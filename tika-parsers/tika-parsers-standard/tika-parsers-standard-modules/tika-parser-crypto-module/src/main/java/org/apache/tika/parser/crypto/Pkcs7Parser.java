@@ -38,6 +38,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -80,14 +81,14 @@ public class Pkcs7Parser implements Parser {
             if (PKCSObjectIdentifiers.signedData.equals(oid)) {
                 parseSignedData(tis, handler, metadata, context);
             } else if (PKCSObjectIdentifiers.id_ct_compressedData.equals(oid)) {
-                metadata.set(Metadata.CONTENT_TYPE, CmsClassifier.COMPRESSED.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, CmsClassifier.COMPRESSED.toString());
                 extractCompressedContent(tis, handler, metadata, context);
             } else {
                 // enveloped / digested / encrypted (labelled; payload absent, encrypted, or
                 // unsupported) or unknown / non-CMS -> empty doc, no throw
                 MediaType type = CmsClassifier.nonSignedType(oid);
                 if (type != null) {
-                    metadata.set(Metadata.CONTENT_TYPE, type.toString());
+                    metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
                 }
                 emptyDocument(handler, metadata);
             }
@@ -106,7 +107,7 @@ public class Pkcs7Parser implements Parser {
             CMSSignedDataParser parser = new CMSSignedDataParser(digestCalculatorProvider, is);
             try {
                 CMSTypedStream content = parser.getSignedContent();
-                metadata.set(Metadata.CONTENT_TYPE,
+                metadata.set(HttpHeaders.CONTENT_TYPE,
                         CmsClassifier.refinedSignedType(parser, content).toString());
                 if (content != null) {
                     try (TikaInputStream contentTis = TikaInputStream.get(content.getContentStream())) {
@@ -133,11 +134,15 @@ public class Pkcs7Parser implements Parser {
         try (InputStream is = Files.newInputStream(tis.getPath())) {
             CMSCompressedDataParser parser = new CMSCompressedDataParser(is);
             CMSTypedStream content = parser.getContent(new ZlibExpanderProvider());
-            BoundedInputStream inflated =
-                    new BoundedInputStream(MAX_DECOMPRESSED, content.getContentStream());
-            try (TikaInputStream contentTis = TikaInputStream.get(inflated)) {
-                Parser delegate = context.get(Parser.class, EmptyParser.INSTANCE);
-                delegate.parse(contentTis, handler, Metadata.newInstance(context), context);
+            BoundedInputStream inflated;
+            // BoundedInputStream does not delegate close(), so the InflaterInputStream underneath
+            // must be closed here or its native zlib arena is only reclaimed by the Cleaner.
+            try (InputStream contentStream = content.getContentStream()) {
+                inflated = new BoundedInputStream(MAX_DECOMPRESSED, contentStream);
+                try (TikaInputStream contentTis = TikaInputStream.get(inflated)) {
+                    Parser delegate = context.get(Parser.class, EmptyParser.INSTANCE);
+                    delegate.parse(contentTis, handler, Metadata.newInstance(context), context);
+                }
             }
             if (inflated.hasHitBound()) {
                 // zlib-bomb guard tripped: the payload was truncated at MAX_DECOMPRESSED, so record

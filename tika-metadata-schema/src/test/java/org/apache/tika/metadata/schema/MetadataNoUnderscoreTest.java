@@ -34,8 +34,22 @@ import org.junit.jupiter.api.Test;
  */
 public class MetadataNoUnderscoreTest {
 
-    /** Keys/prefixes whose underscore is an external standard's spelling (verbatim). Empty today. */
-    private static final Set<String> ALLOWLIST = Set.of();
+    /**
+     * Keys/prefixes whose underscore is an external standard's spelling (verbatim).
+     * {@code ClimateForecast} (tika-core) mints its 15 constants from the NCAR CCSM /
+     * Climate Forecast convention (http://cf-pcmdi.llnl.gov/) attribute names as-is; 6 of
+     * them carry the convention's own underscores. These are not Tika-coined, so renaming
+     * them is out of scope here (it would also change the keys Tika has emitted since 0.x).
+     *
+     * <p>TIKA-4816 stage 5a (registry scope expansion) adds {@code sqlite3:application_id}
+     * and {@code sqlite3:user_version} ({@code SQLite3Parser}): these are SQLite's own PRAGMA
+     * names verbatim (sqlite.org/pragma.html#pragma_application_id,
+     * #pragma_user_version) -- same "external standard's own spelling" category as
+     * {@code ClimateForecast}, not Tika-coined.
+     */
+    private static final Set<String> ALLOWLIST = Set.of(
+            "cf:prg_ID", "cf:cmd_ln", "cf:table_id", "cf:project_id", "cf:experiment_id",
+            "cf:model_name_english", "sqlite3:application_id", "sqlite3:user_version");
 
     @Test
     public void noUnderscoreInTikaCoinedKeys() throws Exception {

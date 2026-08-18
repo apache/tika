@@ -41,6 +41,7 @@ import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.EndianUtils;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -202,7 +203,7 @@ class RTFObjDataParser {
                             EmbeddedDocumentUtil.EmbeddedResourcePrefix.EMBEDDED,
                             unknownFilenameCount.getAndIncrement(),
                             type.getType().toString());
-                    metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
+                    metadata.set(HttpHeaders.CONTENT_TYPE, type.getType().toString());
                 }
             }
         }

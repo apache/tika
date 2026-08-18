@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.Parser;
 
@@ -46,7 +47,7 @@ public class TestMagikaIntegration extends TikaTest {
         assertEquals("document", m.get(MagikaDetector.MAGIKA_GROUP));
         assertEquals("0.1.0-rc.1", m.get(MagikaDetector.MAGIKA_VERSION));
         assertEquals("application/pdf", m.get(MagikaDetector.MAGIKA_MIME));
-        assertEquals("application/pdf", m.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/pdf", m.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("ok", m.get(MagikaDetector.MAGIKA_STATUS));
     }
 

@@ -60,9 +60,9 @@ This produces two distribution zips:
   contains the tika-eval-app jar and its `lib/`.  Unzip and run from
   there.
 
-[source,bash]
+[source,bash,subs=attributes+]
 ----
-mkdir -p ~/tika-runtime && cd ~/tika-runtime
+mkdir -p <workdir>/tika-runtime && cd <workdir>/tika-runtime
 unzip -q tika-app/target/tika-app-{tika-version}.zip -d tika-app
 unzip -q tika-eval/tika-eval-app/target/tika-eval-app-{tika-version}.zip -d tika-eval
 ----
@@ -74,7 +74,7 @@ the unzipped `lib/` siblings) will fail at runtime with
 == Step 1: prepare the corpus
 
 Put the input files somewhere on disk.  For this example we'll use
-`/data/corpus/`.  Tika's pipes iterator walks the tree recursively;
+`<corpus>/`.  Tika's pipes iterator walks the tree recursively;
 files at any depth are processed.
 
 == Step 2: write the two extraction configs
@@ -86,7 +86,7 @@ from defaults — typically just the digester and (for this kind of
 A/B test) the field under test.
 
 The two configs should differ in exactly *one* thing — the field
-under test.  Everything else (digester, parsers, worker count) should
+under test.  Everything else (digester, parsers, fork count) should
 match.
 
 === Config A (baseline)
@@ -106,8 +106,10 @@ match.
 ----
 
 The `parse-context > commons-digester-factory` block makes every
-extracted record carry an `tk:digest:SHA256` metadata field —
+extracted record carry a `tk:digest:SHA-256` metadata field —
 required by `tika-eval` for embedded-document alignment across runs.
+(The config value is the enum name `SHA256`; the emitted key uses the
+JCA spelling `SHA-256`.)
 
 === Config B (variant under test)
 
@@ -142,22 +144,22 @@ not specified takes its default.
 
 == Step 3: run extractions
 
-[source,bash]
+[source,bash,subs=attributes+]
 ----
-cd ~/tika-runtime/tika-app
+cd <workdir>/tika-runtime/tika-app
 
 # Extract A — baseline
 java -jar tika-app-{tika-version}.jar \
-    -i /data/corpus \
-    -o /data/extracts-A \
-    -c /path/to/tika-config-A.json \
+    -i <corpus> \
+    -o <workdir>/extracts-A \
+    -c <workdir>/tika-config-A.json \
     -n 8
 
 # Extract B — variant
 java -jar tika-app-{tika-version}.jar \
-    -i /data/corpus \
-    -o /data/extracts-B \
-    -c /path/to/tika-config-B.json \
+    -i <corpus> \
+    -o <workdir>/extracts-B \
+    -c <workdir>/tika-config-B.json \
     -n 8
 ----
 
@@ -166,27 +168,31 @@ Flags:
 * `-i` / `--inputDir` — input directory (recursive walk)
 * `-o` / `--outputDir` — output directory for per-file JSON
 * `-c` / `--config` — optional config overrides
-* `-n` / `--numClients` — forked worker processes (default 4)
+* `-n` / `--numClients` — number of forked JVMs (default 2 for the `-i`/`-o`
+  form; 1 for the bare `<inputDir> <outputDir>` form)
 * `-p` / `--pluginsDir` — explicit plugins directory (omit when
   running from the unzipped distribution — auto-discovery handles it)
-* `-T` / `--timeoutMs` — per-parse timeout
+* `-T` / `--timeoutMillis` — total task timeout per file (sets
+  `totalTaskTimeoutMillis`)
 
-Each run forks worker processes and produces one `.json` per input
+Each run forks JVMs and produces one `.json` per input
 file under the output directory.  Run them sequentially or in
 parallel — they're independent.
 
 Progress is logged to stderr.  On a typical workstation, extraction
 throughput is in the hundreds-of-files-per-minute range, depending on
-parser cost and worker count.
+parser cost and fork count.
 
 == Step 4: compare and report
 
-[source,bash]
+[source,bash,subs=attributes+]
 ----
-java -jar tika-eval/tika-eval-app/target/tika-eval-app-{tika-version}.jar \
+cd <workdir>/tika-runtime/tika-eval
+
+java -jar tika-eval-app-{tika-version}.jar \
     -n 8 -r -d my-comparison \
-    -a /data/extracts-A \
-    -b /data/extracts-B
+    -a <workdir>/extracts-A \
+    -b <workdir>/extracts-B
 ----
 
 The `Compare` subcommand keyword is optional — the CLI infers it from
@@ -201,12 +207,12 @@ Options:
 * `-i` / `--inputDir` — original binary input directory (optional, lets
   tika-eval pair extracts to source files even if A or B failed on some)
 * `-d` / `--db` — H2 database name/path.  A short label is fine —
-  tika-eval will create `\{label}.mv.db` and a `\{label}-reports/` dir
-  alongside.  Persist the db if you want to re-run Report later.
+  tika-eval will create `\{label}.mv.db`.  Persist the db if you want to
+  re-run Report later.
 * `-r` / `--report` — automatically run the Report step after Compare,
   and tgz the reports directory to `<reportsDir>.tgz`.
-* `-rd` / `--reportsDir` — explicit reports directory (overrides the
-  default derived from `-d`).
+* `-rd` / `--reportsDir` — reports directory; defaults to `reports` in the
+  current directory, not to anything derived from `-d`.
 * `-z` / `--gzip` — gzip the H2 db file to `<db>.mv.db.gz` after Compare
   so it can be transferred.  Requires `-d` (no-op with a warning for a
   temp db or a non-file jdbc connection (e.g. `jdbc:h2:mem:`, tcp)).  Combine with `-r` to package
@@ -222,18 +228,20 @@ The reports directory contains subdirectories:
 ** `mime_diffs_A_to_B.xlsx` — summary counts per (A type, B type)
    transition
 ** `mime_diffs_A_to_B_details.xlsx` — one row per file that changed
+* `charset/` — detected-encoding coverage, distribution, and A→B flips
 * `content/` — token-count and content comparison
 * `exceptions/` — new/changed exceptions in B vs A
 * `attachments/` — embedded-document comparison
 * `metadata/` — metadata comparison
+* `md5/`, `parse_times/` — digest and timing comparisons
 
-Open the `.xlsx` files directly, or use the `regression` skill
-(`~/.claude/skills/regression/SKILL.md`) for guided triage.
+Open the `.xlsx` files directly, or query the H2 database for custom counts and
+joins (see <<h2>>).
 
 == Tips
 
 * *Keep the digester identical between A and B.*  tika-eval uses the
-  `tk:digest:SHA256` field on embedded documents to align records
+  `tk:digest:SHA-256` field on embedded documents to align records
   across the two extracts.  If A digests and B doesn't (or different
   algorithms), the embedded-doc alignment falls back to filename and
   produces false-positive diffs.
@@ -246,24 +254,25 @@ Open the `.xlsx` files directly, or use the `regression` skill
   parsers may corrupt input files in rare cases; keep a known-good
   source tree separate from working copies.
 
-* *Persist the H2 database (`-d /path/to/eval.db`)* if you want to
+* *Persist the H2 database (`-d <workdir>/eval.db`)* if you want to
   re-run the Report step or query it directly with the H2 console.
   Omitting `-d` writes to a temp file that's cleaned up on exit.
 
 * *Re-run only Report*: if you already have the database, skip Compare
   and run the Report tool directly:
 +
-[source,bash]
+[source,bash,subs=attributes+]
 ----
-java -jar tika-eval/tika-eval-app/target/tika-eval-app-{tika-version}.jar Report \
-    -d /tmp/eval.db -rd /data/reports/
+cd <workdir>/tika-runtime/tika-eval
+java -jar tika-eval-app-{tika-version}.jar Report \
+    -d <workdir>/eval.db -rd <workdir>/reports/
 ----
 
 == Worked example: encoding-detector chain comparison
 
 Compare the SPI default detector chain (A) against an explicit
 `[BOM, HTML, Mojibuster, JunkFilter]` chain (B) over a 29 000-file
-Common Crawl HTML sample at `~/data/commoncrawl/cc-html-sample`.
+Common Crawl HTML sample at `<corpus>/cc-html-sample`.
 
 . One-time build: `./mvnw install -pl tika-app,tika-eval/tika-eval-app -am -DskipTests`
 . Unzip both distributions: `unzip tika-app/target/tika-app-*.zip` and
@@ -273,49 +282,52 @@ Common Crawl HTML sample at `~/data/commoncrawl/cc-html-sample`.
   examples above.
 . Extract A:
 +
-[source,bash]
+[source,bash,subs=attributes+]
 ----
-cd ~/tika-runtime/tika-app
+cd <workdir>/tika-runtime/tika-app
 java -jar tika-app-{tika-version}.jar \
-    -i ~/data/commoncrawl/cc-html-sample \
-    -o ~/data/extracts/cc-html-sample-A \
-    -c ~/configs/tika-config-A.json -n 8
+    -i <corpus>/cc-html-sample \
+    -o <workdir>/extracts/cc-html-sample-A \
+    -c <workdir>/configs/tika-config-A.json -n 8
 ----
 . Extract B (same form, different config + output):
 +
-[source,bash]
+[source,bash,subs=attributes+]
 ----
 java -jar tika-app-{tika-version}.jar \
-    -i ~/data/commoncrawl/cc-html-sample \
-    -o ~/data/extracts/cc-html-sample-B \
-    -c ~/configs/tika-config-B.json -n 8
+    -i <corpus>/cc-html-sample \
+    -o <workdir>/extracts/cc-html-sample-B \
+    -c <workdir>/configs/tika-config-B.json -n 8
 ----
 . Compare + report:
 +
-[source,bash]
+[source,bash,subs=attributes+]
 ----
-cd ~/tika-runtime/tika-eval
+cd <workdir>/tika-runtime/tika-eval
 java -jar tika-eval-app-{tika-version}.jar \
     -n 8 -r -d cc-html-29k-A-vs-B \
-    -a ~/data/extracts/cc-html-sample-A \
-    -b ~/data/extracts/cc-html-sample-B
+    -a <workdir>/extracts/cc-html-sample-A \
+    -b <workdir>/extracts/cc-html-sample-B
 ----
 +
-Produces `cc-html-29k-A-vs-B-reports/` plus a `.tgz` of the same
-alongside `cc-html-29k-A-vs-B.mv.db`.
+Produces `reports/` plus `reports.tgz` in the current directory, alongside
+`cc-html-29k-A-vs-B.mv.db`.  Pass `-rd cc-html-29k-A-vs-B-reports` if you want
+the reports directory named after the run.
 
-For a 29 K-file HTML sample on a typical workstation (8 forked workers,
+For a 29 K-file HTML sample on a typical workstation (8 forks,
 i9-ish CPU): each extraction completes in roughly 45-60 seconds; the
 Compare step finishes in 2-5 minutes depending on extract size.
 . Open `reports/mimes/mime_diffs_A_to_B.xlsx` to see the headline
-  MIME-detection differences; the encoding-detector chain change
-  surfaces as charset diffs in `mimes/mime_diffs_A_to_B_details.xlsx`
-  (`tk:detected-encoding`).
+  MIME-detection differences.  The encoding-detector chain change shows up
+  in `reports/charset/` — `charset_coverage.xlsx` counts the A→B flips, and
+  the distribution reports break down `tk:detected-encoding` per run.  It also
+  shows up in `mimes/mime_diffs_A_to_B_details.xlsx`, because the recorded
+  MIME string carries the `charset=` parameter.
 
-A regression analysis writeup goes in
-`~/Desktop/claude-todo/<reports-dir-name>-analysis.md` per the
-`regression` skill.
+Keep the writeup next to the reports directory it describes, so the numbers and
+the narrative travel together.
 
+[[h2]]
 == Querying the H2 database directly
 
 `tika-eval` stores everything in an *H2* database — the `-d <name>` passed to
@@ -323,8 +335,8 @@ A regression analysis writeup goes in
 views; for custom counts and joins, connect to the H2 file and run SQL.
 
 The database is created with *no username and no password*
-(`H2Util` opens it with `DriverManager.getConnection(url)` and no credentials).
-So the old H2 default `-user sa` *fails* with "Wrong user name or password" — use
+(`H2Util` opens it with `DriverManager.getConnection(url)` and no credentials),
+so `-user sa` *fails* with "Wrong user name or password" — use
 empty credentials. Append `;IFEXISTS=TRUE` (so a typo opens nothing rather than
 creating a new empty db) and `;ACCESS_MODE_DATA=r` for a read-only open. H2 is
 single-writer: query only after the `Compare`/`Profile`/`Report` run has released

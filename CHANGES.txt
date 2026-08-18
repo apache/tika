@@ -1,19 +1,401 @@
 Release 4.0.0 - ???
 
+  BREAKING CHANGES
+
+   * tika-app: the inline short forms -eX (output encoding) and -pX (document
+     password) were removed from standard mode. Use --encoding=X and
+     --password=X. These were the only short flags that consumed an inline
+     value, and matching them by prefix meant a long name written with one
+     dash was silently swallowed: -config=tika.json set the password to
+     "onfig=tika.json" and loaded no config file, with no error. Every
+     single-dash long name is now rejected with a message naming the
+     two-dash form (TIKA-4808).
+
+   * tika-core/tika-app: NetworkParser and tika-app's -c/--client=<uri>
+     network-client mode were removed. It dispatched raw sockets
+     (including a bare telnet:// scheme) to an arbitrary user-supplied
+     host with no auth or TLS enforcement; use tika-server instead
+     (TIKA-4808).
+
+   * Metadata's reserved tk: (and legacy X-TIKA:) namespace is now a trust
+     boundary for String-keyed writes. A String write to a reserved key throws
+     IllegalArgumentException instead of 3.x's silent success or silent drop,
+     and the public Property factories reject reserved names outright -- a
+     curated tk: constant can only be built from Tika's own package-private
+     factories.
+     Metadata#setAll(Properties) is removed with no replacement; use
+     putAll(Metadata) or individual set/add calls. PassthroughPrefix is
+     renamed to KeyPrefix, and document/tool-derived names are written via the
+     new Metadata#add(KeyPrefix, String, String) route (append-only, with
+     built-in skip-and-WARN bounds on hostile names) or its Instant overload
+     for source-typed dates. A batch of key families was also renamed into
+     namespaced spellings (audio:, ner:, envi:, ogg:streams-, grobid:,
+     iso19115:, gdal:, geotopic:, mif:, idml:, and GeoParser's Optional_NAME<n>
+     fields); see the metadata key migration guide (metadata-changes-4x.adoc)
+     for the full renamed-key table.
+     Metadata no longer implements CreativeCommons, Geographic, HttpHeaders,
+     Message, ClimateForcast, TIFF, or TikaMimeKeys: inherited constants like
+     Metadata.CONTENT_TYPE move to their home interface (HttpHeaders.CONTENT_TYPE,
+     etc.). The TikaMimeKeys and ClimateForcast interfaces are deleted outright;
+     ClimateForecast (corrected spelling) replaces the latter. The Property
+     factories internalClosedChoise/internalOpenChoise/externalClosedChoise/
+     externalOpenChoise are renamed to ...Choice (typo fix, no forwarders), and
+     the dead enum constants PropertyType.STRUCTURE and ValueType.{LOCALE,
+     MIME_TYPE, PROPER_NAME, URL, XPATH} are removed. The remaining metadata
+     API cleanups (cf: prefix, writelimiter package, smaller removals) are
+     enumerated in the migration guide, migrating-to-4x.adoc (TIKA-4816).
+
+   * Parsing with a concrete parser (not AutoDetectParser) and an empty
+     ParseContext no longer auto-generates an AutoDetectParser to handle
+     embedded files. Users must set the Parser of their choice for embedded
+     files. EmbeddedDocumentExtractorFactory and friends are removed;
+     ParsingEmbeddedDocumentExtractor/UnpackExtractor are now stateless
+     singletons (TIKA-4819).
+
+   * Parsing with a concrete parser (not AutoDetectParser) and an empty
+     ParseContext no longer auto-generates a Detector to identify embedded
+     files; they are reported as application/octet-stream instead. Users
+     must set the Detector of their choice for embedded files (TIKA-4819).
+
+   * tika-server: the /translate endpoints have been removed (TIKA-4809).
+
+   * tika-server: /detect/stream and /language/stream and /language/string have
+     been collapsed into /detect and /language (TIKA-4809).
+
+   * tika-server: caller errors now map to accurate HTTP status codes instead of
+     always returning 200 or 500. A saturated worker pool returns 429, a
+     crashed/timed-out/OOM worker returns 503, an unknown or reserved
+     fetcher/emitter or bad handler returns 400, and an over-limit body returns
+     413; the 429 and 503 responses carry a Retry-After header (TIKA-4809).
+
+   * tika-server: the bare /tika endpoint now returns Markdown too (was XHTML),
+     completing the Markdown default (TIKA-4663); use /tika/xml for XHTML (TIKA-4809).
+
+   * tika-server: request bodies are now capped by maxRequestSizeBytes,
+     defaulting to 1 GiB; larger requests are rejected with 413, including
+     over-limit chunked uploads, which previously surfaced as an empty 500
+     (TIKA-4809).
+
+   * tika-server: a /meta request with no Accept header now returns JSON;
+     3.x returned CSV. CSV is still available via Accept: text/csv (TIKA-4809).
+
+   * tika-server: the raw /tika family's 422 responses carry the extracted
+     content only; the exception is no longer appended to the body -- use
+     /rmeta for the structured exception (TIKA-4809).
+
+   * tika-server: /async validates fetcher/emitter ids at POST time (400),
+     rejects a batch larger than the queue's total capacity with 400 instead
+     of throttling it, and one bad tuple no longer stops the async workers
+     (TIKA-4809).
+
+   * tika-server: /pipes returns 400 with the reason for a malformed request
+     body and rejects emit strategies other than EMIT_ALL, whose passed-back
+     data the /pipes response cannot carry (TIKA-4809).
+
+   * tika-server: the 'endpoints' allowlist now also gates SPI-provided
+     resources; a discovered resource binds only when its root endpoint is
+     enabled (TIKA-4809).
+
+   * FetchEmitTuple JSON now names the per-tuple parse context "parse-context"
+     (was "parseContext") and rejects unknown tuple fields with an error naming
+     the field (TIKA-4809).
+
+   * The pipes config keys staleFetcherTimeoutSeconds and
+     staleFetcherDelaySeconds have been removed; a config still carrying them
+     fails startup (TIKA-4809).
+
+   * An unregistered component name in a default-parser, default-detector or
+     default-encoding-detector "exclude" list now throws a TikaConfigException
+     at config load instead of logging a WARN. Silently ignoring an exclusion
+     left a deliberately disabled component enabled. A config that loaded with
+     a warning on 3.x -- typically one that names the excluded component by
+     class name, or misspells it -- now refuses to start. Use the registered
+     component name (e.g. "pdf-parser"); tika-app --list-parser-names prints
+     them (TIKA-3268, TIKA-4808).
+
+   * ParseContext configuration is now resolved per component instance rather
+     than per config class. ConfigDeserializer no longer publishes a resolved
+     config under its class, because a class-keyed write leaked one component's
+     config to every other component sharing that config class -- the three VLM
+     parsers all bind VLMOCRConfig, so one provider's base URL and API key
+     reached the other two. Two user-visible consequences:
+     parseContext.get(SomeConfig.class) no longer returns a JSON-resolved
+     config, so a third-party component following the PDFBoxRenderer pattern
+     must now be handed its config explicitly; and precedence is inverted --
+     a JSON config for a key now beats a programmatic
+     context.set(XConfig.class, ...), where the programmatic value used to win.
+     The programmatic value is still honored for a key with no JSON config.
+     Resolved configs are cached by (component name, config class), so a
+     component that resolves a validation-only RuntimeConfig and then
+     re-resolves its real config class gets each as its own instance and still
+     merges the operator's defaults (TIKA-4808).
+
+   * tika-grpc: the generated Java classes moved from package org.apache.tika
+     to org.apache.tika.pipes.grpc.proto (java_package in tika.proto;
+     java_multiple_files stays true), so every generated type moves --
+     TikaGrpc, FetchAndParseRequest, FetchAndParseReply and the rest. Java gRPC
+     clients must update their imports. This is a source break only: the proto
+     package ("tika") and the service name ("Tika") are unchanged, so the wire
+     protocol is identical and clients in other languages, or Java clients that
+     are not recompiled, are unaffected (TIKA-4808).
+
+   * ExceptionUtils.trimMessage has been removed from tika-core; it moved into
+     tika-eval-core (TIKA-4809).
+
+   * BasicContentHandlerFactory.parseHandlerType now throws
+     IllegalArgumentException for an unrecognized handler name instead of
+     silently returning the supplied default (TIKA-4809).
+
+   * HttpClientFactory's inert redirect-host allowlist accessors
+     (get/setAllowedHostsForRedirect) have been removed (TIKA-4809).
+
+   * TimeoutLimits: progressTimeoutMillis of 0 combined with a positive
+     totalTaskTimeoutMillis is now rejected at config load; it would kill
+     every task immediately (TIKA-4809).
+
+   * The http-fetcher now verifies TLS certificates and hostnames by default;
+     set verifySsl:false to opt out (TIKA-4809).
+
+   * tika-server: /pipes returns the same JSON body as /tika/rmeta/unpack --
+     {"status":<RESULT_STATUS>,"message":...} -- instead of a /pipes-only
+     {"status":"ok"|"process_crash",...} shape (TIKA-4809).
+
+   * tika-server: POST /async requires an object body {"tuples":[...]} instead of
+     a bare JSON array (TIKA-4809).
+
+   * tika-server: the tika-server-client module has been removed (TIKA-4809).
+
+   * Tika 4.x requires Java 17 or later; 3.x built and ran on Java 11. All
+     published artifacts are compiled with --release 17 (TIKA-4685).
+
+   * The core SPI signatures changed. Parser.parse now takes a TikaInputStream
+     instead of an InputStream (there is no InputStream overload),
+     Detector.detect takes (TikaInputStream, Metadata, ParseContext) instead of
+     (InputStream, Metadata), and EmbeddedDocumentExtractor's
+     shouldParseEmbedded/parseEmbedded gained a ParseContext and take a
+     TikaInputStream. Every third-party Parser, Detector or
+     EmbeddedDocumentExtractor implementation must be updated; callers can wrap
+     with TikaInputStream.get(...). The Tika facade (Tika.parse/parseToString)
+     still accepts an InputStream and is unaffected. Tika.detect(InputStream, ...)
+     no longer resets the stream to its original position: detection now reads
+     ahead through a TikaInputStream, so on return the caller's stream must be
+     treated as consumed. It still does not close the caller's stream, and any
+     temporary file spooled during detection is deleted before it returns
+     (TIKA-4399, TIKA-4541, TIKA-4569).
+
+   * TikaConfig and the org.apache.tika.config XML-configuration API are
+     removed: TikaConfig, ConfigBase, Field, Param, ParamField,
+     LoadErrorHandler, InitializableProblemHandler, TikaConfigSerializer and
+     TikaTaskTimeout are gone. Use TikaLoader from tika-serialization; see
+     migrating-to-4x.adoc (TIKA-4545, TIKA-4553, TIKA-4565).
+
+   * ForkParser and the entire org.apache.tika.fork package are removed from
+     tika-core. Out-of-process parsing is now provided by PipesForkParser in
+     the new tika-pipes-fork-parser module. tika-app's -f/--fork routes through
+     it, and --fork-timeout is rejected rather than silently ignored
+     (TIKA-4554, TIKA-4571, TIKA-4651).
+
+   * tika-app and tika-server-standard now ship as zip distributions with an
+     adjacent lib/ directory; the published jars are thin launchers and fail
+     with NoClassDefFoundError if run on their own (TIKA-4733).
+
+   * The encoding detectors moved out of parser packages into
+     org.apache.tika.detect.* and into new tika-encoding-detector-* modules:
+     org.apache.tika.parser.txt.{CharsetDetector,CharsetMatch,
+     Icu4jEncodingDetector,UniversalEncodingDetector,BOMDetector,...} are now
+     org.apache.tika.detect.icu4j.*, org.apache.tika.detect.universal.* and
+     org.apache.tika.detect.BOMDetector, and
+     org.apache.tika.parser.html.HtmlEncodingDetector is now
+     org.apache.tika.detect.html.HtmlEncodingDetector.
+     NonDetectingEncodingDetector is removed (TIKA-4685, TIKA-4720).
+
+   * The tika-langdetect-tika module is removed (TikaLanguageDetector,
+     LanguageIdentifier, LanguageProfile, LanguageProfilerBuilder,
+     ProfilingWriter). tika-app, tika-server and tika-eval now bundle the new
+     CharSoup detector (tika-langdetect-charsoup) instead of
+     tika-langdetect-optimaize, so the language reported by default changes
+     (TIKA-4662).
+
+   * SolrJ moves from 8.11.4 to 10.0.0; the Solr fetcher, emitter and pipes
+     iterator no longer support Solr 8 (TIKA-4789).
+
+   * tika-app's batch mode is gone. The -bc/batch directory-to-directory command
+     line (backed by the removed tika-batch module) has no successor flag; use
+     -a/--async, which runs the same work through tika-pipes (TIKA-4340).
+
+   * Metadata's serialVersionUID changed. A Metadata instance serialized by 3.x
+     now fails deserialization with InvalidClassException instead of silently
+     producing an object with a null write limiter that throws on first write
+     (TIKA-4816).
+
+   * PDF: extractIncrementalUpdateInfo now defaults to true (was false), so
+     every PDF parse emits pdf:incremental-update-count and related keys
+     without configuration. parseIncrementalUpdates remains false
+     (TIKA-4354, TIKA-4358).
+
+   * The DOM-based OOXML extractors are removed (XWPFWordExtractorDecorator,
+     XSLFPowerPointExtractorDecorator, POIXMLTextExtractorDecorator,
+     XPSTextExtractor) and with them the OfficeParserConfig keys
+     useSAXDocxExtractor and useSAXPptxExtractor. The SAX extractors are the
+     only implementation (TIKA-4692, TIKA-4708).
+
+   * The MuPDF renderer is removed (org.apache.tika.renderer.pdf.mutool); PDF
+     page rendering for OCR now uses the PDFBox renderer or the new
+     PopplerRenderer (TIKA-4664).
+
+   * Parsers and detectors no longer expose bean setters/getters for their
+     settings. Configuration moves to per-component *Config objects supplied
+     through the ParseContext (e.g. GeoParserConfig, DWGParserConfig,
+     AmazonTranscribeConfig, MagikaDetector/SiegfriedDetector configs)
+     (TIKA-4758).
+
+   * TikaInputStream no longer caches by default. A stream is consumed in
+     passthrough mode unless enableRewind() is called at position 0;
+     rewind()/getFile()/getPath() after reading without enableRewind() throw
+     instead of silently spooling. Digesters call enableRewind() themselves
+     (TIKA-4618, TIKA-4623).
+
+   * tika-eval-app's command line changed: the FileProfile sub-command is
+     removed, the -bc batch-config option is gone, and extract directories are
+     now named with -e/--extracts (Profile) and -a/--extractsA + -b/--extractsB
+     (Compare); -i/--inputDir, -d/--db, -c/--config, -n/--numWorkers and
+     -m/--maxExtractLength replace the 3.x spellings
+     (TIKA-4342, TIKA-4450, TIKA-4452, TIKA-4507).
+
+   * Audio cover art is now extracted as embedded documents from MP3 (ID3v2
+     APIC/PIC), MP4 (covr), Vorbis and FLAC. Embedded-document counts and
+     /rmeta list lengths for audio files change (TIKA-4801).
+
+   * Additional removals with no direct replacement: the tika-server-eval
+     module (TIKA-4555); SentimentAnalysisParser (TIKA-4574); the
+     tika-age-recogniser module / AgeRecogniser (TIKA-4343);
+     ObjectRecognitionParser and the Tensorflow recognisers/captioners;
+     PooledTimeSeriesParser; org.apache.tika.parser.pdf.AccessChecker
+     (replaced by PDFParserConfig.AccessCheckMode);
+     org.apache.tika.utils.{RereadableInputStream,AnnotationUtils};
+     org.apache.tika.io.{IOUtils,InputStreamFactory};
+     org.apache.tika.sax.DIFContentHandler;
+     org.apache.tika.parser.{AutoDetectParserFactory,ParserFactory};
+     org.apache.tika.parser.internal.Activator; and the jempbox-based
+     JempboxExtractor / XMPMetadataExtractor / pdf.xmpschemas.* classes
+     superseded by the unified XMP extractor (TIKA-4775).
+
   NEW FEATURES
 
-   * Content-based detection of ASN.1/DER crypto containers at parse time. An
-     opt-in Pkcs7Detector surfaces the subtype at detect() time,
-     but must be enabled via configuration (TIKA-1997).
+   * Content-based detection of ASN.1/DER crypto containers. Magic for the
+     PKCS#7/CMS arc ships enabled by default: application/pkcs7-mime gained
+     magic (3.x had globs only), application/pkcs7-signature's magic was
+     broadened across the DER length forms, and application/timestamped-data,
+     application/x-pkcs12, application/x-pkcs7-certificates and
+     application/x-pkcs7-certreqresp gained magic. Pkcs7Parser further refines
+     the smime-type on the output Content-Type. Files that detected as
+     application/octet-stream in 3.x may now detect as a crypto type
+     (TIKA-1997, TIKA-2856).
+
+   * tika-pipes gains three parse modes: NO_PARSE (detect only, no parse),
+     CONTENT_ONLY (emitters write raw content, no metadata envelope) and
+     UNPACK (write embedded bytes out). All three are wired through tika-app
+     and tika-server (TIKA-4631, TIKA-4637, TIKA-4656).
+
+   * New tika-pipes plugins: an Elasticsearch emitter (TIKA-4672), an
+     Atlassian JWT fetcher (TIKA-4604), Google Drive, Microsoft Graph, Azure
+     Blob, JSON and HTTP plugins, and an Apache Ignite ConfigStore for
+     runtime fetcher/emitter configuration (TIKA-4583, TIKA-4587, TIKA-4598).
+
+   * New inference and OCR modules: tika-inference and tika-vlm add
+     vision-language-model parsers (Claude, Gemini, OpenAI) that emit
+     vlm:prompt-tokens / vlm:completion-tokens, and
+     tika-parser-tess4j-module adds in-process Tesseract OCR
+     (TIKA-4665, TIKA-4666, TIKA-4667, TIKA-4690).
+
+   * A Markdown parser with structured, lossless XHTML output, complementing
+     the Markdown content handler (TIKA-4770).
+
+   * New detection: Android binary XML (application/vnd.android.axml,
+     TIKA-4747) and Frictionless Data packages (TIKA-4643); improved mp3/aac
+     (TIKA-4612) and grib (TIKA-4655) detection.
 
   OTHER CHANGES
+
+   * Dependency upgrades since 4.0.0-beta-1, including Jetty 12.1.12, CXF
+     4.2.3 and SolrJ 10.0.0 (TIKA-4327).
+
+   * The charset, junk-text and language detection stack was rewritten:
+     language-aware charset detection, a universal junk detector, wider
+     Unicode handling and the new CharSoup language detector
+     (TIKA-4662, TIKA-4671, TIKA-4675, TIKA-4691, TIKA-4719, TIKA-4810).
+
+   * New audio/video metadata: audio:bitrate, audio:is-variable-bitrate,
+     audio:has-drm, audio:channels, video:frame-rate, video:bitrate and MP4
+     sample size; ID3 TCOP and Vorbis COPYRIGHT map to xmpDM:copyright, EXIF
+     GPS altitude maps to geo:alt, and the presentation start of delayed
+     QuickTime timed-metadata tracks is exposed (TIKA-4777, TIKA-4779,
+     TIKA-4780, TIKA-4781, TIKA-4800, TIKA-4802).
+
+   * Parsing and robustness fixes across formats: CHM (TIKA-4783), ID3 UTF-16
+     (TIKA-4784), MPEG2/2.5 Layer III frame sizing (TIKA-4791), .doc empty
+     comments (TIKA-4718), OOXML hyphenation and field-code hyperlinks
+     (TIKA-4646, TIKA-4683), RTF attachments in HTML decapsulation
+     (TIKA-4710), image extraction (TIKA-4736), embedded-file extension
+     calculation (TIKA-4808), and general media-file robustness (TIKA-4812).
+     MAPI properties no longer overwrite better-fitting Dublin Core terms
+     (TIKA-4806). Embedded-file naming was streamlined (TIKA-4689).
+
+   * tika-eval-core is no longer published as a fat jar (TIKA-4414) and
+     tika-grpc no longer shades gRPC (TIKA-4709).
+
+   * PipesClient/PipesServer IPC now enforces a configurable payload limit
+     (pipes.maxIpcPayloadBytes, default 100 MB) in both directions. Results
+     that exceed the limit return PAYLOAD_LIMIT_EXCEEDED instead of causing
+     heap exhaustion; crash messages are also size-capped (TIKA-4793).
+
+   * Pipes now carries small documents to the forked worker inside the request
+     instead of writing them to disk first. A host that already holds the
+     content -- tika-server's /tika, /rmeta, /meta, /detect and /unpack, or
+     PipesForkParser with a non-file-backed stream -- sends anything at or
+     below the new pipes.maxInlineBytes (default 10 MB) in the request, where
+     the reserved __bytes fetcher serves it in the worker and no disk is
+     touched; larger content is written out once as before (to tika-server's
+     input temp directory, or the calling JVM's java.io.tmpdir under
+     PipesForkParser), and a stream already backed by a file always keeps its
+     file. Set maxInlineBytes to 0 to spool every non-empty body. The value must
+     leave room for the rest of the request inside pipes.maxIpcPayloadBytes;
+     one that does not is rejected at config load (TIKA-4808).
 
    * MagicDetector now compiles its regular expression once, in the
      constructor, instead of recompiling it on every match (TIKA-4796).
 
+   * Unified timeout model across the library, pipes, and server: a total-task
+     budget plus a progress/stall timeout, composed recursively over embedded
+     documents (TIKA-4813).
+
+   * tika-server: /meta now runs through the same pipes-backed parser as the
+     other extraction endpoints (TIKA-4809).
+
+   * tika-server requests now carry only their own parse-context entries to the
+     forked worker, which supplies the config defaults itself. Previously the
+     server sent its config's parse-context along with every request, so the
+     worker -- which clamps request-supplied timeout limits but trusts its own
+     config's -- treated the operator's timeout-limits as caller input and
+     clamped them at pipes.maxTotalTaskTimeoutMillis (TIKA-4808).
+
    * tika-grpc's fetchAndParseServerSideStreaming now completes the call
      after delivering its reply, instead of leaving the client waiting
      for a terminal signal that never came (TIKA-4804).
+
+   * tika-grpc now routes fetchAndParse through the PipesParser client
+     pool instead of one shared single-threaded PipesClient: concurrent
+     calls no longer crash the worker, pipes.numClients and (for the
+     first time) pipes.useSharedServer take effect, up to numClients
+     forked worker JVMs instead of one, and pool saturation surfaces
+     in-band as CLIENT_UNAVAILABLE_WITHIN_MS. An interrupted call
+     closes its connection and recycles the per-client worker, so a
+     pooled client cannot go back to the queue dirty (TIKA-4815).
+
+   * PDFs whose %PDF- header is preceded by a print-composition job ticket are
+     no longer detected as text/x-matlab. Up to 50 %% comment or blank lines of
+     up to 150 characters, and nothing else, may now precede the header; the
+     TIKA-3328 rule this extends only reached 512 bytes (TIKA-4782).
 
 
 Release 4.0.0-beta-1 - 6/29/2026

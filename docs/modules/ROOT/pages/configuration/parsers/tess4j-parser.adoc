@@ -19,57 +19,41 @@
 
 [IMPORTANT]
 ====
-*Advanced users only.* `Tess4JParser` loads the Tesseract native library
-directly into your JVM through https://github.com/java-native-access/jna[JNA]
-(Java Native Access). Operating it safely means locating and linking the
-correct platform-specific native libraries, reasoning about the Java/native
-boundary, and accepting that a fault in the native code can crash the entire
-JVM. In short, it assumes you are comfortable working with native-library
-integration via JNA.
+*Advanced users only.* `Tess4JParser` loads the Tesseract native library into your JVM through
+https://github.com/java-native-access/jna[JNA]. Running it safely means locating and linking the
+right platform-specific native libraries, reasoning about the Java/native boundary, and accepting
+that a fault in native code can crash the whole JVM.
 
-If that doesn't describe you, please don't reach for this parser — and that's
-perfectly fine. The standard
-xref:configuration/parsers/tesseract-ocr-parser.adoc[`TesseractOCRParser`]
-performs the same OCR by running the `tesseract` command-line program in a
-separate process. It needs no native linking, is far easier to set up, and a
-crash in Tesseract can never take down your application, so it is the
-recommended choice for almost everyone. Choose `Tess4JParser` only when you
-have a measured need for in-process OCR throughput *and* the expertise to run
-native bindings safely.
+If that doesn't describe you, don't reach for this parser — and that's perfectly fine.
+xref:configuration/parsers/tesseract-ocr-parser.adoc[`TesseractOCRParser`] does the same OCR by
+running the `tesseract` command-line program in a separate process: no native linking, far easier
+to set up, and a Tesseract crash can never take down your application. Choose `Tess4JParser` only
+with a measured need for in-process OCR throughput *and* the expertise to run native bindings
+safely.
 ====
 
-The `Tess4JParser` is an OCR parser that calls the Tesseract native library
-in-process via https://github.com/nguyenq/tess4j[Tess4J] and JNA, rather
-than spawning a `tesseract` child process for every image. This eliminates
-per-file process-spawn overhead and can be significantly faster when
-processing large batches of images.
+`Tess4JParser` calls the Tesseract native library in-process via
+https://github.com/nguyenq/tess4j[Tess4J] and JNA instead of spawning a `tesseract` child process
+per image. That removes the per-file process-spawn overhead and can be significantly faster on
+large batches.
 
-Because the native Tesseract handle is *not thread-safe*, the parser
-maintains a configurable pool of `Tesseract` instances. Multiple threads
-borrow from the pool and return instances when done, so the parser is safe
-for concurrent use.
+The native Tesseract handle is *not thread-safe*, so the parser keeps a configurable pool of
+`Tesseract` instances that threads borrow and return; the parser itself is safe for concurrent use.
 
-[WARNING]
-====
-This parser loads native C/{cpp} libraries (Tesseract, Leptonica) into
-the JVM via JNA. A segfault or memory leak in the native code *will*
-crash your entire JVM.
-
-*You should run this parser in a forked child process using tika-pipes,
-ideally inside a Docker container.* Do not load it into a long-lived
-application server process unless you are comfortable with the risk.
-====
+WARNING: *Run this parser in a forked JVM using tika-pipes, ideally inside a Docker
+container.* A segfault or memory leak in the native Tesseract or Leptonica code takes down whatever
+JVM loaded it. Do not put it in a long-lived application server process.
 
 == Module dependency
 
 The parser lives in the `tika-parser-tess4j-module` artifact:
 
-[source,xml]
+[source,xml,subs=attributes+]
 ----
 <dependency>
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parser-tess4j-module</artifactId>
-  <version>${tika.version}</version>
+  <version>{tika-version}</version>
 </dependency>
 ----
 
@@ -181,10 +165,11 @@ libraries. Prepended to `jna.library.path` at initialization time.
 threads that will call the parser concurrently. Each instance consumes
 native memory.
 
-|`timeoutSeconds`
-|`120`
-|Maximum time (seconds) to wait for a pooled `Tesseract` instance before
-throwing an exception.
+|`timeoutMillis`
+|`120000`
+|Timeout (milliseconds) applied both to waiting for a pooled `Tesseract`
+instance and to each image's OCR call. Each is budgeted separately up to this
+value, clipped to whatever remains of the task's total budget.
 
 |`dpi`
 |`300`
@@ -195,7 +180,7 @@ throwing an exception.
 |Minimum input file size in bytes. Smaller files are skipped.
 
 |`maxFileSizeToOcr`
-|`2147483647` (~2 GB)
+|`52428800` (50 MB)
 |Maximum input file size in bytes. Larger files are skipped.
 
 |`maxImagePixels`
@@ -210,8 +195,8 @@ throwing an exception.
 == Recommended: Docker + tika-pipes
 
 Because this parser loads native code into the JVM, the safest deployment
-is a Docker container running tika-pipes with forked child processes.
-If the native code crashes, only the child process dies -- tika-pipes will
+is a Docker container running tika-pipes with forked JVMs.
+If the native code crashes, only the fork dies -- tika-pipes will
 respawn it automatically.
 
 A minimal `Dockerfile`:
@@ -235,21 +220,7 @@ WORKDIR /app
 ENTRYPOINT ["java", "-jar", "tika-pipes-app.jar"]
 ----
 
-With the following parser configuration:
-
-[source,json]
-----
-{
-  "parsers": [
-    {
-      "name": "tess4j-parser",
-      "dataPath": "/usr/share/tesseract-ocr/5/tessdata",
-      "nativeLibPath": "/usr/lib/x86_64-linux-gnu",
-      "poolSize": 4
-    }
-  ]
-}
-----
+Use the <<_basic_configuration,basic configuration>> above with those container paths.
 
 TIP: Set `poolSize` equal to the number of forked parser threads to
 maximize throughput without over-allocating native memory.
@@ -287,8 +258,7 @@ maximize throughput without over-allocating native memory.
 
 == Per-request configuration
 
-Override configuration for a single parse call by placing a `Tess4JConfig`
-on the `ParseContext`:
+In-process, place a `Tess4JConfig` on the `ParseContext`:
 
 [source,java]
 ----
@@ -300,8 +270,7 @@ ParseContext context = new ParseContext();
 context.set(Tess4JConfig.class, override);
 ----
 
-Note: `dataPath` and `nativeLibPath` cannot be changed at parse time
-(they are locked at parser initialization). Attempting to set them in a
-runtime config will throw `TikaConfigException`.
-
-@since Apache Tika 4.0
+NOTE: In caller-supplied JSON config — the tika-server `/config` endpoints, tika-grpc's
+`parse_context_json` — `dataPath` and `nativeLibPath` are locked at parser initialization, and
+setting either throws `TikaConfigException`. They point at native code, so a caller must not be
+able to move them.

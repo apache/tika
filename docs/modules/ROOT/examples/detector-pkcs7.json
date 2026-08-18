@@ -1,6 +1,1 @@
-{
-  "detectors": [
-    { "pkcs-7-detector": {} },
-    { "default-detector": {} }
-  ]
-}
+../../../../tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/config-examples/detector-pkcs7.json

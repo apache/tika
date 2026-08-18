@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
-import static org.apache.tika.parser.microsoft.onenote.OneNoteParser.ONE_NOTE_PREFIX;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -35,7 +34,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.microsoft.onenote.OneNotePropertyEnum;
 import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
@@ -180,7 +179,7 @@ public class MSOneStorePackage {
                         if (instant.isAfter(lastModifiedTimestamp)) {
                             lastModifiedTimestamp = instant;
                         }
-                        metadata.set(ONE_NOTE_PREFIX + "lastModifiedTimestamp",
+                        metadata.set(OneNote.LAST_MODIFIED_TIMESTAMP,
                                 String.valueOf(lastModifiedTimestamp.toEpochMilli()));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.CreationTimeStamp) {
                         // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
@@ -190,7 +189,7 @@ public class MSOneStorePackage {
                         if (creationTs < creationTimestamp) {
                             creationTimestamp = creationTs;
                         }
-                        metadata.set(ONE_NOTE_PREFIX + "creationTimestamp", String.valueOf(creationTimestamp));
+                        metadata.set(OneNote.CREATION_TIMESTAMP, String.valueOf(creationTimestamp));
                     } else if (oneNotePropertyEnum == OneNotePropertyEnum.LastModifiedTime) {
                         // add the TIME32_EPOCH_DIFF_1980 because OneNote TIME32 epoch time is per 1980, not
                         // 1970
@@ -257,11 +256,11 @@ public class MSOneStorePackage {
             metadata.set(TikaCoreProperties.CREATOR, authors.toArray(new String[]{}));
         }
         if (!mostRecentAuthors.isEmpty()) {
-            metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "mostRecentAuthors"),
+            metadata.set(OneNote.MOST_RECENT_AUTHORS,
                     mostRecentAuthors.toArray(new String[]{}));
         }
         if (!originalAuthors.isEmpty()) {
-            metadata.set(Property.externalTextBag(ONE_NOTE_PREFIX + "originalAuthors"),
+            metadata.set(OneNote.ORIGINAL_AUTHORS,
                     originalAuthors.toArray(new String[]{}));
         }
     }

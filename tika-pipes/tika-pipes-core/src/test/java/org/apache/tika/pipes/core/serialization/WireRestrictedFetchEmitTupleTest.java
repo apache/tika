@@ -62,7 +62,7 @@ public class WireRestrictedFetchEmitTupleTest {
     @Test
     public void asyncEndpointRejectsParserInjection() {
         Exception e = assertThrows(Exception.class,
-                () -> JsonFetchEmitTupleList.fromJson(new StringReader("[" + tuple(WIRE_BLOCKED_PARSE_CONTEXT) + "]")));
+                () -> JsonFetchEmitTupleList.fromJson(new StringReader("{\"tuples\":[" + tuple(WIRE_BLOCKED_PARSE_CONTEXT) + "]}")));
         assertTrue(root(e).contains("may not be supplied via a request parseContext"),
                 "expected wire-blocked rejection, got: " + root(e));
     }

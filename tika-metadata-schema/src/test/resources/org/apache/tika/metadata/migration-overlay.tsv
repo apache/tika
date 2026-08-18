@@ -16,7 +16,10 @@
 # TIKA-4797 manual migration overlay (core scope, adjudicated + confirmed 2026-07-28)
 # The moves/removals the field-identity join could NOT auto-bridge. Everything else auto-renames.
 #
-# v3<TAB>v4    (v4 = DROPPED means 4.x no longer emits it; not bridgeable)
+# v3<TAB>v4[<TAB>EGRESS_ONLY]
+#   v4 = DROPPED: 4.x no longer emits it; removed on ingest, not bridgeable.
+#   EGRESS_ONLY: applied only V4_TO_V3 (several v4 keys may share one v3 spelling; ingest would
+#   be ambiguous or would mis-map same-named keys from other sources, so ingest ignores the row).
 meta:mapi-from-representing-email	mapi:from-representing-email
 meta:mapi-from-representing-name	mapi:from-representing-name
 meta:mapi-importance	mapi:importance
@@ -30,6 +33,10 @@ meta:mapi-msg-client-submit-time	mapi:msg-client-submit-time
 # full item path, a SUPERSET. Not a 1:1 value, so the key-rename bridge can't reproduce the folder-only
 # value; document "folder path now part of tk:internal-path". Not bridgeable as a rename.
 pst:folderPath	DROPPED
+# DROPPED (TIKA-4816): TikaCoreProperties.TIKA_CONTENT_HANDLER (tk:content-handler) was deleted
+# pre-4.0.0; tk:content-handler-type covers the use case with a different value shape (enum name,
+# not handler simple class name), so the 3.x key is not remapped rather than remapped-wrong.
+X-TIKA:content_handler	DROPPED
 # RTF embedded-object fields: 4.x renamed the Java fields EMB_* -> EMBEDDED_* AND the keys
 # rtf_meta:emb_* -> rtf:embedded-*, so field-identity can't bridge them. Clean renames (targets
 # verified present in the 4.x closed set); fuzzy suggested each correctly.
@@ -37,3 +44,230 @@ rtf_meta:emb_app_version	rtf:embedded-app-version
 rtf_meta:emb_class	rtf:embedded-class
 rtf_meta:emb_item	rtf:embedded-item
 rtf_meta:emb_topic	rtf:embedded-topic
+#
+# TikaCoreProperties fields that were bare String constants (not Property) in 3.x, so the 3.x field
+# table -- which only captures static Property fields -- never recorded them; field-identity can't
+# join what was never a field of that type. Verified against the 3.3.2 tag: both keys shipped bare,
+# with no X-TIKA: prefix.
+resourceName	tk:resource-name
+embeddedRelationshipId	tk:embedded-relationship-id
+#
+# TIKA-4816 rename batch (post stage-5a). These fields are declared outside org.apache.tika.metadata
+# (parser modules), so the field-identity join -- core-scoped by design (see
+# MigrationTableGenerator's javadoc) -- can never auto-detect them; every row here is adjudicated.
+# The unbounded-suffix families in this same batch (GeoParser Optional_/geotopic:alt-, Ogg streams-/
+# ogg:streams-, and the ISO19139 Keywords/KeywordsType/ThesaurusNameTitle/
+# ThesaurusNameAlternativeTitle -> iso19115:keywords:/iso19115:keywords-type:/
+# iso19115:thesaurus-name-title:/iso19115:thesaurus-name-alternative-title: families) are NOT here
+# -- they're prefix rules in LegacyKeyMigrationFilter instead (flat rows can't express an
+# unbounded suffix).
+#
+# GeoParser (tika-parser-nlp-module): the best-match location's fixed fields. geo: -> geotopic:
+# (TIKA-4816 rename batch) to cleanly separate from the W3C Geo Vocabulary's geo: namespace.
+Geographic_NAME	geotopic:name
+Geographic_LONGITUDE	geotopic:longitude
+Geographic_LATITUDE	geotopic:latitude
+#
+# TEIDOMParser (tika-parser-nlp-module): namespaced under grobid:tei: + kebab-case. The v3
+# spellings are grobid:header_<Field> -- 3.3.2 GrobidRESTParser.java:107 re-keyed TEIDOMParser's
+# scratch-Metadata bare names under "grobid:header_" before they reached parse output, so the bare
+# names (Title, Abstract, ...) never appeared in any release's output and must NOT be v3 rows
+# (bare generic words would mis-map unrelated 3.x keys on ingest). The re-keying step is retired
+# in 4.x: TEIDOMParser's grobid:tei:* keys are final.
+grobid:header_Class	grobid:tei:class
+grobid:header_TEIXMLSource	grobid:tei:xml-source
+grobid:header_Language	grobid:tei:language
+grobid:header_Title	grobid:tei:title
+grobid:header_Address	grobid:tei:address
+grobid:header_Affiliation	grobid:tei:affiliation
+grobid:header_Authors	grobid:tei:authors
+grobid:header_FullAffiliations	grobid:tei:full-affiliations
+grobid:header_Error	grobid:tei:error
+grobid:header_Abstract	grobid:tei:abstract
+grobid:header_Keyword	grobid:tei:keyword
+#
+# KeynoteContentHandler (tika-parser-apple-module): namespaced to match pages:/numbers:/iwork:
+# elsewhere in the module (the iworks: -> iwork: prefix rename itself is a
+# LegacyKeyMigrationFilter prefix rule, not a flat row -- open family).
+slides-width	keynote:slides-width
+slides-height	keynote:slides-height
+#
+# IDML/MIF (tika-parser-miscoffice-module; interfaces relocated into tika-core this batch).
+SpreadPageCount	idml:spread-page-count
+MasterSpreadPageCount	idml:master-spread-page-count
+MasterPageCount	mif:master-page-count
+ReferencePageCount	mif:reference-page-count
+TotalPageCount	mif:total-page-count
+#
+# Audio addendum (tika-parser-audiovideo-module): AudioParser/Mp3Parser's bare "channels"/"bits"
+# unified onto the pre-existing curated Audio.CHANNELS/Audio.BITS_PER_SAMPLE; AudioParser's bare
+# "encoding" promoted to a new curated Audio constant; MidiParser's MIDI-sequence fields namespaced.
+# Mp3Parser's bare "version" (MPEG version/layer string) and OggAudioParser's bare "version"
+# (CODEC_VERSION, e.g. "Theora 3.2.1") both used the identical bare key "version" pre-batch and
+# now diverge to mp3:version vs ogg:codec-version. A flat v3->v4 row can't disambiguate by source
+# parser on ingest, so ingest stays unbridged -- but egress (V4_TO_V3, the BWC direction) is
+# unambiguous per 4.x key, so both restore the 3.x bare spelling as EGRESS_ONLY rows.
+version	mp3:version	EGRESS_ONLY
+version	ogg:codec-version	EGRESS_ONLY
+channels	audio:channels
+bits	audio:bits-per-sample
+encoding	audio:encoding
+tracks	midi:tracks
+patches	midi:patches
+divisionType	midi:division-type
+#
+# GDALParser (tika-parser-scientific-module): gdalinfo's small fixed-vocabulary patterns, now
+# namespaced to gdal: + kebab-case (previously bare, matching gdalinfo's own literal output text --
+# see GDALParser.addPatternWithColon()/addPatternWithIs()/addBoundingBoxPattern(), which now take
+# that literal text as a separate label parameter so the rename doesn't break the match).
+Driver	gdal:driver
+Files	gdal:files
+Size	gdal:size
+Coordinate System	gdal:coordinate-system
+Upper Left	gdal:upper-left
+Lower Left	gdal:lower-left
+Upper Right	gdal:upper-right
+Lower Right	gdal:lower-right
+#
+# HDFParser/NetCDFParser (tika-parser-scientific-module): 3.3.2 emitted the SAME bare
+# "File-Type-Description" from both parsers (HDFParser.java:106 / NetCDFParser.java:87 at the
+# 3.3.2 tag -- the prefixed spellings only ever existed on unreleased 4.x main). Bare-and-shared
+# means ingest can't disambiguate (same shape as bare "version" above), so these are EGRESS_ONLY:
+# each 4.x key restores the bare 3.x spelling on egress; ingest passes the bare key through.
+File-Type-Description	hdf:file-type-description	EGRESS_ONLY
+File-Type-Description	netcdf:file-type-description	EGRESS_ONLY
+# NumbersContentHandler (tika-parser-apple-module): fixed single key, kebab-cased.
+numbers:sheetNames	numbers:sheet-names
+#
+# The rows below were found by MetadataChangesAdocDriftTest (TIKA-4816), not by the original
+# audit that seeded this file: each is a real 3.x key declared outside org.apache.tika.metadata
+# (parser modules), so -- same as the GeoParser/TEIDOMParser/GDAL rows above -- field-identity
+# can't auto-bridge it. Verified against the 3.3.2 tag.
+#
+# TesseractOCRParser (tika-parser-ocr-module): tess: kebab-cased.
+tess:page_number	tess:page-number
+tess:image_magick_processed	tess:image-magick-processed
+tess:orientation_confidence	tess:orientation-confidence
+tess:script_confidence	tess:script-confidence
+#
+# TextAndCSVParser (tika-parser-text-module): csv: kebab-cased.
+csv:num_columns	csv:num-columns
+csv:num_rows	csv:num-rows
+#
+# EMFParser (tika-parser-microsoft-module): emf: kebab-cased.
+emf:iconOnly	emf:icon-only
+emf:iconString	emf:icon-string
+#
+# XMLProfiler (tika-parser-xml-module): xmlprofiler: kebab-cased.
+xmlprofiler:root_entity	xmlprofiler:root-entity
+xmlprofiler:entity_uris	xmlprofiler:entity-uris
+xmlprofiler:entity_local_names	xmlprofiler:entity-local-names
+#
+# PDFBoxRenderer (tika-parser-pdf-module): these two timing fields moved onto the core Rendering
+# class this batch, so the 3.x side (still declared on PDFBoxRenderer, non-core) is out of the
+# join's core-only scope even though the key text itself is unchanged.
+rendering:pdfbox-image-writing-ms	tk:rendering:pdfbox-image-writing-ms
+rendering:pdfbox-rendering-ms	tk:rendering:pdfbox-rendering-ms
+#
+# TikaCoreProperties.EMBEDDED_STORAGE_CLASS_ID: a bare String constant in 3.x (not a Property, so
+# missing from the field table like resourceName/embeddedRelationshipId above), moved onto Office
+# this batch.
+embeddedStorageClassId	msoffice:embedded-storage-class-id
+#
+# ISO19115 (tika-core; extracted by GeographicInformationParser, tika-parser-scientific-module):
+# 35 ad hoc PascalCase/space-delimited coinages (several with a stray trailing space, one with a
+# trailing hyphen, one with a trailing "-->", and one with an upstream typo -- AccessContraints)
+# get honest iso19115: + kebab-case spellings. Not core-declared in the 3.x snapshot (the class
+# didn't exist as a curated Property source until this batch), so field-identity can't auto-bridge
+# any of these -- every row here is adjudicated. Old spellings copied character-exact from the
+# pre-rename ISO19115.java; trailing spaces are meaningful and preserved by this row (v3 is taken
+# verbatim by MigrationTableGenerator, not trimmed).
+CharacterSet	iso19115:character-set
+ContactRole	iso19115:contact-role
+ContactPartyName-	iso19115:contact-party-name
+CitationDate 	iso19115:citation-date
+CitedResponsiblePartyRole 	iso19115:cited-responsible-party-role
+CitedResponsiblePartyName 	iso19115:cited-responsible-party-name
+CitedResponsiblePartyOrganizationName 	iso19115:cited-responsible-party-organization-name
+CitedResponsiblePartyPositionName 	iso19115:cited-responsible-party-position-name
+CitedResponsiblePartyEMail 	iso19115:cited-responsible-party-email
+IdentificationInfoStatus 	iso19115:identification-info-status
+ResourceFormatSpecificationAlternativeTitle 	iso19115:resource-format-specification-alternative-title
+IdentificationInfoTopicCategory-->	iso19115:identification-info-topic-category
+ThesaurusNameDate 	iso19115:thesaurus-name-date
+AccessContraints 	iso19115:access-constraints
+OtherConstraints 	iso19115:other-constraints
+UserConstraints 	iso19115:use-constraints
+GeographicIdentifierCode 	iso19115:geographic-identifier-code
+GeographicIdentifierAuthorityTitle 	iso19115:geographic-identifier-authority-title
+GeographicIdentifierAuthorityAlternativeTitle 	iso19115:geographic-identifier-authority-alternative-title
+GeographicIdentifierAuthorityDate 	iso19115:geographic-identifier-authority-date
+DistributionFormatSpecificationAlternativeTitle 	iso19115:distribution-format-specification-alternative-title
+Distributor Contact 	iso19115:distributor-contact
+Distributor Organization Name 	iso19115:distributor-organization-name
+TransferOptionsOnlineLinkage 	iso19115:transfer-options-online-linkage
+TransferOptionsOnlineProtocol 	iso19115:transfer-options-online-protocol
+TransferOptionsOnlineProfile 	iso19115:transfer-options-online-profile
+TransferOptionsOnlineName 	iso19115:transfer-options-online-name
+TransferOptionsOnlineDescription 	iso19115:transfer-options-online-description
+TransferOptionsOnlineFunction 	iso19115:transfer-options-online-function
+DateInfo 	iso19115:date-info
+MetaDataResourceScope 	iso19115:metadata-resource-scope
+ParentMetaDataTitle	iso19115:parent-metadata-title
+MetaDataIdentifierCode	iso19115:metadata-identifier-code
+MetaDataStandardTitle 	iso19115:metadata-standard-title
+MetaDataStandardEdition 	iso19115:metadata-standard-edition
+#
+# Deleted-key adjudications (TIKA-4816 round-3 review: keys removed in 4.x that the field-identity
+# join silently produced nothing for -- see MigrationCompletenessTest, which now fails on any
+# unadjudicated 3.x key).
+# OfficeOpenXMLCore.SUBJECT (cp:subject) was a COMPOSITE that also wrote DublinCore.SUBJECT, so
+# every 3.x output carrying cp:subject carries the same value under dc:subject; dropping on ingest
+# is pure dedup, and dc:subject survives unchanged.
+cp:subject	DROPPED
+# IPTC.DIGITAL_SOURCE_FILE_TYPE was a misspelled 3.x alias no parser ever wrote (declaration-only;
+# the correctly-spelled Iptc4xmpExt:DigitalSourceType survives in 4.x). Nothing to bridge.
+Iptc4xmpExt:DigitalSourcefileType	DROPPED
+# JackcessParser.MDB_PW: bare "Password" -> mdb:password. EGRESS_ONLY: rewriting every bare
+# "Password" key on ingest would mis-map same-named keys from non-Access sources.
+Password	mdb:password	EGRESS_ONLY
+# ParserUtils' 3.x exception keys, found by MigrationCompletenessTest's first run: the fields
+# moved onto TikaCoreProperties (and the keys kebab-cased), so the core-only field-identity join
+# never saw them. Unambiguous both-way renames.
+X-TIKA:EXCEPTION:embedded_parser	tk:exception:embedded-parser
+X-TIKA:EXCEPTION:embedded_resource_limit_reached	tk:exception:embedded-resource-limit-reached
+#
+# ClimateForecast (chunk-4 ruling, 2026-08-13): the CF convention's 15 keys keep their verbatim
+# suffixes but move under cf: -- bare generic tokens (comment, source, history) collided
+# indistinguishably in the global keyspace. Distinctive CF-specific spellings bridge both ways;
+# generic English tokens are EGRESS_ONLY (rewriting every bare "comment" on ingest would
+# mis-map same-named keys from non-CF sources). The field-identity join can't see any of these:
+# the constants moved interfaces (ClimateForcast -> ClimateForecast) AND renamed.
+prg_ID	cf:prg_ID
+cmd_ln	cf:cmd_ln
+table_id	cf:table_id
+experiment_id	cf:experiment_id
+model_name_english	cf:model_name_english
+history	cf:history	EGRESS_ONLY
+institution	cf:institution	EGRESS_ONLY
+source	cf:source	EGRESS_ONLY
+contact	cf:contact	EGRESS_ONLY
+project_id	cf:project_id	EGRESS_ONLY
+Conventions	cf:Conventions	EGRESS_ONLY
+references	cf:references	EGRESS_ONLY
+acknowledgement	cf:acknowledgement	EGRESS_ONLY
+realization	cf:realization	EGRESS_ONLY
+comment	cf:comment	EGRESS_ONLY
+# TIKA-4816 mail keys: in 3.x these seven were bare String constants on
+# org.apache.tika.metadata.Message, not Property fields, so the field-identity join could not see
+# them and metadata-keys-3x.json never captured them. Their 11 Property-declared siblings
+# (Message:To-Email -> message:to-email, ...) auto-bridged. Without these rows
+# LegacyKeyMigrationFilter restores every other key and silently leaves the most-used email keys
+# unmapped, which is worse than no filter at all.
+Message-To	message:to
+Message-From	message:from
+Message-Cc	message:cc
+Message-Bcc	message:bcc
+Message-Recipient-Address	message:recipient-address
+Multipart-Boundary	multipart:boundary
+Multipart-Subtype	multipart:subtype

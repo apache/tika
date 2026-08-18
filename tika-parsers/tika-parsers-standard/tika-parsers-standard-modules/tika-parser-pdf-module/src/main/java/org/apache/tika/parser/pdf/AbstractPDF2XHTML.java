@@ -108,6 +108,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Font;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -309,10 +310,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 pdfDocument.getDocumentCatalog().getAcroForm(null).getXFA() != null) {
 
             Metadata xfaMetadata = Metadata.newInstance(context);
-            xfaMetadata.set(Metadata.CONTENT_TYPE, XFA_MEDIA_TYPE.toString());
+            xfaMetadata.set(HttpHeaders.CONTENT_TYPE, XFA_MEDIA_TYPE.toString());
             xfaMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
-            if (embeddedDocumentExtractor.shouldParseEmbedded(xfaMetadata) &&
+            if (embeddedDocumentExtractor.shouldParseEmbedded(xfaMetadata, context) &&
                     supportedTypes.contains(XFA_MEDIA_TYPE)) {
                 byte[] bytes = null;
                 try {
@@ -335,11 +336,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
         Metadata xmpMetadata = Metadata.newInstance(context);
-        xmpMetadata.set(Metadata.CONTENT_TYPE, XMP_MEDIA_TYPE.toString());
+        xmpMetadata.set(HttpHeaders.CONTENT_TYPE, XMP_MEDIA_TYPE.toString());
         xmpMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.METADATA.toString());
         xmpMetadata.set(PDF.XMP_LOCATION, location);
-        if (embeddedDocumentExtractor.shouldParseEmbedded(xmpMetadata)) {
+        if (embeddedDocumentExtractor.shouldParseEmbedded(xmpMetadata, context)) {
             parseMetadata(tis, xmpMetadata);
         }
 
@@ -478,7 +479,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         //if the stream is missing a size, -1 is returned
         long sz = pdEmbeddedFile.getSize();
         if (sz > -1) {
-            embeddedMetadata.set(Metadata.CONTENT_LENGTH, Long.toString(sz));
+            embeddedMetadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(sz));
         }
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
@@ -499,7 +500,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (!StringUtils.isBlank(afRelationship)) {
             embeddedMetadata.set(PDF.ASSOCIATED_FILE_RELATIONSHIP, afRelationship);
         }
-        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             return;
         }
         TikaInputStream tis = null;
@@ -618,8 +619,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 // silently discarded when the renderMetadata goes out of scope.
                 String renderChunks = renderMetadata.get(TikaCoreProperties.TIKA_CHUNKS);
                 if (renderChunks != null && metadata.get(TikaCoreProperties.TIKA_CHUNKS) == null) {
-                    // tk:chunks is reserved; this is Tika propagating its own native output
-                    metadata.setTrusted(TikaCoreProperties.TIKA_CHUNKS.getName(), renderChunks);
+                    metadata.set(TikaCoreProperties.TIKA_CHUNKS, renderChunks);
                 }
             }
         } catch (IOException e) {
@@ -940,7 +940,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return;
         }
         Metadata m = getJavascriptMetadata("3DD_ON_INSTANTIATE", null, null);
-        if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+        if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
             try (TikaInputStream tis = TikaInputStream.get(stream.createInputStream())) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
             }
@@ -1133,7 +1133,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         Metadata m = getJavascriptMetadata(trigger, jsActionName, StandardCharsets.UTF_8);
         String js = jsAction.getAction();
         js = (js == null) ? "" : js;
-        if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+        if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
             try (TikaInputStream tis = TikaInputStream.get(js.getBytes(StandardCharsets.UTF_8))) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
             }
@@ -1147,7 +1147,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     private Metadata getJavascriptMetadata(String trigger, String jsActionName, Charset charset) {
         Metadata m = Metadata.newInstance(context);
-        m.set(Metadata.CONTENT_TYPE, "application/javascript");
+        m.set(HttpHeaders.CONTENT_TYPE, "application/javascript");
         m.set(PDF.ACTION_TRIGGER, trigger);
         m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.MACRO.name());
@@ -1155,7 +1155,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             m.set(PDF.JS_NAME, jsActionName);
         }
         if (charset != null) {
-            m.set(Metadata.CONTENT_ENCODING, charset.toString());
+            m.set(HttpHeaders.CONTENT_ENCODING, charset.toString());
         }
         return m;
     }
@@ -1278,7 +1278,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             updateMetadata.set(PDF.INCREMENTAL_UPDATE_NUMBER, count);
             updateMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.VERSION.toString());
-            if (embeddedDocumentExtractor.shouldParseEmbedded(updateMetadata)) {
+            if (embeddedDocumentExtractor.shouldParseEmbedded(updateMetadata, context)) {
                 try (TikaInputStream tis = TikaInputStream.get(update)) {
                     context.set(IsIncrementalUpdate.class, IsIncrementalUpdate.IS_INCREMENTAL_UPDATE);
                     embeddedDocumentExtractor.parseEmbedded(tis, xhtml, updateMetadata, context, false);

@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.ParseMode;
@@ -239,7 +240,7 @@ public class PipesForkParserExample {
 
             if (result.isSuccess()) {
                 Metadata metadata = result.getMetadata();
-                System.out.println("Content-Type: " + metadata.get(Metadata.CONTENT_TYPE));
+                System.out.println("Content-Type: " + metadata.get(HttpHeaders.CONTENT_TYPE));
                 System.out.println("Title: " + metadata.get(TikaCoreProperties.TITLE));
                 System.out.println("Creator: " + metadata.get(TikaCoreProperties.CREATOR));
                 System.out.println("Content: " + result.getContent());
@@ -298,7 +299,7 @@ public class PipesForkParserExample {
                 } else {
                     System.out.println("Embedded document #" + i + ": " + resourceName);
                 }
-                System.out.println("  Content type: " + m.get(Metadata.CONTENT_TYPE));
+                System.out.println("  Content type: " + m.get(HttpHeaders.CONTENT_TYPE));
                 System.out.println("  Content length: " +
                         (content != null ? content.length() : 0) + " chars");
 
@@ -349,7 +350,7 @@ public class PipesForkParserExample {
             Metadata m = result.getMetadata();
             String content = result.getContent();
 
-            System.out.println("Container content type: " + m.get(Metadata.CONTENT_TYPE));
+            System.out.println("Container content type: " + m.get(HttpHeaders.CONTENT_TYPE));
             System.out.println("Total concatenated content length: " +
                     (content != null ? content.length() : 0) + " chars");
 
@@ -435,7 +436,7 @@ public class PipesForkParserExample {
                     if (result.isSuccess()) {
                         System.out.println("Parsed: " + filePath);
                         System.out.println("Content type: " +
-                                result.getMetadata().get(Metadata.CONTENT_TYPE));
+                                result.getMetadata().get(HttpHeaders.CONTENT_TYPE));
                     } else if (result.isProcessCrash()) {
                         System.err.println("Process crashed on: " + filePath +
                                 " - " + result.getStatus());
@@ -469,7 +470,7 @@ public class PipesForkParserExample {
              TikaInputStream tis = TikaInputStream.get(filePath)) {
 
             Metadata metadata = new Metadata();
-            metadata.set(Metadata.CONTENT_TYPE, contentType);
+            metadata.set(HttpHeaders.CONTENT_TYPE, contentType);
 
             PipesForkResult result = parser.parse(tis, metadata);
             return result.getContent();

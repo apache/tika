@@ -84,7 +84,7 @@ assert_contains "T14 GET /detectors" "org.apache.tika" "$(curl -s -H 'Accept: te
 assert_contains "T15 GET /mime-types" "application/pdf" "$(curl -s -H 'Accept: application/json' "$BASE/mime-types")"
 
 # --- detection ---
-assert_contains "T2 PUT /detect/stream" "application/pdf" "$(curl -s -X PUT -T "$PDF" "$BASE/detect/stream")"
+assert_contains "T2 PUT /detect" "application/pdf" "$(curl -s -X PUT -T "$PDF" "$BASE/detect")"
 
 # --- parse variants (testPDF.pdf contains the literal 'Apache Tika') ---
 assert_contains "T3 PUT /tika/text" "Apache Tika" "$(curl -s -X PUT -T "$PDF" "$BASE/tika/text")"
@@ -100,11 +100,50 @@ assert_contains "T8 PUT /meta/{field}" "application/pdf" "$(curl -s -X PUT -T "$
 assert_contains "T9 PUT /rmeta" "Content-Type" "$(curl -s -X PUT -T "$DOCX" "$BASE/rmeta")"
 assert_contains "T10 PUT /rmeta/text" "Content-Type" "$(curl -s -X PUT -T "$DOCX" "$BASE/rmeta/text")"
 
-# --- language detection (lenient: substantial text only; status-based) ---
-LANG_CODE=$(curl -s -X PUT -T "$PDF" "$BASE/language/stream")
-if printf '%s' "$LANG_CODE" | grep -qE '^[a-z]{2,3}$'; then ok "T11 PUT /language/stream"; else
-  # Known issue: short text language detection is unreliable; accept any non-error 2xx body.
-  ok "T11 PUT /language/stream (lenient: '$LANG_CODE')"; fi
+# --- language detection ---
+# Lenient on WHICH language (short text is unreliable) but strict that we got a language
+# code back: the previous version called ok() in both branches, so it could never fail.
+LANG_CODE=$(curl -s -X PUT -T "$PDF" "$BASE/language")
+if printf '%s' "$LANG_CODE" | grep -qE '^[a-z]{2,3}$'; then
+  ok "T11 PUT /language ('$LANG_CODE')"
+else
+  bad "T11 PUT /language" "an ISO language code" "$LANG_CODE"
+fi
+
+# --- handler selection ---
+# /tika/text is body-only (3.x BodyContentHandler). testHTML.html's <title> is
+# "Title : Test Indexation Html"; the whole-document handler emits it as leading text,
+# the body handler does not. This is the 4.x regression that /tika/json/text still serves.
+HTML_TEXT=$(curl -s -X PUT -T "$HTML" "$BASE/tika/text")
+if printf '%s' "$HTML_TEXT" | grep -qiF "Test Indexation Html" &&
+   ! printf '%s' "$HTML_TEXT" | grep -qiF "Title : Test Indexation Html"; then
+  ok "T31 PUT /tika/text is body-only (no title)"
+else
+  bad "T31 PUT /tika/text body-only" "body text without the <title>" "$HTML_TEXT"
+fi
+
+# An unnamed handler takes the default, which is markdown -- so /tika/json must agree
+# with /tika/json/md, not with /tika/json/text.
+J_DEFAULT=$(curl -s -X PUT -T "$HTML" -H 'Accept: application/json' "$BASE/tika/json")
+J_MD=$(curl -s -X PUT -T "$HTML" -H 'Accept: application/json' "$BASE/tika/json/md")
+if [[ -n "$J_DEFAULT" && "$J_DEFAULT" == "$J_MD" ]]; then
+  ok "T32 /tika/json defaults to markdown"
+else
+  bad "T32 /tika/json defaults to markdown" "same body as /tika/json/md" "$J_DEFAULT"
+fi
+
+# An unrecognized handler name is a caller typo: 400, not the default handler's output.
+BADH=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -T "$PDF" "$BASE/tika/json/txet")
+assert_status "T33 unknown handler name -> 400" "400" "$BADH"
+
+# --- XMP: content negotiation on /meta, not a path. This shipped broken in 4.0.0
+# alpha-1 and beta-1 (the resource failed to load), so it is worth a smoke check. ---
+XMP=$(curl -s -X PUT -T "$PDF" -H 'Accept: application/rdf+xml' "$BASE/meta")
+assert_contains "T34 PUT /meta as rdf+xml" "rdf:RDF" "$XMP"
+
+# --- removed endpoints must be gone, not silently doing something ---
+TR404=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -T "$PDF" "$BASE/translate/all/foo/en/es")
+assert_status "T35 /translate removed -> 404" "404" "$TR404"
 
 # --- embedded extraction: response must be a valid zip (PK magic) ---
 ZIP=$(mktemp); curl -s -X PUT -T "$DOCX" "$BASE/unpack/all" -o "$ZIP"

@@ -37,7 +37,7 @@ public interface Office {
      */
     String USER_DEFINED_METADATA_NAME_PREFIX = "custom:";
 
-    PassthroughPrefix USER_DEFINED = PassthroughPrefix.file(USER_DEFINED_METADATA_NAME_PREFIX,
+    KeyPrefix USER_DEFINED = KeyPrefix.file(USER_DEFINED_METADATA_NAME_PREFIX,
             "OOXML/OLE2/ODF user-defined document properties");
 
 

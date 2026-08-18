@@ -35,6 +35,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
@@ -59,16 +60,16 @@ public class OutlookParserTest extends TikaTest {
         try (TikaInputStream tis = getResourceAsStream("/test-documents/test-outlook.msg")) {
             AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
         }
-        assertEquals("application/vnd.ms-outlook", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.ms-outlook", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Microsoft Outlook Express 6", metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Nouvel utilisateur de Outlook Express",
-                metadata.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
+                metadata.get(Message.MESSAGE_RECIPIENT_ADDRESS));
         assertEquals("L'\u00C9quipe Microsoft Outlook Express",
                 metadata.get(TikaCoreProperties.CREATOR));
 
         //ensure that "raw" header is correctly decoded
         assertEquals("L'\u00C9quipe Microsoft Outlook Express <msoe@microsoft.com>",
-                metadata.get(Metadata.MESSAGE_RAW_HEADER_PREFIX + "From"));
+                metadata.get(Message.MESSAGE_RAW_HEADER_PREFIX + "From"));
 
         assertEquals("Nouvel utilisateur de Outlook Express",
                 metadata.get(Message.MESSAGE_TO_EMAIL));
@@ -110,7 +111,7 @@ public class OutlookParserTest extends TikaTest {
             AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
         }
 
-        assertEquals("application/vnd.ms-outlook", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.ms-outlook", metadata.get(HttpHeaders.CONTENT_TYPE));
 
         String content = handler.toString();
         Pattern pattern = Pattern.compile("From");
@@ -120,12 +121,12 @@ public class OutlookParserTest extends TikaTest {
         //test that last header is added
         assertContains("29 Jan 2009 19:17:10.0163 (UTC) FILETIME=[2ED25E30:01C98246]",
                 Arrays.asList(metadata.getValues(
-                        Metadata.MESSAGE_RAW_HEADER_PREFIX + "X-OriginalArrivalTime")));
+                        Message.MESSAGE_RAW_HEADER_PREFIX + "X-OriginalArrivalTime")));
         //confirm next line is added correctly
         assertContains("from athena.apache.org (HELO athena.apache.org) (140.211.11.136)\n" +
                         "    by apache.org (qpsmtpd/0.29) with ESMTP; Thu, 29 Jan 2009 11:17:08 " +
                         "-0800",
-                Arrays.asList(metadata.getValues(Metadata.MESSAGE_RAW_HEADER_PREFIX + "Received")));
+                Arrays.asList(metadata.getValues(Message.MESSAGE_RAW_HEADER_PREFIX + "Received")));
         assertEquals("EX", metadata.get(MAPI.SENT_BY_SERVER_TYPE));
         assertEquals("NOTE", metadata.get(MAPI.MESSAGE_CLASS));
         assertEquals("Jukka Zitting", metadata.get(Message.MESSAGE_FROM_NAME));
@@ -153,7 +154,7 @@ public class OutlookParserTest extends TikaTest {
         try (TikaInputStream tis = getResourceAsStream("/test-documents/test-outlook2003.msg")) {
             AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
         }
-        assertEquals("application/vnd.ms-outlook", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/vnd.ms-outlook", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Welcome to Microsoft Office Outlook 2003",
                 metadata.get(TikaCoreProperties.TITLE));
         assertEquals("Welcome to Microsoft Office Outlook 2003",

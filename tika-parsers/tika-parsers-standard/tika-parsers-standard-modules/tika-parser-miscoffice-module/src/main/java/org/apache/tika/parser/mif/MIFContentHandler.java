@@ -22,6 +22,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.MIF;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -115,9 +116,9 @@ public class MIFContentHandler extends DefaultHandler {
     @Override
     public void endDocument() {
         metadata.set(Office.PAGE_COUNT, String.valueOf(bodyPageCount));
-        metadata.set("MasterPageCount", String.valueOf(masterPageCount));
-        metadata.set("ReferencePageCount", String.valueOf(referencePageCount));
-        metadata.set("TotalPageCount",
+        metadata.set(MIF.MASTER_PAGE_COUNT, String.valueOf(masterPageCount));
+        metadata.set(MIF.REFERENCE_PAGE_COUNT, String.valueOf(referencePageCount));
+        metadata.set(MIF.TOTAL_PAGE_COUNT,
                 String.valueOf(bodyPageCount + referencePageCount + masterPageCount));
     }
 

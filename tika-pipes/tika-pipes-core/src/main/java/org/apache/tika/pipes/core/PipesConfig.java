@@ -17,20 +17,52 @@
 package org.apache.tika.pipes.core;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.util.StdConverter;
+
+import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
+import org.apache.tika.pipes.core.server.ServerProtocolIO;
+import org.apache.tika.utils.StringUtils;
 
+// Cross-field limits are checked after binding, so JSON key order cannot change the outcome.
+@JsonDeserialize(converter = PipesConfig.PostDeserializationCheck.class)
 public class PipesConfig {
+
+    /** Runs {@link #checkPayloadLimits()} on every Jackson deserialization path. */
+    public static class PostDeserializationCheck extends StdConverter<PipesConfig, PipesConfig> {
+        @Override
+        public PipesConfig convert(PipesConfig config) {
+            config.checkPayloadLimits();
+            return config;
+        }
+    }
 
 
     public static final int DEFAULT_MAX_IPC_PAYLOAD_BYTES = PipesMessage.MAX_PAYLOAD_BYTES;
 
-    public static final long DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS = 300000;
+    /**
+     * Largest request body carried inline to the forked worker rather than spooled to disk.
+     * <p>
+     * Sized for the common case -- most documents are far smaller -- because the cost is heap,
+     * not disk: the parent holds the payload and the Smile frame containing a copy of it, and the
+     * child holds it again. Budget roughly {@code 2 * maxInlineBytes * concurrent-requests} in the
+     * parent before raising this.
+     */
+    public static final int DEFAULT_MAX_INLINE_BYTES = 10 * 1024 * 1024;
 
     /** Past this, worker count becomes a memory decision, and memory is not visible here. */
     public static final int MAX_AUTO_NUM_CLIENTS = 4;
@@ -52,13 +84,13 @@ public class PipesConfig {
 
     public static final int DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS = 10000;
 
-    public static final long DEFAULT_MAX_WAIT_FOR_CLIENT_MS = 60000;
+    public static final long DEFAULT_MAX_WAIT_FOR_CLIENT_MILLIS = 60000;
 
-    public static final long DEFAULT_SOCKET_TIMEOUT_MS = 60000;
+    public static final long DEFAULT_SOCKET_TIMEOUT_MILLIS = 60000;
 
-    public static final long DEFAULT_STARTUP_TIMEOUT_MS = 60000;
+    public static final long DEFAULT_STARTUP_TIMEOUT_MILLIS = 60000;
 
-    public static final long DEFAULT_HEARTBEAT_INTERVAL_MS = 1000;
+    public static final long DEFAULT_HEARTBEAT_INTERVAL_MILLIS = 1000;
 
     public static final boolean DEFAULT_USE_SHARED_SERVER = false;
 
@@ -76,20 +108,25 @@ public class PipesConfig {
     private boolean useSharedServer = DEFAULT_USE_SHARED_SERVER;
 
     private int maxIpcPayloadBytes = DEFAULT_MAX_IPC_PAYLOAD_BYTES;
+    private int maxInlineBytes = DEFAULT_MAX_INLINE_BYTES;
 
-    private long socketTimeoutMs = DEFAULT_SOCKET_TIMEOUT_MS;
-    private long startupTimeoutMs = DEFAULT_STARTUP_TIMEOUT_MS;
-    private long heartbeatIntervalMs = DEFAULT_HEARTBEAT_INTERVAL_MS;
+    private long socketTimeoutMillis = DEFAULT_SOCKET_TIMEOUT_MILLIS;
+    private long startupTimeoutMillis = DEFAULT_STARTUP_TIMEOUT_MILLIS;
+    private long heartbeatIntervalMillis = DEFAULT_HEARTBEAT_INTERVAL_MILLIS;
 
-    private long shutdownClientAfterMillis = DEFAULT_SHUTDOWN_CLIENT_AFTER_MILLS;
+    public static final long DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS = 3_600_000L;
+
+    /**
+     * Ceiling for request-supplied {@code TimeoutLimits}, so a client cannot disable the
+     * forked server's self-termination. Limits in the server's own tika-config
+     * {@code parse-context} are trusted and not capped.
+     */
+    private long maxTotalTaskTimeoutMillis = DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS;
+
     private int numClients = defaultNumClients();
 
-    private long maxWaitForClientMillis = DEFAULT_MAX_WAIT_FOR_CLIENT_MS;
+    private long maxWaitForClientMillis = DEFAULT_MAX_WAIT_FOR_CLIENT_MILLIS;
     private int maxFilesProcessedPerProcess = DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS;
-    public static final int DEFAULT_STALE_FETCHER_TIMEOUT_SECONDS = 600;
-    private int staleFetcherTimeoutSeconds = DEFAULT_STALE_FETCHER_TIMEOUT_SECONDS;
-    public static final int DEFAULT_STALE_FETCHER_DELAY_SECONDS = 60;
-    private int staleFetcherDelaySeconds = DEFAULT_STALE_FETCHER_DELAY_SECONDS;
 
     // Async-specific fields (used by AsyncProcessor, ignored by PipesServer)
     public static final long DEFAULT_EMIT_WITHIN_MILLIS = 10000;
@@ -152,7 +189,7 @@ public class PipesConfig {
      * This configuration is used by both PipesServer (forking process) and
      * AsyncProcessor (async processing). Some fields are specific to each:
      * <ul>
-     *   <li>PipesServer uses: numClients, socketTimeoutMs, directEmitThresholdBytes, etc.</li>
+     *   <li>PipesServer uses: numClients, socketTimeoutMillis, directEmitThresholdBytes, etc.</li>
      *   <li>AsyncProcessor uses: emitWithinMillis, queueSize, numEmitters, etc.</li>
      * </ul>
      * Unused fields in each context are simply ignored.
@@ -167,11 +204,33 @@ public class PipesConfig {
         if (config == null) {
             config = new PipesConfig();
         }
+        // Carry the config-default limits to the client (for its backstop) without full
+        // parse-context resolution -- the client JVM may lack the plugin classes it needs.
+        JsonNode limitsNode = tikaJsonConfig.getRootNode().path("parse-context").path("timeout-limits");
+        if (!limitsNode.isMissingNode()) {
+            try {
+                config.defaultTimeoutLimits =
+                        new ObjectMapper().treeToValue(limitsNode, TimeoutLimits.class);
+            } catch (JsonProcessingException e) {
+                throw new TikaConfigException("problem parsing parse-context.timeout-limits", e);
+            }
+        }
         return config;
     }
 
-    public long getSocketTimeoutMs() {
-        return socketTimeoutMs;
+    private TimeoutLimits defaultTimeoutLimits = new TimeoutLimits();
+
+    /**
+     * The config-level {@code parse-context.timeout-limits} defaults -- what the forked
+     * server enforces when a request carries no {@link TimeoutLimits} of its own.
+     */
+    @JsonIgnore
+    public TimeoutLimits getDefaultTimeoutLimits() {
+        return defaultTimeoutLimits;
+    }
+
+    public long getSocketTimeoutMillis() {
+        return socketTimeoutMillis;
     }
 
     /**
@@ -179,54 +238,52 @@ public class PipesConfig {
      * If no data is received within this time, the connection is considered timed out.
      * This is distinct from the parse/processing timeout, which lives on
      * {@link org.apache.tika.config.TimeoutLimits} under {@code parse-context.timeout-limits}.
-     * @param socketTimeoutMs
+     * @param socketTimeoutMillis
      */
-    public void setSocketTimeoutMs(long socketTimeoutMs) {
-        this.socketTimeoutMs = socketTimeoutMs;
+    public void setSocketTimeoutMillis(long socketTimeoutMillis) {
+        this.socketTimeoutMillis = socketTimeoutMillis;
     }
 
-    public long getStartupTimeoutMs() {
-        return startupTimeoutMs;
+    public long getMaxTotalTaskTimeoutMillis() {
+        return maxTotalTaskTimeoutMillis;
+    }
+
+    public void setMaxTotalTaskTimeoutMillis(long maxTotalTaskTimeoutMillis) {
+        if (maxTotalTaskTimeoutMillis <= 0) {
+            throw new IllegalArgumentException("maxTotalTaskTimeoutMillis must be > 0, was " +
+                    maxTotalTaskTimeoutMillis + "; use Long.MAX_VALUE for no cap");
+        }
+        this.maxTotalTaskTimeoutMillis = maxTotalTaskTimeoutMillis;
+    }
+
+    public long getStartupTimeoutMillis() {
+        return startupTimeoutMillis;
     }
 
     /**
      * Timeout in milliseconds for the forked server to start up and send its READY handshake.
-     * Distinct from {@link #getSocketTimeoutMs()}: cold-starting the forked JVM (loading config,
+     * Distinct from {@link #getSocketTimeoutMillis()}: cold-starting the forked JVM (loading config,
      * parsers and plugins) can take far longer than a normal per-read timeout, so the handshake
-     * gets its own generous budget. Once the server is ready, reads switch to {@code socketTimeoutMs}.
-     * @param startupTimeoutMs
+     * gets its own generous budget. Once the server is ready, reads switch to {@code socketTimeoutMillis}.
+     * @param startupTimeoutMillis
      */
-    public void setStartupTimeoutMs(long startupTimeoutMs) {
-        this.startupTimeoutMs = startupTimeoutMs;
+    public void setStartupTimeoutMillis(long startupTimeoutMillis) {
+        this.startupTimeoutMillis = startupTimeoutMillis;
     }
 
-    public long getHeartbeatIntervalMs() {
-        return heartbeatIntervalMs;
+    public long getHeartbeatIntervalMillis() {
+        return heartbeatIntervalMillis;
     }
 
     /**
      * Interval in milliseconds between heartbeat messages sent from server to client.
-     * Should be significantly less than socketTimeoutMs to ensure the client doesn't timeout.
-     * WARNING: Setting this >= socketTimeoutMs will cause socket timeouts during normal processing.
+     * Should be significantly less than socketTimeoutMillis to ensure the client doesn't timeout.
+     * WARNING: Setting this >= socketTimeoutMillis will cause socket timeouts during normal processing.
      * This only exists for testing. We encourage you never to use it.
-     * @param heartbeatIntervalMs
+     * @param heartbeatIntervalMillis
      */
-    public void setHeartbeatIntervalMs(long heartbeatIntervalMs) {
-        this.heartbeatIntervalMs = heartbeatIntervalMs;
-    }
-
-    public long getShutdownClientAfterMillis() {
-        return shutdownClientAfterMillis;
-    }
-
-    /**
-     * If the client has been inactive after this many milliseconds,
-     * shut it down.
-     *
-     * @param shutdownClientAfterMillis
-     */
-    public void setShutdownClientAfterMillis(long shutdownClientAfterMillis) {
-        this.shutdownClientAfterMillis = shutdownClientAfterMillis;
+    public void setHeartbeatIntervalMillis(long heartbeatIntervalMillis) {
+        this.heartbeatIntervalMillis = heartbeatIntervalMillis;
     }
 
     public int getNumClients() {
@@ -234,6 +291,10 @@ public class PipesConfig {
     }
 
     public void setNumClients(int numClients) {
+        // Without this, 0 surfaces at startup as the client queue's message-less IAE.
+        if (numClients <= 0) {
+            throw new IllegalArgumentException("numClients must be > 0, was " + numClients);
+        }
         this.numClients = numClients;
     }
 
@@ -282,22 +343,6 @@ public class PipesConfig {
      */
     public void setEmitStrategy(EmitStrategyConfig emitStrategy) {
         this.emitStrategy = emitStrategy;
-    }
-
-    public int getStaleFetcherTimeoutSeconds() {
-        return staleFetcherTimeoutSeconds;
-    }
-
-    public void setStaleFetcherTimeoutSeconds(int staleFetcherTimeoutSeconds) {
-        this.staleFetcherTimeoutSeconds = staleFetcherTimeoutSeconds;
-    }
-
-    public int getStaleFetcherDelaySeconds() {
-        return staleFetcherDelaySeconds;
-    }
-
-    public void setStaleFetcherDelaySeconds(int staleFetcherDelaySeconds) {
-        this.staleFetcherDelaySeconds = staleFetcherDelaySeconds;
     }
 
     public long getMaxWaitForClientMillis() {
@@ -466,6 +511,20 @@ public class PipesConfig {
     }
 
     /**
+     * Creates a temp directory under {@link #getTempDirectory()}, or under the system default
+     * when unset. Callers must not use {@code Files.createTempDirectory} directly or the
+     * configured directory is silently ignored.
+     */
+    public Path createTempDirectory(String prefix) throws IOException {
+        if (StringUtils.isBlank(tempDirectory)) {
+            return Files.createTempDirectory(prefix);
+        }
+        Path base = Paths.get(tempDirectory);
+        Files.createDirectories(base);
+        return Files.createTempDirectory(base, prefix);
+    }
+
+    /**
      * Sets the directory for temporary files during pipes-based parsing.
      * If not set, the system default temp directory will be used.
      * Consider using a RAM-backed filesystem (e.g., /dev/shm or /tmpfs) for better performance.
@@ -513,19 +572,67 @@ public class PipesConfig {
     }
 
     /**
-     * Sets the maximum IPC payload size in bytes. Must be a positive value.
-     * This bounds the size of a message the client will accept back from the
-     * forked server (chiefly the FINISHED result). Request payloads
-     * (client to server) are small and use the built-in default.
+     * @return largest request body sent inline instead of spooled; see
+     *         {@link #DEFAULT_MAX_INLINE_BYTES}
+     */
+    public int getMaxInlineBytes() {
+        return maxInlineBytes;
+    }
+
+    /**
+     * Sets the inline-payload threshold. Must stay under {@code maxIpcPayloadBytes}: the payload
+     * travels inside the NEW_REQUEST frame, so a threshold above that limit would let the parent
+     * build requests the child refuses, surfacing as an undiagnosable crash rather than a clean
+     * fallback to spooling. The pair is checked in {@link #checkPayloadLimits()}, not here, so
+     * the two fields may be set in either order.
      *
-     * @param maxIpcPayloadBytes positive payload limit in bytes
-     * @throws IllegalArgumentException if the value is not positive
+     * @throws IllegalArgumentException if negative
+     */
+    public void setMaxInlineBytes(int maxInlineBytes) {
+        if (maxInlineBytes < 0) {
+            throw new IllegalArgumentException("maxInlineBytes must be >= 0, got: " + maxInlineBytes);
+        }
+        this.maxInlineBytes = maxInlineBytes;
+    }
+
+    /**
+     * Sets the maximum IPC payload size in bytes. This limit is <em>bidirectional</em>:
+     * it controls both the largest result the client will accept back from the forked server
+     * (the FINISHED payload) and the largest request the server will accept from the client
+     * (the NEW_REQUEST payload). Lowering this value below the size of a typical
+     * {@link org.apache.tika.pipes.api.FetchEmitTuple} will cause requests to be rejected
+     * on the server side and reported as undiagnosable {@code UNSPECIFIED_CRASH} errors.
+     * <p>
+     * The value must be at least {@link org.apache.tika.pipes.core.server.ServerProtocolIO#MIN_FALLBACK_PAYLOAD_BYTES}
+     * so that the server can always write a {@code PAYLOAD_LIMIT_EXCEEDED} response
+     * that the client will accept.
+     *
+     * @param maxIpcPayloadBytes payload limit in bytes (must be &ge; {@code ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES})
+     * @throws IllegalArgumentException if the value is below the minimum
      */
     public void setMaxIpcPayloadBytes(int maxIpcPayloadBytes) {
-        if (maxIpcPayloadBytes <= 0) {
+        if (maxIpcPayloadBytes < ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES) {
             throw new IllegalArgumentException(
-                    "maxIpcPayloadBytes must be positive, got: " + maxIpcPayloadBytes);
+                    "maxIpcPayloadBytes must be at least " +
+                    ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES +
+                    " (minimum to carry a PAYLOAD_LIMIT_EXCEEDED response), got: " + maxIpcPayloadBytes);
         }
         this.maxIpcPayloadBytes = maxIpcPayloadBytes;
+    }
+
+    /**
+     * Checks that {@code maxInlineBytes} leaves headroom for the rest of the tuple (metadata,
+     * parseContext) inside {@code maxIpcPayloadBytes}. Runs automatically after Jackson
+     * deserialization; call it directly after configuring an instance through setters.
+     *
+     * @throws IllegalArgumentException if the pair is inconsistent
+     */
+    public void checkPayloadLimits() {
+        long ceiling = maxIpcPayloadBytes - (maxIpcPayloadBytes / 10);
+        if (maxInlineBytes > ceiling) {
+            throw new IllegalArgumentException("maxInlineBytes (" + maxInlineBytes +
+                    ") must leave room for the rest of the request inside maxIpcPayloadBytes (" +
+                    maxIpcPayloadBytes + "); keep it at or below " + ceiling);
+        }
     }
 }

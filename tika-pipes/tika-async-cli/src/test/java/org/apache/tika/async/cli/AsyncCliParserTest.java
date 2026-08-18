@@ -44,7 +44,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertEquals(1, simpleAsyncConfig.getNumClients());
-        assertEquals(30000L, simpleAsyncConfig.getTimeoutMs());
+        assertEquals(30000L, simpleAsyncConfig.getTimeoutMillis());
         assertEquals("-Xmx1g", simpleAsyncConfig.getXmx());
         // TIKA-4663: default content handler is markdown
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN, simpleAsyncConfig.getHandlerType());
@@ -54,7 +54,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertNull(simpleAsyncConfig.getNumClients());
-        assertNull(simpleAsyncConfig.getTimeoutMs());
+        assertNull(simpleAsyncConfig.getTimeoutMillis());
         assertNull(simpleAsyncConfig.getXmx());
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN, simpleAsyncConfig.getHandlerType());
 
@@ -63,7 +63,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertNull(simpleAsyncConfig.getNumClients());
-        assertNull(simpleAsyncConfig.getTimeoutMs());
+        assertNull(simpleAsyncConfig.getTimeoutMillis());
         assertNull(simpleAsyncConfig.getXmx());
 
         simpleAsyncConfig = TikaAsyncCLI.parseCommandLine(new String[]{"--output", "output", "--input", "input"});
@@ -71,7 +71,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertNull(simpleAsyncConfig.getNumClients());
-        assertNull(simpleAsyncConfig.getTimeoutMs());
+        assertNull(simpleAsyncConfig.getTimeoutMillis());
         assertNull(simpleAsyncConfig.getXmx());
 
         simpleAsyncConfig = TikaAsyncCLI.parseCommandLine(new String[]{"--output=output", "--input=input"});
@@ -79,7 +79,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertNull(simpleAsyncConfig.getNumClients());
-        assertNull(simpleAsyncConfig.getTimeoutMs());
+        assertNull(simpleAsyncConfig.getTimeoutMillis());
         assertNull(simpleAsyncConfig.getXmx());
     }
 
@@ -91,7 +91,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertEquals(5, simpleAsyncConfig.getNumClients());
-        assertEquals(30000L, simpleAsyncConfig.getTimeoutMs());
+        assertEquals(30000L, simpleAsyncConfig.getTimeoutMillis());
         assertEquals("1g", simpleAsyncConfig.getXmx());
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.XML, simpleAsyncConfig.getHandlerType());
     }

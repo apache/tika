@@ -1,0 +1,32 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# TIKA-4816: in migrated parser modules, document-derived metadata keys must never reach
+# Metadata's String-keyed write routes -- that is the exact route through which a crafted
+# file could assert a reserved tk: key (Metadata#set/add(String,String) throws on tk: names;
+# this ban keeps parser code from being where anyone finds that out). Parser code gets
+# exactly two routes: curated Property constants (bounded, declaration-time vocabularies)
+# and KeyPrefix-minted Properties (open, document-derived names under a registered prefix).
+# The trusted routes (setTrusted/addTrusted/reconstruct/putAll) are escape hatches reserved
+# for filters, serialization, and pipes internals -- not parsers. No @SuppressForbidden
+# grandfathering: a site that cannot be migrated keeps its module's ban out entirely rather
+# than suppress here.
+
+org.apache.tika.metadata.Metadata#set(java.lang.String,java.lang.String) @ document-derived keys must go through a curated Property constant or a KeyPrefix-minted Property; see Metadata#set(Property,String)
+org.apache.tika.metadata.Metadata#add(java.lang.String,java.lang.String) @ document-derived keys must go through a curated Property constant or a KeyPrefix-minted Property; see Metadata#add(Property,String)
+org.apache.tika.metadata.Metadata#setTrusted(java.lang.String,java.lang.String) @ trusted route; not for parser code (filters/serialization/pipes only)
+org.apache.tika.metadata.Metadata#addTrusted(java.lang.String,java.lang.String) @ trusted route; not for parser code (filters/serialization/pipes only)
+org.apache.tika.metadata.Metadata#reconstruct(java.lang.String,java.lang.String,boolean) @ trusted route; not for parser code (filters/serialization/pipes only)
+org.apache.tika.metadata.Metadata#putAll(org.apache.tika.metadata.Metadata) @ trusted route; not for parser code (filters/serialization/pipes only)

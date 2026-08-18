@@ -40,6 +40,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 
 /**
  * JAX-RS resource for unpacking embedded documents from container files.
@@ -55,26 +56,11 @@ import org.apache.tika.parser.ParseContext;
  *   <li>POST /unpack/all - Extract all with config (multipart)</li>
  * </ul>
  * <p>
- * <b>Configuration Requirements:</b>
+ * <b>Configuration:</b>
  * <p>
- * Your tika-config.json must include:
- * <pre>
- * {
- *   "fetchers": {
- *     "file-system-fetcher": {
- *       "class": "org.apache.tika.pipes.fetcher.fs.FileSystemFetcher",
- *       "allowAbsolutePaths": true
- *     }
- *   },
- *   "emitters": {
- *     "unpack-emitter": {
- *       "class": "org.apache.tika.pipes.emitter.fs.FileSystemEmitter",
- *       "basePath": "/tmp/tika-unpack",
- *       "onExists": "replace"
- *     }
- *   }
- * }
- * </pre>
+ * None required. The server wires up its own {@code __}-prefixed fetcher and emitter against
+ * temp directories it owns, confined by {@code basePath}. Those ids are reserved and a request
+ * that names one is rejected.
  * <p>
  * <b>Multipart Configuration (POST endpoints):</b>
  * <p>
@@ -163,10 +149,9 @@ public class UnpackerResource {
     @PUT
     @Produces("application/zip")
     public Response unpack(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext pc = tikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(pc);
+        ParseContext pc = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
             TikaResource.logRequest(LOG, "/unpack", metadata);
             return doUnpack(tis, metadata, pc, false);
@@ -187,8 +172,8 @@ public class UnpackerResource {
     @Consumes("multipart/form-data")
     @Produces("application/zip")
     public Response unpackWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext pc = tikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(pc);
+        ParseContext pc = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
             TikaResource.logRequest(LOG, "/unpack", metadata);
             return doUnpack(tis, metadata, pc, false);
@@ -208,10 +193,9 @@ public class UnpackerResource {
     @PUT
     @Produces("application/zip")
     public Response unpackAll(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext pc = tikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(pc);
+        ParseContext pc = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
             TikaResource.logRequest(LOG, "/unpack/all", metadata);
             return doUnpack(tis, metadata, pc, true);
@@ -232,8 +216,8 @@ public class UnpackerResource {
     @Consumes("multipart/form-data")
     @Produces("application/zip")
     public Response unpackAllWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext pc = tikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(pc);
+        ParseContext pc = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
             TikaResource.logRequest(LOG, "/unpack/all", metadata);
             return doUnpack(tis, metadata, pc, true);
@@ -254,6 +238,16 @@ public class UnpackerResource {
         PipesParsingHelper helper = tikaResource.getPipesParsingHelper();
         if (helper == null) {
             throw new WebApplicationException("Pipes-based parsing is not enabled", Response.Status.SERVICE_UNAVAILABLE);
+        }
+
+        // parseUnpack mutates this and so overrides the worker's own config; seed it from the
+        // config's unpack-config (a per-request instance) rather than from defaults. A config
+        // supplied by the request itself already sits in pc and wins, as before.
+        if (pc.get(UnpackConfig.class) == null) {
+            UnpackConfig fromConfig = tikaResource.newConfigUnpackConfig();
+            if (fromConfig != null) {
+                pc.set(UnpackConfig.class, fromConfig);
+            }
         }
 
         PipesParsingHelper.UnpackResult result = helper.parseUnpack(tis, metadata, pc, saveAll);

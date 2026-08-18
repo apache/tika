@@ -35,6 +35,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -121,13 +122,13 @@ public class TNEFParser implements Parser {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
         }
         if (type != null) {
-            metadata.set(Metadata.CONTENT_TYPE, type);
+            metadata.set(HttpHeaders.CONTENT_TYPE, type);
         }
         if (inferredExtension) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
         }
 
-        if (embeddedExtractor.shouldParseEmbedded(metadata)) {
+        if (embeddedExtractor.shouldParseEmbedded(metadata, context)) {
             try (TikaInputStream tis = TikaInputStream.get(contents)) {
                 embeddedExtractor.parseEmbedded(tis,
                         new EmbeddedContentHandler(handler), metadata, context, true);

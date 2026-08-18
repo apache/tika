@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core.async;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -31,6 +32,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -190,10 +192,12 @@ public class AsyncChaosMonkeyTest {
             try (BufferedReader reader = Files.newBufferedReader(f.toPath())) {
                 metadataList = JsonMetadataList.fromJson(reader);
             }
-            assertEquals(64,
-                    metadataList.get(0).get("tk:digest:SHA-256").trim().length());
+            String sha = metadataList.get(0).get("tk:digest:SHA-256");
+            assertNotNull(sha, "no SHA-256 digest on " + f.getName() + " (pipesResult=" +
+                    metadataList.get(0).get(TikaCoreProperties.PIPES_RESULT) + ")");
+            assertEquals(64, sha.trim().length());
             assertEquals("application/mock+xml",
-                    metadataList.get(0).get(Metadata.CONTENT_TYPE));
+                    metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
             String val = metadataList.get(0).get(TikaCoreProperties.PIPES_RESULT);
             if (val == null) {
                 // Null means success (no crash status was set)

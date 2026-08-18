@@ -196,6 +196,23 @@ public class TikaCLITest {
      * --task-timeout/--progress-timeout. It must fail loudly with a migration hint rather
      * than silently falling through to an "unknown option" / file-not-found error.
      */
+    /**
+     * The inline short forms -eX/-pX/-c&lt;uri&gt; were removed in 4.0.0. They were the only
+     * short flags matched by prefix, which made a single-dash long name silently become
+     * their value: -config=tika.json set the client URI to "onfig=tika.json" and loaded
+     * no config. Each must now reach the unknown-option error.
+     */
+    @Test
+    public void testSingleDashLongNamesAreRejected() {
+        for (String arg : new String[]{"-config=tika-config.json", "-encoding=UTF-8",
+                "-password=secret", "-pretty-print", "-client=http://localhost:9998/"}) {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                    () -> TikaCLI.main(new String[]{arg, resourcePrefix + "alice.cli.test"}), arg);
+            assertTrue(e.getMessage().contains("two dashes"),
+                    arg + " -> " + e.getMessage());
+        }
+    }
+
     @Test
     public void testForkTimeoutFlagRemoved() {
         IllegalArgumentException e = assertThrows(
@@ -577,10 +594,10 @@ public class TikaCLITest {
     @Test
     public void testMultiValuedMetadata() throws Exception {
         String content = getParamOutContent("-m", resourcePrefix + "testMultipleSheets.numbers");
-        assertTrue(content.contains("sheetNames: Checking"));
-        assertTrue(content.contains("sheetNames: Secon sheet"));
-        assertTrue(content.contains("sheetNames: Logical Sheet 3"));
-        assertTrue(content.contains("sheetNames: Sheet 4"));
+        assertTrue(content.contains("sheet-names: Checking"));
+        assertTrue(content.contains("sheet-names: Secon sheet"));
+        assertTrue(content.contains("sheet-names: Logical Sheet 3"));
+        assertTrue(content.contains("sheet-names: Sheet 4"));
     }
 
     // TIKA-1031

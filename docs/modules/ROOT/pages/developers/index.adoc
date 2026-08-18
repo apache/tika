@@ -22,11 +22,12 @@ with custom parsers, detectors, and other components.
 
 * xref:developers/serialization.adoc[Serialization and Configuration] - JSON configuration,
   @TikaComponent annotation, and creating custom components
-* xref:developers/metadata-keys.adoc[Adding a Metadata Key] - the Property/PassthroughPrefix
+* xref:developers/metadata-keys.adoc[Adding a Metadata Key] - the Property/KeyPrefix
   registry, naming conventions, and regenerating the schema
+* xref:pipes/plugins/writing-a-plugin.adoc[Writing a Pipes Plugin] - implementing a fetcher,
+  emitter, iterator or reporter and packaging it for PF4J
 
 == Coming Soon
 
 * Creating Custom Parsers
 * Creating Custom Detectors
-* Plugin Development with PF4J

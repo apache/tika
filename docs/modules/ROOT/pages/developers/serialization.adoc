@@ -52,10 +52,14 @@ Tika uses a compact format for component configuration:
 }
 ----
 
-Components can be specified as:
+Inside an array-valued section (`parsers`, `detectors`, `encoding-detectors`,
+`metadata-filters`) an element can be specified as:
 
 * **String**: `"pdf-parser"` - creates instance with defaults
 * **Object**: `{"pdf-parser": {"ocr": {"strategy": "AUTO"}}}` - creates configured instance
+
+Object-valued sections such as `parse-context` key each entry by name instead, with
+the config object as the value.
 
 == The @TikaComponent Annotation
 
@@ -129,8 +133,8 @@ one of these known interfaces:
 
 * `Parser`, `Detector`, `EncodingDetector`
 * `MetadataFilter`, `Translator`, `Renderer`
-* `DigesterFactory`, `ContentHandlerFactory`
-* `EmbeddedDocumentExtractorFactory`, `MetadataWriteLimiterFactory`
+* `DigesterFactory`, `ContentHandlerFactory`, `ContentHandlerDecoratorFactory`
+* `MetadataWriteLimiterFactory`, `UnpackSelector`, `EmbeddedDocumentExtractor`
 
 [source,java]
 ----
@@ -175,23 +179,25 @@ Components not implementing first-class interfaces go to `parse-context.idx`:
 
 * `DigesterFactory` - Digest/checksum calculation
 * `ContentHandlerFactory` - SAX content handler creation
-* `EmbeddedDocumentExtractorFactory` - Embedded document handling
 * `MetadataWriteLimiterFactory` - Metadata write limiting
 
 == Self-Configuring Components
 
-Components implementing `SelfConfiguring` handle their own configuration
-at runtime rather than during initial loading:
+`SelfConfiguring` is a marker interface with no methods: `resolveAll` skips such
+components, leaving their JSON in `ParseContext`, and the component reads it where
+it needs it. `Parser` extends `SelfConfiguring`, so every parser is self-configuring.
 
 [source,java]
 ----
 @TikaComponent
-public class PDFParser extends AbstractParser implements SelfConfiguring {
+public class PDFParser implements Parser {
 
-    private PDFParserConfig defaultConfig = new PDFParserConfig();
+    private final PDFParserConfig defaultConfig = new PDFParserConfig();
 
     @Override
-    public void configure(ParseContext parseContext) {
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                      ParseContext parseContext)
+            throws IOException, SAXException, TikaException {
         PDFParserConfig config = ParseContextConfig.getConfig(
             parseContext, "pdf-parser", PDFParserConfig.class, defaultConfig);
         // Use config...
@@ -261,15 +267,17 @@ including options that spawn external processes such as OCR" — not as somethin
 the allowlist constrains.
 ====
 
-[source,java]
+[source,json]
 ----
-// This will FAIL - class not registered
 {
   "parse-context": {
-    "java.lang.Runtime": {}  // Error: Unknown component
+    "java.lang.Runtime": {}
   }
 }
 ----
+
+That fails with "Unrecognized parse-context entry 'java.lang.Runtime'" — the class
+is not registered.
 
 === Untrusted (Wire) Input: Restricted Mode
 
@@ -284,8 +292,8 @@ fail-closed gate on top of the registry:
   `ContentHandlerDecoratorFactory`, `DigesterFactory`,
   `MetadataWriteLimiterFactory`, `UnpackSelector`
 * Types with exec/IO/network capability or control over which components run
-  are blocked: `Parser`, `Detector`, `EncodingDetector`, `Renderer`,
-  `Translator`, `EmbeddedDocumentExtractorFactory`
+  are blocked: `Parser`, `Detector`, `EncodingDetector`, `Renderer`, `Translator`,
+  `EmbeddedDocumentExtractor`
 * The check is fail-closed: a newly added context-key interface is blocked until
   it is consciously allow-listed
 * The whole tree is scanned *before* any component is constructed
@@ -329,19 +337,21 @@ framework keys.
 
 == Creating a Custom Component
 
-Complete example of a custom metadata filter:
+Complete example of a custom metadata filter. `fieldName` is config-supplied, so it could
+legitimately name a reserved `tk:` key; use `setTrusted` rather than `set` -- filters run
+inside the trusted bracket of `MetadataFilter`, the sanctioned route for a write keyed by
+a name that isn't a compile-time constant:
 
 [source,java]
 ----
 package com.example.tika;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.MetadataFilterBase;
 
 @TikaComponent
-public class UpperCaseFilter implements MetadataFilter {
+public class UpperCaseFilter extends MetadataFilterBase {
 
     private String fieldName = "title";
 
@@ -354,18 +364,19 @@ public class UpperCaseFilter implements MetadataFilter {
     }
 
     @Override
-    public void filter(Metadata metadata) throws TikaException {
+    protected void filter(Metadata metadata) {
         String value = metadata.get(fieldName);
         if (value != null) {
-            metadata.set(fieldName, value.toUpperCase());
+            metadata.setTrusted(fieldName, value.toUpperCase());
         }
     }
 }
 ----
 
 Configure in JSON. Metadata filters are loaded via `parse-context` (they
-implement the `MetadataFilter` interface, which is a `ParseContext`-keyed
-component):
+extend the `MetadataFilter` abstract class -- here via `MetadataFilterBase`,
+whose per-`Metadata` hook suits context-free filters -- which is a
+`ParseContext`-keyed component):
 
 [source,json]
 ----
@@ -376,7 +387,7 @@ component):
 }
 ----
 
-Or with defaults (string form constructs with no overrides):
+Or with defaults (an empty config object applies no overrides):
 
 [source,json]
 ----
@@ -399,7 +410,8 @@ Or with defaults (string form constructs with no overrides):
 
 * Verify you're using the correct interface type for lookup
 * Check if explicit `contextKey` is needed
-* For self-configuring components, ensure `configure()` was called
+* Self-configuring components are never resolved into the context map; read them
+  with `ParseContextConfig.getConfig(context, "<name>", ConfigClass.class, default)`
 
 === SPI Not Loading Component
 

@@ -23,6 +23,7 @@ import org.mozilla.universalchardet.Constants;
 import org.mozilla.universalchardet.UniversalDetector;
 
 import org.apache.tika.detect.TextStatistics;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.utils.CharsetUtils;
@@ -46,12 +47,12 @@ class UniversalEncodingListener implements CharsetListener {
     private Charset charset = null;
 
     public UniversalEncodingListener(Metadata metadata) {
-        MediaType type = MediaType.parse(metadata.get(Metadata.CONTENT_TYPE));
+        MediaType type = MediaType.parse(metadata.get(HttpHeaders.CONTENT_TYPE));
         if (type != null) {
             hint = type.getParameters().get("charset");
         }
         if (hint == null) {
-            hint = metadata.get(Metadata.CONTENT_ENCODING);
+            hint = metadata.get(HttpHeaders.CONTENT_ENCODING);
         }
     }
 

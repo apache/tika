@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.Parser;
@@ -38,9 +39,9 @@ public class DBFParserTest extends TikaTest {
     public void testBasic() throws Exception {
         XMLResult r = getXML("testDBF.dbf");
         assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(),
-                r.metadata.get(Metadata.CONTENT_TYPE));
+                r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("2016-05-24T00:00:00Z", r.metadata.get(TikaCoreProperties.MODIFIED));
-        assertEquals("UTF-8", r.metadata.get(Metadata.CONTENT_ENCODING));
+        assertEquals("UTF-8", r.metadata.get(HttpHeaders.CONTENT_ENCODING));
 
         String xml = r.xml.replaceAll("[\\t\\r\\n]", " ");
         //header
@@ -64,7 +65,7 @@ public class DBFParserTest extends TikaTest {
     public void testGB18030Encoded() throws Exception {
         XMLResult r = getXML("testDBF_gb18030.dbf");
         assertEquals(DBFReader.Version.FOXBASE_PLUS.getFullMimeString(),
-                r.metadata.get(Metadata.CONTENT_TYPE));
+                r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("虽然该", r.xml);
     }
 
@@ -132,7 +133,7 @@ public class DBFParserTest extends TikaTest {
             //this cast happens to work because of the range of possible values
             bytes[0] = (byte) version.getId();
             XMLResult r = getXML(TikaInputStream.get(bytes), AUTO_DETECT_PARSER, new Metadata());
-            assertEquals(version.getFullMimeString(), r.metadata.get(Metadata.CONTENT_TYPE));
+            assertEquals(version.getFullMimeString(), r.metadata.get(HttpHeaders.CONTENT_TYPE));
         }
     }
 
@@ -143,7 +144,7 @@ commented out until we get permission to add the test file
         XMLResult r = getXML("prem2007_2.dbf");
         String xml = r.xml.replaceAll("[\\r\\n\\t]", " ");
         assertEquals("application/x-dbf; dbf_version=Visual_FoxPro",
-        r.metadata.get(Metadata.CONTENT_TYPE));
+        r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("<th>莉こ晤鎢</th>", xml);//header
         assertContains("<td>齠褕</td>", xml);//content
         assertContains("<td>2010-04-20T00:00:00Z</td>", xml);

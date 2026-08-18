@@ -63,13 +63,13 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.ParseTimeout;
-import org.apache.tika.config.TikaProgressTracker;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.ParentContentHandler;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -339,11 +339,11 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
                 metadata.remove(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE.getName());
             }
         }
-        String contentType = metadata.get(Metadata.CONTENT_TYPE);
+        String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
             MediaType parsedType = MediaType.parse(contentType);
             if (parsedType != null && parsedType.getSubtype().startsWith(OCR)) {
-                metadata.set(Metadata.CONTENT_TYPE,
+                metadata.set(HttpHeaders.CONTENT_TYPE,
                         new MediaType(parsedType.getType(),
                                 parsedType.getSubtype().substring(OCR.length())).toString());
             }
@@ -516,7 +516,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             process = pb.start();
             id = register(process);
             runOCRProcess(process, parseContext, requestedMillis, timeoutMillis);
-            TikaProgressTracker.update(parseContext);
+            ParseTimeout.checkpoint(parseContext);
         } finally {
             if (process != null) {
                 process.destroyForcibly();

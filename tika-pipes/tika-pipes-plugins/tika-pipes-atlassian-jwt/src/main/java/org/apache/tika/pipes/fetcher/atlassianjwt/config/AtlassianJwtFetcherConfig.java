@@ -47,6 +47,11 @@ public class AtlassianJwtFetcherConfig {
     private Integer socketTimeoutMillis = 120000;
     private Long maxSpoolSize = -1L;
     private Integer maxRedirects = 0;
+    /**
+     * Verify server certificates and hostnames; false accepts any cert from any host
+     * (the opt-out for self-signed internal certs).
+     */
+    private boolean verifySsl = true;
     private List<String> httpHeaders = new ArrayList<>();
     private Map<String, List<String>> httpRequestHeaders = new LinkedHashMap<>();
     private Long overallTimeoutMillis = 120000L;
@@ -118,6 +123,15 @@ public class AtlassianJwtFetcherConfig {
 
     public AtlassianJwtFetcherConfig setMaxRedirects(Integer maxRedirects) {
         this.maxRedirects = maxRedirects;
+        return this;
+    }
+
+    public boolean isVerifySsl() {
+        return verifySsl;
+    }
+
+    public AtlassianJwtFetcherConfig setVerifySsl(boolean verifySsl) {
+        this.verifySsl = verifySsl;
         return this;
     }
 

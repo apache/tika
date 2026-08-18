@@ -184,6 +184,8 @@ public class ProcessUtils {
                     }
                 }
             } catch (InterruptedException e) {
+                // restore the flag or the interrupt is misread as a subprocess timeout
+                Thread.currentThread().interrupt();
                 exitValue = -1000;
             } finally {
                 outThread.interrupt();
@@ -284,6 +286,7 @@ public class ProcessUtils {
                     errThread.join(1000);
                 }
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 exitValue = -1000;
             }
             FileProcessResult result = new FileProcessResult();
@@ -384,7 +387,11 @@ public class ProcessUtils {
                 }
             }
             return true;
-        } catch (IOException | InterruptedException | TimeoutException e) {
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOG.debug("interrupted trying to run " + checkCmd[0], e);
+            return false;
+        } catch (IOException | TimeoutException e) {
             LOG.debug("exception trying to run " + checkCmd[0], e);
             return false;
         } catch (SecurityException se) {
@@ -420,10 +427,10 @@ public class ProcessUtils {
      */
     public static boolean waitForWithHeartbeat(Process p, ParseContext context, long timeoutMillis)
             throws InterruptedException {
-        long now = System.currentTimeMillis();
-        long deadline = (timeoutMillis >= Long.MAX_VALUE - now) ? Long.MAX_VALUE : now + timeoutMillis;
+        long startNanos = System.nanoTime();
         while (true) {
-            long remaining = deadline - System.currentTimeMillis();
+            long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000L;
+            long remaining = timeoutMillis - elapsedMillis;
             long pollMillis = remaining <= 0 ? 0 : Math.min(remaining, HEARTBEAT_INTERVAL_MILLIS);
             if (p.waitFor(pollMillis, TimeUnit.MILLISECONDS)) {
                 return true;

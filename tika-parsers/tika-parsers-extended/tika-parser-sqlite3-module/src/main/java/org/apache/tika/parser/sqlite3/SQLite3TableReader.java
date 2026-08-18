@@ -27,7 +27,6 @@ import javax.sql.rowset.serial.SerialBlob;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.jdbc.JDBCTableReader;
@@ -43,9 +42,8 @@ import org.apache.tika.parser.jdbc.JDBCTableReader;
 public class SQLite3TableReader extends JDBCTableReader {
 
 
-    public SQLite3TableReader(Connection connection, String tableName,
-                              EmbeddedDocumentUtil embeddedDocumentUtil) {
-        super(connection, tableName, embeddedDocumentUtil);
+    public SQLite3TableReader(Connection connection, String tableName) {
+        super(connection, tableName);
     }
 
 

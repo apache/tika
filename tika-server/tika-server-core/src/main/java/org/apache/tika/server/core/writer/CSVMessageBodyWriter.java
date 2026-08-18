@@ -38,7 +38,7 @@ import org.apache.commons.csv.CSVPrinter;
 import org.apache.tika.metadata.Metadata;
 
 @Provider
-@Produces("text/csv")
+@Produces("text/csv;charset=UTF-8")
 public class CSVMessageBodyWriter implements MessageBodyWriter<Metadata> {
 
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {

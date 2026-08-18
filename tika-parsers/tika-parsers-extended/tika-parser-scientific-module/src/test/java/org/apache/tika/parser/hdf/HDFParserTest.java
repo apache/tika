@@ -55,7 +55,7 @@ public class HDFParserTest extends TikaTest {
         }
 
         assertNotNull(metadata);
-        assertEquals("5", metadata.get("GranuleMonth"));
+        assertEquals("5", metadata.get("hdf:GranuleMonth"));
     }
 
     @Test
@@ -77,8 +77,8 @@ public class HDFParserTest extends TikaTest {
         }
 
         assertNotNull(metadata);
-        assertEquals("Direct read of HDF4 file through CDM library", metadata.get("_History"));
-        assertEquals("Ascending", metadata.get("Pass"));
-        assertEquals("Hierarchical Data Format, version 4", metadata.get("hdf:File-Type-Description"));
+        assertEquals("Direct read of HDF4 file through CDM library", metadata.get("hdf:_History"));
+        assertEquals("Ascending", metadata.get("hdf:Pass"));
+        assertEquals("Hierarchical Data Format, version 4", metadata.get("hdf:file-type-description"));
     }
 }

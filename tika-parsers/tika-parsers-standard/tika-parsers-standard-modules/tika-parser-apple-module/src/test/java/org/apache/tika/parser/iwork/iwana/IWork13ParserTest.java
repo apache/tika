@@ -26,6 +26,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -58,7 +59,7 @@ public class IWork13ParserTest extends TikaTest {
 
         assertEquals(9, metadata.size());
         assertEquals(IWork13PackageParser.IWork13DocumentType.KEYNOTE13.getType().toString(),
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
@@ -75,7 +76,7 @@ public class IWork13ParserTest extends TikaTest {
         // TODO Test properly when a full Parser is added
         assertEquals(
                 IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType().toString(),
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("preview.jpg", handler.toString().trim());
     }
 
@@ -92,7 +93,7 @@ public class IWork13ParserTest extends TikaTest {
         // TODO Test properly when a full Parser is added
         assertEquals(
                 IWork13PackageParser.IWork13DocumentType.UNKNOWN13.getType().toString(),
-                metadata.get(Metadata.CONTENT_TYPE));
+                metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("preview.jpg", handler.toString().trim());
     }
 
@@ -103,11 +104,11 @@ public class IWork13ParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testNumbers2013.numbers", metadata);
         assertEquals(2, metadataList.size());
         assertEquals("application/vnd.apple.numbers.13",
-                metadataList.get(0).get(Metadata.CONTENT_TYPE));
-        assertEquals("true", metadataList.get(0).get("iworks:isMultiPage"));
+                metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("true", metadataList.get(0).get("iwork:isMultiPage"));
         assertEquals("C5ED6463-575C-43B9-8FDA-1957B186C422",
-                metadataList.get(0).get("iworks:versionUUID"));
-        assertEquals("image/jpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+                metadataList.get(0).get("iwork:versionUUID"));
+        assertEquals("image/jpeg", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }

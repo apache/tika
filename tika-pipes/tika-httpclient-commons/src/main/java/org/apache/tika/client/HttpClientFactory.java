@@ -28,8 +28,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.HashSet;
-import java.util.Set;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
@@ -82,8 +80,9 @@ import org.apache.tika.utils.StringUtils;
 /**
  * This holds quite a bit of state and is not thread safe.  Beware!
  * <p>
- * Also, we're currently ignoring the SSL checks.  Please open a ticket/PR
- * if you need robust SSL.
+ * TLS certificates and hostnames are verified against the JVM trust store unless
+ * {@link #setVerifySsl(boolean)} is called with {@code false}, which accepts any
+ * certificate and skips the hostname check.
  */
 public class HttpClientFactory {
 
@@ -96,7 +95,6 @@ public class HttpClientFactory {
 
     private String proxyHost;
     private int proxyPort;
-    private Set<String> allowedHostsForRedirect = new HashSet<>();
     private int maxConnectionsPerRoute = 1000;
     private int maxConnections = 2000;
     private int requestTimeoutMillis = 120000;
@@ -109,7 +107,7 @@ public class HttpClientFactory {
     private String authScheme = "basic"; //ntlm or basic
     private boolean credentialsAESEncrypted = false;
     private boolean disableContentCompression = false;
-    private boolean verifySsl = false;
+    private boolean verifySsl = true;
 
     public String getProxyHost() {
         return proxyHost;
@@ -125,14 +123,6 @@ public class HttpClientFactory {
 
     public void setProxyPort(int proxyPort) {
         this.proxyPort = proxyPort;
-    }
-
-    public Set<String> getAllowedHostsForRedirect() {
-        return allowedHostsForRedirect;
-    }
-
-    public void setAllowedHostsForRedirect(Set<String> allowedHostsForRedirect) {
-        this.allowedHostsForRedirect = allowedHostsForRedirect;
     }
 
     public int getMaxConnectionsPerRoute() {
@@ -248,7 +238,6 @@ public class HttpClientFactory {
 
     public HttpClientFactory copy() throws TikaConfigException {
         HttpClientFactory cp = new HttpClientFactory();
-        cp.setAllowedHostsForRedirect(new HashSet<>(allowedHostsForRedirect));
         cp.setAuthScheme(authScheme);
         cp.setConnectTimeoutMillis(connectTimeoutMillis);
         cp.setCredentialsAESEncrypted(credentialsAESEncrypted);
@@ -276,8 +265,8 @@ public class HttpClientFactory {
             sslsf = new SSLConnectionSocketFactory(sslContext,
                     SSLConnectionSocketFactory.getDefaultHostnameVerifier());
         } else {
-            LOG.warn("http client does not verify ssl at this point.  " +
-                    "If you need that, please open a ticket.");
+            LOG.warn("http client does not verify TLS certificates or hostnames; " +
+                    "set verifySsl=true to enable verification");
             TrustStrategy acceptingTrustStrategy = (cert, authType) -> true;
             try {
                 sslContext =
@@ -310,7 +299,7 @@ public class HttpClientFactory {
         addProxy(builder);
         return builder.setConnectionManager(manager)
                 .evictExpiredConnections()
-                .setRedirectStrategy(new CustomRedirectStrategy(allowedHostsForRedirect))
+                .setRedirectStrategy(new CustomRedirectStrategy())
                 .setDefaultRequestConfig(RequestConfig.custom().setTargetPreferredAuthSchemes(
                         Arrays.asList(AuthSchemes.BASIC, AuthSchemes.NTLM))
                         .setConnectionRequestTimeout(requestTimeoutMillis)
@@ -402,11 +391,6 @@ public class HttpClientFactory {
     private static class CustomRedirectStrategy extends LaxRedirectStrategy {
 
         private static final Logger LOG = LoggerFactory.getLogger(CustomRedirectStrategy.class);
-        private final Set<String> allowedHosts;
-
-        public CustomRedirectStrategy(Set<String> allowedHosts) {
-            this.allowedHosts = allowedHosts;
-        }
 
         @Override
         protected URI createLocationURI(final String location) throws ProtocolException {
@@ -430,20 +414,9 @@ public class HttpClientFactory {
                 throws ProtocolException {
             boolean isRedirectedSuper = super.isRedirected(request, response, context);
             if (isRedirectedSuper) {
+                // A present-but-blank Location would otherwise blow up in getLocationURI.
                 Header locationHeader = response.getFirstHeader("Location");
-                String location = locationHeader.getValue();
-                if (StringUtils.isBlank(location)) {
-                    return false;
-                }
-                URI uri;
-                try {
-                    uri = new URI(location);
-                } catch (URISyntaxException e) {
-                    return true;
-                }
-                if (!allowedHosts.isEmpty() && !allowedHosts.contains(uri.getHost())) {
-                    LOG.warn("Not allowing external redirect. OriginalUrl={}," +
-                            " RedirectLocation={}", request.getRequestLine().getUri(), location);
+                if (StringUtils.isBlank(locationHeader.getValue())) {
                     return false;
                 }
             }

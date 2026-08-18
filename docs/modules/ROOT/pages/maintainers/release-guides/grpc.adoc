@@ -31,8 +31,10 @@ and is too large to publish as a mirror artifact).
 * *Maven Central* — the slim `tika-grpc-<version>.jar` (plus pom, sources,
   javadoc, and `.asc` signatures), for embedding the gRPC server in a
   Maven/Gradle build. Deployed with the rest of Tika via `release:perform`.
-* *Docker Hub* — `apache/tika-grpc`, the ready-to-run server image, built from a
-  `-Pdocker` Maven layout and published by `.github/workflows/docker-release.yml`.
+* *Docker Hub* — `apache/tika-grpc`, the ready-to-run server image. Built and
+  published by `.github/workflows/docker-release.yml`, which assembles its own
+  build context (grpc jar + runtime deps + every pipes-plugin zip +
+  parser-package jars) after a plain `mvn install`.
 * *Apache dist* — nothing. There is no `tika-grpc` archive on dist.
 
 == Release steps

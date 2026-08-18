@@ -242,7 +242,7 @@ public class DefaultZipContainerDetector implements Detector {
             metadata.set(Zip.DETECTOR_ZIPFILE_OPENED, false);
 
             // If parsing will follow, try salvaging to prepare ZipFile for parser reuse
-            if (parseContext.get(ParsingIntent.class) != null) {
+            if (parseContext.get(ParsingIntent.class) == ParsingIntent.WILL_PARSE) {
                 zip = ZipSalvager.tryToOpenZipFile(tis, metadata);
                 if (zip != null && LOG.isDebugEnabled()) {
                     LOG.debug("Successfully salvaged ZIP for parsing");

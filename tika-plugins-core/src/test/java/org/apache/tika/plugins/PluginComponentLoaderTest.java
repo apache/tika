@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.pf4j.DefaultPluginDescriptor;
+import org.pf4j.PluginClassLoader;
 import org.pf4j.PluginManager;
 
 import org.apache.tika.exception.TikaConfigException;
@@ -78,6 +81,26 @@ public class PluginComponentLoaderTest {
         @Override
         public MockTikaExtension buildExtension(ExtensionConfig extensionConfig) {
             return instanceToReturn != null ? instanceToReturn : new MockTikaExtension(extensionConfig);
+        }
+    }
+
+    // public so a PluginClassLoader can load its own copy and reflection can read the record back
+    public static class TcclRecordingFactory implements TikaExtensionFactory<MockTikaExtension> {
+        private ClassLoader recordedTccl;
+
+        public ClassLoader getRecordedTccl() {
+            return recordedTccl;
+        }
+
+        @Override
+        public String getName() {
+            return "tccl-recorder";
+        }
+
+        @Override
+        public MockTikaExtension buildExtension(ExtensionConfig extensionConfig) {
+            recordedTccl = Thread.currentThread().getContextClassLoader();
+            return new MockTikaExtension(extensionConfig);
         }
     }
 
@@ -493,5 +516,53 @@ public class PluginComponentLoaderTest {
         JsonNode config = objectMapper.readTree(instances.get(0).getExtensionConfig().json());
         assertEquals("/reports", config.get("basePath").asText());
         assertTrue(config.get("enabled").asBoolean());
+    }
+
+    // ---- Thread-context classloader tests ----
+
+    /**
+     * TIKA-4808: a plugin's bundled client library resolves configured class names off the
+     * thread-context classloader; if that is the host's, it misses the plugin's lib/ or finds a
+     * second copy of the class and the subsequent cast fails.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void testBuildExtensionRunsPluginFactoryUnderPluginClassLoader() throws Exception {
+        URL testClasses = PluginComponentLoaderTest.class
+                .getProtectionDomain().getCodeSource().getLocation();
+        ClassLoader hostClassLoader = Thread.currentThread().getContextClassLoader();
+
+        try (PluginClassLoader pluginClassLoader = new PluginClassLoader(mock(PluginManager.class),
+                new DefaultPluginDescriptor("test-plugin", "", "", "0.0.1", "", "", ""),
+                PluginComponentLoaderTest.class.getClassLoader())) {
+            pluginClassLoader.addURL(testClasses);
+
+            TikaExtensionFactory<TikaExtension> pluginFactory =
+                    (TikaExtensionFactory<TikaExtension>) pluginClassLoader
+                            .loadClass(TcclRecordingFactory.class.getName())
+                            .getDeclaredConstructor().newInstance();
+            assertSame(pluginClassLoader, pluginFactory.getClass().getClassLoader());
+
+            PluginComponentLoader.buildExtension(pluginFactory,
+                    new ExtensionConfig("id", "tccl-recorder", "{}"));
+
+            ClassLoader recorded = (ClassLoader) pluginFactory.getClass()
+                    .getMethod("getRecordedTccl").invoke(pluginFactory);
+            assertSame(pluginClassLoader, recorded);
+        }
+        assertSame(hostClassLoader, Thread.currentThread().getContextClassLoader());
+    }
+
+    @Test
+    public void testBuildExtensionLeavesContextClassLoaderAloneForNonPluginFactory()
+            throws Exception {
+        TcclRecordingFactory factory = new TcclRecordingFactory();
+        ClassLoader hostClassLoader = Thread.currentThread().getContextClassLoader();
+
+        PluginComponentLoader.buildExtension(factory,
+                new ExtensionConfig("id", "tccl-recorder", "{}"));
+
+        assertSame(hostClassLoader, factory.getRecordedTccl());
+        assertSame(hostClassLoader, Thread.currentThread().getContextClassLoader());
     }
 }

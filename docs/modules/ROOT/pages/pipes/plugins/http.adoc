@@ -47,23 +47,23 @@ include::example$pipes-http-fetcher.json[]
 |Field |Default |Description
 
 |`userName` / `password`
-|_optional_
-|Basic-auth credentials.
+|_none_
+|Credentials. Applied only when `authScheme` is also set — without it they are silently ignored.
 
 |`ntDomain`
-|_optional_
-|NT domain for NTLM auth.
+|_none_
+|NT domain for NTLM auth. Same `authScheme` precondition.
 
 |`authScheme`
-|_optional_
-|Auth scheme hint: `basic`, `digest`, `ntlm`, or unset.
+|_none_
+|`basic` or `ntlm`. Acts as the switch that enables `userName`/`password`/`ntDomain`.
 
 |`proxyHost` / `proxyPort`
-|_optional_
+|_none_
 |Outbound HTTP proxy.
 
 |`userAgent`
-|_no default_
+|_none_
 |`User-Agent` header sent on each request.
 
 |`maxConnections`
@@ -92,7 +92,11 @@ include::example$pipes-http-fetcher.json[]
 
 |`maxRedirects`
 |`0`
-|Maximum number of redirects to follow. `0` means follow none. Not applied to range requests — see <<security-notes>>.
+|Maximum number of redirects to follow. `0` means follow none.
+
+|`verifySsl`
+|`true`
+|Verify server certificates and hostnames. Set `false` to accept any certificate — see <<security-notes>>.
 
 |`maxSpoolSize`
 |`-1`
@@ -111,15 +115,15 @@ include::example$pipes-http-fetcher.json[]
 |Structured per-request headers as a `Header → [values]` map. Used when a header has multiple values.
 
 |`jwtIssuer` / `jwtSubject` / `jwtExpiresInSeconds`
-|_optional_
+|_none_
 |JWT claims, for endpoints that accept JWT-bearer auth.
 
 |`jwtSecret`
-|_optional_
+|_none_
 |HMAC secret for symmetric-key JWT signing.
 
 |`jwtPrivateKeyBase64`
-|_optional_
+|_none_
 |Base64-encoded private key for asymmetric (RSA/ECDSA) JWT signing. Mutually exclusive with `jwtSecret`.
 |===
 
@@ -139,21 +143,31 @@ endpoint that can reach it (`/pipes`, `/async`).
   Schemes other than `http`/`https` fail only because no other scheme is registered in
   the connection manager — that is a side effect of the transport setup, not a check.
 
-* **TLS certificates are not verified, and this is not configurable here.** The
-  underlying client defaults to `verifySsl=false`, which installs an accept-everything
-  trust strategy and `NoopHostnameVerifier`. `HttpFetcherConfig` exposes no `verifySsl`
-  setting, so an http-fetcher config cannot turn verification on. Do not use this fetcher
-  to retrieve anything whose authenticity matters over an untrusted network.
+* **TLS certificates are verified by default (`verifySsl: true`).** Not every HTTP-based
+  plugin does this — check the plugin page before assuming.
++
+To opt out -- self-signed internal certificates are the usual reason -- set `verifySsl`
+to `false` on the fetcher:
++
+[source,json]
+----
+{
+  "fetchers": {
+    "my-http-fetcher": {
+      "http-fetcher": { "verifySsl": false }
+    }
+  }
+}
+----
++
+That installs an accept-everything trust strategy and `NoopHostnameVerifier`: any
+certificate from any host is accepted, so anything on the network path can read and
+alter what is fetched. Prefer adding your CA to the JVM truststore over turning this off.
 
-* **`maxRedirects` does not apply to range requests.** The main `fetch` builds a
-  `RequestConfig` from `maxRedirects`; the `startRange`/`endRange` overload sets no
-  request config at all and therefore uses the client's defaults (redirects enabled).
-  A `maxRedirects: 0` setting does not stop redirects on a range fetch.
-
-* **The redirect host allowlist is currently inert.** `CustomRedirectStrategy` will
-  refuse a redirect to a host outside `allowedHostsForRedirect`, but that set is never
-  populated from any configuration path, and the check is skipped when the set is empty.
-  Do not rely on it to contain redirects.
+* **There is no redirect host allowlist.** Redirects are followed up to `maxRedirects`
+  regardless of the target host -- a redirect can send the fetch to any host the server
+  can reach, including loopback, link-local, or RFC1918 addresses. Set `maxRedirects` to
+  `0` (the default) to follow no redirects at all.
 
 [#notes]
 == Notes

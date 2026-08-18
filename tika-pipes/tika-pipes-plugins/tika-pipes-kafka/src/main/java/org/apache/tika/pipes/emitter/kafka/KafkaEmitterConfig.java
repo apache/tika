@@ -16,32 +16,32 @@
  */
 package org.apache.tika.pipes.emitter.kafka;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
 
+/** Boxed: an unset value stays null so safePut omits the property and Kafka applies its own default. */
 public record KafkaEmitterConfig(
         String topic,
         String bootstrapServers,
-        @JsonProperty(defaultValue = "all") String acks,
-        @JsonProperty(defaultValue = "5000") int lingerMs,
-        @JsonProperty(defaultValue = "16384") int batchSize,
-        @JsonProperty(defaultValue = "33554432") int bufferMemory,
-        @JsonProperty(defaultValue = "none") String compressionType,
-        @JsonProperty(defaultValue = "540000") int connectionsMaxIdleMs,
-        @JsonProperty(defaultValue = "120000") int deliveryTimeoutMs,
-        @JsonProperty(defaultValue = "false") boolean enableIdempotence,
+        String acks,
+        Integer lingerMs,
+        Integer batchSize,
+        Integer bufferMemory,
+        String compressionType,
+        Integer connectionsMaxIdleMs,
+        Integer deliveryTimeoutMs,
+        Boolean enableIdempotence,
         String interceptorClasses,
-        @JsonProperty(defaultValue = "60000") int maxBlockMs,
-        @JsonProperty(defaultValue = "5") int maxInFlightRequestsPerConnection,
-        @JsonProperty(defaultValue = "1048576") int maxRequestSize,
-        @JsonProperty(defaultValue = "300000") int metadataMaxAgeMs,
-        @JsonProperty(defaultValue = "30000") int requestTimeoutMs,
-        @JsonProperty(defaultValue = "2147483647") int retries,
-        @JsonProperty(defaultValue = "100") int retryBackoffMs,
-        @JsonProperty(defaultValue = "60000") int transactionTimeoutMs,
+        Integer maxBlockMs,
+        Integer maxInFlightRequestsPerConnection,
+        Integer maxRequestSize,
+        Integer metadataMaxAgeMs,
+        Integer requestTimeoutMs,
+        Integer retries,
+        Integer retryBackoffMs,
+        Integer transactionTimeoutMs,
         String transactionalId,
         String clientId,
         String keySerializer,

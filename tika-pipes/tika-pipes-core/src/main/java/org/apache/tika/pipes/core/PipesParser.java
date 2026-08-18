@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
@@ -80,14 +80,17 @@ public class PipesParser implements Closeable {
     private final Path tikaConfigPath;
     private final List<PipesClient> clients = new ArrayList<>();
     private final List<ServerManager> serverManagers = new ArrayList<>();
-    private final ArrayBlockingQueue<PipesClient> clientQueue;
+    // LIFO: the most-recently-returned client is borrowed next, so light traffic
+    // concentrates on warm forks instead of round-robining every fork awake (and,
+    // at intervals over the idle shutdown, cold-starting on every request).
+    private final LinkedBlockingDeque<PipesClient> clientQueue;
     private final boolean isSharedMode;
 
     private PipesParser(PipesConfig pipesConfig, Path tikaConfigPath) {
         this.pipesConfig = pipesConfig;
         this.tikaConfigPath = tikaConfigPath;
         this.isSharedMode = pipesConfig.isUseSharedServer();
-        this.clientQueue = new ArrayBlockingQueue<>(pipesConfig.getNumClients());
+        this.clientQueue = new LinkedBlockingDeque<>(pipesConfig.getNumClients());
 
         if (isSharedMode) {
             // Shared mode: one ServerManager for all clients
@@ -98,7 +101,7 @@ public class PipesParser implements Closeable {
 
             for (int i = 0; i < pipesConfig.getNumClients(); i++) {
                 PipesClient client = new PipesClient(pipesConfig, sharedManager);
-                clientQueue.offer(client);
+                clientQueue.offerLast(client);
                 clients.add(client);
             }
         } else {
@@ -110,7 +113,7 @@ public class PipesParser implements Closeable {
                 serverManagers.add(serverManager);
 
                 PipesClient client = new PipesClient(pipesConfig, serverManager);
-                clientQueue.offer(client);
+                clientQueue.offerLast(client);
                 clients.add(client);
             }
         }
@@ -120,7 +123,7 @@ public class PipesParser implements Closeable {
             PipesException, IOException {
         PipesClient client = null;
         try {
-            client = clientQueue.poll(pipesConfig.getMaxWaitForClientMillis(),
+            client = clientQueue.pollFirst(pipesConfig.getMaxWaitForClientMillis(),
                     TimeUnit.MILLISECONDS);
             if (client == null) {
                 return PipesResults.CLIENT_UNAVAILABLE_WITHIN_MS;
@@ -128,7 +131,7 @@ public class PipesParser implements Closeable {
             return client.process(t);
         } finally {
             if (client != null) {
-                clientQueue.offer(client);
+                clientQueue.offerFirst(client);
             }
         }
     }
@@ -158,6 +161,11 @@ public class PipesParser implements Closeable {
         if (!exceptions.isEmpty()) {
             throw exceptions.get(0);
         }
+    }
+
+    // package-private for tests: how many forked servers are actually live
+    long startedServerCount() {
+        return serverManagers.stream().filter(ServerManager::isRunning).count();
     }
 
     /**

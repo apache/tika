@@ -1,5 +1,5 @@
 {
-  "_comment": "Extract inline images from PDF and OCR them with Tesseract.",
+  // Extract inline images from PDF and OCR them with Tesseract.
   "parsers": [
     { "tesseract-ocr-parser": {} },
     {

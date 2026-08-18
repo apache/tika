@@ -82,8 +82,9 @@ public class Tess4JConfig implements Serializable {
     private int poolSize = 2;
 
     /**
-     * Maximum time (in millis) to wait for a Tesseract instance from the pool.
-     * Default is 120000.
+     * Maximum time (in millis) for one OCR call: applied separately to the wait for
+     * a pooled Tesseract instance and to the OCR of one image. Always clipped to
+     * the task's remaining total budget. Default is 120000.
      */
     private long timeoutMillis = 120_000;
 
@@ -219,7 +220,7 @@ public class Tess4JConfig implements Serializable {
     }
 
     /**
-     * Set maximum time (millis) to wait for a pooled Tesseract instance.
+     * Set maximum time (millis) for one OCR call (pool wait and per-image OCR each).
      * Default is 120000.
      */
     public void setTimeoutMillis(long timeoutMillis) {

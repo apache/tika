@@ -22,7 +22,10 @@ a directory, parsing them, and writing JSON metadata to an output directory.
 
 == Quick Start with tika-app
 
-The simplest way to use Tika Pipes is through `tika-app`:
+The simplest way to use Tika Pipes is through `tika-app`. It ships as a zip -- unzip it and run
+from inside, since the published jar is a thin launcher that resolves `lib/` beside itself. See
+xref:using-tika/cli/index.adoc[Command Line] for installation and for the rules that decide when
+Pipes mode activates.
 
 [source,bash]
 ----
@@ -41,7 +44,7 @@ metadata and text content.
 java -jar tika-app.jar -i /data/input -o /data/output -n 4
 
 # Set memory limit per forked process
-java -jar tika-app.jar -i /data/input -o /data/output -n 4 -X 512m
+java -jar tika-app.jar -i /data/input -o /data/output -n 4 --Xmx=512m
 
 # Set parse timeout (milliseconds)
 java -jar tika-app.jar -i /data/input -o /data/output -T 120000
@@ -99,35 +102,32 @@ pipeline continues with the remaining documents.
 
 == Pipeline Configuration Options
 
-The `pipes` section controls the pipeline behavior:
+The `pipes` section controls the pipeline. The four settings worth knowing first:
 
 [cols="1,1,3"]
 |===
 |Field |Default |Description
 
 |`numClients`
-|`4`
-|Number of parallel forked parse processes
+|_CPU-derived_
+|Number of parallel forked parse processes. `max(1, min((cores - 2) / 2, 4))` — roughly half the host's cores, capped at 4.
 
 |`parseMode`
 |`RMETA`
-|Output mode: `RMETA` (full recursive metadata), `CONCATENATE`, `CONTENT_ONLY`, `UNPACK`
-
-|`socketTimeoutMs`
-|`60000`
-|Maximum time (ms) for a single parse operation
+|Output mode: `RMETA`, `CONCATENATE`, `CONTENT_ONLY`, `NO_PARSE`, `UNPACK`.
 
 |`maxFilesProcessedPerProcess`
 |`10000`
-|Restart forked processes after this many files (prevents memory leaks)
+|Restart forked processes after this many files, bounding slow memory leaks.
 
 |`onParseException`
 |`EMIT`
-|What to do on parse failure: `EMIT` (emit error metadata), `SKIP`
+|What to do on parse failure: `EMIT` (emit error metadata) or `SKIP`.
 |===
 
-See xref:pipes/parse-modes.adoc[Parse Modes] and xref:pipes/timeouts.adoc[Timeouts]
-for details.
+xref:pipes/configuration.adoc[Pipeline Configuration] has the full set — timeouts, JVM args,
+emit batching, IPC limits. See also xref:pipes/parse-modes.adoc[Parse Modes] and
+xref:pipes/timeouts.adoc[Timeouts].
 
 == Next Steps
 

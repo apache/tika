@@ -44,6 +44,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -127,21 +128,21 @@ public class PackageParser extends AbstractArchiveParser {
             return;
         }
 
-        String incomingContentTypeString = metadata.get(Metadata.CONTENT_TYPE);
+        String incomingContentTypeString = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (incomingContentTypeString == null) {
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
             return;
         }
 
         MediaType incomingMediaType = MediaType.parse(incomingContentTypeString);
         if (incomingMediaType == null) {
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
             return;
         }
 
         // Don't overwrite if incoming type is a TAR specialization (e.g., gtar)
         if (!incomingMediaType.equals(GTAR)) {
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
         }
     }
 
@@ -173,11 +174,11 @@ public class PackageParser extends AbstractArchiveParser {
                     name, null, entry.getLastModifiedDate(), entry.getSize(),
                     xhtml, context);
 
-            if (extractor.shouldParseEmbedded(entrydata)) {
+            if (extractor.shouldParseEmbedded(entrydata, context)) {
                 TemporaryResources tmp = new TemporaryResources();
                 try {
                     TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata);
-                    extractor.parseEmbedded(tis, xhtml, entrydata, new ParseContext(), true);
+                    extractor.parseEmbedded(tis, xhtml, entrydata, context, true);
                 } finally {
                     tmp.dispose();
                 }

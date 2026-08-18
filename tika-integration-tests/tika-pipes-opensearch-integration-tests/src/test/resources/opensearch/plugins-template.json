@@ -27,7 +27,8 @@
           "password": "PASSWORD",
           "authScheme": "http",
           "connectionTimeoutMillis": 60000,
-          "socketTimeoutMillis": 60000
+          "socketTimeoutMillis": 60000,
+          "verifySsl": false
         }
       }
     }
@@ -50,7 +51,8 @@
         "password": "PASSWORD",
         "authScheme": "http",
         "connectionTimeoutMillis": 60000,
-        "socketTimeoutMillis": 60000
+        "socketTimeoutMillis": 60000,
+        "verifySsl": false
       }
     }
   },

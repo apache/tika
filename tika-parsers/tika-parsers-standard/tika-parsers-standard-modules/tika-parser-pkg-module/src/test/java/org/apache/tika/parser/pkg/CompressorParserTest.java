@@ -18,12 +18,16 @@ package org.apache.tika.parser.pkg;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,10 +35,15 @@ import java.util.Set;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.zip.CompressorConstants;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -85,7 +94,7 @@ public class CompressorParserTest extends TikaTest {
         //pack200 through the spool-to-file workaround so it unpacks cleanly.
         //testPACK200.pack is borrowed from Apache Commons Compress (HelloWorld.pack).
         List<Metadata> metadataList = getRecursiveMetadata("testPACK200.pack");
-        assertEquals("application/x-java-pack200", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-java-pack200", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
         assertNull(metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION),
                 "pack200 should unpack without an exception");
         //the pack200 archive must have been unpacked into at least one embedded document
@@ -112,5 +121,42 @@ public class CompressorParserTest extends TikaTest {
                 CompressorParserTest.class.getResourceAsStream("/test-documents/quine.gz") != null);
         //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
         getRecursiveMetadata("quine.gz");
+    }
+
+    @Test
+    public void testCloseShieldReleasedWhenHandlerThrows() throws Exception {
+        //a stuck close shield turns the caller's tis.close() into a no-op and leaks
+        //its whole TemporaryResources tree
+        ContentHandler throwsOnStart = new DefaultHandler() {
+            @Override
+            public void startDocument() throws SAXException {
+                throw new SAXException("test");
+            }
+        };
+        CloseRecordingInputStream underlying = new CloseRecordingInputStream(
+                CompressorParserTest.class.getResourceAsStream("/test-documents/bob.gz"));
+        TikaInputStream tis = TikaInputStream.get(underlying);
+        try {
+            assertThrows(SAXException.class, () -> new CompressorParser()
+                    .parse(tis, throwsOnStart, new Metadata(), new ParseContext()));
+            assertFalse(tis.isCloseShield(), "close shield must be released");
+        } finally {
+            tis.close();
+        }
+        assertTrue(underlying.closed, "the caller's close() must actually close the stream");
+    }
+
+    private static class CloseRecordingInputStream extends FilterInputStream {
+        private boolean closed = false;
+
+        CloseRecordingInputStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        public void close() throws IOException {
+            closed = true;
+            super.close();
+        }
     }
 }

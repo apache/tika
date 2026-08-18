@@ -66,7 +66,7 @@ public class SharedServerManager implements ServerManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(SharedServerManager.class);
     private static final long WAIT_ON_DESTROY_MS = 10000;
-    private static final int STARTUP_TIMEOUT_MS = 60000;
+    private static final int STARTUP_TIMEOUT_MILLIS = 60000;
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
 
     private final PipesConfig pipesConfig;
@@ -204,7 +204,7 @@ public class SharedServerManager implements ServerManager {
     }
 
     @Override
-    public Socket connect(int socketTimeoutMs) throws IOException, ServerInitializationException {
+    public Socket connect(int socketTimeoutMillis) throws IOException, ServerInitializationException {
         int port;
         byte[] token;
         synchronized (lock) {
@@ -219,7 +219,7 @@ public class SharedServerManager implements ServerManager {
         Socket socket = new Socket();
         try {
             socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), SOCKET_CONNECT_TIMEOUT_MS);
-            socket.setSoTimeout(socketTimeoutMs);
+            socket.setSoTimeout(socketTimeoutMillis);
             socket.setTcpNoDelay(true);
             // Send auth token before any protocol messages
             socket.getOutputStream().write(token);
@@ -274,7 +274,7 @@ public class SharedServerManager implements ServerManager {
                 "  in-flight parses as collateral damage.\n");
         LOG.info("Starting shared server with {} connections", numConnections);
 
-        tmpDir = Files.createTempDirectory("pipes-shared-server-");
+        tmpDir = pipesConfig.createTempDirectory("pipes-shared-server-");
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
         // Pass port and auth token via environment variables so they are not
         // visible in /proc/<pid>/cmdline. The token is only readable via
@@ -345,12 +345,12 @@ public class SharedServerManager implements ServerManager {
 
                 // Check timeout
                 long elapsed = System.currentTimeMillis() - startTime;
-                if (elapsed > STARTUP_TIMEOUT_MS) {
+                if (elapsed > STARTUP_TIMEOUT_MILLIS) {
                     LOG.error("Timed out waiting for shared server to start after {}ms", elapsed);
                     ServerProcessIO.surfaceCrashDiagnostics(LOG, "shared-server", tmpDir);
                     destroyProcessUnsafe();
                     throw new ServerInitializationException(
-                            "Shared server did not start within " + STARTUP_TIMEOUT_MS + "ms");
+                            "Shared server did not start within " + STARTUP_TIMEOUT_MILLIS + "ms");
                 }
 
                 // Try to read a line (with short timeout via available check)

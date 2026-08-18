@@ -35,12 +35,27 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.server.core.resource.MetadataResource;
 import org.apache.tika.server.core.resource.TikaResource;
-import org.apache.tika.server.core.resource.TikaServerResource;
+import org.apache.tika.server.core.resource.TikaResourceAware;
 
-public class XMPMetadataResource extends MetadataResource implements TikaServerResource {
+/**
+ * XMP is content negotiation on {@code /meta}, not a path of its own: this class inherits
+ * {@code @Path("/meta")} from {@link MetadataResource} and differs only in producing
+ * {@code application/rdf+xml}. CXF picks between the two by the request's Accept header.
+ */
+public class XMPMetadataResource extends MetadataResource implements TikaResourceAware {
 
     public XMPMetadataResource(TikaResource tikaResource) {
         super(tikaResource);
+    }
+
+    /** Required by the service loader, which cannot supply the TikaResource. */
+    public XMPMetadataResource() {
+        super();
+    }
+
+    @Override
+    public void setTikaResource(TikaResource tikaResource) {
+        super.setTikaResource(tikaResource);
     }
 
     @PUT
@@ -56,11 +71,10 @@ public class XMPMetadataResource extends MetadataResource implements TikaServerR
     @Produces({"application/rdf+xml"})
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
-        ParseContext context = new ParseContext();
+        ParseContext context = getTikaResource().createRequestContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             return Response
-                    .ok(parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(), context))
+                    .ok(parseMetadata(tis, getTikaResource().newRequestMetadata(), att.getHeaders(), context))
                     .build();
         }
     }
@@ -68,10 +82,9 @@ public class XMPMetadataResource extends MetadataResource implements TikaServerR
     @PUT
     @Produces({"application/rdf+xml"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext context = new ParseContext();
-        Metadata metadata = Metadata.newInstance(context);
+        ParseContext context = getTikaResource().createRequestContext();
+        Metadata metadata = getTikaResource().newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             return Response
                     .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), context))
                     .build();

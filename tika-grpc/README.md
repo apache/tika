@@ -37,6 +37,14 @@ to avoid uploading hundreds of megabytes of native libraries and plugin bundles 
   ```
   This produces `tika-grpc/target/tika-grpc-<version>.zip` but does **not** deploy it to Nexus.
 
+## Concurrency
+
+`fetchAndParse` runs on a pool of forked worker JVMs sized by `pipes.numClients`
+(when unset, derived from host cores, at most 4). A call that cannot get a
+worker within `pipes.maxWaitForClientMillis` (default 60s) returns the in-band
+status `CLIENT_UNAVAILABLE_WITHIN_MS`: the server is at capacity, not failing.
+With `pipes.useSharedServer: true` the workers share one JVM instead.
+
 ## Quick Start - Development Mode
 
 The fastest way to run tika-grpc in development mode with plugin hot-reloading:
@@ -451,6 +459,14 @@ spec:
 ```
 
 #### Deployment with Apache Ignite ConfigStore
+
+> **Not available in the published `apache/tika-grpc` image.** tika-grpc no longer ships the
+> Ignite jars — they pulled in ~196 transitive artifacts for a store that, in practice, only ever
+> talked to an embedded node in the same JVM (`IgniteConfigStore.init()` hardcodes
+> `127.0.0.1:10800`). Setting `configStoreType: ignite` without those jars fails at startup with
+> an explanatory error. To use it, build an image that adds `tika-pipes-config-store-ignite` and
+> its Ignite dependencies to the classpath (the `dev` Maven profile wires them up for local runs).
+> `memory` and `file` are the config stores available out of the box.
 
 For distributed deployments with shared configuration using Apache Ignite:
 

@@ -39,6 +39,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.mime.MediaType;
@@ -79,7 +80,7 @@ public class EMFParser implements Parser {
                                        ContentHandler handler, ParseContext context) throws TikaException, SAXException {
         try (TikaInputStream tis = TikaInputStream.get(data)) {
             Metadata embeddedMetadata = Metadata.newInstance(context);
-            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
                 embeddedDocumentExtractor
                         .parseEmbedded(tis, new EmbeddedContentHandler(handler), embeddedMetadata, context, true);
             }
@@ -253,8 +254,8 @@ public class EMFParser implements Parser {
                            ParseContext context)
             throws IOException, SAXException, TikaException {
         Metadata embeddedMetadata = Metadata.newInstance(context);
-        embeddedMetadata.set(Metadata.CONTENT_TYPE, WMF_MEDIA_TYPE.toString());
-        if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+        embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, WMF_MEDIA_TYPE.toString());
+        if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                 embeddedDocumentExtractor
                         .parseEmbedded(tis, new EmbeddedContentHandler(contentHandler),

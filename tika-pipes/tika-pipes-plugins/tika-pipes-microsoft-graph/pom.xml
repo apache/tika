@@ -33,9 +33,6 @@
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.25.1</msal4j.version>
     <microsoft-kiota.version>1.9.3</microsoft-kiota.version>
-    <!-- Never include the core artifacts in your plugin lib directory. If you do, it will cause the classloading
-    to get messed up when finding your plugins. -->
-    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
   </properties>
 
   <dependencyManagement>
@@ -54,6 +51,14 @@
               <groupId>com.microsoft.kiota</groupId>
               <artifactId>microsoft-kiota-authentication-azure</artifactId>
               <version>${microsoft-kiota.version}</version>
+              <exclusions>
+                  <!-- javax.xml.stream is in the JDK's java.xml module; this jar only shadows it,
+                       and it is GPL/CDDL rather than ASF-compatible on its own. -->
+                  <exclusion>
+                      <groupId>javax.xml.stream</groupId>
+                      <artifactId>stax-api</artifactId>
+                  </exclusion>
+              </exclusions>
           </dependency>
           <dependency>
               <groupId>com.microsoft.kiota</groupId>
@@ -157,8 +162,6 @@
             <configuration>
               <outputDirectory>target/lib</outputDirectory>
               <includeScope>runtime</includeScope>
-              <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
-              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
             </configuration>
           </execution>
         </executions>

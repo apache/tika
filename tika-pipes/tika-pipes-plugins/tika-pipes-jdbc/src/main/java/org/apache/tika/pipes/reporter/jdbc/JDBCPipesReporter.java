@@ -95,6 +95,8 @@ public class JDBCPipesReporter extends PipesReporterBase {
         }
         if (config.reportSql() == null || config.reportSql().isBlank()) {
             reportSql = "insert into " + config.tableName() + " (id, status, timestamp) values (?,?,?)";
+        } else {
+            reportSql = config.reportSql();
         }
         ReportWorker reportWorker = new ReportWorker(config, queue);
         reportWorker.init();

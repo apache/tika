@@ -39,9 +39,11 @@ import org.xml.sax.SAXException;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.zip.DefaultZipContainerDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -60,7 +62,7 @@ abstract class AbstractPOIFSExtractor {
     protected final Metadata parentMetadata;//metadata of the parent/container document
     protected final OfficeParserConfig officeParserConfig;
     protected final ParseContext context;
-    private final EmbeddedDocumentUtil embeddedDocumentUtil;
+    private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     private PasswordProvider passwordProvider;
 
     protected AbstractPOIFSExtractor(ParseContext context) {
@@ -68,7 +70,7 @@ abstract class AbstractPOIFSExtractor {
     }
 
     protected AbstractPOIFSExtractor(ParseContext context, Metadata parentMetadata) {
-        embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
+        embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         this.passwordProvider = context.get(PasswordProvider.class);
         this.officeParserConfig = context.get(OfficeParserConfig.class, new OfficeParserConfig());
@@ -77,7 +79,7 @@ abstract class AbstractPOIFSExtractor {
     }
 
     protected Detector getDetector() {
-        return embeddedDocumentUtil.getDetector();
+        return EmbeddedDocumentUtil.getDetector(context);
     }
 
     /**
@@ -126,11 +128,11 @@ abstract class AbstractPOIFSExtractor {
                         storageClassID.toString());
             }
             if (mediaType != null) {
-                embeddedMetadata.set(Metadata.CONTENT_TYPE, mediaType);
+                embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, mediaType);
             }
 
-            if (embeddedDocumentUtil.shouldParseEmbedded(embeddedMetadata)) {
-                embeddedDocumentUtil.parseEmbedded(resource, xhtml, embeddedMetadata, outputHtml);
+            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
+                embeddedDocumentExtractor.parseEmbedded(resource, xhtml, embeddedMetadata, context, outputHtml);
             }
         }
     }
@@ -167,7 +169,7 @@ abstract class AbstractPOIFSExtractor {
 
         if (ooxml != null) {
             // It's OOXML (has a ZipFile):
-            metadata.set(Metadata.CONTENT_LENGTH,
+            metadata.set(HttpHeaders.CONTENT_LENGTH,
                     Integer.toString(((DocumentEntry)ooxml).getSize()));
             try (TikaInputStream tis = TikaInputStream
                     .get(new DocumentInputStream((DocumentEntry) ooxml))) {
@@ -207,7 +209,7 @@ abstract class AbstractPOIFSExtractor {
             //for Outlook try to use the title first so that we don't wind up with __substg1.0_37...
             //if that doesn't exist, backoff to rName
             //add the suffix
-            metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.getType().toString());
             String name = tryToGetMsgTitle(dir, rName);
             if (! StringUtils.isBlank(name)) {
                 if (StringUtils.isBlank(type.getExtension())) {
@@ -220,7 +222,7 @@ abstract class AbstractPOIFSExtractor {
             }
             parseEmbedded(dir, xhtml, metadata, outputHtml);
         } else {
-            metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.getType().toString());
             if (! StringUtils.isBlank(rName)) {
                 if (StringUtils.isBlank(type.getExtension())) {
                     metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, rName);
@@ -313,17 +315,17 @@ abstract class AbstractPOIFSExtractor {
             String extension = type.getExtension();
             try {
                 MimeType mimeType =
-                        embeddedDocumentUtil.getMimeTypes().forName(mediaType.toString());
+                        EmbeddedDocumentUtil.getMimeTypes(context).forName(mediaType.toString());
                 extension = mimeType.getExtension();
             } catch (MimeTypeException mte) {
                 // No details on this type are known
             }
 
             // Record what we can do about it
-            metadata.set(Metadata.CONTENT_TYPE, mediaType.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, mediaType.toString());
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, appendExtensionIfMissing(rName, extension));
             metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
-            metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(length));
             parseEmbedded(parentDir, tis, xhtml, metadata, outputHtml);
         } finally {
             inp.close();
@@ -370,7 +372,7 @@ abstract class AbstractPOIFSExtractor {
                 metadata.add(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, ole.getFileName());
             }
             data = ole.getDataBuffer();
-            metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(data.length));
         } catch (Ole10NativeException ex) {
             // Not a valid OLE10Native record, skip it
         } catch (SecurityException e) {
@@ -390,20 +392,20 @@ abstract class AbstractPOIFSExtractor {
     private void parseEmbedded(DirectoryEntry parentDir, TikaInputStream tis, XHTMLContentHandler xhtml,
                                Metadata metadata, boolean outputHtml) throws IOException,
             SAXException, TikaException {
-        if (!embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(metadata, context)) {
             return;
         }
         if (parentDir.getStorageClsid() != null) {
             metadata.set(Office.EMBEDDED_STORAGE_CLASS_ID,
                     parentDir.getStorageClsid().toString());
         }
-        embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, outputHtml);
+        embeddedDocumentExtractor.parseEmbedded(tis, xhtml, metadata, context, outputHtml);
     }
 
     private void parseEmbedded(DirectoryEntry dir, XHTMLContentHandler xhtml, Metadata metadata,
                                boolean outputHtml)
             throws IOException, SAXException, TikaException {
-        if (!embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(metadata, context)) {
             return;
         }
         long sz = estimateSize(dir);
@@ -412,7 +414,7 @@ abstract class AbstractPOIFSExtractor {
                 metadata.set(Office.EMBEDDED_STORAGE_CLASS_ID,
                         dir.getStorageClsid().toString());
             }
-            embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, outputHtml);
+            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, metadata, context, outputHtml);
         }
     }
 

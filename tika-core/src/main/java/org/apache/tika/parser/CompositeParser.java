@@ -30,11 +30,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.ParseTimeout;
-import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -250,7 +250,7 @@ public class CompositeParser implements Parser {
         //check for parser override first
         String contentTypeString = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
         if (contentTypeString == null) {
-            contentTypeString = metadata.get(Metadata.CONTENT_TYPE);
+            contentTypeString = metadata.get(HttpHeaders.CONTENT_TYPE);
         }
         MediaType type = MediaType.parse(contentTypeString);
         if (type != null) {
@@ -286,25 +286,16 @@ public class CompositeParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
         ParseRecord parserRecord = context.get(ParseRecord.class);
-        // A non-null ParseRecord already back at depth 0 proves a previous top-level parse
-        // on this same (legitimately reused, e.g. across a batch of files) ParseContext has
-        // already finished -- never true for a nested embedded-document call mid-parse,
-        // since depth is only 0 between top-level parses. Only in that proven case do we
-        // reset -- NOT merely because ParseRecord is absent: some callers (e.g. PipesServer)
-        // pre-install ParseTimeout via ParseTimeout.getOrCreate before ParseRecord exists,
-        // for their own external watchdog to hold a reference to; reinstalling ParseTimeout
-        // here on first use would orphan that reference, leaving the watchdog checking a
-        // stale copy no in-progress checkpoint ever reaches.
-        boolean priorTopLevelParseFinished = parserRecord != null && parserRecord.getDepth() == 0;
+        // Never replace pre-installed state: the pipes watchdog holds a reference to the
+        // ParseTimeout; a replacement would orphan it and checkpoints would never reach it.
         if (parserRecord == null) {
             parserRecord = ParseRecord.newInstance(context);
             context.set(ParseRecord.class, parserRecord);
-        } else if (priorTopLevelParseFinished) {
-            parserRecord = ParseRecord.newInstance(context);
-            context.set(ParseRecord.class, parserRecord);
-            context.set(ParseTimeout.class, ParseTimeout.start(TimeoutLimits.get(context)));
         }
         ParseTimeout.getOrCreate(context);
+        // The one boundary every parse (any mode/extractor) crosses; without this, many
+        // fast in-JVM embedded children read as a stall to the pipes watchdog.
+        ParseTimeout.checkpoint(context);
         try {
             TaggedContentHandler taggedHandler =
                     handler != null ? new TaggedContentHandler(handler) : null;
@@ -327,14 +318,9 @@ public class CompositeParser implements Parser {
                 }
                 throw new TikaException("TIKA-237: Illegal SAXException from " + parser, e);
             } catch (EmbeddedLimitReachedException e) {
-                // throwOnMaxDepth/throwOnMaxCount/throwOnDeadline mean the caller wants
-                // this to surface as a hard failure all the way to the top-level caller,
-                // not be recorded and swallowed by whichever embedded-document extractor
-                // is supervising a shallower level of nesting -- which is exactly what
-                // wrapping it in a checked TikaException here would cause: it would then
-                // match a plain catch(TikaException), the same handling as any ordinary
-                // per-document failure. Rethrow unwrapped so it keeps propagating as a
-                // RuntimeException past every intermediate catch(TikaException).
+                // throwOnMaxDepth/throwOnMaxCount/throwOnDeadline mean this must surface to
+                // the top-level caller. Rethrow unwrapped: wrapped in TikaException it would
+                // be swallowed by an intermediate catch(TikaException) like any per-document failure.
                 throw e;
             } catch (RuntimeException e) {
                 throw new TikaException("Unexpected RuntimeException from " + parser, e);

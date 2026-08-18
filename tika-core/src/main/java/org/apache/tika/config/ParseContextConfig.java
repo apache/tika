@@ -69,14 +69,10 @@ public class ParseContextConfig {
     /**
      * Retrieves runtime configuration from ParseContext.
      * <p>
-     * This method first checks if the config is already resolved in ParseContext
-     * (via {@code context.get(configClass)}). If found, it returns immediately without
-     * re-deserializing. This is efficient for embedded documents where the config
-     * was already deserialized for the parent document.
-     * <p>
-     * If not found, it checks jsonConfigs for the config key and deserializes
-     * the JSON. The deserialized config is cached in resolvedConfigs and also
-     * set in the main ParseContext for future lookups.
+     * Resolution is per config key and config class: the resolved-config cache, then
+     * JSON config (deserialized and cached). A class-keyed entry set programmatically via
+     * {@code context.set(configClass, config)} is honored only when no JSON config
+     * exists for the key, since several components may share one config class.
      * <p>
      * This method performs defensive checking: if the ParseContext has JSON configuration
      * for the requested key but the ConfigDeserializer is not available on the classpath,
@@ -98,16 +94,19 @@ public class ParseContextConfig {
             return defaultConfig;
         }
 
-        // First check if config is already resolved in ParseContext
-        // (may have been set by a previous call or by user code)
-        T existingConfig = context.get(configClass);
-        if (existingConfig != null) {
-            return existingConfig;
+        // Per-key resolution first: a class-keyed entry may belong to a different
+        // component that happens to share this config class. The cache is also keyed
+        // by class: one key may be resolved into a validation-only subclass and then
+        // into the real config class, and each must get its own instance.
+        T resolved = context.getResolvedConfig(configKey, configClass);
+        if (resolved != null) {
+            return resolved;
         }
 
-        // Check for JSON config
         if (!context.hasJsonConfig(configKey)) {
-            return defaultConfig;
+            // no JSON for this key: honor a programmatic, class-keyed override
+            T existingConfig = context.get(configClass);
+            return existingConfig != null ? existingConfig : defaultConfig;
         }
 
         // JSON config exists for this key - ConfigDeserializer MUST be available

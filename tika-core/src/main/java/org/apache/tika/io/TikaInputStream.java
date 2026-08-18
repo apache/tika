@@ -35,6 +35,7 @@ import java.sql.SQLException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.TaggedInputStream;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
@@ -46,7 +47,8 @@ import org.apache.tika.utils.StringUtils;
  * <ul>
  *   <li>{@link ByteArraySource} for byte[] inputs - no caching needed</li>
  *   <li>{@link FileSource} for Path/File inputs - direct file access</li>
- *   <li>{@link CachingSource} for InputStream inputs - caches bytes as read</li>
+ *   <li>{@link CachingSource} for InputStream inputs - passthrough by default;
+ *       caches bytes only after {@link #enableRewind()}</li>
  * </ul>
  *
  * @since Apache Tika 0.8
@@ -56,7 +58,7 @@ public class TikaInputStream extends TaggedInputStream {
     private static final int MAX_CONSECUTIVE_EOFS = 1000;
     private static final int BLOB_SIZE_THRESHOLD = 1024 * 1024;
 
-    protected TemporaryResources tmp;
+    private final TemporaryResources tmp;
 
     private long position = 0;
     private long mark = -1;
@@ -67,14 +69,6 @@ public class TikaInputStream extends TaggedInputStream {
     private long overrideLength = -1;  // For getFromContainer() to set explicit length
 
     // ========== Constructors ==========
-
-    /**
-     * Protected constructor for subclasses.
-     */
-    protected TikaInputStream(InputStream stream, long length) {
-        super(stream);
-        this.tmp = null;
-    }
 
     /**
      * Strategy-based constructor.
@@ -103,7 +97,7 @@ public class TikaInputStream extends TaggedInputStream {
             return (TikaInputStream) stream;
         }
         String ext = getExtension(metadata);
-        TikaInputSource inputSource = new CachingSource(stream, tmp, -1, metadata);
+        TikaInputSource inputSource = new CachingSource(stream, tmp, -1, metadata, ext);
         return new TikaInputStream(inputSource, tmp, ext);
     }
 
@@ -115,12 +109,12 @@ public class TikaInputStream extends TaggedInputStream {
         return get(stream, new TemporaryResources(), metadata);
     }
 
-    public static TikaInputStream get(byte[] data) throws IOException {
+    public static TikaInputStream get(byte[] data) {
         return get(data, new Metadata());
     }
 
-    public static TikaInputStream get(byte[] data, Metadata metadata) throws IOException {
-        metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(data.length));
+    public static TikaInputStream get(byte[] data, Metadata metadata) {
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(data.length));
         String ext = getExtension(metadata);
         TemporaryResources tmp = new TemporaryResources();
         TikaInputSource inputSource = new ByteArraySource(data, tmp);
@@ -135,7 +129,7 @@ public class TikaInputStream extends TaggedInputStream {
         if (StringUtils.isBlank(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
         }
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(Files.size(path)));
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(Files.size(path)));
         String ext = FilenameUtils.getSuffixFromPath(path.getFileName().toString());
         TemporaryResources tmp = new TemporaryResources();
         TikaInputSource inputSource = new FileSource(path);
@@ -148,7 +142,7 @@ public class TikaInputStream extends TaggedInputStream {
         if (StringUtils.isBlank(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, path.getFileName().toString());
         }
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
         String ext = FilenameUtils.getSuffixFromPath(path.getFileName().toString());
         TikaInputSource inputSource = new FileSource(path);
         return new TikaInputStream(inputSource, tmp, ext);
@@ -170,7 +164,7 @@ public class TikaInputStream extends TaggedInputStream {
         long length = -1;
         try {
             length = blob.length();
-            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
         } catch (SQLException ignore) {
         }
 
@@ -180,7 +174,7 @@ public class TikaInputStream extends TaggedInputStream {
             String ext = getExtension(metadata);
             TemporaryResources tmp = new TemporaryResources();
             TikaInputSource inputSource = new CachingSource(
-                    new BufferedInputStream(blob.getBinaryStream()), tmp, length, metadata);
+                    new BufferedInputStream(blob.getBinaryStream()), tmp, length, metadata, ext);
             return new TikaInputStream(inputSource, tmp, ext);
         }
     }
@@ -225,32 +219,31 @@ public class TikaInputStream extends TaggedInputStream {
 
         String type = connection.getContentType();
         if (type != null) {
-            metadata.set(Metadata.CONTENT_TYPE, type);
+            metadata.set(HttpHeaders.CONTENT_TYPE, type);
         }
 
         String encoding = connection.getContentEncoding();
         if (encoding != null) {
-            metadata.set(Metadata.CONTENT_ENCODING, encoding);
+            metadata.set(HttpHeaders.CONTENT_ENCODING, encoding);
         }
 
         int length = connection.getContentLength();
         if (length >= 0) {
-            metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(length));
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(length));
         }
 
         String ext = getExtension(metadata);
         TemporaryResources tmp = new TemporaryResources();
         TikaInputSource inputSource = new CachingSource(
-                new BufferedInputStream(connection.getInputStream()), tmp, length, metadata);
+                new BufferedInputStream(connection.getInputStream()), tmp, length, metadata, ext);
         return new TikaInputStream(inputSource, tmp, ext);
     }
 
-    public static TikaInputStream getFromContainer(Object openContainer, long length, Metadata metadata)
-            throws IOException {
+    public static TikaInputStream getFromContainer(Object openContainer, long length, Metadata metadata) {
         TikaInputStream tis = TikaInputStream.get(new byte[0], metadata);
         tis.setOpenContainer(openContainer);
         tis.setLength(length);
-        metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
         return tis;
     }
 
@@ -339,18 +332,20 @@ public class TikaInputStream extends TaggedInputStream {
     public int peek(byte[] buffer) throws IOException {
         int n = 0;
         mark(buffer.length);
-
-        int m = read(buffer);
-        while (m != -1) {
-            n += m;
-            if (n < buffer.length) {
-                m = read(buffer, n, buffer.length - n);
-            } else {
-                m = -1;
+        // reset in finally: a throw mid-read must not leave the stream advanced
+        try {
+            int m = read(buffer);
+            while (m != -1) {
+                n += m;
+                if (n < buffer.length) {
+                    m = read(buffer, n, buffer.length - n);
+                } else {
+                    m = -1;
+                }
             }
+        } finally {
+            reset();
         }
-
-        reset();
         return n;
     }
 
@@ -400,6 +395,10 @@ public class TikaInputStream extends TaggedInputStream {
         return source != null && source.getLength() != -1;
     }
 
+    /**
+     * The stream length. For a stream-backed instance with no declared length this
+     * spools the entire remaining stream to a temporary file to measure it.
+     */
     public long getLength() throws IOException {
         if (overrideLength >= 0) {
             return overrideLength;
@@ -421,10 +420,6 @@ public class TikaInputStream extends TaggedInputStream {
         return position;
     }
 
-    protected void setPosition(long position) {
-        this.position = position;
-    }
-
     private void setLength(long length) {
         this.overrideLength = length;
     }
@@ -434,7 +429,10 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     public void removeCloseShield() {
-        this.closeShieldDepth--;
+        // floored: an unmatched remove must not cancel a later caller's shield
+        if (closeShieldDepth > 0) {
+            closeShieldDepth--;
+        }
     }
 
     public boolean isCloseShield() {
@@ -469,16 +467,17 @@ public class TikaInputStream extends TaggedInputStream {
      * {@link #rewind()}, {@link #mark(int)}/{@link #reset()}, and random access.
      * <p>
      * Must be called when position is 0 (before any reading), otherwise
-     * throws IllegalStateException.
+     * throws IOException.
      * <p>
      * Use this method when you know you'll need to rewind the stream later
      * (e.g., for detection followed by parsing, or digest calculation).
      * For streaming-only operations (e.g., HTML parsing), skip this call
      * to avoid unnecessary caching overhead.
      *
-     * @throws IllegalStateException if position is not 0
+     * @throws IOException if bytes have already been read from the stream
+     *         (position is not 0); rewind support cannot be enabled retroactively
      */
-    public void enableRewind() {
+    public void enableRewind() throws IOException {
         TikaInputSource source = inputSource();
         if (source != null) {
             source.enableRewind();

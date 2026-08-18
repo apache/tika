@@ -1,0 +1,42 @@
+# Apache Tika
+
+> Apache Tika detects and extracts metadata and text from over a thousand
+> file types (PDF, Office, images with OCR, archives, and more). It exposes a
+> Java API, a command-line app, an HTTP server, and a pipes framework for
+> large-scale, fault-tolerant batch extraction. ASF project, Apache-2.0,
+> Java 17+.
+
+Build with `./mvnw`. Contributor/agent ground rules are in `AGENTS.md` and
+`.skills/`. Issues are tracked in JIRA (project TIKA).
+
+## Documentation
+
+- [Overview](docs/modules/ROOT/pages/index.adoc): what Tika is and which
+  entry point (app, server, Java, pipes) fits a use case
+- [Java API](docs/modules/ROOT/pages/using-tika/java-api/index.adoc): parse
+  programmatically from Java
+- [CLI](docs/modules/ROOT/pages/using-tika/cli/index.adoc): tika-app command
+  line, single files and batch
+- [Server](docs/modules/ROOT/pages/using-tika/server/index.adoc): tika-server
+  HTTP endpoints
+- [Pipes](docs/modules/ROOT/pages/pipes/index.adoc): large-scale batch
+  extraction with process isolation
+- [Configuration](docs/modules/ROOT/pages/configuration/index.adoc): JSON
+  config for parsers, detectors, metadata filters
+- [Timeouts](docs/modules/ROOT/pages/pipes/timeouts.adoc): the unified
+  timeout model
+- [Migrating to 4.x](docs/modules/ROOT/pages/migration-to-4x/migrating-to-4x.adoc):
+  upgrading from Tika 3.x
+- [Migrating tika-server to 4.x](docs/modules/ROOT/pages/migration-to-4x/migrating-tika-server-4x.adoc):
+  endpoint, wire-format, and config changes for server upgraders
+- [Security model](docs/modules/ROOT/pages/security.adoc): parsing untrusted
+  files safely, and why in-process parsing cannot be made DoS-proof
+- [FAQ](docs/modules/ROOT/pages/faq.adoc): the questions upgraders ask most
+
+## Optional
+
+- [Website](https://tika.apache.org/): releases, downloads, published docs
+- [Issue tracker](https://issues.apache.org/jira/projects/TIKA)
+- [Source](https://github.com/apache/tika)
+- [Developer docs](docs/modules/ROOT/pages/developers/index.adoc): building,
+  module layout, contributing

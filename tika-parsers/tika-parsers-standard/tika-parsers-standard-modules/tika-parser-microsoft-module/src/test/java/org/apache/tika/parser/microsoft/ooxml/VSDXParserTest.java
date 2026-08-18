@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -33,7 +34,7 @@ public class VSDXParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("testVISIO.vsdx");
         String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         assertEquals("application/vnd.ms-visio.drawing",
-                metadataList.get(0).get(Metadata.CONTENT_TYPE));
+                metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
         assertContains("test", content);
         assertContains("This is a test.", content);
         assertContains("Nothing fancy.", content);

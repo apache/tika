@@ -26,6 +26,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
@@ -68,7 +69,7 @@ public class OutlookPSTParserTest extends TikaTest {
         Metadata m1 = metadataList.get(1);
         assertEquals("application/x-tika-pst-mail-item", m1.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE));
         assertEquals("application/vnd.ms-outlook", m1.get(TikaCoreProperties.CONTENT_TYPE_MAGIC_DETECTED));
-        assertEquals("application/x-tika-pst-mail-item", m1.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-tika-pst-mail-item", m1.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Jörn Kottmann", m1.get(Message.MESSAGE_FROM_NAME));
         assertEquals("Jörn Kottmann", m1.get(TikaCoreProperties.CREATOR));
         assertEquals("Re: Feature Generators", m1.get(TikaCoreProperties.TITLE));

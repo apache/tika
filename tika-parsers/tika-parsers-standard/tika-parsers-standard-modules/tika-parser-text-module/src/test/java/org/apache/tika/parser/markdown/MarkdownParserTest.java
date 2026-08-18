@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -75,8 +76,8 @@ public class MarkdownParserTest extends TikaTest {
         assertContains("title=\"Tika\"", xhtml);
 
         //detected charset lands in the metadata
-        assertTrue(r.metadata.get(Metadata.CONTENT_TYPE).startsWith("text/markdown; charset="),
-                r.metadata.get(Metadata.CONTENT_TYPE));
+        assertTrue(r.metadata.get(HttpHeaders.CONTENT_TYPE).startsWith("text/markdown; charset="),
+                r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains("Café naïve résumé", xhtml);
     }
 
@@ -109,8 +110,8 @@ public class MarkdownParserTest extends TikaTest {
 
         //container + image destination + data uri scraped from the raw html block
         assertEquals(3, metadataList.size());
-        assertEquals("image/gif", metadataList.get(1).get(Metadata.CONTENT_TYPE));
-        assertEquals("image/gif", metadataList.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals("image/gif", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("image/gif", metadataList.get(2).get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }

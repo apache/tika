@@ -31,6 +31,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -85,7 +86,7 @@ public class WebPXmpTest {
         Files.write(file, webpWithXmp());
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/webp");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/webp");
         try (TikaInputStream tis = TikaInputStream.get(file)) {
             new WebPParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
@@ -112,7 +113,7 @@ public class WebPXmpTest {
         Files.write(file, riff.toByteArray());
 
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "image/webp");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/webp");
         try (TikaInputStream tis = TikaInputStream.get(file)) {
             new WebPParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }

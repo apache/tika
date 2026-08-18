@@ -53,22 +53,34 @@ import org.apache.tika.server.core.TikaServerParseException;
 public class MetadataResource {
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
 
-    private final TikaResource tikaResource;
+    private TikaResource tikaResource;
 
     public MetadataResource(TikaResource tikaResource) {
         this.tikaResource = tikaResource;
     }
 
+    /** For subclasses the service loader constructs; see {@link TikaResourceAware}. */
+    protected MetadataResource() {
+    }
+
+    /** For subclasses in other modules; they need it for request contexts and metadata. */
+    protected TikaResource getTikaResource() {
+        return tikaResource;
+    }
+
+    protected void setTikaResource(TikaResource tikaResource) {
+        this.tikaResource = tikaResource;
+    }
+
     @POST
     @Consumes("multipart/form-data")
-    @Produces({"text/csv", "application/json"})
+    @Produces({"application/json", "text/csv;charset=UTF-8"})
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
-        ParseContext context = tikaResource.createParseContext();
+        ParseContext context = tikaResource.createRequestContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             return Response
-                    .ok(parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(), context))
+                    .ok(parseMetadata(tis, tikaResource.newRequestMetadata(), att.getHeaders(), context))
                     .build();
         }
     }
@@ -79,32 +91,29 @@ public class MetadataResource {
      */
     @POST
     @Consumes("multipart/form-data")
-    @Produces({"text/csv", "application/json"})
+    @Produces({"application/json", "text/csv;charset=UTF-8"})
     @Path("config")
     public Response getMetadataWithConfig(
             List<Attachment> attachments,
             @Context HttpHeaders httpHeaders) throws Exception {
 
         // Load default context from config, then overlay with request config
-        ParseContext context = tikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
+        ParseContext context = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, context)) {
             TikaResource.logRequest(LOG, "/meta/config", metadata);
-            // No request headers: on a multipart request those describe the envelope
-            // ("multipart/form-data; boundary=..." and its total length), and would
-            // overwrite the Content-Type/Content-Length setupMultipartConfig derived
-            // from the file part.
+            // Null headers: multipart request headers describe the envelope and would
+            // overwrite the Content-Type/Content-Length derived from the file part.
             return Response.ok(parseMetadata(tis, metadata, null, context)).build();
         }
     }
 
     @PUT
-    @Produces({"text/csv", "application/json"})
+    @Produces({"application/json", "text/csv;charset=UTF-8"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext context = tikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
+        ParseContext context = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
             return Response
                     .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), context))
                     .build();
@@ -134,13 +143,12 @@ public class MetadataResource {
      */
     @PUT
     @Path("{field}")
-    @Produces({"text/csv", "application/json", "text/plain"})
+    @Produces({"application/json", "text/csv;charset=UTF-8", "text/plain;charset=UTF-8"})
     public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info, @PathParam("field") String field) throws Exception {
-        ParseContext context = tikaResource.createParseContext();
+        ParseContext context = tikaResource.createRequestContext();
         Metadata metadata;
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            tis.getPath(); // Spool to temp file for pipes-based parsing
-            metadata = parseMetadata(tis, Metadata.newInstance(context), httpHeaders.getRequestHeaders(), context);
+            metadata = parseMetadata(tis, tikaResource.newRequestMetadata(), httpHeaders.getRequestHeaders(), context);
         }
 
         String containerException = metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
@@ -188,7 +196,7 @@ public class MetadataResource {
         TikaResource.logRequest(LOG, "/meta", metadata);
         List<Metadata> metadataList = tikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);
         if (metadataList.isEmpty()) {
-            return Metadata.newInstance(context);
+            return tikaResource.newRequestMetadata();
         }
         return metadataList.get(0);
     }

@@ -57,7 +57,7 @@ include::example$pipes-atlassian-jwt-fetcher.json[]
 |Shared secret from the app installation, used as the JWT signing key.
 
 |`subject`
-|_optional_
+|_none_
 |JWT `sub` claim — typically an account ID for user-context calls.
 
 |`jwtExpiresInSeconds`
@@ -65,7 +65,7 @@ include::example$pipes-atlassian-jwt-fetcher.json[]
 |JWT validity window. Each request gets a freshly-signed token.
 
 |`userAgent`
-|_no default_
+|_none_
 |`User-Agent` header sent on each request.
 
 |`maxConnections`
@@ -112,6 +112,20 @@ include::example$pipes-atlassian-jwt-fetcher.json[]
 |_empty_
 |Structured per-request headers as a `Header → [values]` map.
 |===
+
+[#security-notes]
+== Security Notes
+
+This fetcher verifies TLS certificates and hostnames against the JVM trust store, and its
+config exposes no way to turn verification off. Traffic to Atlassian Cloud is therefore both
+encrypted and authenticated, which matters here because the `Authorization` header carries a
+signed JWT. If the cluster presents a certificate from a private CA, add that CA to the JVM
+truststore.
+
+The fetch key is used as the request URL with no validation, exactly as in the
+xref:pipes/plugins/http.adoc#security-notes[HTTP fetcher] — the same server-side request
+forgery considerations apply, including the absence of a redirect host allowlist. Treat the
+source of fetch keys as fully trusted.
 
 [#notes]
 == Notes

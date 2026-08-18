@@ -101,7 +101,7 @@ public interface TIFF {
      * 8 = 0th row at left, 0th column at bottom
      */
     Property ORIENTATION =
-            Property.internalClosedChoise("tiff:Orientation", "1", "2", "3", "4", "5", "6", "7",
+            Property.internalClosedChoice("tiff:Orientation", "1", "2", "3", "4", "5", "6", "7",
                     "8");
 
     /**
@@ -118,7 +118,7 @@ public interface TIFF {
      * "Units used for Horizontal and Vertical Resolutions."
      * One of "Inch" or "cm"
      */
-    Property RESOLUTION_UNIT = Property.internalClosedChoise("tiff:ResolutionUnit", "Inch", "cm");
+    Property RESOLUTION_UNIT = Property.internalClosedChoice("tiff:ResolutionUnit", "Inch", "cm");
 
     /**
      * "Date and time when original image was generated"

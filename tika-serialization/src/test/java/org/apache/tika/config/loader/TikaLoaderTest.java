@@ -19,6 +19,7 @@ package org.apache.tika.config.loader;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.net.URL;
@@ -30,7 +31,9 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.EmbeddedLimits;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -63,7 +66,7 @@ public class TikaLoaderTest {
 
         // Parse with the composite parser to verify config was applied
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/test+configurable");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/test+configurable");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -126,7 +129,7 @@ public class TikaLoaderTest {
 
         // Parse with minimal parser type
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/test+minimal");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/test+minimal");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -146,7 +149,7 @@ public class TikaLoaderTest {
 
         // Parse with fallback parser type
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/test+fallback");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/test+fallback");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -168,7 +171,7 @@ public class TikaLoaderTest {
 
         // Parse with ConfigurableTestParser - should use the explicitly configured instance
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/test+configurable");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/test+configurable");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -181,7 +184,7 @@ public class TikaLoaderTest {
 
         // Verify other parsers (FallbackTestParser, MinimalTestParser) are still available via SPI
         Metadata fallbackMetadata = new Metadata();
-        fallbackMetadata.set(Metadata.CONTENT_TYPE, "application/test+fallback");
+        fallbackMetadata.set(HttpHeaders.CONTENT_TYPE, "application/test+fallback");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), fallbackMetadata, new ParseContext());
@@ -203,7 +206,7 @@ public class TikaLoaderTest {
 
         // Verify ConfigurableTestParser uses the configured instance
         Metadata configurableMetadata = new Metadata();
-        configurableMetadata.set(Metadata.CONTENT_TYPE, "application/test+configurable");
+        configurableMetadata.set(HttpHeaders.CONTENT_TYPE, "application/test+configurable");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), configurableMetadata, new ParseContext());
@@ -214,7 +217,7 @@ public class TikaLoaderTest {
 
         // Verify FallbackTestParser was loaded from SPI
         Metadata fallbackMetadata = new Metadata();
-        fallbackMetadata.set(Metadata.CONTENT_TYPE, "application/test+fallback");
+        fallbackMetadata.set(HttpHeaders.CONTENT_TYPE, "application/test+fallback");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), fallbackMetadata, new ParseContext());
@@ -249,6 +252,19 @@ public class TikaLoaderTest {
         assertTrue(!compositeParser.getSupportedTypes(context)
                         .contains(MediaType.parse("application/test+minimal")),
                 "Should NOT support application/test+minimal");
+    }
+
+    /** TIKA-3268: an unresolvable exclusion must fail loudly, not warn. */
+    @Test
+    public void testUnknownExclusionFailsLoudly() throws Exception {
+        URL configUrl =
+                getClass().getResource("/configs/test-default-parser-unknown-exclusion.json");
+        Path configPath = Path.of(configUrl.toURI());
+
+        TikaConfigException e = assertThrows(TikaConfigException.class,
+                () -> TikaLoader.load(configPath).get(Parser.class));
+        assertTrue(e.getMessage().contains("no-such-parser"),
+                "the message must name the unresolvable entry, got: " + e.getMessage());
     }
 
     @Test
@@ -289,7 +305,7 @@ public class TikaLoaderTest {
 
         // Parse with the opt-in parser
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "application/test+optin");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/test+optin");
 
         try (TikaInputStream tis = TikaInputStream.get("test".getBytes(StandardCharsets.UTF_8))) {
             compositeParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());

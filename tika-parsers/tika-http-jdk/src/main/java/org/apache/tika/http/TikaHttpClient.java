@@ -199,12 +199,15 @@ public class TikaHttpClient implements Closeable {
     }
 
     /**
-     * Resolves the requested timeout (millis) against the task's remaining budget. Unlike
-     * the old seconds-floored-at-1 version, this can legitimately return 0 -- see
-     * {@link #failFastIfExhausted}, which is always called right after this.
+     * Resolves the requested timeout (millis) against the task's remaining budget; can
+     * legitimately return 0 -- see {@link #failFastIfExhausted}, always called right after.
+     * A null context grants the request unclipped: {@code ParseTimeout.getOrCreate(null)}
+     * would build a fresh detached instance from default TimeoutLimits, silently capping
+     * anything above one hour and re-firing budgetFor's once-per-task warnings on every
+     * call. Package-private for direct unit testing.
      */
-    private long grantedMillis(long requestedMillis, ParseContext context) {
-        return ParseTimeout.getOrCreate(context).budgetFor(requestedMillis);
+    long grantedMillis(long requestedMillis, ParseContext context) {
+        return context == null ? requestedMillis : ParseTimeout.getOrCreate(context).budgetFor(requestedMillis);
     }
 
     /**
@@ -271,10 +274,10 @@ public class TikaHttpClient implements Closeable {
                                                     ParseContext context, long grantedMillis, URI uri,
                                                     long requestedMillis)
             throws InterruptedException, ExecutionException, TikaTimeoutException {
-        long now = System.currentTimeMillis();
-        long deadline = (grantedMillis >= Long.MAX_VALUE - now) ? Long.MAX_VALUE : now + grantedMillis;
+        long startNanos = System.nanoTime();
         while (true) {
-            long remaining = deadline - System.currentTimeMillis();
+            long elapsedMillis = (System.nanoTime() - startNanos) / 1_000_000L;
+            long remaining = grantedMillis - elapsedMillis;
             long pollMillis = remaining <= 0 ? 0 : Math.min(remaining, HEARTBEAT_INTERVAL_MILLIS);
             try {
                 return future.get(pollMillis, TimeUnit.MILLISECONDS);

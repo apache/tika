@@ -117,15 +117,20 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
                 limits.isThrowOnWriteLimit(), context);
     }
 
+    /** Accepted spellings, for error messages. */
+    // String.join defeats compile-time constant inlining into downstream jars
+    public static final String VALID_HANDLER_TYPE_NAMES =
+            String.join(", ", "text", "txt", "html", "xml", "body", "markdown", "md", "ignore");
+
     /**
-     * Tries to parse string into handler type.  Returns default if string is null or
-     * parse fails.
+     * Parses a string into a handler type.
      * <p/>
-     * Options: xml, html, text, body, ignore (no content), markdown/md
+     * Options: xml, html, text/txt, body, ignore (no content), markdown/md
      *
-     * @param handlerTypeName string to parse
-     * @param defaultType     type to return if parse fails
+     * @param handlerTypeName string to parse; null means "unspecified", which yields defaultType
+     * @param defaultType     type to return when handlerTypeName is null
      * @return handler type
+     * @throws IllegalArgumentException if handlerTypeName is non-null and not recognized
      */
     public static HANDLER_TYPE parseHandlerType(String handlerTypeName, HANDLER_TYPE defaultType) {
         if (handlerTypeName == null) {
@@ -150,7 +155,11 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
             case "md":
                 return HANDLER_TYPE.MARKDOWN;
             default:
-                return defaultType;
+                // A name we don't know is a caller mistake, not a request for the default:
+                // silently substituting one meant "/rmeta/txet" quietly returned the default
+                // handler's output and looked like it worked.
+                throw new IllegalArgumentException("Unrecognized handler type '" + handlerTypeName
+                        + "'. Valid types: " + VALID_HANDLER_TYPE_NAMES);
         }
     }
 

@@ -16,24 +16,35 @@
 //
 
 = Using Tika as a Library (Java API)
+:toc:
+:toclevels: 3
 
-This section covers using Apache Tika programmatically in your Java applications.
+Tika embeds directly in your Java application, giving you full control over parsing, detection and
+configuration.
 
-== Overview
+[IMPORTANT]
+====
+Some file formats can trigger excessive memory use, infinite loops, or JVM crashes in the
+underlying parsing libraries. For production systems processing untrusted files, use
+xref:pipes/index.adoc[Tika Pipes], which runs each parse in a forked JVM with timeouts and memory
+limits; xref:using-tika/server/index.adoc[tika-server] and xref:using-tika/grpc/index.adoc[tika-grpc]
+provide the same robustness as a service. See
+xref:using-tika/java-api/getting-started.adoc[Getting Started with the Java API] for how to choose,
+and xref:advanced/robustness.adoc[Robustness] for what goes wrong without isolation.
 
-Tika can be embedded directly into your Java applications as a library. This gives you
-full control over parsing, detection, and configuration.
-
-IMPORTANT: Some file formats can trigger excessive memory use, infinite loops, or JVM
-crashes in the underlying parsing libraries. For production systems processing untrusted
-files, use xref:pipes/index.adoc[Tika Pipes] which runs each parse in a forked JVM with
-timeouts and memory limits. Alternatively, xref:using-tika/server/index.adoc[tika-server]
-and xref:using-tika/grpc/index.adoc[tika-grpc] provide the same robustness as a service.
-See xref:advanced/robustness.adoc[Robustness] for details.
+Know where the line falls before you call `AutoDetectParser` in your own JVM. Tika's sandboxing is
+the forked JVM, and calling a parser directly opts out of it. Untrusted data can often
+be crafted to exhaust memory or CPU, or to crash the process; containing that is then the caller's
+responsibility, and the project does not treat it as a security issue. The other half holds too: a
+document that defeats *Tika Pipes' own* limits is a bug in Tika, and is treated as a security
+issue. The remedy is concrete rather than "be careful" — parse through Pipes and the limits are
+Tika's problem again. See xref:security.adoc[Security] for the full model.
+====
 
 == Dependencies
 
-Add the following to your `pom.xml`:
+`tika-parsers-standard-package` pulls in `tika-core` and all standard parsers (PDF, Office, HTML,
+and the rest):
 
 [source,xml,subs=attributes+]
 ----
@@ -41,12 +52,12 @@ Add the following to your `pom.xml`:
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parsers-standard-package</artifactId>
     <version>{tika-version}</version>
+    <type>pom</type>
 </dependency>
 ----
 
-This pulls in `tika-core` and all standard parsers (PDF, Office, HTML, etc.).
-
-If you only need detection (no parsing) or want to select parsers individually:
+Take `tika-core` alone if you only need detection, or want to select parsers individually. Add
+`tika-serialization` if you want `TikaLoader` and JSON-based configuration:
 
 [source,xml,subs=attributes+]
 ----
@@ -55,12 +66,6 @@ If you only need detection (no parsing) or want to select parsers individually:
     <artifactId>tika-core</artifactId>
     <version>{tika-version}</version>
 </dependency>
-----
-
-To use `TikaLoader` for JSON-based configuration, also add:
-
-[source,xml,subs=attributes+]
-----
 <dependency>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-serialization</artifactId>
@@ -70,40 +75,25 @@ To use `TikaLoader` for JSON-based configuration, also add:
 
 == Parsers
 
-The `org.apache.tika.parser.Parser` interface is Tika's fundamental mechanism for document
-processing. It employs a single parsing method accepting an input stream, content handler,
-metadata object, and parse context.
-
-=== Design Principles
-
-Tika's parser architecture prioritizes:
-
-* **Streamed Processing** - When possible, documents aren't held entirely in memory, enabling efficient handling of large files
-* **Structured Output** - Preserves document hierarchy (headings, links, etc.) for relevance assessment
-* **Input Metadata** - Accepts file names and content types to guide parsing decisions
-* **Output Metadata** - Returns extracted metadata like author information alongside content
-* **Context Sensitivity** - Allows fine-grained control through parse context injection
-
-=== The Parse Method
-
-The parse method accepts four arguments:
+`org.apache.tika.parser.Parser` is Tika's fundamental document-processing interface. One method
+does the work:
 
 [source,java]
 ----
-void parse(InputStream stream,
+void parse(TikaInputStream tis,
            ContentHandler handler,
            Metadata metadata,
            ParseContext context) throws IOException, SAXException, TikaException;
 ----
 
-* `InputStream` - the document content
-* `ContentHandler` - receives XHTML SAX events
-* `Metadata` - bidirectional metadata exchange
-* `ParseContext` - context-specific settings
+* `TikaInputStream` — the document content.
+* `ContentHandler` — receives XHTML SAX events.
+* `Metadata` — bidirectional: input hints (filename, content type) in, extracted metadata out.
+* `ParseContext` — context-specific settings injected into the parse.
 
-=== Output Format
-
-Parsers generate XHTML SAX events structured as:
+The design favours streamed processing (large documents are not held entirely in memory), and
+structured output: parsers emit XHTML SAX events that preserve document hierarchy — headings,
+links, tables — rather than a flat blob.
 
 [source,xml]
 ----
@@ -117,8 +107,8 @@ Parsers generate XHTML SAX events structured as:
 
 === AutoDetectParser
 
-The `AutoDetectParser` class automatically determines document type and selects the
-appropriate parser, encapsulating all Tika functionality in a single parser:
+`AutoDetectParser` determines the document type and selects the appropriate parser, encapsulating
+all of Tika in one parser:
 
 [source,java]
 ----
@@ -135,40 +125,58 @@ try (TikaInputStream stream = TikaInputStream.get(path)) {
 }
 ----
 
-NOTE: Always use `TikaInputStream` and pass the original resource directly when possible.
-For example, use `TikaInputStream.get(path)` for a `Path`, or `TikaInputStream.get(bytes)`
-for a `byte[]`. This allows Tika to access the underlying resource efficiently and enables
-features like mark/reset support that many parsers and detectors require.
+WARNING: `new BodyContentHandler()` stops after 100,000 characters and throws
+`WriteLimitReachedException`. Use `new BodyContentHandler(-1)` for no limit, or pass an explicit
+character budget. See xref:advanced/setting-limits.adoc[Setting Limits] for the limits that apply
+when parsing through Tika Pipes.
+
+NOTE: Always use `TikaInputStream`, and hand it the original resource — `TikaInputStream.get(path)`
+for a `Path`, `TikaInputStream.get(bytes)` for a `byte[]`. That lets Tika reach the underlying
+resource efficiently and enables the mark/reset support many parsers and detectors require.
 
 === Content Handlers
 
-Tika provides several content handlers that control the output format:
+The content handler controls the output format:
 
-**BodyContentHandler**:: Extracts and converts the body content to streams or strings.
+[cols="1,3"]
+|===
+|Handler |Output
 
-**ToTextContentHandler**:: Outputs plain text.
+|`BodyContentHandler`
+|Body content, as a stream or a string.
 
-**ToHTMLContentHandler**:: Outputs HTML.
+|`ToTextContentHandler`
+|Plain text.
 
-**ToXMLContentHandler**:: Outputs XHTML/XML.
+|`ToHTMLContentHandler`
+|HTML.
 
-**ToMarkdownContentHandler**:: Outputs Markdown, preserving structural semantics like headings, lists, tables, code blocks, emphasis, and links.
+|`ToXMLContentHandler`
+|XHTML/XML.
 
-**ParsingReader**:: Uses background threading to return extracted text as character streams.
+|`ToMarkdownContentHandler`
+|Markdown, preserving headings, lists, tables, code blocks, emphasis and links.
 
-Use `BasicContentHandlerFactory` to create handlers by type: `TEXT`, `HTML`, `XML`, `BODY`, `MARKDOWN`, `IGNORE`.
+|`ParsingReader`
+|Extracted text as a character stream, filled by a background thread.
+|===
 
-=== Key Metadata Properties
+`BasicContentHandlerFactory` creates handlers by type: `TEXT`, `HTML`, `XML`, `BODY`, `MARKDOWN`,
+`IGNORE`.
 
-* `TikaCoreProperties.RESOURCE_NAME_KEY` - filename or resource identifier
-* `Metadata.CONTENT_TYPE` - declared document format
-* `TikaCoreProperties.TITLE` - document title
-* `TikaCoreProperties.CREATOR` - document creator
+=== Key metadata properties
+
+* `TikaCoreProperties.RESOURCE_NAME_KEY` — filename or resource identifier
+* `HttpHeaders.CONTENT_TYPE` — declared document format (a `Property`; `Metadata` no longer
+  re-exports the HTTP header constants)
+* `TikaCoreProperties.TITLE` — document title
+* `TikaCoreProperties.CREATOR` — document creator
 
 == Detectors
 
-The `org.apache.tika.detect.Detector` interface is the foundation of Tika's detection system.
-All detection approaches implement a shared method:
+`org.apache.tika.detect.Detector` is the foundation of Tika's detection system. Every detection
+approach implements one method, which examines the stream, the metadata and the parse context and
+returns a `MediaType`:
 
 [source,java]
 ----
@@ -176,32 +184,27 @@ MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseConte
     throws IOException;
 ----
 
-This method examines a `TikaInputStream`, metadata object, and parse context, returning a
-`MediaType` representing the detected file type.
+[cols="1,3"]
+|===
+|Approach |How it works
 
-=== Detection Types
+|Magic
+|Byte patterns near the start of the file, in Freedesktop MIME-info format. Implemented by
+`MimeTypes` over configuration files such as `tika-mimetypes.xml`.
 
-**Magic Detection**:: Identifies files by analyzing special byte patterns near the file start
-using the Freedesktop MIME-info format. Works through `MimeTypes` and configuration files
-like `tika-mimetypes.xml`.
+|Name-based
+|Filename patterns, via `NameDetector`. Quick, but unreliable if files are renamed.
 
-**Name-Based Detection**:: Uses filename patterns to guess file types via `NameDetector`.
-Quick but potentially unreliable if files are renamed.
+|Known content type
+|Refines detection using MIME type information already supplied by a web server or repository.
 
-**Known Content Type**:: Leverages pre-existing MIME type information (from web servers or
-repositories) to refine detection.
+|Container-aware
+|Inspects formats stored inside containers — OLE2 for `.doc`/`.ppt`, ZIP for iWork. Needs
+`TikaInputStream` and the Tika parsers jar.
+|===
 
-**Container-Aware Detection**:: Handles formats stored within containers (OLE2 for .doc/.ppt,
-ZIP for iWork files). Requires `TikaInputStream` and the Tika Parsers jar to inspect
-container contents.
-
-=== DefaultDetector
-
-`DefaultDetector` uses service loaders to discover and try all available detectors automatically.
-With only Tika Core, it provides magic and name detection. With Tika Parsers included,
-container detection becomes available.
-
-=== Detection Example
+`DefaultDetector` discovers and tries all available detectors via service loaders: magic and name
+detection with `tika-core` alone, plus container detection when the parsers are on the classpath.
 
 [source,java]
 ----
@@ -219,14 +222,7 @@ for (Path p : myListOfPaths) {
 }
 ----
 
-NOTE: `TikaInputStream.get(path, metadata)` automatically sets the resource name in the
-metadata, so you don't need to set it manually.
+NOTE: `TikaInputStream.get(path, metadata)` sets the resource name in the metadata for you.
 
-=== Language Detection
-
-Tika identifies text language through `LanguageDetector` extensions, useful for documents
-lacking language metadata.
-
-== Topics
-
-* xref:using-tika/java-api/getting-started.adoc[Getting Started] - Recommendations and PipesForkParser usage
+Language detection is separate, through `LanguageDetector` extensions — useful for documents that
+carry no language metadata.

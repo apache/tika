@@ -65,12 +65,12 @@ public interface ServerManager extends Closeable {
      * <p>
      * This method should be called after {@link #ensureRunning()}.
      *
-     * @param socketTimeoutMs the socket timeout in milliseconds
+     * @param socketTimeoutMillis the socket timeout in milliseconds
      * @return a connected Socket ready for communication
      * @throws IOException if connection fails
      * @throws ServerInitializationException if the server died before connecting
      */
-    Socket connect(int socketTimeoutMs) throws IOException, ServerInitializationException;
+    Socket connect(int socketTimeoutMillis) throws IOException, ServerInitializationException;
 
     /**
      * Shuts down the server process and cleans up resources.
@@ -108,6 +108,20 @@ public interface ServerManager extends Closeable {
      */
     default void markServerForRestart() {
         // Default no-op for backward compatibility
+    }
+
+    /**
+     * Signals that the client walked away from its connection, whether
+     * mid-handshake or with a request still in flight.
+     * <p>
+     * A per-client worker dials the parent once and never dials back, so an
+     * abandoned worker must be recycled or the next {@link #connect(int)} waits
+     * out the full accept timeout against a process that will never call. A
+     * shared server outlives its clients and needs nothing here; its
+     * connection handlers already detect the dead socket themselves.
+     */
+    default void connectionAbandoned() {
+        // Default no-op: only per-client mode must recycle the worker
     }
 
     /**

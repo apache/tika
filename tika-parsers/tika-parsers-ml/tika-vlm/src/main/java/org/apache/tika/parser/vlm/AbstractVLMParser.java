@@ -33,12 +33,13 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.ParseContextConfig;
-import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ParentContentHandler;
 import org.apache.tika.http.TikaHttpClient;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -205,7 +206,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
             String responseBody = httpClient.postJson(
                     call.url(), call.json(), call.headers(), config.getTimeoutMillis(), parseContext);
             responseText = extractResponseText(responseBody, metadata);
-            TikaProgressTracker.update(parseContext);
+            ParseTimeout.checkpoint(parseContext);
         } catch (TikaException e) {
             throw e;
         } catch (IOException e) {
@@ -280,7 +281,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
     }
 
     String detectMimeType(Metadata metadata) {
-        String contentType = metadata.get(Metadata.CONTENT_TYPE);
+        String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
             contentType = contentType.replace("ocr-", "");
             if (contentType.startsWith("image/") || contentType.equals("application/pdf")) {

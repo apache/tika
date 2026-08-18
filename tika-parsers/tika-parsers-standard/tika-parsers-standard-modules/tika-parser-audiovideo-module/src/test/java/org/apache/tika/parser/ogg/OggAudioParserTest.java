@@ -34,6 +34,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
@@ -128,7 +129,7 @@ public class OggAudioParserTest {
         ParseContext context = new ParseContext();
         context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
             @Override
-            public boolean shouldParseEmbedded(Metadata metadata) {
+            public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
                 return true;
             }
 
@@ -143,7 +144,7 @@ public class OggAudioParserTest {
 
         assertEquals(1, pictures.size());
         Metadata pictureMetadata = pictures.get(0);
-        assertEquals("image/jpeg", pictureMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/jpeg", pictureMetadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("Back cover", pictureMetadata.get(TikaCoreProperties.TITLE));

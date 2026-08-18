@@ -51,6 +51,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -126,9 +127,9 @@ public class OfficeParser extends AbstractOfficeParser {
             Metadata m = Metadata.newInstance(context);
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
-            m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
+            m.set(HttpHeaders.CONTENT_TYPE, "text/x-vbasic");
             EmbeddedDocumentUtil.recordException(e, m);
-            if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+            if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
                 embeddedDocumentExtractor.parseEmbedded(
                         //pass in space character so that we don't trigger a zero-byte exception
                         TikaInputStream.get(new byte[]{'\u0020'}), xhtml, m, context, true);
@@ -139,11 +140,11 @@ public class OfficeParser extends AbstractOfficeParser {
             Metadata m = Metadata.newInstance(context);
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
-            m.set(Metadata.CONTENT_TYPE, "text/x-vbasic");
+            m.set(HttpHeaders.CONTENT_TYPE, "text/x-vbasic");
             if (!StringUtils.isBlank(e.getKey())) {
                 m.set(TikaCoreProperties.RESOURCE_NAME_KEY, e.getKey());
             }
-            if (embeddedDocumentExtractor.shouldParseEmbedded(m)) {
+            if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
                 try (TikaInputStream tis = TikaInputStream.get(e.getValue().getBytes(StandardCharsets.UTF_8))) {
                     embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
                 }
@@ -308,7 +309,7 @@ public class OfficeParser extends AbstractOfficeParser {
     }
 
     private void setType(Metadata metadata, MediaType type) {
-        metadata.set(Metadata.CONTENT_TYPE, type.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
     }
 
     public enum POIFSDocumentType {

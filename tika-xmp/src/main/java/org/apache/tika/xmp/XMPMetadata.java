@@ -484,11 +484,9 @@ public class XMPMetadata extends Metadata {
     }
 
     /**
-     * It will set all simple and array properties that have QName keys in registered namespaces.
-     *
-     * @see org.apache.tika.metadata.Metadata#setAll(java.util.Properties)
+     * Sets all simple and array properties that have QName keys in registered namespaces.
+     * No longer overrides Metadata; the parent's unguarded setAll was removed.
      */
-    @Override
     public void setAll(Properties properties) {
         @SuppressWarnings("unchecked") Enumeration<String> names =
                 (Enumeration<String>) properties.propertyNames();

@@ -84,6 +84,6 @@ public class ServerStatus {
     }
 
     public enum TASK {
-        PARSE, DETECT, TRANSLATE
+        PARSE, DETECT
     }
 }

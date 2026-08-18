@@ -36,10 +36,14 @@ public interface PDF {
      * end of the file.  This does not include an %%EOF
      * if the startxref=0, as would happen in a dummy %%EOF in a linearized PDF.
      */
-    Property EOF_OFFSETS = Property.externalRealSeq(PDF_PREFIX + "eof-offsets");
+    // byte offsets: integral; was REAL only to satisfy the old REAL-only getLongValues
+    Property EOF_OFFSETS = Property.externalIntegerSequence(PDF_PREFIX + "eof-offsets");
 
-    /** Trapped flag from the XMP {@code pdf:} schema; docinfo counterpart {@link #DOC_INFO_TRAPPED}. */
-    Property TRAPPED = Property.internalText(PDF_PREFIX + "Trapped");
+    /**
+     * Trapped flag from the docinfo dictionary or the XMP {@code pdf:} schema; the
+     * docinfo value is also recorded under {@link #DOC_INFO_TRAPPED}.
+     */
+    Property TRAPPED = Property.internalText(PDF_PREFIX + "trapped");
 
     /**
      * Prefix to be used for properties that record what was stored
@@ -51,8 +55,8 @@ public interface PDF {
     String PDF_DOC_INFO_CUSTOM_PREFIX =
             PDF_DOC_INFO_PREFIX + "custom" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    PassthroughPrefix DOC_INFO_CUSTOM =
-            PassthroughPrefix.file(PDF_DOC_INFO_CUSTOM_PREFIX, "PDF Info-dict custom keys");
+    KeyPrefix DOC_INFO_CUSTOM =
+            KeyPrefix.file(PDF_DOC_INFO_CUSTOM_PREFIX, "PDF Info-dict custom keys");
 
     Property DOC_INFO_CREATED = Property.internalDate(PDF_DOC_INFO_PREFIX + "created");
 

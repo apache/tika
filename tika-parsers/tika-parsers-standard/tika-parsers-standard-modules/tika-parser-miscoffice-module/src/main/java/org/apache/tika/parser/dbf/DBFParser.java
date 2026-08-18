@@ -36,6 +36,7 @@ import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -72,7 +73,7 @@ public class DBFParser implements Parser {
                       ParseContext context) throws IOException, SAXException, TikaException {
         DBFReader reader = DBFReader.open(tis);
         DBFFileHeader header = reader.getHeader();
-        metadata.set(Metadata.CONTENT_TYPE, header.getVersion().getFullMimeString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, header.getVersion().getFullMimeString());
 
         //insert metadata here
         Calendar lastModified = header.getLastModified();
@@ -90,7 +91,7 @@ public class DBFParser implements Parser {
         }
 
         Charset charset = getCharset(firstRows, header, context);
-        metadata.set(Metadata.CONTENT_ENCODING, charset.toString());
+        metadata.set(HttpHeaders.CONTENT_ENCODING, charset.toString());
         //report detected (above); decode with its superset
         Charset decodeAs = CharsetSupersets.decodeAs(charset);
 

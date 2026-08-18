@@ -31,11 +31,6 @@ import org.slf4j.LoggerFactory;
 public class TikaServerCli {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerCli.class);
-    /**
-     * This value is set to the server's id in the forked process.
-     */
-    public static String TIKA_SERVER_ID_ENV = "tika.server.id";
-
     private static Options getOptions() {
         Options options = new Options();
         options.addOption("h", "host", true, "host name (default = " + DEFAULT_HOST + ", use * for all)");
@@ -43,7 +38,7 @@ public class TikaServerCli {
                 "listen port (default = 9998)\n");
         options.addOption("?", "help", false, "this help message");
         options.addOption("c", "config", true, "tika-config file");
-        options.addOption("i", "id", true, "id to use for server in" + " the server status endpoint and logging");
+        options.addOption("i", "id", true, "id for this server, written to the startup log");
         return options;
     }
 

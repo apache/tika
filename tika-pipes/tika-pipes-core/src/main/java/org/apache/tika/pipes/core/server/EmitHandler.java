@@ -127,9 +127,11 @@ class EmitHandler {
             // For CONTENT_ONLY mode: force direct emission only when a real emitter is configured,
             // so the content is emitted as a raw byte stream via emitContentOnly() instead of
             // being returned as passback JSON to the parent AsyncEmitter.
+            // getAllIds, not getSupported: this is an existence check, and a host emitter
+            // (__unpack) is configured but deliberately absent from the caller-facing list.
             boolean forceEmit = parseMode == ParseMode.CONTENT_ONLY
                     && emitterId != null
-                    && emitterManager.getSupported().contains(emitterId);
+                    && emitterManager.getAllIds().contains(emitterId);
             boolean willEmit = forceEmit || shouldEmit(parseMode, parseData, emitDataTuple, parseContext);
             if (willEmit) {
                 return emit(t.getId(), emitKey, parseMode == ParseMode.UNPACK,
@@ -270,7 +272,8 @@ class EmitHandler {
         return (stack != null) ? stack : StringUtils.EMPTY;
     }
 
-    private void injectUserMetadata(Metadata userMetadata, List<Metadata> metadataList) {
+    //package-private for testing
+    void injectUserMetadata(Metadata userMetadata, List<Metadata> metadataList) {
         Metadata target = metadataList.get(0);
         for (String n : userMetadata.names()) {
             //overwrite whatever was there

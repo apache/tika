@@ -19,9 +19,11 @@ package org.apache.tika.pipes.fork;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -37,9 +39,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
 public class PipesForkParserTest {
@@ -99,6 +104,30 @@ public class PipesForkParserTest {
             assertNotNull(extractedContent, "Content should not be null");
             assertTrue(extractedContent.contains("Hello"), "Content should contain 'Hello'");
             assertTrue(extractedContent.contains("test document"), "Content should contain 'test document'");
+        }
+    }
+
+    /**
+     * The inline payload is request-owned: a caller reusing the ParseContext must not have this
+     * document's bytes retained and re-serialized into later requests.
+     */
+    @Test
+    public void testInlinePayloadNotRetainedInCallerContext() throws Exception {
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
+                .setParseMode(ParseMode.RMETA)
+                .addJvmArg("-Xmx256m");
+
+        ParseContext parseContext = new ParseContext();
+        byte[] content = "inline body".getBytes(StandardCharsets.UTF_8);
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(content))) {
+            PipesForkResult result = parser.parse(tis, new Metadata(), parseContext);
+            assertTrue(result.isSuccess(), "Parse should succeed. Status: " + result.getStatus()
+                    + ", message: " + result.getMessage());
+            assertNull(parseContext.get(InlineBytes.class),
+                    "inline payload must not outlive its request in the caller's context");
         }
     }
 
@@ -216,7 +245,7 @@ public class PipesForkParserTest {
 
             // Content type should be detected
             Metadata metadata = metadataList.get(0);
-            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
             assertNotNull(contentType, "Content type should be detected");
             assertTrue(contentType.contains("text/plain"),
                     "Content type should be text/plain, got: " + contentType);
@@ -253,7 +282,7 @@ public class PipesForkParserTest {
 
             // Content type should be detected as zip
             Metadata metadata = metadataList.get(0);
-            String contentType = metadata.get(Metadata.CONTENT_TYPE);
+            String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
             assertNotNull(contentType, "Content type should be detected");
             assertTrue(contentType.contains("zip"),
                     "Content type should be zip, got: " + contentType);

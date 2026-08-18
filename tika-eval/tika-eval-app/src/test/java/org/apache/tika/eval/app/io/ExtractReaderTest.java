@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -132,7 +133,7 @@ public class ExtractReaderTest extends TikaTest {
         assertContains("the quick brown fox fox fox jumped over the lazy lazy dog", m.get(TikaCoreProperties.TIKA_CONTENT));
 
         //test that the mime is inferred from the file extension
-        assertEquals("application/msword", m.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/msword", m.get(HttpHeaders.CONTENT_TYPE));
     }
 
 

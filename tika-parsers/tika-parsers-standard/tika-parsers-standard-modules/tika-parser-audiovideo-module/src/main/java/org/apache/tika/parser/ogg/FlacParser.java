@@ -39,6 +39,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
@@ -92,11 +93,12 @@ public class FlacParser extends AbstractParser {
         extractInfo(metadata, flac.getInfo());
         if (flac instanceof FlacOggFile) {
             FlacOggFile ogg = (FlacOggFile) flac;
-            metadata.add("version", "Flac " + ogg.getFirstPacket().getMajorVersion() +
-                    "." + ogg.getFirstPacket().getMinorVersion());
-            metadata.set(Metadata.CONTENT_TYPE, OGG_FLAC.toString());
+            metadata.add(OggAudioParser.CODEC_VERSION,
+                    "Flac " + ogg.getFirstPacket().getMajorVersion() +
+                            "." + ogg.getFirstPacket().getMinorVersion());
+            metadata.set(HttpHeaders.CONTENT_TYPE, OGG_FLAC.toString());
         } else {
-            metadata.set(Metadata.CONTENT_TYPE, NATIVE_FLAC.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, NATIVE_FLAC.toString());
         }
 
         // Extract any Vorbis-style comments

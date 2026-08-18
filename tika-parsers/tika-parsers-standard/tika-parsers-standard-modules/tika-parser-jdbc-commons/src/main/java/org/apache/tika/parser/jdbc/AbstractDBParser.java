@@ -28,7 +28,6 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
 import org.apache.tika.metadata.Metadata;
@@ -57,7 +56,6 @@ public abstract class AbstractDBParser implements Parser {
         connection = getConnection(tis, metadata, context);
         XHTMLContentHandler xHandler = null;
         List<String> tableNames = null;
-        EmbeddedDocumentUtil embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
         try {
             tableNames = getTableNames(connection, metadata, context);
         } catch (SQLException e) {
@@ -86,8 +84,7 @@ public abstract class AbstractDBParser implements Parser {
 
         try {
             for (String tableName : tableNames) {
-                JDBCTableReader tableReader =
-                        getTableReader(connection, tableName, embeddedDocumentUtil);
+                JDBCTableReader tableReader = getTableReader(connection, tableName);
                 xHandler.startElement("table", "name", tableReader.getTableName());
                 xHandler.startElement("thead");
                 xHandler.startElement("tr");
@@ -207,21 +204,7 @@ public abstract class AbstractDBParser implements Parser {
      * @param connection
      * @param tableName
      * @return a reader
-     * @deprecated use {@link #getTableReader(Connection, String, EmbeddedDocumentUtil)}
      */
-    @Deprecated
-    abstract protected JDBCTableReader getTableReader(Connection connection, String tableName,
-                                                      ParseContext parseContext);
-
-    /**
-     * Given a connection and a table name, return the JDBCTableReader for this db.
-     *
-     * @param connection
-     * @param tableName
-     * @param embeddedDocumentUtil embedded doc util
-     * @return
-     */
-    abstract protected JDBCTableReader getTableReader(Connection connection, String tableName,
-                                                      EmbeddedDocumentUtil embeddedDocumentUtil);
+    abstract protected JDBCTableReader getTableReader(Connection connection, String tableName);
 
 }

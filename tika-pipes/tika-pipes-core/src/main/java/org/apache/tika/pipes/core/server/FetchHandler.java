@@ -28,12 +28,16 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
+import org.apache.tika.pipes.api.fetcher.FetcherNotFoundException;
+import org.apache.tika.pipes.core.fetcher.BytesFetcher;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.utils.ExceptionUtils;
 
 class FetchHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(FetchHandler.class);
+
+    private static final BytesFetcher BYTES_FETCHER = new BytesFetcher();
 
     private final FetcherManager fetcherManager;
 
@@ -56,9 +60,15 @@ class FetchHandler {
     }
 
     private FetcherOrResult getFetcher(FetchEmitTuple t) {
+        String fetcherId = t.getFetchKey().getFetcherId();
+        // Built in, not configured: the bytes come with the request, so there is nothing for an
+        // operator to point at and no reason for it to occupy an id in the ConfigStore.
+        if (BytesFetcher.FETCHER_ID.equals(fetcherId)) {
+            return new FetcherOrResult(BYTES_FETCHER, null);
+        }
         try {
-            return new FetcherOrResult(fetcherManager.getFetcher(t.getFetchKey().getFetcherId()), null);
-        } catch (IllegalArgumentException e) {
+            return new FetcherOrResult(fetcherManager.getFetcher(fetcherId), null);
+        } catch (FetcherNotFoundException e) {
             String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherId());
             LOG.warn(noFetcherMsg);
             return new FetcherOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, noFetcherMsg));

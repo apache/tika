@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.Tika;
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.DefaultProbDetector;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.ProbabilisticMimeDetectionSelector.Builder;
@@ -196,7 +197,7 @@ public class ProbabilisticMimeDetectionTestWithTika {
                 tika.detect(new ByteArrayInputStream(new byte[0]), namehint));
 
         Metadata typehint = new Metadata();
-        typehint.set(Metadata.CONTENT_TYPE, "text/plain");
+        typehint.set(HttpHeaders.CONTENT_TYPE, "text/plain");
         assertEquals(MediaType.TEXT_PLAIN.toString(),
                 tika.detect(new ByteArrayInputStream(new byte[0]), typehint));
 

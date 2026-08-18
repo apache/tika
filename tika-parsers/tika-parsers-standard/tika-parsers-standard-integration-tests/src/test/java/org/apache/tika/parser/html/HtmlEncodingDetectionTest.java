@@ -33,6 +33,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
@@ -55,7 +56,7 @@ public class HtmlEncodingDetectionTest extends TikaTest {
             new JSoupParser().parse(tis,
                     new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("ISO-8859-15", metadata.get(Metadata.CONTENT_ENCODING));
+        assertEquals("ISO-8859-15", metadata.get(HttpHeaders.CONTENT_ENCODING));
     }
 
     /** TIKA-349. */
@@ -69,7 +70,7 @@ public class HtmlEncodingDetectionTest extends TikaTest {
             new JSoupParser().parse(tis,
                     new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("ISO-8859-15", metadata.get(Metadata.CONTENT_ENCODING));
+        assertEquals("ISO-8859-15", metadata.get(HttpHeaders.CONTENT_ENCODING));
 
         // Some HTML pages have errors like ';;' versus '; ' as separator.
         String test2 = "<html><head><meta http-equiv=\"content-type\"" +
@@ -80,7 +81,7 @@ public class HtmlEncodingDetectionTest extends TikaTest {
             new JSoupParser().parse(tis,
                     new BodyContentHandler(), metadata, new ParseContext());
         }
-        assertEquals("ISO-8859-15", metadata.get(Metadata.CONTENT_ENCODING));
+        assertEquals("ISO-8859-15", metadata.get(HttpHeaders.CONTENT_ENCODING));
     }
 
     /** TIKA-357. */
@@ -90,7 +91,7 @@ public class HtmlEncodingDetectionTest extends TikaTest {
         new JSoupParser().parse(getResourceAsStream("/test-documents/big-preamble.html"),
                 new BodyContentHandler(), metadata, new ParseContext());
 
-        assertEquals("windows-1251", metadata.get(Metadata.CONTENT_ENCODING));
+        assertEquals("windows-1251", metadata.get(HttpHeaders.CONTENT_ENCODING));
     }
 
     /** TIKA-1001. */
@@ -133,7 +134,7 @@ public class HtmlEncodingDetectionTest extends TikaTest {
         context.set(org.apache.tika.parser.html.HtmlMapper.class,
                 org.apache.tika.parser.html.IdentityHtmlMapper.INSTANCE);
         Metadata metadata = new Metadata();
-        metadata.set(Metadata.CONTENT_TYPE, "text/html");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "text/html");
 
         final Map<String, Integer> tagFrequencies = new HashMap<>();
 

@@ -41,6 +41,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -407,7 +408,7 @@ public class PipesClientTest {
     @Test
     public void testSocketTimeout(@TempDir Path tmp) throws Exception {
         // Test socket timeout when heartbeats are sent too slowly
-        // Config has heartbeatIntervalMs=10000 (10 seconds) but socketTimeoutMs=3000 (3 seconds)
+        // Config has heartbeatIntervalMillis=10000 (10 seconds) but socketTimeoutMillis=3000 (3 seconds)
         // This simulates a server that appears unresponsive (different from parse timeout)
         // NOTE: This is an invalid configuration that would never be used in production,
         // but we allow it for testing via system property
@@ -430,9 +431,9 @@ public class PipesClientTest {
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
         // Verify the misconfiguration that triggers socket timeout
-        assertEquals(3000, pipesConfig.getSocketTimeoutMs(), "Socket timeout should be 3 seconds");
-        assertEquals(10000, pipesConfig.getHeartbeatIntervalMs(), "Heartbeat interval should be 10 seconds");
-        assertTrue(pipesConfig.getHeartbeatIntervalMs() > pipesConfig.getSocketTimeoutMs(),
+        assertEquals(3000, pipesConfig.getSocketTimeoutMillis(), "Socket timeout should be 3 seconds");
+        assertEquals(10000, pipesConfig.getHeartbeatIntervalMillis(), "Heartbeat interval should be 10 seconds");
+        assertTrue(pipesConfig.getHeartbeatIntervalMillis() > pipesConfig.getSocketTimeoutMillis(),
                 "Test requires heartbeat > socket timeout to trigger timeout");
 
         // The config file includes -Dtika.pipes.allowInvalidHeartbeat=true in forkedJvmArgs
@@ -447,8 +448,8 @@ public class PipesClientTest {
             PipesResult pipesResult = pipesClient.process(tuple);
             long elapsed = System.currentTimeMillis() - startTime;
 
-            // Should timeout due to socket timeout (no heartbeats received within socketTimeoutMs).
-            // Startup/handshake is bounded by startupTimeoutMs (not socketTimeoutMs), so a slow
+            // Should timeout due to socket timeout (no heartbeats received within socketTimeoutMillis).
+            // Startup/handshake is bounded by startupTimeoutMillis (not socketTimeoutMillis), so a slow
             // fork cold-start no longer misfires here as FAILED_TO_INITIALIZE.
             assertEquals(PipesResult.RESULT_STATUS.TIMEOUT, pipesResult.status(),
                     "Should timeout when socket times out");
@@ -609,12 +610,15 @@ public class PipesClientTest {
 
             PipesResult pipesResult = pipesClient.process(tuple);
 
-            assertEquals(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, pipesResult.status(),
-                    "Should return FETCHER_INITIALIZATION_EXCEPTION when fetcher name is invalid");
+            // An unknown fetcher id is not an initialization failure: nothing failed to start,
+            // the caller named something this server does not have. FetchHandler used to catch
+            // IllegalArgumentException, which FetcherManager never throws, so this fell through
+            // to the initialization branch and FETCHER_NOT_FOUND was unreachable.
+            assertEquals(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, pipesResult.status(),
+                    "Should return FETCHER_NOT_FOUND when fetcher name is invalid");
 
-            // Verify it's categorized as INITIALIZATION_FAILURE
-            assertTrue(pipesResult.isInitializationFailure(),
-                    "FETCHER_INITIALIZATION_EXCEPTION should be initialization failure category");
+            assertTrue(pipesResult.isTaskException(),
+                    "FETCHER_NOT_FOUND is a task exception, not an initialization failure");
 
             // Verify error message mentions the fetcher name
             Assertions.assertNotNull(pipesResult.message());
@@ -745,7 +749,7 @@ public class PipesClientTest {
         // Modify config to add very short heartbeat interval
         configContent = configContent.replace(
                 "\"pipes\": {",
-                "\"pipes\": {\n    \"heartbeatIntervalMs\": 100,"
+                "\"pipes\": {\n    \"heartbeatIntervalMillis\": 100,"
         );
         Files.writeString(tikaConfigPath, configContent, StandardCharsets.UTF_8);
 
@@ -792,7 +796,7 @@ public class PipesClientTest {
             // Other metadata should be stripped by the IncludeFieldMetadataFilter
             assertNull(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
                     "RESOURCE_NAME should be stripped in CONTENT_ONLY mode");
-            assertNull(metadata.get(Metadata.CONTENT_TYPE),
+            assertNull(metadata.get(HttpHeaders.CONTENT_TYPE),
                     "CONTENT_TYPE should be stripped in CONTENT_ONLY mode");
         }
     }
@@ -1003,7 +1007,7 @@ public class PipesClientTest {
                 PipesMessage.ready().write(out);
                 PipesMessage.read(in); // NEW_REQUEST -- ignored, this fake never parses anything
                 while (!socket.isClosed()) {
-                    PipesMessage.working(System.currentTimeMillis()).write(out);
+                    PipesMessage.working().write(out);
                     Thread.sleep(200);
                 }
             } catch (Exception e) {
@@ -1022,10 +1026,10 @@ public class PipesClientTest {
         }
 
         @Override
-        public Socket connect(int socketTimeoutMs) throws IOException {
+        public Socket connect(int socketTimeoutMillis) throws IOException {
             Socket socket = new Socket();
-            socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), getPort()), socketTimeoutMs);
-            socket.setSoTimeout(socketTimeoutMs);
+            socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), getPort()), socketTimeoutMillis);
+            socket.setSoTimeout(socketTimeoutMillis);
             return socket;
         }
 

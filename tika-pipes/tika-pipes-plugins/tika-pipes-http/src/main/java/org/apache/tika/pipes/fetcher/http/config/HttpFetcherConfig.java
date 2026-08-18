@@ -51,6 +51,11 @@ public class HttpFetcherConfig {
     private Integer socketTimeoutMillis = 120000;
     private Long maxSpoolSize = -1L;
     private Integer maxRedirects = 0;
+    /**
+     * Verify server certificates and hostnames; false accepts any cert from any host
+     * (the opt-out for self-signed internal certs).
+     */
+    private boolean verifySsl = true;
     private List<String> httpHeaders = new ArrayList<>();
     private HttpHeaders httpRequestHeaders = new HttpHeaders();
     private Long overallTimeoutMillis = 120000L;
@@ -58,7 +63,8 @@ public class HttpFetcherConfig {
     private String userAgent;
     private String jwtIssuer;
     private String jwtSubject;
-    private int jwtExpiresInSeconds;
+    // 0 would mint already-expired tokens
+    private int jwtExpiresInSeconds = 3600;
     private String jwtSecret;
     private String jwtPrivateKeyBase64;
 
@@ -269,4 +275,13 @@ public class HttpFetcherConfig {
         this.jwtPrivateKeyBase64 = jwtPrivateKeyBase64;
         return this;
     }
+    public boolean isVerifySsl() {
+        return verifySsl;
+    }
+
+    public HttpFetcherConfig setVerifySsl(boolean verifySsl) {
+        this.verifySsl = verifySsl;
+        return this;
+    }
+
 }

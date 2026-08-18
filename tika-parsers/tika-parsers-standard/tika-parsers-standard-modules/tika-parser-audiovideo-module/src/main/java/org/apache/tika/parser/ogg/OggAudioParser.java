@@ -41,8 +41,10 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.PassthroughPrefix;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
@@ -59,8 +61,18 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public abstract class OggAudioParser extends AbstractParser {
     private static final long serialVersionUID = 5168743829615945633L;
 
-    private static final PassthroughPrefix VORBIS =
-            PassthroughPrefix.file("vorbis:", "Vorbis comment field names");
+    private static final KeyPrefix VORBIS =
+            KeyPrefix.file("vorbis:", "Vorbis comment field names");
+
+    /**
+     * The Vorbis comment header vendor string (encoder library identification), also
+     * captured under {@link org.apache.tika.metadata.XMP#CREATOR_TOOL}; kept under its
+     * own name too since some consumers look for the raw vorbis: field.
+     */
+    private static final Property VORBIS_VENDOR = Property.internalText("vorbis:vendor");
+
+    // Codec bitstream/library version string (e.g. "Theora 3.2.1"); distinct from the vendor/encoder tool under XMP#CREATOR_TOOL.
+    protected static final Property CODEC_VERSION = Property.internalText("ogg:codec-version");
 
     /**
      * Comment holding an embedded picture (e.g. cover art) as a base64
@@ -116,7 +128,7 @@ public abstract class OggAudioParser extends AbstractParser {
         metadata.set(XMPDM.GENRE, comments.getGenre());
         metadata.set(XMPDM.RELEASE_DATE, comments.getDate());
         metadata.add(XMP.CREATOR_TOOL, comments.getVendor());
-        metadata.add("vorbis:vendor", comments.getVendor());
+        metadata.add(VORBIS_VENDOR, comments.getVendor());
 
         //xmpDM:copyright is single-valued, so map the first comment; like
         //vendor, the raw comments also stay available under the vorbis: name
@@ -126,7 +138,7 @@ public abstract class OggAudioParser extends AbstractParser {
         }
 
         for (String comment : comments.getComments("comment")) {
-            metadata.add(XMPDM.LOG_COMMENT.getName(), comment);
+            metadata.add(XMPDM.LOG_COMMENT, comment);
         }
 
         // Grab the rest just in case; the pictures become embedded
@@ -137,10 +149,11 @@ public abstract class OggAudioParser extends AbstractParser {
                 VorbisComments.KEY_DATE, VorbisComments.KEY_TRACKNUMBER,
                 "vendor", "comment", METADATA_BLOCK_PICTURE
         );
+        // BAG: a Vorbis comment field can legitimately repeat.
         for (String key : comments.getAllComments().keySet()) {
             if (!done.contains(key)) {
                 for (String value : comments.getAllComments().get(key)) {
-                    metadata.add(VORBIS.key(key), value);
+                    metadata.add(VORBIS, key, value);
                 }
             }
         }
@@ -271,7 +284,7 @@ public abstract class OggAudioParser extends AbstractParser {
         pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
         if (!mimeType.isEmpty()) {
-            pictureMetadata.set(Metadata.CONTENT_TYPE, mimeType);
+            pictureMetadata.set(HttpHeaders.CONTENT_TYPE, mimeType);
         }
         if (!description.isEmpty()) {
             pictureMetadata.set(TikaCoreProperties.TITLE, description);
@@ -281,7 +294,7 @@ public abstract class OggAudioParser extends AbstractParser {
             pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
                     ID3Tags.PICTURE_TYPES[pictureType]);
         }
-        if (extractor.shouldParseEmbedded(pictureMetadata)) {
+        if (extractor.shouldParseEmbedded(pictureMetadata, context)) {
             try (TikaInputStream pictureStream = TikaInputStream.get(picture)) {
                 extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context, true);
             }

@@ -20,19 +20,22 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.CodeSource;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import org.apache.tika.digest.DigestDef;
-import org.apache.tika.metadata.PassthroughPrefix;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Property;
 
 /**
@@ -54,34 +57,131 @@ public final class SchemaGenerator {
     // Field/parameter descriptors in a .class constant pool: a class referencing one is force-loaded.
     private static final byte[] PROP_DESC =
             "Lorg/apache/tika/metadata/Property;".getBytes(StandardCharsets.ISO_8859_1);
-    private static final byte[] PASSTHROUGH_DESC =
-            "Lorg/apache/tika/metadata/PassthroughPrefix;".getBytes(StandardCharsets.ISO_8859_1);
+    private static final byte[] KEY_PREFIX_DESC =
+            "Lorg/apache/tika/metadata/KeyPrefix;".getBytes(StandardCharsets.ISO_8859_1);
 
     private SchemaGenerator() {
     }
 
+    // Populated by generate()'s classpath scan; passthroughJson() (contractually called after
+    // generate() -- see its javadoc) reads this to attribute KeyPrefix prefixes to a module.
+    private static Map<String, String> lastPrefixModules = Map.of();
+
     /** @return the registry as stable JSON (sorted by key). */
     public static String generate() throws Exception {
         ClassLoader cl = SchemaGenerator.class.getClassLoader();
-        scanClasspath(cl);
+        List<String> loaded = scanClasspath(cl);
         Field fld = Property.class.getDeclaredField("PROPERTIES");
         fld.setAccessible(true);
         @SuppressWarnings("unchecked")
         Map<String, Property> reg = (Map<String, Property>) fld.get(null);
 
-        TreeMap<String, String[]> entries = new TreeMap<>();   // key -> [valueType, cardinality]
+        // TIKA-4816 stage 5a: attribute each declaration to its supplying module (Maven artifactId),
+        // derived from the declaring class's CodeSource. Same scan, so no extra classpath pass.
+        Map<String, String> propertyModules =
+                attributeModules(loaded, cl, Property.class, p -> ((Property) p).getName());
+        lastPrefixModules =
+                attributeModules(loaded, cl, KeyPrefix.class, p -> ((KeyPrefix) p).prefix());
+
+        TreeMap<String, String[]> entries = new TreeMap<>();   // key -> [valueType, cardinality, module]
         for (Map.Entry<String, Property> e : reg.entrySet()) {
             entries.put(e.getKey(), new String[]{
-                    e.getValue().getValueType().toString(), e.getValue().getPropertyType().toString()});
+                    e.getValue().getValueType().toString(), e.getValue().getPropertyType().toString(),
+                    propertyModules.getOrDefault(e.getKey(), "")});
         }
         // Digest keys are a CLOSED cross-product of the supported algorithms and encodings, not an
         // open template. Synthesize them via the real DigestDef.metadataKey() so they can't drift.
+        // No declaring field (they're synthesized here, not minted by a static constant), so
+        // attribute them directly to the module that supplies DigestDef itself.
+        String digestModule = moduleOf(DigestDef.class);
         for (DigestDef.Algorithm a : DigestDef.Algorithm.values()) {
             for (DigestDef.Encoding enc : DigestDef.Encoding.values()) {
-                entries.put(new DigestDef(a, enc).metadataKey(), new String[]{"TEXT", "SIMPLE"});
+                entries.put(new DigestDef(a, enc).metadataKey(), new String[]{"TEXT", "SIMPLE", digestModule});
             }
         }
         return toJson(entries);
+    }
+
+    /**
+     * Scans {@code loadedClassNames} for static fields of type {@code fieldType} (Property or
+     * KeyPrefix) and attributes each declared instance (keyed by {@code keyOf}) to its declaring
+     * class's module. On a same-key collision across modules (aliases -- distinct fields, same key
+     * -- currently all intra-module, see TIKA-4797 field table) the alphabetically-first module wins,
+     * so the result is deterministic regardless of classpath/scan order.
+     */
+    private static <T> Map<String, String> attributeModules(List<String> loadedClassNames, ClassLoader cl,
+            Class<T> fieldType, java.util.function.Function<T, String> keyOf) {
+        Map<String, TreeSet<String>> candidates = new TreeMap<>();
+        for (String cn : loadedClassNames) {
+            Class<?> c;
+            try {
+                c = Class.forName(cn, true, cl);
+            } catch (Throwable ignore) {
+                continue;
+            }
+            String module = moduleOf(c);
+            Field[] fields;
+            try {
+                // getDeclaredFields() resolves every field's TYPE, not just the ones we want -- a
+                // class with an unrelated field typed on a `provided`-scope dependency (e.g.
+                // CTAKESContentHandler's UIMA AnalysisEngine field) throws NoClassDefFoundError here.
+                fields = c.getDeclaredFields();
+            } catch (Throwable ignore) {
+                continue;
+            }
+            for (Field f : fields) {
+                if (!Modifier.isStatic(f.getModifiers()) || f.getType() != fieldType) {
+                    continue;
+                }
+                try {
+                    f.setAccessible(true);
+                    T v = fieldType.cast(f.get(null));
+                    if (v != null) {
+                        candidates.computeIfAbsent(keyOf.apply(v), k -> new TreeSet<>()).add(module);
+                    }
+                } catch (Throwable ignore) {
+                    // unreadable field; skip
+                }
+            }
+        }
+        Map<String, String> result = new TreeMap<>();
+        for (Map.Entry<String, TreeSet<String>> e : candidates.entrySet()) {
+            result.put(e.getKey(), e.getValue().first());
+        }
+        return result;
+    }
+
+    /**
+     * The supplying module (Maven artifactId) for {@code c}, from its {@link CodeSource}. Handles
+     * both a jar resolved from the local repo ({@code <repo>/.../<artifactId>/<version>/x.jar} --
+     * grandparent dir name is the artifactId) and a reactor project directory ({@code
+     * <artifactId>/target/classes} -- e.g. tika-core can appear this way when Maven's reactor
+     * resolves an intra-build dependency straight to its output directory instead of an installed
+     * jar). Both layouts share the same "two path segments up = module dir" shape, since Tika's
+     * directory name equals its artifactId (same convention {@code MetadataCoverageTest} relies on).
+     */
+    private static String moduleOf(Class<?> c) {
+        try {
+            CodeSource cs = c.getProtectionDomain().getCodeSource();
+            if (cs == null || cs.getLocation() == null) {
+                return "";
+            }
+            Path p = Path.of(cs.getLocation().toURI());
+            Path grandparent;
+            if (p.toString().endsWith("classes")) {
+                // .../<module>/target/classes -> .../<module>/target -> .../<module>
+                Path target = p.getParent();
+                grandparent = target != null ? target.getParent() : null;
+            } else {
+                // .../<repo>/.../<artifactId>/<version>/x.jar -> .../<artifactId>/<version> -> .../<artifactId>
+                Path version = p.getParent();
+                grandparent = version != null ? version.getParent() : null;
+            }
+            return grandparent != null && grandparent.getFileName() != null
+                    ? grandparent.getFileName().toString() : "";
+        } catch (URISyntaxException | RuntimeException e) {
+            return "";
+        }
     }
 
     /**
@@ -99,7 +199,15 @@ public final class SchemaGenerator {
             } catch (Throwable ignore) {
                 continue;
             }
-            for (Field f : c.getDeclaredFields()) {
+            Field[] fields;
+            try {
+                // see attributeModules(): getDeclaredFields() resolves every field's type, not just
+                // Property ones -- a `provided`-scope-typed field elsewhere in the class throws.
+                fields = c.getDeclaredFields();
+            } catch (Throwable ignore) {
+                continue;
+            }
+            for (Field f : fields) {
                 if (!Modifier.isStatic(f.getModifiers()) || f.getType() != Property.class) {
                     continue;
                 }
@@ -118,7 +226,7 @@ public final class SchemaGenerator {
         return fieldTableJson(rows);
     }
 
-    /** Scans the classpath, force-loads every Property/PassthroughPrefix-bearing class (static init
+    /** Scans the classpath, force-loads every Property/KeyPrefix-bearing class (static init
      * registers the constants), and returns the loaded class names. */
     private static List<String> scanClasspath(ClassLoader cl) throws IOException {
         List<String> loaded = new ArrayList<>();
@@ -160,7 +268,7 @@ public final class SchemaGenerator {
 
     private static void maybeLoad(String classPath, byte[] bytes, ClassLoader cl, List<String> loaded) {
         if (!classPath.startsWith("org/apache/tika/")
-                || (!contains(bytes, PROP_DESC) && !contains(bytes, PASSTHROUGH_DESC))) {
+                || (!contains(bytes, PROP_DESC) && !contains(bytes, KEY_PREFIX_DESC))) {
             return;
         }
         String cn = classPath.substring(0, classPath.length() - 6).replace('/', '.');
@@ -196,7 +304,8 @@ public final class SchemaGenerator {
               .append(",\"namespace\":").append(quote(ns))
               .append(",\"valueType\":\"").append(e.getValue()[0])
               .append("\",\"cardinality\":\"").append(e.getValue()[1])
-              .append("\"}").append(++i < n ? "," : "").append('\n');
+              .append("\",\"module\":").append(quote(e.getValue()[2]))
+              .append("}").append(++i < n ? "," : "").append('\n');
         }
         return sb.append("]\n").toString();
     }
@@ -219,11 +328,13 @@ public final class SchemaGenerator {
         return '"' + s.replace("\\", "\\\\").replace("\"", "\\\"") + '"';
     }
 
-    /** Declared passthrough prefixes as stable JSON. Call after {@link #generate()} has loaded classes. */
+    /** Declared passthrough prefixes as stable JSON. Call after {@link #generate()} has loaded classes
+     * (and populated {@link #lastPrefixModules}). */
     public static String passthroughJson() {
         TreeMap<String, String[]> m = new TreeMap<>();
-        for (PassthroughPrefix p : PassthroughPrefix.registered()) {
-            m.put(p.prefix(), new String[]{p.provenance().name(), p.description()});
+        for (KeyPrefix p : KeyPrefix.registered()) {
+            m.put(p.prefix(), new String[]{p.provenance().name(), p.description(),
+                    lastPrefixModules.getOrDefault(p.prefix(), "")});
         }
         StringBuilder sb = new StringBuilder("[\n");
         int i = 0;
@@ -232,6 +343,7 @@ public final class SchemaGenerator {
             sb.append("  {\"prefix\":").append(quote(e.getKey()))
               .append(",\"provenance\":\"").append(e.getValue()[0])
               .append("\",\"description\":").append(quote(e.getValue()[1]))
+              .append(",\"module\":").append(quote(e.getValue()[2]))
               .append("}").append(++i < n ? "," : "").append('\n');
         }
         return sb.append("]\n").toString();

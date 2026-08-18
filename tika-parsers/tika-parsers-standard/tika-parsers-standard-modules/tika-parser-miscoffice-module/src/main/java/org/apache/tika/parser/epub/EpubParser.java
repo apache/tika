@@ -52,6 +52,7 @@ import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -137,7 +138,7 @@ public class EpubParser implements Parser {
         if (type != null) {
             type = type.trim();
         }
-        metadata.set(Metadata.CONTENT_TYPE, type);
+        metadata.set(HttpHeaders.CONTENT_TYPE, type);
 
     }
 
@@ -437,10 +438,10 @@ public class EpubParser implements Parser {
         }
         Metadata embeddedMetadata = Metadata.newInstance(context);
         if (!StringUtils.isBlank(hRefMediaPair.media)) {
-            embeddedMetadata.set(Metadata.CONTENT_TYPE, hRefMediaPair.media);
+            embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, hRefMediaPair.media);
         }
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fullPath);
-        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             return;
         }
 

@@ -32,6 +32,7 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -117,7 +118,7 @@ public class FlatOpenDocumentParser implements Parser {
             //update it here.
             MediaType detected = ((FlatOpenDocumentParserHandler) fodHandler).getDetectedType();
             if (detected != null) {
-                metadata.set(Metadata.CONTENT_TYPE, detected.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, detected.toString());
             }
         } catch (SAXException | IOException | TikaException e) {
             // Drain the balancer on ANY exception that escapes the parse

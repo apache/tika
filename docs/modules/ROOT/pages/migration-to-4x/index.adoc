@@ -17,36 +17,41 @@
 
 = Migrating to Tika 4.x
 
-This section provides guides and background documentation for migrating to Apache Tika 4.x.
-
-See the xref:roadmap.adoc[Roadmap] for version timelines and support schedules.
+Guides and background for upgrading from Apache Tika 3.x.
 
 == Migration Guides
 
-* xref:migration-to-4x/migrating-to-4x.adoc[Migration Guide] - Step-by-step guide for upgrading from Tika 3.x to 4.x
-* xref:migration-to-4x/migrating-tika-server-4x.adoc[Tika Server Migration] - Breaking changes and new endpoints in tika-server 4.x
-* xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes] - Detailed metadata key changes and migration examples
+* xref:migration-to-4x/migrating-to-4x.adoc[Migration Guide] -- start here: Java version,
+  SPI signatures, JSON configuration, and the API changes every upgrader hits
+* xref:migration-to-4x/migrating-tika-server-4x.adoc[Tika Server Migration] -- endpoint,
+  wire-format, and configuration changes in tika-server 4.x
+* xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes] -- the full 3.x -> 4.x
+  key rename tables and the reserved-key write guard
 
 == Background Documentation
 
-* xref:migration-to-4x/design-notes-4x.adoc[Design Notes] - Architectural decisions and design rationale
-* xref:migration-to-4x/serialization-4x.adoc[Serialization] - JSON serialization design and implementation details
-* xref:migration-to-4x/chunk-strategies.adoc[Chunk Strategies] - Chunk emission to Elasticsearch/OpenSearch from the inference pipeline
-* xref:migration-to-4x/inference-handler-requirements.adoc[Inference Handler Requirements] - Why inference filters require MARKDOWN content handler
+* xref:migration-to-4x/design-notes-4x.adoc[Design Notes] -- architectural decisions and
+  their rationale
+* xref:migration-to-4x/serialization-4x.adoc[Serialization] -- how JSON configuration is
+  designed and implemented
+* xref:migration-to-4x/chunk-strategies.adoc[Chunk Strategies] -- emitting inference chunks
+  to Elasticsearch/OpenSearch
+* xref:migration-to-4x/inference-handler-requirements.adoc[Inference Handler Requirements]
+  -- why inference filters want the MARKDOWN content handler
 
-== TODOs / Missing Features in 4.x
+[#not-yet-in-4x]
+== Not Yet in 4.x
 
-The following features from 3.x are not yet implemented in 4.x:
+`tika-app` cannot dump its configuration. These 3.x options are not wired up:
 
-=== Config Serialization
+* `--dump-minimal-config` - print minimal TikaConfig
+* `--dump-current-config` - print current TikaConfig
+* `--dump-static-config` - print static config
+* `--dump-static-full-config` - print static explicit config
 
-The following tika-app options for dumping configuration are not yet available:
+The underlying serialization infrastructure exists (see
+xref:migration-to-4x/serialization-4x.adoc[Serialization]); only the CLI integration is
+missing.
 
-* `--dump-minimal-config` - Print minimal TikaConfig
-* `--dump-current-config` - Print current TikaConfig
-* `--dump-static-config` - Print static config
-* `--dump-static-full-config` - Print static explicit config
-
-These require completing the JSON serialization support for TikaConfig objects. The underlying serialization infrastructure exists (see xref:migration-to-4x/serialization-4x.adoc[Serialization]) but the CLI integration is pending.
-
-*Workaround:* Manually create JSON config files using the xref:pipes/configuration.adoc#config-template[Tika Pipes config template] as a starting point.
+*Workaround:* write the JSON config by hand, starting from the
+xref:pipes/configuration.adoc#config-template[Tika Pipes config template].

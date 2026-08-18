@@ -46,6 +46,36 @@
       <type>pom</type>
     </dependency>
 
+    <!-- Extended/optional parser families (TIKA-4816 stage 5a scope expansion): test-scope only,
+         since the registry is committed and MetadataKeyValidator is dependency-free at runtime, so
+         pulling their (sometimes heavy) runtime deps in is a build-time-only cost. Transitively
+         brings tika-parser-scientific-module (netcdf:/grib:/envi.) and tika-parser-sqlite3-module
+         (sqlite3:) onto the scan classpath. -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parser-scientific-package</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parser-sqlite3-package</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parser-nlp-module</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-vlm</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter</artifactId>
@@ -57,7 +87,7 @@
        MetadataFieldTableTest regenerate in-memory and fail if they go stale. Regenerate with:
          ./mvnw -pl tika-metadata-schema -Pregen-metadata-schema process-classes
        Forking exec goal is deliberate: exec:java runs in-process, scans the wrong classpath, and
-       silently emits a near-empty registry. See .skills/metadata-schema.md. -->
+       silently emits a near-empty registry. See .skills/metadata-schema/SKILL.md. -->
   <profiles>
     <profile>
       <id>regen-metadata-schema</id>
@@ -76,6 +106,11 @@
                 </goals>
                 <configuration>
                   <executable>java</executable>
+                  <!-- default classpathScope is "runtime", which excludes the test-scope extended
+                       parser families (TIKA-4816 stage 5a); the generated classpath must match what
+                       MetadataSchemaTest sees at test time (full test classpath) or the committed
+                       registry silently falls short of it. -->
+                  <classpathScope>test</classpathScope>
                   <arguments>
                     <argument>-cp</argument>
                     <classpath/>

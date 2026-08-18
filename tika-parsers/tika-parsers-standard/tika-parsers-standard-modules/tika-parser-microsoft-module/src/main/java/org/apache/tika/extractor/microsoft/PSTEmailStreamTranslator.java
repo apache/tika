@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -39,7 +40,7 @@ public class PSTEmailStreamTranslator implements EmbeddedStreamTranslator {
     @Override
     public boolean shouldTranslate(TikaInputStream tis, Metadata metadata) throws IOException {
         return MIME_TYPE.equals(metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE))
-                || MIME_TYPE.equals(metadata.get(Metadata.CONTENT_TYPE));
+                || MIME_TYPE.equals(metadata.get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Override

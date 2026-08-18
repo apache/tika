@@ -36,6 +36,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
@@ -137,7 +138,7 @@ public class PSTMailItemParser implements Parser {
         metadata.set(TikaCoreProperties.IDENTIFIER, pstMail.getInternetMessageId());
         metadata.set(TikaCoreProperties.TITLE, pstMail.getSubject());
         metadata.set(TikaCoreProperties.SUBJECT, pstMail.getSubject());
-        metadata.set(Metadata.MESSAGE_FROM, pstMail.getSenderName());
+        metadata.set(Message.MESSAGE_FROM, pstMail.getSenderName());
         metadata.set(TikaCoreProperties.CREATOR, pstMail.getSenderName());
         //creation/last-modification are storage timestamps, not content dates (TIKA-4798)
         Date messageDate = pstMail.getClientSubmitTime();
@@ -236,7 +237,7 @@ public class PSTMailItemParser implements Parser {
             long sz = OutlookPSTParser.estimateSize(attachedEmail);
             try (TikaInputStream tis = TikaInputStream.getFromContainer(attachedEmail, sz, metadata)) {
                 Metadata attachMetadata = Metadata.newInstance(context);
-                attachMetadata.set(Metadata.CONTENT_TYPE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
+                attachMetadata.set(HttpHeaders.CONTENT_TYPE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 attachMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 attachMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attachedEmail.getSubject() + ".msg");
                 attachMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
@@ -257,12 +258,12 @@ public class PSTMailItemParser implements Parser {
         attachMeta.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         attachMeta.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, filename);
         attachMeta.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
-        attachMeta.set(Metadata.CONTENT_LENGTH, Integer.toString(attachment.getSize()));
+        attachMeta.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(attachment.getSize()));
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
         attributes.addAttribute("", "id", "id", "CDATA", filename);
         xhtml.startElement("div", attributes);
-        if (embeddedExtractor.shouldParseEmbedded(attachMeta)) {
+        if (embeddedExtractor.shouldParseEmbedded(attachMeta, context)) {
             TikaInputStream tis = null;
             try {
                 tis = TikaInputStream.get(attachment.getFileInputStream());
