@@ -32,9 +32,9 @@ import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.reflect.Field;
-import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
@@ -90,7 +90,6 @@ import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.CompositeParser;
-import org.apache.tika.parser.NetworkParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -135,7 +134,6 @@ public class TikaCLI {
     private TikaLoader tikaLoader;
     private String configFilePath;
     private boolean recursiveJSON = false;
-    private URI networkURI = null;
     /**
      * Output character encoding, or <code>null</code> for platform default
      */
@@ -446,8 +444,13 @@ public class TikaCLI {
         }
 
         if (args.length == 2) {
-            if (Files.isDirectory(Paths.get(args[0]))) {
-                return true;
+            try {
+                if (Files.isDirectory(Paths.get(args[0]))) {
+                    return true;
+                }
+            } catch (InvalidPathException e) {
+                // Not a valid path (e.g. a URL passed as a raw single-dash
+                // arg on Windows) -- fall through to the other checks.
             }
         }
 
@@ -606,8 +609,6 @@ public class TikaCLI {
             maxEmbeddedCount = Integer.parseInt(arg.substring("--maxEmbeddedCount=".length()));
         } else if (arg.equals("-r") || arg.equals("--pretty-print")) {
             prettyPrint = true;
-        } else if (arg.startsWith("--client=")) {
-            networkURI = new URI(arg.substring("--client=".length()));
         } else {
             // Any arg that reaches here is either "-" (stdin), an existing
             // file, a URL, or an unknown/typo'd flag. The default fallthrough
@@ -615,7 +616,7 @@ public class TikaCLI {
             // surface as a confusing MalformedURLException. Catch dash-prefixed
             // args that aren't the stdin marker or an existing file and emit
             // an actionable error before that happens.
-            if (arg.startsWith("-") && !arg.equals("-") && !new File(arg).exists()) {
+            if (arg.startsWith("-") && !arg.equals("-") && !fileExists(arg)) {
                 String hint = " Run with --help for the full option list.";
                 // Heuristic: single-dash + multi-letter (e.g. "-input") is
                 // usually a long-form-with-one-dash typo. Single-dash + one
@@ -639,9 +640,8 @@ public class TikaCLI {
                 }
             } else {
                 URL url;
-                File file = new File(arg);
-                if (file.isFile()) {
-                    url = file
+                if (isRegularFile(arg)) {
+                    url = new File(arg)
                             .toURI()
                             .toURL();
                 } else {
@@ -663,6 +663,27 @@ public class TikaCLI {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Windows rejects a colon outside the drive-letter slot (e.g. a URL passed
+     * as a raw CLI arg) by throwing InvalidPathException from File I/O instead
+     * of just reporting "not found"; normalize that to "doesn't exist".
+     */
+    private static boolean fileExists(String arg) {
+        try {
+            return new File(arg).exists();
+        } catch (InvalidPathException e) {
+            return false;
+        }
+    }
+
+    private static boolean isRegularFile(String arg) {
+        try {
+            return new File(arg).isFile();
+        } catch (InvalidPathException e) {
+            return false;
         }
     }
 
@@ -1002,11 +1023,7 @@ public class TikaCLI {
                 Files.deleteIfExists(tempConfig);
             }
         }
-        if (networkURI != null) {
-            parser = new NetworkParser(networkURI);
-        } else {
-            parser = tikaLoader.loadAutoDetectParser();
-        }
+        parser = tikaLoader.loadAutoDetectParser();
 
         // Load configs from tika-config.json and merge into existing context
         // (preserves EmbeddedDocumentExtractor and other items set before configure())

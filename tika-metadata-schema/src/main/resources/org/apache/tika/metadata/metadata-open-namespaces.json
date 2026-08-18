@@ -29,7 +29,6 @@
   {"prefix":"mp4:","provenance":"FILE","description":"QuickTime 'keys' box item names, read verbatim from file bytes","module":"tika-parser-audiovideo-module"},
   {"prefix":"ner:","provenance":"TOOL","description":"named-entity types","module":"tika-parser-nlp-module"},
   {"prefix":"netcdf:","provenance":"FILE","description":"NetCDF global attribute names","module":"tika-parser-scientific-module"},
-  {"prefix":"network:","provenance":"TOOL","description":"meta/@name from a remote parse service's XML response","module":"tika-core"},
   {"prefix":"numbers:","provenance":"FILE","description":"iWork Numbers document metadata element names","module":"tika-parser-apple-module"},
   {"prefix":"ogg:streams-","provenance":"TOOL","description":"Ogg per-stream-type/kind counts","module":"tika-parser-audiovideo-module"},
   {"prefix":"pages:","provenance":"FILE","description":"Pages metadata element names with no mapped Property","module":"tika-parser-apple-module"},
