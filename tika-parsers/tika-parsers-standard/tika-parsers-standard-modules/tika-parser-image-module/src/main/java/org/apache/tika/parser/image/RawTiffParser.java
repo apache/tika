@@ -19,6 +19,7 @@ package org.apache.tika.parser.image;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -42,24 +43,29 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
- * Parser for Nikon NEF/NRW raw images.
+ * Parser for TIFF-based camera raw images: Nikon NEF/NRW, Sony ARW/SRF/SR2
+ * and Pentax PEF/PTX.
  * <p>
- * NEF files are TIFF-based: metadata extraction is inherited from
+ * These formats are TIFF containers: metadata extraction is inherited from
  * {@link TiffParser}. In addition, this parser extracts the camera-generated
- * JPEG preview images that Nikon embeds in the raw file (referenced from
- * SubIFDs via the JPEGInterchangeFormat/JPEGInterchangeFormatLength tags)
- * and hands them to the {@link EmbeddedDocumentExtractor}.
+ * JPEG preview images embedded in the raw file (referenced from the IFD
+ * chain or from SubIFDs via the JPEGInterchangeFormat/
+ * JPEGInterchangeFormatLength tags) and hands them to the
+ * {@link EmbeddedDocumentExtractor}.
  */
 @TikaComponent
-public class NEFParser extends TiffParser {
+public class RawTiffParser extends TiffParser {
 
     /**
      * Serial version UID
      */
     private static final long serialVersionUID = 5385105345533384662L;
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.image("x-raw-nikon"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(
+                    MediaType.image("x-raw-nikon"),
+                    MediaType.image("x-raw-sony"),
+                    MediaType.image("x-raw-pentax"))));
 
     private static final String JPEG_MIME = "image/jpeg";
 
@@ -72,17 +78,17 @@ public class NEFParser extends TiffParser {
     //previews are camera-generated JPEGs, tens of MB is already generous
     private static final long MAX_PREVIEW_LENGTH_BYTES = 100 * 1024 * 1024;
 
-    private NEFParserConfig defaultConfig = new NEFParserConfig();
+    private RawTiffParserConfig defaultConfig = new RawTiffParserConfig();
 
-    public NEFParser() {
+    public RawTiffParser() {
     }
 
-    public NEFParser(NEFParserConfig config) {
+    public RawTiffParser(RawTiffParserConfig config) {
         this.defaultConfig = config;
     }
 
-    public NEFParser(JsonConfig jsonConfig) {
-        this(ConfigDeserializer.buildConfig(jsonConfig, NEFParserConfig.class));
+    public RawTiffParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, RawTiffParserConfig.class));
     }
 
     @Override
@@ -269,9 +275,9 @@ public class NEFParser extends TiffParser {
     }
 
     /**
-     * Configuration class for NEFParser.
+     * Configuration class for RawTiffParser.
      */
-    public static class NEFParserConfig {
+    public static class RawTiffParserConfig {
         private boolean extractPreviews = true;
 
         public boolean isExtractPreviews() {

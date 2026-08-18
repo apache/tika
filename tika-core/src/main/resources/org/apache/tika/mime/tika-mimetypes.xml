@@ -7232,7 +7232,7 @@
   </mime-type>
 
   <mime-type type="image/x-raw-nikon">
-    <_comment>Nikon raw image, TIFF-based</_comment>
+    <_comment>Nikon raw image</_comment>
     <sub-class-of type="image/tiff" />
     <glob pattern="*.nef"/>
     <glob pattern="*.nrw"/>
@@ -7248,12 +7248,14 @@
 
   <mime-type type="image/x-raw-pentax">
     <_comment>Pentax raw image</_comment>
+    <sub-class-of type="image/tiff" />
     <glob pattern="*.ptx"/>
     <glob pattern="*.pef"/>
   </mime-type>
 
   <mime-type type="image/x-raw-sony">
     <_comment>Sony raw image</_comment>
+    <sub-class-of type="image/tiff" />
     <glob pattern="*.arw"/>
     <glob pattern="*.srf"/>
     <glob pattern="*.sr2"/>

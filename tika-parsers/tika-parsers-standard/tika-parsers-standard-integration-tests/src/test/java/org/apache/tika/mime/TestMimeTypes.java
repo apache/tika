@@ -896,6 +896,10 @@ public class TestMimeTypes {
         assertTypeByName("image/x-raw-nikon", "x.nrw");
         assertTypeByData("image/tiff", "testNEF.nef");
         assertTypeByNameAndData("image/x-raw-nikon", "testNEF.nef");
+        assertTypeByData("image/tiff", "testARW.arw");
+        assertTypeByNameAndData("image/x-raw-sony", "testARW.arw");
+        assertTypeByData("image/tiff", "testPEF.pef");
+        assertTypeByNameAndData("image/x-raw-pentax", "testPEF.pef");
         assertTypeByName("image/x-raw-olympus", "x.orf");
         assertTypeByName("image/x-raw-pentax", "x.ptx");
         assertTypeByName("image/x-raw-pentax", "x.pef");
