@@ -45,6 +45,7 @@ import org.apache.tika.grpc.v2.MetadataField;
 import org.apache.tika.grpc.v2.MetadataValue;
 import org.apache.tika.grpc.v2.ParseStatus;
 import org.apache.tika.grpc.v2.TikaV2Grpc;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
@@ -392,7 +393,8 @@ class HandlerTypeTest {
                     .setFetchKey("testPDF.pdf")
                     .build());
             Assertions.assertEquals("PARSE_SUCCESS", v1Reply.getStatus());
-            Assertions.assertNotNull(v1Reply.getFieldsMap().get("X-TIKA:content"),
+            Assertions.assertNotNull(
+                    v1Reply.getFieldsMap().get(TikaCoreProperties.TIKA_CONTENT.getName()),
                     "v1 fields map must keep working independently of v2");
 
             org.apache.tika.grpc.v2.FetchAndParseReply reply = v2.fetchAndParse(
