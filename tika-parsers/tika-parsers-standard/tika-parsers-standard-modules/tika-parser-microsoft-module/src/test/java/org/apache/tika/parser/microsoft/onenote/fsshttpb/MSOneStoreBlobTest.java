@@ -131,7 +131,7 @@ public class MSOneStoreBlobTest {
         ParseContext context = new ParseContext();
         context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
             @Override
-            public boolean shouldParseEmbedded(Metadata metadata) {
+            public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
                 return true;
             }
 
@@ -234,7 +234,7 @@ public class MSOneStoreBlobTest {
         MSOneStorePackage emptyPackage = packageWithFileData(new ObjectDataBLOBDataElementData());
         walkWithExtractor(emptyPackage, new EmbeddedDocumentExtractor() {
             @Override
-            public boolean shouldParseEmbedded(Metadata metadata) {
+            public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
                 throw new AssertionError("empty data must not reach the extractor");
             }
 
@@ -250,7 +250,7 @@ public class MSOneStoreBlobTest {
                 (ObjectDataBLOBDataElementData) blobElement.data);
         walkWithExtractor(failedPackage, new EmbeddedDocumentExtractor() {
             @Override
-            public boolean shouldParseEmbedded(Metadata metadata) {
+            public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
                 return true;
             }
 

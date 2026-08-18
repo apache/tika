@@ -367,7 +367,7 @@ public class MSOneStorePackage {
      * Walks the section object space (the data root cell) and collects the object space (cell)
      * references in document order - this is the order of the pages in the section.
      */
-    private List<CellID> collectSectionReferencedCells() throws TikaException {
+    private List<CellID> collectSectionReferencedCells() {
         List<CellID> orderedCellIds = new ArrayList<>();
         if (dataRootCell == null) {
             return orderedCellIds;
@@ -463,10 +463,6 @@ public class MSOneStorePackage {
                                Metadata metadata, XHTMLContentHandler xhtml, int depth,
                                EmbeddedResourceInfo inheritedResourceInfo)
             throws SAXException, TikaException, IOException {
-        if (depth > MAX_TRAVERSAL_DEPTH) {
-            throw new TikaException("OneNote object graph exceeds maximum depth of " +
-                    MAX_TRAVERSAL_DEPTH);
-        }
         if (object == null) {
             return false;
         }
@@ -919,7 +915,7 @@ public class MSOneStorePackage {
         xhtml.startElement("div", attributes);
         xhtml.endElement("div");
         try (TikaInputStream tis = TikaInputStream.get(data)) {
-            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
                 embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
                         embeddedMetadata, this.parseContext, false);
             }
