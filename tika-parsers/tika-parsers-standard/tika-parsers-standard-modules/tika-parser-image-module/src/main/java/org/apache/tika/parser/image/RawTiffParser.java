@@ -43,15 +43,19 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
- * Parser for TIFF-based camera raw images: Nikon NEF/NRW, Sony ARW/SRF/SR2
- * and Pentax PEF/PTX.
+ * Parser for TIFF-based camera raw images: Nikon NEF/NRW, Sony ARW/SRF/SR2,
+ * Pentax PEF/PTX, Adobe DNG and Canon CR2.
  * <p>
  * These formats are TIFF containers: metadata extraction is inherited from
  * {@link TiffParser}. In addition, this parser extracts the camera-generated
- * JPEG preview images embedded in the raw file (referenced from the IFD
- * chain or from SubIFDs via the JPEGInterchangeFormat/
- * JPEGInterchangeFormatLength tags) and hands them to the
- * {@link EmbeddedDocumentExtractor}.
+ * JPEG preview images embedded in the raw file and hands them to the
+ * {@link EmbeddedDocumentExtractor}. Previews are referenced from the IFD
+ * chain or from SubIFDs, either via the JPEGInterchangeFormat/
+ * JPEGInterchangeFormatLength tags or as a single JPEG-compressed strip
+ * (DNG, CR2). Strips holding raw sensor data are also JPEG-encoded in some
+ * formats (lossless JPEG in CR2 and DNG), so strip candidates are only
+ * accepted for displayable images: PhotometricInterpretation RGB or YCbCr,
+ * or 8 bits per sample when PhotometricInterpretation is absent (CR2).
  */
 @TikaComponent
 public class RawTiffParser extends TiffParser {
@@ -65,13 +69,25 @@ public class RawTiffParser extends TiffParser {
             new HashSet<>(Arrays.asList(
                     MediaType.image("x-raw-nikon"),
                     MediaType.image("x-raw-sony"),
-                    MediaType.image("x-raw-pentax"))));
+                    MediaType.image("x-raw-pentax"),
+                    MediaType.image("x-raw-adobe"),
+                    MediaType.image("x-canon-cr2"))));
 
     private static final String JPEG_MIME = "image/jpeg";
 
+    private static final int TAG_BITS_PER_SAMPLE = 0x0102;
+    private static final int TAG_COMPRESSION = 0x0103;
+    private static final int TAG_PHOTOMETRIC_INTERPRETATION = 0x0106;
+    private static final int TAG_STRIP_OFFSETS = 0x0111;
+    private static final int TAG_STRIP_BYTE_COUNTS = 0x0117;
     private static final int TAG_SUB_IFDS = 0x014A;
     private static final int TAG_JPEG_INTERCHANGE_FORMAT = 0x0201;
     private static final int TAG_JPEG_INTERCHANGE_FORMAT_LENGTH = 0x0202;
+
+    private static final int COMPRESSION_OLD_JPEG = 6;
+    private static final int COMPRESSION_JPEG = 7;
+    private static final int PHOTOMETRIC_RGB = 2;
+    private static final int PHOTOMETRIC_YCBCR = 6;
 
     private static final int MAX_IFDS = 32;
     private static final int MAX_ENTRIES_PER_IFD = 1024;
@@ -189,6 +205,11 @@ public class RawTiffParser extends TiffParser {
             }
             long jpegOffset = -1;
             long jpegLength = -1;
+            long compression = -1;
+            long photometric = -1;
+            long[] bitsPerSample = new long[0];
+            long[] stripOffsets = new long[0];
+            long[] stripByteCounts = new long[0];
             for (int i = 0; i < numEntries; i++) {
                 raf.seek(ifdOffset + 2 + i * 12L);
                 int tag = readUInt16(raf, bigEndian);
@@ -204,11 +225,28 @@ public class RawTiffParser extends TiffParser {
                 } else if (tag == TAG_JPEG_INTERCHANGE_FORMAT_LENGTH && valueCount == 1) {
                     long[] v = readLongValues(raf, bigEndian, type, valueCount);
                     jpegLength = v.length == 1 ? v[0] : -1;
+                } else if (tag == TAG_COMPRESSION && valueCount == 1) {
+                    long[] v = readLongValues(raf, bigEndian, type, valueCount);
+                    compression = v.length == 1 ? v[0] : -1;
+                } else if (tag == TAG_PHOTOMETRIC_INTERPRETATION && valueCount == 1) {
+                    long[] v = readLongValues(raf, bigEndian, type, valueCount);
+                    photometric = v.length == 1 ? v[0] : -1;
+                } else if (tag == TAG_BITS_PER_SAMPLE) {
+                    bitsPerSample = readLongValues(raf, bigEndian, type, valueCount);
+                } else if (tag == TAG_STRIP_OFFSETS) {
+                    stripOffsets = readLongValues(raf, bigEndian, type, valueCount);
+                } else if (tag == TAG_STRIP_BYTE_COUNTS) {
+                    stripByteCounts = readLongValues(raf, bigEndian, type, valueCount);
                 }
             }
             raf.seek(ifdOffset + 2 + numEntries * 12L);
             toVisit.add(readUInt32(raf, bigEndian));
 
+            if (jpegOffset < 0 && isDisplayableJpegStrip(compression, photometric, bitsPerSample,
+                    stripOffsets, stripByteCounts)) {
+                jpegOffset = stripOffsets[0];
+                jpegLength = stripByteCounts[0];
+            }
             if (jpegOffset > 0 && jpegLength > 4 && jpegLength <= MAX_PREVIEW_LENGTH_BYTES &&
                     jpegOffset + jpegLength <= fileLength) {
                 raf.seek(jpegOffset);
@@ -219,6 +257,39 @@ public class RawTiffParser extends TiffParser {
             }
         }
         return previews;
+    }
+
+    /**
+     * Decides whether an IFD without JPEGInterchangeFormat holds a JPEG
+     * preview as a single strip (DNG, CR2). Raw sensor data can also be
+     * JPEG-encoded (lossless JPEG), so the image must be displayable:
+     * PhotometricInterpretation RGB or YCbCr, or 8 bits per sample when
+     * PhotometricInterpretation is absent (CR2's preview IFD).
+     */
+    private boolean isDisplayableJpegStrip(long compression, long photometric,
+                                           long[] bitsPerSample, long[] stripOffsets,
+                                           long[] stripByteCounts) {
+        if (compression != COMPRESSION_OLD_JPEG && compression != COMPRESSION_JPEG) {
+            return false;
+        }
+        if (stripOffsets.length != 1 || stripByteCounts.length != 1) {
+            return false;
+        }
+        if (photometric == PHOTOMETRIC_RGB || photometric == PHOTOMETRIC_YCBCR) {
+            return true;
+        }
+        if (photometric != -1) {
+            return false;
+        }
+        if (bitsPerSample.length == 0) {
+            return false;
+        }
+        for (long bits : bitsPerSample) {
+            if (bits != 8) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

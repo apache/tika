@@ -93,6 +93,35 @@ public class RawTiffParserTest extends TikaTest {
     }
 
     @Test
+    public void testDNG() throws Exception {
+        List<Metadata> metadataList = parseByName("testDNG.dng");
+        //the raw strip in SubIFD0 also starts with a JPEG SOI marker
+        //(lossless JPEG) and must not be extracted
+        assertEquals(2, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-adobe", container.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("PENTAX K-x", container.get(TIFF.EQUIPMENT_MODEL));
+
+        assertPreview(metadataList.get(1), 0, 64, 48);
+    }
+
+    @Test
+    public void testCR2() throws Exception {
+        List<Metadata> metadataList = parseByName("testCR2.cr2");
+        //the lossless-JPEG raw strip in the last IFD must not be extracted
+        assertEquals(3, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-canon-cr2", container.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("Canon EOS 7D", container.get(TIFF.EQUIPMENT_MODEL));
+
+        //full-size preview stored as a strip in IFD0, thumbnail from IFD1
+        assertPreview(metadataList.get(1), 0, 64, 48);
+        assertPreview(metadataList.get(2), 1, 32, 24);
+    }
+
+    @Test
     public void testParsedByRawTiffParser() throws Exception {
         List<Metadata> metadataList = parseByName("testNEF.nef");
         List<String> parsedBy =

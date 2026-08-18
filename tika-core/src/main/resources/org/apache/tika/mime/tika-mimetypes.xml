@@ -7164,6 +7164,7 @@
   <mime-type type="image/x-raw-adobe">
     <acronym>DNG</acronym>
     <_comment>Adobe Digital Negative</_comment>
+    <sub-class-of type="image/tiff" />
     <glob pattern="*.dng"/>
   </mime-type>
 
