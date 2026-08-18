@@ -136,7 +136,7 @@ public class RawTiffParser extends TiffParser {
 
     private void extractPreviews(TikaInputStream tis, XHTMLContentHandler xhtml, Metadata metadata,
                                  ParseContext context) throws IOException, SAXException {
-        List<long[]> previews;
+        List<Preview> previews;
         try (RandomAccessFile raf = new RandomAccessFile(tis.getFile(), "r")) {
             previews = locateJpegPreviews(raf);
         } catch (TiffStructureException e) {
@@ -149,7 +149,7 @@ public class RawTiffParser extends TiffParser {
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         int count = 0;
-        for (long[] preview : previews) {
+        for (Preview preview : previews) {
             Metadata previewMetadata = Metadata.newInstance(context);
             previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
@@ -162,10 +162,10 @@ public class RawTiffParser extends TiffParser {
             }
             //stream the preview region instead of loading it onto the heap
             try (InputStream fileStream = Files.newInputStream(tis.getPath())) {
-                IOUtils.skipFully(fileStream, preview[0]);
+                IOUtils.skipFully(fileStream, preview.offset());
                 BoundedInputStream bounded = BoundedInputStream.builder()
                         .setInputStream(fileStream)
-                        .setMaxCount(preview[1])
+                        .setMaxCount(preview.length())
                         .get();
                 try (TikaInputStream previewStream = TikaInputStream.get(bounded)) {
                     extractor.parseEmbedded(previewStream, xhtml, previewMetadata, context, true);
@@ -175,10 +175,10 @@ public class RawTiffParser extends TiffParser {
     }
 
     /**
-     * Walks the TIFF IFD chain plus one level of SubIFDs and returns
-     * {offset, length} pairs of embedded JPEG previews.
+     * Walks the TIFF IFD chain and any SubIFDs (traversal bounded by
+     * {@link #MAX_IFDS}) and returns the embedded JPEG previews.
      */
-    private List<long[]> locateJpegPreviews(RandomAccessFile raf)
+    private List<Preview> locateJpegPreviews(RandomAccessFile raf)
             throws IOException, TiffStructureException {
         long fileLength = raf.length();
         if (fileLength < 8) {
@@ -199,7 +199,7 @@ public class RawTiffParser extends TiffParser {
             throw new TiffStructureException("bad TIFF magic number");
         }
 
-        List<long[]> previews = new ArrayList<>();
+        List<Preview> previews = new ArrayList<>();
         Set<Long> visited = new HashSet<>();
         Deque<Long> toVisit = new ArrayDeque<>();
         toVisit.add(readUInt32(raf, bigEndian));
@@ -268,7 +268,7 @@ public class RawTiffParser extends TiffParser {
                 raf.seek(jpegOffset);
                 //require the JPEG SOI marker
                 if (raf.read() == 0xFF && raf.read() == 0xD8) {
-                    previews.add(new long[]{jpegOffset, jpegLength});
+                    previews.add(new Preview(jpegOffset, jpegLength));
                 }
             }
         }
@@ -359,6 +359,9 @@ public class RawTiffParser extends TiffParser {
         long high = readUInt16(raf, bigEndian);
         long low = readUInt16(raf, bigEndian);
         return bigEndian ? (high << 16) | low : (low << 16) | high;
+    }
+
+    private record Preview(long offset, long length) {
     }
 
     private static class TiffStructureException extends TikaException {
