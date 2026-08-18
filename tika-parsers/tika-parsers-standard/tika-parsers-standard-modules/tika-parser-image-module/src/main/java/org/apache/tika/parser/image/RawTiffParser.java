@@ -17,14 +17,20 @@
 package org.apache.tika.parser.image;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -94,9 +100,10 @@ public class RawTiffParser extends TiffParser {
     //previews are camera-generated JPEGs, tens of MB is already generous
     private static final long MAX_PREVIEW_LENGTH_BYTES = 100 * 1024 * 1024;
 
-    private RawTiffParserConfig defaultConfig = new RawTiffParserConfig();
+    private final RawTiffParserConfig defaultConfig;
 
     public RawTiffParser() {
+        this(new RawTiffParserConfig());
     }
 
     public RawTiffParser(RawTiffParserConfig config) {
@@ -130,32 +137,38 @@ public class RawTiffParser extends TiffParser {
         List<long[]> previews;
         try (RandomAccessFile raf = new RandomAccessFile(tis.getFile(), "r")) {
             previews = locateJpegPreviews(raf);
-            if (previews.isEmpty()) {
-                return;
+        } catch (TiffStructureException e) {
+            EmbeddedDocumentUtil.recordException(e, metadata);
+            return;
+        }
+        if (previews.isEmpty()) {
+            return;
+        }
+        EmbeddedDocumentExtractor extractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        int count = 0;
+        for (long[] preview : previews) {
+            Metadata previewMetadata = Metadata.newInstance(context);
+            previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+            previewMetadata.set(HttpHeaders.CONTENT_TYPE, JPEG_MIME);
+            EmbeddedDocumentUtil.setGeneratedResourceName(previewMetadata,
+                    EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL, count, JPEG_MIME);
+            count++;
+            if (!extractor.shouldParseEmbedded(previewMetadata, context)) {
+                continue;
             }
-            EmbeddedDocumentExtractor extractor =
-                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-            int count = 0;
-            for (long[] preview : previews) {
-                Metadata previewMetadata = Metadata.newInstance(context);
-                previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
-                previewMetadata.set(HttpHeaders.CONTENT_TYPE, JPEG_MIME);
-                EmbeddedDocumentUtil.setGeneratedResourceName(previewMetadata,
-                        EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL, count, JPEG_MIME);
-                count++;
-                if (!extractor.shouldParseEmbedded(previewMetadata, context)) {
-                    continue;
-                }
-                byte[] data = new byte[(int) preview[1]];
-                raf.seek(preview[0]);
-                raf.readFully(data);
-                try (TikaInputStream previewStream = TikaInputStream.get(data)) {
+            //stream the preview region instead of loading it onto the heap
+            try (InputStream fileStream = Files.newInputStream(tis.getPath())) {
+                IOUtils.skipFully(fileStream, preview[0]);
+                BoundedInputStream bounded = BoundedInputStream.builder()
+                        .setInputStream(fileStream)
+                        .setMaxCount(preview[1])
+                        .get();
+                try (TikaInputStream previewStream = TikaInputStream.get(bounded)) {
                     extractor.parseEmbedded(previewStream, xhtml, previewMetadata, context, true);
                 }
             }
-        } catch (TiffStructureException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);
         }
     }
 
@@ -186,11 +199,11 @@ public class RawTiffParser extends TiffParser {
 
         List<long[]> previews = new ArrayList<>();
         Set<Long> visited = new HashSet<>();
-        List<Long> toVisit = new ArrayList<>();
+        Deque<Long> toVisit = new ArrayDeque<>();
         toVisit.add(readUInt32(raf, bigEndian));
 
         while (!toVisit.isEmpty() && visited.size() < MAX_IFDS) {
-            long ifdOffset = toVisit.remove(0);
+            long ifdOffset = toVisit.poll();
             if (ifdOffset == 0 || !visited.add(ifdOffset)) {
                 continue;
             }
