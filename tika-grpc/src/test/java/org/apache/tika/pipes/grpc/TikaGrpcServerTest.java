@@ -62,6 +62,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.TikaV2Grpc;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherReply;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherRequest;
@@ -146,10 +149,13 @@ public class TikaGrpcServerTest {
     public void testFetcherCrud(Resources resources) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
 
+        TikaGrpcServerImpl serviceImpl =
+                new TikaGrpcServerImpl(tikaConfigUnlocked.toAbsolutePath().toString());
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfigUnlocked.toAbsolutePath().toString()))
+                .addService(serviceImpl)
+                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -359,13 +365,14 @@ public class TikaGrpcServerTest {
         assertNotNull(reply.getMessage());
     }
 
-    private static TikaGrpc.TikaBlockingStub startServer(Resources resources, Path config)
-            throws Exception {
+    private static ManagedChannel startChannel(Resources resources, Path config) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
+        TikaGrpcServerImpl serviceImpl = new TikaGrpcServerImpl(config.toAbsolutePath().toString());
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(config.toAbsolutePath().toString()))
+                .addService(serviceImpl)
+                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -375,7 +382,96 @@ public class TikaGrpcServerTest {
                 .directExecutor()
                 .build();
         resources.register(channel, Duration.ofSeconds(10));
-        return TikaGrpc.newBlockingStub(channel);
+        return channel;
+    }
+
+    private static TikaGrpc.TikaBlockingStub startServer(Resources resources, Path config)
+            throws Exception {
+        return TikaGrpc.newBlockingStub(startChannel(resources, config));
+    }
+
+    /**
+     * The stage-1 typed contract on the experimental v2 service (real forked pipes
+     * worker, real proto round trip): Document carries the typed envelope, Dublin Core
+     * metadata, and a lossless tagged tail that never double-ships what already has a
+     * typed home. v1 remains the legacy fields-map surface.
+     */
+    @Test
+    public void testFetchAndParseReturnsTypedDocument(Resources resources) throws Exception {
+        ManagedChannel channel = startChannel(resources, tikaConfig);
+        TikaGrpc.TikaBlockingStub v1 = TikaGrpc.newBlockingStub(channel);
+        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+
+        // Use the fetcher configured statically in tika-pipes-test-config.json
+        // (basePath = target): runtime-saved fetchers do not reach the forked worker
+        // with the default in-memory config store.
+        String folderName = "typed-doc-" + UUID.randomUUID();
+        File testDocumentFolder = new File("target/" + folderName);
+        assertTrue(testDocumentFolder.mkdir());
+        try {
+            File testFile = new File(testDocumentFolder, "typed.html");
+            FileUtils.writeStringToFile(testFile,
+                    "<html><head><title>Typed Contract</title>"
+                            + "<meta name=\"author\" content=\"Jane Doe\"/></head>"
+                            + "<body>hello typed world</body></html>",
+                    StandardCharsets.UTF_8);
+
+            String fetchKey = folderName + "/typed.html";
+            String fetcherId = createFetcherId(1);
+
+            // v1 keeps the legacy fields-map contract
+            FetchAndParseReply v1Reply = v1.fetchAndParse(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey(fetchKey)
+                    .build());
+            assertEquals("PARSE_SUCCESS", v1Reply.getStatus());
+            String legacyContent = v1Reply.getFieldsMap()
+                    .get(TikaCoreProperties.TIKA_CONTENT.getName());
+            assertNotNull(legacyContent, "v1 fields map must keep working");
+            assertTrue(legacyContent.contains("hello typed world"));
+
+            // v2 returns the typed Document contract
+            org.apache.tika.grpc.v2.FetchAndParseReply reply = v2.fetchAndParse(
+                    org.apache.tika.grpc.v2.FetchAndParseRequest.newBuilder()
+                            .setFetcherId(fetcherId)
+                            .setFetchKey(fetchKey)
+                            .build());
+
+            assertTrue(reply.hasDocument(), "v2 reply should carry a typed Document");
+            Document document = reply.getDocument();
+
+            // envelope
+            assertEquals(fetchKey, document.getId());
+            assertTrue(document.getContentType().startsWith("text/html"),
+                    "detected content type, got: " + document.getContentType());
+            assertTrue(document.getOrigin().getFilename().endsWith("typed.html"),
+                    "origin filename, got: " + document.getOrigin().getFilename());
+            assertTrue(document.hasParsedAt());
+
+            // typed Dublin Core fields
+            assertEquals("Typed Contract", document.getMetadata().getTitle());
+            assertEquals(List.of("Jane Doe"), document.getMetadata().getAuthorsList());
+
+            // status
+            assertEquals(org.apache.tika.grpc.v2.ParseStatus.Status.SUCCESS,
+                    document.getStatus().getStatus());
+            assertEquals("PARSE_SUCCESS", document.getStatus().getPipesStatus());
+            assertTrue(document.getStatus().getTikaVersion().startsWith("Apache Tika"));
+            Assertions.assertFalse(document.getStatus().getParsersUsedList().isEmpty());
+            assertTrue(document.getStatus().getFetchParseTimeMs() >= 0);
+
+            // the tagged tail is lossless but never double-ships a typed home
+            assertTrue(document.getExtraCount() > 0,
+                    "unmapped keys should survive in the tagged tail");
+            assertTrue(document.getExtraList().stream().noneMatch(f ->
+                            f.getKey().equals(TikaCoreProperties.TIKA_CONTENT.getName())
+                                    || f.getKey().equals("Content-Type")
+                                    || f.getKey().equals("dc:title")),
+                    "typed/envelope keys must not duplicate into the tail");
+        } finally {
+            FileUtils.deleteDirectory(testDocumentFolder);
+        }
     }
 
     /**
@@ -457,6 +553,7 @@ public class TikaGrpcServerTest {
                 .forName(serverName)
                 .directExecutor()
                 .addService(tikaGrpcServerImpl)
+                .addService(new TikaGrpcV2ServerImpl(tikaGrpcServerImpl))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -554,6 +651,14 @@ public class TikaGrpcServerTest {
             assertEquals(NUM_TEST_DOCS, successes.size());
             assertEquals(1, errors.size());
             assertTrue(finished.get());
+
+            // v1 bi-stream replies keep the legacy fields-map contract
+            for (FetchAndParseReply success : successes) {
+                assertEquals("PARSE_SUCCESS", success.getStatus());
+                assertNotNull(success.getFieldsMap()
+                                .get(TikaCoreProperties.TIKA_CONTENT.getName()),
+                        "v1 reply should carry content in fields for " + success.getFetchKey());
+            }
 
             tikaGrpcServerImpl.shutdown();
             server.shutdown();
