@@ -32,3 +32,13 @@ conventions, pre-commit checks.
 | `.skills/tika-eval-encoding-regression/SKILL.md` | Charset-detector regression hunts |
 | `.skills/tika-eval-h2-query/SKILL.md` | Querying the tika-eval H2 database directly |
 | `.skills/update-site-for-release/SKILL.md` | Updating tika.apache.org for a release |
+
+## Security
+
+Security model: [SECURITY.md](./SECURITY.md)
+
+Agents that scan this repository should consult `SECURITY.md` before
+reporting issues. It links Tika's published
+[security model](https://tika.apache.org/security-model.html), which states
+what the project does and does not treat as a vulnerability — in particular
+its position on untrusted data, untrusted callers, and denial of service.
