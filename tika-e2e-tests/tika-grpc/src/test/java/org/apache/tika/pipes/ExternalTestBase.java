@@ -243,7 +243,8 @@ public abstract class ExternalTestBase {
     public static void copyTestFixtures() throws IOException {
         Path targetDir = TEST_FOLDER.toPath();
         Files.createDirectories(targetDir);
-        String[] fixtures = {"sample.txt", "sample.html", "sample.csv", "sample.xml"};
+        String[] fixtures = {"sample.txt", "sample.html", "sample.csv", "sample.xml",
+                "testPDF.pdf"};
         for (String fixture : fixtures) {
             URL resource = ExternalTestBase.class.getClassLoader()
                     .getResource("test-fixtures/" + fixture);
