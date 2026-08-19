@@ -106,6 +106,10 @@ public class RawTiffParser extends TiffParser {
     private static final int MAX_PENDING_IFDS = 1024;
     //previews are camera-generated JPEGs, tens of MB is already generous
     private static final long DEFAULT_MAX_PREVIEW_LENGTH_BYTES = 100 * 1024 * 1024;
+    //a real raw file holds a handful of small previews; bounding the aggregate
+    //stops a crafted file from pointing many IFDs at overlapping large regions
+    //to amplify extraction work well beyond the file's own size
+    private static final long DEFAULT_MAX_TOTAL_PREVIEW_BYTES = 256L * 1024 * 1024;
 
     private final RawTiffParserConfig defaultConfig;
 
@@ -228,6 +232,8 @@ public class RawTiffParser extends TiffParser {
         List<Preview> previews = new ArrayList<>();
         //distinct IFDs can reference the same JPEG region; extract each region once
         Set<Long> previewOffsets = new HashSet<>();
+        long totalPreviewBytes = 0;
+        long maxTotalPreviewBytes = defaultConfig.getMaxTotalPreviewBytes();
         Set<Long> visited = new HashSet<>();
         Deque<Long> toVisit = new ArrayDeque<>();
         toVisit.add(readOffset(raf, bigEndian, bigTiff));
@@ -299,6 +305,12 @@ public class RawTiffParser extends TiffParser {
                 raf.seek(jpegOffset);
                 //require the JPEG SOI marker
                 if (raf.read() == 0xFF && raf.read() == 0xD8 && previewOffsets.add(jpegOffset)) {
+                    //bound the aggregate extraction work; overlapping offsets
+                    //could otherwise sum to many times the file's own size
+                    if (totalPreviewBytes > maxTotalPreviewBytes - jpegLength) {
+                        break;
+                    }
+                    totalPreviewBytes += jpegLength;
                     previews.add(new Preview(jpegOffset, jpegLength));
                 }
             }
@@ -449,6 +461,7 @@ public class RawTiffParser extends TiffParser {
 
         private boolean extractPreviews = true;
         private long maxPreviewLengthBytes = DEFAULT_MAX_PREVIEW_LENGTH_BYTES;
+        private long maxTotalPreviewBytes = DEFAULT_MAX_TOTAL_PREVIEW_BYTES;
 
         public boolean isExtractPreviews() {
             return extractPreviews;
@@ -464,6 +477,14 @@ public class RawTiffParser extends TiffParser {
 
         public void setMaxPreviewLengthBytes(long maxPreviewLengthBytes) {
             this.maxPreviewLengthBytes = maxPreviewLengthBytes;
+        }
+
+        public long getMaxTotalPreviewBytes() {
+            return maxTotalPreviewBytes;
+        }
+
+        public void setMaxTotalPreviewBytes(long maxTotalPreviewBytes) {
+            this.maxTotalPreviewBytes = maxTotalPreviewBytes;
         }
     }
 }

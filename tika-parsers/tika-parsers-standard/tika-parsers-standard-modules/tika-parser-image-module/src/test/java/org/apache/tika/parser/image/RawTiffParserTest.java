@@ -180,6 +180,24 @@ public class RawTiffParserTest extends TikaTest {
     }
 
     @Test
+    public void testMaxTotalPreviewBytes() throws Exception {
+        //testARW has two previews (676 + 644 bytes); a 700-byte total budget
+        //admits only the first, bounding aggregate extraction work
+        Parser parser = TikaLoader
+                .load(getConfigPath(RawTiffParserTest.class,
+                        "tika-config-raw-total-preview-budget.json"))
+                .loadParsers();
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testARW.arw");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/x-raw-sony");
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testARW.arw", parser, metadata, new ParseContext(), false);
+
+        assertEquals(2, metadataList.size());
+        assertPreview(metadataList.get(1), 0, 64, 48);
+    }
+
+    @Test
     public void testExtractPreviewsDisabled() throws Exception {
         Parser parser = TikaLoader
                 .load(getConfigPath(RawTiffParserTest.class, "tika-config-raw-previews-off.json"))
