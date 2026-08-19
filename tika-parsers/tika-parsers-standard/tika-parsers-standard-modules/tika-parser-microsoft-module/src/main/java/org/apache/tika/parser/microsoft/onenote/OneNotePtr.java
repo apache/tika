@@ -19,11 +19,10 @@ package org.apache.tika.parser.microsoft.onenote;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.EndianUtils;
@@ -54,6 +53,7 @@ class OneNotePtr {
             new byte[]{60, 0, 105, 0, 102, 0, 110, 0, 100, 0, 102, 0, 62, 0};
     private static final String PACKAGE_STORAGE_FILE_FORMAT_GUID =
             "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
+    private static final int MAX_PROPERTY_VALUES = 100_000;
 
     int indentLevel = 0;
 
@@ -453,23 +453,22 @@ class OneNotePtr {
 
             data.subType.globalIdTableEntryFNDX.guid = deserializeGUID();
 
-            document.revisionMap.get(document.currentRevision).globalId.put(
-                    data.subType.globalIdTableEntryFNDX.index,
+            Revision currentRevision = getCurrentRevision();
+            currentRevision.globalId.put(data.subType.globalIdTableEntryFNDX.index,
                     data.subType.globalIdTableEntryFNDX.guid);
         } else if (data.id == FndStructureConstants.GlobalIdTableEntry2FNDX) {
             data.subType.globalIdTableEntry2FNDX.indexMapFrom = deserializeLittleEndianInt();
             data.subType.globalIdTableEntry2FNDX.indexMapTo = deserializeLittleEndianInt();
 
-            ExtendedGUID dependentRevision =
-                    document.revisionMap.get(document.currentRevision).dependent;
-            // Get the compactId from the revisionMap's globalId map.
-            GUID compactId = document.revisionMap.get(dependentRevision).globalId.get(
+            Revision currentRevision = getCurrentRevision();
+            Revision dependentRevision = getRevision(currentRevision.dependent);
+            GUID compactId = dependentRevision.globalId.get(
                     data.subType.globalIdTableEntry2FNDX.indexMapFrom);
             if (compactId == null) {
                 throw new TikaException("COMPACT_ID_MISSING");
             }
-            document.revisionMap.get(document.currentRevision).globalId.put(
-                    data.subType.globalIdTableEntry2FNDX.indexMapTo, compactId);
+            currentRevision.globalId.put(data.subType.globalIdTableEntry2FNDX.indexMapTo,
+                    compactId);
         } else if (data.id == FndStructureConstants.GlobalIdTableEntry3FNDX) {
             data.subType.globalIdTableEntry3FNDX.indexCopyFromStart = deserializeLittleEndianInt();
 
@@ -477,16 +476,17 @@ class OneNotePtr {
 
             data.subType.globalIdTableEntry3FNDX.indexCopyToStart = deserializeLittleEndianInt();
 
-            ExtendedGUID dependent_revision =
-                    document.revisionMap.get(document.currentRevision).dependent;
-            for (int i = 0; i < data.subType.globalIdTableEntry3FNDX.entriesToCopy; ++i) {
-                Map<Long, GUID> globalIdMap = document.revisionMap.get(dependent_revision).globalId;
-                GUID compactId = globalIdMap.get(
+            Revision currentRevision = getCurrentRevision();
+            Revision dependentRevision = getRevision(currentRevision.dependent);
+            int entriesToCopy = checkedCount(
+                    data.subType.globalIdTableEntry3FNDX.entriesToCopy, "global ID entries");
+            for (int i = 0; i < entriesToCopy; ++i) {
+                GUID compactId = dependentRevision.globalId.get(
                         data.subType.globalIdTableEntry3FNDX.indexCopyFromStart + i);
                 if (compactId == null) {
                     throw new TikaException("COMPACT_ID_MISSING");
                 }
-                document.revisionMap.get(document.currentRevision).globalId.put(
+                currentRevision.globalId.put(
                         data.subType.globalIdTableEntry3FNDX.indexCopyToStart + i, compactId);
             }
         } else if (data.id == FndStructureConstants.CanRevise.ObjectRevisionWithRefCountFNDX ||
@@ -623,9 +623,9 @@ class OneNotePtr {
                         "Data out of bounds - cch " + cch + " is > room left = " + roomLeftLong);
             }
 
-            if (cch > dif.size()) {
+            if (cch > dif.size() || cch > Integer.MAX_VALUE / 2L) {
                 throw new TikaMemoryLimitException(
-                        "CCH=" + cch + " was found that was greater" + " than file size " +
+                        "CCH=" + cch + " cannot be safely allocated for file size " +
                                 dif.size());
             }
             ByteBuffer dataSpaceBuffer = ByteBuffer.allocate((int) cch * 2);
@@ -816,7 +816,7 @@ class OneNotePtr {
         compactID.guid = ExtendedGUID.nil();
         compactID.guid.n = compactID.n;
         long index = compactID.guidIndex;
-        Map<Long, GUID> globalIdMap = document.revisionMap.get(document.currentRevision).globalId;
+        Map<Long, GUID> globalIdMap = getCurrentRevision().globalId;
         GUID guid = globalIdMap.get(index);
         if (guid != null) {
             compactID.guid.guid = guid;
@@ -976,13 +976,44 @@ class OneNotePtr {
         }
     }
 
+    private Revision getCurrentRevision() throws TikaException {
+        Revision revision = document.revisionMap.get(document.currentRevision);
+        if (revision == null) {
+            throw new TikaException("Missing current revision");
+        }
+        return revision;
+    }
+
+    private Revision getRevision(ExtendedGUID revisionId) throws TikaException {
+        Revision revision = document.revisionMap.get(revisionId);
+        if (revision == null) {
+            throw new TikaException("Missing dependent revision");
+        }
+        return revision;
+    }
+
+    private int checkedCount(long count, String description) throws TikaException {
+        if (count < 0 || count > MAX_PROPERTY_VALUES) {
+            throw new TikaMemoryLimitException(
+                    description + " count " + count + " exceeds limit " + MAX_PROPERTY_VALUES);
+        }
+        return (int) count;
+    }
+
+    private List<PropertyValue> newPropertyValues(int count) {
+        List<PropertyValue> values = new ArrayList<>(count);
+        for (int i = 0; i < count; ++i) {
+            values.add(new PropertyValue());
+        }
+        return values;
+    }
+
     private PropertySet deserializePropertySet(ObjectStreamCounters counters,
                                                ObjectSpaceObjectPropSet streams)
             throws IOException, TikaException {
         PropertySet data = new PropertySet();
-        long count = deserializeLittleEndianShort();
-        data.rgPridsData =
-                Stream.generate(PropertyValue::new).limit((int) count).collect(Collectors.toList());
+        int count = checkedCount(deserializeLittleEndianShort(), "property");
+        data.rgPridsData = newPropertyValues(count);
         for (int i = 0; i < count; ++i) {
             data.rgPridsData.get(i).propertyId = deserializePropertyID();
             LOG.debug("{}Property {}", getIndent(), data.rgPridsData.get(i).propertyId);
@@ -1119,10 +1150,9 @@ class OneNotePtr {
                     val32 = deserializeLittleEndianInt();
                     OneNotePropertyId propId = deserializePropertyID();
                     LOG.debug(" UnifiedSubPropertySet {} {}", val32, propId);
-                    data.propertySet.rgPridsData =
-                            Stream.generate(PropertyValue::new).limit((int) val32)
-                                    .collect(Collectors.toList());
-                    for (int i = 0; i < val32; ++i) {
+                    int propertyCount = checkedCount(val32, "unified property");
+                    data.propertySet.rgPridsData = newPropertyValues(propertyCount);
+                    for (int i = 0; i < propertyCount; ++i) {
                         try {
                             data.propertySet.rgPridsData.set(i,
                                     deserializePropertyValueFromPropertyID(propId, streams,
@@ -1185,7 +1215,8 @@ class OneNotePtr {
                     getIndent(), data.count, data.osidsStreamNotPresent,
                     data.extendedStreamsPresent);
         }
-        for (int i = 0; i < data.count; ++i) {
+        int count = checkedCount(data.count, "object stream");
+        for (int i = 0; i < count; ++i) {
             CompactID cid;
             cid = deserializeCompactID();
             data.data.add(cid);

@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 import org.apache.tika.utils.StringUtils;
 
@@ -41,13 +42,23 @@ public class GUID implements Comparable<GUID> {
      *             -EEEEEEEEEEEE}
      * @return GUID object parsed from guid bytes.
      */
-    public static GUID fromCurlyBraceUTF16Bytes(byte[] guid) {
+    public static GUID fromCurlyBraceUTF16Bytes(byte[] guid) throws TikaException {
         int[] intGuid = new int[16];
-        String utf16Str = new String(guid, StandardCharsets.UTF_16LE).replaceAll("\\{", "")
-                .replaceAll("-", "").replaceAll("}", "");
-        for (int i = 0; i < utf16Str.length(); i += 2) {
-            intGuid[i / 2] =
-                    Integer.parseUnsignedInt("" + utf16Str.charAt(i) + utf16Str.charAt(i + 1), 16);
+        String utf16Str = new String(guid, StandardCharsets.UTF_16LE);
+        if (utf16Str.length() != 38 || utf16Str.charAt(0) != '{' ||
+                utf16Str.charAt(9) != '-' || utf16Str.charAt(14) != '-' ||
+                utf16Str.charAt(19) != '-' || utf16Str.charAt(24) != '-' ||
+                utf16Str.charAt(37) != '}') {
+            throw new TikaException("Invalid GUID string");
+        }
+        String hex = utf16Str.substring(1, 37).replace("-", "");
+        for (int i = 0; i < hex.length(); i += 2) {
+            int high = Character.digit(hex.charAt(i), 16);
+            int low = Character.digit(hex.charAt(i + 1), 16);
+            if (high < 0 || low < 0) {
+                throw new TikaException("Invalid GUID string");
+            }
+            intGuid[i / 2] = (high << 4) | low;
         }
         return new GUID(intGuid);
     }

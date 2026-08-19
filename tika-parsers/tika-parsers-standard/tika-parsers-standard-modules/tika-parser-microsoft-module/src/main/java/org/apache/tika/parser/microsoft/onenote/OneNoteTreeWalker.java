@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -103,6 +104,8 @@ class OneNoteTreeWalker {
      * Contains pairs of {Offset,Length} that we have added to the text stream already.
      */
     private final Set<Pair<Long, Integer>> textAlreadyFetched = new HashSet<>();
+    private final Set<FileNode> activeFileNodes =
+            Collections.newSetFromMap(new IdentityHashMap<>());
 
     /**
      * Create a one tree walker.
@@ -291,6 +294,19 @@ class OneNoteTreeWalker {
      */
     public Map<String, Object> walkFileNode(FileNode fileNode,
                                             OneNotePropertyId parentPropertyId)
+            throws IOException, TikaException, SAXException {
+        if (fileNode == null || !activeFileNodes.add(fileNode)) {
+            return Collections.emptyMap();
+        }
+        try {
+            return walkFileNodeInternal(fileNode, parentPropertyId);
+        } finally {
+            activeFileNodes.remove(fileNode);
+        }
+    }
+
+    private Map<String, Object> walkFileNodeInternal(FileNode fileNode,
+                                                      OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
         Map<String, Object> structure = new HashMap<>();
         structure.put("oneNoteType", "FileNode");
