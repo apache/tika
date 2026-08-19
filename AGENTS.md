@@ -23,6 +23,10 @@ the ground rules: build with `./mvnw` (always `clean`, `-Pfast` for quick
 builds), never run `git commit`/`git push` or write to GitHub, code and test
 conventions, pre-commit checks.
 
+## Working on Tika
+
+Contributor-facing — building, testing, and releasing this codebase.
+
 | Skill | Use when |
 |-------|----------|
 | `.skills/dev/SKILL.md` | Any development task — load at session start |
@@ -32,3 +36,14 @@ conventions, pre-commit checks.
 | `.skills/tika-eval-encoding-regression/SKILL.md` | Charset-detector regression hunts |
 | `.skills/tika-eval-h2-query/SKILL.md` | Querying the tika-eval H2 database directly |
 | `.skills/update-site-for-release/SKILL.md` | Updating tika.apache.org for a release |
+
+## Using Tika
+
+For any agent that wants Tika as a tool — not specific to this repo, useful
+whether or not you're working on Tika's own source.
+
+| Skill | Use when |
+|-------|----------|
+| `.skills/file-to-markdown/SKILL.md` | Turning a file (PDF, Office, email, archives, images, ...) into Markdown + metadata via tika-app or tika-server |
+| `.skills/file-to-markdown-docker/SKILL.md` | Need guaranteed OCR/GDAL with no local install, or a disposable containerized Tika — running tika-server via Docker |
+| `.skills/file-forensics/SKILL.md` | What a file claims vs. contains: provenance, tamper signals, hidden/embedded content, macros, digests — evidence, not verdicts |
