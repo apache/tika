@@ -45,18 +45,20 @@ public class PipesWorkerCallerHintsTest {
     }
 
     /**
-     * The Content-Type is carried only as a soft hint. The unconditional override key
+     * The Content-Type is carried only as a soft hint. The unconditional override keys
      * must never be carried, or a caller could force any type past detection.
      */
     @Test
-    public void testDoesNotCarryUserOverride() {
+    public void testDoesNotCarryOverrides() {
         Metadata tuple = new Metadata();
         tuple.set(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, "image/x-raw-nikon");
+        tuple.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, "image/x-raw-nikon");
 
         Metadata target = new Metadata();
         PipesWorker.carryCallerHints(tuple, target);
 
         assertNull(target.get(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE));
+        assertNull(target.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE));
         assertNull(target.get(HttpHeaders.CONTENT_TYPE));
     }
 
