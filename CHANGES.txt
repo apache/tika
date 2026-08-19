@@ -466,6 +466,13 @@ Release 4.0.0 - 8/18/2026
      TIKA-4747) and Frictionless Data packages (TIKA-4643); improved mp3/aac
      (TIKA-4612) and grib (TIKA-4655) detection.
 
+   * RawTiffParser extracts the camera-generated JPEG previews embedded in
+     TIFF-based raw images (Nikon NEF/NRW, Sony ARW/SRF/SR2, Pentax PEF/PTX,
+     Adobe DNG and Canon CR2, including BigTIFF DNG containers) as thumbnail
+     embedded documents; image/x-raw-{nikon,sony,pentax,adobe} are now
+     sub-classes of image/tiff. Disable via
+     "raw-tiff-parser": {"extractPreviews": false} (TIKA-4824).
+
   OTHER CHANGES
 
    * Release artifacts are now channel-specific. Maven Central gets slim

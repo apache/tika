@@ -19,6 +19,7 @@ package org.apache.tika.parser.image;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.io.Serializable;
 import java.nio.file.Files;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -438,7 +439,10 @@ public class RawTiffParser extends TiffParser {
     /**
      * Configuration class for RawTiffParser.
      */
-    public static class RawTiffParserConfig {
+    public static class RawTiffParserConfig implements Serializable {
+
+        private static final long serialVersionUID = 1990316744955315312L;
+
         private boolean extractPreviews = true;
         private long maxPreviewLengthBytes = DEFAULT_MAX_PREVIEW_LENGTH_BYTES;
 
