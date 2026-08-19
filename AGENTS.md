@@ -36,6 +36,7 @@ Contributor-facing — building, testing, and releasing this codebase.
 | `.skills/tika-eval-encoding-regression/SKILL.md` | Charset-detector regression hunts |
 | `.skills/tika-eval-h2-query/SKILL.md` | Querying the tika-eval H2 database directly |
 | `.skills/update-site-for-release/SKILL.md` | Updating tika.apache.org for a release |
+| `.skills/oss-fuzz/SKILL.md` | Fuzzing a parser locally (OSS-Fuzz Jazzer targets); reproducing an OSS-Fuzz crash |
 
 ## Using Tika
 
