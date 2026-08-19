@@ -902,6 +902,9 @@ public class TestMimeTypes {
         assertTypeByNameAndData("image/x-raw-pentax", "testPEF.pef");
         assertTypeByData("image/tiff", "testDNG.dng");
         assertTypeByNameAndData("image/x-raw-adobe", "testDNG.dng");
+        //little-endian BigTIFF DNG: detectable as tiff by data, x-raw-adobe by name+data
+        assertTypeByData("image/tiff", "testDNG_bigtiff.dng");
+        assertTypeByNameAndData("image/x-raw-adobe", "testDNG_bigtiff.dng");
         assertTypeByData("image/x-canon-cr2", "testCR2.cr2");
         assertTypeByNameAndData("image/x-canon-cr2", "testCR2.cr2");
         assertTypeByName("image/x-raw-olympus", "x.orf");
