@@ -49,7 +49,9 @@ Targets (as of this writing): `AudioVideoParsersFuzzer`,
 `OfficeParserFuzzer`, `OneNoteParserFuzzer`, `PDFParserFuzzer`,
 `PackageParserFuzzer`, `RFC822ParserFuzzer`, `RTFParserFuzzer`,
 `TextAndCSVParserFuzzer`, `XMLReaderUtilsFuzzer`. `ParserFuzzer` is the shared
-helper, not a target (`build.sh` skips it).
+helper, not a target (`build.sh` skips it). This list drifts — get the current
+one after a build with `ls build/out/apache-tika/*Fuzzer`, or from source with
+`find $OSSFUZZ/projects/apache-tika/project-parent/fuzz-targets -name '*Fuzzer.java'`.
 
 Primary contact on the project is `tallison@apache.org`, so OSS-Fuzz crash
 mail / ClusterFuzz notifications land in that inbox — check there for what
@@ -61,6 +63,14 @@ continuous fuzzing has already found before treating a bug as newly discovered.
 - A local oss-fuzz checkout: `git clone --depth 1 https://github.com/google/oss-fuzz`.
   All `helper.py` commands run from the oss-fuzz root. `$OSSFUZZ` below = that dir.
 - `python3` (helper.py is Python).
+- **An amd64 host.** The OSS-Fuzz base images are amd64-only, so every `docker
+  run` here pins `--platform linux/amd64`. On Apple Silicon that is qemu
+  emulation — slow for a CPU-bound fuzzing workload and it distorts exactly the
+  timing-based findings this skill tells you to trust, so treat `-timeout` /
+  slow-unit results under emulation as suspect and run real campaigns on a native
+  amd64 box.
+- **Disk:** budget many GB — the base-builder/base-runner images are multi-GB
+  each, plus `build/out` and any corpus copies.
 
 ## 1. Build the image (non-interactive)
 
@@ -141,13 +151,18 @@ the seed-corpus substitution above.
 
 **Corpus must be a FLAT dir of files.** libFuzzer does not recurse into
 subdirectories. A sharded/nested corpus (e.g. `onenote/a3/47/<sha>`) must be
-flattened first:
+flattened first — and flatten **collision-safe**: a plain `cp` of a human-named
+tree (`a/test.pdf`, `b/test.pdf`) silently overwrites, so you fuzz fewer files
+than you think (the same "ran fewer than expected" trap this section opened
+with). Name each flattened file by its content hash, which also dedups identical
+inputs:
 
 ```bash
-mkdir -p flat && find <nested> -type f -exec cp {} flat/ \;
+mkdir -p flat
+find <nested> -type f -exec sh -c 'cp "$1" flat/$(sha1sum "$1" | cut -c1-40)' _ {} \;
 ```
 
-(sha-named blobs are already unique, so no collisions).
+(sha-named source blobs are already unique; the hash-rename makes any corpus safe).
 
 ## 3b. Open-ended (mutational) fuzzing
 
@@ -177,25 +192,36 @@ purpose — audio/video/image/onenote parsers hit `new byte[~Integer.MAX_VALUE]`
 single-allocation OOMs. An OOM under ~2–3 GB is a real finding; if you see one
 above the rss limit, the fix is a bound in the parser, not a bigger heap.
 
-### The loop is whack-a-mole: find → fix → rebuild → re-fuzz
+### Finding → fixing → re-fuzzing (usually whack-a-mole)
 
-libFuzzer **halts on the first finding** — so one campaign yields one bug, and an
-early crash/OOM/hang after a few hundred execs means the target barely explored
-the space. That is not a clean bill of health; it is one mole.
+libFuzzer **halts on the first finding** by default — so one campaign yields one
+bug, and an early crash/OOM/hang after a few hundred execs means the target
+barely explored the space. That is not a clean bill of health.
 
-**Do NOT paper over it with `-ignore_ooms` / `-ignore_crashes` / `-ignore_timeouts`
-to "keep finding more."** A resource-exhaustion bug (unbounded allocation, runaway
-recursion, hang) is a **wall**: every input that reaches it dies *there*, so the
-code *after* that point never runs and its bugs stay invisible no matter how long
-you fuzz. Ignoring the finding just burns cycles re-hitting the same wall.
+You *can* enumerate several bugs in one run: `-fork=1` with `-ignore_crashes` /
+`-ignore_ooms` / `-ignore_timeouts` keeps going past each finding and drops one
+artifact per distinct crash. That genuinely works when the bugs sit on
+**independent paths** — two roughly-equally-reachable bugs, neither downstream of
+the other.
 
-The only approach that makes progress:
+What it does **not** do is get you past a bug that *blocks* what's behind it. A
+resource-exhaustion bug (unbounded allocation, runaway recursion, hang) is a
+**wall**: every input that reaches it dies *there*, so code *downstream on that
+same path* never executes and its bugs stay invisible no matter how long you fuzz
+or how many `-ignore_*` flags you set. And in practice the easy, early bugs tend
+to sit on shared entry paths and block the harder, deeper ones — so ignoring them
+mostly burns cycles re-hitting the same wall. That tendency (not a law) is why the
+loop is usually:
 
 1. Fuzz until it halts on a finding; save the reproducer.
 2. **Fix that bug** in the parser (bound the count/array, cap the recursion) so the
    input survives past it.
 3. Rebuild fuzzers (step 2 above) against the fix.
-4. Re-fuzz — mutations now proceed past the old wall and surface the next bug.
+4. Re-fuzz — mutations now proceed past the old wall and reach the next bug.
+
+Rule of thumb: reach for `-ignore_*`/`-fork` to *triage breadth* (roughly how many
+independent problems are in here?); fix-and-re-fuzz to actually make *depth*
+progress past a blocker.
 
 Corollary: a wall early in a shared entry point (e.g. an OOM in the legacy
 `OneNotePtr` path) also blocks fuzzing of *sibling* code (the fsshttpb/MS-ONESTORE
@@ -238,20 +264,37 @@ histogram (dominant object class) to find what actually accumulated. (Real
 example: a heap-capped OOM surfaced at `PropertyValue.<init>`, but the cause was
 an unbounded 32-bit count two frames up driving `Stream.generate(...).limit(val32)`.)
 
-**Caveat — Jazzer splits `--jvm_args` on `:`.** So JVM options that themselves
-contain a colon (`-XX:+HeapDumpOnOutOfMemoryError`, `-Xlog:gc`) can't go through
-`--jvm_args`. Pass those via the `JAVA_TOOL_OPTIONS` env var instead
-(`-e JAVA_TOOL_OPTIONS='-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/in'`),
-which the embedded JVM reads directly.
+**Caveat — colon-bearing JVM options are SILENTLY DROPPED by `--jvm_args`.**
+Jazzer splits `--jvm_args` on `:` and creates the JVM with `ignoreUnrecognized`,
+so an option that itself contains a colon (`-XX:+HeapDumpOnOutOfMemoryError`,
+`-Xlog:gc`) is split into fragments and then **silently ignored — no error, no
+effect** (verified: `--jvm_args=-XX:+PrintFlagsFinal` printed no flag dump and
+exited 0). That is worse than an error — you think a flag is set when it isn't.
+Colon-free options (`-Xmx`, `-Xss`) go through fine. For `-XX`/`-Xlog` flags, use
+the `JAVA_TOOL_OPTIONS` env var instead — the embedded JVM reads it directly
+(verified: `-e JAVA_TOOL_OPTIONS=-XX:+PrintFlagsFinal` logs `Picked up
+JAVA_TOOL_OPTIONS` and dumps the flag table):
+`-e JAVA_TOOL_OPTIONS='-XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/in'`.
 
 ## 4. Reproduce a specific crash
 
+Run the target **binary** on the single testcase — the direct form used
+throughout this skill (and the one verified here). A file positional makes
+libFuzzer run just that input and exit:
+
 ```bash
-python3 infra/helper.py reproduce apache-tika OneNoteParserFuzzer <testcase-file>
+docker run --rm --platform linux/amd64 --shm-size=2g \
+  -e FUZZING_ENGINE=libfuzzer -e SANITIZER=address \
+  -v <dir-with-testcase>:/in -v $HOME/oss-fuzz/build/out/apache-tika:/out \
+  -t gcr.io/oss-fuzz-base/base-runner:latest \
+  bash -c '/out/OneNoteParserFuzzer -rss_limit_mb=3600 /in/<testcase>'
 ```
 
-Runs that one input against the built target. Rebuild fuzzers (step 2) against a
-candidate fix and re-run to confirm the crash clears.
+Add `--jvm_args=-Xmx1024m:-Xss1024k` for a Java stack on an OOM (§3c). Rebuild
+fuzzers (step 2) against a candidate fix and re-run to confirm the crash clears.
+`helper.py reproduce apache-tika <Target> <file>` does the same via the wrapper
+and is safe — it runs a single testcase, not a corpus dir, so the
+`run_fuzzer --corpus-dir` destruction in §3a does not apply.
 
 ## 5. Add seeds / a new target
 
