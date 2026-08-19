@@ -17,14 +17,17 @@
 package org.apache.tika.parser.image;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
@@ -127,6 +130,37 @@ public class RawTiffParserTest extends TikaTest {
         List<String> parsedBy =
                 Arrays.asList(metadataList.get(0).getValues(TikaCoreProperties.TIKA_PARSED_BY));
         assertContains(RawTiffParser.class.getName(), parsedBy);
+    }
+
+    @Test
+    public void testBigTiffDNG() throws Exception {
+        //DNG allows BigTIFF containers since spec version 1.7
+        List<Metadata> metadataList = parseByName("testDNG_bigtiff.dng");
+        assertEquals(2, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-adobe", container.get(HttpHeaders.CONTENT_TYPE));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        assertPreview(metadataList.get(1), 0, 64, 48);
+    }
+
+    @Test
+    public void testEmptyBigTiffWithoutException() throws Exception {
+        //a BigTIFF file without any previews must parse quietly,
+        //without recording an exception
+        byte[] bigTiff = new byte[]{
+                'M', 'M', 0, 0x2B, 0, 8, 0, 0,
+                0, 0, 0, 0, 0, 0, 0, 16,  //offset of IFD0
+                0, 0, 0, 0, 0, 0, 0, 0,   //IFD0: zero entries
+                0, 0, 0, 0, 0, 0, 0, 0    //no next IFD
+        };
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/x-raw-adobe");
+        try (TikaInputStream tis = TikaInputStream.get(bigTiff)) {
+            new RawTiffParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        }
+        assertNull(metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 
     @Test
