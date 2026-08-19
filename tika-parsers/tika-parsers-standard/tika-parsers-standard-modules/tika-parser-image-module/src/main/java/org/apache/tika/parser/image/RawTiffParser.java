@@ -237,7 +237,9 @@ public class RawTiffParser extends TiffParser {
             if (ifdOffset <= 0 || !visited.add(ifdOffset)) {
                 continue;
             }
-            if (ifdOffset + countSize > fileLength) {
+            // overflow-safe: ifdOffset is a 64-bit value from the file, so avoid
+            // ifdOffset + countSize which could wrap past Long.MAX_VALUE
+            if (ifdOffset > fileLength - countSize) {
                 continue;
             }
             raf.seek(ifdOffset);
