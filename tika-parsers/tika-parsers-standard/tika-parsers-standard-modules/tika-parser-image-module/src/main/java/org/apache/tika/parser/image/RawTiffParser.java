@@ -17,10 +17,10 @@
 package org.apache.tika.parser.image;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.io.Serializable;
-import java.nio.file.Files;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,12 +32,14 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.BoundedInputStream;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -141,19 +143,26 @@ public class RawTiffParser extends TiffParser {
         } else {
             extractMetadata(tis, handler, metadata, context);
         }
+        RawTiffParserConfig config = getConfig(context);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
-        if (defaultConfig.isExtractPreviews()) {
-            extractPreviews(tis, xhtml, metadata, context);
+        if (config.isExtractPreviews()) {
+            extractPreviews(tis, xhtml, metadata, context, config);
         }
         xhtml.endDocument();
     }
 
+    private RawTiffParserConfig getConfig(ParseContext context) throws TikaException, IOException {
+        return ParseContextConfig.getConfig(context, "raw-tiff-parser",
+                RawTiffParserConfig.class, defaultConfig);
+    }
+
     private void extractPreviews(TikaInputStream tis, XHTMLContentHandler xhtml, Metadata metadata,
-                                 ParseContext context) throws IOException, SAXException {
+                                 ParseContext context, RawTiffParserConfig config)
+            throws IOException, SAXException {
         List<Preview> previews;
         try (RandomAccessFile raf = new RandomAccessFile(tis.getFile(), "r")) {
-            previews = locateJpegPreviews(raf);
+            previews = locateJpegPreviews(raf, config);
         } catch (TiffStructureException | IOException e) {
             //a file we cannot walk for previews should not fail the parse;
             //the TIFF metadata has already been extracted at this point
@@ -166,22 +175,24 @@ public class RawTiffParser extends TiffParser {
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         int count = 0;
-        for (Preview preview : previews) {
-            Metadata previewMetadata = Metadata.newInstance(context);
-            previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                    TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
-            previewMetadata.set(HttpHeaders.CONTENT_TYPE, JPEG_MIME);
-            EmbeddedDocumentUtil.setGeneratedResourceName(previewMetadata,
-                    EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL, count, JPEG_MIME);
-            count++;
-            if (!extractor.shouldParseEmbedded(previewMetadata, context)) {
-                continue;
-            }
-            //stream the preview region instead of loading it onto the heap
-            try (InputStream fileStream = Files.newInputStream(tis.getPath())) {
-                IOUtils.skipFully(fileStream, preview.offset());
+        //reuse one channel across previews, positioning to each offset in turn
+        try (FileChannel channel = FileChannel.open(tis.getPath())) {
+            for (Preview preview : previews) {
+                Metadata previewMetadata = Metadata.newInstance(context);
+                previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+                previewMetadata.set(HttpHeaders.CONTENT_TYPE, JPEG_MIME);
+                EmbeddedDocumentUtil.setGeneratedResourceName(previewMetadata,
+                        EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL, count, JPEG_MIME);
+                count++;
+                if (!extractor.shouldParseEmbedded(previewMetadata, context)) {
+                    continue;
+                }
+                //stream the preview region instead of loading it onto the heap;
+                //close-shield the shared channel so parseEmbedded cannot close it
+                channel.position(preview.offset());
                 BoundedInputStream bounded = BoundedInputStream.builder()
-                        .setInputStream(fileStream)
+                        .setInputStream(CloseShieldInputStream.wrap(Channels.newInputStream(channel)))
                         .setMaxCount(preview.length())
                         .get();
                 try (TikaInputStream previewStream = TikaInputStream.get(bounded)) {
@@ -195,7 +206,7 @@ public class RawTiffParser extends TiffParser {
      * Walks the TIFF IFD chain and any SubIFDs (traversal bounded by
      * {@link #MAX_IFDS}) and returns the embedded JPEG previews.
      */
-    private List<Preview> locateJpegPreviews(RandomAccessFile raf)
+    private List<Preview> locateJpegPreviews(RandomAccessFile raf, RawTiffParserConfig config)
             throws IOException, TiffStructureException {
         long fileLength = raf.length();
         if (fileLength < 8) {
@@ -233,7 +244,7 @@ public class RawTiffParser extends TiffParser {
         //distinct IFDs can reference the same JPEG region; extract each region once
         Set<Long> previewOffsets = new HashSet<>();
         long totalPreviewBytes = 0;
-        long maxTotalPreviewBytes = defaultConfig.getMaxTotalPreviewBytes();
+        long maxTotalPreviewBytes = config.getMaxTotalPreviewBytes();
         Set<Long> visited = new HashSet<>();
         Deque<Long> toVisit = new ArrayDeque<>();
         toVisit.add(readOffset(raf, bigEndian, bigTiff));
@@ -254,6 +265,12 @@ public class RawTiffParser extends TiffParser {
                     ifdOffset + countSize + numEntries * entrySize + offsetSize > fileLength) {
                 continue;
             }
+            //read the whole entry table (plus the trailing follower pointer) in one go and
+            //parse it from memory, so a crafted IFD cannot force a read syscall per byte
+            byte[] table = new byte[(int) (numEntries * entrySize + offsetSize)];
+            raf.seek(ifdOffset + countSize);
+            raf.readFully(table);
+            int inlineSize = bigTiff ? 8 : 4;
             long jpegOffset = -1;
             long jpegLength = -1;
             long compression = -1;
@@ -262,37 +279,40 @@ public class RawTiffParser extends TiffParser {
             long[] stripOffsets = new long[0];
             long[] stripByteCounts = new long[0];
             for (int i = 0; i < numEntries; i++) {
-                raf.seek(ifdOffset + countSize + (long) i * entrySize);
-                int tag = readUInt16(raf, bigEndian);
-                int type = readUInt16(raf, bigEndian);
-                long valueCount = bigTiff ? readUInt64(raf, bigEndian) : readUInt32(raf, bigEndian);
+                int e = i * entrySize;
+                int tag = getUInt16(table, e, bigEndian);
+                int type = getUInt16(table, e + 2, bigEndian);
+                long valueCount = bigTiff
+                        ? getUInt64(table, e + 4, bigEndian) : getUInt32(table, e + 4, bigEndian);
+                int valueField = e + 4 + inlineSize;
                 if (tag == TAG_SUB_IFDS) {
                     for (long subIfdOffset :
-                            readLongValues(raf, bigEndian, bigTiff, type, valueCount)) {
+                            readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount)) {
                         enqueue(toVisit, subIfdOffset);
                     }
                 } else if (tag == TAG_JPEG_INTERCHANGE_FORMAT && valueCount == 1) {
-                    long[] v = readLongValues(raf, bigEndian, bigTiff, type, valueCount);
+                    long[] v = readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount);
                     jpegOffset = v.length == 1 ? v[0] : -1;
                 } else if (tag == TAG_JPEG_INTERCHANGE_FORMAT_LENGTH && valueCount == 1) {
-                    long[] v = readLongValues(raf, bigEndian, bigTiff, type, valueCount);
+                    long[] v = readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount);
                     jpegLength = v.length == 1 ? v[0] : -1;
                 } else if (tag == TAG_COMPRESSION && valueCount == 1) {
-                    long[] v = readLongValues(raf, bigEndian, bigTiff, type, valueCount);
+                    long[] v = readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount);
                     compression = v.length == 1 ? v[0] : -1;
                 } else if (tag == TAG_PHOTOMETRIC_INTERPRETATION && valueCount == 1) {
-                    long[] v = readLongValues(raf, bigEndian, bigTiff, type, valueCount);
+                    long[] v = readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount);
                     photometric = v.length == 1 ? v[0] : -1;
                 } else if (tag == TAG_BITS_PER_SAMPLE) {
-                    bitsPerSample = readLongValues(raf, bigEndian, bigTiff, type, valueCount);
+                    bitsPerSample = readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount);
                 } else if (tag == TAG_STRIP_OFFSETS) {
-                    stripOffsets = readLongValues(raf, bigEndian, bigTiff, type, valueCount);
+                    stripOffsets = readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount);
                 } else if (tag == TAG_STRIP_BYTE_COUNTS) {
-                    stripByteCounts = readLongValues(raf, bigEndian, bigTiff, type, valueCount);
+                    stripByteCounts = readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount);
                 }
             }
-            raf.seek(ifdOffset + countSize + numEntries * entrySize);
-            enqueue(toVisit, readOffset(raf, bigEndian, bigTiff));
+            int followerField = (int) (numEntries * entrySize);
+            enqueue(toVisit, bigTiff
+                    ? getUInt64(table, followerField, bigEndian) : getUInt32(table, followerField, bigEndian));
 
             if (jpegOffset < 0 && isDisplayableJpegStrip(compression, photometric, bitsPerSample,
                     stripOffsets, stripByteCounts)) {
@@ -300,7 +320,7 @@ public class RawTiffParser extends TiffParser {
                 jpegLength = stripByteCounts[0];
             }
             if (jpegOffset > 0 && jpegLength > 4 &&
-                    jpegLength <= defaultConfig.getMaxPreviewLengthBytes() &&
+                    jpegLength <= config.getMaxPreviewLengthBytes() &&
                     jpegOffset <= fileLength - jpegLength) {
                 raf.seek(jpegOffset);
                 //require the JPEG SOI marker
@@ -378,11 +398,13 @@ public class RawTiffParser extends TiffParser {
 
     /**
      * Reads the values of an integer-typed entry (SHORT, LONG, IFD and, for
-     * BigTIFF, LONG8/IFD8) whose value field starts at the current position;
+     * BigTIFF, LONG8/IFD8) from the in-memory entry table. Values that do not
+     * fit the inline value field are read once from their offset into a buffer;
      * returns an empty array for other types.
      */
-    private long[] readLongValues(RandomAccessFile raf, boolean bigEndian, boolean bigTiff,
-                                  int type, long valueCount) throws IOException {
+    private long[] readLongValues(RandomAccessFile raf, byte[] table, int valueField,
+                                  boolean bigEndian, boolean bigTiff, int type, long valueCount)
+            throws IOException {
         int typeSize;
         if (type == 3) {
             typeSize = 2;
@@ -397,21 +419,32 @@ public class RawTiffParser extends TiffParser {
             return new long[0];
         }
         int count = (int) valueCount;
-        if (typeSize * count > (bigTiff ? 8 : 4)) {
-            long valueOffset = readOffset(raf, bigEndian, bigTiff);
-            if (valueOffset < 0 || valueOffset > raf.length() - typeSize * (long) count) {
+        long totalBytes = (long) typeSize * count;
+        byte[] src;
+        int off;
+        if (totalBytes <= (bigTiff ? 8 : 4)) {
+            src = table;
+            off = valueField;
+        } else {
+            long valueOffset = bigTiff
+                    ? getUInt64(table, valueField, bigEndian) : getUInt32(table, valueField, bigEndian);
+            if (valueOffset < 0 || valueOffset > raf.length() - totalBytes) {
                 return new long[0];
             }
+            src = new byte[(int) totalBytes];
             raf.seek(valueOffset);
+            raf.readFully(src);
+            off = 0;
         }
         long[] values = new long[count];
         for (int i = 0; i < count; i++) {
+            int p = off + i * typeSize;
             if (typeSize == 2) {
-                values[i] = readUInt16(raf, bigEndian);
+                values[i] = getUInt16(src, p, bigEndian);
             } else if (typeSize == 4) {
-                values[i] = readUInt32(raf, bigEndian);
+                values[i] = getUInt32(src, p, bigEndian);
             } else {
-                values[i] = readUInt64(raf, bigEndian);
+                values[i] = getUInt64(src, p, bigEndian);
             }
         }
         return values;
@@ -441,6 +474,24 @@ public class RawTiffParser extends TiffParser {
     private long readOffset(RandomAccessFile raf, boolean bigEndian, boolean bigTiff)
             throws IOException {
         return bigTiff ? readUInt64(raf, bigEndian) : readUInt32(raf, bigEndian);
+    }
+
+    private static int getUInt16(byte[] b, int off, boolean bigEndian) {
+        int a = b[off] & 0xFF;
+        int c = b[off + 1] & 0xFF;
+        return bigEndian ? (a << 8) | c : (c << 8) | a;
+    }
+
+    private static long getUInt32(byte[] b, int off, boolean bigEndian) {
+        long high = getUInt16(b, off, bigEndian);
+        long low = getUInt16(b, off + 2, bigEndian);
+        return bigEndian ? (high << 16) | low : (low << 16) | high;
+    }
+
+    private static long getUInt64(byte[] b, int off, boolean bigEndian) {
+        long high = getUInt32(b, off, bigEndian);
+        long low = getUInt32(b, off + 4, bigEndian);
+        return bigEndian ? (high << 32) | low : (low << 32) | high;
     }
 
     private record Preview(long offset, long length) {

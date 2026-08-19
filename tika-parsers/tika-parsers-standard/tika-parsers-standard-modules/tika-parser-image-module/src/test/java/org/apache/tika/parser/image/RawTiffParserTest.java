@@ -67,6 +67,15 @@ public class RawTiffParserTest extends TikaTest {
     }
 
     @Test
+    public void testDuplicatePreviewOffsetsDeduplicated() throws Exception {
+        //IFD0 and IFD1 both point their JPEGInterchangeFormat at the same region;
+        //it is extracted once, not per referencing IFD
+        List<Metadata> metadataList = parseByName("testNEF_dup.nef");
+        assertEquals(2, metadataList.size());
+        assertPreview(metadataList.get(1), 0, 64, 48);
+    }
+
+    @Test
     public void testARW() throws Exception {
         List<Metadata> metadataList = parseByName("testARW.arw");
         assertEquals(3, metadataList.size());
