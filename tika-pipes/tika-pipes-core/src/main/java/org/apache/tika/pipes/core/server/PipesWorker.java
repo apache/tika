@@ -36,6 +36,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
@@ -487,18 +488,11 @@ class PipesWorker implements Callable<PipesResult> {
         }
         // Use newMetadata() to apply any configured write limits
         Metadata metadata = localContext.newMetadata();
-        // Carry the caller-supplied resource name across the fresh-metadata boundary so
-        // detection, suffix selection, and the Frictionless manifest's name field see
-        // the logical filename rather than whatever the fetcher's path happens to be
-        // (e.g., a server-side spool prefix). TikaInputStream.get(path, metadata)
-        // already honors a pre-set RESOURCE_NAME_KEY.
-        Metadata tupleMetadata = fetchEmitTuple.getMetadata();
-        String suppliedName = tupleMetadata == null
-                ? null
-                : tupleMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        if (!StringUtils.isBlank(suppliedName)) {
-            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, suppliedName);
-        }
+        // Carry the caller-supplied detection hints (resource name and the Content-Type soft
+        // hint) across the fresh-metadata boundary so detection, suffix selection, and the
+        // Frictionless manifest's name field see the logical filename and type rather than
+        // whatever the fetcher's path happens to be (e.g., a server-side spool prefix).
+        carryCallerHints(fetchEmitTuple.getMetadata(), metadata);
         FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata, localContext);
         if (tisOrResult.pipesResult() != null) {
             return new ParseDataOrPipesResult(null, tisOrResult.pipesResult());
@@ -516,7 +510,33 @@ class PipesWorker implements Callable<PipesResult> {
         }
     }
 
-
+    /**
+     * Carries the caller-supplied detection hints from the tuple metadata across the
+     * fresh-metadata boundary into the metadata used for fetch and detection.
+     * <p>
+     * Only the resource name and the {@code Content-Type} soft hint are carried.
+     * {@code Content-Type} is applied by {@code MimeTypes.detect} via {@code applyHint},
+     * which keeps it only when it equals or specializes the magic-detected type (e.g.
+     * {@code image/tiff} -&gt; {@code image/x-raw-nikon} for a NEF supplied without a
+     * filename). The {@code CONTENT_TYPE_USER_OVERRIDE} key is deliberately NOT carried:
+     * it short-circuits detection unconditionally and would let a caller force any type.
+     *
+     * @param tupleMetadata the caller-supplied metadata (may be null)
+     * @param target the fresh metadata used for fetch and detection
+     */
+    static void carryCallerHints(Metadata tupleMetadata, Metadata target) {
+        if (tupleMetadata == null) {
+            return;
+        }
+        String suppliedName = tupleMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        if (!StringUtils.isBlank(suppliedName)) {
+            target.set(TikaCoreProperties.RESOURCE_NAME_KEY, suppliedName);
+        }
+        String suppliedContentType = tupleMetadata.get(HttpHeaders.CONTENT_TYPE);
+        if (!StringUtils.isBlank(suppliedContentType)) {
+            target.set(HttpHeaders.CONTENT_TYPE, suppliedContentType);
+        }
+    }
 
     private ParseContext setupParseContext() throws TikaException, IOException {
         // ContentHandlerFactory and ParseMode are retrieved from ParseContext in ParseHandler.
