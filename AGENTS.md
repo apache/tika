@@ -47,3 +47,13 @@ whether or not you're working on Tika's own source.
 | `.skills/file-to-markdown/SKILL.md` | Turning a file (PDF, Office, email, archives, images, ...) into Markdown + metadata via tika-app or tika-server |
 | `.skills/file-to-markdown-docker/SKILL.md` | Need guaranteed OCR/GDAL with no local install, or a disposable containerized Tika — running tika-server via Docker |
 | `.skills/file-forensics/SKILL.md` | What a file claims vs. contains: provenance, tamper signals, hidden/embedded content, macros, digests — evidence, not verdicts |
+
+## Security
+
+Security model: [SECURITY.md](./SECURITY.md)
+
+Agents that scan this repository should consult `SECURITY.md` before
+reporting issues. It links Tika's published
+[security model](https://tika.apache.org/security-model.html), which states
+what the project does and does not treat as a vulnerability — in particular
+its position on untrusted data, untrusted callers, and denial of service.
