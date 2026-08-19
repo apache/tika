@@ -226,6 +226,8 @@ public class RawTiffParser extends TiffParser {
         int offsetSize = bigTiff ? 8 : 4;
 
         List<Preview> previews = new ArrayList<>();
+        //distinct IFDs can reference the same JPEG region; extract each region once
+        Set<Long> previewOffsets = new HashSet<>();
         Set<Long> visited = new HashSet<>();
         Deque<Long> toVisit = new ArrayDeque<>();
         toVisit.add(readOffset(raf, bigEndian, bigTiff));
@@ -294,7 +296,7 @@ public class RawTiffParser extends TiffParser {
                     jpegOffset <= fileLength - jpegLength) {
                 raf.seek(jpegOffset);
                 //require the JPEG SOI marker
-                if (raf.read() == 0xFF && raf.read() == 0xD8) {
+                if (raf.read() == 0xFF && raf.read() == 0xD8 && previewOffsets.add(jpegOffset)) {
                     previews.add(new Preview(jpegOffset, jpegLength));
                 }
             }
