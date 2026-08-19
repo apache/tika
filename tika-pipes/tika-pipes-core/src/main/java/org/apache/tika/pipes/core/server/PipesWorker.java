@@ -488,10 +488,7 @@ class PipesWorker implements Callable<PipesResult> {
         }
         // Use newMetadata() to apply any configured write limits
         Metadata metadata = localContext.newMetadata();
-        // Carry the caller-supplied detection hints (resource name and the Content-Type soft
-        // hint) across the fresh-metadata boundary so detection, suffix selection, and the
-        // Frictionless manifest's name field see the logical filename and type rather than
-        // whatever the fetcher's path happens to be (e.g., a server-side spool prefix).
+        // Carry the caller's resource name and Content-Type detection hints (see javadoc).
         carryCallerHints(fetchEmitTuple.getMetadata(), metadata);
         FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata, localContext);
         if (tisOrResult.pipesResult() != null) {

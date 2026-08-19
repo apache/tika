@@ -428,6 +428,15 @@ Transport headers are unaffected: `Content-Disposition`,
 `Content-Type` and `Content-Length` still describe the payload and still
 influence detection.
 
+NOTE: The way `Content-Type` influences detection changed. In 3.x, parsing ran
+in-process and a request `Content-Type` acted as a hard override that forced the
+type. In 4.x, parsing runs in a forked worker and the header is carried across as
+a *soft* hint: detection keeps it only when it equals or specializes the type
+detected from the content, and otherwise ignores it (TIKA-4825). A 3.x client
+that forced an unrelated type onto arbitrary bytes (for example `text/plain`)
+will now see that type ignored in favor of content-based detection. Supply the
+correct `Content-Type` (or a filename) to refine within the detected hierarchy.
+
 === Pipes Configuration (for `/pipes` and `/async`)
 
 No pipes or fetcher configuration is required to start the server: the default-on endpoints
