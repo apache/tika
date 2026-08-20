@@ -23,6 +23,7 @@ import java.security.Provider;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -116,7 +117,12 @@ public class InputStreamDigester implements Digester {
     @Override
     public void digest(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
-        tis.enableRewind();
+        // Bridge the shared memory budget (if any) from the ParseContext into the IO layer, so
+        // that caching this object for rewind stays in memory up to the budget instead of spilling
+        // per-object at 1MB. TikaInputStream itself never sees ParseContext.
+        CacheMemoryBudget budget =
+                (parseContext == null) ? null : parseContext.get(CacheMemoryBudget.class);
+        tis.enableRewind(budget);
 
         MessageDigest messageDigest = newMessageDigest();
         byte[] buffer = new byte[8192];

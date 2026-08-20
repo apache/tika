@@ -65,4 +65,15 @@ interface TikaInputSource extends Closeable {
      * @throws IOException if position is not 0
      */
     void enableRewind() throws IOException;
+
+    /**
+     * Like {@link #enableRewind()}, but supplies a shared {@link CacheMemoryBudget} that governs
+     * how much may be held in memory before spilling to disk. Only sources that cache
+     * (CachingSource) use it; sources that are inherently rewindable ignore it.
+     *
+     * @param budget shared memory budget, or {@code null} for the historic per-object default
+     */
+    default void enableRewind(CacheMemoryBudget budget) throws IOException {
+        enableRewind();
+    }
 }

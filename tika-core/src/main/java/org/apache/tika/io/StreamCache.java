@@ -33,8 +33,17 @@ class StreamCache implements Closeable {
 
     private static final int DEFAULT_MEMORY_THRESHOLD = 1024 * 1024; // 1MB
 
+    // Max size of the in-memory byte[] (a single JVM array); with a budget we grow past the
+    // per-object threshold but never past this.
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
     private final int memoryThreshold;
     private final TemporaryResources tmp;
+
+    // Optional shared memory budget; when non-null it governs the memory-vs-spill decision
+    // instead of the fixed per-object memoryThreshold.
+    private final CacheMemoryBudget budget;
+    private long reserved;
 
     // Memory storage (null after spill)
     private byte[] memoryBuffer;
@@ -51,18 +60,28 @@ class StreamCache implements Closeable {
     private boolean closed;
 
     StreamCache(TemporaryResources tmp) {
-        this(tmp, null, DEFAULT_MEMORY_THRESHOLD);
+        this(tmp, null, DEFAULT_MEMORY_THRESHOLD, null);
     }
 
     /** Suffix up front: a threshold spill precedes any getPath(suffix) call (TIKA-3903). */
     StreamCache(TemporaryResources tmp, String suffix) {
-        this(tmp, suffix, DEFAULT_MEMORY_THRESHOLD);
+        this(tmp, suffix, DEFAULT_MEMORY_THRESHOLD, null);
     }
 
     StreamCache(TemporaryResources tmp, String suffix, int memoryThreshold) {
+        this(tmp, suffix, memoryThreshold, null);
+    }
+
+    /** When {@code budget} is non-null it governs memory-vs-spill instead of memoryThreshold. */
+    StreamCache(TemporaryResources tmp, String suffix, CacheMemoryBudget budget) {
+        this(tmp, suffix, DEFAULT_MEMORY_THRESHOLD, budget);
+    }
+
+    StreamCache(TemporaryResources tmp, String suffix, int memoryThreshold, CacheMemoryBudget budget) {
         this.tmp = tmp;
         this.suffix = suffix;
         this.memoryThreshold = memoryThreshold;
+        this.budget = budget;
         this.memoryBuffer = new byte[Math.min(memoryThreshold, 8192)];
         this.memorySize = 0;
         this.totalSize = 0;
@@ -78,12 +97,12 @@ class StreamCache implements Closeable {
 
         if (memoryBuffer != null) {
             // Still in memory mode
-            if (memorySize >= memoryThreshold) {
-                spillToFile();
-                spillOutputStream.write(b);
-            } else {
+            if (canKeepInMemory(1)) {
                 ensureMemoryCapacity(memorySize + 1);
                 memoryBuffer[memorySize++] = (byte) b;
+            } else {
+                spillToFile();
+                spillOutputStream.write(b);
             }
         } else {
             // Already spilled to file
@@ -101,13 +120,13 @@ class StreamCache implements Closeable {
         }
 
         if (memoryBuffer != null) {
-            if (memorySize + len > memoryThreshold) {
-                spillToFile();
-                spillOutputStream.write(b, off, len);
-            } else {
+            if (canKeepInMemory(len)) {
                 ensureMemoryCapacity(memorySize + len);
                 System.arraycopy(b, off, memoryBuffer, memorySize, len);
                 memorySize += len;
+            } else {
+                spillToFile();
+                spillOutputStream.write(b, off, len);
             }
         } else {
             spillOutputStream.write(b, off, len);
@@ -115,11 +134,38 @@ class StreamCache implements Closeable {
         totalSize += len;
     }
 
+    /**
+     * Decide whether {@code additional} more bytes can stay in memory. With no budget this is the
+     * historic fixed per-object threshold; with a budget it reserves against the shared pool
+     * (all-or-nothing) and spills once the pool is exhausted.
+     */
+    private boolean canKeepInMemory(int additional) {
+        if (budget == null) {
+            return memorySize + (long) additional <= memoryThreshold;
+        }
+        if ((long) memorySize + additional > MAX_ARRAY_SIZE) {
+            return false;
+        }
+        if (budget.tryReserve(additional) == additional) {
+            reserved += additional;
+            return true;
+        }
+        return false;
+    }
+
+    private void releaseReserved() {
+        if (budget != null && reserved > 0) {
+            budget.release(reserved);
+            reserved = 0;
+        }
+    }
+
     private void ensureMemoryCapacity(int needed) {
         if (needed <= memoryBuffer.length) {
             return;
         }
-        int newSize = Math.min(memoryThreshold, Math.max(memoryBuffer.length * 2, needed));
+        int cap = (budget == null) ? memoryThreshold : MAX_ARRAY_SIZE;
+        int newSize = Math.min(cap, Math.max(memoryBuffer.length * 2, needed));
         byte[] newBuffer = new byte[newSize];
         System.arraycopy(memoryBuffer, 0, newBuffer, 0, memorySize);
         memoryBuffer = newBuffer;
@@ -141,9 +187,10 @@ class StreamCache implements Closeable {
             spillOutputStream.write(memoryBuffer, 0, memorySize);
         }
 
-        // Release memory buffer
+        // Release memory buffer (and give any reserved budget back -- we're on disk now)
         memoryBuffer = null;
         memorySize = 0;
+        releaseReserved();
     }
 
     /**
@@ -258,6 +305,7 @@ class StreamCache implements Closeable {
         }
         closed = true;
         memoryBuffer = null;
+        releaseReserved();
 
         if (spillOutputStream != null) {
             spillOutputStream.close();

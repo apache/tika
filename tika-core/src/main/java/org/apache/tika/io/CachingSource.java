@@ -187,6 +187,11 @@ class CachingSource extends InputStream implements TikaInputSource {
 
     @Override
     public void enableRewind() throws IOException {
+        enableRewind(null);
+    }
+
+    @Override
+    public void enableRewind(CacheMemoryBudget budget) throws IOException {
         // Already in caching or file mode - no-op
         if (cachingStream != null || fileStream != null) {
             return;
@@ -199,7 +204,7 @@ class CachingSource extends InputStream implements TikaInputSource {
         }
 
         // Switch to caching mode
-        StreamCache cache = new StreamCache(tmp, suffix);
+        StreamCache cache = new StreamCache(tmp, suffix, budget);
         cachingStream = new CachingInputStream(passthroughStream, cache);
         passthroughStream = null;
     }

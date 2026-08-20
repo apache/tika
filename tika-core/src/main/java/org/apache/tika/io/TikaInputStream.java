@@ -33,6 +33,7 @@ import java.sql.Blob;
 import java.sql.SQLException;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.function.IOSupplier;
 import org.apache.commons.io.input.TaggedInputStream;
 
 import org.apache.tika.metadata.HttpHeaders;
@@ -98,6 +99,38 @@ public class TikaInputStream extends TaggedInputStream {
         }
         String ext = getExtension(metadata);
         TikaInputSource inputSource = new CachingSource(stream, tmp, -1, metadata, ext);
+        return new TikaInputStream(inputSource, tmp, ext);
+    }
+
+    /**
+     * Creates a TikaInputStream from a re-openable stream supplier. Unlike
+     * {@link #get(InputStream, TemporaryResources, Metadata)} -- which caches a one-shot
+     * stream to memory/disk so it can be rewound -- the supplier is re-invoked to re-read
+     * the content, so rewinding (e.g. during digesting) never spills to disk. A temp file
+     * is only created if {@link #getPath()} is later called (a parser/detector needing a File).
+     *
+     * @param opener   supplies a fresh InputStream over the same content on each call
+     * @param tmp      temporary resources for any on-demand {@link #getPath()} spill
+     * @param metadata metadata used for extension/length hints; may be null
+     */
+    public static TikaInputStream get(IOSupplier<InputStream> opener, TemporaryResources tmp,
+                                      Metadata metadata) {
+        if (opener == null) {
+            throw new NullPointerException("The opener must not be null");
+        }
+        String ext = getExtension(metadata);
+        long length = -1;
+        if (metadata != null) {
+            String cl = metadata.get(HttpHeaders.CONTENT_LENGTH);
+            if (cl != null) {
+                try {
+                    length = Long.parseLong(cl);
+                } catch (NumberFormatException e) {
+                    length = -1;
+                }
+            }
+        }
+        TikaInputSource inputSource = new ReopenableSource(opener, tmp, length);
         return new TikaInputStream(inputSource, tmp, ext);
     }
 
@@ -481,6 +514,23 @@ public class TikaInputStream extends TaggedInputStream {
         TikaInputSource source = inputSource();
         if (source != null) {
             source.enableRewind();
+        }
+    }
+
+    /**
+     * Like {@link #enableRewind()}, but supplies a shared {@link CacheMemoryBudget} that governs
+     * how much is held in memory before spilling to disk (only used by stream-backed sources that
+     * cache). {@code null} falls back to the historic per-object default. This lets a caller that
+     * has the budget (e.g. the digester, which is handed a ParseContext) bridge it to the IO layer
+     * without TikaInputStream itself depending on ParseContext.
+     *
+     * @param budget shared memory budget, or {@code null}
+     * @throws IOException if bytes have already been read (position is not 0)
+     */
+    public void enableRewind(CacheMemoryBudget budget) throws IOException {
+        TikaInputSource source = inputSource();
+        if (source != null) {
+            source.enableRewind(budget);
         }
     }
 

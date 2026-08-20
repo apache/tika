@@ -52,6 +52,7 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
@@ -89,6 +90,16 @@ import org.apache.tika.utils.ExceptionUtils;
 public class PipesServer implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesServer.class);
+
+    // Process-wide budget bounding total in-memory stream caching (embedded-object digest rewind
+    // buffers, etc.) so small embedded objects stay in RAM instead of spilling per-object at 1MB.
+    // Tunable via -Dtika.pipes.cacheMemoryBudgetBytes; <=0 disables (falls back to the 1MB default).
+    static final CacheMemoryBudget CACHE_MEMORY_BUDGET = initCacheMemoryBudget();
+
+    private static CacheMemoryBudget initCacheMemoryBudget() {
+        long bytes = Long.getLong("tika.pipes.cacheMemoryBudgetBytes", 256L * 1024 * 1024);
+        return bytes > 0 ? new CacheMemoryBudget(bytes) : null;
+    }
 
     public static final int AUTH_TOKEN_LENGTH_BYTES = 32;
 
@@ -677,6 +688,10 @@ public class PipesServer implements AutoCloseable {
         // EmbeddedDocumentExtractor + UnpackedByteCount in PipesWorker's UNPACK-mode setup.
         // Request-level values override config defaults
         mergedContext.copyFrom(requestContext);
+        // Seed the process-wide cache memory budget (unless the request already set one).
+        if (CACHE_MEMORY_BUDGET != null && mergedContext.get(CacheMemoryBudget.class) == null) {
+            mergedContext.set(CacheMemoryBudget.class, CACHE_MEMORY_BUDGET);
+        }
         return mergedContext;
     }
 

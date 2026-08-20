@@ -20,7 +20,6 @@ import static org.apache.tika.detect.zip.PackageConstants.JAR;
 import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.FileTime;
@@ -498,8 +497,12 @@ public class ZipParser extends AbstractArchiveParser {
 
         if (extractor.shouldParseEmbedded(entryMetadata, context)) {
             TemporaryResources tmp = new TemporaryResources();
-            try (InputStream entryStream = zipFile.getInputStream(entry)) {
-                TikaInputStream tis = TikaInputStream.get(entryStream, tmp, entryMetadata);
+            // Re-openable source: the entry can be re-read from the random-access ZipFile,
+            // so enableRewind/rewind (e.g. during per-object digesting) re-opens the entry
+            // instead of buffering/spilling it to disk. A temp file is created only if a
+            // parser/detector actually needs a File via getPath(). See ReopenableSource.
+            try (TikaInputStream tis = TikaInputStream.get(
+                    () -> zipFile.getInputStream(entry), tmp, entryMetadata)) {
                 extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);
             } catch (UnsupportedZipFeatureException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
