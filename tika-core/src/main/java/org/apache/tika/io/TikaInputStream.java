@@ -108,7 +108,9 @@ public class TikaInputStream extends TaggedInputStream {
      * {@link #get(InputStream, TemporaryResources, Metadata)} -- which caches a one-shot
      * stream to memory/disk so it can be rewound -- the supplier is re-invoked to re-read
      * the content, so rewinding (e.g. during digesting) never spills to disk. A temp file
-     * is only created if {@link #getPath()} is later called (a parser/detector needing a File).
+     * is created only if {@link #getPath()} is later called (a parser/detector needing a
+     * File) or {@link #getSeekableByteChannel()} is asked for content that does not fit
+     * in memory.
      *
      * @param opener   supplies a fresh InputStream over the same content on each call
      * @param tmp      temporary resources for any on-demand {@link #getPath()} spill
@@ -131,7 +133,7 @@ public class TikaInputStream extends TaggedInputStream {
                 }
             }
         }
-        TikaInputSource inputSource = new ReopenableSource(opener, tmp, length);
+        TikaInputSource inputSource = new ReopenableSource(opener, tmp, length, ext);
         return new TikaInputStream(inputSource, tmp, ext);
     }
 
@@ -512,18 +514,13 @@ public class TikaInputStream extends TaggedInputStream {
      *         (position is not 0); rewind support cannot be enabled retroactively
      */
     public void enableRewind() throws IOException {
-        TikaInputSource source = inputSource();
-        if (source != null) {
-            source.enableRewind();
-        }
+        enableRewind(null);
     }
 
     /**
-     * Like {@link #enableRewind()}, but supplies a shared {@link CacheMemoryBudget} that governs
-     * how much is held in memory before spilling to disk (only used by stream-backed sources that
-     * cache). {@code null} falls back to the historic per-object default. This lets a caller that
-     * has the budget (e.g. the digester, which is handed a ParseContext) bridge it to the IO layer
-     * without TikaInputStream itself depending on ParseContext.
+     * Like {@link #enableRewind()}, but supplies a shared {@link CacheMemoryBudget} governing
+     * how much may be held in memory before spilling to disk (used only by stream-backed
+     * sources); {@code null} falls back to the per-object default.
      *
      * @param budget shared memory budget, or {@code null}
      * @throws IOException if bytes have already been read (position is not 0)
@@ -544,6 +541,8 @@ public class TikaInputStream extends TaggedInputStream {
      * (e.g. reading a zip central directory); reserve {@code getFile()} for callers that truly
      * need a {@link java.io.File}. The caller owns closing the returned channel. Does not
      * disturb this stream's read position.
+     *
+     * @throws IOException if this stream has been partially read without rewind enabled
      */
     public SeekableByteChannel getSeekableByteChannel() throws IOException {
         TikaInputSource source = inputSource();

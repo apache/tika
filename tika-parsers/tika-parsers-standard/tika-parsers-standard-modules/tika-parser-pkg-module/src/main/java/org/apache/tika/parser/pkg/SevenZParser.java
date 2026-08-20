@@ -114,8 +114,7 @@ public class SevenZParser extends AbstractArchiveParser {
         }
 
         SevenZFile sevenZFile;
-        // getSeekableByteChannel() serves in-memory content without spilling it to disk;
-        // SevenZFile.close() closes the channel it was built on.
+        // SevenZFile.close() closes the channel it was built on
         SeekableByteChannel channel = tis.getSeekableByteChannel();
         try {
             // Use setMaxMemoryLimitKiB (direct KiB); setMaxMemoryLimitKb divides the arg by 1024.

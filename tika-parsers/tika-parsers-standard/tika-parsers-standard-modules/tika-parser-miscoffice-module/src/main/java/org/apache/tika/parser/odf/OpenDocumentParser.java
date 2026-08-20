@@ -20,7 +20,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.SeekableByteChannel;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -59,6 +58,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.apache.tika.zip.utils.ZipFileHelper;
 
 /**
  * OpenOffice parser
@@ -169,20 +169,12 @@ public class OpenDocumentParser implements Parser {
         EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         // Open the Zip stream; an already open zip from the detector is best.
-        // getSeekableByteChannel() serves in-memory content without spilling it to disk;
-        // ZipFile.close() closes the channel it was built on.
         ZipFile zipFile = null;
         Object container = tis.getOpenContainer();
         if (container instanceof ZipFile) {
             zipFile = (ZipFile) container;
         } else {
-            SeekableByteChannel channel = tis.getSeekableByteChannel();
-            try {
-                zipFile = ZipFile.builder().setSeekableByteChannel(channel).get();
-            } catch (IOException e) {
-                channel.close();
-                throw e;
-            }
+            zipFile = ZipFileHelper.open(tis, null);
             tis.setOpenContainer(zipFile);
         }
         // Prepare to handle the content

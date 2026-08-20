@@ -63,28 +63,22 @@ interface TikaInputSource extends Closeable {
      * <p>
      * Must be called when position is 0, otherwise throws IOException.
      *
+     * @param budget shared memory budget governing how much a caching source may hold in
+     *               memory before spilling, or {@code null} for the per-object default;
+     *               inherently rewindable sources ignore it
      * @throws IOException if position is not 0
      */
-    void enableRewind() throws IOException;
+    void enableRewind(CacheMemoryBudget budget) throws IOException;
 
     /**
-     * Like {@link #enableRewind()}, but supplies a shared {@link CacheMemoryBudget} that governs
-     * how much may be held in memory before spilling to disk. Only sources that cache
-     * (CachingSource) use it; sources that are inherently rewindable ignore it.
+     * Returns a read-only random-access channel over this source's full content: content
+     * already in memory (byte[], unspilled cache) is served from memory; file-backed or
+     * spilled content from a file channel; unread stream content is drained through the
+     * cache, which decides memory-vs-disk during the drain. Fails for a stream-backed
+     * source that has been partially read without rewind enabled. Callers own closing the
+     * returned channel. Does not change this source's read position.
      *
-     * @param budget shared memory budget, or {@code null} for the historic per-object default
-     */
-    default void enableRewind(CacheMemoryBudget budget) throws IOException {
-        enableRewind();
-    }
-
-    /**
-     * Returns a read-only random-access channel over this source's full content. Always
-     * succeeds: sources whose content is already in memory (byte[], unspilled cache) serve it
-     * from memory; file-backed or spilled sources serve a file channel; stream-backed sources
-     * drain into their cache first, which decides memory-vs-disk during the drain (the expanded
-     * size of a stream is unknowable up front). Callers own closing the returned channel. Does
-     * not change this source's read position.
+     * @throws IOException if the source is partially read and cannot be rewound
      */
     SeekableByteChannel getSeekableByteChannel() throws IOException;
 }

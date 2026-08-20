@@ -20,7 +20,6 @@ import static org.apache.tika.detect.zip.PackageConstants.JAR;
 import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
 import java.io.IOException;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.FileTime;
@@ -62,6 +61,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ParserUtils;
+import org.apache.tika.zip.utils.ZipFileHelper;
 
 /**
  * Parser for ZIP and JAR archives using file-based access for complete metadata extraction.
@@ -226,23 +226,11 @@ public class ZipParser extends AbstractArchiveParser {
         }
 
         // No ZipFile from detector - try to open directly
-        // This handles cases where parser is called without detector.
-        // getSeekableByteChannel() serves in-memory content without spilling it to disk.
+        // This handles cases where parser is called without detector
         ZipFile zipFile = null;
         try {
-            SeekableByteChannel channel = tis.getSeekableByteChannel();
-            try {
-                ZipFile.Builder builder = ZipFile.builder().setSeekableByteChannel(channel);
-                if (config.getEntryEncoding() != null) {
-                    builder.setCharset(config.getEntryEncoding());
-                }
-                // ZipFile.close() closes the channel it was built on
-                zipFile = builder.get();
-                tis.setOpenContainer(zipFile);
-            } catch (IOException e) {
-                channel.close();
-                throw e;
-            }
+            zipFile = ZipFileHelper.open(tis, config.getEntryEncoding());
+            tis.setOpenContainer(zipFile);
         } catch (IOException e) {
             // ZipFile failed - fall back to streaming
         }
@@ -506,10 +494,8 @@ public class ZipParser extends AbstractArchiveParser {
 
         if (extractor.shouldParseEmbedded(entryMetadata, context)) {
             TemporaryResources tmp = new TemporaryResources();
-            // Re-openable source: the entry can be re-read from the random-access ZipFile,
-            // so enableRewind/rewind (e.g. during per-object digesting) re-opens the entry
-            // instead of buffering/spilling it to disk. A temp file is created only if a
-            // parser/detector actually needs a File via getPath(). See ReopenableSource.
+            // Re-openable source: rewind (e.g. for digesting) re-opens the entry instead of
+            // buffering/spilling it
             try (TikaInputStream tis = TikaInputStream.get(
                     () -> zipFile.getInputStream(entry), tmp, entryMetadata)) {
                 extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);

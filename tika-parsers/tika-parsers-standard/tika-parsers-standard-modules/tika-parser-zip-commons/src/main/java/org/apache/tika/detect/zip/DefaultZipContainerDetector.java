@@ -46,6 +46,7 @@ import org.apache.tika.metadata.Zip;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ParsingIntent;
+import org.apache.tika.zip.utils.ZipFileHelper;
 import org.apache.tika.zip.utils.ZipSalvager;
 
 /**
@@ -213,27 +214,7 @@ public class DefaultZipContainerDetector implements Detector {
     }
 
     /**
-     * Opens a {@link ZipFile} for detection over {@link TikaInputStream#getSeekableByteChannel()}:
-     * in-memory content (e.g. a small embedded zip cached in RAM for digesting) is read without
-     * spilling to disk; file-backed or oversized content is served from a file channel. A
-     * truncated/corrupt zip throws, leaving the salvage path to the caller.
-     */
-    private static ZipFile openZipFileForDetection(TikaInputStream tis) throws IOException {
-        SeekableByteChannel channel = tis.getSeekableByteChannel();
-        try {
-            ZipFile zip = ZipFile.builder().setSeekableByteChannel(channel).get();
-            // Keep the channel alive for the parser's reuse of the openContainer ZipFile;
-            // registered before the ZipFile so it is closed after it (LIFO).
-            tis.addCloseableResource(channel);
-            return zip;
-        } catch (IOException e) {
-            channel.close();
-            throw e;
-        }
-    }
-
-    /**
-     * Opens the zip via {@link #openZipFileForDetection} (random access from memory when the
+     * Opens the zip via {@link ZipFileHelper#open} (random access from memory when the
      * content is already cached there, a file otherwise). If there are no exceptions,
      * it will place the ZipFile in TikaInputStream's openContainer and leave it
      * open.
@@ -253,7 +234,7 @@ public class DefaultZipContainerDetector implements Detector {
         // Try to open ZipFile directly
         ZipFile zip = null;
         try {
-            zip = openZipFileForDetection(tis);
+            zip = ZipFileHelper.open(tis, null);
             metadata.set(Zip.DETECTOR_ZIPFILE_OPENED, true);
         } catch (IOException e) {
             // ZipFile failed to open (truncated/corrupt)

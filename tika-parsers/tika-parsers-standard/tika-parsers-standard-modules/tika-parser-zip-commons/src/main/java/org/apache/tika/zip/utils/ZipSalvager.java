@@ -18,7 +18,6 @@ package org.apache.tika.zip.utils;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,21 +64,9 @@ public class ZipSalvager {
      * @return the opened ZipFile, or null if opening and salvaging both failed
      */
     public static ZipFile tryToOpenZipFile(TikaInputStream tis, Metadata metadata, Charset charset) {
-        // First, try direct open. getSeekableByteChannel() serves in-memory content without
-        // spilling it to disk; ZipFile.close() closes the channel it was built on.
+        // First, try direct open
         try {
-            SeekableByteChannel channel = tis.getSeekableByteChannel();
-            ZipFile zipFile;
-            try {
-                ZipFile.Builder builder = new ZipFile.Builder().setSeekableByteChannel(channel);
-                if (charset != null) {
-                    builder.setCharset(charset);
-                }
-                zipFile = builder.get();
-            } catch (IOException e) {
-                channel.close();
-                throw e;
-            }
+            ZipFile zipFile = ZipFileHelper.open(tis, charset);
 
             // Direct open succeeded
             metadata.set(Zip.DETECTOR_ZIPFILE_OPENED, true);

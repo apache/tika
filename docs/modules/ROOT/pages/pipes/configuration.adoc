@@ -45,7 +45,7 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 
 |`forkedJvmArgs`
 |`[]`
-|JVM arguments for forked processes (e.g., `["-Xmx512m", "-Xms256m"]`). Unless you supply your own, Tika auto-injects `-XX:ActiveProcessorCount` to right-size each fork's GC and JIT thread pools, and `-XX:MaxRAMPercentage` to keep the forks' combined heap ceiling under the host's memory; see xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing].
+|JVM arguments for forked processes (e.g., `["-Xmx512m", "-Xms256m"]`). Unless you supply your own, Tika auto-injects `-XX:ActiveProcessorCount` to right-size each fork's GC and JIT thread pools, and `-XX:MaxRAMPercentage` to keep the forks' combined heap ceiling under the host's memory; see xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing]. This is also where the fork's system properties go, e.g. `-Dtika.pipes.cacheMemoryBudgetBytes` below -- setting them on the parent JVM has no effect on the forks.
 
 |`javaPath`
 |`java`
@@ -65,6 +65,26 @@ crashing fork does not accumulate them. A parent killed abruptly (`SIGKILL`, con
 cannot, and its subdirectories survive. On a RAM-backed filesystem those leaks consume memory
 rather than disk, and `/dev/shm` is commonly sized at half of RAM -- so if you point
 `tempDirectory` at one, sweep it on service start.
+
+=== Embedded-object cache memory budget
+
+Each fork holds a process-wide in-memory budget for stream caching (chiefly the rewind
+buffers used when digesting embedded documents), so small embedded objects stay in RAM
+instead of spilling to a temp file at the per-object 1MB threshold. The default is 256MB per
+fork, clamped to a quarter of the fork's max heap; the effective value is logged at fork
+startup. Tune it with a system property in `forkedJvmArgs` (plain bytes, no unit suffix;
+`<=0` disables the budget and restores the per-object threshold):
+
+[source,json]
+----
+"forkedJvmArgs": ["-Xmx1g", "-Dtika.pipes.cacheMemoryBudgetBytes=134217728"]
+----
+
+Size `-Xmx` with the budget in mind: the budget is additional heap the fork may use on top
+of its parsing working set, and in per-client mode every fork holds its own budget
+(`numClients` x budget in aggregate). In shared-server mode all concurrent parses in the
+single forked server share one budget, so each in-flight document gets a smaller slice of
+the same value.
 
 == Timeouts
 

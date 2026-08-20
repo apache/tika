@@ -158,7 +158,6 @@ public class OneNoteParser implements Parser {
             } else if (header.isLegacyOrAlternativePackaging()) {
                 try {
                     AlternativePackaging alternatePackageOneStoreFile = new AlternativePackaging();
-                    // read via the seekable channel: in-memory content stays in memory
                     byte[] bytes;
                     try (InputStream is = Channels.newInputStream(tis.getSeekableByteChannel())) {
                         bytes = is.readAllBytes();

@@ -121,7 +121,7 @@ class ByteArraySource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public void enableRewind() throws IOException {
+    public void enableRewind(CacheMemoryBudget budget) throws IOException {
         // No-op: byte array is always rewindable
     }
 

@@ -24,14 +24,13 @@ import java.nio.channels.SeekableByteChannel;
 
 /**
  * Read-only {@link SeekableByteChannel} over an in-memory byte array. Wraps the array directly
- * (no copy); callers must not mutate the backing array while the channel is in use. Used to give
- * random access to already-cached content (e.g. a small embedded zip) without spilling to disk.
+ * (no copy); callers must not mutate the backing array while the channel is in use.
  */
 class MemorySeekableByteChannel implements SeekableByteChannel {
 
     private final byte[] data;
     private final int length;
-    private int position;
+    private long position;
     private boolean open = true;
 
     MemorySeekableByteChannel(byte[] data, int length) {
@@ -45,8 +44,9 @@ class MemorySeekableByteChannel implements SeekableByteChannel {
         if (position >= length) {
             return -1;
         }
-        int n = Math.min(dst.remaining(), length - position);
-        dst.put(data, position, n);
+        int pos = (int) position;
+        int n = Math.min(dst.remaining(), length - pos);
+        dst.put(data, pos, n);
         position += n;
         return n;
     }
@@ -68,7 +68,8 @@ class MemorySeekableByteChannel implements SeekableByteChannel {
         if (newPosition < 0) {
             throw new IllegalArgumentException("negative position: " + newPosition);
         }
-        position = (int) Math.min(newPosition, length);
+        // Setting a position beyond size is legal per SeekableByteChannel; reads return EOF
+        position = newPosition;
         return this;
     }
 

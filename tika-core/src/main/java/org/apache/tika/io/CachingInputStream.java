@@ -47,10 +47,8 @@ class CachingInputStream extends InputStream {
 
     /**
      * Returns a read-only random-access channel over the full content, draining any unread
-     * source bytes into the cache first. The cache decides memory-vs-disk during the drain
-     * (budget/threshold governs the spill -- expansion size is unknowable up front), so this
-     * returns an in-memory channel when the content fit and a file channel when it spilled.
-     * Does not change the logical read position.
+     * source bytes into the cache first; in-memory when the content fit, a file channel when
+     * it spilled. Does not change the logical read position.
      */
     SeekableByteChannel getSeekableByteChannel() throws IOException {
         drainSourceToCache();

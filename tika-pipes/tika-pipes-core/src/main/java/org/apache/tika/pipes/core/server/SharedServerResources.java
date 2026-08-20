@@ -25,7 +25,6 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
@@ -159,11 +158,7 @@ public class SharedServerResources {
         // content extraction for every non-UNPACK parse mode.
         // Request-level values override config defaults
         mergedContext.copyFrom(requestContext);
-        // Seed the process-wide cache memory budget (unless the request already set one).
-        if (PipesServer.CACHE_MEMORY_BUDGET != null
-                && mergedContext.get(CacheMemoryBudget.class) == null) {
-            mergedContext.set(CacheMemoryBudget.class, PipesServer.CACHE_MEMORY_BUDGET);
-        }
+        PipesServer.seedCacheMemoryBudget(mergedContext);
         return mergedContext;
     }
 

@@ -111,15 +111,13 @@ public class InputStreamDigester implements Digester {
      *
      * @param tis          TikaInputStream to digest
      * @param metadata     metadata in which to store the digest information
-     * @param parseContext ParseContext -- not actually used yet, but there for future expansion
+     * @param parseContext ParseContext, which may carry a {@link CacheMemoryBudget}
      * @throws IOException on IO problem or IllegalArgumentException if algorithm couldn't be found
      */
     @Override
     public void digest(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
-        // Bridge the shared memory budget (if any) from the ParseContext into the IO layer, so
-        // that caching this object for rewind stays in memory up to the budget instead of spilling
-        // per-object at 1MB. TikaInputStream itself never sees ParseContext.
+        // Bridge the shared budget from ParseContext; TikaInputStream never sees ParseContext
         CacheMemoryBudget budget =
                 (parseContext == null) ? null : parseContext.get(CacheMemoryBudget.class);
         tis.enableRewind(budget);

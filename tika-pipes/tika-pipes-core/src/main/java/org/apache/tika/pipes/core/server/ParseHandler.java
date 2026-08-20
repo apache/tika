@@ -163,7 +163,6 @@ class ParseHandler {
         if (unpackConfig != null &&
                 unpackConfig.isIncludeOriginal()) {
             UnpackHandler unpackHandler = parseContext.get(UnpackHandler.class);
-            // read via the seekable channel: in-memory content stays in memory
             try (InputStream is = Channels.newInputStream(tis.getSeekableByteChannel())) {
                 unpackHandler.add(0, metadata, is);
             } catch (IOException e) {

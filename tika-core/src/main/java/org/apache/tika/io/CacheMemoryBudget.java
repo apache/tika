@@ -21,19 +21,11 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * A shared, bounded memory budget for in-memory stream caching.
  * <p>
- * When a {@code CacheMemoryBudget} is available, {@link StreamCache} keeps embedded-object
- * content in memory as long as it can reserve against this budget, spilling to a temp file only
- * once the budget is exhausted -- rather than at a fixed per-object threshold. This lets small
- * embedded objects stay in RAM (avoiding per-object temp-file spills) while still bounding total
- * cache heap across concurrent parses.
- * <p>
- * Intended usage: place a single, process-wide instance in the {@link
- * org.apache.tika.parser.ParseContext} (e.g. seeded by the pipes server / batch runner into every
- * document's context). It is bridged to the IO layer explicitly at the point of caching (see
- * {@link org.apache.tika.digest.InputStreamDigester#digest} -&gt; {@link
- * TikaInputStream#enableRewind(CacheMemoryBudget)}); {@code TikaInputStream} itself never depends
- * on {@code ParseContext}. When no budget is present, callers fall back to the historic per-object
- * default ({@link StreamCache} 1MB threshold).
+ * When present, stream caches hold content in memory past the per-object threshold by
+ * reserving buffer <em>capacity</em> against this budget, spilling to a temp file when a
+ * reservation fails. Content up to the per-object threshold is not accounted here. Place a
+ * single, process-wide instance in the {@link org.apache.tika.parser.ParseContext}; it is
+ * bridged to the IO layer via {@link TikaInputStream#enableRewind(CacheMemoryBudget)}.
  * <p>
  * Thread-safe; a single instance may be shared across concurrent parses.
  */
@@ -44,11 +36,11 @@ public final class CacheMemoryBudget {
 
     /**
      * @param maxBytes maximum total bytes that may be held in memory across all caches sharing
-     *                 this budget
+     *                 this budget; must be positive (to disable budgeting, pass no budget at all)
      */
     public CacheMemoryBudget(long maxBytes) {
-        if (maxBytes < 0) {
-            throw new IllegalArgumentException("maxBytes must be >= 0: " + maxBytes);
+        if (maxBytes <= 0) {
+            throw new IllegalArgumentException("maxBytes must be > 0: " + maxBytes);
         }
         this.maxBytes = maxBytes;
     }

@@ -36,9 +36,9 @@ import org.apache.tika.utils.StringUtils;
  * Input source that wraps a raw InputStream with optional caching.
  * <p>
  * Starts in passthrough mode using {@link BufferedInputStream} for basic
- * mark/reset support. When {@link #enableRewind()} is called (at position 0),
- * switches to caching mode using {@link CachingInputStream} which enables
- * full rewind/seek capability.
+ * mark/reset support. When {@link #enableRewind(CacheMemoryBudget)} is called
+ * (at position 0), switches to caching mode using {@link CachingInputStream}
+ * which enables full rewind/seek capability.
  * <p>
  * If caching is not enabled, {@link #seekTo(long)} will fail for any position
  * other than the current position.
@@ -189,11 +189,6 @@ class CachingSource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public void enableRewind() throws IOException {
-        enableRewind(null);
-    }
-
-    @Override
     public void enableRewind(CacheMemoryBudget budget) throws IOException {
         // Already in caching or file mode - no-op
         if (cachingStream != null || fileStream != null) {
@@ -224,11 +219,11 @@ class CachingSource extends InputStream implements TikaInputSource {
                         "Cannot create seekable view: position is " + passthroughPosition +
                                 ", must be 0. Call enableRewind() before reading.");
             }
-            enableRewind();
+            enableRewind(null);
         }
         SeekableByteChannel channel = cachingStream.getSeekableByteChannel();
-        // The drain established the true content length -- record it like getPath() does, so
-        // consumers (e.g. SecureContentHandler's zip-bomb ratio) see the real input size.
+        // Record the drained length like getPath() does (feeds SecureContentHandler's
+        // zip-bomb ratio)
         length = channel.size();
         if (metadata != null &&
                 StringUtils.isBlank(metadata.get(HttpHeaders.CONTENT_LENGTH))) {
@@ -278,7 +273,7 @@ class CachingSource extends InputStream implements TikaInputSource {
                             "Cannot spill to file: position is " + passthroughPosition +
                                     ", must be 0. Call enableRewind() before reading if you need file access.");
                 }
-                enableRewind();
+                enableRewind(null);
             }
 
             // Spill to file and switch to file-backed mode

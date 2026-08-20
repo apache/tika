@@ -17,7 +17,6 @@
 package org.apache.tika.io;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,6 +25,7 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.function.IOSupplier;
@@ -35,17 +35,23 @@ import org.apache.commons.io.function.IOSupplier;
  * random-access {@code ZipFile}, which can be re-opened via
  * {@code zipFile.getInputStream(entry)}).
  * <p>
- * Because the underlying content can be re-read on demand, {@link #enableRewind()}
- * is a no-op and {@link #seekTo(long)}/rewind simply re-open the source and skip.
- * This avoids the memory-then-disk caching that {@link CachingSource} performs for
- * one-shot streams -- notably the per-embedded-object spill during digesting.
- * A temp file is only created if {@link #getPath} is called (i.e. a parser or
- * detector genuinely needs a File on disk).
+ * Because the underlying content can be re-read on demand, rewinding simply
+ * re-opens the source, avoiding the memory-then-disk caching that
+ * {@link CachingSource} performs for one-shot streams. A temp file is created
+ * only if {@link #getPath} is called or {@link #getSeekableByteChannel()} is
+ * asked for content that does not fit in memory.
  */
 class ReopenableSource extends InputStream implements TikaInputSource {
 
+    // Per-object bytes that may be buffered in memory without a budget reservation;
+    // matches StreamCache's default per-object threshold.
+    private static final int IN_MEMORY_FLOOR = 1024 * 1024;
+
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
     private final IOSupplier<InputStream> opener;
     private final TemporaryResources tmp;
+    private final String suffix;
     private long length;
 
     private InputStream currentStream; // lazily opened
@@ -53,10 +59,19 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     private Path spilledPath;
     private long markPosition = -1;
 
-    ReopenableSource(IOSupplier<InputStream> opener, TemporaryResources tmp, long length) {
+    private CacheMemoryBudget budget;
+    // Full content retained after an in-memory drain, with its budget reservation,
+    // so repeated channel requests don't re-read (re-decompress) the entry.
+    private byte[] retainedBuffer;
+    private int retainedLength;
+    private long retainedReservation;
+
+    ReopenableSource(IOSupplier<InputStream> opener, TemporaryResources tmp, long length,
+                     String suffix) {
         this.opener = opener;
         this.tmp = tmp;
         this.length = length;
+        this.suffix = suffix;
         this.position = 0;
     }
 
@@ -109,8 +124,6 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         if (currentStream != null) {
             currentStream.close();
         }
-        // Re-open from the beginning (from the spilled file if we've already spilled,
-        // otherwise from the supplier) and skip forward.
         currentStream = new BufferedInputStream(
                 spilledPath != null ? Files.newInputStream(spilledPath) : opener.get());
         if (newPosition > 0) {
@@ -127,15 +140,19 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     @Override
     public Path getPath(String suffix) throws IOException {
         if (spilledPath == null) {
-            // A caller needs a real File -- materialize once from a fresh stream.
-            Path p = tmp.createTempFile(suffix);
-            try (InputStream in = opener.get(); OutputStream out = Files.newOutputStream(p)) {
-                IOUtils.copy(in, out);
+            Path p = tmp.createTempFile(suffix == null ? this.suffix : suffix);
+            try (OutputStream out = Files.newOutputStream(p)) {
+                if (retainedBuffer != null) {
+                    out.write(retainedBuffer, 0, retainedLength);
+                } else {
+                    try (InputStream in = opener.get()) {
+                        IOUtils.copy(in, out);
+                    }
+                }
             }
             spilledPath = p;
-            if (length < 0) {
-                length = Files.size(p);
-            }
+            // The spooled size is ground truth, even over a lying declared length
+            length = Files.size(p);
         }
         return spilledPath;
     }
@@ -146,47 +163,120 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public void enableRewind() throws IOException {
-        // No-op: the source can be re-opened, so no caching is needed to rewind.
+    public void enableRewind(CacheMemoryBudget budget) throws IOException {
+        if (position != 0) {
+            throw new IOException("Cannot enable rewind: position is " + position +
+                    ", must be 0. Call enableRewind() before reading.");
+        }
+        // No caching needed to rewind (the source re-opens); the budget is kept for
+        // on-demand in-memory buffering in getSeekableByteChannel().
+        if (this.budget == null) {
+            this.budget = budget;
+        }
     }
-
-    /** Up to this many bytes of a re-openable object may be buffered in memory on demand. */
-    private static final long MAX_IN_MEMORY_BYTES = 64L * 1024 * 1024;
 
     @Override
     public SeekableByteChannel getSeekableByteChannel() throws IOException {
-        if (spilledPath == null) {
-            // Re-open a fresh stream and buffer it in memory if it fits (the true size is
-            // unknowable up front, so the cap is enforced during the read). Does not disturb
-            // this source's current position.
-            try (InputStream in = opener.get()) {
-                ByteArrayOutputStream bos = new ByteArrayOutputStream();
-                byte[] buf = new byte[8192];
-                long total = 0;
-                int r;
-                boolean fits = true;
-                while ((r = in.read(buf)) != -1) {
-                    total += r;
-                    if (total > MAX_IN_MEMORY_BYTES) {
-                        fits = false;
+        if (retainedBuffer != null) {
+            return new MemorySeekableByteChannel(retainedBuffer, retainedLength);
+        }
+        if (spilledPath == null && tryBufferInMemory()) {
+            return new MemorySeekableByteChannel(retainedBuffer, retainedLength);
+        }
+        return FileChannel.open(getPath(null), StandardOpenOption.READ);
+    }
+
+    /**
+     * Drains a fresh stream into memory if it fits within the per-object floor plus what
+     * can be reserved from the shared budget, retaining the buffer (and its reservation)
+     * until {@link #close()}. The declared length is a sizing hint only -- it can lie, so
+     * the cap is enforced during the read. Does not disturb this source's read position.
+     */
+    private boolean tryBufferInMemory() throws IOException {
+        if (length > MAX_ARRAY_SIZE || (length > IN_MEMORY_FLOOR && budget == null)) {
+            return false;
+        }
+        long reservedHere = 0;
+        // Reservation invariant: reservedHere == max(0, data.length - IN_MEMORY_FLOOR)
+        if (length > IN_MEMORY_FLOOR) {
+            long extra = length - IN_MEMORY_FLOOR;
+            if (budget.tryReserve(extra) != extra) {
+                return false;
+            }
+            reservedHere = extra;
+        }
+        byte[] data = new byte[length > 0 ? (int) length : 8192];
+        int total = 0;
+        boolean fits = false;
+        try (InputStream in = opener.get()) {
+            while (true) {
+                if (total == data.length) {
+                    int peek = in.read();
+                    if (peek == -1) {
+                        fits = true;
                         break;
                     }
-                    bos.write(buf, 0, r);
-                }
-                if (fits) {
-                    if (length < 0) {
-                        length = total;   // the full read established the true length
+                    long newCapacity =
+                            Math.min(MAX_ARRAY_SIZE, Math.max((long) data.length * 2, 8192));
+                    if (newCapacity > IN_MEMORY_FLOOR) {
+                        if (budget == null) {
+                            newCapacity = IN_MEMORY_FLOOR;
+                        } else {
+                            long delta = newCapacity - Math.max(data.length, IN_MEMORY_FLOOR);
+                            if (delta > 0) {
+                                if (budget.tryReserve(delta) != delta) {
+                                    break;
+                                }
+                                reservedHere += delta;
+                            }
+                        }
                     }
-                    return new MemorySeekableByteChannel(bos.toByteArray(), (int) total);
+                    if (newCapacity <= data.length) {
+                        break;
+                    }
+                    data = Arrays.copyOf(data, (int) newCapacity);
+                    data[total++] = (byte) peek;
+                    continue;
                 }
+                int r = in.read(data, total, data.length - total);
+                if (r == -1) {
+                    fits = true;
+                    break;
+                }
+                total += r;
+            }
+        } finally {
+            if (!fits && reservedHere > 0) {
+                budget.release(reservedHere);
             }
         }
-        // Too large (or already spilled) -> serve from the spill file
-        return FileChannel.open(getPath(null), StandardOpenOption.READ);
+        if (!fits) {
+            return false;
+        }
+        // Trim over-allocation from a lying declared length, releasing the excess reservation
+        if (data.length - total > 8192) {
+            data = Arrays.copyOf(data, Math.max(total, 1));
+            long target = Math.max(0, (long) data.length - IN_MEMORY_FLOOR);
+            if (reservedHere > target) {
+                budget.release(reservedHere - target);
+                reservedHere = target;
+            }
+        }
+        retainedBuffer = data;
+        retainedLength = total;
+        retainedReservation = reservedHere;
+        // The full read is ground truth, even over a lying declared length
+        length = total;
+        return true;
     }
 
     @Override
     public void close() throws IOException {
+        if (retainedReservation > 0) {
+            budget.release(retainedReservation);
+            retainedReservation = 0;
+        }
+        retainedBuffer = null;
         if (currentStream != null) {
             currentStream.close();
         }
