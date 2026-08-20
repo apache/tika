@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -30,6 +31,10 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.CellManifestCurrentRevision;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.CellManifestDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElement;
@@ -42,75 +47,79 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StorageIndexD
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.StorageIndexRevisionMapping;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.CellID;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.ExGuid;
+import org.apache.tika.sax.ToTextContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 public class MSOneStoreParserTest {
 
     @Test
-    public void testStorageMappingIndexesSeePublicListUpdates() {
+    public void testStorageMappingIndexes() {
         MSOneStorePackage pkg = new MSOneStorePackage();
         pkg.storageIndex = new StorageIndexDataElementData();
         CellID cellID = cell(700);
-        assertNull(pkg.findStorageIndexCellMapping(cellID));
         StorageIndexCellMapping cellMapping = new StorageIndexCellMapping();
         cellMapping.cellID = cellID;
         pkg.storageIndex.storageIndexCellMappingList.add(cellMapping);
-        assertSame(cellMapping, pkg.findStorageIndexCellMapping(cellID));
-        StorageIndexCellMapping replacement = new StorageIndexCellMapping();
-        replacement.cellID = cellID;
-        replacement.cellMappingExGuid = id(702);
-        pkg.storageIndex.storageIndexCellMappingList.set(0, replacement);
-        assertSame(replacement, pkg.findStorageIndexCellMapping(cellID));
 
         ExGuid revisionID = id(701);
-        assertNull(pkg.findStorageIndexRevisionMapping(revisionID));
         StorageIndexRevisionMapping revisionMapping = new StorageIndexRevisionMapping();
         revisionMapping.revisionExGuid = revisionID;
         pkg.storageIndex.storageIndexRevisionMappingList.add(revisionMapping);
+
+        assertSame(cellMapping, pkg.findStorageIndexCellMapping(cellID));
         assertSame(revisionMapping, pkg.findStorageIndexRevisionMapping(revisionID));
+
+        StorageIndexCellMapping addedAfterIndexing = new StorageIndexCellMapping();
+        addedAfterIndexing.cellID = cell(702);
+        pkg.storageIndex.storageIndexCellMappingList.add(addedAfterIndexing);
+        assertNull(pkg.findStorageIndexCellMapping(addedAfterIndexing.cellID));
     }
 
     @Test
     public void testMissingRootsAndRevisionMappingsReturnNoCell() throws Exception {
-        MSOneStoreParser parser = new MSOneStoreParser();
-        set(parser, "cellManifestDataElements", new java.util.ArrayList<>());
-        set(parser, "revisionManifestDataElements", new java.util.ArrayList<>());
-        set(parser, "objectGroupDataElements", new java.util.ArrayList<>());
-        set(parser, "objectGroupDataElementsById", new java.util.HashMap<>());
-        set(parser, "objectBlobElementsById", new java.util.HashMap<>());
-        MSOneStorePackage pkg = new MSOneStorePackage();
         CellID cellID = cell(1);
-
-        assertNull(parseCell(parser, cellID, pkg));
-
-        pkg.storageIndex = new StorageIndexDataElementData();
-        StorageIndexCellMapping cellMapping = new StorageIndexCellMapping();
-        cellMapping.cellID = cellID;
-        cellMapping.cellMappingExGuid = id(2);
-        pkg.storageIndex.storageIndexCellMappingList.add(cellMapping);
-        assertNull(parseCell(parser, cellID, pkg));
-
-        DataElement cellManifestElement = new DataElement();
-        cellManifestElement.dataElementExGuid = cellMapping.cellMappingExGuid;
-        cellManifestElement.data = new CellManifestDataElementData();
-        set(parser, "cellManifestDataElements", Arrays.asList(cellManifestElement));
-        set(parser, "cellManifestDataElementsById",
-                Collections.singletonMap(cellManifestElement.dataElementExGuid,
-                        cellManifestElement));
-        assertNull(parseCell(parser, cellID, pkg));
-
-        CellManifestDataElementData cellManifest = (CellManifestDataElementData)
-                cellManifestElement.data;
-        cellManifest.cellManifestCurrentRevision = null;
-        assertNull(parseCell(parser, cellID, pkg));
-        cellManifest.cellManifestCurrentRevision = new CellManifestCurrentRevision();
+        ExGuid cellMappingID = id(2);
         ExGuid missingRevisionID = id(3);
-        cellManifest.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid =
-                missingRevisionID;
-        StorageIndexRevisionMapping missingManifestMapping = new StorageIndexRevisionMapping();
-        missingManifestMapping.revisionExGuid = missingRevisionID;
-        missingManifestMapping.revisionMappingExGuid = id(4);
-        pkg.storageIndex.storageIndexRevisionMappingList.add(missingManifestMapping);
-        assertNull(parseCell(parser, cellID, pkg));
+        ExGuid revisionMappingID = id(4);
+
+        MSOneStoreParser noMappingParser = parserWithEmptyIndexes();
+        assertParseWarning(noMappingParser, new MSOneStorePackage(), cellID,
+                "no storage-index cell mapping");
+
+        MSOneStoreParser noManifestParser = parserWithEmptyIndexes();
+        MSOneStorePackage noManifestPackage = packageWithCellMapping(cellID, cellMappingID);
+        assertParseWarning(noManifestParser, noManifestPackage, cellID,
+                "no current cell manifest");
+
+        MSOneStoreParser noCurrentParser = parserWithEmptyIndexes();
+        DataElement currentlessManifest = cellManifest(cellMappingID, null);
+        set(noCurrentParser, "cellManifestDataElements", Arrays.asList(currentlessManifest));
+        set(noCurrentParser, "cellManifestDataElementsById",
+                Collections.singletonMap(cellMappingID, currentlessManifest));
+        assertParseWarning(noCurrentParser,
+                packageWithCellMapping(cellID, cellMappingID), cellID,
+                "no current cell manifest");
+
+        MSOneStoreParser noRevisionMappingParser = parserWithEmptyIndexes();
+        DataElement manifest = cellManifest(cellMappingID, missingRevisionID);
+        set(noRevisionMappingParser, "cellManifestDataElements", Arrays.asList(manifest));
+        set(noRevisionMappingParser, "cellManifestDataElementsById",
+                Collections.singletonMap(cellMappingID, manifest));
+        assertParseWarning(noRevisionMappingParser,
+                packageWithCellMapping(cellID, cellMappingID), cellID, "no revision mapping");
+
+        MSOneStoreParser noRevisionManifestParser = parserWithEmptyIndexes();
+        set(noRevisionManifestParser, "cellManifestDataElements", Arrays.asList(manifest));
+        set(noRevisionManifestParser, "cellManifestDataElementsById",
+                Collections.singletonMap(cellMappingID, manifest));
+        MSOneStorePackage noRevisionManifestPackage = packageWithCellMapping(cellID,
+                cellMappingID);
+        StorageIndexRevisionMapping revisionMapping = new StorageIndexRevisionMapping();
+        revisionMapping.revisionExGuid = missingRevisionID;
+        revisionMapping.revisionMappingExGuid = revisionMappingID;
+        noRevisionManifestPackage.storageIndex.storageIndexRevisionMappingList.add(revisionMapping);
+        assertParseWarning(noRevisionManifestParser, noRevisionManifestPackage, cellID,
+                "no revision manifest");
     }
 
     @Test
@@ -189,6 +198,53 @@ public class MSOneStoreParserTest {
         old.revisionManifest.baseRevisionID = id(1001);
         RevisionStoreCell missingBaseResult = parseCell(parser, cellID, pkg);
         assertEquals(2, missingBaseResult.objectGroups.size());
+    }
+
+    private static MSOneStoreParser parserWithEmptyIndexes() throws Exception {
+        MSOneStoreParser parser = new MSOneStoreParser();
+        set(parser, "cellManifestDataElements", new java.util.ArrayList<>());
+        set(parser, "revisionManifestDataElements", new java.util.ArrayList<>());
+        set(parser, "objectGroupDataElements", new java.util.ArrayList<>());
+        set(parser, "objectGroupDataElementsById", new java.util.HashMap<>());
+        set(parser, "objectBlobElementsById", new java.util.HashMap<>());
+        return parser;
+    }
+
+    private static MSOneStorePackage packageWithCellMapping(CellID cellID, ExGuid mappingID) {
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.storageIndex = new StorageIndexDataElementData();
+        StorageIndexCellMapping mapping = new StorageIndexCellMapping();
+        mapping.cellID = cellID;
+        mapping.cellMappingExGuid = mappingID;
+        pkg.storageIndex.storageIndexCellMappingList.add(mapping);
+        return pkg;
+    }
+
+    private static DataElement cellManifest(ExGuid mappingID, ExGuid revisionID) {
+        DataElement element = new DataElement();
+        element.dataElementExGuid = mappingID;
+        CellManifestDataElementData data = new CellManifestDataElementData();
+        data.cellManifestCurrentRevision = null;
+        if (revisionID != null) {
+            data.cellManifestCurrentRevision = new CellManifestCurrentRevision();
+            data.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid = revisionID;
+        }
+        element.data = data;
+        return element;
+    }
+
+    private static void assertParseWarning(MSOneStoreParser parser, MSOneStorePackage pkg,
+                                           CellID cellID, String expected) throws Exception {
+        assertNull(parseCell(parser, cellID, pkg));
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new ToTextContentHandler(), metadata,
+                context);
+        xhtml.startDocument();
+        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+        xhtml.endDocument();
+        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .anyMatch(warning -> warning.contains(expected)), expected);
     }
 
     private static RevisionManifestDataElementData revision(ExGuid revisionID,

@@ -54,8 +54,14 @@ class OneNotePtr {
     private static final String PACKAGE_STORAGE_FILE_FORMAT_GUID =
             "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
     private static final int MAX_PROPERTY_VALUES = 100_000;
+    private static final int MAX_PROPERTY_SET_DEPTH = 1000;
+
+    private static final class PropertyValueBudget {
+        private long remaining = MAX_PROPERTY_VALUES;
+    }
 
     int indentLevel = 0;
+    private PropertyValueBudget propertyValueBudget = new PropertyValueBudget();
 
     long offset;
     long end;
@@ -77,6 +83,7 @@ class OneNotePtr {
         this.offset = oneNotePtr.offset;
         this.end = oneNotePtr.end;
         this.indentLevel = oneNotePtr.indentLevel;
+        this.propertyValueBudget = oneNotePtr.propertyValueBudget;
     }
 
     public OneNoteHeader deserializeHeader() throws IOException, TikaException {
@@ -260,7 +267,7 @@ class OneNotePtr {
     public OneNotePtr internalDeserializeFileNodeList(OneNotePtr ptr, FileNodeList fileNodeList,
                                                       FileNodePtr curPath)
             throws IOException, TikaException {
-        OneNotePtr localPtr = new OneNotePtr(document, dif);
+        OneNotePtr localPtr = new OneNotePtr(ptr);
         FileNodePtrBackPush bp = new FileNodePtrBackPush(curPath);
         try {
             while (true) {
@@ -279,8 +286,13 @@ class OneNotePtr {
     }
 
 
+    /**
+     * Deserializes one file-node list and its fragments. The property-value budget is reset for
+     * each list; pointers copied while parsing that list share the budget.
+     */
     public OneNotePtr deserializeFileNodeList(FileNodeList fileNodeList, FileNodePtr curPath)
             throws IOException, TikaException {
+        propertyValueBudget = new PropertyValueBudget();
         return internalDeserializeFileNodeList(this, fileNodeList, curPath);
     }
 
@@ -1000,29 +1012,45 @@ class OneNotePtr {
         return (int) count;
     }
 
-    private List<PropertyValue> newPropertyValues(int count) {
-        List<PropertyValue> values = new ArrayList<>(count);
-        for (int i = 0; i < count; ++i) {
-            values.add(new PropertyValue());
+    private int reservePropertyCount(long count, String description) throws TikaException {
+        int checked = checkedCount(count, description);
+        if (count > propertyValueBudget.remaining) {
+            throw new TikaMemoryLimitException(description + " count " + count +
+                    " exceeds remaining property value budget " + propertyValueBudget.remaining);
         }
-        return values;
+        propertyValueBudget.remaining -= count;
+        return checked;
     }
 
     private PropertySet deserializePropertySet(ObjectStreamCounters counters,
                                                ObjectSpaceObjectPropSet streams)
             throws IOException, TikaException {
+        return deserializePropertySet(counters, streams, 0);
+    }
+
+    private PropertySet deserializePropertySet(ObjectStreamCounters counters,
+                                               ObjectSpaceObjectPropSet streams,
+                                               int depth)
+            throws IOException, TikaException {
+        if (depth >= MAX_PROPERTY_SET_DEPTH) {
+            throw new TikaException("Property set nesting exceeds limit " +
+                    MAX_PROPERTY_SET_DEPTH);
+        }
         PropertySet data = new PropertySet();
-        int count = checkedCount(deserializeLittleEndianShort(), "property");
-        data.rgPridsData = newPropertyValues(count);
+        // Reserve the count before allocating any PropertyValue instances.
+        int count = reservePropertyCount(deserializeLittleEndianShort(), "property");
+        data.rgPridsData = new ArrayList<>();
         for (int i = 0; i < count; ++i) {
-            data.rgPridsData.get(i).propertyId = deserializePropertyID();
-            LOG.debug("{}Property {}", getIndent(), data.rgPridsData.get(i).propertyId);
+            PropertyValue propertyValue = new PropertyValue();
+            propertyValue.propertyId = deserializePropertyID();
+            data.rgPridsData.add(propertyValue);
+            LOG.debug("{}Property {}", getIndent(), propertyValue.propertyId);
         }
         LOG.debug("{}{} elements in property set:", getIndent(), count);
         for (int i = 0; i < count; ++i) {
             data.rgPridsData.set(i,
                     deserializePropertyValueFromPropertyID(data.rgPridsData.get(i).propertyId,
-                            streams, counters));
+                            streams, counters, depth));
         }
         LOG.debug("");
         return data;
@@ -1031,8 +1059,13 @@ class OneNotePtr {
 
     private PropertyValue deserializePropertyValueFromPropertyID(OneNotePropertyId propertyID,
                                                                  ObjectSpaceObjectPropSet streams,
-                                                                 ObjectStreamCounters counters)
+                                                                 ObjectStreamCounters counters,
+                                                                 int propertySetDepth)
             throws IOException, TikaException {
+        if (propertySetDepth >= MAX_PROPERTY_SET_DEPTH) {
+            throw new TikaException("Property value nesting exceeds limit " +
+                    MAX_PROPERTY_SET_DEPTH);
+        }
         PropertyValue data = new PropertyValue();
         data.propertyId = propertyID;
         char val8;
@@ -1150,21 +1183,18 @@ class OneNotePtr {
                     val32 = deserializeLittleEndianInt();
                     OneNotePropertyId propId = deserializePropertyID();
                     LOG.debug(" UnifiedSubPropertySet {} {}", val32, propId);
-                    int propertyCount = checkedCount(val32, "unified property");
-                    data.propertySet.rgPridsData = newPropertyValues(propertyCount);
+                    int propertyCount = reservePropertyCount(val32, "unified property");
+                    data.propertySet.rgPridsData = new ArrayList<>();
                     for (int i = 0; i < propertyCount; ++i) {
-                        try {
-                            data.propertySet.rgPridsData.set(i,
-                                    deserializePropertyValueFromPropertyID(propId, streams,
-                                            counters));
-                        } catch (IOException e) {
-                            return data;
-                        }
+                        data.propertySet.rgPridsData.add(
+                                deserializePropertyValueFromPropertyID(propId, streams, counters,
+                                        propertySetDepth + 1));
                     }
                     break;
                 case 0x11:
                     LOG.debug(" SubPropertySet");
-                    data.propertySet = deserializePropertySet(counters, streams);
+                    data.propertySet = deserializePropertySet(counters, streams,
+                            propertySetDepth + 1);
                     break;
                 default:
                     throw new TikaException("Invalid type: " + type);

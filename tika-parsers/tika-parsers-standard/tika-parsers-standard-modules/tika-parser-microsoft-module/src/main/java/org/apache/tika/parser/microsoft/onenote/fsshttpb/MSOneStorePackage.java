@@ -24,13 +24,13 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -96,6 +96,7 @@ public class MSOneStorePackage {
     private static final String P = "p";
     private static final int MAX_OBJECT_WALK_DEPTH = 1000;
     private static final int MAX_REFERENCE_COUNT = 100000;
+    private static final int MAX_PARSE_WARNINGS = 100;
 
     static {
         LocalDateTime time32Epoch1980 = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
@@ -112,6 +113,10 @@ public class MSOneStorePackage {
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
+    /**
+     * The fully populated storage index. Set this before performing storage-index lookups; its
+     * mapping lists are indexed once and must not be mutated afterward.
+     */
     public StorageIndexDataElementData storageIndex;
     public StorageManifestDataElementData storageManifest;
     public CellManifestDataElementData headerCellCellManifest;
@@ -132,62 +137,15 @@ public class MSOneStorePackage {
     private ParseContext parseContext;
     private EmbeddedDocumentExtractor embeddedDocumentExtractor;
     private Metadata parentMetadata;
-    private StorageIndexDataElementData indexedStorageIndex;
-    private List<CellMappingKey> indexedCellMappingKeys = Collections.emptyList();
-    private List<RevisionMappingKey> indexedRevisionMappingKeys = Collections.emptyList();
+    private final List<String> parseWarnings = new ArrayList<>();
+    // This state intentionally spans parser construction and tree walking for one package.
+    private final Set<String> recordedParseWarningKeys = new HashSet<>();
+    private boolean parseWarningsSuppressed;
+    private boolean storageMappingsIndexed;
     private final Map<CellID, StorageIndexCellMapping> storageIndexCellMappingsById =
             new HashMap<>();
     private final Map<ExGuid, StorageIndexRevisionMapping> storageIndexRevisionMappingsById =
             new HashMap<>();
-
-    private static final class CellMappingKey {
-        private final CellID cellID;
-        private final ExGuid mappingID;
-
-        private CellMappingKey(CellID cellID, ExGuid mappingID) {
-            this.cellID = cellID;
-            this.mappingID = mappingID;
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof CellMappingKey)) {
-                return false;
-            }
-            CellMappingKey that = (CellMappingKey) other;
-            return Objects.equals(cellID, that.cellID) && Objects.equals(mappingID, that.mappingID);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(cellID, mappingID);
-        }
-    }
-
-    private static final class RevisionMappingKey {
-        private final ExGuid revisionID;
-        private final ExGuid mappingID;
-
-        private RevisionMappingKey(ExGuid revisionID, ExGuid mappingID) {
-            this.revisionID = revisionID;
-            this.mappingID = mappingID;
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof RevisionMappingKey)) {
-                return false;
-            }
-            RevisionMappingKey that = (RevisionMappingKey) other;
-            return Objects.equals(revisionID, that.revisionID) &&
-                    Objects.equals(mappingID, that.mappingID);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(revisionID, mappingID);
-        }
-    }
 
     public MSOneStorePackage() {
         this.revisionManifests = new ArrayList<>();
@@ -220,35 +178,15 @@ public class MSOneStorePackage {
     }
 
     private void indexStorageMappings() {
-        List<CellMappingKey> cellMappingKeys = new ArrayList<>();
-        List<RevisionMappingKey> revisionMappingKeys = new ArrayList<>();
-        if (storageIndex != null) {
-            for (StorageIndexCellMapping mapping : storageIndex.storageIndexCellMappingList) {
-                cellMappingKeys.add(new CellMappingKey(mapping.cellID, mapping.cellMappingExGuid));
-            }
-            for (StorageIndexRevisionMapping mapping :
-                    storageIndex.storageIndexRevisionMappingList) {
-                revisionMappingKeys.add(new RevisionMappingKey(mapping.revisionExGuid,
-                        mapping.revisionMappingExGuid));
-            }
-        }
-        if (indexedStorageIndex == storageIndex && indexedCellMappingKeys.equals(cellMappingKeys) &&
-                indexedRevisionMappingKeys.equals(revisionMappingKeys)) {
+        if (storageMappingsIndexed || storageIndex == null) {
             return;
         }
-        indexedStorageIndex = storageIndex;
-        indexedCellMappingKeys = cellMappingKeys;
-        indexedRevisionMappingKeys = revisionMappingKeys;
-        storageIndexCellMappingsById.clear();
-        storageIndexRevisionMappingsById.clear();
-        if (storageIndex != null) {
-            for (StorageIndexCellMapping mapping : storageIndex.storageIndexCellMappingList) {
-                storageIndexCellMappingsById.putIfAbsent(mapping.cellID, mapping);
-            }
-            for (StorageIndexRevisionMapping mapping :
-                    storageIndex.storageIndexRevisionMappingList) {
-                storageIndexRevisionMappingsById.putIfAbsent(mapping.revisionExGuid, mapping);
-            }
+        storageMappingsIndexed = true;
+        for (StorageIndexCellMapping mapping : storageIndex.storageIndexCellMappingList) {
+            storageIndexCellMappingsById.putIfAbsent(mapping.cellID, mapping);
+        }
+        for (StorageIndexRevisionMapping mapping : storageIndex.storageIndexRevisionMappingList) {
+            storageIndexRevisionMappingsById.putIfAbsent(mapping.revisionExGuid, mapping);
         }
     }
 
@@ -272,6 +210,14 @@ public class MSOneStorePackage {
         NONE, MOST_RECENT, ORIGINAL
     }
 
+    private enum ParseWarningKind {
+        DEFAULT,
+        OBJECT_REFERENCE_ARRAY_UNAVAILABLE,
+        OBJECT_REFERENCE_ARRAY_CAPPED,
+        OBJECT_SPACE_REFERENCE_ARRAY_UNAVAILABLE,
+        OBJECT_SPACE_REFERENCE_ARRAY_CAPPED
+    }
+
     public void walkTree(OneNoteTreeWalkerOptions options, Metadata metadata,
                          XHTMLContentHandler xhtml, ParseContext parseContext)
             throws SAXException, TikaException, IOException {
@@ -279,6 +225,10 @@ public class MSOneStorePackage {
         this.parentMetadata = metadata;
         this.embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+        for (String warning : parseWarnings) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+        }
+        parseWarnings.clear();
         if (!cells.isEmpty()) {
             // Walk each page cell (object space) as a tree, starting from the root objects of
             // its current revision and following the object references in property order. This
@@ -311,15 +261,13 @@ public class MSOneStorePackage {
             }
         }
         if (!authors.isEmpty()) {
-            metadata.set(TikaCoreProperties.CREATOR, authors.toArray(new String[]{}));
+            metadata.set(TikaCoreProperties.CREATOR, sortedValues(authors));
         }
         if (!mostRecentAuthors.isEmpty()) {
-            metadata.set(OneNote.MOST_RECENT_AUTHORS,
-                    mostRecentAuthors.toArray(new String[]{}));
+            metadata.set(OneNote.MOST_RECENT_AUTHORS, sortedValues(mostRecentAuthors));
         }
         if (!originalAuthors.isEmpty()) {
-            metadata.set(OneNote.ORIGINAL_AUTHORS,
-                    originalAuthors.toArray(new String[]{}));
+            metadata.set(OneNote.ORIGINAL_AUTHORS, sortedValues(originalAuthors));
         }
     }
 
@@ -351,11 +299,13 @@ public class MSOneStorePackage {
             RevisionStoreCell cell = remainingCells.remove(cellId);
             if (cell != null) {
                 pageCells.add(cell);
-                coveredObjectSpaces.add(cellId.extendGUID2);
+                if (cellId.extendGUID2 != null) {
+                    coveredObjectSpaces.add(cellId.extendGUID2);
+                }
             }
         }
         for (RevisionStoreCell cell : remainingCells.values()) {
-            if (cell.cellID == null ||
+            if (cell.cellID == null || cell.cellID.extendGUID2 == null ||
                     !coveredObjectSpaces.contains(cell.cellID.extendGUID2)) {
                 // not an older version of one of the pages - keep it so no content is lost
                 otherCells.add(cell);
@@ -375,8 +325,12 @@ public class MSOneStorePackage {
         Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(dataRootCell.objectGroups);
         Set<ExGuid> visited = new HashSet<>();
         for (RevisionManifestRootDeclare rootDeclare : dataRootCell.rootDeclares) {
-            collectReferencedCells(objectsById.get(rootDeclare.objectExGuid), objectsById, visited,
-                    orderedCellIds, 0);
+            RevisionStoreObject rootObject = objectsById.get(rootDeclare.objectExGuid);
+            if (rootObject == null) {
+                recordParseWarning("OneNote section root object " + rootDeclare.objectExGuid +
+                        " could not be resolved");
+            }
+            collectReferencedCells(rootObject, objectsById, visited, orderedCellIds, 0);
         }
         return orderedCellIds;
     }
@@ -389,7 +343,7 @@ public class MSOneStorePackage {
             return;
         }
         if (depth >= MAX_OBJECT_WALK_DEPTH) {
-            LOG.warn("OneNote section reference traversal exceeded depth limit {}",
+            recordParseWarning("OneNote section reference traversal exceeded depth limit " +
                     MAX_OBJECT_WALK_DEPTH);
             return;
         }
@@ -401,8 +355,12 @@ public class MSOneStorePackage {
             if (action.spaceReference != null) {
                 out.add(action.spaceReference);
             } else if (action.isChildReference && action.childReference != null) {
-                collectReferencedCells(objectsById.get(action.childReference), objectsById,
-                        visited, out, depth + 1);
+                RevisionStoreObject child = objectsById.get(action.childReference);
+                if (child == null && !warningsSaturated()) {
+                    recordParseWarning("OneNote section object " + action.childReference +
+                            " could not be resolved");
+                }
+                collectReferencedCells(child, objectsById, visited, out, depth + 1);
             }
         }
     }
@@ -415,19 +373,70 @@ public class MSOneStorePackage {
         // Only objects reachable from the root objects of the current revision are part of
         // the current content. The object groups may also contain older, superseded versions
         // of objects (under a different object ID); those are intentionally not walked.
-        boolean walkedRoot = false;
+        boolean resolvedRoot = false;
         for (RevisionManifestRootDeclare rootDeclare : cell.rootDeclares) {
-            walkedRoot |= walkObject(objectsById.get(rootDeclare.objectExGuid), objectsById, visited,
-                    AuthorRole.NONE, options, metadata, xhtml, 0);
+            RevisionStoreObject rootObject = objectsById.get(rootDeclare.objectExGuid);
+            if (rootObject == null) {
+                recordParseWarning("OneNote cell root object " + rootDeclare.objectExGuid +
+                        " could not be resolved");
+            } else {
+                resolvedRoot = true;
+                walkObject(rootObject, objectsById, visited, AuthorRole.NONE, options,
+                        metadata, xhtml, 0);
+            }
         }
-        if (!walkedRoot) {
-            // no root objects could be resolved - walk everything so no content is lost
+        if (!resolvedRoot) {
+            if (cell.rootDeclares.isEmpty()) {
+                recordParseWarning("OneNote cell has no declared root objects; walking all objects");
+            } else {
+                recordParseWarning("OneNote cell root objects could not be resolved; walking all objects");
+            }
             for (RevisionStoreObjectGroup objectGroup : cell.objectGroups) {
                 for (RevisionStoreObject object : objectGroup.objects) {
                     walkObject(object, objectsById, visited, AuthorRole.NONE, options, metadata,
                             xhtml, 0);
                 }
             }
+        }
+    }
+
+    private String[] sortedValues(Set<String> values) {
+        String[] sorted = values.toArray(new String[0]);
+        Arrays.sort(sorted);
+        return sorted;
+    }
+
+    private boolean warningsSaturated() {
+        return parseWarningsSuppressed;
+    }
+
+    void recordParseWarning(String warning) {
+        recordParseWarning(ParseWarningKind.DEFAULT, warning);
+    }
+
+    private void recordParseWarning(ParseWarningKind kind, String warning) {
+        String warningKey = kind == ParseWarningKind.DEFAULT ? warning : kind.name();
+        if (recordedParseWarningKeys.contains(warningKey)) {
+            return;
+        }
+        if (recordedParseWarningKeys.size() >= MAX_PARSE_WARNINGS) {
+            if (!parseWarningsSuppressed) {
+                parseWarningsSuppressed = true;
+                emitParseWarning("Additional OneNote parse warnings were suppressed after " +
+                        MAX_PARSE_WARNINGS + " distinct warnings");
+            }
+            return;
+        }
+        recordedParseWarningKeys.add(warningKey);
+        emitParseWarning(warning);
+    }
+
+    private void emitParseWarning(String warning) {
+        LOG.warn(warning);
+        if (parentMetadata == null) {
+            parseWarnings.add(warning);
+        } else {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         }
     }
 
@@ -448,30 +457,31 @@ public class MSOneStorePackage {
         return objectsById;
     }
 
-    private boolean walkObject(RevisionStoreObject object,
-                               Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                               AuthorRole authorRole, OneNoteTreeWalkerOptions options,
-                               Metadata metadata, XHTMLContentHandler xhtml, int depth)
+    private void walkObject(RevisionStoreObject object,
+                             Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
+                             AuthorRole authorRole, OneNoteTreeWalkerOptions options,
+                             Metadata metadata, XHTMLContentHandler xhtml, int depth)
             throws SAXException, TikaException, IOException {
-        return walkObject(object, objectsById, visited, authorRole, options, metadata, xhtml,
+        walkObject(object, objectsById, visited, authorRole, options, metadata, xhtml,
                 depth, null);
     }
 
-    private boolean walkObject(RevisionStoreObject object,
-                               Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
-                               AuthorRole authorRole, OneNoteTreeWalkerOptions options,
-                               Metadata metadata, XHTMLContentHandler xhtml, int depth,
-                               EmbeddedResourceInfo inheritedResourceInfo)
+    private void walkObject(RevisionStoreObject object,
+                             Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
+                             AuthorRole authorRole, OneNoteTreeWalkerOptions options,
+                             Metadata metadata, XHTMLContentHandler xhtml, int depth,
+                             EmbeddedResourceInfo inheritedResourceInfo)
             throws SAXException, TikaException, IOException {
         if (object == null) {
-            return false;
+            return;
         }
         if (depth >= MAX_OBJECT_WALK_DEPTH) {
-            LOG.warn("OneNote object traversal exceeded depth limit {}", MAX_OBJECT_WALK_DEPTH);
-            return false;
+            recordParseWarning("OneNote object traversal exceeded depth limit " +
+                    MAX_OBJECT_WALK_DEPTH);
+            return;
         }
         if (object.objectID != null && !visited.add(object.objectID)) {
-            return false;
+            return;
         }
         List<PropertyAction> actions = object.propertySet != null &&
                 object.propertySet.objectSpaceObjectPropSet != null ?
@@ -485,11 +495,11 @@ public class MSOneStorePackage {
         }
         if (object.fileDataObject != null) {
             // the object carries opaque binary data, e.g. an embedded image or file
-            handleEmbedded(object.fileDataObject.getData(), xhtml, resourceInfo);
+            handleEmbedded(object.fileDataObject.getData(), xhtml, resourceInfo, object.objectID);
         }
         if (object.propertySet == null ||
                 object.propertySet.objectSpaceObjectPropSet == null) {
-            return false;
+            return;
         }
         // An image node can reference the same picture twice: PictureContainer holds the
         // canonical image data and WebPictureContainer14 holds a rendition derived from it
@@ -523,7 +533,6 @@ public class MSOneStorePackage {
                         depth, resourceInfo);
             }
         }
-        return true;
     }
 
     private boolean hasUsablePicture(ExGuid objectId,
@@ -597,8 +606,7 @@ public class MSOneStorePackage {
     }
 
     /**
-     * A property of an object, together with the object reference assigned to it if it is
-     * an object reference property.
+     * Metadata used when emitting an embedded resource.
      */
     private static final class EmbeddedResourceInfo {
         private final String name;
@@ -610,6 +618,10 @@ public class MSOneStorePackage {
         }
     }
 
+    /**
+     * A property of an object, together with the object reference assigned to it if it is
+     * an object reference property.
+     */
     private static final class PropertyAction {
         private final IProperty property;
         private final PropertyType propertyType;
@@ -672,7 +684,8 @@ public class MSOneStorePackage {
             return;
         }
         if (depth >= MAX_OBJECT_WALK_DEPTH) {
-            LOG.warn("OneNote property traversal exceeded depth limit {}", MAX_OBJECT_WALK_DEPTH);
+            recordParseWarning("OneNote property traversal exceeded depth limit " +
+                    MAX_OBJECT_WALK_DEPTH);
             return;
         }
         for (int i = 0; i < propertySet.rgPrids.length && i < propertySet.rgData.size(); ++i) {
@@ -682,16 +695,29 @@ public class MSOneStorePackage {
             OneNotePropertyEnum oneNotePropertyEnum =
                     OneNotePropertyEnum.of(Unsigned.uint(propertyID.value).longValue());
             if (propertyType == PropertyType.ObjectID) {
+                ExGuid childReference = nextReference(referencedObjects, referenceCursor);
+                if (childReference == null) {
+                    recordParseWarning("OneNote object reference slot was exhausted");
+                }
                 actions.add(new PropertyAction(property, propertyType, oneNotePropertyEnum, true,
-                        nextReference(referencedObjects, referenceCursor), null));
+                        childReference, null));
             } else if (propertyType == PropertyType.ArrayOfObjectIDs) {
                 int available = referencedObjects.size() - referenceCursor[0];
-                int declaredCount = property instanceof ArrayNumber ?
-                        boundedAvailableReferenceCount(((ArrayNumber) property).number, available) : 0;
+                int requestedCount = property instanceof ArrayNumber ?
+                        Math.max(0, ((ArrayNumber) property).number) : 0;
+                int declaredCount = boundedAvailableReferenceCount(requestedCount, available);
                 int count = Math.min(declaredCount, MAX_REFERENCE_COUNT);
-                if (declaredCount > count) {
-                    LOG.warn("Capping OneNote object reference array at {} entries",
-                            MAX_REFERENCE_COUNT);
+                if (requestedCount > available && !warningsSaturated()) {
+                    recordParseWarning(ParseWarningKind.OBJECT_REFERENCE_ARRAY_UNAVAILABLE,
+                            "OneNote object reference array had unavailable entries " +
+                                    "(first occurrence: declared " + requestedCount +
+                                    " entries but only " + Math.max(available, 0) +
+                                    " were available)");
+                }
+                if (declaredCount > count && !warningsSaturated()) {
+                    recordParseWarning(ParseWarningKind.OBJECT_REFERENCE_ARRAY_CAPPED,
+                            "Capping OneNote object reference array at " +
+                                    MAX_REFERENCE_COUNT + " entries");
                 }
                 for (int j = 0; j < count; ++j) {
                     actions.add(new PropertyAction(property, propertyType, oneNotePropertyEnum,
@@ -699,16 +725,29 @@ public class MSOneStorePackage {
                 }
                 referenceCursor[0] += declaredCount - count;
             } else if (propertyType == PropertyType.ObjectSpaceID) {
+                CellID spaceReference = nextSpaceReference(referencedSpaces, spaceCursor);
+                if (spaceReference == null) {
+                    recordParseWarning("OneNote object-space reference slot was exhausted");
+                }
                 actions.add(new PropertyAction(property, propertyType, oneNotePropertyEnum, false,
-                        null, nextSpaceReference(referencedSpaces, spaceCursor)));
+                        null, spaceReference));
             } else if (propertyType == PropertyType.ArrayOfObjectSpaceIDs) {
                 int available = referencedSpaces.size() - spaceCursor[0];
-                int declaredCount = property instanceof ArrayNumber ?
-                        boundedAvailableReferenceCount(((ArrayNumber) property).number, available) : 0;
+                int requestedCount = property instanceof ArrayNumber ?
+                        Math.max(0, ((ArrayNumber) property).number) : 0;
+                int declaredCount = boundedAvailableReferenceCount(requestedCount, available);
                 int count = Math.min(declaredCount, MAX_REFERENCE_COUNT);
-                if (declaredCount > count) {
-                    LOG.warn("Capping OneNote object-space reference array at {} entries",
-                            MAX_REFERENCE_COUNT);
+                if (requestedCount > available && !warningsSaturated()) {
+                    recordParseWarning(ParseWarningKind.OBJECT_SPACE_REFERENCE_ARRAY_UNAVAILABLE,
+                            "OneNote object-space reference array had unavailable entries " +
+                                    "(first occurrence: declared " + requestedCount +
+                                    " entries but only " + Math.max(available, 0) +
+                                    " were available)");
+                }
+                if (declaredCount > count && !warningsSaturated()) {
+                    recordParseWarning(ParseWarningKind.OBJECT_SPACE_REFERENCE_ARRAY_CAPPED,
+                            "Capping OneNote object-space reference array at " +
+                                    MAX_REFERENCE_COUNT + " entries");
                 }
                 for (int j = 0; j < count; ++j) {
                     actions.add(new PropertyAction(property, propertyType, oneNotePropertyEnum,
@@ -754,9 +793,14 @@ public class MSOneStorePackage {
             }
             EmbeddedResourceInfo childResourceInfo = resourceInfoForChild(action,
                     parentResourceInfo);
-            walkObject(action.childReference == null ? null :
-                            objectsById.get(action.childReference), objectsById, visited,
-                    childRole, options, metadata, xhtml, depth + 1, childResourceInfo);
+            RevisionStoreObject child = action.childReference == null ? null :
+                    objectsById.get(action.childReference);
+            if (child == null && action.childReference != null && !warningsSaturated()) {
+                recordParseWarning("OneNote object " + action.childReference +
+                        " could not be resolved");
+            }
+            walkObject(child, objectsById, visited, childRole, options, metadata, xhtml,
+                    depth + 1, childResourceInfo);
         } else {
             processPrimitiveProperty(action.property, action.propertyType,
                     action.oneNotePropertyEnum, authorRole, options, metadata, xhtml);
@@ -837,18 +881,27 @@ public class MSOneStorePackage {
                     oneNotePropertyEnum != OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
                 if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
                     xhtml.startElement(P);
-                    xhtml.characters(new String(dataProperty.data, StandardCharsets.UTF_16LE));
-                    xhtml.endElement(P);
+                    try {
+                        xhtml.characters(new String(dataProperty.data, StandardCharsets.UTF_16LE));
+                    } finally {
+                        xhtml.endElement(P);
+                    }
                 }
             } else if (oneNotePropertyEnum == OneNotePropertyEnum.TextExtendedAscii) {
                 xhtml.startElement(P);
-                xhtml.characters(new String(dataProperty.data, StandardCharsets.US_ASCII));
-                xhtml.endElement(P);
+                try {
+                    xhtml.characters(new String(dataProperty.data, StandardCharsets.US_ASCII));
+                } finally {
+                    xhtml.endElement(P);
+                }
             } else if (!isBinary) {
                 if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
                     xhtml.startElement(P);
-                    xhtml.characters(new String(dataProperty.data, StandardCharsets.UTF_16LE));
-                    xhtml.endElement(P);
+                    try {
+                        xhtml.characters(new String(dataProperty.data, StandardCharsets.UTF_16LE));
+                    } finally {
+                        xhtml.endElement(P);
+                    }
                 }
             } else {
                 if (oneNotePropertyEnum == OneNotePropertyEnum.RichEditTextUnicode) {
@@ -888,6 +941,9 @@ public class MSOneStorePackage {
 
     private String sanitizeResourceName(String name) {
         name = name.replace('\\', '/');
+        if (name.length() > 1 && name.charAt(1) == ':') {
+            return "";
+        }
         int slash = name.lastIndexOf('/');
         name = slash >= 0 ? name.substring(slash + 1) : name;
         return ".".equals(name) || "..".equals(name) ? "" : name;
@@ -898,7 +954,7 @@ public class MSOneStorePackage {
      * embedded document extractor.
      */
     private void handleEmbedded(byte[] data, XHTMLContentHandler xhtml,
-                                EmbeddedResourceInfo resourceInfo)
+                                EmbeddedResourceInfo resourceInfo, ExGuid objectID)
             throws SAXException, IOException {
         if (data == null || data.length == 0 || embeddedDocumentExtractor == null) {
             return;
@@ -910,8 +966,16 @@ public class MSOneStorePackage {
         if (resourceInfo != null && resourceInfo.name != null) {
             embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, resourceInfo.name);
         }
+        String relationshipID = objectID == null ? null : "_" + objectID.value + "_" +
+                objectID.guid;
+        if (relationshipID != null) {
+            embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, relationshipID);
+        }
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
+        if (relationshipID != null) {
+            attributes.addAttribute("", "id", "id", "CDATA", relationshipID);
+        }
         xhtml.startElement("div", attributes);
         xhtml.endElement("div");
         try (TikaInputStream tis = TikaInputStream.get(data)) {
@@ -942,12 +1006,18 @@ public class MSOneStorePackage {
         Matcher m = HYPERLINK_PATTERN.matcher(txt);
         if (m.find()) {
             xhtml.startElement("a", "href", m.group(1));
-            xhtml.characters(m.group(2));
-            xhtml.endElement("a");
+            try {
+                xhtml.characters(m.group(2));
+            } finally {
+                xhtml.endElement("a");
+            }
         } else {
             xhtml.startElement(P);
-            xhtml.characters(txt);
-            xhtml.endElement(P);
+            try {
+                xhtml.characters(txt);
+            } finally {
+                xhtml.endElement(P);
+            }
         }
     }
 

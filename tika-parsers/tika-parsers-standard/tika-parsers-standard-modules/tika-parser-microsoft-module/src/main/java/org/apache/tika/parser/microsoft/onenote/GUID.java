@@ -52,6 +52,9 @@ public class GUID implements Comparable<GUID> {
             throw new TikaException("Invalid GUID string");
         }
         String hex = utf16Str.substring(1, 37).replace("-", "");
+        if (hex.length() != 32) {
+            throw new TikaException("Invalid GUID string");
+        }
         for (int i = 0; i < hex.length(); i += 2) {
             int high = Character.digit(hex.charAt(i), 16);
             int low = Character.digit(hex.charAt(i + 1), 16);

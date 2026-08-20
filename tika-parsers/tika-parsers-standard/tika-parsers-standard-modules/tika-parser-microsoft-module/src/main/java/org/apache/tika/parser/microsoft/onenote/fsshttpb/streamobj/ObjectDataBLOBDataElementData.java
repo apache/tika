@@ -37,11 +37,11 @@ public class ObjectDataBLOBDataElementData extends DataElementData {
     }
 
     /**
-     * Used to return the length of this element.
+     * Deserializes this element from the supplied byte array.
      *
-     * @param byteArray  A Byte array
+     * @param byteArray  A byte array
      * @param startIndex Start position
-     * @return The element length
+     * @return The number of bytes consumed
      */
     @Override
     public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)

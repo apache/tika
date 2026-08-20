@@ -28,9 +28,24 @@ public class GUIDTest {
 
     @Test
     public void testRejectsMalformedCurlyBraceGuid() {
-        byte[] malformed = "{638DE92F-A6D4-4BC1-9A36-4ĲFC2511A5B7}"
+        byte[] malformed = "{638DE92F-A6D4-4BC1-9Ĳ36-4AFC2511A5B7}"
                 .getBytes(StandardCharsets.UTF_16LE);
 
         assertThrows(TikaException.class, () -> GUID.fromCurlyBraceUTF16Bytes(malformed));
+    }
+
+    @Test
+    public void testRejectsInjectedDashes() {
+        String[] malformedGuids = {
+                "{-38DE92F-A6D4-4BC1-9A36-4AFC2511A5B7}",
+                "{--8DE92F-A6D4-4BC1-9A36-4AFC2511A5B7}",
+                "{---8DE92F-A6D4-4BC1-9A36-4AFC2511A5B7}",
+                "{----E92F-A6D4-4BC1-9A36-4AFC2511A5B7}"
+        };
+        for (String malformedGuid : malformedGuids) {
+            assertThrows(TikaException.class,
+                    () -> GUID.fromCurlyBraceUTF16Bytes(
+                            malformedGuid.getBytes(StandardCharsets.UTF_16LE)));
+        }
     }
 }

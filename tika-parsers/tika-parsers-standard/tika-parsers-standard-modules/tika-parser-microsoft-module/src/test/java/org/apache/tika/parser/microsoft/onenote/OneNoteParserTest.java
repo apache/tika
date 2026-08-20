@@ -19,10 +19,18 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import static org.apache.tika.parser.microsoft.onenote.OneNoteParser.ONE_NOTE_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,19 +38,44 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ToTextContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 public class OneNoteParserTest extends TikaTest {
 
     //test recursive parser wrapper for image files
+
+    @Test
+    public void testFuzzerRegressionInputsFailWithTikaExceptions() throws Exception {
+        String[][] resources = {
+                {"testOneNote-fuzz1.one", "Missing dependent revision"},
+                {"testOneNote-fuzz2.one", "unified property count"},
+                {"testOneNote-fuzz3.one", "Invalid GUID string"}
+        };
+        for (String[] resource : resources) {
+            InputStream input = getClass().getResourceAsStream("/test-documents/" + resource[0]);
+            assertNotNull(input, resource[0]);
+            try (InputStream stream = input;
+                 TikaInputStream tis = TikaInputStream.get(stream)) {
+                TikaException exception = assertThrows(TikaException.class,
+                        () -> new OneNoteParser().parse(tis, new ToTextContentHandler(),
+                                new Metadata(), new ParseContext()), resource[0]);
+                assertTrue(exception.getMessage().contains(resource[1]),
+                        exception.getMessage());
+            }
+        }
+    }
 
     /**
      * This is the sample document that is automatically created from onenote 2013.
@@ -254,10 +287,55 @@ public class OneNoteParserTest extends TikaTest {
             new OneNoteParser().parse(tis, new ToTextContentHandler(), new Metadata(), context);
         }
 
-        assertFalse(embedded.isEmpty());
+        assertEquals(1, embedded.size());
         assertTrue(embedded.stream().anyMatch(bytes -> bytes.length > 1000),
                 () -> "embedded sizes: " + embedded.stream().map(bytes -> bytes.length).toList());
         assertTrue(embeddedTypes.contains("INLINE"));
+    }
+
+    @Test
+    public void testPropertyValueBudgetIsSharedAcrossCopiesAndResetsPerList(
+            @TempDir Path tempDir) throws Exception {
+        Path emptyFile = tempDir.resolve("empty");
+        Files.write(emptyFile, ByteBuffer.allocate(36).order(ByteOrder.LITTLE_ENDIAN)
+                .putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
+                .putLong(-1).putInt(0).putLong(OneNotePtr.FOOTER_CONST).array());
+        Method reservePropertyCount = OneNotePtr.class.getDeclaredMethod(
+                "reservePropertyCount", long.class, String.class);
+        reservePropertyCount.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            OneNotePtr copy = new OneNotePtr(ptr);
+            reservePropertyCount.invoke(ptr, 100_000L, "test");
+            InvocationTargetException exception = assertThrows(InvocationTargetException.class,
+                    () -> reservePropertyCount.invoke(copy, 1L, "test"));
+            assertTrue(exception.getCause() instanceof TikaMemoryLimitException);
+
+            ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr());
+            reservePropertyCount.invoke(ptr, 1L, "test");
+        }
+    }
+
+    @Test
+    public void testFileNodeCycleIsReportedAndStopsTraversal(@TempDir Path tempDir) throws Exception {
+        FileNode fileNode = new FileNode().setGosid(ExtendedGUID.nil());
+        fileNode.childFileNodeList.setFileNodeListHeader(new FileNodeListHeader(0,
+                FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
+        fileNode.childFileNodeList.children.add(fileNode);
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        Path emptyFile = Files.createFile(tempDir.resolve("empty"));
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
+            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+                    new OneNoteDocument(), dif,
+                    new XHTMLContentHandler(new ToTextContentHandler(), metadata, parseContext),
+                    metadata, parseContext, null);
+            walker.walkFileNode(fileNode, null);
+        }
+        assertEquals(1, Arrays.stream(
+                        metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(warning -> warning.contains("file-node cycle detected"))
+                .count());
     }
 
     /**
@@ -271,7 +349,8 @@ public class OneNoteParserTest extends TikaTest {
 
         // only the authors of the current content count - authors that only appear in
         // older page version snapshots are not reported
-        assertEquals("Du Chang", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals(Arrays.asList("Chang Du", "Du Chang"),
+                Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR)));
         assertEquals(1, metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors").length);
 
         assertEquals(Instant.ofEpochSecond(1636621406),
@@ -283,6 +362,7 @@ public class OneNoteParserTest extends TikaTest {
         assertContains("Section1Page1Content", txt);
         // content from revisions other than each cell's current revision manifest
         assertContains("Section1Page2Content", txt);
+        assertTrue(txt.indexOf("Section1Page1Content") < txt.indexOf("Section1Page2Content"));
     }
 
     /**
@@ -294,7 +374,8 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNoteFromOffice365-2.one", metadata);
 
-        assertEquals("Robert Lucarini", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals(List.of("Robert Lucarini"),
+                Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR)));
         List<String> mostRecentAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors"));
         assertContains(
                 "Robert Lucarini",

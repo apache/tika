@@ -30,9 +30,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.CellManifestDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElement;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElementPackage;
@@ -54,7 +51,6 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.basic.HeaderC
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.GuidUtil;
 
 public class MSOneStoreParser {
-    private static final Logger LOG = LoggerFactory.getLogger(MSOneStoreParser.class);
     /**
      * The root role declaration used for the encryption key of encrypted sections.
      */
@@ -222,7 +218,7 @@ public class MSOneStoreParser {
      * Find the CellManifestDataElementData
      *
      * @param cellMappingExtendedGUID The ExGuid of Cell Mapping Extended GUID.
-     * @return The CellManifestDataElementData instance.
+     * @return The CellManifestDataElementData instance, or {@code null} if it is absent.
      */
     private CellManifestDataElementData findCellManifest(ExGuid cellMappingExtendedGUID) {
         DataElement element = cellManifestDataElementsById.get(cellMappingExtendedGUID);
@@ -233,7 +229,7 @@ public class MSOneStoreParser {
      * Find the Revision Manifest from Data Elements.
      *
      * @param revisionMappingExtendedGUID The Revision Mapping Extended GUID.
-     * @return Returns the instance of RevisionManifestDataElementData
+     * @return The RevisionManifestDataElementData instance, or {@code null} if it is absent.
      */
     private RevisionManifestDataElementData findRevisionManifestDataElement(
             ExGuid revisionMappingExtendedGUID) {
@@ -265,13 +261,17 @@ public class MSOneStoreParser {
         StorageIndexCellMapping storageIndexCellMapping =
                 msOneStorePackage.findStorageIndexCellMapping(objectGroupCellID);
         if (storageIndexCellMapping == null) {
-            LOG.debug("Skipping OneNote cell {}: no storage-index cell mapping", objectGroupCellID);
+            String warning = "Skipping OneNote cell " + objectGroupCellID +
+                    ": no storage-index cell mapping";
+            msOneStorePackage.recordParseWarning(warning);
             return null;
         }
         CellManifestDataElementData cellManifest =
                 this.findCellManifest(storageIndexCellMapping.cellMappingExGuid);
         if (cellManifest == null || cellManifest.cellManifestCurrentRevision == null) {
-            LOG.debug("Skipping OneNote cell {}: no current cell manifest", objectGroupCellID);
+            String warning = "Skipping OneNote cell " + objectGroupCellID +
+                    ": no current cell manifest";
+            msOneStorePackage.recordParseWarning(warning);
             return null;
         }
         List<RevisionStoreObjectGroup> objectGroups = new ArrayList<>();
@@ -280,13 +280,17 @@ public class MSOneStoreParser {
                 msOneStorePackage.findStorageIndexRevisionMapping(
                         cellManifest.cellManifestCurrentRevision.cellManifestCurrentRevisionExGuid);
         if (revisionMapping == null) {
-            LOG.debug("Skipping OneNote cell {}: no revision mapping", objectGroupCellID);
+            String warning = "Skipping OneNote cell " + objectGroupCellID +
+                    ": no revision mapping";
+            msOneStorePackage.recordParseWarning(warning);
             return null;
         }
         RevisionManifestDataElementData revisionManifest =
                 findRevisionManifestDataElement(revisionMapping.revisionMappingExGuid);
         if (revisionManifest == null || revisionManifest.revisionManifest == null) {
-            LOG.debug("Skipping OneNote cell {}: no revision manifest", objectGroupCellID);
+            String warning = "Skipping OneNote cell " + objectGroupCellID +
+                    ": no revision manifest";
+            msOneStorePackage.recordParseWarning(warning);
             return null;
         }
 
@@ -338,6 +342,9 @@ public class MSOneStoreParser {
                 DataElement dataElement =
                         objectGroupDataElementsById.get(objRef.objectGroupExtendedGUID);
                 if (dataElement == null) {
+                    msOneStorePackage.recordParseWarning(
+                            "OneNote object group " + objRef.objectGroupExtendedGUID +
+                                    " could not be resolved");
                     continue;
                 }
                 ObjectGroupDataElementData dataObject =
