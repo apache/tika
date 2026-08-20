@@ -5,11 +5,28 @@
 [![Jenkins tests](https://img.shields.io/jenkins/t/https/ci-builds.apache.org/job/Tika/job/tika-main-jdk17.svg?maxAge=3600)](https://ci-builds.apache.org/job/Tika/job/tika-main-jdk17/lastBuild/testReport/)
 [![Maven Central](https://img.shields.io/maven-central/v/org.apache.tika/tika.svg?maxAge=86400)](http://search.maven.org/#search|ga|1|g%3A%22org.apache.tika%22)
 
-Apache Tika(TM) is a toolkit for detecting and extracting metadata and structured text content from various documents using existing parser libraries.
+Apache Tika(TM) detects and extracts metadata and text from over a thousand
+file types. As of 4.0.0 it emits **Markdown by default** — output shaped for
+LLM and RAG pipelines — parses in **crash-isolated forked processes**, and
+adds vision-language-model parsers (Claude, Gemini, OpenAI) for documents OCR
+can't read.
 
 Tika is a project of the [Apache Software Foundation](https://www.apache.org).
 
 Apache Tika, Tika, Apache, the Apache feather logo, and the Apache Tika project logo are trademarks of The Apache Software Foundation.
+
+## Using Tika from AI Agents
+
+Tika 4.x is built for agent pipelines: Markdown output by default, structured
+recursive extraction (`-J` / `/rmeta`), and process isolation so a hostile
+document takes down a fork, not your service.
+
+Ready-to-use agent skills live in [`.skills/`](.skills/):
+[`file-to-markdown`](.skills/file-to-markdown/SKILL.md) (parsing via tika-app
+or tika-server) and
+[`file-to-markdown-docker`](.skills/file-to-markdown-docker/SKILL.md)
+(containerized Tika with guaranteed OCR). They are standalone — copy them into
+any agent's skill directory; nothing in them requires this repository.
 
 ## Quick Start
 
@@ -29,7 +46,11 @@ launcher that loads the parsers from the adjacent `lib/`; on its own it fails wi
 `NoClassDefFoundError`.
 
 ```bash
-java -jar tika-app-<version>.jar --text document.pdf
+java -jar tika-app-<version>.jar document.pdf        # Markdown (the 4.x default)
+java -jar tika-app-<version>.jar --text document.pdf # plain text
+java -jar tika-app-<version>.jar -J document.pdf     # structured JSON: metadata +
+                                                     # content for the document AND
+                                                     # anything embedded in it
 ```
 
 **Maven dependency:**
