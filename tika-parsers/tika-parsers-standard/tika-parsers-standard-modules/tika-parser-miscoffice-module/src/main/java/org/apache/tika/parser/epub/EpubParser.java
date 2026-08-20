@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -152,8 +153,14 @@ public class EpubParser implements Parser {
             return bufferedParseZipFile((ZipFile) tis.getOpenContainer(), bodyHandler,
                     normalizer, xhtml, metadata, context);
         }
-        try (ZipFile zipFile = ZipFile.builder().setFile(tis.getPath().toFile()).get()) {
+        // getSeekableByteChannel() serves in-memory content without spilling it to disk;
+        // ZipFile.close() closes the channel it was built on.
+        SeekableByteChannel channel = tis.getSeekableByteChannel();
+        try (ZipFile zipFile = ZipFile.builder().setSeekableByteChannel(channel).get()) {
             return bufferedParseZipFile(zipFile, bodyHandler, normalizer, xhtml, metadata, context);
+        } catch (IOException e) {
+            channel.close();
+            throw e;
         }
     }
 

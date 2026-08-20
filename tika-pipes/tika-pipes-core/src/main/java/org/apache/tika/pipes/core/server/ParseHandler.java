@@ -18,7 +18,7 @@ package org.apache.tika.pipes.core.server;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
+import java.nio.channels.Channels;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -163,7 +163,8 @@ class ParseHandler {
         if (unpackConfig != null &&
                 unpackConfig.isIncludeOriginal()) {
             UnpackHandler unpackHandler = parseContext.get(UnpackHandler.class);
-            try (InputStream is = Files.newInputStream(tis.getPath())) {
+            // read via the seekable channel: in-memory content stays in memory
+            try (InputStream is = Channels.newInputStream(tis.getSeekableByteChannel())) {
                 unpackHandler.add(0, metadata, is);
             } catch (IOException e) {
                 LOG.warn("problem reading source file into embedded document byte store", e);

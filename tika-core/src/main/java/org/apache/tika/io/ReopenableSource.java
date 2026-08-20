@@ -17,11 +17,15 @@
 package org.apache.tika.io;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.function.IOSupplier;
@@ -144,6 +148,38 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     @Override
     public void enableRewind() throws IOException {
         // No-op: the source can be re-opened, so no caching is needed to rewind.
+    }
+
+    /** Up to this many bytes of a re-openable object may be buffered in memory on demand. */
+    private static final long MAX_IN_MEMORY_BYTES = 64L * 1024 * 1024;
+
+    @Override
+    public SeekableByteChannel getSeekableByteChannel() throws IOException {
+        if (spilledPath == null) {
+            // Re-open a fresh stream and buffer it in memory if it fits (the true size is
+            // unknowable up front, so the cap is enforced during the read). Does not disturb
+            // this source's current position.
+            try (InputStream in = opener.get()) {
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                byte[] buf = new byte[8192];
+                long total = 0;
+                int r;
+                boolean fits = true;
+                while ((r = in.read(buf)) != -1) {
+                    total += r;
+                    if (total > MAX_IN_MEMORY_BYTES) {
+                        fits = false;
+                        break;
+                    }
+                    bos.write(buf, 0, r);
+                }
+                if (fits) {
+                    return new MemorySeekableByteChannel(bos.toByteArray(), (int) total);
+                }
+            }
+        }
+        // Too large (or already spilled) -> serve from the spill file
+        return FileChannel.open(getPath(null), StandardOpenOption.READ);
     }
 
     @Override

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -296,6 +297,18 @@ class StreamCache implements Closeable {
      */
     boolean isFileBacked() {
         return spillFile != null;
+    }
+
+    /**
+     * If the full content is currently held in memory (not spilled, not closed), returns a
+     * read-only random-access channel over it (no copy, no disk). Otherwise {@code null}.
+     * The caller is responsible only for content that has actually been cached so far.
+     */
+    SeekableByteChannel getInMemorySeekableByteChannel() {
+        if (closed || memoryBuffer == null) {
+            return null;
+        }
+        return new MemorySeekableByteChannel(memoryBuffer, memorySize);
     }
 
     @Override

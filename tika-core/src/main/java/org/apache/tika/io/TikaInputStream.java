@@ -26,6 +26,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -532,6 +533,24 @@ public class TikaInputStream extends TaggedInputStream {
         if (source != null) {
             source.enableRewind(budget);
         }
+    }
+
+    /**
+     * Returns a read-only random-access {@link SeekableByteChannel} over this stream's full
+     * content. Unlike {@link #getPath()}/{@link #getFile()}, this never forces content that is
+     * already in memory onto disk: in-memory content is served from memory, file-backed or
+     * spilled content from a file channel, and unread stream content is drained through the
+     * cache which decides memory-vs-disk as it goes. Use this when random access is needed
+     * (e.g. reading a zip central directory); reserve {@code getFile()} for callers that truly
+     * need a {@link java.io.File}. The caller owns closing the returned channel. Does not
+     * disturb this stream's read position.
+     */
+    public SeekableByteChannel getSeekableByteChannel() throws IOException {
+        TikaInputSource source = inputSource();
+        if (source == null) {
+            throw new IOException("No TikaInputSource available");
+        }
+        return source.getSeekableByteChannel();
     }
 
     @Override

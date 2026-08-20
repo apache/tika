@@ -20,6 +20,7 @@ import static org.apache.tika.detect.zip.PackageConstants.JAR;
 import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
 import java.io.IOException;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.FileTime;
@@ -225,15 +226,23 @@ public class ZipParser extends AbstractArchiveParser {
         }
 
         // No ZipFile from detector - try to open directly
-        // This handles cases where parser is called without detector
+        // This handles cases where parser is called without detector.
+        // getSeekableByteChannel() serves in-memory content without spilling it to disk.
         ZipFile zipFile = null;
         try {
-            ZipFile.Builder builder = ZipFile.builder().setFile(tis.getFile());
-            if (config.getEntryEncoding() != null) {
-                builder.setCharset(config.getEntryEncoding());
+            SeekableByteChannel channel = tis.getSeekableByteChannel();
+            try {
+                ZipFile.Builder builder = ZipFile.builder().setSeekableByteChannel(channel);
+                if (config.getEntryEncoding() != null) {
+                    builder.setCharset(config.getEntryEncoding());
+                }
+                // ZipFile.close() closes the channel it was built on
+                zipFile = builder.get();
+                tis.setOpenContainer(zipFile);
+            } catch (IOException e) {
+                channel.close();
+                throw e;
             }
-            zipFile = builder.get();
-            tis.setOpenContainer(zipFile);
         } catch (IOException e) {
             // ZipFile failed - fall back to streaming
         }

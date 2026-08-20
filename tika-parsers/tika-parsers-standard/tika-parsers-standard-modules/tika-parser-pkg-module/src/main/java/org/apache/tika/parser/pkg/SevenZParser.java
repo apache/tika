@@ -20,6 +20,7 @@ import static org.apache.tika.detect.zip.PackageConstants.SEVENZ;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.SeekableByteChannel;
 import java.util.Collections;
 import java.util.Set;
 
@@ -113,10 +114,13 @@ public class SevenZParser extends AbstractArchiveParser {
         }
 
         SevenZFile sevenZFile;
+        // getSeekableByteChannel() serves in-memory content without spilling it to disk;
+        // SevenZFile.close() closes the channel it was built on.
+        SeekableByteChannel channel = tis.getSeekableByteChannel();
         try {
             // Use setMaxMemoryLimitKiB (direct KiB); setMaxMemoryLimitKb divides the arg by 1024.
             SevenZFile.Builder builder = new SevenZFile.Builder()
-                    .setFile(tis.getFile())
+                    .setSeekableByteChannel(channel)
                     .setMaxMemoryLimitKiB(defaultConfig.getMemoryLimitInKb());
             if (password == null) {
                 sevenZFile = builder.get();
@@ -124,11 +128,16 @@ public class SevenZParser extends AbstractArchiveParser {
                 sevenZFile = builder.setPassword(password.toCharArray()).get();
             }
         } catch (PasswordRequiredException e) {
+            channel.close();
             throw new EncryptedDocumentException(e);
         } catch (MemoryLimitException e) {
             // The limit can be exceeded at open time (assertValidity) as well as lazily on the
             // first getNextEntry() when the LZMA/LZMA2 dictionary is allocated.
+            channel.close();
             throw new TikaMemoryLimitException(e.getMessage());
+        } catch (IOException e) {
+            channel.close();
+            throw e;
         }
 
         metadata.set(HttpHeaders.CONTENT_TYPE, SEVENZ.toString());

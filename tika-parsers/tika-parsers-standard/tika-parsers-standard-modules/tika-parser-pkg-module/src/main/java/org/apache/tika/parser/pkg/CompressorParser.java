@@ -35,7 +35,7 @@ import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
+import java.nio.channels.Channels;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -251,13 +251,14 @@ public class CompressorParser implements Parser {
                 // TIKA-4221 / COMPRESS-721 workaround: commons-compress' Pack200CompressorInputStream
                 // reflects into java.io internals (FilterInputStream.in / FileInputStream.path) to
                 // bound its input, which throws InaccessibleObjectException on Java 17+. A
-                // TikaInputStream is a FilterInputStream, so it triggers this. Spool to a file and
-                // reopen via Files.newInputStream (a ChannelInputStream) -- the one input type
-                // commons-compress does not reflect into. Pack200CompressorInputStream reads its
-                // input fully in the constructor (IN_MEMORY) and then serves bytes from an in-memory
-                // buffer, so the channel stream can be closed immediately afterward. Remove this once
-                // Tika depends on a commons-compress release that contains the COMPRESS-721 fix.
-                try (InputStream packStream = Files.newInputStream(tis.getPath())) {
+                // TikaInputStream is a FilterInputStream, so it triggers this. Re-read via
+                // Channels.newInputStream (a ChannelInputStream) -- the one input type
+                // commons-compress does not reflect into -- without forcing in-memory content to
+                // disk. Pack200CompressorInputStream reads its input fully in the constructor
+                // (IN_MEMORY) and then serves bytes from an in-memory buffer, so the channel
+                // stream can be closed immediately afterward. Remove this once Tika depends on a
+                // commons-compress release that contains the COMPRESS-721 fix.
+                try (InputStream packStream = Channels.newInputStream(tis.getSeekableByteChannel())) {
                     cis = factory.createCompressorInputStream(CompressorStreamFactory.PACK200,
                             packStream);
                 }

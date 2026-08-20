@@ -18,6 +18,7 @@ package org.apache.tika.io;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 
 /**
@@ -76,4 +77,14 @@ interface TikaInputSource extends Closeable {
     default void enableRewind(CacheMemoryBudget budget) throws IOException {
         enableRewind();
     }
+
+    /**
+     * Returns a read-only random-access channel over this source's full content. Always
+     * succeeds: sources whose content is already in memory (byte[], unspilled cache) serve it
+     * from memory; file-backed or spilled sources serve a file channel; stream-backed sources
+     * drain into their cache first, which decides memory-vs-disk during the drain (the expanded
+     * size of a stream is unknowable up front). Callers own closing the returned channel. Does
+     * not change this source's read position.
+     */
+    SeekableByteChannel getSeekableByteChannel() throws IOException;
 }

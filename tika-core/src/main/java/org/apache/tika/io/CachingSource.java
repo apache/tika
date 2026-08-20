@@ -20,8 +20,11 @@ import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import org.apache.commons.io.IOUtils;
 
@@ -207,6 +210,23 @@ class CachingSource extends InputStream implements TikaInputSource {
         StreamCache cache = new StreamCache(tmp, suffix, budget);
         cachingStream = new CachingInputStream(passthroughStream, cache);
         passthroughStream = null;
+    }
+
+    @Override
+    public SeekableByteChannel getSeekableByteChannel() throws IOException {
+        if (spilledPath != null) {
+            return FileChannel.open(spilledPath, StandardOpenOption.READ);
+        }
+        // If still in passthrough mode, switch to caching first (same rule as getPath)
+        if (cachingStream == null) {
+            if (passthroughPosition != 0) {
+                throw new IOException(
+                        "Cannot create seekable view: position is " + passthroughPosition +
+                                ", must be 0. Call enableRewind() before reading.");
+            }
+            enableRewind();
+        }
+        return cachingStream.getSeekableByteChannel();
     }
 
     @Override

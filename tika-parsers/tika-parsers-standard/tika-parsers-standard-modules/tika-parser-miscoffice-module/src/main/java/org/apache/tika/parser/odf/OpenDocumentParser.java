@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.SeekableByteChannel;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -167,14 +168,21 @@ public class OpenDocumentParser implements Parser {
 
         EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
-        // Open the Zip stream
-        // Use a File if we can, and an already open zip is even better
+        // Open the Zip stream; an already open zip from the detector is best.
+        // getSeekableByteChannel() serves in-memory content without spilling it to disk;
+        // ZipFile.close() closes the channel it was built on.
         ZipFile zipFile = null;
         Object container = tis.getOpenContainer();
         if (container instanceof ZipFile) {
             zipFile = (ZipFile) container;
         } else {
-            zipFile = ZipFile.builder().setFile(tis.getFile()).get();
+            SeekableByteChannel channel = tis.getSeekableByteChannel();
+            try {
+                zipFile = ZipFile.builder().setSeekableByteChannel(channel).get();
+            } catch (IOException e) {
+                channel.close();
+                throw e;
+            }
             tis.setOpenContainer(zipFile);
         }
         // Prepare to handle the content
