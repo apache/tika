@@ -24,6 +24,7 @@ import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.FETCH_RANGE_END;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.FETCH_RANGE_START;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ID;
+import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.INLINE_BYTES;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.METADATA_KEY;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ON_PARSE_EXCEPTION;
 import static org.apache.tika.serialization.serdes.ParseContextSerializer.PARSE_CONTEXT;
@@ -45,13 +46,14 @@ import org.apache.tika.pipes.api.ComponentIds;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple> {
 
     private static final Set<String> KNOWN_KEYS = Set.of(
             ID, FETCHER, FETCH_KEY, EMITTER, EMIT_KEY, FETCH_RANGE_START, FETCH_RANGE_END,
-            METADATA_KEY, PARSE_CONTEXT, ON_PARSE_EXCEPTION);
+            METADATA_KEY, PARSE_CONTEXT, ON_PARSE_EXCEPTION, INLINE_BYTES);
 
     private final boolean restricted;
 
@@ -81,6 +83,12 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
     public FetchEmitTuple deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
         JsonNode root = jsonParser.readValueAsTree();
         rejectUnknownKeys(root);
+        if (restricted && root.has(INLINE_BYTES)) {
+            // Same stance as the reserved __bytes fetcher id: inline content is how the
+            // host hands a payload to its own child, never something a request supplies.
+            throw new IOException("'" + INLINE_BYTES
+                    + "' is reserved for the host's IPC and may not be supplied by a request");
+        }
 
         String id = readVal(ID, root, null, true);
         String fetcherId = normalizeId(readVal(FETCHER, root, null, true), "fetcher");
@@ -95,6 +103,12 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         // its parseContext so it cannot introduce wire-blocked components (parsers, detectors, ...).
         ParseContext parseContext = parseContextNode == null ? new ParseContext()
                 : ParseContextDeserializer.readParseContext(parseContextNode, true);
+        JsonNode inlineBytesNode = root.get(INLINE_BYTES);
+        if (inlineBytesNode != null) {
+            // Set typed, not as a lazy json config: resolveAll never sees the payload, and
+            // the child's context merge copies typed entries as-is.
+            parseContext.set(InlineBytes.class, new InlineBytes(inlineBytesNode.binaryValue()));
+        }
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
 
         return new FetchEmitTuple(id, new FetchKey(fetcherId, fetchKey, fetchRangeStart, fetchRangeEnd),

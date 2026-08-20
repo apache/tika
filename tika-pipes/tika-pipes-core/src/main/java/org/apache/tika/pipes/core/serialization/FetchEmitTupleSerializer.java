@@ -25,7 +25,9 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.utils.StringUtils;
 
 public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
@@ -38,6 +40,7 @@ public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
     public static final String EMIT_KEY = "emitKey";
     public static final String METADATA_KEY = "metadata";
     public static final String ON_PARSE_EXCEPTION = "onParseException";
+    public static final String INLINE_BYTES = "inlineBytes";
 
     public void serialize(FetchEmitTuple t, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
 
@@ -57,8 +60,20 @@ public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
             jsonGenerator.writeObjectField(METADATA_KEY, t.getMetadata());
         }
         jsonGenerator.writeStringField(ON_PARSE_EXCEPTION, t.getOnParseException().name().toLowerCase(Locale.US));
-        if (!t.getParseContext().isEmpty()) {
-            jsonGenerator.writeObjectField(PARSE_CONTEXT, t.getParseContext());
+        // The document payload is data, not config: written as a top-level binary field so it
+        // never enters the parse-context lazy-config machinery, whose per-entry text-JSON
+        // round trip would base64 it (see ParseContextDeserializer.readParseContext).
+        ParseContext parseContext = t.getParseContext();
+        InlineBytes inlineBytes = parseContext.get(InlineBytes.class);
+        if (inlineBytes != null && inlineBytes.getBytes() != null) {
+            jsonGenerator.writeBinaryField(INLINE_BYTES, inlineBytes.getBytes());
+            ParseContext copy = new ParseContext();
+            copy.copyFrom(parseContext);
+            copy.set(InlineBytes.class, null);
+            parseContext = copy;
+        }
+        if (!parseContext.isEmpty()) {
+            jsonGenerator.writeObjectField(PARSE_CONTEXT, parseContext);
         }
         jsonGenerator.writeEndObject();
     }

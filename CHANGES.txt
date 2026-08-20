@@ -1,3 +1,8 @@
+Release 4.1.0 - unreleased
+
+   * TIKA-4829 -- pipes IPC: carry inline document bytes as a raw binary field
+     of the tuple and disable Smile's 7-bit binary encoding.
+
 Release 4.0.0 - 8/18/2026
 
   This section is the complete delta from 3.x. It includes everything first

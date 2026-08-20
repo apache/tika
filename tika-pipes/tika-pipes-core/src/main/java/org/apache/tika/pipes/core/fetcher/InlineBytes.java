@@ -27,8 +27,10 @@ import org.apache.tika.annotation.TikaComponent;
  * hand it to the forked worker.
  * <p>
  * Read by {@link BytesFetcher}, which the tuple selects with fetcher id
- * {@link BytesFetcher#FETCHER_ID}. The IPC is Smile, so this rides as native binary rather than
- * base64; it counts against {@code maxIpcPayloadBytes} like any other part of the request.
+ * {@link BytesFetcher#FETCHER_ID}. On the IPC wire this travels as a dedicated raw-binary
+ * field of the tuple, bypassing the parse-context config machinery (whose text-JSON round
+ * trip would base64 it); it counts against {@code maxIpcPayloadBytes} like any other part
+ * of the request.
  */
 @TikaComponent(name = "inline-bytes", spi = false)
 public class InlineBytes implements Serializable {
