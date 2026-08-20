@@ -43,6 +43,19 @@ Memory: 4 JVMs                          Memory: 1 JVM
 Isolation: Per-request                  Isolation: None (shared fate)
 ----
 
+== Performance
+
+Shared mode is not only a memory option. Because all requests are served by one
+warm JVM — a single JIT profile and a single garbage collector — it typically
+has *higher throughput* than per-client mode at the same concurrency, and can
+show lower tail latency (one large heap incurs fewer, shorter GC stalls than
+several small worker heaps). In one benchmark it came within roughly 5–15% of a
+single in-JVM parser's throughput on mixed and large documents, where per-client
+was ~20–35% slower. This throughput edge is the upside you weigh against the loss
+of per-request isolation described below. See
+xref:pipes/performance.adoc[Performance and Isolation Trade-offs] for the full
+comparison.
+
 == Limitations and Risks
 
 === Shared fate

@@ -34,6 +34,7 @@
 ** xref:pipes/timeouts.adoc[Timeouts]
 ** xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing]
 ** xref:pipes/shared-server-mode.adoc[Shared Server Mode]
+** xref:pipes/performance.adoc[Performance and Isolation Trade-offs]
 ** xref:pipes/troubleshooting.adoc[Troubleshooting]
 ** xref:pipes/plugins/index.adoc[Plugins]
 *** xref:pipes/plugins/writing-a-plugin.adoc[Writing a Pipes Plugin]

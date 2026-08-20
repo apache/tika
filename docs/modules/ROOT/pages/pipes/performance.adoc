@@ -1,0 +1,263 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+= Performance and Isolation Trade-offs
+
+In Tika 4.x, `tika-server`'s classic endpoints (`/tika`, `/rmeta`, `/meta`,
+`/detect`, `/unpack`) parse through Tika Pipes by default: the HTTP front-end
+hands each document to a pool of forked worker JVMs rather than parsing in the
+server process. This buys crash/OOM isolation at the cost of a per-request
+overhead — spooling large payloads to a temp file, a socket round-trip, and
+serializing the result back. This page describes that trade-off and how to tune
+for it.
+
+[NOTE]
+====
+Closing the throughput gap of the default isolated mode — *without* giving up the
+crash/OOM isolation it provides — is an area of active work. Treat the figures on
+this page as a snapshot of the 4.0.0 release, not a fixed ceiling: expect the
+isolated-mode gap to narrow in future releases. Note also that this gap is
+specific to the *upload* endpoints on small documents — for file-system inputs
+and outputs the fetch/emit endpoints already match or beat 3.x while staying
+fully isolated (see <<endpoint-choice>>).
+====
+
+== Deployment shapes
+
+[cols="1,3,2"]
+|===
+|Shape |Description |Parsing JVMs
+
+|In-process (legacy)
+|Tika 3.x with `--noFork`. The server parses in its own JVM. No isolation, no
+recovery. Not recommended.
+|1 (the server itself)
+
+|Single forked child
+|Tika 3.x *default*. A thin watchdog parent forks one child that binds the port
+and does all parsing; the watchdog restarts it on crash/OOM/timeout.
+|1 (the child)
+
+|Pipes per-client
+|Tika 4.x *default*. The HTTP front-end forks `numClients` worker JVMs; each
+handles one request at a time.
+|`numClients` (e.g. 4)
+
+|Pipes shared-server
+|Tika 4.x opt-in (`useSharedServer=true`; see
+xref:pipes/shared-server-mode.adoc[Shared Server Mode]). The front-end forks a
+single worker JVM with a `numClients`-sized thread pool.
+|1 (shared worker)
+|===
+
+The single-forked-child (3.x) and shared-server (4.x) shapes are close cousins:
+one parsing JVM serving all concurrency, with the front-end/watchdog restarting
+it on failure. The practical 4.x default choice is between **per-client**
+(strongest isolation) and **shared-server** (highest throughput).
+
+== Throughput
+
+The pipes per-request overhead — temp-spool of large payloads, socket IPC, and
+result serialization — is roughly *fixed per request*. It therefore dominates
+when parse time is small (many tiny documents) and amortizes away as documents
+get larger and parsing dominates.
+
+Relative throughput at matched concurrency (requesting threads = worker count),
+normalized to a single in-JVM parser of the same total heap (= 1.00; higher is
+faster). These are representative figures from one benchmark (16-core host, JDK
+17, loopback HTTP, plain-text extraction) and are meant to show the *shape* of
+the trade-off, not to be quoted as absolutes:
+
+[cols="2,1,1,1"]
+|===
+|Corpus |Single in-JVM (8g) |Shared-server (1×8g) |Per-client (4×2g)
+
+|Many small files (~50 KB HTML) |1.00 |~0.60 |~0.47
+|Mixed (~350 KB avg)            |1.00 |~0.85 |~0.65
+|Large (multi-MB, up to ~50 MB) |1.00 |~0.95 |~0.82
+|===
+
+Two things to note:
+
+* The gap is widest on small files (per-request overhead is the whole cost) and
+  nearly closes on large files (parse time dominates).
+* **Shared-server recovers most of the pipes overhead relative to per-client** —
+  one warm JVM with shared JIT and one garbage collector outperforms several
+  smaller, independently-warming worker heaps.
+
+[#endpoint-choice]
+== Endpoint choice: uploading bytes vs fetch-and-emit
+
+How a document reaches the parser matters as much as the parsing mode. The
+classic endpoints (`/tika`, `/rmeta`, `/meta`) receive the document *in the HTTP
+request body* and return the extract *in the response*, so every request pays to
+move the bytes in and the result back out — and in 4.x that now crosses the
+process boundary to a forked worker. The pipes endpoints (`/pipes`, `/async`)
+instead take only a small fetch/emit *tuple*: the worker reads the document
+straight from the configured xref:pipes/fetchers.adoc[fetcher] — a file system,
+Amazon S3, Google Cloud Storage, Azure Blob Storage, and so on — and the
+configured xref:pipes/emitters.adoc[emitter] writes the result straight to its
+destination, which need not be a file at all: an object store, a search index
+(OpenSearch, Solr, Elasticsearch), a database, a queue. The bytes never travel
+over HTTP and the result is never passed back through the front-end.
+
+Whenever a fetcher can reach your inputs and an emitter your destination, the
+fetch/emit endpoints skip the HTTP body transfer and the result passback — a
+saving that holds for any fetcher and emitter. What that is worth in *throughput*
+depends on the store, and the only combination measured here is **local file
+system on both ends**. Those figures, relative to a 3.x single in-JVM parser
+(= 1.00; higher is faster; one 16-core host, plain-text recursive metadata,
+concurrency = worker count, per-client isolation):
+
+[cols="2,1,1"]
+|===
+|Document size |4.x sync `/rmeta` (HTTP upload) |4.x `/pipes` (fetch/emit)
+
+|Small (~50 KB)   |0.50 |0.80
+|Medium (~350 KB) |0.73 |1.23
+|Large (multi-MB) |0.81 |1.14
+|===
+
+Two things to read from it:
+
+* The classic upload endpoints *are* slower than 3.x's in-JVM parsing — by ~2x on
+  tiny documents, shrinking toward ~20% as documents grow and parse time
+  dominates. That is the crash-isolation cost, and it lands on the per-request
+  HTTP path.
+* The fetch/emit path — still *fully isolated* (per-client: one forked worker per
+  in-flight document) — *matches or beats* a 3.x in-JVM parser on realistic and
+  large documents, because it drops the HTTP body transfer and the result
+  passback. Only on very small documents does it trail. (The figures are for
+  local file-system fetch and emit; a remote store adds its own latency and
+  bandwidth, but the architecture — fetch, parse in an isolated worker, emit —
+  is unchanged.)
+
+So a *file-system* fetch-and-emit workload need not choose between 3.x throughput
+and 4.x isolation: measured file system to file system, `/pipes` (and `/async`)
+delivered both. With other fetchers and emitters you keep the isolation and the
+skipped HTTP-body/passback, and the extract can land straight in a search index
+or database instead of round-tripping back through your client — but the
+throughput then also rides on that store's own latency and bandwidth, which we
+have not measured, so treat those cases as architecturally similar rather than
+numerically equal. The upload endpoints remain the convenient choice for
+interactive, single-document requests where the bytes are already in hand and
+isolation — not raw throughput — is what you are buying.
+
+== Latency
+
+Pipes adds a fixed floor of roughly tens of milliseconds per request from the
+IPC round-trip, visible at the median on fast parses.
+
+For the *tail*, isolating the parse JVM from the HTTP front-end (both pipes
+modes) keeps a slow or pathological document off the request-accept path. In
+per-client mode a single slow document occupies only one of `numClients`
+workers; in shared-server and single-child modes it occupies one of the shared
+thread pool's slots. In practice shared-server can show the *best* worst-case
+latency of the shapes here, because it combines a large single heap (fewer,
+shorter GC stalls than several small heaps) with a front-end that is never
+blocked by parsing.
+
+The output format also matters: full XHTML, Markdown, plain text, and recursive
+metadata JSON impose different serialization costs on the same parse. Compare
+like with like when benchmarking.
+
+== Memory
+
+Per-client mode runs `numClients` heaps; size each for the worst-case *single*
+document. Shared-server and single-JVM modes run one heap; size it for the
+worst-case *concurrent* load (see
+xref:pipes/shared-server-mode.adoc#_sizing_guidance[Shared-server sizing]). Per-client
+therefore uses more total resident memory but bounds per-document usage: a
+memory-hungry document can only exhaust its own worker's heap, not the pool's.
+For the per-fork `-Xmx` and CPU rules of thumb, see
+xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing].
+
+== Isolation and recovery
+
+Every shape below *except* 3.x `--noFork` recovers automatically from a
+crash, `OutOfMemoryError`, or timeout. They differ in how many in-flight
+requests a single failure takes down, and whether the HTTP endpoint stays up:
+
+[cols="2,2,2,2"]
+|===
+|Shape |Blast radius |HTTP front-end |Recovery
+
+|In-process (`--noFork`) |All in-flight |Dies |None — manual restart
+|Single forked child (3.x default) |All in-flight (shared child) |Brief outage while the child restarts (the child owns the port) |Auto — watchdog restarts child
+|Shared-server (4.x) |All in-flight (shared worker) |Stays up (separate front-end) |Auto — front-end respawns worker
+|Per-client (4.x default) |One request (1 of `numClients`) |Stays up |Auto — only that worker respawns
+|===
+
+3.x already provides process isolation in its default configuration: the forked
+child survives a parser crash, OOM, or timeout because the watchdog restarts it.
+Only the legacy `--noFork` mode parses in the server process itself and has no
+recovery. So the 4.x change is a *finer* granularity of isolation, not isolation
+where there was none — per-client mode narrows the blast radius from "all
+in-flight" to "one request," and both pipes modes keep the HTTP front-end serving
+while a worker restarts.
+
+== Choosing a shape
+
+* **Per-client (default)** — hostile or heterogeneous inputs, where one bad
+  document must not disturb the others. Strongest isolation; highest memory;
+  lowest raw throughput.
+* **Shared-server** — well-behaved inputs where you want throughput close to a
+  single in-JVM parser and a crash-resilient front-end, and can accept that one
+  failure drops all in-flight requests. See
+  xref:pipes/shared-server-mode.adoc[Shared Server Mode].
+* Tune `numClients` and per-fork heap with
+  xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing]; configure per-parse
+  limits with xref:pipes/timeouts.adoc[Timeouts].
+
+== Benchmarking your own workload
+
+The numbers above are illustrative. Throughput depends on your document mix,
+document sizes, requested output format, concurrency, host CPU/heap, and disk
+speed (large payloads spool to a temp directory). Measure with *your* corpus:
+
+* Fix concurrency equal to the worker count so the comparison is apples to
+  apples.
+* Exclude a warm-up phase — forked workers pay a one-time fork + JIT cost on
+  their first requests.
+* Hold the output format constant across the versions or modes you compare.
+* Watch peak RSS across the whole process tree (front-end plus workers), not
+  just one process.
+
+== Appendix: approaches considered and set aside
+
+Levers that were tried against the isolated-mode throughput gap and do *not*
+close it, recorded here so they need not be re-litigated:
+
+* **Class-data sharing (CDS / AppCDS).** A shared archive measurably speeds
+  worker *start-up* (class loading is a one-time cost), but class loading is not a
+  steady-state cost, so parsing throughput is unchanged. CDS is still worth having
+  for faster worker cold-start and restart — a resilience/latency benefit that is
+  compatible with the hard-kill lifecycle, since the archive is generated offline
+  and mapped read-only (a worker can be force-killed at any instant). It is not,
+  however, a throughput lever.
+* **Uncapping the per-fork CPU view.** Raising or removing the auto-injected
+  `-XX:ActiveProcessorCount` slice makes throughput *worse*: N forks each sizing
+  their GC and JIT thread pools to the full host core count oversubscribes the
+  cores. The slice (see xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing])
+  is doing its job.
+* **Swapping the garbage collector.** ParallelGC helped tiny documents marginally
+  and hurt larger ones — no reliable win over the default across a mixed corpus.
+
+What is left is structural: the fixed per-request IPC + temp-spool + result
+serialization cost, and running several CPU-partitioned JVMs instead of one. The
+productive directions are shrinking that per-request cost (RAM-disk temp directory,
+keeping more payloads inline, leaner serialization) and fork-pool sizing — not a
+single JVM flag.
