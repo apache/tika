@@ -174,6 +174,9 @@ class ReopenableSource extends InputStream implements TikaInputSource {
                     bos.write(buf, 0, r);
                 }
                 if (fits) {
+                    if (length < 0) {
+                        length = total;   // the full read established the true length
+                    }
                     return new MemorySeekableByteChannel(bos.toByteArray(), (int) total);
                 }
             }

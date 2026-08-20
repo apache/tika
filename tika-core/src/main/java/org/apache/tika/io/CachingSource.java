@@ -226,7 +226,15 @@ class CachingSource extends InputStream implements TikaInputSource {
             }
             enableRewind();
         }
-        return cachingStream.getSeekableByteChannel();
+        SeekableByteChannel channel = cachingStream.getSeekableByteChannel();
+        // The drain established the true content length -- record it like getPath() does, so
+        // consumers (e.g. SecureContentHandler's zip-bomb ratio) see the real input size.
+        length = channel.size();
+        if (metadata != null &&
+                StringUtils.isBlank(metadata.get(HttpHeaders.CONTENT_LENGTH))) {
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
+        }
+        return channel;
     }
 
     @Override
