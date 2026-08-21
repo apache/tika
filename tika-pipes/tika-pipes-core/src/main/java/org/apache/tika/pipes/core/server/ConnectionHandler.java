@@ -52,6 +52,7 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
+import org.apache.tika.pipes.core.serialization.PipesRequest;
 import org.apache.tika.serialization.ParseContextUtils;
 
 /**
@@ -151,11 +152,13 @@ public class ConnectionHandler implements Runnable, Closeable {
                         intermediateResult.clear();
                         CountDownLatch countDownLatch = new CountDownLatch(1);
 
+                        PipesRequest pipesRequest;
                         FetchEmitTuple fetchEmitTuple;
                         try {
-                            fetchEmitTuple = JsonPipesIpc.fromBytes(msg.payload(), FetchEmitTuple.class);
+                            pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class);
+                            fetchEmitTuple = pipesRequest.getTuple();
                         } catch (IOException e) {
-                            LOG.error("handlerId={}: problem deserializing FetchEmitTuple", handlerId, e);
+                            LOG.error("handlerId={}: problem deserializing PipesRequest", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
                             return; // connection is unsalvageable after deserialization failure
                         }
@@ -167,6 +170,9 @@ public class ConnectionHandler implements Runnable, Closeable {
                             ServerProtocolIO.clampRequestTimeoutLimits(
                                     fetchEmitTuple.getParseContext(), mergedContext,
                                     pipesConfig.getMaxTotalTaskTimeoutMillis());
+                            // After resolveAll: the payload is typed runtime state for
+                            // BytesFetcher, never a resolvable config entry.
+                            pipesRequest.applyTo(mergedContext);
                             // Installed here, before submit, so the worker thread's own
                             // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
                             // sees this instance rather than racing to install its own.

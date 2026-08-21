@@ -49,6 +49,7 @@ import org.apache.tika.pipes.core.protocol.PayloadLimitExceededException;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
+import org.apache.tika.pipes.core.serialization.PipesRequest;
 import org.apache.tika.pipes.core.server.IntermediateResult;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
@@ -340,7 +341,9 @@ public class PipesClient implements Closeable {
             throw new IOException("connection closed");
         }
         LOG.debug("pipesClientId={}: sending NEW_REQUEST for id={}", pipesClientId, t.getId());
-        byte[] bytes = JsonPipesIpc.toBytes(t);
+        // PipesRequest.of lifts any InlineBytes out of the tuple's context into the envelope;
+        // a serialized tuple never carries content.
+        byte[] bytes = JsonPipesIpc.toBytes(PipesRequest.of(t));
         PipesMessage.newRequest(bytes).write(tuple.output);
     }
 

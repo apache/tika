@@ -16,13 +16,16 @@
  */
 package org.apache.tika.pipes.core.serialization;
 
+import static org.apache.tika.pipes.core.serialization.WireTestUtil.root;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.Random;
 
@@ -41,8 +44,8 @@ import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.serialization.ParseContextUtils;
 
 /**
- * The inline payload travels as a dedicated raw-binary field of the tuple, not through the
- * parse-context config machinery whose text-JSON round trip would base64 it.
+ * The inline payload travels beside the tuple in the {@link PipesRequest} envelope -- never
+ * inside the tuple or its serialized ParseContext, in any format.
  */
 public class InlineBytesWireTest {
 
@@ -64,15 +67,17 @@ public class InlineBytesWireTest {
     public void ipcRoundTripPreservesPayload() throws Exception {
         byte[] payload = payload(100_000);
         FetchEmitTuple t = tuple(payload);
-        byte[] wire = JsonPipesIpc.toBytes(t);
-        // serializing must not strip the payload from the caller's live context
+        PipesRequest request = PipesRequest.of(t);
+        // lifting the payload into the envelope must not mutate the caller's live context
         assertNotNull(t.getParseContext().get(InlineBytes.class));
 
-        FetchEmitTuple back = JsonPipesIpc.fromBytes(wire, FetchEmitTuple.class);
-        // the child's path: merge, resolve, fetch
+        byte[] wire = JsonPipesIpc.toBytes(request);
+        PipesRequest back = JsonPipesIpc.fromBytes(wire, PipesRequest.class);
+        // the child's path: merge, resolve, plant, fetch
         ParseContext merged = new ParseContext();
-        merged.copyFrom(back.getParseContext());
+        merged.copyFrom(back.getTuple().getParseContext());
         ParseContextUtils.resolveAll(merged, getClass().getClassLoader());
+        back.applyTo(merged);
         assertEquals(ParseMode.RMETA, merged.get(ParseMode.class));
 
         Metadata metadata = new Metadata();
@@ -85,7 +90,7 @@ public class InlineBytesWireTest {
     @Test
     public void wireCarriesRawBinary() throws Exception {
         byte[] payload = payload(1_000_000);
-        byte[] wire = JsonPipesIpc.toBytes(tuple(payload));
+        byte[] wire = JsonPipesIpc.toBytes(PipesRequest.of(tuple(payload)));
         // raw binary: no base64 (+33%) and no Smile 7-bit encoding (+14%)
         assertTrue(wire.length >= payload.length, "wire shorter than payload?");
         assertTrue(wire.length < payload.length + 1024,
@@ -93,29 +98,63 @@ public class InlineBytesWireTest {
     }
 
     @Test
-    public void payloadBypassesParseContextConfigs() throws Exception {
-        byte[] wire = JsonPipesIpc.toBytes(tuple(payload(1000)));
-        FetchEmitTuple back = JsonPipesIpc.fromBytes(wire, FetchEmitTuple.class);
-        assertFalse(back.getParseContext().hasJsonConfig("inline-bytes"),
+    public void payloadStaysOutOfTheTuple() throws Exception {
+        byte[] wire = JsonPipesIpc.toBytes(PipesRequest.of(tuple(payload(1000))));
+        PipesRequest back = JsonPipesIpc.fromBytes(wire, PipesRequest.class);
+        assertFalse(back.getTuple().getParseContext().hasJsonConfig("inline-bytes"),
                 "payload leaked into the lazy-config path");
-        assertNotNull(back.getParseContext().get(InlineBytes.class));
+        assertNull(back.getTuple().getParseContext().get(InlineBytes.class),
+                "payload leaked into the tuple's context");
+        assertNotNull(back.getInlineBytes());
+    }
+
+    @Test
+    public void serializingATupleStillCarryingPayloadFailsLoudly() {
+        // InlineBytes is deliberately unregistered: a tuple whose context still holds one has
+        // no serialized form. PipesRequest.of is the only way onto the wire.
+        Exception e = assertThrows(Exception.class, () -> JsonPipesIpc.toBytes(tuple(payload(10))));
+        assertTrue(root(e).contains("Cannot serialize ParseContext entry"),
+                "expected loud refusal, got: " + root(e));
+        Exception text = assertThrows(Exception.class,
+                () -> JsonFetchEmitTuple.toJson(tuple(payload(10))));
+        assertTrue(root(text).contains("Cannot serialize ParseContext entry"),
+                "expected loud refusal, got: " + root(text));
     }
 
     @Test
     public void requestBodyRejectsInlineBytes() {
         String json = "{\"id\":\"t\",\"fetcher\":\"f\",\"fetchKey\":\"k\"," +
                 "\"emitter\":\"e\",\"inlineBytes\":\"QUJD\"}";
-        Exception e = assertThrows(Exception.class,
+        Exception e = assertThrows(IOException.class,
                 () -> JsonFetchEmitTuple.fromJson(new StringReader(json)));
-        assertTrue(root(e).contains("reserved for the host's IPC"),
+        assertTrue(root(e).contains("not a FetchEmitTuple field"),
                 "expected inlineBytes rejection, got: " + root(e));
     }
 
-    private static String root(Throwable t) {
-        Throwable r = t;
-        while (r.getCause() != null && r.getCause() != r) {
-            r = r.getCause();
-        }
-        return String.valueOf(r.getMessage());
+    @Test
+    public void requestParseContextFormCannotBind() throws Exception {
+        // Unregistered means the parse-context form is admitted as an inert config at most,
+        // and resolution fails closed before anything binds.
+        String json = "{\"id\":\"t\",\"fetcher\":\"f\",\"fetchKey\":\"k\",\"emitter\":\"e\"," +
+                "\"parse-context\":{\"inline-bytes\":{\"bytes\":\"QUJD\"}}}";
+        FetchEmitTuple t = JsonFetchEmitTuple.fromJson(new StringReader(json));
+        ParseContext merged = new ParseContext();
+        merged.copyFrom(t.getParseContext());
+        Exception e = assertThrows(Exception.class,
+                () -> ParseContextUtils.resolveAll(merged, getClass().getClassLoader()));
+        assertTrue(root(e).contains("Unrecognized parse-context entry"),
+                "expected fail-closed resolution, got: " + root(e));
+        assertNull(merged.get(InlineBytes.class));
+    }
+
+    @Test
+    public void unknownFieldErrorDoesNotAdvertiseInlineBytes() {
+        String json = "{\"id\":\"t\",\"fetcher\":\"f\",\"fetchKey\":\"k\",\"emitter\":\"e\"," +
+                "\"fetchKye\":\"typo\"}";
+        Exception e = assertThrows(IOException.class,
+                () -> JsonFetchEmitTuple.fromJson(new StringReader(json)));
+        assertTrue(root(e).contains("Unrecognized"), "expected unknown-field error, got: " + root(e));
+        assertFalse(root(e).contains("inlineBytes"),
+                "IPC-only field advertised to requests: " + root(e));
     }
 }
