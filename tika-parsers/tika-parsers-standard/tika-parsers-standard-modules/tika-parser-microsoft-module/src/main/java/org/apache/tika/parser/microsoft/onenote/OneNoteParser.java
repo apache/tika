@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -27,11 +28,15 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OneNote;
@@ -53,6 +58,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class OneNoteParser implements Parser {
 
     public static final String ONE_NOTE_PREFIX = "onenote:";
+    private static final Logger LOG = LoggerFactory.getLogger(OneNoteParser.class);
     private static final Map<MediaType, List<String>> TYPES_MAP = new HashMap<>();
     /**
      * Serial version UID
@@ -132,15 +138,15 @@ public class OneNoteParser implements Parser {
 
                 if (!oneNoteTreeWalker.getAuthors().isEmpty()) {
                     metadata.set(TikaCoreProperties.CREATOR,
-                            oneNoteTreeWalker.getAuthors().toArray(new String[]{}));
+                            sortedValues(oneNoteTreeWalker.getAuthors()));
                 }
                 if (!oneNoteTreeWalker.getMostRecentAuthors().isEmpty()) {
                     metadata.set(OneNote.MOST_RECENT_AUTHORS,
-                            oneNoteTreeWalker.getMostRecentAuthors().toArray(new String[]{}));
+                            sortedValues(oneNoteTreeWalker.getMostRecentAuthors()));
                 }
                 if (!oneNoteTreeWalker.getOriginalAuthors().isEmpty()) {
                     metadata.set(OneNote.ORIGINAL_AUTHORS,
-                            oneNoteTreeWalker.getOriginalAuthors().toArray(new String[]{}));
+                            sortedValues(oneNoteTreeWalker.getOriginalAuthors()));
                 }
                 if (!Instant.MAX.equals(
                         Instant.ofEpochMilli(oneNoteTreeWalker.getCreationTimestamp()))) {
@@ -169,8 +175,20 @@ public class OneNoteParser implements Parser {
                     MSOneStorePackage pkg =
                             onenoteParser.parse(alternatePackageOneStoreFile.dataElementPackage);
 
-                    pkg.walkTree(options, metadata, xhtml);
+                    pkg.walkTree(options, metadata, xhtml, context);
                 } catch (Exception e) {
+                    WriteLimitReachedException.throwIfWriteLimitReached(e);
+                    if (e instanceof EmbeddedLimitReachedException) {
+                        throw (EmbeddedLimitReachedException) e;
+                    }
+                    String failure = e.getMessage() == null ? e.getClass().getSimpleName() :
+                            e.getMessage();
+                    LOG.warn("OneNote FSSHTTPB parse failed; falling back to legacy text dump: {}",
+                            failure);
+                    LOG.debug("OneNote FSSHTTPB parse failure", e);
+                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                            "OneNote FSSHTTPB parse failed; falling back to legacy text dump: " +
+                                    failure);
                     OneNoteLegacyDumpStrings dumpStrings =
                             new OneNoteLegacyDumpStrings(oneNoteDirectFileResource, xhtml);
                     dumpStrings.dump();
@@ -182,6 +200,12 @@ public class OneNoteParser implements Parser {
         }
 
 
+    }
+
+    private static String[] sortedValues(Set<String> values) {
+        String[] sorted = values.toArray(new String[0]);
+        Arrays.sort(sorted);
+        return sorted;
     }
 
     /**

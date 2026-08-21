@@ -105,6 +105,14 @@ public class CellID extends BasicObject {
         return this.extendGUID1.hashCode() + this.extendGUID2.hashCode();
     }
 
+    @Override
+    public String toString() {
+        return "CellID{" +
+                "extendGUID1=" + extendGUID1 +
+                ", extendGUID2=" + extendGUID2 +
+                '}';
+    }
+
     /**
      * This method is used to deserialize the CellID basic object from the specified byte array and start index.
      *

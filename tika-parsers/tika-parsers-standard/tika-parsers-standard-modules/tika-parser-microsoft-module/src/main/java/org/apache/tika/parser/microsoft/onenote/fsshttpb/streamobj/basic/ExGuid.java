@@ -144,6 +144,15 @@ public class ExGuid extends BasicObject {
         return this.guid.hashCode() + Integer.valueOf(this.value).hashCode();
     }
 
+    @Override
+    public String toString() {
+        return "ExGuid{" +
+                "type=" + type +
+                ", value=" + value +
+                ", guid=" + guid +
+                '}';
+    }
+
     /**
      * This method is used to deserialize the ExGuid basic object from the specified byte array and start index.
      *
