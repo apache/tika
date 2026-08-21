@@ -239,6 +239,8 @@ public class TikaDetectionTest {
         assertEquals("application/vnd.fuzzysheet", tika.detect("x.fzs"));
         assertEquals("application/vnd.genomatix.tuxedo", tika.detect("x.txd"));
         assertEquals("application/vnd.geogebra.file", tika.detect("x.ggb"));
+        assertEquals("application/vnd.geogebra.pinboard", tika.detect("x.ggp"));
+        assertEquals("application/vnd.geogebra.slides", tika.detect("x.ggs"));
         assertEquals("application/vnd.geogebra.tool", tika.detect("x.ggt"));
         assertEquals("application/vnd.geometry-explorer", tika.detect("x.gex"));
         assertEquals("application/vnd.geometry-explorer", tika.detect("x.gre"));
