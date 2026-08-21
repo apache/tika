@@ -191,7 +191,11 @@ public class StackTraceTest extends CXFTestBase {
     }
 
 
-    // A truncated document isn't a process failure -- NOT_FOUND, not BAD_REQUEST.
+    // Since TIKA-4825 the caller-supplied Content-Type is carried into detection, so an
+    // explicit application/mock+xml routes the (truncated) document to the mock parser,
+    // which cannot parse the incomplete XML. That container exception maps to 422 for the
+    // bare-field endpoint (which has no envelope to embed it in). Without a Content-Type the
+    // truncated bytes detect as generic XML and still yield NOT_FOUND -- see testMetaNoType.
     @Test
     public void testMeta() throws Exception {
         InputStream stream = ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD);
@@ -199,6 +203,19 @@ public class StackTraceTest extends CXFTestBase {
         Response response = WebClient
                 .create(endPoint + "/meta" + "/Author")
                 .type("application/mock+xml")
+                .accept(MediaType.TEXT_PLAIN)
+                .put(copy(stream, 100));
+        assertEquals(422, response.getStatus());
+    }
+
+    // A truncated document with no forcing Content-Type isn't a process failure --
+    // NOT_FOUND (field missing), not BAD_REQUEST.
+    @Test
+    public void testMetaNoType() throws Exception {
+        InputStream stream = ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD);
+
+        Response response = WebClient
+                .create(endPoint + "/meta" + "/Author")
                 .accept(MediaType.TEXT_PLAIN)
                 .put(copy(stream, 100));
         assertEquals(Response.Status.NOT_FOUND.getStatusCode(), response.getStatus());

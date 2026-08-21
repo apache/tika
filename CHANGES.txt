@@ -1,5 +1,16 @@
 Release 4.1.0 - ???
 
+   * Pipes now carries the caller-supplied Content-Type across the worker's
+     fresh-metadata boundary as a soft detection hint, so every forked-parse
+     endpoint (/tika, /meta, /rmeta, /unpack, /async, /pipes, plus tika-grpc
+     and embedded PipesForkParser) can route on a client Content-Type, not
+     only on the filename. Detection keeps the hint only when it equals or
+     specializes the content-detected type (e.g. refining image/tiff to
+     image/x-canon-cr2); for bytes with no magic it can select any type,
+     matching the routing power the filename already had. The
+     CONTENT_TYPE_USER_OVERRIDE key is deliberately not carried, so the hint
+     cannot force an unrelated type (TIKA-4825).
+
    * RawTiffParser extracts the camera-generated JPEG previews embedded in
      TIFF-based raw images (Nikon NEF/NRW, Sony ARW/SRF/SR2, Pentax PEF/PTX,
      Adobe DNG and Canon CR2, including BigTIFF DNG containers) as thumbnail
