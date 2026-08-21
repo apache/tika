@@ -18,7 +18,10 @@ package org.apache.tika.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 /**
  * Package-private InputStream wrapper that caches all bytes read,
@@ -40,6 +43,37 @@ class CachingInputStream extends InputStream {
         this.cache = cache;
         this.position = 0;
         this.sourceExhausted = false;
+    }
+
+    /**
+     * Returns a read-only random-access channel over the full content, draining any unread
+     * source bytes into the cache first; in-memory when the content fit, a file channel when
+     * it spilled. Does not change the logical read position.
+     */
+    SeekableByteChannel getSeekableByteChannel() throws IOException {
+        drainSourceToCache();
+        SeekableByteChannel channel = cache.getInMemorySeekableByteChannel();
+        if (channel != null) {
+            return channel;
+        }
+        // The drain overflowed the memory budget/threshold -> serve from the spill file.
+        return FileChannel.open(cache.toFile(), StandardOpenOption.READ);
+    }
+
+    /**
+     * Drains any remaining source bytes into the cache without changing the logical read
+     * position.
+     */
+    private void drainSourceToCache() throws IOException {
+        if (sourceExhausted) {
+            return;
+        }
+        byte[] buffer = new byte[8192];
+        int n;
+        while ((n = source.read(buffer)) != -1) {
+            cache.append(buffer, 0, n);
+        }
+        sourceExhausted = true;
     }
 
     @Override

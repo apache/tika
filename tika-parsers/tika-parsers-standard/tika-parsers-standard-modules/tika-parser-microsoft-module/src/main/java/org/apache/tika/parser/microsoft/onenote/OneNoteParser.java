@@ -17,7 +17,8 @@
 package org.apache.tika.parser.microsoft.onenote;
 
 import java.io.IOException;
-import java.nio.file.Files;
+import java.io.InputStream;
+import java.nio.channels.Channels;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
@@ -163,7 +164,10 @@ public class OneNoteParser implements Parser {
             } else if (header.isLegacyOrAlternativePackaging()) {
                 try {
                     AlternativePackaging alternatePackageOneStoreFile = new AlternativePackaging();
-                    byte[] bytes = Files.readAllBytes(tis.getPath());
+                    byte[] bytes;
+                    try (InputStream is = Channels.newInputStream(tis.getSeekableByteChannel())) {
+                        bytes = is.readAllBytes();
+                    }
                     //enable streaming deserialization
                     alternatePackageOneStoreFile.doDeserializeFromByteArray(bytes, 0);
 

@@ -1,0 +1,115 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.io;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.NonWritableChannelException;
+import java.nio.channels.SeekableByteChannel;
+
+/**
+ * Read-only {@link SeekableByteChannel} over an in-memory byte array. Wraps the array directly
+ * (no copy); callers must not mutate the backing array while the channel is in use.
+ */
+class MemorySeekableByteChannel implements SeekableByteChannel {
+
+    private final byte[] data;
+    private final int length;
+    private final Runnable onClose;
+    private long position;
+    private boolean open = true;
+
+    MemorySeekableByteChannel(byte[] data, int length) {
+        this(data, length, null);
+    }
+
+    /** {@code onClose} runs exactly once, on the first {@link #close()} -- used by sources
+     *  to unpin a budget reservation held while this channel references their buffer. */
+    MemorySeekableByteChannel(byte[] data, int length, Runnable onClose) {
+        this.data = data;
+        this.length = length;
+        this.onClose = onClose;
+    }
+
+    @Override
+    public int read(ByteBuffer dst) throws IOException {
+        ensureOpen();
+        if (position >= length) {
+            return -1;
+        }
+        int pos = (int) position;
+        int n = Math.min(dst.remaining(), length - pos);
+        dst.put(data, pos, n);
+        position += n;
+        return n;
+    }
+
+    @Override
+    public int write(ByteBuffer src) {
+        throw new NonWritableChannelException();
+    }
+
+    @Override
+    public long position() throws IOException {
+        ensureOpen();
+        return position;
+    }
+
+    @Override
+    public SeekableByteChannel position(long newPosition) throws IOException {
+        ensureOpen();
+        if (newPosition < 0) {
+            throw new IllegalArgumentException("negative position: " + newPosition);
+        }
+        // Setting a position beyond size is legal per SeekableByteChannel; reads return EOF
+        position = newPosition;
+        return this;
+    }
+
+    @Override
+    public long size() throws IOException {
+        ensureOpen();
+        return length;
+    }
+
+    @Override
+    public SeekableByteChannel truncate(long size) {
+        throw new NonWritableChannelException();
+    }
+
+    @Override
+    public boolean isOpen() {
+        return open;
+    }
+
+    @Override
+    public void close() {
+        if (open) {
+            open = false;
+            if (onClose != null) {
+                onClose.run();
+            }
+        }
+    }
+
+    private void ensureOpen() throws IOException {
+        if (!open) {
+            throw new ClosedChannelException();
+        }
+    }
+}

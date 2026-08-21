@@ -19,8 +19,8 @@ package org.apache.tika.detect.zip;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.channels.Channels;
+import java.nio.channels.SeekableByteChannel;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +46,7 @@ import org.apache.tika.metadata.Zip;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ParsingIntent;
+import org.apache.tika.zip.utils.ZipFileHelper;
 import org.apache.tika.zip.utils.ZipSalvager;
 
 /**
@@ -213,7 +214,8 @@ public class DefaultZipContainerDetector implements Detector {
     }
 
     /**
-     * This will call TikaInputStream's getFile(). If there are no exceptions,
+     * Opens the zip via {@link ZipFileHelper#open} (random access from memory when the
+     * content is already cached there, a file otherwise). If there are no exceptions,
      * it will place the ZipFile in TikaInputStream's openContainer and leave it
      * open.
      * <p>
@@ -232,7 +234,7 @@ public class DefaultZipContainerDetector implements Detector {
         // Try to open ZipFile directly
         ZipFile zip = null;
         try {
-            zip = ZipFile.builder().setFile(tis.getFile()).get();
+            zip = ZipFileHelper.open(tis, null);
             metadata.set(Zip.DETECTOR_ZIPFILE_OPENED, true);
         } catch (IOException e) {
             // ZipFile failed to open (truncated/corrupt)
@@ -287,8 +289,8 @@ public class DefaultZipContainerDetector implements Detector {
         if (LOG.isDebugEnabled()) {
             LOG.debug("Falling back to streaming detection");
         }
-        try {
-            return detectStreamingFromPath(tis.getPath(), metadata, false);
+        try (SeekableByteChannel channel = tis.getSeekableByteChannel()) {
+            return detectStreamingFromChannel(channel, metadata, false);
         } catch (IOException e) {
             //swallow
         }
@@ -328,11 +330,18 @@ public class DefaultZipContainerDetector implements Detector {
         return finalDetect(detectContext);
     }
 
-    private MediaType detectStreamingFromPath(Path p, Metadata metadata, boolean allowStoredEntries)
-            throws IOException {
+    /**
+     * Streaming detection over a seekable channel (rewound to 0 for each attempt), so
+     * in-memory content need not be spilled to a path. The channel is close-shielded from
+     * the ZipArchiveInputStream; the caller owns closing it.
+     */
+    private MediaType detectStreamingFromChannel(SeekableByteChannel channel, Metadata metadata,
+                                                 boolean allowStoredEntries) throws IOException {
+        channel.position(0);
         StreamingDetectContext detectContext = new StreamingDetectContext();
         try (ZipArchiveInputStream zis = new ZipArchiveInputStream(
-                Files.newInputStream(p), "UTF8", false, allowStoredEntries)) {
+                CloseShieldInputStream.wrap(Channels.newInputStream(channel)),
+                "UTF8", false, allowStoredEntries)) {
             ZipArchiveEntry zae = zis.getNextEntry();
             while (zae != null) {
                 MediaType mt = detect(zae, zis, detectContext);
@@ -346,7 +355,7 @@ public class DefaultZipContainerDetector implements Detector {
                     zfe.getFeature() == UnsupportedZipFeatureException.Feature.DATA_DESCRIPTOR) {
                 // Set hint for parser that DATA_DESCRIPTOR support is required
                 metadata.set(Zip.DETECTOR_DATA_DESCRIPTOR_REQUIRED, true);
-                return detectStreamingFromPath(p, metadata, true);
+                return detectStreamingFromChannel(channel, metadata, true);
             }
         } catch (SecurityException e) {
             throw e;

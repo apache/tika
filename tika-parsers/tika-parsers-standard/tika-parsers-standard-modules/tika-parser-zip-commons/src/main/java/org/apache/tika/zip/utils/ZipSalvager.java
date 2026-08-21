@@ -57,7 +57,8 @@ public class ZipSalvager {
      *   <li>Returns null</li>
      * </ul>
      *
-     * @param tis      the TikaInputStream (must be file-backed)
+     * @param tis      the TikaInputStream (must be rewindable, i.e. unread or with rewind
+     *                 enabled; it need not be file-backed)
      * @param metadata the metadata to update with hints
      * @param charset  optional charset for entry names (may be null)
      * @return the opened ZipFile, or null if opening and salvaging both failed
@@ -65,11 +66,7 @@ public class ZipSalvager {
     public static ZipFile tryToOpenZipFile(TikaInputStream tis, Metadata metadata, Charset charset) {
         // First, try direct open
         try {
-            ZipFile.Builder builder = new ZipFile.Builder().setFile(tis.getFile());
-            if (charset != null) {
-                builder.setCharset(charset);
-            }
-            ZipFile zipFile = builder.get();
+            ZipFile zipFile = ZipFileHelper.open(tis, charset);
 
             // Direct open succeeded
             metadata.set(Zip.DETECTOR_ZIPFILE_OPENED, true);

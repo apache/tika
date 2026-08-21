@@ -19,6 +19,7 @@ package org.apache.tika.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -120,8 +121,14 @@ class ByteArraySource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public void enableRewind() throws IOException {
+    public void enableRewind(CacheMemoryBudget budget) throws IOException {
         // No-op: byte array is always rewindable
+    }
+
+    @Override
+    public SeekableByteChannel getSeekableByteChannel() {
+        // The array stays valid even after a getPath() spill copy
+        return new MemorySeekableByteChannel(data, length);
     }
 
     // Mark/reset support using position tracking

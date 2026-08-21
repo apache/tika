@@ -52,6 +52,7 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
@@ -89,6 +90,51 @@ import org.apache.tika.utils.ExceptionUtils;
 public class PipesServer implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesServer.class);
+
+    // Process-wide budget bounding total in-memory stream caching (embedded-object digest rewind
+    // buffers, etc.) so small embedded objects stay in RAM instead of spilling per-object at 1MB.
+    // NOTE: read in THIS (forked server) JVM -- set it via the config's forkedJvmArgs, not on the
+    // parent JVM. Tunable via -Dtika.pipes.cacheMemoryBudgetBytes; <=0 disables (falls back to
+    // the 1MB per-object default). Clamped to a quarter of the fork's max heap.
+    static final String CACHE_MEMORY_BUDGET_BYTES_PROP = "tika.pipes.cacheMemoryBudgetBytes";
+
+    static final CacheMemoryBudget CACHE_MEMORY_BUDGET = initCacheMemoryBudget();
+
+    private static CacheMemoryBudget initCacheMemoryBudget() {
+        long bytes = 256L * 1024 * 1024;
+        String val = System.getProperty(CACHE_MEMORY_BUDGET_BYTES_PROP);
+        if (val != null) {
+            try {
+                bytes = Long.parseLong(val.trim());
+            } catch (NumberFormatException e) {
+                LOG.warn("Could not parse -D{}={} (plain bytes required, no unit suffix); " +
+                        "using the default {}", CACHE_MEMORY_BUDGET_BYTES_PROP, val, bytes);
+            }
+        }
+        if (bytes <= 0) {
+            LOG.info("Cache memory budget disabled; per-object 1MB spill threshold applies");
+            return null;
+        }
+        long clamp = Runtime.getRuntime().maxMemory() / 4;
+        if (bytes > clamp) {
+            LOG.warn("Cache memory budget {} exceeds a quarter of max heap; clamping to {}",
+                    bytes, clamp);
+            bytes = clamp;
+        }
+        LOG.info("Cache memory budget: {} bytes", bytes);
+        return new CacheMemoryBudget(bytes);
+    }
+
+    /**
+     * Seeds the process-wide cache memory budget into a merged per-request ParseContext.
+     * The budget is not a registered component, so neither the config nor a wire request
+     * can supply one -- this is the only way it enters a context in a pipes fork.
+     */
+    static void seedCacheMemoryBudget(ParseContext mergedContext) {
+        if (CACHE_MEMORY_BUDGET != null) {
+            mergedContext.set(CacheMemoryBudget.class, CACHE_MEMORY_BUDGET);
+        }
+    }
 
     public static final int AUTH_TOKEN_LENGTH_BYTES = 32;
 
@@ -677,6 +723,7 @@ public class PipesServer implements AutoCloseable {
         // EmbeddedDocumentExtractor + UnpackedByteCount in PipesWorker's UNPACK-mode setup.
         // Request-level values override config defaults
         mergedContext.copyFrom(requestContext);
+        seedCacheMemoryBudget(mergedContext);
         return mergedContext;
     }
 

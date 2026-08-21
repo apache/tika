@@ -18,7 +18,7 @@ package org.apache.tika.parser.crypto;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
+import java.nio.channels.Channels;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -101,7 +101,7 @@ public class Pkcs7Parser implements Parser {
     private void parseSignedData(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                                  ParseContext context)
             throws IOException, SAXException, TikaException {
-        try (InputStream is = Files.newInputStream(tis.getPath())) {
+        try (InputStream is = Channels.newInputStream(tis.getSeekableByteChannel())) {
             DigestCalculatorProvider digestCalculatorProvider =
                     new JcaDigestCalculatorProviderBuilder().setProvider("BC").build();
             CMSSignedDataParser parser = new CMSSignedDataParser(digestCalculatorProvider, is);
@@ -131,7 +131,7 @@ public class Pkcs7Parser implements Parser {
     private void extractCompressedContent(TikaInputStream tis, ContentHandler handler,
                                           Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
-        try (InputStream is = Files.newInputStream(tis.getPath())) {
+        try (InputStream is = Channels.newInputStream(tis.getSeekableByteChannel())) {
             CMSCompressedDataParser parser = new CMSCompressedDataParser(is);
             CMSTypedStream content = parser.getContent(new ZlibExpanderProvider());
             BoundedInputStream inflated;

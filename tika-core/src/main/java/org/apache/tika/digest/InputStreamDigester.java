@@ -23,6 +23,7 @@ import java.security.Provider;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -110,13 +111,16 @@ public class InputStreamDigester implements Digester {
      *
      * @param tis          TikaInputStream to digest
      * @param metadata     metadata in which to store the digest information
-     * @param parseContext ParseContext -- not actually used yet, but there for future expansion
+     * @param parseContext ParseContext, which may carry a {@link CacheMemoryBudget}
      * @throws IOException on IO problem or IllegalArgumentException if algorithm couldn't be found
      */
     @Override
     public void digest(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
-        tis.enableRewind();
+        // Bridge the shared budget from ParseContext; TikaInputStream never sees ParseContext
+        CacheMemoryBudget budget =
+                (parseContext == null) ? null : parseContext.get(CacheMemoryBudget.class);
+        tis.enableRewind(budget);
 
         MessageDigest messageDigest = newMessageDigest();
         byte[] buffer = new byte[8192];

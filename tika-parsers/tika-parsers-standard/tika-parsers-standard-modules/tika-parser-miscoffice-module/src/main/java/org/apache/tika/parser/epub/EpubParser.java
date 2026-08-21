@@ -64,6 +64,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLBalancingHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.apache.tika.zip.utils.ZipFileHelper;
 
 /**
  * Epub parser
@@ -152,7 +153,7 @@ public class EpubParser implements Parser {
             return bufferedParseZipFile((ZipFile) tis.getOpenContainer(), bodyHandler,
                     normalizer, xhtml, metadata, context);
         }
-        try (ZipFile zipFile = ZipFile.builder().setFile(tis.getPath().toFile()).get()) {
+        try (ZipFile zipFile = ZipFileHelper.open(tis, null)) {
             return bufferedParseZipFile(zipFile, bodyHandler, normalizer, xhtml, metadata, context);
         }
     }

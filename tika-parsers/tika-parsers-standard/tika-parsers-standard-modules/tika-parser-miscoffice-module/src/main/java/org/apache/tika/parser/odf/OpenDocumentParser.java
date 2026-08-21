@@ -58,6 +58,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.apache.tika.zip.utils.ZipFileHelper;
 
 /**
  * OpenOffice parser
@@ -167,14 +168,13 @@ public class OpenDocumentParser implements Parser {
 
         EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
-        // Open the Zip stream
-        // Use a File if we can, and an already open zip is even better
+        // Open the Zip stream; an already open zip from the detector is best.
         ZipFile zipFile = null;
         Object container = tis.getOpenContainer();
         if (container instanceof ZipFile) {
             zipFile = (ZipFile) container;
         } else {
-            zipFile = ZipFile.builder().setFile(tis.getFile()).get();
+            zipFile = ZipFileHelper.open(tis, null);
             tis.setOpenContainer(zipFile);
         }
         // Prepare to handle the content

@@ -26,6 +26,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +34,7 @@ import java.sql.Blob;
 import java.sql.SQLException;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.function.IOSupplier;
 import org.apache.commons.io.input.TaggedInputStream;
 
 import org.apache.tika.metadata.HttpHeaders;
@@ -98,6 +100,40 @@ public class TikaInputStream extends TaggedInputStream {
         }
         String ext = getExtension(metadata);
         TikaInputSource inputSource = new CachingSource(stream, tmp, -1, metadata, ext);
+        return new TikaInputStream(inputSource, tmp, ext);
+    }
+
+    /**
+     * Creates a TikaInputStream from a re-openable stream supplier. Unlike
+     * {@link #get(InputStream, TemporaryResources, Metadata)} -- which caches a one-shot
+     * stream to memory/disk so it can be rewound -- the supplier is re-invoked to re-read
+     * the content, so rewinding (e.g. during digesting) never spills to disk. A temp file
+     * is created only if {@link #getPath()} is later called (a parser/detector needing a
+     * File) or {@link #getSeekableByteChannel()} is asked for content that does not fit
+     * in memory.
+     *
+     * @param opener   supplies a fresh InputStream over the same content on each call
+     * @param tmp      temporary resources for any on-demand {@link #getPath()} spill
+     * @param metadata metadata used for extension/length hints; may be null
+     */
+    public static TikaInputStream get(IOSupplier<InputStream> opener, TemporaryResources tmp,
+                                      Metadata metadata) {
+        if (opener == null) {
+            throw new NullPointerException("The opener must not be null");
+        }
+        String ext = getExtension(metadata);
+        long length = -1;
+        if (metadata != null) {
+            String cl = metadata.get(HttpHeaders.CONTENT_LENGTH);
+            if (cl != null) {
+                try {
+                    length = Long.parseLong(cl);
+                } catch (NumberFormatException e) {
+                    length = -1;
+                }
+            }
+        }
+        TikaInputSource inputSource = new ReopenableSource(opener, tmp, length, ext);
         return new TikaInputStream(inputSource, tmp, ext);
     }
 
@@ -478,10 +514,42 @@ public class TikaInputStream extends TaggedInputStream {
      *         (position is not 0); rewind support cannot be enabled retroactively
      */
     public void enableRewind() throws IOException {
+        enableRewind(null);
+    }
+
+    /**
+     * Like {@link #enableRewind()}, but supplies a shared {@link CacheMemoryBudget} governing
+     * how much may be held in memory before spilling to disk (used only by stream-backed
+     * sources); {@code null} falls back to the per-object default.
+     *
+     * @param budget shared memory budget, or {@code null}
+     * @throws IOException if bytes have already been read (position is not 0)
+     */
+    public void enableRewind(CacheMemoryBudget budget) throws IOException {
         TikaInputSource source = inputSource();
         if (source != null) {
-            source.enableRewind();
+            source.enableRewind(budget);
         }
+    }
+
+    /**
+     * Returns a read-only random-access {@link SeekableByteChannel} over this stream's full
+     * content. Unlike {@link #getPath()}/{@link #getFile()}, this never forces content that is
+     * already in memory onto disk: in-memory content is served from memory, file-backed or
+     * spilled content from a file channel, and unread stream content is drained through the
+     * cache which decides memory-vs-disk as it goes. Use this when random access is needed
+     * (e.g. reading a zip central directory); reserve {@code getFile()} for callers that truly
+     * need a {@link java.io.File}. The caller owns closing the returned channel. Does not
+     * disturb this stream's read position.
+     *
+     * @throws IOException if this stream has been partially read without rewind enabled
+     */
+    public SeekableByteChannel getSeekableByteChannel() throws IOException {
+        TikaInputSource source = inputSource();
+        if (source == null) {
+            throw new IOException("No TikaInputSource available");
+        }
+        return source.getSeekableByteChannel();
     }
 
     @Override

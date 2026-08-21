@@ -1,5 +1,18 @@
 Release 4.1.0 - ???
 
+   * Digesting embedded documents no longer buffers each embedded object to a
+     temp file. Zip entries are re-read from the parent archive on rewind, and
+     a new process-wide CacheMemoryBudget (seeded by the pipes forked server;
+     default 256MB, clamped to a quarter of the fork's heap; tunable via
+     -Dtika.pipes.cacheMemoryBudgetBytes in the config's forkedJvmArgs, <=0
+     disables) lets embedded objects stay in memory past the per-object 1MB
+     threshold. New public API on TikaInputStream: get(IOSupplier,...),
+     enableRewind(CacheMemoryBudget), getSeekableByteChannel(). Zip/7z/epub/odf
+     parsing and zip container detection now read through seekable channels, so
+     after detection/parsing a TikaInputStream may no longer be file-backed
+     (hasFile() false); getPath()/getFile() still work and spool on demand
+     (TIKA-4828).
+     
    * Pipes now carries the caller-supplied Content-Type across the worker's
      fresh-metadata boundary as a soft detection hint, so every forked-parse
      endpoint (/tika, /meta, /rmeta, /unpack, /async, /pipes, plus tika-grpc

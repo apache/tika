@@ -20,7 +20,6 @@ import static org.apache.tika.detect.zip.PackageConstants.JAR;
 import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.FileTime;
@@ -62,6 +61,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ParserUtils;
+import org.apache.tika.zip.utils.ZipFileHelper;
 
 /**
  * Parser for ZIP and JAR archives using file-based access for complete metadata extraction.
@@ -229,11 +229,7 @@ public class ZipParser extends AbstractArchiveParser {
         // This handles cases where parser is called without detector
         ZipFile zipFile = null;
         try {
-            ZipFile.Builder builder = ZipFile.builder().setFile(tis.getFile());
-            if (config.getEntryEncoding() != null) {
-                builder.setCharset(config.getEntryEncoding());
-            }
-            zipFile = builder.get();
+            zipFile = ZipFileHelper.open(tis, config.getEntryEncoding());
             tis.setOpenContainer(zipFile);
         } catch (IOException e) {
             // ZipFile failed - fall back to streaming
@@ -498,8 +494,10 @@ public class ZipParser extends AbstractArchiveParser {
 
         if (extractor.shouldParseEmbedded(entryMetadata, context)) {
             TemporaryResources tmp = new TemporaryResources();
-            try (InputStream entryStream = zipFile.getInputStream(entry)) {
-                TikaInputStream tis = TikaInputStream.get(entryStream, tmp, entryMetadata);
+            // Re-openable source: rewind (e.g. for digesting) re-opens the entry instead of
+            // buffering/spilling it
+            try (TikaInputStream tis = TikaInputStream.get(
+                    () -> zipFile.getInputStream(entry), tmp, entryMetadata)) {
                 extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);
             } catch (UnsupportedZipFeatureException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);

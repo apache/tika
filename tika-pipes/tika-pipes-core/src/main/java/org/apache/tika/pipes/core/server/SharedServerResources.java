@@ -158,6 +158,7 @@ public class SharedServerResources {
         // content extraction for every non-UNPACK parse mode.
         // Request-level values override config defaults
         mergedContext.copyFrom(requestContext);
+        PipesServer.seedCacheMemoryBudget(mergedContext);
         return mergedContext;
     }
 
