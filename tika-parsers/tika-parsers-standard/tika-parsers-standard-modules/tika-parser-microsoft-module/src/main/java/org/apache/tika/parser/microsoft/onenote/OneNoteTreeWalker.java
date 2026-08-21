@@ -60,6 +60,8 @@ class OneNoteTreeWalker {
 
     private static final Logger LOG = LoggerFactory.getLogger(OneNoteTreeWalker.class);
     private static final int MAX_CYCLE_WARNINGS = 100;
+    // low enough that the ~3 stack frames per level cannot overflow a default thread stack
+    private static final int MAX_WALK_DEPTH = 500;
     private static final String P = "p";
     /**
      * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
@@ -115,6 +117,8 @@ class OneNoteTreeWalker {
             Collections.newSetFromMap(new IdentityHashMap<>());
     private int cycleWarningCount;
     private boolean cycleWarningsSuppressed;
+    private int walkDepth;
+    private boolean depthWarningRecorded;
 
     /**
      * Create a one tree walker.
@@ -307,14 +311,34 @@ class OneNoteTreeWalker {
         if (fileNode == null) {
             return Collections.emptyMap();
         }
+        if (walkDepth >= MAX_WALK_DEPTH) {
+            // the cycle guard cannot catch a long acyclic chain - cap the recursion depth
+            // so a crafted file cannot overflow the stack
+            recordDepthWarning();
+            return Collections.emptyMap();
+        }
         if (!activeFileNodes.add(fileNode)) {
             recordCycleWarning(fileNode);
             return Collections.emptyMap();
         }
+        walkDepth++;
         try {
             return walkFileNodeInternal(fileNode, parentPropertyId);
         } finally {
+            walkDepth--;
             activeFileNodes.remove(fileNode);
+        }
+    }
+
+    private void recordDepthWarning() {
+        if (depthWarningRecorded) {
+            return;
+        }
+        depthWarningRecorded = true;
+        String warning = "OneNote file-node traversal exceeded depth limit " + MAX_WALK_DEPTH;
+        LOG.warn(warning);
+        if (parentMetadata != null) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         }
     }
 
@@ -368,7 +392,7 @@ class OneNoteTreeWalker {
         if (fileNode.subType.fileDataStoreObjectReference.ref != null && !FileChunkReference.nil()
                 .equals(fileNode.subType.fileDataStoreObjectReference.ref.fileData)) {
             structure.put("fileDataStoreObjectReference", walkFileDataStoreObjectReference(
-                    fileNode.subType.fileDataStoreObjectReference));
+                    fileNode.subType.fileDataStoreObjectReference, fileNode.gosid));
         }
         return structure;
     }
@@ -381,7 +405,7 @@ class OneNoteTreeWalker {
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
     private Map<String, Object> walkFileDataStoreObjectReference(
-            FileDataStoreObjectReference fileDataStoreObjectReference)
+            FileDataStoreObjectReference fileDataStoreObjectReference, ExtendedGUID gosid)
             throws IOException, SAXException, TikaException {
         Map<String, Object> structure = new HashMap<>();
         OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
@@ -391,12 +415,13 @@ class OneNoteTreeWalker {
                     "File data store cb " + fileDataStoreObjectReference.ref.fileData.cb +
                             " exceeds document size: " + dif.size());
         }
-        handleEmbedded((int) fileDataStoreObjectReference.ref.fileData.cb);
+        handleEmbedded((int) fileDataStoreObjectReference.ref.fileData.cb, gosid);
         structure.put("fileDataStoreObjectMetadata", fileDataStoreObjectReference);
         return structure;
     }
 
-    private void handleEmbedded(int length) throws TikaException, IOException, SAXException {
+    private void handleEmbedded(int length, ExtendedGUID gosid)
+            throws TikaException, IOException, SAXException {
         TikaInputStream tis = null;
         ByteBuffer buf;
         try {
@@ -408,14 +433,21 @@ class OneNoteTreeWalker {
             return;
         }
         Metadata embeddedMetadata = Metadata.newInstance(this.parseContext);
+        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+        if (gosid != null && !ExtendedGUID.nil().equals(gosid)) {
+            embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, gosid.toString());
+        }
         try {
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
-            tis = TikaInputStream.get(buf.array());
-            embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, this.parseContext, false);
+            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
+                tis = TikaInputStream.get(buf.array());
+                embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
+                        embeddedMetadata, this.parseContext, false);
+            }
         } finally {
             IOUtils.closeQuietly(tis);
         }

@@ -6,7 +6,10 @@ Release 4.1.0 - ???
      warnings and embedded relationship IDs are exposed in metadata. Malformed
      or truncated files that cannot be fully parsed, and files whose walk
      yields no content, now fall back to the legacy string dump instead of
-     failing or returning empty output (TIKA-4814).
+     failing or returning empty output. The legacy MS-ONESTORE walker bounds
+     its recursion (depth caps plus file-node-list and fragment-chain cycle
+     guards) and now honors shouldParseEmbedded for embedded file data
+     (TIKA-4814).
 
    * RawTiffParser extracts the camera-generated JPEG previews embedded in
      TIFF-based raw images (Nikon NEF/NRW, Sony ARW/SRF/SR2, Pentax PEF/PTX,

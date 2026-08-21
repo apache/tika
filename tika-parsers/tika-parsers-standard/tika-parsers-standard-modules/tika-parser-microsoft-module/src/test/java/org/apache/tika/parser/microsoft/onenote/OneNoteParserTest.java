@@ -35,6 +35,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -42,6 +43,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
@@ -372,6 +374,129 @@ public class OneNoteParserTest extends TikaTest {
                         metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
                 .filter(warning -> warning.contains("file-node cycle detected"))
                 .count());
+    }
+
+    @Test
+    public void testDeepFileNodeChainIsDepthCapped(@TempDir Path tempDir) throws Exception {
+        // a long acyclic chain slips past the cycle guard - the depth cap must stop it
+        // before the recursion can overflow the stack
+        FileNode root = new FileNode().setGosid(ExtendedGUID.nil());
+        FileNode current = root;
+        for (int i = 0; i < 600; i++) {
+            FileNode child = new FileNode().setGosid(ExtendedGUID.nil());
+            current.childFileNodeList.setFileNodeListHeader(new FileNodeListHeader(0,
+                    FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
+            current.childFileNodeList.children.add(child);
+            current = child;
+        }
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        Path emptyFile = Files.createFile(tempDir.resolve("empty"));
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
+            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+                    new OneNoteDocument(), dif,
+                    new XHTMLContentHandler(new ToTextContentHandler(), metadata, parseContext),
+                    metadata, parseContext, null);
+            walker.walkFileNode(root, null);
+        }
+        assertEquals(1, Arrays.stream(
+                        metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(warning -> warning.contains("exceeded depth limit"))
+                .count());
+    }
+
+    /**
+     * Writes one minimal 56-byte file-node-list fragment: header, a single baseType-2 node
+     * whose child list is at {childStp, childCb}, a terminator, a nil next-fragment
+     * reference and the footer.
+     */
+    private static void writeFileNodeListBlock(ByteBuffer buf, long childStp, int childCb) {
+        // id=0x10, size=16 (node header + 8-byte stp + 4-byte cb), stpFormat=0, cbFormat=0,
+        // baseType=2, reserved=1
+        int fileNodeHeader = 0x10 | (16 << 10) | (2 << 27) | (1 << 31);
+        buf.putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
+                .putInt(fileNodeHeader).putLong(childStp).putInt(childCb)
+                .putInt(0)
+                .putLong(-1).putInt(0)
+                .putLong(OneNotePtr.FOOTER_CONST);
+    }
+
+    @Test
+    public void testFileNodeListCycleFailsCleanly(@TempDir Path tempDir) throws Exception {
+        // one fragment holding a baseType-2 node whose child list points back at itself
+        ByteBuffer buf = ByteBuffer.allocate(56).order(ByteOrder.LITTLE_ENDIAN);
+        writeFileNodeListBlock(buf, 0, 56);
+        Path cyclic = tempDir.resolve("cyclic");
+        Files.write(cyclic, buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(cyclic.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            TikaException e = assertThrows(TikaException.class,
+                    () -> ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr()));
+            assertTrue(e.getMessage().contains("cycle"), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testFileNodeListNestingIsDepthCapped(@TempDir Path tempDir) throws Exception {
+        // 120 lists, each holding one baseType-2 node pointing at the next list - acyclic,
+        // so only the depth cap can stop the recursion
+        int lists = 120;
+        ByteBuffer buf = ByteBuffer.allocate(56 * lists).order(ByteOrder.LITTLE_ENDIAN);
+        for (int i = 0; i < lists; i++) {
+            long childStp = (i + 1 < lists ? i + 1 : i) * 56L;
+            writeFileNodeListBlock(buf, childStp, 56);
+        }
+        Path deep = tempDir.resolve("deep");
+        Files.write(deep, buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(deep.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            assertThrows(TikaMemoryLimitException.class,
+                    () -> ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr()));
+        }
+    }
+
+    @Test
+    public void testFragmentChainCycleFailsCleanly(@TempDir Path tempDir) throws Exception {
+        // an empty fragment whose next-fragment reference points back at itself would
+        // previously loop forever
+        ByteBuffer buf = ByteBuffer.allocate(36).order(ByteOrder.LITTLE_ENDIAN)
+                .putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
+                .putLong(0).putInt(36)
+                .putLong(OneNotePtr.FOOTER_CONST);
+        Path cyclic = tempDir.resolve("cyclic-fragment");
+        Files.write(cyclic, buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(cyclic.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            TikaException e = assertThrows(TikaException.class,
+                    () -> ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr()));
+            assertTrue(e.getMessage().contains("fragment cycle"), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testLegacyEmbeddedExtractionHonorsShouldParseEmbedded() throws Exception {
+        AtomicInteger asked = new AtomicInteger();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
+                asked.incrementAndGet();
+                return false;
+            }
+
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                                      Metadata metadata, ParseContext context,
+                                      boolean outputHtml) {
+                throw new AssertionError("must not parse embedded when shouldParseEmbedded" +
+                        " returns false");
+            }
+        });
+        try (TikaInputStream tis =
+                getResourceAsStream("/test-documents/testOneNoteEmbeddedWordDoc.one")) {
+            new OneNoteParser().parse(tis, new ToTextContentHandler(), new Metadata(), context);
+        }
+        assertTrue(asked.get() > 0);
     }
 
     /**
