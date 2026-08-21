@@ -30,12 +30,20 @@ class MemorySeekableByteChannel implements SeekableByteChannel {
 
     private final byte[] data;
     private final int length;
+    private final Runnable onClose;
     private long position;
     private boolean open = true;
 
     MemorySeekableByteChannel(byte[] data, int length) {
+        this(data, length, null);
+    }
+
+    /** {@code onClose} runs exactly once, on the first {@link #close()} -- used by sources
+     *  to unpin a budget reservation held while this channel references their buffer. */
+    MemorySeekableByteChannel(byte[] data, int length, Runnable onClose) {
         this.data = data;
         this.length = length;
+        this.onClose = onClose;
     }
 
     @Override
@@ -91,7 +99,12 @@ class MemorySeekableByteChannel implements SeekableByteChannel {
 
     @Override
     public void close() {
-        open = false;
+        if (open) {
+            open = false;
+            if (onClose != null) {
+                onClose.run();
+            }
+        }
     }
 
     private void ensureOpen() throws IOException {

@@ -60,7 +60,11 @@ public class StreamCacheBudgetTest {
         try (StreamCache cache = new StreamCache(tmp, null, THRESHOLD, budget)) {
             append(cache, 10 * THRESHOLD);
             assertFalse(cache.isFileBacked());
-            assertNotNull(cache.getInMemorySeekableByteChannel());
+            // channel must be closed: an open channel pins the reservation past cache close
+            try (java.nio.channels.SeekableByteChannel channel =
+                    cache.getInMemorySeekableByteChannel()) {
+                assertNotNull(channel);
+            }
             assertTrue(budget.getReservedBytes() >= 9 * THRESHOLD,
                     "capacity beyond the threshold is reserved");
         }
@@ -124,6 +128,22 @@ public class StreamCacheBudgetTest {
                 assertEquals(data[i], out[i]);
             }
         }
+    }
+
+    @Test
+    public void testChannelOutlivingCacheHoldsReservation() throws Exception {
+        CacheMemoryBudget budget = new CacheMemoryBudget(1024 * 1024);
+        StreamCache cache = new StreamCache(tmp, null, THRESHOLD, budget);
+        append(cache, 10 * THRESHOLD);
+        java.nio.channels.SeekableByteChannel channel = cache.getInMemorySeekableByteChannel();
+        assertNotNull(channel);
+        cache.close();
+        assertTrue(budget.getReservedBytes() > 0,
+                "reservation must be held while a channel still pins the buffer");
+        channel.close();
+        assertEquals(0, budget.getReservedBytes(), "last channel close releases");
+        channel.close(); // idempotent: no double-release
+        assertEquals(0, budget.getReservedBytes());
     }
 
     @Test

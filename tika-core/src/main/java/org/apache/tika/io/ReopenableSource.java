@@ -65,6 +65,8 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     private byte[] retainedBuffer;
     private int retainedLength;
     private long retainedReservation;
+    private int channelPins;
+    private boolean closed;
 
     ReopenableSource(IOSupplier<InputStream> opener, TemporaryResources tmp, long length,
                      String suffix) {
@@ -178,12 +180,29 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     @Override
     public SeekableByteChannel getSeekableByteChannel() throws IOException {
         if (retainedBuffer != null) {
-            return new MemorySeekableByteChannel(retainedBuffer, retainedLength);
+            return retainedChannel();
         }
         if (spilledPath == null && tryBufferInMemory()) {
-            return new MemorySeekableByteChannel(retainedBuffer, retainedLength);
+            return retainedChannel();
         }
         return FileChannel.open(getPath(null), StandardOpenOption.READ);
+    }
+
+    /** Channels pin the retained buffer: the reservation is released only once this source
+     *  is closed AND no handed-out channel still references the array. */
+    private SeekableByteChannel retainedChannel() {
+        channelPins++;
+        return new MemorySeekableByteChannel(retainedBuffer, retainedLength, () -> {
+            channelPins--;
+            maybeReleaseRetained();
+        });
+    }
+
+    private void maybeReleaseRetained() {
+        if (closed && channelPins == 0 && retainedReservation > 0) {
+            budget.release(retainedReservation);
+            retainedReservation = 0;
+        }
     }
 
     /**
@@ -272,11 +291,9 @@ class ReopenableSource extends InputStream implements TikaInputSource {
 
     @Override
     public void close() throws IOException {
-        if (retainedReservation > 0) {
-            budget.release(retainedReservation);
-            retainedReservation = 0;
-        }
+        closed = true;
         retainedBuffer = null;
+        maybeReleaseRetained();
         if (currentStream != null) {
             currentStream.close();
         }

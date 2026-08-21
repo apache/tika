@@ -45,6 +45,8 @@ class StreamCache implements Closeable {
     // instead of the fixed per-object memoryThreshold.
     private final CacheMemoryBudget budget;
     private long reserved;
+    // In-memory channels handed out that still reference memoryBuffer (see maybeReleaseReserved)
+    private int channelPins;
 
     // Memory storage (null after spill)
     private byte[] memoryBuffer;
@@ -154,8 +156,11 @@ class StreamCache implements Closeable {
         return true;
     }
 
-    private void releaseReserved() {
-        if (budget != null && reserved > 0) {
+    /** Releases the reservation once the buffer is no longer held by this cache (spilled or
+     *  closed) AND no handed-out in-memory channel still pins the array. */
+    private void maybeReleaseReserved() {
+        if (budget != null && reserved > 0 && channelPins == 0 &&
+                (closed || memoryBuffer == null)) {
             budget.release(reserved);
             reserved = 0;
         }
@@ -196,7 +201,7 @@ class StreamCache implements Closeable {
         // Release memory buffer
         memoryBuffer = null;
         memorySize = 0;
-        releaseReserved();
+        maybeReleaseReserved();
     }
 
     /**
@@ -316,7 +321,13 @@ class StreamCache implements Closeable {
         if (closed || memoryBuffer == null) {
             return null;
         }
-        return new MemorySeekableByteChannel(memoryBuffer, memorySize);
+        // The channel pins the array: the budget reservation is held until this cache no
+        // longer needs the buffer (spill/close) AND all handed-out channels are closed.
+        channelPins++;
+        return new MemorySeekableByteChannel(memoryBuffer, memorySize, () -> {
+            channelPins--;
+            maybeReleaseReserved();
+        });
     }
 
     @Override
@@ -326,7 +337,7 @@ class StreamCache implements Closeable {
         }
         closed = true;
         memoryBuffer = null;
-        releaseReserved();
+        maybeReleaseReserved();
 
         if (spillOutputStream != null) {
             spillOutputStream.close();

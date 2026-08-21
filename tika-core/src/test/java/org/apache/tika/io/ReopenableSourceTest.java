@@ -212,6 +212,24 @@ public class ReopenableSourceTest {
     }
 
     @Test
+    public void testChannelOutlivingSourceHoldsReservation() throws Exception {
+        byte[] data = data(FLOOR + 100);
+        CacheMemoryBudget budget = new CacheMemoryBudget(16L * 1024 * 1024);
+        ReopenableSource source = new ReopenableSource(
+                countingOpener(data, new AtomicInteger()), tmp, data.length, null);
+        source.enableRewind(budget);
+        SeekableByteChannel channel = source.getSeekableByteChannel();
+        source.close();
+        assertTrue(budget.getReservedBytes() > 0,
+                "reservation must be held while a channel still pins the retained buffer");
+        assertArrayEquals(data, readFully(channel));
+        channel.close();
+        assertEquals(0, budget.getReservedBytes(), "last channel close releases");
+        channel.close(); // idempotent: no double-release
+        assertEquals(0, budget.getReservedBytes());
+    }
+
+    @Test
     public void testChannelBudgetExhaustedSpills() throws Exception {
         byte[] data = data(FLOOR + 2048);
         AtomicInteger opens = new AtomicInteger();

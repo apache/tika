@@ -134,7 +134,8 @@ public class SevenZParser extends AbstractArchiveParser {
             // first getNextEntry() when the LZMA/LZMA2 dictionary is allocated.
             channel.close();
             throw new TikaMemoryLimitException(e.getMessage());
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
+            // commons-compress throws unchecked exceptions on corrupt headers
             channel.close();
             throw e;
         }
