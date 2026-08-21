@@ -3,6 +3,16 @@ Release 4.1.0 - unreleased
    * TIKA-4829 -- pipes IPC: carry inline document bytes as a raw binary field
      of the tuple and disable Smile's 7-bit binary encoding.
 
+   * RawTiffParser extracts the camera-generated JPEG previews embedded in
+     TIFF-based raw images (Nikon NEF/NRW, Sony ARW/SRF/SR2, Pentax PEF/PTX,
+     Adobe DNG and Canon CR2, including BigTIFF DNG containers) as thumbnail
+     embedded documents. image/x-raw-{nikon,sony,pentax,adobe} are now
+     sub-classes of image/tiff, so a named NEF/ARW/PEF/DNG that used to detect
+     as image/tiff (TiffParser, metadata only) now detects as image/x-raw-* and
+     emits thumbnail-N.jpg attachments in /rmeta and /unpack; CR2 keeps its
+     detection but also gains the attachments. Disable via
+     "raw-tiff-parser": {"extractPreviews": false} (TIKA-4824).
+
 Release 4.0.0 - 8/18/2026
 
   This section is the complete delta from 3.x. It includes everything first

@@ -284,6 +284,9 @@ java -jar tika-app.jar -i /path/to/input -o /path/to/output
 That parses every file under the input directory and writes JSON metadata (RMETA format) to the
 output directory.
 
+The throughput, memory, and isolation characteristics of this forked-JVM pipeline — and how to
+size it — are described in xref:pipes/performance.adoc[Performance and Isolation Trade-offs].
+
 [#_how_pipes_mode_is_activated]
 === How Pipes mode is activated
 
