@@ -532,6 +532,12 @@ All parsing now occurs in isolated child processes, providing:
 * Memory isolation (OOM in parser doesn't crash server)
 * Configurable timeouts at the pipes level
 
+This isolation carries a throughput and memory cost relative to a single in-JVM
+parser, and the size of that cost depends on your document mix and the pool
+configuration (per-client versus shared-server, `numClients`, per-fork heap).
+See xref:pipes/performance.adoc[Performance and Isolation Trade-offs] for the
+comparison and tuning guidance.
+
 [#backpressure]
 === Backpressure: `429` Separates "Busy" From "Broken"
 
