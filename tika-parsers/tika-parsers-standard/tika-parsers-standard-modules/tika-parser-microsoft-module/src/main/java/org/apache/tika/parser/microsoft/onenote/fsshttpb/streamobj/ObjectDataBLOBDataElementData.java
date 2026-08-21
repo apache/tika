@@ -29,20 +29,10 @@ import org.apache.tika.exception.TikaException;
 public class ObjectDataBLOBDataElementData extends DataElementData {
     public ObjectDataBLOB objectDataBLOB;
 
-    /**
-     * Initializes a new instance of the ObjectDataBLOBDataElementData class.
-     */
     public ObjectDataBLOBDataElementData() {
         this.objectDataBLOB = new ObjectDataBLOB();
     }
 
-    /**
-     * Deserializes this element from the supplied byte array.
-     *
-     * @param byteArray  A byte array
-     * @param startIndex Start position
-     * @return The number of bytes consumed
-     */
     @Override
     public int deserializeDataElementDataFromByteArray(byte[] byteArray, int startIndex)
             throws TikaException, IOException {
@@ -51,11 +41,6 @@ public class ObjectDataBLOBDataElementData extends DataElementData {
         return index.get() - startIndex;
     }
 
-    /**
-     * Used to convert the element into a byte List.
-     *
-     * @return The Byte list
-     */
     @Override
     public List<Byte> serializeToByteList() throws TikaException, IOException {
         return this.objectDataBLOB.serializeToByteList();

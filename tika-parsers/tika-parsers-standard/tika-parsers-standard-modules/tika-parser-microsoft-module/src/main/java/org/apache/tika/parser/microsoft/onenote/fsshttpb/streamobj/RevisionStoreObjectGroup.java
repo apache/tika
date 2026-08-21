@@ -18,7 +18,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -42,11 +42,16 @@ public class RevisionStoreObjectGroup {
                                                           Map<ExGuid, DataElement> blobElements)
             throws IOException {
         RevisionStoreObjectGroup objectGroup = new RevisionStoreObjectGroup(objectGroupId);
-        Map<ExGuid, RevisionStoreObject> objectDict = new HashMap<>();
+        // insertion-ordered so the object list (and any degraded-file fallback walk) is
+        // deterministic
+        Map<ExGuid, RevisionStoreObject> objectDict = new LinkedHashMap<>();
         if (!isEncryption) {
             RevisionStoreObject revisionObject = null;
             for (int i = 0; i < dataObject.objectGroupDeclarations.objectDeclarationList.size();
                     i++) {
+                if (i >= dataObject.objectGroupData.objectGroupObjectDataList.size()) {
+                    throw new IOException("Missing object data for object declaration " + i);
+                }
                 ObjectGroupObjectDeclare objectDeclaration =
                         dataObject.objectGroupDeclarations.objectDeclarationList.get(i);
                 ObjectGroupObjectData objectData =
@@ -108,6 +113,9 @@ public class RevisionStoreObjectGroup {
         } else {
             for (int i = 0; i < dataObject.objectGroupDeclarations.objectDeclarationList.size();
                     i++) {
+                if (i >= dataObject.objectGroupData.objectGroupObjectDataList.size()) {
+                    throw new IOException("Missing object data for object declaration " + i);
+                }
                 ObjectGroupObjectDeclare objectDeclaration =
                         dataObject.objectGroupDeclarations.objectDeclarationList.get(i);
                 ObjectGroupObjectData objectData =

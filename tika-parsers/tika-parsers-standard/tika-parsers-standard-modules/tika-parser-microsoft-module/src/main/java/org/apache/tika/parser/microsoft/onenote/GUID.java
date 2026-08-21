@@ -56,14 +56,28 @@ public class GUID implements Comparable<GUID> {
             throw new TikaException("Invalid GUID string");
         }
         for (int i = 0; i < hex.length(); i += 2) {
-            int high = Character.digit(hex.charAt(i), 16);
-            int low = Character.digit(hex.charAt(i + 1), 16);
+            int high = asciiHexDigit(hex.charAt(i));
+            int low = asciiHexDigit(hex.charAt(i + 1));
             if (high < 0 || low < 0) {
                 throw new TikaException("Invalid GUID string");
             }
             intGuid[i / 2] = (high << 4) | low;
         }
         return new GUID(intGuid);
+    }
+
+    // Character.digit accepts non-ASCII Unicode digits; GUIDs are ASCII hex only
+    private static int asciiHexDigit(char c) {
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        }
+        if (c >= 'a' && c <= 'f') {
+            return c - 'a' + 10;
+        }
+        if (c >= 'A' && c <= 'F') {
+            return c - 'A' + 10;
+        }
+        return -1;
     }
 
     public static int memcmp(int[] b1, int[] b2, int sz) {

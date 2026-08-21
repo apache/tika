@@ -30,14 +30,8 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.ByteUtil;
  * e.g. an embedded image or file. See MS-FSSHTTPB section 2.2.1.12.8.
  */
 public class ObjectDataBLOB extends StreamObject {
-    /**
-     * A binary item that holds the opaque binary data.
-     */
     public BinaryItem data;
 
-    /**
-     * Initializes a new instance of the ObjectDataBLOB class.
-     */
     public ObjectDataBLOB() {
         super(StreamObjectTypeHeaderStart.ObjectDataBLOB);
         this.data = new BinaryItem();
@@ -53,13 +47,6 @@ public class ObjectDataBLOB extends StreamObject {
         return ByteUtil.toByteArray(this.data.content);
     }
 
-    /**
-     * Used to de-serialize the element.
-     *
-     * @param byteArray     A Byte array
-     * @param currentIndex  Start position
-     * @param lengthOfItems The length of the items
-     */
     @Override
     protected void deserializeItemsFromByteArray(byte[] byteArray, AtomicInteger currentIndex,
                                                  int lengthOfItems)
@@ -75,12 +62,6 @@ public class ObjectDataBLOB extends StreamObject {
         currentIndex.set(index.get());
     }
 
-    /**
-     * Used to convert the element into a byte List
-     *
-     * @param byteList A Byte list
-     * @return The number of elements actually contained in the list
-     */
     @Override
     protected int serializeItemsToByteList(List<Byte> byteList) throws IOException {
         int startPoint = byteList.size();

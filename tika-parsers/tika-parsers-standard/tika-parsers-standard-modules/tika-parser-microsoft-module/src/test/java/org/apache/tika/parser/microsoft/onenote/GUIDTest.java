@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.charset.StandardCharsets;
@@ -25,6 +26,24 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.exception.TikaException;
 
 public class GUIDTest {
+
+    @Test
+    public void testParsesValidGuidRoundTrip() throws Exception {
+        byte[] valid = "{638DE92F-a6d4-4BC1-9A36-4AFC2511A5B7}"
+                .getBytes(StandardCharsets.UTF_16LE);
+
+        assertEquals("{638DE92F-A6D4-4BC1-9A36-4AFC2511A5B7}",
+                GUID.fromCurlyBraceUTF16Bytes(valid).toString());
+    }
+
+    @Test
+    public void testRejectsNonAsciiUnicodeDigits() {
+        // fullwidth '6' is a Unicode digit that Character.digit(c, 16) would accept
+        byte[] malformed = "{６38DE92F-A6D4-4BC1-9A36-4AFC2511A5B7}"
+                .getBytes(StandardCharsets.UTF_16LE);
+
+        assertThrows(TikaException.class, () -> GUID.fromCurlyBraceUTF16Bytes(malformed));
+    }
 
     @Test
     public void testRejectsMalformedCurlyBraceGuid() {

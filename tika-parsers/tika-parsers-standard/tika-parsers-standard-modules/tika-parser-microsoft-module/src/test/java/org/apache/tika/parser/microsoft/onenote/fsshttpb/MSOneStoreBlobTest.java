@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -213,8 +214,7 @@ public class MSOneStoreBlobTest {
         assertNull(blob.getData());
         blob.data = new BinaryItem();
         blob.data.content.add((byte) 1);
-        // Exercise serialization of a non-null BLOB; the round-trip assertion is above.
-        blob.serializeToByteList();
+        assertFalse(blob.serializeToByteList().isEmpty());
 
         ObjectDataBLOB validBlob = new ObjectDataBLOB();
         validBlob.data.content.add((byte) 1);
@@ -261,6 +261,19 @@ public class MSOneStoreBlobTest {
                 throw new IOException("synthetic embedded parse failure");
             }
         });
+    }
+
+    @Test
+    public void testDeclarationWithoutObjectDataFailsCleanly() {
+        ObjectGroupDataElementData mismatched = new ObjectGroupDataElementData();
+        ObjectGroupObjectDeclare declaration = new ObjectGroupObjectDeclare();
+        declaration.objectPartitionID.setDecodedValue(1);
+        mismatched.objectGroupDeclarations.objectDeclarationList.add(declaration);
+
+        IOException e = assertThrows(IOException.class,
+                () -> RevisionStoreObjectGroup.createInstance(new ExGuid(9, UUID.randomUUID()),
+                        mismatched, false, Collections.emptyMap()));
+        assertTrue(e.getMessage().contains("Missing object data"));
     }
 
     @Test

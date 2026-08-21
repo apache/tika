@@ -42,7 +42,6 @@ import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
@@ -57,7 +56,9 @@ public class OneNoteParserTest extends TikaTest {
     //test recursive parser wrapper for image files
 
     @Test
-    public void testFuzzerRegressionInputsFailWithTikaExceptions() throws Exception {
+    public void testFuzzerRegressionInputsFallBackToLegacyDump() throws Exception {
+        // structural failures no longer abort the parse - the legacy string dump runs and
+        // the original failure is pinned in the parse-warning metadata
         String[][] resources = {
                 {"testOneNote-fuzz1.one", "Missing dependent revision"},
                 {"testOneNote-fuzz2.one", "unified property count"},
@@ -68,13 +69,38 @@ public class OneNoteParserTest extends TikaTest {
             assertNotNull(input, resource[0]);
             try (InputStream stream = input;
                  TikaInputStream tis = TikaInputStream.get(stream)) {
-                TikaException exception = assertThrows(TikaException.class,
-                        () -> new OneNoteParser().parse(tis, new ToTextContentHandler(),
-                                new Metadata(), new ParseContext()), resource[0]);
-                assertTrue(exception.getMessage().contains(resource[1]),
-                        exception.getMessage());
+                Metadata metadata = new Metadata();
+                new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata,
+                        new ParseContext());
+                assertTrue(Arrays.stream(
+                                metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                        .anyMatch(warning -> warning.contains(resource[1])
+                                && warning.contains("falling back to legacy text dump")),
+                        () -> resource[0] + ": " + Arrays.toString(metadata.getValues(
+                                TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)));
             }
         }
+    }
+
+    @Test
+    public void testTruncatedFileFallsBackToLegacyDump(@TempDir Path tempDir) throws Exception {
+        byte[] full;
+        try (InputStream is = getClass()
+                .getResourceAsStream("/test-documents/testOneNote1.one")) {
+            full = is.readAllBytes();
+        }
+        // keep the 1024-byte header plus a sliver of content so the root file node list
+        // is unreachable
+        Path truncated = tempDir.resolve("truncated.one");
+        Files.write(truncated, Arrays.copyOf(full, 2048));
+
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(truncated)) {
+            new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata,
+                    new ParseContext());
+        }
+        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .anyMatch(warning -> warning.contains("falling back to legacy text dump")));
     }
 
     /**
@@ -294,6 +320,16 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testOneNoteEmbeddedImageRecursiveMetadata() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testOneNoteEmbeddedImage.one");
+
+        assertEquals(2, metadataList.size());
+        Metadata embedded = metadataList.get(1);
+        assertEquals("INLINE", embedded.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertNotNull(embedded.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID));
+    }
+
+    @Test
     public void testPropertyValueBudgetIsSharedAcrossCopiesAndResetsPerList(
             @TempDir Path tempDir) throws Exception {
         Path emptyFile = tempDir.resolve("empty");
@@ -351,7 +387,10 @@ public class OneNoteParserTest extends TikaTest {
         // older page version snapshots are not reported
         assertEquals(Arrays.asList("Chang Du", "Du Chang"),
                 Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR)));
-        assertEquals(1, metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors").length);
+        // both authors are referenced as AuthorMostRecent by current content; one of them
+        // is first visited under another role, so its most-recent role must still register
+        assertEquals(Arrays.asList("Chang Du", "Du Chang"),
+                Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors")));
 
         assertEquals(Instant.ofEpochSecond(1636621406),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));
