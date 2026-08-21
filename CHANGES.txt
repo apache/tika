@@ -2,7 +2,9 @@ Release 4.1.0 - unreleased
 
    * Pipes IPC: carry inline document bytes as a raw binary field beside the
      tuple in the request envelope -- never inside the tuple or its
-     ParseContext -- and disable Smile's 7-bit binary encoding (TIKA-4829).
+     ParseContext -- and disable Smile's 7-bit binary encoding. Tuple JSON
+     serialized by 4.0.0 with an "inline-bytes" parse-context entry no longer
+     loads; it is rejected with a tailored message (TIKA-4829).
 
    * RawTiffParser extracts the camera-generated JPEG previews embedded in
      TIFF-based raw images (Nikon NEF/NRW, Sony ARW/SRF/SR2, Pentax PEF/PTX,

@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
+import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.utils.StringUtils;
 
 public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
@@ -58,10 +59,15 @@ public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
             jsonGenerator.writeObjectField(METADATA_KEY, t.getMetadata());
         }
         jsonGenerator.writeStringField(ON_PARSE_EXCEPTION, t.getOnParseException().name().toLowerCase(Locale.US));
-        // A tuple never carries content: on the IPC the payload travels beside it in
-        // PipesRequest, which lifts InlineBytes out before this runs. If one is still in the
-        // context here, ParseContextSerializer refuses the unregistered entry loudly.
         ParseContext parseContext = t.getParseContext();
+        // Tailored: ParseContextSerializer's generic refusal suggests registering the
+        // component -- for InlineBytes, exactly the forbidden fix.
+        if (parseContext.get(InlineBytes.class) != null) {
+            throw new IOException("A FetchEmitTuple whose ParseContext holds InlineBytes has no"
+                    + " serialized form: inline content is in-process only and, on the pipes IPC,"
+                    + " travels beside the tuple in the request envelope. Remove the InlineBytes"
+                    + " entry before serializing.");
+        }
         if (!parseContext.isEmpty()) {
             jsonGenerator.writeObjectField(PARSE_CONTEXT, parseContext);
         }

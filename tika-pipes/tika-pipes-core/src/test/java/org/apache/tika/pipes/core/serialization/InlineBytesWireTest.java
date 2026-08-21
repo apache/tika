@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Random;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.io.TikaInputStream;
@@ -42,6 +44,7 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.fetcher.BytesFetcher;
 import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.serialization.ParseContextUtils;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 /**
  * The inline payload travels beside the tuple in the {@link PipesRequest} envelope -- never
@@ -110,14 +113,14 @@ public class InlineBytesWireTest {
 
     @Test
     public void serializingATupleStillCarryingPayloadFailsLoudly() {
-        // InlineBytes is deliberately unregistered: a tuple whose context still holds one has
-        // no serialized form. PipesRequest.of is the only way onto the wire.
+        // A tuple whose context still holds InlineBytes has no serialized form;
+        // PipesRequest.of is the only way onto the wire.
         Exception e = assertThrows(Exception.class, () -> JsonPipesIpc.toBytes(tuple(payload(10))));
-        assertTrue(root(e).contains("Cannot serialize ParseContext entry"),
+        assertTrue(root(e).contains("no serialized form"),
                 "expected loud refusal, got: " + root(e));
         Exception text = assertThrows(Exception.class,
                 () -> JsonFetchEmitTuple.toJson(tuple(payload(10))));
-        assertTrue(root(text).contains("Cannot serialize ParseContext entry"),
+        assertTrue(root(text).contains("no serialized form"),
                 "expected loud refusal, got: " + root(text));
     }
 
@@ -132,19 +135,29 @@ public class InlineBytesWireTest {
     }
 
     @Test
-    public void requestParseContextFormCannotBind() throws Exception {
-        // Unregistered means the parse-context form is admitted as an inert config at most,
-        // and resolution fails closed before anything binds.
+    public void requestBodyRejectsLegacyParseContextSpelling() {
+        // 4.0.0 serialized InlineBytes under this parse-context name; upgraders get a
+        // tailored message, not the generic "check for a typo".
         String json = "{\"id\":\"t\",\"fetcher\":\"f\",\"fetchKey\":\"k\",\"emitter\":\"e\"," +
                 "\"parse-context\":{\"inline-bytes\":{\"bytes\":\"QUJD\"}}}";
-        FetchEmitTuple t = JsonFetchEmitTuple.fromJson(new StringReader(json));
-        ParseContext merged = new ParseContext();
-        merged.copyFrom(t.getParseContext());
+        Exception e = assertThrows(IOException.class,
+                () -> JsonFetchEmitTuple.fromJson(new StringReader(json)));
+        assertTrue(root(e).contains("no longer a serializable parse-context entry"),
+                "expected legacy-spelling rejection, got: " + root(e));
+    }
+
+    @Test
+    public void requestParseContextFormCannotBind() throws Exception {
+        // Defense in depth below the tuple gate: even if the entry reaches a ParseContext
+        // (it is admitted as an inert config at most), resolution fails closed.
+        JsonNode node = new ObjectMapper()
+                .readTree("{\"inline-bytes\":{\"bytes\":\"QUJD\"}}");
+        ParseContext ctx = ParseContextDeserializer.readParseContext(node, true);
         Exception e = assertThrows(Exception.class,
-                () -> ParseContextUtils.resolveAll(merged, getClass().getClassLoader()));
+                () -> ParseContextUtils.resolveAll(ctx, getClass().getClassLoader()));
         assertTrue(root(e).contains("Unrecognized parse-context entry"),
                 "expected fail-closed resolution, got: " + root(e));
-        assertNull(merged.get(InlineBytes.class));
+        assertNull(ctx.get(InlineBytes.class));
     }
 
     @Test

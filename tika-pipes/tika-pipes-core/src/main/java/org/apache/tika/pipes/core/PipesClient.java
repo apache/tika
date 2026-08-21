@@ -241,6 +241,14 @@ public class PipesClient implements Closeable {
             serverManager.connectionAbandoned();
             closeConnection();
             throw e;
+        } catch (PayloadLimitExceededException e) {
+            // Only writeTask's pre-send check throws this here (waitForServer handles its
+            // own); nothing was written, so the connection stays in sync -- keep it.
+            LOG.warn("clientId={}: request too large for id={}: {}", pipesClientId, t.getId(),
+                    e.getMessage());
+            return buildFatalResult(t.getId(), t.getEmitKey(),
+                    PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED,
+                    intermediateResult.get(), e.getMessage());
         } catch (Exception e) {
             LOG.error("exception waiting for server to complete task: {} ", t.getId(), e);
             closeConnection();
@@ -341,9 +349,14 @@ public class PipesClient implements Closeable {
             throw new IOException("connection closed");
         }
         LOG.debug("pipesClientId={}: sending NEW_REQUEST for id={}", pipesClientId, t.getId());
-        // PipesRequest.of lifts any InlineBytes out of the tuple's context into the envelope;
-        // a serialized tuple never carries content.
         byte[] bytes = JsonPipesIpc.toBytes(PipesRequest.of(t));
+        // Fail fast before sending: the server would refuse the frame anyway, but only by
+        // dying or dropping the connection, misreported as a crash.
+        if (bytes.length > maxIpcPayloadBytes) {
+            throw new PayloadLimitExceededException("serialized request for id=" + t.getId()
+                    + " is " + bytes.length + " bytes, over maxIpcPayloadBytes="
+                    + maxIpcPayloadBytes + "; raise maxIpcPayloadBytes or shrink the request");
+        }
         PipesMessage.newRequest(bytes).write(tuple.output);
     }
 

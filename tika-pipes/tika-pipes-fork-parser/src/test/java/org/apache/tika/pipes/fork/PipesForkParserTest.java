@@ -126,6 +126,8 @@ public class PipesForkParserTest {
             PipesForkResult result = parser.parse(tis, new Metadata(), parseContext);
             assertTrue(result.isSuccess(), "Parse should succeed. Status: " + result.getStatus()
                     + ", message: " + result.getMessage());
+            assertTrue(result.getContent().contains("inline body"),
+                    "worker did not parse the inline payload; content: " + result.getContent());
             assertNull(parseContext.get(InlineBytes.class),
                     "inline payload must not outlive its request in the caller's context");
         }

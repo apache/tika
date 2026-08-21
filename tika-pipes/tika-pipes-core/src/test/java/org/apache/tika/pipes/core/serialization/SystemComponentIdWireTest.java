@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.core.serialization;
 
+import static org.apache.tika.pipes.core.serialization.WireTestUtil.root;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -117,13 +118,5 @@ public class SystemComponentIdWireTest {
         Exception e = assertThrows(Exception.class,
                 () -> JsonPipesIpc.fromBytes(smile, FetchEmitTuple.class));
         assertTrue(root(e).contains("Illegal"), "expected charset rejection, got: " + root(e));
-    }
-
-    private static String root(Throwable t) {
-        StringBuilder sb = new StringBuilder();
-        for (Throwable c = t; c != null; c = c.getCause()) {
-            sb.append(c.getMessage()).append(' ');
-        }
-        return sb.toString();
     }
 }

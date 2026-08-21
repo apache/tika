@@ -50,6 +50,9 @@ import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple> {
 
+    /** The parse-context name InlineBytes was registered under in 4.0.0. */
+    static final String LEGACY_INLINE_BYTES_ENTRY = "inline-bytes";
+
     private static final Set<String> KNOWN_KEYS = Set.of(
             ID, FETCHER, FETCH_KEY, EMITTER, EMIT_KEY, FETCH_RANGE_START, FETCH_RANGE_END,
             METADATA_KEY, PARSE_CONTEXT, ON_PARSE_EXCEPTION);
@@ -81,14 +84,19 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
     @Override
     public FetchEmitTuple deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
         JsonNode root = jsonParser.readValueAsTree();
+        // Both checked before rejectUnknownKeys so they get tailored messages.
         if (root.has(PipesRequest.INLINE_BYTES)) {
-            // Content is never tuple state; on the IPC it travels beside the tuple in
-            // PipesRequest. A tailored message, since this is the field a caller holding
-            // content is most tempted to invent.
             throw new IOException("'" + PipesRequest.INLINE_BYTES
                     + "' is not a FetchEmitTuple field; content travels outside the tuple, and"
-                    + " only on the host's internal IPC. To parse content you already hold, PUT"
-                    + " it to /tika or /rmeta, which inline it for you.");
+                    + " only on the host's internal IPC. For tika-server, PUT content you"
+                    + " already hold to /tika or /rmeta, which inline it for you.");
+        }
+        if (root.path(PARSE_CONTEXT).has(LEGACY_INLINE_BYTES_ENTRY)) {
+            // 4.0.0 serialized this entry; the generic "check for a typo" would mislead upgraders.
+            throw new IOException("'" + LEGACY_INLINE_BYTES_ENTRY + "' is no longer a serializable"
+                    + " parse-context entry (4.0.0 wrote it as base64): content travels outside"
+                    + " the tuple, and only on the host's internal IPC. For tika-server, PUT"
+                    + " content you already hold to /tika or /rmeta, which inline it for you.");
         }
         rejectUnknownKeys(root);
 

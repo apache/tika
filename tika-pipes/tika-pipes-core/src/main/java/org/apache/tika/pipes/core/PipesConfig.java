@@ -601,7 +601,7 @@ public class PipesConfig {
      * (the FINISHED payload) and the largest request the server will accept from the client
      * (the NEW_REQUEST payload). Lowering this value below the size of a typical
      * {@link org.apache.tika.pipes.api.FetchEmitTuple} will cause requests to be rejected
-     * on the server side and reported as undiagnosable {@code UNSPECIFIED_CRASH} errors.
+     * client-side before sending, reported as {@code PAYLOAD_LIMIT_EXCEEDED}.
      * <p>
      * The value must be at least {@link org.apache.tika.pipes.core.server.ServerProtocolIO#MIN_FALLBACK_PAYLOAD_BYTES}
      * so that the server can always write a {@code PAYLOAD_LIMIT_EXCEEDED} response

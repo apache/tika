@@ -26,8 +26,8 @@ import java.util.Arrays;
  * <p>
  * Read by {@link BytesFetcher}, which the tuple selects with fetcher id
  * {@link BytesFetcher#FETCHER_ID}. In-process only: deliberately not a registered component,
- * so no serialized form of it exists -- ParseContextSerializer refuses the unregistered entry
- * loudly if a context holding one is serialized. On the IPC wire the payload travels beside
+ * so no serialized form of it exists and serialization refuses loudly. On the IPC wire the
+ * payload travels beside
  * the tuple in {@code PipesRequest} (which lifts it out on the parent and plants it back into
  * the worker's context on the child); it counts against {@code maxIpcPayloadBytes} like any
  * other part of the request. A request can supply it in no form at all.

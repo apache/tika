@@ -23,8 +23,8 @@ import org.apache.tika.pipes.core.fetcher.InlineBytes;
 /**
  * The NEW_REQUEST envelope on the parent-to-child IPC: the tuple, plus the optional inline
  * document payload beside it. Bytes are data, not tuple state -- a {@link FetchEmitTuple} and
- * its ParseContext are never serialized with content in them ({@code ParseContextSerializer}
- * refuses the unregistered {@link InlineBytes} entry loudly if one slips through).
+ * its ParseContext are never serialized with content in them ({@code FetchEmitTupleSerializer}
+ * refuses loudly if an {@link InlineBytes} slips through).
  * <p>
  * {@link #of} lifts the payload out of the caller's context on the parent;
  * {@link #applyTo} plants it into the worker's merged context on the child, where
@@ -33,7 +33,7 @@ import org.apache.tika.pipes.core.fetcher.InlineBytes;
 public final class PipesRequest {
 
     /** Wire name of the payload field; not a FetchEmitTuple field. */
-    public static final String INLINE_BYTES = "inlineBytes";
+    static final String INLINE_BYTES = "inlineBytes";
 
     static final String TUPLE = "tuple";
 
