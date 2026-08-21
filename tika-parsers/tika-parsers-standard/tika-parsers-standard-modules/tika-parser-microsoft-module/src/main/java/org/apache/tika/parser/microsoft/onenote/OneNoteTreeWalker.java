@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +36,8 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -44,6 +47,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -54,6 +58,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 class OneNoteTreeWalker {
 
+    private static final Logger LOG = LoggerFactory.getLogger(OneNoteTreeWalker.class);
+    private static final int MAX_CYCLE_WARNINGS = 100;
     private static final String P = "p";
     /**
      * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
@@ -103,6 +109,12 @@ class OneNoteTreeWalker {
      * Contains pairs of {Offset,Length} that we have added to the text stream already.
      */
     private final Set<Pair<Long, Integer>> textAlreadyFetched = new HashSet<>();
+    private final Set<FileNode> activeFileNodes =
+            Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<FileNode> reportedCycleNodes =
+            Collections.newSetFromMap(new IdentityHashMap<>());
+    private int cycleWarningCount;
+    private boolean cycleWarningsSuppressed;
 
     /**
      * Create a one tree walker.
@@ -292,6 +304,48 @@ class OneNoteTreeWalker {
     public Map<String, Object> walkFileNode(FileNode fileNode,
                                             OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
+        if (fileNode == null) {
+            return Collections.emptyMap();
+        }
+        if (!activeFileNodes.add(fileNode)) {
+            recordCycleWarning(fileNode);
+            return Collections.emptyMap();
+        }
+        try {
+            return walkFileNodeInternal(fileNode, parentPropertyId);
+        } finally {
+            activeFileNodes.remove(fileNode);
+        }
+    }
+
+    private void recordCycleWarning(FileNode fileNode) {
+        if (reportedCycleNodes.contains(fileNode)) {
+            return;
+        }
+        if (cycleWarningCount >= MAX_CYCLE_WARNINGS) {
+            if (!cycleWarningsSuppressed) {
+                cycleWarningsSuppressed = true;
+                String warning = "Additional OneNote file-node cycle warnings were suppressed " +
+                        "after " + MAX_CYCLE_WARNINGS + " distinct cycles";
+                LOG.warn(warning);
+                if (parentMetadata != null) {
+                    parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+                }
+            }
+            return;
+        }
+        reportedCycleNodes.add(fileNode);
+        cycleWarningCount++;
+        String warning = "OneNote file-node cycle detected at " + fileNode.gosid;
+        LOG.warn(warning);
+        if (parentMetadata != null) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+        }
+    }
+
+    private Map<String, Object> walkFileNodeInternal(FileNode fileNode,
+                                                      OneNotePropertyId parentPropertyId)
+            throws IOException, TikaException, SAXException {
         Map<String, Object> structure = new HashMap<>();
         structure.put("oneNoteType", "FileNode");
         structure.put("gosid", fileNode.gosid.toString());
@@ -473,8 +527,11 @@ class OneNoteTreeWalker {
                 propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
                 if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
                     xhtml.startElement(P);
-                    xhtml.characters((String) propMap.get("dataUnicode16LE"));
-                    xhtml.endElement(P);
+                    try {
+                        xhtml.characters((String) propMap.get("dataUnicode16LE"));
+                    } finally {
+                        xhtml.endElement(P);
+                    }
                 }
             } else if (propertyValue.propertyId.propertyEnum ==
                     OneNotePropertyEnum.TextExtendedAscii) {
@@ -487,8 +544,11 @@ class OneNoteTreeWalker {
                 dif.read(buf);
                 propMap.put("dataAscii", new String(buf.array(), StandardCharsets.US_ASCII));
                 xhtml.startElement(P);
-                xhtml.characters((String) propMap.get("dataAscii"));
-                xhtml.endElement(P);
+                try {
+                    xhtml.characters((String) propMap.get("dataAscii"));
+                } finally {
+                    xhtml.endElement(P);
+                }
             } else if (!isBinary) {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
@@ -500,8 +560,11 @@ class OneNoteTreeWalker {
                 propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
                 if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
                     xhtml.startElement(P);
-                    xhtml.characters((String) propMap.get("dataUnicode16LE"));
-                    xhtml.endElement(P);
+                    try {
+                        xhtml.characters((String) propMap.get("dataUnicode16LE"));
+                    } finally {
+                        xhtml.endElement(P);
+                    }
                 }
             } else {
                 if (content.size() > dif.size()) {
@@ -593,12 +656,18 @@ class OneNoteTreeWalker {
         Matcher m = HYPERLINK_PATTERN.matcher(txt);
         if (m.find()) {
             xhtml.startElement("a", "href", m.group(1));
-            xhtml.characters(m.group(2));
-            xhtml.endElement("a");
+            try {
+                xhtml.characters(m.group(2));
+            } finally {
+                xhtml.endElement("a");
+            }
         } else {
             xhtml.startElement(P);
-            xhtml.characters(txt);
-            xhtml.endElement(P);
+            try {
+                xhtml.characters(txt);
+            } finally {
+                xhtml.endElement(P);
+            }
         }
     }
 
