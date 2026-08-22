@@ -30,6 +30,17 @@ Release 4.1.0 - unreleased
      CONTENT_TYPE_USER_OVERRIDE key is deliberately not carried, so the hint
      cannot force an unrelated type (TIKA-4825).
 
+   * OneNote extraction now follows document order, omits superseded page
+     revisions, sorts author metadata, extracts embedded object BLOBs, and
+     bounds malformed-input recursion and file-derived allocations. Parse
+     warnings and embedded relationship IDs are exposed in metadata. Malformed
+     or truncated files that cannot be fully parsed, and files whose walk
+     yields no content, now fall back to the legacy string dump instead of
+     failing or returning empty output. The legacy MS-ONESTORE walker bounds
+     its recursion (depth caps plus file-node-list and fragment-chain cycle
+     guards) and now honors shouldParseEmbedded for embedded file data
+     (TIKA-4814).
+
    * RawTiffParser extracts the camera-generated JPEG previews embedded in
      TIFF-based raw images (Nikon NEF/NRW, Sony ARW/SRF/SR2, Pentax PEF/PTX,
      Adobe DNG and Canon CR2, including BigTIFF DNG containers) as thumbnail
@@ -509,12 +520,6 @@ Release 4.0.0 - 8/18/2026
      (TIKA-4612) and grib (TIKA-4655) detection.
 
   OTHER CHANGES
-
-   * OneNote extraction now follows document order, omits superseded page
-     revisions, sorts author metadata, extracts embedded object BLOBs, and
-     bounds malformed-input recursion and per-file-node-list property allocation.
-     Malformed truncated property arrays now fail rather than return partial data;
-     parse warnings and embedded relationship IDs are exposed in metadata (TIKA-4814).
 
    * Dependency upgrades since 4.0.0-beta-1, including Jetty 12.1.12, CXF
      4.2.3 and SolrJ 10.0.0 (TIKA-4327).

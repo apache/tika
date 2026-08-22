@@ -21,8 +21,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.EndianUtils;
@@ -55,13 +57,26 @@ class OneNotePtr {
             "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
     private static final int MAX_PROPERTY_VALUES = 100_000;
     private static final int MAX_PROPERTY_SET_DEPTH = 1000;
+    // the format nests file node lists only a handful of levels deep; 100 leaves wide
+    // margin while keeping the recursion far from any stack limit
+    private static final int MAX_FILE_NODE_LIST_DEPTH = 100;
 
     private static final class PropertyValueBudget {
         private long remaining = MAX_PROPERTY_VALUES;
     }
 
+    /**
+     * Recursion state for the baseType-2 file-node-list nesting, shared by every pointer
+     * copied while parsing one document.
+     */
+    private static final class FileNodeListRecursion {
+        private int depth;
+        private final Set<Long> activeListOffsets = new HashSet<>();
+    }
+
     int indentLevel = 0;
     private PropertyValueBudget propertyValueBudget = new PropertyValueBudget();
+    private FileNodeListRecursion fileNodeListRecursion = new FileNodeListRecursion();
 
     long offset;
     long end;
@@ -84,6 +99,7 @@ class OneNotePtr {
         this.end = oneNotePtr.end;
         this.indentLevel = oneNotePtr.indentLevel;
         this.propertyValueBudget = oneNotePtr.propertyValueBudget;
+        this.fileNodeListRecursion = oneNotePtr.fileNodeListRecursion;
     }
 
     public OneNoteHeader deserializeHeader() throws IOException, TikaException {
@@ -269,12 +285,20 @@ class OneNotePtr {
             throws IOException, TikaException {
         OneNotePtr localPtr = new OneNotePtr(ptr);
         FileNodePtrBackPush bp = new FileNodePtrBackPush(curPath);
+        // a next-fragment reference pointing at an already-seen fragment would loop forever
+        Set<Long> seenFragmentOffsets = new HashSet<>();
+        seenFragmentOffsets.add(ptr.offset);
         try {
             while (true) {
                 FileChunkReference next = FileChunkReference.nil();
                 ptr.deserializeFileNodeListFragment(fileNodeList, next, curPath);
                 if (FileChunkReference.nil().equals(next)) {
                     break;
+                }
+                if (!seenFragmentOffsets.add(next.stp)) {
+                    throw new TikaException(
+                            "OneNote file node list fragment cycle detected at offset " +
+                                    next.stp);
                 }
                 localPtr.reposition(next);
                 ptr = localPtr;
@@ -292,8 +316,24 @@ class OneNotePtr {
      */
     public OneNotePtr deserializeFileNodeList(FileNodeList fileNodeList, FileNodePtr curPath)
             throws IOException, TikaException {
-        propertyValueBudget = new PropertyValueBudget();
-        return internalDeserializeFileNodeList(this, fileNodeList, curPath);
+        if (fileNodeListRecursion.depth >= MAX_FILE_NODE_LIST_DEPTH) {
+            throw new TikaMemoryLimitException(
+                    "OneNote file node list nesting exceeds depth limit " +
+                            MAX_FILE_NODE_LIST_DEPTH);
+        }
+        long listOffset = offset;
+        if (!fileNodeListRecursion.activeListOffsets.add(listOffset)) {
+            throw new TikaException(
+                    "OneNote file node list cycle detected at offset " + listOffset);
+        }
+        fileNodeListRecursion.depth++;
+        try {
+            propertyValueBudget = new PropertyValueBudget();
+            return internalDeserializeFileNodeList(this, fileNodeList, curPath);
+        } finally {
+            fileNodeListRecursion.depth--;
+            fileNodeListRecursion.activeListOffsets.remove(listOffset);
+        }
     }
 
     /**

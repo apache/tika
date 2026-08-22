@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -142,6 +143,11 @@ public class MSOneStorePackage {
     private final Set<String> recordedParseWarningKeys = new HashSet<>();
     private boolean parseWarningsSuppressed;
     private boolean storageMappingsIndexed;
+    private boolean contentEmitted;
+    // flattened property actions per object; objects can be re-flattened many times during
+    // picture/resource-name resolution, which is quadratic without this cache
+    private final Map<RevisionStoreObject, List<PropertyAction>> objectActionsCache =
+            new IdentityHashMap<>();
     private final Map<CellID, StorageIndexCellMapping> storageIndexCellMappingsById =
             new HashMap<>();
     private final Map<ExGuid, StorageIndexRevisionMapping> storageIndexRevisionMappingsById =
@@ -305,8 +311,7 @@ public class MSOneStorePackage {
             }
         }
         for (RevisionStoreCell cell : remainingCells.values()) {
-            if (cell.cellID == null || cell.cellID.extendGUID2 == null ||
-                    !coveredObjectSpaces.contains(cell.cellID.extendGUID2)) {
+            if (!coveredObjectSpaces.contains(cell.cellID.extendGUID2)) {
                 // not an older version of one of the pages - keep it so no content is lost
                 otherCells.add(cell);
             }
@@ -350,7 +355,7 @@ public class MSOneStorePackage {
         if (object.objectID != null && !visited.add(object.objectID)) {
             return;
         }
-        List<PropertyAction> actions = collectObjectActions(object, depth);
+        List<PropertyAction> actions = collectObjectActions(object);
         for (PropertyAction action : actions) {
             if (action.spaceReference != null) {
                 out.add(action.spaceReference);
@@ -373,19 +378,26 @@ public class MSOneStorePackage {
         // Only objects reachable from the root objects of the current revision are part of
         // the current content. The object groups may also contain older, superseded versions
         // of objects (under a different object ID); those are intentionally not walked.
-        boolean resolvedRoot = false;
+        // A blob-only root (no property set) cannot reach the page body, so it does not
+        // count as a resolved content root: if the content root declare dangles next to it,
+        // the walk-everything fallback must still fire or the page body is silently lost.
+        boolean resolvedContentRoot = false;
+        boolean unresolvedRoot = false;
         for (RevisionManifestRootDeclare rootDeclare : cell.rootDeclares) {
             RevisionStoreObject rootObject = objectsById.get(rootDeclare.objectExGuid);
             if (rootObject == null) {
                 recordParseWarning("OneNote cell root object " + rootDeclare.objectExGuid +
                         " could not be resolved");
+                unresolvedRoot = true;
             } else {
-                resolvedRoot = true;
+                if (rootObject.propertySet != null) {
+                    resolvedContentRoot = true;
+                }
                 walkObject(rootObject, objectsById, visited, AuthorRole.NONE, options,
                         metadata, xhtml, 0);
             }
         }
-        if (!resolvedRoot) {
+        if (cell.rootDeclares.isEmpty() || (unresolvedRoot && !resolvedContentRoot)) {
             if (cell.rootDeclares.isEmpty()) {
                 recordParseWarning("OneNote cell has no declared root objects; walking all objects");
             } else {
@@ -481,11 +493,15 @@ public class MSOneStorePackage {
             return;
         }
         if (object.objectID != null && !visited.add(object.objectID)) {
+            // one object may be referenced under several author roles (e.g. the same author
+            // as both AuthorOriginal and AuthorMostRecent) - record the role even though
+            // the subtree is not walked again
+            recordAuthors(object, authorRole);
             return;
         }
         List<PropertyAction> actions = object.propertySet != null &&
                 object.propertySet.objectSpaceObjectPropSet != null ?
-                collectObjectActions(object, depth) : Collections.emptyList();
+                collectObjectActions(object) : Collections.emptyList();
         EmbeddedResourceInfo resourceInfo = embeddedResourceInfo(actions);
         if (resourceInfo == null) {
             resourceInfo = inheritedResourceInfo;
@@ -552,7 +568,7 @@ public class MSOneStorePackage {
         if (object.propertySet == null || object.propertySet.objectSpaceObjectPropSet == null) {
             return false;
         }
-        for (PropertyAction action : collectObjectActions(object, depth)) {
+        for (PropertyAction action : collectObjectActions(object)) {
             if (action.isChildReference && action.childReference != null &&
                     hasUsablePicture(action.childReference, objectsById, visited, depth + 1)) {
                 return true;
@@ -572,7 +588,7 @@ public class MSOneStorePackage {
                     candidate.propertySet.objectSpaceObjectPropSet == null) {
                 continue;
             }
-            List<PropertyAction> candidateActions = collectObjectActions(candidate, depth);
+            List<PropertyAction> candidateActions = collectObjectActions(candidate);
             for (PropertyAction action : candidateActions) {
                 if (action.isChildReference && target.objectID.equals(action.childReference) &&
                         (action.oneNotePropertyEnum == OneNotePropertyEnum.PictureContainer ||
@@ -643,22 +659,24 @@ public class MSOneStorePackage {
     }
 
     /**
-     * Flattens the properties of an object, in order, into a list of actions.
+     * Flattens the properties of an object, in order, into a list of actions. The result is
+     * cached per object; callers must not mutate the returned list.
      */
     private List<PropertyAction> collectObjectActions(RevisionStoreObject object) {
-        return collectObjectActions(object, 0);
-    }
-
-    private List<PropertyAction> collectObjectActions(RevisionStoreObject object, int depth) {
+        List<PropertyAction> actions = objectActionsCache.get(object);
+        if (actions != null) {
+            return actions;
+        }
         List<ExGuid> referencedObjects =
                 object.referencedObjectID == null || object.referencedObjectID.content == null ?
                         Collections.emptyList() : object.referencedObjectID.content;
         List<CellID> referencedSpaces = object.referencedObjectSpacesID == null ||
                 object.referencedObjectSpacesID.content == null ? Collections.emptyList() :
                 object.referencedObjectSpacesID.content;
-        List<PropertyAction> actions = new ArrayList<>();
+        actions = new ArrayList<>();
         collectActions(object.propertySet.objectSpaceObjectPropSet.body, referencedObjects,
-                new int[]{0}, referencedSpaces, new int[]{0}, actions, depth);
+                new int[]{0}, referencedSpaces, new int[]{0}, actions, 0);
+        objectActionsCache.put(object, actions);
         return actions;
     }
 
@@ -670,13 +688,6 @@ public class MSOneStorePackage {
      * section 2.7.8), so the references must be assigned here, in property order, no matter
      * in which order the actions are processed later.
      */
-    private void collectActions(PropertySet propertySet, List<ExGuid> referencedObjects,
-                                int[] referenceCursor, List<CellID> referencedSpaces,
-                                int[] spaceCursor, List<PropertyAction> actions) {
-        collectActions(propertySet, referencedObjects, referenceCursor, referencedSpaces,
-                spaceCursor, actions, 0);
-    }
-
     private void collectActions(PropertySet propertySet, List<ExGuid> referencedObjects,
                                 int[] referenceCursor, List<CellID> referencedSpaces,
                                 int[] spaceCursor, List<PropertyAction> actions, int depth) {
@@ -862,17 +873,8 @@ public class MSOneStorePackage {
             }
             metadata.set(TikaCoreProperties.MODIFIED, String.valueOf(lastModified));
         } else if (oneNotePropertyEnum == OneNotePropertyEnum.Author) {
-            String author = decodeOneNoteText(
-                    ((PrtFourBytesOfLengthFollowedByData) property).data);
-            if (authorRole == AuthorRole.MOST_RECENT) {
-                mostRecentAuthors.add(author);
-            } else if (authorRole == AuthorRole.ORIGINAL) {
-                originalAuthors.add(author);
-                // the original authors are the creators of the content
-                authors.add(author);
-            } else {
-                authors.add(author);
-            }
+            recordAuthor(decodeOneNoteText(
+                    ((PrtFourBytesOfLengthFollowedByData) property).data), authorRole);
         } else if (propertyType == PropertyType.FourBytesOfLengthFollowedByData) {
             boolean isBinary = propertyIsBinary(oneNotePropertyEnum);
             PrtFourBytesOfLengthFollowedByData dataProperty =
@@ -880,28 +882,15 @@ public class MSOneStorePackage {
             if ((dataProperty.data.length & 1) == 0 &&
                     oneNotePropertyEnum != OneNotePropertyEnum.TextExtendedAscii && !isBinary) {
                 if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
-                    xhtml.startElement(P);
-                    try {
-                        xhtml.characters(new String(dataProperty.data, StandardCharsets.UTF_16LE));
-                    } finally {
-                        xhtml.endElement(P);
-                    }
+                    emitParagraph(xhtml, new String(dataProperty.data,
+                            StandardCharsets.UTF_16LE));
                 }
             } else if (oneNotePropertyEnum == OneNotePropertyEnum.TextExtendedAscii) {
-                xhtml.startElement(P);
-                try {
-                    xhtml.characters(new String(dataProperty.data, StandardCharsets.US_ASCII));
-                } finally {
-                    xhtml.endElement(P);
-                }
+                emitParagraph(xhtml, new String(dataProperty.data, StandardCharsets.US_ASCII));
             } else if (!isBinary) {
                 if (options.getUtf16PropertiesToPrint().contains(oneNotePropertyEnum)) {
-                    xhtml.startElement(P);
-                    try {
-                        xhtml.characters(new String(dataProperty.data, StandardCharsets.UTF_16LE));
-                    } finally {
-                        xhtml.endElement(P);
-                    }
+                    emitParagraph(xhtml, new String(dataProperty.data,
+                            StandardCharsets.UTF_16LE));
                 }
             } else {
                 if (oneNotePropertyEnum == OneNotePropertyEnum.RichEditTextUnicode) {
@@ -918,6 +907,36 @@ public class MSOneStorePackage {
 
     private String decodeOneNoteText(byte[] bytes) {
         return new String(bytes, StandardCharsets.UTF_16LE).replace("\u0000", "");
+    }
+
+    private void recordAuthor(String author, AuthorRole role) {
+        if (role == AuthorRole.MOST_RECENT) {
+            mostRecentAuthors.add(author);
+        } else if (role == AuthorRole.ORIGINAL) {
+            originalAuthors.add(author);
+            // the original authors are the creators of the content
+            authors.add(author);
+        } else {
+            authors.add(author);
+        }
+    }
+
+    /**
+     * Records the Author properties of an already-visited object under the given role.
+     */
+    private void recordAuthors(RevisionStoreObject object, AuthorRole role) {
+        // NONE also records (into authors) so the result is visit-order independent
+        if (object.propertySet == null ||
+                object.propertySet.objectSpaceObjectPropSet == null) {
+            return;
+        }
+        for (PropertyAction action : collectObjectActions(object)) {
+            if (action.oneNotePropertyEnum == OneNotePropertyEnum.Author &&
+                    action.property instanceof PrtFourBytesOfLengthFollowedByData) {
+                recordAuthor(decodeOneNoteText(
+                        ((PrtFourBytesOfLengthFollowedByData) action.property).data), role);
+            }
+        }
     }
 
     private EmbeddedResourceInfo embeddedResourceInfo(List<PropertyAction> actions) {
@@ -939,10 +958,11 @@ public class MSOneStorePackage {
         return null;
     }
 
-    private String sanitizeResourceName(String name) {
+    static String sanitizeResourceName(String name) {
         name = name.replace('\\', '/');
+        // a drive-relative name like C:pic.png has no slash, so strip the prefix separately
         if (name.length() > 1 && name.charAt(1) == ':') {
-            return "";
+            name = name.substring(2);
         }
         int slash = name.lastIndexOf('/');
         name = slash >= 0 ? name.substring(slash + 1) : name;
@@ -980,6 +1000,9 @@ public class MSOneStorePackage {
         xhtml.endElement("div");
         try (TikaInputStream tis = TikaInputStream.get(data)) {
             if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
+                // only counts as content when the extractor accepts it, so a declined
+                // embedded object in an otherwise-empty file still triggers the fallback
+                contentEmitted = true;
                 embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
                         embeddedMetadata, this.parseContext, false);
             }
@@ -1011,14 +1034,32 @@ public class MSOneStorePackage {
             } finally {
                 xhtml.endElement("a");
             }
+            contentEmitted = true;
         } else {
-            xhtml.startElement(P);
-            try {
-                xhtml.characters(txt);
-            } finally {
-                xhtml.endElement(P);
-            }
+            emitParagraph(xhtml, txt);
         }
+    }
+
+    private void emitParagraph(XHTMLContentHandler xhtml, String text) throws SAXException {
+        xhtml.startElement(P);
+        try {
+            xhtml.characters(text);
+        } finally {
+            xhtml.endElement(P);
+        }
+        // blank text does not count as content, so it cannot suppress the legacy fallback
+        if (!text.isBlank()) {
+            contentEmitted = true;
+        }
+    }
+
+    /**
+     * Whether the tree walk emitted any content - text or an embedded object. When it did
+     * not, the caller can fall back to the legacy string dump so a degraded file still
+     * yields its text.
+     */
+    public boolean hasEmittedContent() {
+        return contentEmitted;
     }
 
     private long getScalar(IProperty property) throws TikaException, IOException {

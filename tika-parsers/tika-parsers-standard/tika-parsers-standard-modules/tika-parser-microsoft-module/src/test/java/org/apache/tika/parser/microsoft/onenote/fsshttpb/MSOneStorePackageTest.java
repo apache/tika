@@ -286,6 +286,91 @@ public class MSOneStorePackageTest {
     }
 
     @Test
+    public void testDualRoleAuthorRecordedForBothRoles() throws Exception {
+        ExGuid authorId = id(710);
+        // the same author object referenced as both AuthorOriginal and AuthorMostRecent
+        RevisionStoreObject root = object(id(711), propertySet(
+                        new PropertySpec(PropertyType.ObjectID, 0x20001D78, new NoData()),
+                        new PropertySpec(PropertyType.ObjectID, 0x20001D79, new NoData())),
+                Arrays.asList(authorId, authorId), Collections.emptyList());
+        RevisionStoreObject author = object(authorId, propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C001D75, utf16Text("Single Author"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(root, author));
+        RevisionManifestRootDeclare rootDeclare = new RevisionManifestRootDeclare();
+        rootDeclare.objectExGuid = root.objectID;
+        cell.rootDeclares.add(rootDeclare);
+
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+        Metadata metadata = new Metadata();
+        walk(pkg, metadata);
+
+        assertEquals("Single Author", metadata.get(TikaCoreProperties.CREATOR));
+        assertEquals("Single Author", metadata.get(OneNote.ORIGINAL_AUTHORS));
+        assertEquals("Single Author", metadata.get(OneNote.MOST_RECENT_AUTHORS));
+    }
+
+    @Test
+    public void testBlobOnlyRootWithDanglingContentRootWalksAllObjects() throws Exception {
+        RevisionStoreObject blobRoot = object(id(620), propertySet(),
+                Collections.emptyList(), Collections.emptyList());
+        blobRoot.propertySet = null;
+        blobRoot.fileDataObject = fileData("blob root");
+        RevisionStoreObject textObject = object(id(621), propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003498, text("page body text"))),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(blobRoot, textObject));
+        RevisionManifestRootDeclare blobDeclare = new RevisionManifestRootDeclare();
+        blobDeclare.objectExGuid = blobRoot.objectID;
+        cell.rootDeclares.add(blobDeclare);
+        RevisionManifestRootDeclare danglingContentRoot = new RevisionManifestRootDeclare();
+        danglingContentRoot.objectExGuid = id(622);
+        cell.rootDeclares.add(danglingContentRoot);
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+        Metadata metadata = new Metadata();
+
+        // the blob root alone cannot reach the page body; the dangling content root must
+        // trigger the walk-everything fallback so the body is not lost
+        assertTrue(walk(pkg, metadata).contains("page body text"));
+        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .anyMatch(warning -> warning.contains("walking all objects")));
+    }
+
+    @Test
+    public void testHasEmittedContentTracksTextAndEmptyWalks() throws Exception {
+        MSOneStorePackage withText = new MSOneStorePackage();
+        withText.cells.add(cellWithText(cell(70, 71), "some text"));
+        walk(withText);
+        assertTrue(withText.hasEmittedContent());
+
+        MSOneStorePackage empty = new MSOneStorePackage();
+        RevisionStoreCell danglingCell = new RevisionStoreCell();
+        RevisionManifestRootDeclare missingRoot = new RevisionManifestRootDeclare();
+        missingRoot.objectExGuid = id(72);
+        danglingCell.rootDeclares.add(missingRoot);
+        empty.cells.add(danglingCell);
+        walk(empty);
+        assertFalse(empty.hasEmittedContent());
+    }
+
+    @Test
+    public void testSanitizeResourceNameKeepsBasenameOfPathShapedNames() {
+        assertEquals("pic 1.png",
+                MSOneStorePackage.sanitizeResourceName("D:\\images\\pic 1.png"));
+        assertEquals("pic.png", MSOneStorePackage.sanitizeResourceName("C:pic.png"));
+        assertEquals("a.png", MSOneStorePackage.sanitizeResourceName("/tmp/a.png"));
+        assertEquals("plain.png", MSOneStorePackage.sanitizeResourceName("plain.png"));
+        assertEquals("", MSOneStorePackage.sanitizeResourceName(".."));
+        assertEquals("", MSOneStorePackage.sanitizeResourceName("D:\\images\\.."));
+    }
+
+    @Test
     public void testBlobOnlyRootDoesNotFallBackToOtherObjects() throws Exception {
         RevisionStoreObject blobRoot = object(id(610), propertySet(),
                 Collections.emptyList(), Collections.emptyList());
@@ -417,19 +502,17 @@ public class MSOneStorePackageTest {
                                 new NoData())),
                 Collections.emptyList(), Collections.emptyList());
         Method collectActions = MSOneStorePackage.class.getDeclaredMethod("collectActions",
-                PropertySet.class, List.class, int[].class, List.class, int[].class, List.class);
+                PropertySet.class, List.class, int[].class, List.class, int[].class, List.class,
+                int.class);
         collectActions.setAccessible(true);
         List<Object> actions = new ArrayList<>();
         collectActions.invoke(new MSOneStorePackage(),
                 hugeArrayRoot.propertySet.objectSpaceObjectPropSet.body,
                 Collections.emptyList(), new int[]{0}, Collections.emptyList(), new int[]{0},
-                actions);
+                actions, 0);
         assertTrue(actions.isEmpty());
-        Method collectActionsWithDepth = MSOneStorePackage.class.getDeclaredMethod(
-                "collectActions", PropertySet.class, List.class, int[].class, List.class,
-                int[].class, List.class, int.class);
-        collectActionsWithDepth.setAccessible(true);
-        collectActionsWithDepth.invoke(new MSOneStorePackage(),
+        actions.clear();
+        collectActions.invoke(new MSOneStorePackage(),
                 hugeArrayRoot.propertySet.objectSpaceObjectPropSet.body,
                 Collections.singletonList(id(601)), new int[]{0}, Collections.emptyList(),
                 new int[]{0}, actions, 1000);
@@ -454,7 +537,7 @@ public class MSOneStorePackageTest {
         actions.clear();
         collectActions.invoke(new MSOneStorePackage(), alignedSet,
                 Collections.nCopies(100001, id(601)), new int[]{0}, Collections.emptyList(),
-                new int[]{0}, actions);
+                new int[]{0}, actions, 0);
         assertEquals(100001, actions.size());
         java.lang.reflect.Field childReference = actions.get(actions.size() - 1).getClass()
                 .getDeclaredField("childReference");
@@ -467,15 +550,26 @@ public class MSOneStorePackageTest {
                 OneNoteTreeWalkerOptions.class, Metadata.class, XHTMLContentHandler.class,
                 int.class);
         walkObject.setAccessible(true);
+        // an object that emits text when walked, so the depth-capped walk's blank
+        // output proves the cap fired rather than the setup having nothing to emit
+        RevisionStoreObject textRoot = object(id(605), propertySet(
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003498, text("depth capped text"))),
+                Collections.emptyList(), Collections.emptyList());
         Metadata metadata = new Metadata();
         StringWriter writer = new StringWriter();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(
                 new ToTextContentHandler(writer), metadata, new ParseContext());
         xhtml.startDocument();
-        walkObject.invoke(new MSOneStorePackage(), hugeArrayRoot,
+        walkObject.invoke(new MSOneStorePackage(), textRoot,
                 new java.util.HashMap<>(), new java.util.HashSet<>(), null,
                 new OneNoteTreeWalkerOptions(), metadata, xhtml, 1000);
+        assertTrue(writer.toString().isBlank());
+        walkObject.invoke(new MSOneStorePackage(), textRoot,
+                new java.util.HashMap<>(), new java.util.HashSet<>(), null,
+                new OneNoteTreeWalkerOptions(), metadata, xhtml, 0);
         xhtml.endDocument();
+        assertTrue(writer.toString().contains("depth capped text"));
     }
 
     @Test

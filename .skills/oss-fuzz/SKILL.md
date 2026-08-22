@@ -312,6 +312,26 @@ and is safe — it runs a single testcase, not a corpus dir, so the
 - **New target:** add `FooParserFuzzer.java` next to the others following the
   `ParserFuzzer.parseOne` + swallow-expected-exceptions pattern.
 
+## Cleanup — the container leaves root-owned files in your working tree
+
+`build_fuzzers` with a local `--mount_path` compiles your working tree *inside
+the container as root*, so `target/` dirs (and other build outputs) in the
+mounted checkout come back **root-owned** — a later host-side `./mvnw clean`
+then fails with permission errors. When you are done fuzzing, run the clean
+**from the container** (root can delete its own files) against the same mount:
+
+```bash
+docker run --rm --platform linux/amd64 \
+  -v /path/to/tika:/src/project-parent/tika \
+  gcr.io/oss-fuzz/apache-tika \
+  bash -c 'cd /src/project-parent/tika && ./mvnw clean -Pfast -Dmaven.repo.local=/tmp/m2'
+```
+
+Use a throwaway in-container repo path for `-Dmaven.repo.local` (as above) so
+the clean itself does not write root-owned files into the host `.local_m2_repo`.
+Verify nothing is left behind: `find /path/to/tika -user root | head` should
+print nothing.
+
 ## Disclosure caveat (read before touching the public project)
 
 The `apache-tika` project on Google's infra **auto-files bugs and discloses on
