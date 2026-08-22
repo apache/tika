@@ -82,6 +82,13 @@ public class OutlookParserTest extends TikaTest {
         // Stored as Thu, 5 Apr 2007 09:26:06 -0700
         assertEquals("2007-04-05T16:26:06Z", metadata.get(TikaCoreProperties.CREATED));
 
+        //TIKA-4798: dcterms:modified should reflect the message date, not
+        //PR_LAST_MODIFICATION_TIME, which for a .msg file records when the file's
+        //underlying storage was last written (e.g. resaved/exported to disk), and
+        //can be much later than when the message was actually sent/received.
+        assertEquals("2007-04-05T16:26:06Z", metadata.get(TikaCoreProperties.MODIFIED));
+        assertEquals("2007-10-05T05:37:49Z", metadata.get("mapi:last-modification-time"));
+
         String content = handler.toString();
         assertNotContained("Microsoft Outlook Express 6", content);
         assertNotContained("L'\u00C9quipe Microsoft Outlook Express", content);
