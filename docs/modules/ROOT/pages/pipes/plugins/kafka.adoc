@@ -21,6 +21,11 @@
 
 The Apache Kafka plugin (`tika-pipes-kafka`) provides an emitter (publishes parsed documents to a Kafka topic) and an iterator (consumes fetch requests from a Kafka topic).
 
+The two halves have different standing. The *emitter* is a plain producer and a good fit: Tika
+parses, results stream to a topic for downstream indexing. The *iterator* is a worked example
+whose suitability depends on your parse latency -- see <<iterator-caveats>> before building on
+it.
+
 [cols="2,1,3"]
 |===
 |Interface |Component name |Class
@@ -146,12 +151,47 @@ applies. The Default column below is therefore the Kafka client's default.
 [#kafka-iterator]
 == Kafka Iterator (`kafka-pipes-iterator`)
 
-Consumes fetch-request messages from a Kafka topic and emits one `FetchEmitTuple` per message. Useful for building event-driven pipelines where some upstream system pushes work to a queue.
+[WARNING]
+.Reference example -- check that your parse latency suits it
+====
+Kafka's consumer model assumes bounded, roughly uniform per-message processing time, so how
+well this component works depends on *how long your documents take to parse*. Short, predictable
+parses fit that assumption. Long-running parses do not: pairing Kafka with documents that take
+minutes to an hour -- OCR'd PDFs, large archives, anything near the one-hour default total-task
+timeout -- works against the grain of the offset model, and the caveats below stop being
+theoretical.
 
-[source,json]
-----
-include::example$pipes-kafka-iterator.json[]
-----
+It is kept as a worked example rather than a supported production integration. If your workload
+has a long latency tail, consider driving tika-server or tika-grpc from your own consumer, where
+you control acknowledgement and retry, and use the <<kafka-emitter,Kafka emitter>> to publish
+results.
+====
+
+[#iterator-caveats]
+=== Things to know before building on it
+
+*Head-of-line blocking, in proportion to your latency spread.* A partition is consumed in order
+by one member of the group. Even with `numClients` workers parsing in parallel, correct offset
+handling can only advance the commit watermark to the lowest un-acknowledged offset, so one slow
+document holds up its partition's progress. With short, uniform parses this is barely
+noticeable; with a long tail, one document can stall a partition for as long as it parses.
+This follows from Kafka's offset model rather than from a setting.
+
+*At-most-once delivery.* `enable.auto.commit` is left at Kafka's default of `true`, so offsets
+are committed on a timer as soon as records are *polled* -- before Tika has parsed or emitted
+them. A crash, OOM or failed emit in between loses those documents silently. Committing after a
+successful emit is not currently possible: the iterator pushes tuples onto a queue and receives
+no completion signal back.
+
+*It drains and exits; it does not stream.* The iterator enqueues what is on the topic and then
+finishes, because tika-pipes' iterator contract is finite. A quiet period ends the run (see
+`drainIdleMs`). It suits a periodic batch drain, not a long-running consumer.
+
+*Give the consumer room to join.* A stock Kafka broker applies
+`group.initial.rebalance.delay.ms` (default 3000) to the first member joining an *empty* group.
+A deployment that runs back-to-back, or keeps another member in the group, never pays this; one
+that starts cold pays it every run. The iterator waits for a partition assignment up to
+`assignmentTimeoutMs` rather than mistaking a not-yet-assigned consumer for an empty topic.
 
 === Configuration
 
@@ -183,21 +223,35 @@ In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.
 
 |`pollDelayMs`
 |`100`
-|Sleep between `poll()` calls when the topic is idle.
+|Timeout passed to each `poll()` call.
 
 |`emitMax`
 |`-1`
 |Maximum tuples to emit. `-1` means unbounded.
 
+|`assignmentTimeoutMs`
+|`30000`
+|How long to wait for the consumer to be assigned a partition before failing. A newly
+subscribed consumer returns empty polls while it joins the group; the iterator waits for an
+assignment so it cannot mistake that for an empty topic.
+
+|`drainIdleMs`
+|`1000`
+|How long the topic must stay quiet (no records, after assignment) before it is treated as
+drained and the iterator finishes. A duration rather than a poll count, so it holds however
+short `pollDelayMs` is.
+
 |`groupInitialRebalanceDelayMs`
 |`3000`
-|Initial rebalance delay for the consumer group.
+|*Deprecated and ignored.* This is a broker setting, not a consumer one, so Kafka never
+applied it. Use `assignmentTimeoutMs` instead. Still accepted so existing configs start;
+scheduled for removal.
 |===
 
 [#kafka-pipeline]
 == Complete Pipeline Example
 
-A Kafka iterator (consuming fetch requests), a filesystem fetcher, and a Kafka emitter (publishing parsed results) — the stream-processing shape.
+A Kafka iterator (consuming fetch requests), a filesystem fetcher, and a Kafka emitter (publishing parsed results). This end-to-end shape is the reference example; see <<iterator-caveats>> before relying on the iterator half.
 
 [source,json]
 ----
@@ -210,4 +264,4 @@ include::example$pipes-kafka-pipeline.json[]
 * The Kafka plugin uses the official `kafka-clients` SDK.
 * The emitter is fire-and-forget at the Tika level; durability is determined by Kafka's `acks` and broker replication factor, not by Tika.
 * For exactly-once semantics, set `enableIdempotence: true` (and ensure `acks: all`); for transactional semantics, also set `transactionalId`.
-* The iterator's `groupId` controls partition assignment. Set it explicitly in production — without one, the consumer receives a transient assignment that resets on restart.
+* The iterator's `groupId` controls partition assignment. Set it explicitly — without one, the consumer receives a transient assignment that resets on restart.

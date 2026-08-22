@@ -1,5 +1,14 @@
 Release 4.1.0 - unreleased
 
+   * The Kafka pipes iterator no longer stops at the first empty poll. A newly
+     subscribed consumer spends its first poll(s) joining the group and returns
+     empty even when the topic has a backlog, so the iterator could enqueue zero
+     files and report success. It now waits for a partition assignment (bounded
+     by the new assignmentTimeoutMs, default 30s) and requires a continuous quiet
+     window (drainIdleMs, default 1s) before concluding the topic is drained.
+     groupInitialRebalanceDelayMs is deprecated and no longer sent to the
+     consumer: it is a broker setting that Kafka has always ignored (TIKA-4833).
+
    * Pipes IPC: carry inline document bytes as a raw binary field beside the
      tuple in the request envelope -- never inside the tuple or its
      ParseContext -- and disable Smile's 7-bit binary encoding. Tuple JSON
