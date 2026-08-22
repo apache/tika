@@ -492,6 +492,9 @@ Release 4.0.0 - 8/18/2026
 
   OTHER CHANGES
 
+   * Dependency upgrades since 4.0.0-beta-1, including Jetty 12.1.12, CXF
+     4.2.3 and SolrJ 10.0.0 (TIKA-4327).
+
    * Release artifacts are now channel-specific. Maven Central gets slim
      per-module jars (plus pom, sources and javadoc); the Apache dist area
      gets runnable zip distributions (tika-app, tika-server-standard,
@@ -560,10 +563,6 @@ Release 4.0.0 - 8/18/2026
      tika-grpc no longer shades gRPC (TIKA-4709).
 
    * Fix concurrency bug in TikaToXMP (TIKA-4393).
-
-   * Dependency upgrades throughout the 4.0.0 line, including Jetty 11 ->
-     12.1.12, CXF 4.0 -> 4.2.3 and SolrJ 8.11.4 -> 10.0.0, plus routine
-     library updates (TIKA-4327).
 
 
 Release 4.0.0-beta-1 - 6/29/2026

@@ -25,17 +25,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
@@ -50,6 +51,7 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
 import org.apache.tika.sax.ToTextContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -59,8 +61,8 @@ public class OneNoteParserTest extends TikaTest {
 
     @Test
     public void testFuzzerRegressionInputsFallBackToLegacyDump() throws Exception {
-        // structural failures no longer abort the parse - the legacy string dump runs and
-        // the original failure is pinned in the parse-warning metadata
+        // a structural failure falls back to the legacy string dump; the failure is
+        // pinned in the parse-warning metadata
         String[][] resources = {
                 {"testOneNote-fuzz1.one", "Missing dependent revision"},
                 {"testOneNote-fuzz2.one", "unified property count"},
@@ -82,6 +84,39 @@ public class OneNoteParserTest extends TikaTest {
                                 TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)));
             }
         }
+    }
+
+    @Test
+    public void testNoContentFsshttpbWalkFallsBackToLegacyDump(@TempDir Path tempDir)
+            throws Exception {
+        Path file = tempDir.resolve("empty-walk.one");
+        // trailing newline: the dump excludes the file's final byte from scanning
+        Files.write(file,
+                "recoverable legacy dump text\n".getBytes(StandardCharsets.US_ASCII));
+        Metadata metadata = new Metadata();
+        StringWriter writer = new StringWriter();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new ToTextContentHandler(writer),
+                metadata, new ParseContext());
+        xhtml.startDocument();
+        try (OneNoteDirectFileResource resource =
+                new OneNoteDirectFileResource(file.toFile())) {
+            // fresh package = the walk completed without emitting anything
+            OneNoteParser.legacyFallbackIfNoContent(new MSOneStorePackage(), metadata, xhtml,
+                    resource);
+            assertTrue(writer.toString().contains("recoverable legacy dump text"));
+            assertTrue(metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)
+                    .contains("produced no content"));
+
+            // pkg == null means the exception path already dumped - no second dump
+            StringWriter exceptionPath = new StringWriter();
+            XHTMLContentHandler xhtml2 = new XHTMLContentHandler(
+                    new ToTextContentHandler(exceptionPath), metadata, new ParseContext());
+            xhtml2.startDocument();
+            OneNoteParser.legacyFallbackIfNoContent(null, metadata, xhtml2, resource);
+            xhtml2.endDocument();
+            assertTrue(exceptionPath.toString().isBlank());
+        }
+        xhtml.endDocument();
     }
 
     @Test
@@ -475,12 +510,12 @@ public class OneNoteParserTest extends TikaTest {
 
     @Test
     public void testLegacyEmbeddedExtractionHonorsShouldParseEmbedded() throws Exception {
-        AtomicInteger asked = new AtomicInteger();
+        List<Metadata> offered = new ArrayList<>();
         ParseContext context = new ParseContext();
         context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
             @Override
             public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
-                asked.incrementAndGet();
+                offered.add(metadata);
                 return false;
             }
 
@@ -496,7 +531,13 @@ public class OneNoteParserTest extends TikaTest {
                 getResourceAsStream("/test-documents/testOneNoteEmbeddedWordDoc.one")) {
             new OneNoteParser().parse(tis, new ToTextContentHandler(), new Metadata(), context);
         }
-        assertTrue(asked.get() > 0);
+        assertTrue(offered.size() > 0);
+        // the legacy path offers every embedded object as an ATTACHMENT; the relationship
+        // id is set only when the object carries a non-nil gosid
+        for (Metadata offeredMetadata : offered) {
+            assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
+                    offeredMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        }
     }
 
     /**

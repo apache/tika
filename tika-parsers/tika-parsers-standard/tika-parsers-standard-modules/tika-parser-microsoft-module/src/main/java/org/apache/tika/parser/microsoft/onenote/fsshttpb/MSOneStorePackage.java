@@ -690,13 +690,6 @@ public class MSOneStorePackage {
      */
     private void collectActions(PropertySet propertySet, List<ExGuid> referencedObjects,
                                 int[] referenceCursor, List<CellID> referencedSpaces,
-                                int[] spaceCursor, List<PropertyAction> actions) {
-        collectActions(propertySet, referencedObjects, referenceCursor, referencedSpaces,
-                spaceCursor, actions, 0);
-    }
-
-    private void collectActions(PropertySet propertySet, List<ExGuid> referencedObjects,
-                                int[] referenceCursor, List<CellID> referencedSpaces,
                                 int[] spaceCursor, List<PropertyAction> actions, int depth) {
         if (propertySet == null || propertySet.rgPrids == null || propertySet.rgData == null) {
             return;
@@ -932,7 +925,8 @@ public class MSOneStorePackage {
      * Records the Author properties of an already-visited object under the given role.
      */
     private void recordAuthors(RevisionStoreObject object, AuthorRole role) {
-        if (role == AuthorRole.NONE || object.propertySet == null ||
+        // NONE also records (into authors) so the result is visit-order independent
+        if (object.propertySet == null ||
                 object.propertySet.objectSpaceObjectPropSet == null) {
             return;
         }
@@ -966,7 +960,7 @@ public class MSOneStorePackage {
 
     static String sanitizeResourceName(String name) {
         name = name.replace('\\', '/');
-        // drop a drive-letter prefix (C:...) so the basename below survives
+        // a drive-relative name like C:pic.png has no slash, so strip the prefix separately
         if (name.length() > 1 && name.charAt(1) == ':') {
             name = name.substring(2);
         }
@@ -985,7 +979,6 @@ public class MSOneStorePackage {
         if (data == null || data.length == 0 || embeddedDocumentExtractor == null) {
             return;
         }
-        contentEmitted = true;
         Metadata embeddedMetadata = Metadata.newInstance(this.parseContext);
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 resourceInfo == null ? TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString() :
@@ -1007,6 +1000,9 @@ public class MSOneStorePackage {
         xhtml.endElement("div");
         try (TikaInputStream tis = TikaInputStream.get(data)) {
             if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
+                // only counts as content when the extractor accepts it, so a declined
+                // embedded object in an otherwise-empty file still triggers the fallback
+                contentEmitted = true;
                 embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
                         embeddedMetadata, this.parseContext, false);
             }
@@ -1051,7 +1047,8 @@ public class MSOneStorePackage {
         } finally {
             xhtml.endElement(P);
         }
-        if (!text.isEmpty()) {
+        // blank text does not count as content, so it cannot suppress the legacy fallback
+        if (!text.isBlank()) {
             contentEmitted = true;
         }
     }

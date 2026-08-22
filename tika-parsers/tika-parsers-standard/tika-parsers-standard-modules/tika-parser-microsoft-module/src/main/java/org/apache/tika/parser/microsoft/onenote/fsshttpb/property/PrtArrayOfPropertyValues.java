@@ -41,6 +41,11 @@ public class PrtArrayOfPropertyValues implements IProperty {
      * @return
      */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
+        return doDeserializeFromByteArray(byteArray, startIndex, 0);
+    }
+
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex, int depth)
+            throws IOException {
         int index = startIndex;
         this.cProperties = BitConverter.toInt32(byteArray, index);
         index += 4;
@@ -56,7 +61,7 @@ public class PrtArrayOfPropertyValues implements IProperty {
         this.data = new PropertySet[this.cProperties];
         for (int i = 0; i < this.cProperties; i++) {
             this.data[i] = new PropertySet();
-            int length = this.data[i].doDeserializeFromByteArray(byteArray, index);
+            int length = this.data[i].doDeserializeFromByteArray(byteArray, index, depth + 1);
             index += length;
         }
 

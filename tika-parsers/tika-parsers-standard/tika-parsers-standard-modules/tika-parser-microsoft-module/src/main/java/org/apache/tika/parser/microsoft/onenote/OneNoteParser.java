@@ -196,13 +196,7 @@ public class OneNoteParser implements Parser {
                             oneNoteDirectFileResource);
                     pkg = null;
                 }
-                if (pkg != null && !pkg.hasEmittedContent()) {
-                    // the walk completed but every page dangled - without this a degraded
-                    // file would yield empty output where the dump still finds its text
-                    legacyFallbackDump("OneNote FSSHTTPB parse produced no content; " +
-                                    "falling back to legacy text dump", null, metadata, xhtml,
-                            oneNoteDirectFileResource);
-                }
+                legacyFallbackIfNoContent(pkg, metadata, xhtml, oneNoteDirectFileResource);
             } else {
                 throw new TikaException("Invalid OneStore document - could not parse headers");
             }
@@ -227,6 +221,19 @@ public class OneNoteParser implements Parser {
 
     private static String failureMessage(Exception e) {
         return e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
+    }
+
+    // the walk completed but every page dangled - without this a degraded
+    // file would yield empty output where the dump still finds its text
+    static void legacyFallbackIfNoContent(MSOneStorePackage pkg, Metadata metadata,
+                                          XHTMLContentHandler xhtml,
+                                          OneNoteDirectFileResource oneNoteDirectFileResource)
+            throws TikaException, SAXException {
+        if (pkg != null && !pkg.hasEmittedContent()) {
+            legacyFallbackDump("OneNote FSSHTTPB parse produced no content; " +
+                            "falling back to legacy text dump", null, metadata, xhtml,
+                    oneNoteDirectFileResource);
+        }
     }
 
     private static void legacyFallbackDump(String warning, Exception cause, Metadata metadata,
@@ -274,7 +281,8 @@ public class OneNoteParser implements Parser {
      *                                  content.
      * @return A parsed one note document. This document does not contain any of the binary data,
      * rather it just contains
-     * the data pointers and metadata.
+     * the data pointers and metadata. A failure while parsing the root file node list is not
+     * thrown; it is recorded in the returned document's {@code structureParseException}.
      * @throws IOException Will throw IOException in typical IO issue situations.
      */
     public OneNoteDocument createOneNoteDocumentFromDirectFileResource(
