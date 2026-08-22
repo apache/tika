@@ -26,7 +26,10 @@ content:
       start_path: docs
       branches:
         - HEAD           # current development (SNAPSHOT)
-        - docs/*         # released version branches (docs/4.0.0, docs/4.1.0, etc.)
+        - docs/{0..9}*   # released version branches (docs/4.0.x, docs/4.1.x, ...);
+                         # numbered-only so a feature branch named docs/foo can't
+                         # collide ("Duplicate nav"). NB: [0-9] bracket globs
+                         # don't match here; the {0..9} brace range does.
 
 ui:
   bundle:
@@ -37,7 +40,8 @@ ui:
 asciidoc:
   attributes:
     # Tika version attributes
-    tika-version: '4.0.0-SNAPSHOT'
+    # '@' = soft: each branch's antora.yml tika-version wins over this default
+    tika-version: '4.1.0-SNAPSHOT@'
     tika-stable-version: '3.3.2'
     # Enable source highlighting
     source-highlighter: highlight.js

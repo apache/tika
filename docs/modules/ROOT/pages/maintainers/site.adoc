@@ -100,10 +100,19 @@ Documentation versions are managed through Git branches with the `docs/` prefix.
 
 === Branch Structure
 
-* `HEAD` (main branch) — current development version (SNAPSHOT)
-* `docs/X.Y.Z` — one branch per released version, e.g. `docs/4.0.0`
+* `HEAD` (main branch) — current development version (SNAPSHOT); its
+  `antora.yml` carries `prerelease: true` so the `/docs` redirect stays on the
+  latest released line
+* `docs/X.Y.x` — one branch per released *minor* line, e.g. `docs/4.0.x`.
+  Patch releases commit to the same branch and republish in place, so there is
+  one URL per line (`/docs/4.0.x/`). The Changes page and javadoc stay
+  per-release (`/4.0.0/`, `/4.0.0/api/`) — javadocs are exact-version artifacts.
 
-The playbook (`antora-playbook.yml`) builds all `docs/*` branches automatically.
+The playbook (`antora-playbook.yml`) builds all `docs/{0..9}*` branches
+automatically (a brace range — `[0-9]` bracket globs don't match in Antora's
+matcher). The glob is numbered-only on purpose: a feature branch named
+`docs/anything` would otherwise be picked up as a content source and break the
+build with "Duplicate nav".
 
 === Publishing to the Site
 
@@ -134,30 +143,40 @@ the site checkout with the correct directory layout:
 
 === Publishing a Release
 
-When releasing a new version (e.g., 4.0.0):
+When releasing a new minor line (e.g., 4.0.0 creates `docs/4.0.x`):
 
 [source,bash]
 ----
-# 1. The release tag is the bare version (see the release guide, Step 12)
+# 1. Create the docs branch (from the release tag, or from main if the
+#    post-tag docs improvements should ship too)
+git checkout -b docs/4.0.x 4.0.0
 
-# 2. Create docs branch from the tag
-git checkout -b docs/4.0.0 4.0.0
+# 2. Set the version (and the tika-version attribute) in docs/antora.yml
+#    version: '4.0.x'
+#    asciidoc:
+#      attributes:
+#        tika-version: '4.0.0'
+git commit -am "Set docs version to 4.0.x"
+git push origin docs/4.0.x
 
-# 3. Update version in antora.yml
-sed -i "s/4.0.0-SNAPSHOT/4.0.0/" docs/antora.yml
-git commit -am "Set docs version to 4.0.0"
-git push origin docs/4.0.0
+# 3. On main, make sure docs/antora.yml still carries prerelease: true;
+#    without it /docs redirects to the SNAPSHOT after the version bump.
 
 # 4. Build and publish
 ./mvnw package -Papache-release -pl :tika-docs -DskipTests
 cd docs
 ./publish-docs.sh /path/to/tika-site/publish
 
-# 5. Commit to SVN
+# 5. In the SVN checkout: prune any stale SNAPSHOT tree, then commit
 cd /path/to/tika-site
+svn rm publish/docs/<old>-SNAPSHOT   # nothing prunes it otherwise
 svn add publish/docs publish/_ publish/search-index.js --force
-svn commit -m "Publish 4.0.0 docs"
+svn commit -m "Publish 4.0.x docs"
 ----
+
+For a patch release (e.g. 4.0.1), there is no new branch: merge or cherry-pick
+the doc changes to `docs/4.0.x`, bump its `tika-version` attribute, rebuild and
+republish in place.
 
 === Updating Released Documentation
 
@@ -166,21 +185,21 @@ To fix or update documentation for a released version:
 [source,bash]
 ----
 # 1. Checkout the docs branch
-git checkout docs/4.0.0
+git checkout docs/4.0.x
 
 # 2. Make changes (docs or config examples)
 # Edit files as needed...
 
 # 3. Commit and push
 git commit -am "Fix PDF parser example"
-git push origin docs/4.0.0
+git push origin docs/4.0.x
 
 # 4. Rebuild and republish
 ./mvnw package -Papache-release -pl :tika-docs -DskipTests
 cd docs
 ./publish-docs.sh /path/to/tika-site/publish
 cd /path/to/tika-site
-svn commit -m "Update 4.0.0 docs"
+svn commit -m "Update 4.0.x docs"
 ----
 
 == Publishing the API docs (Javadoc)

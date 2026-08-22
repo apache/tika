@@ -2,9 +2,10 @@
 name: update-site-for-release
 description: >
   Update/publish the Apache Tika website (tika-site SVN repo) for a release —
-  step 17 of the Release Process. Handles STABLE (full per-version docs +
-  javadoc) vs PREVIEW/beta (Changes page + Antora docs). Use for "update the
-  site", "publish the site for X.Y.Z", "the website part of the release".
+  step 17 of the Release Process. Handles the 4.x track (Changes page +
+  aggregate javadoc + Antora docs branch) vs the 3.x maintenance track (full
+  per-version apt docs + javadoc). Use for "update the site", "publish the
+  site for X.Y.Z", "the website part of the release".
 ---
 
 <!--
@@ -47,43 +48,53 @@ private companion skill under `~/.claude/skills/`.
 
 ---
 
-## 0. Inputs + release type
+## 0. Inputs + release track
+
+Two supported tracks since 4.0.0 (2026-08-21): **4.x** is the current line,
+**3.x** is the maintenance line. Which track a release is on decides the
+process; both tracks are "stable" — there is no preview slot unless a future
+5.x preview reintroduces one.
 
 | Input | Example | Notes |
 |---|---|---|
-| `NEW_VERSION` | `3.3.2` | the release |
-| `RELEASE_TYPE` | `stable` | `stable` or `preview` (alpha/beta/BETA) |
-| `PREV_STABLE` / `PREV_PREVIEW` | `3.3.1` / `4.0.0-beta-1` | current `tika.stable.version` / `tika.preview.version` |
-| `PREV_TAG` / `NEW_TAG` | `3.3.1` / `3.3.2` | git tags, for the GitHub contributor query |
-| `JIRA fixVersion` | `3.3.2` | **may differ** from the label (betas often use the base version, e.g. `4.0.0`) |
-| `CHANGES` file | `$SCRATCH/CHANGES-3.3.2.txt` | notable-changes source |
-| src release zip | `tika-<NEW>-src.zip` | **stable only** (javadoc) |
-| release date | `2026-07-21` | doap.rdf + news blurb |
+| `NEW_VERSION` | `4.0.1` | the release |
+| `RELEASE_TRACK` | `4.x` | `4.x` or `3.x` (maintenance) |
+| `PREV_TAG` / `NEW_TAG` | `4.0.0-rc1` / `4.0.1` | git tags, for the GitHub contributor query |
+| `JIRA fixVersion` | `4.0.1` | **may differ** from the label (pre-releases often use the base version) |
+| `CHANGES` file | `$SCRATCH/CHANGES-4.0.1.txt` | notable-changes source |
+| src release zip | `tika-<NEW>-src.zip` | javadoc source (both tracks) |
+| release date | `2026-08-21` | doap.rdf + news blurb |
 
-Confirm current values in `src/site/pom.xml`.
+Confirm current values in `pom.xml` (repo root — `tika.stable.version` = 4.x
+line, `tika.maintenance.version` = 3.x line).
 
-| Step | STABLE | PREVIEW / beta |
+| Step | 4.x track | 3.x maintenance track |
 |---|---|---|
-| `pom.xml` `<parent><version>` | → `<NEW>` | leave at stable |
+| `pom.xml` `<parent><version>` | leave at newest 3.x | → `<NEW>` (must stay a 3.x parent — Java 11 build) |
 | `pom.xml` `tika.stable.version` | → `<NEW>` | leave |
-| `pom.xml` `tika.preview.version` | leave | → `<NEW>` |
-| `src/site/apt/<NEW>/` | full 8-file set (scaffold from prev) | **only `index.apt`** |
-| `site.xml` entry | full sub-menu, expanded | minimal `Changes` item under `docs/<major>-SNAPSHOT` |
-| formats.apt | regenerate from `tika-app` jar | n/a (Antora docs) |
-| javadoc | `clean install -Pfast` + `javadoc:aggregate` → `publish/<NEW>/api` (step 7) | n/a |
-| Antora docs | n/a | `mvn package -pl docs` + `docs/publish-docs.sh` |
+| `pom.xml` `tika.maintenance.version` | leave | → `<NEW>` |
+| `src/site/apt/<NEW>/` | **only `index.apt`** (Changes) | full 8-file set (scaffold from prev 3.x) |
+| `site.xml` entry | sub-menu linking `docs/<X.Y>.x/` pages + Changes + api | full legacy sub-menu, expanded |
+| formats.apt | n/a (Antora docs) | regenerate from `tika-app` jar |
+| javadoc | `clean install -Pfast` + `javadoc:aggregate` → `publish/<NEW>/api` (step 7) | same |
+| Antora docs | new minor → new `docs/<X.Y>.x` branch; patch → republish same branch (step 7) | n/a |
 | Download page | automatic | automatic |
 
 doap.rdf, index.apt.vm news, verify, publish are common to both.
+
+URL scheme (decided 2026-08-19): Antora docs are per-minor (`/docs/4.0.x/`);
+the apt Changes page and javadoc are per-release (`/4.0.0/`, `/4.0.0/api/`) —
+javadocs are exact-version artifacts.
 
 ---
 
 ## 1. `src/site/pom.xml` versions  [AGENT]
 
-- **STABLE:** bump `<parent><version>` **and** `<tika.stable.version>` to `<NEW>`.
-  (parent version drives `${project.parent.version}` home-page links → must be
-  newest stable.)
-- **PREVIEW:** bump only `<tika.preview.version>`; leave parent + stable.
+- **4.x:** bump `<tika.stable.version>` to `<NEW>`.
+- **3.x:** bump `<tika.maintenance.version>` **and** `<parent><version>` to `<NEW>`.
+- `<parent>` supplies build config only (no site content references it since
+  4.0.0). It must stay on the newest **3.x** parent: the 4.x parent enforces
+  Java 17, but maven-site-plugin 3.4 needs the Java 11 build (step 8).
 
 Download page auto-reads these — no manual edit.
 
@@ -91,10 +102,26 @@ Download page auto-reads these — no manual edit.
 
 ## 2. `src/site/site.xml` menu  [AGENT]
 
-Current stable + current preview expanded; older = `collapse="true"`.
+Current 4.x + current 3.x expanded; older = `collapse="true"`.
 
-- **STABLE:** new expanded block above the previous stable; add `collapse="true"`
-  to the old stable block:
+- **4.x, new minor:** new expanded block at the top; links go into the Antora
+  tree plus the per-release Changes/api (repoint `docs/<old>.x` → `docs/<new>.x`
+  when a new minor supersedes; a patch release only updates the Changes/api
+  version numbers in the hrefs):
+  ```xml
+  <item name="Apache Tika 4.0.0" href="docs/4.0.x/index.html">
+    <item name="Documentation Home" href="docs/4.0.x/index.html"/>
+    <item name="Using Tika" href="docs/4.0.x/using-tika/index.html"/>
+    <item name="Getting Started (Java API)" href="docs/4.0.x/using-tika/java-api/getting-started.html"/>
+    <item name="Pipes" href="docs/4.0.x/pipes/index.html"/>
+    <item name="Configuration" href="docs/4.0.x/configuration/index.html"/>
+    <item name="Migrating to Tika 4.x" href="docs/4.0.x/migration-to-4x/index.html"/>
+    <item name="Changes" href="4.0.0/index.html"/>
+    <item name="API Documentation" href="4.0.0/api/"/>
+  </item>
+  ```
+- **3.x:** new expanded block above the previous 3.x; add `collapse="true"`
+  to the old block:
   ```xml
   <item name="Apache Tika 3.3.2" href="3.3.2/index.html">
     <item name="Getting Started"                href="3.3.2/gettingstarted.html"/>
@@ -107,19 +134,15 @@ Current stable + current preview expanded; older = `collapse="true"`.
     <item name="API Documentation"              href="3.3.2/api/"/>
   </item>
   ```
-- **PREVIEW:** minimal block above the old preview (collapse it); `href` → Antora
-  snapshot, not an apt page:
-  ```xml
-  <item name="Apache Tika 4.0.0-beta-2" href="docs/4.0.0-SNAPSHOT">
-    <item name="Changes" href="4.0.0-beta-2/index.html"/>
-  </item>
-  ```
 
 ---
 
 ## 3. Per-version apt docs `src/site/apt/<NEW>/`  [AGENT]
 
-**STABLE** — scaffold (these docs are version-string-identical across 3.x):
+**4.x** — create only `index.apt` (the Changes page; title `Apache Tika <NEW>`;
+fill step 4). No other apt files — everything else lives in the Antora docs.
+
+**3.x** — scaffold (these docs are version-string-identical across 3.x):
 ```bash
 ./scripts/scaffold-stable-version.sh $SITE 3.3.1 3.3.2
 ```
@@ -136,8 +159,7 @@ Copies+bumps `configuring/detection/examples/parser/parser_guide/gettingstarted.
   skips `formats.apt` for this reason.)
 - **index.apt** — step 4.
 
-**PREVIEW** — create only `index.apt` (copy prev preview's; title `Apache Tika
-<NEW>`; fill step 4). No other files.
+
 
 ---
 
@@ -206,7 +228,7 @@ release can sit above an older-dated preview — 3.3.2/Jul-16 above 4.0.0-beta-1
 
 ## 7. Docs / Javadoc
 
-**STABLE — javadoc [AGENT].** NOT the wiki's `javadoc:aggregate-no-fork` (runs
+**Javadoc — both tracks [AGENT].** NOT the wiki's `javadoc:aggregate-no-fork` (runs
 against `tika-parent`, its relative `<sourcepath>` fails → `No source files for
 package org.apache.tika`; wrong goal, not a JDK issue). From the unzipped src
 release (its `./mvnw` is broken — use system `mvn`):
@@ -222,14 +244,23 @@ exist`; the forking `aggregate` (@aggregator) runs once on the root, `-no-fork`
 breaks per-`pom`-module. Any modern JDK (11 and 25 verified). (`tika-server`
 miredot docs discontinued — skip.)
 
-**PREVIEW (4.x) — Antora docs [AGENT]:**
+**4.x — Antora docs [AGENT].** Built from the tika git repo (main checkout),
+not the src zip — the playbook pulls every `docs/{0..9}*` branch as a content
+source. New minor: create `docs/<X.Y>.x` from the tag (or main), set
+`version: '<X.Y>.x'` + `tika-version` attribute in that branch's
+`docs/antora.yml`, and make sure main's antora.yml has `prerelease: true`
+[HUMAN commits]. Patch: commit doc changes + `tika-version` bump to the
+existing branch. Then:
 ```bash
-cd tika-<NEW>            # unzipped src release
-./mvnw package -pl docs
+cd tika-main
+./mvnw package -Papache-release -pl :tika-docs -DskipTests
 ./docs/publish-docs.sh $SITE/publish
 ```
 `publish-docs.sh` copies target/site into `publish/docs/`, flattens URLs, rewrites
-the search index (has its own guards).
+the search index (has its own guards). First 4.x publish after the SNAPSHOT era:
+`svn rm publish/docs/<old>-SNAPSHOT` (nothing prunes it) and verify
+`publish/docs/index.html` redirects to the released line, not a SNAPSHOT.
+Full procedure: docs/modules/ROOT/pages/maintainers/site.adoc.
 
 ---
 
@@ -263,7 +294,7 @@ svn add src/site/apt/<NEW>            # + any other new files
 # svn commit -m "Update website for <NEW> release."
 ```
 
-**Big-commit caveat (stable):** `publish/<NEW>/api` is ~3,000 files / ~55 MB; a
+**Big-commit caveat (javadoc):** `publish/<NEW>/api` is ~3,000 files / ~55 MB; a
 single commit often **times out / `E000104 Connection reset by peer`** — this is
 size, NOT auth (bad password = `Authentication failed`/403, and cached creds won't
 re-prompt). Fixes:
@@ -314,15 +345,15 @@ commit outside `publish/` won't trigger. Still stuck ~30 min → ping `#asfinfra
 
 ## Checklist
 
-- [ ] stable vs preview decided
-- [ ] `pom.xml` versions (parent+stable for stable; preview only for preview)
+- [ ] 4.x vs 3.x track decided
+- [ ] `pom.xml` versions (stable for 4.x; maintenance+parent for 3.x)
 - [ ] `site.xml`: new entry added, previous same-track entry collapsed
-- [ ] per-version apt docs (full set for stable / `index.apt` only for preview)
-- [ ] `formats.apt` regenerated (stable)
+- [ ] per-version apt docs (`index.apt` only for 4.x / full set for 3.x)
+- [ ] `formats.apt` regenerated (3.x only)
 - [ ] `index.apt`: notable changes + curated contributors + shortlink
 - [ ] `doap.rdf` entry
 - [ ] `index.apt.vm`: news block + superseded CHANGES link → archive
-- [ ] javadoc → `publish/<NEW>/api` (stable) / Antora docs (preview)
+- [ ] javadoc → `publish/<NEW>/api` (both tracks); Antora branch published (4.x)
 - [ ] `mvn clean install` (never bare `install`); pages styled (CSS + sidebar)
 - [ ] `svn status`/`svn add` done, commit handed to RM (chunk `api/` if it resets)
 - [ ] live site 200: `https://tika.apache.org/<NEW>/index.html?cb=…` — else re-kick
