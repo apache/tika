@@ -1591,10 +1591,24 @@
     <glob pattern="*.txd"/>
   </mime-type>
   <mime-type type="application/vnd.geogebra.file">
+    <_comment>GeoGebra Worksheet</_comment>
     <glob pattern="*.ggb"/>
+    <sub-class-of type="application/zip"/>
+  </mime-type>
+  <mime-type type="application/vnd.geogebra.pinboard">
+    <_comment>GeoGebra Pinboard</_comment>
+    <glob pattern="*.ggp"/>
+    <sub-class-of type="application/json"/>
+  </mime-type>
+  <mime-type type="application/vnd.geogebra.slides">
+    <_comment>GeoGebra Notes/Slides</_comment>
+    <glob pattern="*.ggs"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
   <mime-type type="application/vnd.geogebra.tool">
+    <_comment>GeoGebra Tool</_comment>
     <glob pattern="*.ggt"/>
+    <sub-class-of type="application/zip"/>
   </mime-type>
   <mime-type type="application/vnd.geometry-explorer">
     <glob pattern="*.gex"/>
