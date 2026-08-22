@@ -3,6 +3,17 @@ Release 3.3.3 - ???
   * MagicDetector now compiles its regular expression once, in the
     constructor, instead of recompiling it on every match (TIKA-4796).
 
+   * OneNote extraction now follows document order, omits superseded page
+     revisions, sorts author metadata, extracts embedded object BLOBs, and
+     bounds malformed-input recursion and file-derived allocations. Parse
+     warnings and embedded relationship IDs are exposed in metadata. Malformed
+     or truncated files that cannot be fully parsed, and files whose walk
+     yields no content, now fall back to the legacy string dump instead of
+     failing or returning empty output. The legacy MS-ONESTORE walker bounds
+     its recursion (depth caps plus file-node-list and fragment-chain cycle
+     guards) and now honors shouldParseEmbedded for embedded file data
+     (TIKA-4814).
+
    * PDFs whose %PDF- header is preceded by a print-composition job ticket are
      no longer detected as text/x-matlab. Up to 50 %% comment or blank lines of
      up to 150 characters, and nothing else, may now precede the header; the

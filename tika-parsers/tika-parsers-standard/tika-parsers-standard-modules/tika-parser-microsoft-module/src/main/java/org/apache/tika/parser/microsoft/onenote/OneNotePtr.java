@@ -19,11 +19,12 @@ package org.apache.tika.parser.microsoft.onenote;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Set;
 
 import org.apache.commons.codec.binary.Hex;
 import org.apache.commons.io.EndianUtils;
@@ -54,8 +55,28 @@ class OneNotePtr {
             new byte[]{60, 0, 105, 0, 102, 0, 110, 0, 100, 0, 102, 0, 62, 0};
     private static final String PACKAGE_STORAGE_FILE_FORMAT_GUID =
             "{638DE92F-A6D4-4BC1-9A36-B3FC2511A5B7}";
+    private static final int MAX_PROPERTY_VALUES = 100_000;
+    private static final int MAX_PROPERTY_SET_DEPTH = 1000;
+    // the format nests file node lists only a handful of levels deep; 100 leaves wide
+    // margin while keeping the recursion far from any stack limit
+    private static final int MAX_FILE_NODE_LIST_DEPTH = 100;
+
+    private static final class PropertyValueBudget {
+        private long remaining = MAX_PROPERTY_VALUES;
+    }
+
+    /**
+     * Recursion state for the baseType-2 file-node-list nesting, shared by every pointer
+     * copied while parsing one document.
+     */
+    private static final class FileNodeListRecursion {
+        private int depth;
+        private final Set<Long> activeListOffsets = new HashSet<>();
+    }
 
     int indentLevel = 0;
+    private PropertyValueBudget propertyValueBudget = new PropertyValueBudget();
+    private FileNodeListRecursion fileNodeListRecursion = new FileNodeListRecursion();
 
     long offset;
     long end;
@@ -77,6 +98,8 @@ class OneNotePtr {
         this.offset = oneNotePtr.offset;
         this.end = oneNotePtr.end;
         this.indentLevel = oneNotePtr.indentLevel;
+        this.propertyValueBudget = oneNotePtr.propertyValueBudget;
+        this.fileNodeListRecursion = oneNotePtr.fileNodeListRecursion;
     }
 
     public OneNoteHeader deserializeHeader() throws IOException, TikaException {
@@ -260,14 +283,22 @@ class OneNotePtr {
     public OneNotePtr internalDeserializeFileNodeList(OneNotePtr ptr, FileNodeList fileNodeList,
                                                       FileNodePtr curPath)
             throws IOException, TikaException {
-        OneNotePtr localPtr = new OneNotePtr(document, dif);
+        OneNotePtr localPtr = new OneNotePtr(ptr);
         FileNodePtrBackPush bp = new FileNodePtrBackPush(curPath);
+        // a next-fragment reference pointing at an already-seen fragment would loop forever
+        Set<Long> seenFragmentOffsets = new HashSet<>();
+        seenFragmentOffsets.add(ptr.offset);
         try {
             while (true) {
                 FileChunkReference next = FileChunkReference.nil();
                 ptr.deserializeFileNodeListFragment(fileNodeList, next, curPath);
                 if (FileChunkReference.nil().equals(next)) {
                     break;
+                }
+                if (!seenFragmentOffsets.add(next.stp)) {
+                    throw new TikaException(
+                            "OneNote file node list fragment cycle detected at offset " +
+                                    next.stp);
                 }
                 localPtr.reposition(next);
                 ptr = localPtr;
@@ -279,9 +310,30 @@ class OneNotePtr {
     }
 
 
+    /**
+     * Deserializes one file-node list and its fragments. The property-value budget is reset for
+     * each list; pointers copied while parsing that list share the budget.
+     */
     public OneNotePtr deserializeFileNodeList(FileNodeList fileNodeList, FileNodePtr curPath)
             throws IOException, TikaException {
-        return internalDeserializeFileNodeList(this, fileNodeList, curPath);
+        if (fileNodeListRecursion.depth >= MAX_FILE_NODE_LIST_DEPTH) {
+            throw new TikaMemoryLimitException(
+                    "OneNote file node list nesting exceeds depth limit " +
+                            MAX_FILE_NODE_LIST_DEPTH);
+        }
+        long listOffset = offset;
+        if (!fileNodeListRecursion.activeListOffsets.add(listOffset)) {
+            throw new TikaException(
+                    "OneNote file node list cycle detected at offset " + listOffset);
+        }
+        fileNodeListRecursion.depth++;
+        try {
+            propertyValueBudget = new PropertyValueBudget();
+            return internalDeserializeFileNodeList(this, fileNodeList, curPath);
+        } finally {
+            fileNodeListRecursion.depth--;
+            fileNodeListRecursion.activeListOffsets.remove(listOffset);
+        }
     }
 
     /**
@@ -453,23 +505,22 @@ class OneNotePtr {
 
             data.subType.globalIdTableEntryFNDX.guid = deserializeGUID();
 
-            document.revisionMap.get(document.currentRevision).globalId.put(
-                    data.subType.globalIdTableEntryFNDX.index,
+            Revision currentRevision = getCurrentRevision();
+            currentRevision.globalId.put(data.subType.globalIdTableEntryFNDX.index,
                     data.subType.globalIdTableEntryFNDX.guid);
         } else if (data.id == FndStructureConstants.GlobalIdTableEntry2FNDX) {
             data.subType.globalIdTableEntry2FNDX.indexMapFrom = deserializeLittleEndianInt();
             data.subType.globalIdTableEntry2FNDX.indexMapTo = deserializeLittleEndianInt();
 
-            ExtendedGUID dependentRevision =
-                    document.revisionMap.get(document.currentRevision).dependent;
-            // Get the compactId from the revisionMap's globalId map.
-            GUID compactId = document.revisionMap.get(dependentRevision).globalId.get(
+            Revision currentRevision = getCurrentRevision();
+            Revision dependentRevision = getRevision(currentRevision.dependent);
+            GUID compactId = dependentRevision.globalId.get(
                     data.subType.globalIdTableEntry2FNDX.indexMapFrom);
             if (compactId == null) {
                 throw new TikaException("COMPACT_ID_MISSING");
             }
-            document.revisionMap.get(document.currentRevision).globalId.put(
-                    data.subType.globalIdTableEntry2FNDX.indexMapTo, compactId);
+            currentRevision.globalId.put(data.subType.globalIdTableEntry2FNDX.indexMapTo,
+                    compactId);
         } else if (data.id == FndStructureConstants.GlobalIdTableEntry3FNDX) {
             data.subType.globalIdTableEntry3FNDX.indexCopyFromStart = deserializeLittleEndianInt();
 
@@ -477,16 +528,17 @@ class OneNotePtr {
 
             data.subType.globalIdTableEntry3FNDX.indexCopyToStart = deserializeLittleEndianInt();
 
-            ExtendedGUID dependent_revision =
-                    document.revisionMap.get(document.currentRevision).dependent;
-            for (int i = 0; i < data.subType.globalIdTableEntry3FNDX.entriesToCopy; ++i) {
-                Map<Long, GUID> globalIdMap = document.revisionMap.get(dependent_revision).globalId;
-                GUID compactId = globalIdMap.get(
+            Revision currentRevision = getCurrentRevision();
+            Revision dependentRevision = getRevision(currentRevision.dependent);
+            int entriesToCopy = checkedCount(
+                    data.subType.globalIdTableEntry3FNDX.entriesToCopy, "global ID entries");
+            for (int i = 0; i < entriesToCopy; ++i) {
+                GUID compactId = dependentRevision.globalId.get(
                         data.subType.globalIdTableEntry3FNDX.indexCopyFromStart + i);
                 if (compactId == null) {
                     throw new TikaException("COMPACT_ID_MISSING");
                 }
-                document.revisionMap.get(document.currentRevision).globalId.put(
+                currentRevision.globalId.put(
                         data.subType.globalIdTableEntry3FNDX.indexCopyToStart + i, compactId);
             }
         } else if (data.id == FndStructureConstants.CanRevise.ObjectRevisionWithRefCountFNDX ||
@@ -623,9 +675,9 @@ class OneNotePtr {
                         "Data out of bounds - cch " + cch + " is > room left = " + roomLeftLong);
             }
 
-            if (cch > dif.size()) {
+            if (cch > dif.size() || cch > Integer.MAX_VALUE / 2L) {
                 throw new TikaMemoryLimitException(
-                        "CCH=" + cch + " was found that was greater" + " than file size " +
+                        "CCH=" + cch + " cannot be safely allocated for file size " +
                                 dif.size());
             }
             ByteBuffer dataSpaceBuffer = ByteBuffer.allocate((int) cch * 2);
@@ -816,7 +868,7 @@ class OneNotePtr {
         compactID.guid = ExtendedGUID.nil();
         compactID.guid.n = compactID.n;
         long index = compactID.guidIndex;
-        Map<Long, GUID> globalIdMap = document.revisionMap.get(document.currentRevision).globalId;
+        Map<Long, GUID> globalIdMap = getCurrentRevision().globalId;
         GUID guid = globalIdMap.get(index);
         if (guid != null) {
             compactID.guid.guid = guid;
@@ -976,22 +1028,69 @@ class OneNotePtr {
         }
     }
 
+    private Revision getCurrentRevision() throws TikaException {
+        Revision revision = document.revisionMap.get(document.currentRevision);
+        if (revision == null) {
+            throw new TikaException("Missing current revision");
+        }
+        return revision;
+    }
+
+    private Revision getRevision(ExtendedGUID revisionId) throws TikaException {
+        Revision revision = document.revisionMap.get(revisionId);
+        if (revision == null) {
+            throw new TikaException("Missing dependent revision");
+        }
+        return revision;
+    }
+
+    private int checkedCount(long count, String description) throws TikaException {
+        if (count < 0 || count > MAX_PROPERTY_VALUES) {
+            throw new TikaMemoryLimitException(
+                    description + " count " + count + " exceeds limit " + MAX_PROPERTY_VALUES);
+        }
+        return (int) count;
+    }
+
+    private int reservePropertyCount(long count, String description) throws TikaException {
+        int checked = checkedCount(count, description);
+        if (count > propertyValueBudget.remaining) {
+            throw new TikaMemoryLimitException(description + " count " + count +
+                    " exceeds remaining property value budget " + propertyValueBudget.remaining);
+        }
+        propertyValueBudget.remaining -= count;
+        return checked;
+    }
+
     private PropertySet deserializePropertySet(ObjectStreamCounters counters,
                                                ObjectSpaceObjectPropSet streams)
             throws IOException, TikaException {
+        return deserializePropertySet(counters, streams, 0);
+    }
+
+    private PropertySet deserializePropertySet(ObjectStreamCounters counters,
+                                               ObjectSpaceObjectPropSet streams,
+                                               int depth)
+            throws IOException, TikaException {
+        if (depth >= MAX_PROPERTY_SET_DEPTH) {
+            throw new TikaException("Property set nesting exceeds limit " +
+                    MAX_PROPERTY_SET_DEPTH);
+        }
         PropertySet data = new PropertySet();
-        long count = deserializeLittleEndianShort();
-        data.rgPridsData =
-                Stream.generate(PropertyValue::new).limit((int) count).collect(Collectors.toList());
+        // Reserve the count before allocating any PropertyValue instances.
+        int count = reservePropertyCount(deserializeLittleEndianShort(), "property");
+        data.rgPridsData = new ArrayList<>();
         for (int i = 0; i < count; ++i) {
-            data.rgPridsData.get(i).propertyId = deserializePropertyID();
-            LOG.debug("{}Property {}", getIndent(), data.rgPridsData.get(i).propertyId);
+            PropertyValue propertyValue = new PropertyValue();
+            propertyValue.propertyId = deserializePropertyID();
+            data.rgPridsData.add(propertyValue);
+            LOG.debug("{}Property {}", getIndent(), propertyValue.propertyId);
         }
         LOG.debug("{}{} elements in property set:", getIndent(), count);
         for (int i = 0; i < count; ++i) {
             data.rgPridsData.set(i,
                     deserializePropertyValueFromPropertyID(data.rgPridsData.get(i).propertyId,
-                            streams, counters));
+                            streams, counters, depth));
         }
         LOG.debug("");
         return data;
@@ -1000,8 +1099,13 @@ class OneNotePtr {
 
     private PropertyValue deserializePropertyValueFromPropertyID(OneNotePropertyId propertyID,
                                                                  ObjectSpaceObjectPropSet streams,
-                                                                 ObjectStreamCounters counters)
+                                                                 ObjectStreamCounters counters,
+                                                                 int propertySetDepth)
             throws IOException, TikaException {
+        if (propertySetDepth >= MAX_PROPERTY_SET_DEPTH) {
+            throw new TikaException("Property value nesting exceeds limit " +
+                    MAX_PROPERTY_SET_DEPTH);
+        }
         PropertyValue data = new PropertyValue();
         data.propertyId = propertyID;
         char val8;
@@ -1119,22 +1223,18 @@ class OneNotePtr {
                     val32 = deserializeLittleEndianInt();
                     OneNotePropertyId propId = deserializePropertyID();
                     LOG.debug(" UnifiedSubPropertySet {} {}", val32, propId);
-                    data.propertySet.rgPridsData =
-                            Stream.generate(PropertyValue::new).limit((int) val32)
-                                    .collect(Collectors.toList());
-                    for (int i = 0; i < val32; ++i) {
-                        try {
-                            data.propertySet.rgPridsData.set(i,
-                                    deserializePropertyValueFromPropertyID(propId, streams,
-                                            counters));
-                        } catch (IOException e) {
-                            return data;
-                        }
+                    int propertyCount = reservePropertyCount(val32, "unified property");
+                    data.propertySet.rgPridsData = new ArrayList<>();
+                    for (int i = 0; i < propertyCount; ++i) {
+                        data.propertySet.rgPridsData.add(
+                                deserializePropertyValueFromPropertyID(propId, streams, counters,
+                                        propertySetDepth + 1));
                     }
                     break;
                 case 0x11:
                     LOG.debug(" SubPropertySet");
-                    data.propertySet = deserializePropertySet(counters, streams);
+                    data.propertySet = deserializePropertySet(counters, streams,
+                            propertySetDepth + 1);
                     break;
                 default:
                     throw new TikaException("Invalid type: " + type);
@@ -1185,7 +1285,8 @@ class OneNotePtr {
                     getIndent(), data.count, data.osidsStreamNotPresent,
                     data.extendedStreamsPresent);
         }
-        for (int i = 0; i < data.count; ++i) {
+        int count = checkedCount(data.count, "object stream");
+        for (int i = 0; i < count; ++i) {
             CompactID cid;
             cid = deserializeCompactID();
             data.data.add(cid);
