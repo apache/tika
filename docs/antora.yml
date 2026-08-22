@@ -17,8 +17,13 @@
 
 name: tika
 title: Apache Tika
-version: '4.0.0-SNAPSHOT'
+# One URL per 4.0.x minor line; patch releases republish in place.
+version: '4.0.x'
 start_page: index.adoc
+
+asciidoc:
+  attributes:
+    tika-version: '4.0.0'
 
 nav:
   - modules/ROOT/nav.adoc
