@@ -29,7 +29,8 @@ import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.utils.StringUtils;
 
 /**
- * Serves the bytes a caller put in the {@link InlineBytes} parse-context entry, so a host that
+ * Serves the bytes in the {@link InlineBytes} parse-context entry -- set by the caller
+ * in-process, or planted by the server from the {@code PipesRequest} envelope -- so a host that
  * already holds the content does not have to spool it to disk purely to hand it across the
  * process boundary.
  * <p>

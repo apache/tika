@@ -70,7 +70,7 @@ IDs you configure yourself may contain only letters, digits, `.`, `_` and `-`, a
 
 A host that already holds a document -- tika-server serving `/tika`, or an application calling `PipesForkParser` with an in-memory stream -- does not have to write it to disk for the forked worker to read. Content at or below xref:pipes/configuration.adoc#payload-limits[`maxInlineBytes`] travels inside the request and is served in the worker by the built-in `\_\_bytes` fetcher; larger content is written once to a file instead. A stream that is already backed by a file always keeps its file.
 
-This is automatic and needs no configuration. `\_\_bytes` is not declarable in a config file and cannot be named by a request.
+This is automatic and needs no configuration. `\_\_bytes` is not declarable in a config file and cannot be named by a request. The payload itself has no request-suppliable form either: it travels beside the tuple in the host's parent-to-worker request envelope, never as a tuple field (`inlineBytes` in a request tuple is rejected). The IPC wire format is internal and same-version-only; parent and worker run from the same classpath by default, and a version-skewed worker classpath (a `-cp` override in `forkedJvmArgs`) is unsupported.
 
 [#plugins]
 == Available Fetchers

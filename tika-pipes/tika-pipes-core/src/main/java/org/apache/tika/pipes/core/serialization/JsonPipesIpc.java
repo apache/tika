@@ -23,6 +23,7 @@ import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
+import com.fasterxml.jackson.dataformat.smile.SmileGenerator;
 
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -42,8 +43,12 @@ public class JsonPipesIpc {
     private static final ObjectMapper OBJECT_MAPPER;
 
     static {
-        // Use SmileFactory for binary format - more compact and faster than text JSON
-        SmileFactory smileFactory = new SmileFactory();
+        // Use SmileFactory for binary format - more compact and faster than text JSON.
+        // 7-bit binary encoding (the Smile default) costs +14% size and a transcode pass
+        // on every binary payload; this is a private same-version channel, so write raw.
+        SmileFactory smileFactory = SmileFactory.builder()
+                .disable(SmileGenerator.Feature.ENCODE_BINARY_AS_7BIT)
+                .build();
 
         // Configure stream constraints for large content (e.g., 30MB+ documents)
         // Default Jackson limit is 20MB which is too small for IPC with large documents
@@ -60,6 +65,8 @@ public class JsonPipesIpc {
         pipesModule.addSerializer(FetchEmitTuple.class, new FetchEmitTupleSerializer());
         // Parent-to-child IPC: the host builds these tuples itself and they name __ components.
         pipesModule.addDeserializer(FetchEmitTuple.class, FetchEmitTupleDeserializer.internal());
+        pipesModule.addSerializer(PipesRequest.class, new PipesRequestSerializer());
+        pipesModule.addDeserializer(PipesRequest.class, new PipesRequestDeserializer());
         pipesModule.addSerializer(EmitData.class, new EmitDataSerializer());
         pipesModule.addDeserializer(EmitDataImpl.class, new EmitDataDeserializer());
         pipesModule.addSerializer(PipesResult.class, new PipesResultSerializer());

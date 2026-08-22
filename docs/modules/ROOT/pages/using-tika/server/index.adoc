@@ -156,7 +156,11 @@ curl -X POST http://localhost:9998/async -H "Content-Type: application/json" \
 
 A tuple's fields are `id`, `fetcher`, `fetchKey`, `emitter`, `emitKey`, and optionally
 `fetchRangeStart`, `fetchRangeEnd`, `metadata`, `parse-context` and `onParseException`. Any other
-field is a `400` — there is no silent tolerance for a typo. The `{"tuples":[...]}` envelope is
+field is a `400` — there is no silent tolerance for a typo. There is no field for content:
+`inlineBytes` draws a tailored `400`, because inline content is
+xref:pipes/fetchers.adoc#reserved-ids[how the server feeds its own workers], not something a
+tuple can carry. To parse content you already hold, PUT it to `/tika` or `/rmeta`, which inline
+it for you. The `{"tuples":[...]}` envelope is
 required on `/async`; a bare array is rejected.
 
 === Best practices

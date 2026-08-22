@@ -1,4 +1,10 @@
-Release 4.1.0 - ???
+Release 4.1.0 - unreleased
+
+   * Pipes IPC: carry inline document bytes as a raw binary field beside the
+     tuple in the request envelope -- never inside the tuple or its
+     ParseContext -- and disable Smile's 7-bit binary encoding. Tuple JSON
+     serialized by 4.0.0 with an "inline-bytes" parse-context entry no longer
+     loads; it is rejected with a tailored message (TIKA-4829).
 
    * Digesting embedded documents no longer buffers each embedded object to a
      temp file. Zip entries are re-read from the parent archive on rewind, and
@@ -33,7 +39,6 @@ Release 4.1.0 - ???
      emits thumbnail-N.jpg attachments in /rmeta and /unpack; CR2 keeps its
      detection but also gains the attachments. Disable via
      "raw-tiff-parser": {"extractPreviews": false} (TIKA-4824).
-
 
 Release 4.0.0 - 8/18/2026
 
