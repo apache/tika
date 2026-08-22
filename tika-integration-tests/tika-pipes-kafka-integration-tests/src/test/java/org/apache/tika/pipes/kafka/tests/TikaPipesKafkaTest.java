@@ -94,7 +94,9 @@ public class TikaPipesKafkaTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Set<String> waitingFor = new HashSet<>();
     // https://java.testcontainers.org/modules/kafka/#using-orgtestcontainerskafkaconfluentkafkacontainer
-    ConfluentKafkaContainer kafka = new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.0"));
+    private static final DockerImageName KAFKA_IMAGE =
+            DockerImageName.parse("confluentinc/cp-kafka:7.4.0");
+    ConfluentKafkaContainer kafka = new ConfluentKafkaContainer(KAFKA_IMAGE);
 
     private void createTestFiles(Path testFileFolderPath) throws Exception {
         Files.createDirectories(testFileFolderPath);
@@ -123,13 +125,19 @@ public class TikaPipesKafkaTest {
     }
 
     /**
-     * A 1 ms poll always expires before the consumer's group join completes, which is the
-     * loaded-host case that made the iterator enqueue 0 files and report success (TIKA-4833).
-     * Deterministic here; on a fast box the 1000 ms variant above usually wins the race.
+     * Testcontainers pins the broker's group.initial.rebalance.delay.ms to 0; Kafka's own
+     * default is 3000, and tika-pipes leaves the group empty between runs, so a real
+     * deployment pays that delay on every run. Restore the stock value here: with the default
+     * 100 ms pollDelayMs the iterator used to give up ~30x too early, enqueue 0 files and
+     * report success (TIKA-4833). Without this the suite cannot see the production case at all.
      */
     @Test
-    public void testPollShorterThanGroupJoin(@TempDir Path pipesDirectory) throws Exception {
-        runPipeIteratorAndEmitter(pipesDirectory, 1);
+    public void testStockBrokerRebalanceDelay(@TempDir Path pipesDirectory) throws Exception {
+        kafka.close();
+        kafka = new ConfluentKafkaContainer(KAFKA_IMAGE)
+                .withEnv("KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS", "3000");
+        kafka.start();
+        runPipeIteratorAndEmitter(pipesDirectory, 100);
     }
 
     private void runPipeIteratorAndEmitter(Path pipesDirectory, int pollDelayMs) throws Exception {
