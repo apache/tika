@@ -83,7 +83,7 @@
       "bootstrapServers": "BOOTSTRAP_SERVERS",
       "groupId": "grpid",
       "autoOffsetReset": "earliest",
-      "pollDelayMs": 1000,
+      "pollDelayMs": "POLL_DELAY_MS",
       "fetcherId": "fsf",
       "emitterId": "ke"
     }
