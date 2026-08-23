@@ -14,6 +14,7 @@
 #  limitations under the License.
 #These are a special type of detector, and we're currently relying on this
 #manual file.
+org.apache.tika.detect.zip.GeoGebraDetector
 org.apache.tika.detect.zip.IPADetector
 org.apache.tika.detect.zip.JarDetector
 org.apache.tika.detect.zip.KMZDetector
