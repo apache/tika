@@ -20,6 +20,8 @@ import java.io.IOException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.apache.tika.plugins.PluginJson;
+
 
 /**
  * @param verifySsl When {@code true} (the default), the HTTP client validates server certificates
@@ -31,7 +33,7 @@ public record HttpClientConfig(String userName, String password,
                                String authScheme, int connectionTimeoutMillis, int socketTimeoutMillis, String proxyHost, int proxyPort,
                                Boolean verifySsl) {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
     public static HttpClientConfig load(final String json) throws IOException {
         return OBJECT_MAPPER.readValue(json, HttpClientConfig.class);
     }

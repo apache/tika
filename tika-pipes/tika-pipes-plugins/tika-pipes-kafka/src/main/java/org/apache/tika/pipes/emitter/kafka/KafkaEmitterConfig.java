@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.PluginJson;
 
 /** Boxed: an unset value stays null so safePut omits the property and Kafka applies its own default. */
 public record KafkaEmitterConfig(
@@ -48,7 +49,7 @@ public record KafkaEmitterConfig(
         String valueSerializer
 ) {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
 
     public static KafkaEmitterConfig load(final String json)
             throws TikaConfigException {

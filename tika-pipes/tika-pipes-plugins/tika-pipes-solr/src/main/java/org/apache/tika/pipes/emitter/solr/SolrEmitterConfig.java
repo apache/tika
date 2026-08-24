@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.PluginJson;
 
 public record SolrEmitterConfig(
         String solrCollection,
@@ -53,7 +54,7 @@ public record SolrEmitterConfig(
         ADD, UPDATE_MUST_EXIST, UPDATE_MUST_NOT_EXIST
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
 
     public static SolrEmitterConfig load(final String json)
             throws TikaConfigException {

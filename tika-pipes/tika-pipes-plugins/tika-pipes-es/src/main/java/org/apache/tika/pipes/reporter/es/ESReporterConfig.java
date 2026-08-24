@@ -24,13 +24,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.ReservedNamespaces;
 import org.apache.tika.pipes.emitter.es.HttpClientConfig;
+import org.apache.tika.plugins.PluginJson;
 import org.apache.tika.utils.StringUtils;
 
 public record ESReporterConfig(String esUrl, Set<String> includes, Set<String> excludes,
                                String keyPrefix, boolean includeRouting,
                                String apiKey, HttpClientConfig httpClientConfig) {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
 
     public static ESReporterConfig load(final String json) throws TikaConfigException {
         ESReporterConfig config;

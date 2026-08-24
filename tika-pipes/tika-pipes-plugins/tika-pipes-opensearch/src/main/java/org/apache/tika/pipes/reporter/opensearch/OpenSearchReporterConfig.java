@@ -22,11 +22,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.PluginJson;
 
 public record OpenSearchReporterConfig(String openSearchUrl, Set<String> includes, Set<String> excludes, String keyPrefix,
                                        boolean includeRouting, HttpClientConfig httpClientConfig) {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
 
     public static OpenSearchReporterConfig load(final String json)
             throws TikaConfigException {

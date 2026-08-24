@@ -20,6 +20,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.PluginJson;
 
 public record OpenSearchEmitterConfig(String openSearchUrl, String idField, AttachmentStrategy attachmentStrategy,
                                       UpdateStrategy updateStrategy, int commitWithin,
@@ -32,7 +33,7 @@ public record OpenSearchEmitterConfig(String openSearchUrl, String idField, Atta
         OVERWRITE, UPSERT
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
 
     public static OpenSearchEmitterConfig load(final String json)
             throws TikaConfigException {
