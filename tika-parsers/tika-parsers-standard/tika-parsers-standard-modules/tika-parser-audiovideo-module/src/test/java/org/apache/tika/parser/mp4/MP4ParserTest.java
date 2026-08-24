@@ -366,7 +366,7 @@ public class MP4ParserTest extends TikaTest {
     @Test
     public void testDrmProtectedM4a() throws Exception {
         //the sample description declares a protected 'drms' sample entry: the
-        //format is the protection scheme and has-drm is set
+        //format is the protected sample entry format and has-drm is set
         Metadata metadata = new Metadata();
         getText("testMP4_drm.m4a", metadata);
         assertEquals("true", metadata.get(Audio.HAS_DRM));
