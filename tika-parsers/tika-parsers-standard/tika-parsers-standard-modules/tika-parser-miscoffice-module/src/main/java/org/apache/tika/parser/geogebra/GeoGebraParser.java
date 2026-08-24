@@ -192,9 +192,15 @@ public class GeoGebraParser implements Parser {
                 numericallySorted.add(m.group(1));
             }
         }
-        numericallySorted.sort((a, b) -> Integer.compare(
-                Integer.parseInt(a.substring("_slide".length())),
-                Integer.parseInt(b.substring("_slide".length()))));
+        //compare the digit suffixes numerically without parsing them: a shorter
+        //digit string is the smaller number, equal lengths compare lexicographically.
+        //Parsing would throw for a crafted id with more digits than an int holds.
+        numericallySorted.sort((a, b) -> {
+            String da = a.substring("_slide".length());
+            String db = b.substring("_slide".length());
+            return da.length() != db.length()
+                    ? Integer.compare(da.length(), db.length()) : da.compareTo(db);
+        });
 
         ZipArchiveEntry structure = zipFile.getEntry(STRUCTURE_JSON);
         if (structure == null || numericallySorted.isEmpty()) {

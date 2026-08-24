@@ -20,15 +20,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 
 public class GeoGebraParserTest extends TikaTest {
 
@@ -111,5 +117,34 @@ public class GeoGebraParserTest extends TikaTest {
         //no thumbnail in this tool file
         assertEquals(1, metadataList.size());
         assertNull(metadata.get(TikaCoreProperties.TITLE));
+    }
+
+    /**
+     * A crafted slide id can carry more digits than an int holds; sorting the
+     * slide ids must not throw a NumberFormatException out of parse().
+     */
+    @Test
+    public void testSlideNumberLargerThanIntParses() throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (ZipOutputStream zos = new ZipOutputStream(bos)) {
+            zos.putNextEntry(new ZipEntry("structure.json"));
+            //two slides so that sorting actually compares the ids
+            zos.write(("{\"chapters\":[{\"pages\":[{\"elements\":"
+                    + "[{\"id\":\"_slide0\"},{\"id\":\"_slide99999999999\"}]}]}]}")
+                    .getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("_slide0/geogebra.xml"));
+            zos.write("<geogebra format=\"5.0\"></geogebra>".getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
+            zos.putNextEntry(new ZipEntry("_slide99999999999/geogebra.xml"));
+            zos.write("<geogebra format=\"5.0\"></geogebra>".getBytes(StandardCharsets.UTF_8));
+            zos.closeEntry();
+        }
+        try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
+            List<Metadata> metadataList =
+                    getRecursiveMetadata(tis, new Metadata(), new ParseContext(), false);
+            assertEquals("application/vnd.geogebra.slides",
+                    metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+        }
     }
 }
