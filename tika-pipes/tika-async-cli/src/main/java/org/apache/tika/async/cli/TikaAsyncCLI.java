@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -39,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -445,9 +445,8 @@ public class TikaAsyncCLI {
      * @return the config path to use (original if plugin-roots exists, or a new merged config)
      */
     static Path ensurePluginRoots(Path originalConfigPath, String pluginsDir) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        // The user's file may carry the // and /* */ comments the config docs permit.
-        mapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
+        // The shared config mapper: same comment and strictness rules as the main loader.
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
         JsonNode rootNode = mapper.readTree(originalConfigPath.toFile());
 
         if (rootNode.has("plugin-roots")) {
