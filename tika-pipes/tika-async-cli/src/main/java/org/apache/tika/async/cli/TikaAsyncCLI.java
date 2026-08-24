@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -445,6 +446,8 @@ public class TikaAsyncCLI {
      */
     static Path ensurePluginRoots(Path originalConfigPath, String pluginsDir) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
+        // The user's file may carry the // and /* */ comments the config docs permit.
+        mapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
         JsonNode rootNode = mapper.readTree(originalConfigPath.toFile());
 
         if (rootNode.has("plugin-roots")) {

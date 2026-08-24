@@ -1,0 +1,20 @@
+// TIKA-4834: comments everywhere the docs say they are allowed
+{
+  /* block comment before a key */
+  "server": {
+    "port": 9999, // trailing comment
+    "allowPipes": true,
+    "endpoints": [
+      "rmeta",
+      // comment inside an array
+      "tika"
+    ]
+  },
+  "pipes": {
+    "numClients": 1,
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ]
+  },
+  "plugin-roots": "target/plugins"
+}

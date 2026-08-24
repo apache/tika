@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -92,6 +93,8 @@ public class ConfigMerger {
             throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        // The user's file may carry the // and /* */ comments the config docs permit.
+        mapper.enable(JsonParser.Feature.ALLOW_COMMENTS);
 
         ObjectNode root;
         if (existingConfig != null && Files.exists(existingConfig)) {
