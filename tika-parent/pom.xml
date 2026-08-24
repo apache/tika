@@ -435,7 +435,7 @@
     <snappy.version>1.1.10.8</snappy.version>
     <!-- SolrJ 10 splits the Jetty client/ZK code into solr-solrj-jetty / solr-solrj-zookeeper -->
     <solrj.version>10.0.0</solrj.version>
-    <spring.version>7.0.8</spring.version>
+    <spring.version>7.0.9</spring.version>
     <sqlite.version>3.53.2.1</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.5</testcontainers.version>
