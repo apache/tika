@@ -237,13 +237,20 @@ public interface Office {
     /**
      * Security-relevant, best-effort: true when the OOXML package contains one or more
      * declared parts that are NOT reachable from the package root through the OPC
-     * relationship graph. Office and Tika load content by following relationships, so an
-     * unreferenced part is carried in the file but never parsed -- a place to hide bytes
-     * that a raw-ZIP reader (AV/DLP/CDR) can still see. (Note: a part with no declared
-     * content type is a different case -- POI rejects the whole package at open time, so
-     * it cannot appear on a successfully parsed file.)
+     * relationship graph. Office resolves content by following relationships, so such a
+     * part is dead weight to Office -- a place to hide bytes that a raw-ZIP reader
+     * (AV/DLP/CDR) can still see. Whether <em>Tika</em> parsed it depends on the parser:
+     * some discover parts by content type rather than by relationship (the SAX Word parser
+     * still extracts an unreferenced wordprocessingml part), so this flag says nothing
+     * about which bytes reached a parser.
+     * <p>Purely structural: the part's bytes are never inspected, and its content type comes
+     * from {@code [Content_Types].xml} by extension or explicit override, never by sniffing.
+     * So {@code smuggle.xml} holding RTF is flagged exactly as an innocent orphan is, and
+     * expect false positives -- some producers leave stale customXml or media parts behind
+     * after an edit. (A part with NO declared content type is a different case: POI rejects
+     * the whole package at open, so it surfaces as a container exception, never here.)
      * <p>This is an informational signal, NOT a guarantee, and it is evadable (a payload
-     * referenced by a relationship type Tika ignores is still reachable): per
+     * referenced by a relationship type Tika ignores is still reachable and unflagged): per
      * <a href="https://tika.apache.org/security-model.html">Tika's security model</a>,
      * Tika is not a security boundary and does not attempt to detect parser differentials.
      * See {@link #UNREFERENCED_PART_NAMES} for the part names.

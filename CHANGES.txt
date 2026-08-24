@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * OOXML parsers flag package parts that are unreachable through the OPC
+     relationship graph: msoffice:has-unreferenced-parts (boolean) and
+     msoffice:unreferenced-part-names. Purely structural (no bytes are
+     inspected; content types come from [Content_Types].xml by extension), so
+     expect false positives from tools that leave orphan parts behind. A hiding
+     place a raw-ZIP scanner can still see, not a statement about what Tika
+     parsed (TIKA-4837).
+
    * The Kafka pipes iterator no longer stops at the first empty poll. A newly
      subscribed consumer spends its first poll(s) joining the group and returns
      empty even when the topic has a backlog, so the iterator could enqueue zero
