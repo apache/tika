@@ -77,7 +77,7 @@ class TikaMp4VideoHandler extends Mp4VideoHandler {
             }
             int end = pos + (int) size;
             //the format fourcc is the video codec ('avc1', 'hev1', ...) or, for
-            //protected streams, the protection scheme ('encv'/'drmi')
+            //protected streams, the protected sample entry format ('encv'/'drmi')
             tikaMetadata.set(Video.FORMAT, fourCc(b, pos + 4));
             int bitRate = findBtrtAverageBitRate(b, pos + VISUAL_ENTRY_SIZE, end);
             if (bitRate > 0) {
