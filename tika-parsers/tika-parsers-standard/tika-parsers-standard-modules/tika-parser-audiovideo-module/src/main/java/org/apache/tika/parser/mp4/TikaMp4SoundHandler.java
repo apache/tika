@@ -70,11 +70,12 @@ class TikaMp4SoundHandler extends Mp4SoundHandler {
             }
             int end = pos + (int) size;
             String format = fourCc(b, pos + 4);
-            //protected streams replace the codec fourcc with a protected
-            //entry format: 'drms' (FairPlay) or 'enca' (ISO common encryption)
+            //protected streams carry a protection scheme fourcc as the format:
+            //'drms' (FairPlay) or 'enca' (ISO common encryption)
             if ("drms".equals(format) || "enca".equals(format)) {
                 tikaMetadata.set(Audio.HAS_DRM, true);
             }
+            tikaMetadata.set(Audio.FORMAT, format);
             if (pos + 18 <= end) {
                 //sample entry: 8 byte header, 6 reserved, 2 data ref index,
                 //then version-dependent fixed sound fields before child boxes

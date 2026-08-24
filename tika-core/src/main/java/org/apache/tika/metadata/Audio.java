@@ -85,6 +85,15 @@ public interface Audio {
     Property BITS_PER_SAMPLE = Property.internalInteger("audio:bits-per-sample");
 
     /**
+     * The audio track's four-character codec identifier from the MP4/QuickTime
+     * sample description (e.g. "mp4a" for AAC, "alac", "ac-3"), or the protection
+     * scheme ("drms"/"enca") for protected streams, where {@link #HAS_DRM} is also
+     * set. A per-stream value: with several audio tracks it reflects the last one.
+     * Distinct from {@link XMPDM#AUDIO_COMPRESSOR}, the human-readable codec name.
+     */
+    Property FORMAT = Property.internalText("audio:format");
+
+    /**
      * The raw javax.sound encoding name (e.g. "PCM_SIGNED"), as reported by {@code
      * AudioFormat#getEncoding()} (AudioParser). Distinct from {@link XMPDM#AUDIO_SAMPLE_TYPE}
      * (bit depth) and {@link XMPDM#AUDIO_COMPRESSOR} (codec name).

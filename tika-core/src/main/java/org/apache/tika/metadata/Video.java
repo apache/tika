@@ -37,4 +37,13 @@ public interface Video {
      * reflects the last one.
      */
     Property BITRATE = Property.internalInteger("video:bitrate");
+
+    /**
+     * The video track's four-character codec identifier from the MP4/QuickTime
+     * sample description (e.g. "avc1" for H.264, "hvc1"/"hev1" for HEVC), or the
+     * protection scheme ("encv"/"drmi") for protected streams. A per-stream value:
+     * with several video tracks it reflects the last one. Distinct from
+     * {@link XMPDM#VIDEO_COMPRESSOR}, the human-readable compressor name.
+     */
+    Property FORMAT = Property.internalText("video:format");
 }

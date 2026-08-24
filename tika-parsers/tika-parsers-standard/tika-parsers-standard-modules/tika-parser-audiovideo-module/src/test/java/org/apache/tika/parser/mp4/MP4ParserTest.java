@@ -130,6 +130,7 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
         assertEquals("2", metadata.get(Audio.CHANNELS));
         assertEquals("16", metadata.get(Audio.BITS_PER_SAMPLE));
+        assertEquals("mp4a", metadata.get(Audio.FORMAT));
         assertEquals("M4A", metadata.get(XMPDM.AUDIO_COMPRESSOR));
         assertEquals("0.07", metadata.get(XMPDM.DURATION));
 
@@ -197,6 +198,18 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("video/mp4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("10.0", r.metadata.get(Video.FRAME_RATE));
         assertEquals("6536", r.metadata.get(Video.BITRATE));
+        assertEquals("avc1", r.metadata.get(Video.FORMAT));
+    }
+
+    @Test
+    public void testVideoAudioTrackCodecs() throws Exception {
+        // a 1s clip with an H.264 video track and an AAC audio track: both track
+        // codecs must be exposed for a video/* file, where xmpDM:audioCompressor
+        // does not fire and xmpDM:videoCompressor carries the encoder name.
+        XMLResult r = getXML("testMP4VideoAudio.mp4");
+        assertEquals("video/mp4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("avc1", r.metadata.get(Video.FORMAT));
+        assertEquals("mp4a", r.metadata.get(Audio.FORMAT));
     }
 
     @Test
@@ -352,10 +365,12 @@ public class MP4ParserTest extends TikaTest {
 
     @Test
     public void testDrmProtectedM4a() throws Exception {
-        //the sample description declares a protected 'drms' sample entry
+        //the sample description declares a protected 'drms' sample entry: the
+        //format is the protection scheme and has-drm is set
         Metadata metadata = new Metadata();
         getText("testMP4_drm.m4a", metadata);
         assertEquals("true", metadata.get(Audio.HAS_DRM));
+        assertEquals("drms", metadata.get(Audio.FORMAT));
     }
 
     @Test
