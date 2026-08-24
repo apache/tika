@@ -247,6 +247,11 @@ public class AsyncProcessor implements Closeable {
         return fetchEmitTuples.remainingCapacity();
     }
 
+    /** Tuples accepted but not yet picked up by a worker. */
+    public int getQueueDepth() {
+        return fetchEmitTuples.size();
+    }
+
     /**
      * Long-running callers (tika-server) set true so one bad tuple
      * (unknown fetcher, init failure) can't halt the shared workers;

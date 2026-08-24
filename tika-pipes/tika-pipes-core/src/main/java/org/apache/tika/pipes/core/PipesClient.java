@@ -404,7 +404,7 @@ public class PipesClient implements Closeable {
                 LOG.warn("clientId={}: client-side backstop timeout: id={} elapsed={}ms limit={}ms " +
                                 "-- server should have self-terminated well before this", pipesClientId,
                         t.getId(), totalElapsed, clientBackstopMillis);
-                serverManager.markServerForRestart();
+                serverManager.markServerForRestart(RestartReason.TIMEOUT);
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get());
             }
@@ -420,19 +420,19 @@ public class PipesClient implements Closeable {
                 switch (msg.type()) {
                     case OOM:
                         String oomMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
-                        serverManager.markServerForRestart();
+                        serverManager.markServerForRestart(RestartReason.OOM);
                         closeConnection();
                         return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.OOM,
                                 intermediateResult.get(), oomMsg);
                     case TIMEOUT:
                         String timeoutMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
-                        serverManager.markServerForRestart();
+                        serverManager.markServerForRestart(RestartReason.TIMEOUT);
                         closeConnection();
                         return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT,
                                 intermediateResult.get(), timeoutMsg);
                     case UNSPECIFIED_CRASH:
                         String crashMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
-                        serverManager.markServerForRestart();
+                        serverManager.markServerForRestart(RestartReason.CRASH);
                         closeConnection();
                         return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH,
                                 intermediateResult.get(), crashMsg);
@@ -466,7 +466,7 @@ public class PipesClient implements Closeable {
             } catch (SocketTimeoutException e) {
                 LOG.warn("clientId={}: Socket timeout exception while waiting for server", pipesClientId, e);
                 // Mark for restart - server is stuck on current request and needs to be restarted
-                serverManager.markServerForRestart();
+                serverManager.markServerForRestart(RestartReason.TIMEOUT);
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get(),
                         ExceptionUtils.getStackTrace(e));
@@ -486,8 +486,10 @@ public class PipesClient implements Closeable {
                 PipesResult.RESULT_STATUS status = UNSPECIFIED_CRASH;
                 if (exitCode == PipesMessageType.OOM.getExitCode().orElse(-1)) {
                     status = PipesResult.RESULT_STATUS.OOM;
+                    serverManager.markServerForRestart(RestartReason.OOM);
                 } else if (exitCode == PipesMessageType.TIMEOUT.getExitCode().orElse(-1)) {
                     status = PipesResult.RESULT_STATUS.TIMEOUT;
+                    serverManager.markServerForRestart(RestartReason.TIMEOUT);
                 }
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), status, intermediateResult.get(),

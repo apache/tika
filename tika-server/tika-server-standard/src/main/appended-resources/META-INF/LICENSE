@@ -1872,3 +1872,13 @@ jetty-session, jetty-util)
     Apache Tika elects the Apache License, Version 2.0, whose terms appear
     above.  The Jetty jars do not carry a copy of either license; both texts
     are available at the URLs above.
+
+Prometheus Java client (prometheus-metrics-core, prometheus-metrics-config,
+prometheus-metrics-model, prometheus-metrics-exposition-formats,
+prometheus-metrics-exposition-textformats, prometheus-metrics-tracer-common)
+
+    Copyright The Prometheus Authors
+
+    Licensed under the Apache License, Version 2.0, whose terms appear above.
+    The jars do not carry a copy of the license; the upstream project is
+    https://github.com/prometheus/client_java

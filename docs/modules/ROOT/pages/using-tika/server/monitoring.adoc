@@ -1,0 +1,208 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Monitoring with Prometheus
+:toc:
+:toclevels: 3
+
+Tika Server can publish operational metrics in the Prometheus text exposition format,
+via https://micrometer.io[Micrometer]. The metrics are built for two questions an operator
+of a parse fleet actually has: _is this server saturated_ (scale on that, not on CPU) and
+_are its forked workers dying_ (alert on that).
+
+== Enabling
+
+Metrics are off by default. Setting a metrics port turns them on; nothing else is needed.
+
+[source,bash]
+----
+java -jar tika-server-standard-X.Y.Z.jar --metricsPort 9404
+----
+
+or in `tika-config.json`:
+
+[source,json]
+----
+{
+  "server": {
+    "port": 9998,
+    "metrics": {
+      "port": 9404,
+      "host": "127.0.0.1",
+      "commonTags": { "cluster": "blue" }
+    }
+  }
+}
+----
+
+[cols="1,3"]
+|===
+|Key |Meaning
+
+|`port`
+|The scrape port. Unset means metrics are entirely off: no registry, no meters, no
+listener. `--metricsPort` on the command line overrides the JSON value. Must differ from
+the server port.
+
+|`host`
+|Bind address for the scrape listener. Defaults to the server's own host (`-h`), so a
+server started with `-h 0.0.0.0` in a container exposes its metrics on the pod IP with no
+extra configuration. Set this to `127.0.0.1` to restrict scraping to a sidecar.
+
+|`commonTags`
+|Labels added to every series, for example a cluster or tier name.
+|===
+
+Metrics are served on a *separate port* from the parse endpoints, on purpose. The parse
+port receives untrusted documents; the metrics port should be reachable only by your
+scraper. Keep them apart at the network layer (a Kubernetes `NetworkPolicy`, a security
+group). The scrape listener answers only `GET /metrics` -- every parse endpoint is `404`
+there, and `/metrics` is `404` on the parse port. It also has its own small thread pool,
+so a scrape never waits behind a slow parse.
+
+The scrape listener is plain HTTP even when the parse port uses
+xref:using-tika/server/tls.adoc[TLS].
+
+== Probes
+
+Point Kubernetes liveness and readiness probes at the parse port (for example
+`GET /version`, or `GET /status` when that endpoint is enabled), never at `/metrics`. A
+scrape target is not a health check: the listener stays up while the parser is failing,
+and a metrics misconfiguration must not take a healthy parser out of rotation.
+
+== Scrape configuration
+
+[source,yaml]
+----
+scrape_configs:
+  - job_name: tika-server
+    static_configs:
+      - targets: ['tika-1:9404', 'tika-2:9404']
+----
+
+For the Prometheus Operator, a `ServiceMonitor` selecting a Service that exposes the
+metrics port works the same way.
+
+== Meters
+
+Durations are Micrometer timers exported in seconds with a fixed histogram of twelve
+buckets (10ms, 50ms, 100ms, 250ms, 500ms, 1s, 2s, 5s, 10s, 30s, 60s, 120s), so
+`histogram_quantile` works and the series count per pod stays small. Every label value is
+drawn from a fixed set -- endpoint names, status classes, enum names -- never from the
+request, so cardinality cannot grow with traffic.
+
+=== HTTP (parse port)
+
+[cols="2,1,2,3"]
+|===
+|Meter |Type |Labels |Meaning
+
+|`tika_server_requests_seconds`
+|timer
+|`endpoint`, `method`, `status`
+|Every request on the parse port, timed from before routing to the response. `endpoint`
+is the first path segment when it is one of the server's endpoints (`tika`, `rmeta`,
+`meta`, `unpack`, `detect`, `language`, `mime-types`, `detectors`, `parsers`, `version`,
+`status`, `pipes`, `async`), `other` for any other resource, `unmatched` for a `404`
+that matched nothing. `status` is the class: `2xx`, `4xx`, `5xx`.
+
+|`tika_server_request_size_bytes`
+|summary
+|`endpoint`
+|Request body size from `Content-Length`; chunked uploads have none and are not recorded.
+
+|`tika_server_response_size_bytes`
+|summary
+|`endpoint`
+|Bytes of the response entity, before any compression.
+
+|`tika_server_rejected_total`
+|counter
+|`reason`
+|Requests refused for capacity reasons, by the status the server already uses to encode
+them: `busy_429` (the `/async` queue was full, or no fork was free within
+`maxWaitForClientMillis`), `crash_503` (the fork serving the request OOM'd, timed out or
+crashed), `payload_413` (body over `maxRequestSizeBytes` or the IPC payload limit).
+
+|`tika_server_tasks_active`
+|gauge
+|
+|Parse/detect tasks in flight right now.
+
+|`tika_server_tasks_started_total`
+|counter
+|
+|Tasks started since the server came up.
+
+|`jetty_threads_*`
+|gauges
+|
+|The parse port's request thread pool. `jetty_threads_jobs` (queued jobs) is HTTP-level
+backpressure: requests waiting for a thread.
+|===
+
+=== Forked workers
+
+[cols="2,1,2,3"]
+|===
+|Meter |Type |Labels |Meaning
+
+|`tika_pipes_workers`
+|gauge
+|`state`
+|Forked pipes workers `busy` and `idle`. `busy / (busy + idle)` sustained near 1 means the
+server is at capacity; see xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing]
+before raising `numClients`.
+
+|`tika_pipes_worker_restarts_total`
+|counter
+|`reason`
+|Forked workers restarted, by why: `oom`, `timeout`, `crash` (an unexplained exit),
+`max_files` (routine recycling after `maxFilesProcessedPerProcess`), `idle` (the worker
+shut itself down after `socketTimeoutMillis` without a request -- exit code 24 -- and was
+started again on the next one), `connection_abandoned` (a request was interrupted mid-flight). Alert on
+`oom`, `timeout` and `crash`; `max_files` and `idle` are expected.
+
+|`tika_pipes_queue_depth`
+|gauge
+|
+|Tuples accepted by `/async` and not yet picked up by a worker. Only present when the
+`async` endpoint is enabled.
+|===
+
+=== JVM and process
+
+The standard Micrometer binders are enabled: `jvm_memory_*`, `jvm_gc_*`, `jvm_threads_*`,
+`process_cpu_usage`, `system_cpu_usage`, `process_files_*`, `process_uptime_seconds`.
+These describe the server JVM only, not the forked workers.
+
+== What to scale and alert on
+
+* Saturation, for an autoscaler: `tika_pipes_workers{state="busy"}` as a ratio of the
+  total, the rate of `tika_server_rejected_total{reason="busy_429"}`, and
+  `jetty_threads_jobs`. These move before latency does, which CPU does not.
+* Failure, for alerting: `rate(tika_pipes_worker_restarts_total{reason=~"oom|timeout|crash"}[5m])`
+  and `tika_server_rejected_total{reason="crash_503"}`. A `503` tells the client the
+  document broke a fork; the restart counter tells you how often that is happening.
+* Latency: `histogram_quantile(0.95, sum by (le, endpoint) (rate(tika_server_requests_seconds_bucket[5m])))`.
+
+== Not counted
+
+An exception that no JAX-RS `ExceptionMapper` handles is answered by the servlet
+container's own error path, which bypasses the response filter that records
+`tika_server_requests_seconds`. Tika Server maps its own parse and pipes failures, so this
+only affects genuine server bugs.

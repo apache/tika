@@ -77,6 +77,7 @@ public class SharedServerManager implements ServerManager {
     private final AtomicLong filesProcessed = new AtomicLong(0);
     private volatile boolean restarting = false;
     private volatile boolean pendingRestart = false; // Set when a client reports fatal error or max files reached
+    private final RestartCounter restarts = new RestartCounter();
     private volatile byte[] currentToken;
     private Process process;
     private Path tmpDir;
@@ -142,10 +143,14 @@ public class SharedServerManager implements ServerManager {
                 return;
             }
             restarting = true;
+            Process previous = process;
             try {
                 startServer();
                 pendingRestart = false; // Clear the flag after successful restart
                 filesProcessed.set(0); // Reset file counter on restart
+                if (previous != null) {
+                    restarts.restarted(PerClientServerManager.exitCodeOrMinusOne(previous));
+                }
             } finally {
                 restarting = false;
                 lock.notifyAll(); // Wake up any threads waiting in getPort()
@@ -165,10 +170,21 @@ public class SharedServerManager implements ServerManager {
      */
     @Override
     public void markServerForRestart() {
+        markServerForRestart(RestartReason.CRASH);
+    }
+
+    @Override
+    public void markServerForRestart(RestartReason reason) {
         synchronized (lock) {
-            LOG.debug("Server marked for restart - will restart on next ensureRunning()");
+            LOG.debug("Server marked for restart ({}) - will restart on next ensureRunning()", reason);
+            restarts.mark(reason);
             pendingRestart = true;
         }
+    }
+
+    @Override
+    public long getRestartCount(RestartReason reason) {
+        return restarts.count(reason);
     }
 
     /**
@@ -184,6 +200,7 @@ public class SharedServerManager implements ServerManager {
             synchronized (lock) {
                 LOG.info("Shared server reached max files limit ({}/{}), marking for restart",
                         count, maxFilesPerProcess);
+                restarts.mark(RestartReason.MAX_FILES);
                 pendingRestart = true;
             }
         }

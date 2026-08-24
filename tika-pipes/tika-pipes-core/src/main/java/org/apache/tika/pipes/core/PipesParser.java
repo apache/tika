@@ -168,6 +168,24 @@ public class PipesParser implements Closeable {
         return serverManagers.stream().filter(ServerManager::isRunning).count();
     }
 
+    public int getNumClients() {
+        return pipesConfig.getNumClients();
+    }
+
+    /** Clients not currently borrowed by a {@link #parse} call. */
+    public int getIdleClientCount() {
+        return clientQueue.size();
+    }
+
+    /** Forked-server restarts performed so far for {@code reason}, summed over all servers. */
+    public long getRestartCount(RestartReason reason) {
+        long total = 0;
+        for (ServerManager m : serverManagers) {
+            total += m.getRestartCount(reason);
+        }
+        return total;
+    }
+
     /**
      * Returns whether this parser is using shared server mode.
      *

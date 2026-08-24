@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.server.core.metrics.MetricsConfig;
 
 public class TikaServerConfig {
 
@@ -74,6 +75,7 @@ public class TikaServerConfig {
     private ArrayList<String> endpoints = new ArrayList<>();
 
     private TlsConfig tlsConfig = new TlsConfig();
+    private MetricsConfig metrics = new MetricsConfig();
 
     /**
      * Config with only the defaults
@@ -107,6 +109,11 @@ public class TikaServerConfig {
         if (commandLine.hasOption("i")) {
             config.setId(commandLine.getOptionValue("i"));
             settings.add("id");
+        }
+
+        if (commandLine.hasOption("metricsPort")) {
+            config.getMetrics().setPort(Integer.parseInt(commandLine.getOptionValue("metricsPort")));
+            settings.add("metricsPort");
         }
 
         config.validateConsistency(settings);
@@ -180,6 +187,16 @@ public class TikaServerConfig {
             }
         }
         tlsConfig.checkInitialization();
+        if (metrics.isEnabled()) {
+            int metricsPort = metrics.getPort();
+            if (metricsPort < 0 || metricsPort > 65535) {
+                throw new TikaConfigException("metrics.port must be 0-65535, got " + metricsPort);
+            }
+            if (metricsPort != 0 && metricsPort == port) {
+                throw new TikaConfigException("metrics.port (" + metricsPort
+                        + ") must differ from the server port");
+            }
+        }
     }
 
     public String getHost() {
@@ -267,6 +284,22 @@ public class TikaServerConfig {
 
     public void setTlsConfig(TlsConfig tlsConfig) {
         this.tlsConfig = tlsConfig;
+    }
+
+    /**
+     * Prometheus metrics; off unless {@code metrics.port} (or {@code --metricsPort}) is set.
+     */
+    public MetricsConfig getMetrics() {
+        return metrics;
+    }
+
+    public void setMetrics(MetricsConfig metrics) {
+        this.metrics = metrics == null ? new MetricsConfig() : metrics;
+    }
+
+    /** Bind address for the scrape listener: {@code metrics.host} if set, else the server host. */
+    public String getMetricsHost() {
+        return metrics.getHost() == null ? host : metrics.getHost();
     }
 
     public ArrayList<String> getEndpoints() {

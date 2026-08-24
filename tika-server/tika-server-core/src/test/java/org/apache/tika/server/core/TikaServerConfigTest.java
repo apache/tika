@@ -238,4 +238,48 @@ public class TikaServerConfigTest extends TikaTest {
         TikaServerConfig config = TikaServerConfig.load(commandLine);
         assertTrue(config.getTlsConfig().isClientAuthenticationRequired());
     }
+    private static Options metricsOptions() {
+        return new Options()
+                .addOption(Option.builder("c").longOpt("config").hasArg().get())
+                .addOption(Option.builder("p").longOpt("port").hasArg().get())
+                .addOption(Option.builder().longOpt("metricsPort").hasArg().get());
+    }
+
+    @Test
+    public void testMetricsOffByDefault() throws Exception {
+        TikaServerConfig config = TikaServerConfig.load(
+                new DefaultParser().parse(metricsOptions(), new String[]{}));
+        assertFalse(config.getMetrics().isEnabled());
+        assertEquals(config.getHost(), config.getMetricsHost());
+    }
+
+    @Test
+    public void testMetricsFromJson() throws Exception {
+        Path path = getConfigPath(getClass(), "tika-config-server-metrics.json");
+        TikaServerConfig config = TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
+                new String[]{"-c", ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())}));
+        assertTrue(config.getMetrics().isEnabled());
+        assertEquals(9404, config.getMetrics().getPort());
+        assertEquals("127.0.0.1", config.getMetricsHost());
+        assertEquals("blue", config.getMetrics().getCommonTags().get("cluster"));
+    }
+
+    @Test
+    public void testMetricsPortFromCommandLine() throws Exception {
+        TikaServerConfig config = TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
+                new String[]{"-p", "9998", "--metricsPort", "9500"}));
+        assertTrue(config.getMetrics().isEnabled());
+        assertEquals(9500, config.getMetrics().getPort());
+        // no metrics.host: follows the server host
+        assertEquals(TikaServerConfig.DEFAULT_HOST, config.getMetricsHost());
+    }
+
+    @Test
+    public void testMetricsPortMustDifferFromServerPort() throws Exception {
+        CommandLine commandLine = new DefaultParser().parse(metricsOptions(),
+                new String[]{"-p", "9998", "--metricsPort", "9998"});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains("metrics.port", ex.getMessage());
+    }
 }

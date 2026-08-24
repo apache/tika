@@ -56,6 +56,9 @@ moment" apart from "this document broke a fork" and act accordingly: back off an
 their fetch rate, and autoscalers have a signal to scale on — none of which is possible against a
 server that can only get slower or fail blind.
 
+The same signal is available as metrics -- busy workers, `429` rate, worker restarts by reason --
+when a metrics port is set; see xref:using-tika/server/monitoring.adoc[Monitoring with Prometheus].
+
 The cost is real and lands on you: backpressure only reports the capacity you configured.
 `numClients` is now an operational obligation, sized against both your request volume and your
 host's core count, as the note above says — undersized shows up as `429`s under load that should
@@ -206,11 +209,15 @@ The server starts on `localhost:9998` by default.
 |`-i <id>`, `--id <id>`
 |Server ID, written to the startup log. Defaults to a random UUID.
 
+|`--metricsPort <port>`
+|Enable Prometheus metrics on this port. See
+xref:using-tika/server/monitoring.adoc[Monitoring with Prometheus].
+
 |`-?`, `--help`
 |Print the usage message.
 |===
 
-NOTE: `-h`, `-p` and `-i` override the JSON config. Everything else — `allowPipes`,
+NOTE: `-h`, `-p`, `-i` and `--metricsPort` override the JSON config. Everything else — `allowPipes`,
 `allowPerRequestConfig`, CORS, TLS, timeouts — is JSON-only.
 
 == Endpoints
@@ -574,5 +581,7 @@ explicitly with the combined total in mind).
 == Topics
 
 * xref:using-tika/server/tls.adoc[TLS/SSL Configuration] — TLS and mutual authentication
+* xref:using-tika/server/monitoring.adoc[Monitoring with Prometheus] — metrics for
+autoscaling and alerting
 * xref:migration-to-4x/migrating-tika-server-4x.adoc[Migrating Tika Server to 4.x] — breaking
 changes from 3.x

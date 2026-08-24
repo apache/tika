@@ -180,6 +180,7 @@ public class PerClientServerManager implements ServerManager {
     private volatile int port = -1;
     private long filesProcessed = 0;
     private volatile boolean pendingRestart = false;
+    private final RestartCounter restarts = new RestartCounter();
     // Set once by shutdown()/close(); guards a request thread from starting a fresh
     // process after the manager has been torn down (which would leak the child).
     private volatile boolean closed = false;
@@ -281,6 +282,7 @@ public class PerClientServerManager implements ServerManager {
         if (filesProcessed >= maxFilesPerProcess) {
             LOG.info("clientId={}: reached max files limit ({}/{}), marking for restart",
                     clientId, filesProcessed, maxFilesPerProcess);
+            restarts.mark(RestartReason.MAX_FILES);
             pendingRestart = true;
         }
     }
@@ -292,18 +294,31 @@ public class PerClientServerManager implements ServerManager {
 
     @Override
     public void markServerForRestart() {
-        LOG.info("clientId={}: marking server for restart", clientId);
+        markServerForRestart(RestartReason.CRASH);
+    }
+
+    @Override
+    public void markServerForRestart(RestartReason reason) {
+        LOG.info("clientId={}: marking server for restart ({})", clientId, reason);
+        restarts.mark(reason);
         pendingRestart = true;
+    }
+
+    @Override
+    public long getRestartCount(RestartReason reason) {
+        return restarts.count(reason);
     }
 
     @Override
     public void connectionAbandoned() {
         LOG.info("clientId={}: connection abandoned, worker will be recycled on next use", clientId);
+        restarts.mark(RestartReason.CONNECTION_ABANDONED);
         pendingRestart = true;
     }
 
     @Override
     public int handleCrashAndGetExitCode() {
+        restarts.mark(RestartReason.CRASH);
         pendingRestart = true;
         if (process != null) {
             try {
@@ -312,6 +327,8 @@ public class PerClientServerManager implements ServerManager {
                     int exitValue = process.exitValue();
                     if (exitValue == 0) {
                         LOG.info("clientId={}: process exited cleanly", clientId);
+                    } else if (exitValue == PipesServer.IDLE_EXIT_CODE) {
+                        LOG.info("clientId={}: process exited after idle timeout", clientId);
                     } else {
                         LOG.warn("clientId={}: process exited with code {}", clientId, exitValue);
                     }
@@ -335,7 +352,11 @@ public class PerClientServerManager implements ServerManager {
         if (isRunning() && !pendingRestart) {
             return;
         }
+        Process previous = process;
         startServer();
+        if (previous != null) {
+            restarts.restarted(exitCodeOrMinusOne(previous));
+        }
     }
 
     @Override
@@ -374,6 +395,7 @@ public class PerClientServerManager implements ServerManager {
                     // 1. pb.start() fails (can't launch process) - handled in startServer()
                     // 2. Server explicitly reports bad config via protocol - handled in waitForStartup()
                     // 3. Exhausted all retry attempts - handled in maybeInit()
+                    restarts.mark(RestartReason.CRASH);
                     pendingRestart = true;
                     throw new IOException(
                             "Server process died before connecting (exit code " + exitValue + ") - will retry");
@@ -389,6 +411,10 @@ public class PerClientServerManager implements ServerManager {
                 // Continue polling
             }
         }
+    }
+
+    static int exitCodeOrMinusOne(Process p) {
+        return p.isAlive() ? -1 : p.exitValue();
     }
 
     private synchronized void startServer() throws IOException, InterruptedException, TimeoutException, ServerInitializationException {

@@ -148,6 +148,11 @@ public class PipesServer implements AutoCloseable {
      *  tell the difference between "I crashed" and "my parent went away". */
     public static final int PARENT_GONE_EXIT_CODE = 23;
 
+    /** Exit code for the idle shutdown (no request within socketTimeoutMillis). Not 0:
+     *  0 is reserved for a parent-requested SHUT_DOWN, so the parent can tell a worker
+     *  that timed out from one that stopped for any other reason. */
+    public static final int IDLE_EXIT_CODE = 24;
+
     private final long heartbeatIntervalMillis;
     private final String pipesClientId;
 
@@ -402,7 +407,7 @@ public class PipesServer implements AutoCloseable {
                     } catch (Exception ex) {
                         //swallow
                     }
-                    System.exit(0);
+                    System.exit(IDLE_EXIT_CODE);
                     return; // unreachable, but needed for compilation
                 }
                 LOG.trace("received message type={}", msg.type());

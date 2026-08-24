@@ -110,6 +110,16 @@ public interface ServerManager extends Closeable {
         // Default no-op for backward compatibility
     }
 
+    /** As {@link #markServerForRestart()}, attributing the restart to {@code reason}. */
+    default void markServerForRestart(RestartReason reason) {
+        markServerForRestart();
+    }
+
+    /** Restarts performed so far for {@code reason}; monotonic, never reset. */
+    default long getRestartCount(RestartReason reason) {
+        return 0;
+    }
+
     /**
      * Signals that the client walked away from its connection, whether
      * mid-handshake or with a request still in flight.

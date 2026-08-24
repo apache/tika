@@ -402,6 +402,7 @@
     <log4j2.version>2.26.1</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
+    <micrometer.version>1.17.1</micrometer.version>
     <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
     <metadata.extractor.version>2.21.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
@@ -592,6 +593,16 @@
         <groupId>org.eclipse.jetty.http2</groupId>
         <artifactId>jetty-http2-server</artifactId>
         <version>${jetty.http2.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-core</artifactId>
+        <version>${micrometer.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.micrometer</groupId>
+        <artifactId>micrometer-registry-prometheus</artifactId>
+        <version>${micrometer.version}</version>
       </dependency>
       <dependency>
         <groupId>org.jsoup</groupId>

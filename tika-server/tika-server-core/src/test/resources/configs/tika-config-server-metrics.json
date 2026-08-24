@@ -1,0 +1,16 @@
+{
+  "server": {
+    "port": 9999,
+    "endpoints": [
+      "tika"
+    ],
+    "metrics": {
+      "port": 9404,
+      "host": "127.0.0.1",
+      "commonTags": {
+        "cluster": "blue"
+      }
+    }
+  },
+  "plugin-roots": "target/plugins"
+}
