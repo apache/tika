@@ -17,6 +17,9 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -24,7 +27,9 @@ import org.apache.poi.openxml4j.exceptions.OpenXML4JException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.apache.poi.openxml4j.opc.PackagePart;
+import org.apache.poi.openxml4j.opc.PackageRelationship;
 import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
+import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.util.LocaleUtil;
 import org.apache.poi.xslf.usermodel.XSLFRelation;
 import org.apache.poi.xssf.usermodel.XSSFRelation;
@@ -39,6 +44,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.EmptyParser;
@@ -96,6 +102,7 @@ public class OOXMLExtractorFactory {
                 if (prc != null && prc.size() > 0) {
                     metadata.set(TikaCoreProperties.HAS_SIGNATURE, "true");
                 }
+                markUnreferencedParts(pkg, metadata);
             }
 
             MediaType type = null;
@@ -214,6 +221,64 @@ public class OOXMLExtractorFactory {
 
     private static boolean isVisioType(MediaType type) {
         return type != null && VISIO_SUBTYPES.contains(type.getSubtype());
+    }
+
+    private static final String RELATIONSHIPS_CONTENT_TYPE =
+            "application/vnd.openxmlformats-package.relationships+xml";
+
+    /**
+     * Best-effort, security-relevant signal: flags declared parts that are not reachable
+     * from the package root via the OPC relationship graph -- content carried in the file
+     * but outside the structure Office loads by following relationships. Reuses the
+     * already-open package (an in-memory walk of relationships POI loads anyway). Never
+     * throws: a failure here must not break the parse.
+     *
+     * @see Office#HAS_UNREFERENCED_PARTS
+     */
+    private static void markUnreferencedParts(OPCPackage pkg, Metadata metadata) {
+        try {
+            Set<String> reachable = new HashSet<>();
+            Deque<PackagePart> queue = new ArrayDeque<>();
+            addRelatedParts(pkg.getRelationships(), rel -> pkg.getPart(rel), reachable, queue);
+            while (!queue.isEmpty()) {
+                PackagePart part = queue.poll();
+                addRelatedParts(part.getRelationships(), part::getRelatedPart, reachable, queue);
+            }
+            for (PackagePart part : pkg.getParts()) {
+                // relationship parts (_rels/*.rels) are never relationship targets; skip them
+                if (RELATIONSHIPS_CONTENT_TYPE.equals(part.getContentType())) {
+                    continue;
+                }
+                if (!reachable.contains(part.getPartName().getName())) {
+                    metadata.set(Office.HAS_UNREFERENCED_PARTS, true);
+                    metadata.add(Office.UNREFERENCED_PART_NAMES, part.getPartName().getName());
+                }
+            }
+        } catch (Exception e) {
+            // best-effort only; never fail the parse over this signal
+        }
+    }
+
+    @FunctionalInterface
+    private interface PartResolver {
+        PackagePart resolve(PackageRelationship rel) throws Exception;
+    }
+
+    private static void addRelatedParts(PackageRelationshipCollection rels, PartResolver resolver,
+                                        Set<String> reachable, Deque<PackagePart> queue) {
+        for (PackageRelationship rel : rels) {
+            if (rel.getTargetMode() != TargetMode.INTERNAL) {
+                continue;
+            }
+            try {
+                PackagePart part = resolver.resolve(rel);
+                if (part != null && reachable.add(part.getPartName().getName())) {
+                    queue.add(part);
+                }
+            } catch (Exception e) {
+                // unresolved/broken relationship target -- ignore for this best-effort signal
+            }
+        }
     }
 
     private static String getCorePartContentType(OPCPackage pkg) {
