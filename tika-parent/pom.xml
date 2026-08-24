@@ -454,7 +454,7 @@
     <zookeeper.version>3.8.6</zookeeper.version>
     <zstd.version>1.5.7-15</zstd.version>
     <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
-    <logback.version>1.6.0</logback.version>
+    <logback.version>1.6.3</logback.version>
     <javacpp.version>1.5.13</javacpp.version>
     <maven.site.version>3.22.0</maven.site.version>
     <maven.exec.version>3.6.3</maven.exec.version>
