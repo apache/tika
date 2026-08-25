@@ -103,18 +103,14 @@ public interface ServerManager extends Closeable {
      * might still return true briefly. The next call to {@link #ensureRunning()} will
      * wait for the process to fully exit and then restart.
      * <p>
-     * In per-client mode, this is typically a no-op since the client owns the server.
-     * In shared mode, this is important for coordinating restarts among multiple clients.
+     * Kept for implementations predating {@link RestartReason}; nothing in tika-pipes calls
+     * this form. Do not implement it by calling the reason form, which defaults to this one.
      */
     default void markServerForRestart() {
         // Default no-op for backward compatibility
     }
 
-    /**
-     * As {@link #markServerForRestart()}, attributing the restart to {@code reason}.
-     * Override this method. An implementation that overrides only the no-arg form must
-     * not implement it by calling this one: this default forwards back to the no-arg form.
-     */
+    /** As {@link #markServerForRestart()}, attributing the restart to {@code reason}. Override this one. */
     default void markServerForRestart(RestartReason reason) {
         markServerForRestart();
     }
@@ -174,7 +170,7 @@ public interface ServerManager extends Closeable {
      * @return the exit code if available, or -1 if the process is still running or unavailable
      */
     default int handleCrashAndGetExitCode() {
-        markServerForRestart();
+        markServerForRestart(RestartReason.CRASH);
         return -1;
     }
 }

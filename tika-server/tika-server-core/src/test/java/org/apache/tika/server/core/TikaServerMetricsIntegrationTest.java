@@ -36,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
 import org.apache.tika.server.core.metrics.MetricsServer;
+import org.apache.tika.server.core.metrics.TikaServerMetrics;
 import org.apache.tika.utils.ProcessUtils;
 
 /**
@@ -115,7 +116,7 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
         String body = get(metricsEndPoint + MetricsServer.PATH).body();
         assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"oom\"", 0.0);
         assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"async\",reason=\"oom\"", 0.0);
-        assertTrue(body.contains("tika_pipes_queue_depth"), body);
+        assertSample(body, "tika_pipes_queue_depth", "pool=\"async\"", 0.0);
     }
 
     /** Routine restarts (max files, idle exit 24) must not be counted as crashes. */
@@ -128,18 +129,65 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
         for (int i = 0; i < 3; i++) {
             assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
         }
-        // Past the idle socket timeout: the fork exits 24 and is restarted by the next request.
-        Thread.sleep(4000);
-        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
-
-        String body = get(metricsEndPoint + MetricsServer.PATH).body();
+        // Past the idle socket timeout the fork exits 24 and is restarted by the next request.
+        String body = awaitSample("tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"idle\"", 1.0);
         assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"max_files\"", 1.0);
-        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"idle\"", 1.0);
         assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 0.0);
     }
 
+    /** Timeout and crash are attributed per client; a 503 for either is a crash_503 rejection. */
+    @Test
+    @Timeout(240)
+    public void testTimeoutAndCrashReasons() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-metrics-timeout.json"),
+                "--metricsPort", String.valueOf(metricsPort)});
+        awaitServerStartup();
+        assertEquals(503, rmeta(TEST_HEAVY_HANG).getStatus());
+        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
+        assertEquals(503, rmeta(TEST_SYSTEM_EXIT).getStatus());
+        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
+
+        String body = get(metricsEndPoint + MetricsServer.PATH).body();
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"timeout\"", 1.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 1.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"oom\"", 0.0);
+        assertSample(body, "tika_server_rejected_total", "reason=\"crash_503\"", 2.0);
+    }
+
+    /** Shared server: the client that saw the OOM marks it; the restarter must not overwrite it with crash. */
+    @Test
+    @Timeout(240)
+    public void testSharedServerOomReason() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-metrics-shared.json"),
+                "--metricsPort", String.valueOf(metricsPort)});
+        awaitServerStartup();
+        assertEquals(503, rmeta(TEST_OOM).getStatus());
+        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
+
+        String body = get(metricsEndPoint + MetricsServer.PATH).body();
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"oom\"", 1.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 0.0);
+    }
+
+    /** Polls (parse + scrape) until the sample reaches {@code expected}; returns the last body. */
+    private String awaitSample(String name, String labels, double expected) throws Exception {
+        long deadline = System.currentTimeMillis() + 30_000;
+        String body;
+        do {
+            // Each parse resets the fork's idle clock, so sleep past the config's socketTimeoutMillis.
+            Thread.sleep(3000);
+            assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
+            body = get(metricsEndPoint + MetricsServer.PATH).body();
+            if (sample(body, name, labels) == expected) {
+                return body;
+            }
+        } while (System.currentTimeMillis() < deadline);
+        throw new AssertionError("timed out waiting for " + name + "{" + labels + "}=" + expected
+                + " in:\n" + body);
+    }
+
     /**
-     * The twelve explicit SLO boundaries, not micrometer's ~70-bucket percentile histogram.
+     * The explicit SLO boundaries, not micrometer's ~70-bucket percentile histogram.
      * Guards the cardinality decision: a stray publishPercentileHistogram() fails here.
      */
     @Test
@@ -156,7 +204,8 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
                 .filter(l -> l.startsWith("tika_server_requests_seconds_bucket{")
                         && l.contains("endpoint=\"rmeta\""))
                 .count();
-        assertEquals(13, buckets, "expected 12 SLO buckets + Inf, got " + buckets + ":\n" + body);
+        int expected = TikaServerMetrics.DURATION_SLOS.length + 1;
+        assertEquals(expected, buckets, "expected SLO buckets + Inf, got " + buckets + ":\n" + body);
     }
 
     private Response rmeta(String resource) {
@@ -166,11 +215,15 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
     }
 
     private static void assertSample(String body, String name, String labels, double expected) {
+        assertEquals(expected, sample(body, name, labels), 0.0, name + "{" + labels + "}");
+    }
+
+    private static double sample(String body, String name, String labels) {
         String labelled = labels.isEmpty() ? "" : "\\{" + Pattern.quote(labels) + ",?\\}";
         Matcher m = Pattern.compile("^" + Pattern.quote(name) + labelled + " (\\S+)$",
                 Pattern.MULTILINE).matcher(body);
         assertTrue(m.find(), "missing " + name + "{" + labels + "} in:\n" + body);
-        assertEquals(expected, Double.parseDouble(m.group(1)), 0.0, name + "{" + labels + "}");
+        return Double.parseDouble(m.group(1));
     }
 
     private static HttpResponse<String> get(String url) throws Exception {

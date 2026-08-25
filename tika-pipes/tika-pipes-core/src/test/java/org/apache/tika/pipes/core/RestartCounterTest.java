@@ -18,7 +18,12 @@ package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import org.apache.tika.pipes.core.server.PipesServer;
 
@@ -55,15 +60,22 @@ public class RestartCounterTest {
         assertEquals(1, c.count(RestartReason.CRASH));
     }
 
-    @Test
-    public void testUnmarkedAttributedByExitCode() {
+    @ParameterizedTest
+    @MethodSource("exitCodes")
+    public void testUnmarkedAttributedByExitCode(int exitCode, RestartReason expected) {
         RestartCounter c = new RestartCounter();
-        c.restarted(PipesServer.IDLE_EXIT_CODE);
-        c.restarted(0);
-        c.restarted(1);
-        c.restarted(-1);
-        assertEquals(1, c.count(RestartReason.IDLE));
-        assertEquals(3, c.count(RestartReason.CRASH));
+        c.restarted(exitCode);
+        for (RestartReason r : RestartReason.values()) {
+            assertEquals(r == expected ? 1 : 0, c.count(r), r.name());
+        }
+    }
+
+    static Stream<Arguments> exitCodes() {
+        return Stream.of(
+                Arguments.of(PipesServer.IDLE_EXIT_CODE, RestartReason.IDLE),
+                Arguments.of(0, RestartReason.CRASH),
+                Arguments.of(1, RestartReason.CRASH),
+                Arguments.of(-1, RestartReason.CRASH));
     }
 
     @Test
@@ -76,13 +88,17 @@ public class RestartCounterTest {
         assertEquals(1, c.count(RestartReason.IDLE));
     }
 
+    /** A mark left over from a start that never produced a process must not bleed into the next restart. */
     @Test
-    public void testFirstStartNotCounted() {
+    public void testFirstStartNotCountedAndClearsMark() {
         RestartCounter c = new RestartCounter();
         c.mark(RestartReason.CRASH);
         c.restarted((Process) null);
         for (RestartReason r : RestartReason.values()) {
             assertEquals(0, c.count(r), r.name());
         }
+        c.restarted(PipesServer.IDLE_EXIT_CODE);
+        assertEquals(1, c.count(RestartReason.IDLE));
+        assertEquals(0, c.count(RestartReason.CRASH));
     }
 }

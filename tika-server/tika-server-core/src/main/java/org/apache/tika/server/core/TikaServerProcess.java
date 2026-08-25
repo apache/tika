@@ -121,7 +121,9 @@ public class TikaServerProcess {
         options.addOption("p", "port", true, "listen port");
         options.addOption("c", "config", true, "Tika Configuration xml file to override default config with.");
         options.addOption("i", "id", true, "id for this server, written to the startup log");
-        options.addOption(null, "metricsPort", true, "serve Prometheus metrics on this port");
+        options.addOption(null, "metricsPort", true,
+                "serve Prometheus metrics on this port (9404 by convention); "
+                        + "unset means metrics are off\n");
         options.addOption("?", "help", false, "this help message");
         return options;
     }

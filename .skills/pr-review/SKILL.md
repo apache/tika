@@ -241,6 +241,10 @@ Agents finish spread over many minutes: in attended sessions, surface each
 dimension's headline as its report lands; the ranked list waits for all.
 
 - Dedup across agents; promote findings reached independently by 2+ reviewers.
+- Severity gate: list only findings that change behavior or a documented
+  contract. Doc wording, comment terseness, naming and test-hygiene items go
+  in one "cleanups" line each, not as numbered findings — a 25-item list
+  where 5 matter reads as non-convergence.
 - One ranked list: severity, then cheapness of fix.
 - Split maintainer decisions (contract mismatches, policy choices) from
   mechanical fixes.
@@ -254,6 +258,9 @@ Present the list and stop.
 - Fix in priority order. Behavioral fixes get a regression test unless
   impractical (note why) or an existing test already fails without the fix;
   never add a duplicative test. Run touched modules' tests as you go.
+- Write the test before the fix and watch it fail. A fix round that rewrites
+  logic is new, unreviewed code; the test is what stops the next round from
+  finding the bug the fix introduced.
 - If a fix's premise falls (a constraint makes a guard unnecessary), prefer
   deleting the mechanism over patching it.
 - Doc fixes may be delegated to one agent; verify every doc claim against code.
@@ -261,3 +268,17 @@ Present the list and stop.
   Never commit (including merge commits), push, merge, or write to GitHub —
   the user does that (workflow default; see the precedence note in
   `.skills/dev/SKILL.md` Git Policy).
+
+## 7. Converging: the round after a fix round
+
+Full fan-out is for the first review of new code. After a fix round, review
+the delta only: one skeptic agent on `git diff <last-review-sha>..HEAD`,
+prompted to refute each fix and check it is complete (the same bug in the
+sibling class, the test that would pass without the fix). Stop when the
+skeptic pass returns nothing above low.
+
+Give the brief a short invariant list from the design doc or the PR itself
+("every restart is counted exactly once"; "every failure-path close marks a
+reason"). Agents can check an invariant mechanically; they cannot check
+"the design is right", and a fix that breaks an unstated invariant is how
+round N+1 finds new bugs in round N's code.

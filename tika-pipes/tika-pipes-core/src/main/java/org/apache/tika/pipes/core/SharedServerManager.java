@@ -149,7 +149,10 @@ public class SharedServerManager implements ServerManager {
                 pendingRestart = false; // Clear the flag after successful restart
                 filesProcessed.set(0); // Reset file counter on restart
             } finally {
-                restarts.restarted(previous);
+                // Count the old process once it is really gone, even if the new start failed.
+                if (process != previous) {
+                    restarts.restarted(previous);
+                }
                 restarting = false;
                 lock.notifyAll(); // Wake up any threads waiting in getPort()
             }
@@ -157,27 +160,21 @@ public class SharedServerManager implements ServerManager {
     }
 
     /**
-     * Marks the server for restart due to a fatal error (OOM, timeout).
-     * <p>
-     * This is called by clients when they receive OOM or TIMEOUT status.
-     * It signals that the server process is stopping (System.exit was called),
-     * even if isRunning() might still return true briefly.
-     * <p>
-     * The next call to ensureRunning() will wait for the process to fully
-     * exit and then restart the server.
+     * Called by a client that received OOM or TIMEOUT: the process is exiting even if
+     * isRunning() still says otherwise; the next ensureRunning() restarts it.
      */
-    @Override
-    public void markServerForRestart() {
-        markServerForRestart(RestartReason.CRASH);
-    }
-
     @Override
     public void markServerForRestart(RestartReason reason) {
         synchronized (lock) {
             LOG.debug("Server marked for restart ({}) - will restart on next ensureRunning()", reason);
-            restarts.mark(reason);
-            pendingRestart = true;
+            markForRestart(reason);
         }
+    }
+
+    /** Callers hold {@code lock}. */
+    private void markForRestart(RestartReason reason) {
+        restarts.mark(reason);
+        pendingRestart = true;
     }
 
     @Override
@@ -208,8 +205,7 @@ public class SharedServerManager implements ServerManager {
             synchronized (lock) {
                 LOG.info("Shared server reached max files limit ({}/{}), marking for restart",
                         count, maxFilesPerProcess);
-                restarts.mark(RestartReason.MAX_FILES);
-                pendingRestart = true;
+                markForRestart(RestartReason.MAX_FILES);
             }
         }
     }

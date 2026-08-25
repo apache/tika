@@ -56,8 +56,8 @@ configuration. Labels such as a cluster or tier name belong in your scrape confi
 Metrics are served on a *separate port* from the parse endpoints, on purpose. The parse
 port receives untrusted documents; the metrics port should be reachable only by your
 scraper. Keep them apart at the network layer (a Kubernetes `NetworkPolicy`, a security
-group). The scrape listener answers only `GET /metrics` -- every parse endpoint is `404`
-there, and `/metrics` is `404` on the parse port. It also has its own small thread pool
+group). The scrape listener serves only `/metrics` (`GET` or `HEAD`) -- every parse
+endpoint is `404` there, and `/metrics` is `404` on the parse port. It also has its own small thread pool
 and a cap of 64 open connections, so a scrape never waits behind a slow parse.
 
 The scrape listener is plain HTTP even when the parse port uses
@@ -126,8 +126,8 @@ crashed), `payload_413` (body over `maxRequestSizeBytes` or the IPC payload limi
 |`tika_server_tasks_active`
 |gauge
 |
-|Sync parse/detect tasks (`/tika`, `/rmeta`, `/meta`, `/unpack`, `/detect`) in flight
-right now; `/pipes` and `/async` work is not included.
+|Sync parse/detect tasks (`/tika`, `/rmeta`, `/meta`, `/detect`) in flight right now;
+`/unpack`, `/pipes` and `/async` work is not included.
 |===
 
 === Forked workers
@@ -152,8 +152,9 @@ Heap Sizing] before raising `numClients`.
 including an IPC error the server could not attribute), `max_files` (routine recycling
 after `maxFilesProcessedPerProcess`), `idle` (the worker shut itself down after
 `socketTimeoutMillis` without a request -- exit code 24 -- and was started again on the
-next one), `connection_abandoned` (a request was interrupted mid-flight). Alert on `oom`,
-`timeout` and `crash`; the rest are expected.
+next one; per-client mode only, a shared server stays up when idle),
+`connection_abandoned` (the client dropped the connection: a request was interrupted, or a
+worker reply exceeded `maxIpcPayloadBytes`). Alert on `oom`, `timeout` and `crash`; the rest are expected.
 
 `pool` separates two independent sets of forks: `sync` serves `/tika`, `/rmeta`, `/meta`,
 `/unpack`, `/detect` and `/pipes`; `async` serves `/async`. Each pool is sized by its own
@@ -162,9 +163,9 @@ one of them specifically.
 
 |`tika_pipes_queue_depth`
 |gauge
-|
-|Tuples accepted by `/async` and not yet picked up by a worker. Only present when the
-`async` endpoint is enabled.
+|`pool`
+|Tuples accepted by `/async` and not yet picked up by a worker. Only `pool="async"`
+exists today; present only when the `async` endpoint is enabled.
 |===
 
 === JVM and process

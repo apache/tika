@@ -282,8 +282,7 @@ public class PerClientServerManager implements ServerManager {
         if (filesProcessed >= maxFilesPerProcess) {
             LOG.info("clientId={}: reached max files limit ({}/{}), marking for restart",
                     clientId, filesProcessed, maxFilesPerProcess);
-            restarts.mark(RestartReason.MAX_FILES);
-            pendingRestart = true;
+            markForRestart(RestartReason.MAX_FILES);
         }
     }
 
@@ -293,13 +292,12 @@ public class PerClientServerManager implements ServerManager {
     }
 
     @Override
-    public void markServerForRestart() {
-        markServerForRestart(RestartReason.CRASH);
-    }
-
-    @Override
     public void markServerForRestart(RestartReason reason) {
         LOG.info("clientId={}: marking server for restart ({})", clientId, reason);
+        markForRestart(reason);
+    }
+
+    private void markForRestart(RestartReason reason) {
         restarts.mark(reason);
         pendingRestart = true;
     }
@@ -312,14 +310,12 @@ public class PerClientServerManager implements ServerManager {
     @Override
     public void connectionAbandoned() {
         LOG.info("clientId={}: connection abandoned, worker will be recycled on next use", clientId);
-        restarts.mark(RestartReason.CONNECTION_ABANDONED);
-        pendingRestart = true;
+        markForRestart(RestartReason.CONNECTION_ABANDONED);
     }
 
     @Override
     public int handleCrashAndGetExitCode() {
-        // No mark: the exit code attributes the restart (see RestartCounter), and the
-        // caller refines OOM/TIMEOUT from it.
+        // Not marked: RestartCounter attributes by exit code; the caller refines OOM/TIMEOUT.
         pendingRestart = true;
         if (process != null) {
             try {
@@ -327,7 +323,8 @@ public class PerClientServerManager implements ServerManager {
                 if (!process.isAlive()) {
                     int exitValue = process.exitValue();
                     if (exitValue == 0) {
-                        LOG.info("clientId={}: process exited cleanly", clientId);
+                        LOG.warn("clientId={}: process exited with code 0 without a shutdown request; " +
+                                "counted as a crash restart", clientId);
                     } else if (exitValue == PipesServer.IDLE_EXIT_CODE) {
                         LOG.info("clientId={}: process exited after idle timeout", clientId);
                     } else {
@@ -357,8 +354,10 @@ public class PerClientServerManager implements ServerManager {
         try {
             startServer();
         } finally {
-            // The old process is gone either way; count it even if the new start failed.
-            restarts.restarted(previous);
+            // Count the old process once it is really gone, even if the new start failed.
+            if (process != previous) {
+                restarts.restarted(previous);
+            }
         }
     }
 

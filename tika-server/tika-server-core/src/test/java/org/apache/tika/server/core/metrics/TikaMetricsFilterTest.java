@@ -17,7 +17,6 @@
 package org.apache.tika.server.core.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -25,6 +24,9 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.Socket;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,10 +39,13 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.MaxRequestSizeFilter;
@@ -61,6 +66,16 @@ public class TikaMetricsFilterTest extends CXFTestBase {
         public String get() {
             // Mapped by JAX-RS itself; an unmapped exception never reaches response filters.
             throw new InternalServerErrorException("boom");
+        }
+
+        @GET
+        @Path("mid-write")
+        public StreamingOutput midWrite() {
+            return out -> {
+                out.write("partial".getBytes(StandardCharsets.UTF_8));
+                out.flush();
+                throw new InternalServerErrorException("mid-write");
+            };
         }
     }
 
@@ -89,6 +104,9 @@ public class TikaMetricsFilterTest extends CXFTestBase {
         try (InputStream is = ClassLoader.getSystemResourceAsStream(HELLO_WORLD)) {
             helloWorldBytes = is.readAllBytes().length;
         }
+        long before = count("tika", "PUT", "2xx");
+        long sizeBefore = sizeCount("tika");
+        double sizeTotalBefore = sizeTotal("tika");
         Response response = WebClient
                 .create(endPoint + "/tika/text")
                 .accept("text/plain")
@@ -97,31 +115,69 @@ public class TikaMetricsFilterTest extends CXFTestBase {
         String body = getStringFromInputStream((InputStream) response.getEntity());
         assertTrue(body.contains("hello world"), body);
 
-        Timer timer = timer("tika", "PUT", "2xx");
-        assertNotNull(timer);
-        assertEquals(1, timer.count());
-        DistributionSummary requestSize = metrics.getRegistry()
-                .find(TikaServerMetrics.REQUEST_SIZE).tag("endpoint", "tika").summary();
-        assertNotNull(requestSize);
-        assertEquals(helloWorldBytes, requestSize.totalAmount(), 0.0);
+        assertEquals(before + 1, count("tika", "PUT", "2xx"));
+        assertEquals(sizeBefore + 1, sizeCount("tika"));
+        assertEquals(sizeTotalBefore + helloWorldBytes, sizeTotal("tika"), 0.0);
     }
 
+    /** WebClient streams an InputStream chunked, so this is the BoundedInputStream + mapper path. */
     @Test
-    public void testPayloadTooLargeCountsAsRejected() {
+    public void testChunkedPayloadTooLargeCountsAsRejected() {
+        long before = count("tika", "PUT", "4xx");
+        double rejectedBefore = rejected("payload_413");
         Response response = WebClient
                 .create(endPoint + "/tika/text")
                 .put(new ByteArrayInputStream(new byte[(int) MAX_BYTES * 4]));
         assertEquals(413, response.getStatus());
-        assertEquals(1, timer("tika", "PUT", "4xx").count());
-        assertEquals(1.0, rejected("payload_413").count(), 0.0);
+        assertEquals(before + 1, count("tika", "PUT", "4xx"));
+        assertEquals(rejectedBefore + 1, rejected("payload_413"), 0.0);
+    }
+
+    /** A declared Content-Length over the limit is refused via abortWith before the body is read. */
+    @Test
+    public void testDeclaredLengthTooLargeCountsAsRejected() throws Exception {
+        long before = count("tika", "PUT", "4xx");
+        double rejectedBefore = rejected("payload_413");
+        HttpResponse<String> response = put(
+                HttpRequest.BodyPublishers.ofByteArray(new byte[(int) MAX_BYTES * 4]));
+        assertEquals(413, response.statusCode());
+        assertEquals(before + 1, count("tika", "PUT", "4xx"));
+        assertEquals(rejectedBefore + 1, rejected("payload_413"), 0.0);
+    }
+
+    @Test
+    public void testChunkedRequestHasNoSizeSample() throws Exception {
+        long before = count("tika", "PUT", "2xx");
+        long sizeBefore = sizeCount("tika");
+        HttpResponse<String> response = put(HttpRequest.BodyPublishers.ofInputStream(
+                () -> ClassLoader.getSystemResourceAsStream(HELLO_WORLD)));
+        assertEquals(200, response.statusCode());
+        assertEquals(before + 1, count("tika", "PUT", "2xx"));
+        assertEquals(sizeBefore, sizeCount("tika"), "no Content-Length must mean no size sample");
     }
 
     @Test
     public void testThrownExceptionIs5xx() {
+        long before = count(TikaMetricsFilter.OTHER, "GET", "5xx");
         Response response = WebClient.create(endPoint + "/boom").get();
         assertEquals(500, response.getStatus());
         // /boom is not a tika-server endpoint name, so it folds into "other"
-        assertEquals(1, timer(TikaMetricsFilter.OTHER, "GET", "5xx").count());
+        assertEquals(before + 1, count(TikaMetricsFilter.OTHER, "GET", "5xx"));
+    }
+
+    /** CXF re-runs the response filters for the mapped exception; the request must be timed once. */
+    @Test
+    public void testMidWriteExceptionRecordedOnce() {
+        long before = count(TikaMetricsFilter.OTHER, "GET");
+        WebClient.create(endPoint + "/boom/mid-write").get();
+        assertEquals(before + 1, count(TikaMetricsFilter.OTHER, "GET"));
+    }
+
+    private HttpResponse<String> put(HttpRequest.BodyPublisher body) throws Exception {
+        return HttpClient.newHttpClient().send(
+                HttpRequest.newBuilder(URI.create(endPoint + "/tika/text"))
+                        .header("Accept", "text/plain").PUT(body).build(),
+                HttpResponse.BodyHandlers.ofString());
     }
 
     @Test
@@ -136,7 +192,7 @@ public class TikaMetricsFilterTest extends CXFTestBase {
             }
             timersBefore = timers;
         }
-        assertEquals(25, timer(TikaMetricsFilter.UNMATCHED, "GET", "4xx").count());
+        assertEquals(25, count(TikaMetricsFilter.UNMATCHED, "GET", "4xx"));
     }
 
     @Test
@@ -151,19 +207,14 @@ public class TikaMetricsFilterTest extends CXFTestBase {
             timersBefore = timers;
         }
         assertNull(timer("tika", "BOGUS0", "4xx"), "the raw method must not become a tag value");
-        long recorded = metrics.getRegistry().find(TikaServerMetrics.REQUESTS)
-                .tag("endpoint", "tika").tag("method", "other").timers().stream()
-                .mapToLong(Timer::count).sum();
-        assertEquals(25, recorded, "requests with unknown methods must still be counted");
+        assertEquals(25, count("tika", "other"), "requests with unknown methods must still be counted");
     }
 
-    @Test
-    public void testMethodTagIsBounded() {
-        assertEquals("GET", TikaServerMetrics.methodTag("GET"));
-        assertEquals("PUT", TikaServerMetrics.methodTag("PUT"));
-        assertEquals("other", TikaServerMetrics.methodTag("BOGUS"));
-        assertEquals("other", TikaServerMetrics.methodTag("get"));
-        assertEquals("other", TikaServerMetrics.methodTag(null));
+    @ParameterizedTest
+    @CsvSource(nullValues = "null", value = {
+            "GET, GET", "PUT, PUT", "BOGUS, other", "get, other", "null, other"})
+    public void testMethodTagIsBounded(String method, String expected) {
+        assertEquals(expected, TikaServerMetrics.methodTag(method));
     }
 
     /** Arbitrary method tokens: HttpURLConnection and java.net.http both refuse to send them. */
@@ -184,7 +235,35 @@ public class TikaMetricsFilterTest extends CXFTestBase {
                 .tag("endpoint", endpoint).tag("method", method).tag("status", status).timer();
     }
 
-    private Counter rejected(String reason) {
-        return metrics.getRegistry().find(TikaServerMetrics.REJECTED).tag("reason", reason).counter();
+    /** Registry is shared across the class (PER_CLASS), so callers assert deltas; absent meters read 0. */
+    private long count(String endpoint, String method, String status) {
+        Timer t = timer(endpoint, method, status);
+        return t == null ? 0 : t.count();
+    }
+
+    private long count(String endpoint, String method) {
+        return metrics.getRegistry().find(TikaServerMetrics.REQUESTS)
+                .tag("endpoint", endpoint).tag("method", method).timers().stream()
+                .mapToLong(Timer::count).sum();
+    }
+
+    private DistributionSummary size(String endpoint) {
+        return metrics.getRegistry().find(TikaServerMetrics.REQUEST_SIZE)
+                .tag("endpoint", endpoint).summary();
+    }
+
+    private long sizeCount(String endpoint) {
+        DistributionSummary s = size(endpoint);
+        return s == null ? 0 : s.count();
+    }
+
+    private double sizeTotal(String endpoint) {
+        DistributionSummary s = size(endpoint);
+        return s == null ? 0 : s.totalAmount();
+    }
+
+    private double rejected(String reason) {
+        Counter c = metrics.getRegistry().find(TikaServerMetrics.REJECTED).tag("reason", reason).counter();
+        return c == null ? 0 : c.count();
     }
 }

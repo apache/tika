@@ -50,7 +50,7 @@ public final class TikaServerMetrics implements AutoCloseable {
      * One bucket set for every duration timer. Twelve explicit boundaries instead of
      * Micrometer's percentile histogram, which would emit roughly 70 per series.
      */
-    static final Duration[] DURATION_SLOS = {
+    public static final Duration[] DURATION_SLOS = {
             Duration.ofMillis(10), Duration.ofMillis(50), Duration.ofMillis(100),
             Duration.ofMillis(250), Duration.ofMillis(500), Duration.ofSeconds(1),
             Duration.ofSeconds(2), Duration.ofSeconds(5), Duration.ofSeconds(10),
@@ -132,6 +132,7 @@ public final class TikaServerMetrics implements AutoCloseable {
     public void bindAsyncPool(AsyncProcessor asyncProcessor) {
         bindRestarts(POOL_ASYNC, asyncProcessor::getRestartCount);
         Gauge.builder(PIPES_QUEUE_DEPTH, asyncProcessor, AsyncProcessor::getQueueDepth)
+                .tag(TAG_POOL, POOL_ASYNC)
                 .description("Tuples waiting in the /async queue")
                 .register(registry);
     }

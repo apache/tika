@@ -81,7 +81,6 @@ public class AsyncResource {
         this.maxQueuePauseMillis = maxQueuePauseMillis;
     }
 
-    /** For monitoring. */
     public AsyncProcessor getAsyncProcessor() {
         return asyncProcessor;
     }

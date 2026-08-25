@@ -19,6 +19,7 @@ package org.apache.tika.server.core.metrics;
 import java.util.List;
 import java.util.Set;
 
+import jakarta.annotation.Priority;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -36,6 +37,8 @@ import jakarta.ws.rs.ext.Provider;
  */
 @Provider
 @PreMatching
+// Ahead of CXF's CORS filter (999) so a preflight abort is timed, not recorded as 0.
+@Priority(100)
 public class TikaMetricsFilter implements ContainerRequestFilter, ContainerResponseFilter {
 
     static final String START_NANOS = TikaMetricsFilter.class.getName() + ".start";

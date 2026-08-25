@@ -8,7 +8,7 @@ Release 4.1.0 - unreleased
      summary, tika_server_rejected_total (busy_429, crash_503, payload_413),
      tika_server_tasks_active, tika_pipes_workers (busy/idle),
      tika_pipes_worker_restarts_total by reason (oom, timeout, crash, max_files,
-     idle, connection_abandoned), tika_pipes_queue_depth, and heap/thread/
+     idle, connection_abandoned), tika_pipes_queue_depth (async), and heap/thread/
      file-descriptor/uptime binders for the server JVM (no GC or CPU binder:
      parses run in forked workers). The pipes meters carry a pool tag (sync for
      /tika, /rmeta, /meta, /unpack, /detect and /pipes; async for /async).
@@ -19,7 +19,7 @@ Release 4.1.0 - unreleased
      ServerManager.markServerForRestart(RestartReason) and
      getRestartCount(RestartReason), PipesParser.getNumClients/
      getIdleClientCount/getRestartCount, AsyncProcessor.getQueueDepth/
-     getRestartCount; tika-server-core TikaServerConfig.getMetricsPort,
+     getRestartCount; tika-server-core TikaServerConfig.get/setMetricsPort,
      ServerStatus.getNumTasks, AsyncResource.getAsyncProcessor and the
      org.apache.tika.server.core.metrics package. A forked PipesServer that
      shuts down after its idle socket timeout now exits with code 24

@@ -17,8 +17,10 @@
 package org.apache.tika.server.core.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -77,6 +79,13 @@ public class MetricsServerTest {
                         .POST(HttpRequest.BodyPublishers.noBody()).build(),
                 HttpResponse.BodyHandlers.ofString());
         assertEquals(405, post.statusCode());
+    }
+
+    @Test
+    public void testClosedServerRefusesConnections() throws Exception {
+        assertEquals(200, get(base + MetricsServer.PATH).statusCode());
+        server.close();
+        assertThrows(IOException.class, () -> get(base + MetricsServer.PATH));
     }
 
     private static HttpResponse<String> get(String url) throws Exception {

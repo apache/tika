@@ -23,7 +23,7 @@ import org.apache.tika.pipes.core.server.PipesServer;
 
 /**
  * Reason marked while a restart is pending, plus counts of restarts performed, by reason.
- * Last mark wins: a crash is marked generically, then refined from the exit code.
+ * Last mark wins; an unmarked restart is attributed by the old process's exit code.
  */
 final class RestartCounter {
 
@@ -47,9 +47,14 @@ final class RestartCounter {
         }
     }
 
-    /** Records a restart of {@code previous} (null on first start: nothing counted). */
+    /**
+     * Records a restart of {@code previous}. Null means there was no process to restart
+     * (first start, or the last start failed): nothing is counted and any mark is dropped,
+     * since it referred to a restart that never happened.
+     */
     void restarted(Process previous) {
         if (previous == null) {
+            pending = null;
             return;
         }
         restarted(previous.isAlive() ? -1 : previous.exitValue());

@@ -32,6 +32,8 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaConfigException;
@@ -268,22 +270,18 @@ public class TikaServerConfigTest extends TikaTest {
         assertEquals(9500, config.getMetricsPort());
     }
 
-    @Test
-    public void testMetricsPortMustBeAnInteger() throws Exception {
+    @ParameterizedTest
+    @CsvSource({"abc, --metricsPort", "65536, 0-65535", "-1, 0-65535"})
+    public void testMetricsPortRejected(String value, String expectedMessage) throws Exception {
         CommandLine commandLine = new DefaultParser().parse(metricsOptions(),
-                new String[]{"--metricsPort", "abc"});
+                new String[]{"--metricsPort", value});
         TikaConfigException ex = assertThrows(TikaConfigException.class,
                 () -> TikaServerConfig.load(commandLine));
-        assertContains("--metricsPort", ex.getMessage());
+        assertContains(expectedMessage, ex.getMessage());
     }
 
     @Test
-    public void testMetricsPortRange() throws Exception {
-        CommandLine commandLine = new DefaultParser().parse(metricsOptions(),
-                new String[]{"--metricsPort", "65536"});
-        TikaConfigException ex = assertThrows(TikaConfigException.class,
-                () -> TikaServerConfig.load(commandLine));
-        assertContains("0-65535", ex.getMessage());
+    public void testMetricsPortZeroIsEphemeral() throws Exception {
         assertEquals(0, TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
                 new String[]{"--metricsPort", "0"})).getMetricsPort());
     }
