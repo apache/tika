@@ -87,19 +87,15 @@ public class DigestHelper {
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
             CacheMemoryBudget budget = context.get(CacheMemoryBudget.class);
             tis.enableRewind(budget);
-            // Translated size is unknown up front; the source length bounds it, so reserve
-            // that from the budget (or use the per-object default) as the in-memory threshold.
-            long threshold = DEFAULT_TRANSLATED_MEMORY_THRESHOLD;
-            long reserved = 0;
-            if (budget != null && tis.hasLength()) {
-                long len = tis.getLength();
-                if (len > 0 && budget.tryReserve(len) > 0) {
-                    reserved = len;
-                    threshold = len;
-                }
+            // Translated size is unknown up front (translation may inflate), so the sink
+            // starts at the source length / per-object default and grows from the budget.
+            long initial = DEFAULT_TRANSLATED_MEMORY_THRESHOLD;
+            if (tis.hasLength() && tis.getLength() > initial) {
+                initial = tis.getLength();
             }
+            TranslatedBytes translated = null;
             try (TemporaryResources tmp = new TemporaryResources()) {
-                TranslatedBytes translated = new TranslatedBytes(tmp, threshold);
+                translated = new TranslatedBytes(tmp, budget, initial);
                 try (OutputStream os = translated) {
                     EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, os);
                 }
@@ -107,8 +103,8 @@ public class DigestHelper {
                     digester.digest(translatedStream, metadata, context);
                 }
             } finally {
-                if (reserved > 0) {
-                    budget.release(reserved);
+                if (translated != null) {
+                    translated.release();
                 }
                 tis.rewind();
             }

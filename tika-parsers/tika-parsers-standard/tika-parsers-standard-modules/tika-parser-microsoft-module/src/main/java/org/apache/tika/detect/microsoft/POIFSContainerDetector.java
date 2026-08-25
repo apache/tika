@@ -607,6 +607,9 @@ public class POIFSContainerDetector implements Detector {
         CacheMemoryBudget budget = context == null ? null : context.get(CacheMemoryBudget.class);
         long limit = budget == null ? DEFAULT_IN_MEMORY_POIFS :
                 Math.min(MAX_IN_MEMORY_POIFS, budget.getMaxBytes());
+        // attach the budget first: without it the drain below caches only the per-object
+        // default (1MB) in memory and spills the rest before we can even check the size
+        stream.enableRewind(budget);
         // the channel is served from memory while the content fits the cache/budget
         try (SeekableByteChannel channel = stream.getSeekableByteChannel()) {
             long size = channel.size();

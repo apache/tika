@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 
@@ -44,7 +45,7 @@ public class TranslatedBytesTest {
         }
         try (TemporaryResources tmp = new TemporaryResources()) {
             tmp.setTemporaryFileDirectory(tempDir);
-            TranslatedBytes sink = new TranslatedBytes(tmp, 1000);
+            TranslatedBytes sink = new TranslatedBytes(tmp, null, 1000);
             sink.write(data, 0, 600);
             sink.write(data, 600, 400);
             sink.close();
@@ -66,7 +67,7 @@ public class TranslatedBytesTest {
         }
         try (TemporaryResources tmp = new TemporaryResources()) {
             tmp.setTemporaryFileDirectory(tempDir);
-            TranslatedBytes sink = new TranslatedBytes(tmp, 1000);
+            TranslatedBytes sink = new TranslatedBytes(tmp, null, 1000);
             sink.write(data, 0, 800);       // in memory
             sink.write(data, 800, 4200);    // crosses the threshold: memory flushed to the file
             sink.close();
@@ -81,6 +82,36 @@ public class TranslatedBytesTest {
         // the temp file belongs to tmp and is gone once it closes
         try (Stream<Path> files = Files.list(tempDir)) {
             assertEquals(0, files.count());
+        }
+    }
+
+    @Test
+    public void testGrowsFromBudgetInsteadOfSpilling() throws Exception {
+        byte[] data = new byte[3 * 1024 * 1024];
+        for (int i = 0; i < data.length; i++) {
+            data[i] = (byte) (i * 13);
+        }
+        CacheMemoryBudget budget = new CacheMemoryBudget(64L * 1024 * 1024);
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            tmp.setTemporaryFileDirectory(tempDir);
+            TranslatedBytes sink = new TranslatedBytes(tmp, budget, 1024 * 1024);
+            sink.write(data, 0, data.length);   // 3x the initial threshold
+            sink.close();
+            assertTrue(sink.isInMemory(), "should have grown its reservation, not spilled");
+            try (TikaInputStream tis = sink.toTikaInputStream()) {
+                assertArrayEquals(data, tis.readAllBytes());
+            }
+            sink.release();
+        }
+        // a budget too small to grow into => spill
+        CacheMemoryBudget tiny = new CacheMemoryBudget(1024 * 1024 + 1);
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            tmp.setTemporaryFileDirectory(tempDir);
+            TranslatedBytes sink = new TranslatedBytes(tmp, tiny, 1024 * 1024);
+            sink.write(data, 0, data.length);
+            sink.close();
+            assertFalse(sink.isInMemory());
+            sink.release();
         }
     }
 }
