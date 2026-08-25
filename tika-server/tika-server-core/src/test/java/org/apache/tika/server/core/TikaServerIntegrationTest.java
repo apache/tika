@@ -100,6 +100,18 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         testBaseline();
     }
 
+    /** TIKA-4834: the docs permit comments in the config; the server must start from one. */
+    @Test
+    public void testCommentedConfig() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-comments.json")});
+        awaitServerStartup();
+        Response response = WebClient
+                .create(endPoint + RMETA_PATH)
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        assertEquals(200, response.getStatus());
+    }
+
     @Test
     public void testBasicWithPipes() throws Exception {
         // Test that pipes-based parsing works for normal documents
