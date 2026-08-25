@@ -145,6 +145,16 @@ public class ImageMetadataExtractor {
         }
     }
 
+    public void parseJpeg(InputStream stream) throws IOException, SAXException, TikaException {
+        try {
+            com.drew.metadata.Metadata jpegMetadata =
+                    JpegMetadataReader.readMetadata(stream, JPEG_READERS_NO_XMP);
+            handle(jpegMetadata);
+        } catch (JpegProcessingException | MetadataException e) {
+            throw new TikaException("Can't read JPEG metadata", e);
+        }
+    }
+
     public void parseTiff(File file) throws IOException, SAXException, TikaException {
         try {
             com.drew.metadata.Metadata tiffMetadata = TiffMetadataReader.readMetadata(file);
@@ -154,14 +164,26 @@ public class ImageMetadataExtractor {
         }
     }
 
-    public void parseWebP(File file) throws IOException, TikaException {
-
+    public void parseTiff(InputStream stream) throws IOException, SAXException, TikaException {
         try {
-            com.drew.metadata.Metadata webPMetadata = new com.drew.metadata.Metadata();
-            webPMetadata = WebpMetadataReader.readMetadata(file);
-            handle(webPMetadata);
-        } catch (IOException e) {
-            throw e;
+            com.drew.metadata.Metadata tiffMetadata = TiffMetadataReader.readMetadata(stream);
+            handle(tiffMetadata);
+        } catch (MetadataException | TiffProcessingException e) {
+            throw new TikaException("Can't read TIFF metadata", e);
+        }
+    }
+
+    public void parseWebP(File file) throws IOException, TikaException {
+        try {
+            handle(WebpMetadataReader.readMetadata(file));
+        } catch (RiffProcessingException | MetadataException e) {
+            throw new TikaException("Can't process Riff data", e);
+        }
+    }
+
+    public void parseWebP(InputStream stream) throws IOException, TikaException {
+        try {
+            handle(WebpMetadataReader.readMetadata(stream));
         } catch (RiffProcessingException | MetadataException e) {
             throw new TikaException("Can't process Riff data", e);
         }

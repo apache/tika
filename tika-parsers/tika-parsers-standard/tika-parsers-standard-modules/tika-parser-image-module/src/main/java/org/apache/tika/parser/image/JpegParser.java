@@ -26,6 +26,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -54,9 +55,13 @@ public class JpegParser extends AbstractImageParser {
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
+            // Two sequential passes over the bytes; rewind instead of spooling to a file so
+            // in-memory embedded images never touch disk.
+            tis.enableRewind(parseContext.get(CacheMemoryBudget.class));
             // XMP first so it is canonical; the metadata-extractor handlers (IPTC/EXIF) fill gaps.
-            ImageXmp.extractJpeg(tis.getFile(), metadata, parseContext);
-            new ImageMetadataExtractor(metadata).parseJpeg(tis.getFile());
+            ImageXmp.extractJpeg(tis, metadata, parseContext);
+            tis.rewind();
+            new ImageMetadataExtractor(metadata).parseJpeg(tis);
         } finally {
             tmp.dispose();
         }

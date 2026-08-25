@@ -22,6 +22,8 @@ import static org.apache.tika.mime.MediaType.image;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -44,6 +46,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -554,7 +557,18 @@ public class POIFSContainerDetector implements Detector {
     }
 
 
-    private Set<String> getTopLevelNames(TikaInputStream stream) throws IOException {
+    // In-memory POIFS copies the whole object into heap; above this, spool as before.
+    private static final long MAX_IN_MEMORY_POIFS = 64L * 1024 * 1024;
+    private static final long DEFAULT_IN_MEMORY_POIFS = 1024 * 1024;
+
+    private Set<String> getTopLevelNames(TikaInputStream stream, ParseContext context)
+            throws IOException {
+        if (!stream.hasFile()) {
+            Set<String> names = getTopLevelNamesInMemory(stream, context);
+            if (names != null) {
+                return names;
+            }
+        }
         // Force the document stream to a (possibly temporary) file
         // so we don't modify the current position of the stream.
         Path file = stream.getPath();
@@ -583,16 +597,51 @@ public class POIFSContainerDetector implements Detector {
         }
     }
 
+    /**
+     * Opens the OLE2 container from memory instead of spooling it to a temp file. Returns
+     * null when the object is too large for the in-memory limit or POI cannot load it from a
+     * stream (the caller then spools, as before).
+     */
+    private Set<String> getTopLevelNamesInMemory(TikaInputStream stream, ParseContext context)
+            throws IOException {
+        CacheMemoryBudget budget = context == null ? null : context.get(CacheMemoryBudget.class);
+        long limit = budget == null ? DEFAULT_IN_MEMORY_POIFS :
+                Math.min(MAX_IN_MEMORY_POIFS, budget.getMaxBytes());
+        // the channel is served from memory while the content fits the cache/budget
+        try (SeekableByteChannel channel = stream.getSeekableByteChannel()) {
+            long size = channel.size();
+            if (size > limit) {
+                return null;
+            }
+            if (budget != null) {
+                if (budget.tryReserve(size) == 0) {
+                    return null;
+                }
+                stream.addCloseableResource(() -> budget.release(size));
+            }
+            POIFSFileSystem fs = new POIFSFileSystem(Channels.newInputStream(channel));
+            stream.setOpenContainer(fs);
+            return getTopLevelNames(fs.getRoot());
+        } catch (SecurityException e) {
+            throw e;
+        } catch (IOException | RuntimeException e) {
+            // POI's stream loader is stricter than its file loader (e.g. truncated objects);
+            // fall back to the file path so behavior is unchanged for anything it rejects
+            return null;
+        }
+    }
+
     public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         // Check if we have access to the document
         if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
 
-        return handleTikaStream(tis, metadata);
+        return handleTikaStream(tis, metadata, parseContext);
     }
 
-    private MediaType handleTikaStream(TikaInputStream tis, Metadata metadata) throws IOException {
+    private MediaType handleTikaStream(TikaInputStream tis, Metadata metadata, ParseContext context)
+            throws IOException {
         //try for an open container
         Set<String> names = tryOpenContainerOnTikaInputStream(tis, metadata);
 
@@ -604,7 +653,7 @@ public class POIFSContainerDetector implements Detector {
         // If OLE, spool to disk
         if (names == null) {
             // spool to disk and try detection
-            names = getTopLevelNames(tis);
+            names = getTopLevelNames(tis, context);
         }
 
         // Detect based on the names (as available)

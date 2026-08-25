@@ -45,6 +45,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -320,14 +321,14 @@ public class OpenDocumentParser implements Parser {
 
                     if (embeddedName.contains("Pictures/")) {
                         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-                        //spool
-                        tisZip.getFile();
+                        // rewind (not spool) so detection leaves the entry re-readable in memory
+                        tisZip.enableRewind(context.get(CacheMemoryBudget.class));
                         MediaType embeddedMimeType = EmbeddedDocumentUtil.getDetector(context)
                                 .detect(tisZip, embeddedMetadata, context);
                         if (embeddedMimeType != null) {
                             embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, embeddedMimeType.toString());
                         }
-                        tisZip.reset();
+                        tisZip.rewind();
                         // Tag the picture with the draw:page indices it
                         // appears on (set populated by scanPicturePages).
                         // A null lookup means "not referenced by any

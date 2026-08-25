@@ -17,8 +17,6 @@
 package org.apache.tika.parser.image;
 
 import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +26,7 @@ import com.drew.imaging.jpeg.JpegProcessingException;
 import com.drew.imaging.jpeg.JpegSegmentData;
 import com.drew.imaging.jpeg.JpegSegmentReader;
 import com.drew.imaging.jpeg.JpegSegmentType;
+import com.drew.lang.StreamReader;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.xml.sax.SAXException;
@@ -82,11 +81,11 @@ final class ImageXmp {
     }
 
     /** JPEG: read APP1 segments, reassemble Extended XMP, parse each resulting packet. */
-    static void extractJpeg(File file, Metadata metadata, ParseContext context) {
+    static void extractJpeg(InputStream stream, Metadata metadata, ParseContext context) {
         try {
             Iterable<byte[]> app1;
             try {
-                JpegSegmentData data = JpegSegmentReader.readSegments(file,
+                JpegSegmentData data = JpegSegmentReader.readSegments(new StreamReader(stream),
                         Collections.singletonList(JpegSegmentType.APP1));
                 app1 = data.getSegments(JpegSegmentType.APP1);
             } catch (JpegProcessingException e) {
@@ -106,9 +105,9 @@ final class ImageXmp {
     }
 
     /** WebP: pull the raw packet out of the RIFF {@code "XMP "} chunk and parse it. */
-    static void extractWebp(File file, Metadata metadata, ParseContext context) {
+    static void extractWebp(InputStream stream, Metadata metadata, ParseContext context) {
         try {
-            byte[] xmp = readRiffChunk(file, "XMP ");
+            byte[] xmp = readRiffChunk(stream, "XMP ");
             if (xmp != null) {
                 new XmpExtractor().extract(xmp, metadata, context);
             }
@@ -123,8 +122,9 @@ final class ImageXmp {
     private static final long MAX_CHUNK = 64L * 1024 * 1024;
 
     /** Return the payload of the first top-level RIFF chunk with the given FourCC, or null. */
-    private static byte[] readRiffChunk(File file, String fourCC) throws IOException {
-        try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
+    private static byte[] readRiffChunk(InputStream stream, String fourCC) throws IOException {
+        InputStream in = stream instanceof BufferedInputStream ? stream : new BufferedInputStream(stream);
+        {
             byte[] head = new byte[12];
             if (IOUtils.read(in, head, 0, 12) < 12 || head[0] != 'R' || head[1] != 'I' ||
                     head[2] != 'F' || head[3] != 'F' || head[8] != 'W' || head[9] != 'E' ||

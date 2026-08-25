@@ -1,5 +1,22 @@
 Release 4.1.0 - unreleased
 
+   * The JPEG, TIFF and WebP parsers no longer spool in-memory input to a temp
+     file to read metadata, and the OpenDocument parser no longer spools each
+     inline picture before detecting it: both now rewind the stream (governed
+     by the CacheMemoryBudget when one is set) instead of calling getFile().
+     On a 20k-file corpus sample these sites accounted for ~70% of the temp
+     bytes 4.x wrote, the dominant driver of 4.x's batch slowdown vs 3.x on
+     spinning disks. ImageMetadataExtractor gains InputStream overloads of
+     parseJpeg/parseTiff/parseWebP; ImageXmp.extractJpeg/extractWebp now take
+     an InputStream. POIFSContainerDetector opens in-memory OLE2 objects from
+     memory (under the CacheMemoryBudget, falling back to the file path for
+     anything POI's stream loader rejects) instead of spooling every embedded
+     OLE2 object to read its entry names, and the digest of translated
+     embedded streams (DigestHelper) buffers the translated bytes in memory
+     up to the budget before spilling. PDFParser's incremental-update xref
+     scan reads in-memory input from memory instead of spooling it
+     (TIKA-4835).
+
    * The Kafka pipes iterator no longer stops at the first empty poll. A newly
      subscribed consumer spends its first poll(s) joining the group and returns
      empty even when the topic has a backlog, so the iterator could enqueue zero

@@ -18,8 +18,6 @@ package org.apache.tika.digest;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
@@ -59,6 +57,9 @@ public class DigestHelper {
      * @param context  parse context (should contain DigesterFactory, may contain SkipContainerDocumentDigest marker)
      * @throws IOException if an I/O error occurs
      */
+    // Same per-object threshold as StreamCache when no budget is in the context.
+    private static final long DEFAULT_TRANSLATED_MEMORY_THRESHOLD = 1024 * 1024;
+
     public static void maybeDigest(TikaInputStream tis,
                                    Metadata metadata,
                                    ParseContext context) throws IOException {
@@ -84,16 +85,31 @@ public class DigestHelper {
         // The translator consumes `tis` (e.g. OLE2), so enableRewind() before and rewind()
         // after -- otherwise the caller would see an exhausted stream.
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
-            tis.enableRewind(context.get(CacheMemoryBudget.class));
+            CacheMemoryBudget budget = context.get(CacheMemoryBudget.class);
+            tis.enableRewind(budget);
+            // Translated size is unknown up front; the source length bounds it, so reserve
+            // that from the budget (or use the per-object default) as the in-memory threshold.
+            long threshold = DEFAULT_TRANSLATED_MEMORY_THRESHOLD;
+            long reserved = 0;
+            if (budget != null && tis.hasLength()) {
+                long len = tis.getLength();
+                if (len > 0 && budget.tryReserve(len) > 0) {
+                    reserved = len;
+                    threshold = len;
+                }
+            }
             try (TemporaryResources tmp = new TemporaryResources()) {
-                Path tmpBytes = tmp.createTempFile();
-                try (OutputStream os = Files.newOutputStream(tmpBytes)) {
+                TranslatedBytes translated = new TranslatedBytes(tmp, threshold);
+                try (OutputStream os = translated) {
                     EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, os);
                 }
-                try (TikaInputStream translated = TikaInputStream.get(tmpBytes)) {
-                    digester.digest(translated, metadata, context);
+                try (TikaInputStream translatedStream = translated.toTikaInputStream()) {
+                    digester.digest(translatedStream, metadata, context);
                 }
             } finally {
+                if (reserved > 0) {
+                    budget.release(reserved);
+                }
                 tis.rewind();
             }
         } else {

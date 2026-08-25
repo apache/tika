@@ -20,6 +20,8 @@ import static org.apache.tika.metadata.PDF.OCR_PAGE_COUNT;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -315,8 +317,13 @@ public class PDFParser implements Parser, RenderingParser {
         List<StartXRefOffset> xRefOffsets = new ArrayList<>();
         //TODO -- can we use the PDFBox parser's RandomAccessRead
         //so that we don't have to reopen from file?
-        try (RandomAccessRead ra =
-                     new RandomAccessReadBufferedFile(tikaInputStream.getFile())) {
+        // In-memory input is scanned from memory (as the main parse already does) rather
+        // than spooled to a file just for this pass.
+        try (SeekableByteChannel channel = tikaInputStream.hasFile() ? null :
+                tikaInputStream.getSeekableByteChannel();
+             RandomAccessRead ra = channel == null ?
+                     new RandomAccessReadBufferedFile(tikaInputStream.getFile()) :
+                     new RandomAccessReadBuffer(Channels.newInputStream(channel))) {
             StartXRefScanner xRefScanner = new StartXRefScanner(ra);
             xRefOffsets.addAll(xRefScanner.scan());
         } catch (IOException e) {
