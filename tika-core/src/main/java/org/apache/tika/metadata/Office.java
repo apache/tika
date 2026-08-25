@@ -253,6 +253,8 @@ public interface Office {
      * referenced by a relationship type Tika ignores is still reachable and unflagged): per
      * <a href="https://tika.apache.org/security-model.html">Tika's security model</a>,
      * Tika is not a security boundary and does not attempt to detect parser differentials.
+     * <p>Set only for Word, Excel, PowerPoint and Visio OOXML (including macro-enabled
+     * variants). XPS links content by markup rather than relationships and is not checked.
      * See {@link #UNREFERENCED_PART_NAMES} for the part names.
      */
     Property HAS_UNREFERENCED_PARTS =

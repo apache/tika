@@ -166,4 +166,16 @@ public class ZipStructureCoverageTest extends TikaTest {
                 "clean package must not set HAS_UNREFERENCED_PARTS; listed: "
                         + Arrays.toString(container.getValues(Office.UNREFERENCED_PART_NAMES)));
     }
+
+    /**
+     * XPS wires documents, pages and resources together through markup, not OPC
+     * relationships, so a normal XPS would otherwise flag nearly every part.
+     */
+    @Test
+    public void testXpsIsNotFlagged() throws Exception {
+        Metadata m = getXML("testXPS_various.xps").metadata;
+        assertNull(m.get(Office.HAS_UNREFERENCED_PARTS),
+                "XPS must not be flagged; listed: "
+                        + Arrays.toString(m.getValues(Office.UNREFERENCED_PART_NAMES)));
+    }
 }
