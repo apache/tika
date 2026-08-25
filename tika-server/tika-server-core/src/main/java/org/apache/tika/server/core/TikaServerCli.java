@@ -28,7 +28,6 @@ import org.apache.commons.cli.help.HelpFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.server.core.metrics.MetricsConfig;
 
 public class TikaServerCli {
 
@@ -42,8 +41,8 @@ public class TikaServerCli {
         options.addOption("c", "config", true, "tika-config file");
         options.addOption("i", "id", true, "id for this server, written to the startup log");
         options.addOption(null, "metricsPort", true,
-                "enable Prometheus metrics on this port (default when enabled in config = "
-                        + MetricsConfig.DEFAULT_PORT + ")");
+                "serve Prometheus metrics on this port (9404 by convention); "
+                        + "unset means metrics are off\n");
         return options;
     }
 

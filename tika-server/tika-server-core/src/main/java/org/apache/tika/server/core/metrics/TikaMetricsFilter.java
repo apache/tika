@@ -98,6 +98,7 @@ public class TikaMetricsFilter implements ContainerRequestFilter, ContainerRespo
         try {
             context.proceed();
         } finally {
+            context.setOutputStream(original);
             Object endpoint = context.getProperty(ENDPOINT);
             metrics.recordResponseSize(endpoint instanceof String e ? e : OTHER,
                     counting.getByteCount());

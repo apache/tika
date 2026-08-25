@@ -17,21 +17,19 @@
 package org.apache.tika.pipes.core;
 
 /**
- * Why a forked pipes server was (or will be) restarted. Bounded on purpose: these
- * become metric tag values.
+ * Read-only view of a set of forked pipes workers, for monitoring.
+ * <p>
+ * A process can own more than one pool -- tika-server runs a {@link PipesParser} for the
+ * sync endpoints and an {@link org.apache.tika.pipes.core.async.AsyncProcessor} for
+ * {@code /async}, each with its own forks -- so a consumer that reads only one of them
+ * reports a fraction of the fleet. Implementations are polled; they must not block on a
+ * worker or take a lock a parse thread holds for the length of a parse.
  */
-public enum RestartReason {
-    OOM,
-    TIMEOUT,
-    CRASH,
-    MAX_FILES,
-    CONNECTION_ABANDONED,
-    /** The worker exited cleanly on its own after sitting idle (socket timeout). */
-    IDLE,
-    /**
-     * The parent tore the connection down and the worker honored the SHUT_DOWN it was
-     * sent (exit 0). {@code closeConnection()} sends that on every close, so a clean
-     * exit is never evidence of a crash.
-     */
-    SHUTDOWN
+public interface PipesWorkerPool {
+
+    /** Worker slots configured for this pool. Under shared-server mode these share one fork. */
+    int getNumClients();
+
+    /** Restarts performed so far for {@code reason}, summed over this pool's workers. */
+    long getRestartCount(RestartReason reason);
 }

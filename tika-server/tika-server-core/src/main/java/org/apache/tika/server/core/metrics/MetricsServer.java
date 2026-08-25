@@ -23,6 +23,8 @@ import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.HttpConfiguration;
+import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
@@ -49,7 +51,10 @@ public final class MetricsServer implements AutoCloseable {
         QueuedThreadPool pool = new QueuedThreadPool(MAX_THREADS, 1);
         pool.setName("tika-metrics");
         server = new Server(pool);
-        connector = new ServerConnector(server);
+        // No Server: header -- this port is unauthenticated by design; don't advertise a version.
+        HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.setSendServerVersion(false);
+        connector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
         connector.setHost(host);
         connector.setPort(port);
         server.addConnector(connector);

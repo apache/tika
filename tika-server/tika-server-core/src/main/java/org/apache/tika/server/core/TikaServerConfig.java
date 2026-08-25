@@ -299,7 +299,11 @@ public class TikaServerConfig {
 
     /** Bind address for the scrape listener: {@code metrics.host} if set, else the server host. */
     public String getMetricsHost() {
-        return metrics.getHost() == null ? host : metrics.getHost();
+        String metricsHost = metrics.getHost();
+        if (metricsHost == null) {
+            return host;
+        }
+        return "*".equals(metricsHost) ? "0.0.0.0" : metricsHost;
     }
 
     public ArrayList<String> getEndpoints() {

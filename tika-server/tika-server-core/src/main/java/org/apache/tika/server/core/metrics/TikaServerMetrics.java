@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import io.micrometer.core.instrument.Counter;
@@ -29,17 +30,17 @@ import io.micrometer.core.instrument.FunctionCounter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.jetty.JettyServerThreadPoolMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.micrometer.core.instrument.binder.system.FileDescriptorMetrics;
-import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.core.instrument.binder.system.UptimeMetrics;
 import io.micrometer.prometheusmetrics.PrometheusConfig;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.eclipse.jetty.util.thread.ThreadPool;
 
 import org.apache.tika.pipes.core.PipesParser;
+import org.apache.tika.pipes.core.PipesWorkerPool;
 import org.apache.tika.pipes.core.RestartReason;
 import org.apache.tika.server.core.ServerStatus;
 import org.apache.tika.server.core.resource.AsyncResource;
@@ -58,7 +59,7 @@ public final class TikaServerMetrics implements AutoCloseable {
      * One bucket set for every duration timer. Twelve explicit boundaries instead of
      * Micrometer's percentile histogram, which would emit roughly 70 per series.
      */
-    public static final Duration[] DURATION_SLOS = {
+    static final Duration[] DURATION_SLOS = {
             Duration.ofMillis(10), Duration.ofMillis(50), Duration.ofMillis(100),
             Duration.ofMillis(250), Duration.ofMillis(500), Duration.ofSeconds(1),
             Duration.ofSeconds(2), Duration.ofSeconds(5), Duration.ofSeconds(10),
@@ -70,15 +71,26 @@ public final class TikaServerMetrics implements AutoCloseable {
             1_000, 10_000, 100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000
     };
 
-    public static final String REQUESTS = "tika_server_requests";
-    public static final String REQUEST_SIZE = "tika_server_request_size_bytes";
-    public static final String RESPONSE_SIZE = "tika_server_response_size_bytes";
-    public static final String REJECTED = "tika_server_rejected_total";
-    public static final String TASKS_ACTIVE = "tika_server_tasks_active";
-    public static final String TASKS_STARTED = "tika_server_tasks_started_total";
-    public static final String PIPES_WORKERS = "tika_pipes_workers";
-    public static final String PIPES_RESTARTS = "tika_pipes_worker_restarts_total";
-    public static final String PIPES_QUEUE_DEPTH = "tika_pipes_queue_depth";
+    /**
+     * Jetty passes any RFC-token method through to the filter, so the raw verb would let a
+     * client mint meters without limit. Anything outside this set is tagged {@code other}.
+     */
+    private static final Set<String> KNOWN_METHODS =
+            Set.of("GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS", "PATCH", "TRACE", "CONNECT");
+
+    static final String REQUESTS = "tika_server_requests";
+    static final String REQUEST_SIZE = "tika_server_request_size_bytes";
+    static final String RESPONSE_SIZE = "tika_server_response_size_bytes";
+    static final String REJECTED = "tika_server_rejected_total";
+    static final String TASKS_ACTIVE = "tika_server_tasks_active";
+    static final String TASKS_STARTED = "tika_server_tasks_started_total";
+    static final String PIPES_WORKERS = "tika_pipes_workers";
+    static final String PIPES_RESTARTS = "tika_pipes_worker_restarts_total";
+    static final String PIPES_QUEUE_DEPTH = "tika_pipes_queue_depth";
+
+    /** Worker pools a tika-server can run at once; each has its own forks. */
+    public static final String POOL_SYNC = "sync";
+    public static final String POOL_ASYNC = "async";
 
     private final PrometheusMeterRegistry registry;
     private final List<AutoCloseable> closeables = new ArrayList<>();
@@ -99,19 +111,21 @@ public final class TikaServerMetrics implements AutoCloseable {
         return registry.scrape();
     }
 
+    /**
+     * Resources of this JVM only -- parses run in forked workers, so no binder here sees
+     * them. Deliberately no GC or CPU binder: both describe a process that does not parse,
+     * and a near-idle parent invites the false read that there is headroom. Container CPU
+     * (which does cover the workers) belongs to cAdvisor/node-exporter.
+     */
     public void bindJvm() {
-        JvmGcMetrics gc = new JvmGcMetrics();
-        gc.bindTo(registry);
-        closeables.add(gc);
         new JvmMemoryMetrics().bindTo(registry);
         new JvmThreadMetrics().bindTo(registry);
-        new ProcessorMetrics().bindTo(registry);
         new UptimeMetrics().bindTo(registry);
         new FileDescriptorMetrics().bindTo(registry);
     }
 
     public void bindServerStatus(ServerStatus serverStatus) {
-        Gauge.builder(TASKS_ACTIVE, serverStatus, s -> s.getTasks().size())
+        Gauge.builder(TASKS_ACTIVE, serverStatus, ServerStatus::getNumTasks)
                 .description("Parse/detect tasks currently running in this server")
                 .register(registry);
         FunctionCounter.builder(TASKS_STARTED, serverStatus, ServerStatus::getFilesProcessed)
@@ -119,21 +133,32 @@ public final class TikaServerMetrics implements AutoCloseable {
                 .register(registry);
     }
 
-    public void bindPipes(PipesParser pipesParser) {
-        Gauge.builder(PIPES_WORKERS, pipesParser, p -> p.getNumClients() - p.getIdleClientCount())
-                .tag("state", "busy")
-                .description("Forked pipes workers by state")
-                .register(registry);
-        Gauge.builder(PIPES_WORKERS, pipesParser, PipesParser::getIdleClientCount)
-                .tag("state", "idle")
-                .description("Forked pipes workers by state")
-                .register(registry);
+    /**
+     * Restart counters for one worker pool. {@code pool} distinguishes the sync endpoints'
+     * workers from {@code /async}'s: they are separate forks, and a server can run both.
+     */
+    public void bindPipes(String pool, PipesWorkerPool workerPool) {
         for (RestartReason reason : RestartReason.values()) {
-            FunctionCounter.builder(PIPES_RESTARTS, pipesParser, p -> p.getRestartCount(reason))
+            FunctionCounter.builder(PIPES_RESTARTS, workerPool, p -> p.getRestartCount(reason))
+                    .tag("pool", pool)
                     .tag("reason", tagValue(reason.name()))
                     .description("Forked pipes worker restarts by reason")
                     .register(registry);
         }
+    }
+
+    /** Busy/idle needs a borrowable client queue, which only the sync pool has. */
+    public void bindSyncWorkerStates(PipesParser pipesParser) {
+        Gauge.builder(PIPES_WORKERS, pipesParser, p -> p.getNumClients() - p.getIdleClientCount())
+                .tag("pool", POOL_SYNC)
+                .tag("state", "busy")
+                .description("Pipes worker slots by state")
+                .register(registry);
+        Gauge.builder(PIPES_WORKERS, pipesParser, PipesParser::getIdleClientCount)
+                .tag("pool", POOL_SYNC)
+                .tag("state", "idle")
+                .description("Pipes worker slots by state")
+                .register(registry);
     }
 
     public void bindAsyncQueue(AsyncResource asyncResource) {
@@ -144,14 +169,16 @@ public final class TikaServerMetrics implements AutoCloseable {
 
     /** The CXF/Jetty request thread pool: queued jobs are HTTP-level backpressure. */
     public void bindJettyThreadPool(ThreadPool threadPool) {
-        new io.micrometer.core.instrument.binder.jetty.JettyServerThreadPoolMetrics(
-                threadPool, List.of()).bindTo(registry);
+        JettyServerThreadPoolMetrics poolMetrics =
+                new JettyServerThreadPoolMetrics(threadPool, List.of());
+        poolMetrics.bindTo(registry);
+        closeables.add(poolMetrics);
     }
 
     void recordRequest(String endpoint, String method, int status, long nanos) {
         Timer.builder(REQUESTS)
                 .tag("endpoint", endpoint)
-                .tag("method", method)
+                .tag("method", methodTag(method))
                 .tag("status", statusClass(status))
                 .description("HTTP requests handled by the parse-side listener")
                 .serviceLevelObjectives(DURATION_SLOS)
@@ -184,6 +211,10 @@ public final class TikaServerMetrics implements AutoCloseable {
                 .description(description)
                 .serviceLevelObjectives(SIZE_SLOS)
                 .register(registry);
+    }
+
+    static String methodTag(String method) {
+        return method != null && KNOWN_METHODS.contains(method) ? method : "other";
     }
 
     static String statusClass(int status) {

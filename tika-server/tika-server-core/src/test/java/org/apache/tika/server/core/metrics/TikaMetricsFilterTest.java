@@ -18,10 +18,14 @@ package org.apache.tika.server.core.metrics;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.net.Socket;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -143,6 +147,42 @@ public class TikaMetricsFilterTest extends CXFTestBase {
             timersBefore = timers;
         }
         assertEquals(25, timer(TikaMetricsFilter.UNMATCHED, "GET", "4xx").count());
+    }
+
+    @Test
+    public void testUnknownMethodsAreBoundedTags() throws Exception {
+        long timersBefore = -1;
+        for (int i = 0; i < 25; i++) {
+            assertTrue(rawRequest("BOGUS" + i + " /tika HTTP/1.1").startsWith("HTTP/1.1"));
+            long timers = metrics.getRegistry().find(TikaServerMetrics.REQUESTS).timers().size();
+            if (timersBefore >= 0) {
+                assertEquals(timersBefore, timers, "a new request timer appeared for method BOGUS" + i);
+            }
+            timersBefore = timers;
+        }
+        assertNull(timer("tika", "BOGUS0", "4xx"), "the raw method must not become a tag value");
+    }
+
+    @Test
+    public void testMethodTagIsBounded() {
+        assertEquals("GET", TikaServerMetrics.methodTag("GET"));
+        assertEquals("PUT", TikaServerMetrics.methodTag("PUT"));
+        assertEquals("other", TikaServerMetrics.methodTag("BOGUS"));
+        assertEquals("other", TikaServerMetrics.methodTag("get"));
+        assertEquals("other", TikaServerMetrics.methodTag(null));
+    }
+
+    /** Arbitrary method tokens: HttpURLConnection and java.net.http both refuse to send them. */
+    private String rawRequest(String requestLine) throws Exception {
+        URI uri = URI.create(endPoint);
+        try (Socket socket = new Socket(uri.getHost(), uri.getPort())) {
+            socket.setSoTimeout(30000);
+            socket.getOutputStream().write(
+                    (requestLine + "\r\nHost: " + uri.getHost() + "\r\nConnection: close\r\n\r\n")
+                            .getBytes(StandardCharsets.US_ASCII));
+            socket.getOutputStream().flush();
+            return new String(socket.getInputStream().readAllBytes(), StandardCharsets.US_ASCII);
+        }
     }
 
     private Timer timer(String endpoint, String method, String status) {

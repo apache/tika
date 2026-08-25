@@ -327,8 +327,10 @@ public class PerClientServerManager implements ServerManager {
                     int exitValue = process.exitValue();
                     if (exitValue == 0) {
                         LOG.info("clientId={}: process exited cleanly", clientId);
+                        restarts.mark(RestartReason.SHUTDOWN);
                     } else if (exitValue == PipesServer.IDLE_EXIT_CODE) {
                         LOG.info("clientId={}: process exited after idle timeout", clientId);
+                        restarts.mark(RestartReason.IDLE);
                     } else {
                         LOG.warn("clientId={}: process exited with code {}", clientId, exitValue);
                     }

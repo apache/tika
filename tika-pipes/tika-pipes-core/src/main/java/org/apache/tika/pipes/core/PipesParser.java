@@ -33,7 +33,7 @@ import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.plugins.TikaPluginManager;
 
-public class PipesParser implements Closeable {
+public class PipesParser implements Closeable, PipesWorkerPool {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesParser.class);
 
@@ -168,6 +168,7 @@ public class PipesParser implements Closeable {
         return serverManagers.stream().filter(ServerManager::isRunning).count();
     }
 
+    @Override
     public int getNumClients() {
         return pipesConfig.getNumClients();
     }
@@ -178,6 +179,7 @@ public class PipesParser implements Closeable {
     }
 
     /** Forked-server restarts performed so far for {@code reason}, summed over all servers. */
+    @Override
     public long getRestartCount(RestartReason reason) {
         long total = 0;
         for (ServerManager m : serverManagers) {

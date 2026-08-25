@@ -17,8 +17,10 @@
 package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -71,9 +73,10 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
         assertSample(body, "tika_server_requests_seconds_count",
                 "endpoint=\"unmatched\",method=\"GET\",status=\"4xx\"", 1.0);
         assertSample(body, "tika_server_rejected_total", "reason=\"crash_503\"", 1.0);
-        assertSample(body, "tika_pipes_worker_restarts_total", "reason=\"oom\"", 1.0);
-        assertSample(body, "tika_pipes_workers", "state=\"idle\"", 2.0);
-        assertSample(body, "tika_pipes_workers", "state=\"busy\"", 0.0);
+        assertSample(body, "tika_pipes_worker_restarts_total",
+                "pool=\"sync\",reason=\"oom\"", 1.0);
+        assertSample(body, "tika_pipes_workers", "pool=\"sync\",state=\"idle\"", 2.0);
+        assertSample(body, "tika_pipes_workers", "pool=\"sync\",state=\"busy\"", 0.0);
         assertTrue(body.contains("tika_server_tasks_started_total"), body);
         assertTrue(body.contains("jvm_memory_used_bytes"), body);
         assertTrue(body.contains("tika_server_request_size_bytes_count{endpoint=\"rmeta\"}"), body);
@@ -93,6 +96,48 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
         awaitServerStartup();
         assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
         assertEquals(404, WebClient.create(endPoint + MetricsServer.PATH).get().getStatus());
+        // The gate is the port: nothing may be listening on the one the metrics config names.
+        assertThrows(IOException.class, () -> get(metricsEndPoint + MetricsServer.PATH),
+                "a scrape listener came up with no metrics port configured");
+    }
+
+    /**
+     * /async forks its own workers, separate from the sync pool's. Without a pool label and
+     * a second binding, a crash in an async worker is counted nowhere.
+     */
+    @Test
+    @Timeout(240)
+    public void testBothWorkerPoolsAreCounted() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-async-metrics.json"),
+                "--metricsPort", String.valueOf(metricsPort)});
+        awaitServerStartup();
+        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
+
+        String body = get(metricsEndPoint + MetricsServer.PATH).body();
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"oom\"", 0.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"async\",reason=\"oom\"", 0.0);
+        assertTrue(body.contains("tika_pipes_queue_depth"), body);
+    }
+
+    /**
+     * The twelve explicit SLO boundaries, not micrometer's ~70-bucket percentile histogram.
+     * Guards the cardinality decision: a stray publishPercentileHistogram() fails here.
+     */
+    @Test
+    @Timeout(240)
+    public void testDurationBucketsAreBounded() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json"),
+                "--metricsPort", String.valueOf(metricsPort)});
+        awaitServerStartup();
+        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
+
+        String body = get(metricsEndPoint + MetricsServer.PATH).body();
+        long buckets = body
+                .lines()
+                .filter(l -> l.startsWith("tika_server_requests_seconds_bucket{")
+                        && l.contains("endpoint=\"rmeta\""))
+                .count();
+        assertEquals(13, buckets, "expected 12 SLO buckets + Inf, got " + buckets + ":\n" + body);
     }
 
     private Response rmeta(String resource) {

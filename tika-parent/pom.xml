@@ -402,9 +402,9 @@
     <log4j2.version>2.26.1</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
-    <micrometer.version>1.17.1</micrometer.version>
     <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
     <metadata.extractor.version>2.21.0</metadata.extractor.version>
+    <micrometer.version>1.17.1</micrometer.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- can't update to 4 because Apache Ignite needs io.micronaut.core.convert.DefaultConversionService
          which no longer exists in 4.0: https://stackoverflow.com/questions/79937141/    -->

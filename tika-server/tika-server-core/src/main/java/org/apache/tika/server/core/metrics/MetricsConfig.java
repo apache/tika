@@ -25,8 +25,6 @@ import java.util.Map;
  */
 public class MetricsConfig {
 
-    public static final int DEFAULT_PORT = 9404;
-
     private Integer port;
     private String host;
     private Map<String, String> commonTags = new LinkedHashMap<>();

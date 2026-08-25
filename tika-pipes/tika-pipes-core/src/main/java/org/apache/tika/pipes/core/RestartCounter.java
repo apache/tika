@@ -25,8 +25,8 @@ import org.apache.tika.pipes.core.server.PipesServer;
  * Per-manager restart bookkeeping: the reason recorded while a restart is pending, and
  * monotonic counts of restarts actually performed, by reason.
  * <p>
- * Last recorded reason wins: a crash is first seen generically and then refined
- * (OOM/TIMEOUT) from the exit code, so the refinement must overwrite.
+ * Last recorded reason wins: a crash is first seen generically and then refined from the
+ * exit code, so the refinement must overwrite.
  */
 final class RestartCounter {
 
@@ -44,15 +44,19 @@ final class RestartCounter {
     }
 
     /**
-     * Records that a restart happened. With no reason marked, the worker died on its own:
-     * the idle exit code is the idle shutdown, anything else -- including an unexplained
-     * 0 -- is a crash.
+     * Records that a restart happened. With no reason marked, the exit code is the only
+     * evidence: the idle code is an idle self-exit, 0 is the SHUT_DOWN the parent sends on
+     * every {@code closeConnection()}, and anything else is a crash.
      */
     void restarted(int exitCode) {
         RestartReason reason = pending;
         pending = null;
         if (reason == null) {
-            reason = exitCode == PipesServer.IDLE_EXIT_CODE ? RestartReason.IDLE : RestartReason.CRASH;
+            reason = switch (exitCode) {
+                case PipesServer.IDLE_EXIT_CODE -> RestartReason.IDLE;
+                case 0 -> RestartReason.SHUTDOWN;
+                default -> RestartReason.CRASH;
+            };
         }
         counts.get(reason).increment();
     }

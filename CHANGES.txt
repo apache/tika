@@ -6,14 +6,26 @@ Release 4.1.0 - unreleased
      is created. Meters: tika_server_requests_seconds (endpoint/method/status
      class, fixed 12-bucket histogram), request/response size summaries,
      tika_server_rejected_total (busy_429, crash_503, payload_413),
+     tika_server_tasks_active, tika_server_tasks_started_total,
      tika_pipes_workers (busy/idle), tika_pipes_worker_restarts_total by
-     reason (oom, timeout, crash, max_files, idle, connection_abandoned),
-     tika_pipes_queue_depth, the parse port's Jetty thread pool, and the JVM
-     binders. The scrape listener binds to the server host by default
-     (server.metrics.host overrides). New public API in tika-pipes-core:
-     RestartReason, ServerManager.markServerForRestart(RestartReason),
+     reason (oom, timeout, crash, max_files, idle, shutdown,
+     connection_abandoned), tika_pipes_queue_depth, the parse port's Jetty
+     thread pool, and heap/thread/file-descriptor/uptime binders for the server
+     JVM (no GC or CPU binder: parses run in forked workers, so those would
+     describe a process that does not parse). The pipes meters carry a pool tag
+     (sync for /tika, /rmeta, /meta, /unpack, /detect and /pipes; async for
+     /async), since those are separate sets of forked workers.
+     The scrape listener binds to the server host by default
+     (server.metrics.host overrides). tika-server-core now depends on
+     micrometer-core and micrometer-registry-prometheus, which add micrometer,
+     prometheus-metrics-*, jspecify and HdrHistogram jars to the distribution
+     even when metrics are off. New public API in tika-pipes-core:
+     RestartReason, PipesWorkerPool (implemented by PipesParser and
+     AsyncProcessor), ServerManager.markServerForRestart(RestartReason),
+     ServerManager.getRestartCount(RestartReason),
      PipesParser.getNumClients/getIdleClientCount/getRestartCount and
-     AsyncProcessor.getQueueDepth. A forked PipesServer that shuts down after
+     AsyncProcessor.getQueueDepth/getNumClients/getRestartCount. A forked
+     PipesServer that shuts down after
      its idle socket timeout now exits with code 24 (PipesServer.IDLE_EXIT_CODE)
      instead of 0, so the parent can tell an idle exit from a requested
      shutdown; 0 remains the SHUT_DOWN reply (TIKA-4839).

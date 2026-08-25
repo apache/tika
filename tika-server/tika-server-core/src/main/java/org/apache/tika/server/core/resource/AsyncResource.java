@@ -85,6 +85,11 @@ public class AsyncResource {
         return asyncProcessor.getQueueDepth();
     }
 
+    /** The /async worker pool, for monitoring; its forks are separate from PipesParser's. */
+    public AsyncProcessor getAsyncProcessor() {
+        return asyncProcessor;
+    }
+
     public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {
         this.queue = new ArrayBlockingQueue<>(queueSize);
         return queue;

@@ -114,21 +114,25 @@ request, so cardinality cannot grow with traffic.
 |`tika_server_requests_seconds`
 |timer
 |`endpoint`, `method`, `status`
-|Every request on the parse port, timed from before routing to the response. `endpoint`
-is the first path segment when it is one of the server's endpoints (`tika`, `rmeta`,
-`meta`, `unpack`, `detect`, `language`, `mime-types`, `detectors`, `parsers`, `version`,
-`status`, `pipes`, `async`), `other` for any other resource, `unmatched` for a `404`
-that matched nothing. `status` is the class: `2xx`, `4xx`, `5xx`.
+|Every request on the parse port, timed from before routing until the response is
+returned -- the parse is inside that window, streaming the response body to the client is
+not. `endpoint` is the first path segment when it is one of the server's endpoints
+(`tika`, `rmeta`, `meta`, `unpack`, `detect`, `language`, `mime`, `mime-types`,
+`detectors`, `parsers`, `version`, `status`, `pipes`, `async`), `other` for any other
+resource, `unmatched` for a `404` that matched nothing. `method` is the HTTP verb when it
+is a standard one, else `other`. `status` is the class: `1xx`, `2xx`, `3xx`, `4xx`, `5xx`,
+or `other` for a status outside 100-599.
 
 |`tika_server_request_size_bytes`
 |summary
 |`endpoint`
-|Request body size from `Content-Length`; chunked uploads have none and are not recorded.
+|Request body size as declared by the client's `Content-Length`, not bytes actually read;
+chunked uploads have none and are not recorded. Bucketed at 1KB..1GB by decades.
 
 |`tika_server_response_size_bytes`
 |summary
 |`endpoint`
-|Bytes of the response entity, before any compression.
+|Bytes of the response entity, before any compression. Bucketed at 1KB..1GB by decades.
 
 |`tika_server_rejected_total`
 |counter
@@ -163,19 +167,28 @@ backpressure: requests waiting for a thread.
 
 |`tika_pipes_workers`
 |gauge
-|`state`
-|Forked pipes workers `busy` and `idle`. `busy / (busy + idle)` sustained near 1 means the
-server is at capacity; see xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing]
-before raising `numClients`.
+|`pool`, `state`
+|Pipes worker slots `busy` and `idle`. Only `pool="sync"` has these: busy/idle needs a
+borrowable client queue, which the `/async` pool does not have. Under `useSharedServer`
+these are client slots against one forked JVM, not JVMs. `busy / (busy + idle)` sustained
+near 1 means the server is at capacity; see xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and
+Heap Sizing] before raising `numClients`.
 
 |`tika_pipes_worker_restarts_total`
 |counter
-|`reason`
+|`pool`, `reason`
 |Forked workers restarted, by why: `oom`, `timeout`, `crash` (an unexplained exit),
 `max_files` (routine recycling after `maxFilesProcessedPerProcess`), `idle` (the worker
 shut itself down after `socketTimeoutMillis` without a request -- exit code 24 -- and was
-started again on the next one), `connection_abandoned` (a request was interrupted mid-flight). Alert on
-`oom`, `timeout` and `crash`; `max_files` and `idle` are expected.
+started again on the next one), `shutdown` (the server closed the connection deliberately
+and the worker honored the `SHUT_DOWN` it was sent -- exit code 0), `connection_abandoned`
+(a request was interrupted mid-flight). Alert on `oom`, `timeout` and `crash`; the rest
+are expected.
+
+`pool` separates two independent sets of forks: `sync` serves `/tika`, `/rmeta`, `/meta`,
+`/unpack`, `/detect` and `/pipes`; `async` serves `/async`. A server running both forks
+`2 x numClients` workers, and each pool is present only when its endpoints are. Sum over
+`pool` unless you mean one of them specifically.
 
 |`tika_pipes_queue_depth`
 |gauge
@@ -186,17 +199,30 @@ started again on the next one), `connection_abandoned` (a request was interrupte
 
 === JVM and process
 
-The standard Micrometer binders are enabled: `jvm_memory_*`, `jvm_gc_*`, `jvm_threads_*`,
-`process_cpu_usage`, `system_cpu_usage`, `process_files_*`, `process_uptime_seconds`.
-These describe the server JVM only, not the forked workers.
+`jvm_memory_*`, `jvm_buffer_*`, `jvm_threads_*`, `process_files_*`,
+`process_start_time_seconds` and `process_uptime_seconds`.
+
+These describe *this* JVM, which routes requests and holds the results coming back over
+IPC. It is not where documents are parsed: that happens in forked workers this server
+starts and restarts, and no meter on this page except `tika_pipes_*` sees inside them.
+A near-idle heap here is not evidence of headroom.
+
+There is deliberately no GC or CPU binder. Both describe a process that does not parse,
+and both invite that false read. For CPU that actually covers the workers, use the
+container/node metrics your cluster already collects (cAdvisor, node-exporter); for
+worker health use `tika_pipes_worker_restarts_total` and the saturation signals below.
 
 == What to scale and alert on
 
-* Saturation, for an autoscaler: `tika_pipes_workers{state="busy"}` as a ratio of the
-  total, the rate of `tika_server_rejected_total{reason="busy_429"}`, and
-  `jetty_threads_jobs`. These move before latency does, which CPU does not.
-* Failure, for alerting: `rate(tika_pipes_worker_restarts_total{reason=~"oom|timeout|crash"}[5m])`
-  and `tika_server_rejected_total{reason="crash_503"}`. A `503` tells the client the
+* Saturation, for an autoscaler: on a sync workload, `tika_pipes_workers{state="busy"}` as
+  a ratio of the total, the rate of `tika_server_rejected_total{reason="busy_429"}`, and
+  `jetty_threads_jobs`. On an `/async` workload use `tika_pipes_queue_depth` instead --
+  there is no busy/idle gauge for that pool, and the sync gauge sits at 0 while `/async`
+  saturates. These move before latency does, which CPU does not.
+* Failure, for alerting:
+  `rate(sum by (reason) (tika_pipes_worker_restarts_total{reason=~"oom|timeout|crash"})[5m])`
+  -- summed over `pool`, so async workers are included -- and
+  `tika_server_rejected_total{reason="crash_503"}`. A `503` tells the client the
   document broke a fork; the restart counter tells you how often that is happening.
 * Latency: `histogram_quantile(0.95, sum by (le, endpoint) (rate(tika_server_requests_seconds_bucket[5m])))`.
 

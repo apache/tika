@@ -48,11 +48,13 @@ public class RestartCounterTest {
     public void testUnmarkedAttributedByExitCode() {
         RestartCounter c = new RestartCounter();
         c.restarted(PipesServer.IDLE_EXIT_CODE);
-        c.restarted(0); // unexplained clean exit: the parent did not ask for it
+        // closeConnection() sends SHUT_DOWN on every close, so exit 0 is not a crash
+        c.restarted(0);
         c.restarted(1);
         c.restarted(-1);
         assertEquals(1, c.count(RestartReason.IDLE));
-        assertEquals(3, c.count(RestartReason.CRASH));
+        assertEquals(1, c.count(RestartReason.SHUTDOWN));
+        assertEquals(2, c.count(RestartReason.CRASH));
     }
 
     @Test

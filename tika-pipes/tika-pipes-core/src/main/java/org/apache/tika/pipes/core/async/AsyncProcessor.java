@@ -50,6 +50,8 @@ import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesResults;
+import org.apache.tika.pipes.core.PipesWorkerPool;
+import org.apache.tika.pipes.core.RestartReason;
 import org.apache.tika.pipes.core.ServerManager;
 import org.apache.tika.pipes.core.SharedServerManager;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
@@ -61,7 +63,7 @@ import org.apache.tika.plugins.TikaPluginManager;
  * AsyncClients and AsyncEmitters.
  *
  */
-public class AsyncProcessor implements Closeable {
+public class AsyncProcessor implements Closeable, PipesWorkerPool {
 
     static final int PARSER_FUTURE_CODE = 1;
     static final int WATCHER_FUTURE_CODE = 3;
@@ -250,6 +252,24 @@ public class AsyncProcessor implements Closeable {
     /** Tuples accepted but not yet picked up by a worker. */
     public int getQueueDepth() {
         return fetchEmitTuples.size();
+    }
+
+    @Override
+    public int getNumClients() {
+        return asyncConfig.getNumClients();
+    }
+
+    /**
+     * Restarts of this processor's own forks -- a separate set from any {@link PipesParser}
+     * in the same JVM.
+     */
+    @Override
+    public long getRestartCount(RestartReason reason) {
+        long total = 0;
+        for (ServerManager m : serverManagers) {
+            total += m.getRestartCount(reason);
+        }
+        return total;
     }
 
     /**

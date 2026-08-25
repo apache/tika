@@ -192,8 +192,10 @@ public class TikaServerProcess {
                 return;
             }
             serverDetails.metrics.bindJettyThreadPool(engine.getServer().getThreadPool());
-        } catch (Exception e) {
-            LOG.warn("metrics: could not bind request thread pool metrics", e);
+        } catch (Throwable t) {
+            // Throwable, not Exception: micrometer's binder is compiled against Jetty 9 and
+            // resolves its lambdas here, so a Jetty bump surfaces as NoSuchMethodError.
+            LOG.warn("metrics: could not bind request thread pool metrics", t);
         }
     }
 
@@ -307,11 +309,15 @@ public class TikaServerProcess {
             metrics.bindJvm();
             metrics.bindServerStatus(serverStatus);
             if (pipesParsingHelper != null) {
-                metrics.bindPipes(pipesParsingHelper.getPipesParser());
+                PipesParser pipesParser = pipesParsingHelper.getPipesParser();
+                metrics.bindPipes(TikaServerMetrics.POOL_SYNC, pipesParser);
+                metrics.bindSyncWorkerStates(pipesParser);
             }
             AsyncResource asyncResource = findAsyncResource(resourceProviders);
             if (asyncResource != null) {
                 metrics.bindAsyncQueue(asyncResource);
+                // /async forks its own workers; without this their restarts are counted nowhere.
+                metrics.bindPipes(TikaServerMetrics.POOL_ASYNC, asyncResource.getAsyncProcessor());
             }
             providers.add(new TikaMetricsFilter(metrics));
             metricsServer = new MetricsServer(tikaServerConfig.getMetricsHost(),
@@ -634,7 +640,7 @@ public class TikaServerProcess {
      * Root segment of the class-level {@code @Path}, walking up the hierarchy:
      * {@code @Path} is not {@code @Inherited}, but JAX-RS resolves it from superclasses.
      */
-    public static String resourcePathRoot(Class<?> resourceClass) {
+    static String resourcePathRoot(Class<?> resourceClass) {
         for (Class<?> c = resourceClass; c != null && c != Object.class; c = c.getSuperclass()) {
             jakarta.ws.rs.Path path = c.getAnnotation(jakarta.ws.rs.Path.class);
             if (path != null) {
