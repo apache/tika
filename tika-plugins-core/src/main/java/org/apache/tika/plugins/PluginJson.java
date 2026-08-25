@@ -48,11 +48,6 @@ public final class PluginJson {
     private PluginJson() {
     }
 
-    /** Shared and immutable in practice: callers must not reconfigure it. */
-    public static ObjectMapper mapper() {
-        return MAPPER;
-    }
-
     /** Deserializes {@code json} into {@code type}, reporting failures as config errors. */
     public static <T> T read(String json, Class<T> type) throws TikaConfigException {
         try {
