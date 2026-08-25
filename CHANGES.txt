@@ -10,6 +10,13 @@ Release 4.1.0 - unreleased
      PipesResult constructor gained the serverTimings component; the previous
      three-argument constructor remains (TIKA-4835).
 
+   * tika-server and tika-async-cli now start from a config that contains
+     // or /* */ comments, as the configuration docs have always said they
+     may. The main loader accepted them; the steps that re-read the user's
+     file to merge in server/CLI overrides (ConfigMerger, ensurePluginRoots)
+     used their own bare parser and refused the whole file; they now use the
+     shared TikaObjectMapperFactory mapper (TIKA-4834).
+
    * The Kafka pipes iterator no longer stops at the first empty poll. A newly
      subscribed consumer spends its first poll(s) joining the group and returns
      empty even when the topic has a backlog, so the iterator could enqueue zero
