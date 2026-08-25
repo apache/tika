@@ -318,7 +318,8 @@ public class PerClientServerManager implements ServerManager {
 
     @Override
     public int handleCrashAndGetExitCode() {
-        restarts.mark(RestartReason.CRASH);
+        // No mark: the exit code attributes the restart (see RestartCounter), and the
+        // caller refines OOM/TIMEOUT from it.
         pendingRestart = true;
         if (process != null) {
             try {
@@ -327,10 +328,8 @@ public class PerClientServerManager implements ServerManager {
                     int exitValue = process.exitValue();
                     if (exitValue == 0) {
                         LOG.info("clientId={}: process exited cleanly", clientId);
-                        restarts.mark(RestartReason.SHUTDOWN);
                     } else if (exitValue == PipesServer.IDLE_EXIT_CODE) {
                         LOG.info("clientId={}: process exited after idle timeout", clientId);
-                        restarts.mark(RestartReason.IDLE);
                     } else {
                         LOG.warn("clientId={}: process exited with code {}", clientId, exitValue);
                     }
@@ -355,9 +354,11 @@ public class PerClientServerManager implements ServerManager {
             return;
         }
         Process previous = process;
-        startServer();
-        if (previous != null) {
-            restarts.restarted(exitCodeOrMinusOne(previous));
+        try {
+            startServer();
+        } finally {
+            // The old process is gone either way; count it even if the new start failed.
+            restarts.restarted(previous);
         }
     }
 
@@ -389,15 +390,20 @@ public class PerClientServerManager implements ServerManager {
                 }
                 if (!p.isAlive()) {
                     int exitValue = p.exitValue();
-                    LOG.error("clientId={}: Process exited with code {} before connecting to socket",
-                            clientId, exitValue);
-                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
+                    if (exitValue == 0 || exitValue == PipesServer.IDLE_EXIT_CODE) {
+                        // Idle/SHUT_DOWN exit raced the reconnect; not a crash.
+                        LOG.info("clientId={}: process exited with code {} before connecting",
+                                clientId, exitValue);
+                    } else {
+                        LOG.error("clientId={}: Process exited with code {} before connecting to socket",
+                                clientId, exitValue);
+                        ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
+                    }
                     // Always treat pre-connect death as retryable.
                     // The only non-retryable paths are:
                     // 1. pb.start() fails (can't launch process) - handled in startServer()
                     // 2. Server explicitly reports bad config via protocol - handled in waitForStartup()
                     // 3. Exhausted all retry attempts - handled in maybeInit()
-                    restarts.mark(RestartReason.CRASH);
                     pendingRestart = true;
                     throw new IOException(
                             "Server process died before connecting (exit code " + exitValue + ") - will retry");
@@ -413,10 +419,6 @@ public class PerClientServerManager implements ServerManager {
                 // Continue polling
             }
         }
-    }
-
-    static int exitCodeOrMinusOne(Process p) {
-        return p.isAlive() ? -1 : p.exitValue();
     }
 
     private synchronized void startServer() throws IOException, InterruptedException, TimeoutException, ServerInitializationException {

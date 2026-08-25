@@ -148,10 +148,8 @@ public class SharedServerManager implements ServerManager {
                 startServer();
                 pendingRestart = false; // Clear the flag after successful restart
                 filesProcessed.set(0); // Reset file counter on restart
-                if (previous != null) {
-                    restarts.restarted(PerClientServerManager.exitCodeOrMinusOne(previous));
-                }
             } finally {
+                restarts.restarted(previous);
                 restarting = false;
                 lock.notifyAll(); // Wake up any threads waiting in getPort()
             }
@@ -185,6 +183,16 @@ public class SharedServerManager implements ServerManager {
     @Override
     public long getRestartCount(RestartReason reason) {
         return restarts.count(reason);
+    }
+
+    /** Another client may already have attributed this crash (OOM/TIMEOUT); don't overwrite it. */
+    @Override
+    public int handleCrashAndGetExitCode() {
+        synchronized (lock) {
+            restarts.markIfUnmarked(RestartReason.CRASH);
+            pendingRestart = true;
+        }
+        return -1;
     }
 
     /**

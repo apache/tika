@@ -148,9 +148,9 @@ public class PipesServer implements AutoCloseable {
      *  tell the difference between "I crashed" and "my parent went away". */
     public static final int PARENT_GONE_EXIT_CODE = 23;
 
-    /** Exit code for the idle shutdown (no request within socketTimeoutMillis). Not 0:
-     *  0 is reserved for a parent-requested SHUT_DOWN, so the parent can tell a worker
-     *  that timed out from one that stopped for any other reason. */
+    /** Idle self-exit (no request within socketTimeoutMillis). Not 0: that means a
+     *  parent-requested SHUT_DOWN. Reserved exit codes: 17 OOM, 18 TIMEOUT, 19 crash,
+     *  23 parent gone, 24 idle. */
     public static final int IDLE_EXIT_CODE = 24;
 
     private final long heartbeatIntervalMillis;

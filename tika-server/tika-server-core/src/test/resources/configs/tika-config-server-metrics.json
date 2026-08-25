@@ -4,13 +4,7 @@
     "endpoints": [
       "tika"
     ],
-    "metrics": {
-      "port": 9404,
-      "host": "127.0.0.1",
-      "commonTags": {
-        "cluster": "blue"
-      }
-    }
+    "metricsPort": 9404
   },
   "plugin-roots": "target/plugins"
 }

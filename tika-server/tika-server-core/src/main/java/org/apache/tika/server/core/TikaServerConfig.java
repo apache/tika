@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.server.core.metrics.MetricsConfig;
 
 public class TikaServerConfig {
 
@@ -75,7 +74,7 @@ public class TikaServerConfig {
     private ArrayList<String> endpoints = new ArrayList<>();
 
     private TlsConfig tlsConfig = new TlsConfig();
-    private MetricsConfig metrics = new MetricsConfig();
+    private Integer metricsPort;
 
     /**
      * Config with only the defaults
@@ -112,7 +111,12 @@ public class TikaServerConfig {
         }
 
         if (commandLine.hasOption("metricsPort")) {
-            config.getMetrics().setPort(Integer.parseInt(commandLine.getOptionValue("metricsPort")));
+            String value = commandLine.getOptionValue("metricsPort");
+            try {
+                config.setMetricsPort(Integer.parseInt(value));
+            } catch (NumberFormatException e) {
+                throw new TikaConfigException("--metricsPort must be an integer, got '" + value + "'");
+            }
             settings.add("metricsPort");
         }
 
@@ -187,13 +191,12 @@ public class TikaServerConfig {
             }
         }
         tlsConfig.checkInitialization();
-        if (metrics.isEnabled()) {
-            int metricsPort = metrics.getPort();
+        if (metricsPort != null) {
             if (metricsPort < 0 || metricsPort > 65535) {
-                throw new TikaConfigException("metrics.port must be 0-65535, got " + metricsPort);
+                throw new TikaConfigException("metricsPort must be 0-65535, got " + metricsPort);
             }
             if (metricsPort != 0 && metricsPort == port) {
-                throw new TikaConfigException("metrics.port (" + metricsPort
+                throw new TikaConfigException("metricsPort (" + metricsPort
                         + ") must differ from the server port");
             }
         }
@@ -286,24 +289,13 @@ public class TikaServerConfig {
         this.tlsConfig = tlsConfig;
     }
 
-    /**
-     * Prometheus metrics; off unless {@code metrics.port} (or {@code --metricsPort}) is set.
-     */
-    public MetricsConfig getMetrics() {
-        return metrics;
+    /** Prometheus scrape port; null means metrics are off. The listener binds to {@link #getHost()}. */
+    public Integer getMetricsPort() {
+        return metricsPort;
     }
 
-    public void setMetrics(MetricsConfig metrics) {
-        this.metrics = metrics == null ? new MetricsConfig() : metrics;
-    }
-
-    /** Bind address for the scrape listener: {@code metrics.host} if set, else the server host. */
-    public String getMetricsHost() {
-        String metricsHost = metrics.getHost();
-        if (metricsHost == null) {
-            return host;
-        }
-        return "*".equals(metricsHost) ? "0.0.0.0" : metricsHost;
+    public void setMetricsPort(Integer metricsPort) {
+        this.metricsPort = metricsPort;
     }
 
     public ArrayList<String> getEndpoints() {

@@ -523,6 +523,11 @@ changes no other log level.
 |`tlsConfig`
 |_TLS off_
 |Nested TLS/mTLS settings. See xref:using-tika/server/tls.adoc[TLS/SSL Configuration].
+
+|`metricsPort`
+|_metrics off_
+|Serve Prometheus metrics on this port (same setting as `--metricsPort`). See
+xref:using-tika/server/monitoring.adoc[Monitoring with Prometheus].
 |===
 
 NOTE: Digests are configured in `parse-context`, not in `server`. See

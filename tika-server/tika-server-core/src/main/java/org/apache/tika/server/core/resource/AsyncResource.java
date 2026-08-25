@@ -81,11 +81,7 @@ public class AsyncResource {
         this.maxQueuePauseMillis = maxQueuePauseMillis;
     }
 
-    public int getQueueDepth() {
-        return asyncProcessor.getQueueDepth();
-    }
-
-    /** The /async worker pool, for monitoring; its forks are separate from PipesParser's. */
+    /** For monitoring. */
     public AsyncProcessor getAsyncProcessor() {
         return asyncProcessor;
     }

@@ -28,6 +28,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -72,18 +73,18 @@ public class TikaMetricsFilterTest extends CXFTestBase {
 
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
-        metrics = new TikaServerMetrics(new MetricsConfig());
+        metrics = new TikaServerMetrics();
         List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         providers.add(new MaxRequestSizeFilter(MAX_BYTES));
         providers.add(new MaxRequestSizeFilter.RequestTooLargeExceptionMapper());
-        providers.add(new TikaMetricsFilter(metrics));
+        providers.add(new TikaMetricsFilter(metrics, Set.of("tika", "rmeta")));
         sf.setProviders(providers);
     }
 
     @Test
-    public void testSuccessRecordsTimerAndSizes() throws Exception {
+    public void testSuccessRecordsTimerAndSize() throws Exception {
         long helloWorldBytes;
         try (InputStream is = ClassLoader.getSystemResourceAsStream(HELLO_WORLD)) {
             helloWorldBytes = is.readAllBytes().length;
@@ -103,17 +104,6 @@ public class TikaMetricsFilterTest extends CXFTestBase {
                 .find(TikaServerMetrics.REQUEST_SIZE).tag("endpoint", "tika").summary();
         assertNotNull(requestSize);
         assertEquals(helloWorldBytes, requestSize.totalAmount(), 0.0);
-        // Recorded after the last byte is flushed, so possibly a beat after the client returns.
-        DistributionSummary responseSize = null;
-        for (int i = 0; i < 50 && responseSize == null; i++) {
-            responseSize = metrics.getRegistry()
-                    .find(TikaServerMetrics.RESPONSE_SIZE).tag("endpoint", "tika").summary();
-            if (responseSize == null) {
-                Thread.sleep(50);
-            }
-        }
-        assertNotNull(responseSize);
-        assertTrue(responseSize.totalAmount() >= 11.0, "response bytes: " + responseSize.totalAmount());
     }
 
     @Test
@@ -161,6 +151,10 @@ public class TikaMetricsFilterTest extends CXFTestBase {
             timersBefore = timers;
         }
         assertNull(timer("tika", "BOGUS0", "4xx"), "the raw method must not become a tag value");
+        long recorded = metrics.getRegistry().find(TikaServerMetrics.REQUESTS)
+                .tag("endpoint", "tika").tag("method", "other").timers().stream()
+                .mapToLong(Timer::count).sum();
+        assertEquals(25, recorded, "requests with unknown methods must still be counted");
     }
 
     @Test

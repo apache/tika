@@ -52,7 +52,6 @@ import org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter;
 import org.apache.cxf.service.factory.ServiceConstructionException;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
-import org.apache.cxf.transport.http_jetty.JettyHTTPServerEngine;
 import org.apache.cxf.transport.http_jetty.JettyHTTPServerEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,7 +106,7 @@ public class TikaServerProcess {
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerProcess.class);
     public static int DO_NOT_RESTART_EXIT_VALUE = -100;
 
-    public static final List<String> VALID_ENDPOINTS = List.of("tika", "rmeta", "meta",
+    private static final List<String> VALID_ENDPOINTS = List.of("tika", "rmeta", "meta",
             "unpack", "detect", "language", "mime", "mime-types", "detectors",
             "parsers", "version", "status", "pipes", "async");
 
@@ -122,7 +121,7 @@ public class TikaServerProcess {
         options.addOption("p", "port", true, "listen port");
         options.addOption("c", "config", true, "Tika Configuration xml file to override default config with.");
         options.addOption("i", "id", true, "id for this server, written to the startup log");
-        options.addOption(null, "metricsPort", true, "enable Prometheus metrics on this port");
+        options.addOption(null, "metricsPort", true, "serve Prometheus metrics on this port");
         options.addOption("?", "help", false, "this help message");
         return options;
     }
@@ -142,8 +141,8 @@ public class TikaServerProcess {
             LOG.debug("forked config: {}", tikaServerConfig);
 
             ServerDetails serverDetails = initServer(tikaServerConfig);
-            startServer(serverDetails);
             registerOrderedShutdown(serverDetails);
+            startServer(serverDetails);
 
         } catch (Exception e) {
             LOG.error("Can't start: ", e);
@@ -162,6 +161,10 @@ public class TikaServerProcess {
     }
 
     private static void startServer(ServerDetails serverDetails) {
+        // Metrics first: a scrape-port clash must not leave the parse port briefly open.
+        if (serverDetails.metricsServer != null) {
+            startMetricsServer(serverDetails);
+        }
         try {
             //start the server
             serverDetails.server = serverDetails.sf.create();
@@ -173,30 +176,6 @@ public class TikaServerProcess {
             System.exit(DO_NOT_RESTART_EXIT_VALUE);
         }
         LOG.info("Started Apache Tika server {} at {}", serverDetails.serverId, serverDetails.url);
-        if (serverDetails.metrics != null) {
-            bindJettyThreadPool(serverDetails);
-            startMetricsServer(serverDetails);
-        }
-    }
-
-    // Read-only: the CXF-owned Jetty engine is only consulted for its request pool.
-    private static void bindJettyThreadPool(ServerDetails serverDetails) {
-        try {
-            JettyHTTPServerEngineFactory factory = serverDetails.sf.getBus()
-                    .getExtension(JettyHTTPServerEngineFactory.class);
-            JettyHTTPServerEngine engine = factory == null ? null :
-                    factory.retrieveJettyHTTPServerEngine(serverDetails.port);
-            if (engine == null || engine.getServer() == null) {
-                LOG.warn("metrics: CXF Jetty engine not found for port {}; skipping request "
-                        + "thread pool metrics", serverDetails.port);
-                return;
-            }
-            serverDetails.metrics.bindJettyThreadPool(engine.getServer().getThreadPool());
-        } catch (Throwable t) {
-            // Throwable, not Exception: micrometer's binder is compiled against Jetty 9 and
-            // resolves its lambdas here, so a Jetty bump surfaces as NoSuchMethodError.
-            LOG.warn("metrics: could not bind request thread pool metrics", t);
-        }
     }
 
     private static void startMetricsServer(ServerDetails serverDetails) {
@@ -209,8 +188,9 @@ public class TikaServerProcess {
             }
             System.exit(DO_NOT_RESTART_EXIT_VALUE);
         }
-        LOG.info("Started metrics listener on {}:{}{}", serverDetails.metricsHost,
-                serverDetails.metricsServer.getPort(), MetricsServer.PATH);
+        LOG.info("Started metrics listener (plain HTTP) on http://{}:{}{}",
+                serverDetails.metricsServer.getHost(), serverDetails.metricsServer.getPort(),
+                MetricsServer.PATH);
     }
 
     /**
@@ -304,24 +284,20 @@ public class TikaServerProcess {
 
         TikaServerMetrics metrics = null;
         MetricsServer metricsServer = null;
-        if (tikaServerConfig.getMetrics().isEnabled()) {
-            metrics = new TikaServerMetrics(tikaServerConfig.getMetrics());
+        if (tikaServerConfig.getMetricsPort() != null) {
+            metrics = new TikaServerMetrics();
             metrics.bindJvm();
             metrics.bindServerStatus(serverStatus);
             if (pipesParsingHelper != null) {
-                PipesParser pipesParser = pipesParsingHelper.getPipesParser();
-                metrics.bindPipes(TikaServerMetrics.POOL_SYNC, pipesParser);
-                metrics.bindSyncWorkerStates(pipesParser);
+                metrics.bindSyncPool(pipesParsingHelper.getPipesParser());
             }
             AsyncResource asyncResource = findAsyncResource(resourceProviders);
             if (asyncResource != null) {
-                metrics.bindAsyncQueue(asyncResource);
-                // /async forks its own workers; without this their restarts are counted nowhere.
-                metrics.bindPipes(TikaServerMetrics.POOL_ASYNC, asyncResource.getAsyncProcessor());
+                metrics.bindAsyncPool(asyncResource.getAsyncProcessor());
             }
-            providers.add(new TikaMetricsFilter(metrics));
-            metricsServer = new MetricsServer(tikaServerConfig.getMetricsHost(),
-                    tikaServerConfig.getMetrics().getPort(), metrics);
+            providers.add(new TikaMetricsFilter(metrics, Set.copyOf(VALID_ENDPOINTS)));
+            metricsServer = new MetricsServer(tikaServerConfig.getHost(),
+                    tikaServerConfig.getMetricsPort(), metrics);
         }
 
         sf.setResourceProviders(resourceProviders);
@@ -365,10 +341,8 @@ public class TikaServerProcess {
         details.serverId = tikaServerConfig.getId();
         details.serverStatus = serverStatus;
         details.pipesParsingHelper = pipesParsingHelper;
-        details.port = port;
         details.metrics = metrics;
         details.metricsServer = metricsServer;
-        details.metricsHost = tikaServerConfig.getMetricsHost();
         return details;
     }
 
@@ -842,9 +816,7 @@ public class TikaServerProcess {
         String url;
         ServerStatus serverStatus;
         PipesParsingHelper pipesParsingHelper;
-        int port;
         TikaServerMetrics metrics;
         MetricsServer metricsServer;
-        String metricsHost;
     }
 }

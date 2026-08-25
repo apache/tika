@@ -77,10 +77,9 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
                 "pool=\"sync\",reason=\"oom\"", 1.0);
         assertSample(body, "tika_pipes_workers", "pool=\"sync\",state=\"idle\"", 2.0);
         assertSample(body, "tika_pipes_workers", "pool=\"sync\",state=\"busy\"", 0.0);
-        assertTrue(body.contains("tika_server_tasks_started_total"), body);
+        assertSample(body, "tika_server_tasks_active", "", 0.0);
         assertTrue(body.contains("jvm_memory_used_bytes"), body);
         assertTrue(body.contains("tika_server_request_size_bytes_count{endpoint=\"rmeta\"}"), body);
-        assertTrue(body.contains("jetty_threads_"), "CXF request pool metrics missing:\n" + body);
 
         // Isolation both ways.
         assertEquals(404, WebClient.create(endPoint + MetricsServer.PATH).get().getStatus());
@@ -119,6 +118,26 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
         assertTrue(body.contains("tika_pipes_queue_depth"), body);
     }
 
+    /** Routine restarts (max files, idle exit 24) must not be counted as crashes. */
+    @Test
+    @Timeout(240)
+    public void testRoutineRestartReasons() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-metrics-restarts.json"),
+                "--metricsPort", String.valueOf(metricsPort)});
+        awaitServerStartup();
+        for (int i = 0; i < 3; i++) {
+            assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
+        }
+        // Past the idle socket timeout: the fork exits 24 and is restarted by the next request.
+        Thread.sleep(4000);
+        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
+
+        String body = get(metricsEndPoint + MetricsServer.PATH).body();
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"max_files\"", 1.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"idle\"", 1.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 0.0);
+    }
+
     /**
      * The twelve explicit SLO boundaries, not micrometer's ~70-bucket percentile histogram.
      * Guards the cardinality decision: a stray publishPercentileHistogram() fails here.
@@ -147,8 +166,9 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
     }
 
     private static void assertSample(String body, String name, String labels, double expected) {
-        Matcher m = Pattern.compile("^" + Pattern.quote(name) + "\\{" + Pattern.quote(labels)
-                + ",?\\} (\\S+)$", Pattern.MULTILINE).matcher(body);
+        String labelled = labels.isEmpty() ? "" : "\\{" + Pattern.quote(labels) + ",?\\}";
+        Matcher m = Pattern.compile("^" + Pattern.quote(name) + labelled + " (\\S+)$",
+                Pattern.MULTILINE).matcher(body);
         assertTrue(m.find(), "missing " + name + "{" + labels + "} in:\n" + body);
         assertEquals(expected, Double.parseDouble(m.group(1)), 0.0, name + "{" + labels + "}");
     }

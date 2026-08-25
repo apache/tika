@@ -26,12 +26,6 @@ public enum RestartReason {
     CRASH,
     MAX_FILES,
     CONNECTION_ABANDONED,
-    /** The worker exited cleanly on its own after sitting idle (socket timeout). */
-    IDLE,
-    /**
-     * The parent tore the connection down and the worker honored the SHUT_DOWN it was
-     * sent (exit 0). {@code closeConnection()} sends that on every close, so a clean
-     * exit is never evidence of a crash.
-     */
-    SHUTDOWN
+    /** The worker exited on its own (exit 24) after sitting idle for socketTimeoutMillis. */
+    IDLE
 }

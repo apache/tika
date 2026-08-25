@@ -218,11 +218,13 @@ public class PipesClient implements Closeable {
             throw e;
         } catch (ServerInitializationException e) {
             LOG.error("server initialization failed: {} ", t.getId(), e);
+            serverManager.markServerForRestart(RestartReason.CRASH);
             closeConnection();
             return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
                     intermediateResult.get(), e.getMessage());
         } catch (SecurityException e) {
             LOG.error("security exception during initialization: {} ", t.getId());
+            serverManager.markServerForRestart(RestartReason.CRASH);
             closeConnection();
             return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
                     intermediateResult.get());
@@ -251,6 +253,7 @@ public class PipesClient implements Closeable {
                     intermediateResult.get(), e.getMessage());
         } catch (Exception e) {
             LOG.error("exception waiting for server to complete task: {} ", t.getId(), e);
+            serverManager.markServerForRestart(RestartReason.CRASH);
             closeConnection();
             return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH, intermediateResult.get());
         }

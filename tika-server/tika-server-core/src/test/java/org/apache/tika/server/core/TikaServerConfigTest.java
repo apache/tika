@@ -18,6 +18,7 @@ package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -249,8 +250,7 @@ public class TikaServerConfigTest extends TikaTest {
     public void testMetricsOffByDefault() throws Exception {
         TikaServerConfig config = TikaServerConfig.load(
                 new DefaultParser().parse(metricsOptions(), new String[]{}));
-        assertFalse(config.getMetrics().isEnabled());
-        assertEquals(config.getHost(), config.getMetricsHost());
+        assertNull(config.getMetricsPort());
     }
 
     @Test
@@ -258,20 +258,34 @@ public class TikaServerConfigTest extends TikaTest {
         Path path = getConfigPath(getClass(), "tika-config-server-metrics.json");
         TikaServerConfig config = TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
                 new String[]{"-c", ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())}));
-        assertTrue(config.getMetrics().isEnabled());
-        assertEquals(9404, config.getMetrics().getPort());
-        assertEquals("127.0.0.1", config.getMetricsHost());
-        assertEquals("blue", config.getMetrics().getCommonTags().get("cluster"));
+        assertEquals(9404, config.getMetricsPort());
     }
 
     @Test
     public void testMetricsPortFromCommandLine() throws Exception {
         TikaServerConfig config = TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
                 new String[]{"-p", "9998", "--metricsPort", "9500"}));
-        assertTrue(config.getMetrics().isEnabled());
-        assertEquals(9500, config.getMetrics().getPort());
-        // no metrics.host: follows the server host
-        assertEquals(TikaServerConfig.DEFAULT_HOST, config.getMetricsHost());
+        assertEquals(9500, config.getMetricsPort());
+    }
+
+    @Test
+    public void testMetricsPortMustBeAnInteger() throws Exception {
+        CommandLine commandLine = new DefaultParser().parse(metricsOptions(),
+                new String[]{"--metricsPort", "abc"});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains("--metricsPort", ex.getMessage());
+    }
+
+    @Test
+    public void testMetricsPortRange() throws Exception {
+        CommandLine commandLine = new DefaultParser().parse(metricsOptions(),
+                new String[]{"--metricsPort", "65536"});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains("0-65535", ex.getMessage());
+        assertEquals(0, TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
+                new String[]{"--metricsPort", "0"})).getMetricsPort());
     }
 
     @Test
@@ -280,6 +294,6 @@ public class TikaServerConfigTest extends TikaTest {
                 new String[]{"-p", "9998", "--metricsPort", "9998"});
         TikaConfigException ex = assertThrows(TikaConfigException.class,
                 () -> TikaServerConfig.load(commandLine));
-        assertContains("metrics.port", ex.getMessage());
+        assertContains("metricsPort", ex.getMessage());
     }
 }

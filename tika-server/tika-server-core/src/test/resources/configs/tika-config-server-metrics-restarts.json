@@ -1,0 +1,18 @@
+{
+  "server": {
+    "port": 9999,
+    "allowPipes": true,
+    "endpoints": [
+      "rmeta"
+    ]
+  },
+  "pipes": {
+    "numClients": 1,
+    "maxFilesProcessedPerProcess": 2,
+    "socketTimeoutMillis": 2000,
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ]
+  },
+  "plugin-roots": "target/plugins"
+}

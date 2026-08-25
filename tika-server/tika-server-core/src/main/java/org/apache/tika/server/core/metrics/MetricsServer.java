@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpStatus;
+import org.eclipse.jetty.server.ConnectionLimit;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -33,16 +34,17 @@ import org.eclipse.jetty.util.Callback;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 /**
- * The scrape listener: a separate, minimal Jetty server that answers {@code GET /metrics}
- * and nothing else. Deliberately not a connector on the CXF-owned server, so the parse
- * endpoints are unreachable on this port by construction and a slow parse can never
- * queue a scrape -- it has its own (tiny) thread pool.
+ * Minimal standalone Jetty answering only {@code GET /metrics}. Separate from the CXF
+ * server so the parse endpoints are unreachable here and a slow parse cannot starve a scrape.
  */
 public final class MetricsServer implements AutoCloseable {
 
     public static final String PATH = "/metrics";
     static final String CONTENT_TYPE = "text/plain; version=0.0.4; charset=utf-8";
     private static final int MAX_THREADS = 4;
+    // Unauthenticated port: cap what idle sockets can take from the process FD budget.
+    private static final int MAX_CONNECTIONS = 64;
+    private static final long IDLE_TIMEOUT_MS = 10_000;
 
     private final Server server;
     private final ServerConnector connector;
@@ -51,18 +53,23 @@ public final class MetricsServer implements AutoCloseable {
         QueuedThreadPool pool = new QueuedThreadPool(MAX_THREADS, 1);
         pool.setName("tika-metrics");
         server = new Server(pool);
-        // No Server: header -- this port is unauthenticated by design; don't advertise a version.
         HttpConfiguration httpConfig = new HttpConfiguration();
         httpConfig.setSendServerVersion(false);
         connector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
         connector.setHost(host);
         connector.setPort(port);
+        connector.setIdleTimeout(IDLE_TIMEOUT_MS);
         server.addConnector(connector);
+        server.addBean(new ConnectionLimit(MAX_CONNECTIONS, connector));
         server.setHandler(new ScrapeHandler(metrics));
     }
 
     public void start() throws Exception {
         server.start();
+    }
+
+    public String getHost() {
+        return connector.getHost();
     }
 
     /** The bound port; meaningful after {@link #start()} (port 0 picks a free one). */
@@ -85,11 +92,13 @@ public final class MetricsServer implements AutoCloseable {
 
         @Override
         public boolean handle(Request request, Response response, Callback callback) {
-            if (!PATH.equals(Request.getPathInContext(request))) {
+            String path = Request.getPathInContext(request);
+            if (!PATH.equals(path) && !(PATH + "/").equals(path)) {
                 Response.writeError(request, response, callback, HttpStatus.NOT_FOUND_404);
                 return true;
             }
-            if (!HttpMethod.GET.is(request.getMethod())) {
+            boolean head = HttpMethod.HEAD.is(request.getMethod());
+            if (!head && !HttpMethod.GET.is(request.getMethod())) {
                 Response.writeError(request, response, callback, HttpStatus.METHOD_NOT_ALLOWED_405);
                 return true;
             }
@@ -97,7 +106,7 @@ public final class MetricsServer implements AutoCloseable {
             response.setStatus(HttpStatus.OK_200);
             response.getHeaders().put(HttpHeader.CONTENT_TYPE, CONTENT_TYPE);
             response.getHeaders().put(HttpHeader.CONTENT_LENGTH, body.length);
-            response.write(true, ByteBuffer.wrap(body), callback);
+            response.write(true, head ? null : ByteBuffer.wrap(body), callback);
             return true;
         }
     }

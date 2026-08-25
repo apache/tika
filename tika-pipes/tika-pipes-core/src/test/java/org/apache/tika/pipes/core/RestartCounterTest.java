@@ -35,7 +35,6 @@ public class RestartCounterTest {
 
     @Test
     public void testLastMarkWins() {
-        // generic crash first, then refined from the exit code
         RestartCounter c = new RestartCounter();
         c.mark(RestartReason.CRASH);
         c.mark(RestartReason.OOM);
@@ -45,16 +44,26 @@ public class RestartCounterTest {
     }
 
     @Test
+    public void testMarkIfUnmarkedKeepsSpecificReason() {
+        RestartCounter c = new RestartCounter();
+        c.mark(RestartReason.OOM);
+        c.markIfUnmarked(RestartReason.CRASH);
+        c.restarted(-1);
+        assertEquals(1, c.count(RestartReason.OOM));
+        c.markIfUnmarked(RestartReason.CRASH);
+        c.restarted(-1);
+        assertEquals(1, c.count(RestartReason.CRASH));
+    }
+
+    @Test
     public void testUnmarkedAttributedByExitCode() {
         RestartCounter c = new RestartCounter();
         c.restarted(PipesServer.IDLE_EXIT_CODE);
-        // closeConnection() sends SHUT_DOWN on every close, so exit 0 is not a crash
         c.restarted(0);
         c.restarted(1);
         c.restarted(-1);
         assertEquals(1, c.count(RestartReason.IDLE));
-        assertEquals(1, c.count(RestartReason.SHUTDOWN));
-        assertEquals(2, c.count(RestartReason.CRASH));
+        assertEquals(3, c.count(RestartReason.CRASH));
     }
 
     @Test
@@ -65,5 +74,15 @@ public class RestartCounterTest {
         c.restarted(PipesServer.IDLE_EXIT_CODE);
         assertEquals(1, c.count(RestartReason.TIMEOUT));
         assertEquals(1, c.count(RestartReason.IDLE));
+    }
+
+    @Test
+    public void testFirstStartNotCounted() {
+        RestartCounter c = new RestartCounter();
+        c.mark(RestartReason.CRASH);
+        c.restarted((Process) null);
+        for (RestartReason r : RestartReason.values()) {
+            assertEquals(0, c.count(r), r.name());
+        }
     }
 }

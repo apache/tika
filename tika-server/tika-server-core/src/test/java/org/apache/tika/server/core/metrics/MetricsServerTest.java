@@ -23,7 +23,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Map;
 
 import io.micrometer.core.instrument.Counter;
 import org.junit.jupiter.api.AfterEach;
@@ -38,9 +37,7 @@ public class MetricsServerTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        MetricsConfig config = new MetricsConfig();
-        config.setCommonTags(Map.of("cluster", "test"));
-        metrics = new TikaServerMetrics(config);
+        metrics = new TikaServerMetrics();
         Counter.builder("tika_test_total").register(metrics.getRegistry()).increment(3);
         server = new MetricsServer("localhost", 0, metrics);
         server.start();
@@ -61,14 +58,20 @@ public class MetricsServerTest {
                 .startsWith("text/plain; version=0.0.4"), response.headers().toString());
         String body = response.body();
         assertTrue(body.contains("# TYPE tika_test_total counter"), body);
-        assertTrue(body.contains("tika_test_total{cluster=\"test\"} 3.0"), body);
+        assertTrue(body.contains("tika_test_total 3.0"), body);
+        assertEquals(200, get(base + MetricsServer.PATH + "/").statusCode());
+        HttpResponse<String> head = HttpClient.newHttpClient().send(
+                HttpRequest.newBuilder(URI.create(base + MetricsServer.PATH))
+                        .method("HEAD", HttpRequest.BodyPublishers.noBody()).build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, head.statusCode());
+        assertEquals("", head.body());
     }
 
     @Test
     public void testOnlyMetricsPathIsServed() throws Exception {
         assertEquals(404, get(base + "/tika").statusCode());
         assertEquals(404, get(base + "/").statusCode());
-        assertEquals(404, get(base + "/metrics/").statusCode());
         HttpResponse<String> post = HttpClient.newHttpClient().send(
                 HttpRequest.newBuilder(URI.create(base + MetricsServer.PATH))
                         .POST(HttpRequest.BodyPublishers.noBody()).build(),

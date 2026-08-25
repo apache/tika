@@ -110,7 +110,11 @@ public interface ServerManager extends Closeable {
         // Default no-op for backward compatibility
     }
 
-    /** As {@link #markServerForRestart()}, attributing the restart to {@code reason}. */
+    /**
+     * As {@link #markServerForRestart()}, attributing the restart to {@code reason}.
+     * Override this method. An implementation that overrides only the no-arg form must
+     * not implement it by calling this one: this default forwards back to the no-arg form.
+     */
     default void markServerForRestart(RestartReason reason) {
         markServerForRestart();
     }
