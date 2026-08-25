@@ -42,6 +42,14 @@
       <scope>test</scope>
       <type>zip</type>
     </dependency>
+    <!-- The zip deps are what force reactor ordering; the zips are consumed by dependency-plugin below. -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-pipes-es</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+      <type>zip</type>
+    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-pipes-es</artifactId>
