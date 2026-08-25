@@ -16,9 +16,6 @@
  */
 package org.apache.tika.pipes.emitter.s3;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.PluginJson;
 
@@ -57,16 +54,9 @@ public record S3EmitterConfig(
         }
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
-
     public static S3EmitterConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, S3EmitterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse S3EmitterConfig from JSON", e);
-        }
+        return PluginJson.read(json, S3EmitterConfig.class);
     }
 
     public void validate() throws TikaConfigException {

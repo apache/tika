@@ -16,9 +16,6 @@
  */
 package org.apache.tika.pipes.emitter.kafka;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.PluginJson;
 
@@ -49,16 +46,9 @@ public record KafkaEmitterConfig(
         String valueSerializer
 ) {
 
-    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
-
     public static KafkaEmitterConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, KafkaEmitterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse KafkaEmitterConfig from JSON", e);
-        }
+        return PluginJson.read(json, KafkaEmitterConfig.class);
     }
 
     public void validate() throws TikaConfigException {

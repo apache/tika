@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Locale;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.PluginJson;
@@ -54,16 +52,9 @@ public record SolrEmitterConfig(
         ADD, UPDATE_MUST_EXIST, UPDATE_MUST_NOT_EXIST
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
-
     public static SolrEmitterConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, SolrEmitterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse SolrEmitterConfig from JSON", e);
-        }
+        return PluginJson.read(json, SolrEmitterConfig.class);
     }
 
     public void validate() throws TikaConfigException {

@@ -16,24 +16,14 @@
  */
 package org.apache.tika.pipes.fetcher.s3.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.PluginJson;
 
 public class S3FetcherConfig {
 
-    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
-
     public static S3FetcherConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, S3FetcherConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse S3FetcherConfig from JSON", e);
-        }
+        return PluginJson.read(json, S3FetcherConfig.class);
     }
 
     private boolean spoolToTemp = true;

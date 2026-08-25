@@ -21,8 +21,6 @@ import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.PluginJson;
@@ -51,17 +49,9 @@ public record JDBCPipesReporterConfig(String connectionString, Set<String> inclu
                                       String postConnectionSql,
                                       List<String> reportVariables, long reportWithinMs, int cacheSize) {
 
-    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
-
     public static JDBCPipesReporterConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json,
-                    JDBCPipesReporterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse JDBCPipesReporterConfig from JSON", e);
-        }
+        return PluginJson.read(json, JDBCPipesReporterConfig.class);
     }
 
     @JsonCreator

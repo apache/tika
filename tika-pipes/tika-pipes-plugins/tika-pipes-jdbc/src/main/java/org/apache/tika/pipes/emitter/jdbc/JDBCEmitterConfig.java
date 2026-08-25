@@ -19,9 +19,6 @@ package org.apache.tika.pipes.emitter.jdbc;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.PluginJson;
 
@@ -60,16 +57,9 @@ public record JDBCEmitterConfig(
         FIRST_ONLY, CONCATENATE
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
-
     public static JDBCEmitterConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, JDBCEmitterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse JDBCEmitterConfig from JSON", e);
-        }
+        return PluginJson.read(json, JDBCEmitterConfig.class);
     }
 
     public void validate() throws TikaConfigException {

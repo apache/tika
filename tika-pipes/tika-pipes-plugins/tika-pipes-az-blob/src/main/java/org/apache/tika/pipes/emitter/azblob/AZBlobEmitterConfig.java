@@ -17,8 +17,6 @@
 package org.apache.tika.pipes.emitter.azblob;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.PluginJson;
@@ -32,16 +30,9 @@ public record AZBlobEmitterConfig(
         @JsonProperty(defaultValue = "false") boolean overwriteExisting
 ) {
 
-    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
-
     public static AZBlobEmitterConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, AZBlobEmitterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse AZBlobEmitterConfig from JSON", e);
-        }
+        return PluginJson.read(json, AZBlobEmitterConfig.class);
     }
 
     public void validate() throws TikaConfigException {

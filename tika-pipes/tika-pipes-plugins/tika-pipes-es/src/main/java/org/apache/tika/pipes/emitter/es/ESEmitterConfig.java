@@ -16,9 +16,6 @@
  */
 package org.apache.tika.pipes.emitter.es;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.PluginJson;
 
@@ -50,16 +47,9 @@ public record ESEmitterConfig(String esUrl, String idField,
         OVERWRITE, UPSERT
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
-
     public static ESEmitterConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, ESEmitterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse ESEmitterConfig from JSON", e);
-        }
+        return PluginJson.read(json, ESEmitterConfig.class);
     }
 
     /** Overrides the record default to prevent {@code apiKey} leaking into logs. */

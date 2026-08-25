@@ -18,9 +18,6 @@ package org.apache.tika.pipes.reporter.es;
 
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.ReservedNamespaces;
 import org.apache.tika.pipes.emitter.es.HttpClientConfig;
@@ -31,16 +28,8 @@ public record ESReporterConfig(String esUrl, Set<String> includes, Set<String> e
                                String keyPrefix, boolean includeRouting,
                                String apiKey, HttpClientConfig httpClientConfig) {
 
-    private static final ObjectMapper OBJECT_MAPPER = PluginJson.mapper();
-
     public static ESReporterConfig load(final String json) throws TikaConfigException {
-        ESReporterConfig config;
-        try {
-            config = OBJECT_MAPPER.readValue(json, ESReporterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse ESReporterConfig from JSON", e);
-        }
+        ESReporterConfig config = PluginJson.read(json, ESReporterConfig.class);
         // keyPrefix is prepended to this reporter's own scratch-Metadata keys (parse_status/
         // parse_time_ms/exit_value); reject a reserved prefix here, before it fails every report() call.
         if (!StringUtils.isBlank(config.keyPrefix()) && ReservedNamespaces.isTikaNative(config.keyPrefix())) {
