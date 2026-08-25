@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Stream;
+import java.util.Locale;
 
 /**
  * Reads a PIPES_TIMING TSV produced by {@link PipesBenchmark} and prints
@@ -91,20 +92,20 @@ public final class PipesTimingAnalyzer {
         System.out.println("rows: " + totalRows);
         System.out.println("status counts:");
         for (Map.Entry<String, Integer> e : statusCounts.entrySet()) {
-            System.out.printf("  %-30s %d%n", e.getKey(), e.getValue());
+            System.out.printf(Locale.ROOT, "  %-30s %d%n", e.getKey(), e.getValue());
         }
         System.out.println();
-        System.out.printf("%-20s %10s %10s %10s %10s %10s%n",
+        System.out.printf(Locale.ROOT, "%-20s %10s %10s %10s %10s %10s%n",
                 "stage", "n", "p50_us", "p95_us", "p99_us", "max_us");
         for (String s : STAGES) {
             List<Long> values = byStage.get(s);
             if (values.isEmpty()) {
-                System.out.printf("%-20s %10d %10s %10s %10s %10s%n",
+                System.out.printf(Locale.ROOT, "%-20s %10d %10s %10s %10s %10s%n",
                         s, 0, "-", "-", "-", "-");
                 continue;
             }
             Collections.sort(values);
-            System.out.printf("%-20s %10d %10d %10d %10d %10d%n",
+            System.out.printf(Locale.ROOT, "%-20s %10d %10d %10d %10d %10d%n",
                     s, values.size(),
                     pct(values, 0.50), pct(values, 0.95), pct(values, 0.99),
                     values.get(values.size() - 1));

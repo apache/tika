@@ -20,6 +20,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
@@ -127,7 +128,7 @@ public class PdfParseProbe {
         counts.entrySet().stream()
                 .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(25)
-                .forEach(e -> System.out.printf("  %5d  %s%n", e.getValue(), e.getKey()));
+                .forEach(e -> System.out.printf(Locale.ROOT, "  %5d  %s%n", e.getValue(), e.getKey()));
     }
 
     private static void parseOnce(AutoDetectParser parser, Path file, ParseContext ctxTemplate)

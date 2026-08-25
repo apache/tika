@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Locale;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -234,7 +235,7 @@ public class PipesBenchmark {
                 int sinceLast = total - lastReportedTotal;
                 double overallRate = total * 1000.0 / Math.max(1, elapsedMs);
                 double recentRate = sinceLast * 1000.0 / sinceLastMs;
-                System.out.printf(
+                System.out.printf(Locale.ROOT, 
                         "PipesBenchmark[%s]: %,d/%,d done elapsed=%,dms overall=%.0f f/s recent=%.0f f/s success=%,d other=%,d%n",
                         passName, total, submitted, elapsedMs,
                         overallRate, recentRate,
