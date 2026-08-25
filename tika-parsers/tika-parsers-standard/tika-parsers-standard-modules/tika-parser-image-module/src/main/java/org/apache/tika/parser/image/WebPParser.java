@@ -55,7 +55,12 @@ public class WebPParser implements Parser {
         tis.enableRewind(context.get(CacheMemoryBudget.class));
         ImageXmp.extractWebp(tis, metadata, context);
         tis.rewind();
-        new ImageMetadataExtractor(metadata).parseWebP(tis);
+        ImageMetadataExtractor extractor = new ImageMetadataExtractor(metadata);
+        if (tis.hasFile()) {
+            extractor.parseWebP(tis.getFile());
+        } else {
+            extractor.parseWebP(tis);
+        }
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();

@@ -14,8 +14,11 @@ Release 4.1.0 - unreleased
      OLE2 object to read its entry names, and the digest of translated
      embedded streams (DigestHelper) buffers the translated bytes in memory
      up to the budget before spilling. PDFParser's incremental-update xref
-     scan reads in-memory input from memory instead of spooling it
-     (TIKA-4835).
+     scan reads in-memory input from memory instead of spooling it. One
+     visible metadata change: embedded (in-memory) JPEG/TIFF/WebP images no
+     longer carry metadata-extractor's file-system tags (img:File Name,
+     img:File Size, img:File Modified Date), which described the temp file,
+     not the image; real files keep them (TIKA-4835).
 
    * tika-server and tika-async-cli now start from a config that contains
      // or /* */ comments, as the configuration docs have always said they

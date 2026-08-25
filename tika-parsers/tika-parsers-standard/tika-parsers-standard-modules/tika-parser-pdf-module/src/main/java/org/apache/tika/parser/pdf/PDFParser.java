@@ -20,8 +20,6 @@ import static org.apache.tika.metadata.PDF.OCR_PAGE_COUNT;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.channels.Channels;
-import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +29,7 @@ import java.util.List;
 import java.util.Set;
 import javax.xml.stream.XMLStreamException;
 
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.cos.COSArray;
@@ -68,6 +67,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.HttpHeaders;
@@ -183,6 +183,10 @@ public class PDFParser implements Parser, RenderingParser {
         context.set(OCRPageCounter.class, new OCRPageCounter());
         try {
             if (shouldSpool(localConfig)) {
+                // Later stages re-read the document (xref scan, renderer, parse). Keep the
+                // content re-readable from the cache instead of spooling it to a file;
+                // getPath() still spools on demand for anything that truly needs a file.
+                ensureRereadable(tis, context);
                 context.set(PDFRenderingState.class, new PDFRenderingState(tis));
             }
 
@@ -317,15 +321,25 @@ public class PDFParser implements Parser, RenderingParser {
         List<StartXRefOffset> xRefOffsets = new ArrayList<>();
         //TODO -- can we use the PDFBox parser's RandomAccessRead
         //so that we don't have to reopen from file?
-        // In-memory input is scanned from memory (as the main parse already does) rather
-        // than spooled to a file just for this pass.
-        try (SeekableByteChannel channel = tikaInputStream.hasFile() ? null :
-                tikaInputStream.getSeekableByteChannel();
-             RandomAccessRead ra = channel == null ?
-                     new RandomAccessReadBufferedFile(tikaInputStream.getFile()) :
-                     new RandomAccessReadBuffer(Channels.newInputStream(channel))) {
-            StartXRefScanner xRefScanner = new StartXRefScanner(ra);
-            xRefOffsets.addAll(xRefScanner.scan());
+        // In-memory input is scanned from memory rather than spooled to a file for this
+        // pass. Rewind support is enabled first so the later parse (and a renderer's
+        // getPath(), if rendering is on) can re-read the content from the cache: the old
+        // getFile() spool used to provide that as a side effect.
+        boolean fileBacked = tikaInputStream.hasFile();
+        try {
+            if (!fileBacked) {
+                tikaInputStream.enableRewind(parseContext.get(CacheMemoryBudget.class));
+            }
+            try (RandomAccessRead ra = fileBacked ?
+                    new RandomAccessReadBufferedFile(tikaInputStream.getFile()) :
+                    new RandomAccessReadBuffer(CloseShieldInputStream.wrap(tikaInputStream))) {
+                StartXRefScanner xRefScanner = new StartXRefScanner(ra);
+                xRefOffsets.addAll(xRefScanner.scan());
+            } finally {
+                if (!fileBacked) {
+                    tikaInputStream.rewind();
+                }
+            }
         } catch (IOException e) {
             //swallow
         }
@@ -487,11 +501,32 @@ public class PDFParser implements Parser, RenderingParser {
         }
     }
 
+    /** Enables rewind on stream-backed input at position 0; falls back to a spool otherwise. */
+    private static void ensureRereadable(TikaInputStream tis, ParseContext context) throws IOException {
+        if (tis.hasFile()) {
+            return;
+        }
+        try {
+            tis.enableRewind(context.get(CacheMemoryBudget.class));
+        } catch (IOException e) {
+            tis.getPath();
+        }
+    }
+
+    private static void rewindQuietly(TikaInputStream tis) {
+        try {
+            tis.rewind();
+        } catch (IOException e) {
+            // not rewindable (no rewind enabled and not file-backed): leave as is
+        }
+    }
+
     private RenderResults renderPDF(TikaInputStream tstream,
                                     ParseContext parseContext, PDFParserConfig localConfig)
             throws IOException, TikaException {
         Metadata metadata = Metadata.newInstance(parseContext);
         metadata.set(TikaCoreProperties.TYPE, MEDIA_TYPE.toString());
+        rewindQuietly(tstream);
         return renderer.render(
                 tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);
     }
@@ -515,6 +550,8 @@ public class PDFParser implements Parser, RenderingParser {
                 } finally {
                     tis.removeCloseShield();
                 }
+                // the renderer re-reads the stream after this load
+                rewindQuietly(tis);
             }
             return pdDocument;
         } catch (IOException e) {

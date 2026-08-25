@@ -61,7 +61,14 @@ public class JpegParser extends AbstractImageParser {
             // XMP first so it is canonical; the metadata-extractor handlers (IPTC/EXIF) fill gaps.
             ImageXmp.extractJpeg(tis, metadata, parseContext);
             tis.rewind();
-            new ImageMetadataExtractor(metadata).parseJpeg(tis);
+            ImageMetadataExtractor extractor = new ImageMetadataExtractor(metadata);
+            // A real file keeps metadata-extractor's file-system tags (name/size/date);
+            // in-memory input reads from the stream instead of being spooled to disk.
+            if (tis.hasFile()) {
+                extractor.parseJpeg(tis.getFile());
+            } else {
+                extractor.parseJpeg(tis);
+            }
         } finally {
             tmp.dispose();
         }
