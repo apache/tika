@@ -20,7 +20,8 @@ import java.io.Serializable;
 
 import org.apache.tika.pipes.api.emitter.EmitData;
 
-public record PipesResult(RESULT_STATUS status, EmitData emitData, String message) implements Serializable {
+public record PipesResult(RESULT_STATUS status, EmitData emitData, String message,
+                          StageTimings serverTimings) implements Serializable {
 
     /**
      * High-level categorization of result statuses.
@@ -187,15 +188,27 @@ public record PipesResult(RESULT_STATUS status, EmitData emitData, String messag
     }
 
     public PipesResult(RESULT_STATUS status) {
-        this(status, null, null);
+        this(status, null, null, null);
     }
 
     public PipesResult(RESULT_STATUS status, EmitData emitData) {
-        this(status, emitData, null);
+        this(status, emitData, null, null);
     }
 
     public PipesResult(RESULT_STATUS status, String message) {
-        this(status, null, message);
+        this(status, null, message, null);
+    }
+
+    public PipesResult(RESULT_STATUS status, EmitData emitData, String message) {
+        this(status, emitData, message, null);
+    }
+
+    /**
+     * Returns a copy of this result with the given server timings attached.
+     * Used on the server side to stamp timings onto a result before sending FINISHED.
+     */
+    public PipesResult withServerTimings(StageTimings timings) {
+        return new PipesResult(status, emitData, message, timings);
     }
 
     /**

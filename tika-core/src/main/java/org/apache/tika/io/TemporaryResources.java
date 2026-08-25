@@ -88,8 +88,12 @@ public class TemporaryResources implements Closeable {
 
         final Path path = tempFileDir == null ? Files.createTempFile("apache-tika-", actualSuffix) :
                 Files.createTempFile(tempFileDir, "apache-tika-", actualSuffix);
+        final String site = SpillStats.enabled() ? SpillStats.recordCreate() : null;
         addResource(() -> {
             try {
+                if (site != null) {
+                    SpillStats.recordDelete(site, path);
+                }
                 Files.delete(path);
             } catch (IOException e) {
                 // delete when exit if current delete fail

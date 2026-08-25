@@ -122,13 +122,15 @@ public class PipesParser implements Closeable {
     public PipesResult parse(FetchEmitTuple t) throws InterruptedException,
             PipesException, IOException {
         PipesClient client = null;
+        long pollStart = System.nanoTime();
         try {
             client = clientQueue.pollFirst(pipesConfig.getMaxWaitForClientMillis(),
                     TimeUnit.MILLISECONDS);
+            long clientWaitNanos = System.nanoTime() - pollStart;
             if (client == null) {
                 return PipesResults.CLIENT_UNAVAILABLE_WITHIN_MS;
             }
-            return client.process(t);
+            return client.process(t, clientWaitNanos);
         } finally {
             if (client != null) {
                 clientQueue.offerFirst(client);

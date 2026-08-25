@@ -30,6 +30,7 @@ public class PipesResultSerializer extends JsonSerializer<PipesResult> {
     public static final String STATUS = "status";
     public static final String EMIT_DATA = "emitData";
     public static final String MESSAGE = "message";
+    public static final String SERVER_TIMINGS = "serverTimings";
 
     @Override
     public void serialize(PipesResult pipesResult, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
@@ -40,6 +41,9 @@ public class PipesResultSerializer extends JsonSerializer<PipesResult> {
         }
         if (!StringUtils.isBlank(pipesResult.message())) {
             jsonGenerator.writeStringField(MESSAGE, pipesResult.message());
+        }
+        if (pipesResult.serverTimings() != null) {
+            jsonGenerator.writeObjectField(SERVER_TIMINGS, pipesResult.serverTimings());
         }
         jsonGenerator.writeEndObject();
     }

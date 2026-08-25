@@ -18,6 +18,7 @@ package org.apache.tika.pipes.core.serialization;
 
 import static org.apache.tika.pipes.core.serialization.PipesResultSerializer.EMIT_DATA;
 import static org.apache.tika.pipes.core.serialization.PipesResultSerializer.MESSAGE;
+import static org.apache.tika.pipes.core.serialization.PipesResultSerializer.SERVER_TIMINGS;
 import static org.apache.tika.pipes.core.serialization.PipesResultSerializer.STATUS;
 
 import java.io.IOException;
@@ -29,6 +30,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.StageTimings;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 
 public class PipesResultDeserializer extends JsonDeserializer<PipesResult> {
@@ -49,7 +51,13 @@ public class PipesResultDeserializer extends JsonDeserializer<PipesResult> {
 
         String message = readString(MESSAGE, root, null, false);
 
-        return new PipesResult(status, emitData, message);
+        StageTimings serverTimings = null;
+        JsonNode timingsNode = root.get(SERVER_TIMINGS);
+        if (timingsNode != null && !timingsNode.isNull()) {
+            serverTimings = mapper.treeToValue(timingsNode, StageTimings.class);
+        }
+
+        return new PipesResult(status, emitData, message, serverTimings);
     }
 
     private static String readString(String key, JsonNode root, String defaultVal, boolean required) throws IOException {

@@ -45,6 +45,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.api.StageTimings;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.StreamEmitter;
@@ -74,6 +75,12 @@ class PipesWorker implements Callable<PipesResult> {
     private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
     private final ParseMode defaultParseMode;
 
+    // Per-stage server-side timings, set as the worker proceeds. Stamped onto
+    // the PipesResult returned from call(). NOT_RUN means the stage was skipped.
+    private long fetchNanos = StageTimings.NOT_RUN;
+    private long parseNanos = StageTimings.NOT_RUN;
+    private long emitNanos = StageTimings.NOT_RUN;
+
     public PipesWorker(FetchEmitTuple fetchEmitTuple, ParseContext parseContext, AutoDetectParser autoDetectParser,
                        EmitterManager emitterManager, FetchHandler fetchHandler, ParseHandler parseHandler,
                        EmitHandler emitHandler, MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory,
@@ -91,6 +98,14 @@ class PipesWorker implements Callable<PipesResult> {
 
     @Override
     public PipesResult call() throws Exception {
+        long serverStart = System.nanoTime();
+        PipesResult result = runWork();
+        long serverWall = System.nanoTime() - serverStart;
+        return result.withServerTimings(
+                new StageTimings(fetchNanos, parseNanos, emitNanos, serverWall));
+    }
+
+    private PipesResult runWork() throws Exception {
         MetadataListAndEmbeddedBytes parseData = null;
         TempFileUnpackHandler tempHandler = null;
         FrictionlessUnpackHandler frictionlessHandler = null;
@@ -110,11 +125,13 @@ class PipesWorker implements Callable<PipesResult> {
 
             // Check if we need to zip and emit embedded files
             UnpackHandler handler = parseContext.get(UnpackHandler.class);
+            long emitStart = System.nanoTime();
             if (handler instanceof FrictionlessUnpackHandler) {
                 frictionlessHandler = (FrictionlessUnpackHandler) handler;
                 PipesResult frictionlessResult = emitFrictionlessOutput(frictionlessHandler, parseData);
                 if (frictionlessResult != null) {
                     // Frictionless emit failed - return the error
+                    emitNanos = System.nanoTime() - emitStart;
                     return frictionlessResult;
                 }
             } else if (handler instanceof TempFileUnpackHandler) {
@@ -122,11 +139,14 @@ class PipesWorker implements Callable<PipesResult> {
                 PipesResult zipResult = zipAndEmitEmbeddedFiles(tempHandler);
                 if (zipResult != null) {
                     // Zipping/emitting failed - return the error
+                    emitNanos = System.nanoTime() - emitStart;
                     return zipResult;
                 }
             }
 
-            return emitHandler.emitParseData(fetchEmitTuple, parseData, parseContext);
+            PipesResult emitted = emitHandler.emitParseData(fetchEmitTuple, parseData, parseContext);
+            emitNanos = System.nanoTime() - emitStart;
+            return emitted;
         } finally {
             // Clean up handlers if used
             if (frictionlessHandler != null) {
@@ -490,13 +510,18 @@ class PipesWorker implements Callable<PipesResult> {
         Metadata metadata = localContext.newMetadata();
         // Carry the caller's resource name and Content-Type detection hints (see javadoc).
         carryCallerHints(fetchEmitTuple.getMetadata(), metadata);
+        long fetchStart = System.nanoTime();
         FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata, localContext);
+        fetchNanos = System.nanoTime() - fetchStart;
         if (tisOrResult.pipesResult() != null) {
             return new ParseDataOrPipesResult(null, tisOrResult.pipesResult());
         }
 
         try (TikaInputStream tis = tisOrResult.tis()) {
-            return parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, localContext);
+            long parseStart = System.nanoTime();
+            ParseDataOrPipesResult result = parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, localContext);
+            parseNanos = System.nanoTime() - parseStart;
+            return result;
         } catch (SecurityException e) {
             LOG.error("security exception id={}", fetchEmitTuple.getId(), e);
             throw e;
