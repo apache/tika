@@ -161,15 +161,16 @@ public class ChmSection {
 
     public BigInteger getEncint() {
         byte ob;
-        BigInteger bi = BigInteger.ZERO;
-        byte[] nb = new byte[1];
+        //accumulate in a fixed-width long rather than a BigInteger: a run of
+        //continuation bytes from a hostile section would otherwise grow the
+        //BigInteger without bound, an O(n^2) memory/CPU DoS. getByte() returns 0
+        //past the end of data, which terminates the loop.
+        long value = 0;
         while ((ob = this.getByte()) < 0) {
-            nb[0] = (byte) ((ob & 0x7f));
-            bi = bi.shiftLeft(7).add(new BigInteger(nb));
+            value = (value << 7) | (ob & 0x7f);
         }
-        nb[0] = (byte) ((ob & 0x7f));
-        bi = bi.shiftLeft(7).add(new BigInteger(nb));
-        return bi;
+        value = (value << 7) | (ob & 0x7f);
+        return BigInteger.valueOf(value);
     }
 
 //    private void setData(byte[] data) {

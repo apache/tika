@@ -19,23 +19,14 @@ package org.apache.tika.pipes.fetcher.http.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.PluginJson;
 
 public class HttpFetcherConfig {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     public static HttpFetcherConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, HttpFetcherConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse HttpFetcherConfig from JSON", e);
-        }
+        return PluginJson.read(json, HttpFetcherConfig.class);
     }
 
     private String userName;
@@ -51,6 +42,11 @@ public class HttpFetcherConfig {
     private Integer socketTimeoutMillis = 120000;
     private Long maxSpoolSize = -1L;
     private Integer maxRedirects = 0;
+    /**
+     * Verify server certificates and hostnames; false accepts any cert from any host
+     * (the opt-out for self-signed internal certs).
+     */
+    private boolean verifySsl = true;
     private List<String> httpHeaders = new ArrayList<>();
     private HttpHeaders httpRequestHeaders = new HttpHeaders();
     private Long overallTimeoutMillis = 120000L;
@@ -58,7 +54,8 @@ public class HttpFetcherConfig {
     private String userAgent;
     private String jwtIssuer;
     private String jwtSubject;
-    private int jwtExpiresInSeconds;
+    // 0 would mint already-expired tokens
+    private int jwtExpiresInSeconds = 3600;
     private String jwtSecret;
     private String jwtPrivateKeyBase64;
 
@@ -269,4 +266,13 @@ public class HttpFetcherConfig {
         this.jwtPrivateKeyBase64 = jwtPrivateKeyBase64;
         return this;
     }
+    public boolean isVerifySsl() {
+        return verifySsl;
+    }
+
+    public HttpFetcherConfig setVerifySsl(boolean verifySsl) {
+        this.verifySsl = verifySsl;
+        return this;
+    }
+
 }

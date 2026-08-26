@@ -78,7 +78,7 @@ public class MagikaDetector implements Detector {
     //TODO -- grab errors and warnings
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MagikaDetector.class);
-    private static final long DEFAULT_TIMEOUT_MS = 60000;
+    private static final long DEFAULT_TIMEOUT_MILLIS = 60000;
     private static final String DEFAULT_MAGIKA_PATH = "magika";
 
     //we set this during the initial check.
@@ -95,7 +95,7 @@ public class MagikaDetector implements Detector {
     public static class Config {
         private String magikaPath = DEFAULT_MAGIKA_PATH;
         private int maxBytes = 1_000_000;
-        private long timeoutMs = DEFAULT_TIMEOUT_MS;
+        private long timeoutMillis = DEFAULT_TIMEOUT_MILLIS;
         private boolean useMime = false;
 
         public String getMagikaPath() {
@@ -114,12 +114,12 @@ public class MagikaDetector implements Detector {
             this.maxBytes = maxBytes;
         }
 
-        public long getTimeoutMs() {
-            return timeoutMs;
+        public long getTimeoutMillis() {
+            return timeoutMillis;
         }
 
-        public void setTimeoutMs(long timeoutMs) {
-            this.timeoutMs = timeoutMs;
+        public void setTimeoutMillis(long timeoutMillis) {
+            this.timeoutMillis = timeoutMillis;
         }
 
         public boolean isUseMime() {
@@ -218,14 +218,14 @@ public class MagikaDetector implements Detector {
             return MediaType.OCTET_STREAM;
         }
         //spool the full file to disk if there is no underlying file
-        return detectOnPath(tis.getPath(), metadata);
+        return detectOnPath(tis.getPath(), metadata, parseContext);
     }
 
     public Config getDefaultConfig() {
         return defaultConfig;
     }
 
-    private MediaType detectOnPath(Path path, Metadata metadata) throws IOException {
+    private MediaType detectOnPath(Path path, Metadata metadata, ParseContext parseContext) throws IOException {
 
         String[] args = new String[]{
                 ProcessUtils.escapeCommandLine(defaultConfig.getMagikaPath()),
@@ -233,7 +233,7 @@ public class MagikaDetector implements Detector {
                 "--json"
         };
         ProcessBuilder builder = new ProcessBuilder(args);
-        FileProcessResult result = ProcessUtils.execute(builder, defaultConfig.getTimeoutMs(), 10000000, 1000);
+        FileProcessResult result = ProcessUtils.execute(builder, parseContext, defaultConfig.getTimeoutMillis(), 10000000, 1000);
         return processResult(result, metadata, defaultConfig.isUseMime());
     }
 

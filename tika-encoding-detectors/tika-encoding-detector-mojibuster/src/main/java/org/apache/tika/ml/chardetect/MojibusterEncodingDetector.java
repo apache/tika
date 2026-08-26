@@ -34,6 +34,7 @@ import org.apache.tika.detect.EncodingProbeCache;
 import org.apache.tika.detect.EncodingResult;
 import org.apache.tika.detect.HighByteLetterStats;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -140,7 +141,10 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      *  genuine false-CJK ≥5.3%, so ~2.5% separates them (see CjkDecodeValidator). */
     private static final double CJK_FAILURE_VETO_THRESHOLD = 0.025;
 
-    /** Confidence for the windows-1252 fallback emitted on empty/ASCII probes. */
+    /** Confidence for the windows-1252 fallback emitted on empty/ASCII probes.
+     *  MUST equal JunkFilterEncodingDetector.NO_INFO_CONFIDENCE (tika-ml-junkdetect):
+     *  its strict {@code confidence > NO_INFO_CONFIDENCE} test treats exactly this
+     *  value as "statistical layer abstained" so a declaration can win. */
     private static final float FALLBACK_CONFIDENCE = 0.1f;
 
     /**
@@ -173,6 +177,12 @@ public class MojibusterEncodingDetector implements EncodingDetector {
      * genuinely-UTF-8 pages carrying a couple of stray bytes.)
      */
     private static final int UTF8_MAX_TOLERATED_ERRORS = 1;
+
+    /** Minimum valid multi-byte UTF-8 sequences before a tolerated (not clean)
+     *  probe is promoted to STRUCTURAL — else a short filename could false-
+     *  positive on a single coincidental error (mirrors {@link
+     *  CjkDecodeValidator#MIN_HIGH_BYTES}). */
+    private static final int MIN_TOLERATED_UTF8_SEQUENCES = 30;
 
     /** Windows-1252: the WHATWG-canonical default for unlabeled Western content. */
     private static final String WIN1252 = "windows-1252";
@@ -329,7 +339,8 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         //     because STRUCTURAL confidence outranks STATISTICAL.
         //   • AMBIGUOUS (pure ASCII or only truncated lead): no
         //     emission; NB + fallbacks handle it.
-        StructuralEncodingRules.Utf8Result utf8 = StructuralEncodingRules.checkUtf8(probe);
+        StructuralEncodingRules.Utf8Stats utf8Stats = StructuralEncodingRules.utf8Stats(probe);
+        StructuralEncodingRules.Utf8Result utf8 = utf8Stats.toResult();
         // TACTICAL: tolerate small corruption.  If the grammar check returned
         // NOT_UTF8 but the malformed-byte fraction is tiny, treat as UTF-8 —
         // a single bad continuation byte in 2KB of CJK is nearly always
@@ -337,7 +348,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
         // replaced with a probabilistic decoder.
         boolean utf8Tolerated = false;
         if (utf8 == StructuralEncodingRules.Utf8Result.NOT_UTF8) {
-            int errors = StructuralEncodingRules.countUtf8Errors(probe);
+            int errors = utf8Stats.errors();
             // Length-aware: absolute floor for short probes, rate for long ones.
             int maxTolerated = Math.max(UTF8_MAX_TOLERATED_ERRORS,
                     (int) (probe.length * UTF8_MALFORMED_TOLERANCE));
@@ -355,16 +366,18 @@ public class MojibusterEncodingDetector implements EncodingDetector {
             }
         }
         LOG.trace("mojibuster utf8Check={} tolerated={}", utf8, utf8Tolerated);
-        // Emit a structural UTF-8 candidate only when the grammar is definitively
-        // clean (LIKELY_UTF8).  When the probe is NOT_UTF8 but within the error
-        // tolerance (utf8Tolerated), NB's UTF-8 result is already kept as a
-        // STATISTICAL candidate (see NOT_UTF8 disqualifier above) — promoting it
-        // to STRUCTURAL here would cause the "return only top-1 STRUCTURAL" path
-        // to short-circuit JunkFilter, preventing it from comparing UTF-8 against
-        // windows-1252.  For short probes a single bad byte in otherwise-ASCII
-        // content is more likely a genuine Latin-1/windows-1252 byte than a
-        // corrupt UTF-8 sequence; JunkFilter has enough signal to arbitrate.
-        if (utf8 == StructuralEncodingRules.Utf8Result.LIKELY_UTF8) {
+        // Promote on LIKELY_UTF8, or on tolerated errors backed by abundant
+        // evidence (evidenceTolerated).  Bare tolerance isn't enough: on a short
+        // probe (e.g. a zip entry name, routed here by ZipParser) NB already
+        // covers a real UTF-8 case as STATISTICAL, so a lone tolerated error is
+        // more likely a coincidentally-valid legacy string.  But on a long,
+        // genuinely-UTF-8 document NB can return an empty pool for some scripts
+        // (TIKA-4810) — without this, one stray legacy byte costs the whole
+        // document its STRUCTURAL proof and JunkFilter has nothing to prefer
+        // over the declared charset.
+        boolean evidenceTolerated = utf8Tolerated
+                && utf8Stats.sequences() >= MIN_TOLERATED_UTF8_SEQUENCES;
+        if (utf8 == StructuralEncodingRules.Utf8Result.LIKELY_UTF8 || evidenceTolerated) {
             pool.add(new EncodingResult(
                     java.nio.charset.StandardCharsets.UTF_8,
                     UTF8_STRUCTURAL_CONF, "UTF-8",
@@ -527,83 +540,6 @@ public class MojibusterEncodingDetector implements EncodingDetector {
     }
 
     /**
-     * Resolve UTF-16 to LE or BE once NB has called it "UTF-16".
-     *
-     * <p>Two deterministic tests:
-     * <ol>
-     *   <li>Null-density: count null bytes in even-offset positions
-     *       vs odd-offset positions.  For ASCII-in-UTF-16-LE the
-     *       high byte is 0x00 at odd positions; for BE it's at even
-     *       positions.  If one column is clearly null-dominant, that
-     *       column indicates the endianness.</li>
-     *   <li>Codepoint validity fallback: for ambiguous probes (pure
-     *       CJK UTF-16, no nulls in either column) count how many
-     *       16-bit codepoints under LE vs BE interpretation land in
-     *       assigned Unicode BMP ranges (non-PUA, non-unassigned).
-     *       Whichever interpretation yields more valid codepoints
-     *       wins.</li>
-     * </ol>
-     *
-     * <p>Also honors the {@code invalidUtf16Le}/{@code invalidUtf16Be}
-     * flags from {@link WideUnicodeDetector} — if either endianness
-     * is structurally invalid (surrogate-pair violation), the other
-     * wins by default.
-     *
-     * @return the resolved charset, or {@code null} if the probe is
-     *         structurally invalid under both interpretations
-     */
-    private static java.nio.charset.Charset disambiguateUtf16(byte[] probe,
-                                                              boolean invalidLe,
-                                                              boolean invalidBe) {
-        if (invalidLe && invalidBe) {
-            return null;
-        }
-        if (invalidLe) {
-            return java.nio.charset.Charset.forName("UTF-16BE");
-        }
-        if (invalidBe) {
-            return java.nio.charset.Charset.forName("UTF-16LE");
-        }
-        int nullEven = 0;
-        int nullOdd = 0;
-        for (int i = 0; i + 1 < probe.length; i += 2) {
-            if (probe[i] == 0) nullEven++;
-            if (probe[i + 1] == 0) nullOdd++;
-        }
-        // Clear null-density winner: one column is ≥ 3× more
-        // null-dominant than the other.
-        if (nullEven >= 3 * Math.max(1, nullOdd)) {
-            return java.nio.charset.Charset.forName("UTF-16BE");
-        }
-        if (nullOdd >= 3 * Math.max(1, nullEven)) {
-            return java.nio.charset.Charset.forName("UTF-16LE");
-        }
-        // Ambiguous on null-density (CJK content).  Count valid BMP
-        // codepoints under each interpretation.  A "valid" codepoint
-        // is any non-zero codepoint outside the surrogate range
-        // (0xD800-0xDFFF) — for CJK content most bytes map into
-        // assigned blocks, and random-byte-interpreted-as-UTF-16
-        // produces many surrogate-range halves.
-        int validLe = 0;
-        int validBe = 0;
-        for (int i = 0; i + 1 < probe.length; i += 2) {
-            int lo = probe[i] & 0xFF;
-            int hi = probe[i + 1] & 0xFF;
-            int leCp = (hi << 8) | lo;
-            int beCp = (lo << 8) | hi;
-            if (leCp != 0 && (leCp < 0xD800 || leCp > 0xDFFF)) {
-                validLe++;
-            }
-            if (beCp != 0 && (beCp < 0xD800 || beCp > 0xDFFF)) {
-                validBe++;
-            }
-        }
-        return validLe >= validBe
-                ? java.nio.charset.Charset.forName("UTF-16LE")
-                : java.nio.charset.Charset.forName("UTF-16BE");
-    }
-
-    /**
      * Relabel the top result to windows-1252 when top is a non-1252
      * member of {@link CharsetConfusables#SBCS_LATIN_FAMILY} and
      * windows-1252 decodes at least as many Unicode-Letter codepoints
@@ -731,7 +667,7 @@ public class MojibusterEncodingDetector implements EncodingDetector {
                 contentType = metadata.get(TikaCoreProperties.CONTENT_TYPE_MAGIC_DETECTED);
             }
             if (contentType == null) {
-                contentType = metadata.get(Metadata.CONTENT_TYPE);
+                contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
             }
         }
         if (!shouldTryStrip(contentType)) {

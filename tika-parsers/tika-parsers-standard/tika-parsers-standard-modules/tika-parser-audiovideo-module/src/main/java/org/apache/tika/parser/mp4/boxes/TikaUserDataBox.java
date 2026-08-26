@@ -18,8 +18,6 @@ package org.apache.tika.parser.mp4.boxes;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import com.drew.lang.SequentialByteArrayReader;
 import com.drew.lang.SequentialReader;
@@ -29,10 +27,16 @@ import com.drew.metadata.mp4.Mp4Directory;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.RuntimeSAXException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class TikaUserDataBox {
@@ -43,8 +47,6 @@ public class TikaUserDataBox {
     private static final String MDTA = "mdta";
     private static final String HDLR = "hdlr";
     private static final String MDIR = "mdir";//apple metadata itunes reader
-    private static final Pattern COORDINATE_PATTERN =
-            Pattern.compile("([+-]\\d+\\.\\d+)([+-]\\d+\\.\\d+)([+-]\\d+(?:\\.\\d+)?)?");
 
     @Nullable
     private String coordinateString;
@@ -52,10 +54,13 @@ public class TikaUserDataBox {
     private boolean isQuickTime = false;
     private final Metadata metadata;
     private final XHTMLContentHandler xhtml;
+    private final ParseContext parseContext;
     public TikaUserDataBox(@NotNull String box, byte[] payload, Metadata metadata,
-                           XHTMLContentHandler xhtml) throws IOException, SAXException {
+                           XHTMLContentHandler xhtml, ParseContext parseContext)
+            throws IOException, SAXException {
         this.metadata = metadata;
         this.xhtml = xhtml;
+        this.parseContext = parseContext;
         int length = payload.length;
         SequentialReader reader = new SequentialByteArrayReader(payload);
         while (reader.getPosition() < (long) length) {
@@ -111,22 +116,25 @@ public class TikaUserDataBox {
         int toSkip = lengthToStartOfList - read;
         reader.skip(toSkip);
         long len = reader.getUInt32();
-        if (len >= Integer.MAX_VALUE || len <= 0) {
-            //log
-            return;
-        }
         String subType = reader.getString(4, StandardCharsets.ISO_8859_1);
-        //this handles "free" types...not sure if there are others?
-        //will throw IOException if no ilist is found
-        while (! subType.equals(ILST)) {
+        //walk the "free"-style sub-boxes to the ilst, validating each declared length
+        //once before it is used: a length below the 8-byte header would make skip(len - 8)
+        //negative (an IllegalArgumentException that escapes MP4Reader), and an oversize one
+        //would desync the walk. Raise a caught IOException instead, so the udta walk aborts
+        //and the problem is recorded as a parse error rather than silently mis-read. It
+        //also throws (EOFException) if no ilst is found. See TIKA-4812.
+        while (! ILST.equals(subType)) {
+            if (len < 8L || len >= Integer.MAX_VALUE) {
+                throw new IOException("Malformed box length in udta metadata: " + len);
+            }
             reader.skip(len - 8);
             len = reader.getUInt32();
             subType = reader.getString(4, StandardCharsets.ISO_8859_1);
         }
-        if (ILST.equals(subType)) {
-            processIList(reader, len);
+        if (len < 8L || len >= Integer.MAX_VALUE) {
+            throw new IOException("Malformed ilst length in udta metadata: " + len);
         }
-
+        processIList(reader, len);
     }
 
 
@@ -136,62 +144,120 @@ public class TikaUserDataBox {
 
         long totalRead = 0;
         while (totalRead < totalLen) {
+            long recordStart = reader.getPosition();
             long recordLen = reader.getUInt32();
+            if (recordLen < 16) {
+                //malformed record header; stop rather than loop or skip a negative span
+                return;
+            }
             String fieldName = reader.getString(4, StandardCharsets.ISO_8859_1);
             long fieldLen = reader.getUInt32();
             String typeName = reader.getString(4, StandardCharsets.ISO_8859_1);//data
-            totalRead += 16;
+            long recordEnd = recordStart + recordLen;
             if ("data".equals(typeName)) {
-                reader.skip(8);//not sure what these are
-                totalRead += 8;
+                //1 byte version and 3 bytes flags; for the "well-known" types the
+                //flags hold the value type
+                long valueType = reader.getUInt32() & 0xFFFFFF;
+                reader.skip(4L);//locale
                 int toRead = (int) fieldLen - 16;
-                if (toRead <= 0) {
-                    //log?
-                    return;
-                }
-                if ("covr".equals(fieldName)) {
-                    //covr can be an image file, e.g. png or jpeg
-                    //skip this for now
-                    reader.skip(toRead);
-                } else if ("cpil".equals(fieldName)) {
-                    int compilationId = (int)reader.getByte();
-                    metadata.set(XMPDM.COMPILATION, compilationId);
-                } else if ("trkn".equals(fieldName)) {
-                    if (toRead == 8) {
-                        long numA = reader.getUInt32();
-                        long numB = reader.getUInt32();
-                        metadata.set(XMPDM.TRACK_NUMBER, (int)numA);
-                    } else {
-                        //log
-                        reader.skip(toRead);
+                if (toRead > 0) {
+                    if ("covr".equals(fieldName)) {
+                        //covr holds one image per data atom and may repeat the data atom
+                        //for further images; the realign below consumes any leftover
+                        if (reader.getPosition() + toRead <= recordEnd) {
+                            handleCoverArt(reader, valueType, toRead);
+                        }
+                        while (reader.getPosition() + 16 <= recordEnd) {
+                            long extraLen = reader.getUInt32();
+                            String extraType =
+                                    reader.getString(4, StandardCharsets.ISO_8859_1);
+                            long extraValueType = reader.getUInt32() & 0xFFFFFF;
+                            reader.skip(4L);//locale
+                            int extraToRead = (int) extraLen - 16;
+                            if (!"data".equals(extraType) || extraToRead <= 0
+                                    || reader.getPosition() + extraToRead > recordEnd) {
+                                break;
+                            }
+                            handleCoverArt(reader, extraValueType, extraToRead);
+                        }
+                    } else if ("cpil".equals(fieldName)) {
+                        metadata.set(XMPDM.COMPILATION, (int) reader.getByte());
+                    } else if ("trkn".equals(fieldName)) {
+                        if (toRead >= 8) {
+                            long numA = reader.getUInt32();
+                            long numB = reader.getUInt32();
+                            metadata.set(XMPDM.TRACK_NUMBER, (int) numA);
+                            //2 bytes track total, 2 bytes reserved
+                            int trackCount = (int) (numB >>> 16);
+                            if (trackCount > 0) {
+                                metadata.set(Audio.TRACK_COUNT, trackCount);
+                            }
+                        }
+                    } else if ("disk".equals(fieldName)) {
+                        if (toRead >= 6) {
+                            //2 bytes reserved, 2 bytes disc, 2 bytes total
+                            int a = reader.getInt32();
+                            short b = reader.getInt16();
+                            metadata.set(XMPDM.DISC_NUMBER, a);
+                            if (b > 0) {
+                                metadata.set(Audio.DISC_COUNT, b);
+                            }
+                        }
+                    } else if (reader.getPosition() + toRead <= recordEnd) {
+                        String val = reader.getString(toRead, StandardCharsets.UTF_8);
+                        try {
+                            addMetadata(fieldName, val);
+                        } catch (SAXException e) {
+                            //need to punch through IOException catching in MP4Reader
+                            throw new RuntimeSAXException(e);
+                        }
                     }
-                } else if ("disk".equals(fieldName)) {
-                    int a = reader.getInt32();
-                    short b = reader.getInt16();
-                    metadata.set(XMPDM.DISC_NUMBER, a);
-                } else {
-                    String val = reader.getString(toRead, StandardCharsets.UTF_8);
-                    try {
-                        addMetadata(fieldName, val);
-                    } catch (SAXException e) {
-                        //need to punch through IOException catching in MP4Reader
-                        throw new RuntimeSAXException(e);
-                    }
                 }
-
-                totalRead += toRead;
-            } else {
-                int toSkip = (int) recordLen - 16;
-                if (toSkip <= 0) {
-                    //log?
-                    return;
-                }
-                reader.skip(toSkip);
-                totalRead += toSkip;
             }
+            //realign to the end of the record regardless of what the branch consumed, so a
+            //trailing sub-atom (e.g. a 'name' atom after 'data') can't desync the walk
+            long pos = reader.getPosition();
+            if (pos > recordEnd) {
+                //a branch read past the record end (malformed lengths); stop
+                return;
+            }
+            reader.skip(recordEnd - pos);
+            totalRead += recordLen;
         }
     }
 
+
+    /**
+     * Sends one embedded cover image to the embedded document extractor.
+     * The image only becomes an embedded document, no metadata is recorded
+     * on the audio document itself.
+     */
+    private void handleCoverArt(SequentialReader reader, long valueType, int length)
+            throws IOException {
+        byte[] picture = reader.getBytes(length);
+        Metadata pictureMetadata = Metadata.newInstance(parseContext);
+        pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        //the data atom's well-known value type declares the image format;
+        //for any other type leave the content type for auto-detection
+        if (valueType == 13) {
+            pictureMetadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
+        } else if (valueType == 14) {
+            pictureMetadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
+        } else if (valueType == 27) {
+            pictureMetadata.set(HttpHeaders.CONTENT_TYPE, "image/bmp");
+        }
+        EmbeddedDocumentExtractor extractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
+        if (extractor.shouldParseEmbedded(pictureMetadata, parseContext)) {
+            try (TikaInputStream tis = TikaInputStream.get(picture)) {
+                extractor.parseEmbedded(tis, xhtml, pictureMetadata, parseContext, true);
+            } catch (SAXException e) {
+                //need to punch through IOException catching in MP4Reader
+                throw new RuntimeSAXException(e);
+            }
+        }
+    }
 
     private void addMetadata(String key, String value) throws SAXException {
         switch (key) {
@@ -264,16 +330,13 @@ public class TikaUserDataBox {
 
     public void addMetadata(Mp4Directory directory) {
         if (this.coordinateString != null) {
-            Matcher matcher = COORDINATE_PATTERN.matcher(this.coordinateString);
-            if (matcher.find()) {
-                double latitude = Double.parseDouble(matcher.group(1));
-                double longitude = Double.parseDouble(matcher.group(2));
-                directory.setDouble(8193, latitude);
-                directory.setDouble(8194, longitude);
+            ISO6709.Location location = ISO6709.parse(this.coordinateString);
+            if (location != null) {
+                directory.setDouble(8193, location.latitude);
+                directory.setDouble(8194, location.longitude);
                 //Mp4Directory has no altitude tag, so set geo:alt directly
-                if (matcher.group(3) != null) {
-                    metadata.set(TikaCoreProperties.ALTITUDE,
-                            Double.parseDouble(matcher.group(3)));
+                if (location.altitude != null) {
+                    metadata.set(TikaCoreProperties.ALTITUDE, location.altitude);
                 }
             }
         }

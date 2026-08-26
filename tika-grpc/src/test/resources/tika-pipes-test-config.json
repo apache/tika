@@ -13,12 +13,10 @@
     ],
     "emitStrategy": {
       "type": "PASSBACK_ALL"
-    },
-    "staleFetcherTimeoutSeconds": 600,
-    "staleFetcherDelaySeconds": 60
+    }
   },
   "fetchers": {
-    "nick1:is:cool:super/class org.apache.tika.pipes.fetcher.fs.FileSystemFetcher": {
+    "nick1.is.cool.super-fs": {
       "file-system-fetcher": {
         "basePath": "FETCHER_BASE_PATH",
         "extractFileSystemMetadata": true

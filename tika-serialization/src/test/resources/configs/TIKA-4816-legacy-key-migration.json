@@ -1,0 +1,5 @@
+{
+  "parse-context": {
+    "legacy-key-migration-filter": {"direction": "V3_TO_V4"}
+  }
+}

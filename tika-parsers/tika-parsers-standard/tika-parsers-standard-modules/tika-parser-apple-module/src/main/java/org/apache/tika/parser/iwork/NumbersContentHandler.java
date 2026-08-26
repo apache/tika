@@ -23,12 +23,20 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 class NumbersContentHandler extends DefaultHandler {
+
+    private static final KeyPrefix NUMBERS_METADATA =
+            KeyPrefix.file("numbers:", "iWork Numbers document metadata element names");
+
+    /** Fixed (not document-derived) key: one entry per {@code ls:workspace} sheet. */
+    static final Property SHEET_NAMES = Property.externalTextBag("numbers:sheet-names");
 
     private final XHTMLContentHandler xhtml;
     private final Metadata metadata;
@@ -68,7 +76,7 @@ class NumbersContentHandler extends DefaultHandler {
             numberOfSheets++;
             xhtml.startElement("div");
             String sheetName = attributes.getValue("ls:workspace-name");
-            metadata.add("numbers:sheetNames", sheetName);
+            metadata.add(SHEET_NAMES, sheetName);
         }
 
         if ("sf:text".equals(qName)) {
@@ -226,7 +234,7 @@ class NumbersContentHandler extends DefaultHandler {
         } else if ("comment".equals(localName)) {
             metadata.add(TikaCoreProperties.COMMENTS, value);
         } else {
-            metadata.add("numbers:" + localName, value);
+            metadata.add(NUMBERS_METADATA, localName, value);
         }
     }
 }

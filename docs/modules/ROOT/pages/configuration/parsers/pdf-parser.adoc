@@ -17,7 +17,7 @@
 
 = PDFParser Configuration
 
-This page documents the configuration options for `PDFParser` in Tika 4.x.
+Configuration options for `PDFParser`.
 
 == Basic Configuration
 
@@ -29,16 +29,12 @@ icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers
 
 == Full Configuration
 
-The example below lists every option with its default value and an inline comment describing
-it. It also includes a `default-parser` entry so the config works as-is; see
-xref:configuration/index.adoc[Configuration] for why that entry matters.
+Every option with its default value and an inline comment describing it. The `default-parser` entry
+keeps the rest of Tika's parsers loaded — see xref:configuration/index.adoc[Configuration] for why
+that matters.
 
 [source,json]
 ----
 include::example$pdf-parser-full.json[]
 ----
 icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/config-examples/pdf-parser-full.json[View source on GitHub]
-
-== Changes from 3.x
-
-See xref:migration-to-4x/migrating-to-4x.adoc[Migrating to 4.x] for general migration guidance.

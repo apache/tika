@@ -37,6 +37,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -108,12 +109,13 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
 
         //now handle embedded images
         if (embeddedImages.size() > 0) {
-            EmbeddedDocumentUtil embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
+            EmbeddedDocumentExtractor embeddedDocumentExtractor =
+                    EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
             for (Map.Entry<String, Metadata> embeddedImage : embeddedImages.entrySet()) {
                 String zipPath = embeddedImage.getKey();
                 Metadata metadata = embeddedImage.getValue();
-                if (embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
-                    handleEmbeddedImage(zipPath, metadata, embeddedDocumentUtil, xhtml);
+                if (embeddedDocumentExtractor.shouldParseEmbedded(metadata, context)) {
+                    handleEmbeddedImage(zipPath, metadata, embeddedDocumentExtractor, xhtml);
                 }
             }
         }
@@ -121,7 +123,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     private void handleEmbeddedImage(String zipPath, Metadata metadata,
-                                     EmbeddedDocumentUtil embeddedDocumentUtil,
+                                     EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                      XHTMLContentHandler xhtml) throws SAXException, IOException {
         TikaInputStream tis = null;
         try {
@@ -133,7 +135,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
         }
 
         try {
-            embeddedDocumentUtil.parseEmbedded(tis, xhtml, metadata, true);
+            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, metadata, context, true);
         } finally {
             IOUtils.closeQuietly(tis);
         }

@@ -499,41 +499,6 @@ public interface IPTC {
             PREFIX_IPTC_CORE + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CiUrlWork");
 
     /**
-     * As this metadata element pertains to distribution management, it was not
-     * adopted. However, this data is still synchronised with the XMP property
-     * [photoshop:Urgency], and hence, available for future use, but outside the
-     * IPTC Core.
-     *
-     * @deprecated
-     */
-    @Deprecated
-    Property URGENCY = Photoshop.URGENCY;
-
-    /**
-     * As this metadata element was earmarked as deprecated already for IIM 4.1,
-     * it was not adopted. However, this data is still synchronised with the XMP
-     * property [photoshop:Category], and hence available for future use - but
-     * outside the IPTC Core. For migrating from Category codes to Subject Codes
-     * please read the Guideline for mapping Category Codes to Subject NewsCodes
-     * section below.
-     *
-     * @deprecated
-     */
-    @Deprecated
-    Property CATEGORY = Photoshop.CATEGORY;
-
-    /**
-     * As this metadata element was earmarked as deprecated already for IIM 4.1,
-     * it was not adopted. However, this data is still synchronised with the XMP
-     * property [photoshop:SupplementalCategories], and hence available for
-     * future use - but outside the IPTC Core.
-     *
-     * @deprecated
-     */
-    @Deprecated
-    Property SUPPLEMENTAL_CATEGORIES = Photoshop.SUPPLEMENTAL_CATEGORIES;
-
-    /**
      * Information about the ethnicity and other facets of the model(s) in a
      * model-released image.
      * <p>
@@ -635,18 +600,6 @@ public interface IPTC {
             PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "DigImageGUID");
 
     /**
-     * The type of the source digital file.
-     * <p>
-     * The IPTC recommends not to implement this property any longer.
-     *
-     * @deprecated
-     */
-    @Deprecated
-    Property DIGITAL_SOURCE_FILE_TYPE = Property.internalText(
-            PREFIX_IPTC_EXT + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER +
-                    "DigitalSourcefileType");
-
-    /**
      * The type of the source of this digital image
      */
     Property DIGITAL_SOURCE_TYPE = Property.internalText(
@@ -692,12 +645,6 @@ public interface IPTC {
     Property IMAGE_SUPPLIER = Property.internalText(
             PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageSupplier");
     /**
-     * @deprecated use {@link IPTC#IMAGE_SUPPLIER_ID}
-     */
-    @Deprecated
-    String IMAGE_SUPPLIER_ID_WRONG_CASE =
-            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierId";
-    /**
      * Identifies the most recent supplier of the item, who is not necessarily
      * its owner or creator.
      * <p>
@@ -709,9 +656,8 @@ public interface IPTC {
      * This is a PLUS version 1.2 property included in the IPTC Extension
      * schema.
      */
-    Property IMAGE_SUPPLIER_ID = Property.composite(Property.internalText(
-            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierID"),
-            new Property[]{Property.internalText(IPTC.IMAGE_SUPPLIER_ID_WRONG_CASE)});
+    Property IMAGE_SUPPLIER_ID = Property.internalText(
+            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageSupplierID");
     /**
      * Identifies the most recent supplier of the item, who is not necessarily
      * its owner or creator.
@@ -799,12 +745,6 @@ public interface IPTC {
     Property COPYRIGHT_OWNER = Property.internalTextBag(
             PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwner");
     /**
-     * @deprecated use {@link IPTC#COPYRIGHT_OWNER_ID}
-     */
-    @Deprecated
-    String COPYRIGHT_OWNER_ID_WRONG_CASE =
-            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerId";
-    /**
      * The ID of the owner or owners of the copyright in the licensed image.
      * <p>
      * Serves to identify the rights holder/s for the image. The Copyright
@@ -813,9 +753,8 @@ public interface IPTC {
      * This is a PLUS version 1.2 property included in the IPTC Extension
      * schema.
      */
-    Property COPYRIGHT_OWNER_ID = Property.composite(Property.internalTextBag(
-            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerID"),
-            new Property[]{Property.internalTextBag(IPTC.COPYRIGHT_OWNER_ID_WRONG_CASE)});
+    Property COPYRIGHT_OWNER_ID = Property.internalTextBag(
+            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CopyrightOwnerID");
     /**
      * The name of the owner or owners of the copyright in the licensed image.
      * <p>
@@ -843,12 +782,6 @@ public interface IPTC {
     Property IMAGE_CREATOR = Property.internalTextBag(
             PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageCreator");
     /**
-     * @deprecated use {@link IPTC#IMAGE_CREATOR_ID}
-     */
-    @Deprecated
-    String IMAGE_CREATOR_ID_WRONG_CASE =
-            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorId";
-    /**
      * The ID of the creator or creators of the image.
      * <p>
      * The creator can be additionally expressed in free-text using the IPTC
@@ -860,9 +793,8 @@ public interface IPTC {
      * This is a PLUS version 1.2 property included in the IPTC Extension
      * schema.
      */
-    Property IMAGE_CREATOR_ID = Property.composite(Property.internalTextBag(
-            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorID"),
-            new Property[]{Property.internalTextBag(IPTC.IMAGE_CREATOR_ID_WRONG_CASE)});
+    Property IMAGE_CREATOR_ID = Property.internalTextBag(
+            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ImageCreatorID");
     /**
      * The name of the creator or creators of the image.
      * <p>
@@ -888,21 +820,14 @@ public interface IPTC {
     Property LICENSOR = Property.internalTextBag(
             PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "Licensor");
     /**
-     * @deprecated use {@link IPTC#LICENSOR_ID}
-     */
-    @Deprecated
-    String LICENSOR_ID_WRONG_CASE =
-            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorId";
-    /**
      * The ID of the person or company that should be contacted to obtain a licence for
      * using the item or who has licensed the item.
      * <p>
      * This is a PLUS version 1.2 property included in the IPTC Extension
      * schema.
      */
-    Property LICENSOR_ID = Property.composite(Property.internalTextBag(
-            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorID"),
-            new Property[]{Property.internalTextBag(IPTC.LICENSOR_ID_WRONG_CASE)});
+    Property LICENSOR_ID = Property.internalTextBag(
+            PREFIX_PLUS + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "LicensorID");
     /**
      * The name of the person or company that should be contacted to obtain a licence for
      * using the item or who has licensed the item.

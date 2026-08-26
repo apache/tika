@@ -110,9 +110,16 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
             setBlockCount(getDataRemained() / 8);
         }
 
-        long[] addresses = new long[(int) getBlockCount()];
+        int count = (int) getBlockCount();
+        if (count < 0) {
+            throw new ChmParsingException("negative chm reset table block count: " + count);
+        }
+        long[] addresses = new long[count];
         int rem = getDataRemained() / 8;
-        for (int i = 0; i < rem; i++) {
+        //only read as many addresses as both the block count and the trailing data
+        //allow, so a block count smaller than the data can't write past the array
+        int toRead = Math.min(count, rem);
+        for (int i = 0; i < toRead; i++) {
             long num = -1;
 
             try {
@@ -144,10 +151,11 @@ public class ChmLzxcResetTable implements ChmAccessor<ChmLzxcResetTable> {
 
     private long unmarshalUInt32(byte[] data, long dest) throws TikaException {
         ChmAssert.assertByteArrayNotNull(data);
+        //shift the top byte in long arithmetic so a value >= 2^31 stays unsigned
         dest = (data[this.getCurrentPlace()] & 0xff) |
                 (data[this.getCurrentPlace() + 1] & 0xff) << 8 |
                 (data[this.getCurrentPlace() + 2] & 0xff) << 16 |
-                (data[this.getCurrentPlace() + 3] & 0xff) << 24;
+                ((long) (data[this.getCurrentPlace() + 3] & 0xff)) << 24;
 
         setDataRemained(this.getDataRemained() - 4);
         this.setCurrentPlace(this.getCurrentPlace() + 4);

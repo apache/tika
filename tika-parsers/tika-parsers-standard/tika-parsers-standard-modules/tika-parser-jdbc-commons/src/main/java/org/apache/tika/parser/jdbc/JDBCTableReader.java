@@ -37,9 +37,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Database;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -53,16 +55,13 @@ public class JDBCTableReader {
     private final static Attributes EMPTY_ATTRIBUTES = new AttributesImpl();
     private final Connection connection;
     private final String tableName;
-    private final EmbeddedDocumentUtil embeddedDocumentUtil;
     int maxClobLength = 1000000;
     ResultSet results = null;
     int rows = 0;
 
-    public JDBCTableReader(Connection connection, String tableName,
-                           EmbeddedDocumentUtil embeddedDocumentUtil) {
+    public JDBCTableReader(Connection connection, String tableName) {
         this.connection = connection;
         this.tableName = tableName;
-        this.embeddedDocumentUtil = embeddedDocumentUtil;
     }
 
     public boolean nextRow(ContentHandler handler, ParseContext context)
@@ -189,8 +188,8 @@ public class JDBCTableReader {
         m.set(Database.PREFIX + "IS_CLOB", "true");
         m.set(Database.PREFIX + "CLOB_LENGTH", Long.toString(clob.length()));
         m.set(Database.PREFIX + "IS_CLOB_TRUNCATED", Boolean.toString(truncated));
-        m.set(Metadata.CONTENT_TYPE, "text/plain; charset=UTF-8");
-        m.set(Metadata.CONTENT_LENGTH, Integer.toString(readSize));
+        m.set(HttpHeaders.CONTENT_TYPE, "text/plain; charset=UTF-8");
+        m.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(readSize));
         m.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                 //just in case something screwy is going on with the column name
                 FilenameUtils.normalize(FilenameUtils.getName(columnName + "_" + rowNum + ".txt")));
@@ -198,9 +197,10 @@ public class JDBCTableReader {
 
         //is there a more efficient way to go from a Reader to an InputStream?
         String s = clob.getSubString(0, readSize);
-        if (embeddedDocumentUtil.shouldParseEmbedded(m)) {
+        EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        if (extractor.shouldParseEmbedded(m, context)) {
             try (TikaInputStream tis = TikaInputStream.get(s.getBytes(UTF_8))) {
-                embeddedDocumentUtil.parseEmbedded(tis, handler, m, true);
+                extractor.parseEmbedded(tis, handler, m, context, true);
             }
         }
     }
@@ -228,15 +228,16 @@ public class JDBCTableReader {
             ((AttributesImpl) attrs).addAttribute("", "row_number", "row_number", "CDATA",
                     Integer.toString(rowNum));
             handler.startElement("", "span", "span", attrs);
-            String extension = embeddedDocumentUtil.getExtension(tis, m);
+            String extension = EmbeddedDocumentUtil.getExtension(tis, m, context);
 
             m.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                     //just in case something screwy is going on with the column name
                     FilenameUtils.normalize(
                             FilenameUtils.getName(columnName + "_" + rowNum + extension)));
             m.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
-            if (embeddedDocumentUtil.shouldParseEmbedded(m)) {
-                embeddedDocumentUtil.parseEmbedded(tis, handler, m, true);
+            EmbeddedDocumentExtractor extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+            if (extractor.shouldParseEmbedded(m, context)) {
+                extractor.parseEmbedded(tis, handler, m, context, true);
             }
 
         } finally {

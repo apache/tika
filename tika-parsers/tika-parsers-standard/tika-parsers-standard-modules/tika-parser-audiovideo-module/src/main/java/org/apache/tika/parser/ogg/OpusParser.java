@@ -32,6 +32,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
@@ -61,7 +62,7 @@ public class OpusParser extends OggAudioParser {
     public void parse(TikaInputStream tis, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
-        metadata.set(Metadata.CONTENT_TYPE, OPUS_AUDIO.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, OPUS_AUDIO.toString());
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "Opus");
 
         // Open and process the files
@@ -76,7 +77,7 @@ public class OpusParser extends OggAudioParser {
         extractInfo(metadata, opus.getInfo());
 
         // Extract any Vorbis comments
-        extractComments(metadata, xhtml, opus.getTags());
+        extractComments(metadata, xhtml, opus.getTags(), context);
 
         // Extract the audio length
         extractDuration(metadata, xhtml, opus, opus);
@@ -88,7 +89,8 @@ public class OpusParser extends OggAudioParser {
 
     protected void extractInfo(Metadata metadata, OpusInfo info) throws TikaException {
         metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) info.getRate());
-        metadata.add("version", "Opus " + info.getMajorVersion() + "." + info.getMinorVersion());
+        metadata.add(CODEC_VERSION,
+                "Opus " + info.getMajorVersion() + "." + info.getMinorVersion());
 
         extractChannelInfo(metadata, info);
     }

@@ -44,7 +44,7 @@ The File System plugin (`tika-pipes-file-system`) is the most common starting po
 
 == Complete Pipeline Example
 
-The example below is the canonical filesystem-to-filesystem integration test config. Tokens like `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, `PLUGINS_PATHS`, and `EMIT_INTERMEDIATE_RESULTS` are placeholders the test harness substitutes; replace the path tokens with real paths and `EMIT_INTERMEDIATE_RESULTS` with the boolean `true` or `false`. See xref:pipes/configuration.adoc[Pipes Configuration] for what each setting does.
+The canonical filesystem-to-filesystem integration-test config. `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH` and `PLUGINS_PATHS` are placeholders the test harness substitutes with real paths; `EMIT_INTERMEDIATE_RESULTS` with the boolean `true` or `false`. See xref:pipes/configuration.adoc[Pipes Configuration] for what each setting does.
 
 [source,json,subs=none]
 ----
@@ -81,8 +81,8 @@ The outer key (`fsf`) is the fetcher ID — referenced by `pipesIterator.fetcher
 |Field |Default |Description
 
 |`basePath`
-|_required_
-|Base directory for fetch operations. Fetch keys are resolved relative to this path.
+|_none_
+|Base directory for fetch operations. Fetch keys are resolved relative to this path and must stay inside it. Omitting it requires `allowAbsolutePaths: true` and disables containment entirely — see <<security-notes>>.
 
 |`extractFileSystemMetadata`
 |`false`
@@ -90,7 +90,7 @@ The outer key (`fsf`) is the fetcher ID — referenced by `pipesIterator.fetcher
 
 |`allowAbsolutePaths`
 |`false`
-|When `true`, fetch keys may be absolute paths and `basePath` may be omitted. Use sparingly — see <<security-notes>>.
+|Permission to run *without* a `basePath`. It is not a relaxation of `basePath` — see <<security-notes>>.
 |===
 
 [#file-system-emitter]
@@ -121,12 +121,16 @@ Writes parsed results as files under `basePath`. The relative output path is der
 |Field |Default |Description
 
 |`basePath`
-|_required_
-|Base output directory. The emit key is resolved relative to this path.
+|_none_
+|Base output directory. Emit keys are resolved relative to this path and must stay inside it. Omitting it requires `allowAbsolutePaths: true` and disables containment entirely — see <<security-notes>>.
+
+|`allowAbsolutePaths`
+|`false`
+|Permission to run *without* a `basePath`. It is not a relaxation of `basePath` — see <<security-notes>>.
 
 |`fileExtension`
-|`json`
-|Extension appended to each output file. For `CONTENT_ONLY` mode, set this to match the handler type (`txt`, `html`, `md`, `xml`).
+|_none_
+|Extension appended to each output file; omitted entirely when unset. Applied on both output paths, so under `CONTENT_ONLY` set it to match the handler type (`txt`, `html`, `md`, `xml`). Without it the emit key keeps the input's own name, and output collides with input when `-i` and `-o` are the same directory.
 
 |`onExists`
 |`EXCEPTION`
@@ -158,6 +162,8 @@ Recursively walks a directory tree, emitting one `FetchEmitTuple` per file found
 
 === Configuration
 
+In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.adoc#wiring[Wiring an Iterator]):
+
 [cols="1,1,3"]
 |===
 |Field |Default |Description
@@ -168,18 +174,14 @@ Recursively walks a directory tree, emitting one `FetchEmitTuple` per file found
 
 |`countTotal`
 |`true`
-|If `true`, walks the tree once to count files before processing begins. Enables progress reporting at the cost of an extra scan over the tree.
-
-|`fetcherId` / `emitterId`
-|_required_
-|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
+|If `true`, a daemon thread walks the tree in parallel with processing to count files. Enables progress reporting at the cost of an extra scan over the tree.
 |===
 
 === Notes
 
 * Walk order is filesystem-dependent and not guaranteed stable across runs.
 * The relative path of each file (from `basePath`) becomes the fetch key, and by default also the emit key.
-* Symbolic links are followed.
+* Symbolic links are not followed: the walk runs without `FOLLOW_LINKS`, so a symlinked directory is emitted as a single entry rather than descended into.
 
 [#file-system-reporter]
 == File System Reporter (`file-system-reporter`)
@@ -198,7 +200,7 @@ Maintains a JSON status file that summarizes pipeline progress. The reporter wri
 }
 ----
 
-`pipes-reporters` accepts multiple reporters keyed by type name — see xref:pipes/reporters.adoc[Pipes Reporters] for how multiple reporters compose.
+`pipes-reporters` accepts multiple reporters keyed by component name — see xref:pipes/reporters.adoc[Pipes Reporters] for how multiple reporters compose.
 
 === Configuration
 
@@ -208,11 +210,11 @@ Maintains a JSON status file that summarizes pipeline progress. The reporter wri
 
 |`statusFile`
 |_required_
-|Path of the JSON status file. Absolute paths are written as given; relative paths resolve against the JVM's working directory at startup. Parent directories that don't exist are created automatically on first write. Always include a parent component (e.g., `./status.json` rather than bare `status.json`) — the auto-create step fails on a path with no parent. The file is created on first write and overwritten in place.
+|Path of the JSON status file. Absolute paths are written as given; relative paths resolve against the JVM's working directory at startup. Missing parent directories are created at startup. Always include a parent component (e.g., `./status.json` rather than bare `status.json`) — a path with no parent throws a `NullPointerException` during that step. The file is created on first write and overwritten in place.
 
 |`reportUpdateMs`
-|_no default_
-|Interval in milliseconds between status-file writes. Typical values: `1000` for a low-overhead heartbeat, `100` for near-real-time updates. There is no built-in default — always set this explicitly.
+|`0`
+|Interval in milliseconds between status-file writes. Typical values: `1000` for a low-overhead heartbeat, `100` for near-real-time updates. Always set it: the value is used as the writer thread's sleep, so leaving it unset rewrites the file in a tight loop.
 |===
 
 === Status file schema
@@ -222,7 +224,7 @@ The reporter serializes an `AsyncStatus` object to JSON, containing:
 * `started` — ISO-8601 timestamp of when the reporter was constructed.
 * `lastUpdate` — ISO-8601 timestamp of the most recent write.
 * `asyncStatus` — current pipeline phase (`STARTED`, `COMPLETED`, `CRASHED`).
-* `statusCounts` — map of `PipesResult.RESULT_STATUS` to count (e.g., `PARSE_SUCCESS`, `PARSE_EXCEPTION`, `TIMEOUT`, `OOM`, `EMIT_SUCCESS`, `EMIT_EXCEPTION`).
+* `statusCounts` — map of `PipesResult.RESULT_STATUS` to count (e.g., `PARSE_SUCCESS`, `PARSE_SUCCESS_WITH_EXCEPTION`, `TIMEOUT`, `OOM`, `EMIT_SUCCESS`, `EMIT_EXCEPTION`).
 * `totalCountResult` — total documents discovered by the iterator and whether the enumeration is complete.
 * `crashMessage` — empty string under normal operation; populated with a stack trace on fatal pipeline failure.
 
@@ -253,6 +255,7 @@ Tradeoffs:
 [#security-notes]
 == Security Notes
 
-* **`basePath` is a sandbox boundary.** The fetcher and emitter reject fetch/emit keys that resolve outside `basePath`. Do not set `allowAbsolutePaths=true` unless the source of fetch keys is fully trusted — an attacker-controlled fetch key could otherwise read arbitrary files.
-* **Symlinks are followed.** A symlink under `basePath` pointing outside `basePath` may still be readable. If you need strict containment, do not allow symlinks in your input tree.
+* **`basePath` is the sandbox boundary, and it is the only one.** With `basePath` set, the fetcher and emitter reject any key that resolves outside it, including absolute paths and `../` traversal. `allowAbsolutePaths` has no effect in this state.
+* **Without `basePath` there is no containment at all.** The key is used as a raw absolute path, and the containment checks are skipped entirely. `allowAbsolutePaths=true` is how you assert that you intend this; it is a switch between two states, not a dial that loosens `basePath`. For the fetcher this means any file the process can read; for the emitter, any file it can write. Use it only when fetch/emit keys come from a fully trusted source and access to the service is restricted by other means.
+* **Symlink containment differs between fetcher and emitter.** The fetcher re-checks with `toRealPath()`, so a symlink under `basePath` pointing outside it is rejected. The emitter does not: it checks only the normalized path, so a symlink already present under its `basePath` can be written through. Do not rely on symlinks being contained on the emit side.
 * **Output directories are created automatically.** The emitter creates intermediate directories as needed. Make sure the process's umask is appropriate for the data being written.

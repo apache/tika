@@ -17,9 +17,14 @@
 package org.apache.tika.parser.ogg;
 
 import java.io.IOException;
+import java.nio.BufferUnderflowException;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
 
@@ -32,11 +37,21 @@ import org.gagravarr.vorbis.VorbisStyleComments;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.AbstractParser;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.audio.NumberAndTotal;
+import org.apache.tika.parser.mp3.ID3Tags;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -45,6 +60,46 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 public abstract class OggAudioParser extends AbstractParser {
     private static final long serialVersionUID = 5168743829615945633L;
+
+    private static final KeyPrefix VORBIS =
+            KeyPrefix.file("vorbis:", "Vorbis comment field names");
+
+    /**
+     * The Vorbis comment header vendor string (encoder library identification), also
+     * captured under {@link org.apache.tika.metadata.XMP#CREATOR_TOOL}; kept under its
+     * own name too since some consumers look for the raw vorbis: field.
+     */
+    private static final Property VORBIS_VENDOR = Property.internalText("vorbis:vendor");
+
+    // Codec bitstream/library version string (e.g. "Theora 3.2.1"); distinct from the vendor/encoder tool under XMP#CREATOR_TOOL.
+    protected static final Property CODEC_VERSION = Property.internalText("ogg:codec-version");
+
+    /**
+     * Comment holding an embedded picture (e.g. cover art) as a base64
+     * encoded FLAC picture block
+     */
+    private static final String METADATA_BLOCK_PICTURE = "metadata_block_picture";
+
+
+    /**
+     * Returns the first positive integer found under the given comment keys,
+     * or null if there is none.
+     */
+    private static Integer firstPositiveInteger(VorbisStyleComments comments, String... keys) {
+        for (String key : keys) {
+            for (String value : comments.getComments(key)) {
+                try {
+                    int parsed = Integer.parseInt(value.trim());
+                    if (parsed > 0) {
+                        return parsed;
+                    }
+                } catch (NumberFormatException e) {
+                    //skip unparseable values
+                }
+            }
+        }
+        return null;
+    }
 
     protected static void extractChannelInfo(Metadata metadata, OggAudioInfoHeader info) {
         extractChannelInfo(metadata, info.getNumChannels());
@@ -63,7 +118,8 @@ public abstract class OggAudioParser extends AbstractParser {
     }
 
     protected static void extractComments(Metadata metadata, XHTMLContentHandler xhtml,
-            VorbisStyleComments comments) throws TikaException, SAXException {
+            VorbisStyleComments comments, ParseContext context)
+            throws IOException, TikaException, SAXException {
         // Get the specific known comments
         metadata.set(TikaCoreProperties.TITLE, comments.getTitle());
         metadata.set(TikaCoreProperties.CREATOR, comments.getArtist());
@@ -72,23 +128,32 @@ public abstract class OggAudioParser extends AbstractParser {
         metadata.set(XMPDM.GENRE, comments.getGenre());
         metadata.set(XMPDM.RELEASE_DATE, comments.getDate());
         metadata.add(XMP.CREATOR_TOOL, comments.getVendor());
-        metadata.add("vorbis:vendor", comments.getVendor());
+        metadata.add(VORBIS_VENDOR, comments.getVendor());
 
-        for (String comment : comments.getComments("comment")) {
-            metadata.add(XMPDM.LOG_COMMENT.getName(), comment);
+        //xmpDM:copyright is single-valued, so map the first comment; like
+        //vendor, the raw comments also stay available under the vorbis: name
+        List<String> copyrights = comments.getComments("copyright");
+        if (!copyrights.isEmpty()) {
+            metadata.set(XMPDM.COPYRIGHT, copyrights.get(0));
         }
 
-        // Grab the rest just in case
+        for (String comment : comments.getComments("comment")) {
+            metadata.add(XMPDM.LOG_COMMENT, comment);
+        }
+
+        // Grab the rest just in case; the pictures become embedded
+        //  documents instead, their raw base64 blocks help nobody
         List<String> done = Arrays.asList(
                 VorbisComments.KEY_TITLE, VorbisComments.KEY_ARTIST,
                 VorbisComments.KEY_ALBUM, VorbisComments.KEY_GENRE,
                 VorbisComments.KEY_DATE, VorbisComments.KEY_TRACKNUMBER,
-                "vendor", "comment"
+                "vendor", "comment", METADATA_BLOCK_PICTURE
         );
+        // BAG: a Vorbis comment field can legitimately repeat.
         for (String key : comments.getAllComments().keySet()) {
             if (!done.contains(key)) {
                 for (String value : comments.getAllComments().get(key)) {
-                    metadata.add("vorbis:" + key, value);
+                    metadata.add(VORBIS, key, value);
                 }
             }
         }
@@ -100,9 +165,39 @@ public abstract class OggAudioParser extends AbstractParser {
         // Album and Track number
         if (comments.getTrackNumber() != null) {
             xhtml.element("p", comments.getAlbum() + ", track " + comments.getTrackNumber());
-            metadata.set(XMPDM.TRACK_NUMBER, comments.getTrackNumber());
+            metadata.set(Audio.RAW_TRACK_NUMBER, comments.getTrackNumber());
+            NumberAndTotal trackNumberAndTotal = NumberAndTotal.parse(comments.getTrackNumber());
+            if (trackNumberAndTotal != null) {
+                if (trackNumberAndTotal.number != null) {
+                    metadata.set(XMPDM.TRACK_NUMBER, trackNumberAndTotal.number);
+                }
+                if (trackNumberAndTotal.total != null) {
+                    metadata.set(Audio.TRACK_COUNT, trackNumberAndTotal.total);
+                }
+            }
         } else {
             xhtml.element("p", comments.getAlbum());
+        }
+        for (String discValue : comments.getComments("discnumber")) {
+            metadata.set(Audio.RAW_DISC_NUMBER, discValue);
+            NumberAndTotal discNumberAndTotal = NumberAndTotal.parse(discValue);
+            if (discNumberAndTotal != null) {
+                if (discNumberAndTotal.number != null) {
+                    metadata.set(XMPDM.DISC_NUMBER, discNumberAndTotal.number);
+                }
+                if (discNumberAndTotal.total != null) {
+                    metadata.set(Audio.DISC_COUNT, discNumberAndTotal.total);
+                }
+            }
+        }
+        //explicit totals win over the combined "n/total" form
+        Integer trackTotal = firstPositiveInteger(comments, "tracktotal", "totaltracks");
+        if (trackTotal != null) {
+            metadata.set(Audio.TRACK_COUNT, trackTotal);
+        }
+        Integer discTotal = firstPositiveInteger(comments, "disctotal", "totaldiscs");
+        if (discTotal != null) {
+            metadata.set(Audio.DISC_COUNT, discTotal);
         }
 
         // A few other bits
@@ -111,6 +206,113 @@ public abstract class OggAudioParser extends AbstractParser {
             xhtml.element("p", comment);
         }
         xhtml.element("p", comments.getGenre());
+
+        // Any embedded pictures, such as cover art, become
+        //  embedded documents of the audio file
+        extractPictures(xhtml, comments, context);
+    }
+
+    /**
+     * Sends the embedded pictures, such as cover art, from the comments to
+     * the embedded document extractor. The pictures are carried as base64
+     * encoded FLAC picture blocks; malformed blocks are skipped silently.
+     * The pictures only become embedded documents, no metadata is recorded
+     * on the audio document itself.
+     */
+    private static void extractPictures(XHTMLContentHandler xhtml,
+            VorbisStyleComments comments, ParseContext context)
+            throws IOException, SAXException {
+        EmbeddedDocumentExtractor extractor = null;
+        for (String block : comments.getComments(METADATA_BLOCK_PICTURE)) {
+            byte[] decoded;
+            try {
+                decoded = Base64.getMimeDecoder().decode(block);
+            } catch (IllegalArgumentException e) {
+                //not valid base64, skip
+                continue;
+            }
+            if (extractor == null) {
+                extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+            }
+            extractPictureBlock(decoded, xhtml, context, extractor);
+        }
+    }
+
+    /**
+     * Parses one FLAC picture block and sends the picture it holds to the
+     * embedded document extractor. Native FLAC PICTURE metadata blocks use
+     * the very same structure, so {@link FlacParser} shares this method.
+     * Malformed or truncated blocks are skipped silently.
+     */
+    static void extractPictureBlock(byte[] block, XHTMLContentHandler xhtml,
+            ParseContext context, EmbeddedDocumentExtractor extractor)
+            throws IOException, SAXException {
+        // The picture block holds a 32 bit BE picture type, the mime
+        // type, the description, the image geometry and the picture
+        // data, with mime type, description and data length prefixed
+        int pictureType;
+        String mimeType;
+        String description;
+        byte[] picture;
+        try {
+            ByteBuffer buffer = ByteBuffer.wrap(block);
+            pictureType = buffer.getInt();
+            mimeType = getPrefixedString(buffer, StandardCharsets.ISO_8859_1);
+            if (mimeType == null || "-->".equals(mimeType)) {
+                // Malformed, or a link to a picture rather than an
+                // embedded one
+                return;
+            }
+            description = getPrefixedString(buffer, StandardCharsets.UTF_8);
+            if (description == null) {
+                return;
+            }
+            // Width, height, color depth and number of colors
+            buffer.position(buffer.position() + 16);
+            int dataLength = buffer.getInt();
+            if (dataLength <= 0 || dataLength > buffer.remaining()) {
+                return;
+            }
+            picture = new byte[dataLength];
+            buffer.get(picture);
+        } catch (BufferUnderflowException | IllegalArgumentException e) {
+            //truncated picture block, skip
+            return;
+        }
+
+        Metadata pictureMetadata = Metadata.newInstance(context);
+        pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+        if (!mimeType.isEmpty()) {
+            pictureMetadata.set(HttpHeaders.CONTENT_TYPE, mimeType);
+        }
+        if (!description.isEmpty()) {
+            pictureMetadata.set(TikaCoreProperties.TITLE, description);
+        }
+        //the FLAC picture block reuses the ID3v2 APIC picture types
+        if (pictureType >= 0 && pictureType < ID3Tags.PICTURE_TYPES.length) {
+            pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
+                    ID3Tags.PICTURE_TYPES[pictureType]);
+        }
+        if (extractor.shouldParseEmbedded(pictureMetadata, context)) {
+            try (TikaInputStream pictureStream = TikaInputStream.get(picture)) {
+                extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context, true);
+            }
+        }
+    }
+
+    /**
+     * Reads a 32 bit length prefixed string from the buffer, or null if the
+     * declared length is invalid for the remaining data.
+     */
+    private static String getPrefixedString(ByteBuffer buffer, Charset charset) {
+        int length = buffer.getInt();
+        if (length < 0 || length > buffer.remaining()) {
+            return null;
+        }
+        byte[] bytes = new byte[length];
+        buffer.get(bytes);
+        return new String(bytes, charset);
     }
 
     protected static void extractDuration(Metadata metadata, XHTMLContentHandler xhtml,
@@ -154,4 +356,5 @@ public abstract class OggAudioParser extends AbstractParser {
             return String.format(Locale.ROOT, "%d:%02d", minutes, seconds);
         }
     }
+
 }

@@ -441,17 +441,16 @@ public class ExtractComparer extends ProfilerBase {
 
     /**
      * Computes the hex-encoded digest of empty (zero-byte) content for the
-     * algorithm identified by the shared digest key (e.g. "X-TIKA:digest:MD5").
+     * algorithm identified by the shared digest key (e.g. "tk:digest:MD5").
      * Returns null if the algorithm cannot be resolved.
      */
     private static String computeEmptyDigest(String sharedDigestKey) {
         if (sharedDigestKey == null) {
             return null;
         }
-        // key format: "X-TIKA:digest:MD5" or "X-TIKA:digest:SHA256" etc.
         String algo = sharedDigestKey.substring(DIGEST_KEY_PREFIX.length());
-        // normalize common names to MessageDigest algorithm names
-        // e.g. SHA256 -> SHA-256
+        // Tika emits the MessageDigest name ("SHA-256"), but extracts may carry the
+        // hyphen-less spelling from an older release or a hand-written key.
         if (algo.matches("(?i)SHA(\\d+)")) {
             algo = algo.toUpperCase(Locale.ROOT).replaceFirst("SHA(\\d+)", "SHA-$1");
         }

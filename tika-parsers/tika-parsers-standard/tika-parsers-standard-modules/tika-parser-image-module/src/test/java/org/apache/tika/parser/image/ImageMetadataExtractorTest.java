@@ -28,11 +28,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
 
+import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
+import com.drew.metadata.exif.GpsDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -83,6 +85,28 @@ public class ImageMetadataExtractorTest {
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
         assertEquals("2000-01-01T00:00:00", metadata.get(TikaCoreProperties.CREATED),
                 "Should be ISO date without time zone");
+    }
+
+    @Test
+    public void testGeotagHandlerAltitude() throws MetadataException {
+        GpsDirectory gps = Mockito.mock(GpsDirectory.class);
+        Mockito.when(gps.getRational(GpsDirectory.TAG_ALTITUDE)).thenReturn(new Rational(2274, 10));
+        Mockito.when(gps.getInteger(GpsDirectory.TAG_ALTITUDE_REF)).thenReturn(0);
+        Metadata metadata = new Metadata();
+
+        new ImageMetadataExtractor.GeotagHandler().handle(gps, metadata);
+        assertEquals("227.4", metadata.get(TikaCoreProperties.ALTITUDE));
+    }
+
+    @Test
+    public void testGeotagHandlerAltitudeBelowSeaLevel() throws MetadataException {
+        GpsDirectory gps = Mockito.mock(GpsDirectory.class);
+        Mockito.when(gps.getRational(GpsDirectory.TAG_ALTITUDE)).thenReturn(new Rational(2274, 10));
+        Mockito.when(gps.getInteger(GpsDirectory.TAG_ALTITUDE_REF)).thenReturn(1);
+        Metadata metadata = new Metadata();
+
+        new ImageMetadataExtractor.GeotagHandler().handle(gps, metadata);
+        assertEquals("-227.4", metadata.get(TikaCoreProperties.ALTITUDE));
     }
 
     @Test

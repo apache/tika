@@ -29,6 +29,7 @@ import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
@@ -81,7 +82,7 @@ public class TXTParser extends AbstractEncodingDetectorParser {
                 metadata, getEncodingDetector(context))) {
             //try to get detected content type; could be a subclass of text/plain
             //such as vcal, etc.
-            String incomingMime = metadata.get(Metadata.CONTENT_TYPE);
+            String incomingMime = metadata.get(HttpHeaders.CONTENT_TYPE);
             MediaType mediaType = MediaType.TEXT_PLAIN;
             if (incomingMime != null) {
                 MediaType tmpMediaType = MediaType.parse(incomingMime);
@@ -91,9 +92,9 @@ public class TXTParser extends AbstractEncodingDetectorParser {
             }
             Charset charset = reader.getCharset();
             MediaType type = new MediaType(mediaType, charset);
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
             // deprecated, see TIKA-431
-            metadata.set(Metadata.CONTENT_ENCODING, charset.name());
+            metadata.set(HttpHeaders.CONTENT_ENCODING, charset.name());
 
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.core.serialization;
 
+import static org.apache.tika.pipes.core.serialization.WireTestUtil.root;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -62,7 +63,7 @@ public class WireRestrictedFetchEmitTupleTest {
     @Test
     public void asyncEndpointRejectsParserInjection() {
         Exception e = assertThrows(Exception.class,
-                () -> JsonFetchEmitTupleList.fromJson(new StringReader("[" + tuple(WIRE_BLOCKED_PARSE_CONTEXT) + "]")));
+                () -> JsonFetchEmitTupleList.fromJson(new StringReader("{\"tuples\":[" + tuple(WIRE_BLOCKED_PARSE_CONTEXT) + "]}")));
         assertTrue(root(e).contains("may not be supplied via a request parseContext"),
                 "expected wire-blocked rejection, got: " + root(e));
     }
@@ -97,13 +98,5 @@ public class WireRestrictedFetchEmitTupleTest {
                 () -> JsonPipesIpc.fromBytes(smile, FetchEmitTuple.class));
         assertTrue(root(e).contains("may not be supplied via a request parseContext"),
                 "expected wire-blocked rejection at fork IPC, got: " + root(e));
-    }
-
-    private static String root(Throwable t) {
-        Throwable r = t;
-        while (r.getCause() != null && r.getCause() != r) {
-            r = r.getCause();
-        }
-        return String.valueOf(r.getMessage());
     }
 }

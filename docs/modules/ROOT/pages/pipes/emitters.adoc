@@ -23,16 +23,16 @@ An *emitter* writes parse results to a destination — a file on disk, a row in 
 [#contract]
 == The Emitter Contract
 
-Each emitter implements `Emitter#emit(EmitData emitData)`, where `EmitData` carries the emit key, the parsed `Metadata`, and (for content-emitting strategies) the extracted content.
+Each emitter implements `Emitter#emit(String emitKey, List<Metadata> metadataList, ParseContext parseContext)` for a single document and `Emitter#emit(List<? extends EmitData>)` for a batch. Emitters that can also write raw bytes implement `StreamEmitter#emit(String emitKey, InputStream, Metadata, ParseContext)` — that is the path `CONTENT_ONLY` uses.
 
 The emit key is supplied by the iterator on each `FetchEmitTuple` and tells the emitter where to put the result. Its shape depends on the emitter:
 
 * file-system / S3 / GCS / Azure Blob — a key/path relative to `basePath` or `prefix`.
-* OpenSearch / Elasticsearch / Solr — the `_id` field value, taken from the metadata field named by the emitter's `idField`.
+* OpenSearch / Elasticsearch / Solr — the document ID. For OpenSearch and Elasticsearch it becomes `_id` directly; for Solr it is written into the field named by `idField`. Attachments get the emit key plus a random suffix.
 * JDBC — the value bound to the first `?` placeholder in the `insert` template.
 * Kafka — the Kafka record key.
 
-Emitters are intended to be safe under concurrent use; the pipeline's worker pool may call `emit()` from many threads.
+Emitters are intended to be safe under concurrent use; `emit()` may be called from many threads at once.
 
 [#wiring]
 == Wiring Emitters Into a Pipeline

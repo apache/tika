@@ -23,6 +23,7 @@ import java.nio.file.Path;
 
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -80,12 +81,10 @@ public class DigestHelper {
 
         Digester digester = digesterFactory.build();
 
-        // Handle embedded stream translation if needed (e.g., for OLE2 objects in TikaInputStream's
-        // open container). The translator consumes `tis` to produce the translated bytes that get
-        // digested, so we enableRewind() before and rewind() after — otherwise the caller (typically
-        // AutoDetectParser) would see an exhausted stream and fail its zero-byte probe (TIKA-XXXX).
+        // The translator consumes `tis` (e.g. OLE2), so enableRewind() before and rewind()
+        // after -- otherwise the caller would see an exhausted stream.
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
-            tis.enableRewind();
+            tis.enableRewind(context.get(CacheMemoryBudget.class));
             try (TemporaryResources tmp = new TemporaryResources()) {
                 Path tmpBytes = tmp.createTempFile();
                 try (OutputStream os = Files.newOutputStream(tmpBytes)) {

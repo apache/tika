@@ -49,6 +49,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -81,7 +82,7 @@ import org.apache.tika.utils.ProcessUtils;
  * <p>
  * int : cleanDwgReadOutputBatchSize - clean output batch size to process 
  * <p>
- * long : dwgReadTimeout -timeout in milliseconds before killing the dwgread process
+ * long : timeoutMillis -timeout in milliseconds before killing the dwgread process
  * <p>
  * String : cleanDwgReadRegexToReplace - characters to replace in the json 
  * <p>
@@ -122,7 +123,7 @@ public class DWGReadParser extends AbstractDWGParser {
                     tmpFileOut.getCanonicalPath(), tmpFileIn.getCanonicalPath());
             ProcessBuilder pb = new ProcessBuilder().command(command);
             LOG.debug("About to call DWGRead: {}", command);
-            FileProcessResult fpr = ProcessUtils.execute(pb, dwgc.getDwgReadTimeout(), 10000, 10000);
+            FileProcessResult fpr = ProcessUtils.execute(pb, context, dwgc.getTimeoutMillis(), 10000, 10000);
             LOG.debug("DWGRead Exit code is: {}", fpr.getExitValue());
             if (fpr.getExitValue() == 0) {
                 if (dwgc.isCleanDwgReadOutput()) {
@@ -165,8 +166,8 @@ public class DWGReadParser extends AbstractDWGParser {
                             + "if json parsing fails consider reviewing dwgread json output to check it's valid");
                 }
             } else if (fpr.isTimeout()) {
-                throw new TikaException(
-                        "DWGRead Failed - Timeout setting exceeded current setting of " + dwgc.getDwgReadTimeout() );
+                throw new TikaTimeoutException("DWGRead timed out",
+                        fpr.getRequestedTimeoutMillis(), fpr.getGrantedTimeoutMillis());
             }
             else {
                 throw new TikaException(
@@ -294,7 +295,7 @@ public class DWGReadParser extends AbstractDWGParser {
                 if (nextToken.isStructStart()) {
                     jsonParser.skipChildren();
                 } else if (nextToken.isScalarValue()) {
-                    metadata.set("dwg:" + nextFieldName, jsonParser.getText());
+                    metadata.add(DWG.RAW_FIELD, nextFieldName, jsonParser.getText());
                 }
             }
         }
@@ -347,7 +348,7 @@ public class DWGReadParser extends AbstractDWGParser {
                         } else if ("HYPERLINKBASE".equals(nextFieldName)) {
                             metadata.set(TikaCoreProperties.RELATION, textVal);
                         } else if (!Strings.CI.startsWith(nextFieldName, "unknown")) {
-                            metadata.set("dwg:" + nextFieldName, textVal);
+                            metadata.add(DWG.RAW_FIELD, nextFieldName, textVal);
                         }
                     }
                 }
@@ -418,7 +419,7 @@ public class DWGReadParser extends AbstractDWGParser {
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "thumbnail");
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             return;
         }
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {

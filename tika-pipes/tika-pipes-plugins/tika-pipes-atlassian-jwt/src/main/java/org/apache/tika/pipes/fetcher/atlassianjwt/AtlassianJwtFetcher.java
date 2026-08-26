@@ -27,6 +27,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Timer;
@@ -123,6 +124,7 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
         if (config.getMaxConnectionsPerRoute() != null) {
             httpClientFactory.setMaxConnectionsPerRoute(config.getMaxConnectionsPerRoute());
         }
+        httpClientFactory.setVerifySsl(config.isVerifySsl());
 
         // Initialize HTTP client
         httpClient = httpClientFactory.build();
@@ -136,6 +138,10 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
                     config.getIssuer(), config.getSubject(),
                     config.getJwtExpiresInSeconds());
         }
+    }
+
+    public HttpClientFactory getHttpClientFactory() {
+        return httpClientFactory;
     }
 
     @Override
@@ -237,20 +243,31 @@ public class AtlassianJwtFetcher extends AbstractTikaExtension implements Fetche
     private TikaInputStream spool(InputStream content, Metadata metadata) throws IOException {
         long start = System.currentTimeMillis();
         TemporaryResources tmp = new TemporaryResources();
-        Path tmpFile = tmp.createTempFile(metadata);
-        if (config.getMaxSpoolSize() < 0) {
-            Files.copy(content, tmpFile);
-        } else {
-            try (OutputStream os = Files.newOutputStream(tmpFile)) {
-                long totalRead = IOUtils.copyLarge(content, os, 0, config.getMaxSpoolSize());
-                if (totalRead == config.getMaxSpoolSize() && content.read() != -1) {
-                    metadata.set(HTTP_FETCH_TRUNCATED, true);
+        try {
+            Path tmpFile = tmp.createTempFile(metadata);
+            if (config.getMaxSpoolSize() < 0) {
+                // createTempFile already created the file
+                Files.copy(content, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                try (OutputStream os = Files.newOutputStream(tmpFile)) {
+                    long totalRead = IOUtils.copyLarge(content, os, 0, config.getMaxSpoolSize());
+                    if (totalRead == config.getMaxSpoolSize() && content.read() != -1) {
+                        metadata.set(HTTP_FETCH_TRUNCATED, true);
+                    }
                 }
             }
+            long elapsed = System.currentTimeMillis() - start;
+            LOG.debug("took {} ms to copy to local tmp file", elapsed);
+            return TikaInputStream.get(tmpFile, metadata, tmp);
+        } catch (Throwable t) {
+            // a failed copy must not orphan the temp file, and a close failure must not hide why
+            try {
+                tmp.close();
+            } catch (IOException e) {
+                t.addSuppressed(e);
+            }
+            throw t;
         }
-        long elapsed = System.currentTimeMillis() - start;
-        LOG.debug("took {} ms to copy to local tmp file", elapsed);
-        return TikaInputStream.get(tmpFile);
     }
 
     private void updateMetadata(String url, HttpResponse response, HttpClientContext context,

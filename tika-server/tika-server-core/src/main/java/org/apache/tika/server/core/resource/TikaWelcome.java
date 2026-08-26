@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jakarta.ws.rs.DELETE;
@@ -47,7 +46,11 @@ import org.apache.tika.server.core.HTMLHelper;
  */
 @Path("/")
 public class TikaWelcome {
-    private static final String DOCS_URL = "https://wiki.apache.org/tika/TikaJAXRS";
+    private static final String DOCS_URL = "https://tika.apache.org/";
+
+    /** Matches {@code {name : regex}} in a JAX-RS path, capturing the parameter name. */
+    private static final Pattern PATH_TEMPLATE_REGEX =
+            Pattern.compile("\\{\\s*(\\w+)\\s*:[^}]*}");
 
     private static final Map<Class<? extends Annotation>, String> HTTP_METHODS = new HashMap<>();
 
@@ -144,33 +147,25 @@ public class TikaWelcome {
         h.append("\">");
         h.append(DOCS_URL);
         h.append("</a>");
-
-        // TIKA-1269 -- Miredot documentation
-        // As the SNAPSHOT endpoints are updated, please update the website by running
-        // the server tests and doing step 12.6 of https://wiki.apache.org/tika/ReleaseProcess.
-        Pattern p = Pattern.compile("\\d+\\.\\d+");
-        Matcher m = p.matcher(tikaVersion);
-        if (m.find()) {
-            String versionNumber = m.group();
-            String miredot = "https://tika.apache.org/" + versionNumber + "/miredot/index.html";
-            h
-                    .append(" and <a href=\"")
-                    .append(miredot)
-                    .append("\">")
-                    .append(miredot)
-                    .append("</a>");
-        }
         h.append("</p>\n");
 
         h.append("<ul>\n");
         for (Endpoint e : identifyEndpoints()) {
+            String displayPath = simplifyPathTemplate(e.path);
             h.append("<li><b>");
             h.append(e.httpMethod);
-            h.append("</b> <i><a href=\"");
-            h.append(e.path);
-            h.append("\">");
-            h.append(e.path);
-            h.append("</a></i><br />");
+            h.append("</b> <i>");
+            // Only linkify concrete paths; one with a {param} is not fetchable as written.
+            if (displayPath.indexOf('{') < 0) {
+                h.append("<a href=\"");
+                h.append(displayPath);
+                h.append("\">");
+                h.append(displayPath);
+                h.append("</a>");
+            } else {
+                h.append(displayPath);
+            }
+            h.append("</i><br />");
             h.append("Class: ");
             h.append(e.className);
             h.append("<br />Method: ");
@@ -211,6 +206,17 @@ public class TikaWelcome {
         }
 
         return text.toString();
+    }
+
+    /**
+     * Strips the regex from a JAX-RS path template so {@code /rmeta/{handler : (\w+)?}}
+     * renders as {@code /rmeta/{handler}}.
+     */
+    static String simplifyPathTemplate(String path) {
+        if (path == null || path.indexOf('{') < 0) {
+            return path;
+        }
+        return PATH_TEMPLATE_REGEX.matcher(path).replaceAll("{$1}");
     }
 
     protected static class Endpoint {

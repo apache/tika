@@ -17,9 +17,7 @@
 package org.apache.tika.server.core.resource;
 
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
-import static org.apache.tika.server.core.resource.TikaResource.setupMultipartConfig;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -38,28 +36,51 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
+import org.apache.tika.extractor.SkipEmbeddedDocumentSelector;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.language.detect.LanguageHandler;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
+import org.apache.tika.pipes.api.ParseMode;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.server.core.TikaServerParseException;
 
 
 @Path("/meta")
 public class MetadataResource {
     private static final Logger LOG = LoggerFactory.getLogger(MetadataResource.class);
 
+    private TikaResource tikaResource;
+
+    public MetadataResource(TikaResource tikaResource) {
+        this.tikaResource = tikaResource;
+    }
+
+    /** For subclasses the service loader constructs; see {@link TikaResourceAware}. */
+    protected MetadataResource() {
+    }
+
+    /** For subclasses in other modules; they need it for request contexts and metadata. */
+    protected TikaResource getTikaResource() {
+        return tikaResource;
+    }
+
+    protected void setTikaResource(TikaResource tikaResource) {
+        this.tikaResource = tikaResource;
+    }
+
     @POST
     @Consumes("multipart/form-data")
-    @Produces({"text/csv", "application/json"})
+    @Produces({"application/json", "text/csv;charset=UTF-8"})
     @Path("form")
     public Response getMetadataFromMultipart(Attachment att, @Context UriInfo info) throws Exception {
-        ParseContext context = TikaResource.createParseContext();
+        ParseContext context = tikaResource.createRequestContext();
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
             return Response
-                    .ok(parseMetadata(tis, Metadata.newInstance(context), att.getHeaders(), info))
+                    .ok(parseMetadata(tis, tikaResource.newRequestMetadata(), att.getHeaders(), context))
                     .build();
         }
     }
@@ -70,51 +91,41 @@ public class MetadataResource {
      */
     @POST
     @Consumes("multipart/form-data")
-    @Produces({"text/csv", "application/json"})
+    @Produces({"application/json", "text/csv;charset=UTF-8"})
     @Path("config")
     public Response getMetadataWithConfig(
             List<Attachment> attachments,
-            @Context HttpHeaders httpHeaders,
-            @Context UriInfo info) throws Exception {
+            @Context HttpHeaders httpHeaders) throws Exception {
 
         // Load default context from config, then overlay with request config
-        ParseContext context = TikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
-        try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
-            // No need to parse embedded docs for metadata-only extraction
-            context.set(DocumentSelector.class, metadata1 -> false);
-
-            Parser parser = TikaResource.createParser();
+        ParseContext context = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
+        try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, context)) {
             TikaResource.logRequest(LOG, "/meta/config", metadata);
-            TikaResource.parse(parser, LOG, info.getPath(), tis, new LanguageHandler() {
-                public void endDocument() {
-                    metadata.set("language", getLanguage().getLanguage());
-                }
-            }, metadata, context);
-
-            return Response.ok(metadata).build();
+            // Null headers: multipart request headers describe the envelope and would
+            // overwrite the Content-Type/Content-Length derived from the file part.
+            return Response.ok(parseMetadata(tis, metadata, null, context)).build();
         }
     }
 
     @PUT
-    @Produces({"text/csv", "application/json"})
+    @Produces({"application/json", "text/csv;charset=UTF-8"})
     public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        ParseContext context = TikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
+        ParseContext context = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             return Response
-                    .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info))
+                    .ok(parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), context))
                     .build();
         }
     }
 
     /**
-     * Get a specific metadata field. If the input stream cannot be parsed, but a
-     * value was found for the given metadata field, then the value of the field
-     * is returned as part of a 200 OK response; otherwise a
-     * {@link javax.ws.rs.core.Response.Status#BAD_REQUEST} is generated. If the stream
-     * was successfully parsed but the specific metadata field was not found, then a
-     * {@link javax.ws.rs.core.Response.Status#NOT_FOUND} is returned.
+     * Get a specific metadata field. If the document parses successfully but the
+     * specific metadata field was not found, a
+     * {@link javax.ws.rs.core.Response.Status#NOT_FOUND} is returned. Unlike the other
+     * /meta endpoints, a bare field value has no envelope to embed a container-level
+     * exception in, so that case is thrown (422) instead.
      * <p/>
      * Note that this method handles multivalue fields and returns possibly more
      * metadata value than requested.
@@ -126,35 +137,28 @@ public class MetadataResource {
      * @param httpHeaders httpheaders
      * @param info        info
      * @param field       the tika metadata field name
-     * @return one of {@link javax.ws.rs.core.Response.Status#OK},
-     * {@link javax.ws.rs.core.Response.Status#NOT_FOUND}, or
-     * {@link javax.ws.rs.core.Response.Status#BAD_REQUEST}
+     * @return one of {@link javax.ws.rs.core.Response.Status#OK} or
+     * {@link javax.ws.rs.core.Response.Status#NOT_FOUND}
      * @throws Exception
      */
     @PUT
     @Path("{field}")
-    @Produces({"text/csv", "application/json", "text/plain"})
+    @Produces({"application/json", "text/csv;charset=UTF-8", "text/plain;charset=UTF-8"})
     public Response getMetadataField(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info, @PathParam("field") String field) throws Exception {
-
-        // use BAD request to indicate that we may not have had enough data to
-        // process the request
-        Response.Status defaultErrorResponse = Response.Status.BAD_REQUEST;
-        ParseContext context = TikaResource.createParseContext();
-        Metadata metadata = Metadata.newInstance(context);
-        boolean success = false;
+        ParseContext context = tikaResource.createRequestContext();
+        Metadata metadata;
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(), info);
-            // once we've parsed the document successfully, we should use NOT_FOUND
-            // if we did not see the field
-            defaultErrorResponse = Response.Status.NOT_FOUND;
-            success = true;
-        } catch (Exception e) {
-            LOG.warn("Failed to process field {}", field, e);
+            metadata = parseMetadata(tis, tikaResource.newRequestMetadata(), httpHeaders.getRequestHeaders(), context);
         }
 
-        if (success == false || metadata.get(field) == null) {
+        String containerException = metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
+        if (containerException != null && !containerException.isEmpty()) {
+            throw new TikaServerParseException(new TikaException(containerException));
+        }
+
+        if (metadata.get(field) == null) {
             return Response
-                    .status(defaultErrorResponse)
+                    .status(Response.Status.NOT_FOUND)
                     .entity("Failed to get metadata field " + field)
                     .build();
         }
@@ -170,21 +174,30 @@ public class MetadataResource {
                 .build();
     }
 
-    protected Metadata parseMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, UriInfo info)
-            throws IOException, TikaConfigException {
-        // Load default context from config (includes DigesterFactory from parse-context)
-        final ParseContext context = TikaResource.createParseContext();
-        Parser parser = TikaResource.createParser();
-        fillMetadata(parser, metadata, httpHeaders);
-        //no need to parse embedded docs
-        context.set(DocumentSelector.class, metadata1 -> false);
+    /**
+     * Parses via the shared pipes-backed PipesParser, stopping at the container document
+     * (SkipEmbeddedDocumentSelector) with content capture off ("ignore" handler) -- metadata
+     * only, matching /meta's contract. Set unconditionally so per-request config can't
+     * turn content capture back on. A container-level exception is embedded in
+     * CONTAINER_EXCEPTION here, not thrown; getMetadataField throws instead since it
+     * returns a bare scalar with nowhere to embed it.
+     */
+    protected Metadata parseMetadata(TikaInputStream tis, Metadata metadata, MultivaluedMap<String, String> httpHeaders, ParseContext context)
+            throws Exception {
+        if (httpHeaders != null) {
+            fillMetadata(null, metadata, httpHeaders);
+        }
+        // Selector, not EmbeddedLimits(maxDepth=0): reaching a limit is recorded, so a depth
+        // limit would stamp tk:exception:embedded-depth-limit-reached on every container.
+        context.set(DocumentSelector.class, new SkipEmbeddedDocumentSelector());
+        context.set(ContentHandlerFactory.class,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
 
         TikaResource.logRequest(LOG, "/meta", metadata);
-        TikaResource.parse(parser, LOG, info.getPath(), tis, new LanguageHandler() {
-            public void endDocument() {
-                metadata.set("language", getLanguage().getLanguage());
-            }
-        }, metadata, context);
-        return metadata;
+        List<Metadata> metadataList = tikaResource.parseWithPipes(tis, metadata, context, ParseMode.RMETA);
+        if (metadataList.isEmpty()) {
+            return tikaResource.newRequestMetadata();
+        }
+        return metadataList.get(0);
     }
 }

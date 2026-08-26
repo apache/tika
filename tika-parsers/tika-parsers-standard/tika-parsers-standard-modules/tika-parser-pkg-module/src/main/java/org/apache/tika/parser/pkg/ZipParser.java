@@ -20,7 +20,6 @@ import static org.apache.tika.detect.zip.PackageConstants.JAR;
 import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.attribute.FileTime;
@@ -54,6 +53,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.Zip;
@@ -61,6 +61,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ParserUtils;
+import org.apache.tika.zip.utils.ZipFileHelper;
 
 /**
  * Parser for ZIP and JAR archives using file-based access for complete metadata extraction.
@@ -228,11 +229,7 @@ public class ZipParser extends AbstractArchiveParser {
         // This handles cases where parser is called without detector
         ZipFile zipFile = null;
         try {
-            ZipFile.Builder builder = ZipFile.builder().setFile(tis.getFile());
-            if (config.getEntryEncoding() != null) {
-                builder.setCharset(config.getEntryEncoding());
-            }
-            zipFile = builder.get();
+            zipFile = ZipFileHelper.open(tis, config.getEntryEncoding());
             tis.setOpenContainer(zipFile);
         } catch (IOException e) {
             // ZipFile failed - fall back to streaming
@@ -446,20 +443,20 @@ public class ZipParser extends AbstractArchiveParser {
     }
 
     private void setMediaTypeIfNotSpecialization(Metadata metadata, MediaType type) {
-        String incomingContentTypeString = metadata.get(Metadata.CONTENT_TYPE);
+        String incomingContentTypeString = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (incomingContentTypeString == null) {
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
             return;
         }
 
         MediaType incomingMediaType = MediaType.parse(incomingContentTypeString);
         if (incomingMediaType == null) {
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
             return;
         }
 
         if (!ZIP_SPECIALIZATIONS.contains(incomingMediaType)) {
-            metadata.set(Metadata.CONTENT_TYPE, type.toString());
+            metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
         }
     }
 
@@ -495,11 +492,13 @@ public class ZipParser extends AbstractArchiveParser {
 
         writeEntryXhtml(name, xhtml);
 
-        if (extractor.shouldParseEmbedded(entryMetadata)) {
+        if (extractor.shouldParseEmbedded(entryMetadata, context)) {
             TemporaryResources tmp = new TemporaryResources();
-            try (InputStream entryStream = zipFile.getInputStream(entry)) {
-                TikaInputStream tis = TikaInputStream.get(entryStream, tmp, entryMetadata);
-                extractor.parseEmbedded(tis, xhtml, entryMetadata, new ParseContext(), true);
+            // Re-openable source: rewind (e.g. for digesting) re-opens the entry instead of
+            // buffering/spilling it
+            try (TikaInputStream tis = TikaInputStream.get(
+                    () -> zipFile.getInputStream(entry), tmp, entryMetadata)) {
+                extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);
             } catch (UnsupportedZipFeatureException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             } finally {
@@ -537,11 +536,11 @@ public class ZipParser extends AbstractArchiveParser {
 
         writeEntryXhtml(name, xhtml);
 
-        if (extractor.shouldParseEmbedded(entryMetadata)) {
+        if (extractor.shouldParseEmbedded(entryMetadata, context)) {
             TemporaryResources tmp = new TemporaryResources();
             try {
                 TikaInputStream tis = TikaInputStream.get(zis, tmp, entryMetadata);
-                extractor.parseEmbedded(tis, xhtml, entryMetadata, new ParseContext(), true);
+                extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);
             } catch (UnsupportedZipFeatureException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
             } finally {
@@ -623,7 +622,7 @@ public class ZipParser extends AbstractArchiveParser {
 
         long size = entry.getSize();
         if (size >= 0) {
-            entryMetadata.set(Metadata.CONTENT_LENGTH, Long.toString(size));
+            entryMetadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(size));
             entryMetadata.set(Zip.UNCOMPRESSED_SIZE, Long.toString(size));
         }
         long compressedSize = entry.getCompressedSize();

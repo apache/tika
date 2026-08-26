@@ -32,6 +32,8 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
@@ -59,7 +61,7 @@ public class VorbisParser extends OggAudioParser {
     public void parse(TikaInputStream tis, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
-        metadata.set(Metadata.CONTENT_TYPE, OGG_VORBIS.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, OGG_VORBIS.toString());
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "Vorbis");
 
         // Open and process the files
@@ -74,7 +76,7 @@ public class VorbisParser extends OggAudioParser {
         extractInfo(metadata, vorbis.getInfo());
 
         // Extract any Vorbis comments
-        extractComments(metadata, xhtml, vorbis.getComment());
+        extractComments(metadata, xhtml, vorbis.getComment(), context);
 
         // Extract the audio length
         extractDuration(metadata, xhtml, vorbis, vorbis);
@@ -86,7 +88,24 @@ public class VorbisParser extends OggAudioParser {
 
     protected void extractInfo(Metadata metadata, VorbisInfo info) throws TikaException {
         metadata.set(XMPDM.AUDIO_SAMPLE_RATE, (int) info.getRate());
-        metadata.add("version", "Vorbis " + info.getVersion());
+        metadata.add(CODEC_VERSION, "Vorbis " + info.getVersion());
+
+        int upper = info.getBitrateUpper();
+        int nominal = info.getBitrateNominal();
+        int lower = info.getBitrateLower();
+        if (nominal > 0 || upper > 0 || lower > 0) {
+            if (nominal > 0) {
+                metadata.set(Audio.BITRATE, nominal);
+            } else if (upper > 0 && upper == lower) {
+                //a zero-width bitrate bracket declares an exact rate as well
+                metadata.set(Audio.BITRATE, upper);
+            }
+            //fixed rate when all three declared rates agree, or when a
+            //zero-width bracket is declared without a nominal rate
+            boolean fixedRate = (nominal > 0 && upper == nominal && lower == nominal)
+                    || (nominal <= 0 && upper > 0 && upper == lower);
+            metadata.set(Audio.IS_VARIABLE_BITRATE, !fixedRate);
+        }
 
         extractChannelInfo(metadata, info);
     }

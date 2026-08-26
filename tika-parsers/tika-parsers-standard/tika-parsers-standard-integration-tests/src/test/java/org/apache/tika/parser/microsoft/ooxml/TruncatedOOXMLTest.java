@@ -28,6 +28,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -42,7 +43,7 @@ public class TruncatedOOXMLTest extends TikaTest {
                 getRecursiveMetadata(truncate("testWORD_various.docx", 13138), true);
         assertEquals(19, metadataList.size());
         Metadata m = metadataList.get(0);
-        assertEquals("application/x-tika-ooxml", m.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-tika-ooxml", m.get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
@@ -53,15 +54,15 @@ public class TruncatedOOXMLTest extends TikaTest {
 
         /* for debuging problems in commons compress 1.25.0 -> 1.26.0
         metadataList.forEach(m -> {
-            System.out.println("depth: " + m.get("X-TIKA:embedded_depth"));
+            System.out.println("depth: " + m.get("tk:embedded-depth"));
             System.out.println("relid: " + m.get("embeddedRelationshipId"));
             System.out.println("res:   " + m.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-            System.out.println("cont:  " + m.get("X-TIKA:content"));
+            System.out.println("cont:  " + m.get("tk:content"));
         });
         */
         assertEquals(4, metadataList.size());
         Metadata m = metadataList.get(0);
-        assertEquals("application/x-tika-ooxml", m.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-tika-ooxml", m.get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test

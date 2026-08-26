@@ -17,13 +17,36 @@
 package org.apache.tika.parser.video;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.Tika;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 
 public class FLVParserTest {
+
+    /**
+     * Deeply nested AMF objects used to recurse in readAMFData until the stack
+     * overflowed (an uncaught Error); the reader must bound the nesting depth.
+     */
+    @Test
+    public void testAmfNestingIsBounded() throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write(3); //top-level AMF object marker
+        for (int i = 0; i < 100_000; i++) {
+            bos.write(new byte[]{0, 0}); //empty key (uint16 length 0)
+            bos.write(3);                //value type = object -> recurse
+        }
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(bos.toByteArray()));
+        assertThrows(IOException.class, () -> new FLVParser().readAMFData(dis, -1));
+    }
 
     @Test
     public void testFLV() throws Exception {
@@ -34,7 +57,7 @@ public class FLVParserTest {
                 new Tika().parseToString(FLVParserTest.class.getResourceAsStream(path), metadata);
 
         assertEquals("", content);
-        assertEquals("video/x-flv", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("video/x-flv", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("true", metadata.get("flv:hasVideo"));
         assertEquals("false", metadata.get("flv:stereo"));
         assertEquals("true", metadata.get("flv:hasAudio"));

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.datauri;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Objects;
@@ -37,8 +38,13 @@ public class DataURIScheme {
         this.data = data;
     }
 
-    public InputStream getInputStream() {
-        return new UnsynchronizedByteArrayInputStream(data);
+    /**
+     * @return the data as an InputStream.
+     *
+     * @throws IOException doesn't happen, the implementation doesn't throw an IOException.
+     */
+    public InputStream getInputStream() throws IOException {
+        return UnsynchronizedByteArrayInputStream.builder().setByteArray(data).get();
     }
 
     /**

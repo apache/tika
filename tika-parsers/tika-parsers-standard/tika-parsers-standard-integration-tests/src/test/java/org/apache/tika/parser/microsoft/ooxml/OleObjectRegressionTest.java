@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.digest.DigesterFactory;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -79,7 +80,7 @@ public class OleObjectRegressionTest extends TikaTest {
         // Sanity check that the digester actually ran (so we know the test is exercising
         // the digest code path).
         long digested = list.stream()
-                .filter(m -> m.get("X-TIKA:digest:MD5") != null)
+                .filter(m -> m.get("tk:digest:MD5") != null)
                 .count();
         assertTrue(digested > 0,
                 "expected the digester to have computed at least one MD5; "
@@ -89,7 +90,7 @@ public class OleObjectRegressionTest extends TikaTest {
     private static void assertOleGraphPresent(List<Metadata> list) {
         List<String> contentTypes = list.stream()
                 .map(m -> m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH) + " -> "
-                        + m.get(Metadata.CONTENT_TYPE))
+                        + m.get(HttpHeaders.CONTENT_TYPE))
                 .collect(Collectors.toList());
 
         // testWPSAttachment.docx has three "raw OLE2" embeds at /oleObject{4,6,8}.bin
@@ -102,15 +103,15 @@ public class OleObjectRegressionTest extends TikaTest {
                     .findFirst()
                     .orElse(null);
             assertTrue(m != null, "expected " + n + " to be present; items=" + contentTypes);
-            String ct = m.get(Metadata.CONTENT_TYPE);
+            String ct = m.get(HttpHeaders.CONTENT_TYPE);
             assertTrue(ct != null
                             && !ct.toLowerCase(java.util.Locale.ROOT)
                                     .contains("openxmlformats-officedocument.oleobject"),
                     "expected " + n + " to be detected as its inner POIFS type, not "
                             + "as the dead-end oleobject mime; ct=" + ct);
-            assertNull(m.get("X-TIKA:EXCEPTION:embedded_exception"),
+            assertNull(m.get("tk:exception:embedded-exception"),
                     "expected no embedded_exception on " + n
-                            + "; got: " + m.get("X-TIKA:EXCEPTION:embedded_exception"));
+                            + "; got: " + m.get("tk:exception:embedded-exception"));
         }
     }
 }

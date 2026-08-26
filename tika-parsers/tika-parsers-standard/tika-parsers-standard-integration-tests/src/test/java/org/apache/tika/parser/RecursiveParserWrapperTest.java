@@ -42,7 +42,6 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -292,7 +291,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
             assertEquals(totalNoLimit, list.size());
 
             limitReached = list.get(0)
-                    .get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED);
+                    .get(TikaCoreProperties.EMBEDDED_RESOURCE_LIMIT_REACHED);
             assertNull(limitReached);
         }
 
@@ -311,7 +310,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
             assertEquals(maxEmbedded + 1, list.size());
 
             limitReached = list.get(0)
-                    .get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED);
+                    .get(TikaCoreProperties.EMBEDDED_RESOURCE_LIMIT_REACHED);
             assertEquals("true", limitReached);
         }
 
@@ -324,7 +323,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
             List<Metadata> list = handler.getMetadataList();
             assertEquals(totalNoLimit, list.size());
             limitReached = list.get(0)
-                    .get(AbstractRecursiveParserWrapperHandler.EMBEDDED_RESOURCE_LIMIT_REACHED);
+                    .get(TikaCoreProperties.EMBEDDED_RESOURCE_LIMIT_REACHED);
             assertNull(limitReached);
         }
     }
@@ -441,7 +440,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1),
                 true, true);
 
-        String md5Key = "X-TIKA:digest:MD5";
+        String md5Key = "tk:digest:MD5";
         assertEquals("59f626e09a8c16ab6dbc2800c685f772", list.get(0).get(md5Key));
         assertEquals("ccdf3882e7e4c2454e28884db9b0a54d", list.get(6).get(md5Key));
         assertEquals("a869bf6432ebd14e19fc79416274e0c9", list.get(7).get(md5Key));
@@ -456,9 +455,7 @@ public class RecursiveParserWrapperTest extends TikaTest {
 
     @Test
     public void testStreamClosedAfterSpill() throws Exception {
-        // When TikaInputStream spills to a temp file (via getPath()/getFile()),
-        // the source stream should be closed promptly since all bytes have been
-        // consumed and cached - there's no reason to keep it open.
+        // Spill must not close the source early; close() must reach it exactly once.
         ParseContext context = new ParseContext();
         Metadata metadata = new Metadata();
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER, true);
@@ -473,10 +470,11 @@ public class RecursiveParserWrapperTest extends TikaTest {
             TikaInputStream tis = TikaInputStream.get(stream);
             tis.setCloseShield();
             wrapper.parse(tis, handler, metadata, context);
-            // Source stream should not be closed after spilling to file
             assertEquals(0, stream.counter);
             tis.removeCloseShield();
             tis.close();
+            // close() must reach the source, spill or no spill
+            assertEquals(1, stream.counter);
         }
 
     }

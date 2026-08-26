@@ -28,8 +28,10 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -62,7 +64,7 @@ class RTFEmbObjHandler {
     private static final String EMPTY_STRING = "";
     private final ContentHandler handler;
     private final ParseContext context;
-    private final EmbeddedDocumentUtil embeddedDocumentUtil;
+    private final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     private final UnsynchronizedByteArrayOutputStream os;
     private final int memoryLimitInKb;
 
@@ -83,7 +85,7 @@ class RTFEmbObjHandler {
                                int memoryLimitInKb) {
         this.handler = handler;
         this.context = context;
-        this.embeddedDocumentUtil = new EmbeddedDocumentUtil(context);
+        this.embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         os = UnsynchronizedByteArrayOutputStream.builder().get();
         this.memoryLimitInKb = memoryLimitInKb;
     }
@@ -100,7 +102,6 @@ class RTFEmbObjHandler {
 
     protected void startSN() {
         sb.setLength(0);
-        sb.append(RTFMetadata.RTF_PICT_META_PREFIX);
     }
 
     protected void endSN() {
@@ -117,7 +118,9 @@ class RTFEmbObjHandler {
 
     //end metadata pair
     protected void endSP() {
-        metadata.add(sn, sv);
+        //sn is document-controlled (RTF shape-property name); may repeat
+        //across multiple {\sp...} pairs in one \pict group
+        metadata.add(RTFMetadata.PICT, sn, sv);
     }
 
     protected boolean getInObject() {
@@ -217,12 +220,12 @@ class RTFEmbObjHandler {
             return;
         }
 
-        metadata.set(Metadata.CONTENT_LENGTH, Integer.toString(bytes.length));
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(bytes.length));
 
-        if (embeddedDocumentUtil.shouldParseEmbedded(metadata)) {
+        if (embeddedDocumentExtractor.shouldParseEmbedded(metadata, context)) {
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                 if (metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY) == null) {
-                    String extension = embeddedDocumentUtil.getExtension(tis, metadata);
+                    String extension = EmbeddedDocumentUtil.getExtension(tis, metadata, context);
                     if (inObject && state == EMB_STATE.PICT) {
                         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                                 EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL.getPrefix()
@@ -245,9 +248,9 @@ class RTFEmbObjHandler {
                 // endDocument. Same shape as the SXWPF / Epub catch arms.
                 XHTMLBalancingHandler balancer = new XHTMLBalancingHandler(handler);
                 try {
-                    embeddedDocumentUtil
+                    embeddedDocumentExtractor
                             .parseEmbedded(tis, new EmbeddedContentHandler(balancer), metadata,
-                                    true);
+                                    context, true);
                 } catch (IOException e) {
                     balancer.drainOpenElements();
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);

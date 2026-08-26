@@ -94,7 +94,7 @@ public final class CjkDecodeValidator {
                 i++;
                 continue;
             }
-            int ulen = utf8SequenceLength(bytes, i);
+            int ulen = StructuralEncodingRules.utf8SequenceLength(bytes, i);
             if (ulen > 0) {
                 nUtf8Seqs++;
                 i += ulen; // embedded UTF-8 — not legacy content, skip
@@ -136,30 +136,4 @@ public final class CjkDecodeValidator {
                 || name.contains("shift") || name.contains("jis") || name.contains("949");
     }
 
-    /** Length (2/3/4) of a valid UTF-8 multi-byte sequence starting at {@code i},
-     *  or 0 if none.  Lead-byte ranges exclude overlong 2-byte (C0/C1) and
-     *  out-of-range (≥F5) leads; continuations must be 0x80–0xBF. */
-    static int utf8SequenceLength(byte[] b, int i) {
-        int x = b[i] & 0xFF;
-        int len;
-        if (x >= 0xC2 && x <= 0xDF) {
-            len = 2;
-        } else if (x >= 0xE0 && x <= 0xEF) {
-            len = 3;
-        } else if (x >= 0xF0 && x <= 0xF4) {
-            len = 4;
-        } else {
-            return 0;
-        }
-        if (i + len > b.length) {
-            return 0;
-        }
-        for (int k = 1; k < len; k++) {
-            int c = b[i + k] & 0xFF;
-            if (c < 0x80 || c > 0xBF) {
-                return 0;
-            }
-        }
-        return len;
-    }
 }

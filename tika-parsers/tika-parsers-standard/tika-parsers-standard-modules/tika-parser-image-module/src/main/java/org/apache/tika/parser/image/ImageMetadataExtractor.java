@@ -22,19 +22,19 @@ import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.adobe.internal.xmp.XMPException;
-import com.adobe.internal.xmp.XMPMetaFactory;
 import com.drew.imaging.heif.HeifMetadataReader;
 import com.drew.imaging.jpeg.JpegMetadataReader;
 import com.drew.imaging.jpeg.JpegProcessingException;
+import com.drew.imaging.jpeg.JpegSegmentMetadataReader;
 import com.drew.imaging.riff.RiffProcessingException;
 import com.drew.imaging.tiff.TiffMetadataReader;
 import com.drew.imaging.tiff.TiffProcessingException;
@@ -45,6 +45,7 @@ import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
 import com.drew.metadata.Tag;
+import com.drew.metadata.adobe.AdobeJpegReader;
 import com.drew.metadata.exif.ExifDirectoryBase;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifReader;
@@ -52,26 +53,30 @@ import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.ExifThumbnailDirectory;
 import com.drew.metadata.exif.GpsDirectory;
 import com.drew.metadata.icc.IccDirectory;
+import com.drew.metadata.icc.IccReader;
 import com.drew.metadata.iptc.IptcDirectory;
+import com.drew.metadata.iptc.IptcReader;
+import com.drew.metadata.jfif.JfifReader;
+import com.drew.metadata.jfxx.JfxxReader;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
+import com.drew.metadata.jpeg.JpegCommentReader;
+import com.drew.metadata.jpeg.JpegDhtReader;
 import com.drew.metadata.jpeg.JpegDirectory;
-import com.drew.metadata.xmp.XmpDirectory;
+import com.drew.metadata.jpeg.JpegDnlReader;
+import com.drew.metadata.jpeg.JpegReader;
+import com.drew.metadata.photoshop.DuckyReader;
+import com.drew.metadata.photoshop.PhotoshopReader;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
-import org.apache.jempbox.xmp.XMPMetadata;
-import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.IPTC;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.xmp.JempboxExtractor;
-import org.apache.tika.utils.XMLReaderUtils;
 
 /**
  * Uses the <a href="http://www.drewnoakes.com/code/exif/">Metadata Extractor</a> library
@@ -83,12 +88,15 @@ import org.apache.tika.utils.XMLReaderUtils;
 public class ImageMetadataExtractor {
 
     //TODO: add this to the signatures from the actual parse
-    private static final ParseContext EMPTY_PARSE_CONTEXT = new ParseContext();
     private static final String GEO_DECIMAL_FORMAT_STRING = "#.######";
             // 6 dp seems to be reasonable
 
     public static final String UNKNOWN_IMG_NS = "img" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
-    public static final String ICC_NS = "ICC" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static final String ICC_NS = "icc" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    public static final KeyPrefix UNKNOWN_IMG =
+            KeyPrefix.file(UNKNOWN_IMG_NS, "unrecognized image tag names");
+    public static final KeyPrefix ICC =
+            KeyPrefix.file(ICC_NS, "unrecognized ICC profile tag names");
 
     private final Metadata metadata;
     private DirectoryHandler[] handlers;
@@ -99,7 +107,7 @@ public class ImageMetadataExtractor {
     public ImageMetadataExtractor(Metadata metadata) {
         this(metadata, new CopyUnknownFieldsHandler(), new TiffPageNumberHandler(),
                 new JpegCommentHandler(), new ExifHandler(), new DimensionsHandler(),
-                new GeotagHandler(), new IptcHandler(), new XmpHandler());
+                new GeotagHandler(), new IptcHandler());
     }
 
     /**
@@ -121,9 +129,16 @@ public class ImageMetadataExtractor {
         return s;
     }
 
+    // ALL_READERS minus XmpReader: Tika parses XMP itself, avoiding a double XMP parse.
+    private static final List<JpegSegmentMetadataReader> JPEG_READERS_NO_XMP = Arrays.asList(
+            new JpegReader(), new JpegCommentReader(), new JfifReader(), new JfxxReader(),
+            new ExifReader(), new IccReader(), new PhotoshopReader(), new DuckyReader(),
+            new IptcReader(), new AdobeJpegReader(), new JpegDhtReader(), new JpegDnlReader());
+
     public void parseJpeg(File file) throws IOException, SAXException, TikaException {
         try {
-            com.drew.metadata.Metadata jpegMetadata = JpegMetadataReader.readMetadata(file);
+            com.drew.metadata.Metadata jpegMetadata =
+                    JpegMetadataReader.readMetadata(file, JPEG_READERS_NO_XMP);
             handle(jpegMetadata);
         } catch (JpegProcessingException | MetadataException e) {
             throw new TikaException("Can't read JPEG metadata", e);
@@ -191,22 +206,6 @@ public class ImageMetadataExtractor {
         }
     }
 
-    public void parseRawXMP(byte[] xmpData) throws IOException, SAXException, TikaException {
-        XMPMetadata xmp = null;
-        try (InputStream decoded = UnsynchronizedByteArrayInputStream.builder().setByteArray(xmpData).get()) {
-            Document dom = XMLReaderUtils.buildDOM(decoded, EMPTY_PARSE_CONTEXT);
-            if (dom != null) {
-                xmp = new XMPMetadata(dom);
-            }
-        } catch (IOException | SAXException e) {
-            //
-        }
-        if (xmp != null) {
-            JempboxExtractor.extractDublinCore(xmp, metadata);
-            JempboxExtractor.extractXMPMM(xmp, metadata);
-        }
-
-    }
 
     /**
      * Copies extracted tags to tika metadata using registered handlers.
@@ -266,10 +265,10 @@ public class ImageMetadataExtractor {
             if (directory.getTags() != null) {
                 for (Tag tag : directory.getTags()) {
                     if (directory instanceof ExifDirectoryBase) {
-                        metadata.set(directory.getName() + ":" + tag.getTagName(),
+                        metadata.add(UNKNOWN_IMG, directory.getName() + ":" + tag.getTagName(),
                                 tag.getDescription());
                     } else {
-                        metadata.set(tag.getTagName(), tag.getDescription());
+                        metadata.add(UNKNOWN_IMG, tag.getTagName(), tag.getDescription());
                     }
                 }
             }
@@ -298,11 +297,11 @@ public class ImageMetadataExtractor {
                             value = Boolean.FALSE.toString();
                         }
                         if (directory instanceof ExifDirectoryBase) {
-                            metadata.set(UNKNOWN_IMG_NS + directory.getName() + ":" + name, value);
+                            metadata.add(UNKNOWN_IMG, directory.getName() + ":" + name, value);
                         } else if (directory instanceof IccDirectory) {
-                            metadata.set(ICC_NS + name, value);
+                            metadata.add(ICC, name, value);
                         } else {
-                            metadata.set(UNKNOWN_IMG_NS + name, value);
+                            metadata.add(UNKNOWN_IMG, name, value);
                         }
                     }
                 }
@@ -310,55 +309,6 @@ public class ImageMetadataExtractor {
         }
     }
 
-    /**
-     * Copies the XMP properties parsed by Metadata Extractor into the metadata,
-     * keyed by their {@code prefix:name} path. The other handlers copy a
-     * directory's tags, but XMP keeps its properties in a separate map
-     * ({@link XmpDirectory#getXmpProperties()}), so without this they are lost.
-     * A property is skipped when its key is already set or matches a known Tika
-     * field, so normalized values from other handlers are not overwritten.
-     */
-    static class XmpHandler implements DirectoryHandler {
-
-        static {
-            // XMPCore's namespace registry is process-global and keeps the first
-            // prefix it sees for a URI. Pin canonical prefixes so keys stay stable
-            // (files use both Camera and GCamera for the Google photo namespace).
-            // https://developer.android.com/media/platform/motion-photo-format
-            try {
-                XMPMetaFactory.getSchemaRegistry()
-                        .registerNamespace("http://ns.google.com/photos/1.0/camera/", "Camera");
-                XMPMetaFactory.getSchemaRegistry()
-                        .registerNamespace("http://ns.google.com/photos/1.0/container/", "Container");
-                XMPMetaFactory.getSchemaRegistry()
-                        .registerNamespace("http://ns.google.com/photos/1.0/container/item/", "Item");
-            } catch (XMPException e) {
-                // Constant, valid URIs, so this cannot throw. A broken registration
-                // would make the keys non-deterministic (parse-order dependent), which
-                // MotionPhotoXmpTest catches in CI; rethrowing from a static initializer
-                // would break all image parsing, so it is swallowed.
-            }
-        }
-
-        public boolean supports(Class<? extends Directory> directoryType) {
-            return XmpDirectory.class.isAssignableFrom(directoryType);
-        }
-
-        public void handle(Directory directory, Metadata metadata) throws MetadataException {
-            Map<String, String> properties = ((XmpDirectory) directory).getXmpProperties();
-            if (properties == null) {
-                return;
-            }
-            for (Map.Entry<String, String> property : properties.entrySet()) {
-                String name = property.getKey();
-                String value = property.getValue();
-                if (value != null && metadata.get(name) == null
-                        && !MetadataFields.isMetadataField(name)) {
-                    metadata.set(name, value);
-                }
-            }
-        }
-    }
 
     static class TiffPageNumberHandler implements DirectoryHandler {
         public boolean supports(Class<? extends Directory> directoryType) {
@@ -398,15 +348,15 @@ public class ImageMetadataExtractor {
             //Exif.Image.ImageLength                       Short       1  75
             // and the values are found in "Thumbnail Image Width" (and Height)
             // from Metadata Extractor
-            set(directory, metadata, JpegDirectory.TAG_IMAGE_WIDTH, Metadata.IMAGE_WIDTH);
-            set(directory, metadata, JpegDirectory.TAG_IMAGE_HEIGHT, Metadata.IMAGE_LENGTH);
+            set(directory, metadata, JpegDirectory.TAG_IMAGE_WIDTH, TIFF.IMAGE_WIDTH);
+            set(directory, metadata, JpegDirectory.TAG_IMAGE_HEIGHT, TIFF.IMAGE_LENGTH);
             // Bits per sample, two methods of extracting, exif overrides jpeg
-            set(directory, metadata, JpegDirectory.TAG_DATA_PRECISION, Metadata.BITS_PER_SAMPLE);
+            set(directory, metadata, JpegDirectory.TAG_DATA_PRECISION, TIFF.BITS_PER_SAMPLE);
             set(directory, metadata, ExifSubIFDDirectory.TAG_BITS_PER_SAMPLE,
-                    Metadata.BITS_PER_SAMPLE);
+                    TIFF.BITS_PER_SAMPLE);
             // Straightforward
             set(directory, metadata, ExifSubIFDDirectory.TAG_SAMPLES_PER_PIXEL,
-                    Metadata.SAMPLES_PER_PIXEL);
+                    TIFF.SAMPLES_PER_PIXEL);
         }
 
         private void set(Directory directory, Metadata metadata, int extractTag,
@@ -481,9 +431,9 @@ public class ImageMetadataExtractor {
             if (directory.containsTag(ExifSubIFDDirectory.TAG_EXPOSURE_TIME)) {
                 Object exposure = directory.getObject(ExifSubIFDDirectory.TAG_EXPOSURE_TIME);
                 if (exposure instanceof Rational) {
-                    metadata.set(Metadata.EXPOSURE_TIME, ((Rational) exposure).doubleValue());
+                    metadata.set(TIFF.EXPOSURE_TIME, ((Rational) exposure).doubleValue());
                 } else {
-                    metadata.set(Metadata.EXPOSURE_TIME,
+                    metadata.set(TIFF.EXPOSURE_TIME,
                             directory.getString(ExifSubIFDDirectory.TAG_EXPOSURE_TIME));
                 }
             }
@@ -492,11 +442,11 @@ public class ImageMetadataExtractor {
                 String flash = directory.getDescription(ExifSubIFDDirectory.TAG_FLASH);
                 if (flash != null) {
                     if (flash.contains("Flash fired")) {
-                        metadata.set(Metadata.FLASH_FIRED, Boolean.TRUE.toString());
+                        metadata.set(TIFF.FLASH_FIRED, Boolean.TRUE.toString());
                     } else if (flash.contains("Flash did not fire")) {
-                        metadata.set(Metadata.FLASH_FIRED, Boolean.FALSE.toString());
+                        metadata.set(TIFF.FLASH_FIRED, Boolean.FALSE.toString());
                     } else {
-                        metadata.set(Metadata.FLASH_FIRED, flash);
+                        metadata.set(TIFF.FLASH_FIRED, flash);
                     }
                 }
             }
@@ -504,9 +454,9 @@ public class ImageMetadataExtractor {
             if (directory.containsTag(ExifSubIFDDirectory.TAG_FNUMBER)) {
                 Object fnumber = directory.getObject(ExifSubIFDDirectory.TAG_FNUMBER);
                 if (fnumber instanceof Rational) {
-                    metadata.set(Metadata.F_NUMBER, ((Rational) fnumber).doubleValue());
+                    metadata.set(TIFF.F_NUMBER, ((Rational) fnumber).doubleValue());
                 } else {
-                    metadata.set(Metadata.F_NUMBER,
+                    metadata.set(TIFF.F_NUMBER,
                             directory.getString(ExifSubIFDDirectory.TAG_FNUMBER));
                 }
             }
@@ -514,72 +464,72 @@ public class ImageMetadataExtractor {
             if (directory.containsTag(ExifSubIFDDirectory.TAG_FOCAL_LENGTH)) {
                 Object length = directory.getObject(ExifSubIFDDirectory.TAG_FOCAL_LENGTH);
                 if (length instanceof Rational) {
-                    metadata.set(Metadata.FOCAL_LENGTH, ((Rational) length).doubleValue());
+                    metadata.set(TIFF.FOCAL_LENGTH, ((Rational) length).doubleValue());
                 } else {
-                    metadata.set(Metadata.FOCAL_LENGTH,
+                    metadata.set(TIFF.FOCAL_LENGTH,
                             directory.getString(ExifSubIFDDirectory.TAG_FOCAL_LENGTH));
                 }
             }
 
             if (directory.containsTag(ExifSubIFDDirectory.TAG_ISO_EQUIVALENT)) {
-                metadata.set(Metadata.ISO_SPEED_RATINGS,
+                metadata.set(TIFF.ISO_SPEED_RATINGS,
                         directory.getString(ExifSubIFDDirectory.TAG_ISO_EQUIVALENT));
             }
 
             if (directory.containsTag(ExifIFD0Directory.TAG_MAKE)) {
-                metadata.set(Metadata.EQUIPMENT_MAKE,
+                metadata.set(TIFF.EQUIPMENT_MAKE,
                         directory.getString(ExifIFD0Directory.TAG_MAKE));
             }
             if (directory.containsTag(ExifIFD0Directory.TAG_MODEL)) {
-                metadata.set(Metadata.EQUIPMENT_MODEL,
+                metadata.set(TIFF.EQUIPMENT_MODEL,
                         directory.getString(ExifIFD0Directory.TAG_MODEL));
             }
 
             if (directory.containsTag(ExifIFD0Directory.TAG_ORIENTATION)) {
                 Object length = directory.getObject(ExifIFD0Directory.TAG_ORIENTATION);
                 if (length instanceof Integer) {
-                    metadata.set(Metadata.ORIENTATION, Integer.toString((Integer) length));
+                    metadata.set(TIFF.ORIENTATION, Integer.toString((Integer) length));
                 } else {
-                    metadata.set(Metadata.ORIENTATION,
+                    metadata.set(TIFF.ORIENTATION,
                             directory.getString(ExifIFD0Directory.TAG_ORIENTATION));
                 }
             }
 
             if (directory.containsTag(ExifIFD0Directory.TAG_SOFTWARE)) {
-                metadata.set(Metadata.SOFTWARE,
+                metadata.set(TIFF.SOFTWARE,
                         directory.getString(ExifIFD0Directory.TAG_SOFTWARE));
             }
 
             if (directory.containsTag(ExifIFD0Directory.TAG_X_RESOLUTION)) {
                 Object resolution = directory.getObject(ExifIFD0Directory.TAG_X_RESOLUTION);
                 if (resolution instanceof Rational) {
-                    metadata.set(Metadata.RESOLUTION_HORIZONTAL,
+                    metadata.set(TIFF.RESOLUTION_HORIZONTAL,
                             ((Rational) resolution).doubleValue());
                 } else {
-                    metadata.set(Metadata.RESOLUTION_HORIZONTAL,
+                    metadata.set(TIFF.RESOLUTION_HORIZONTAL,
                             directory.getString(ExifIFD0Directory.TAG_X_RESOLUTION));
                 }
             }
             if (directory.containsTag(ExifIFD0Directory.TAG_Y_RESOLUTION)) {
                 Object resolution = directory.getObject(ExifIFD0Directory.TAG_Y_RESOLUTION);
                 if (resolution instanceof Rational) {
-                    metadata.set(Metadata.RESOLUTION_VERTICAL,
+                    metadata.set(TIFF.RESOLUTION_VERTICAL,
                             ((Rational) resolution).doubleValue());
                 } else {
-                    metadata.set(Metadata.RESOLUTION_VERTICAL,
+                    metadata.set(TIFF.RESOLUTION_VERTICAL,
                             directory.getString(ExifIFD0Directory.TAG_Y_RESOLUTION));
                 }
             }
             if (directory.containsTag(ExifIFD0Directory.TAG_RESOLUTION_UNIT)) {
-                metadata.set(Metadata.RESOLUTION_UNIT,
+                metadata.set(TIFF.RESOLUTION_UNIT,
                         directory.getDescription(ExifIFD0Directory.TAG_RESOLUTION_UNIT));
             }
             if (directory.containsTag(ExifThumbnailDirectory.TAG_IMAGE_WIDTH)) {
-                metadata.set(Metadata.IMAGE_WIDTH, trimPixels(
+                metadata.set(TIFF.IMAGE_WIDTH, trimPixels(
                         directory.getDescription(ExifThumbnailDirectory.TAG_IMAGE_WIDTH)));
             }
             if (directory.containsTag(ExifThumbnailDirectory.TAG_IMAGE_HEIGHT)) {
-                metadata.set(Metadata.IMAGE_LENGTH, trimPixels(
+                metadata.set(TIFF.IMAGE_LENGTH, trimPixels(
                         directory.getDescription(ExifThumbnailDirectory.TAG_IMAGE_HEIGHT)));
             }
 
@@ -588,14 +538,14 @@ public class ImageMetadataExtractor {
                 String width = directory.getDescription(ExifSubIFDDirectory.TAG_EXIF_IMAGE_WIDTH);
                 //check for null because this could overwrite earlier set width if the value is null
                 if (width != null) {
-                    metadata.set(Metadata.IMAGE_WIDTH, trimPixels(width));
+                    metadata.set(TIFF.IMAGE_WIDTH, trimPixels(width));
                 }
             }
 
             if (directory.containsTag(ExifSubIFDDirectory.TAG_EXIF_IMAGE_HEIGHT)) {
                 String height = directory.getDescription(ExifSubIFDDirectory.TAG_EXIF_IMAGE_HEIGHT);
                 if (height != null) {
-                    metadata.set(Metadata.IMAGE_LENGTH, trimPixels(height));
+                    metadata.set(TIFF.IMAGE_LENGTH, trimPixels(height));
                 }
             }
 
@@ -618,7 +568,7 @@ public class ImageMetadataExtractor {
                     String datetimeNoTimeZone = dateUnspecifiedTz
                             .format(original); // Same time zone as Metadata Extractor uses
                     metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
-                    metadata.set(Metadata.ORIGINAL_DATE, datetimeNoTimeZone);
+                    metadata.set(TIFF.ORIGINAL_DATE, datetimeNoTimeZone);
                 }
             }
             if (directory.containsTag(ExifIFD0Directory.TAG_DATETIME)) {
@@ -651,19 +601,25 @@ public class ImageMetadataExtractor {
                     metadata.add(TikaCoreProperties.SUBJECT, k);
                 }
             }
-            if (directory.containsTag(IptcDirectory.TAG_HEADLINE)) {
-                metadata.set(TikaCoreProperties.TITLE,
-                        directory.getString(IptcDirectory.TAG_HEADLINE));
-            } else if (directory.containsTag(IptcDirectory.TAG_OBJECT_NAME)) {
-                metadata.set(TikaCoreProperties.TITLE,
-                        directory.getString(IptcDirectory.TAG_OBJECT_NAME));
+            // IPTC fallback: XMP is canonical, so only fill what XMP left unset (XMP wins).
+            if (metadata.get(TikaCoreProperties.TITLE) == null) {
+                if (directory.containsTag(IptcDirectory.TAG_HEADLINE)) {
+                    metadata.set(TikaCoreProperties.TITLE,
+                            directory.getString(IptcDirectory.TAG_HEADLINE));
+                } else if (directory.containsTag(IptcDirectory.TAG_OBJECT_NAME)) {
+                    metadata.set(TikaCoreProperties.TITLE,
+                            directory.getString(IptcDirectory.TAG_OBJECT_NAME));
+                }
             }
             if (directory.containsTag(IptcDirectory.TAG_BY_LINE)) {
-                metadata.set(TikaCoreProperties.CREATOR,
-                        directory.getString(IptcDirectory.TAG_BY_LINE));
+                if (metadata.get(TikaCoreProperties.CREATOR) == null) {
+                    metadata.set(TikaCoreProperties.CREATOR,
+                            directory.getString(IptcDirectory.TAG_BY_LINE));
+                }
                 metadata.set(IPTC.CREATOR, directory.getString(IptcDirectory.TAG_BY_LINE));
             }
-            if (directory.containsTag(IptcDirectory.TAG_CAPTION)) {
+            if (directory.containsTag(IptcDirectory.TAG_CAPTION)
+                    && metadata.get(TikaCoreProperties.DESCRIPTION) == null) {
                 metadata.set(TikaCoreProperties.DESCRIPTION,
                         // Looks like metadata extractor returns IPTC newlines
                         // as a single carriage return,
@@ -684,10 +640,10 @@ public class ImageMetadataExtractor {
         }
 
         public void handle(Directory directory, Metadata metadata) throws MetadataException {
+            DecimalFormat geoDecimalFormat = new DecimalFormat(GEO_DECIMAL_FORMAT_STRING,
+                    new DecimalFormatSymbols(Locale.ENGLISH));
             GeoLocation geoLocation = ((GpsDirectory) directory).getGeoLocation();
             if (geoLocation != null) {
-                DecimalFormat geoDecimalFormat = new DecimalFormat(GEO_DECIMAL_FORMAT_STRING,
-                        new DecimalFormatSymbols(Locale.ENGLISH));
                 metadata.set(TikaCoreProperties.LATITUDE,
                         geoDecimalFormat.format(geoLocation.getLatitude()));
                 metadata.set(TikaCoreProperties.LONGITUDE,
@@ -696,6 +652,17 @@ public class ImageMetadataExtractor {
             Date gpsDate = ((GpsDirectory)directory).getGpsDate();
             if (gpsDate != null) {
                 metadata.set(Geographic.TIMESTAMP, gpsDate);
+            }
+            Rational altitude = ((GpsDirectory) directory).getRational(GpsDirectory.TAG_ALTITUDE);
+            if (altitude != null) {
+                double metres = altitude.doubleValue();
+                //GPSAltitudeRef 1 means below sea level
+                Integer altitudeRef =
+                        ((GpsDirectory) directory).getInteger(GpsDirectory.TAG_ALTITUDE_REF);
+                if (altitudeRef != null && altitudeRef == 1) {
+                    metres = -metres;
+                }
+                metadata.set(TikaCoreProperties.ALTITUDE, geoDecimalFormat.format(metres));
             }
         }
     }

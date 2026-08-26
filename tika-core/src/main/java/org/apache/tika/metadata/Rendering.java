@@ -17,8 +17,22 @@
 package org.apache.tika.metadata;
 
 public interface Rendering {
-    String RENDERING_PREFIX = "rendering:";
+    String RENDERING_PREFIX = "tk:rendering:";
 
-    Property RENDERED_BY = Property.externalTextBag(RENDERING_PREFIX + "Rendered-By");
-    Property RENDERED_MS = Property.externalReal(RENDERING_PREFIX + "rendering-time-ms");
+    Property RENDERED_BY = Property.reservedExternalTextBag(RENDERING_PREFIX + "rendered-by");
+    Property RENDERED_MS = Property.reservedExternalReal(RENDERING_PREFIX + "rendering-time-ms");
+
+    /**
+     * Time PDFBox took to render the page to a {@code BufferedImage}.
+     * @see org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer
+     */
+    Property PDFBOX_RENDERING_TIME_MS =
+            Property.reservedExternalReal(RENDERING_PREFIX + "pdfbox-rendering-ms");
+
+    /**
+     * Time PDFBox/java took to write the rendered image out (encoding cost varies by format).
+     * @see org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer
+     */
+    Property PDFBOX_IMAGE_WRITING_TIME_MS =
+            Property.reservedExternalReal(RENDERING_PREFIX + "pdfbox-image-writing-ms");
 }

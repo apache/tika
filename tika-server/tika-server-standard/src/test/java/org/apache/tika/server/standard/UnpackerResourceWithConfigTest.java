@@ -80,7 +80,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(UnpackerResource.class);
-        sf.setResourceProvider(UnpackerResource.class, new SingletonResourceProvider(new UnpackerResource()));
+        sf.setResourceProvider(UnpackerResource.class, new SingletonResourceProvider(new UnpackerResource(tikaResource)));
     }
 
     @Override
@@ -88,7 +88,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
         List<Object> providers = new ArrayList<>();
         providers.add(new TarWriter());
         providers.add(new ZipWriter());
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
         sf.setProviders(providers);
     }
 

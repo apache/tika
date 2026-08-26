@@ -25,8 +25,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.Locale;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CountDownLatch;
@@ -41,7 +39,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -54,6 +52,7 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
+import org.apache.tika.pipes.core.serialization.PipesRequest;
 import org.apache.tika.serialization.ParseContextUtils;
 
 /**
@@ -80,7 +79,7 @@ public class ConnectionHandler implements Runnable, Closeable {
     private final DataOutputStream output;
     private final SharedServerResources resources;
     private final PipesConfig pipesConfig;
-    private final long heartbeatIntervalMs;
+    private final long heartbeatIntervalMillis;
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final ExecutorCompletionService<PipesResult> executorCompletionService =
@@ -105,8 +104,8 @@ public class ConnectionHandler implements Runnable, Closeable {
         this.output = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
         this.resources = resources;
         this.pipesConfig = pipesConfig;
-        this.heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
-        this.protocolIO = new ServerProtocolIO(input, output);
+        this.heartbeatIntervalMillis = pipesConfig.getHeartbeatIntervalMillis();
+        this.protocolIO = new ServerProtocolIO(input, output, pipesConfig.getMaxIpcPayloadBytes());
     }
 
     @Override
@@ -136,7 +135,7 @@ public class ConnectionHandler implements Runnable, Closeable {
             try {
                 PipesMessage msg;
                 try {
-                    msg = PipesMessage.read(input);
+                    msg = PipesMessage.read(input, pipesConfig.getMaxIpcPayloadBytes());
                 } catch (SocketTimeoutException e) {
                     // Socket timeout while idle is the normal inactivity shutdown path.
                     LOG.info("handlerId={}: socket timeout while waiting for task, closing connection",
@@ -153,11 +152,13 @@ public class ConnectionHandler implements Runnable, Closeable {
                         intermediateResult.clear();
                         CountDownLatch countDownLatch = new CountDownLatch(1);
 
+                        PipesRequest pipesRequest;
                         FetchEmitTuple fetchEmitTuple;
                         try {
-                            fetchEmitTuple = JsonPipesIpc.fromBytes(msg.payload(), FetchEmitTuple.class);
+                            pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class);
+                            fetchEmitTuple = pipesRequest.getTuple();
                         } catch (IOException e) {
-                            LOG.error("handlerId={}: problem deserializing FetchEmitTuple", handlerId, e);
+                            LOG.error("handlerId={}: problem deserializing PipesRequest", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
                             return; // connection is unsalvageable after deserialization failure
                         }
@@ -166,19 +167,44 @@ public class ConnectionHandler implements Runnable, Closeable {
                             mergedContext = resources.createMergedParseContext(fetchEmitTuple.getParseContext());
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
                             ServerProtocolIO.validateParseContext(mergedContext);
-                            TikaProgressTracker tracker = new TikaProgressTracker();
-                            mergedContext.set(TikaProgressTracker.class, tracker);
+                            ServerProtocolIO.clampRequestTimeoutLimits(
+                                    fetchEmitTuple.getParseContext(), mergedContext,
+                                    pipesConfig.getMaxTotalTaskTimeoutMillis());
+                            // After resolveAll: the payload is typed runtime state for
+                            // BytesFetcher, never a resolvable config entry.
+                            pipesRequest.applyTo(mergedContext);
+                            // Installed here, before submit, so the worker thread's own
+                            // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
+                            // sees this instance rather than racing to install its own.
+                            ParseTimeout parseTimeout = ParseTimeout.getOrCreate(mergedContext);
 
                             PipesWorker pipesWorker = createPipesWorker(intermediateResult, fetchEmitTuple,
                                     mergedContext, countDownLatch);
                             executorCompletionService.submit(pipesWorker);
 
-                            loopUntilDone(fetchEmitTuple, mergedContext, intermediateResult, countDownLatch, tracker);
+                            loopUntilDone(fetchEmitTuple, mergedContext, intermediateResult, countDownLatch, parseTimeout);
                         } catch (TikaConfigException e) {
                             LOG.error("handlerId={}: config error processing request", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
                         } catch (Throwable t) {
+                            if (t instanceof Error) {
+                                // OOM or other JVM-level error: don't trust the heap; exit
+                                // immediately. Everything before the exit is best-effort and
+                                // inside the try -- a secondary OOM in logging or writeCrash
+                                // must not escape and leave this shared JVM alive post-Error.
+                                try {
+                                    LOG.error("handlerId={}: fatal JVM error; exiting", handlerId, t);
+                                    protocolIO.writeCrash(PipesMessageType.OOM, t);
+                                } catch (Throwable ignored) {
+                                    //swallow
+                                } finally {
+                                    System.exit(PipesMessageType.OOM.getExitCode().orElse(18));
+                                }
+                            }
+                            // respond, or the client blocks until socket timeout and
+                            // restarts a healthy server
                             LOG.error("handlerId={}: error processing request", handlerId, t);
+                            handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), t);
                         } finally {
                             if (mergedContext != null) {
                                 MetadataFilter requestFilter = mergedContext.get(MetadataFilter.class);
@@ -236,20 +262,35 @@ public class ConnectionHandler implements Runnable, Closeable {
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
                                ArrayBlockingQueue<Metadata> intermediateResult,
                                CountDownLatch countDownLatch,
-                               TikaProgressTracker tracker) throws InterruptedException, IOException {
-        Instant start = Instant.now();
+                               ParseTimeout parseTimeout) throws InterruptedException, IOException {
+        // nanoTime: watchdog deadlines and heartbeat pacing must be immune to wall-clock steps
+        long startNanos = System.nanoTime();
         TimeoutLimits limits = TimeoutLimits.get(mergedContext);
         long progressTimeoutMillis = limits.getProgressTimeoutMillis();
         long totalTaskTimeoutMillis = limits.getTotalTaskTimeoutMillis();
         long heartbeatCounter = 1;
         boolean wroteIntermediateResult = false;
+        // If the client disconnects mid-parse we stop writing to the dead socket but keep
+        // polling and enforcing the timeouts below, so an abandoned worker that will not stop
+        // still trips checkTotalTimeout/checkProgressTimeout -> System.exit -> the shared JVM
+        // recycles it. Otherwise (per-JVM shared mode has no per-request process to kill) a
+        // runaway parse would spin forever with its heap pinned.
+        boolean clientGone = false;
 
         while (running) {
             // Check for intermediate result
             if (!wroteIntermediateResult) {
                 Metadata intermediate = intermediateResult.poll(100, TimeUnit.MILLISECONDS);
                 if (intermediate != null) {
-                    protocolIO.writeIntermediate(intermediate);
+                    if (!clientGone) {
+                        try {
+                            protocolIO.writeIntermediate(intermediate);
+                        } catch (IOException e) {
+                            clientGone = true;
+                            LOG.debug("handlerId={}: client gone (writing intermediate); keeping the "
+                                    + "worker under its timeout so a runaway parse is reclaimed", handlerId);
+                        }
+                    }
                     countDownLatch.countDown();
                     wroteIntermediateResult = true;
                 }
@@ -278,31 +319,53 @@ public class ConnectionHandler implements Runnable, Closeable {
                 }
                 LOG.debug("handlerId={}: finished task id={} status={}", handlerId,
                         fetchEmitTuple.getId(), pipesResult.status());
-                protocolIO.writeFinished(pipesResult);
+                if (!clientGone) {
+                    try {
+                        protocolIO.writeFinished(pipesResult);
+                    } catch (IOException e) {
+                        LOG.debug("handlerId={}: client gone before final result could be sent", handlerId);
+                    }
+                }
                 return;
             }
 
             // Send fire-and-forget heartbeat
-            long elapsed = System.currentTimeMillis() - start.toEpochMilli();
-            if (elapsed > heartbeatCounter * heartbeatIntervalMs) {
+            long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
+            if (!clientGone && elapsed > heartbeatCounter * heartbeatIntervalMillis) {
                 LOG.trace("handlerId={}: still processing, counter={}", handlerId, heartbeatCounter);
-                PipesMessage.working(tracker.getLastProgressMillis()).write(output);
+                try {
+                    PipesMessage.working().write(output);
+                } catch (IOException e) {
+                    clientGone = true;
+                    LOG.debug("handlerId={}: client gone (heartbeat); keeping the worker under its "
+                            + "timeout so a runaway parse is reclaimed", handlerId);
+                }
                 heartbeatCounter++;
             }
 
             // Check timeouts
-            if (checkTotalTimeout(start, totalTaskTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkTotalTimeout(startNanos, totalTaskTimeoutMillis, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return;
             }
-            if (checkProgressTimeout(tracker, progressTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkProgressTimeout(parseTimeout, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return;
             }
         }
     }
 
-    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, String id) {
-        long elapsed = Duration.between(start, Instant.now()).toMillis();
-        if (elapsed > totalTaskTimeoutMillis) {
+    /**
+     * Fires at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, not at the deadline
+     * itself: the cooperative deadline path (skip remaining embedded docs, emit a
+     * PARTIAL_TIMEOUT result) only starts once ParseTimeout's identically-anchored deadline
+     * is reached, so killing the JVM at that instant would leave the wind-down no time to
+     * run. The grace window stays bounded: {@link #checkProgressTimeout} still fires
+     * independently, so a wind-down that hangs is caught via the stall path instead.
+     */
+    private boolean checkTotalTimeout(long startNanos, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
+        long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
+        long graceDeadline = (totalTaskTimeoutMillis >= Long.MAX_VALUE - progressTimeoutMillis)
+                ? Long.MAX_VALUE : totalTaskTimeoutMillis + progressTimeoutMillis;
+        if (elapsed > graceDeadline) {
             handleCrash(PipesMessageType.TIMEOUT, id,
                     new RuntimeException("Server-side total task timeout after " + elapsed + "ms (limit: " + totalTaskTimeoutMillis + "ms)"));
             // Timeout means a parsing thread is stuck - the JVM must be restarted
@@ -313,8 +376,8 @@ public class ConnectionHandler implements Runnable, Closeable {
         return false;
     }
 
-    private boolean checkProgressTimeout(TikaProgressTracker tracker, long progressTimeoutMillis, String id) {
-        long timeSinceProgress = System.currentTimeMillis() - tracker.getLastProgressMillis();
+    private boolean checkProgressTimeout(ParseTimeout parseTimeout, long progressTimeoutMillis, String id) {
+        long timeSinceProgress = parseTimeout.millisSinceLastProgress();
         if (timeSinceProgress > progressTimeoutMillis) {
             handleCrash(PipesMessageType.TIMEOUT, id,
                     new RuntimeException("Server-side progress timeout: no progress for " + timeSinceProgress + "ms (limit: " + progressTimeoutMillis + "ms)"));

@@ -1,0 +1,254 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Metadata Filters
+:toc:
+
+A metadata filter rewrites the metadata *after* parsing and *before* the result is emitted or
+serialized — the last chance to drop a field, rename it, normalize it, or add a derived one.
+Filters are the supported way to shape Tika's output; parsers are not the place to do it.
+
+Filters run in `tika-app`, `tika-server` and Tika Pipes alike, on the whole metadata list
+(container document first, then each embedded document).
+
+== The `metadata-filters` section
+
+`metadata-filters` is a top-level array. The filters run in the order listed, each one seeing what
+the previous one produced.
+
+[source,json]
+----
+{
+  "metadata-filters": [
+    { "include-field-metadata-filter": { "include": ["tk:content", "Content-Type"] } },
+    "date-normalizing-metadata-filter"
+  ]
+}
+----
+
+An element is either a *string* (the filter's name, default settings) or an *object* keyed by that
+name with its configuration.
+
+IMPORTANT: There is no `default-metadata-filter` and no implicit filtering. If you omit the section
+— or give it an empty array — *no* filter runs and the metadata is emitted unchanged. This is
+unlike `parsers` and `detectors`, where a `default-parser` / `default-detector` entry restores the
+components you did not name.
+
+== Built-in filters
+
+These ship in `tika-core` and need no extra dependency.
+
+[cols="2,3,2"]
+|===
+|Name |What it does |Options (default)
+
+|`include-field-metadata-filter`
+|Keeps only the named fields; drops everything else.
+|`include` — list of field names (empty)
+
+|`exclude-field-metadata-filter`
+|Drops the named fields; keeps everything else.
+|`exclude` — list of field names (empty)
+
+|`field-name-mapping-filter`
+|Renames fields. With `excludeUnmapped`, doubles as an allow-list that renames as it filters.
+|`mappings` — map of old name to new name (empty); `excludeUnmapped` — drop fields with no
+mapping (`true`)
+
+|`remove-by-mime-metadata-filter`
+|Removes a document's entire `Metadata` object from the list if its `Content-Type` base type
+matches. Use it to keep, say, embedded images out of the output entirely.
+|`mimes` — list of base media types, no parameters (empty)
+
+|`clear-by-attachment-type-metadata-filter`
+|Empties (but keeps) the `Metadata` of an embedded document whose
+`tk:embedded-resource-type` matches.
+|`types` — list of `INLINE`, `ATTACHMENT`, `MACRO`, `METADATA`, `FONT`, `THUMBNAIL`,
+`RENDERING`, `VERSION`, `ALTERNATE_FORMAT_CHUNK` (empty). An unrecognized name is a config error.
+
+|`date-normalizing-metadata-filter`
+|Rewrites every `DATE`-typed field that has no timezone to `yyyy-MM-dd'T'HH:mm:ss'Z'`, assuming
+the configured zone. Values that already end in `Z` are left alone.
+|`defaultTimeZone` — zone id, e.g. `America/New_York` (`UTC`)
+
+|`capture-group-metadata-filter`
+|Runs a regex against the *first* value of `sourceField` and writes capture group 1 to
+`targetField`, overwriting it. No match, or a missing source field, is a no-op.
+|`regex`, `sourceField`, `targetField` — all required
+
+|`geo-point-metadata-filter`
+|If both latitude and longitude are present, writes `"<lat>,<lon>"` to one field, the shape
+Elasticsearch and Solr want for a geo point.
+|`geoPointFieldName` (`location`)
+
+|`legacy-key-migration-filter`
+|Rewrites 4.x `tk:` keys back to their 3.x spellings (or forward). See
+xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes in 4.x].
+|`direction` (`V4_TO_V3`); `table` — classpath resource for the rename table
+
+|`no-op-filter`
+|Does nothing. Only useful as an explicit "filter nothing here".
+|none
+|===
+
+== Filters from optional modules
+
+Adding the module to the classpath is enough to make the name resolvable.
+
+[cols="2,2,3"]
+|===
+|Name |Module |What it adds
+
+|`openai-embedding-filter`, `jina-embedding-filter`
+|`tika-inference`
+|Chunks `tk:content` and calls an embeddings endpoint, putting the vectors on `tk:chunks`. See
+xref:migration-to-4x/chunk-strategies.adoc[Chunk Strategies].
+
+|`charsoup-metadata-filter`, `optimaize-metadata-filter`, `open-nlp-metadata-filter`
+|`tika-langdetect-charsoup`, `-optimaize`, `-opennlp`
+|Detects the language of the extracted text and writes it to the metadata. See
+xref:advanced/language-detection.adoc[Language Detection].
+
+|`tika-eval-metadata-filter`
+|`tika-eval-core`
+|Scores extraction quality per document: `tika-eval:numTokens`, `numUniqueTokens`,
+`numAlphaTokens`, `numCommonTokens`, `numUniqueAlphaTokens`, `lang`, `langConfidence`, `oov`,
+`languageness`. Useful for spotting garbage extractions before they reach an index.
+|===
+
+== Common tasks
+
+=== Emit only the fields your index needs
+
+[source,json]
+----
+{
+  "metadata-filters": [
+    {
+      "include-field-metadata-filter": {
+        "include": ["tk:content", "Content-Type", "dc:title", "dc:creator"]
+      }
+    }
+  ]
+}
+----
+
+=== Rename fields for a downstream schema
+
+`excludeUnmapped` defaults to `true`, so this keeps *only* the four mapped fields, under their new
+names:
+
+[source,json]
+----
+{
+  "metadata-filters": [
+    {
+      "field-name-mapping-filter": {
+        "excludeUnmapped": true,
+        "mappings": {
+          "tk:content": "content",
+          "Content-Type": "mime",
+          "dc:title": "title",
+          "dc:creator": "author"
+        }
+      }
+    }
+  ]
+}
+----
+
+=== Strip the parameters off a media type
+
+`Content-Type` often arrives as `text/plain; charset=UTF-8`. To index the base type only:
+
+[source,json]
+----
+{
+  "metadata-filters": [
+    {
+      "capture-group-metadata-filter": {
+        "sourceField": "Content-Type",
+        "targetField": "Content-Type",
+        "regex": "\\A([^;]+)"
+      }
+    }
+  ]
+}
+----
+
+=== Drop the metadata of embedded images
+
+[source,json]
+----
+{
+  "metadata-filters": [
+    { "clear-by-attachment-type-metadata-filter": { "types": ["INLINE"] } }
+  ]
+}
+----
+
+To remove those documents from the list altogether rather than blank them, filter by media type
+instead:
+
+[source,json]
+----
+{
+  "metadata-filters": [
+    { "remove-by-mime-metadata-filter": { "mimes": ["image/jpeg", "image/png"] } }
+  ]
+}
+----
+
+== Ordering
+
+Composition is literal: filter _n_ sees filter _n-1_'s output. Two consequences worth planning
+around.
+
+* An allow-list runs last, or it removes the fields a later filter wanted. `include-field-metadata-filter`
+  before `geo-point-metadata-filter` drops the latitude and longitude the geo filter reads — unless
+  you included them.
+* A rename runs last, or later filters have to be configured against the new names.
+
+== Where filters do and do not apply
+
+* `tika-app` applies them to the metadata list before writing output.
+* `tika-server`'s `/tika`, `/rmeta`, `/meta` and `/unpack` parse in forked JVMs, and the filters
+  configured in the server's `tika-config.json` are applied there before the response is written.
+* Tika Pipes applies them at the emit edge, before the emitter runs.
+
+`parse-context` can carry a per-request `metadata-filters` list, which *replaces* the configured
+one for that request rather than adding to it.
+
+NOTE: In `CONTENT_ONLY` xref:pipes/parse-modes.adoc[parse mode], Tika applies an
+`include-field-metadata-filter` for `tk:content` and `tk:exception:container-exception` when you have
+configured no filter of your own. Configure one and yours wins — including having to keep
+`tk:content` yourself.
+
+== Writing your own
+
+`MetadataFilter` is an extension point. Extend `MetadataFilterBase` if one `Metadata` at a time is
+enough, or `MetadataFilter` if you need the whole list; annotate with `@TikaComponent` to get a
+config name. Writing a reserved `tk:` key by name (rather than through its `Property`) requires
+`Metadata#setTrusted` / `addTrusted`. See
+xref:developers/serialization.adoc[Serialization and Configuration] for a worked example.
+
+== Source
+
+* link:https://github.com/apache/tika/tree/main/tika-core/src/main/java/org/apache/tika/metadata/filter[`org.apache.tika.metadata.filter`]
+  — the built-in filters
+* link:https://github.com/apache/tika/blob/main/tika-core/src/main/java/org/apache/tika/metadata/filter/CompositeMetadataFilter.java[`CompositeMetadataFilter`]
+  — the ordering semantics above

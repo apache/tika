@@ -19,6 +19,7 @@ package org.apache.tika.sax;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -54,6 +55,38 @@ public class BasicContentHandlerFactoryTest {
         assertFalse(haystack.contains(needle), needle + " found in:\n" + haystack);
     }
 
+    @Test
+    public void testParseHandlerTypeNullYieldsDefault() {
+        assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.XML,
+                BasicContentHandlerFactory.parseHandlerType(null,
+                        BasicContentHandlerFactory.HANDLER_TYPE.XML));
+    }
+
+    @Test
+    public void testParseHandlerTypeAliases() {
+        for (String name : new String[]{"text", "txt", "TEXT"}) {
+            assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                    BasicContentHandlerFactory.parseHandlerType(name, null), name);
+        }
+        for (String name : new String[]{"markdown", "md", "MD"}) {
+            assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN,
+                    BasicContentHandlerFactory.parseHandlerType(name, null), name);
+        }
+        assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE,
+                BasicContentHandlerFactory.parseHandlerType("ignore", null));
+    }
+
+    /** Unknown names throw with the valid list -- they must not fall back to the default. */
+    @Test
+    public void testParseHandlerTypeUnknownThrows() {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> BasicContentHandlerFactory.parseHandlerType("txet",
+                        BasicContentHandlerFactory.HANDLER_TYPE.XML));
+        assertTrue(e.getMessage().contains("txet"), e.getMessage());
+        assertTrue(e.getMessage().contains(BasicContentHandlerFactory.VALID_HANDLER_TYPE_NAMES),
+                e.getMessage());
+    }
+
     public static void assertNotContains(String needle, byte[] hayStack)
             throws UnsupportedEncodingException {
         assertNotContains(needle, new String(hayStack, UTF_8));
@@ -76,8 +109,9 @@ public class BasicContentHandlerFactoryTest {
                         .createHandler();
         assertTrue(handler instanceof DefaultHandler);
         p.parse(null, handler, null, null);
-        //unfortunatley, the DefaultHandler does not return "",
-        assertContains("org.xml.sax.helpers.DefaultHandler", handler.toString());
+        // toString() returns "" (not Object's default identity string) so callers can
+        // blank-check it directly instead of special-casing DefaultHandler's class identity.
+        assertEquals("", handler.toString());
 
         //tests that no write limit exception is thrown
         p = new MockParser(100);
@@ -85,7 +119,7 @@ public class BasicContentHandlerFactoryTest {
                 .createHandler();
         assertTrue(handler instanceof DefaultHandler);
         p.parse(null, handler, null, null);
-        assertContains("org.xml.sax.helpers.DefaultHandler", handler.toString());
+        assertEquals("", handler.toString());
     }
 
     @Test

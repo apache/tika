@@ -29,6 +29,8 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.TypeDetector;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AutoDetectParser;
@@ -66,20 +68,20 @@ public class MboxParserTest extends TikaTest {
         String content = handler.toString();
         assertContains("Test content 1", content);
         assertContains("Test content 2", content);
-        assertEquals("application/mbox", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/mbox", metadata.get(HttpHeaders.CONTENT_TYPE));
 
         Map<Integer, Metadata> mailsMetadata = mboxParser.getTrackingMetadata();
         assertEquals(2, mailsMetadata.size(), "Nb. Of mails");
 
         Metadata mail1 = mailsMetadata.get(0);
-        assertEquals("message/rfc822", mail1.get(Metadata.CONTENT_TYPE));
+        assertEquals("message/rfc822", mail1.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("envelope-sender-mailbox-name Mon Jun 01 10:00:00 2009",
-                mail1.get("MboxParser-from"));
+                mail1.get("mbox:from"));
 
         Metadata mail2 = mailsMetadata.get(1);
-        assertEquals("message/rfc822", mail2.get(Metadata.CONTENT_TYPE));
+        assertEquals("message/rfc822", mail2.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("envelope-sender-mailbox-name Mon Jun 01 11:00:00 2010",
-                mail2.get("MboxParser-from"));
+                mail2.get("mbox:from"));
     }
 
     @Test
@@ -99,9 +101,9 @@ public class MboxParserTest extends TikaTest {
         assertEquals("2009-06-10T03:58:45Z", mailMetadata.get(TikaCoreProperties.CREATED));
         assertEquals("<author@domain.com>", mailMetadata.get(TikaCoreProperties.CREATOR));
         assertEquals("subject", mailMetadata.get(TikaCoreProperties.SUBJECT));
-        assertEquals("message/rfc822", mailMetadata.get(Metadata.CONTENT_TYPE));
-        assertEquals("author@domain.com", mailMetadata.get("Message-From"));
-        assertEquals("<name@domain.com>", mailMetadata.get("MboxParser-return-path"));
+        assertEquals("message/rfc822", mailMetadata.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("author@domain.com", mailMetadata.get(Message.MESSAGE_FROM));
+        assertEquals("<name@domain.com>", mailMetadata.get("mbox:return-path"));
     }
 
     @Test
@@ -116,14 +118,14 @@ public class MboxParserTest extends TikaTest {
         assertEquals(1, mboxParser.getTrackingMetadata().size(), "Nb. Of mails");
 
         Metadata mailMetadata = mboxParser.getTrackingMetadata().get(0);
-        assertEquals("from xxx by xxx with xxx; date", mailMetadata.get("MboxParser-received"));
+        assertEquals("from xxx by xxx with xxx; date", mailMetadata.get("mbox:received"));
     }
 
     @Test
     public void testMultilineHeader2() throws Exception {
         //make sure that we aren't injecting body content into headers
         for (Metadata m : getRecursiveMetadata("multiline2.mbox")) {
-            for (String mime : m.getValues(Metadata.CONTENT_TYPE)) {
+            for (String mime : m.getValues(HttpHeaders.CONTENT_TYPE)) {
                 assertFalse("something".equals(mime));
             }
         }
@@ -161,7 +163,7 @@ public class MboxParserTest extends TikaTest {
         assertEquals("Jothi Padmanabhan <jothipn@yahoo-inc.com>",
                 firstMail.get(TikaCoreProperties.CREATOR));
         assertEquals("core-user@hadoop.apache.org",
-                firstMail.get(Metadata.MESSAGE_RECIPIENT_ADDRESS));
+                firstMail.get(Message.MESSAGE_RECIPIENT_ADDRESS));
 
         assertContains("When a Mapper completes", handler.toString());
     }
@@ -170,8 +172,8 @@ public class MboxParserTest extends TikaTest {
     public void testTika2478() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testMBOX_complex.mbox");
         assertEquals(2, metadataList.size());
-        assertEquals("application/mbox", metadataList.get(0).get(Metadata.CONTENT_TYPE));
-        assertEquals("message/rfc822", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/mbox", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("message/rfc822", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
         assertContains("body 2", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertNotContained("body 1", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
     }

@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
@@ -110,7 +111,7 @@ public class TestLibPstParser extends TikaTest {
 
         assertEquals("application/vnd.openxmlformats-officedocument.wordprocessingml.document", metadataList
                 .get(4)
-                .get(Metadata.CONTENT_TYPE));
+                .get(HttpHeaders.CONTENT_TYPE));
     }
 
 }

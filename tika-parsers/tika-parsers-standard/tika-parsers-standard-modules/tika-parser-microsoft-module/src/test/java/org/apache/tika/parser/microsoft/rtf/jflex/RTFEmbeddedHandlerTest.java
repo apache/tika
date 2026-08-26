@@ -48,7 +48,7 @@ public class RTFEmbeddedHandlerTest {
         ParseContext context = new ParseContext();
         context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
             @Override
-            public boolean shouldParseEmbedded(Metadata metadata) {
+            public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
                 return true;
             }
 

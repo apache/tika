@@ -27,6 +27,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -59,21 +60,21 @@ public class MetadataCharsetDetectorTest {
     public void testContentType() throws Exception {
         Metadata m = new Metadata();
         // ISO-8859-1 normalizes to its windows-1252 superset (WHATWG), existing behavior.
-        m.set(Metadata.CONTENT_TYPE, "text/html; charset=ISO-8859-1");
+        m.set(HttpHeaders.CONTENT_TYPE, "text/html; charset=ISO-8859-1");
         assertEquals(Charset.forName("windows-1252"), detect(m));
     }
 
     @Test
     public void testContentEncoding() throws Exception {
         Metadata m = new Metadata();
-        m.set(Metadata.CONTENT_ENCODING, "Shift_JIS");
+        m.set(HttpHeaders.CONTENT_ENCODING, "Shift_JIS");
         assertEquals(Charset.forName("Shift_JIS"), detect(m));
     }
 
     @Test
     public void testContentTypeWinsOverHint() throws Exception {
         Metadata m = new Metadata();
-        m.set(Metadata.CONTENT_TYPE, "text/plain; charset=UTF-16");
+        m.set(HttpHeaders.CONTENT_TYPE, "text/plain; charset=UTF-16");
         m.set(TikaCoreProperties.CONTENT_TYPE_HINT, "text/plain; charset=UTF-8");
         assertEquals(StandardCharsets.UTF_16, detect(m));
     }
@@ -82,7 +83,7 @@ public class MetadataCharsetDetectorTest {
     public void testHintWinsOverContentEncoding() throws Exception {
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.CONTENT_TYPE_HINT, "text/plain; charset=UTF-8");
-        m.set(Metadata.CONTENT_ENCODING, "Shift_JIS");
+        m.set(HttpHeaders.CONTENT_ENCODING, "Shift_JIS");
         assertEquals(StandardCharsets.UTF_8, detect(m));
     }
 
@@ -91,11 +92,11 @@ public class MetadataCharsetDetectorTest {
         assertEquals(null, detect(new Metadata()));
         // A content-type with no charset parameter is not a declaration.
         Metadata m = new Metadata();
-        m.set(Metadata.CONTENT_TYPE, "text/plain");
+        m.set(HttpHeaders.CONTENT_TYPE, "text/plain");
         assertEquals(null, detect(m));
         // An unparseable charset label is ignored, not thrown.
         Metadata bad = new Metadata();
-        bad.set(Metadata.CONTENT_ENCODING, "not-a-charset");
+        bad.set(HttpHeaders.CONTENT_ENCODING, "not-a-charset");
         assertTrue(detect(bad) == null);
     }
 }

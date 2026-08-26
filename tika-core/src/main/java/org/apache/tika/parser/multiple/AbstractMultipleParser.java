@@ -33,6 +33,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -43,7 +44,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.utils.ParserUtils;
 
 /**
  * Abstract base class for parser wrappers which may / will
@@ -112,7 +112,7 @@ public abstract class AbstractMultipleParser implements Parser {
             if (n.equals(TikaCoreProperties.TIKA_PARSED_BY.getName())) {
                 continue;
             }
-            if (n.equals(ParserUtils.EMBEDDED_PARSER.getName())) {
+            if (n.equals(TikaCoreProperties.EMBEDDED_PARSER.getName())) {
                 continue;
             }
             if (n.equals(TikaCoreProperties.EMBEDDED_EXCEPTION.getName())) {
@@ -245,7 +245,7 @@ public abstract class AbstractMultipleParser implements Parser {
                        ContentHandlerFactory handlerFactory, Metadata originalMetadata,
                        ParseContext context) throws IOException, SAXException, TikaException {
         // Enable rewind capability since we rewind between multiple parsers
-        tis.enableRewind();
+        tis.enableRewind(context == null ? null : context.get(CacheMemoryBudget.class));
 
         // Track the metadata between parsers, so we can apply our policy
         Metadata lastMetadata = cloneMetadata(originalMetadata);

@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.config.loader.ComponentInstantiator;
@@ -126,11 +127,11 @@ public class ParseContextUtils {
             // Try to find this friendly name in any registered component registry
             var optionalInfo = ComponentNameResolver.getComponentInfo(friendlyName);
             if (optionalInfo.isEmpty()) {
-                // Not a registered component -- ignored (not applied). WARN so a typo'd config key
-                // is visible rather than silently dropped.
-                LOG.warn("Ignoring unrecognized parse-context entry '{}' (not a registered "
-                        + "component); check for a typo", friendlyName);
-                continue;
+                // Fail rather than warn: parse-context is where the DoS limits live
+                // (timeout-limits, embedded-limits, output-limits), so a typo'd name
+                // silently reverts to defaults an operator believes they overrode.
+                throw new TikaConfigException("Unrecognized parse-context entry '" + friendlyName
+                        + "'. Check for a typo; it does not match any registered component.");
             }
 
             ComponentInfo info = optionalInfo.get();
@@ -145,8 +146,23 @@ public class ParseContextUtils {
             Class<?> contextKey = ComponentNameResolver.determineContextKey(info);
 
             try {
-                // Deserialize and cache in resolvedConfigs, also add to context
-                Object instance = MAPPER.readValue(jsonConfig.json(), info.componentClass());
+                // A component whose config binds only through a (JsonConfig) constructor
+                // (e.g. LegacyKeyMigrationFilter) takes the same instantiation path as
+                // array configs; everything else keeps vanilla Jackson (enums like
+                // parse-mode and @JsonCreator beans have no no-arg constructor).
+                Object instance;
+                if (ComponentInstantiator.hasJsonConfigConstructor(info.componentClass())) {
+                    instance = ComponentInstantiator.instantiateComponent(
+                            friendlyName, MAPPER.readTree(jsonConfig.json()),
+                            MAPPER, classLoader, null);
+                } else {
+                    instance = MAPPER.readValue(jsonConfig.json(), info.componentClass());
+                    // Cross-field validation hook; the ComponentInstantiator paths call
+                    // initialize() themselves, this path deserializes directly.
+                    if (instance instanceof Initializable initializable) {
+                        initializable.initialize();
+                    }
+                }
                 context.setResolvedConfig(friendlyName, instance);
                 context.set((Class) contextKey, instance);
 

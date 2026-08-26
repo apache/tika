@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-= Forked-JVM CPU Sizing
+= Forked-JVM CPU and Heap Sizing
 
 Tika Pipes runs multiple forked JVMs in per-client mode (one per `numClients`).
 Each JVM independently sizes its garbage collector, JIT compiler, and common
@@ -25,9 +25,10 @@ cores.
 
 To fix this, Tika Pipes auto-injects `-XX:ActiveProcessorCount` into each
 forked JVM's command line, sizing each fork's view of the CPU count to a fair
-slice of the host. This is on by default in per-client mode (`numClients > 1`)
-when the user has not already supplied `-XX:ActiveProcessorCount` in
-`forkedJvmArgs`.
+slice of the host. This is on by default in per-client mode — including
+`numClients=1`, where the slice is everything but the parent's reserved
+cores — whenever the user has not already supplied
+`-XX:ActiveProcessorCount` in `forkedJvmArgs`.
 
 == Mental model
 
@@ -73,10 +74,10 @@ For typical cloud-VM core counts:
 |===
 |hostCores |numClients |slice |Notes
 
-|2  |1 |n/a    |Tight; auto-cap not applied (single fork). Acceptable for low throughput.
-|4  |1 |n/a    |Comfortable single-fork deployment.
+|2  |1 |1 → skipped |Tight; auto-cap declines. Acceptable for low throughput.
+|4  |1 |2      |Comfortable single-fork deployment.
 |4  |2 |1 → skipped |Auto-cap declines; consider `numClients=1`.
-|8  |1 |n/a    |Lots of headroom; single-fork lifecycle isolation is fine.
+|8  |1 |6      |Lots of headroom; single-fork lifecycle isolation is fine.
 |8  |3 |2      |Sweet spot for medium pods.
 |16 |4 |3      |Sweet spot for 16-core hosts. Measured winner in benchmarks.
 |16 |6 |2      |Higher concurrency; tighter per-fork breathing room.
@@ -85,8 +86,28 @@ For typical cloud-VM core counts:
 |===
 
 The general rule is: pick the largest `numClients` that satisfies
-`numClients × 2 + 2 ≤ hostCores`. Beyond that point, adding workers
+`numClients × 2 + 2 ≤ hostCores`. Beyond that point, adding forks
 starts hurting throughput.
+
+== Lazy start, warm reuse, and idle shutdown
+
+`numClients` is a *ceiling* on concurrent forks, not a resident count:
+
+* **Lazy start.** No fork is started at construction; each starts on the
+  first request that needs it.
+* **Warm reuse (LIFO).** The client pool hands out the most-recently-used
+  client first. Sequential or lightly-concurrent traffic stays on the same
+  warm fork (or forks) instead of round-robining every fork awake; a cold
+  fork is only started when concurrency actually exceeds the number of warm
+  ones.
+* **Idle shutdown.** A fork that receives no work for `socketTimeoutMillis`
+  (default 60s) exits on its own and is restarted transparently on next use.
+
+Together these make the resident fork count track *recent concurrency*
+rather than `numClients`, so over-sizing `numClients` costs little at idle.
+Per-fork CPU and heap slices are still computed statically from
+`numClients` (a lone warm fork does not inherit its idle siblings'
+shares) — capacity planning above is unchanged.
 
 == Diagnostics
 
@@ -95,14 +116,13 @@ logger so operators can see what was decided:
 
 [source]
 ----
-INFO  pipes-cpu-sizing: hostCores=16, numClients=4, parentReserved=2, autoCap=slice=3
+INFO  pipes-cpu-sizing: hostCores=16, numClients=4, parentReserved=2, autoCap=slice=3, heap=MaxRAMPercentage=18
 ----
 
 The `autoCap` field is one of:
 
 * `slice=N` — the auto-cap fired; each fork sees N CPUs.
 * `skipped (slice<2)` — over-provisioned; operator should reduce `numClients`.
-* `n/a (single fork; not capped)` — `numClients=1`; fork sees the whole host.
 * `user-set in forkedJvmArgs` — operator set `-XX:ActiveProcessorCount` themselves.
 
 Two `WARN`-level messages call out clearly-bad provisioning:
@@ -111,6 +131,40 @@ Two `WARN`-level messages call out clearly-bad provisioning:
 * `numClients × 2 + 2 > hostCores` — the host is too small for the requested concurrency.
 
 `grep pipes-cpu-sizing` on the parent's logs surfaces all sizing-related output.
+
+[#_known_limitation_multiple_pipes_groups_in_one_process]
+== Known limitation: multiple Pipes groups in one process
+
+Everything above describes sizing for *one* `PipesParser` — one `pipes`
+config section, one set of forks. The auto-sizer has no visibility
+into anything else running in the same JVM.
+
+This matters concretely for tika-server: `/tika`+`/rmeta`+`/unpack`+`/meta`+`/detect`+
+`/pipes` and `/async` are backed by *two independent* groups when both are
+enabled in the same server — the first six endpoints share one `PipesParser`
+instance, and `/async` manages its own fork pool directly (not via
+`PipesParser` at all, though it uses the same underlying auto-sizer). Each
+group's auto-sizer computes its slice from `Runtime.availableProcessors()` as
+if it were the only consumer on the host — it does not know the sibling group
+in the same process is about to start its own `numClients` forks too. The
+result: with `numClients=2` on both, you get 4 total forked JVMs, each capped
+assuming exclusive access to the whole host. Whether that's *actually*
+oversubscribed depends on your host's real core count relative to those
+combined `numClients` values — it's not automatic, but the auto-sizer also
+won't warn you, because each group looks correctly sized from its own
+perspective alone. See
+xref:using-tika/server/index.adoc#_endpoints_and_forked_process_groups[Endpoints
+and Forked-Process Groups] for the tika-server-specific guidance.
+
+The same applies to any application embedding `PipesForkParser`/`PipesParser`
+directly and constructing more than one instance in a single JVM — the
+auto-sizer will size each independently, with the same caveat.
+
+There is no automatic fix for this today: unlike the single-group case, where
+Tika detects and warns about bad provisioning, each group has no way to learn
+what its siblings already claimed. Mitigate it explicitly — either run fewer
+groups per process, or set `-XX:ActiveProcessorCount` yourself (next section)
+with the combined total in mind.
 
 == Disabling or overriding
 
@@ -129,22 +183,61 @@ When Tika sees an explicit `-XX:ActiveProcessorCount` in `forkedJvmArgs`, it
 respects your value and skips the auto-injection — the sizing summary will
 report `autoCap=user-set in forkedJvmArgs`.
 
-[#heap-per-worker]
-== Heap per worker — rule of thumb
+[#heap-per-fork]
+== Heap per fork — rule of thumb
 
-A reasonable starting point is **~2 GB of heap per forked worker** (passed via `-Xmx2g` in `forkedJvmArgs`). The number falls out of three independent constraints any of which can dominate:
+Heap is auto-sized the same way CPU is. Left to itself, every forked JVM takes its own
+default max heap — a fixed fraction of host or container memory — so `numClients` forks have
+a combined ceiling well above what the host actually has. When you have not set `-Xmx`
+(or `-XX:MaxRAMPercentage`/`-XX:MaxRAMFraction`) yourself, Tika injects
+`-XX:MaxRAMPercentage=75/numClients`, leaving the remainder for the parent JVM and the OS.
+A single fork gets 60. The parent claims the JVM default (about 25% of the container) on top
+of whatever the forks take, and metaspace, thread stacks and page cache come out of what is
+left; committing the whole container between the two JVMs trades a clean per-document OOM for
+an OOM-kill that takes both down. The `pipes-cpu-sizing` summary line reports the decision as
+`heap=...`.
+
+[IMPORTANT]
+====
+**`numClients` is sized against CPU, not memory.** The rule above —
+`numClients × 2 + 2 ≤ hostCores` — considers cores only. Memory is then divided among
+however many forks that produced. On a host with many cores relative to its RAM, a
+`numClients` that is correct for CPU can leave each fork with too little heap to parse
+reliably.
+
+Tika cannot reconcile the two automatically: the parent sizes forks as a *percentage* of
+memory and has no portable way to resolve that to bytes. Each forked JVM therefore checks
+its own heap at startup and logs a `WARN` if it came up under 256 MB — the point below which
+ordinary documents, not just pathological ones, begin to fail. If you see that warning,
+lower `numClients`, raise the container memory limit, or set `-Xmx` explicitly.
+
+When you set fork heap explicitly, the parent checks the arithmetic for you at startup:
+if `numClients × -Xmx` exceeds 75% of host/container memory (or explicit
+`-XX:MaxRAMPercentage` values sum past 75%), it logs a `pipes-cpu-sizing` `WARN` naming
+the commitment. It warns rather than fails — a co-tenant box the operator has budgeted
+deliberately is indistinguishable from a mistake.
+
+Cross-check both constraints yourself when sizing: `numClients × 2 + 2 ≤ hostCores` **and**
+`numClients × per-fork-heap ≤ 75% of memory`.
+====
+
+Set `-Xmx` explicitly when you know your workload: the auto-slice is a safe default, not a
+tuned one, and a fork that legitimately needs more than its slice will OOM where an untuned
+JVM might have grown into spare memory.
+
+A reasonable starting point is **~2 GB of heap per fork** (passed via `-Xmx2g` in `forkedJvmArgs`). The number falls out of three independent constraints any of which can dominate:
 
 * **Worst-case PDF parsing.** A handful of pathological PDFs in any reasonably large corpus will allocate hundreds of MB of intermediate object data per document — large image streams, deeply nested form fields, big embedded fonts. Smaller heaps OOM on those documents; larger heaps just let GC clean up between docs.
-* **Embedded-document explosion.** A zip-bomb-shaped office document with thousands of embedded objects multiplies per-doc allocation by the embedding count. The `maxEmbeddedResources` setting caps the count, but each retained object still lives in the heap until the whole tree finishes parsing.
-* **GC headroom.** G1GC behaves poorly above ~85% occupancy. A `-Xmx2g` worker comfortably handles documents that allocate up to ~1.5 GB of live data; below that you start trading throughput for memory.
+* **Embedded-document explosion.** A zip-bomb-shaped office document with thousands of embedded objects multiplies per-doc allocation by the embedding count. The `parse-context.embedded-limits.maxCount` setting caps the count, but each retained object still lives in the heap until the whole tree finishes parsing.
+* **GC headroom.** G1GC behaves poorly above ~85% occupancy. A `-Xmx2g` fork comfortably handles documents that allocate up to ~1.5 GB of live data; below that you start trading throughput for memory.
 
 This is a default — not a tuning recommendation. To right-size for your specific corpus:
 
-. Measure peak per-worker live-heap with `-Xlog:gc*` (look at the post-GC working set, not the peak before GC).
+. Measure peak per-fork live-heap with `-Xlog:gc*` (look at the post-GC working set, not the peak before GC).
 . Pick `-Xmx` ≈ `1.5 × peakLiveHeap` to leave GC headroom.
 . Re-measure under your real concurrency. Embedded-doc-heavy formats (PowerPoint, complex Word) shift this number up; flat text or PDF-text-only shifts it down.
 
-The pod-level heap budget is `numClients × per-worker-Xmx + parent-overhead`. On a 16 GB node running `numClients=4`, that's about `4 × 2 GB + 1 GB ≈ 9 GB` — comfortably below the node limit, leaving room for kernel, IO buffers, and a non-saturated pod.
+The pod-level heap budget is `numClients × per-fork-Xmx + parent-overhead`. On a 16 GB node running `numClients=4`, that's about `4 × 2 GB + 1 GB ≈ 9 GB` — comfortably below the node limit, leaving room for kernel, IO buffers, and a non-saturated pod.
 
 == Container & cgroup behavior
 

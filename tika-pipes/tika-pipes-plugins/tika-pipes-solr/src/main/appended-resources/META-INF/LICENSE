@@ -1,0 +1,93 @@
+APACHE TIKA SUBCOMPONENTS
+
+This distribution bundles third-party libraries under lib/.  Except for the
+components listed below, those libraries are licensed under the Apache License,
+Version 2.0, whose terms appear above.  The components below are licensed under
+other terms, reproduced here as required.
+
+
+Eclipse Public License, Version 2.0
+
+    Applies to:
+        jakarta.ws.rs-api-4.0.0.jar
+        jetty-alpn-client-12.1.12.jar
+        jetty-alpn-java-client-12.1.12.jar
+        jetty-client-12.1.12.jar
+        jetty-compression-common-12.1.12.jar
+        jetty-compression-gzip-12.1.12.jar
+        jetty-http-12.1.12.jar
+        jetty-http2-client-12.1.12.jar
+        jetty-http2-client-transport-12.1.12.jar
+        jetty-http2-common-12.1.12.jar
+        jetty-http2-hpack-12.1.12.jar
+        jetty-io-12.1.12.jar
+        jetty-util-12.1.12.jar
+
+    This program and the accompanying materials are made available under the terms
+    of the Eclipse Public License 2.0 which is available at
+    http://www.eclipse.org/legal/epl-2.0
+
+    The full text of the Eclipse Public License, Version 2.0 accompanies each such
+    component inside its own jar in this distribution, at META-INF/LICENSE (or
+    META-INF/LICENSE.md) within the jars named above under lib/.
+
+    SPDX-License-Identifier: EPL-2.0
+
+    Secondary Licenses: when the conditions for such availability set forth in the
+    Eclipse Public License v. 2.0 are satisfied, the following Secondary Licenses
+    apply: GNU General Public License, version 2 with the GNU Classpath Exception,
+    which is available at https://www.gnu.org/software/classpath/license.html.
+
+
+GNU General Public License, Version 2, with the Classpath Exception
+
+    Applies to:
+        jakarta.ws.rs-api-4.0.0.jar
+
+    This component is available under the GNU General Public License, version 2,
+    with the Classpath Exception:
+
+      "Linking this library statically or dynamically with other modules is making
+       a combined work based on this library.  Thus, the terms and conditions of
+       the GNU General Public License cover the whole combination.
+
+       As a special exception, the copyright holders of this library give you
+       permission to link this library with independent modules to produce an
+       executable, regardless of the license terms of these independent modules,
+       and to copy and distribute the resulting executable under terms of your
+       choice, provided that you also meet, for each linked independent module,
+       the terms and conditions of the license of that module.  An independent
+       module is a module which is not derived from or based on this library.  If
+       you modify this library, you may extend this exception to your version of
+       the library, but you are not obliged to do so.  If you do not wish to do so,
+       delete this exception statement from your version."
+
+    The full text of the GNU General Public License, version 2 accompanies each such
+    component inside its own jar in this distribution, at META-INF/LICENSE (or
+    META-INF/LICENSE.md) within the jars named above under lib/.  These components
+    are dual-licensed; Apache Tika redistributes them in binary form relying on the
+    Classpath Exception.
+
+
+The MIT License
+
+    Applies to:
+        semver4j-6.0.0.jar
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal
+    in the Software without restriction, including without limitation the rights
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+    copies of the Software, and to permit persons to whom the Software is
+    furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all
+    copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+    FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+    LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+    SOFTWARE.

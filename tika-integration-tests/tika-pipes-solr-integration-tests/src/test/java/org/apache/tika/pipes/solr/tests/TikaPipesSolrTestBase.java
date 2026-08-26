@@ -180,8 +180,9 @@ public abstract class TikaPipesSolrTestBase {
         zkPort = solr.getMappedPort(9983);
         solrEndpoint = "http://" + solrHost + ":" + solrPort + "/solr";
 
+        // "create" (not the deprecated "create_collection", removed in Solr 10) works on 8/9/10
         org.testcontainers.containers.Container.ExecResult createResult =
-                solr.execInContainer("/opt/solr/bin/solr", "create_collection", "-c", collection);
+                solr.execInContainer("/opt/solr/bin/solr", "create", "-c", collection);
         if (createResult.getExitCode() != 0) {
             LOG.error("Failed to create Solr collection '{}'. Exit code: {}, stdout: {}, stderr: {}",
                     collection, createResult.getExitCode(),

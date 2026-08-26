@@ -49,15 +49,14 @@ include::example$pipes-json-iterator.json[]
 |`jsonPath`
 |_required_
 |Path to the JSONL file on disk.
-
-|`fetcherId` / `emitterId`
-|_required_
-|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
 |===
+
+Unlike the other iterators, this one takes no `fetcherId` / `emitterId`: each line names its own fetcher and emitter. The fields are accepted by the config parser (they are inherited from the shared iterator config) but never read.
 
 [#notes]
 == Notes
 
 * The file format is JSON-lines (also called NDJSON) — one valid JSON object per line, no surrounding array brackets.
-* Each line's JSON object is parsed and its fields become the metadata of the emitted `FetchEmitTuple`. The keys used for fetch / emit identification come from the tuple-shaped fields (e.g., `fetchKey`, `emitKey`).
+* Each line must be a serialized `FetchEmitTuple`: `id`, `fetcher`, `fetchKey`, `emitter`, `emitKey`, and optionally `fetchRangeStart`, `fetchRangeEnd`, `metadata`, `parse-context`, `onParseException`. Any other
+  field is rejected — the deserializer does not tolerate unknown keys.
 * For columnar work items in a CSV, use the xref:pipes/plugins/csv.adoc[CSV iterator] instead.

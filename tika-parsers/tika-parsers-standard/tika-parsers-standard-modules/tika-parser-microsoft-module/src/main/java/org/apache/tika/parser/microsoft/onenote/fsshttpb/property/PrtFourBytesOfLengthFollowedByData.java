@@ -43,6 +43,12 @@ public class PrtFourBytesOfLengthFollowedByData implements IProperty {
         int index = startIndex;
         this.cb = (int) BitConverter.toUInt32(byteArray, startIndex);
         index += 4;
+        // copyOfRange zero-fills past the source end, so cb must be bounded by
+        // the remaining bytes or a malformed length allocates cb bytes of heap
+        if (this.cb < 0 || this.cb > byteArray.length - index) {
+            throw new IOException("prtFourBytesOfLengthFollowedByData length " + this.cb +
+                    " exceeds remaining data " + (byteArray.length - index));
+        }
         this.data = Arrays.copyOfRange(byteArray, index, index + this.cb);
         index += this.cb;
 

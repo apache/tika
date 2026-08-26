@@ -318,7 +318,7 @@ public class OpenSearchClient {
      * OpenSearch can index vectors, locators, etc. natively.
      */
     static final Set<String> INFERENCE_JSON_FIELDS = Set.of(
-            "tika:chunks");
+            "tk:chunks");
 
     private static void writeMetadata(Metadata metadata, JsonGenerator jsonGenerator) throws IOException {
         //writes the metadata without the start { or the end }

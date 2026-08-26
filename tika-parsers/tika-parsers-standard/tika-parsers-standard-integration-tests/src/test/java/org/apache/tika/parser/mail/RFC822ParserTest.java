@@ -30,6 +30,8 @@ import org.xml.sax.ContentHandler;
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -71,7 +73,7 @@ public class RFC822ParserTest extends TikaTest {
         }
 
         // Check we go the metadata
-        assertEquals("Juha Haaga <juha.haaga@gmail.com>", metadata.get(Metadata.MESSAGE_FROM));
+        assertEquals("Juha Haaga <juha.haaga@gmail.com>", metadata.get(Message.MESSAGE_FROM));
         assertEquals("Test mail for Tika", metadata.get(TikaCoreProperties.TITLE));
 
         // Check we got the message text, for both Plain Text and HTML
@@ -84,7 +86,8 @@ public class RFC822ParserTest extends TikaTest {
         assertContains("TEST DATA FOR TIKA.", handler.toString());
         assertContains("This is text inside an unencrypted zip file", handler.toString());
         assertContains("TIKA-1028", handler.toString());
-        assertEquals("<juha.haaga@gmail.com>", metadata.get("Message:Raw-Header:Return-Path"));
+        assertEquals("<juha.haaga@gmail.com>",
+                metadata.get(Message.MESSAGE_RAW_HEADER_PREFIX + "Return-Path"));
     }
 
     /**
@@ -104,7 +107,7 @@ public class RFC822ParserTest extends TikaTest {
         }
 
         // Check we go the metadata
-        assertEquals("Juha Haaga <juha.haaga@gmail.com>", metadata.get(Metadata.MESSAGE_FROM));
+        assertEquals("Juha Haaga <juha.haaga@gmail.com>", metadata.get(Message.MESSAGE_FROM));
         assertEquals("Test mail for Tika", metadata.get(TikaCoreProperties.TITLE));
 
         // Check we got the message text, for both Plain Text and HTML
@@ -158,7 +161,7 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals(3, metadataList.size());
         assertContains("This is the HTML part",
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("application/zip", metadataList.get(2).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/zip", metadataList.get(2).get(HttpHeaders.CONTENT_TYPE));
 
         metadataList = getRecursiveMetadata("testRFC822-txt-body");
         assertEquals(2, metadataList.size());

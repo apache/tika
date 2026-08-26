@@ -33,6 +33,8 @@ import org.apache.tika.detect.AutoDetectReader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
@@ -43,6 +45,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
     public static final String ENVI_MIME_TYPE = "application/envi.hdr";
+    public static final KeyPrefix ENVI =
+            KeyPrefix.file("envi:", "ENVI header field names");
     private static final long serialVersionUID = -1479368523072408091L;
     private static final Logger LOG = LoggerFactory.getLogger(EnviHeaderParser.class);
     private static final Set<MediaType> SUPPORTED_TYPES =
@@ -70,7 +74,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         // Only outputting the MIME type as metadata
-        metadata.set(Metadata.CONTENT_TYPE, ENVI_MIME_TYPE);
+        metadata.set(HttpHeaders.CONTENT_TYPE, ENVI_MIME_TYPE);
 
         // The following code was taken from the TXTParser
         // Automatically detect the character encoding
@@ -79,7 +83,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                 metadata, getEncodingDetector(context))) {
             Charset charset = reader.getCharset();
             // deprecated, see TIKA-431
-            metadata.set(Metadata.CONTENT_ENCODING, charset.name());
+            metadata.set(HttpHeaders.CONTENT_ENCODING, charset.name());
             xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             readLines(reader, metadata);
@@ -118,7 +122,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                 if (keyValue[0].trim().equals("map info")) {
                     String[] mapInfoValues = parseMapInfoContents(keyValue[1]);
                     if (mapInfoValues[0].equals("UTM")) {
-                        metadata.set("envi." + keyValue[0].trim().replace(" ", "."),
+                        metadata.add(ENVI, keyValue[0].trim().replace(" ", "."),
                                 keyValue[1].trim());
                         String[] latLonStringArray =
                                 convertMapInfoValuesToLatLngAndSetMetadata(mapInfoValues, metadata);
@@ -128,11 +132,11 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
                         xhtml.characters(xhtmlLatLongLine);
                         xhtml.endElement("p");
                     } else {
-                        metadata.set("envi." + keyValue[0].trim().replace(" ", "."),
+                        metadata.add(ENVI, keyValue[0].trim().replace(" ", "."),
                                 keyValue[1].trim());
                     }
                 } else {
-                    metadata.set("envi." + keyValue[0].trim().replace(" ", "."),
+                    metadata.add(ENVI, keyValue[0].trim().replace(" ", "."),
                             keyValue[1].trim());
                 }
             }
@@ -211,7 +215,7 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
         double zoneCM = (zone > 0) ? 6 * zone - 183.0 : 3.0;
         double latitude = 180.0 * (phi1 - fact1 * (fact2 + fact3 + fact4)) / Math.PI;
         double longitude = zoneCM - _a3;
-        metadata.set("envi.lat/lon", latitude + ", " + longitude);
+        metadata.add(ENVI, "lat/lon", latitude + ", " + longitude);
 
         return new String[]{Double.toString(latitude), Double.toString(longitude)};
     }

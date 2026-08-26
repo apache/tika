@@ -22,6 +22,7 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -56,7 +57,10 @@ public class XLIFF12ContentHandler extends DefaultHandler {
             numberOfFiles++;
 
             // Write out the original file name
-            metadata.add("original", attributes.getValue("source-language"));
+            //externalTextBag: a document can carry multiple <file> elements, and
+            //source-language/target-language are also add()-ed by TMXContentHandler, so
+            //the shape must match there too (Property registration is name-keyed, global)
+            metadata.add(Property.externalTextBag("original"), attributes.getValue("source-language"));
 
             xhtml.startElement("div");
             xhtml.startElement("h1");
@@ -64,9 +68,9 @@ public class XLIFF12ContentHandler extends DefaultHandler {
             xhtml.endElement("h1");
 
             // Add the files source (mandatory) and target (optional) languages
-            metadata.add("source-language", attributes.getValue("source-language"));
+            metadata.add(Property.externalTextBag("source-language"), attributes.getValue("source-language"));
             if (null != attributes.getValue("target-language")) {
-                metadata.add("target-language", attributes.getValue("target-language"));
+                metadata.add(Property.externalTextBag("target-language"), attributes.getValue("target-language"));
             }
         }
 
@@ -125,8 +129,8 @@ public class XLIFF12ContentHandler extends DefaultHandler {
 
     @Override
     public void endDocument() {
-        metadata.set("file-count", String.valueOf(numberOfFiles));
-        metadata.set("tu-count", String.valueOf(numberOfTUs));
+        metadata.set(Property.externalText("file-count"), String.valueOf(numberOfFiles));
+        metadata.set(Property.externalText("tu-count"), String.valueOf(numberOfTUs));
     }
 
 }

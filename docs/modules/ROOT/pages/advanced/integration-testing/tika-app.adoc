@@ -27,16 +27,20 @@ Integration tests for `tika-app` to be run from a distribution ZIP.
 mkdir -p /tmp/tika-app-test
 cd /tmp/tika-app-test
 
-# Copy and extract distribution
+# Copy and extract distribution. The zip has no wrapping directory: the jar,
+# lib/ and plugins/ land directly in the current directory.
 cp /path/to/tika-app-4.0.0-SNAPSHOT.zip .
 unzip tika-app-4.0.0-SNAPSHOT.zip
-cd tika-app-4.0.0-SNAPSHOT
 
 # Get test files
-cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/test-documents/testPDF.pdf .
-cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/test-documents/test_recursive_embedded.docx .
-cp /path/to/tika-main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/test-documents/testHTML.html .
+cp /path/to/tika-main/release-tools/uat/test-files/testPDF.pdf .
+cp /path/to/tika-main/release-tools/uat/test-files/test_recursive_embedded.docx .
+cp /path/to/tika-main/release-tools/uat/test-files/testHTML.html .
 ----
+
+Below, `tika-app.jar` stands for the versioned jar the zip actually contains
+(`tika-app-4.0.0-SNAPSHOT.jar`). Run every command from the unzipped directory so the
+sibling `lib/` and `plugins/` are found.
 
 == Test Cases
 
@@ -147,7 +151,7 @@ java -jar tika-app.jar -J -t /tmp/tika-app-test/batch-input /tmp/tika-app-test/b
 ls /tmp/tika-app-test/batch-output2
 ----
 
-*Expected:* Creates .json files with text content (X-TIKA:content_handler should be ToTextContentHandler).
+*Expected:* Creates .json files with text content (`tk:content-handler-type` should be `TEXT`).
 
 === Test 11: Version Check
 
@@ -183,7 +187,7 @@ java -jar tika-app.jar --language testPDF.pdf
 java -jar tika-app.jar --digest=md5 --json testPDF.pdf
 ----
 
-*Expected:* JSON output includes `X-TIKA:digest:MD5` field.
+*Expected:* JSON output includes `tk:digest:MD5` field.
 
 === Test 15: URL Input
 
@@ -373,7 +377,7 @@ java -jar tika-app.jar -T 30000 /tmp/tika-app-test/batch-input /tmp/tika-app-tes
 [source,bash]
 ----
 mkdir -p /tmp/tika-app-test/heap-out
-java -jar tika-app.jar -X 2g /tmp/tika-app-test/batch-input /tmp/tika-app-test/heap-out
+java -jar tika-app.jar --Xmx=2g /tmp/tika-app-test/batch-input /tmp/tika-app-test/heap-out
 ----
 
 *Expected:* Forked processes use 2GB heap.
@@ -390,9 +394,11 @@ MalformedURLException: no protocol: nonexistent_file.pdf
 
 Should say "File not found".
 
-=== Issue 2: INFO Message on Every Command
+=== Issue 2: INFO Message on Every Default-Config Command
 
-Every command prints an INFO message to stderr about convenience features. Use `2>/dev/null` to suppress.
+Every command that loads the default single-file config prints an INFO message to stderr about
+the non-default features TikaCLI turns on. Passing `--config=<file>` skips it; otherwise use
+`2>/dev/null` to suppress.
 
 === Issue 3: Config Dump Options Not Implemented
 

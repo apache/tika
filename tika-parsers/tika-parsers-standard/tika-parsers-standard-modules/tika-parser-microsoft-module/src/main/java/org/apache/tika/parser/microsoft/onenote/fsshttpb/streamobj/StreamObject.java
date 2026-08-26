@@ -73,7 +73,8 @@ public abstract class StreamObject implements IFSSHTTPBSerializable {
         for (StreamObjectTypeHeaderStart value : StreamObjectTypeHeaderStart.values()) {
             String className = StreamObject.class.getPackage().getName() + "." + value.name();
             try {
-                streamObjectTypeMapping.put(value, Class.forName(className));
+                streamObjectTypeMapping.put(value,
+                        Class.forName(className, false, StreamObject.class.getClassLoader()));
             } catch (ClassNotFoundException e) {
                 // This is OK, we are not pulling over every single class
             }

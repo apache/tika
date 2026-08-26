@@ -52,9 +52,11 @@ import org.apache.tika.server.core.HTMLHelper;
 public class TikaMimeTypes {
 
     private HTMLHelper html;
+    private final TikaResource tikaResource;
 
-    public TikaMimeTypes() {
+    public TikaMimeTypes(TikaResource tikaResource) {
         this.html = new HTMLHelper();
+        this.tikaResource = tikaResource;
     }
 
     private static String[] copyToStringArray(MediaType[] aliases) {
@@ -364,7 +366,7 @@ public class TikaMimeTypes {
     }
 
     protected List<MediaTypeDetails> getMediaTypes() throws TikaConfigException {
-        TikaLoader tikaLoader = TikaResource.getTikaLoader();
+        TikaLoader tikaLoader = tikaResource.getTikaLoader();
         MimeTypes mimeTypes = TikaLoader.getMimeTypes();
         MediaTypeRegistry registry = mimeTypes.getMediaTypeRegistry();
         Map<MediaType, Parser> parsers = ((CompositeParser) tikaLoader.loadParsers()).getParsers();

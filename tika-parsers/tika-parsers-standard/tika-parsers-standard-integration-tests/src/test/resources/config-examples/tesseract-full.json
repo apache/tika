@@ -54,7 +54,7 @@
         // Directory with the tesseract binary (empty = on PATH).
         "tesseractPath": "",
         // Max seconds to wait for the OCR process.
-        "timeoutSeconds": 120
+        "timeoutMillis": 120000
       }
     },
     {

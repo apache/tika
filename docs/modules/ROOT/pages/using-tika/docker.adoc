@@ -1,0 +1,181 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Running Tika in Docker
+:toc:
+
+The project publishes two images on Docker Hub:
+link:https://hub.docker.com/r/apache/tika[`apache/tika`] (the REST server, port 9998) and
+link:https://hub.docker.com/r/apache/tika-grpc[`apache/tika-grpc`] (the gRPC server, port 9090).
+
+[source,bash]
+----
+docker run -d -p 127.0.0.1:9998:9998 apache/tika:X.Y.Z
+curl -T document.pdf http://localhost:9998/tika
+----
+
+WARNING: Bind to `127.0.0.1` unless you mean otherwise. Docker writes its own iptables rules, so
+`-p 9998:9998` can publish the server to the internet past a host firewall. Tika parses untrusted
+input by design — see xref:security.adoc[Security].
+
+== Choosing an image
+
+[cols="1,3"]
+|===
+|Variant |Contents
+
+|`apache/tika:<version>`
+|Minimal. A JRE and the `tika-server-standard` distribution — every pure-Java parser, nothing
+external.
+
+|`apache/tika:<version>-full`
+|Adds the external tools some parsers shell out to: Tesseract OCR (with `eng`, `ita`, `fra`,
+`spa`, `deu`, `jpn` language packs), GDAL, ImageMagick, and the Liberation / FreeFont /
+msttcorefonts font sets. Considerably larger.
+
+|`apache/tika-grpc:<version>`
+|gRPC server on port 9090, with OCR, GDAL and fonts included.
+|===
+
+Take `-full` if you OCR scanned documents or parse geospatial rasters; otherwise take minimal.
+
+Tags come in three forms: `<version>` rolls forward if the image is rebuilt for the same Tika
+release, `<version>-<N>` is immutable and is what to pin in production, and `latest` tracks the
+newest stable release. The `apache/tika` images — minimal and `-full` alike — are published for
+`linux/amd64`, `linux/arm64` and `linux/s390x`; `apache/tika-grpc` is published for
+`linux/amd64` and `linux/arm64` only. `docker pull` picks the right one.
+
+== What is inside
+
+Knowing the layout matters as soon as you mount anything.
+
+[cols="1,3"]
+|===
+|Path or setting |Value
+
+|`/opt/tika-server`
+|The unzipped distribution: the server jar, `lib/`, and `plugins/`. Also the working directory.
+
+|`/tika-extras`
+|On the classpath, empty by default. Mount a directory of extra jars here.
+
+|Process user
+|UID/GID `35002:35002`, not root. Mounted files must be readable, and any directory the server
+writes to must be writable, by that UID.
+
+|Entry point
+|`TikaServerCli -h 0.0.0.0`, plus whatever you pass as the container command. The bind host is
+already set, so do not pass `-h` again.
+|===
+
+== Configuration
+
+Mount a `tika-config.json` and point the server at it with `-c`. Anything after the image name is
+appended to the entry point.
+
+[source,bash]
+----
+docker run -d -p 127.0.0.1:9998:9998 \
+  -v "$(pwd)/tika-config.json:/tika-config.json" \
+  apache/tika:X.Y.Z-full -c /tika-config.json
+----
+
+For example, to keep the full image's parsers but turn OCR off:
+
+[source,json]
+----
+{
+  "parsers": [
+    { "default-parser": {} },
+    { "tesseract-ocr-parser": { "skipOcr": true } }
+  ]
+}
+----
+
+See xref:configuration/index.adoc[Configuration] for the file format.
+
+== Extra jars
+
+Mount a directory of jars at `/tika-extras` — it is already on the container's classpath, and the
+jars are forwarded to the forked JVMs as well.
+
+[source,bash]
+----
+docker run -d -p 127.0.0.1:9998:9998 -v "$(pwd)/my-jars:/tika-extras" \
+  apache/tika:X.Y.Z-full
+----
+
+Treat that directory as a trusted code location: whatever is in it runs with the full privileges of
+the Tika process. Outside Docker the equivalent is the `tika.extras.dir` system property.
+
+== Pipes plugins
+
+`/tika`, `/rmeta`, `/meta` and `/unpack` work out of the box. The pipes endpoints (`/pipes`,
+`/async`) need the fetcher and emitter plugins for whatever they talk to. The image ships
+`tika-pipes-file-system` under `/opt/tika-server/plugins/`; mount any other plugin into that
+directory, one subdirectory per plugin.
+
+[source,bash]
+----
+docker run -d -p 127.0.0.1:9998:9998 \
+  -v "$(pwd)/tika-pipes-s3:/opt/tika-server/plugins/tika-pipes-s3" \
+  -v "$(pwd)/tika-config.json:/tika-config.json" \
+  apache/tika:X.Y.Z -c /tika-config.json
+----
+
+See xref:pipes/plugins/index.adoc[Pipes Plugins].
+
+== Memory
+
+The JVM sizes its heap from the container's memory limit, so set the limit rather than passing
+`-Xmx`. Tika Pipes forks JVMs inside the same container, and each fork's heap comes out of
+that same limit — size for the forks, not just the parent. See
+xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing].
+
+[source,bash]
+----
+docker run -d -p 127.0.0.1:9998:9998 --memory 4g apache/tika:X.Y.Z
+----
+
+== Docker Compose
+
+Worked compositions live in
+link:https://github.com/apache/tika/tree/main/tika-server/docker-build[`tika-server/docker-build`]:
+`docker-compose-tika-vision.yml` (a VLM parser against a local Ollama server),
+`docker-compose-tika-grobid.yml`, and `docker-compose-tika-customocr.yml`. Their configs are under
+`sample-configs/`.
+
+[source,yaml]
+----
+services:
+  tika:
+    image: apache/tika:latest-full
+    command: -c /tika-config.json
+    restart: on-failure
+    ports:
+      - "127.0.0.1:9998:9998"
+    volumes:
+      - ./tika-config.json:/tika-config.json
+----
+
+== Building the images yourself
+
+The `Dockerfile`s are in the source tree under `tika-server/docker-build/` (`minimal/` and
+`full/`) and `tika-grpc/docker-build/`. They download the signed release zip from an Apache mirror
+and verify it against the project KEYS file, so a build needs a released `TIKA_VERSION` — they do
+not build from your working tree. Maintainers publishing official images should follow
+xref:maintainers/release-guides/docker.adoc[Releasing Tika Docker Images].

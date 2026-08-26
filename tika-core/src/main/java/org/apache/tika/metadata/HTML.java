@@ -19,6 +19,9 @@ package org.apache.tika.metadata;
 public interface HTML {
     String PREFIX_HTML_META = "html" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
+    KeyPrefix SCRAPED_META = KeyPrefix.file(PREFIX_HTML_META,
+            "scraped <meta>/http-equiv/OpenGraph names not mapped to a Property");
+
 
     /**
      * If a script element contains a src value, this value

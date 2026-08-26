@@ -107,7 +107,7 @@ include::example$pipes-gcs-emitter.json[]
 |Destination GCS bucket (validated non-blank).
 
 |`prefix`
-|_no default_
+|_none_
 |Optional object-name prefix. A trailing `/` is stripped automatically.
 
 |`fileExtension`
@@ -127,6 +127,8 @@ include::example$pipes-gcs-iterator.json[]
 
 === Configuration
 
+In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.adoc#wiring[Wiring an Iterator]):
+
 [cols="1,1,3"]
 |===
 |Field |Default |Description
@@ -142,16 +144,12 @@ include::example$pipes-gcs-iterator.json[]
 |`prefix`
 |`""`
 |Object-name prefix to scope the listing.
-
-|`fetcherId` / `emitterId`
-|_required_
-|IDs of the fetcher and emitter to bind to each emitted tuple. See xref:pipes/iterators.adoc[Pipes Iterators] for the shared iterator contract.
 |===
 
 [#gcs-pipeline]
 == Complete Pipeline Example
 
-The example below wires the GCS fetcher, emitter, and iterator together for a bucket-to-bucket pipeline.
+Fetcher, emitter, and iterator wired into a bucket-to-bucket pipeline.
 
 [source,json]
 ----

@@ -25,6 +25,7 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -39,8 +40,8 @@ public class WARCParserTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata("cc.warc.gz");
         assertEquals(2, metadataList.size());
-        assertEquals("application/warc+gz", metadataList.get(0).get(Metadata.CONTENT_TYPE));
-        assertContains("text/html", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/warc+gz", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+        assertContains("text/html", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
         assertContains("Common Crawl on Twitter", metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals("<urn:uuid:c3f02271-44d2-4159-9cdb-3e3efeb16ba0>",
                 metadataList.get(1).get("warc:WARC-Warcinfo-ID"));
@@ -57,13 +58,13 @@ public class WARCParserTest extends TikaTest {
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
 
         Set<String> fieldsToIgnore = new HashSet<>();
-        fieldsToIgnore.add("X-TIKA:parse_time_millis");
+        fieldsToIgnore.add("tk:parse-time-millis");
         fieldsToIgnore.add("Content-Type");
-        fieldsToIgnore.add("Content-Type-Magic-Detected");
+        fieldsToIgnore.add("tk:content-type-magic-detected");
         assertMetadataListEquals(metadataList, gzMetadataList, fieldsToIgnore);
 
-        assertEquals("application/warc", metadataList.get(0).get(Metadata.CONTENT_TYPE));
-        assertEquals("application/warc+gz", gzMetadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/warc", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("application/warc+gz", gzMetadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
@@ -88,7 +89,7 @@ public class WARCParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata("example.arc.gz",
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT);
         assertEquals(2, metadataList.size());
-        assertEquals("application/arc+gz", metadataList.get(0).get(Metadata.CONTENT_TYPE));
+        assertEquals("application/arc+gz", metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
         assertContains("This domain is established",
                 metadataList.get(1).get(TikaCoreProperties.TIKA_CONTENT));
 

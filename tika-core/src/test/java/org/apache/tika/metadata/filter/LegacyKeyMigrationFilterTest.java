@@ -1,0 +1,358 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.metadata.filter;
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.filter.LegacyKeyMigrationFilter.Direction;
+
+public class LegacyKeyMigrationFilterTest {
+
+    private static LegacyKeyMigrationFilter bundled(Direction direction) {
+        LegacyKeyMigrationFilter.Config config = new LegacyKeyMigrationFilter.Config();
+        config.direction = direction;
+        return new LegacyKeyMigrationFilter(config);
+    }
+
+    private static List<Metadata> apply(LegacyKeyMigrationFilter f, Metadata m) throws Exception {
+        List<Metadata> list = new ArrayList<>();
+        list.add(m);
+        f.filter(list);
+        return list;
+    }
+
+    @Test
+    public void egressRenamesAndPassesThrough() throws Exception {
+        // table is v3 -> v4; egress rewrites 4.x output back to 3.x keys.
+        var f = new LegacyKeyMigrationFilter(
+                Map.of("pdf:hasMarkedContent", "pdf:has-marked-content"), Direction.V4_TO_V3);
+        Metadata m = new Metadata();
+        m.set("pdf:has-marked-content", "true");   // 4.x key
+        m.set("dc:title", "Hello");                // unmapped -> passthrough
+        apply(f, m);
+        assertEquals("true", m.get("pdf:hasMarkedContent"));
+        assertNull(m.get("pdf:has-marked-content"));
+        assertEquals("Hello", m.get("dc:title"));
+    }
+
+    @Test
+    public void egressWritesReservedTarget() throws Exception {
+        // Proves the trusted bracket: the 3.x target is a reserved (X-TIKA:) key a plain String
+        // write would be dropped for.
+        var f = new LegacyKeyMigrationFilter(
+                Map.of("X-TIKA:Parsed-By", "tk:parsed-by"), Direction.V4_TO_V3);
+        Metadata m = new Metadata();
+        // Post-4.0 tk: is reserved too, so seed it with a trusted write (a plain String set to a
+        // reserved key is dropped by the guard); the point of the test is the X-TIKA: target.
+        m.setTrusted("tk:parsed-by", "org.apache.tika.parser.DefaultParser");
+        apply(f, m);
+        assertEquals("org.apache.tika.parser.DefaultParser", m.get("X-TIKA:Parsed-By"));
+        assertNull(m.get("tk:parsed-by"));
+    }
+
+    @Test
+    public void ingestDropsRemovedKeysAndRenames() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(
+                "pst:folderPath", "DROPPED",
+                "pdf:hasMarkedContent", "pdf:has-marked-content"), Direction.V3_TO_V4);
+        Metadata m = new Metadata();
+        m.set("pst:folderPath", "/Inbox/Sub");     // 3.x key with no 4.x successor
+        m.set("pdf:hasMarkedContent", "true");     // 3.x key -> 4.x
+        apply(f, m);
+        assertNull(m.get("pst:folderPath"));       // dropped
+        assertEquals("true", m.get("pdf:has-marked-content"));
+    }
+
+    @Test
+    public void multiValuedKeysArePreserved() throws Exception {
+        var f = new LegacyKeyMigrationFilter(
+                Map.of("meta:mapi-importance", "mapi:importance"), Direction.V4_TO_V3);
+        Metadata m = new Metadata();
+        m.add("mapi:importance", "1");
+        m.add("mapi:importance", "2");
+        apply(f, m);
+        assertArrayEquals(new String[]{"1", "2"}, m.getValues("meta:mapi-importance"));
+    }
+
+    @Test
+    public void emptyTableIsNoOp() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
+        Metadata m = new Metadata();
+        m.set("dc:title", "Hello");
+        apply(f, m);
+        assertEquals("Hello", m.get("dc:title"));
+    }
+
+    @Test
+    public void loadsBundledTableAndRewritesRealKeys() throws Exception {
+        // default ctor loads the committed metadata-migration-3x-4x.json; egress (V4_TO_V3).
+        LegacyKeyMigrationFilter f = new LegacyKeyMigrationFilter();
+        Metadata m = new Metadata();
+        m.setTrusted("tk:content", "hello");       // reserved 4.x key -> X-TIKA:content
+        m.set("message:from-email", "a@b.com");    // non-reserved 4.x key -> Message:From-Email
+        apply(f, m);
+        assertEquals("hello", m.get("X-TIKA:content"));
+        assertNull(m.get("tk:content"));
+        assertEquals("a@b.com", m.get("Message:From-Email"));
+    }
+
+    @Test
+    public void digestPrefixRuleEgress() throws Exception {
+        // digest keys have no declaring field, so not in the flat table -> handled by the prefix rule.
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V4_TO_V3);
+        Metadata m = new Metadata();
+        m.setTrusted("tk:digest:SHA-256", "abc");
+        m.setTrusted("tk:digest:SHA-256:BASE32", "def");   // encoding suffix preserved
+        m.setTrusted("tk:digest:MD5", "ghi");              // MD5 unchanged between 3.x/4.x
+        apply(f, m);
+        assertEquals("abc", m.get("X-TIKA:digest:SHA256"));
+        assertEquals("def", m.get("X-TIKA:digest:SHA256:BASE32"));
+        assertEquals("ghi", m.get("X-TIKA:digest:MD5"));
+        assertNull(m.get("tk:digest:SHA-256"));
+    }
+
+    @Test
+    public void digestPrefixRuleIngest() throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), Direction.V3_TO_V4);
+        Metadata m = new Metadata();
+        m.setTrusted("X-TIKA:digest:SHA3_512", "z");
+        apply(f, m);
+        assertEquals("z", m.get("tk:digest:SHA3-512"));
+        assertNull(m.get("X-TIKA:digest:SHA3_512"));
+    }
+
+    // Open-vocabulary KeyPrefix families (unbounded suffix), rewritten by prefix rule rather than
+    // the flat table; one representative row per family (plus a second NER row for the entity
+    // type's own underscore, kept verbatim through the rule).
+    private static final String[][] EGRESS_ROWS = {
+            // {v4 key, v3 key, sample value}
+            {"ner:PERSON", "NER_PERSON", "John McKay"},
+            {"ner:WEEK_DAY", "NER_WEEK_DAY", "Sunday"},
+            {"envi:lat/lon", "envi.lat/lon", "36.79, -108.48"},
+            {"ogg:streams-total", "streams-total", "2"},
+            {"iso19115:keywords:2", "Keywords 2", "climate"},
+            {"iso19115:keywords-type:2", "KeywordsType 2", "theme"},
+            {"iso19115:thesaurus-name-title:2", "ThesaurusNameTitle 2", "GCMD"},
+            {"iso19115:thesaurus-name-alternative-title:2", "ThesaurusNameAlternativeTitle 2", "GCMD Keywords"},
+            {"geotopic:alt-name1", "Optional_NAME1", "United States"},
+            {"geotopic:alt-longitude12", "Optional_LONGITUDE12", "-98.5"},
+            {"iwork:document-id", "iworks:document-id", "ABC-123"},
+            {"dif:DIF-Entry_ID", "DIF-Entry_ID", "e-42"},
+            {"mdb-prop:Title", "MDB_PROP:Title", "My DB"},
+            {"mdb-user-prop:Owner", "MDB_USER_PROP:Owner", "me"},
+            {"mdb-summary-prop:Company", "MDB_SUMMARY_PROP:Company", "ACME"},
+            // bare-in-3.x families: egress strips the 4.x prefix
+            {"hdf:GRingPointLatitude", "GRingPointLatitude", "1.0 2.0"},
+            {"netcdf:project_id", "project_id", "IPCC"},
+            {"gdal:NETCDF_VARNAME", "NETCDF_VARNAME", "tasmax"},
+            {"isatab:Study Title", "Study Title", "Mouse study"},
+            {"mp4:com.apple.quicktime.author", "com.apple.quicktime.author", "someone"},
+            {"network:geo:lat", "geo:lat", "36.4"},
+            {"audio:x-vendor-extension", "x-vendor-extension", "v"},
+    };
+    private static final String[][] INGEST_ROWS = {
+            // {v3 key, v4 key, sample value}
+            {"NER_LOCATION", "ner:LOCATION", "Los Angeles"},
+            {"envi.samples", "envi:samples", "2400"},
+            {"streams-vorbis", "ogg:streams-vorbis", "1"},
+            {"Keywords 3", "iso19115:keywords:3", "ocean"},
+            {"Optional_LATITUDE1", "geotopic:alt-latitude1", "39.76"},
+            {"iworks:document-id", "iwork:document-id", "ABC-123"},
+            {"DIF-Entry_ID", "dif:DIF-Entry_ID", "e-42"},
+            {"MDB_PROP:Title", "mdb-prop:Title", "My DB"},
+            {"MDB_USER_PROP:Owner", "mdb-user-prop:Owner", "me"},
+            {"MDB_SUMMARY_PROP:Company", "mdb-summary-prop:Company", "ACME"},
+    };
+    // bare-in-3.x families carry no marker a rule could recognize, so ingest must NOT touch them
+    private static final String[] INGEST_PASSTHROUGH_KEYS = {
+            "GRingPointLatitude", "project_id", "Study Title", "com.apple.quicktime.author",
+            "x-vendor-extension", "File-Type-Description", "version", "Password",
+    };
+
+    @Test
+    public void prefixRuleFamiliesEgress() throws Exception {
+        for (String[] row : EGRESS_ROWS) {
+            assertMigrates(Direction.V4_TO_V3, row[0], row[1], row[2]);
+        }
+    }
+
+    @Test
+    public void prefixRuleFamiliesIngest() throws Exception {
+        for (String[] row : INGEST_ROWS) {
+            assertMigrates(Direction.V3_TO_V4, row[0], row[1], row[2]);
+        }
+    }
+
+    private static void assertMigrates(Direction direction, String from, String to, String value)
+            throws Exception {
+        var f = new LegacyKeyMigrationFilter(Map.of(), direction);
+        Metadata m = new Metadata();
+        m.set(from, value);
+        apply(f, m);
+        assertEquals(value, m.get(to), from + " -> " + to);
+        assertNull(m.get(from), from + " should be removed");
+    }
+
+    @Test
+    public void bareFamilyKeysPassThroughOnIngest() throws Exception {
+        LegacyKeyMigrationFilter f = bundled(Direction.V3_TO_V4);
+        Metadata m = new Metadata();
+        for (String key : INGEST_PASSTHROUGH_KEYS) {
+            m.set(key, "v");
+        }
+        apply(f, m);
+        for (String key : INGEST_PASSTHROUGH_KEYS) {
+            assertEquals("v", m.get(key), key + " must pass through unchanged on ingest");
+        }
+    }
+
+    @Test
+    public void bundledTableEndToEnd() throws Exception {
+        // One behavior test over the committed table, pinning the three bug classes the
+        // TIKA-4816 round-3 review found shipped unpinned: (a) egress-only rows -- several 4.x
+        // keys share one bare 3.x spelling, restored on egress, ignored on ingest; (b) grobid's
+        // real 3.x spellings were grobid:header_<Field>, and bare generic words must not be
+        // mis-mapped; (c) ISO19115 v3 spellings are character-exact including trailing spaces.
+        LegacyKeyMigrationFilter egress = new LegacyKeyMigrationFilter();   // bundled, V4_TO_V3
+        Metadata m = new Metadata();
+        m.set("hdf:file-type-description", "HDF5");
+        m.set("mp3:version", "MPEG 3 Layer III");
+        m.set("mdb:password", "s3cret");
+        m.set("grobid:tei:abstract", "text");
+        apply(egress, m);
+        assertEquals("HDF5", m.get("File-Type-Description"));
+        assertEquals("MPEG 3 Layer III", m.get("version"));
+        assertEquals("s3cret", m.get("Password"));
+        assertEquals("text", m.get("grobid:header_Abstract"));
+        assertNull(m.get("hdf:file-type-description"));
+
+        Metadata m2 = new Metadata();
+        m2.set("netcdf:file-type-description", "NetCDF-4");
+        m2.set("ogg:codec-version", "Theora 3.2.1");
+        apply(egress, m2);
+        assertEquals("NetCDF-4", m2.get("File-Type-Description"));
+        assertEquals("Theora 3.2.1", m2.get("version"));
+
+        LegacyKeyMigrationFilter ingest = bundled(Direction.V3_TO_V4);
+        Metadata m3 = new Metadata();
+        m3.set("grobid:header_Title", "A Paper");
+        m3.set("Title", "not grobid's");            // bare generic word: must pass through
+        m3.set("AccessContraints ", "restricted");  // sic: upstream typo + trailing space
+        apply(ingest, m3);
+        assertEquals("A Paper", m3.get("grobid:tei:title"));
+        assertEquals("not grobid's", m3.get("Title"));
+        assertEquals("restricted", m3.get("iso19115:access-constraints"));
+        assertNull(m3.get("grobid:header_Title"));
+        assertNull(m3.get("AccessContraints "));
+    }
+
+    /**
+     * These seven are 3.x bare String constants, not Property fields, so the field-identity join
+     * cannot generate their rows -- they are hand-carried in migration-overlay.tsv and nothing
+     * but this test would catch their loss.
+     */
+    @Test
+    public void testBareMailKeysBridgeBothDirections() throws Exception {
+        LegacyKeyMigrationFilter ingest = bundled(Direction.V3_TO_V4);
+        Metadata in = new Metadata();
+        in.set("Message-To", "to@example.com");
+        in.set("Message-From", "from@example.com");
+        in.set("Message-Cc", "cc@example.com");
+        in.set("Message-Bcc", "bcc@example.com");
+        in.set("Message-Recipient-Address", "rcpt@example.com");
+        in.set("Multipart-Boundary", "----=_Part_0");
+        in.set("Multipart-Subtype", "mixed");
+        apply(ingest, in);
+        assertEquals("to@example.com", in.get("message:to"));
+        assertEquals("from@example.com", in.get("message:from"));
+        assertEquals("cc@example.com", in.get("message:cc"));
+        assertEquals("bcc@example.com", in.get("message:bcc"));
+        assertEquals("rcpt@example.com", in.get("message:recipient-address"));
+        assertEquals("----=_Part_0", in.get("multipart:boundary"));
+        assertEquals("mixed", in.get("multipart:subtype"));
+        assertNull(in.get("Message-To"));
+        assertNull(in.get("Multipart-Boundary"));
+
+        LegacyKeyMigrationFilter egress = bundled(Direction.V4_TO_V3);
+        Metadata out = new Metadata();
+        out.set("message:to", "to@example.com");
+        out.set("multipart:subtype", "mixed");
+        apply(egress, out);
+        assertEquals("to@example.com", out.get("Message-To"));
+        assertEquals("mixed", out.get("Multipart-Subtype"));
+        assertNull(out.get("message:to"));
+    }
+
+    /**
+     * Six open-vocabulary families whose spelling changed in 4.x, none of which can appear as
+     * flat rows. html:/img: were bare in 3.x, so they bridge on egress only; the other four
+     * carry a 3.x marker and bridge both ways.
+     */
+    @Test
+    public void testOpenVocabularyPrefixFamiliesBridge() throws Exception {
+        LegacyKeyMigrationFilter egress = bundled(Direction.V4_TO_V3);
+        Metadata out = new Metadata();
+        out.set("html:og:description", "a page");
+        out.set("html:scriptSrc", "https://example.com/x.js");  // declared: flat row beats the strip
+        out.set("img:Image Description", "t1");
+        out.set("message:raw-header:X-Originating-IP", "10.0.0.1");
+        out.set("rtf:pict:wmetafile", "8");
+        out.set("icc:Blue Colorant", "(0.1, 0.2, 0.3)");
+        out.set("mbox:from", "someone@example.com");
+        apply(egress, out);
+        assertEquals("a page", out.get("og:description"));
+        assertEquals("https://example.com/x.js", out.get("html_meta:scriptSrc"));
+        assertEquals("t1", out.get("Image Description"));
+        assertEquals("10.0.0.1", out.get("Message:Raw-Header:X-Originating-IP"));
+        assertEquals("8", out.get("rtf_pict:wmetafile"));
+        assertEquals("(0.1, 0.2, 0.3)", out.get("ICC:Blue Colorant"));
+        assertEquals("someone@example.com", out.get("MboxParser-from"));
+        assertNull(out.get("html:og:description"));
+        assertNull(out.get("html:scriptSrc"));
+        assertNull(out.get("img:Image Description"));
+        assertNull(out.get("mbox:from"));
+
+        LegacyKeyMigrationFilter ingest = bundled(Direction.V3_TO_V4);
+        Metadata in = new Metadata();
+        in.set("html_meta:scriptSrc", "https://example.com/x.js");
+        in.set("Message:Raw-Header:X-Originating-IP", "10.0.0.1");
+        in.set("rtf_pict:wmetafile", "8");
+        in.set("ICC:Blue Colorant", "(0.1, 0.2, 0.3)");
+        in.set("MboxParser-from", "someone@example.com");
+        in.set("og:description", "a page");     // bare in 3.x: no marker, must pass through
+        in.set("Image Description", "t1");
+        apply(ingest, in);
+        assertEquals("https://example.com/x.js", in.get("html:scriptSrc"));
+        assertEquals("10.0.0.1", in.get("message:raw-header:X-Originating-IP"));
+        assertEquals("8", in.get("rtf:pict:wmetafile"));
+        assertEquals("(0.1, 0.2, 0.3)", in.get("icc:Blue Colorant"));
+        assertEquals("someone@example.com", in.get("mbox:from"));
+        assertEquals("a page", in.get("og:description"));
+        assertEquals("t1", in.get("Image Description"));
+        assertNull(in.get("ICC:Blue Colorant"));
+        assertNull(in.get("MboxParser-from"));
+    }
+}

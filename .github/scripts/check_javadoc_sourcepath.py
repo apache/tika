@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-Guard the hand-maintained <sourcepath> in tika-parent/pom.xml used by the
+Guard the hand-maintained <sourcepath> in the root pom.xml used by the
 TIKA-4318 javadoc:aggregate workaround. That list must name every module's
 src/main/java (except tika-grpc); a module missing from it is silently dropped
 from the aggregated API docs. Run this right before building the javadocs.
@@ -30,7 +30,7 @@ import sys
 
 PRUNE = {"target", ".git", ".local_m2_repo", "node_modules", ".mvn"}
 EXCLUDE_MODULE_PREFIX = "tika-grpc/"          # protobuf gen-sources not on the aggregate classpath
-POM = "tika-parent/pom.xml"
+POM = "pom.xml"
 
 
 def actual_roots(root: str):

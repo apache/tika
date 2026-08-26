@@ -17,9 +17,7 @@
 package org.apache.tika.server.core;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -33,12 +31,17 @@ import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.TikaTest;
 
+// PER_CLASS so subclasses' state (notably TEMP_WORKING_DIR below) is isolated
+// per test class instead of shared via one static field on this common base --
+// a prerequisite for running subclasses' test classes concurrently.
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class IntegrationTestBase extends TikaTest {
 
     static final String TEST_HELLO_WORLD = "test-documents/mock/hello_world.xml";
@@ -52,24 +55,24 @@ public class IntegrationTestBase extends TikaTest {
     static final String STATUS_PATH = "/status";
 
     static final long MAX_WAIT_MS = 60000;
-    static final int integrationTestPort = TestPortAllocator.findFreePort();
-    static final String INTEGRATION_TEST_PORT = String.valueOf(integrationTestPort);
-    protected static final String endPoint = "http://localhost:" + INTEGRATION_TEST_PORT;
     private static final Logger LOG = LoggerFactory.getLogger(IntegrationTestBase.class);
 
+    // Instance (not static) so each test method -- JUnit5 creates a fresh test
+    // instance per @Test method by default -- gets its own port. These used to be
+    // `static final`, computed once for the whole JVM fork and shared by every
+    // subclass; harmless serially, but a guaranteed bind collision if two
+    // subclasses' tests ever ran concurrently in the same fork.
+    final int integrationTestPort = TestPortAllocator.findFreePort();
+    final String INTEGRATION_TEST_PORT = String.valueOf(integrationTestPort);
+    protected final String endPoint = "http://localhost:" + INTEGRATION_TEST_PORT;
+
     @TempDir
-    static Path TEMP_WORKING_DIR;
-    static Path LOG_FILE;
-    static Path STREAMS_DIR;
+    Path TEMP_WORKING_DIR;
     protected Process process = null;
 
     @BeforeAll
-    public static void staticSetup() throws Exception {
+    public void setUp() throws Exception {
         LogUtils.setLoggerClass(NullWebClientLogger.class);
-
-        LOG_FILE = Files.createTempFile(TEMP_WORKING_DIR, "tika-server-integration", ".xml");
-        Files.copy(TikaServerIntegrationTest.class.getResourceAsStream("/logging/log4j2_forked.xml"), LOG_FILE, StandardCopyOption.REPLACE_EXISTING);
-        STREAMS_DIR = Files.createTempDirectory(TEMP_WORKING_DIR, "tika-server-integration");
     }
 
     @AfterEach

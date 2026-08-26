@@ -57,11 +57,11 @@ curl -s http://localhost:9998/version
 
 *Expected:* `Apache Tika X.X.X`
 
-=== Test 2: PUT /detect/stream
+=== Test 2: PUT /detect
 
 [source,bash]
 ----
-curl -s -X PUT -T testPDF.pdf http://localhost:9998/detect/stream
+curl -s -X PUT -T testPDF.pdf http://localhost:9998/detect
 ----
 
 *Expected:* `application/pdf`
@@ -100,7 +100,7 @@ curl -s -X PUT -T testPDF.pdf http://localhost:9998/tika/xml
 curl -s -X PUT -T testPDF.pdf http://localhost:9998/tika/json
 ----
 
-*Expected:* JSON object with metadata and X-TIKA:content field.
+*Expected:* JSON object with metadata and tk:content field.
 
 === Test 7: PUT /meta
 
@@ -118,7 +118,8 @@ curl -s -X PUT -H "Accept: application/json" -T testPDF.pdf http://localhost:999
 curl -s -X PUT -T testPDF.pdf http://localhost:9998/meta/Content-Type
 ----
 
-*Expected:* `Content-Type,application/pdf`
+*Expected:* JSON containing only the requested field: `{"Content-Type":"application/pdf"}`
+(the header-less default is JSON; add `-H "Accept: text/csv"` for `Content-Type,application/pdf`)
 
 === Test 9: PUT /rmeta
 
@@ -138,14 +139,16 @@ curl -s -X PUT -T test_recursive_embedded.docx http://localhost:9998/rmeta/text
 
 *Expected:* JSON array with ToTextContentHandler content.
 
-=== Test 11: PUT /language/stream
+=== Test 11: PUT /language
 
 [source,bash]
 ----
-curl -s -X PUT -T testPDF.pdf http://localhost:9998/language/stream
+curl -s -X PUT -T testPDF.pdf http://localhost:9998/language
 ----
 
-*Expected:* Two-letter language code (e.g., `en`, `th`).
+*Expected:* An ISO 639 code, i.e. 2-3 lowercase letters. Do not assert a *particular*
+language here: `testPDF.pdf` carries too little text for detection to be reliable, which
+is why `run-uat.sh` matches `^[a-z]{2,3}$` rather than a specific code.
 
 === Test 12: PUT /unpack/all
 
@@ -155,7 +158,8 @@ curl -s -X PUT -T test_recursive_embedded.docx http://localhost:9998/unpack/all 
 unzip -l /tmp/unpack.zip
 ----
 
-*Expected:* ZIP file containing extracted embedded files plus `__TEXT__` and `__METADATA__` files.
+*Expected:* ZIP file containing the extracted embedded files, a `*.metadata.json` entry
+per file, and the original container document.
 
 === Test 13: GET /parsers
 
@@ -235,7 +239,7 @@ EOF
 java -jar tika-server-standard-4.0.0-SNAPSHOT.jar -c tika-config-pipes-no-flags.json
 ----
 
-*Expected:* The server refuses to start, failing with a `TikaConfigException` stating that the `pipes` endpoint requires `allowPipes` to be `true`. The same applies to `async`. (`/status` is no longer gated — it can be enabled simply by listing `status` under `endpoints`.)
+*Expected:* The server refuses to start, failing with a `TikaConfigException` stating that the `pipes` endpoint requires `allowPipes` to be `true`. The same applies to `async`. `/status` is not gated — listing `status` under `endpoints` is enough.
 
 == Part 2: Tests with allowPipes / allowPerRequestConfig
 
@@ -349,23 +353,29 @@ java -jar tika-server-standard-4.0.0-SNAPSHOT.jar -c tika-config.json &
 
 == Headers
 
-=== Test 26: X-Tika-OCRskipOcr Header
+=== Test 26: Removed X-Tika-* headers are ignored
+
+The `X-Tika-OCR*` and `X-Tika-PDF*` header families no longer exist — `grep X-Tika`
+over `tika-server/` finds nothing. This test only confirms that sending one is inert
+rather than an error; it does *not* change OCR behaviour.
 
 [source,bash]
 ----
 curl -s -X PUT -H "X-Tika-OCRskipOcr: true" -T testPDF.pdf http://localhost:9998/tika/text
 ----
 
-*Expected:* Text extraction without OCR.
+*Expected:* HTTP 200 with the same body as the same request without the header. To
+configure OCR in 4.x, use `tika-config.json` (or per-request config where enabled) —
+see xref:migration-to-4x/migrating-tika-server-4x.adoc[Migrating tika-server to 4.x].
 
 === Test 27: Content-Disposition Filename
 
 [source,bash]
 ----
-curl -s -X PUT -H "Content-Disposition: attachment; filename=myfile.pdf" -T testPDF.pdf http://localhost:9998/meta/resourceName
+curl -s -X PUT -H "Content-Disposition: attachment; filename=myfile.pdf" -T testPDF.pdf http://localhost:9998/meta/tk:resource-name
 ----
 
-*Expected:* Returns the filename from Content-Disposition header.
+*Expected:* Returns the `tk:resource-name` value taken from the Content-Disposition filename.
 
 == Error Handling
 
@@ -406,7 +416,7 @@ The following endpoints were tested and verified working:
 |Endpoint |Method |Status
 
 |`/version` |GET |PASS
-|`/detect/stream` |PUT |PASS
+|`/detect` |PUT |PASS
 |`/tika` |PUT |PASS
 |`/tika/text` |PUT |PASS
 |`/tika/html` |PUT |PASS
@@ -416,7 +426,7 @@ The following endpoints were tested and verified working:
 |`/meta/\{field}` |PUT |PASS
 |`/rmeta` |PUT |PASS
 |`/rmeta/text` |PUT |PASS
-|`/language/stream` |PUT |PASS
+|`/language` |PUT |PASS
 |`/unpack/all` |PUT |PASS
 |`/parsers` |GET |PASS
 |`/detectors` |GET |PASS
@@ -445,7 +455,7 @@ The following endpoints were tested and verified working:
 
 === Issue 1: Language Detection Accuracy
 
-Short texts may not be detected reliably. The `/language/stream` endpoint works best with substantial text content.
+Short texts may not be detected reliably. The `/language` endpoint works best with substantial text content.
 
 == Quick Reference
 
@@ -478,7 +488,7 @@ curl -X PUT -T file.docx http://localhost:9998/rmeta/text
 === Detection
 [source,bash]
 ----
-curl -X PUT -T file.pdf http://localhost:9998/detect/stream
+curl -X PUT -T file.pdf http://localhost:9998/detect
 ----
 
 === Extract Embedded Files
@@ -493,14 +503,16 @@ curl -X PUT -T file.docx http://localhost:9998/unpack/all -o output.zip
 
 The server automatically configures the required fetcher and emitter for pipes-based parsing:
 
-* **tika-server-fetcher**: A file-system-fetcher with `basePath` pointing to a dedicated temp directory for input files. This enables the `/tika`, `/rmeta`, and `/meta` endpoints to work with uploaded files.
+* **\_\_tika-server**: A file-system-fetcher with `basePath` pointing to a dedicated temp directory for input files. It is the over-threshold path for uploads to `/tika`, `/rmeta`, `/meta`, `/detect` and `/unpack`: a body at or below xref:pipes/configuration.adoc#payload-limits[`maxInlineBytes`] is carried inside the request and served by the built-in `\_\_bytes` fetcher instead, so it never reaches this directory.
 
-* **unpack-emitter**: A file-system-emitter with `basePath` pointing to a dedicated temp directory for unpacked files. This is only created when the `/unpack` endpoint is enabled (default). This enables the `/unpack/all` endpoint to return embedded files as a ZIP.
+* **\_\_unpack**: A file-system-emitter with `basePath` pointing to a dedicated temp directory for unpacked files. This is only created when the `/unpack` endpoint is enabled (default). This enables the `/unpack/all` endpoint to return embedded files as a ZIP.
 
 Both temp directories are cleaned up on server shutdown.
 
-If a user config file does not include `plugin-roots`, the server automatically adds a default value pointing to a `plugins` directory in the current working directory.
+The `\_\_` prefix is reserved. Component ids beginning with `\_\_` name components the server wires up for itself: a `/pipes` or `/async` request that names one is rejected, a config file that defines one fails at startup, and they are omitted from the fetcher and emitter lists reported in error messages. Ids you configure yourself may contain only letters, digits, `.`, `_` and `-`, and are trimmed of surrounding whitespace when loaded.
+
+If a user config file does not include `plugin-roots`, the server automatically adds a default value: a `plugins` directory beside the server jar if one exists, otherwise `plugins` in the current working directory. An explicit `plugin-roots` in the user config is never overwritten.
 
 === Security Boundary
 
-Child processes (pipes workers) are configured with `basePath` rather than `allowAbsolutePaths`, ensuring they can only access files within their designated temp directories. This provides a security boundary between the parent server process and forked child processes.
+Forks are configured with `basePath` rather than `allowAbsolutePaths`, ensuring they can only access files within their designated temp directories. This provides a security boundary between the parent server process and its forks.

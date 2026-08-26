@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>org.apache.tika</groupId>
+    <artifactId>tika-parent</artifactId>
+    <version>${revision}</version>
+    <relativePath>../tika-parent/pom.xml</relativePath>
+  </parent>
+
+  <artifactId>tika-metadata-schema</artifactId>
+  <name>Apache Tika metadata schema</name>
+  <description>Generates and enforces the machine-readable metadata key registry
+    (metadata-keys.json) from the live Property declarations.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- brings the standard parser classes onto the classpath so their Property
+         constants are discoverable by the generator -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parsers-standard-package</artifactId>
+      <version>${project.version}</version>
+      <type>pom</type>
+    </dependency>
+
+    <!-- Extended/optional parser families (TIKA-4816 stage 5a scope expansion): test-scope only,
+         since the registry is committed and MetadataKeyValidator is dependency-free at runtime, so
+         pulling their (sometimes heavy) runtime deps in is a build-time-only cost. Transitively
+         brings tika-parser-scientific-module (netcdf:/grib:/envi.) and tika-parser-sqlite3-module
+         (sqlite3:) onto the scan classpath. -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parser-scientific-package</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parser-sqlite3-package</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-parser-nlp-module</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-vlm</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <!-- The registries under src/main/resources are committed and drift-gated: MetadataSchemaTest /
+       MetadataFieldTableTest regenerate in-memory and fail if they go stale. Regenerate with:
+         ./mvnw -pl tika-metadata-schema -Pregen-metadata-schema process-classes
+       Forking exec goal is deliberate: exec:java runs in-process, scans the wrong classpath, and
+       silently emits a near-empty registry. See .skills/metadata-schema/SKILL.md. -->
+  <profiles>
+    <profile>
+      <id>regen-metadata-schema</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>exec-maven-plugin</artifactId>
+            <version>3.6.3</version>
+            <executions>
+              <execution>
+                <id>regen-registries</id>
+                <phase>process-classes</phase>
+                <goals>
+                  <goal>exec</goal>
+                </goals>
+                <configuration>
+                  <executable>java</executable>
+                  <!-- default classpathScope is "runtime", which excludes the test-scope extended
+                       parser families (TIKA-4816 stage 5a); the generated classpath must match what
+                       MetadataSchemaTest sees at test time (full test classpath) or the committed
+                       registry silently falls short of it. -->
+                  <classpathScope>test</classpathScope>
+                  <arguments>
+                    <argument>-cp</argument>
+                    <classpath />
+                    <argument>org.apache.tika.metadata.schema.SchemaGenerator</argument>
+                    <argument>${project.basedir}/src/main/resources/org/apache/tika/metadata/metadata-keys.json</argument>
+                    <argument>${project.basedir}/src/main/resources/org/apache/tika/metadata/metadata-open-namespaces.json</argument>
+                    <argument>${project.basedir}/src/main/resources/org/apache/tika/metadata/metadata-key-fields.json</argument>
+                  </arguments>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

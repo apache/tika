@@ -55,7 +55,8 @@ You can check for this in your code:
 ----
 import org.apache.tika.metadata.Zip;
 
-boolean wasSalvaged = metadata.getBoolean(Zip.SALVAGED);
+// getBoolean returns null when the property is not set
+boolean wasSalvaged = Boolean.TRUE.equals(metadata.getBoolean(Zip.SALVAGED));
 ----
 
 === Direct Parser Usage
@@ -72,28 +73,33 @@ For consistent behavior with truncated files, use `AutoDetectParser`:
 
 [source,java]
 ----
-// Recommended: Uses detection with salvaging
+// Recommended: detection runs, so salvaging applies
 AutoDetectParser parser = new AutoDetectParser();
-parser.parse(inputStream, handler, metadata, context);
+try (TikaInputStream tis = TikaInputStream.get(path)) {
+    parser.parse(tis, handler, metadata, context);
+}
 ----
 
 Rather than calling parsers directly:
 
 [source,java]
 ----
-// Direct parser: No salvaging support
+// Direct parser: no detection, so no salvaging -- may fail on truncated files
 ZipParser parser = new ZipParser();
-parser.parse(inputStream, handler, metadata, context);  // May fail on truncated files
+try (TikaInputStream tis = TikaInputStream.get(path)) {
+    parser.parse(tis, handler, metadata, context);
+}
 ----
 
 == Other Detection Hints
 
 The detector also sets additional metadata hints for parsers:
 
-`zip:detectorZipFileOpened`:: `true` if the detector successfully opened the ZIP as a `ZipFile`.
-The `ZipFile` object is available via `TikaInputStream.getOpenContainer()` for reuse by parsers.
+`zip:detector-zip-file-opened`:: `true` if the detector has a `ZipFile` for the parser to reuse —
+either the original or, when `zip:salvaged` is also `true`, the salvaged copy. The `ZipFile`
+object is available via `TikaInputStream.getOpenContainer()`.
 
-`zip:detectorDataDescriptorRequired`:: `true` if streaming detection required
+`zip:detector-data-descriptor-required`:: `true` if streaming detection required
 DATA_DESCRIPTOR support. This hint helps parsers choose the correct streaming mode.
 
 == Related Topics

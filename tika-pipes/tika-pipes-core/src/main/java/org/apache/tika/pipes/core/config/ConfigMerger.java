@@ -20,19 +20,21 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
+import org.apache.tika.pipes.api.ComponentIds;
 
 /**
  * Utility for merging configuration overrides with existing Tika JSON configuration.
@@ -88,8 +90,8 @@ public class ConfigMerger {
      */
     public static MergeResult mergeOrCreate(Path existingConfig, ConfigOverrides overrides)
             throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        // The shared config mapper: same comment and strictness rules as the main loader.
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
 
         ObjectNode root;
         if (existingConfig != null && Files.exists(existingConfig)) {
@@ -105,6 +107,12 @@ public class ConfigMerger {
             LOG.debug("Creating new config (no existing config provided)");
         }
 
+        // Refuse user-authored __ ids before any override is folded in. This is the only point
+        // where the user's config and the host's overrides are still distinguishable -- afterwards
+        // they are one JSON tree, and getOrCreateObject would silently merge a user entry named
+        // __tika-server into the host's rather than failing.
+        rejectSystemIdsInUserConfig(root, existingConfig);
+
         // Generate UUID for internal components
         String uuid = UUID.randomUUID().toString();
 
@@ -118,7 +126,7 @@ public class ConfigMerger {
             for (ConfigOverrides.FetcherOverride fetcher : overrides.getFetchers()) {
                 String fetcherId = fetcher.getId();
                 if (fetcherId == null || fetcherId.isEmpty()) {
-                    fetcherId = "tika-internal-fetcher-" + uuid;
+                    fetcherId = GENERATED_FETCHER_PREFIX + uuid;
                 }
                 generatedFetcherIds.add(fetcherId);
 
@@ -136,7 +144,7 @@ public class ConfigMerger {
             for (ConfigOverrides.EmitterOverride emitter : overrides.getEmitters()) {
                 String emitterId = emitter.getId();
                 if (emitterId == null || emitterId.isEmpty()) {
-                    emitterId = "tika-internal-emitter-" + uuid;
+                    emitterId = GENERATED_EMITTER_PREFIX + uuid;
                 }
                 generatedEmitterIds.add(emitterId);
 
@@ -216,6 +224,40 @@ public class ConfigMerger {
     /**
      * Gets or creates an ObjectNode child of the parent.
      */
+    /**
+     * Ids for host components the caller did not name (PipesForkParser's fetcher, for one). They
+     * live in the reserved namespace like every other host-wired component: the UUID makes them
+     * unguessable, but that is not the same as being unnameable.
+     */
+    public static final String GENERATED_FETCHER_PREFIX =
+            ComponentIds.SYSTEM_PREFIX + "tika-internal-fetcher-";
+
+    public static final String GENERATED_EMITTER_PREFIX =
+            ComponentIds.SYSTEM_PREFIX + "tika-internal-emitter-";
+
+    /** Component sections whose keys are instance ids. */
+    private static final String[] ID_KEYED_SECTIONS = {"fetchers", "emitters", "pipes-iterators"};
+
+    private static void rejectSystemIdsInUserConfig(ObjectNode root, Path source)
+            throws IOException {
+        for (String section : ID_KEYED_SECTIONS) {
+            JsonNode node = root.get(section);
+            if (node == null || !node.isObject()) {
+                continue;
+            }
+            for (Iterator<String> it = node.fieldNames(); it.hasNext(); ) {
+                String id = it.next();
+                if (ComponentIds.isSystem(id)) {
+                    throw new IOException("'" + id.trim() + "' in '" + section + "'"
+                            + (source == null ? "" : " of " + source)
+                            + " is reserved: ids beginning with '" + ComponentIds.SYSTEM_PREFIX
+                            + "' name components the host wires up for itself and may not be"
+                            + " defined in a config file.");
+                }
+            }
+        }
+    }
+
     private static ObjectNode getOrCreateObject(ObjectMapper mapper, ObjectNode parent, String key) {
         if (parent.has(key) && parent.get(key).isObject()) {
             return (ObjectNode) parent.get(key);

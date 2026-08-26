@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -51,7 +52,7 @@ public class XPSParserTest extends TikaTest {
         assertContains("tika content", content);
 
 
-        assertEquals("image/jpeg", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("image/jpeg", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
@@ -82,15 +83,15 @@ public class XPSParserTest extends TikaTest {
         assertEquals("2017-12-12T11:15:38Z", metadata.get(TikaCoreProperties.MODIFIED));
 
 
-        assertEquals("image/png", metadataList.get(1).get(Metadata.CONTENT_TYPE));
+        assertEquals("image/png", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
 
         Metadata inlineJpeg = metadataList.get(2);
-        assertEquals("image/jpeg", inlineJpeg.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/jpeg", inlineJpeg.get(HttpHeaders.CONTENT_TYPE));
         assertContains("INetCache", inlineJpeg.get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 inlineJpeg.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
 
-        assertEquals("image/jpeg", metadataList.get(3).get(Metadata.CONTENT_TYPE));
+        assertEquals("image/jpeg", metadataList.get(3).get(HttpHeaders.CONTENT_TYPE));
 //        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
         //              inlineJpeg.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
 

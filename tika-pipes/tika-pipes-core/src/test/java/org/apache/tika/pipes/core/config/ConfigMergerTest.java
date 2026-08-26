@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -78,6 +79,40 @@ public class ConfigMergerTest {
         assertEquals("plugins", root.get("plugin-roots").asText());
 
         // Clean up
+        Files.deleteIfExists(result.configPath());
+    }
+
+    /** TIKA-4834: the config docs permit comments; the merge step must not reject them. */
+    @Test
+    public void testMergeWithCommentedConfig() throws IOException {
+        String existingConfig = """
+                // leading line comment
+                {
+                    /* block comment */
+                    "fetchers": {
+                        "existing-fetcher": { // trailing comment
+                            "file-system-fetcher": {
+                                "basePath": "/existing/path"
+                            }
+                        }
+                    },
+                    "plugin-roots": "existing-plugins"
+                }
+                """;
+        Path existingPath = tempDir.resolve("commented-config.json");
+        Files.writeString(existingPath, existingConfig);
+
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .addFetcher("new-fetcher", "file-system-fetcher", Map.of("basePath", "/new/path"))
+                .build();
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(existingPath, overrides);
+
+        // The merged file is plain JSON: readable by a strict mapper, content intact.
+        JsonNode root = new ObjectMapper().readTree(result.configPath().toFile());
+        assertEquals("/existing/path", root.get("fetchers").get("existing-fetcher")
+                .get("file-system-fetcher").get("basePath").asText());
+        assertTrue(root.get("fetchers").has("new-fetcher"));
+        assertEquals("existing-plugins", root.get("plugin-roots").asText());
         Files.deleteIfExists(result.configPath());
     }
 
@@ -150,7 +185,8 @@ public class ConfigMergerTest {
         ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(null, overrides);
 
         assertNotNull(result.fetcherId());
-        assertTrue(result.fetcherId().startsWith("tika-internal-fetcher-"));
+        assertTrue(result.fetcherId().startsWith(ConfigMerger.GENERATED_FETCHER_PREFIX),
+                result.fetcherId());
 
         // Verify fetcher exists with generated ID
         ObjectMapper mapper = new ObjectMapper();
@@ -314,6 +350,40 @@ public class ConfigMergerTest {
 
         assertNotNull(result);
         assertTrue(Files.exists(result.configPath()));
+
+        Files.deleteIfExists(result.configPath());
+    }
+
+    /**
+     * A user config naming a host component would otherwise be merged into the host's own entry
+     * by getOrCreateObject -- silently repointing, say, tika-server's upload fetcher rather than
+     * failing. This is the only point where user config and host overrides are still separable.
+     */
+    @Test
+    public void testUserConfigCannotDefineSystemId() throws IOException {
+        Path userConfig = tempDir.resolve("user-config.json");
+        Files.writeString(userConfig,
+                "{\"fetchers\":{\"__tika-server\":{\"file-system-fetcher\":{\"basePath\":\"/evil\"}}}}");
+
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .addFetcher("__tika-server", "file-system-fetcher", Map.of("basePath", "/spool"))
+                .build();
+
+        IOException e = assertThrows(IOException.class,
+                () -> ConfigMerger.mergeOrCreate(userConfig, overrides));
+        assertTrue(e.getMessage().contains("is reserved"), e.getMessage());
+    }
+
+    /** The host's own overrides must still be able to use the namespace. */
+    @Test
+    public void testHostOverrideMayUseSystemId() throws IOException {
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .addFetcher("__tika-server", "file-system-fetcher", Map.of("basePath", "/spool"))
+                .build();
+
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(null, overrides);
+        JsonNode root = new ObjectMapper().readTree(result.configPath().toFile());
+        assertTrue(root.get("fetchers").has("__tika-server"));
 
         Files.deleteIfExists(result.configPath());
     }

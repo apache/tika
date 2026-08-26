@@ -52,11 +52,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>org.apache.pdfbox</groupId>
-      <artifactId>jempbox</artifactId>
-      <version>${jempbox.version}</version>
-    </dependency>
     <!-- TIKA-370: PDFBox declares the Bouncy Castle dependencies
          as optional, but we prefer to have them always to avoid
          problems with encrypted PDFs. -->
@@ -116,6 +111,21 @@
             <goals>
               <goal>test-jar</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- TIKA-4816 metadata string-key ban, main sources; see tika-parent -->
+      <plugin>
+        <groupId>de.thetaphi</groupId>
+        <artifactId>forbiddenapis</artifactId>
+        <executions>
+          <execution>
+            <id>forbiddenapis-check</id>
+            <configuration>
+              <signaturesFiles>
+                <signaturesFile>${metadata.forbiddenapis.signaturesFile}</signaturesFile>
+              </signaturesFiles>
+            </configuration>
           </execution>
         </executions>
       </plugin>

@@ -49,6 +49,8 @@ public class WebPParser implements Parser {
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
+        // XMP first (canonical), then EXIF/etc. from metadata-extractor as fallback.
+        ImageXmp.extractWebp(tis.getFile(), metadata, context);
         new ImageMetadataExtractor(metadata).parseWebP(tis.getFile());
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);

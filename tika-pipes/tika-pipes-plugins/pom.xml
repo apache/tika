@@ -56,10 +56,12 @@
       <!-- !!! VERY IMPORTANT -->
       <scope>provided</scope>
     </dependency>
+    <!-- provided: bundling the plugin/host boundary yields duplicate Class objects -->
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-pipes-api</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -71,6 +73,62 @@
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-plugins-core</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-serialization</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- parent-loaded: on every host via tika-pipes-core; bundling duplicates PipesIteratorBase -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-pipes-iterator-commons</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- host-supplied via tika-serialization: a plugin that bundles its own Jackson gets a
+         second ObjectMapper class, and any mapper crossing the plugin boundary fails to link -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <!-- logging is host-supplied -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jcl-over-slf4j</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j2-impl</artifactId>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -90,7 +148,66 @@
   </dependencies>
 
   <build>
+    <resources>
+      <!-- plugin.properties carries the release version; everything else must stay unfiltered
+           so config examples keep their literal ${...} placeholders. -->
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+        <includes>
+          <include>plugin.properties</include>
+        </includes>
+      </resource>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+        <excludes>
+          <exclude>plugin.properties</exclude>
+        </excludes>
+      </resource>
+    </resources>
     <plugins>
+      <!-- A plugin's lib/ is its runtime-scope dependencies; a logging jar there puts a
+           second SLF4J binding on the plugin classloader. Anything from these groups that
+           arrives transitively must be declared provided (see the parent's dependencies). -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>ban-bundled-logging</id>
+            <phase>validate</phase>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>org.slf4j</exclude>
+                    <exclude>org.apache.logging.log4j</exclude>
+                    <exclude>com.fasterxml.jackson.core</exclude>
+                  </excludes>
+                  <!-- the artifacts this module declares provided; anything else in these
+                       groups needs a provided declaration here before it may be depended on -->
+                  <includes>
+                    <include>org.slf4j:slf4j-api</include>
+                    <include>org.slf4j:jcl-over-slf4j</include>
+                    <include>org.apache.logging.log4j:log4j-api</include>
+                    <include>org.apache.logging.log4j:log4j-core</include>
+                    <include>org.apache.logging.log4j:log4j-slf4j2-impl</include>
+                    <include>com.fasterxml.jackson.core:jackson-core</include>
+                    <include>com.fasterxml.jackson.core:jackson-databind</include>
+                    <include>com.fasterxml.jackson.core:jackson-annotations</include>
+                  </includes>
+                  <message>logging and Jackson are host-supplied: add a provided-scope declaration in tika-pipes-plugins/pom.xml (and to this rule's include list) rather than bundling this artifact in the plugin zip. A plugin whose SDK genuinely needs its own Jackson may bundle it (compile scope, skip this execution in its pom) but must then use no host Jackson type -- not PluginJson -- since the two ObjectMapper classes cannot be assigned to each other.</message>
+                </bannedDependencies>
+              </rules>
+              <fail>true</fail>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>

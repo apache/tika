@@ -26,10 +26,10 @@ Starting with 4.0.0-alpha-1, the Dockerfiles and the GitHub Actions workflow
 that publishes them live in this repository:
 
 * `tika-server/docker-build/{minimal,full}/Dockerfile` — `apache/tika` (server) release builds
-* `tika-server/docker-build/{minimal,full}/Dockerfile.snapshot` — nightly snapshot builds
-* `tika-grpc/docker-build/Dockerfile` — `apache/tika-grpc` release builds
+* `tika-server/docker-build/{minimal,full}/Dockerfile.snapshot` — snapshot builds
+* `tika-grpc/docker-build/Dockerfile` — `apache/tika-grpc` release *and* snapshot builds
 * `.github/workflows/docker-release.yml` — the release publishing workflow
-* `.github/workflows/docker-snapshot.yml` — the snapshot publishing workflow (auto on push to `main`)
+* `.github/workflows/docker-snapshot.yml` — the snapshot publishing workflow (auto on push to `main`, skipped when the version is not a `-SNAPSHOT`)
 
 NOTE: The legacy https://github.com/apache/tika-docker[apache/tika-docker]
 repository is still used for 3.x patch releases — see <<3x-patches>> below. New
@@ -54,11 +54,13 @@ The gRPC server packaged with parser-package jars and pipes plugin zips.
   model — no separate Docker Hub credential is needed at trigger time; Docker
   Hub auth is held by the workflow as a secret.
 * The Tika release vote has passed and the artifacts have been moved from
-  `dist/dev` to `dist/release` (i.e., the bin.zip and parser-package jars are
-  already on `dlcdn.apache.org`/`downloads.apache.org`). The workflow
-  downloads those artifacts during the build, so they must be live first.
-* The release tag (e.g. `4.0.0-alpha-1`) exists in the repo. `release:perform`
-  creates it during the upstream release.
+  `dist/dev` to `dist/release`, so `tika-server-standard-<TAG>.zip` and its
+  `.asc` are live on `dlcdn.apache.org`/`downloads.apache.org`. The `apache/tika`
+  Dockerfiles download and GPG-verify that zip at build time. (The
+  `apache/tika-grpc` job builds from source instead and needs nothing from dist.)
+* The release tag (e.g. `4.0.0-alpha-1`) exists in the repo. `release:prepare`
+  creates the `X.Y.Z-rcN` tag; the GA `X.Y.Z` tag is pushed by hand after the
+  vote passes.
 
 == Release process
 
@@ -140,7 +142,7 @@ gh workflow run docker-release.yml \
 
 === Tag scheme
 
-Each workflow run publishes three tags per image, all pointing at the same
+Each workflow run publishes up to three tags per image, all pointing at the same
 manifest digest:
 
 [cols="1,3,1", options="header"]
@@ -223,9 +225,10 @@ initial build's source state is already marked by the original Tika git tag
 
 === Step 3: Watch the run
 
-A successful run takes ~30–45 minutes (multi-arch builds across `linux/amd64`,
-`linux/arm64`, `linux/s390x` are slow under qemu emulation, especially the
-full image).
+A successful run takes ~30–45 minutes (multi-arch builds are slow under qemu
+emulation, especially the full image). The `apache/tika` images build for
+`linux/amd64`, `linux/arm64`, and `linux/s390x`; `apache/tika-grpc` builds for
+`linux/amd64` and `linux/arm64`.
 
 * GitHub UI: the Actions run page streams logs.
 * CLI: `gh run watch` will tail the latest run.
@@ -270,9 +273,10 @@ point at the 3.x stable image (the `latest`-tagged 3.3.0 image published from
 the external apache/tika-docker repo).
 
 The release workflow *deliberately does not push `:latest`* for 4.x
-alpha/beta/RC builds — those tags stay on 3.x until 4.0.0 GA. When 4.0.0 GA
-ships, edit `docker-release.yml` to re-add `apache/tika:latest` and
-`apache/tika:latest-full` to the tag lists.
+alpha/beta/RC builds — any hyphen in the tag suppresses it, so those tags stay
+on 3.x. No workflow edit is needed at GA: the bare `X.Y.Z` tag has no hyphen, so
+the 4.0.0 GA run moves `apache/tika:latest` and `apache/tika:latest-full` on its
+own.
 
 `apache/tika-grpc:latest` *is* pushed on every 4.x release — the grpc image is
 new in 4.x and has no 3.x incumbent to protect.
@@ -280,8 +284,7 @@ new in 4.x and has no 3.x incumbent to protect.
 [[3x-patches]]
 == 3.x patch releases (legacy path)
 
-Until 4.0.0 GA, any 3.x patch release (e.g. a 3.3.0.1 with a CVE fix) is
-still published from the legacy https://github.com/apache/tika-docker[apache/tika-docker]
+Any 3.x patch release (e.g. a 3.3.0.1 with a CVE fix) is published from the legacy https://github.com/apache/tika-docker[apache/tika-docker]
 repository using its `docker-tool.sh`:
 
 [source,bash]

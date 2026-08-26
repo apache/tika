@@ -19,6 +19,7 @@ package org.apache.tika.server.standard;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -46,10 +47,14 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.serialization.JsonMetadata;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
+import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.MetadataResource;
+import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.CSVMessageBodyWriter;
 import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
+import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 import org.apache.tika.server.core.writer.TextMessageBodyWriter;
 import org.apache.tika.server.standard.resource.XMPMetadataResource;
 import org.apache.tika.server.standard.writer.XMPMessageBodyWriter;
@@ -57,6 +62,7 @@ import org.apache.tika.server.standard.writer.XMPMessageBodyWriter;
 public class MetadataResourceTest extends CXFTestBase {
 
     private static final String META_PATH = "/meta";
+    private static final String TEST_RECURSIVE_DOC = "test-documents/test_recursive_embedded.docx";
 
     @Override
     protected boolean isAllowPerRequestConfig() {
@@ -65,16 +71,22 @@ public class MetadataResourceTest extends CXFTestBase {
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
-        sf.setResourceClasses(MetadataResource.class, XMPMetadataResource.class);
-        sf.setResourceProvider(MetadataResource.class, new SingletonResourceProvider(new MetadataResource()));
-        sf.setResourceProvider(XMPMetadataResource.class, new SingletonResourceProvider(new XMPMetadataResource()));
+        sf.setResourceClasses(MetadataResource.class, XMPMetadataResource.class,
+                RecursiveMetadataResource.class);
+        sf.setResourceProvider(MetadataResource.class, new SingletonResourceProvider(new MetadataResource(tikaResource)));
+        sf.setResourceProvider(XMPMetadataResource.class, new SingletonResourceProvider(new XMPMetadataResource(tikaResource)));
+        sf.setResourceProvider(RecursiveMetadataResource.class,
+                new SingletonResourceProvider(new RecursiveMetadataResource(tikaResource)));
     }
 
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
+        // Needed by getMetadataField's TikaServerParseException throw.
+        providers.add(new TikaServerParseExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         providers.add(new CSVMessageBodyWriter());
+        providers.add(new MetadataListMessageBodyWriter());
         providers.add(new XMPMessageBodyWriter());
         providers.add(new TextMessageBodyWriter());
         sf.setProviders(providers);
@@ -102,7 +114,17 @@ public class MetadataResourceTest extends CXFTestBase {
         assertNotNull(metadata.get(TikaCoreProperties.CREATOR.getName()));
         assertEquals("Maxim Valyanskiy", metadata.get(TikaCoreProperties.CREATOR.getName()));
 
-        assertEquals("f8be45c34e8919eedba48cc8d207fbf0", metadata.get("X-TIKA:digest:MD5"), "X-TIKA:digest:MD5");
+        assertEquals("f8be45c34e8919eedba48cc8d207fbf0", metadata.get("tk:digest:MD5"), "tk:digest:MD5");
+    }
+
+    @Test
+    public void testDefaultAcceptIsJson() {
+        // With no Accept header, /meta defaults to JSON, not CSV (TIKA-4809).
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .type("application/msword")
+                .put(ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC));
+        assertEquals("json", response.getMediaType().getSubtype());
     }
 
     @Test
@@ -118,10 +140,13 @@ public class MetadataResourceTest extends CXFTestBase {
                 .accept("application/json")
                 .post(new MultipartBody(Arrays.asList(fileAtt)));
 
-        // Won't work, no password given - EncryptedDocumentException returns 422
-        assertEquals(500, response.getStatus());
+        // A failed decrypt isn't a process failure -- 200, exception on the metadata.
+        assertEquals(200, response.getStatus());
+        Metadata noPasswordMetadata = JsonMetadata.fromJson(new InputStreamReader((InputStream) response.getEntity(), UTF_8));
+        assertContains("org.apache.tika.exception.EncryptedDocumentException",
+                noPasswordMetadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
 
-        // Test 2: Wrong password - should fail
+        // Test 2: Wrong password - should fail the same way
         fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"test.xls\"");
         fileAtt = new Attachment("file",
                 ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_PASSWORD_PROTECTED), fileCd);
@@ -142,7 +167,10 @@ public class MetadataResourceTest extends CXFTestBase {
                 .accept("application/json")
                 .post(new MultipartBody(Arrays.asList(fileAtt, wrongConfigAtt)));
 
-        assertEquals(500, response.getStatus());
+        assertEquals(200, response.getStatus());
+        Metadata wrongPasswordMetadata = JsonMetadata.fromJson(new InputStreamReader((InputStream) response.getEntity(), UTF_8));
+        assertContains("org.apache.tika.exception.EncryptedDocumentException",
+                wrongPasswordMetadata.get(TikaCoreProperties.CONTAINER_EXCEPTION));
 
         // Test 3: Correct password - should work
         fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"test.xls\"");
@@ -213,8 +241,9 @@ public class MetadataResourceTest extends CXFTestBase {
     }
 
     @Test
-    public void testGetField_Author_TEXT_Partial_BAD_REQUEST() throws Exception {
-
+    public void testGetField_Author_TEXT_Partial_UNPROCESSABLE() throws Exception {
+        // Truncating at 8000 bytes corrupts the OLE2 structure enough that OfficeParser
+        // throws -- a real container exception, not just a missing field.
         InputStream stream = ClassLoader.getSystemResourceAsStream(TikaResourceTest.TEST_DOC);
 
         Response response = WebClient
@@ -222,7 +251,7 @@ public class MetadataResourceTest extends CXFTestBase {
                 .type("application/msword")
                 .accept(MediaType.TEXT_PLAIN)
                 .put(copy(stream, 8000));
-        assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+        assertEquals(422, response.getStatus());
     }
 
     @Test
@@ -271,5 +300,42 @@ public class MetadataResourceTest extends CXFTestBase {
         assertContains("<rdf:li>Maxim Valyanskiy</rdf:li>", s);
     }
 
+
+    /**
+     * /meta and /rmeta[0] describe the same container document, so their metadata must
+     * agree -- every /meta defect this release was a silent divergence between the two
+     * that no test compared.
+     */
+    @Test
+    public void testMetaAgreesWithRmeta() throws Exception {
+        Metadata meta = JsonMetadata.fromJson(new InputStreamReader(
+                (InputStream) WebClient.create(endPoint + META_PATH).accept("application/json")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC))
+                        .getEntity(), UTF_8));
+
+        List<Metadata> rmeta = JsonMetadataList.fromJson(new InputStreamReader(
+                (InputStream) WebClient.create(endPoint + "/rmeta/ignore").accept("application/json")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC))
+                        .getEntity(), UTF_8));
+        Metadata container = rmeta.get(0);
+
+        for (String name : container.names()) {
+            // tk:content is absent from both (ignore handler); embedded-only bookkeeping
+            // differs because /meta stops at the container; tk:resource-name/tk:source-path
+            // carry the server's per-request spool filename, so they differ by
+            // construction until that is fixed.
+            if (name.startsWith(TikaCoreProperties.TIKA_META_EXCEPTION_PREFIX)
+                    || name.equals("tk:content")
+                    || name.startsWith("tk:parsed-by-full-set")
+                    || name.equals("tk:resource-name") || name.equals("tk:source-path")
+                    || name.equals("tk:parse-time-millis")) {
+                continue;
+            }
+            assertEquals(container.get(name), meta.get(name),
+                    "/meta and /rmeta[0] disagree on '" + name + "'");
+        }
+        assertNull(meta.get("tk:exception:embedded-depth-limit-reached"),
+                "/meta suppresses embedded docs; that is not a limit the caller hit");
+    }
 
 }

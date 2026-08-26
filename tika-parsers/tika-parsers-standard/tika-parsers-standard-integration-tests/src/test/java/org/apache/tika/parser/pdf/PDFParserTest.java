@@ -53,8 +53,10 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.extractor.ParsingEmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
@@ -249,11 +251,11 @@ public class PDFParserTest extends TikaTest {
                 metadatas.get(3).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("Unit10.doc", metadatas.get(4).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertImageContentType("image/jpeg",
-                metadatas.get(1).get(Metadata.CONTENT_TYPE));
+                metadatas.get(1).get(HttpHeaders.CONTENT_TYPE));
         assertImageContentType("image/tiff",
-                metadatas.get(2).get(Metadata.CONTENT_TYPE));
-        assertEquals("text/plain; charset=windows-1252", metadatas.get(3).get(Metadata.CONTENT_TYPE));
-        assertEquals(TYPE_DOC.toString(), metadatas.get(4).get(Metadata.CONTENT_TYPE));
+                metadatas.get(2).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("text/plain; charset=windows-1252", metadatas.get(3).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(TYPE_DOC.toString(), metadatas.get(4).get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
@@ -337,9 +339,9 @@ public class PDFParserTest extends TikaTest {
         assertEquals(5, metadataList.size());
         //inlined jpeg metadata
         Metadata jpegMetadata = metadataList.get(1);
-        assertImageContentType("image/jpeg", jpegMetadata.get(Metadata.CONTENT_TYPE));
+        assertImageContentType("image/jpeg", jpegMetadata.get(HttpHeaders.CONTENT_TYPE));
         //the metadata parse will fail if the stream is not correctly decoded
-        assertEquals("1425", jpegMetadata.get(Metadata.IMAGE_LENGTH));
+        assertEquals("1425", jpegMetadata.get(TIFF.IMAGE_LENGTH));
     }
 
     @Test // TIKA-2232
@@ -359,7 +361,7 @@ public class PDFParserTest extends TikaTest {
                 metadatas.get(0).get(TikaCoreProperties.TIKA_CONTENT));
 
         for (String key : metadatas.get(1).names()) {
-            if (key.startsWith("X-TIKA:EXCEPTION")) {
+            if (key.startsWith("tk:exception")) {
                 fail("Exception: " + metadatas.get(1).get(key));
             }
         }
@@ -369,7 +371,7 @@ public class PDFParserTest extends TikaTest {
         assertEquals("testPDF_JBIG2.pdf", metadatas.get(0).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("image-0.jb2", metadatas.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(MediaType.image("x-jbig2").toString(),
-                metadatas.get(1).get(Metadata.CONTENT_TYPE));
+                metadatas.get(1).get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test
@@ -658,17 +660,13 @@ public class PDFParserTest extends TikaTest {
 
     private ParseContext configureRenderingParseContext() {
         ParseContext parseContext = new ParseContext();
-        parseContext.set(EmbeddedDocumentExtractor.class, new RenderCaptureExtractor(parseContext));
+        parseContext.set(EmbeddedDocumentExtractor.class, new RenderCaptureExtractor());
         return parseContext;
     }
 
     private static class RenderCaptureExtractor extends ParsingEmbeddedDocumentExtractor {
         private int count = 0;
         Map<Integer, byte[]> embedded = new HashMap<>();
-
-        public RenderCaptureExtractor(ParseContext context) {
-            super(context);
-        }
 
         @Override
         public void parseEmbedded(TikaInputStream tis, ContentHandler handler, Metadata metadata, ParseContext parseContext, boolean outputHtml) throws SAXException, IOException {

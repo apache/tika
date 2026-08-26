@@ -841,7 +841,7 @@
   <!-- CHARSET / ENCODING DETECTION
        Reports over the encodings_a / encodings_b tables.  One row per file that ran
        charset detection: detected_encoding (final pick), encoding_detector (winning
-       detector), declared_metadata (charset declared via Content-Type-Hint).  A row
+       detector), declared_metadata (charset declared via tk:content-type-hint).  A row
        exists only when an encoding was detected, so counts are over text-y files and
        joins to encodings are effectively inner.  A and B are paired by id.  These
        tables are not covered by any other report. -->

@@ -21,23 +21,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.PluginJson;
 
 public class AtlassianJwtFetcherConfig {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     public static AtlassianJwtFetcherConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, AtlassianJwtFetcherConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse AtlassianJwtFetcherConfig from JSON", e);
-        }
+        return PluginJson.read(json, AtlassianJwtFetcherConfig.class);
     }
 
     private Integer maxConnectionsPerRoute = 1000;
@@ -47,6 +38,11 @@ public class AtlassianJwtFetcherConfig {
     private Integer socketTimeoutMillis = 120000;
     private Long maxSpoolSize = -1L;
     private Integer maxRedirects = 0;
+    /**
+     * Verify server certificates and hostnames; false accepts any cert from any host
+     * (the opt-out for self-signed internal certs).
+     */
+    private boolean verifySsl = true;
     private List<String> httpHeaders = new ArrayList<>();
     private Map<String, List<String>> httpRequestHeaders = new LinkedHashMap<>();
     private Long overallTimeoutMillis = 120000L;
@@ -118,6 +114,15 @@ public class AtlassianJwtFetcherConfig {
 
     public AtlassianJwtFetcherConfig setMaxRedirects(Integer maxRedirects) {
         this.maxRedirects = maxRedirects;
+        return this;
+    }
+
+    public boolean isVerifySsl() {
+        return verifySsl;
+    }
+
+    public AtlassianJwtFetcherConfig setVerifySsl(boolean verifySsl) {
+        this.verifySsl = verifySsl;
         return this;
     }
 

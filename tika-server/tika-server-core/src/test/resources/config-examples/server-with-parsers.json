@@ -1,9 +1,7 @@
 {
   "server": {
     "port": 9998,
-    "host": "0.0.0.0",
-    "taskTimeoutMillis": 600000,
-    "returnStackTrace": true
+    "host": "localhost"
   },
   "parsers": [
     {

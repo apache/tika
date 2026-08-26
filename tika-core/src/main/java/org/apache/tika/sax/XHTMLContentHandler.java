@@ -26,6 +26,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -161,7 +162,7 @@ public class XHTMLContentHandler extends SafeContentHandler {
             // Call directly, so we don't go through our startElement(), which will
             // ignore these elements.
             AttributesImpl htmlAttrs = new AttributesImpl();
-            String lang = metadata.get(Metadata.CONTENT_LANGUAGE);
+            String lang = metadata.get(HttpHeaders.CONTENT_LANGUAGE);
             if (lang != null) {
                 htmlAttrs.addAttribute("", "lang", "lang", "CDATA", lang);
             }

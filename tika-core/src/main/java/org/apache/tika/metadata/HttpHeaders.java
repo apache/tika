@@ -24,20 +24,20 @@ package org.apache.tika.metadata;
  */
 public interface HttpHeaders {
 
-    String CONTENT_ENCODING = "Content-Encoding";
+    Property CONTENT_ENCODING = Property.internalText("Content-Encoding");
 
-    String CONTENT_LANGUAGE = "Content-Language";
+    Property CONTENT_LANGUAGE = Property.internalText("Content-Language");
 
-    String CONTENT_LENGTH = "Content-Length";
+    Property CONTENT_LENGTH = Property.internalText("Content-Length");
 
-    String CONTENT_LOCATION = "Content-Location";
+    Property CONTENT_LOCATION = Property.internalText("Content-Location");
 
-    String CONTENT_DISPOSITION = "Content-Disposition";
+    Property CONTENT_DISPOSITION = Property.internalText("Content-Disposition");
 
-    String CONTENT_MD5 = "Content-MD5";
+    Property CONTENT_MD5 = Property.internalText("Content-MD5");
 
-    String CONTENT_TYPE = "Content-Type";
+    Property CONTENT_TYPE = Property.internalText("Content-Type");
 
-    String LOCATION = "Location";
+    Property LOCATION = Property.internalText("Location");
 
 }

@@ -17,9 +17,8 @@
 
 = External Parser Configuration
 
-The `ExternalParser` allows Tika to delegate parsing to external command-line
-programs such as `ffmpeg`, `exiftool`, or `sox`. Each external parser is
-configured via JSON and must be explicitly enabled -- Tika 4.x does not
+`ExternalParser` delegates parsing to external command-line programs such as `ffmpeg`, `exiftool`
+or `sox`. Each one is configured in JSON and must be enabled explicitly — Tika does not
 auto-discover external tools at startup.
 
 == Key Concepts
@@ -61,6 +60,11 @@ configured, the raw bytes are written as text.
 |===
 |Field |Type |Description
 
+|`_mime-include`
+|`List<String>`
+|Media types this parser handles. (`_mime-exclude` is the inverse; both are generic parser
+decorators, not specific to `ExternalParser`.)
+
 |`commandLine`
 |`List<String>`
 |The command and arguments to run. Use `$\{INPUT_FILE}` and `$\{OUTPUT_FILE}` tokens for file paths.
@@ -95,9 +99,9 @@ configured, the raw bytes are written as text.
 
 |`returnStderr`
 |`boolean`
-|Store raw stderr in metadata. Default: `true`.
+|Store raw stderr in metadata. Default: `false`.
 
-|`timeoutMs`
+|`timeoutMillis`
 |`long`
 |Process timeout in milliseconds. Default: `60000`.
 
@@ -146,9 +150,8 @@ icon:github[] https://github.com/apache/tika/blob/main/tika-serialization/src/te
 
 === Multiple External Parsers
 
-You can configure multiple external parsers in a single config file. Each
-handles different MIME types via `_mime-include`. Here FFmpeg handles video
-files while exiftool handles PDFs:
+A single config file can hold several, each scoped to different media types by `_mime-include`.
+Here FFmpeg handles video while exiftool handles PDFs:
 
 [source,json]
 ----
@@ -156,21 +159,6 @@ include::example$external-parser-multi.json[]
 ----
 icon:github[] https://github.com/apache/tika/blob/main/tika-serialization/src/test/resources/configs/external-parser-multi.json[View source on GitHub]
 
-== Changes from 3.x
-
-In Tika 3.x, external parsers were configured via XML (`tika-external-parsers.xml`)
-and auto-discovered at startup. The `CompositeExternalParser` would fork
-a process for each configured tool on every Tika initialization to check
-if the tool was available.
-
-In Tika 4.x:
-
-* External parsers must be explicitly configured in JSON -- no auto-discovery.
-* The `checkCommandLine` runs lazily on first use, not at startup.
-* Three independent stream handlers (`stdoutHandler`, `stderrHandler`,
-  `outputFileHandler`) replace the old `outputParser`/`stderrParser` split.
-* The `contentSource` field explicitly controls which stream provides text content.
-* `CompositeExternalParser`, `ExternalParsersFactory`, and the XML config
-  reader have been removed.
-
-See xref:migration-to-4x/migrating-to-4x.adoc[Migrating to 4.x] for general migration guidance.
+Converting a 3.x `tika-external-parsers.xml`? See
+xref:migration-to-4x/migrating-to-4x.adoc[Migrating to 4.x], which covers the removal of
+`CompositeExternalParser`, `ExternalParsersFactory` and XML-based auto-discovery.

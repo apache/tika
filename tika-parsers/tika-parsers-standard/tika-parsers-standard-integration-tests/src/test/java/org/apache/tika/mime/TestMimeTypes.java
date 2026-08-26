@@ -894,6 +894,19 @@ public class TestMimeTypes {
         assertTypeByName("image/x-raw-minolta", "x.mrw");
         assertTypeByName("image/x-raw-nikon", "x.nef");
         assertTypeByName("image/x-raw-nikon", "x.nrw");
+        assertTypeByData("image/tiff", "testNEF.nef");
+        assertTypeByNameAndData("image/x-raw-nikon", "testNEF.nef");
+        assertTypeByData("image/tiff", "testARW.arw");
+        assertTypeByNameAndData("image/x-raw-sony", "testARW.arw");
+        assertTypeByData("image/tiff", "testPEF.pef");
+        assertTypeByNameAndData("image/x-raw-pentax", "testPEF.pef");
+        assertTypeByData("image/tiff", "testDNG.dng");
+        assertTypeByNameAndData("image/x-raw-adobe", "testDNG.dng");
+        //BigTIFF has no image/tiff data magic here (TiffParser can't read BigTIFF yet),
+        //so a BigTIFF DNG resolves by name+data via the glob, not by data alone
+        assertTypeByNameAndData("image/x-raw-adobe", "testDNG_bigtiff.dng");
+        assertTypeByData("image/x-canon-cr2", "testCR2.cr2");
+        assertTypeByNameAndData("image/x-canon-cr2", "testCR2.cr2");
         assertTypeByName("image/x-raw-olympus", "x.orf");
         assertTypeByName("image/x-raw-pentax", "x.ptx");
         assertTypeByName("image/x-raw-pentax", "x.pef");
@@ -1242,10 +1255,9 @@ public class TestMimeTypes {
         // Parameters only have PEM form, always need data
         assertTypeByData("application/x-x509-dsa-parameters", "testDSAPARAMS.pem");
         assertTypeByData("application/x-x509-ec-parameters", "testECPARAMS.pem");
-        // PKCS12 wrappers of Certs+Keys cannot currently be identified
-        // Once solved, see TIKA-3784, ought to work for name or data
-        //assertType("application/x-pkcs12", "testRSAKEYandCERT.p12");
-        //assertTypeByData("application/x-pkcs12", "testRSAKEYandCERT.p12"); // pass=tika
+        // PKCS12 is now identified by content via the PFX version-3 anchor (TIKA-1997/TIKA-3784)
+        assertType("application/x-pkcs12", "testRSAKEYandCERT.p12");
+        assertTypeByData("application/x-pkcs12", "testRSAKEYandCERT.p12");
         assertTypeByData("application/x-java-keystore", "KeyStore.jks");
     }
 

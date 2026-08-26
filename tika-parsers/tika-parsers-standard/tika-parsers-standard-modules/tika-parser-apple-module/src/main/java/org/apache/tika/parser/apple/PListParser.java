@@ -48,6 +48,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -111,12 +112,12 @@ public class PListParser implements Parser {
                 throw new TikaException("problem parsing root", e);
             }
         }
-        String contentType = metadata.get(Metadata.CONTENT_TYPE);
+        String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (BPListDetector.PLIST.toString().equals(contentType)) {
             if (rootObj instanceof NSDictionary) {
                 MediaType subtype =
                         BPListDetector.detectXMLOnKeys(((NSDictionary) rootObj).keySet());
-                metadata.set(Metadata.CONTENT_TYPE, subtype.toString());
+                metadata.set(HttpHeaders.CONTENT_TYPE, subtype.toString());
             }
         }
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
@@ -192,13 +193,13 @@ public class PListParser implements Parser {
     private void handleData(NSData value, State state) throws IOException, SAXException, TikaException {
         state.xhtml.characters(value.getBase64EncodedData());
         Metadata embeddedMetadata = Metadata.newInstance(state.parseContext);
-        if (!state.embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+        if (!state.embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, state.parseContext)) {
             return;
         }
 
         try (TikaInputStream tis = TikaInputStream.get(value.bytes())) {
             state.embeddedDocumentExtractor
-                    .parseEmbedded(tis, state.xhtml, embeddedMetadata, new ParseContext(), true);
+                    .parseEmbedded(tis, state.xhtml, embeddedMetadata, state.parseContext, true);
         }
     }
 

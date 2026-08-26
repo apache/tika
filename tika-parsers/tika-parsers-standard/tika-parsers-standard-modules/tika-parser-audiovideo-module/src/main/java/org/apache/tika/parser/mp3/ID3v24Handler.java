@@ -39,12 +39,14 @@ public class ID3v24Handler implements ID3Tags {
     private String album;
     private String year;
     private String composer;
+    private String copyright;
     private String genre;
     private String trackNumber;
     private String albumArtist;
     private String disc;
     private String compilation;
     private List<ID3Comment> comments = new ArrayList<>();
+    private List<ID3Picture> pictures = new ArrayList<>();
 
     public ID3v24Handler(ID3v2Frame frame) throws IOException, SAXException, TikaException {
         RawTagIterator tags = new RawV24TagIterator(frame);
@@ -74,9 +76,23 @@ public class ID3v24Handler implements ID3Tags {
                 case "TCOM":
                     composer = getTagString(tag.data, 0, tag.data.length);
                     break;
-                case "COMM":
-                    comments.add(getComment(tag.data, 0, tag.data.length));
+                case "TCOP":
+                    copyright = getTagString(tag.data, 0, tag.data.length);
                     break;
+                case "COMM": {
+                    ID3Comment comment = getComment(tag.data, 0, tag.data.length);
+                    if (comment != null) {
+                        comments.add(comment);
+                    }
+                    break;
+                }
+                case "APIC": {
+                    ID3Picture picture = ID3v2Frame.getPicture(tag.data, 0, tag.data.length);
+                    if (picture != null) {
+                        pictures.add(picture);
+                    }
+                    break;
+                }
                 case "TRCK":
                     trackNumber = getTagString(tag.data, 0, tag.data.length);
                     break;
@@ -125,8 +141,16 @@ public class ID3v24Handler implements ID3Tags {
         return composer;
     }
 
+    public String getCopyright() {
+        return copyright;
+    }
+
     public List<ID3Comment> getComments() {
         return comments;
+    }
+
+    public List<ID3Picture> getPictures() {
+        return pictures;
     }
 
     public String getGenre() {
@@ -151,7 +175,8 @@ public class ID3v24Handler implements ID3Tags {
 
     private class RawV24TagIterator extends RawTagIterator {
         private RawV24TagIterator(ID3v2Frame frame) {
-            frame.super(4, 4, 1, 2);
+            //v2.4 frame sizes are synchsafe integers
+            frame.super(4, 4, 1, 2, true);
         }
     }
 }

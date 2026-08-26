@@ -37,7 +37,7 @@ public class Tess4JConfigTest {
         assertEquals(50 * 1024 * 1024, config.getMaxFileSizeToOcr());
         assertEquals(0, config.getMinFileSizeToOcr());
         assertEquals(2, config.getPoolSize());
-        assertEquals(120, config.getTimeoutSeconds());
+        assertEquals(120_000, config.getTimeoutMillis());
         assertFalse(config.isSkipOcr());
         assertEquals(300, config.getDpi());
     }

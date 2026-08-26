@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -69,13 +70,13 @@ public class OneOffMimeTest extends TikaTest {
         assertEquals(expected,
                 getRecursiveMetadata(TikaInputStream.get(new byte[0]),
                         metadata,
-                        new ParseContext(), true).get(0).get(Metadata.CONTENT_TYPE));
+                        new ParseContext(), true).get(0).get(HttpHeaders.CONTENT_TYPE));
     }
 
     private void assertByData(String expected, Path p) throws Exception {
         try (TikaInputStream tis = TikaInputStream.get(p)) {
             List<Metadata> metadataList = getRecursiveMetadata(tis, true);
-            assertEquals(expected, metadataList.get(0).get(Metadata.CONTENT_TYPE));
+            assertEquals(expected, metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
         }
     }
 

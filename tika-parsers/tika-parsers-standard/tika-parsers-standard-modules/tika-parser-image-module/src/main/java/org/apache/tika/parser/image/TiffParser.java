@@ -31,7 +31,6 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.xmp.JempboxExtractor;
 
 @TikaComponent
 public class TiffParser extends AbstractImageParser {
@@ -55,8 +54,10 @@ public class TiffParser extends AbstractImageParser {
         TemporaryResources tmp = new TemporaryResources();
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
+            tis.getFile();   // spool so tis is fully re-readable below
+            // XMP first so it is canonical; metadata-extractor (IPTC/EXIF) fills gaps.
+            ImageXmp.scanAndExtract(tis, metadata, parseContext);
             new ImageMetadataExtractor(metadata).parseTiff(tis.getFile());
-            new JempboxExtractor(metadata).parse(tis);
         } finally {
             tmp.dispose();
         }

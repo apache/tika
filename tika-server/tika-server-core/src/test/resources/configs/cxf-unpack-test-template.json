@@ -7,7 +7,7 @@
     }
   },
   "emitters": {
-    "unpack-emitter": {
+    "__unpack": {
       "file-system-emitter": {
         "basePath": "UNPACK_EMITTER_BASE_PATH",
         "onExists": "REPLACE"
@@ -25,12 +25,10 @@
     "throwOnZeroBytes": false
   },
   "parse-context": {
-    "digester-factory": {
-      "commons-digester-factory": {
-        "digests": [
-          { "algorithm": "MD5" }
-        ]
-      }
+    "commons-digester-factory": {
+      "digests": [
+        { "algorithm": "MD5" }
+      ]
     },
     "timeout-limits": {
       "progressTimeoutMillis": "TIMEOUT_MILLIS"

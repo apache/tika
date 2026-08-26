@@ -99,7 +99,7 @@ public class ESPipesReporter extends PipesReporterBase {
                 httpClientFactory.setProxyHost(http.proxyHost());
                 httpClientFactory.setProxyPort(http.proxyPort());
             }
-            httpClientFactory.setVerifySsl(http.verifySsl());
+            httpClientFactory.setVerifySsl(http.verifySslOrDefault());
         }
         httpClient = httpClientFactory.build();
 

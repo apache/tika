@@ -21,7 +21,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -148,23 +147,21 @@ public class ExtendedMetadataExtractor {
         if (!includeType(propertyValue)) {
             return;
         }
-        String key = MAPI.PREFIX_MAPI_PROPERTY + pair.tikaMapiProperty.name;
+        //append-only route: distinct raw MAPI properties can resolve to the same
+        //tikaMapiProperty name (e.g. multi-value MV_TIME entries), so repeats accumulate
+        String name = pair.tikaMapiProperty.name;
         Types.MAPIType type = propertyValue.getActualType();
         if (type == Types.TIME || type == Types.MV_TIME || type == Types.APP_TIME || type == Types.MV_APP_TIME) {
             Calendar calendar = (Calendar) propertyValue.getValue();
-            String calendarString = calendar
-                    .toInstant()
-                    .truncatedTo(ChronoUnit.SECONDS)
-                    .toString();
-            metadata.add(key, calendarString);
+            metadata.add(MAPI.PROPERTY, name, calendar.toInstant());
         } else if (type == Types.BOOLEAN) {
             Boolean val = (Boolean)propertyValue.getValue();
             if (val == null) {
                 return;
             }
-            metadata.add(key, Boolean.toString(val));
+            metadata.add(MAPI.PROPERTY, name, Boolean.toString(val));
         } else if (! StringUtils.isBlank(propertyValue.toString())) {
-            metadata.add(key, propertyValue.toString());
+            metadata.add(MAPI.PROPERTY, name, propertyValue.toString());
         }
 
     }

@@ -155,6 +155,14 @@ public class ID3v1Handler implements ID3Tags {
     }
 
     /**
+     * ID3v1 doesn't have copyright messages,
+     * so returns null;
+     */
+    public String getCopyright() {
+        return null;
+    }
+
+    /**
      * ID3v1 doesn't have album-wide artists,
      * so returns null;
      */

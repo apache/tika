@@ -49,7 +49,7 @@ public class RTFConverter extends AbstractConverter {
     public XMPMeta process(Metadata metadata) throws XMPException {
         setMetadata(metadata);
 
-        createProperty(HttpHeaders.CONTENT_TYPE, XMPConst.NS_DC, "format");
+        createProperty(HttpHeaders.CONTENT_TYPE.getName(), XMPConst.NS_DC, "format");
 
         createCommaSeparatedArray(TikaCoreProperties.CREATOR, XMPConst.NS_DC, "creator",
                 PropertyOptions.ARRAY_ORDERED);

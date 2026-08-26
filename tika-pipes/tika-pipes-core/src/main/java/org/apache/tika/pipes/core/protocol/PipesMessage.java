@@ -20,8 +20,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Locale;
 
 /**
@@ -40,19 +38,34 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
     static final byte MAGIC_0 = 0x54; // 'T'
     static final byte MAGIC_1 = 0x4B; // 'K'
 
-    /** Maximum payload size: 100 MB (same as old MAX_FETCH_EMIT_TUPLE_BYTES). */
+    /** Default maximum payload size. Override per-read via {@link #read(DataInputStream, int)}. */
     public static final int MAX_PAYLOAD_BYTES = 100 * 1024 * 1024;
 
     private static final byte[] EMPTY = new byte[0];
 
     /**
-     * Reads one framed message from the stream.
+     * Reads one framed message from the stream, enforcing {@link #MAX_PAYLOAD_BYTES}.
      *
      * @throws ProtocolDesyncException if magic bytes don't match
      * @throws EOFException if the stream ends before a complete message
-     * @throws IOException on payload size violations or I/O errors
+     * @throws PayloadLimitExceededException if the payload length exceeds {@link #MAX_PAYLOAD_BYTES}
+     * @throws IOException on other I/O errors
      */
     public static PipesMessage read(DataInputStream in) throws IOException {
+        return read(in, MAX_PAYLOAD_BYTES);
+    }
+
+    /**
+     * Reads one framed message from the stream, enforcing the given payload limit.
+     * Use this overload when the caller has a per-connection limit from config.
+     *
+     * @param maxPayloadBytes maximum allowed payload size in bytes
+     * @throws ProtocolDesyncException if magic bytes don't match
+     * @throws EOFException if the stream ends before a complete message
+     * @throws PayloadLimitExceededException if the payload length exceeds {@code maxPayloadBytes}
+     * @throws IOException on other I/O errors
+     */
+    public static PipesMessage read(DataInputStream in, int maxPayloadBytes) throws IOException {
         int m0 = in.read();
         if (m0 == -1) {
             throw new EOFException("Stream closed before magic byte");
@@ -77,9 +90,9 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
         if (len < 0) {
             throw new IOException("Negative payload length: " + len);
         }
-        if (len > MAX_PAYLOAD_BYTES) {
-            throw new IOException("Payload length " + len +
-                    " exceeds maximum of " + MAX_PAYLOAD_BYTES + " bytes");
+        if (len > maxPayloadBytes) {
+            throw new PayloadLimitExceededException("Payload length " + len +
+                    " exceeds maximum of " + maxPayloadBytes + " bytes");
         }
 
         byte[] payload;
@@ -125,16 +138,11 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
     }
 
     /**
-     * Creates a WORKING heartbeat with the last-progress timestamp in the payload.
-     *
-     * @param lastProgressMillis epoch millis of the last progress update
+     * Creates a WORKING heartbeat. Empty payload: the client treats WORKING as a pure
+     * liveness signal and never reads anything from it.
      */
-    public static PipesMessage working(long lastProgressMillis) {
-        byte[] payload = ByteBuffer.allocate(Long.BYTES)
-                .order(ByteOrder.BIG_ENDIAN)
-                .putLong(lastProgressMillis)
-                .array();
-        return new PipesMessage(PipesMessageType.WORKING, payload);
+    public static PipesMessage working() {
+        return new PipesMessage(PipesMessageType.WORKING, EMPTY);
     }
 
     public static PipesMessage newRequest(byte[] payload) {
@@ -155,19 +163,5 @@ public record PipesMessage(PipesMessageType type, byte[] payload) {
 
     public static PipesMessage crash(PipesMessageType crashType, byte[] payload) {
         return new PipesMessage(crashType, payload);
-    }
-
-    /**
-     * Extracts the last-progress timestamp from a WORKING message payload.
-     *
-     * @return epoch millis of the last progress update reported by the server
-     */
-    public long lastProgressMillis() {
-        if (type != PipesMessageType.WORKING) {
-            throw new IllegalStateException("lastProgressMillis() only valid for WORKING messages");
-        }
-        return ByteBuffer.wrap(payload)
-                .order(ByteOrder.BIG_ENDIAN)
-                .getLong();
     }
 }

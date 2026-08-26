@@ -30,6 +30,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -81,7 +82,7 @@ public class AdobeFontMetricParser implements Parser {
         // Get the creation date
         extractCreationDate(metadata, comments);
 
-        metadata.set(Metadata.CONTENT_TYPE, AFM_TYPE.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, AFM_TYPE.toString());
         metadata.set(TikaCoreProperties.TITLE, fontMetrics.getFullName());
 
         // Add metadata associated with the font type
@@ -114,10 +115,11 @@ public class AdobeFontMetricParser implements Parser {
         xhtml.endDocument();
     }
 
+    //name is always one of the fixed MET_* constants above, never document-derived
     private void addMetadataByString(Metadata metadata, String name, String value) {
         // Add metadata if an appropriate value is passed
         if (value != null) {
-            metadata.add(name, value);
+            metadata.add(Property.externalText(name), value);
         }
     }
 

@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -70,7 +71,8 @@ public class TikaAsyncCLI {
         options.addOption("n", "numClients", true, "number of forked clients");
         options.addOption(null, "Xmx", true, "heap for the forked clients, e.g. --Xmx 1g");
         options.addOption(null, "help", false, "this help message");
-        options.addOption("T", "timeoutMs", true, "timeout for each parse in milliseconds");
+        options.addOption("T", "timeoutMillis", true,
+                "total timeout per task in milliseconds (sets timeout-limits.totalTaskTimeoutMillis)");
         options.addOption(null, "handler", true, "handler type: t=text, h=html, x=xml, m=markdown, b=body, i=ignore (default: m)");
         options.addOption("p", "pluginsDir", true, "plugins directory");
         options.addOption("l", "fileList", true,
@@ -179,7 +181,7 @@ public class TikaAsyncCLI {
         String inputDir = null;
         String outputDir = null;
         String xmx = null;
-        Long timeoutMs = null;
+        Long timeoutMillis = null;
         Integer numClients = null;
         String fileList = null;
         String tikaConfig = null;
@@ -197,7 +199,7 @@ public class TikaAsyncCLI {
             xmx = line.getOptionValue("Xmx");
         }
         if (line.hasOption("T")) {
-            timeoutMs = Long.parseLong(line.getOptionValue("T"));
+            timeoutMillis = Long.parseLong(line.getOptionValue("T"));
         }
         if (line.hasOption("n")) {
             numClients = Integer.parseInt(line.getOptionValue("n"));
@@ -299,7 +301,7 @@ public class TikaAsyncCLI {
         }
 
         SimpleAsyncConfig config = new SimpleAsyncConfig(inputDir, outputDir,
-                numClients, timeoutMs, xmx, fileList, tikaConfig, handlerType,
+                numClients, timeoutMillis, xmx, fileList, tikaConfig, handlerType,
                 extractBytesMode, pluginsDir, concatenate, contentOnly,
                 unpackFormat, unpackMode, unpackIncludeMetadata);
         config.setOnExists(onExists);
@@ -349,9 +351,7 @@ public class TikaAsyncCLI {
         if (asyncConfig == null) {
             return;
         }
-        if (asyncConfig.getHandlerType() == BasicContentHandlerFactory.HANDLER_TYPE.TEXT) {
-            return;
-        }
+        // no TEXT early-return: the default handler is MARKDOWN, not TEXT
         ContentHandlerFactory factory = new BasicContentHandlerFactory(asyncConfig.getHandlerType(), -1);
         t.getParseContext().set(ContentHandlerFactory.class, factory);
     }
@@ -445,7 +445,8 @@ public class TikaAsyncCLI {
      * @return the config path to use (original if plugin-roots exists, or a new merged config)
      */
     static Path ensurePluginRoots(Path originalConfigPath, String pluginsDir) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        // The shared config mapper: same comment and strictness rules as the main loader.
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
         JsonNode rootNode = mapper.readTree(originalConfigPath.toFile());
 
         if (rootNode.has("plugin-roots")) {

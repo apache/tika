@@ -98,7 +98,7 @@ public class AppleSingleFileParser implements Parser {
         if (contentFieldInfo != null) {
             long diff = contentFieldInfo.offset - bytesRead;
             IOUtils.skipFully(tis, diff);
-            if (ex.shouldParseEmbedded(embeddedMetadata)) {
+            if (ex.shouldParseEmbedded(embeddedMetadata, context)) {
                 // Use BoundedInputStream to limit bytes read, then spool to temp file
                 // for complete isolation from parent stream (reset() goes to embedded start)
                 BoundedInputStream bounded =

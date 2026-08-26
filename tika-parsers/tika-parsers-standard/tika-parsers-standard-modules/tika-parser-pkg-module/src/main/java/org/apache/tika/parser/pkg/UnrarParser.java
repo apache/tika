@@ -81,7 +81,7 @@ public class UnrarParser implements Parser {
             try (OutputStream os = Files.newOutputStream(tmp, StandardOpenOption.WRITE)) {
                 IOUtils.copy(tis, os);
             }
-            FileProcessResult result = unrar(cwd, tmp);
+            FileProcessResult result = unrar(cwd, tmp, context);
             //delete the tmp rar file so that we don't recursively parse it in the next step
             try {
                 Files.delete(tmp);
@@ -89,7 +89,8 @@ public class UnrarParser implements Parser {
                 //warn failed to delete tmp
             }
             if (result.isTimeout()) {
-                throw new TikaTimeoutException("timed out unrarring");
+                throw new TikaTimeoutException("timed out unrarring",
+                        result.getRequestedTimeoutMillis(), result.getGrantedTimeoutMillis());
             } else if (result.getExitValue() != 0) {
                 if (result.getStderr().contains("error in the encrypted file")) {
                     throw new EncryptedDocumentException();
@@ -132,14 +133,14 @@ public class UnrarParser implements Parser {
         String fName = FilenameUtils.getName(relPath);
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fName);
         metadata.set(TikaCoreProperties.ORIGINAL_RESOURCE_NAME, relPath);
-        if (extractor.shouldParseEmbedded(metadata)) {
+        if (extractor.shouldParseEmbedded(metadata, context)) {
             try (TikaInputStream tis = TikaInputStream.get(embeddedFile)) {
                 extractor.parseEmbedded(tis, xhtml, metadata, context, true);
             }
         }
     }
 
-    private FileProcessResult unrar(Path cwd, Path tmp) throws IOException {
+    private FileProcessResult unrar(Path cwd, Path tmp, ParseContext context) throws IOException {
         //we could use the -l option to check for potentially bad file names
         //e.g. path traversals
         ProcessBuilder pb = new ProcessBuilder();
@@ -152,6 +153,6 @@ public class UnrarParser implements Parser {
                 ProcessUtils.escapeCommandLine(tmp.toAbsolutePath().toString())
 
         );
-        return ProcessUtils.execute(pb, timeoutMillis, 10000, 1000);
+        return ProcessUtils.execute(pb, context, timeoutMillis, 10000, 1000);
     }
 }

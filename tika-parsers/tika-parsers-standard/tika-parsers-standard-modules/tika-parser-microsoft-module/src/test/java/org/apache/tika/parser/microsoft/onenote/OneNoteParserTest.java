@@ -19,22 +19,126 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import static org.apache.tika.parser.microsoft.onenote.OneNoteParser.ONE_NOTE_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.TikaMemoryLimitException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
+import org.apache.tika.sax.ToTextContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 public class OneNoteParserTest extends TikaTest {
 
     //test recursive parser wrapper for image files
+
+    @Test
+    public void testFuzzerRegressionInputsFallBackToLegacyDump() throws Exception {
+        // a structural failure falls back to the legacy string dump; the failure is
+        // pinned in the parse-warning metadata
+        String[][] resources = {
+                {"testOneNote-fuzz1.one", "Missing dependent revision"},
+                {"testOneNote-fuzz2.one", "unified property count"},
+                {"testOneNote-fuzz3.one", "Invalid GUID string"}
+        };
+        for (String[] resource : resources) {
+            InputStream input = getClass().getResourceAsStream("/test-documents/" + resource[0]);
+            assertNotNull(input, resource[0]);
+            try (InputStream stream = input;
+                 TikaInputStream tis = TikaInputStream.get(stream)) {
+                Metadata metadata = new Metadata();
+                new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata,
+                        new ParseContext());
+                assertTrue(Arrays.stream(
+                                metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                        .anyMatch(warning -> warning.contains(resource[1])
+                                && warning.contains("falling back to legacy text dump")),
+                        () -> resource[0] + ": " + Arrays.toString(metadata.getValues(
+                                TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)));
+            }
+        }
+    }
+
+    @Test
+    public void testNoContentFsshttpbWalkFallsBackToLegacyDump(@TempDir Path tempDir)
+            throws Exception {
+        Path file = tempDir.resolve("empty-walk.one");
+        // trailing newline: the dump excludes the file's final byte from scanning
+        Files.write(file,
+                "recoverable legacy dump text\n".getBytes(StandardCharsets.US_ASCII));
+        Metadata metadata = new Metadata();
+        StringWriter writer = new StringWriter();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(new ToTextContentHandler(writer),
+                metadata, new ParseContext());
+        xhtml.startDocument();
+        try (OneNoteDirectFileResource resource =
+                new OneNoteDirectFileResource(file.toFile())) {
+            // fresh package = the walk completed without emitting anything
+            OneNoteParser.legacyFallbackIfNoContent(new MSOneStorePackage(), metadata, xhtml,
+                    resource);
+            assertTrue(writer.toString().contains("recoverable legacy dump text"));
+            assertTrue(metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)
+                    .contains("produced no content"));
+
+            // pkg == null means the exception path already dumped - no second dump
+            StringWriter exceptionPath = new StringWriter();
+            XHTMLContentHandler xhtml2 = new XHTMLContentHandler(
+                    new ToTextContentHandler(exceptionPath), metadata, new ParseContext());
+            xhtml2.startDocument();
+            OneNoteParser.legacyFallbackIfNoContent(null, metadata, xhtml2, resource);
+            xhtml2.endDocument();
+            assertTrue(exceptionPath.toString().isBlank());
+        }
+        xhtml.endDocument();
+    }
+
+    @Test
+    public void testTruncatedFileFallsBackToLegacyDump(@TempDir Path tempDir) throws Exception {
+        byte[] full;
+        try (InputStream is = getClass()
+                .getResourceAsStream("/test-documents/testOneNote1.one")) {
+            full = is.readAllBytes();
+        }
+        // keep the 1024-byte header plus a sliver of content so the root file node list
+        // is unreachable
+        Path truncated = tempDir.resolve("truncated.one");
+        Files.write(truncated, Arrays.copyOf(full, 2048));
+
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(truncated)) {
+            new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata,
+                    new ParseContext());
+        }
+        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .anyMatch(warning -> warning.contains("falling back to legacy text dump")));
+    }
 
     /**
      * This is the sample document that is automatically created from onenote 2013.
@@ -223,6 +327,219 @@ public class OneNoteParserTest extends TikaTest {
                         ml.get("Content-Type"))));
     }
 
+    @Test
+    public void testOneNoteEmbeddedImage() throws Exception {
+        List<byte[]> embedded = new ArrayList<>();
+        List<String> embeddedTypes = new ArrayList<>();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                                      Metadata metadata, ParseContext context,
+                                      boolean outputHtml) throws IOException {
+                embedded.add(stream.readAllBytes());
+                embeddedTypes.add(metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+            }
+        });
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testOneNoteEmbeddedImage.one")) {
+            new OneNoteParser().parse(tis, new ToTextContentHandler(), new Metadata(), context);
+        }
+
+        assertEquals(1, embedded.size());
+        assertTrue(embedded.stream().anyMatch(bytes -> bytes.length > 1000),
+                () -> "embedded sizes: " + embedded.stream().map(bytes -> bytes.length).toList());
+        assertTrue(embeddedTypes.contains("INLINE"));
+    }
+
+    @Test
+    public void testOneNoteEmbeddedImageRecursiveMetadata() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testOneNoteEmbeddedImage.one");
+
+        assertEquals(2, metadataList.size());
+        Metadata embedded = metadataList.get(1);
+        assertEquals("INLINE", embedded.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertNotNull(embedded.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID));
+    }
+
+    @Test
+    public void testPropertyValueBudgetIsSharedAcrossCopiesAndResetsPerList(
+            @TempDir Path tempDir) throws Exception {
+        Path emptyFile = tempDir.resolve("empty");
+        Files.write(emptyFile, ByteBuffer.allocate(36).order(ByteOrder.LITTLE_ENDIAN)
+                .putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
+                .putLong(-1).putInt(0).putLong(OneNotePtr.FOOTER_CONST).array());
+        Method reservePropertyCount = OneNotePtr.class.getDeclaredMethod(
+                "reservePropertyCount", long.class, String.class);
+        reservePropertyCount.setAccessible(true);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            OneNotePtr copy = new OneNotePtr(ptr);
+            reservePropertyCount.invoke(ptr, 100_000L, "test");
+            InvocationTargetException exception = assertThrows(InvocationTargetException.class,
+                    () -> reservePropertyCount.invoke(copy, 1L, "test"));
+            assertTrue(exception.getCause() instanceof TikaMemoryLimitException);
+
+            ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr());
+            reservePropertyCount.invoke(ptr, 1L, "test");
+        }
+    }
+
+    @Test
+    public void testFileNodeCycleIsReportedAndStopsTraversal(@TempDir Path tempDir) throws Exception {
+        FileNode fileNode = new FileNode().setGosid(ExtendedGUID.nil());
+        fileNode.childFileNodeList.setFileNodeListHeader(new FileNodeListHeader(0,
+                FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
+        fileNode.childFileNodeList.children.add(fileNode);
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        Path emptyFile = Files.createFile(tempDir.resolve("empty"));
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
+            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+                    new OneNoteDocument(), dif,
+                    new XHTMLContentHandler(new ToTextContentHandler(), metadata, parseContext),
+                    metadata, parseContext, null);
+            walker.walkFileNode(fileNode, null);
+        }
+        assertEquals(1, Arrays.stream(
+                        metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(warning -> warning.contains("file-node cycle detected"))
+                .count());
+    }
+
+    @Test
+    public void testDeepFileNodeChainIsDepthCapped(@TempDir Path tempDir) throws Exception {
+        // a long acyclic chain slips past the cycle guard - the depth cap must stop it
+        // before the recursion can overflow the stack
+        FileNode root = new FileNode().setGosid(ExtendedGUID.nil());
+        FileNode current = root;
+        for (int i = 0; i < 600; i++) {
+            FileNode child = new FileNode().setGosid(ExtendedGUID.nil());
+            current.childFileNodeList.setFileNodeListHeader(new FileNodeListHeader(0,
+                    FileNodeListHeader.UNIT_MAGIC_CONSTANT, 0x10, 0));
+            current.childFileNodeList.children.add(child);
+            current = child;
+        }
+        Metadata metadata = new Metadata();
+        ParseContext parseContext = new ParseContext();
+        Path emptyFile = Files.createFile(tempDir.resolve("empty"));
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(emptyFile.toFile())) {
+            OneNoteTreeWalker walker = new OneNoteTreeWalker(new OneNoteTreeWalkerOptions(),
+                    new OneNoteDocument(), dif,
+                    new XHTMLContentHandler(new ToTextContentHandler(), metadata, parseContext),
+                    metadata, parseContext, null);
+            walker.walkFileNode(root, null);
+        }
+        assertEquals(1, Arrays.stream(
+                        metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(warning -> warning.contains("exceeded depth limit"))
+                .count());
+    }
+
+    /**
+     * Writes one minimal 56-byte file-node-list fragment: header, a single baseType-2 node
+     * whose child list is at {childStp, childCb}, a terminator, a nil next-fragment
+     * reference and the footer.
+     */
+    private static void writeFileNodeListBlock(ByteBuffer buf, long childStp, int childCb) {
+        // id=0x10, size=16 (node header + 8-byte stp + 4-byte cb), stpFormat=0, cbFormat=0,
+        // baseType=2, reserved=1
+        int fileNodeHeader = 0x10 | (16 << 10) | (2 << 27) | (1 << 31);
+        buf.putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
+                .putInt(fileNodeHeader).putLong(childStp).putInt(childCb)
+                .putInt(0)
+                .putLong(-1).putInt(0)
+                .putLong(OneNotePtr.FOOTER_CONST);
+    }
+
+    @Test
+    public void testFileNodeListCycleFailsCleanly(@TempDir Path tempDir) throws Exception {
+        // one fragment holding a baseType-2 node whose child list points back at itself
+        ByteBuffer buf = ByteBuffer.allocate(56).order(ByteOrder.LITTLE_ENDIAN);
+        writeFileNodeListBlock(buf, 0, 56);
+        Path cyclic = tempDir.resolve("cyclic");
+        Files.write(cyclic, buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(cyclic.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            TikaException e = assertThrows(TikaException.class,
+                    () -> ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr()));
+            assertTrue(e.getMessage().contains("cycle"), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testFileNodeListNestingIsDepthCapped(@TempDir Path tempDir) throws Exception {
+        // 120 lists, each holding one baseType-2 node pointing at the next list - acyclic,
+        // so only the depth cap can stop the recursion
+        int lists = 120;
+        ByteBuffer buf = ByteBuffer.allocate(56 * lists).order(ByteOrder.LITTLE_ENDIAN);
+        for (int i = 0; i < lists; i++) {
+            long childStp = (i + 1 < lists ? i + 1 : i) * 56L;
+            writeFileNodeListBlock(buf, childStp, 56);
+        }
+        Path deep = tempDir.resolve("deep");
+        Files.write(deep, buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(deep.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            assertThrows(TikaMemoryLimitException.class,
+                    () -> ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr()));
+        }
+    }
+
+    @Test
+    public void testFragmentChainCycleFailsCleanly(@TempDir Path tempDir) throws Exception {
+        // an empty fragment whose next-fragment reference points back at itself would
+        // previously loop forever
+        ByteBuffer buf = ByteBuffer.allocate(36).order(ByteOrder.LITTLE_ENDIAN)
+                .putLong(FileNodeListHeader.UNIT_MAGIC_CONSTANT).putInt(0x10).putInt(0)
+                .putLong(0).putInt(36)
+                .putLong(OneNotePtr.FOOTER_CONST);
+        Path cyclic = tempDir.resolve("cyclic-fragment");
+        Files.write(cyclic, buf.array());
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(cyclic.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            TikaException e = assertThrows(TikaException.class,
+                    () -> ptr.deserializeFileNodeList(new FileNodeList(), new FileNodePtr()));
+            assertTrue(e.getMessage().contains("fragment cycle"), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testLegacyEmbeddedExtractionHonorsShouldParseEmbedded() throws Exception {
+        List<Metadata> offered = new ArrayList<>();
+        ParseContext context = new ParseContext();
+        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
+                offered.add(metadata);
+                return false;
+            }
+
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                                      Metadata metadata, ParseContext context,
+                                      boolean outputHtml) {
+                throw new AssertionError("must not parse embedded when shouldParseEmbedded" +
+                        " returns false");
+            }
+        });
+        try (TikaInputStream tis =
+                getResourceAsStream("/test-documents/testOneNoteEmbeddedWordDoc.one")) {
+            new OneNoteParser().parse(tis, new ToTextContentHandler(), new Metadata(), context);
+        }
+        assertTrue(offered.size() > 0);
+        // the legacy path offers every embedded object as an ATTACHMENT; the relationship
+        // id is set only when the object carries a non-nil gosid
+        for (Metadata offeredMetadata : offered) {
+            assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
+                    offeredMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        }
+    }
+
     /**
      * Test a document pulled from Office 365 which stores the MS-ONESTORE document using the MS-FSSHTTPB
      * protocol.
@@ -232,7 +549,14 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNoteFromOffice365.one", metadata);
 
-        assertEquals(1, metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors").length);
+        // only the authors of the current content count - authors that only appear in
+        // older page version snapshots are not reported
+        assertEquals(Arrays.asList("Chang Du", "Du Chang"),
+                Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR)));
+        // both authors are referenced as AuthorMostRecent by current content; one of them
+        // is first visited under another role, so its most-recent role must still register
+        assertEquals(Arrays.asList("Chang Du", "Du Chang"),
+                Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors")));
 
         assertEquals(Instant.ofEpochSecond(1636621406),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));
@@ -241,6 +565,9 @@ public class OneNoteParserTest extends TikaTest {
         assertEquals(Instant.ofEpochSecond(1636621448),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(TikaCoreProperties.MODIFIED))));
         assertContains("Section1Page1Content", txt);
+        // content from revisions other than each cell's current revision manifest
+        assertContains("Section1Page2Content", txt);
+        assertTrue(txt.indexOf("Section1Page1Content") < txt.indexOf("Section1Page2Content"));
     }
 
     /**
@@ -252,20 +579,23 @@ public class OneNoteParserTest extends TikaTest {
         Metadata metadata = new Metadata();
         String txt = getText("testOneNoteFromOffice365-2.one", metadata);
 
+        assertEquals(List.of("Robert Lucarini"),
+                Arrays.asList(metadata.getValues(TikaCoreProperties.CREATOR)));
         List<String> mostRecentAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "mostRecentAuthors"));
         assertContains(
-                "R\u0000o\u0000b\u0000e\u0000r\u0000t\u0000 \u0000L\u0000u\u0000c\u0000a" +
-                        "\u0000r\u0000i\u0000n\u0000i\u0000\u0000\u0000",
+                "Robert Lucarini",
                 mostRecentAuthors);
 
         assertEquals(Instant.ofEpochSecond(1591712300),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));
-        assertEquals(Instant.ofEpochMilli(1623252330000L),
+        assertEquals(Instant.ofEpochMilli(1623597638000L),
                 Instant.ofEpochMilli(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "lastModifiedTimestamp"))));
         assertEquals(Instant.ofEpochSecond(1623597587),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(TikaCoreProperties.MODIFIED))));
 
         assertContains("Section1Page1Content", txt);
+        // content from revisions other than each cell's current revision manifest
+        assertContains("Section1Page2Content", txt);
     }
 
     private void assertNoJunk(String txt) {

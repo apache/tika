@@ -120,6 +120,21 @@
                     </inputExcludes>
                 </configuration>
             </plugin>
+            <!-- TIKA-4816 metadata string-key ban, main sources; see tika-parent -->
+            <plugin>
+                <groupId>de.thetaphi</groupId>
+                <artifactId>forbiddenapis</artifactId>
+                <executions>
+                    <execution>
+                        <id>forbiddenapis-check</id>
+                        <configuration>
+                            <signaturesFiles>
+                                <signaturesFile>${metadata.forbiddenapis.signaturesFile}</signaturesFile>
+                            </signaturesFiles>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
     <profiles>
@@ -146,7 +161,7 @@
                             <dependency>
                                 <groupId>org.apache.groovy</groupId>
                                 <artifactId>groovy-all</artifactId>
-                                <version>5.0.7</version>
+                                <version>5.1.0</version>
                                 <type>pom</type>
                             </dependency>
                         </dependencies>

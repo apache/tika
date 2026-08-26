@@ -20,13 +20,14 @@ package org.apache.tika.metadata;
  *
  * Properties that typically appear in MSG/PST message format files.
  *
- * @since Apache Tika 4.0
+ * @since Apache Tika 4.0.0
  */
 public interface MAPI {
 
     String PREFIX_MAPI_META = "mapi" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PREFIX_MAPI_ATTACH_META = "mapi:attach" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
     String PREFIX_MAPI_PROPERTY = PREFIX_MAPI_META + "property" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    KeyPrefix PROPERTY = KeyPrefix.file(PREFIX_MAPI_PROPERTY, "MAPI named properties");
 
     /**
      * MAPI message class.  What type of .msg/MAPI file is it?
@@ -47,6 +48,16 @@ public interface MAPI {
     Property FROM_REPRESENTING_EMAIL = Property.internalText(PREFIX_MAPI_META + "from-representing-email");
 
     Property SUBMISSION_ACCEPTED_AT_TIME = Property.internalDate(PREFIX_MAPI_META + "msg-submission-accepted-at-time");
+
+    // PidTagClientSubmitTime -- distinct MAPI prop from the provider-side SUBMISSION_ACCEPTED_AT_TIME.
+    Property CLIENT_SUBMIT_TIME = Property.internalDate(PREFIX_MAPI_META + "msg-client-submit-time");
+
+    // CREATED/MODIFIED fallback when no CLIENT_SUBMIT_TIME.
+    Property MESSAGE_DELIVERY_TIME = Property.internalDate(PREFIX_MAPI_META + "message-delivery-time");
+
+    // Storage-level timestamps, not content dates -- don't use for CREATED/MODIFIED (TIKA-4798).
+    Property CREATION_TIME = Property.internalDate(PREFIX_MAPI_META + "creation-time");
+    Property LAST_MODIFICATION_TIME = Property.internalDate(PREFIX_MAPI_META + "last-modification-time");
 
     Property SUBMISSION_ID = Property.internalText(PREFIX_MAPI_META + "msg-submission-id");
 

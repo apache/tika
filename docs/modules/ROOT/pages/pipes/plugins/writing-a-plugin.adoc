@@ -1,0 +1,400 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Writing a Pipes Plugin
+:toc:
+
+A pipes plugin is a zip that Tika loads at runtime through
+link:https://pf4j.org/[PF4J], contributing one or more fetchers, emitters, iterators or
+reporters. This page walks through building one, using
+link:https://github.com/apache/tika/tree/main/tika-pipes/tika-pipes-plugins/tika-pipes-file-system[`tika-pipes-file-system`]
+as the reference implementation — every shipped plugin follows the same shape.
+
+The path is: three classes, one `plugin.properties`, and a build that produces a zip with a
+specific internal layout.
+
+== The three classes
+
+=== 1. The plugin class
+
+One per zip. Subclass `org.pf4j.Plugin` with a `(PluginWrapper)` constructor. Overriding
+`start()` / `stop()` is optional.
+
+[source,java]
+----
+public class MyPipesPlugin extends Plugin {
+    public MyPipesPlugin(PluginWrapper wrapper) {
+        super(wrapper);
+    }
+}
+----
+
+=== 2. The factory
+
+One per extension, and this — not the fetcher or emitter itself — is what carries
+`@org.pf4j.Extension`. Tika needs to build *several* configured instances of one type, so the
+discovered thing is a factory.
+
+[source,java]
+----
+@Extension
+public class MyFetcherFactory implements FetcherFactory {
+
+    @Override
+    public String getName() {
+        return "my-fetcher";                 // <1>
+    }
+
+    @Override
+    public Fetcher buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        return new MyFetcher(extensionConfig);
+    }
+
+    @Override
+    public Class<?> getConfigClass() {       // <2>
+        return MyFetcherConfig.class;
+    }
+}
+----
+<1> The name users write in `tika-config.json`. It must be unique across every loaded plugin.
+<2> `FetcherFactory` only. It backs the gRPC `GetFetcherConfigJsonSchema` call.
+
+Pick the factory interface for what you are contributing:
+
+[cols="1,2,2"]
+|===
+|Contributing |Factory interface (`org.apache.tika.pipes.api.*`) |Extension interface
+
+|Fetcher
+|`fetcher.FetcherFactory`
+|`fetcher.Fetcher`, or `fetcher.RangeFetcher` for byte ranges
+
+|Emitter
+|`emitter.EmitterFactory`
+|`emitter.Emitter`, or `emitter.StreamEmitter` to write raw bytes
+
+|Iterator
+|`pipesiterator.PipesIteratorFactory`
+|`pipesiterator.PipesIterator`
+
+|Reporter
+|`reporter.PipesReporterFactory`
+|`reporter.PipesReporter`
+|===
+
+All four extend `org.apache.tika.plugins.TikaExtensionFactory<T>`, which is the PF4J extension
+point.
+
+=== 3. The extension
+
+Extend `org.apache.tika.plugins.AbstractTikaExtension` (which just holds the `ExtensionConfig`)
+and implement the interface. Iterators and reporters have richer bases —
+`PipesIteratorBase` in `tika-pipes-iterator-commons`, whose only abstract method is
+`enqueue()`, and `PipesReporterBase` in `tika-pipes-reporter-commons`.
+
+[source,java]
+----
+public class MyFetcher extends AbstractTikaExtension implements Fetcher {
+
+    private final MyFetcherConfig config;
+
+    public MyFetcher(ExtensionConfig extensionConfig) throws TikaConfigException {
+        super(extensionConfig);
+        config = MyFetcherConfig.load(extensionConfig.json());   // <1>
+    }
+
+    @Override
+    public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext)
+            throws TikaException, IOException {
+        ...
+    }
+}
+----
+<1> Config arrives as a **JSON string**; nothing richer crosses the boundary — see
+<<classloading>>. The in-tree plugins parse it with `org.apache.tika.plugins.PluginJson`
+(`PluginJson.read(json, MyFetcherConfig.class)`), the host's strict mapper: comments allowed,
+unknown keys, duplicate keys and numbers-for-enums rejected. Using it is optional — the
+boundary is the `Fetcher`, not how it is configured — but see the Jackson rule under
+<<classloading>> before deciding.
+
+IMPORTANT: `Fetcher` implementations must be thread-safe. One instance serves every concurrent
+request against that fetcher id.
+
+== plugin.properties
+
+PF4J finds the plugin through `src/main/resources/plugin.properties`. There are no
+`Plugin-Id` / `Plugin-Class` manifest entries; this file is the whole descriptor.
+
+[source,properties]
+----
+plugin.id=my-pipes-plugin
+plugin.class=com.example.tika.MyPipesPlugin
+plugin.version=${project.version}
+plugin.provider=Example Corp
+plugin.description=Fetches documents from Example
+----
+
+`${project.version}` needs resource filtering turned on for this file — and *only* this file, so
+that config examples keep their literal `${...}`:
+
+[source,xml]
+----
+<resources>
+  <resource>
+    <directory>src/main/resources</directory>
+    <filtering>true</filtering>
+    <includes><include>plugin.properties</include></includes>
+  </resource>
+  <resource>
+    <directory>src/main/resources</directory>
+    <filtering>false</filtering>
+    <excludes><exclude>plugin.properties</exclude></excludes>
+  </resource>
+</resources>
+----
+
+== The build
+
+Packaging stays `jar`; the zip is an assembly built alongside it.
+
+=== Dependency scopes
+
+Everything on the type boundary between host and plugin must be `provided`, so it is compiled
+against but never shipped inside the plugin:
+
+[source,xml]
+----
+<dependency><groupId>org.pf4j</groupId><artifactId>pf4j</artifactId><scope>provided</scope></dependency>
+<dependency><groupId>org.apache.tika</groupId><artifactId>tika-core</artifactId><scope>provided</scope></dependency>
+<dependency><groupId>org.apache.tika</groupId><artifactId>tika-plugins-core</artifactId><scope>provided</scope></dependency>
+<dependency><groupId>org.apache.tika</groupId><artifactId>tika-pipes-api</artifactId><scope>provided</scope></dependency>
+<dependency><groupId>org.apache.tika</groupId><artifactId>tika-serialization</artifactId><scope>provided</scope></dependency>
+<dependency><groupId>com.fasterxml.jackson.core</groupId><artifactId>jackson-databind</artifactId><scope>provided</scope></dependency>
+----
+
+=== Extension index
+
+PF4J's annotation processor writes `META-INF/extensions.idx` — the file the host reads to find
+your factories. It is on the classpath already via PF4J's own SPI registration; naming it
+explicitly pins it:
+
+[source,xml]
+----
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <configuration>
+    <annotationProcessors>
+      <annotationProcessor>org.pf4j.processor.ExtensionAnnotationProcessor</annotationProcessor>
+    </annotationProcessors>
+  </configuration>
+</plugin>
+----
+
+WARNING: Listing `annotationProcessors` disables processor auto-discovery for that module. If you
+also use another processor, list it here too.
+
+The result, in `target/classes/META-INF/extensions.idx`, is one fully-qualified factory name per
+line:
+
+----
+# Generated by PF4J
+org.apache.tika.pipes.fetcher.fs.FileSystemFetcherFactory
+org.apache.tika.pipes.emitter.fs.FileSystemEmitterFactory
+org.apache.tika.pipes.iterator.fs.FileSystemPipesIteratorFactory
+org.apache.tika.pipes.reporter.fs.FileSystemReporterFactory
+----
+
+If that file is missing or empty, the plugin loads and contributes nothing.
+
+=== Collecting runtime dependencies
+
+`maven-dependency-plugin` copies runtime dependencies to `target/lib`. There is no
+exclusion list to maintain: every boundary artifact is declared `provided`, and
+`includeScope=runtime` excludes `provided` by definition. A boundary artifact can
+only end up in `lib/` if a pom re-declares it at compile scope -- do not.
+
+[source,xml]
+----
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-dependency-plugin</artifactId>
+  <executions>
+    <execution>
+      <id>copy-dependencies</id>
+      <phase>package</phase>
+      <goals><goal>copy-dependencies</goal></goals>
+      <configuration>
+        <outputDirectory>${project.build.directory}/lib</outputDirectory>
+        <includeScope>runtime</includeScope>
+      </configuration>
+    </execution>
+  </executions>
+</plugin>
+----
+
+=== The zip
+
+`maven-assembly-plugin` with a descriptor that sets `includeBaseDirectory=false` and produces
+exactly this layout:
+
+----
+plugin.properties                 <1>
+classes/META-INF/extensions.idx   <2>
+lib/my-pipes-plugin-1.0.0.jar     <3>
+lib/<runtime dependencies>.jar
+LICENSE
+NOTICE
+----
+<1> At the zip root. PF4J reads it from there.
+<2> Under `classes/`, which is where PF4J looks for a plugin's class directory.
+<3> Your own jar goes in `lib/` with everything else.
+
+[#classloading]
+== Classloading: what you must not bundle
+
+A plugin's classloader prefers the plugin's own classes over the host's. So if your zip ships
+`tika-core`, `tika-pipes-api`, `tika-plugins-core` or `tika-serialization`, your
+`MyFetcherFactory` implements a `FetcherFactory` that is a *different* `Class` object from the
+host's. The host then finds no extensions, or fails casting one.
+
+That is what the `provided` scoping above prevents, and it is the usual cause
+of a plugin that loads cleanly and then behaves as if it were not there — or of a
+`NoClassDefFoundError` / `ClassCastException` naming a Tika type.
+
+The same reasoning covers logging: leave `org.slf4j` and `org.apache.logging.log4j` to the host so
+plugin logs land in the host's configuration.
+
+Jackson is the one library with a choice, and it is either/or:
+
+* **Host Jackson (the default, what the in-tree plugins do):** `jackson-core`, `jackson-databind`
+  and `jackson-annotations` `provided`, absent from `lib/`. Every Tika host carries them (via
+  `tika-serialization`), and you may then use `PluginJson` and other host Jackson types.
+* **Your own Jackson:** only if a library you depend on needs a version the host does not ship.
+  Bundle it (`compile` scope), and then never touch a host Jackson object — not `PluginJson`, not
+  `JsonMetadataList`, nothing returning an `ObjectMapper` or `JsonNode`. Your `ObjectMapper` and
+  the host's are different `Class` objects, and the first assignment between them fails with a
+  `LinkageError` or `ClassCastException`. Parse `ExtensionConfig.json()` with your own mapper.
+
+Never both. The in-tree plugins' parent pom enforces the first choice; a third-party plugin
+choosing the second must not inherit that rule.
+
+Everything else — your own transitive libraries — belongs in `lib/`.
+
+== Installing and configuring
+
+=== Deployment
+
+`plugin-roots` is a directory of **zip files**, not of unpacked plugin directories:
+
+----
+/opt/tika/plugins/
+  tika-pipes-file-system-X.Y.Z.zip
+  my-pipes-plugin-1.0.0.zip
+----
+
+Tika unzips each one to a sibling directory named after the zip, writing a completion marker when
+it finishes. A directory without that marker is treated as a failed extraction and deleted, so
+unpacking a plugin there by hand does not work.
+
+`plugin-roots` accepts a single path or an array. tika-server, `tika-app` and `PipesForkParser`
+all fill it in when you do not: a `plugins` directory beside the running jar, else one in the
+working directory. Loading through `TikaPluginManager` directly with no `plugin-roots` fails with
+`plugin-roots must be specified`.
+
+=== tika-config.json
+
+The JSON never names a class. It names your factory's `getName()`.
+
+`fetchers` and `emitters` are keyed by **instance id first, component name second** — one type per
+instance:
+
+[source,json]
+----
+{
+  "plugin-roots": "/opt/tika/plugins",
+  "fetchers": {
+    "my-fetcher-id": {
+      "my-fetcher": { "endpoint": "https://example.invalid", "timeoutMillis": 30000 }
+    }
+  },
+  "emitters": {
+    "my-emitter-id": {
+      "file-system-emitter": { "basePath": "/data/output" }
+    }
+  }
+}
+----
+
+`pipes-iterator` and `pipes-reporters` are keyed by **component name directly** — there is no instance
+id, because a pipeline has one iterator and reporters are not referenced by id:
+
+[source,json]
+----
+{
+  "pipes-iterator": {
+    "file-system-pipes-iterator": {
+      "basePath": "/data/input",
+      "fetcherId": "my-fetcher-id",
+      "emitterId": "my-emitter-id"
+    }
+  },
+  "pipes-reporters": {
+    "es-pipes-reporter": { "esUrl": "https://es.example.invalid:9200/tika-status" }
+  }
+}
+----
+
+Whatever object sits innermost is re-serialized to a string and handed to your factory as
+`ExtensionConfig.json()`. Configs are validated when the config loads — an unknown component name
+fails immediately, listing the names that *are* available — but instances are built lazily, on
+first use.
+
+An array in any of these sections is rejected outright rather than silently ignored.
+
+== Developing without repackaging
+
+Set `tika.plugin.dev.mode=true` (or `TIKA_PLUGIN_DEV_MODE=true`) and each entry in `plugin-roots`
+is treated as one already-exploded plugin directory rather than a directory of zips. Point them at
+your module's `target/classes`, and no zip is built or unpacked.
+
+[source,bash]
+----
+java -Dtika.plugin.dev.mode=true ...
+----
+
+== Checklist
+
+* `plugin.properties` at the zip root, with `plugin.id` and `plugin.class`.
+* `@Extension` on the factory, never on the fetcher or emitter.
+* `META-INF/extensions.idx` non-empty in `target/classes` after compiling.
+* `tika-core`, `tika-pipes-api`, `tika-plugins-core`, `tika-serialization`,
+  `tika-pipes-core`, `tika-pipes-iterator-commons`, `pf4j` and the logging
+  implementations `provided`, and absent from `lib/`.
+* Jackson either `provided` (and then `PluginJson` is yours to use) or bundled (and then no host
+  Jackson type is) — never a mix.
+* The zip — not an unpacked directory — dropped in a `plugin-roots` directory.
+* `getName()` unique against every other loaded plugin.
+
+== Source
+
+* link:https://github.com/apache/tika/tree/main/tika-pipes/tika-pipes-plugins/tika-pipes-file-system[`tika-pipes-file-system`]
+  — the smallest plugin that implements all four extension points
+* link:https://github.com/apache/tika/tree/main/tika-plugins-core/src/main/java/org/apache/tika/plugins[`org.apache.tika.plugins`]
+  — `TikaExtensionFactory`, `ExtensionConfig`, `TikaPluginManager`
+* link:https://github.com/apache/tika/tree/main/tika-pipes/tika-pipes-api/src/main/java/org/apache/tika/pipes/api[`org.apache.tika.pipes.api`]
+  — the four extension interfaces

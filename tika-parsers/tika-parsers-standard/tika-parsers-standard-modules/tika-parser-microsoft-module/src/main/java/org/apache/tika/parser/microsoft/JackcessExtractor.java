@@ -47,6 +47,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -102,13 +103,13 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
         db.setDateTimeType(DateTimeType.DATE);
         PropertyMap dbp = db.getDatabaseProperties();
         for (PropertyMap.Property p : dbp) {
-            parentMetadata.add(JackcessParser.MDB_PROPERTY_PREFIX + p.getName(),
+            parentMetadata.add(JackcessParser.MDB_PROPERTY, p.getName(),
                     toString(p.getValue(), p.getType()));
         }
 
         PropertyMap up = db.getUserDefinedProperties();
         for (PropertyMap.Property p : up) {
-            parentMetadata.add(JackcessParser.USER_DEFINED_PROPERTY_PREFIX + p.getName(),
+            parentMetadata.add(JackcessParser.MDB_USER_PROPERTY, p.getName(),
                     toString(p.getValue(), p.getType()));
         }
 
@@ -137,7 +138,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
 
             for (PropertyMap.Property p : db.getSummaryProperties()) {
                 if (!found.contains(p.getName())) {
-                    parentMetadata.add(JackcessParser.SUMMARY_PROPERTY_PREFIX + p.getName(),
+                    parentMetadata.add(JackcessParser.MDB_SUMMARY_PROPERTY, p.getName(),
                             toString(p.getValue(), p.getType()));
                 }
             }
@@ -217,7 +218,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             if (isRichText(c)) {
                 BodyContentHandler h = new BodyContentHandler();
                 Metadata m = Metadata.newInstance(parseContext);
-                m.set(Metadata.CONTENT_TYPE, "text/html; charset=UTF-8");
+                m.set(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8");
                 try (TikaInputStream tis = TikaInputStream.get(v.getBytes(UTF_8))) {
                     htmlParser.parse(tis, h, m, parseContext);
                     handler.characters(h.toString());

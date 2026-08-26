@@ -286,6 +286,36 @@ public class XmlToJsonConfigConverterTest {
     }
 
     @Test
+    public void testLegacyTimeoutParamsRemapped(@TempDir Path tempDir) throws Exception {
+        // 3.x timeoutSeconds must become timeoutMillis with the value multiplied;
+        // already-millis legacy names (timeoutMs) are renamed without scaling.
+        String xmlConfig = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<properties>\n" +
+                "    <parsers>\n" +
+                "        <parser class=\"org.apache.tika.parser.ocr.TesseractOCRParser\">\n" +
+                "            <params>\n" +
+                "                <param name=\"timeoutSeconds\" type=\"int\">300</param>\n" +
+                "            </params>\n" +
+                "        </parser>\n" +
+                "    </parsers>\n" +
+                "</properties>";
+
+        Path xmlPath = tempDir.resolve("legacy-timeout.xml");
+        Path jsonPath = tempDir.resolve("legacy-timeout.json");
+        Files.write(xmlPath, xmlConfig.getBytes(StandardCharsets.UTF_8));
+
+        XmlToJsonConfigConverter.convert(xmlPath, jsonPath);
+
+        String json = new String(Files.readAllBytes(jsonPath), StandardCharsets.UTF_8);
+        assertTrue(json.contains("\"timeoutMillis\" : 300000"),
+                "timeoutSeconds must be renamed and multiplied to millis, got: " + json);
+        assertFalse(json.contains("timeoutSeconds"), "old key must not survive conversion");
+
+        TikaLoader loader = TikaLoader.load(jsonPath);
+        assertNotNull(loader.loadParsers());
+    }
+
+    @Test
     public void testListAndMapParameterTypes(@TempDir Path tempDir) throws Exception {
         Path xmlPath = Paths.get(getClass().getResource("/xml-configs/tika-config-list-map-types.xml").toURI());
         Path jsonPath = tempDir.resolve("list-map-config.json");
@@ -309,7 +339,7 @@ public class XmlToJsonConfigConverterTest {
                 "Should parse third key-value pair");
 
         // Verify regular parameters still work
-        assertTrue(json.contains("\"timeoutSeconds\" : 300"), "Should have integer parameter");
+        assertTrue(json.contains("\"timeoutMillis\" : 300000"), "Should have integer parameter");
         assertTrue(json.contains("\"enableImagePreprocessing\" : true"), "Should have boolean parameter");
         assertTrue(json.contains("\"language\" : \"eng\""), "Should have string parameter");
 

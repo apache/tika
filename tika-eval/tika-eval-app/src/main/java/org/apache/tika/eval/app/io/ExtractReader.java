@@ -25,8 +25,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -37,13 +39,13 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.ToTextContentHandler;
-import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.sax.BasicContentHandlerFactory.HANDLER_TYPE;
 import org.apache.tika.serialization.JsonMetadataList;
 
 
@@ -159,6 +161,9 @@ public class ExtractReader {
         try {
             if (fileSuffixes.format == FileSuffixes.FORMAT.JSON) {
                 metadataList = JsonMetadataList.fromJson(reader);
+                for (Metadata m : metadataList) {
+                    normalizeLegacyKeys(m);
+                }
                 if (alterMetadataList.equals(ALTER_METADATA_LIST.FIRST_ONLY) && metadataList.size() > 1) {
                     while (metadataList.size() > 1) {
                         metadataList.remove(metadataList.size() - 1);
@@ -196,9 +201,9 @@ public class ExtractReader {
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.TIKA_CONTENT, content);
         if (fileSuffixes.format == FileSuffixes.FORMAT.HTML) {
-            m.set(TikaCoreProperties.TIKA_CONTENT_HANDLER, ToXMLContentHandler.class.getSimpleName());
+            m.set(TikaCoreProperties.TIKA_CONTENT_HANDLER_TYPE, HANDLER_TYPE.XML.name());
         } else if (fileSuffixes.format == FileSuffixes.FORMAT.TXT) {
-            m.set(TikaCoreProperties.TIKA_CONTENT_HANDLER, ToTextContentHandler.class.getSimpleName());
+            m.set(TikaCoreProperties.TIKA_CONTENT_HANDLER_TYPE, HANDLER_TYPE.TEXT.name());
         }
         //Let's hope the file name has a suffix that can
         //be used to determine the mime.  Could be wrong or missing,
@@ -207,11 +212,78 @@ public class ExtractReader {
 
         MediaType mimeType = mimeTypes.detect(null, m, new ParseContext());
         if (mimeType != null) {
-            m.set(Metadata.CONTENT_TYPE, mimeType.toString());
+            m.set(HttpHeaders.CONTENT_TYPE, mimeType.toString());
         }
         metadataList.add(m);
         return metadataList;
 
+    }
+
+    // Pre-4.0 extract key -> 4.0 key, for the Tika-native fields tika-eval reads. Digest keys are
+    // handled by the prefix rule in normalizeLegacyKeys; Content-Type/Content-Length are standard
+    // names (unchanged) so they are not listed. New-side keys come from the live constants so this
+    // can't drift from the 4.0 declarations. X-TIKA:content_handler (the handler's simple class
+    // name) has no 4.0 equivalent -- tk:content-handler-type carries a different value shape
+    // (a HANDLER_TYPE enum name), so it is deliberately not remapped here.
+    private static final Map<String, String> LEGACY_KEY_MAP = Map.ofEntries(
+            Map.entry("X-TIKA:content", TikaCoreProperties.TIKA_CONTENT.getName()),
+            Map.entry("X-TIKA:embedded_depth", TikaCoreProperties.EMBEDDED_DEPTH.getName()),
+            Map.entry("X-TIKA:embedded_resource_path", TikaCoreProperties.EMBEDDED_RESOURCE_PATH.getName()),
+            Map.entry("X-TIKA:final_embedded_resource_path", TikaCoreProperties.FINAL_EMBEDDED_RESOURCE_PATH.getName()),
+            Map.entry("X-TIKA:parse_time_millis", TikaCoreProperties.PARSE_TIME_MILLIS.getName()),
+            Map.entry("X-TIKA:resourceName", TikaCoreProperties.RESOURCE_NAME_KEY.getName()),
+            Map.entry("X-TIKA:detectedEncoding", TikaCoreProperties.DETECTED_ENCODING.getName()),
+            Map.entry("X-TIKA:encodingDetector", TikaCoreProperties.ENCODING_DETECTOR.getName()),
+            Map.entry("Content-Type-Hint", TikaCoreProperties.CONTENT_TYPE_HINT.getName()),
+            Map.entry("embeddedResourceType", TikaCoreProperties.EMBEDDED_RESOURCE_TYPE.getName()),
+            Map.entry("X-TIKA:EXCEPTION:container_exception", TikaCoreProperties.CONTAINER_EXCEPTION.getName()),
+            Map.entry("X-TIKA:EXCEPTION:embedded_exception", TikaCoreProperties.EMBEDDED_EXCEPTION.getName()));
+
+    private static final String LEGACY_DIGEST_PREFIX = TikaCoreProperties.LEGACY_TIKA_META_PREFIX
+            + "digest" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+
+    /**
+     * Pre-4.0 extracts (e.g. 4.0.0-beta-1) key Tika-native fields under X-TIKA:/camelCase names.
+     * Normalize the fields tika-eval reads to their 4.0 tk: keys so a cross-version compare reflects
+     * real diffs, not the rename. Harmless on 4.0 extracts: the legacy keys are simply absent.
+     */
+    private static void normalizeLegacyKeys(Metadata m) {
+        for (Map.Entry<String, String> e : LEGACY_KEY_MAP.entrySet()) {
+            remapLegacyKey(m, e.getKey(), e.getValue());
+        }
+        // digest keys: X-TIKA:digest:<alg> -> tk:digest:<alg> (algorithm unchanged; MD5 drives
+        // embedded-doc matching). names() is a snapshot, so remapping while iterating is safe.
+        for (String name : m.names()) {
+            if (name.startsWith(LEGACY_DIGEST_PREFIX)) {
+                remapLegacyKey(m, name, TikaCoreProperties.TIKA_META_PREFIX
+                        + name.substring(TikaCoreProperties.LEGACY_TIKA_META_PREFIX.length()));
+            }
+        }
+    }
+
+    private static void remapLegacyKey(Metadata m, String legacyKey, String modernKey) {
+        String[] legacyVals = m.getValues(legacyKey);
+        if (legacyVals.length == 0) {
+            return;
+        }
+        String[] modernVals = m.getValues(modernKey);
+        if (modernVals.length > 0) {
+            // Both present: safe only if identical. Fail loud rather than silently clobber a value.
+            if (!Arrays.equals(legacyVals, modernVals)) {
+                throw new IllegalStateException("Extract has both legacy key '" + legacyKey
+                        + "' and modern key '" + modernKey + "' with different values; legacy-key "
+                        + "normalization would clobber. Extract is inconsistent.");
+            }
+        } else {
+            for (int i = 0; i < legacyVals.length; i++) {
+                if (i == 0) {
+                    m.setTrusted(modernKey, legacyVals[i]);
+                } else {
+                    m.addTrusted(modernKey, legacyVals[i]);
+                }
+            }
+        }
+        m.remove(legacyKey);
     }
 
     public enum ALTER_METADATA_LIST {

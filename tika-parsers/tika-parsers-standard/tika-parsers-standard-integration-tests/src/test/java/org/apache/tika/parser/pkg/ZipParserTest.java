@@ -29,6 +29,7 @@ import org.xml.sax.ContentHandler;
 
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
@@ -48,7 +49,7 @@ public class ZipParserTest extends AbstractPkgTest {
             AUTO_DETECT_PARSER.parse(tis, handler, metadata, recursingContext);
         }
 
-        assertEquals("application/zip", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/zip", metadata.get(HttpHeaders.CONTENT_TYPE));
         String content = handler.toString();
         assertContains("testEXCEL.xls", content);
         assertContains("Sample Excel Worksheet", content);
@@ -114,19 +115,19 @@ public class ZipParserTest extends AbstractPkgTest {
 
         //mime is 0 bytes
         assertContains("InputStream must have > 0 bytes",
-                results.get(1).get("X-TIKA:EXCEPTION:embedded_exception"));
+                results.get(1).get("tk:exception:embedded-exception"));
         //source.xml is binary, not xml
         assertContains("TikaException: XML parse error",
-                results.get(2).get("X-TIKA:EXCEPTION:embedded_exception"));
+                results.get(2).get("tk:exception:embedded-exception"));
         //manifest.xml has malformed xml
         assertContains("TikaException: XML parse error",
-                results.get(4).get("X-TIKA:EXCEPTION:embedded_exception"));
+                results.get(4).get("tk:exception:embedded-exception"));
     }
 
     private static class GatherInternalPathsDocumentExtractor implements EmbeddedDocumentExtractor {
         public Set<String> allInternalPaths = new HashSet<>();
 
-        public boolean shouldParseEmbedded(Metadata metadata) {
+        public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
             String internalPath = metadata.get(TikaCoreProperties.INTERNAL_PATH);
             if (internalPath != null) {
                 allInternalPaths.add(internalPath);

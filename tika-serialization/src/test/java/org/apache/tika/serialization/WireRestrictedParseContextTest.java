@@ -76,6 +76,17 @@ public class WireRestrictedParseContextTest {
     }
 
     @Test
+    public void restrictedRejectsEmbeddedDocumentExtractorInjection() {
+        // EmbeddedDocumentExtractor controls which parser handles every embedded document --
+        // same exec/IO-control tier as Parser/Detector, must be refused from a wire parseContext.
+        String json = "{\"mock-embedded-document-extractor\":{}}";
+        Exception e = assertThrows(Exception.class,
+                () -> restrictedMapper().readValue(json, ParseContext.class));
+        assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
+                "expected wire-blocked rejection, got: " + rootMessage(e));
+    }
+
+    @Test
     public void restrictedAllowsFlatSelfConfiguringParserConfig() throws Exception {
         // Per-request tuning of an already-loaded self-configuring parser is config, not
         // instantiation: stored as an inert jsonConfig, never bound, so it must be allowed
@@ -138,6 +149,20 @@ public class WireRestrictedParseContextTest {
         assertNotNull(ctx);
         assertTrue(ctx.hasJsonConfig("metadata-filters"));
         assertTrue(ctx.hasJsonConfig("timeout-limits"));
+    }
+
+    /**
+     * Initializable cross-field validation must fire at resolution, so a bad pair fails
+     * config load / request admission rather than every task at runtime.
+     */
+    @Test
+    public void resolveRunsInitializableValidation() throws Exception {
+        String json = "{\"timeout-limits\":{\"progressTimeoutMillis\":0,\"totalTaskTimeoutMillis\":60000}}";
+        ParseContext ctx = restrictedMapper().readValue(json, ParseContext.class);
+        Exception e = assertThrows(Exception.class,
+                () -> ParseContextUtils.resolveAll(ctx, ParseContextUtils.class.getClassLoader()));
+        assertTrue(rootMessage(e).contains("would kill every task"),
+                "expected the cross-field timeout rejection, got: " + rootMessage(e));
     }
 
     private static String rootMessage(Throwable t) {

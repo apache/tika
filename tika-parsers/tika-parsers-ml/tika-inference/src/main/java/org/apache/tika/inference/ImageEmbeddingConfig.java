@@ -33,7 +33,7 @@ public class ImageEmbeddingConfig implements Serializable {
     private String baseUrl = "http://localhost:8000";
     private String model = "";
     private String apiKey = "";
-    private int timeoutSeconds = 120;
+    private long timeoutMillis = 120_000;
     private long minFileSizeToEmbed = 0;
     private long maxFileSizeToEmbed = 50 * 1024 * 1024; // 50 MB
     private boolean skipEmbedding = false;
@@ -43,7 +43,7 @@ public class ImageEmbeddingConfig implements Serializable {
      * image vector and locators. Defaults to the canonical chunks field
      * so image embeddings merge with text chunks in a single array.
      */
-    private String outputField = TikaCoreProperties.TIKA_CHUNKS;
+    private String outputField = TikaCoreProperties.TIKA_CHUNKS.getName();
 
     public String getBaseUrl() {
         return baseUrl;
@@ -69,12 +69,12 @@ public class ImageEmbeddingConfig implements Serializable {
         this.apiKey = apiKey;
     }
 
-    public int getTimeoutSeconds() {
-        return timeoutSeconds;
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        this.timeoutSeconds = timeoutSeconds;
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
     public long getMinFileSizeToEmbed() {

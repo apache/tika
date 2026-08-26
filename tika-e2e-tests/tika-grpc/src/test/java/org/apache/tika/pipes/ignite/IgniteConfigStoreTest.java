@@ -48,13 +48,13 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import org.apache.tika.FetchAndParseReply;
-import org.apache.tika.FetchAndParseRequest;
-import org.apache.tika.SaveFetcherReply;
-import org.apache.tika.SaveFetcherRequest;
-import org.apache.tika.TikaGrpc;
 import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseRequest;
+import org.apache.tika.pipes.grpc.proto.SaveFetcherReply;
+import org.apache.tika.pipes.grpc.proto.SaveFetcherRequest;
+import org.apache.tika.pipes.grpc.proto.TikaGrpc;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @Testcontainers
@@ -147,9 +147,11 @@ class IgniteConfigStoreTest {
         String javaCmd = javaHome + (isWindows ? "\\bin\\java.exe" : "/bin/java");
         String mvnCmd = tikaRootDir.resolve(isWindows ? "mvnw.cmd" : "mvnw").toString();
         
+        // -Pdev: tika-grpc no longer ships Ignite, so the config store's jars come from that profile
         ProcessBuilder pb = new ProcessBuilder(
             mvnCmd,
             "exec:exec",
+            "-Pdev",
             "-Dexec.executable=" + javaCmd,
             "-Dexec.args=" +
                 "--add-opens=java.base/java.lang=ALL-UNNAMED " +

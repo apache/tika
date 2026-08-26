@@ -52,6 +52,7 @@ import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -63,6 +64,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLBalancingHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.apache.tika.zip.utils.ZipFileHelper;
 
 /**
  * Epub parser
@@ -137,7 +139,7 @@ public class EpubParser implements Parser {
         if (type != null) {
             type = type.trim();
         }
-        metadata.set(Metadata.CONTENT_TYPE, type);
+        metadata.set(HttpHeaders.CONTENT_TYPE, type);
 
     }
 
@@ -151,7 +153,7 @@ public class EpubParser implements Parser {
             return bufferedParseZipFile((ZipFile) tis.getOpenContainer(), bodyHandler,
                     normalizer, xhtml, metadata, context);
         }
-        try (ZipFile zipFile = ZipFile.builder().setFile(tis.getPath().toFile()).get()) {
+        try (ZipFile zipFile = ZipFileHelper.open(tis, null)) {
             return bufferedParseZipFile(zipFile, bodyHandler, normalizer, xhtml, metadata, context);
         }
     }
@@ -437,10 +439,10 @@ public class EpubParser implements Parser {
         }
         Metadata embeddedMetadata = Metadata.newInstance(context);
         if (!StringUtils.isBlank(hRefMediaPair.media)) {
-            embeddedMetadata.set(Metadata.CONTENT_TYPE, hRefMediaPair.media);
+            embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, hRefMediaPair.media);
         }
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fullPath);
-        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata)) {
+        if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             return;
         }
 

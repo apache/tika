@@ -43,9 +43,12 @@ public interface Photoshop {
             {"Bitmap", "Greyscale", "Indexed Colour", "RGB Color", "CMYK Colour", "Multi-Channel",
                     "Duotone", "LAB Colour", "reserved", "reserved", "YCbCr Colour", "YCgCo Colour",
                     "YCbCrK Colour"};
-    Property COLOR_MODE = Property.internalClosedChoise(
+    Property COLOR_MODE = Property.internalClosedChoice(
             PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ColorMode",
             _COLOR_MODE_CHOICES_INDEXED);
+
+    Property ICC_PROFILE = Property.internalText(
+            PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "ICCProfile");
 
     Property CAPTION_WRITER = Property.internalText(
             PREFIX_PHOTOSHOP + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER + "CaptionWriter");

@@ -33,6 +33,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
@@ -62,7 +63,7 @@ public class TheoraParser extends AbstractParser {
     public void parse(TikaInputStream tis, ContentHandler handler,
             Metadata metadata, ParseContext context)
             throws IOException, TikaException, SAXException {
-        metadata.set(Metadata.CONTENT_TYPE, THEORA_VIDEO.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, THEORA_VIDEO.toString());
         metadata.set(XMPDM.VIDEO_COMPRESSOR, "Theora");
 
         // Open and process the files
@@ -77,7 +78,7 @@ public class TheoraParser extends AbstractParser {
         extractInfo(metadata, theora.getInfo());
 
         // Extract the common Theora comments
-        OggAudioParser.extractComments(metadata, xhtml, theora.getComments());
+        OggAudioParser.extractComments(metadata, xhtml, theora.getComments(), context);
 
         // Extract any soundtracks
         for (OggAudioHeaders audio : theora.getSoundtracks()) {
@@ -90,6 +91,6 @@ public class TheoraParser extends AbstractParser {
     }
 
     protected void extractInfo(Metadata metadata, TheoraInfo info) throws TikaException {
-        metadata.add("version", "Theora " + info.getVersion());
+        metadata.add(OggAudioParser.CODEC_VERSION, "Theora " + info.getVersion());
     }
 }

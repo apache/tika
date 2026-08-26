@@ -39,14 +39,13 @@ import org.apache.tika.server.core.writer.ZipWriter;
 public class DetectorResourceTest extends CXFTestBase {
 
     private static final String DETECT_PATH = "/detect";
-    private static final String DETECT_STREAM_PATH = DETECT_PATH + "/stream";
     private static final String FOO_CSV = "test-documents/foo.csv";
     private static final String CDEC_CSV_NO_EXT = "test-documents/CDEC_WEATHER_2010_03_02";
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(DetectorResource.class);
-        sf.setResourceProvider(DetectorResource.class, new SingletonResourceProvider(new DetectorResource(new ServerStatus())));
+        sf.setResourceProvider(DetectorResource.class, new SingletonResourceProvider(new DetectorResource(new ServerStatus(), tikaResource)));
 
     }
 
@@ -55,16 +54,15 @@ public class DetectorResourceTest extends CXFTestBase {
         List<Object> providers = new ArrayList<>();
         providers.add(new TarWriter());
         providers.add(new ZipWriter());
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
         sf.setProviders(providers);
 
     }
 
     @Test
     public void testDetectCsvWithExt() throws Exception {
-        String url = endPoint + DETECT_STREAM_PATH;
         Response response = WebClient
-                .create(endPoint + DETECT_STREAM_PATH)
+                .create(endPoint + DETECT_PATH)
                 .type("text/csv")
                 .accept("*/*")
                 .header("Content-Disposition", "attachment; filename=" + FOO_CSV)
@@ -79,7 +77,7 @@ public class DetectorResourceTest extends CXFTestBase {
     public void testDetectCsvNoExt() throws Exception {
 
         Response response = WebClient
-                .create(endPoint + DETECT_STREAM_PATH)
+                .create(endPoint + DETECT_PATH)
                 .type("text/csv")
                 .accept("*/*")
                 .header("Content-Disposition", "attachment; filename=" + CDEC_CSV_NO_EXT)
@@ -90,7 +88,7 @@ public class DetectorResourceTest extends CXFTestBase {
 
         // now trick it by adding .csv to the end
         response = WebClient
-                .create(endPoint + DETECT_STREAM_PATH)
+                .create(endPoint + DETECT_PATH)
                 .type("text/csv")
                 .accept("*/*")
                 .header("Content-Disposition", "attachment; filename=" + CDEC_CSV_NO_EXT + ".csv")

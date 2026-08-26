@@ -37,25 +37,6 @@ import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.DeleteFetcherReply;
-import org.apache.tika.DeleteFetcherRequest;
-import org.apache.tika.DeletePipesIteratorReply;
-import org.apache.tika.DeletePipesIteratorRequest;
-import org.apache.tika.FetchAndParseReply;
-import org.apache.tika.FetchAndParseRequest;
-import org.apache.tika.GetFetcherConfigJsonSchemaReply;
-import org.apache.tika.GetFetcherConfigJsonSchemaRequest;
-import org.apache.tika.GetFetcherReply;
-import org.apache.tika.GetFetcherRequest;
-import org.apache.tika.GetPipesIteratorReply;
-import org.apache.tika.GetPipesIteratorRequest;
-import org.apache.tika.ListFetchersReply;
-import org.apache.tika.ListFetchersRequest;
-import org.apache.tika.SaveFetcherReply;
-import org.apache.tika.SaveFetcherRequest;
-import org.apache.tika.SavePipesIteratorReply;
-import org.apache.tika.SavePipesIteratorRequest;
-import org.apache.tika.TikaGrpc;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
@@ -68,12 +49,31 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
-import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.PipesException;
+import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
-import org.apache.tika.pipes.ignite.server.IgniteStoreServer;
+import org.apache.tika.pipes.grpc.proto.DeleteFetcherReply;
+import org.apache.tika.pipes.grpc.proto.DeleteFetcherRequest;
+import org.apache.tika.pipes.grpc.proto.DeletePipesIteratorReply;
+import org.apache.tika.pipes.grpc.proto.DeletePipesIteratorRequest;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
+import org.apache.tika.pipes.grpc.proto.FetchAndParseRequest;
+import org.apache.tika.pipes.grpc.proto.GetFetcherConfigJsonSchemaReply;
+import org.apache.tika.pipes.grpc.proto.GetFetcherConfigJsonSchemaRequest;
+import org.apache.tika.pipes.grpc.proto.GetFetcherReply;
+import org.apache.tika.pipes.grpc.proto.GetFetcherRequest;
+import org.apache.tika.pipes.grpc.proto.GetPipesIteratorReply;
+import org.apache.tika.pipes.grpc.proto.GetPipesIteratorRequest;
+import org.apache.tika.pipes.grpc.proto.ListFetchersReply;
+import org.apache.tika.pipes.grpc.proto.ListFetchersRequest;
+import org.apache.tika.pipes.grpc.proto.SaveFetcherReply;
+import org.apache.tika.pipes.grpc.proto.SaveFetcherRequest;
+import org.apache.tika.pipes.grpc.proto.SavePipesIteratorReply;
+import org.apache.tika.pipes.grpc.proto.SavePipesIteratorRequest;
+import org.apache.tika.pipes.grpc.proto.TikaGrpc;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
 
@@ -85,15 +85,16 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     public static final JsonSchemaGenerator JSON_SCHEMA_GENERATOR = new JsonSchemaGenerator(OBJECT_MAPPER);
 
     private static final String PIPES_ITERATOR_PREFIX = "pipesIterator:";
+    private static final String IGNITE_STORE_SERVER_CLASS = "org.apache.tika.pipes.ignite.server.IgniteStoreServer";
 
     PipesConfig pipesConfig;
     TikaGrpcConfig tikaGrpcConfig;
-    PipesClient pipesClient;
+    PipesParser pipesParser;
     FetcherManager fetcherManager;
     ConfigStore configStore;
     Path tikaConfigPath;
     PluginManager pluginManager;
-    private IgniteStoreServer igniteStoreServer;
+    private AutoCloseable igniteStoreServer;
 
     TikaGrpcServerImpl(String tikaConfigPath) throws TikaConfigException, IOException {
         this(tikaConfigPath, null);
@@ -120,7 +121,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         // modifications) are off unless explicitly enabled in the "grpc" section.
         tikaGrpcConfig = TikaGrpcConfig.load(tikaJsonConfig);
 
-        pipesClient = new PipesClient(pipesConfig, configPath);
+        // PipesClient is single-threaded; the pool admits pipes.numClients at a time.
+        pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, configPath);
         
         try {
             if (pluginRootsOverride != null && !pluginRootsOverride.trim().isEmpty()) {
@@ -169,24 +171,39 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 storeConfig);
     }
     
-    private void startIgniteServer(ExtensionConfig config) {
+    /**
+     * Starts the embedded Ignite node backing an {@code ignite} ConfigStore. Loaded reflectively so
+     * that tika-grpc does not carry an Ignite dependency: Ignite is an opt-in extra that the operator
+     * adds to the classpath, not part of the shipped server.
+     */
+    private void startIgniteServer(ExtensionConfig config) throws TikaConfigException {
+        Class<?> serverClass;
+        try {
+            serverClass = Class.forName(IGNITE_STORE_SERVER_CLASS);
+        } catch (ClassNotFoundException e) {
+            throw new TikaConfigException("configStoreType=ignite requires tika-pipes-config-store-ignite "
+                    + "(and its Ignite dependencies) on the classpath; tika-grpc does not ship them. Add the "
+                    + "jars to the classpath, or use a configStoreType of 'memory' or 'file'.", e);
+        }
         try {
             LOG.info("Starting embedded Ignite server for ConfigStore");
 
-            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-            com.fasterxml.jackson.databind.JsonNode params = mapper.readTree(config.json());
+            com.fasterxml.jackson.databind.JsonNode params = OBJECT_MAPPER.readTree(config.json());
 
             String tableName = params.has("tableName") ? params.get("tableName").asText() :
                                params.has("cacheName") ? params.get("cacheName").asText() : "tika_config_store";
             String instanceName = params.has("igniteInstanceName") ? params.get("igniteInstanceName").asText() : "TikaIgniteServer";
 
-            igniteStoreServer = new IgniteStoreServer(tableName, instanceName);
-            igniteStoreServer.start();
+            igniteStoreServer = (AutoCloseable) serverClass.getConstructor(String.class, String.class)
+                    .newInstance(tableName, instanceName);
+            serverClass.getMethod("start").invoke(igniteStoreServer);
 
             LOG.info("Embedded Ignite server started successfully");
         } catch (Exception e) {
             LOG.error("Failed to start embedded Ignite server", e);
-            throw new RuntimeException("Failed to start Ignite server", e);
+            // The constructor propagates, so nothing else will ever call shutdown() for this node.
+            shutdown();
+            throw new TikaConfigException("Failed to start Ignite server", e);
         }
     }
 
@@ -245,6 +262,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             return;
         }
         fetchAndParseImpl(request, responseObserver);
+        responseObserver.onCompleted();
     }
 
     @Override
@@ -303,7 +321,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 contextNode.fields().forEachRemaining(entry ->
                         parseContext.setJsonConfig(entry.getKey(), entry.getValue().toString()));
             }
-            PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcher.getExtensionConfig().id(), request.getFetchKey()),
+            PipesResult pipesResult = pipesParser.parse(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcher.getExtensionConfig().id(), request.getFetchKey()),
                     new EmitKey(), tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =
                     FetchAndParseReply.newBuilder()
@@ -323,7 +341,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 }
             }
             responseObserver.onNext(fetchReplyBuilder.build());
-        } catch (IOException e) {
+        } catch (IOException | PipesException e) {
             throw new RuntimeException(e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -629,17 +647,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     }
 
     /**
-     * Close the pipe client, to be called after TikaGrpcServer has shut down.
+     * Close the pipes parser, to be called after TikaGrpcServer has shut down.
      */
     void postShutdown() {
-        if (pipesClient != null) {
-            LOG.info("Shutting down the pipes client");
+        if (pipesParser != null) {
+            LOG.info("Shutting down the pipes parser");
             try {
-                pipesClient.close();
+                pipesParser.close();
             } catch (IOException e) {
-                LOG.error("Error closing the pipes client", e);
+                LOG.error("Error closing the pipes parser", e);
             } finally {
-                pipesClient = null;
+                pipesParser = null;
             }
         }
     }

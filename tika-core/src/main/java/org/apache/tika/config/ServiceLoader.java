@@ -35,6 +35,8 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import aQute.bnd.annotation.spi.ServiceConsumer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.EncodingDetector;
@@ -58,6 +60,8 @@ import org.apache.tika.utils.ServiceLoaderUtils;
 @ServiceConsumer(LanguageDetector.class)
 @ServiceConsumer(MetadataFilter.class)
 public class ServiceLoader {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ServiceLoader.class);
 
     /**
      * The dynamic set of services available in an OSGi environment.
@@ -339,7 +343,10 @@ public class ServiceLoader {
                                 "Class " + name + " is not of type: " + iface);
                     }
                 } catch (Throwable t) {
-                    //TODO: swallow, log, throw?
+                    // Swallowed so one bad provider cannot break loading of the rest,
+                    // but logged: an SPI class that silently fails to load looks exactly
+                    // like one that was never registered.
+                    LOG.warn("failed to load service provider {} for {}", name, iface, t);
                 }
             }
         }

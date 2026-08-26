@@ -28,8 +28,6 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.Callable;
@@ -121,36 +119,6 @@ public class TestMetadata extends TikaTest {
         assertEquals(2, values.length);
         assertEquals("new value 1", values[0]);
         assertEquals("new value 2", values[1]);
-    }
-
-    /**
-     * Test for <code>setAll(Properties)</code> method.
-     */
-    @Test
-    public void testSetProperties() {
-        String[] values = null;
-        Metadata meta = new Metadata();
-        Properties props = new Properties();
-
-        meta.setAll(props);
-        assertEquals(0, meta.size());
-
-        props.setProperty("name-one", "value1.1");
-        meta.setAll(props);
-        assertEquals(1, meta.size());
-        values = meta.getValues("name-one");
-        assertEquals(1, values.length);
-        assertEquals("value1.1", values[0]);
-
-        props.setProperty("name-two", "value2.1");
-        meta.setAll(props);
-        assertEquals(2, meta.size());
-        values = meta.getValues("name-one");
-        assertEquals(1, values.length);
-        assertEquals("value1.1", values[0]);
-        values = meta.getValues("name-two");
-        assertEquals(1, values.length);
-        assertEquals("value2.1", values[0]);
     }
 
     /**
@@ -259,12 +227,12 @@ public class TestMetadata extends TikaTest {
         Metadata meta = new Metadata();
 
         // Isn't initially set, will get null back
-        assertEquals(null, meta.get(Metadata.IMAGE_WIDTH));
-        assertEquals(null, meta.getInt(Metadata.IMAGE_WIDTH));
+        assertEquals(null, meta.get(TIFF.IMAGE_WIDTH));
+        assertEquals(null, meta.getInt(TIFF.IMAGE_WIDTH));
 
         // Can only set as a single valued int
         try {
-            meta.set(Metadata.BITS_PER_SAMPLE, 1);
+            meta.set(TIFF.BITS_PER_SAMPLE, 1);
             fail("Shouldn't be able to set a multi valued property as an int");
         } catch (PropertyTypeException e) {
             //swallow
@@ -277,19 +245,19 @@ public class TestMetadata extends TikaTest {
         }
 
         // Can set it and retrieve it
-        meta.set(Metadata.IMAGE_WIDTH, 22);
-        assertEquals("22", meta.get(Metadata.IMAGE_WIDTH));
-        assertEquals(22, meta.getInt(Metadata.IMAGE_WIDTH).intValue());
+        meta.set(TIFF.IMAGE_WIDTH, 22);
+        assertEquals("22", meta.get(TIFF.IMAGE_WIDTH));
+        assertEquals(22, meta.getInt(TIFF.IMAGE_WIDTH).intValue());
 
         // If you save a non int value, you get null
-        meta.set(Metadata.IMAGE_WIDTH, "INVALID");
-        assertEquals("INVALID", meta.get(Metadata.IMAGE_WIDTH));
-        assertEquals(null, meta.getInt(Metadata.IMAGE_WIDTH));
+        meta.set(TIFF.IMAGE_WIDTH, "INVALID");
+        assertEquals("INVALID", meta.get(TIFF.IMAGE_WIDTH));
+        assertEquals(null, meta.getInt(TIFF.IMAGE_WIDTH));
 
         // If you try to retrieve a non simple int value, you get null
-        meta.set(Metadata.IMAGE_WIDTH, 22);
-        assertEquals(22, meta.getInt(Metadata.IMAGE_WIDTH).intValue());
-        assertEquals(null, meta.getInt(Metadata.BITS_PER_SAMPLE));
+        meta.set(TIFF.IMAGE_WIDTH, 22);
+        assertEquals(22, meta.getInt(TIFF.IMAGE_WIDTH).intValue());
+        assertEquals(null, meta.getInt(TIFF.BITS_PER_SAMPLE));
         assertEquals(null, meta.getInt(TikaCoreProperties.CREATED));
     }
 
@@ -308,13 +276,13 @@ public class TestMetadata extends TikaTest {
 
         // Can only set as a single valued date
         try {
-            meta.set(Metadata.BITS_PER_SAMPLE, new Date(1000));
+            meta.set(TIFF.BITS_PER_SAMPLE, new Date(1000));
             fail("Shouldn't be able to set a multi valued property as a date");
         } catch (PropertyTypeException e) {
             //swallow
         }
         try {
-            meta.set(Metadata.IMAGE_WIDTH, new Date(1000));
+            meta.set(TIFF.IMAGE_WIDTH, new Date(1000));
             fail("Shouldn't be able to set an int property as an date");
         } catch (PropertyTypeException e) {
             //swallow
@@ -333,7 +301,7 @@ public class TestMetadata extends TikaTest {
         // If you try to retrieve a non simple date value, you get null
         meta.set(TikaCoreProperties.CREATED, new Date(1000));
         assertEquals(1000, meta.getDate(TikaCoreProperties.CREATED).getTime());
-        assertEquals(null, meta.getInt(Metadata.BITS_PER_SAMPLE));
+        assertEquals(null, meta.getInt(TIFF.BITS_PER_SAMPLE));
         assertEquals(null, meta.getInt(TikaCoreProperties.CREATED));
 
         // Our format doesn't include milliseconds

@@ -50,7 +50,7 @@ public class JinaEmbeddingFilterTest {
         config.setModel("jina-embeddings-v3");
         config.setMaxChunkChars(500);
         config.setOverlapChars(0);
-        config.setTimeoutSeconds(10);
+        config.setTimeoutMillis(10_000);
 
         filter = new JinaEmbeddingFilter(config);
     }
@@ -124,8 +124,8 @@ public class JinaEmbeddingFilterTest {
         list.add(metadata);
         filter.filter(list);
 
-        String chunksJson = metadata.get("tika:chunks");
-        assertNotNull(chunksJson, "Should have tika:chunks");
+        String chunksJson = metadata.get("tk:chunks");
+        assertNotNull(chunksJson, "Should have tk:chunks");
 
         List<Chunk> chunks = ChunkSerializer.fromJson(chunksJson);
         assertEquals(2, chunks.size());

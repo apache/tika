@@ -15,6 +15,9 @@
  * limitations under the License.
  */
 package org.apache.tika.langdetect.charsoup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.langdetect.charsoup.core.CharSoupFeatureExtractor;
 import org.apache.tika.language.detect.LanguageResult;
@@ -39,6 +42,8 @@ import org.apache.tika.metadata.filter.MetadataFilterBase;
 @TikaComponent(name = "charsoup-metadata-filter")
 public class CharSoupMetadataFilter extends MetadataFilterBase {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CharSoupMetadataFilter.class);
+
     private int maxLength = CharSoupFeatureExtractor.MAX_TEXT_LENGTH;
 
     public void setMaxLength(int maxLength) {
@@ -49,6 +54,9 @@ public class CharSoupMetadataFilter extends MetadataFilterBase {
     public void filter(Metadata metadata) {
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
         if (content == null || content.isEmpty()) {
+            // No tk:content to detect from -- e.g. the ignore handler, which /meta pins.
+            // Silence here reads as "no language found" rather than "never ran".
+            LOG.debug("no content to detect language from; filter is a no-op for this document");
             return;
         }
         CharSoupLanguageDetector detector = new CharSoupLanguageDetector();

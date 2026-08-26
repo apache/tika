@@ -29,24 +29,12 @@
   <name>Apache Tika Pipes JDBC</name>
   <packaging>jar</packaging>
 
-  <properties>
-    <!-- You want to make sure you don't load competing dependencies in your plugin or your classloading is going
-     to get messed up when finding your plugins. -->
-    <plugin.excluded.artifactIds>tika-core,tika-pipes-api,tika-serialization,tika-plugins-core</plugin.excluded.artifactIds>
-    <plugin.excluded.groupIds>org.apache.logging.log4j,org.slf4j</plugin.excluded.groupIds>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-pipes-api</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-pipes-iterator-commons</artifactId>
-      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -86,8 +74,6 @@
             <configuration>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
               <includeScope>runtime</includeScope>
-              <excludeArtifactIds>${plugin.excluded.artifactIds}</excludeArtifactIds>
-              <excludeGroupIds>${plugin.excluded.groupIds}</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
@@ -127,15 +113,15 @@
         <artifactId>maven-install-plugin</artifactId>
         <executions>
           <!--
-            The assembly attaches the zip with <attach>false</attach> (TIKA-4723)
-            so it is not added to the Maven artifact set and therefore is not
-            deployed to Maven Central. Sibling modules declare this plugin zip
-            as a test-scope Maven dep, so we install-file it locally to satisfy
-            reactor resolution without making it part of the project artifacts.
+            The assembly builds the zip with <attach>false</attach> (TIKA-4723) so it
+            stays out of the Maven artifact set and off Maven Central. Sibling modules
+            declare it as a test-scope zip dep, so install-file puts it in the local
+            repo instead. Bound to package, not install: CI and contributors run
+            `mvn package`, which has to resolve it too.
           -->
           <execution>
             <id>install-plugin-zip-locally</id>
-            <phase>install</phase>
+            <phase>package</phase>
             <goals>
               <goal>install-file</goal>
             </goals>

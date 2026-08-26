@@ -29,8 +29,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
@@ -47,17 +45,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
-import org.apache.tika.config.TikaProgressTracker;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractorFactory;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
@@ -70,12 +68,12 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.pipes.core.extractor.UnpackExtractorFactory;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.protocol.ShutDownReceivedException;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
+import org.apache.tika.pipes.core.serialization.PipesRequest;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.ContentHandlerFactory;
@@ -94,6 +92,51 @@ public class PipesServer implements AutoCloseable {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesServer.class);
 
+    // Process-wide budget bounding total in-memory stream caching (embedded-object digest rewind
+    // buffers, etc.) so small embedded objects stay in RAM instead of spilling per-object at 1MB.
+    // NOTE: read in THIS (forked server) JVM -- set it via the config's forkedJvmArgs, not on the
+    // parent JVM. Tunable via -Dtika.pipes.cacheMemoryBudgetBytes; <=0 disables (falls back to
+    // the 1MB per-object default). Clamped to a quarter of the fork's max heap.
+    static final String CACHE_MEMORY_BUDGET_BYTES_PROP = "tika.pipes.cacheMemoryBudgetBytes";
+
+    static final CacheMemoryBudget CACHE_MEMORY_BUDGET = initCacheMemoryBudget();
+
+    private static CacheMemoryBudget initCacheMemoryBudget() {
+        long bytes = 256L * 1024 * 1024;
+        String val = System.getProperty(CACHE_MEMORY_BUDGET_BYTES_PROP);
+        if (val != null) {
+            try {
+                bytes = Long.parseLong(val.trim());
+            } catch (NumberFormatException e) {
+                LOG.warn("Could not parse -D{}={} (plain bytes required, no unit suffix); " +
+                        "using the default {}", CACHE_MEMORY_BUDGET_BYTES_PROP, val, bytes);
+            }
+        }
+        if (bytes <= 0) {
+            LOG.info("Cache memory budget disabled; per-object 1MB spill threshold applies");
+            return null;
+        }
+        long clamp = Runtime.getRuntime().maxMemory() / 4;
+        if (bytes > clamp) {
+            LOG.warn("Cache memory budget {} exceeds a quarter of max heap; clamping to {}",
+                    bytes, clamp);
+            bytes = clamp;
+        }
+        LOG.info("Cache memory budget: {} bytes", bytes);
+        return new CacheMemoryBudget(bytes);
+    }
+
+    /**
+     * Seeds the process-wide cache memory budget into a merged per-request ParseContext.
+     * The budget is not a registered component, so neither the config nor a wire request
+     * can supply one -- this is the only way it enters a context in a pipes fork.
+     */
+    static void seedCacheMemoryBudget(ParseContext mergedContext) {
+        if (CACHE_MEMORY_BUDGET != null) {
+            mergedContext.set(CacheMemoryBudget.class, CACHE_MEMORY_BUDGET);
+        }
+    }
+
     public static final int AUTH_TOKEN_LENGTH_BYTES = 32;
 
     /** Env var the parent manager sets so the child can watch the parent's
@@ -105,7 +148,7 @@ public class PipesServer implements AutoCloseable {
      *  tell the difference between "I crashed" and "my parent went away". */
     public static final int PARENT_GONE_EXIT_CODE = 23;
 
-    private final long heartbeatIntervalMs;
+    private final long heartbeatIntervalMillis;
     private final String pipesClientId;
 
     private Detector detector;
@@ -144,7 +187,7 @@ public class PipesServer implements AutoCloseable {
             PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
             // Set socket timeout from config after loading PipesConfig
-            socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+            socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
             socket.setTcpNoDelay(true);
 
             MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
@@ -160,6 +203,8 @@ public class PipesServer implements AutoCloseable {
                 String msg = ExceptionUtils.getStackTrace(e);
                 byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
                 PipesMessage.startupFailed(bytes).write(dos);
+                // pipesConfig may not have loaded successfully (that may be why we're
+                // here); use the built-in default rather than an unreliable reference.
                 PipesMessage ackMsg = PipesMessage.read(dis);
                 if (ackMsg.type() != PipesMessageType.ACK) {
                     LOG.warn("Expected ACK but got: {}", ackMsg.type());
@@ -185,23 +230,11 @@ public class PipesServer implements AutoCloseable {
         this.defaultMetadataWriteLimiterFactory = metadataWriteLimiterFactory;
         this.input = new DataInputStream(in);
         this.output = new DataOutputStream(out);
-        this.heartbeatIntervalMs = pipesConfig.getHeartbeatIntervalMs();
-
-        // Validate heartbeat interval is less than socket timeout
-        if (heartbeatIntervalMs >= pipesConfig.getSocketTimeoutMs()) {
-            String msg = String.format(Locale.ROOT, "Heartbeat interval (%dms) must be less than socket timeout (%dms). " +
-                    "This configuration will cause socket timeouts during normal processing.",
-                    heartbeatIntervalMs, pipesConfig.getSocketTimeoutMs());
-
-            // Allow override for testing only
-            if (!"true".equals(System.getProperty("tika.pipes.allowInvalidHeartbeat"))) {
-                throw new TikaConfigException(msg);
-            }
-            LOG.error(msg + " Proceeding because tika.pipes.allowInvalidHeartbeat=true");
-        }
+        this.heartbeatIntervalMillis = pipesConfig.getHeartbeatIntervalMillis();
+        validateHeartbeatInterval(pipesConfig);
 
         emitStrategy = pipesConfig.getEmitStrategy().getType();
-        this.protocolIO = new ServerProtocolIO(input, output);
+        this.protocolIO = new ServerProtocolIO(input, output, pipesConfig.getMaxIpcPayloadBytes());
     }
 
 
@@ -244,6 +277,28 @@ public class PipesServer implements AutoCloseable {
     }
 
     /**
+     * Fails fast if heartbeatIntervalMillis >= socketTimeoutMillis: the client's liveness check
+     * ({@code PipesClient#waitForServer}) relies solely on the socket's own
+     * {@code SO_TIMEOUT}, so a too-slow heartbeat makes a healthy server look dead.
+     * Checked once at startup rather than left as a violable javadoc warning.
+     */
+    private static void validateHeartbeatInterval(PipesConfig pipesConfig) throws TikaConfigException {
+        long heartbeatIntervalMillis = pipesConfig.getHeartbeatIntervalMillis();
+        long socketTimeoutMillis = pipesConfig.getSocketTimeoutMillis();
+        if (heartbeatIntervalMillis >= socketTimeoutMillis) {
+            String msg = String.format(Locale.ROOT, "Heartbeat interval (%dms) must be less than socket timeout (%dms). " +
+                    "This configuration will cause socket timeouts during normal processing.",
+                    heartbeatIntervalMillis, socketTimeoutMillis);
+
+            // Allow override for testing only
+            if (!"true".equals(System.getProperty("tika.pipes.allowInvalidHeartbeat"))) {
+                throw new TikaConfigException(msg);
+            }
+            LOG.error(msg + " Proceeding because tika.pipes.allowInvalidHeartbeat=true");
+        }
+    }
+
+    /**
      * Runs the server in shared mode, accepting multiple client connections.
      * <p>
      * Each incoming connection must present a valid auth token (32 bytes) before
@@ -257,6 +312,7 @@ public class PipesServer implements AutoCloseable {
                                       byte[] expectedToken) throws Exception {
         TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaLoader.getConfig());
+        validateHeartbeatInterval(pipesConfig);
 
         // Load shared resources
         SharedServerResources resources = SharedServerResources.load(tikaLoader, pipesConfig);
@@ -279,7 +335,7 @@ public class PipesServer implements AutoCloseable {
             while (!Thread.currentThread().isInterrupted()) {
                 try {
                     java.net.Socket clientSocket = serverSocket.accept();
-                    clientSocket.setSoTimeout((int) pipesConfig.getSocketTimeoutMs());
+                    clientSocket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
                     clientSocket.setTcpNoDelay(true);
 
                     // Validate auth token before creating handler
@@ -336,7 +392,7 @@ public class PipesServer implements AutoCloseable {
             while (true) {
                 PipesMessage msg;
                 try {
-                    msg = PipesMessage.read(input);
+                    msg = PipesMessage.read(input, pipesConfig.getMaxIpcPayloadBytes());
                 } catch (SocketTimeoutException e) {
                     // Socket timeout while idle is the normal inactivity shutdown path.
                     // Exit cleanly — PipesClient will restart the server if needed.
@@ -359,28 +415,49 @@ public class PipesServer implements AutoCloseable {
                         intermediateResult.clear();
                         CountDownLatch countDownLatch = new CountDownLatch(1);
 
+                        PipesRequest pipesRequest;
                         FetchEmitTuple fetchEmitTuple;
                         try {
-                            fetchEmitTuple = JsonPipesIpc.fromBytes(msg.payload(), FetchEmitTuple.class);
+                            pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class);
+                            fetchEmitTuple = pipesRequest.getTuple();
                         } catch (IOException e) {
-                            LOG.error("problem deserializing FetchEmitTuple", e);
+                            LOG.error("problem deserializing PipesRequest", e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
                             break; // unreachable after handleCrash/exit, but needed for compilation
                         }
-                        // Create merged ParseContext: defaults from tika-config + request overrides
-                        ParseContext mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
-                        // Resolve friendly-named configs in ParseContext to actual objects
-                        ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
-                        // Validate the effective (merged + resolved) context
-                        ServerProtocolIO.validateParseContext(mergedContext);
-                        TikaProgressTracker tracker = new TikaProgressTracker();
-                        mergedContext.set(TikaProgressTracker.class, tracker);
+                        ParseContext mergedContext;
+                        ParseTimeout parseTimeout;
+                        try {
+                            mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
+                            ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
+                            ServerProtocolIO.validateParseContext(mergedContext);
+                            ServerProtocolIO.clampRequestTimeoutLimits(
+                                    fetchEmitTuple.getParseContext(), mergedContext,
+                                    pipesConfig.getMaxTotalTaskTimeoutMillis());
+                            // After resolveAll: the payload is typed runtime state for
+                            // BytesFetcher, never a resolvable config entry.
+                            pipesRequest.applyTo(mergedContext);
+                            // Installed here, before submit, so the worker thread's own
+                            // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
+                            // sees this instance rather than racing to install its own.
+                            parseTimeout = ParseTimeout.getOrCreate(mergedContext);
+                        } catch (Exception e) {
+                            // write the reason to the client instead of a bare exit code
+                            handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
+                            break; // unreachable after handleCrash/exit, but needed for compilation
+                        }
 
                         PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
                         executorCompletionService.submit(pipesWorker);
                         try {
-                            loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch, tracker);
+                            loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch, parseTimeout);
                         } catch (Throwable t) {
+                            if (t instanceof Error) {
+                                // OOM or other JVM-level error: exit rather than continue in a
+                                // possibly corrupt heap state.
+                                handleCrash(PipesMessageType.OOM, fetchEmitTuple.getId(), t);
+                                return; // handleCrash calls exit(); unreachable
+                            }
                             LOG.error("Serious problem processing request", t);
                         }
                         break;
@@ -420,11 +497,24 @@ public class PipesServer implements AutoCloseable {
                 pipesConfig.getParseMode());
     }
 
+    /**
+     * Poll slice used before the intermediate result has been written. NO_PARSE never produces
+     * one, so this is the floor on every such request; the parsing modes add theirs immediately
+     * and then block on the latch released below, so they spin here only while pre-parse
+     * (digest + detect) runs. Kept short deliberately -- at 5ms /detect measured 14.6ms per
+     * request against 10.3ms here.
+     */
+    private static final long PRE_INTERMEDIATE_POLL_MS = 1;
+
+    /** Steady-state slice once the intermediate result is out of the way. */
+    private static final long COMPLETION_POLL_MS = 100;
+
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
                                ExecutorCompletionService<PipesResult> executorCompletionService,
                                ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch,
-                               TikaProgressTracker tracker) throws InterruptedException, IOException {
-        Instant start = Instant.now();
+                               ParseTimeout parseTimeout) throws InterruptedException, IOException {
+        // nanoTime: watchdog deadlines and heartbeat pacing must be immune to wall-clock steps
+        long startNanos = System.nanoTime();
         TimeoutLimits limits = TimeoutLimits.get(mergedContext);
         long progressTimeoutMillis = limits.getProgressTimeoutMillis();
         long totalTaskTimeoutMillis = limits.getTotalTaskTimeoutMillis();
@@ -434,7 +524,7 @@ public class PipesServer implements AutoCloseable {
         while (true) {
             // Check for intermediate result (pre-parse metadata)
             if (!wroteIntermediateResult) {
-                Metadata intermediate = intermediateResult.poll(100, TimeUnit.MILLISECONDS);
+                Metadata intermediate = intermediateResult.poll(PRE_INTERMEDIATE_POLL_MS, TimeUnit.MILLISECONDS);
                 if (intermediate != null) {
                     writeIntermediate(intermediate);
                     countDownLatch.countDown();
@@ -442,8 +532,11 @@ public class PipesServer implements AutoCloseable {
                 }
             }
 
-            // Check for task completion (can happen even without intermediate result if crash occurs early)
-            Future<PipesResult> future = executorCompletionService.poll(100, TimeUnit.MILLISECONDS);
+            // Check for task completion (can happen even without intermediate result if crash occurs early).
+            // Don't block here until the intermediate result is settled: NO_PARSE never produces one, so a
+            // long wait is pure latency on every request rather than an occasional cost.
+            Future<PipesResult> future = executorCompletionService.poll(
+                    wroteIntermediateResult ? COMPLETION_POLL_MS : 0, TimeUnit.MILLISECONDS);
             if (future != null) {
                 PipesResult pipesResult = null;
                 try {
@@ -467,25 +560,35 @@ public class PipesServer implements AutoCloseable {
             }
 
             // Send fire-and-forget heartbeat if we've waited long enough
-            long elapsed = System.currentTimeMillis() - start.toEpochMilli();
-            if (elapsed > heartbeatCounter * heartbeatIntervalMs) {
-                PipesMessage.working(tracker.getLastProgressMillis()).write(output);
+            long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
+            if (elapsed > heartbeatCounter * heartbeatIntervalMillis) {
+                PipesMessage.working().write(output);
                 heartbeatCounter++;
             }
 
-            if (checkTotalTimeout(start, totalTaskTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkTotalTimeout(startNanos, totalTaskTimeoutMillis, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return; // handleCrash calls exit(), but guard against unexpected return
             }
-            if (checkProgressTimeout(tracker, progressTimeoutMillis, fetchEmitTuple.getId())) {
+            if (checkProgressTimeout(parseTimeout, progressTimeoutMillis, fetchEmitTuple.getId())) {
                 return;
             }
         }
 
     }
 
-    private boolean checkTotalTimeout(Instant start, long totalTaskTimeoutMillis, String id) {
-        long elapsed = Duration.between(start, Instant.now()).toMillis();
-        if (elapsed > totalTaskTimeoutMillis) {
+    /**
+     * Fires at {@code totalTaskTimeoutMillis + progressTimeoutMillis}, not at the deadline
+     * itself: the cooperative deadline path (skip remaining embedded docs, emit a
+     * PARTIAL_TIMEOUT result) only starts once ParseTimeout's identically-anchored deadline
+     * is reached, so killing the JVM at that instant would leave the wind-down no time to
+     * run. The grace window stays bounded: {@link #checkProgressTimeout} still fires
+     * independently, so a wind-down that hangs is caught via the stall path instead.
+     */
+    private boolean checkTotalTimeout(long startNanos, long totalTaskTimeoutMillis, long progressTimeoutMillis, String id) {
+        long elapsed = (System.nanoTime() - startNanos) / 1_000_000L;
+        long graceDeadline = (totalTaskTimeoutMillis >= Long.MAX_VALUE - progressTimeoutMillis)
+                ? Long.MAX_VALUE : totalTaskTimeoutMillis + progressTimeoutMillis;
+        if (elapsed > graceDeadline) {
             handleCrash(PipesMessageType.TIMEOUT, id,
                     new RuntimeException("Server-side total task timeout after " + elapsed + "ms (limit: " + totalTaskTimeoutMillis + "ms)"));
             return true;
@@ -493,8 +596,8 @@ public class PipesServer implements AutoCloseable {
         return false;
     }
 
-    private boolean checkProgressTimeout(TikaProgressTracker tracker, long progressTimeoutMillis, String id) {
-        long timeSinceProgress = System.currentTimeMillis() - tracker.getLastProgressMillis();
+    private boolean checkProgressTimeout(ParseTimeout parseTimeout, long progressTimeoutMillis, String id) {
+        long timeSinceProgress = parseTimeout.millisSinceLastProgress();
         if (timeSinceProgress > progressTimeoutMillis) {
             handleCrash(PipesMessageType.TIMEOUT, id,
                     new RuntimeException("Server-side progress timeout: no progress for " + timeSinceProgress + "ms (limit: " + progressTimeoutMillis + "ms)"));
@@ -536,7 +639,7 @@ public class PipesServer implements AutoCloseable {
      * self-terminates promptly if its parent disappears. Without this, an
      * orphaned PipesServer would only notice the parent is gone when the
      * next socket read fails -- which can take up to
-     * {@code socketTimeoutMs} (default 60s) and doesn't fire at all while
+     * {@code socketTimeoutMillis} (default 60s) and doesn't fire at all while
      * the server is mid-parse. {@code System.exit} here lets the
      * {@code AbstractExternalProcessParser} shutdown hook run, killing any
      * in-flight external subprocess (e.g. tesseract) cleanly.
@@ -570,7 +673,26 @@ public class PipesServer implements AutoCloseable {
         LOG.info("watching parent pid {} for exit", parentPid);
     }
 
+    /** Below this, ordinary documents -- not just pathological ones -- start OOMing. */
+    private static final long MIN_USABLE_HEAP_BYTES = 256L * 1024 * 1024;
+
+    /** Checked here, not in the parent: the parent sizes forks by percentage and has no
+     *  portable way to resolve that to bytes. The child knows what it actually got. */
+    private static void checkUsableHeap() {
+        long maxHeapMb = Runtime.getRuntime().maxMemory() / (1024 * 1024);
+        LOG.info("forked JVM max heap: {} MB", maxHeapMb);
+        if (maxHeapMb < MIN_USABLE_HEAP_BYTES / (1024 * 1024)) {
+            LOG.warn("forked JVM max heap is {} MB, below the {} MB needed to parse " +
+                            "reliably. Lower pipes.numClients, raise the container memory " +
+                            "limit, or set -Xmx explicitly in forkedJvmArgs; otherwise " +
+                            "ordinary documents will fail with OOM.",
+                    maxHeapMb, MIN_USABLE_HEAP_BYTES / (1024 * 1024));
+        }
+    }
+
     protected void initializeResources() throws TikaException, IOException, SAXException {
+
+        checkUsableHeap();
 
         TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
@@ -599,13 +721,15 @@ public class PipesServer implements AutoCloseable {
     private ParseContext createMergedParseContext(ParseContext requestContext) throws TikaConfigException {
         // Create fresh context with defaults from tika-config (e.g., DigesterFactory)
         ParseContext mergedContext = tikaLoader.loadParseContext();
-        // If no embedded document extractor factory is configured, use UnpackExtractorFactory
-        // as the default for pipes scenarios (supports embedded byte extraction)
-        if (mergedContext.get(EmbeddedDocumentExtractorFactory.class) == null) {
-            mergedContext.set(EmbeddedDocumentExtractorFactory.class, new UnpackExtractorFactory());
-        }
+        // EmbeddedDocumentExtractor is deliberately left unset here: setting a default (even
+        // UnpackExtractor, which is stateless) would short-circuit AutoDetectParser's own
+        // Parser/Detector propagation to embedded docs (initializeEmbeddedDocumentExtractor
+        // no-ops whenever one is already bound), silently disabling embedded content
+        // extraction for every non-UNPACK parse mode. UNPACK mode sets its own
+        // EmbeddedDocumentExtractor + UnpackedByteCount in PipesWorker's UNPACK-mode setup.
         // Request-level values override config defaults
         mergedContext.copyFrom(requestContext);
+        seedCacheMemoryBudget(mergedContext);
         return mergedContext;
     }
 

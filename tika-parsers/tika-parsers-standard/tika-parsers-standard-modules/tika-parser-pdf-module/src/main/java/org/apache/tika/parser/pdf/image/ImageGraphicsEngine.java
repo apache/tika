@@ -61,7 +61,9 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.MetadataOnlyParse;
@@ -411,7 +413,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             return;
         }
 
-        if (embeddedDocumentExtractor.shouldParseEmbedded(metadata)) {
+        if (embeddedDocumentExtractor.shouldParseEmbedded(metadata, parseContext)) {
             UnsynchronizedByteArrayOutputStream buffer = UnsynchronizedByteArrayOutputStream.builder().get();
             if (pdImage instanceof PDImageXObject) {
                 //extract the metadata contained outside of the image
@@ -445,8 +447,8 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             PDMetadataExtractor
                     .extract(((PDImageXObject) pdImage).getMetadata(), metadata, parseContext);
         }
-        metadata.set(Metadata.IMAGE_WIDTH, pdImage.getWidth());
-        metadata.set(Metadata.IMAGE_LENGTH, pdImage.getHeight());
+        metadata.set(TIFF.IMAGE_WIDTH, pdImage.getWidth());
+        metadata.set(TIFF.IMAGE_LENGTH, pdImage.getHeight());
         //TODO: what else can we extract from the PDImage without rendering?
         //Register the image's metadata entry without decoding it (marker skips the parse).
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
@@ -463,20 +465,20 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         String suffix = pdImage.getSuffix();
 
         if (suffix == null || suffix.equals("png")) {
-            metadata.set(Metadata.CONTENT_TYPE, "image/png");
+            metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
             suffix = "png";
         } else if (suffix.equals("jpg")) {
-            metadata.set(Metadata.CONTENT_TYPE, "image/jpeg");
+            metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
         } else if (suffix.equals("tiff")) {
-            metadata.set(Metadata.CONTENT_TYPE, "image/tiff");
+            metadata.set(HttpHeaders.CONTENT_TYPE, "image/tiff");
             suffix = "tif";
         } else if (suffix.equals("jpx")) {
-            metadata.set(Metadata.CONTENT_TYPE, "image/jp2");
+            metadata.set(HttpHeaders.CONTENT_TYPE, "image/jp2");
             // use jp2 suffix for file because jpx not known by windows
             suffix = "jp2";
         } else if (suffix.equals("jb2")) {
             //PDFBox resets suffix to png when image's suffix == jb2
-            metadata.set(Metadata.CONTENT_TYPE, "image/x-jbig2");
+            metadata.set(HttpHeaders.CONTENT_TYPE, "image/x-jbig2");
         } else {
             //TODO: determine if we need to add more image types
 //                    throw new RuntimeException("EXTEN:" + extension);

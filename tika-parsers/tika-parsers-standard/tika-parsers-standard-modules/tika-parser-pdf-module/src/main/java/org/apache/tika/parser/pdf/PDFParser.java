@@ -68,9 +68,11 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -81,7 +83,6 @@ import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
 import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
 import org.apache.tika.parser.pdf.updates.StartXRefOffset;
 import org.apache.tika.parser.pdf.updates.StartXRefScanner;
-import org.apache.tika.parser.pdf.xmpschemas.XMPSchemaIllustrator;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
@@ -252,16 +253,15 @@ public class PDFParser implements Parser, RenderingParser {
     }
 
     private PDFParserConfig getConfig(ParseContext parseContext) throws TikaException, IOException {
-        // ParseContextConfig.getConfig() handles:
-        // 1. Check for PDFParserConfig already in ParseContext (fast path for embedded docs)
-        // 2. Check jsonConfigs for "pdf-parser" and deserialize if present
-        // 3. Set deserialized config in ParseContext for future lookups
-        // 4. Return defaultConfig if no runtime config found
-        return ParseContextConfig.getConfig(
+        PDFParserConfig config = ParseContextConfig.getConfig(
                 parseContext,
                 "pdf-parser",
                 PDFParserConfig.class,
                 defaultConfig);
+        // publish class-keyed for collaborators that read parseContext.get(PDFParserConfig.class),
+        // e.g. PDFBoxRenderer; safe because pdf-parser is this class's sole owner
+        parseContext.set(PDFParserConfig.class, config);
+        return config;
     }
 
     private void checkEncryptedPayload(PDDocument pdfDocument,
@@ -374,7 +374,7 @@ public class PDFParser implements Parser, RenderingParser {
         if (privateDict == null) {
             return;
         }
-        metadata.set(Metadata.CONTENT_TYPE, XMPSchemaIllustrator.ILLUSTRATOR);
+        metadata.set(HttpHeaders.CONTENT_TYPE, MediaType.application("illustrator").toString());
         //TODO -- consider parsing the metadata
         //COSStream aiMetaData = privateDict.getCOSStream(COSName.AI_META_DATA);
     }
@@ -467,7 +467,7 @@ public class PDFParser implements Parser, RenderingParser {
 
         for (RenderResult result : renderResults.getResults()) {
             if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
-                if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata())) {
+                if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
                     try (TikaInputStream tis = result.getInputStream()) {
                         embeddedDocumentExtractor.parseEmbedded(tis, xhtml, result.getMetadata(), context, false);
                     } catch (SecurityException e) {
@@ -595,7 +595,7 @@ public class PDFParser implements Parser, RenderingParser {
 
     private void extractMetadata(PDDocument document, Metadata metadata, ParseContext context)
             throws TikaException {
-        metadata.set(Metadata.CONTENT_TYPE, MEDIA_TYPE.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, MEDIA_TYPE.toString());
 
         //first extract AccessPermissions
         AccessPermission ap = document.getCurrentAccessPermission();
@@ -651,6 +651,7 @@ public class PDFParser implements Parser, RenderingParser {
         PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.SUBJECT, info.getSubject());
 
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_TRAPPED, info.getTrapped());
+        PDMetadataExtractor.addMetadata(metadata, PDF.TRAPPED, info.getTrapped());
         Calendar created = info.getCreationDate();
         PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CREATED, created);
         PDMetadataExtractor.addMetadata(metadata, TikaCoreProperties.CREATED, created);
@@ -666,7 +667,7 @@ public class PDFParser implements Parser, RenderingParser {
         for (COSName key : info.getCOSObject().keySet()) {
             String name = key.getName();
             if (!handledMetadata.contains(name)) {
-                PDMetadataExtractor.addMetadata(metadata, PDF.PDF_DOC_INFO_CUSTOM_PREFIX + name,
+                PDMetadataExtractor.addMetadata(metadata, PDF.DOC_INFO_CUSTOM, name,
                         info.getCOSObject().getDictionaryObject(key));
             }
         }
@@ -676,9 +677,9 @@ public class PDFParser implements Parser, RenderingParser {
         //    there is currently a fair amount of redundancy
         //    TikaCoreProperties.FORMAT can be multivalued
         //    There are also three potential pdf specific version keys:
-        //    pdf:PDFVersion, pdfa:PDFVersion, pdf:PDFExtensionVersion
+        //    pdf:pdf-version, pdfa:pdf-version, pdf:pdf-extension-version
         metadata.set(PDF.PDF_VERSION, Float.toString(document.getDocument().getVersion()));
-        metadata.add(TikaCoreProperties.FORMAT.getName(), MEDIA_TYPE.toString() + "; version=" +
+        addFormat(metadata, MEDIA_TYPE.toString() + "; version=" +
                 Float.toString(document.getDocument().getVersion()));
 
 
@@ -701,20 +702,30 @@ public class PDFParser implements Parser, RenderingParser {
                         if (el != -1) {
                             metadata.set(PDF.PDF_EXTENSION_VERSION,
                                     baseVersion + " Adobe Extension Level " + el);
-                            metadata.add(TikaCoreProperties.FORMAT.getName(),
-                                    MEDIA_TYPE.toString() + "; version=\"" + baseVersion +
-                                            " Adobe Extension Level " + el + "\"");
+                            addFormat(metadata, MEDIA_TYPE.toString() + "; version=\"" + baseVersion +
+                                    " Adobe Extension Level " + el + "\"");
                         }
                     }
                 } else {
                     // WARN that there is an Extension, but it's not Adobe's, and so is a 'new'
                     // format'.
-                    metadata.set("pdf:foundNonAdobeExtensionName", extName.getName());
+                    metadata.set(Property.externalText("pdf:found-non-adobe-extension-name"),
+                            extName.getName());
                 }
             }
         }
     }
 
+
+    //TikaCoreProperties.FORMAT is SIMPLE, but this site legitimately appends more than
+    //one value (base version + Adobe extension level); set(Property,String[]) bypasses
+    //the single-value enforcement that add(Property,String) would apply
+    private static void addFormat(Metadata metadata, String value) {
+        String[] existing = metadata.getValues(TikaCoreProperties.FORMAT);
+        String[] updated = Arrays.copyOf(existing, existing.length + 1);
+        updated[existing.length] = value;
+        metadata.set(TikaCoreProperties.FORMAT, updated);
+    }
 
     private boolean hasXFA(PDDocument pdDocument, Metadata metadata) {
         boolean hasXFA = pdDocument.getDocumentCatalog() != null &&

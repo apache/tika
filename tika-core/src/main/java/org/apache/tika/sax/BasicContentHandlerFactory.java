@@ -117,15 +117,20 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
                 limits.isThrowOnWriteLimit(), context);
     }
 
+    /** Accepted spellings, for error messages. */
+    // String.join defeats compile-time constant inlining into downstream jars
+    public static final String VALID_HANDLER_TYPE_NAMES =
+            String.join(", ", "text", "txt", "html", "xml", "body", "markdown", "md", "ignore");
+
     /**
-     * Tries to parse string into handler type.  Returns default if string is null or
-     * parse fails.
+     * Parses a string into a handler type.
      * <p/>
-     * Options: xml, html, text, body, ignore (no content), markdown/md
+     * Options: xml, html, text/txt, body, ignore (no content), markdown/md
      *
-     * @param handlerTypeName string to parse
-     * @param defaultType     type to return if parse fails
+     * @param handlerTypeName string to parse; null means "unspecified", which yields defaultType
+     * @param defaultType     type to return when handlerTypeName is null
      * @return handler type
+     * @throws IllegalArgumentException if handlerTypeName is non-null and not recognized
      */
     public static HANDLER_TYPE parseHandlerType(String handlerTypeName, HANDLER_TYPE defaultType) {
         if (handlerTypeName == null) {
@@ -150,7 +155,11 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
             case "md":
                 return HANDLER_TYPE.MARKDOWN;
             default:
-                return defaultType;
+                // A name we don't know is a caller mistake, not a request for the default:
+                // silently substituting one meant "/rmeta/txet" quietly returned the default
+                // handler's output and looked like it worked.
+                throw new IllegalArgumentException("Unrecognized handler type '" + handlerTypeName
+                        + "'. Valid types: " + VALID_HANDLER_TYPE_NAMES);
         }
     }
 
@@ -165,7 +174,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
                     new WriteOutContentHandler(new ToTextContentHandler(), writeLimit,
                     throwOnWriteLimitReached, parseContext));
         } else if (type == HANDLER_TYPE.IGNORE) {
-            return new DefaultHandler();
+            return new NoOpContentHandler();
         }
         ContentHandler formatHandler = getFormatHandler();
         if (writeLimit < 0) {
@@ -201,7 +210,7 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
 
     private ContentHandler createHandlerInner(OutputStream os, Charset charset) {
         if (type == HANDLER_TYPE.IGNORE) {
-            return new DefaultHandler();
+            return new NoOpContentHandler();
         }
         try {
             if (writeLimit > -1) {
@@ -331,5 +340,21 @@ public class BasicContentHandlerFactory implements StreamingContentHandlerFactor
         result = 31 * result + (throwOnWriteLimitReached ? 1 : 0);
         result = 31 * result + (validateXHTML ? 1 : 0);
         return result;
+    }
+
+    /**
+     * DefaultHandler, but with toString() returning "" instead of the default
+     * Object identity string. Callers that want to know whether a parse
+     * actually produced content can blank-check toString() directly -- no
+     * need to special-case DefaultHandler's class identity, which breaks the
+     * moment this handler is wrapped by a decorator (e.g. StrictXHTMLValidator
+     * when validateXHTML is set): ContentHandlerDecorator.toString() delegates
+     * to the wrapped handler, so the empty string still propagates through.
+     */
+    private static final class NoOpContentHandler extends DefaultHandler {
+        @Override
+        public String toString() {
+            return "";
+        }
     }
 }

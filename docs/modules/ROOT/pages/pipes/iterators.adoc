@@ -18,7 +18,7 @@
 = Pipes Iterators
 :toc:
 
-A *pipes iterator* enumerates the documents to be processed. It emits one `FetchEmitTuple` per document; the pipeline workers then call the bound fetcher (to get the bytes), the parser, and the bound emitter (to write the result).
+A *pipes iterator* enumerates the documents to be processed. It emits one `FetchEmitTuple` per document; the pipeline then hands each tuple to a fork, which calls the bound fetcher (to get the bytes) and the parser, and routes the result to the bound emitter.
 
 [#contract]
 == The Iterator Contract
@@ -29,12 +29,14 @@ A `PipesIterator` produces a stream of `FetchEmitTuple` records. Each tuple carr
 * the *emit key* — passed to the emitter to decide where to write results
 * an optional `id` and arbitrary metadata fields
 
-The iterator runs on its own thread; the pipeline reads tuples as fast as the worker pool can keep up.
+The iterator runs on its own thread; the pipeline reads tuples as fast as the forks can keep up.
 
 [#wiring]
 == Wiring an Iterator Into a Pipeline
 
-The iterator lives under the singular top-level `pipes-iterator` key. The inner map key is the iterator's component name. `fetcherId` and `emitterId` are flat fields on the iterator config, alongside the iterator-specific options:
+The iterator lives under the singular top-level `pipes-iterator` key. The inner map key is the iterator's component name.
+
+Every iterator config takes two required flat fields alongside its own options: `fetcherId` and `emitterId`, the IDs of the fetcher and emitter bound to each emitted tuple. The exception is the xref:pipes/plugins/json.adoc[JSON iterator], where each line names its own fetcher and emitter. The per-plugin pages list only the options specific to that iterator.
 
 [source,json]
 ----

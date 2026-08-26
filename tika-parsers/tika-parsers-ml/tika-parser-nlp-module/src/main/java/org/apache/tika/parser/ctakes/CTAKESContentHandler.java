@@ -26,6 +26,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.ContentHandlerDecorator;
 
@@ -41,6 +42,8 @@ import org.apache.tika.sax.ContentHandlerDecorator;
 public class CTAKESContentHandler extends ContentHandlerDecorator {
     // Prefix used for metadata including cTAKES annotations
     public static String CTAKES_META_PREFIX = "ctakes:";
+    public static final KeyPrefix CTAKES =
+            KeyPrefix.tool(CTAKES_META_PREFIX, "cTAKES annotation type names");
 
     // Configuration object for CTAKESContentHandler
     private CTAKESConfig config = null;
@@ -132,7 +135,7 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
             ae.process(jcas);
 
             // add annotations to metadata
-            metadata.add(CTAKES_META_PREFIX + "schema", config.getAnnotationPropsAsString());
+            metadata.add(CTAKES, "schema", config.getAnnotationPropsAsString());
             CTAKESAnnotationProperty[] annotationPros = config.getAnnotationProps();
             Collection<IdentifiedAnnotation> collection =
                     JCasUtil.select(jcas, IdentifiedAnnotation.class);
@@ -146,7 +149,7 @@ public class CTAKESContentHandler extends ContentHandlerDecorator {
                                 .append(CTAKESUtils.getAnnotationProperty(annotation, property));
                     }
                 }
-                metadata.add(CTAKES_META_PREFIX + annotation.getType().getShortName(),
+                metadata.add(CTAKES, annotation.getType().getShortName(),
                         annotationBuilder.toString());
             }
 

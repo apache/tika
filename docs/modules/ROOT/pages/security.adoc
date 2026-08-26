@@ -21,27 +21,46 @@ This page covers security considerations when using Apache Tika.
 
 == Security Model
 
-Apache Tika's security model describes the trust boundaries and assumptions that govern
-how Tika processes content. Understanding this model is essential for deploying Tika securely.
+The https://tika.apache.org/security-model.html[Apache Tika Security Model] describes the
+trust boundaries and assumptions that govern how Tika processes content. Understanding it
+is essential for deploying Tika securely.
 
-* https://tika.apache.org/security-model.html[Apache Tika Security Model]
+[#in-process-dos]
+=== In-Process Parsing and Denial of Service
+
+If you call `AutoDetectParser` — or any parser — directly, the parse runs on your thread and
+in your heap. Untrusted input can often be crafted to exhaust memory or CPU, or to crash the
+process, and containing that is the caller's responsibility: the project does not view denial
+of service as a security issue when you opt out of the built-in sandboxing and parse files
+directly in your application. Tika's limits (`output-limits.writeLimit`,
+`embedded-limits.maxCount`, the metadata limiter) bound what a parse *produces*, not the work
+it does to produce it.
+
+The sandboxing that changes this is process isolation, and it is a mechanism rather than
+advice. xref:pipes/index.adoc[Tika Pipes] — or `PipesForkParser`, if you are embedding Tika
+in a Java application — along with xref:using-tika/server/index.adoc[tika-server] and
+xref:using-tika/grpc/index.adoc[tika-grpc], parse in forked JVMs. A parse that OOMs,
+hangs, or crashes takes down a fork, not your process: the fork is killed and restarted,
+and the caller gets `OOM`, `TIMEOUT`, or `UNSPECIFIED_CRASH` (HTTP `503` from tika-server)
+in place of a lost JVM. Give the forks a heap ceiling (`pipes.forkedJvmArgs`) and a
+timeout (xref:pipes/timeouts.adoc[Timeouts]) so a runaway parse is bounded in both dimensions.
+
+IMPORTANT: The boundary is conditional, not blanket. A document that defeats *Pipes' own*
+limits — escaping the memory, timeout, or process bounds that sandboxing is supposed to
+enforce — is a bug in Tika, and the project does treat that as a security issue. Report it
+privately to mailto:security@apache.org[security@apache.org], not in a public issue.
 
 === Tika Server and gRPC Trust Model
 
-IMPORTANT: The primary rule is *trusted callers only*. `allowPipes`, `allowPerRequestConfig`,
-and the gRPC `allowComponentManagement` flag are *defense in depth* — they reduce what a caller
-can reach, but they are **not** controls that make it safe to expose `tika-server` or `tika-grpc`
-to untrusted callers.
+IMPORTANT: Neither `tika-server` nor `tika-grpc` is a security boundary. They perform no
+authentication or authorization of callers, and parsing untrusted documents is inherently
+risky. Only ever expose them to *trusted callers* on a trusted network — never directly to
+untrusted users or the public internet. Put your own authentication, authorization, and
+network controls (and, for tika-grpc, mutual TLS) in front of them.
 
-Neither `tika-server` nor `tika-grpc` is a security boundary. They perform no authentication or
-authorization of callers, and parsing untrusted documents is inherently risky. Only ever expose
-them to *trusted callers* on a trusted network — never directly to untrusted users or the public
-internet. Put your own authentication, authorization, and network controls (and, for tika-grpc,
-mutual TLS) in front of them.
-
-The capability flags below are *defense in depth, not security boundaries*. They limit what a
-caller can reach, but they do **not** make it safe to expose the service to untrusted callers —
-that requirement stands regardless of how the flags are set. All default to off.
+The capability flags below are *defense in depth, not security boundaries*: they limit what
+a caller can reach, but they do **not** make it safe to expose the service to untrusted
+callers — that requirement stands regardless of how the flags are set. All default to off.
 
 *tika-server* (see xref:using-tika/server/index.adoc[Using Tika Server]):
 
@@ -56,75 +75,57 @@ and `allowComponentManagement` — the latter lets clients add, modify, and dele
 and read back stored configs, which can contain secrets — are off by default. Run it only behind
 network controls and, ideally, mutual TLS. See xref:using-tika/grpc/index.adoc[Tika gRPC].
 
-For the upgrade from the former `enableUnsecureFeatures` flag, see
-xref:migration-to-4x/migrating-tika-server-4x.adoc[Migrating tika-server to 4.x].
+For the upgrade from the former `enableUnsecureFeatures` flag, which is now split into
+`allowPipes` and `allowPerRequestConfig`, see
+xref:migration-to-4x/migrating-tika-server-4x.adoc#_pipes_and_async_require_allowpipes_per_request_config_requires_allowperrequestconfig[Migrating tika-server to 4.x].
 
 == Known Vulnerabilities
 
-For information about known security vulnerabilities (CVEs) in Apache Tika and their
-remediation, please see:
-
-* https://tika.apache.org/security.html[Apache Tika Security Vulnerabilities]
+Known CVEs in Apache Tika and their remediation are listed on the
+https://tika.apache.org/security.html[Apache Tika security page].
 
 == External Command Security
 
-Apache Tika can be configured to use external system commands for certain operations,
-such as the `FileCommandDetector` and `ExternalParser` components.
+Three components can be configured to run external system commands:
+
+* `FileCommandDetector` — uses the system `file` command for MIME type detection
+* `ExternalParser` — executes configured external programs to extract content
+* `ExternalEmbedder` — uses external tools to embed content
 
 CAUTION: External command configuration should only be performed by trusted administrators.
 Never allow untrusted users to configure command paths or arguments.
 
 === Security Best Practices
 
-1. **Restrict configuration access**: Only allow administrators to modify Tika configuration
-   files that specify external commands.
-
-2. **Use absolute paths**: Always configure external commands with absolute paths to prevent
-   PATH manipulation attacks.
-
-3. **Sandbox execution**: Consider running Tika in a container or sandbox environment to
-   limit the impact of any command execution vulnerabilities.
-
-4. **Audit command configuration**: Regularly review configured external commands and
-   their arguments.
+* **Restrict configuration access**: only administrators should be able to modify Tika
+  configuration files that specify external commands.
+* **Use absolute paths**: configure external commands with absolute paths to prevent PATH
+  manipulation attacks.
+* **Sandbox execution**: run Tika in a container or sandbox to limit the impact of any
+  command execution vulnerability.
+* **Audit command configuration**: regularly review configured external commands and their
+  arguments.
 
 === ExternalParser-Specific Risks
 
-* **checkCommandLine runs at type-query time**: If configured, the check command
-  executes the first time `getSupportedTypes()` is called -- not at parse time.
-  This means merely querying which parsers are available can trigger process execution.
-
-* **stderr information leakage**: External programs often write file paths, system
-  usernames, version strings, and internal errors to stderr. By default,
-  `returnStderr` is `false` to prevent this data from leaking into metadata.
-  If you enable `returnStderr`, be aware that the raw stderr content will be
-  stored in the document's metadata and may be visible to end users.
-
-* **Buffer limits**: The `maxStdOut` and `maxStdErr` settings control how much
-  process output is captured in memory. Set these to reasonable values for your
-  deployment to prevent memory exhaustion from misbehaving external programs.
-
-=== Affected Components
-
-* `FileCommandDetector`: Uses the system `file` command for MIME type detection
-* `ExternalParser`: Executes configured external programs to extract content
-* `ExternalEmbedder`: Uses external tools to embed content
+* **`checkCommandLine` runs at type-query time**: if configured, the check command executes
+  the first time `getSupportedTypes()` is called, not at parse time — so merely querying
+  which parsers are available triggers process execution.
+* **stderr information leakage**: external programs often write file paths, system
+  usernames, version strings, and internal errors to stderr. `returnStderr` defaults to
+  `false` for that reason; enabling it stores the raw stderr content in the document's
+  metadata, where end users may see it.
+* **Buffer limits**: `maxStdOut` and `maxStdErr` bound how much process output is held in
+  memory. Set them for your deployment so a misbehaving external program cannot exhaust it.
 
 == Credential Handling
 
-=== Password Storage in Memory
+Tika stores some credentials as Java String objects, which remain in memory until garbage
+collected. For environments with strict security requirements:
 
-Tika stores some credentials as Java String objects, which remain in memory until
-garbage collected. For environments with strict security requirements:
-
-1. **Use environment variables**: Configure credentials via environment variables
-   rather than configuration files where possible.
-
-2. **Use secret managers**: Integrate with HashiCorp Vault, AWS Secrets Manager,
-   or similar services for production deployments.
-
-3. **Enable encryption**: Use the AES encryption option in `HttpClientFactory`
-   for stored passwords.
-
-4. **Minimize credential scope**: Use credentials with minimum necessary privileges
-   and rotate them regularly.
+* **Use environment variables** for credentials rather than configuration files where possible.
+* **Use secret managers** — HashiCorp Vault, AWS Secrets Manager, or similar — in production.
+* **Enable encryption**: `HttpClientFactory` can hold credentials AES-encrypted
+  (`credentialsAESEncrypted`), with the key supplied in the `AES_KEY` environment variable.
+* **Minimize credential scope**: use credentials with the minimum necessary privileges and
+  rotate them regularly.

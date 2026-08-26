@@ -19,6 +19,7 @@ package org.apache.tika.parser.mp3;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PushbackInputStream;
+import java.util.Arrays;
 
 import org.apache.commons.io.IOUtils;
 
@@ -96,14 +97,28 @@ class MpegStream extends PushbackInputStream {
     private static final int SAMPLE_COUNT_L1 = 384;
 
     /**
-     * Constant for the number of samples for a layer 2 or 3 frame.
+     * Constant for the number of samples for a layer 2 frame (all MPEG
+     * versions) and a layer 3 frame in MPEG1.
      */
     private static final int SAMPLE_COUNT_L2 = 1152;
+
+    /**
+     * Constant for the number of samples for a layer 3 frame in MPEG2 and
+     * MPEG2.5: the low sampling frequency mode of ISO/IEC 13818-3 halves the
+     * frame to a single granule of 576 samples.
+     */
+    private static final int SAMPLE_COUNT_L3_LSF = 576;
 
     /**
      * Constant for the size of an MPEG frame header in bytes.
      */
     private static final int HEADER_SIZE = 4;
+
+    /**
+     * Pushback capacity: enough for the header handling plus
+     * {@link #peekFramePayload(int)} peeks into the frame payload.
+     */
+    private static final int PEEK_BUFFER_SIZE = 48;
 
     /**
      * The current MPEG header.
@@ -122,7 +137,7 @@ class MpegStream extends PushbackInputStream {
      * @param in the underlying audio stream
      */
     public MpegStream(InputStream in) {
-        super(in, 2 * HEADER_SIZE);
+        super(in, PEEK_BUFFER_SIZE);
     }
 
     /**
@@ -172,15 +187,20 @@ class MpegStream extends PushbackInputStream {
     /**
      * Calculates the length of an MPEG frame based on the given parameters.
      *
+     * @param mpegVer    the MPEG version
      * @param layer      the layer
      * @param bitRate    the bit rate
      * @param sampleRate the sample rate
      * @param padding    the padding flag
      * @return the length of the frame in bytes
      */
-    private static int calculateFrameLength(int layer, int bitRate, int sampleRate, int padding) {
+    private static int calculateFrameLength(int mpegVer, int layer, int bitRate, int sampleRate,
+            int padding) {
         if (layer == AudioFrame.LAYER_1) {
             return (12 * bitRate / sampleRate + padding) * 4;
+        } else if (layer == AudioFrame.LAYER_3 && mpegVer != AudioFrame.MPEG_V1) {
+            //MPEG2/2.5 layer 3 frames carry 576 samples instead of 1152
+            return 72 * bitRate / sampleRate + padding;
         } else {
             return 144 * bitRate / sampleRate + padding;
         }
@@ -189,12 +209,20 @@ class MpegStream extends PushbackInputStream {
     /**
      * Calculates the duration of a MPEG frame based on the given parameters.
      *
+     * @param mpegVer    the MPEG version
      * @param layer      the layer
      * @param sampleRate the sample rate
      * @return the duration of this frame in milliseconds
      */
-    private static float calculateDuration(int layer, int sampleRate) {
-        int sampleCount = (layer == AudioFrame.LAYER_1) ? SAMPLE_COUNT_L1 : SAMPLE_COUNT_L2;
+    private static float calculateDuration(int mpegVer, int layer, int sampleRate) {
+        int sampleCount;
+        if (layer == AudioFrame.LAYER_1) {
+            sampleCount = SAMPLE_COUNT_L1;
+        } else if (layer == AudioFrame.LAYER_3 && mpegVer != AudioFrame.MPEG_V1) {
+            sampleCount = SAMPLE_COUNT_L3_LSF;
+        } else {
+            sampleCount = SAMPLE_COUNT_L2;
+        }
         return (1000.0f / sampleRate) * sampleCount;
     }
 
@@ -264,7 +292,9 @@ class MpegStream extends PushbackInputStream {
     public boolean skipFrame() throws IOException {
         if (currentHeader != null) {
             long toSkip = currentHeader.getLength() - HEADER_SIZE;
-            long skipped = IOUtils.skip(in, toSkip);
+            //skip through this stream, not the wrapped one, so bytes pushed
+            //back by peekFramePayload are honored
+            long skipped = IOUtils.skip(this, toSkip);
             currentHeader = null;
             if (skipped < toSkip) {
                 return false;
@@ -272,6 +302,27 @@ class MpegStream extends PushbackInputStream {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Reads up to {@code count} bytes of the current frame's payload and
+     * pushes them back, leaving the stream position and the frame accounting
+     * undisturbed. Used to recognize metadata-only frames (Xing/Info/VBRI).
+     */
+    byte[] peekFramePayload(int count) throws IOException {
+        byte[] buffer = new byte[count];
+        int read = 0;
+        while (read < count) {
+            int r = read(buffer, read, count - read);
+            if (r < 0) {
+                break;
+            }
+            read += r;
+        }
+        if (read > 0) {
+            unread(buffer, 0, read);
+        }
+        return read == count ? buffer : Arrays.copyOf(buffer, Math.max(read, 0));
     }
 
     /**
@@ -329,8 +380,8 @@ class MpegStream extends PushbackInputStream {
 
         int bitRate = calculateBitRate(mpegVer, layer, bitRateCode);
         int sampleRate = calculateSampleRate(mpegVer, sampleRateCode);
-        int length = calculateFrameLength(layer, bitRate, sampleRate, padding);
-        float duration = calculateDuration(layer, sampleRate);
+        int length = calculateFrameLength(mpegVer, layer, bitRate, sampleRate, padding);
+        float duration = calculateDuration(mpegVer, layer, sampleRate);
         int channels = calculateChannels(bits.get(6, 7));
         return new AudioFrame(mpegVer, layer, bitRate, sampleRate, channels, length, duration);
     }

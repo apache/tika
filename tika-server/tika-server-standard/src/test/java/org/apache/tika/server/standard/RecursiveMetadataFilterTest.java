@@ -36,6 +36,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
@@ -56,7 +57,7 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(RecursiveMetadataResource.class);
-        sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource()));
+        sf.setResourceProvider(RecursiveMetadataResource.class, new SingletonResourceProvider(new RecursiveMetadataResource(tikaResource)));
     }
 
     @Override
@@ -80,17 +81,17 @@ public class RecursiveMetadataFilterTest extends CXFTestBase {
         assertEquals(5, metadataList.size());
 
         Set<String> expectedKeys = new HashSet<>();
-        expectedKeys.add("X-TIKA:content");
+        expectedKeys.add("tk:content");
         expectedKeys.add("extended-properties:Application");
         expectedKeys.add("Content-Type");
         for (Metadata m : metadataList) {
             if (m
-                    .get(Metadata.CONTENT_TYPE)
+                    .get(HttpHeaders.CONTENT_TYPE)
                     .equals("image/emf")) {
                 fail("emf should have been filtered out");
             }
             if (m
-                    .get(Metadata.CONTENT_TYPE)
+                    .get(HttpHeaders.CONTENT_TYPE)
                     .startsWith("text/plain")) {
                 fail("text/plain should have been filtered out");
             }

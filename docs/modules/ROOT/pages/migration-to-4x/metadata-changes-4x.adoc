@@ -16,106 +16,456 @@
 //
 
 = Metadata Changes in Tika 4.x
+:toc:
 
 This document details the metadata key changes in Apache Tika 4.x.
 
 == Overview
 
-Tika 4.x prefixes all "user generated" metadata keys to prevent overwrites and improve
-namespace clarity. This is a security-focused change that prevents user-controlled data
-from potentially overwriting existing metadata values in the Metadata object.
+Tika 4.x puts every "user generated" metadata key under a prefix. The change buys three
+things:
 
-== Metadata Key Changes
+* *Security*: user-controlled content can no longer overwrite a value Tika computed.
+* *Clarity*: the prefix says which parser or source a key came from.
+* *Consistency*: one naming approach across all parsers.
 
-[cols="2,2,3"]
+The headline prefix moves:
+
+[cols="2,3"]
 |===
-|Category |Change |Details
+|Category |Change
 
 |HTML custom metadata
 |Prefixed with `html:`
-|Custom metadata from HTML documents now uses the `html:` prefix
 
 |MAPI metadata
-|Prefix changed to `mapi:`
-|Microsoft MAPI properties now use the `mapi:` prefix
+|Curated keys move from `meta:mapi-*` to `mapi:*`
 
 |Resource name
-|Renamed
-|`resourceName` changed to `X-TIKA:resourceName`
+|`resourceName` becomes `tk:resource-name`
 
 |Unrecognized image metadata
 |Prefixed with `img:`
-|Unrecognized image metadata keys now use the `img:` prefix
 
-|Office metadata
-|Prefix changed
-|Changed from `meta` prefix to `office` prefix
+|QuattroPro metadata
+|Moved from `wordperfect:` (a collision — it was shared with WordPerfect) to `quattropro:`
 |===
+
+== Tika-native namespace consolidation (`tk:`)
+
+Tika 4.0.0 consolidates every *Tika-asserted* metadata key — keys Tika computes about the
+parse, not values copied out of the document — under a single `tk:` prefix, normalized to
+kebab-case. This replaces the pre-4.0.0 `X-TIKA:` prefix and the scattered `tika:`, `tika_pg:`,
+`rendering:`, `signature:`, `imagereader:` prefixes and bare `hasSignature` /
+`embeddedResourceType` keys. This is a *clean break*: there is no automatic remapping. Code that
+references these keys by string must be updated per the table below (code using the
+`TikaCoreProperties` / `TikaPagedText` / `Rendering` constants needs no change — the constants
+now resolve to the `tk:` names).
+
+The `tk:` namespace is also a trust boundary: a file-controlled key can no longer enter it via a
+String write. The pre-4.0.0 `X-TIKA:` prefix stays *reserved* (rejected on String writes) during
+the 4.x line so a crafted file cannot forge it, even though Tika no longer emits it.
+
+File-claimed namespaces (`dc:`, `xmp:`, `pdf:`, `office:`, `html:`, standards and passthrough)
+are unchanged — they are the file's assertions, not Tika's, and keep their verbatim prefixes.
+
+The canonical `Content-Type` key is likewise unchanged (it is the routing media type). But the
+Tika-added *variants* of it — hint/override/magic-detected — are Tika's own assertions about
+detection, so they move into `tk:` (e.g. `Content-Type-Hint` -> `tk:content-type-hint`). The *Java
+constant* did move even though the key string did not: `Metadata.CONTENT_TYPE` is now
+`HttpHeaders.CONTENT_TYPE`, and a `Property` rather than a `String` — see
+<<_java_constants_moved_even_where_the_key_string_did_not,Java constants moved>>.
+
+.3.x → 4.0.0 Tika-native metadata key migration
+[cols="1,1"]
+|===
+|3.x key |4.0.0 key
+
+|`X-TIKA:content` |`tk:content`
+|`Content-Type-Hint` |`tk:content-type-hint`
+|`Content-Type-Override` |`tk:content-type-override`
+|`Content-Type-Parser-Override` |`tk:content-type-parser-override`
+|`X-TIKA:detectedEncoding` |`tk:detected-encoding`
+|`X-TIKA:detected_language` |`tk:detected-language`
+|`X-TIKA:detected_language_confidence` |`tk:detected-language-confidence`
+|`X-TIKA:detected_language_confidence_raw` |`tk:detected-language-confidence-raw`
+|`X-TIKA:embedded_depth` |`tk:embedded-depth`
+|`X-TIKA:embedded_id` |`tk:embedded-id`
+|`X-TIKA:embedded_id_path` |`tk:embedded-id-path`
+|`embeddedRelationshipId` |`tk:embedded-relationship-id`
+|`X-TIKA:embedded_resource_path` |`tk:embedded-resource-path`
+|`embeddedResourceType` |`tk:embedded-resource-type`
+|`X-TIKA:encodingDetector` |`tk:encoding-detector`
+|`X-TIKA:encrypted` |`tk:encrypted`
+|`X-TIKA:final_embedded_resource_path` |`tk:final-embedded-resource-path`
+|`hasSignature` |`tk:has-signature`
+|`X-TIKA:internalPath` |`tk:internal-path`
+|`imagereader:NumImages` |`tk:num-images`
+|`X-TIKA:origResourceName` |`tk:orig-resource-name`
+|`X-TIKA:parse_time_millis` |`tk:parse-time-millis`
+|`X-TIKA:Parsed-By` |`tk:parsed-by`
+|`X-TIKA:Parsed-By-Full-Set` |`tk:parsed-by-full-set`
+|`X-TIKA:pipes_result` |`tk:pipes-result`
+|`resourceName` |`tk:resource-name`
+|`X-TIKA:sourcePath` |`tk:source-path`
+|`X-TIKA:versionCount` |`tk:version-count`
+|`X-TIKA:versionNumber` |`tk:version-number`
+|`X-TIKA:EXCEPTION:container_exception` |`tk:exception:container-exception`
+|`X-TIKA:EXCEPTION:embedded_bytes_exception` |`tk:exception:embedded-bytes-exception`
+|`X-TIKA:EXCEPTION:embedded_exception` |`tk:exception:embedded-exception`
+|`X-TIKA:EXCEPTION:embedded_parser` |`tk:exception:embedded-parser`
+|`X-TIKA:EXCEPTION:embedded_resource_limit_reached` |`tk:exception:embedded-resource-limit-reached`
+|`X-TIKA:EXCEPTION:embedded_stream_exception` |`tk:exception:embedded-stream-exception`
+|`X-TIKA:EXCEPTION:embedded_warning` |`tk:exception:embedded-warning`
+|`X-TIKA:EXCEPTION:warn` |`tk:exception:warn`
+|`X-TIKA:EXCEPTION:write_limit_reached` |`tk:exception:write-limit-reached`
+|`tika_pg:page_number` |`tk:page:number`
+|`tika_pg:page_rotation` |`tk:page:rotation`
+|`rendering:pdfbox-image-writing-ms` |`tk:rendering:pdfbox-image-writing-ms`
+|`rendering:pdfbox-rendering-ms` |`tk:rendering:pdfbox-rendering-ms`
+|`rendering:Rendered-By` |`tk:rendering:rendered-by`
+|`rendering:rendering-time-ms` |`tk:rendering:rendering-time-ms`
+|`signature:contact-info` |`tk:signature:contact-info`
+|`signature:date` |`tk:signature:date`
+|`signature:filter` |`tk:signature:filter`
+|`signature:location` |`tk:signature:location`
+|`signature:name` |`tk:signature:name`
+|`signature:reason` |`tk:signature:reason`
+|`X-TIKA:WARN:truncated_metadata` |`tk:warn:truncated-metadata`
+|===
+
+Dropped, not renamed: 3.x `X-TIKA:content_handler` (the handler's simple class name) has no 4.x
+equivalent; `tk:content-handler-type` covers the use case with a different value shape (the
+handler-type enum name), so the old key is not remapped.
+
+New in 4.0.0, with no 3.x predecessor: `tk:chunks`, `tk:content-handler-type`,
+`tk:content-type-magic-detected`, `tk:decoded-charset`, `tk:detection-content-length`,
+`tk:encoding-detection-trace`, `tk:resource-name-extension-inferred`,
+`tk:truncated-content-for-detection`, `tk:exception:embedded-depth-limit-reached`, and
+`tk:page:numbers` (only the singular `tk:page:number` has a 3.x predecessor,
+`tika_pg:page_number`).
+
+Reserved-namespace families migrate by prefix:
+
+[cols="1,1"]
+|===
+|3.x prefix |4.0.0 prefix
+
+|`X-TIKA:digest:\*` |`tk:digest:*` (algorithm renamed to its JCA spelling: `SHA256` -> `SHA-256`, `SHA3_512` -> `SHA3-512`, ...; encoding suffix preserved)
+|`X-TIKA:EXCEPTION:\*` |`tk:exception:*` (suffixes kebab-cased -- enumerated key-for-key in the tables below)
+|`X-TIKA:WARN:\*` |`tk:warn:*` (suffixes kebab-cased -- enumerated below)
+|===
+
+
+== Format-namespace key casing
+
+The same casing rule applies *inside* format namespaces, decided by **who authored the key
+name**: names Tika coined are kebab-cased; names that come from the file or an external
+standard/schema keep their verbatim spelling. So the namespace prefix (the domain) is
+independent of casing (the name's origin).
+
+- **Kebab-cased** (Tika-coined names): `pdf:` structural flags (`pdf:hasMarkedContent` ->
+  `pdf:has-marked-content`), `access-permission:`, `zip:`, `database:`, `pst:`, `dwg:`,
+  `wordperfect:`, `quattropro:`, and the few camelCase `msoffice:` stragglers.
+- **Left verbatim** (standard/schema/file names): Dublin Core (`dc:`), the XMP schemas
+  (`xmp*:`), EXIF/`tiff:`, `iptc:`, `photoshop:`, `geo:`, the CF/CMIP attributes under `cf:`,
+  MAPI property names, email headers, the ECMA-376 OOXML core/extended property names
+  (`AppVersion`, `lastModifiedBy`, `TotalTime`, …), and the PDF/A/X/VT/UA sub-namespaces
+  (`pdfaid:`, `pdfx:`, …) and PDF Info-dict names (`pdf:trapped`, `pdf:docinfo:producer`, …).
+
+(The `access_permission:` prefix is also normalized to `access-permission:`. The
+`extended-properties:HiddedSlides` entry additionally corrects a long-standing spelling typo.)
+
+.3.x -> 4.0.0 format-namespace key casing
+[cols="1,1"]
+|===
+|3.x key |4.0.0 key
+
+|`access_permission:assemble_document` |`access-permission:assemble-document`
+|`access_permission:can_modify` |`access-permission:can-modify`
+|`access_permission:can_print` |`access-permission:can-print`
+|`access_permission:can_print_faithful` |`access-permission:can-print-faithful`
+|`access_permission:extract_content` |`access-permission:extract-content`
+|`access_permission:extract_for_accessibility` |`access-permission:extract-for-accessibility`
+|`access_permission:fill_in_form` |`access-permission:fill-in-form`
+|`access_permission:modify_annotations` |`access-permission:modify-annotations`
+|`database:column_count` |`database:column-count`
+|`database:column_name` |`database:column-name`
+|`database:row_count` |`database:row-count`
+|`database:table_name` |`database:table-name`
+|`extended-properties:HiddedSlides` |`extended-properties:HiddenSlides`
+|`extended-properties:DocSecurityString` |`extended-properties:doc-security-string`
+|`embeddedStorageClassId` |`msoffice:embedded-storage-class-id`
+|`msoffice:ocxName` |`msoffice:ocx-name`
+|`msoffice:progID` |`msoffice:prog-id`
+|`pdf:actionTrigger` |`pdf:action-trigger`
+|`pdf:actionTriggers` |`pdf:action-triggers`
+|`pdf:actionTypes` |`pdf:action-types`
+|`pdf:annotationSubtypes` |`pdf:annotation-subtypes`
+|`pdf:annotationTypes` |`pdf:annotation-types`
+|`pdf:associatedFileRelationship` |`pdf:associated-file-relationship`
+|`pdf:charsPerPage` |`pdf:chars-per-page`
+|`pdf:containsDamagedFont` |`pdf:contains-damaged-font`
+|`pdf:containsNonEmbeddedFont` |`pdf:contains-non-embedded-font`
+|`pdf:docinfo:creator_tool` |`pdf:docinfo:creator-tool`
+|`pdf:embeddedFileAnnotationType` |`pdf:embedded-file-annotation-type`
+|`pdf:embeddedFileDescription` |`pdf:embedded-file-description`
+|`pdf:embeddedFileSubtype` |`pdf:embedded-file-subtype`
+|`pdf:eofOffsets` |`pdf:eof-offsets`
+|`pdf:has3D` |`pdf:has-3d`
+|`pdf:hasAcroFormFields` |`pdf:has-acro-form-fields`
+|`pdf:hasCollection` |`pdf:has-collection`
+|`pdf:hasMarkedContent` |`pdf:has-marked-content`
+|`pdf:hasSignatureFields` |`pdf:has-signature-fields`
+|`pdf:hasXFA` |`pdf:has-xfa`
+|`pdf:hasXMP` |`pdf:has-xmp`
+|`pdf:incrementalUpdateCount` |`pdf:incremental-update-count`
+|`pdf:incrementalUpdateNumber` |`pdf:incremental-update-number`
+|`pdf:jsName` |`pdf:js-name`
+|`pdf:num3DAnnotations` |`pdf:num-3d-annotations`
+|`pdf:ocrPageCount` |`pdf:ocr-page-count`
+|`pdf:overallPercentageUnmappedUnicodeChars` |`pdf:overall-percentage-unmapped-unicode-chars`
+|`pdf:PDFExtensionVersion` |`pdf:pdf-extension-version`
+|`pdf:PDFVersion` |`pdf:pdf-version`
+|`pdf:totalUnmappedUnicodeChars` |`pdf:total-unmapped-unicode-chars`
+|`pdf:unmappedUnicodeCharsPerPage` |`pdf:unmapped-unicode-chars-per-page`
+|`pdf:xmpLocation` |`pdf:xmp-location`
+|`pdfa:PDFVersion` |`pdfa:pdf-version`
+|`pst:discriptorNodeId` |`pst:descriptor-node-id`
+|`pst:isValid` |`pst:is-valid`
+|`wordperfect:Build` |`quattropro:build`
+|`wordperfect:Id` |`quattropro:id`
+|`wordperfect:LowestVersion` |`quattropro:lowest-version`
+|`wordperfect:Version` |`quattropro:version`
+|`wordperfect:Encrypted` |`wordperfect:encrypted`
+|`wordperfect:FileId` |`wordperfect:file-id`
+|`wordperfect:FileSize` |`wordperfect:file-size`
+|`wordperfect:FileType` |`wordperfect:file-type`
+|`wordperfect:MajorVersion` |`wordperfect:major-version`
+|`wordperfect:MinorVersion` |`wordperfect:minor-version`
+|`wordperfect:ProductType` |`wordperfect:product-type`
+|`csv:num_columns` |`csv:num-columns`
+|`csv:num_rows` |`csv:num-rows`
+|`emf:iconOnly` |`emf:icon-only`
+|`emf:iconString` |`emf:icon-string`
+|`tess:page_number` |`tess:page-number`
+|`tess:image_magick_processed` |`tess:image-magick-processed`
+|`tess:orientation_confidence` |`tess:orientation-confidence`
+|`tess:script_confidence` |`tess:script-confidence`
+|`xmlprofiler:root_entity` |`xmlprofiler:root-entity`
+|`xmlprofiler:entity_uris` |`xmlprofiler:entity-uris`
+|`xmlprofiler:entity_local_names` |`xmlprofiler:entity-local-names`
+|`Password (un-namespaced; restored on egress only)` |`mdb:password`
+|===
+
+Also new in 4.0.0, with no 3.x predecessor: the entire `zip:*` integrity-check family
+(`zip:central-directory-only-entries`, `zip:compressed-size`, `zip:compression-method`,
+`zip:detector-data-descriptor-required`, `zip:detector-zip-file-opened`,
+`zip:duplicate-entry-names`, `zip:integrity-check-result`, `zip:local-header-only-entries`,
+`zip:uncompressed-size`, `zip:unix-mode`, `zip:version-made-by`), and
+`vlm:prompt-tokens`/`vlm:completion-tokens` (the `tika-vlm` module is new in 4.x).
+
+NOTE: `dwg:applicationComment`/`applicationName`/`applicationVersion`/`productInfo` are
+omitted above: 3.x passed the raw field names from `dwgread` through unprefixed, and there
+is no verified 3.x-to-4.x mapping for these four fields.
+
+== Other Open-Namespace Prefix Renames
+
+A handful of open-vocabulary `KeyPrefix` families (document/tool-derived suffixes, so no
+flat key-for-key row can enumerate them) also moved prefix in this release:
+
+.3.x form -> 4.0.0 prefix
+[cols="2,1"]
+|===
+|3.x form |4.0.0 prefix
+
+|`NER_*` |`ner:*`
+|`envi.*` |`envi:*`
+|`streams-*` |`ogg:streams-*`
+|`grobid:header_*` (the keys 3.x actually emitted) |`grobid:tei:*` (kebab-cased field)
+|`iworks:*` |`iwork:*`
+|`DIF-*` |`dif:DIF-*`
+|`MDB_PROP:*` |`mdb-prop:*`
+|`MDB_USER_PROP:*` |`mdb-user-prop:*`
+|`MDB_SUMMARY_PROP:*` |`mdb-summary-prop:*`
+|bare ISO 19115 field names; the space-delimited `Keywords`, `KeywordsType`,
+`ThesaurusNameTitle`, `ThesaurusNameAlternativeTitle` families |`iso19115:*`
+|bare GDAL field names (`Driver`, `Size`, `Upper Left`, ... and gdalinfo's open
+key/value residual) |`gdal:*`
+|`Geographic_*`; `Optional_NAME<n>`/`Optional_LONGITUDE<n>`/`Optional_LATITUDE<n>`
+(word lower-cased, not a verbatim suffix) |`geotopic:*`
+|bare MIF field names |`mif:*`
+|bare IDML field names |`idml:*`
+|bare audio field names (`bits`, `channels`, `encoding`, and third-party
+`javax.sound` SPI properties) |`audio:*`
+|bare HDF attribute names |`hdf:*`
+|bare NetCDF global-attribute names |`netcdf:*`
+|bare Climate-Forecast convention keys (`prg_ID`, `history`, `comment`, ...; verbatim
+suffixes, distinctive spellings bridged both ways, generic tokens egress-only) |`cf:*`
+|bare ISA-Tab field names |`isatab:*`
+|bare QuickTime `keys`-box names (`com.apple.quicktime.*`, ...) |`mp4:*`
+|bare `meta/@name` values from a NetworkParser parse service |`network:*`
+|===
+
+The compatibility filter bridges families whose 3.x form carries a recognizable marker
+(`NER_*`, `iworks:*`, `MDB_PROP:*`, ...) in both directions. Families whose 3.x keys were
+completely bare (HDF, NetCDF, GDAL's residual, ISA-Tab, QuickTime, NetworkParser, audio
+SPI, the bare ISO 19115/GROBID-adjacent one-off keys `File-Type-Description`, `version`,
+and `Password`) are restored only on egress (`V4_TO_V3`): on ingest a bare name carries
+nothing that identifies its family, so rewriting would mis-map same-named keys from other
+sources, and the filter deliberately passes them through.
+
+This table is a summary by prefix, not exhaustive. `metadata-migration-3x-4x.json`
+(bundled in `tika-core`, generated by the TIKA-4797 migration join) is the machine-readable
+key-for-key list of every enumerable rename and drop, including egress-only rows (marked
+`"egressOnly":true`). The open-vocabulary families in the table above cannot be enumerated
+key-for-key -- their suffixes come from documents -- and exist as prefix rules inside
+`LegacyKeyMigrationFilter` rather than as JSON rows; a script migrating an index should
+handle both the JSON and the prefix families above.
 
 == Migration Steps
 
-When upgrading to Tika 4.x, you will need to update any code that references metadata keys
-directly:
+=== Java constants moved, even where the key string did not
 
-=== HTML Metadata
-
-[source,java]
-----
-// Before (3.x)
-String value = metadata.get("custom-key");
-
-// After (4.x)
-String value = metadata.get("html:custom-key");
-----
-
-=== MAPI Metadata
+`Metadata` no longer implements `HttpHeaders`, `Message`, `TIFF` and the other constant-holding
+interfaces, so a constant referenced through `Metadata` no longer compiles:
 
 [source,java]
 ----
-// Before (3.x)
-String value = metadata.get("mapi:some-property");
+// 3.x
+metadata.get(Metadata.CONTENT_TYPE);
 
-// After (4.x) - prefix remains mapi: but verify specific keys
-String value = metadata.get("mapi:some-property");
+// 4.x -- same key string, different home, and now a Property rather than a String
+metadata.get(HttpHeaders.CONTENT_TYPE);
 ----
 
-=== Resource Name
+The distinction matters because the two move independently. `Content-Type` the *key string* is
+unchanged, so nothing in the rename tables below mentions it -- but `Metadata.CONTENT_TYPE` the
+*Java constant* is gone. If your compiler says `cannot find symbol: variable CONTENT_TYPE`, this
+is why. The same applies to every constant listed under Deprecations and Removals in
+xref:migration-to-4x/migrating-to-4x.adoc[Migrating to Tika 4.x].
+
+=== Key strings that moved
+
+Code that reaches for a metadata key by its `String` name has to be updated. The call itself
+is unchanged; only the key string moves:
 
 [source,java]
 ----
-// Before (3.x)
-String name = metadata.get("resourceName");
+// 3.x
+String value = metadata.get("resourceName");
 
-// After (4.x)
-String name = metadata.get("X-TIKA:resourceName");
+// 4.x
+String value = metadata.get("tk:resource-name");
 ----
 
-=== Image Metadata
+The families most often hit this way:
 
-[source,java]
+[cols="2,2,2"]
+|===
+|Source |3.x key |4.x key
+
+|HTML custom metadata |`custom-key` |`html:custom-key`
+|Unrecognized image metadata |`unknown-image-key` |`img:unknown-image-key`
+|Office custom properties |`meta:some-property` |`office:some-property`
+|Resource name |`resourceName` |`tk:resource-name`
+|Curated MAPI keys |`meta:mapi-importance` |`mapi:importance`
+|===
+
+[CAUTION]
+====
+`pst:folderPath` does not migrate one-to-one, and the opt-in `LegacyKeyMigrationFilter` cannot
+restore it: it is *dropped*, not renamed. In 4.x the Outlook PST parser folds the folder path into
+`tk:internal-path` (`<folder>/<item-name>`, a superset), so there is no folder-only value to map back to.
+====
+
+== Restoring 3.x Key Names (`LegacyKeyMigrationFilter`)
+
+Code that can't migrate to the new key names immediately doesn't have to fork Tika: the opt-in
+`LegacyKeyMigrationFilter` metadata filter rewrites keys at the emit edge, in either direction,
+using the same committed migration table as this document. Enable it via `parse-context`
+(see xref:developers/serialization.adoc[Serialization and Configuration] for how metadata
+filters are configured in general):
+
+[source,json]
 ----
-// Before (3.x)
-String value = metadata.get("unknown-image-key");
-
-// After (4.x)
-String value = metadata.get("img:unknown-image-key");
+{
+  "parse-context": {
+    "legacy-key-migration-filter": {}
+  }
+}
 ----
 
-=== Office Metadata
+The default direction (`V4_TO_V3`) rewrites Tika's 4.x-shaped output back into 3.x key
+spellings, so an unmigrated consumer keeps working against 4.x's output. To rewrite in the
+other direction instead -- 3.x-shaped input names mapped forward to their 4.x spellings on the
+way in -- set `direction` to `V3_TO_V4`:
 
-[source,java]
+[source,json]
 ----
-// Before (3.x)
-String value = metadata.get("meta:some-property");
-
-// After (4.x)
-String value = metadata.get("office:some-property");
+{
+  "parse-context": {
+    "legacy-key-migration-filter": {"direction": "V3_TO_V4"}
+  }
+}
 ----
 
-== Rationale
+`table` overrides the bundled migration table with a custom one, same row shape
+(`{"v3": "...", "v4": "..."}`, `"v4": "DROPPED"` for a 3.x key with no 4.x successor).
 
-The namespacing of metadata keys provides several benefits:
+== Write API Changes (reserved-key guard)
 
-* *Security*: Prevents user-controlled content from overwriting internal metadata
-* *Clarity*: Makes it clear which parser or source generated a metadata key
-* *Consistency*: Provides a uniform approach to metadata naming across all parsers
+The `tk:` namespace isn't just renamed in 4.0.0 -- writing to it changed shape. In 3.x, a
+`String` write to a reserved key (`X-TIKA:*`) simply succeeded: a document-controlled
+custom property literally named `X-TIKA:Parsed-By` could overwrite Tika's own computed
+value. In 4.0.0 `Metadata#set(String, String)` and `#add(String, String)` throw
+`IllegalArgumentException` on a reserved `tk:` (or legacy `X-TIKA:`) name instead, so the
+failure is loud rather than a silent security gap.
+
+=== For parser authors
+
+* Document-derived key names (HTML `<meta>` names, custom document properties, CSV
+  headers, ...) go through a declared `KeyPrefix` and
+  `Metadata#add(KeyPrefix, String, String)` -- the single write route for names Tika
+  does not control. See xref:developers/metadata-keys.adoc[Adding a Metadata Key].
+** Append-only: a repeated name accumulates values.
+** Never throws on hostile input: blank, over-length, or flooding names are skipped
+   with a WARN.
+** Source-typed dates (OLE `VT_DATE`, OOXML `vt:filetime`): use the
+   `add(KeyPrefix, String, Instant)` overload -- stores canonical ISO-8601. If the
+   source's date fails to parse, keep the raw text via the String overload.
+** Known, bounded vocabularies belong in curated `Property` constants instead.
+* Parser modules enforce the route with a forbiddenapis ban on
+  `Metadata.set/add(String, String)` (`metadata.forbiddenapis.signaturesFile`, opt-in
+  per module `pom.xml`).
+* Parsing untrusted files at scale? Configure a `StandardMetadataLimiter`: it bounds
+  key size, value size, values-per-field, and total metadata size per parse.
+* `Property`'s public factories (`Property.externalText(...)`, `internalText(...)`, etc.)
+  throw `IllegalArgumentException` at construction if given a reserved name -- a curated
+  `tk:` `Property` can only be built from Tika's own package-private factories.
+  Since these calls usually initialize `static final` constants, the throw surfaces as an
+  `ExceptionInInitializerError` at class-load time (and `NoClassDefFoundError` on later
+  touches of the same class), far from the offending declaration -- check the initializer
+  error's cause for the reserved name.
+* The throw is a `RuntimeException` (`IllegalArgumentException`), not a `TikaException`.
+  A harness that narrowly catches `TikaException` around a parse will see this as a new,
+  uncaught failure mode when an unmigrated parser hits a crafted file.
+* Some former `String` constants are now SIMPLE (single-valued) `Property` constants
+  instead of BAG. A second `add()` call on one throws `PropertyTypeException` (also an
+  `IllegalArgumentException`) instead of silently accumulating. Use `set()` if the field
+  is genuinely single-valued, or a BAG-typed key if it can legitimately repeat.
+
+=== For integrators
+
+* A manual copy loop (`for (String n : src.names()) dest.set(n, src.get(n))`) both
+  collapses multi-valued keys to their last value *and* throws on every `tk:` key that
+  every parse output already contains (`tk:parsed-by`, `tk:content`, ...). Replace it with
+  `Metadata#putAll(Metadata)`, which preserves multi-values and copies reserved keys
+  through their trusted route.
+* `Metadata#setAll(Properties)` is removed; there is no replacement -- it wrote a raw
+  map directly into `Metadata`, bypassing both the limiter and the reserved-key guard.
+  Use `putAll(Metadata)` or individual `set`/`add` calls instead.
+* `/pipes` and `/async` `userMetadata` behavior is unchanged: a request's own `tk:`-named
+  entries still land in that request's output. This is deliberate (the deserializer uses
+  `Metadata`'s trusted reconstruction route, not the guarded `String` route) and is
+  bounded to the requester's own request; it is not affected by the guard changes above.

@@ -35,7 +35,7 @@ import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
+import java.nio.channels.Channels;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -70,6 +70,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -228,6 +229,7 @@ public class CompressorParser implements Parser {
         tis.setCloseShield();
 
         CompressorInputStream cis;
+        boolean detected = false;
         try {
             CompressorParserOptions options =
                     context.get(CompressorParserOptions.class,
@@ -249,13 +251,14 @@ public class CompressorParser implements Parser {
                 // TIKA-4221 / COMPRESS-721 workaround: commons-compress' Pack200CompressorInputStream
                 // reflects into java.io internals (FilterInputStream.in / FileInputStream.path) to
                 // bound its input, which throws InaccessibleObjectException on Java 17+. A
-                // TikaInputStream is a FilterInputStream, so it triggers this. Spool to a file and
-                // reopen via Files.newInputStream (a ChannelInputStream) -- the one input type
-                // commons-compress does not reflect into. Pack200CompressorInputStream reads its
-                // input fully in the constructor (IN_MEMORY) and then serves bytes from an in-memory
-                // buffer, so the channel stream can be closed immediately afterward. Remove this once
-                // Tika depends on a commons-compress release that contains the COMPRESS-721 fix.
-                try (InputStream packStream = Files.newInputStream(tis.getPath())) {
+                // TikaInputStream is a FilterInputStream, so it triggers this. Re-read via
+                // Channels.newInputStream (a ChannelInputStream) -- the one input type
+                // commons-compress does not reflect into -- without forcing in-memory content to
+                // disk. Pack200CompressorInputStream reads its input fully in the constructor
+                // (IN_MEMORY) and then serves bytes from an in-memory buffer, so the channel
+                // stream can be closed immediately afterward. Remove this once Tika depends on a
+                // commons-compress release that contains the COMPRESS-721 fix.
+                try (InputStream packStream = Channels.newInputStream(tis.getSeekableByteChannel())) {
                     cis = factory.createCompressorInputStream(CompressorStreamFactory.PACK200,
                             packStream);
                 }
@@ -271,23 +274,26 @@ public class CompressorParser implements Parser {
                     metadata.set(CONTENT_TYPE, type.toString());
                 }
             }
+            detected = true;
         } catch (CompressorException e) {
-            tis.removeCloseShield();
             if (e.getCause() instanceof MemoryLimitException) {
                 throw new TikaMemoryLimitException(e.getMessage());
             }
             throw new TikaException("Unable to uncompress document stream", e);
-        } catch (IOException e) {
-            //the pack200 workaround (getPath()/Files.newInputStream) can throw IOException;
-            //make sure the close shield is removed before propagating
-            tis.removeCloseShield();
-            throw e;
+        } finally {
+            // covers unchecked escapes too (e.g. InaccessibleObjectException from the
+            // pack200 reflection), which used to leave the shield stuck on
+            if (!detected) {
+                tis.removeCloseShield();
+            }
         }
 
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
-        xhtml.startDocument();
         try {
+            //inside the try: a handler that throws from startDocument() must still
+            //release cis and the shield
+            xhtml.startDocument();
             Metadata entrydata = Metadata.newInstance(context);
             boolean foundName = false;
             if (cis instanceof GzipCompressorInputStream) {
@@ -300,14 +306,19 @@ public class CompressorParser implements Parser {
             // Use the delegate parser to parse the compressed document
             EmbeddedDocumentExtractor extractor =
                     EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-            if (extractor.shouldParseEmbedded(entrydata)) {
+            if (extractor.shouldParseEmbedded(entrydata, context)) {
                 try (TikaInputStream inner = TikaInputStream.get(cis)) {
                     extractor.parseEmbedded(inner, xhtml, entrydata, context, true);
                 }
             }
         } finally {
-            cis.close();
-            tis.removeCloseShield();
+            //nested so a throw from cis.close() can't strand the shield; a stuck shield
+            //makes the caller's tis.close() a no-op and leaks its whole resource tree
+            try {
+                cis.close();
+            } finally {
+                tis.removeCloseShield();
+            }
         }
 
         xhtml.endDocument();
@@ -355,7 +366,7 @@ public class CompressorParser implements Parser {
      * ind
      */
     private String getStreamName(Metadata metadata) {
-        String mimeString = metadata.get(Metadata.CONTENT_TYPE);
+        String mimeString = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (mimeString == null) {
             return null;
         }

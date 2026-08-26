@@ -44,7 +44,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertEquals(1, simpleAsyncConfig.getNumClients());
-        assertEquals(30000L, simpleAsyncConfig.getTimeoutMs());
+        assertEquals(30000L, simpleAsyncConfig.getTimeoutMillis());
         assertEquals("-Xmx1g", simpleAsyncConfig.getXmx());
         // TIKA-4663: default content handler is markdown
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN, simpleAsyncConfig.getHandlerType());
@@ -54,7 +54,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertNull(simpleAsyncConfig.getNumClients());
-        assertNull(simpleAsyncConfig.getTimeoutMs());
+        assertNull(simpleAsyncConfig.getTimeoutMillis());
         assertNull(simpleAsyncConfig.getXmx());
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.MARKDOWN, simpleAsyncConfig.getHandlerType());
 
@@ -63,7 +63,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertNull(simpleAsyncConfig.getNumClients());
-        assertNull(simpleAsyncConfig.getTimeoutMs());
+        assertNull(simpleAsyncConfig.getTimeoutMillis());
         assertNull(simpleAsyncConfig.getXmx());
 
         simpleAsyncConfig = TikaAsyncCLI.parseCommandLine(new String[]{"--output", "output", "--input", "input"});
@@ -71,7 +71,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertNull(simpleAsyncConfig.getNumClients());
-        assertNull(simpleAsyncConfig.getTimeoutMs());
+        assertNull(simpleAsyncConfig.getTimeoutMillis());
         assertNull(simpleAsyncConfig.getXmx());
 
         simpleAsyncConfig = TikaAsyncCLI.parseCommandLine(new String[]{"--output=output", "--input=input"});
@@ -79,7 +79,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertNull(simpleAsyncConfig.getNumClients());
-        assertNull(simpleAsyncConfig.getTimeoutMs());
+        assertNull(simpleAsyncConfig.getTimeoutMillis());
         assertNull(simpleAsyncConfig.getXmx());
     }
 
@@ -91,7 +91,7 @@ public class AsyncCliParserTest {
         assertEquals("output", simpleAsyncConfig.getOutputDir());
         assertNull(simpleAsyncConfig.getFileList());
         assertEquals(5, simpleAsyncConfig.getNumClients());
-        assertEquals(30000L, simpleAsyncConfig.getTimeoutMs());
+        assertEquals(30000L, simpleAsyncConfig.getTimeoutMillis());
         assertEquals("1g", simpleAsyncConfig.getXmx());
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.XML, simpleAsyncConfig.getHandlerType());
     }
@@ -158,6 +158,23 @@ public class AsyncCliParserTest {
 
     @TempDir
     Path tempDir;
+
+    /** TIKA-4834: the config docs permit comments. */
+    @Test
+    public void testEnsurePluginRootsAcceptsComments() throws Exception {
+        Path configPath = tempDir.resolve("config-comments.json");
+        Files.writeString(configPath, """
+            // leading comment
+            {
+              /* block */
+              "pipes": { "numClients": 3 } // trailing
+            }
+            """);
+        Path result = TikaAsyncCLI.ensurePluginRoots(configPath, null);
+        JsonNode root = new ObjectMapper().readTree(result.toFile());
+        assertTrue(root.has("plugin-roots"));
+        assertEquals(3, root.get("pipes").get("numClients").asInt());
+    }
 
     @Test
     public void testEnsurePluginRootsAddsDefault() throws Exception {

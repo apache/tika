@@ -23,6 +23,7 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -44,7 +45,7 @@ public class WMFParserTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata(fileName);
         Metadata wmfMetadata = metadataList.get(metaDataItemIndex);
 
-        assertEquals("image/wmf", wmfMetadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("image/wmf", wmfMetadata.get(HttpHeaders.CONTENT_TYPE));
         assertContains(expectedText, wmfMetadata.get(TikaCoreProperties.TIKA_CONTENT));
     }
 

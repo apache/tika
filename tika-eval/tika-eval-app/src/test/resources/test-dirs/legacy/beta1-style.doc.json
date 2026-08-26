@@ -1,0 +1,17 @@
+[
+  {
+    "Content-Type" : "text/plain",
+    "X-TIKA:content" : "the quick brown fox",
+    "X-TIKA:parse_time_millis" : "12",
+    "X-TIKA:digest:MD5" : "abc123",
+    "X-TIKA:EXCEPTION:container_exception" : "boom"
+  },
+  {
+    "Content-Type" : "text/plain",
+    "X-TIKA:embedded_resource_path" : "inner.txt",
+    "X-TIKA:content" : "attachment contents",
+    "X-TIKA:embedded_depth" : "1",
+    "X-TIKA:resourceName" : "inner.txt",
+    "embeddedResourceType" : "ATTACHMENT"
+  }
+]

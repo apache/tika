@@ -66,6 +66,7 @@ public record PipesResult(RESULT_STATUS status, EmitData emitData, String messag
         EMIT_EXCEPTION(CATEGORY.TASK_EXCEPTION),
         FETCHER_NOT_FOUND(CATEGORY.TASK_EXCEPTION),
         EMITTER_NOT_FOUND(CATEGORY.TASK_EXCEPTION),
+        PAYLOAD_LIMIT_EXCEEDED(CATEGORY.TASK_EXCEPTION),
 
         // Process crashes - forked process died, auto-restart
         OOM(CATEGORY.PROCESS_CRASH),
@@ -79,7 +80,18 @@ public record PipesResult(RESULT_STATUS status, EmitData emitData, String messag
         PARSE_EXCEPTION_NO_EMIT(CATEGORY.SUCCESS),
         EMIT_SUCCESS(CATEGORY.SUCCESS),
         EMIT_SUCCESS_PARSE_EXCEPTION(CATEGORY.SUCCESS),
-        EMIT_SUCCESS_PASSBACK(CATEGORY.SUCCESS);
+        EMIT_SUCCESS_PASSBACK(CATEGORY.SUCCESS),
+
+        /**
+         * The task's total timeout was exhausted mid-parse: the worker is healthy (no
+         * restart), content extracted up to that point was emitted, but one or more
+         * embedded documents were skipped rather than attempted. Distinct from
+         * {@link #TIMEOUT} (worker lost, content lost, restart) -- here the parse
+         * completed and a retry would truncate at the same place, so the fix is a
+         * bigger {@code totalTaskTimeoutMillis} or accepting the truncation, not a
+         * retry. See {@code TikaCoreProperties#TASK_DEADLINE_REACHED}.
+         */
+        PARTIAL_TIMEOUT(CATEGORY.SUCCESS);
 
 
         private final CATEGORY category;

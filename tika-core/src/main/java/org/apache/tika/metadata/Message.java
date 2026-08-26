@@ -22,30 +22,36 @@ package org.apache.tika.metadata;
  * See also {@link Office}'s MAPI-specific properties.
  */
 public interface Message {
-    String MESSAGE_PREFIX = "Message" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+    String MESSAGE_PREFIX = "message" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+
+    String MULTIPART_PREFIX = "multipart" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     String MESSAGE_RAW_HEADER_PREFIX =
-            MESSAGE_PREFIX + "Raw-Header" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
+            MESSAGE_PREFIX + "raw-header" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
-    String MESSAGE_RECIPIENT_ADDRESS = "Message-Recipient-Address";
+    KeyPrefix RAW_HEADER = KeyPrefix.file(MESSAGE_RAW_HEADER_PREFIX,
+            "RFC822 / Outlook raw email header names");
 
-    String MESSAGE_FROM = "Message-From";
+    Property MESSAGE_RECIPIENT_ADDRESS =
+            Property.internalTextBag(MESSAGE_PREFIX + "recipient-address");
 
-    String MESSAGE_TO = "Message-To";
+    Property MESSAGE_FROM = Property.internalTextBag(MESSAGE_PREFIX + "from");
 
-    String MESSAGE_CC = "Message-Cc";
+    Property MESSAGE_TO = Property.internalTextBag(MESSAGE_PREFIX + "to");
 
-    String MESSAGE_BCC = "Message-Bcc";
+    Property MESSAGE_CC = Property.internalTextBag(MESSAGE_PREFIX + "cc");
 
-    String MULTIPART_SUBTYPE = "Multipart-Subtype";
+    Property MESSAGE_BCC = Property.internalTextBag(MESSAGE_PREFIX + "bcc");
 
-    String MULTIPART_BOUNDARY = "Multipart-Boundary";
+    Property MULTIPART_SUBTYPE = Property.internalText(MULTIPART_PREFIX + "subtype");
+
+    Property MULTIPART_BOUNDARY = Property.internalText(MULTIPART_PREFIX + "boundary");
 
     /**
      * Where possible, this records the value from the name field.
      * Even in MAPI messages, though, this can be an email address.
      */
-    Property MESSAGE_FROM_NAME = Property.internalTextBag(MESSAGE_PREFIX + "From-Name");
+    Property MESSAGE_FROM_NAME = Property.internalTextBag(MESSAGE_PREFIX + "from-name");
 
     /**
      * Where possible, this records the value from the name field.
@@ -54,15 +60,15 @@ public interface Message {
      * Note that the value may also be an X400/x500 Exchange format:
      * /o=ExchangeLabs/ou=Exchange Administrative Group/cn=Recipients/cn=someone.or.other
      */
-    Property MESSAGE_FROM_EMAIL = Property.internalTextBag(MESSAGE_PREFIX + "From-Email");
+    Property MESSAGE_FROM_EMAIL = Property.internalTextBag(MESSAGE_PREFIX + "from-email");
 
     /**
      * In Outlook messages, there are sometimes separate fields for "to-name" and
      * "to-display-name" name.
      */
-    Property MESSAGE_TO_NAME = Property.internalTextBag(MESSAGE_PREFIX + "To-Name");
+    Property MESSAGE_TO_NAME = Property.internalTextBag(MESSAGE_PREFIX + "to-name");
 
-    Property MESSAGE_TO_DISPLAY_NAME = Property.internalTextBag(MESSAGE_PREFIX + "To-Display-Name");
+    Property MESSAGE_TO_DISPLAY_NAME = Property.internalTextBag(MESSAGE_PREFIX + "to-display-name");
 
     /**
      * Where possible, this records the email value in the to field.
@@ -71,15 +77,15 @@ public interface Message {
      * Note that the value may also be an X400/x500 Exchange format:
      * /o=ExchangeLabs/ou=Exchange Administrative Group/cn=Recipients/cn=someone.or.other
      */
-    Property MESSAGE_TO_EMAIL = Property.internalTextBag(MESSAGE_PREFIX + "To-Email");
+    Property MESSAGE_TO_EMAIL = Property.internalTextBag(MESSAGE_PREFIX + "to-email");
 
     /**
      * In Outlook messages, there are sometimes separate fields for "cc-name" and
      * "cc-display-name" name.
      */
-    Property MESSAGE_CC_NAME = Property.internalTextBag(MESSAGE_PREFIX + "CC-Name");
+    Property MESSAGE_CC_NAME = Property.internalTextBag(MESSAGE_PREFIX + "cc-name");
 
-    Property MESSAGE_CC_DISPLAY_NAME = Property.internalTextBag(MESSAGE_PREFIX + "CC-Display-Name");
+    Property MESSAGE_CC_DISPLAY_NAME = Property.internalTextBag(MESSAGE_PREFIX + "cc-display-name");
 
     /**
      * Where possible, this records the email value in the cc field.
@@ -88,16 +94,16 @@ public interface Message {
      * Note that the value may also be an X400/x500 Exchange format:
      * /o=ExchangeLabs/ou=Exchange Administrative Group/cn=Recipients/cn=someone.or.other
      */
-    Property MESSAGE_CC_EMAIL = Property.internalTextBag(MESSAGE_PREFIX + "CC-Email");
+    Property MESSAGE_CC_EMAIL = Property.internalTextBag(MESSAGE_PREFIX + "cc-email");
 
     /**
      * In Outlook messages, there are sometimes separate fields for "bcc-name" and
      * "bcc-display-name" name.
      */
-    Property MESSAGE_BCC_NAME = Property.internalTextBag(MESSAGE_PREFIX + "BCC-Name");
+    Property MESSAGE_BCC_NAME = Property.internalTextBag(MESSAGE_PREFIX + "bcc-name");
 
     Property MESSAGE_BCC_DISPLAY_NAME =
-            Property.internalTextBag(MESSAGE_PREFIX + "BCC-Display-Name");
+            Property.internalTextBag(MESSAGE_PREFIX + "bcc-display-name");
 
     /**
      * Where possible, this records the email value in the bcc field.
@@ -106,6 +112,6 @@ public interface Message {
      * Note that the value may also be an X400/x500 Exchange format:
      * /o=ExchangeLabs/ou=Exchange Administrative Group/cn=Recipients/cn=someone.or.other
      */
-    Property MESSAGE_BCC_EMAIL = Property.internalTextBag(MESSAGE_PREFIX + "BCC-Email");
+    Property MESSAGE_BCC_EMAIL = Property.internalTextBag(MESSAGE_PREFIX + "bcc-email");
 
 }

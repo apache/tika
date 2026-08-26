@@ -16,7 +16,6 @@
  */
 package org.apache.tika.server.standard;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -26,7 +25,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,7 +34,6 @@ import java.util.Locale;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
-import org.apache.cxf.attachment.AttachmentUtil;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
@@ -62,7 +59,6 @@ public class TikaResourceTest extends CXFTestBase {
     public static final String TEST_DOC = "test-documents/test.doc";
     public static final String TEST_PASSWORD_PROTECTED = "test-documents/password.xls";
     private static final String TEST_RECURSIVE_DOC = "test-documents/test_recursive_embedded.docx";
-    private static final String TEST_OOM = "mock/fake_oom.xml";
 
     private static final String TIKA_PATH = "/tika";
     private static final int UNPROCESSEABLE = 422;
@@ -75,13 +71,13 @@ public class TikaResourceTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaResource.class);
-        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(new TikaResource()));
+        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(tikaResource));
     }
 
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
-        providers.add(new TikaServerParseExceptionMapper(false));
+        providers.add(new TikaServerParseExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }
@@ -94,14 +90,6 @@ public class TikaResourceTest extends CXFTestBase {
     @Override
     protected InputStream getPipesConfigInputStream() {
         return getClass().getResourceAsStream("/configs/tika-config-for-server-tests.json");
-    }
-
-    @Test
-    public void testHelloWorld() throws Exception {
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH)
-                .get();
-        assertEquals(TikaResource.GREETING, getStringFromInputStream((InputStream) response.getEntity()));
     }
 
     @Test
@@ -182,6 +170,21 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
+    public void testBareTikaDefaultsToMarkdown() throws Exception {
+        // The bare /tika endpoint returns Markdown by default (was XHTML pre-4.0).
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH)
+                .type("application/msword")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+        String responseMsg = getStringFromInputStream((InputStream) response.getEntity());
+        assertTrue(responseMsg.contains("test"));
+        // Markdown, not XHTML: no HTML/XML tags
+        assertFalse(responseMsg.contains("<html"));
+        assertFalse(responseMsg.contains("<body"));
+        assertFalse(responseMsg.contains("<p>"));
+    }
+
+    @Test
     public void testSimpleWordHTML() throws Exception {
         Response response = WebClient
                 .create(endPoint + TIKA_PATH + "/html")
@@ -219,12 +222,6 @@ public class TikaResourceTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/password.xls"));
 
         assertEquals(UNPROCESSEABLE, response.getStatus());
-    }
-
-    @Test
-    public void testJAXBAndActivationDependency() {
-        //TIKA-2778
-        AttachmentUtil.getCommandMap();
     }
 
     @Test
@@ -656,53 +653,28 @@ public class TikaResourceTest extends CXFTestBase {
         TikaTest.assertContains("org.apache.tika.parser.microsoft.EMFParser", Arrays.asList(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET)));
     }
 
+    /**
+     * 3.x served /tika/text from a BodyContentHandler. 4.x switched to TEXT, which runs over
+     * the whole XHTML document and emits the <title> as leading character data -- a 4.x
+     * regression, not a longstanding difference. Needs a real parser: the mock fixtures in
+     * tika-server-core never put a title in the XHTML, so TEXT and BODY are identical there.
+     */
     @Test
-    public void testJsonWriteLimitEmbedded() throws Exception {
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/json/html")
-                .header("writeLimit", "500")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
-        assertContains("embed2a.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertContains("When in the Course", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertNotFound("declare the causes", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
-        assertTrue(metadata
-                .get(TikaCoreProperties.CONTAINER_EXCEPTION)
-                .startsWith("org.apache.tika.exception.WriteLimitReachedException"));
-        assertNotFound("embed4.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
+    public void testTextIsBodyOnly() throws Exception {
+        String text = getStringFromInputStream((InputStream) WebClient
+                .create(endPoint + TIKA_PATH + "/text")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testHTML.html"))
+                .getEntity());
+        assertContains("Test Indexation Html", text);
+        assertNotFound("Title : Test Indexation Html", text);
+
+        // the whole-document handler is still reachable explicitly, and still emits the title
+        String whole = getStringFromInputStream((InputStream) WebClient
+                .create(endPoint + TIKA_PATH + "/json/text")
+                .accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testHTML.html"))
+                .getEntity());
+        assertContains("Title : Test Indexation Html", whole);
     }
 
-    @Test
-    @org.junit.jupiter.api.Disabled("throwOnWriteLimitReached header not yet supported with pipes-based parsing")
-    public void testJsonNoThrowWriteLimitEmbedded() throws Exception {
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/json/html")
-                .header("writeLimit", "500")
-                .header("throwOnWriteLimitReached", "false")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_RECURSIVE_DOC));
-        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(((InputStream) response.getEntity()), StandardCharsets.UTF_8));
-        String txt = metadata.get(TikaCoreProperties.TIKA_CONTENT);
-        assertContains("embed2a.txt", txt);
-        assertContains("When in the Course", txt);
-        assertNotFound("declare the causes", txt);
-        assertEquals("Microsoft Office Word", metadata.get(OfficeOpenXMLExtended.APPLICATION));
-        assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-        assertContains("<div class=\"embedded\" id=\"embed4.txt", metadata.get(TikaCoreProperties.TIKA_CONTENT));
-    }
-
-    @Test
-    public void testWriteLimitInPDF() throws Exception {
-        int writeLimit = 10;
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/json")
-                .header("writeLimit", Integer.toString(writeLimit))
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/testPDFTwoTextBoxes.pdf"));
-
-        assertEquals(200, response.getStatus());
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        Metadata metadata = JsonMetadata.fromJson(reader);
-        assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
-
-    }
 }

@@ -33,17 +33,17 @@ The Microsoft Graph plugin (`tika-pipes-microsoft-graph`) provides a fetcher tha
 [#credentials]
 == Credentials
 
-The fetcher authenticates against Microsoft Entra (Azure AD) using one of two credential modes — set exactly one:
+The fetcher authenticates against Microsoft Entra (Azure AD) using one of two credential modes — set at least one:
 
 * **Client secret** (`clientSecretCredentialsConfig`) — easiest to set up; client secrets rotate manually.
 * **Client certificate** (`clientCertificateCredentialsConfig`) — for environments that require certificate-based auth.
 
-Both modes need the same three identity fields: `tenantId`, `clientId`, plus either `clientSecret` or `certificate`.
+Both modes need `tenantId` and `clientId`, plus either `clientSecret` or the PFX pair `certificateBytes` / `certificatePassword`. Setting neither block fails at startup; setting both is allowed and the certificate wins.
 
 [#microsoft-graph-fetcher]
 == Microsoft Graph Fetcher (`microsoft-graph-fetcher`)
 
-Fetches files via the Microsoft Graph API. The fetch key encodes the Graph object identifier.
+Fetches files via the Microsoft Graph API. The fetch key is `siteDriveId,driveItemId` — the two Graph identifiers separated by a comma.
 
 [source,json]
 ----
@@ -57,12 +57,12 @@ include::example$pipes-microsoft-graph-fetcher.json[]
 |Field |Default |Description
 
 |`clientSecretCredentialsConfig`
-|_required (XOR)_
+|_one of these two required_
 |Nested object with `tenantId`, `clientId`, `clientSecret`. See <<credentials>>.
 
 |`clientCertificateCredentialsConfig`
-|_required (XOR)_
-|Nested object with `tenantId`, `clientId`, `certificate`. See <<credentials>>.
+|_one of these two required_
+|Nested object with `tenantId`, `clientId`, `certificateBytes` (PFX), `certificatePassword`. Takes precedence over `clientSecretCredentialsConfig`. See <<credentials>>.
 
 |`scopes`
 |_empty_
@@ -73,8 +73,8 @@ include::example$pipes-microsoft-graph-fetcher.json[]
 |If `true`, files are spooled to a temp file before being parsed.
 
 |`throttleSeconds`
-|_optional_
-|Rate-limit array — consecutive failures sleep for the corresponding number of seconds.
+|_none_
+|Retry/back-off array. Its length is the number of attempts, and entry _i_ is the seconds to sleep before retry _i_. Absent or empty means a single attempt with no retry.
 |===
 
 [#notes]

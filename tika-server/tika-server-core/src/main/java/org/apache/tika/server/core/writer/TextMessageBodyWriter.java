@@ -46,7 +46,10 @@ import org.apache.tika.metadata.Metadata;
 public class TextMessageBodyWriter implements MessageBodyWriter<Metadata> {
 
     public boolean isWriteable(Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {
-        return mediaType.equals(MediaType.TEXT_PLAIN_TYPE) && Metadata.class.isAssignableFrom(type);
+        // MediaType.equals compares parameters, so it rejects a "text/plain;charset=UTF-8" response
+        return MediaType.TEXT_PLAIN_TYPE.getType().equals(mediaType.getType())
+                && MediaType.TEXT_PLAIN_TYPE.getSubtype().equals(mediaType.getSubtype())
+                && Metadata.class.isAssignableFrom(type);
     }
 
     public long getSize(Metadata data, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType) {

@@ -20,6 +20,7 @@ import static java.lang.String.valueOf;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Date;
 import java.util.Set;
 
 import com.pff.PSTAttachment;
@@ -35,6 +36,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.MAPI;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
@@ -136,11 +138,19 @@ public class PSTMailItemParser implements Parser {
         metadata.set(TikaCoreProperties.IDENTIFIER, pstMail.getInternetMessageId());
         metadata.set(TikaCoreProperties.TITLE, pstMail.getSubject());
         metadata.set(TikaCoreProperties.SUBJECT, pstMail.getSubject());
-        metadata.set(Metadata.MESSAGE_FROM, pstMail.getSenderName());
+        metadata.set(Message.MESSAGE_FROM, pstMail.getSenderName());
         metadata.set(TikaCoreProperties.CREATOR, pstMail.getSenderName());
-        metadata.set(TikaCoreProperties.CREATED, pstMail.getCreationTime());
-        metadata.set(MAPI.SUBMISSION_ACCEPTED_AT_TIME, pstMail.getClientSubmitTime());
-        metadata.set(TikaCoreProperties.MODIFIED, pstMail.getLastModificationTime());
+        //creation/last-modification are storage timestamps, not content dates (TIKA-4798)
+        Date messageDate = pstMail.getClientSubmitTime();
+        if (messageDate == null) {
+            messageDate = pstMail.getMessageDeliveryTime();
+        }
+        metadata.set(TikaCoreProperties.CREATED, messageDate);
+        metadata.set(TikaCoreProperties.MODIFIED, messageDate);
+        metadata.set(MAPI.CLIENT_SUBMIT_TIME, pstMail.getClientSubmitTime());
+        metadata.set(MAPI.MESSAGE_DELIVERY_TIME, pstMail.getMessageDeliveryTime());
+        metadata.set(MAPI.CREATION_TIME, pstMail.getCreationTime());
+        metadata.set(MAPI.LAST_MODIFICATION_TIME, pstMail.getLastModificationTime());
         metadata.set(TikaCoreProperties.COMMENTS, pstMail.getComment());
         metadata.set(PST.DESCRIPTOR_NODE_ID, valueOf(pstMail.getDescriptorNodeId()));
         metadata.set(Message.MESSAGE_FROM_EMAIL, pstMail.getSenderEmailAddress());
@@ -227,7 +237,7 @@ public class PSTMailItemParser implements Parser {
             long sz = OutlookPSTParser.estimateSize(attachedEmail);
             try (TikaInputStream tis = TikaInputStream.getFromContainer(attachedEmail, sz, metadata)) {
                 Metadata attachMetadata = Metadata.newInstance(context);
-                attachMetadata.set(Metadata.CONTENT_TYPE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
+                attachMetadata.set(HttpHeaders.CONTENT_TYPE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 attachMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, PSTMailItemParser.PST_MAIL_ITEM_STRING);
                 attachMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, attachedEmail.getSubject() + ".msg");
                 attachMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
@@ -248,12 +258,12 @@ public class PSTMailItemParser implements Parser {
         attachMeta.set(TikaCoreProperties.RESOURCE_NAME_KEY, filename);
         attachMeta.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, filename);
         attachMeta.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
-        attachMeta.set(Metadata.CONTENT_LENGTH, Integer.toString(attachment.getSize()));
+        attachMeta.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(attachment.getSize()));
         AttributesImpl attributes = new AttributesImpl();
         attributes.addAttribute("", "class", "class", "CDATA", "embedded");
         attributes.addAttribute("", "id", "id", "CDATA", filename);
         xhtml.startElement("div", attributes);
-        if (embeddedExtractor.shouldParseEmbedded(attachMeta)) {
+        if (embeddedExtractor.shouldParseEmbedded(attachMeta, context)) {
             TikaInputStream tis = null;
             try {
                 tis = TikaInputStream.get(attachment.getFileInputStream());

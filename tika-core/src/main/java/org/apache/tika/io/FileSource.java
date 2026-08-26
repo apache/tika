@@ -19,8 +19,11 @@ package org.apache.tika.io;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import org.apache.commons.io.IOUtils;
 
@@ -120,8 +123,13 @@ class FileSource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public void enableRewind() {
+    public void enableRewind(CacheMemoryBudget budget) throws IOException {
         // No-op: file is always rewindable
+    }
+
+    @Override
+    public SeekableByteChannel getSeekableByteChannel() throws IOException {
+        return FileChannel.open(path, StandardOpenOption.READ);
     }
 
     // Mark/reset support using seekTo

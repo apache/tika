@@ -44,7 +44,7 @@ public class TikaParsersTest extends CXFTestBase {
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         sf.setResourceClasses(TikaParsers.class);
-        sf.setResourceProvider(TikaParsers.class, new SingletonResourceProvider(new TikaParsers()));
+        sf.setResourceProvider(TikaParsers.class, new SingletonResourceProvider(new TikaParsers(tikaResource)));
     }
 
     @Override

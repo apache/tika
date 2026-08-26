@@ -54,6 +54,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
@@ -230,7 +231,7 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
                 s3Object = s3Client.getObject(objectRequest);
             }
             long length = s3Object.response().contentLength();
-            metadata.set(Metadata.CONTENT_LENGTH, Long.toString(length));
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
             long maxLength = config.getMaxLength();
             if (maxLength > -1) {
                 if (length > maxLength) {
@@ -251,6 +252,8 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
                 tmp = new TemporaryResources();
                 Path tmpPath = tmp.createTempFile(FilenameUtils.getSuffixFromPath(fetchKey));
                 Files.copy(s3Object, tmpPath, StandardCopyOption.REPLACE_EXISTING);
+                // Files.copy does not close its input; the success path must
+                s3Object.close();
                 TikaInputStream tis = TikaInputStream.get(tmpPath, metadata, tmp);
                 LOGGER.debug("took {} ms to fetch metadata and copy to local tmp file",
                         System.currentTimeMillis() - start);

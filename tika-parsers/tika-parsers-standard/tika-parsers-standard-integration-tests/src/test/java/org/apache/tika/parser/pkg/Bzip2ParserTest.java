@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.sax.BodyContentHandler;
 
@@ -39,7 +40,7 @@ public class Bzip2ParserTest extends AbstractPkgTest {
             AUTO_DETECT_PARSER.parse(tis, handler, metadata, recursingContext);
         }
 
-        assertEquals("application/x-bzip2", metadata.get(Metadata.CONTENT_TYPE));
+        assertEquals("application/x-bzip2", metadata.get(HttpHeaders.CONTENT_TYPE));
         String content = handler.toString();
         assertContains("test-documents/testEXCEL.xls", content);
         assertContains("Sample Excel Worksheet", content);

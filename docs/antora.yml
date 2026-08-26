@@ -17,8 +17,14 @@
 
 name: tika
 title: Apache Tika
-version: '4.0.0-SNAPSHOT'
+version: '4.1.0-SNAPSHOT'
+# Keeps the /docs redirect pointed at the released line, not this snapshot.
+prerelease: true
 start_page: index.adoc
+
+asciidoc:
+  attributes:
+    tika-version: '4.1.0-SNAPSHOT'
 
 nav:
   - modules/ROOT/nav.adoc

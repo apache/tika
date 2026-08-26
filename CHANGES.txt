@@ -1,90 +1,634 @@
-Release 4.0.0-beta-1 - 6/29/2026
+Release 4.1.0 - unreleased
+
+   * Pipes plugins no longer bundle their own Jackson: jackson-core, -databind
+     and -annotations are provided by the host (tika-serialization) and the
+     plugins parent pom now bans bundling them, so a mapper can cross the
+     plugin boundary without a second copy of the Jackson classes (seven plugin
+     zips shipped one). Plugin configuration JSON is parsed by one shared
+     mapper, PluginJson (tika-plugins-core), which rejects unknown keys,
+     numbers for enums and duplicate keys, and accepts
+     // and /* */ comments; the 33 per-plugin *Config classes use it instead of
+     their own bare ObjectMapper (TIKA-4840).
+
+   * tika-server and tika-async-cli now start from a config that contains
+     // or /* */ comments, as the configuration docs have always said they
+     may. The main loader accepted them; the steps that re-read the user's
+     file to merge in server/CLI overrides (ConfigMerger, ensurePluginRoots)
+     used their own bare parser and refused the whole file; they now use the
+     shared TikaObjectMapperFactory mapper (TIKA-4834).
+
+   * The Kafka pipes iterator no longer stops at the first empty poll. A newly
+     subscribed consumer spends its first poll(s) joining the group and returns
+     empty even when the topic has a backlog, so the iterator could enqueue zero
+     files and report success. It now waits for a partition assignment (bounded
+     by the new assignmentTimeoutMs, default 30s) and requires a continuous quiet
+     window (drainIdleMs, default 1s) before concluding the topic is drained.
+     groupInitialRebalanceDelayMs is deprecated and no longer sent to the
+     consumer: it is a broker setting that Kafka has always ignored (TIKA-4833).
+
+   * Pipes IPC: carry inline document bytes as a raw binary field beside the
+     tuple in the request envelope -- never inside the tuple or its
+     ParseContext -- and disable Smile's 7-bit binary encoding. Tuple JSON
+     serialized by 4.0.0 with an "inline-bytes" parse-context entry no longer
+     loads; it is rejected with a tailored message (TIKA-4829).
+
+   * Digesting embedded documents no longer buffers each embedded object to a
+     temp file. Zip entries are re-read from the parent archive on rewind, and
+     a new process-wide CacheMemoryBudget (seeded by the pipes forked server;
+     default 256MB, clamped to a quarter of the fork's heap; tunable via
+     -Dtika.pipes.cacheMemoryBudgetBytes in the config's forkedJvmArgs, <=0
+     disables) lets embedded objects stay in memory past the per-object 1MB
+     threshold. New public API on TikaInputStream: get(IOSupplier,...),
+     enableRewind(CacheMemoryBudget), getSeekableByteChannel(). Zip/7z/epub/odf
+     parsing and zip container detection now read through seekable channels, so
+     after detection/parsing a TikaInputStream may no longer be file-backed
+     (hasFile() false); getPath()/getFile() still work and spool on demand
+     (TIKA-4828).
+     
+   * Pipes now carries the caller-supplied Content-Type across the worker's
+     fresh-metadata boundary as a soft detection hint, so every forked-parse
+     endpoint (/tika, /meta, /rmeta, /unpack, /async, /pipes, plus tika-grpc
+     and embedded PipesForkParser) can route on a client Content-Type, not
+     only on the filename. Detection keeps the hint only when it equals or
+     specializes the content-detected type (e.g. refining image/tiff to
+     image/x-canon-cr2); for bytes with no magic it can select any type,
+     matching the routing power the filename already had. The
+     CONTENT_TYPE_USER_OVERRIDE key is deliberately not carried, so the hint
+     cannot force an unrelated type (TIKA-4825).
+
+   * OneNote extraction now follows document order, omits superseded page
+     revisions, sorts author metadata, extracts embedded object BLOBs, and
+     bounds malformed-input recursion and file-derived allocations. Parse
+     warnings and embedded relationship IDs are exposed in metadata. Malformed
+     or truncated files that cannot be fully parsed, and files whose walk
+     yields no content, now fall back to the legacy string dump instead of
+     failing or returning empty output. The legacy MS-ONESTORE walker bounds
+     its recursion (depth caps plus file-node-list and fragment-chain cycle
+     guards) and now honors shouldParseEmbedded for embedded file data
+     (TIKA-4814).
+
+   * RawTiffParser extracts the camera-generated JPEG previews embedded in
+     TIFF-based raw images (Nikon NEF/NRW, Sony ARW/SRF/SR2, Pentax PEF/PTX,
+     Adobe DNG and Canon CR2, including BigTIFF DNG containers) as thumbnail
+     embedded documents. image/x-raw-{nikon,sony,pentax,adobe} are now
+     sub-classes of image/tiff, so a named NEF/ARW/PEF/DNG that used to detect
+     as image/tiff (TiffParser, metadata only) now detects as image/x-raw-* and
+     emits thumbnail-N.jpg attachments in /rmeta and /unpack; CR2 keeps its
+     detection but also gains the attachments. Disable via
+     "raw-tiff-parser": {"extractPreviews": false} (TIKA-4824).
+
+Release 4.0.0 - 8/18/2026
+
+  This section is the complete delta from 3.x. It includes everything first
+  released in 4.0.0-alpha-1 and 4.0.0-beta-1; those sections below are stubs.
+
+  Upgrading from 3.x? Start with the migration guides at
+  https://tika.apache.org/docs -- "Migrating to Tika 4.x", "Migrating Tika
+  Server to 4.x" and "Metadata Changes in Tika 4.x". They carry the detail
+  and the code examples behind the summaries here.
+
+  Important architectural change: parsing now runs in a forked process
+  where possible. tika-server's endpoints, tika-app's -a/--async and -f/--fork,
+  and tika-grpc all parse in forked, crash-isolated tika-pipes workers.
+  Applications embedding Tika should consider getting the same isolation from
+  PipesForkParser (tika-pipes-fork-parser) rather than parsing in-process with
+  AutoDetectParser. Note that the project does not treat denial of service --
+  memory exhaustion, CPU exhaustion, a crashed process -- as a security issue
+  when files are parsed outside these isolated paths; see
+  https://tika.apache.org/security-model.html.
 
   BREAKING CHANGES
 
-   * The default content handler is now Markdown. tika-app, tika-server
-     (the /tika and /rmeta endpoints), and the async/pipes CLI now emit
-     Markdown content by default instead of XHTML/XML (plain text for the
-     async CLI). Request the previous format explicitly, e.g. tika-app
-     -x/--xml, the server /tika/xml and /rmeta/xml paths (or the
-     X-Tika-Handler header), and the async CLI --handler x (TIKA-4663).
+  --- Platform, packaging, configuration and output format (everyone) ---
+
+   * Tika 4.x requires Java 17 or later; 3.x built and ran on Java 11. All
+     published artifacts are compiled with --release 17 (TIKA-4685).
+
+   * tika-app and tika-server-standard now ship as zip distributions with an
+     adjacent lib/ directory; the published jars are thin launchers and fail
+     with NoClassDefFoundError if run on their own. This catches
+     tika-server-standard hardest, because its jar is still on Maven Central:
+     unzip the distribution and run from inside it (TIKA-4733).
+
+   * tika-parsers-standard-package is now a pom, not a jar. Users must add
+     <type>pom</type> in Maven or @pom in Gradle (TIKA-4712).
+
+   * The default content handler is now Markdown. tika-app, tika-server (the
+     /tika and /rmeta endpoints) and the async/pipes CLI emit Markdown content
+     by default instead of XHTML/XML (plain text for the async CLI). Request
+     the previous format explicitly: tika-app -x/--xml, the server's /tika/xml
+     and /rmeta/xml paths, the async CLI --handler x (TIKA-4663).
+
+   * Configuration moved from XML to JSON. TikaConfig and the
+     org.apache.tika.config XML-configuration API are removed: TikaConfig,
+     ConfigBase, Field, Param, ParamField, LoadErrorHandler,
+     InitializableProblemHandler, TikaConfigSerializer and TikaTaskTimeout are
+     gone. Use TikaLoader from tika-serialization. tika-app
+     --convert-config-xml-to-json converts a 3.x parsers section as a starting
+     point; every other section needs manual migration
+     (TIKA-4544, TIKA-4545, TIKA-4553, TIKA-4565).
+
+   * An unregistered component name in a default-parser, default-detector or
+     default-encoding-detector "exclude" list now throws a TikaConfigException
+     at config load instead of logging a WARN, so a 3.x config that named the
+     component by class name or misspelled it now refuses to start. Use the
+     registered name (e.g. "pdf-parser"); tika-app --list-parser-names prints
+     them (TIKA-3268, TIKA-4808).
+
+   * Metadata keys were renamed for consistency and provenance. Every
+     Tika-asserted key now lives under a single tk: prefix, replacing 3.x's
+     scattered X-TIKA:, tika:, tika_pg:, rendering:, signature: and
+     imagereader: prefixes and bare names such as resourceName; names Tika
+     coined inside format namespaces are kebab-cased (pdf:hasMarkedContent ->
+     pdf:has-marked-content) while names from a file or an external standard
+     keep their spelling; and open key families gained prefixes (audio:, ner:,
+     envi:, ogg:streams-, grobid:, iso19115:, gdal:, geotopic:, mif:, idml:).
+     Code using the TikaCoreProperties / TikaPagedText / Rendering constants is
+     unaffected. Code that references keys by String has two paths: update the
+     strings with the key-for-key tables in metadata-changes-4x.adoc, or turn
+     on the compatibility filter below and migrate on your own schedule
+     (TIKA-4816).
+
+   * The opt-in legacy-key-migration-filter restores 3.x key spellings at the
+     emit edge (default direction V4_TO_V3), so an unmigrated consumer keeps
+     working against 4.x output; V3_TO_V4 maps 3.x names forward instead.
+     tika-core bundles metadata-migration-3x-4x.json, the machine-readable
+     rename/drop table (TIKA-4797).
+
+   * The reserved tk: (and legacy X-TIKA:) namespace is now a trust boundary
+     for String-keyed writes. Metadata#set/add(String, String) throw
+     IllegalArgumentException on a reserved key instead of 3.x's silent
+     success, where a document-controlled property named X-TIKA:Parsed-By could
+     overwrite Tika's own value, and Property's public factories reject reserved
+     names outright. Document- and tool-derived names now go through
+     Metadata#add(KeyPrefix, String, String) -- append-only, skip-and-WARN on
+     hostile names -- or its Instant overload for source-typed dates
+     (TIKA-4816).
+
+   * Metadata no longer implements CreativeCommons, Geographic, HttpHeaders,
+     Message, ClimateForcast, TIFF or TikaMimeKeys: inherited constants move to
+     their home interface, e.g. Metadata.CONTENT_TYPE becomes
+     HttpHeaders.CONTENT_TYPE (now a Property, though the key string is
+     unchanged). TikaMimeKeys and
+     ClimateForcast are deleted outright; ClimateForecast (corrected spelling)
+     replaces the latter, with its keys under cf: (TIKA-4816).
+
+   * Other Metadata API changes: setAll(Properties) removed with no replacement
+     -- it bypassed both the limiter and the reserved-key guard, so use
+     putAll(Metadata) or individual set/add calls; PassthroughPrefix renamed
+     KeyPrefix; the Property factories internalClosedChoise / internalOpenChoise
+     / externalClosedChoise / externalOpenChoise renamed to ...Choice with no
+     forwarders; the dead enum constants PropertyType.STRUCTURE and
+     ValueType.{LOCALE, MIME_TYPE, PROPER_NAME, URL, XPATH} removed; package
+     org.apache.tika.metadata.writefilter renamed to ...metadata.writelimiter.
+     Metadata's serialVersionUID also changed, so a 3.x-serialized instance now
+     fails with InvalidClassException instead of deserializing into an object
+     that throws on first write (TIKA-4816).
+
+  --- Java API (library integrators) ---
+
+   * The core SPI signatures changed. Parser.parse takes a TikaInputStream
+     instead of an InputStream (there is no InputStream overload),
+     Detector.detect takes (TikaInputStream, Metadata, ParseContext), and
+     EmbeddedDocumentExtractor's shouldParseEmbedded/parseEmbedded gained a
+     ParseContext and take a TikaInputStream. Every third-party implementation
+     must be updated; callers can wrap with TikaInputStream.get(...). The Tika
+     facade still accepts an InputStream, but Tika.detect(InputStream, ...) no
+     longer returns the caller's stream at its original position. The detector
+     still resets the TikaInputStream it reads -- but that read-ahead is
+     buffered inside an internal wrapper that detect() discards, so the
+     caller's own stream comes back advanced. Pass a TikaInputStream you own
+     (and rewind it), or re-open the source
+     (TIKA-4399, TIKA-4541, TIKA-4569).
+
+   * TikaInputStream no longer caches by default. A stream is consumed in
+     passthrough mode unless enableRewind() is called at position 0;
+     rewind()/getFile()/getPath() after reading without enableRewind() throw
+     instead of silently spooling. A parser that read part of a stream and then
+     asked for a file worked in 3.x and now fails. Digesters call
+     enableRewind() themselves (TIKA-4618, TIKA-4623).
+
+   * Parsing with a concrete parser (not AutoDetectParser) and an empty
+     ParseContext no longer auto-generates an AutoDetectParser to handle
+     embedded files: they are silently skipped, with no content and no
+     exception. Nor does it auto-generate a Detector to identify them; they are
+     reported as application/octet-stream instead. Set Parser.class and
+     Detector.class in the ParseContext, or go through AutoDetectParser, which
+     does this for you (TIKA-4819).
+
+   * EmbeddedDocumentExtractorFactory and friends are removed;
+     ParsingEmbeddedDocumentExtractor and UnpackExtractor are now stateless
+     singletons (use INSTANCE) that take the enclosing ParseContext as a method
+     parameter rather than capturing one at construction. Code that supplied a
+     custom factory should bind an EmbeddedDocumentExtractor instance directly.
+     EmbeddedDocumentUtil's instance API is likewise removed in favor of statics
+     that take a ParseContext explicitly (TIKA-4819).
+
+   * ParseContext configuration is now resolved per component instance rather
+     than per config class, because a class-keyed write leaked one component's
+     config to every other component binding the same config class. Two
+     consequences: parseContext.get(SomeConfig.class) no longer returns a
+     JSON-resolved config, so a third-party component following the
+     PDFBoxRenderer pattern must be handed its config explicitly; and precedence
+     is inverted -- a JSON config now beats a programmatic
+     context.set(XConfig.class, ...), which used to win (TIKA-4808).
+
+   * ForkParser and the entire org.apache.tika.fork package are removed from
+     tika-core. Out-of-process parsing is now provided by PipesForkParser in
+     the new tika-pipes-fork-parser module -- the recommended parser for
+     untrusted documents. tika-app's -f/--fork routes through it, and
+     --fork-timeout is rejected rather than silently ignored
+     (TIKA-4554, TIKA-4571, TIKA-4651).
+
+   * Unified timeout model across the library, pipes and server: a total-task
+     budget plus a progress/stall timeout, composed recursively over embedded
+     documents. TikaTimeoutException is now a checked exception, and several
+     parser/pipes config fields were renamed (*TimeoutSeconds / *TimeoutMs ->
+     *TimeoutMillis, including a unit change for Tess4J) (TIKA-4813).
+
+   * Parsers and detectors no longer expose bean setters/getters for their
+     settings. Configuration moves to per-component *Config objects supplied
+     through the ParseContext (e.g. GeoParserConfig, DWGParserConfig,
+     AmazonTranscribeConfig, MagikaDetector/SiegfriedDetector configs)
+     (TIKA-4758).
+
+   * The encoding detectors moved out of parser packages into
+     org.apache.tika.detect.* and into new tika-encoding-detector-* modules:
+     org.apache.tika.parser.txt.{CharsetDetector,CharsetMatch,
+     Icu4jEncodingDetector,UniversalEncodingDetector,BOMDetector,...} are now
+     org.apache.tika.detect.icu4j.*, org.apache.tika.detect.universal.* and
+     org.apache.tika.detect.BOMDetector, and
+     org.apache.tika.parser.html.HtmlEncodingDetector is now
+     org.apache.tika.detect.html.HtmlEncodingDetector.
+     NonDetectingEncodingDetector is removed (TIKA-4685, TIKA-4720).
+
+   * MetadataListFilter has been renamed MetadataFilter, and the 3.x
+     MetadataFilter has been removed (TIKA-4546).
+
+   * API changes in the EmbeddedStreamTranslator (TIKA-4518), and
+     DigestingParser is removed (TIKA-4607).
+
+   * BasicContentHandlerFactory.parseHandlerType now throws
+     IllegalArgumentException for an unrecognized handler name instead of
+     silently returning the supplied default (TIKA-4809).
+
+  --- tika-server ---
+
+   * All parsing now runs out-of-process through tika-pipes. /tika, /rmeta,
+     /meta, /unpack, /detect, /pipes and /async share a fixed pool of
+     numClients forked worker JVMs (default derived from host cores), so a
+     parser crash, OOM or timeout no longer takes down the server. The cost is
+     a sizing decision 3.x never asked of you: numClients is both the server's
+     concurrency ceiling and its CPU/memory footprint, and each fork's heap is
+     set with pipes.forkedJvmArgs (e.g. -Xmx1g), not the server JVM's. Size
+     both deliberately; see the cpu-sizing docs (TIKA-4809).
+
+   * Capability flags are default-deny and split in two. enableUnsecureFeatures
+     no longer exists -- a config still carrying it fails to start with an
+     "Unrecognized field" error -- and is replaced by allowPipes (gates /pipes
+     and /async) and allowPerRequestConfig (gates the /config endpoints and the
+     multipart config part). /status is no longer gated and is enabled simply
+     by listing it under endpoints. tika-grpc gains
+     the same allowPerRequestConfig flag plus allowComponentModifications, which
+     gates runtime Save/Delete of fetchers and pipes iterators (TIKA-4764).
+
+   * Endpoints removed: /translate/* (unusable as shipped), /tika/main and
+     /tika/form/main (Boilerpipe; use /tika/text), and the /tika/form family.
+     The 3.x /tika/config and /tika/form/config forms are replaced by the
+     /tika/config* multipart POSTs, which require allowPerRequestConfig
+     (TIKA-4809).
+
+   * Endpoints collapsed: /detect/stream is now /detect, and /language/stream
+     and /language/string are both /language. Behavior changed with the rename:
+     /detect now runs in the fork pool, so it can return 429, 503 or 413, and a
+     failure reading the body is a 500 where 3.x returned 200 with
+     application/octet-stream as if detection had succeeded; /language caps
+     input at the first 100,000 characters and uses the default LanguageDetector
+     on the classpath, where 3.x pinned Optimaize (TIKA-4809).
+
+   * Output-format routing on /tika changed. The bare /tika endpoint returns
+     Markdown (was XHTML); use /tika/xml for XHTML. /tika/text is body-only
+     again, as in 3.x. /tika/json and /tika/config/json default to the server
+     default (markdown) rather than hardcoded plain text. The Accept header no
+     longer selects the output format -- 3.x routed bare /tika among plain
+     text, HTML and XHTML by Accept (nondeterministically for */*); now the
+     path names the format. An unrecognized handler name in the path is a 400
+     listing the valid types, instead of silently falling back to the default
+     (TIKA-4663, TIKA-4809).
+
+   * Per-request configuration headers are removed, and are now silently
+     ignored if sent: writeLimit, throwOnWriteLimitReached,
+     maxEmbeddedResources/maxEmbeddedCount, X-Tika-Handler and the meta_*
+     metadata-injection family. The limits move to parse-context
+     (output-limits.writeLimit, output-limits.throwOnWriteLimit,
+     embedded-limits.maxCount); X-Tika-Handler becomes an explicit handler path;
+     meta_* has no replacement, and with per-request config off by default a
+     caller can no longer bound the output of a single request. The
+     X-Tika-OCR* and X-Tika-PDF* families were removed earlier in the 4.x line
+     (TIKA-4809).
+
+   * Caller errors now map to accurate HTTP status codes instead of always
+     returning 200 or 500. A saturated worker pool returns 429, a
+     crashed/timed-out/OOM worker returns 503, an unknown or reserved
+     fetcher/emitter or bad handler returns 400, and an over-limit body returns
+     413; the 429 and 503 responses carry a Retry-After header. Error bodies are
+     now JSON ({"status":"TIMEOUT"}, with a message field when one is
+     available) where 3.x returned plain text such as "Parse failed: TIMEOUT"
+     (TIKA-4809).
+
+   * The raw /tika family's 422 responses carry the extracted content only; the
+     exception is no longer appended to the body -- use /rmeta for the
+     structured exception (TIKA-4809).
+
+   * /meta now runs through the same pipes-backed parser as the other
+     extraction endpoints, so it gains their crash isolation and their error
+     handling: a container exception comes back as 200 with
+     tk:exception:container-exception instead of 500, and /meta/{field} returns
+     422 instead of 500 or 400. A request with no Accept header now returns
+     JSON; 3.x returned CSV, still available via Accept: text/csv. /meta also no
+     longer returns a language field -- it parses with the ignore handler, so
+     there is no text to detect from; configure a language-detection metadata
+     filter and use /rmeta or /tika/json instead (TIKA-4809).
+
+   * /async requires an object body {"tuples":[...]} instead of a bare JSON
+     array, validates fetcher/emitter ids at POST time (400), rejects a batch
+     larger than the queue's total capacity with 400 instead of throttling it,
+     and one bad tuple no longer stops the async workers. /pipes returns the
+     same JSON body as /tika/rmeta/unpack -- {"status":<RESULT_STATUS>,
+     "message":...} -- instead of a /pipes-only {"status":"ok"|"process_crash"}
+     shape, returns 400 with the reason for a malformed request body, and
+     rejects emit strategies other than EMIT_ALL, whose passed-back data the
+     /pipes response cannot carry (TIKA-4809).
+
+   * Many server config keys were removed or renamed (logLevel, idBase,
+     digest, returnStackTrace, port ranges, the spawn-child options, ...), and
+     an unrecognized key now fails startup with an error naming it; see
+     migrating-tika-server-4x.adoc for the key-by-key migration. One change no
+     startup error will flag: taskTimeoutMillis is now
+     parse-context.timeout-limits.totalTaskTimeoutMillis, and its default grew
+     from 5 minutes to 1 hour (TIKA-4809, TIKA-4813).
+
+   * Request bodies are now capped by maxRequestSizeBytes, defaulting to 1 GiB;
+     larger requests are rejected with 413, including over-limit chunked
+     uploads, which previously surfaced as an empty 500 (TIKA-4809).
+
+   * The 'endpoints' allowlist now also gates SPI-provided resources; a
+     discovered resource binds only when its root endpoint is enabled
+     (TIKA-4809).
+
+   * Fetcher-based streaming is removed: the InputStreamFactory pattern for
+     fetching documents via the fetcherName/fetchKey headers is gone, and all
+     documents now go through the pipes infrastructure. The no-op
+     -a/--pluginsConfig flag is removed and now fails option parsing, --help
+     exits 0, and the tika-server-client module is removed (TIKA-4809).
+
+  --- tika-pipes and tika-grpc ---
+
+   * tika-pipes implementation modules are now pf4j plugins, reorganized by
+     resource (tika-pipes-solr) vs task (tika-pipes-fetcher-solr). Core classes
+     moved to tika-pipes-core, and the file-system components moved out of it
+     into their own tika-pipes-file-system plugin
+     (TIKA-4334, TIKA-4519, TIKA-4543).
+
+   * FetchEmitTuple JSON now names the per-tuple parse context "parse-context"
+     (was "parseContext") and rejects unknown tuple fields with an error naming
+     the field (TIKA-4809).
+
+   * The pipes config keys staleFetcherTimeoutSeconds and
+     staleFetcherDelaySeconds have been removed; a config still carrying them
+     fails startup (TIKA-4809).
+
+   * TimeoutLimits: progressTimeoutMillis of 0 combined with a positive
+     totalTaskTimeoutMillis is now rejected at config load; it would kill
+     every task immediately (TIKA-4809).
+
+   * The http-fetcher now verifies TLS certificates and hostnames by default;
+     set verifySsl:false to opt out (TIKA-4809).
+
+   * SolrJ moves from 8.11.4 to 10.0.0; the Solr fetcher, emitter and pipes
+     iterator no longer support Solr 8 (TIKA-4789).
+
+   * tika-grpc: the generated Java classes moved from package org.apache.tika
+     to org.apache.tika.pipes.grpc.proto, so every generated type moves and Java
+     gRPC clients must update their imports. This is a source break only: the
+     proto package ("tika") and the service name ("Tika") are unchanged, so the
+     wire protocol is identical and clients in other languages are unaffected
+     (TIKA-4808).
+
+  --- tika-app and tika-eval-app ---
+
+   * tika-app's batch mode is gone. The -bc/batch directory-to-directory command
+     line (backed by the removed tika-batch module) has no successor flag; use
+     -a/--async, which runs the same work through tika-pipes
+     (TIKA-4333, TIKA-4340).
+
+   * tika-core/tika-app: NetworkParser and tika-app's -c/--client=<uri>
+     network-client mode were removed -- they dispatched raw sockets to an
+     arbitrary user-supplied host with no auth or TLS. Use tika-server
+     instead (TIKA-4808).
+
+   * tika-eval-app's command line changed: the FileProfile sub-command is
+     removed, the -bc batch-config option is gone, and extract directories are
+     now named with -e/--extracts (Profile) and -a/--extractsA + -b/--extractsB
+     (Compare); -i/--inputDir, -d/--db, -c/--config, -n/--numWorkers and
+     -m/--maxExtractLength replace the 3.x spellings
+     (TIKA-4342, TIKA-4450, TIKA-4452, TIKA-4507).
+
+   * tika-app: the inline short forms -eX (output encoding) and -pX (document
+     password) were removed from standard mode; use --encoding=X and
+     --password=X. Prefix-matching them silently swallowed single-dash long
+     names, so every single-dash long name is now rejected with a message
+     naming the two-dash form (TIKA-4808).
+
+  --- Parser, detector and output behavior ---
+
+   * The tika-langdetect-tika module is removed (TikaLanguageDetector,
+     LanguageIdentifier, LanguageProfile, LanguageProfilerBuilder,
+     ProfilingWriter). tika-app, tika-server and tika-eval now bundle the new
+     CharSoup detector (tika-langdetect-charsoup) instead of
+     tika-langdetect-optimaize, so the language reported by default changes
+     (TIKA-4662).
+
+   * PDF: extractIncrementalUpdateInfo now defaults to true (was false), so
+     every PDF parse emits pdf:incremental-update-count and related keys
+     without configuration. parseIncrementalUpdates remains false
+     (TIKA-4354, TIKA-4358).
+
+   * Audio cover art is now extracted as embedded documents from MP3 (ID3v2
+     APIC/PIC), MP4 (covr), Vorbis and FLAC. Embedded-document counts and
+     /rmeta list lengths for audio files change (TIKA-4801).
+
+   * The DOM-based OOXML extractors are removed (XWPFWordExtractorDecorator,
+     XSLFPowerPointExtractorDecorator, POIXMLTextExtractorDecorator,
+     XPSTextExtractor) and with them the OfficeParserConfig keys
+     useSAXDocxExtractor and useSAXPptxExtractor. The SAX extractors are the
+     only implementation (TIKA-4692, TIKA-4708).
+
+   * The MuPDF renderer is removed (org.apache.tika.renderer.pdf.mutool); PDF
+     page rendering for OCR now uses the PDFBox renderer or the new
+     PopplerRenderer (TIKA-4664).
+
+   * The legacy ExternalParser is removed; external parsers now require explicit
+     JSON configuration. CompositeExternalParser and ExternalParsersFactory,
+     which loaded tika-external-parsers.xml definitions from the classpath
+     automatically, are gone (TIKA-4707).
+
+   * Headers are no longer injected into the body/content of MSG files
+     (TIKA-4345). Please open a ticket if you need this behavior across email
+     formats.
+
+  --- Removed modules and classes ---
+
+   * Removed modules with no direct replacement: tika-batch (TIKA-4333),
+     tika-dl (TIKA-4499), the advanced media module (TIKA-4500), tika-fuzzing
+     (TIKA-4506), tika-age-recogniser (TIKA-4343), tika-server-eval
+     (TIKA-4555), the dotnet bindings (TIKA-4332) and snaps deployment
+     (TIKA-4502).
+
+   * Removed parsers and classes with no direct replacement:
+     SentimentAnalysisParser (TIKA-4574); ObjectRecognitionParser and the
+     Tensorflow recognisers/captioners; PooledTimeSeriesParser;
+     org.apache.tika.parser.pdf.AccessChecker (replaced by
+     PDFParserConfig.AccessCheckMode); and the jempbox-based JempboxExtractor /
+     XMPMetadataExtractor / pdf.xmpschemas.* classes superseded by the unified
+     XMP extractor (TIKA-4775).
+
+   * Smaller removals: ExceptionUtils.trimMessage moved from tika-core to
+     tika-eval-core; HttpClientFactory's inert redirect-host allowlist
+     accessors (get/setAllowedHostsForRedirect) are gone (TIKA-4809); and
+     org.apache.tika.utils.{RereadableInputStream,AnnotationUtils},
+     org.apache.tika.io.{IOUtils,InputStreamFactory},
+     org.apache.tika.sax.DIFContentHandler,
+     org.apache.tika.parser.{AutoDetectParserFactory,ParserFactory} and
+     org.apache.tika.parser.internal.Activator are removed.
 
   NEW FEATURES
 
+   * tika-pipes gains three parse modes: NO_PARSE (detect only, no parse),
+     CONTENT_ONLY (emitters write raw content, no metadata envelope) and
+     UNPACK (write embedded bytes out). All three are wired through tika-app
+     and tika-server (TIKA-4631, TIKA-4637, TIKA-4656).
+
+   * New tika-pipes plugins: an Elasticsearch emitter (TIKA-4672), an
+     Atlassian JWT fetcher (TIKA-4604), Google Drive, Microsoft Graph, Azure
+     Blob, JSON and HTTP plugins, and an Apache Ignite ConfigStore for
+     runtime fetcher/emitter configuration (TIKA-4583, TIKA-4587, TIKA-4598).
+
+   * New inference and OCR modules: tika-inference and tika-vlm add
+     vision-language-model parsers (Claude, Gemini, OpenAI) that emit
+     vlm:prompt-tokens / vlm:completion-tokens, and
+     tika-parser-tess4j-module adds in-process Tesseract OCR
+     (TIKA-4665, TIKA-4666, TIKA-4667, TIKA-4690).
+
+   * Unified XMP extraction across containers; adds HEIF/HEIC and WebP XMP,
+     including Samsung/Google Motion Photo (TIKA-4775).
+
    * tika-app and tika-server can load extra jars (additional EncodingDetectors,
      Parsers, etc.) from the directory named by the -Dtika.extras.dir system
-     property, without repackaging the application. Off by default; the directory
-     is a trusted code location whose contents run with full process privileges.
-     The extra jars are also forwarded onto forked pipes/server worker processes,
-     so they are available where parsing actually happens (TIKA-4755).
+     property, without repackaging the application. Off by default; the
+     directory is a trusted code location whose contents run with full process
+     privileges. The jars are forwarded onto forked pipes/server workers too,
+     so they are available where parsing happens (TIKA-4755).
 
-   * More granular, default-deny capability flags for tika-server and tika-grpc.
-     tika-server's enableUnsecureFeatures is split into allowPipes (gates the
-     /pipes and /async endpoints) and allowPerRequestConfig (gates the /config
-     endpoints and the multipart config part); the /status endpoint is no longer
-     gated and is enabled simply by listing it under endpoints. tika-grpc gains
-     the same allowPerRequestConfig flag plus allowComponentModifications (gates
-     runtime Save/Delete of fetchers and pipes iterators). All flags default to
-     false, so an out-of-the-box tika-grpc server no longer accepts per-request
-     configuration or runtime store mutations (TIKA-4764).
+   * A Markdown parser with structured, lossless XHTML output, complementing
+     the Markdown content handler (TIKA-4770).
+
+   * Content-based detection of ASN.1/DER crypto containers, enabled by
+     default: the PKCS#7/CMS, PKCS#12 and RFC 5544 timestamped-data families
+     gained magic where 3.x had globs only, and Pkcs7Parser refines the
+     smime-type on the output Content-Type at parse time. Files that detected
+     as application/octet-stream in 3.x may now detect as a crypto type; see
+     configuration/detectors.adoc for the opt-in detect-time refinement
+     (TIKA-1997, TIKA-2856).
+
+   * New detection: Android binary XML (application/vnd.android.axml,
+     TIKA-4747) and Frictionless Data packages (TIKA-4643); improved mp3/aac
+     (TIKA-4612) and grib (TIKA-4655) detection.
 
   OTHER CHANGES
+
+   * Dependency upgrades since 4.0.0-beta-1, including Jetty 12.1.12, CXF
+     4.2.3 and SolrJ 10.0.0 (TIKA-4327).
 
    * Release artifacts are now channel-specific. Maven Central gets slim
      per-module jars (plus pom, sources and javadoc); the Apache dist area
      gets runnable zip distributions (tika-app, tika-server-standard,
      tika-eval-app) and drop-in pf4j plugin zips; Docker Hub gets ready-to-run
-     images. Fat/shaded artifacts no longer go to Maven Central, and release
-     staging is validated so a missing artifact fails the build (TIKA-4733).
+     images. Fat/shaded artifacts no longer go to Maven Central (TIKA-4733).
 
-   * Improved charset (encoding) detection and junk/garbage-text detection,
-     including more efficient common-token lookups via bloom filters
-     (TIKA-4731, TIKA-4745, TIKA-4754).
+   * The charset, junk-text and language detection stack was rewritten:
+     language-aware charset detection, a universal junk detector, wider
+     Unicode handling, the new CharSoup language detector, and more efficient
+     common-token lookups via bloom filters (TIKA-4662, TIKA-4671, TIKA-4675,
+     TIKA-4691, TIKA-4719, TIKA-4731, TIKA-4745, TIKA-4754, TIKA-4810).
 
-   * Dependency upgrades, including Jetty 11 -> 12.0.36,
-     CXF 4.0 -> 4.1.7, plus routine library updates (TIKA-4327).
+   * Pipes now carries small documents to the forked worker inside the request
+     instead of writing them to disk first. Content at or below the new
+     pipes.maxInlineBytes (default 10 MB) rides in the request and is served in
+     the worker by the reserved __bytes fetcher, touching no disk; larger
+     content is written out once as before, and a stream already backed by a
+     file keeps its file. Set maxInlineBytes to 0 to spool every non-empty body
+     (TIKA-4808).
+
+   * PipesClient/PipesServer IPC now enforces a configurable payload limit
+     (pipes.maxIpcPayloadBytes, default 100 MB) in both directions. Results
+     that exceed the limit return PAYLOAD_LIMIT_EXCEEDED instead of causing
+     heap exhaustion; crash messages are also size-capped (TIKA-4793).
+
+   * tika-server requests now carry only their own parse-context entries to the
+     forked worker, which supplies the config defaults itself. Previously the
+     server sent its config's parse-context with every request, so the worker
+     treated the operator's timeout-limits as caller input and clamped them at
+     pipes.maxTotalTaskTimeoutMillis (TIKA-4808).
+
+   * tika-grpc now routes fetchAndParse through the PipesParser client pool
+     instead of one shared single-threaded PipesClient: concurrent calls no
+     longer crash the worker, pipes.numClients and (for the first time)
+     pipes.useSharedServer take effect, and pool saturation surfaces in-band as
+     CLIENT_UNAVAILABLE_WITHIN_MS. An interrupted call recycles its worker, so a
+     pooled client cannot go back to the queue dirty (TIKA-4815).
+     fetchAndParseServerSideStreaming now completes the call after delivering
+     its reply, instead of leaving the client waiting forever (TIKA-4804).
+
+   * New audio/video metadata: audio:bitrate, audio:is-variable-bitrate,
+     audio:has-drm, audio:channels, video:frame-rate, video:bitrate and MP4
+     sample size; ID3 TCOP and Vorbis COPYRIGHT map to xmpDM:copyright, EXIF
+     GPS altitude maps to geo:alt, and the presentation start of delayed
+     QuickTime timed-metadata tracks is exposed (TIKA-4777, TIKA-4779,
+     TIKA-4780, TIKA-4781, TIKA-4800, TIKA-4802).
+
+   * Parsing and robustness fixes across formats: CHM (TIKA-4783), ID3 UTF-16
+     (TIKA-4784), MPEG2/2.5 Layer III frame sizing (TIKA-4791), .doc empty
+     comments (TIKA-4718), OOXML hyphenation and field-code hyperlinks
+     (TIKA-4646, TIKA-4683), RTF attachments in HTML decapsulation
+     (TIKA-4710), image extraction (TIKA-4736), embedded-file extension
+     calculation (TIKA-4808), and general media-file robustness (TIKA-4812).
+     MAPI properties no longer overwrite better-fitting Dublin Core terms
+     (TIKA-4806). Embedded-file naming was streamlined (TIKA-4689).
+
+   * PDFs whose %PDF- header is preceded by a print-composition job ticket are
+     no longer detected as text/x-matlab: up to 50 %% comment or blank lines may
+     now precede it, extending the TIKA-3328 rule past its 512-byte reach
+     (TIKA-4782).
+
+   * MagicDetector now compiles its regular expression once, in the
+     constructor, instead of recompiling it on every match (TIKA-4796).
+
+   * tika-eval-core is no longer published as a fat jar (TIKA-4414) and
+     tika-grpc no longer shades gRPC (TIKA-4709).
+
+   * Fix concurrency bug in TikaToXMP (TIKA-4393).
+
+
+Release 4.0.0-beta-1 - 6/29/2026
+
+  Prerelease. Its changes are folded into the 4.0.0 section above.
 
 
 Release 4.0.0-alpha-1 - 5/4/2026
 
-  BREAKING CHANGES
+  Prerelease. Its changes are folded into the 4.0.0 section above.
 
-   * Move from xml to json based configuration (TIKA-4544 and many others).
-
-   * tika-pipes implementation modules have been reorganized by
-     resource (tika-pipes-solr) vs task (tika-pipes-fetcher-solr)
-     (TIKA-4543). Note that the file-system pipes components have
-     been taken out of tika-pipes-core and placed in their own
-     pf4j module: tika-pipes-file-system.
-
-   * tika-pipes implementation modules are now pf4j plugins (TIKA-4519).
-
-   * tika-pipes core classes have been moved to a new module: tika-pipes-core,
-     and the FileSystem pipes components have moved (TIKA-4334).
-
-   * MetadataListFilter has been renamed MetadataFilter, and
-     MetadataFilter has been removed (TIKA-4546).
-
-   * Removed several modules, including: tika-batch (TIKA-4333), snaps deployment (TIKA-4502),
-     dotnet (TIKA-4332), advanced media module (TIKA-4500), tika-dl module (TIKA-4499),
-     tika-fuzzing module (TIKA-4506).
-
-   * Headers are no longer injected into the body/content of MSG files (TIKA-4345). Please open
-     a ticket if you need this behavior across email formats.
-
-   * API changes in the EmbeddedStreamTranslator (TIKA-4518).
-
-   * Removed DigestingParser (TIKA-4607).
-
-   * tika-parsers-standard-package is now a pom, not a jar.
-     Users must add <type>pom</type> in Maven or @pom in Gradle (TIKA-4712).
-
-   * Removed legacy ExternalParser; external parsers now require explicit
-     JSON configuration (TIKA-4707).
-
-  OTHER CHANGES
-
-   * Fix concurrency bug in TikaToXMP (TIKA-4393)
 
 Release 3.3.0 - 3/18/2026
 
@@ -221,7 +765,7 @@ Release 3.0.0-BETA - 12/01/2023
    * Improve detection of sqlite3-based file formats (TIKA-4187).
 
    * Upgrade PDFBox to 3.0.1 (TIKA-3347)
-   
+
    * Deprecated AbstractParser for removal in 4.x (TIKA-4132).
 
    * Fix bug in DateUtils that stripped timezone information from
@@ -243,11 +787,11 @@ Release 2.9.0 - 8/23/2023
    * Add detection of warc.gz as a specialization of gz and parse as if a standard WARC (TIKA-4048).
 
    * Allow users to modify the attachment limit size in the /unpack resource (TIKA-4039)
-   
+
    * Fixed write limit bug in RecursiveParserWrapper (TIKA-4055).
 
    * Add mime detection for many files with thanks to Gregory Lepore (TIKA-3992).
-   
+
    * Fixed iWork 13 keynote detection on files with wrong extension (TIKA-4111).
 
 Release 2.8.0 - 5/11/2023
@@ -591,7 +1135,7 @@ Release 2.2.0 - 12/13/2021
      detectors (TIKA-3556).
 
    * Improve robustness and features of the httpfetcher (TIKA-3543)
-   
+
    * Add optional fetch ranges to FetchEmitTuple to allow range fetching from,
         e.g. http or s3 (TIKA-3542).
 
@@ -648,7 +1192,7 @@ Release 2.0.0 - 07/07/2021
    * Update dependencies.
 
 Release 2.0.0-BETA - 05/19/2021
-   
+
    * Refactor pipes module for resilience
 
    * Add transcribe capability (TIKA-94).
@@ -858,7 +1402,7 @@ Release 1.24 - 3/11/2019
    * Upgrade to PDFBox 2.0.19 (TIKA-3033).
 
    * Fix bug in ASM parser configuration (TIKA-2992).
-   
+
    * Upgrade to java-libpst 0.9.3 (TIKA-2546).
 
    * Fixed XLIFF12Parser failures with ToXMLHandler (TIKA-3014).
@@ -890,7 +1434,7 @@ Release 1.23 - 12/02/2019
      and xml-root detection for XFDF (TIKA-2990) and XDP (TIKA-2989).
 
    * Add an XLZ Parser (TIKA-2976).
-   
+
    * Fix deadlock with ForkParser when InputStream throws IOException (TIKA-2892).
 
 Release 1.22 - 07/29/2019
@@ -1098,7 +1642,7 @@ Release 1.18 - 4/20/2018
      from org.apache.pdfbox (TIKA-2579 and TIKA-2607).
 
    * Support for TIFF images in PDF files (TIKA-2338)
-   
+
    * Detection of full encrypted 7z files (TIKA-2568)
 
    * Various new mimes and typo fixes in tika-mimetypes.xml
@@ -1186,7 +1730,7 @@ Release 1.17 - 12/8/2017
 
   * Extract media files from ooxml (TIKA-2510).
 
-  * Standardize the way the Image and Video captioning 
+  * Standardize the way the Image and Video captioning
     dockers and extraction work (TIKA-2400, GitHub-208)
 
   * Upgrade to xmpcore 5.1.3 (TIKA-2034).
@@ -1224,13 +1768,13 @@ Release 1.17 - 12/8/2017
 
   * Enabling extraction of standard references from text (TIKA-2449).
 
-  * Load external custom mimetypes XML from system property 
-    tika.custom-mimetypes (TIKA-2460). 
+  * Load external custom mimetypes XML from system property
+    tika.custom-mimetypes (TIKA-2460).
 
   * Extract number of tiffs in a multi-page tiff (TIKA-2451).
 
   * Fix detection of emails extracted from mbox (TIKA-2456).
-  
+
   * Add OverrideDetector and allow PSTParser to specify body content type
     as text or html -- to avoid incorrect auto-detection of
     rfc/mbox, etc. (TIKA-2454)
@@ -1251,7 +1795,7 @@ Release 1.17 - 12/8/2017
 
   * Tika now has support for automatic image captioning, that
     combines Computer Vision and Natural Language Processing to
-    automatically generate a readable caption for an image 
+    automatically generate a readable caption for an image
     (TIKA-2262, TIKA-2355, TIKA-2402, Gh-198, Gh-196, Gh-189).
 
   * Add TestCorruptedFiles to allow devs to test parsers against
@@ -1266,8 +1810,8 @@ Release 1.17 - 12/8/2017
     as well as strikethrough extraction in docx (TIKA-2347, GitHub-173)
 
   * Corrected Tesseract OCR rotation.py script and made it a configurable
-    option via Peter Weiss (TIKA-2385) 
- 
+    option via Peter Weiss (TIKA-2385)
+
 Release 1.16 - 7/7/2017
 
   * Exclude jj2000 from edu.ucar grip to avoid potential
@@ -1279,7 +1823,7 @@ Release 1.16 - 7/7/2017
 
   * Add Tika Deep Learning support for the VGG16 model for
     Very Deep Convolutional Networks for Large-Scale Image Recognition.
-    Now Tika supports both Inception v3/v4 and VGG16 based image 
+    Now Tika supports both Inception v3/v4 and VGG16 based image
     recognition (TIKA-2298).
 
   * Extract macros from PPT (TIKA-2089).
@@ -1338,15 +1882,15 @@ Release 1.16 - 7/7/2017
 
 Release 1.15 - 05/23/2017
 
-  * Tika now has a module for Deep Learning powered by the 
+  * Tika now has a module for Deep Learning powered by the
     DL4J toolkit. The initial included model is for InceptionV3
-    and so using this module, natively in Java, Tika can use 
+    and so using this module, natively in Java, Tika can use
     Deep learning for metadata/text extraction from Images using
     the power of the Inception model (Github-165).
 
-  * A new parser for sentiment analysis using a categorical 
+  * A new parser for sentiment analysis using a categorical
     (multi-class, anry, sad, neutral, like, love) and binary
-    (positive/negative) was added leveraging the USC data 
+    (positive/negative) was added leveraging the USC data
     science work (TIKA-2016).
 
   * Tika now has the ability to automatically detect objects in videos,
@@ -1451,7 +1995,7 @@ Release 1.15 - 05/23/2017
 
   * Further mime magic for WebVTT (TIKA-1772)
 
-  * Extend support for increased PSM options up to 13 for modern 
+  * Extend support for increased PSM options up to 13 for modern
     versions of Tesseract (TIKA-2357).
 
   * Prevent potential resource leak by closing TrueTypeFont
@@ -1484,8 +2028,8 @@ Release 1.14 - 10/19/2016
   * Fix hyperlinks with formatting in DOC and DOCX (TIKA-1255
     and TIKA-2078)
 
-  * Tika now is integrated with the Tensorflow library from Google 
-    and it can use its Inception v3 image classification model to 
+  * Tika now is integrated with the Tensorflow library from Google
+    and it can use its Inception v3 image classification model to
     identify objects in images (TIKA-1993).
 
   * Parser configuration is now type-safe and parameters for parsers
@@ -1504,7 +2048,7 @@ Release 1.14 - 10/19/2016
   * Avoid mark/reset issues when extracting or detecting embedded resources
     in RFC822 emails (TIKA-2037).
 
-  * Improving accuracy of Tesseract for better extraction of numeric 
+  * Improving accuracy of Tesseract for better extraction of numeric
     and alphanumeric text from images (TIKA-2021, TIKA-2031).
 
   * Improve extraction of embedded documents from PPT, PPTX and XLSX
@@ -1527,7 +2071,7 @@ Release 1.14 - 10/19/2016
   * Integrate TesseractOCR with full page image rendering for PDFs (TIKA-1994).
 
   * Add mime detection via Nick C and parser for DBF files (TIKA-1513).
-  
+
   * Add mime detection and parsers for MSOffice 2003 XML Word
     and Excel formats (TIKA-1958).
 
@@ -1550,22 +2094,22 @@ Release 1.13 - 05/08/2016
     Recognition (NER) system is now supported in Tika
     (TIKA-1913, GitHub-108).
 
-  * Tika now supports the use of the Yandex translation 
+  * Tika now supports the use of the Yandex translation
     service (TIKA-1943, GitHub-106).
 
   * Tika now uses NER to extract scientific measurements
-    from text using either GROBID Quantities which uses 
-    conditional random fields and NLTK which uses regular 
+    from text using either GROBID Quantities which uses
+    conditional random fields and NLTK which uses regular
     expressesions (TIKA-1917, GitHub-104).
 
-  * Fixed JournalParser to handle null responses from 
+  * Fixed JournalParser to handle null responses from
     GROBID and to log a message (TIKA-1925).
 
   * Refactored Language Detector into tika-landetect module,
     added default N-Gram implementation, Optimaize Lang
-    Detector and MIT Text.jl implementation 
+    Detector and MIT Text.jl implementation
     (TIKA-1872, TIKA-1696, TIKA-1723).
- 
+
   * Extract metadata from MP4 videos whether or not the
     PooledTimeSeries parser is available via Aditya Dhulipala
     (TIKA-1844).
@@ -1626,9 +2170,9 @@ Release 1.13 - 05/08/2016
   * RichTextContentHandler moved from the Server package to Core (TIKA-1870).
 
   * Added ZeroSizeFileDetector to support application/x-zerovalue via
-    Adesh Gupta (TIKA-1885).  
-  
-  * Addition of types information to Grobid quantities parser via 
+    Adesh Gupta (TIKA-1885).
+
+  * Addition of types information to Grobid quantities parser via
     Can Menekse (TIKA-1965).
 
 Release 1.12 - 01/24/2016
@@ -1645,7 +2189,7 @@ Release 1.12 - 01/24/2016
   * Fix bug in GeoTopicParser where NER is reused instead of instantiated
     with each request (TIKA-1834).
 
-  * Upgrade rome to 1.5.1 && Downgrade Rome dependency to 0.9 to avoid 
+  * Upgrade rome to 1.5.1 && Downgrade Rome dependency to 0.9 to avoid
     nasty NPE (TIKA-1820, TIKA-1516)
 
   * The NamedEntityParser was enhanced to generate text content
@@ -1655,7 +2199,7 @@ Release 1.12 - 01/24/2016
     using the new REST server capabilities from Lucene Geo
     Gazetteer (TIKA-1803).
 
-  * A parser to compute motion properties in Videos, e.g., 
+  * A parser to compute motion properties in Videos, e.g.,
     Histogram of Oriented Gradients and Histogram of Optical Flows
     using the Pooled Time Series algorithm, was added (TIKA-1798).
 
@@ -1663,7 +2207,7 @@ Release 1.12 - 01/24/2016
     from OpenNLP and Stanford NER providers (TIKA-1787, GitHub-61,
     GitHub-62).
 
-  * Allow XHTMLContentHandler to pass attributes of html element 
+  * Allow XHTMLContentHandler to pass attributes of html element
     via Markus Jelsma (TIKA-1782).
 
   * Fix regression with spacing in PPT via Andreas Beeker (TIKA-1777).
@@ -1688,16 +2232,16 @@ Release 1.11 - 10/18/2015
 
   * Upgrade to Jackcess Encrypt 2.1.1 to avoid binary incompatibility
     with Bouncy Castle (TIKA-1736).
-  
-  * Make div and other markup more consistent between PPT and 
+
+  * Make div and other markup more consistent between PPT and
     PPTX (TIKA-1755).
 
   * Parse multiple authors from MSOffice's semi-colon delimited
     author field (TIKA-1765).
-  
-  * Include CTAKESConfig.properties within tika-parsers resources 
+
+  * Include CTAKESConfig.properties within tika-parsers resources
     by default (TIKA-1741).
-  
+
   * Prevent infinite recursion when processing inline images
     in PDF files by limiting extraction of duplicate images
     within the same page (TIKA-1742).
@@ -1710,11 +2254,11 @@ Release 1.11 - 10/18/2015
   * Upgraded to Path in TikaInputStream (via Yaniv Kunda) (TIKA-1744).
 
   * Changed default content handler type for "/rmeta" in tika-server
-    to "xml" to align with "-J" option in tika-app.  
+    to "xml" to align with "-J" option in tika-app.
     Clients can now specify handler types via PathParam. (TIKA-1716).
 
   * The fantastic GROBID (or Grobid) GeneRation Of BIbliographic Data
-    for machine learning from PDF files is now integrated as a 
+    for machine learning from PDF files is now integrated as a
     Tika parser (TIKA-1699, TIKA-1712).
 
   * The ability to specify the Tesseract Config Path was added
@@ -1722,7 +2266,7 @@ Release 1.11 - 10/18/2015
 
   * Upgraded to ASM 5.0.4 (TIKA-1705).
 
-  * Corrected Tika Config XML detector definition explicit loading 
+  * Corrected Tika Config XML detector definition explicit loading
     of MimeTypes (TIKA-1708)
 
   * In Tika Parsers, Batch, Server, App and Examples, use Apache
@@ -1739,31 +2283,31 @@ Release 1.10 - 8/1/2015
     and exclude detectors that DefaultDetector would otherwise
     have used. This brings support in-line with Parsers. (TIKA-1702)
 
-  * Reverted to legacy sort order of parsers that was 
+  * Reverted to legacy sort order of parsers that was
     mistakenly reversed in Tika 1.9 (TIKA-1689).
 
   * Upgrade to POI 3.13-beta1 (TIKA-1667).
 
   * Upgrade to PDFBox 1.8.10 (TIKA-1588).
 
-  * MimeTypes now tries to find a registered type with and 
+  * MimeTypes now tries to find a registered type with and
     without parameters (TIKA-1692).
 
   * Added more robust error handling for encoding detection
     of .MSG files (TIKA-1238).
 
-  * Fixed bug in Tika's use of the Jackcess parser that 
+  * Fixed bug in Tika's use of the Jackcess parser that
     prevented reading of v97 Access files (TIKA-1681).
 
-  * Upgrade xerial.org's sqlite-jdbc to 3.8.10.1. NOTE: 
-    as of Tika 1.9, this jar is "provided." Make sure 
+  * Upgrade xerial.org's sqlite-jdbc to 3.8.10.1. NOTE:
+    as of Tika 1.9, this jar is "provided." Make sure
     to upgrade your provided jar! (TIKA-1687).
 
   * Add header/footer extraction to xls (via Aeham Abushwashi)
     (TIKA-1400).
 
   * Drop the source file name from the embedded file path in
-    RecursiveParserWrapper's "X-TIKA:embedded_resource_path" 
+    RecursiveParserWrapper's "X-TIKA:embedded_resource_path"
     (TIKA-1673).
 
   * Upgraded to Java 7 (TIKA-1536).
@@ -1771,14 +2315,14 @@ Release 1.10 - 8/1/2015
   * Non-standards compliant emails are now correctly detected
     as message/rfc822 (TIKA-1602).
 
-  * Added parser for MS Access files via Jackcess. Many thanks 
-    to Health Market Science, Brian O'Neill and James Ahlborn 
+  * Added parser for MS Access files via Jackcess. Many thanks
+    to Health Market Science, Brian O'Neill and James Ahlborn
     for relicensing Jackcess to Apache v2! (TIKA-1601)
 
-  * GDALParser now correctly sets "nitf" as a supported 
+  * GDALParser now correctly sets "nitf" as a supported
     MediaType (TIKA-1664).
 
-  * Added DigestingParser to calculate digest hashes 
+  * Added DigestingParser to calculate digest hashes
     and record them in metadata. Integrated with
     tika-app and tika-server (TIKA-1663).
 
@@ -1789,7 +2333,7 @@ Release 1.10 - 8/1/2015
 Release 1.9 - 6/6/2015
 
   * The ability to use the cTAKES clinical text
-    knowledge extraction system for biomedical data is 
+    knowledge extraction system for biomedical data is
     now included as a Tika parser (TIKA-1645, TIKA-1642).
 
   * Tika-server allows a user to specify the Tika config
@@ -1800,26 +2344,26 @@ Release 1.9 - 6/6/2015
   * The EXIFTool was added as an External parser
     (TIKA-1639).
 
-  * If FFMPEG is installed and on the PATH, it is a 
+  * If FFMPEG is installed and on the PATH, it is a
     usable Parser in Tika now (TIKA-1510).
 
   * Fixes have been applied to the ExternalParser to make
     it functional (TIKA-1638).
 
-  * Tika service loading can now be more verbose with the 
+  * Tika service loading can now be more verbose with the
     org.apache.tika.service.error.warn system property (TIKA-1636).
 
   * Tika Server now allows for metadata extraction from remote
     URLs and in addition it outputs the detected language as a
     metadata field (TIKA-1625).
 
-  * OUTPUT_FILE_TOKEN not being replaced in ExternalParser 
+  * OUTPUT_FILE_TOKEN not being replaced in ExternalParser
     contributed by Pascal Essiembre (TIKA-1620).
 
   * Tika REST server now supports language identification
     (TIKA-1622).
 
-  * All of the example code from the Tika in Action book has 
+  * All of the example code from the Tika in Action book has
     been donated to Tika and added to tika-examples (TIKA-1562).
 
   * Tika server now logs errors determining ContentDisposition
@@ -1833,15 +2377,15 @@ Release 1.9 - 6/6/2015
     means was added (TIKA-1517).
 
   * Tika now incorporates the Apache Spatial Information
-    System capability of parsing Geographic ISO 19139 
+    System capability of parsing Geographic ISO 19139
     files (TIKA-443). It can also detect those files as
     well.
 
   * Update the MimeTypes code to support inheritance
     (TIKA-1535).
 
-  * Provide ability to parse and identify Global Change 
-    Master Directory Interchange Format (GCMD DIF) 
+  * Provide ability to parse and identify Global Change
+    Master Directory Interchange Format (GCMD DIF)
     scientific data files (TIKA-1532).
 
   * Improvements to detect CBOR files by extension (TIKA-1610).
@@ -1874,20 +2418,20 @@ Release 1.8 - 4/13/2015
 
   * Update jhighlight dependency to avoid using LGPL license. Thank
     @kkrugler for his great contribution (TIKA-1581).
-  
-  * Updated HDF and NetCDF parsers to output file version in 
+
+  * Updated HDF and NetCDF parsers to output file version in
     metadata (TIKA-1578 and TIKA-1579).
 
   * Upgraded to POI 3.12-beta1 (TIKA-1531).
 
   * Added tika-batch module for directory to directory batch
-    processing.  This is a new, experimental capability, and the API will 
+    processing.  This is a new, experimental capability, and the API will
     likely change in future releases (TIKA-1330).
 
   * Translator.translate() Exceptions are now restricted to
     TikaException and IOException (TIKA-1416).
 
-  * Tika now supports MIME detection for Microsoft Extended 
+  * Tika now supports MIME detection for Microsoft Extended
     Makefiles (EMF) (TIKA-1554).
 
   * Tika has improved delineation in XML and HTML MIME detection
@@ -1903,7 +2447,7 @@ Release 1.8 - 4/13/2015
     org.apache.tika.server.resource and writer packages (TIKA-1564).
 
   * Upgrade UCAR dependencies to 4.5.5 (TIKA-1571).
-  
+
   * Fix Paths in Tika server welcome page (TIKA-1567).
 
   * Fixed infinite recursion while parsing some PDFs (TIKA-1038).
@@ -1931,25 +2475,25 @@ Release 1.8 - 4/13/2015
 
   * The ForkParser service removed from Activator. Rollback of (TIKA-1354).
 
-  * Increased the speed of language identification by 
+  * Increased the speed of language identification by
     a factor of two -- contributed by Toke Eskildsen (TIKA-1549).
 
-  * Added parser for Sqlite3 db files. Some users will need to 
+  * Added parser for Sqlite3 db files. Some users will need to
     exclude the dependency on xerial.org's sqlite-jdbc because
     it contains native libs (TIKA-1511).
 
   * Use POST instead of PUT for tika-server form methods
     (TIKA-1547).
 
-  * A basic wrapper around the UNIX file command was 
-    added to extract Strings. In addition a parse to 
+  * A basic wrapper around the UNIX file command was
+    added to extract Strings. In addition a parse to
     handle Strings parsing from octet-streams using Latin1
     charsets as added (TIKA-1541, TIKA-1483).
 
   * Add test files and detection mechanism for Gridded
     Binary (GRIB) files (TIKA-1539).
 
-  * The RAR parser was updated to handle Chinese characters 
+  * The RAR parser was updated to handle Chinese characters
     using the functionality provided by allowing encoding to
     be used within ZipArchiveInputStream (TIKA-936).
 
@@ -1968,7 +2512,7 @@ Release 1.8 - 4/13/2015
 
 Release 1.7 - 1/9/2015
 
-  * Fixed resource leak in OutlookPSTParser that caused TikaException 
+  * Fixed resource leak in OutlookPSTParser that caused TikaException
     when invoked via AutoDetectParser on Windows (TIKA-1506).
 
   * HTML tags are properly stripped from content by FeedParser
@@ -1979,16 +2523,16 @@ Release 1.7 - 1/9/2015
 
   * Tika Server support for JSON and XMP views of metadata (TIKA-1497).
 
-  * Tika Parent uses dependency management to keep duplicate 
+  * Tika Parent uses dependency management to keep duplicate
     dependencies in different modules the same version (TIKA-1384).
 
   * Upgraded slf4j to version 1.7.7 (TIKA-1496).
 
   * Tika Server support for RecursiveParserWrapper's JSON output
-    (endpoint=rmeta) equivalent to (TIKA-1451's) -J option 
+    (endpoint=rmeta) equivalent to (TIKA-1451's) -J option
     in tika-app (TIKA-1498).
 
-  * Tika Server support for providing the password for files on a 
+  * Tika Server support for providing the password for files on a
     per-request basis through the Password http header (TIKA-1494).
 
   * Simple support for the BPG (Better Portable Graphics) image format
@@ -2013,19 +2557,19 @@ Release 1.7 - 1/9/2015
 
   * Thread safety issues in ImageMetadataExtractor were resolved
     (TIKA-1369).
- 
+
   * The ForkParser service is now registered in Activator
     (TIKA-1354).
 
   * The Rome Library was upgraded to version 1.5 (TIKA-1435).
 
   * Add markup for files embedded in PDFs (TIKA-1427).
- 
+
   * Extract files embedded in annotations in PDFS (TIKA-1433).
 
   * Upgrade to PDFBox 1.8.8 (TIKA-1419, TIKA-1442).
 
-  * Add RecursiveParserWrapper (aka Jukka's and Nick's) 
+  * Add RecursiveParserWrapper (aka Jukka's and Nick's)
     RecursiveMetadataParser (TIKA-1329)
 
   * Add example for how to dump TikaConfig to XML (TIKA-1418).
@@ -2067,12 +2611,12 @@ Release 1.6 - 08/31/2014
 
   * Tika now supports detection of the Persian/Farsi language.
     (TIKA-1337)
-  
+
   * The Tika Detector interface is now exposed through the JAX-RS
     server (TIKA-1336, TIKA-1336).
 
-  * Tika now has support for parsing binary Matlab files as part of 
-    our larger effort to increase the number of scientific data formats 
+  * Tika now has support for parsing binary Matlab files as part of
+    our larger effort to increase the number of scientific data formats
     supported. (TIKA-1327)
 
   * The Tika Server URLs for the unpacker resources have been changed,
@@ -2101,7 +2645,7 @@ Release 1.6 - 08/31/2014
     based (TIKA-1204, TIKA-1221)
 
   * Added a user facing welcome page to the Tika Server, which
-    says what it is, and a very brief summary of what is available. 
+    says what it is, and a very brief summary of what is available.
     (TIKA-1269)
 
   * Added Tika Server endpoints to list the available mime types,
@@ -2115,7 +2659,7 @@ Release 1.6 - 08/31/2014
   * Extract attachments from RTF files (TIKA-1010)
 
   * Support Outlook Personal Folders File Format *.pst (TIKA-623)
-  
+
   * Added mime entries for additional Ogg based formats (TIKA-1259)
 
   * Updated the Ogg Vorbis plugin to v0.4, which adds detection for a wider
@@ -2135,7 +2679,7 @@ Release 1.5 - 02/04/2014
   * Fixed bug in handling of embedded file processing in PDFs (TIKA-1228).
 
   * Added SourceCodeParser to support java, Groovy, C++ files (TIKA-1224).
-  
+
   * Updated Tika Server to support multipart/form-data payloads (TIKA-1198).
 
   * Updated Tika Server to CXF 2.7.8 (TIKA-1197).
@@ -2149,9 +2693,9 @@ Release 1.5 - 02/04/2014
   * Fixed invalid asterisks from master slide in PPT (TIKA-1171).
 
   * Added test cases to confirm handling of auto-date in PPT and PPTX (TIKA-817).
- 
+
   * Text from tables in PPT files is once again extracted correctly (TIKA-1076).
-  
+
   * Text is extracted from text boxes in XLSX (TIKA-1100).
 
   * Tika no longer hangs when processing Excel files with custom fraction format (TIKA-1132).
@@ -2162,7 +2706,7 @@ Release 1.5 - 02/04/2014
 
   * Upgraded PDFBox to 1.8.4 (TIKA-1230).
 
-  * Made HtmlEncodingDetector more flexible in finding meta 
+  * Made HtmlEncodingDetector more flexible in finding meta
     header charset (TIKA-1001).
 
   * Added sanitized test HTML file for local file test (TIKA-1139).
@@ -2187,7 +2731,7 @@ Release 1.4 - 06/15/2013
   * Improvements were made to the Compressor Parser to handle g'zipped files
     that require the decompressConcatenated option set to true (TIKA-1096).
 
-  * Addressed a typographic error that was preventing from detection of 
+  * Addressed a typographic error that was preventing from detection of
     awk files (TIKA-1081).
 
   * Added a new end-point to Tika's JAX-RS REST server that only detects
@@ -2294,7 +2838,7 @@ Release 1.2 - 07/10/2012
   * Tika: parseToString now lets you specify the max string length
     per-call, in addition to per-Tika-instance. (TIKA-870)
 
-  * Tika now has the ability to detect FITS (Flexible Image Transport System) 
+  * Tika now has the ability to detect FITS (Flexible Image Transport System)
     files (TIKA-874).
 
   * Images: Fixed file handle leak in ImageParser. (TIKA-875)
@@ -2343,7 +2887,7 @@ Release 1.2 - 07/10/2012
 Release 1.1 - 3/7/2012
 ---------------------------------
 
- * Link Extraction: The rel attribute is now extracted from 
+ * Link Extraction: The rel attribute is now extracted from
    links per the LinkConteHandler. (TIKA-824)
 
  * MP3: Fixed handling of UTF-16 (two byte) ID3v2 tags (previously
@@ -2398,7 +2942,7 @@ Release 1.1 - 3/7/2012
    (such as Artist and Title) (TIKA-852)
 
  * Document Passwords: A new ParseContext object, PasswordProvider,
-   has been added. This provides a way to supply the password for 
+   has been added. This provides a way to supply the password for
    a document during processing. Currently, only password protected
    PDFs and Microsoft OOXML Files are supported. (TIKA-850)
 
@@ -2443,10 +2987,10 @@ The most notable changes in Tika 1.0 over previous releases are:
  * MS Office: Performance of extracting embedded office docs was improved.
    (TIKA-753)
 
- * PDF: The PDF parser now extracts paragraphs within each page 
-   (TIKA-742) and  can now optionally extract text from PDF 
-   annotations (TIKA-738). There's also an option to enable (the 
-   default) or disable auto-space insertion (TIKA-724). 
+ * PDF: The PDF parser now extracts paragraphs within each page
+   (TIKA-742) and  can now optionally extract text from PDF
+   annotations (TIKA-738). There's also an option to enable (the
+   default) or disable auto-space insertion (TIKA-724).
 
  * Language detection: Tika can now detect Belarusian, Catalan,
    Esperanto, Galician, Lithuanian (TIKA-582), Romanian, Slovak,
@@ -2512,7 +3056,7 @@ Ken Krugler
 Mark Butler
 Maxim Valyanskiy
 Michael Bryant
-Michael McCandless 
+Michael McCandless
 Nick Burch
 Pablo Queixalos
 Uwe Schindler
@@ -2656,25 +3200,25 @@ Release 0.9 - 02/13/2011
 
 The most notable changes in Tika 0.9 over previous releases are:
 
- * A critical bugfix preventing metadata from printing to the 
-   command line when the underlying Parser didn't generate 
+ * A critical bugfix preventing metadata from printing to the
+   command line when the underlying Parser didn't generate
    XHTML output was fixed. (TIKA-596)
-   
- * The 0.8 version of Tika included a NetCDF jar file that pulled 
-   in tremendous amounts of redundant dependencies. This has 
-   been addressed in Tika 0.9 by republishing a minimal NetCDF 
+
+ * The 0.8 version of Tika included a NetCDF jar file that pulled
+   in tremendous amounts of redundant dependencies. This has
+   been addressed in Tika 0.9 by republishing a minimal NetCDF
    jar and changing Tika to depend on that. (TIKA-556)
-   
- * MIME detection for iWork, and OpenXML documents has been 
+
+ * MIME detection for iWork, and OpenXML documents has been
    improved. (TIKA-533, TIKA-562, TIKA-588)
-   
- * A critical backwards incompatible bug in PDF parsing that 
+
+ * A critical backwards incompatible bug in PDF parsing that
    was introduced in Tika 0.8 has been fixed. (TIKA-548)
-   
- * Support for forked parsing in separate processes was added. 
+
+ * Support for forked parsing in separate processes was added.
    (TIKA-416)
- 
- * Tika's language identifier now supports the Lithuanian 
+
+ * Tika's language identifier now supports the Lithuanian
    language. (TIKA-582)
 
 Tika 0.9 relies on the following set of major dependencies (generated using
@@ -2752,7 +3296,7 @@ Release 0.8 - 11/07/2010
 
 The most notable changes in Tika 0.8 over previous releases are:
 
- * Language identification is now dynamically configurable, 
+ * Language identification is now dynamically configurable,
    managed via a config file loaded from the classpath. (TIKA-490)
 
  * Tika now supports parsing Feeds by wrapping the underlying
@@ -2869,13 +3413,13 @@ Release 0.7 - 3/31/2010
 
 The most notable changes in Tika 0.7 over previous releases are:
 
- * MP3 file parsing was improved, including Channel and SampleRate 
+ * MP3 file parsing was improved, including Channel and SampleRate
    extraction and ID3v2 support (TIKA-368, TIKA-372). Further, audio
    parsing mime detection was also improved for the MIDI format. (TIKA-199)
 
  * Tika no longer relies on X11 for its RTF parsing functionality. (TIKA-386)
 
- * A Thread-safe bug in the AutoDetectParser was discovered and 
+ * A Thread-safe bug in the AutoDetectParser was discovered and
    addressed. (TIKA-374)
 
  * Upgrade to PDFBox 1.0.0. The new PDFBox version improves PDF parsing
@@ -2911,7 +3455,7 @@ The most notable changes in Tika 0.6 over the previous release are:
 
  * Mime-type detection for HTML (and all types) has been improved, allowing malformed
    HTML files and those HTML files that require a bit more observed content
-   before the type is properly detected, are now correctly identified by 
+   before the type is properly detected, are now correctly identified by
    the AutoDetectParser. (TIKA-327, TIKA-357, TIKA-366, TIKA-367)
 
  * Tika now has an additional OSGi bundle packaging that includes all the
@@ -2926,7 +3470,7 @@ The most notable changes in Tika 0.6 over the previous release are:
  * Handling of character encoding information in input metadata and HTML
    <meta> tags has been improved. When no applicable encoding information is
    available, the encoding is detected by looking at the input data.
-   (TIKA-332, TIKA-334, TIKA-335, TIKA-341) 
+   (TIKA-332, TIKA-334, TIKA-335, TIKA-341)
 
  * Some document types like Excel spreadsheets contain content like
    numbers or formulas whose exact text format depends on the current locale.
@@ -2941,11 +3485,11 @@ The most notable changes in Tika 0.6 over the previous release are:
    the platform default encoding. (TIKA-324)
 
  * A flash video (video/x-flv) parser has been added. (TIKA-328)
- 
+
  * The handling of Number and Date cell formatting within the Microsoft Excel
    documents has been added. This include currencies, percentages and
    scientific formats. (TIKA-103)
-   
+
 The following people have contributed to Tika 0.6 by submitting or commenting
 on the issues resolved in this release:
 
@@ -3064,7 +3608,7 @@ The most notable changes in Tika 0.4 over the previous release are:
     RuntimeExceptions, IOExceptions or SAXExceptions unrelated to the given
     document stream or content handler are converted to TikaExceptions
     before being passed to the client. (TIKA-198, TIKA-237)
-    
+
 The following people have contributed to Tika 0.4 by submitting or commenting
 on the issues resolved in this release:
 

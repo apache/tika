@@ -254,7 +254,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
 
     @Override
     public InputSource resolveEntity(String publicId, String systemId) {
-        return new InputSource(new UnsynchronizedByteArrayInputStream(new byte[0]));
+        return new InputSource(UnsynchronizedByteArrayInputStream.nullInputStream());
     }
 
     @Override

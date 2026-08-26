@@ -62,10 +62,10 @@ public class VLMOCRConfig implements Serializable {
     private int maxTokens = 4096;
 
     /**
-     * HTTP timeout in seconds for the chat completions request.
+     * HTTP timeout in millis for the chat completions request.
      * VLM inference can be slow; default is generous.
      */
-    private int timeoutSeconds = 300;
+    private long timeoutMillis = 120_000;
 
     /** Optional API key for authenticated endpoints. Empty means no auth. */
     private String apiKey = "";
@@ -148,12 +148,12 @@ public class VLMOCRConfig implements Serializable {
         this.maxTokens = maxTokens;
     }
 
-    public int getTimeoutSeconds() {
-        return timeoutSeconds;
+    public long getTimeoutMillis() {
+        return timeoutMillis;
     }
 
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        this.timeoutSeconds = timeoutSeconds;
+    public void setTimeoutMillis(long timeoutMillis) {
+        this.timeoutMillis = timeoutMillis;
     }
 
     public String getApiKey() {

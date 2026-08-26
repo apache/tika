@@ -33,13 +33,13 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.ParseContextConfig;
-import org.apache.tika.config.TikaProgressTracker;
-import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ParentContentHandler;
 import org.apache.tika.http.TikaHttpClient;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -73,9 +73,9 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
 
     public static final Property VLM_MODEL = Property.externalText(VLM_META + "model");
     public static final Property VLM_PROMPT_TOKENS =
-            Property.externalInteger(VLM_META + "prompt_tokens");
+            Property.externalInteger(VLM_META + "prompt-tokens");
     public static final Property VLM_COMPLETION_TOKENS =
-            Property.externalInteger(VLM_META + "completion_tokens");
+            Property.externalInteger(VLM_META + "completion-tokens");
 
     /**
      * Encapsulates a fully built HTTP request for a VLM API call.
@@ -199,18 +199,14 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
         byte[] fileBytes = readFully(tis);
         String base64Data = Base64.getEncoder().encodeToString(fileBytes);
 
-        long timeoutMillis = TimeoutLimits.getProcessTimeoutMillis(
-                parseContext, config.getTimeoutSeconds() * 1000L);
-        int timeoutSeconds = (int) (timeoutMillis / 1000L);
-
         HttpCall call = buildHttpCall(config, base64Data, mimeType);
 
         String responseText;
         try {
             String responseBody = httpClient.postJson(
-                    call.url(), call.json(), call.headers(), timeoutSeconds);
+                    call.url(), call.json(), call.headers(), config.getTimeoutMillis(), parseContext);
             responseText = extractResponseText(responseBody, metadata);
-            TikaProgressTracker.update(parseContext);
+            ParseTimeout.checkpoint(parseContext);
         } catch (TikaException e) {
             throw e;
         } catch (IOException e) {
@@ -242,7 +238,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
             Map<String, String> healthHeaders = defaultConfig.getApiKey() != null
                     ? Map.of("Authorization", "Bearer " + defaultConfig.getApiKey())
                     : Map.of();
-            httpClient.get(healthUrl, healthHeaders, defaultConfig.getTimeoutSeconds());
+            httpClient.get(healthUrl, healthHeaders, defaultConfig.getTimeoutMillis());
             serverAvailable = true;
             LOG.info("VLM server is available at {}", defaultConfig.getBaseUrl());
         } catch (TikaException e) {
@@ -285,7 +281,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
     }
 
     String detectMimeType(Metadata metadata) {
-        String contentType = metadata.get(Metadata.CONTENT_TYPE);
+        String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
             contentType = contentType.replace("ocr-", "");
             if (contentType.startsWith("image/") || contentType.equals("application/pdf")) {
@@ -400,12 +396,12 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
         defaultConfig.setMaxTokens(maxTokens);
     }
 
-    public int getTimeoutSeconds() {
-        return defaultConfig.getTimeoutSeconds();
+    public long getTimeoutMillis() {
+        return defaultConfig.getTimeoutMillis();
     }
 
-    public void setTimeoutSeconds(int timeoutSeconds) {
-        defaultConfig.setTimeoutSeconds(timeoutSeconds);
+    public void setTimeoutMillis(long timeoutMillis) {
+        defaultConfig.setTimeoutMillis(timeoutMillis);
     }
 
     public String getApiKey() {

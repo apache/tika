@@ -28,15 +28,22 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TailStream;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.audio.NumberAndTotal;
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
+import org.apache.tika.parser.mp3.ID3Tags.ID3Picture;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -57,6 +64,9 @@ public class Mp3Parser implements Parser {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.audio("mpeg"));
+
+    // MPEG version/layer string (e.g. "MPEG 3 Layer III Version 1"); no existing curated Property match.
+    private static final Property VERSION = Property.internalText("mp3:version");
 
     /**
      * Scans the MP3 frames for ID3 tags, and creates ID3Tag Handlers
@@ -94,12 +104,30 @@ public class Mp3Parser implements Parser {
         // Now iterate over all audio frames in the file
         AudioFrame frame = mpegStream.nextFrame();
         float duration = 0;
+        long bitRateSum = 0;
+        long frameCount = 0;
+        int baselineBitRate = -1;
+        boolean variableBitRate = false;
+        boolean firstFrame = true;
         boolean skipped = true;
         while (frame != null && skipped) {
             duration += frame.getDuration();
             if (firstAudio == null) {
                 firstAudio = frame;
             }
+            //the Xing/Info/VBRI header is a valid MPEG frame but carries no
+            //audio and may use a different bitrate, so keep it out of the stats
+            if (!(firstFrame && isMetadataFrame(mpegStream))) {
+                int bitRate = frame.getBitRate();
+                bitRateSum += bitRate;
+                frameCount++;
+                if (baselineBitRate < 0) {
+                    baselineBitRate = bitRate;
+                } else if (bitRate != baselineBitRate) {
+                    variableBitRate = true;
+                }
+            }
+            firstFrame = false;
             skipped = mpegStream.skipFrame();
             if (skipped) {
                 frame = mpegStream.nextFrame();
@@ -134,6 +162,12 @@ public class Mp3Parser implements Parser {
         ret.lyrics = lyrics;
         ret.tags = tags.toArray(new ID3Tags[0]);
         ret.duration = duration;
+        if (frameCount > 0) {
+            //MP3 frame duration does not depend on the bitrate, so the plain
+            //mean over the frames is the true average bitrate
+            ret.averageBitRate = (int) (bitRateSum / frameCount);
+            ret.variableBitRate = variableBitRate;
+        }
         return ret;
     }
 
@@ -143,7 +177,7 @@ public class Mp3Parser implements Parser {
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        metadata.set(Metadata.CONTENT_TYPE, "audio/mpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "audio/mpeg");
         metadata.set(XMPDM.AUDIO_COMPRESSOR, "MP3");
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
@@ -157,9 +191,13 @@ public class Mp3Parser implements Parser {
             metadata.set(XMPDM.DURATION, audioAndTags.durationSeconds());
         }
 
+        if (audioAndTags.averageBitRate > 0) {
+            metadata.set(Audio.BITRATE, audioAndTags.averageBitRate);
+            metadata.set(Audio.IS_VARIABLE_BITRATE, audioAndTags.variableBitRate);
+        }
         if (audioAndTags.audio != null) {
-            metadata.set("channels", String.valueOf(audioAndTags.audio.getChannels()));
-            metadata.set("version", audioAndTags.audio.getVersion());
+            metadata.set(Audio.CHANNELS, audioAndTags.audio.getChannels());
+            metadata.set(VERSION, audioAndTags.audio.getVersion());
 
             metadata.set(XMPDM.AUDIO_SAMPLE_RATE,
                     Integer.toString(audioAndTags.audio.getSampleRate()));
@@ -185,6 +223,7 @@ public class Mp3Parser implements Parser {
             metadata.set(XMPDM.ARTIST, tag.getArtist());
             metadata.set(XMPDM.ALBUM_ARTIST, tag.getAlbumArtist());
             metadata.set(XMPDM.COMPOSER, tag.getComposer());
+            metadata.set(XMPDM.COPYRIGHT, tag.getCopyright());
             metadata.set(XMPDM.ALBUM, tag.getAlbum());
             metadata.set(XMPDM.COMPILATION, tag.getCompilation());
             metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
@@ -207,7 +246,7 @@ public class Mp3Parser implements Parser {
                 }
 
                 comments.add(cmt.toString());
-                metadata.add(XMPDM.LOG_COMMENT.getName(), cmt.toString());
+                metadata.add(XMPDM.LOG_COMMENT, cmt.toString());
             }
 
             // ID3v1.1 Track addition
@@ -215,11 +254,29 @@ public class Mp3Parser implements Parser {
             sb.append(tag.getAlbum());
             if (tag.getTrackNumber() != null) {
                 sb.append(", track ").append(tag.getTrackNumber());
-                metadata.set(XMPDM.TRACK_NUMBER, tag.getTrackNumber());
+                metadata.set(Audio.RAW_TRACK_NUMBER, tag.getTrackNumber());
+                NumberAndTotal trackNumberAndTotal = NumberAndTotal.parse(tag.getTrackNumber());
+                if (trackNumberAndTotal != null) {
+                    if (trackNumberAndTotal.number != null) {
+                        metadata.set(XMPDM.TRACK_NUMBER, trackNumberAndTotal.number);
+                    }
+                    if (trackNumberAndTotal.total != null) {
+                        metadata.set(Audio.TRACK_COUNT, trackNumberAndTotal.total);
+                    }
+                }
             }
             if (tag.getDisc() != null) {
                 sb.append(", disc ").append(tag.getDisc());
-                metadata.set(XMPDM.DISC_NUMBER, tag.getDisc());
+                metadata.set(Audio.RAW_DISC_NUMBER, tag.getDisc());
+                NumberAndTotal discNumberAndTotal = NumberAndTotal.parse(tag.getDisc());
+                if (discNumberAndTotal != null) {
+                    if (discNumberAndTotal.number != null) {
+                        metadata.set(XMPDM.DISC_NUMBER, discNumberAndTotal.number);
+                    }
+                    if (discNumberAndTotal.total != null) {
+                        metadata.set(Audio.DISC_COUNT, discNumberAndTotal.total);
+                    }
+                }
             }
 
             xhtml.element("h1", tag.getTitle());
@@ -242,7 +299,49 @@ public class Mp3Parser implements Parser {
             xhtml.endElement("p");
         }
 
+        // Any embedded pictures, such as cover art, become
+        //  embedded documents of the audio file
+        extractPictures(audioAndTags.tags, xhtml, context);
+
         xhtml.endDocument();
+    }
+
+    /**
+     * Sends the embedded pictures, such as cover art, from the ID3v2 tags
+     * to the embedded document extractor. The pictures only become embedded
+     * documents, no metadata is recorded on the audio document itself.
+     */
+    private static void extractPictures(ID3Tags[] tags, XHTMLContentHandler xhtml,
+                                        ParseContext context)
+            throws IOException, SAXException {
+        EmbeddedDocumentExtractor extractor = null;
+        for (ID3Tags tag : tags) {
+            for (ID3Picture picture : tag.getPictures()) {
+                if (extractor == null) {
+                    extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+                }
+                Metadata pictureMetadata = Metadata.newInstance(context);
+                pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+                if (picture.getMimeType() != null) {
+                    pictureMetadata.set(HttpHeaders.CONTENT_TYPE, picture.getMimeType());
+                }
+                if (picture.getDescription() != null && !picture.getDescription().isEmpty()) {
+                    pictureMetadata.set(TikaCoreProperties.TITLE, picture.getDescription());
+                }
+                if (picture.getPictureType() >= 0 &&
+                        picture.getPictureType() < ID3Tags.PICTURE_TYPES.length) {
+                    pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
+                            ID3Tags.PICTURE_TYPES[picture.getPictureType()]);
+                }
+                if (extractor.shouldParseEmbedded(pictureMetadata, context)) {
+                    try (TikaInputStream pictureStream = TikaInputStream.get(picture.getData())) {
+                        extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context,
+                                true);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -257,14 +356,38 @@ public class Mp3Parser implements Parser {
     public int getMaxRecordSize() {
         return ID3v2Frame.getMaxRecordSize();
     }
+    /**
+     * Does the current frame's payload start with a Xing, Info or VBRI
+     * header? Those tag frames describe the stream rather than carrying
+     * audio. The markers sit at small fixed offsets that depend on version
+     * and channel mode, all within the first 40 payload bytes.
+     */
+    private static boolean isMetadataFrame(MpegStream mpegStream) throws IOException {
+        byte[] payload = mpegStream.peekFramePayload(40);
+        for (int i = 0; i + 4 <= payload.length; i++) {
+            if ((payload[i] == 'X' && payload[i + 1] == 'i'
+                    && payload[i + 2] == 'n' && payload[i + 3] == 'g')
+                    || (payload[i] == 'I' && payload[i + 1] == 'n'
+                    && payload[i + 2] == 'f' && payload[i + 3] == 'o')
+                    || (payload[i] == 'V' && payload[i + 1] == 'B'
+                    && payload[i + 2] == 'R' && payload[i + 3] == 'I')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected static class ID3TagsAndAudio {
         private ID3Tags[] tags;
         private AudioFrame audio;
         private LyricsHandler lyrics;
         private float duration; // Milliseconds
+        private int averageBitRate; // bits per second, 0 if no frame was seen
+        private boolean variableBitRate;
 
         private float durationSeconds() {
             return duration / 1000;
         }
     }
+
 }

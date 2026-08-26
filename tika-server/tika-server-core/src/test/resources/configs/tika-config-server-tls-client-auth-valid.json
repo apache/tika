@@ -1,0 +1,18 @@
+{
+  "server": {
+    "port": 9999,
+    "endpoints": [
+      "status"
+    ],
+    "tlsConfig": {
+      "active": true,
+      "keyStoreType": "PKCS12",
+      "keyStorePassword": "tika-secret",
+      "keyStoreFile": "src/test/resources/ssl-keys/tika-server-keystore.p12",
+      "trustStoreType": "PKCS12",
+      "trustStorePassword": "tika-secret",
+      "trustStoreFile": "src/test/resources/ssl-keys/tika-server-truststore.p12",
+      "clientAuthenticationRequired": true
+    }
+  }
+}

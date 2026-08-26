@@ -56,7 +56,7 @@ import org.slf4j.LoggerFactory;
 public class TikaServerHttp2Test {
 
     private static final Logger log = LoggerFactory.getLogger(TikaServerHttp2Test.class);
-    private static final long SERVER_STARTUP_TIMEOUT_MS = 90_000;
+    private static final long SERVER_STARTUP_TIMEOUT_MILLIS = 90_000;
     /** Health-check polls root (/), which always returns 200 without requiring endpoint config. */
     private static final String HEALTH_PATH = "/";
 
@@ -186,7 +186,7 @@ public class TikaServerHttp2Test {
                 .connectTimeout(Duration.ofSeconds(5))
                 .build();
 
-        Instant deadline = Instant.now().plusMillis(SERVER_STARTUP_TIMEOUT_MS);
+        Instant deadline = Instant.now().plusMillis(SERVER_STARTUP_TIMEOUT_MILLIS);
         while (Instant.now().isBefore(deadline)) {
             if (!serverProcess.isAlive()) {
                 throw new IllegalStateException(
@@ -209,7 +209,7 @@ public class TikaServerHttp2Test {
             }
             Thread.sleep(1000);
         }
-        throw new IllegalStateException("tika-server did not start within " + SERVER_STARTUP_TIMEOUT_MS + " ms");
+        throw new IllegalStateException("tika-server did not start within " + SERVER_STARTUP_TIMEOUT_MILLIS + " ms");
     }
 
     private static int findFreePort() throws Exception {

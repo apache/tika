@@ -41,6 +41,7 @@ import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.EndianUtils;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -85,7 +86,7 @@ class RTFObjDataParser {
             throws IOException, TikaException {
         UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get();
         long version = readUInt(is);
-        metadata.add(RTFMetadata.EMB_APP_VERSION, Long.toString(version));
+        metadata.add(RTFMetadata.EMBEDDED_APP_VERSION, Long.toString(version));
 
         long formatId = readUInt(is);
         //2 is an embedded object. 1 is a link.
@@ -97,13 +98,13 @@ class RTFObjDataParser {
         String itemName = readLengthPrefixedAnsiString(is).trim();
 
         if (className.length() > 0) {
-            metadata.add(RTFMetadata.EMB_CLASS, className);
+            metadata.add(RTFMetadata.EMBEDDED_CLASS, className);
         }
         if (topicName.length() > 0) {
-            metadata.add(RTFMetadata.EMB_TOPIC, topicName);
+            metadata.add(RTFMetadata.EMBEDDED_TOPIC, topicName);
         }
         if (itemName.length() > 0) {
-            metadata.add(RTFMetadata.EMB_ITEM, itemName);
+            metadata.add(RTFMetadata.EMBEDDED_ITEM, itemName);
         }
 
         long dataSz = readUInt(is);
@@ -202,7 +203,7 @@ class RTFObjDataParser {
                             EmbeddedDocumentUtil.EmbeddedResourcePrefix.EMBEDDED,
                             unknownFilenameCount.getAndIncrement(),
                             type.getType().toString());
-                    metadata.set(Metadata.CONTENT_TYPE, type.getType().toString());
+                    metadata.set(HttpHeaders.CONTENT_TYPE, type.getType().toString());
                 }
             }
         }

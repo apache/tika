@@ -162,15 +162,18 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
     public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
         HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
-        RequestConfig requestConfig = RequestConfig
+        get.setConfig(buildRequestConfig());
+        setHttpRequestHeaders(metadata, get);
+        putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
+        return execute(get, metadata, httpClient, true);
+    }
+
+    private RequestConfig buildRequestConfig() {
+        return RequestConfig
                 .custom()
                 .setMaxRedirects(httpFetcherConfig.getMaxRedirects())
                 .setRedirectsEnabled(httpFetcherConfig.getMaxRedirects() > 0)
                 .build();
-        get.setConfig(requestConfig);
-        setHttpRequestHeaders(metadata, get);
-        putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
-        return execute(get, metadata, httpClient, true);
     }
 
     private void setHttpRequestHeaders(Metadata metadata, HttpGet get) {
@@ -218,6 +221,9 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
                              ParseContext parseContext) throws IOException, TikaException {
         HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
+        // Same RequestConfig as the whole-document fetch: maxRedirects must bind range fetches too.
+        get.setConfig(buildRequestConfig());
+        setHttpRequestHeaders(metadata, get);
         putAdditionalHeadersOnRequest(additionalHttpFetcherConfig, get);
 
         get.setHeader("Range", "bytes=" + startRange + "-" + endRange);
@@ -261,7 +267,8 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         get.setHeader(headerKey, headerValue);
     }
 
-    private TikaInputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength) throws IOException {
+    private TikaInputStream execute(HttpGet get, Metadata metadata, HttpClient client, boolean retryOnBadLength)
+            throws IOException, TikaTimeoutException {
         HttpClientContext context = HttpClientContext.create();
         HttpResponse response = null;
         final AtomicBoolean timeout = new AtomicBoolean(false);
@@ -335,20 +342,30 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
     private TikaInputStream spool(InputStream content, Metadata metadata) throws IOException {
         long start = System.currentTimeMillis();
         TemporaryResources tmp = new TemporaryResources();
-        Path tmpFile = tmp.createTempFile(metadata);
-        if (httpFetcherConfig.getMaxSpoolSize() < 0) {
-            Files.copy(content, tmpFile, StandardCopyOption.REPLACE_EXISTING);
-        } else {
-            try (OutputStream os = Files.newOutputStream(tmpFile)) {
-                long totalRead = IOUtils.copyLarge(content, os, 0, httpFetcherConfig.getMaxSpoolSize());
-                if (totalRead == httpFetcherConfig.getMaxSpoolSize() && content.read() != -1) {
-                    metadata.set(HTTP_FETCH_TRUNCATED, "true");
+        try {
+            Path tmpFile = tmp.createTempFile(metadata);
+            if (httpFetcherConfig.getMaxSpoolSize() < 0) {
+                Files.copy(content, tmpFile, StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                try (OutputStream os = Files.newOutputStream(tmpFile)) {
+                    long totalRead = IOUtils.copyLarge(content, os, 0, httpFetcherConfig.getMaxSpoolSize());
+                    if (totalRead == httpFetcherConfig.getMaxSpoolSize() && content.read() != -1) {
+                        metadata.set(HTTP_FETCH_TRUNCATED, "true");
+                    }
                 }
             }
+            long elapsed = System.currentTimeMillis() - start;
+            LOG.debug("took {} ms to copy to local tmp file", elapsed);
+            return TikaInputStream.get(tmpFile, metadata, tmp);
+        } catch (Throwable t) {
+            // a failed copy must not orphan the temp file, and a close failure must not hide why
+            try {
+                tmp.close();
+            } catch (IOException e) {
+                t.addSuppressed(e);
+            }
+            throw t;
         }
-        long elapsed = System.currentTimeMillis() - start;
-        LOG.debug("took {} ms to copy to local tmp file", elapsed);
-        return TikaInputStream.get(tmpFile, metadata, tmp);
     }
 
     private void updateMetadata(String url, HttpResponse response, HttpClientContext context, Metadata metadata) {
@@ -466,7 +483,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
             httpClientFactory.setRequestTimeoutMillis(httpFetcherConfig.getRequestTimeoutMillis());
         }
         if (httpFetcherConfig.getConnectTimeoutMillis() != null) {
-            httpClientFactory.setSocketTimeoutMillis(httpFetcherConfig.getConnectTimeoutMillis());
+            httpClientFactory.setConnectTimeoutMillis(httpFetcherConfig.getConnectTimeoutMillis());
         }
         if (httpFetcherConfig.getMaxConnections() != null) {
             httpClientFactory.setMaxConnections(httpFetcherConfig.getMaxConnections());
@@ -474,6 +491,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         if (httpFetcherConfig.getMaxConnectionsPerRoute() != null) {
             httpClientFactory.setMaxConnectionsPerRoute(httpFetcherConfig.getMaxConnectionsPerRoute());
         }
+        httpClientFactory.setVerifySsl(httpFetcherConfig.isVerifySsl());
         if (!StringUtils.isBlank(httpFetcherConfig.getAuthScheme())) {
             httpClientFactory.setUserName(httpFetcherConfig.getUserName());
             httpClientFactory.setPassword(httpFetcherConfig.getPassword());

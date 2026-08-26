@@ -22,37 +22,39 @@ import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.DateFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.TimeZone;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.metadata.Property.PropertyType;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiter;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiterFactory;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiter;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.DateUtils;
 
 /**
  * A multi-valued metadata container.
  */
-public class Metadata
-        implements CreativeCommons, Geographic, HttpHeaders, Message, ClimateForcast, TIFF,
-        TikaMimeKeys, Serializable {
+public class Metadata implements Serializable {
 
-    private static final Logger LOG = LoggerFactory.getLogger(Metadata.class);
+    /**
+     * A named class, not an anonymous one: this is the default {@code writeLimiter}, so it is
+     * part of {@code Metadata}'s serialized form — an anonymous class would freeze the synthetic
+     * name {@code Metadata$1} into it, silently renamed by any later class reorder.
+     */
+    private static final class AcceptAllLimiter implements MetadataWriteLimiter {
+        private static final long serialVersionUID = 1L;
 
-    private static final MetadataWriteLimiter ACCEPT_ALL = new MetadataWriteLimiter() {
         @Override
         public void add(String field, String value, Map<String, String[]> data) {
             String[] values = data.get(field);
@@ -82,12 +84,30 @@ public class Metadata
             newValues[newValues.length - 1] = value;
             return newValues;
         }
-    };
+
+        private Object readResolve() {
+            return ACCEPT_ALL;
+        }
+    }
+
+    private static final MetadataWriteLimiter ACCEPT_ALL = new AcceptAllLimiter();
+
+    private static final long serialVersionUID = 7748196982570748206L;
+
+    private static final Logger LOG = LoggerFactory.getLogger(Metadata.class);
 
     /**
-     * Serial version UID
+     * Safety net on {@link #add(KeyPrefix, String, String)}: a doc-derived name longer than
+     * this is skipped (with a WARN). Configurable policy belongs in a
+     * {@link org.apache.tika.metadata.writelimiter.StandardMetadataLimiter}.
      */
-    private static final long serialVersionUID = 5623926545693153182L;
+    static final int MAX_PREFIX_ROUTE_NAME_LENGTH = 1024;
+
+    /**
+     * Safety net on {@link #add(KeyPrefix, String, String)}: after this many distinct
+     * prefix-route names in one Metadata instance, further new names are skipped (WARN once).
+     */
+    static final int MAX_PREFIX_ROUTE_NAMES = 10_000;
     /**
      * Some parsers will have the date as a ISO-8601 string
      * already, and will set that into the Metadata object.
@@ -100,7 +120,10 @@ public class Metadata
 
 
     private MetadataWriteLimiter writeLimiter = ACCEPT_ALL;
-    private transient boolean trusted;
+
+    /** Distinct names written via the KeyPrefix route; safety-net bound, resets on deserialize. */
+    private transient int prefixRouteNames;
+    private transient boolean prefixRouteFloodWarned;
     /**
      * Constructs a new, empty metadata.
      */
@@ -113,7 +136,7 @@ public class Metadata
      * The limiter will be applied to all subsequent writes.
      *
      * @param writeLimiter the limiter to apply to metadata writes, or null for no limits
-     * @since Apache Tika 4.0
+     * @since Apache Tika 4.0.0
      */
     public Metadata(MetadataWriteLimiter writeLimiter) {
         metadata = new HashMap<>();
@@ -132,7 +155,7 @@ public class Metadata
      *
      * @param context the ParseContext (may be null)
      * @return a new Metadata instance configured from the context
-     * @since Apache Tika 4.0
+     * @since Apache Tika 4.0.0
      */
     public static Metadata newInstance(ParseContext context) {
         if (context == null) {
@@ -274,6 +297,95 @@ public class Metadata
     }
 
     /**
+     * Returns the value of the identified Long based metadata property (INTEGER or REAL
+     * value type, mirroring {@link #set(Property, long)}). If many values are associated to
+     * the specified property, then the first one is returned.
+     *
+     * @param property simple integer or real property definition
+     * @return property value as a Long, or <code>null</code> if the property is not set, or
+     * not a valid Long
+     * @since Apache Tika 4.0.0
+     */
+    public Long getLong(Property property) {
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            return null;
+        }
+        Property.ValueType valueType = property.getPrimaryProperty().getValueType();
+        if (valueType != Property.ValueType.INTEGER && valueType != Property.ValueType.REAL) {
+            return null;
+        }
+
+        String v = get(property);
+        if (v == null) {
+            return null;
+        }
+        try {
+            return Long.valueOf(v);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Returns the value of the identified Boolean based metadata property. If many values are
+     * associated to the specified property, then the first one is returned.
+     *
+     * @param property simple boolean property definition
+     * @return property value as a Boolean, or <code>null</code> if the property is not set, or
+     * not a valid Boolean
+     * @since Apache Tika 4.0.0
+     */
+    public Boolean getBoolean(Property property) {
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            return null;
+        }
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.BOOLEAN) {
+            return null;
+        }
+
+        String v = get(property);
+        if (v == null) {
+            return null;
+        }
+        if ("true".equalsIgnoreCase(v)) {
+            return Boolean.TRUE;
+        } else if ("false".equalsIgnoreCase(v)) {
+            return Boolean.FALSE;
+        }
+        return null;
+    }
+
+    /**
+     * Returns the value of the identified Double based metadata property (REAL or RATIONAL
+     * value type, mirroring {@link #set(Property, double)}). If many values are associated to
+     * the specified property, then the first one is returned.
+     *
+     * @param property simple real or rational property definition
+     * @return property value as a Double, or <code>null</code> if the property is not set, or
+     * not a valid Double
+     * @since Apache Tika 4.0.0
+     */
+    public Double getDouble(Property property) {
+        if (property.getPrimaryProperty().getPropertyType() != Property.PropertyType.SIMPLE) {
+            return null;
+        }
+        Property.ValueType valueType = property.getPrimaryProperty().getValueType();
+        if (valueType != Property.ValueType.REAL && valueType != Property.ValueType.RATIONAL) {
+            return null;
+        }
+
+        String v = get(property);
+        if (v == null) {
+            return null;
+        }
+        try {
+            return Double.valueOf(v);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
      * Get the values associated to a metadata name.
      *
      * @param property of the metadata.
@@ -304,50 +416,134 @@ public class Metadata
     /**
      * Add a metadata name/value mapping. Add the specified value to the list of
      * values associated to the specified metadata name.
+     * <p>
+     * <strong>This route rejects reserved Tika-native ({@code tk:}) keys.</strong> It is for
+     * names the caller owns. Document-controlled names -- custom OOXML/MSG properties, NetCDF
+     * and GRIB attribute names -- must not come through here, because a crafted file could
+     * then assert Tika's own computed keys by naming one; route those through
+     * {@link #add(KeyPrefix, String, String)}, which namespaces them and applies
+     * skip-and-WARN bounds instead of throwing.
+     * <p>
+     * If you are writing a key Tika owns, use its {@link Property} overload, or
+     * {@link #addTrusted} when only the name is available.
      *
      * @param name  the metadata name.
      * @param value the metadata value.
+     * @throws IllegalArgumentException if {@code name} is a reserved Tika-native
+     * ({@code tk:}) key; use its {@link Property} or {@link #addTrusted}.
+     * @see #addTrusted(String, String)
      */
     public void add(final String name, final String value) {
-        if (blockReservedKeyWrite(name)) {
-            return;
-        }
-        addUnchecked(name, value);
+        checkNotReserved(name);
+        addTrusted(name, value);
     }
 
-    /** Trusted add, bypassing the reserved-key guard. */
-    private void addUnchecked(final String name, final String value) {
+    /**
+     * Trusted add, bypassing the reserved-key guard: writes reach reserved Tika-native
+     * ({@code tk:}) keys directly. For internal/known-trusted writers (metadata filters,
+     * clone/merge/deserialize, emit-time enrichment) that legitimately need to assert a
+     * reserved key by name rather than by its {@link Property}.
+     */
+    public void addTrusted(final String name, final String value) {
         writeLimiter.add(name, value, metadata);
     }
 
     /**
-     * Mark this Metadata as a trusted transformation target (e.g. a metadata filter), letting
-     * String writes reach reserved {@code X-TIKA:} keys. Reset when the transformation is done.
+     * Appends a value under a document- or tool-derived name, keyed as
+     * {@code prefix + name}. This is <em>the</em> write route for names Tika does not
+     * control (custom document properties, format-specific attribute names, tool output):
+     * append-only (a repeated name accumulates values, losslessly transcribing the source),
+     * with a built-in safety net for hostile or malformed input — a null/blank name, a name
+     * longer than {@link #MAX_PREFIX_ROUTE_NAME_LENGTH}, or a new name arriving after
+     * {@link #MAX_PREFIX_ROUTE_NAMES} distinct prefix-route names is skipped with a WARN,
+     * never an exception. Known, bounded vocabularies belong in curated {@link Property}
+     * constants instead; deployment-tunable limits belong in a
+     * {@link org.apache.tika.metadata.writelimiter.StandardMetadataLimiter}, which applies
+     * on top of this route.
+     *
+     * @param prefix the declared prefix for this source (never from document text)
+     * @param name   the source-derived name; skipped if null, blank, or over-length
+     * @param value  the value; a null value is skipped
+     * @throws NullPointerException if prefix is null
+     * @since Apache Tika 4.0.0
      */
-    public void setTrusted(boolean trusted) {
-        this.trusted = trusted;
-    }
-
-    public boolean isTrusted() {
-        return trusted;
-    }
-
-    /** Drop String writes to reserved {@code X-TIKA:} keys unless trusted; use their Property. */
-    private boolean blockReservedKeyWrite(String name) {
-        if (!trusted && name != null && name.startsWith(TikaCoreProperties.TIKA_META_PREFIX)) {
-            LOG.debug("Dropping String write to reserved metadata key '{}'; use its Property.", name);
-            return true;
+    public void add(KeyPrefix prefix, String name, String value) {
+        Objects.requireNonNull(prefix, "prefix must not be null");
+        if (value == null) {
+            return;
         }
-        return false;
+        if (name == null || name.isBlank()) {
+            LOG.warn("skipping '{}' write: blank source-derived name", prefix);
+            return;
+        }
+        if (name.length() > MAX_PREFIX_ROUTE_NAME_LENGTH) {
+            LOG.warn("skipping '{}' write: source-derived name length {} exceeds {}", prefix,
+                    name.length(), MAX_PREFIX_ROUTE_NAME_LENGTH);
+            return;
+        }
+        String key = prefix.key(name);
+        if (!metadata.containsKey(key)) {
+            if (prefixRouteNames >= MAX_PREFIX_ROUTE_NAMES) {
+                if (!prefixRouteFloodWarned) {
+                    prefixRouteFloodWarned = true;
+                    LOG.warn("skipping new prefix-route names: more than {} distinct names",
+                            MAX_PREFIX_ROUTE_NAMES);
+                }
+                return;
+            }
+            prefixRouteNames++;
+        }
+        add(key, value);
+    }
+
+    /**
+     * {@link #add(KeyPrefix, String, String)} for a source-typed date value (e.g. an OLE
+     * VT_DATE / OOXML {@code vt:filetime} custom property): the value is stored in Tika's
+     * canonical ISO-8601 form, identical to how curated date {@link Property} constants
+     * serialize. The date-typing travels with the value, not the key. An Instant too
+     * extreme to represent is skipped with a WARN. If the source's date field fails to
+     * parse in the first place, keep the raw text via the String overload instead.
+     *
+     * @since Apache Tika 4.0.0
+     */
+    public void add(KeyPrefix prefix, String name, Instant value) {
+        Objects.requireNonNull(prefix, "prefix must not be null");
+        if (value == null) {
+            return;
+        }
+        String formatted;
+        try {
+            formatted = formatDate(Date.from(value));
+        } catch (ArithmeticException | IllegalArgumentException e) {
+            LOG.warn("skipping '{}{}' write: unrepresentable instant", prefix, name);
+            return;
+        }
+        add(prefix, name, formatted);
+    }
+
+    /**
+     * Reject String writes to reserved Tika-native keys; use their Property or
+     * {@link #addTrusted}/{@link #setTrusted(String, String)}.
+     */
+    private void checkNotReserved(String name) {
+        if (ReservedNamespaces.isTikaNative(name)) {
+            throw new IllegalArgumentException(
+                    "Writing reserved key '" + name + "' via the String API is not allowed: " +
+                            "use its Property constant (see TikaCoreProperties), " +
+                            "#add(KeyPrefix,String,String) for document-derived names, #putAll " +
+                            "to copy another Metadata, or #setTrusted for intentional " +
+                            "reconstruction; see migration-to-4x/metadata-changes-4x in the docs.");
+        }
     }
 
     /**
      * Trusted write for clone/merge/deserialize; reserved keys go via their Property.
      *
      * @param append add rather than set
+     * @see #putAll(Metadata) the bulk copy built on this, which is what most callers want
      */
     public void reconstruct(String name, String value, boolean append) {
-        if (name != null && name.startsWith(TikaCoreProperties.TIKA_META_PREFIX)) {
+        if (ReservedNamespaces.isTikaNative(name)) {
             Property property = Property.get(name);
             if (property != null) {
                 if (append) {
@@ -356,9 +552,9 @@ public class Metadata
                     set(property, value);
                 }
             } else if (append) {
-                addUnchecked(name, value);
+                addTrusted(name, value);
             } else {
-                setUnchecked(name, value);
+                setTrusted(name, value);
             }
             return;
         }
@@ -366,6 +562,38 @@ public class Metadata
             add(name, value);
         } else {
             set(name, value);
+        }
+    }
+
+    /**
+     * Copies every key from {@code other} into this Metadata: for each name in
+     * {@code other}, this Metadata's values for that name are replaced wholesale with
+     * {@code other}'s values, in order (multi-values preserved); names absent from
+     * {@code other} are left untouched. Each value is written via
+     * {@link #reconstruct(String, String, boolean)}, so reserved {@code tk:} keys copy
+     * through their trusted route rather than the String-guarded route.
+     * <p>
+     * Use this instead of a manual {@code for (String n : src.names()) dest.set(n, src.get(n))}
+     * copy loop, which collapses multi-valued keys and throws on {@code tk:}-prefixed keys.
+     *
+     * @param other the Metadata to copy from; {@code other == this} is a no-op
+     * @throws NullPointerException if other is null
+     * @since Apache Tika 4.0.0
+     */
+    public void putAll(Metadata other) {
+        Objects.requireNonNull(other, "other must not be null");
+        if (other == this) {
+            return;
+        }
+        for (String n : other.names()) {
+            String[] vals = other.getValues(n);
+            if (vals.length == 0) {
+                continue;
+            }
+            reconstruct(n, vals[0], false);
+            for (int i = 1; i < vals.length; i++) {
+                reconstruct(n, vals[i], true);
+            }
         }
     }
 
@@ -382,7 +610,7 @@ public class Metadata
             set(name, newValues);
         } else {
             for (String val : newValues) {
-                addUnchecked(name, val);
+                addTrusted(name, val);
             }
         }
     }
@@ -413,7 +641,7 @@ public class Metadata
                 set(property, value);
             } else {
                 if (property.isMultiValuePermitted()) {
-                    addUnchecked(property.getName(), value);
+                    addTrusted(property.getName(), value);
                 } else {
                     throw new PropertyTypeException(
                             property.getName() + " : " + property.getPropertyType());
@@ -423,37 +651,35 @@ public class Metadata
     }
 
     /**
-     * Copy All key-value pairs from properties.
-     *
-     * @param properties properties to copy from
-     */
-    @SuppressWarnings("unchecked")
-    public void setAll(Properties properties) {
-        Enumeration<String> names = (Enumeration<String>) properties.propertyNames();
-        while (names.hasMoreElements()) {
-            String name = names.nextElement();
-            metadata.put(name, new String[]{properties.getProperty(name)});
-        }
-    }
-
-    /**
      * Set metadata name/value. Associate the specified value to the specified
      * metadata name. If some previous values were associated to this name,
      * they are removed. If the given value is <code>null</code>, then the
      * metadata entry is removed.
+     * <p>
+     * <strong>This route rejects reserved Tika-native ({@code tk:}) keys</strong>
+     * -- see {@link #add(String, String)} for why, and use the {@link Property} overload or
+     * {@link #setTrusted} for keys Tika owns.
      *
      * @param name  the metadata name.
      * @param value the metadata value, or <code>null</code>
+     * @throws IllegalArgumentException if {@code name} is a reserved Tika-native
+     * ({@code tk:}) key and {@code value} is non-null; use its {@link Property} or
+     * {@link #setTrusted}. A null value (removal) is always allowed, matching
+     * {@link #remove(String)}.
+     * @see #setTrusted(String, String)
      */
     public void set(String name, String value) {
-        if (blockReservedKeyWrite(name)) {
-            return;
+        if (value != null) {
+            checkNotReserved(name);
         }
-        setUnchecked(name, value);
+        setTrusted(name, value);
     }
 
-    /** Trusted set, bypassing the reserved-key guard. */
-    private void setUnchecked(String name, String value) {
+    /**
+     * Trusted set, bypassing the reserved-key guard: writes reach reserved Tika-native
+     * ({@code tk:}) keys directly. See {@link #addTrusted}.
+     */
+    public void setTrusted(String name, String value) {
         writeLimiter.set(name, value, metadata);
     }
 
@@ -463,7 +689,7 @@ public class Metadata
         if (values != null) {
             metadata.remove(name);
             for (String v : values) {
-                addUnchecked(name, v);
+                addTrusted(name, v);
             }
         } else {
             metadata.remove(name);
@@ -489,7 +715,7 @@ public class Metadata
                 }
             }
         } else {
-            setUnchecked(property.getName(), value);
+            setTrusted(property.getName(), value);
         }
     }
 
@@ -536,9 +762,9 @@ public class Metadata
     }
 
     /**
-     * Sets the integer value of the identified metadata property.
+     * Sets the long value of the identified metadata property.
      *
-     * @param property simple integer property definition
+     * @param property simple integer or real property definition
      * @param value    property value
      * @since Apache Tika 0.8
      */
@@ -547,9 +773,9 @@ public class Metadata
             throw new PropertyTypeException(Property.PropertyType.SIMPLE,
                     property.getPrimaryProperty().getPropertyType());
         }
-        if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
-            throw new PropertyTypeException(Property.ValueType.REAL,
-                    property.getPrimaryProperty().getValueType());
+        Property.ValueType valueType = property.getPrimaryProperty().getValueType();
+        if (valueType != Property.ValueType.REAL && valueType != Property.ValueType.INTEGER) {
+            throw new PropertyTypeException(Property.ValueType.REAL, valueType);
         }
         set(property, Long.toString(value));
     }
@@ -616,10 +842,11 @@ public class Metadata
     }
 
     /**
-     * Gets the array of ints of the identified "seq" integer metadata property.
+     * Gets the array of longs of the identified "seq" metadata property. INTEGER or REAL
+     * valued (mirroring {@link #getLong}).
      *
-     * @param property seq integer property definition
-     * @return array of ints
+     * @param property seq integer or real property definition
+     * @return array of longs
      * @since Apache Tika 1.21
      */
     public long[] getLongValues(Property property) {
@@ -627,8 +854,9 @@ public class Metadata
             throw new PropertyTypeException(PropertyType.SEQ,
                     property.getPrimaryProperty().getPropertyType());
         }
-        if (property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
-            throw new PropertyTypeException(Property.ValueType.REAL,
+        if (property.getPrimaryProperty().getValueType() != Property.ValueType.INTEGER
+                && property.getPrimaryProperty().getValueType() != Property.ValueType.REAL) {
+            throw new PropertyTypeException(Property.ValueType.INTEGER,
                     property.getPrimaryProperty().getValueType());
         }
         String[] vals = getValues(property);
@@ -727,6 +955,15 @@ public class Metadata
      */
     public void remove(String name) {
         metadata.remove(name);
+    }
+
+    /**
+     * Remove a metadata property and all its associated values.
+     *
+     * @param property metadata property to remove
+     */
+    public void remove(Property property) {
+        remove(property.getName());
     }
 
     /**

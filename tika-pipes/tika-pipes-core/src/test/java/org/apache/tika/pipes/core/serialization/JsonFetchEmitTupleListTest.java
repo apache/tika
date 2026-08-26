@@ -17,7 +17,10 @@
 package org.apache.tika.pipes.core.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
@@ -45,6 +48,31 @@ public class JsonFetchEmitTupleListTest {
         Reader reader = new StringReader(writer.toString());
         List<FetchEmitTuple> deserialized = JsonFetchEmitTupleList.fromJson(reader);
         assertEquals(list, deserialized);
+    }
+
+    @Test
+    public void testBareArrayIsRejected() throws Exception {
+        List<FetchEmitTuple> list = List.of(getFetchEmitTuple(0));
+        StringWriter writer = new StringWriter();
+        JsonFetchEmitTupleList.toJson(list, writer);
+        // strip the envelope down to the bare array
+        String bareArray = new com.fasterxml.jackson.databind.ObjectMapper()
+                .readTree(writer.toString())
+                .get(JsonFetchEmitTupleList.TUPLES)
+                .toString();
+        IOException e = assertThrows(IOException.class,
+                () -> JsonFetchEmitTupleList.fromJson(new StringReader(bareArray)));
+        assertTrue(e.getMessage().contains(JsonFetchEmitTupleList.TUPLES), e.getMessage());
+    }
+
+    /** Unknown tuple fields must surface as IOException, not Jackson's IllegalArgumentException. */
+    @Test
+    public void testUnknownTupleFieldIsRejectedAsIOException() {
+        String body = "{\"tuples\":[{\"id\":\"x\",\"fetcher\":\"f\",\"fetchKey\":\"k\"," +
+                "\"emitter\":\"e\",\"bogusField\":1}]}";
+        IOException e = assertThrows(IOException.class,
+                () -> JsonFetchEmitTupleList.fromJson(new StringReader(body)));
+        assertTrue(e.getMessage().contains("bogusField"), e.getMessage());
     }
 
     private FetchEmitTuple getFetchEmitTuple(int i) {

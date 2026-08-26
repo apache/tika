@@ -20,6 +20,7 @@ import static org.apache.tika.detect.zip.PackageConstants.SEVENZ;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.SeekableByteChannel;
 import java.util.Collections;
 import java.util.Set;
 
@@ -40,6 +41,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -112,10 +114,12 @@ public class SevenZParser extends AbstractArchiveParser {
         }
 
         SevenZFile sevenZFile;
+        // SevenZFile.close() closes the channel it was built on
+        SeekableByteChannel channel = tis.getSeekableByteChannel();
         try {
             // Use setMaxMemoryLimitKiB (direct KiB); setMaxMemoryLimitKb divides the arg by 1024.
             SevenZFile.Builder builder = new SevenZFile.Builder()
-                    .setFile(tis.getFile())
+                    .setSeekableByteChannel(channel)
                     .setMaxMemoryLimitKiB(defaultConfig.getMemoryLimitInKb());
             if (password == null) {
                 sevenZFile = builder.get();
@@ -123,14 +127,20 @@ public class SevenZParser extends AbstractArchiveParser {
                 sevenZFile = builder.setPassword(password.toCharArray()).get();
             }
         } catch (PasswordRequiredException e) {
+            channel.close();
             throw new EncryptedDocumentException(e);
         } catch (MemoryLimitException e) {
             // The limit can be exceeded at open time (assertValidity) as well as lazily on the
             // first getNextEntry() when the LZMA/LZMA2 dictionary is allocated.
+            channel.close();
             throw new TikaMemoryLimitException(e.getMessage());
+        } catch (IOException | RuntimeException e) {
+            // commons-compress throws unchecked exceptions on corrupt headers
+            channel.close();
+            throw e;
         }
 
-        metadata.set(Metadata.CONTENT_TYPE, SEVENZ.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, SEVENZ.toString());
 
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
@@ -170,12 +180,12 @@ public class SevenZParser extends AbstractArchiveParser {
                 xhtml,
                 context);
 
-        if (extractor.shouldParseEmbedded(entrydata)) {
+        if (extractor.shouldParseEmbedded(entrydata, context)) {
             TemporaryResources tmp = new TemporaryResources();
             try {
                 TikaInputStream tis = TikaInputStream.get(
                         new SevenZEntryInputStream(sevenZFile), tmp, entrydata);
-                extractor.parseEmbedded(tis, xhtml, entrydata, new ParseContext(), true);
+                extractor.parseEmbedded(tis, xhtml, entrydata, context, true);
             } finally {
                 tmp.dispose();
             }

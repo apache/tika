@@ -57,7 +57,8 @@ public class ZipSalvager {
      *   <li>Returns null</li>
      * </ul>
      *
-     * @param tis      the TikaInputStream (must be file-backed)
+     * @param tis      the TikaInputStream (must be rewindable, i.e. unread or with rewind
+     *                 enabled; it need not be file-backed)
      * @param metadata the metadata to update with hints
      * @param charset  optional charset for entry names (may be null)
      * @return the opened ZipFile, or null if opening and salvaging both failed
@@ -65,11 +66,7 @@ public class ZipSalvager {
     public static ZipFile tryToOpenZipFile(TikaInputStream tis, Metadata metadata, Charset charset) {
         // First, try direct open
         try {
-            ZipFile.Builder builder = new ZipFile.Builder().setFile(tis.getFile());
-            if (charset != null) {
-                builder.setCharset(charset);
-            }
-            ZipFile zipFile = builder.get();
+            ZipFile zipFile = ZipFileHelper.open(tis, charset);
 
             // Direct open succeeded
             metadata.set(Zip.DETECTOR_ZIPFILE_OPENED, true);
@@ -86,9 +83,14 @@ public class ZipSalvager {
         }
 
         // Direct open failed - try salvaging
+        Path salvagedPath = null;
+        boolean rewindEnabled = false;
+        // set once the tis owns deletion of salvagedPath
+        boolean ownershipTransferred = false;
         try {
-            final Path salvagedPath = Files.createTempFile("tika-salvaged-", ".zip");
+            salvagedPath = Files.createTempFile("tika-salvaged-", ".zip");
             tis.enableRewind();
+            rewindEnabled = true;
             salvageCopy(tis, salvagedPath, false);
             tis.rewind();
 
@@ -107,14 +109,9 @@ public class ZipSalvager {
 
             // Add file deletion FIRST so it runs AFTER ZipFile is closed
             // (TemporaryResources uses LIFO order)
-            tis.addCloseableResource(() -> {
-                try {
-                    Files.deleteIfExists(salvagedPath);
-                } catch (IOException e) {
-                    LOG.warn("Failed to delete salvaged temp file: {}", salvagedPath, e);
-                    salvagedPath.toFile().deleteOnExit();
-                }
-            });
+            final Path toDelete = salvagedPath;
+            tis.addCloseableResource(() -> deleteSalvaged(toDelete));
+            ownershipTransferred = true;
 
             // Then add ZipFile (will be closed before file deletion runs)
             if (tis.getOpenContainer() == null) {
@@ -124,14 +121,31 @@ public class ZipSalvager {
             }
             return salvagedZip;
         } catch (IOException e) {
-            if (LOG.isDebugEnabled()) {
+            //corrupt input is the norm here, so debug; but failing before rewind is even
+            //enabled means an unusable temp dir or an already-advanced stream -- not bad input
+            if (!rewindEnabled) {
+                LOG.warn("Cannot salvage: could not prepare the stream for rewind", e);
+            } else if (LOG.isDebugEnabled()) {
                 LOG.debug("Salvaging failed", e);
+            }
+        } finally {
+            if (!ownershipTransferred && salvagedPath != null) {
+                deleteSalvaged(salvagedPath);
             }
         }
 
         // Both direct open and salvaging failed
         metadata.set(Zip.DETECTOR_ZIPFILE_OPENED, false);
         return null;
+    }
+
+    private static void deleteSalvaged(Path salvagedPath) {
+        try {
+            Files.deleteIfExists(salvagedPath);
+        } catch (IOException e) {
+            LOG.warn("Failed to delete salvaged temp file: {}", salvagedPath, e);
+            salvagedPath.toFile().deleteOnExit();
+        }
     }
 
     /**

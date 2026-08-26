@@ -55,7 +55,7 @@ public class TimeoutLimitsTest extends TikaTest {
     public void testDefaults() {
         TimeoutLimits limits = new TimeoutLimits();
         assertEquals(TimeoutLimits.DEFAULT_PROGRESS_TIMEOUT_MILLIS, limits.getProgressTimeoutMillis());
-        assertEquals(60000, limits.getProgressTimeoutMillis());
+        assertEquals(120000, limits.getProgressTimeoutMillis());
         assertEquals(TimeoutLimits.DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS, limits.getTotalTaskTimeoutMillis());
         assertEquals(3600000, limits.getTotalTaskTimeoutMillis());
     }
@@ -83,23 +83,16 @@ public class TimeoutLimitsTest extends TikaTest {
     }
 
     @Test
-    public void testGetProcessTimeoutMillis() {
-        // Test with null context
-        assertEquals(5000, TimeoutLimits.getProcessTimeoutMillis(null, 5000));
-
-        // Test with context that doesn't have TimeoutLimits
+    public void testBudgetForComposesViaParseTimeout() {
+        // getProcessTimeoutMillis() coupled the per-op budget to progressTimeoutMillis (a
+        // liveness setting); budgetFor() replaces it: honor the requested timeout, but never
+        // grant more than remains of totalTaskTimeoutMillis. Full coverage in ParseTimeoutTest.
         ParseContext context = new ParseContext();
-        assertEquals(5000, TimeoutLimits.getProcessTimeoutMillis(context, 5000));
+        context.set(TimeoutLimits.class, new TimeoutLimits(3600000, 60000));
 
-        // Test with context that has TimeoutLimits
-        TimeoutLimits limits = new TimeoutLimits(3600000, 60000);
-        context.set(TimeoutLimits.class, limits);
-        assertEquals(59900, TimeoutLimits.getProcessTimeoutMillis(context, 5000));
+        long budget = ParseTimeout.getOrCreate(context).budgetFor(5000);
 
-        // Test with very small progress timeout
-        TimeoutLimits smallLimits = new TimeoutLimits(3600000, 50);
-        context.set(TimeoutLimits.class, smallLimits);
-        assertEquals(0, TimeoutLimits.getProcessTimeoutMillis(context, 5000));
+        assertEquals(5000, budget);
     }
 
     @Test
