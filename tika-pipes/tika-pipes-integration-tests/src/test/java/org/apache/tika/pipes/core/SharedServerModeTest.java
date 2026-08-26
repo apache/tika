@@ -617,6 +617,8 @@ public class SharedServerModeTest {
 
             assertTrue(verifyResult.isSuccess(),
                     "After concurrent OOM, server should restart and process new request. Got: " + verifyResult.status());
+
+            assertOneForkPerDeath(pipesParser, 1);
         }
     }
 
@@ -760,7 +762,23 @@ public class SharedServerModeTest {
                     "All 5 phase 2 requests should succeed after server recovery. " +
                     "Phase 1 had: " + phase1OomCount + " OOMs, " + phase1SuccessCount + " successes, " +
                     phase1CrashCount + " crashes");
+
+            assertOneForkPerDeath(pipesParser, 1);
         }
+    }
+
+    /**
+     * The shared JVM died {@code deaths} times. Siblings whose in-flight parses were killed by a
+     * death report a crash <em>result</em>, which is correct -- but none of them is another death,
+     * so none may cause another fork. Generation counts forks directly, so it cannot be satisfied
+     * by relabelling a spurious restart: one death, one replacement.
+     */
+    private void assertOneForkPerDeath(PipesParser pipesParser, int deaths) {
+        long forks = pipesParser.getGeneration();
+        assertEquals(deaths + 1, forks,
+                "expected the initial fork plus exactly " + deaths + " replacement(s); a sibling's "
+                        + "report about an already-replaced process must not restart its healthy "
+                        + "successor (forks=" + forks + ")");
     }
 
     private Path setupInputDir(Path tmp) throws Exception {
