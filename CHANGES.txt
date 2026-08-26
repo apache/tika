@@ -1,5 +1,27 @@
 Release 4.1.0 - unreleased
 
+   * Parsers and detectors no longer spool in-memory input to a temp file just
+     to read it back with random access: the JPEG, TIFF and WebP parsers, the
+     OpenDocument parser's inline pictures, the OLE2 container detector's
+     entry-name read, and PDFParser (the incremental-update scan and the main
+     load). Together these were the bulk of the temp bytes behind 4.0.0's
+     batch slowdown on spinning disks (see docs/.../pipes/performance.adoc).
+     One rule everywhere: content goes through the stream cache (bounded by
+     the pipes cache memory budget, 1MB per object without one); what stays
+     in memory is read in place through a zero-copy view, what spills is
+     read from the file. PDFBox and metadata-extractor no longer receive a
+     second heap copy of the document. The PDF renderer now re-opens the
+     document from byte 0 for every render, which fixes per-page rendering
+     (RENDER_PAGES_AT_PAGE_END) silently producing only the first page --
+     for file-backed input too. PDFParser.getPDDocumentFromStream is
+     deprecated and no longer called; override the new
+     getPDDocument(RandomAccessRead, ...) instead. ImageMetadataExtractor
+     gains TikaInputStream and InputStream overloads. One visible metadata
+     change: JPEG/TIFF/WebP images read from memory no longer carry
+     metadata-extractor's file-system tags (img:File Name, img:File Size,
+     img:File Modified Date), which described whatever file was read rather
+     than the image; input backed by a file still carries them (TIKA-4835).
+
    * tika-pipes: the cache memory budget (how much rewindable content a forked
      worker keeps in memory before spilling to disk) now defaults to a quarter
      of the fork's heap, so raising -Xmx raises it; it was a fixed 256MB. It is

@@ -40,7 +40,6 @@ import org.apache.pdfbox.cos.COSString;
 import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.io.RandomAccessRead;
 import org.apache.pdfbox.io.RandomAccessReadBuffer;
-import org.apache.pdfbox.io.RandomAccessReadBufferedFile;
 import org.apache.pdfbox.io.RandomAccessStreamCache;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDDocumentInformation;
@@ -66,6 +65,7 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
 import org.apache.tika.metadata.HttpHeaders;
@@ -181,6 +181,8 @@ public class PDFParser implements Parser, RenderingParser {
         context.set(OCRPageCounter.class, new OCRPageCounter());
         try {
             if (shouldSpool(localConfig)) {
+                // later stages re-open the document (xref scan, renderer, per-page renders)
+                tis.enableRewind(context.get(CacheMemoryBudget.class));
                 context.set(PDFRenderingState.class, new PDFRenderingState(tis));
             }
 
@@ -313,10 +315,7 @@ public class PDFParser implements Parser, RenderingParser {
             return;
         }
         List<StartXRefOffset> xRefOffsets = new ArrayList<>();
-        //TODO -- can we use the PDFBox parser's RandomAccessRead
-        //so that we don't have to reopen from file?
-        try (RandomAccessRead ra =
-                     new RandomAccessReadBufferedFile(tikaInputStream.getFile())) {
+        try (RandomAccessRead ra = PDFRandomAccess.open(tikaInputStream, parseContext)) {
             StartXRefScanner xRefScanner = new StartXRefScanner(ra);
             xRefOffsets.addAll(xRefScanner.scan());
         } catch (IOException e) {
@@ -495,21 +494,18 @@ public class PDFParser implements Parser, RenderingParser {
                                        ParseContext context)
             throws IOException, EncryptedDocumentException {
         try {
-            PDDocument pdDocument = null;
             if (tis.hasFile()) {
                 // File based -- send file directly to PDFBox
-                pdDocument =
-                        getPDDocument(tis.getPath(), password, streamCacheCreateFunction, metadata, context);
-            } else {
-                tis.setCloseShield();
-                try {
-                    pdDocument = getPDDocumentFromStream(tis, password,
-                            streamCacheCreateFunction, metadata, context);
-                } finally {
-                    tis.removeCloseShield();
-                }
+                return getPDDocument(tis.getPath(), password, streamCacheCreateFunction, metadata, context);
             }
-            return pdDocument;
+            // PDFBox owns the reader and closes it with the document
+            RandomAccessRead ra = PDFRandomAccess.open(tis, context);
+            try {
+                return getPDDocument(ra, password, streamCacheCreateFunction, metadata, context);
+            } catch (IOException | RuntimeException e) {
+                ra.close();
+                throw e;
+            }
         } catch (IOException e) {
             if (e.getMessage() != null &&
                     e.getMessage().contains("No security handler for filter")) {
@@ -519,11 +515,24 @@ public class PDFParser implements Parser, RenderingParser {
         }
     }
 
+    /**
+     * @deprecated no longer called by this parser: stream-backed input is loaded through
+     * {@link #getPDDocument(RandomAccessRead, String, RandomAccessStreamCache.StreamCacheCreateFunction, Metadata, ParseContext)},
+     * which does not copy the document into heap the way {@code RandomAccessReadBuffer(InputStream)} does
+     */
+    @Deprecated
     protected PDDocument getPDDocumentFromStream(InputStream inputStream, String password,
                                        RandomAccessStreamCache.StreamCacheCreateFunction streamCacheCreateFunction,
                                        Metadata metadata,
                                        ParseContext parseContext) throws IOException {
         return Loader.loadPDF(new RandomAccessReadBuffer(inputStream), password, streamCacheCreateFunction);
+    }
+
+    protected PDDocument getPDDocument(RandomAccessRead source, String password,
+                                       RandomAccessStreamCache.StreamCacheCreateFunction streamCacheCreateFunction,
+                                       Metadata metadata,
+                                       ParseContext parseContext) throws IOException {
+        return Loader.loadPDF(source, password, streamCacheCreateFunction);
     }
 
     protected PDDocument getPDDocument(Path path, String password,

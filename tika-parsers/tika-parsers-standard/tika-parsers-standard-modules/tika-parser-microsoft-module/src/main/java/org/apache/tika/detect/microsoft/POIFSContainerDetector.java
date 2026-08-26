@@ -22,6 +22,9 @@ import static org.apache.tika.mime.MediaType.image;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -32,18 +35,23 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.poi.hssf.model.InternalWorkbook;
+import org.apache.poi.poifs.common.POIFSConstants;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DirectoryNode;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
 import org.apache.poi.poifs.filesystem.DocumentNode;
 import org.apache.poi.poifs.filesystem.Entry;
 import org.apache.poi.poifs.filesystem.POIFSFileSystem;
+import org.apache.poi.poifs.storage.BATBlock;
+import org.apache.poi.poifs.storage.HeaderBlock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -554,9 +562,22 @@ public class POIFSContainerDetector implements Detector {
     }
 
 
-    private Set<String> getTopLevelNames(TikaInputStream stream) throws IOException {
-        // Force the document stream to a (possibly temporary) file
-        // so we don't modify the current position of the stream.
+    /**
+     * Largest object opened from memory. POI's stream loader copies the whole object into a
+     * heap array, so this bounds that copy; the cache underneath is already budget-bounded.
+     * Embedded OLE2 objects are typically a few hundred KB.
+     */
+    private static final long MAX_IN_MEMORY_POIFS = 8L * 1024 * 1024;
+
+    private Set<String> getTopLevelNames(TikaInputStream stream, ParseContext context)
+            throws IOException {
+        if (!stream.hasFile()) {
+            Set<String> names = getTopLevelNamesInMemory(stream, context);
+            if (names != null) {
+                return names;
+            }
+        }
+        // random access over content that is not in memory: use the file
         Path file = stream.getPath();
 
         if (file == null) {
@@ -583,16 +604,89 @@ public class POIFSContainerDetector implements Detector {
         }
     }
 
+    /**
+     * Opens the container from memory. Returns null -- and the caller uses the file -- when
+     * the object is too large, its header would make POI allocate too much, or POI's stream
+     * loader rejects it (it is stricter than the file loader on truncated objects).
+     */
+    private Set<String> getTopLevelNamesInMemory(TikaInputStream stream, ParseContext context)
+            throws IOException {
+        if (stream.hasLength() && stream.getLength() > MAX_IN_MEMORY_POIFS) {
+            return null;
+        }
+        // the budget decides how much the drain below keeps in memory
+        stream.enableRewind(context == null ? null : context.get(CacheMemoryBudget.class));
+        POIFSFileSystem fs = null;
+        try (SeekableByteChannel channel = stream.getSeekableByteChannel()) {
+            if (TikaInputStream.inMemoryContent(channel) == null ||
+                    channel.size() > MAX_IN_MEMORY_POIFS ||
+                    declaredInMemorySize(channel) > MAX_IN_MEMORY_POIFS) {
+                return null;
+            }
+            fs = new POIFSFileSystem(Channels.newInputStream(channel));
+            Set<String> names = getTopLevelNames(fs.getRoot());
+            stream.setOpenContainer(fs);
+            fs = null;
+            return names;
+        } catch (SecurityException e) {
+            throw e;
+        } catch (IOException | RuntimeException e) {
+            return null;
+        } finally {
+            if (fs != null) {
+                closeQuietly(fs);
+            }
+        }
+    }
+
+    /**
+     * The heap POI would allocate for this object if opened from a stream. It sizes that buffer
+     * from the header's declared BAT count rather than the actual length, so a 512-byte object
+     * can demand hundreds of MB; the file loader reads block by block and never allocates it.
+     * Returns 0 when the header cannot be read, leaving the rejection to POI.
+     */
+    static long declaredInMemorySize(SeekableByteChannel channel) throws IOException {
+        byte[] header = new byte[POIFSConstants.SMALLER_BIG_BLOCK_SIZE];
+        long start = channel.position();
+        try {
+            channel.position(0);
+            ByteBuffer buffer = ByteBuffer.wrap(header);
+            while (buffer.hasRemaining() && channel.read(buffer) > 0) {
+                // fill the header block
+            }
+            if (buffer.hasRemaining()) {
+                return 0;
+            }
+        } finally {
+            channel.position(start);
+        }
+        try {
+            return BATBlock.calculateMaximumSize(
+                    new HeaderBlock(UnsynchronizedByteArrayInputStream.builder().setByteArray(header).get()));
+        } catch (IOException | RuntimeException e) {
+            return 0;
+        }
+    }
+
+    private static void closeQuietly(POIFSFileSystem fs) {
+        try {
+            fs.close();
+        } catch (IOException e) {
+            LOG.debug("failed to close abandoned POIFSFileSystem", e);
+        }
+    }
+
     public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext) throws IOException {
         // Check if we have access to the document
         if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
 
-        return handleTikaStream(tis, metadata);
+        return handleTikaStream(tis, metadata, parseContext);
     }
 
-    private MediaType handleTikaStream(TikaInputStream tis, Metadata metadata) throws IOException {
+    private MediaType handleTikaStream(TikaInputStream tis, Metadata metadata, ParseContext context)
+            throws IOException {
         //try for an open container
         Set<String> names = tryOpenContainerOnTikaInputStream(tis, metadata);
 
@@ -601,10 +695,8 @@ public class POIFSContainerDetector implements Detector {
             return OCTET_STREAM;
         }
 
-        // If OLE, spool to disk
         if (names == null) {
-            // spool to disk and try detection
-            names = getTopLevelNames(tis);
+            names = getTopLevelNames(tis, context);
         }
 
         // Detect based on the names (as available)
