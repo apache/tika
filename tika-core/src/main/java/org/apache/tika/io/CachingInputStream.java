@@ -203,8 +203,9 @@ class CachingInputStream extends InputStream {
 
     @Override
     public void close() throws IOException {
-        source.close();
-        cache.close();
+        // the cache is registered with tmp only once it spills, so a throwing source
+        // must not skip it: its budget reservation would leak for the fork's life
+        TemporaryResources.closeAll(source, cache);
     }
 
     /**

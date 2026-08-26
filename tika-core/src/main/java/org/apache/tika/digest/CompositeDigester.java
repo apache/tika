@@ -17,8 +17,8 @@
 package org.apache.tika.digest;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -39,61 +39,48 @@ public class CompositeDigester implements Digester {
         }
     }
 
-    /** Fans each write out to every child's sink; close closes them all. */
+    /** Fans each write out to every child's sink; abort and close reach them all. */
     @Override
-    public OutputStream digestSink(Metadata m, ParseContext parseContext) throws IOException {
-        OutputStream[] sinks = new OutputStream[digesters.length];
+    public DigestSink digestSink(Metadata m, ParseContext parseContext) throws IOException {
+        DigestSink[] sinks = new DigestSink[digesters.length];
         try {
             for (int i = 0; i < digesters.length; i++) {
                 sinks[i] = digesters[i].digestSink(m, parseContext);
             }
         } catch (IOException | RuntimeException e) {
-            closeAll(sinks, e);
+            try {
+                TemporaryResources.closeAll(sinks);
+            } catch (Throwable t) {
+                e.addSuppressed(t);
+            }
             throw e;
         }
-        return new OutputStream() {
+        return new DigestSink() {
             @Override
             public void write(int b) throws IOException {
-                for (OutputStream sink : sinks) {
+                ensureOpen();
+                for (DigestSink sink : sinks) {
                     sink.write(b);
                 }
             }
 
             @Override
             public void write(byte[] b, int off, int len) throws IOException {
-                for (OutputStream sink : sinks) {
+                ensureOpen();
+                for (DigestSink sink : sinks) {
                     sink.write(b, off, len);
                 }
             }
 
             @Override
-            public void close() throws IOException {
-                closeAll(sinks, null);
+            protected void finish(boolean publish) throws IOException {
+                if (!publish) {
+                    for (DigestSink sink : sinks) {
+                        sink.abort();
+                    }
+                }
+                TemporaryResources.closeAll(sinks);
             }
         };
-    }
-
-    // Closes every non-null sink even if one throws; the first failure is what propagates.
-    private static void closeAll(OutputStream[] sinks, Throwable pending) throws IOException {
-        IOException first = null;
-        for (OutputStream sink : sinks) {
-            if (sink == null) {
-                continue;
-            }
-            try {
-                sink.close();
-            } catch (IOException e) {
-                if (pending != null) {
-                    pending.addSuppressed(e);
-                } else if (first == null) {
-                    first = e;
-                } else {
-                    first.addSuppressed(e);
-                }
-            }
-        }
-        if (first != null) {
-            throw first;
-        }
     }
 }

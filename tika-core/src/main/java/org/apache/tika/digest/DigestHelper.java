@@ -17,7 +17,6 @@
 package org.apache.tika.digest;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
@@ -79,15 +78,24 @@ public class DigestHelper {
         Digester digester = digesterFactory.build();
 
         // The translator consumes `tis` (e.g. OLE2), so enableRewind() before and rewind()
-        // after -- otherwise the caller would see an exhausted stream. The translated bytes
-        // go straight into the digest: the translator only writes, so nothing can mark,
-        // reset or skip between it and the digest.
+        // after -- otherwise the caller would see an exhausted stream.
+        // Safe to tee here: the translator only writes, so no mark/reset/skip can
+        // desynchronize the digest from the bytes.
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
             tis.enableRewind(context.get(CacheMemoryBudget.class));
-            try (OutputStream sink = digester.digestSink(metadata, context)) {
+            DigestSink sink = digester.digestSink(metadata, context);
+            try {
                 EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, sink);
+            } catch (IOException | RuntimeException e) {
+                // close() publishes; a partial translation must publish nothing
+                sink.abort();
+                throw e;
             } finally {
-                tis.rewind();
+                try {
+                    sink.close();
+                } finally {
+                    tis.rewind();
+                }
             }
         } else {
             digester.digest(tis, metadata, context);

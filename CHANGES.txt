@@ -1,17 +1,23 @@
 Release 4.1.0 - unreleased
 
    * tika-pipes: the cache memory budget (how much rewindable content a forked
-     worker keeps in memory before spilling to disk) now defaults to a quarter
-     of the fork's heap, so raising -Xmx raises it; it was a fixed 256MB. It is
-     one pool per forked JVM shared by all of its threads.
-     -Dtika.pipes.cacheMemoryBudgetBytes in forkedJvmArgs still overrides it
-     (below the quarter-heap ceiling; <=0 disables). TikaInputStream.hasFile()
-     now also reports content the stream cache spilled on its own, not only
-     content a getPath() call put on disk. Digester gains digestSink(), an
-     OutputStream that digests as it is written; DigestHelper uses it for
-     translated embedded streams, which no longer touch a temp file.
-     TemporaryResources and CachingSource now close every remaining resource
-     when one close() throws an unchecked exception (TIKA-4835).
+     worker keeps in memory before spilling to disk; new since 4.0.0, which had
+     no budget at all) defaults to a quarter of the fork's heap, so raising
+     -Xmx raises it. It is one pool per forked JVM shared by all of its threads.
+     -Dtika.pipes.cacheMemoryBudgetBytes in forkedJvmArgs overrides it (below
+     the quarter-heap ceiling; <=0 disables); the fork logs the value and its
+     source at startup. TikaInputStream.hasFile() now also reports content the
+     stream cache spilled on its own, not only content a getPath() call put on
+     disk. TikaInputStream.inMemoryContent(channel) gives a zero-copy read-only
+     view of cached content for consumers that need random access. Digester
+     gains digestSink(), a DigestSink that digests as it is written and can be
+     aborted; DigestHelper uses it for translated embedded streams, which no
+     longer touch a temp file when the digester implements digestSink (all of
+     Tika's do; one that only implements digest() still buffers), and a failed
+     translation now publishes no digest instead of a digest of the fragment.
+     TemporaryResources.closeAll(Closeable...) closes every argument even when
+     one throws unchecked; TemporaryResources, CachingSource, CachingInputStream
+     and CompositeDigester use it (TIKA-4835).
 
    * Pipes plugins no longer bundle their own Jackson: jackson-core, -databind
      and -annotations are provided by the host (tika-serialization) and the

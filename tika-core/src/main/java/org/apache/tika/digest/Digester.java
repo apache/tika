@@ -17,7 +17,6 @@
 package org.apache.tika.digest;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -47,7 +46,8 @@ public interface Digester {
     /**
      * A sink that digests whatever is written to it and sets the value(s) in the metadata
      * when closed. For producers that only write (an embedded-stream translator, say) this
-     * digests the bytes as they are produced, with no buffer and no temp file.
+     * digests the bytes as they are produced, with no buffer and no temp file. See
+     * {@link DigestSink} for the close/abort contract.
      * <p>
      * The default buffers what is written -- in memory below a fixed threshold, in a temp
      * file above it -- and calls {@link #digest} on close, so an implementation that only
@@ -58,7 +58,7 @@ public interface Digester {
      * @param parseContext ParseContext
      * @return a sink; the caller must close it, and the values are set only on close
      */
-    default OutputStream digestSink(Metadata m, ParseContext parseContext) throws IOException {
+    default DigestSink digestSink(Metadata m, ParseContext parseContext) throws IOException {
         return new BufferingDigestSink(this, m, parseContext);
     }
 }

@@ -25,6 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.channels.SeekableByteChannel;
+import java.nio.file.Files;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -159,39 +162,56 @@ public class StreamCacheBudgetTest {
         assertNull(cache.getInMemorySeekableByteChannel());
     }
 
-    /**
-     * A threshold spill inside the cache puts the content on disk; hasFile() must say so, or
-     * callers that branch on it read already-spilled content back into memory.
-     */
+    /** A threshold spill inside the cache puts the content on disk; hasFile() must say so. */
     @Test
     public void testHasFileAfterInternalCacheSpill() throws Exception {
         // no budget => StreamCache's 1MB per-object threshold applies
         byte[] big = new byte[3 * 1024 * 1024];
-        try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tis =
-                    TikaInputStream.get(new ByteArrayInputStream(big), tmp, new Metadata());
+        try (TemporaryResources resources = new TemporaryResources()) {
+            TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(big), resources, new Metadata());
             assertFalse(tis.hasFile(), "nothing read yet, nothing spilled");
             tis.enableRewind(null);
-            // drain through the cache; past the threshold it spills on its own
-            try (java.nio.channels.SeekableByteChannel c = tis.getSeekableByteChannel()) {
+            try (SeekableByteChannel c = tis.getSeekableByteChannel()) {
                 assertEquals(big.length, c.size());
             }
             assertTrue(tis.hasFile(), "cache spilled to disk; hasFile() must report it");
-            assertEquals(big.length, java.nio.file.Files.size(tis.getPath()));
+            assertEquals(big.length, Files.size(tis.getPath()));
         }
     }
 
     @Test
     public void testHasFileStaysFalseWhenCacheKeepsContentInMemory() throws Exception {
         byte[] small = new byte[1024];
-        try (TemporaryResources tmp = new TemporaryResources()) {
-            TikaInputStream tis =
-                    TikaInputStream.get(new ByteArrayInputStream(small), tmp, new Metadata());
+        try (TemporaryResources resources = new TemporaryResources()) {
+            TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(small), resources, new Metadata());
             tis.enableRewind(null);
-            try (java.nio.channels.SeekableByteChannel c = tis.getSeekableByteChannel()) {
+            try (SeekableByteChannel c = tis.getSeekableByteChannel()) {
                 assertEquals(small.length, c.size());
             }
             assertFalse(tis.hasFile(), "content fit in memory; no file exists");
         }
+    }
+
+    /**
+     * The cache registers with TemporaryResources only once it spills, so a source whose
+     * close() throws must not skip the cache's close -- that leaks its reservation from the
+     * fork-wide pool for good.
+     */
+    @Test
+    public void testThrowingSourceCloseStillReleasesBudget() throws Exception {
+        byte[] data = new byte[2 * 1024 * 1024];
+        InputStream source = new ByteArrayInputStream(data) {
+            @Override
+            public void close() {
+                throw new IllegalStateException("fetcher abort");
+            }
+        };
+        CacheMemoryBudget budget = new CacheMemoryBudget(64L * 1024 * 1024);
+        TikaInputStream tis = TikaInputStream.get(source, new TemporaryResources(), new Metadata());
+        tis.enableRewind(budget);
+        assertEquals(data.length, tis.readAllBytes().length);
+        assertTrue(budget.getReservedBytes() > 0, "over-threshold content is charged");
+        assertThrows(IllegalStateException.class, tis::close);
+        assertEquals(0, budget.getReservedBytes(), "cache closed despite the throwing source");
     }
 }

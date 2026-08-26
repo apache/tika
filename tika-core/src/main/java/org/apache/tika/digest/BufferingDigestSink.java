@@ -17,8 +17,8 @@
 package org.apache.tika.digest;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.apache.commons.io.output.DeferredFileOutputStream;
 
@@ -32,53 +32,63 @@ import org.apache.tika.parser.ParseContext;
  * {@link Digester#digest}: buffers the written bytes (memory below the threshold, a temp file
  * above) and runs the pull-style digest over them on close.
  */
-class BufferingDigestSink extends OutputStream {
+class BufferingDigestSink extends DigestSink {
 
     static final int MEMORY_THRESHOLD = 1024 * 1024;
 
     private final Digester digester;
     private final Metadata metadata;
     private final ParseContext context;
-    private final TemporaryResources tmp = new TemporaryResources();
-    private final DeferredFileOutputStream buffer;
-    private boolean closed;
+    // created lazily, only if the content crosses the threshold
+    private final DeferredFileOutputStream buffer = DeferredFileOutputStream.builder()
+            .setThreshold(MEMORY_THRESHOLD)
+            .setPrefix("apache-tika-")
+            .setSuffix(".tmp")
+            .get();
 
-    BufferingDigestSink(Digester digester, Metadata metadata, ParseContext context)
-            throws IOException {
+    BufferingDigestSink(Digester digester, Metadata metadata, ParseContext context) {
         this.digester = digester;
         this.metadata = metadata;
         this.context = context;
-        this.buffer = DeferredFileOutputStream.builder()
-                .setThreshold(MEMORY_THRESHOLD)
-                .setOutputFile(tmp.createTempFile().toFile())
-                .get();
     }
 
     @Override
     public void write(int b) throws IOException {
+        ensureOpen();
         buffer.write(b);
     }
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
+        ensureOpen();
         buffer.write(b, off, len);
     }
 
     @Override
-    public void close() throws IOException {
-        if (closed) {
-            return;
-        }
-        closed = true;
+    protected void finish(boolean publish) throws IOException {
+        Path spilled = null;
         try {
             buffer.close();
-            // toInputStream() serves memory without copying and the file otherwise
-            try (InputStream in = buffer.toInputStream();
-                 TikaInputStream tis = TikaInputStream.get(in, new TemporaryResources(), null)) {
+            if (!buffer.isInMemory()) {
+                spilled = buffer.getPath();
+            }
+            if (!publish) {
+                return;
+            }
+            // A re-openable source: the pull digester's enableRewind()/rewind() re-open
+            // instead of copying the content into a second cache. Metadata is not passed
+            // so the temp file's name cannot leak into the document's metadata.
+            Path path = spilled;
+            try (TemporaryResources tmp = new TemporaryResources();
+                 TikaInputStream tis = path == null ?
+                         TikaInputStream.get(buffer::toInputStream, tmp, null) :
+                         TikaInputStream.get(() -> Files.newInputStream(path), tmp, null)) {
                 digester.digest(tis, metadata, context);
             }
         } finally {
-            tmp.close();
+            if (spilled != null) {
+                Files.deleteIfExists(spilled);
+            }
         }
     }
 }
