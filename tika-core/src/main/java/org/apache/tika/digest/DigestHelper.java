@@ -18,6 +18,9 @@ package org.apache.tika.digest;
 
 import java.io.IOException;
 
+import org.apache.commons.io.output.CloseShieldOutputStream;
+import org.apache.commons.io.output.CountingOutputStream;
+
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.CacheMemoryBudget;
@@ -83,19 +86,34 @@ public class DigestHelper {
         // desynchronize the digest from the bytes.
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
             tis.enableRewind(context.get(CacheMemoryBudget.class));
-            DigestSink sink = digester.digestSink(metadata, context);
             try {
-                EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, sink);
-            } catch (IOException | RuntimeException e) {
-                // close() publishes; a partial translation must publish nothing
-                sink.abort();
-                throw e;
-            } finally {
+                DigestSink sink = digester.digestSink(metadata, context);
                 try {
+                    // Close-shielded so a translator that closes the stream cannot publish on
+                    // our behalf, and counted because "returned normally" is not "produced the
+                    // content": a translator that claims the stream and writes nothing (see
+                    // PSTEmailStreamTranslator) would otherwise publish the digest of zero
+                    // bytes -- the same value for every such object.
+                    CountingOutputStream counted =
+                            new CountingOutputStream(CloseShieldOutputStream.wrap(sink));
+                    EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, counted);
+                    if (counted.getByteCount() > 0) {
+                        sink.commit();
+                    }
                     sink.close();
-                } finally {
-                    tis.rewind();
+                } catch (Throwable t) {
+                    // close() can fail too; that must not erase why the translation failed
+                    try {
+                        sink.close();
+                    } catch (Throwable closeFailure) {
+                        if (closeFailure != t) {
+                            t.addSuppressed(closeFailure);
+                        }
+                    }
+                    throw t;
                 }
+            } finally {
+                tis.rewind();
             }
         } else {
             digester.digest(tis, metadata, context);

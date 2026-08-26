@@ -31,8 +31,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "emitters": {
- *   "gcs-emitter": {
- *     "my-gcs-emitter": {
+ *   "my-gcs-emitter": {
+ *     "gcs-emitter": {
  *       "projectId": "my-project",
  *       "bucket": "my-bucket",
  *       "prefix": "output/",

@@ -122,8 +122,8 @@ include::example$pipes-elasticsearch-emitter.json[]
 |Validated non-blank, but not otherwise read: the `_id` is the emit key (attachments get the emit key plus a random suffix).
 
 |`attachmentStrategy`
-|`SEPARATE_DOCUMENTS`
-|How attached/embedded documents are indexed. `SEPARATE_DOCUMENTS` — each attachment becomes its own top-level document; `PARENT_CHILD` — attachments are nested under the parent in a parent/child relation. Absent behaves as `SEPARATE_DOCUMENTS`.
+|_none_
+|How attached/embedded documents are indexed. `SEPARATE_DOCUMENTS` — each attachment becomes its own top-level document; `PARENT_CHILD` — attachments are nested under the parent in a parent/child relation. There is no default: leave it unset and embedded documents get neither the `parent` field nor the parent/child relation, so set it explicitly.
 
 |`updateStrategy`
 |`UPSERT`

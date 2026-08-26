@@ -338,7 +338,9 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
         context.set(DocumentSelector.class, new ImageDocumentSelector());
 
         int mark = -1;
-        if (tis.hasFile()) {
+        // hasLength(), not hasFile(): getLength() on a stream whose length is unknown spools
+        // the whole stream to measure it
+        if (tis.hasLength()) {
             mark = (int) tis.getLength();
         }
         if (mark == -1) {

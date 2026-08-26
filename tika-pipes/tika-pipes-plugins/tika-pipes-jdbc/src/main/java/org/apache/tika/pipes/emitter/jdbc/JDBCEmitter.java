@@ -58,8 +58,8 @@ import org.apache.tika.utils.StringUtils;
  * <pre>
  * {
  *   "emitters": {
- *     "jdbc-emitter": {
- *       "my-db": {
+ *     "my-db": {
+ *       "jdbc-emitter": {
  *         "connection": "jdbc:postgresql://localhost/mydb",
  *         "createTable": "CREATE TABLE IF NOT EXISTS docs (path VARCHAR(1024), content TEXT)",
  *         "insert": "INSERT INTO docs (path, content) VALUES (?, ?)",

@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.io.RandomAccessRead;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
@@ -101,8 +102,20 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
             pdDocument = (PDDocument) tis.getOpenContainer();
         } else {
             // a fresh reader from byte 0 each time, so per-page renders do not depend on
-            // where the stream was left; the document closes it
-            pdDocument = Loader.loadPDF(PDFRandomAccess.open(tis, parseContext));
+            // where the stream was left; the document closes it -- but only once it exists,
+            // so a failed load must close the reader itself or its channel pin (and the
+            // budget behind it) leaks for the life of the stream
+            RandomAccessRead ra = PDFRandomAccess.open(tis, parseContext);
+            try {
+                pdDocument = Loader.loadPDF(ra);
+            } catch (IOException | RuntimeException e) {
+                try {
+                    ra.close();
+                } catch (IOException closeFailure) {
+                    e.addSuppressed(closeFailure);
+                }
+                throw e;
+            }
             mustClose = true;
         }
         PageBasedRenderResults results = new PageBasedRenderResults(new TemporaryResources());

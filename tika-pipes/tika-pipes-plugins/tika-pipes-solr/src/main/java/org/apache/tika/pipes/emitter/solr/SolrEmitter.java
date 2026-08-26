@@ -49,8 +49,8 @@ import org.apache.tika.utils.StringUtils;
  * <pre>
  * {
  *   "emitters": {
- *     "solr-emitter": {
- *       "my-solr": {
+ *     "my-solr": {
+ *       "solr-emitter": {
  *         "solrCollection": "my-collection",
  *         "solrUrls": ["http://localhost:8983/solr"],
  *         "idField": "id",

@@ -21,26 +21,41 @@ import java.io.OutputStream;
 
 /**
  * A sink returned by {@link Digester#digestSink}: bytes written to it are digested, and the
- * value(s) are set in the metadata when it is closed.
+ * value(s) reach the metadata only if the producer calls {@link #commit()}.
  * <p>
- * Contract, for implementors and callers alike:
+ * Commit is explicit because the alternative -- publish on close unless something remembered
+ * to cancel -- makes every unanticipated exit (a checked exception, an {@link Error}, a
+ * producer that closes the sink itself) publish a digest of whatever bytes happened to arrive.
+ * A digest of a partial write is worse than no digest: it is wrong, and it is stably wrong,
+ * so every failure of the same shape produces the same plausible value.
+ * <p>
+ * Contract:
  * <ul>
- *   <li>{@link #close()} publishes the digest exactly once; further closes are no-ops.</li>
- *   <li>{@link #abort()} discards everything: a later {@code close()} releases resources
- *       but publishes nothing. Call it when the producer failed part-way, or the metadata
- *       gets a digest of whatever fragment was written.</li>
- *   <li>Writing after {@code close()} or {@code abort()} throws {@link IOException}.</li>
- *   <li>Single producer thread; not safe for concurrent writes.</li>
+ *   <li>Write the content, then {@link #commit()}, then {@link #close()} -- close in a
+ *       {@code finally} or via try-with-resources.</li>
+ *   <li>{@link #close()} releases resources either way, and publishes only if
+ *       {@code commit()} was called first. It is idempotent.</li>
+ *   <li>{@link #commit()} after {@code close()} throws {@link IllegalStateException}: the
+ *       chance to publish is gone, and failing loudly beats a silently missing digest.</li>
+ *   <li>Writing after {@code close()} throws {@link IOException}.</li>
+ *   <li>All methods must be called from the producing thread.</li>
  * </ul>
  */
 public abstract class DigestSink extends OutputStream {
 
+    private boolean committed;
     private boolean closed;
-    private boolean aborted;
 
-    /** Discards what was written; {@link #close()} then publishes nothing. Idempotent. */
-    public final void abort() {
-        aborted = true;
+    /**
+     * Marks the content complete, so {@link #close()} publishes it. Idempotent.
+     *
+     * @throws IllegalStateException if this sink is already closed
+     */
+    public final void commit() {
+        if (closed) {
+            throw new IllegalStateException("cannot commit a closed digest sink");
+        }
+        committed = true;
     }
 
     @Override
@@ -49,7 +64,7 @@ public abstract class DigestSink extends OutputStream {
             return;
         }
         closed = true;
-        finish(!aborted);
+        finish(committed);
     }
 
     /**
@@ -60,8 +75,8 @@ public abstract class DigestSink extends OutputStream {
 
     /** For subclasses' write methods. */
     protected final void ensureOpen() throws IOException {
-        if (closed || aborted) {
-            throw new IOException("digest sink is " + (aborted ? "aborted" : "closed"));
+        if (closed) {
+            throw new IOException("digest sink is closed");
         }
     }
 }

@@ -503,7 +503,11 @@ public class PDFParser implements Parser, RenderingParser {
             try {
                 return getPDDocument(ra, password, streamCacheCreateFunction, metadata, context);
             } catch (IOException | RuntimeException e) {
-                ra.close();
+                try {
+                    ra.close();
+                } catch (IOException closeFailure) {
+                    e.addSuppressed(closeFailure);
+                }
                 throw e;
             }
         } catch (IOException e) {

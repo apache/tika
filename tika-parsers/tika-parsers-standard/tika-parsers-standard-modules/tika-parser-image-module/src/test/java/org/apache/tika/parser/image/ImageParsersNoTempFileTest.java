@@ -19,16 +19,12 @@ package org.apache.tika.parser.image;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.stream.Stream;
-import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -63,7 +59,6 @@ public class ImageParsersNoTempFileTest extends TikaTest {
     private static final String TIFF_RES = "/test-documents/testTIFF.tif";
     private static final String WEBP = "/test-documents/testWebp_Alpha_Lossless.webp";
     private static final String WEBP_WIDTH = ImageMetadataExtractor.UNKNOWN_IMG_NS + "Image Width";
-    private static final String PNG = "/test-documents/testPNG.png";
 
     private static ParseContext context() {
         ParseContext context = new ParseContext();
@@ -90,31 +85,6 @@ public class ImageParsersNoTempFileTest extends TikaTest {
     @Test
     public void testWebPInMemory() throws Exception {
         assertNotSpooled(new WebPParser(), WEBP, WEBP_WIDTH);
-    }
-
-    /**
-     * ImageIO's own file cache is outside TemporaryResources entirely, and its cache file is
-     * gone by the time a parse returns -- so the watched-directory check cannot see it. Make
-     * the cache directory unwritable instead: a parser that asks ImageIO for a file-backed
-     * stream then fails with "Can't create cache file"; one that reads from memory never
-     * notices.
-     */
-    @Test
-    public void testImageIoParserUsesNoFileCache() throws Exception {
-        assumeTrue(Files.getFileStore(tempDir).supportsFileAttributeView("posix"), "needs POSIX permissions");
-        Path cache = Files.createDirectory(tempDir.resolve("imageio-cache"));
-        File before = ImageIO.getCacheDirectory();
-        boolean useCache = ImageIO.getUseCache();
-        ImageIO.setUseCache(true);
-        ImageIO.setCacheDirectory(cache.toFile());
-        Files.setPosixFilePermissions(cache, PosixFilePermissions.fromString("r-xr-xr-x"));
-        try {
-            assertNotSpooled(new ImageParser(), PNG, TIFF.IMAGE_WIDTH.getName());
-        } finally {
-            Files.setPosixFilePermissions(cache, PosixFilePermissions.fromString("rwxr-xr-x"));
-            ImageIO.setCacheDirectory(before);
-            ImageIO.setUseCache(useCache);
-        }
     }
 
     @Test

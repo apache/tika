@@ -201,6 +201,15 @@ class CachingInputStream extends InputStream {
         return cache.isFileBacked();
     }
 
+    /**
+     * The spill file once it holds the whole source, or null. A mid-stream spill file is
+     * still growing, so naming it would be misleading; this is for diagnostics only and the
+     * very tail may still be buffered until {@link #spillToFile(String)} flushes it.
+     */
+    Path completeSpillFile() {
+        return sourceExhausted ? cache.spillFilePath() : null;
+    }
+
     @Override
     public void close() throws IOException {
         // the cache is registered with tmp only once it spills, so a throwing source

@@ -99,4 +99,30 @@ public class DigestHelperTest {
             assertEquals(md5Of(SOURCE), metadata.get(MD5_KEY));
         }
     }
+
+    /**
+     * A translator that claims the stream and writes nothing must publish nothing. Otherwise
+     * every such object gets the digest of zero bytes -- the same wrong value for all of them.
+     */
+    @Test
+    public void testTranslatorThatWritesNothingPublishesNoDigest() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(FailingTestTranslator.MODE, "silent");
+        try (TikaInputStream tis = TikaInputStream.get(SOURCE, new Metadata())) {
+            DigestHelper.maybeDigest(tis, metadata, contextWithDigester());
+            assertNull(metadata.get(MD5_KEY), "no digest of the zero bytes it produced");
+            assertNull(metadata.get(HttpHeaders.CONTENT_LENGTH));
+        }
+    }
+
+    /** A translator that closes the sink must not publish on our behalf, nor break the parse. */
+    @Test
+    public void testTranslatorClosingTheStreamStillDigestsWhatItWrote() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(FailingTestTranslator.MODE, "closes");
+        try (TikaInputStream tis = TikaInputStream.get(SOURCE, new Metadata())) {
+            DigestHelper.maybeDigest(tis, metadata, contextWithDigester());
+            assertEquals(md5Of(TRANSLATED), metadata.get(MD5_KEY));
+        }
+    }
 }

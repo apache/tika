@@ -603,9 +603,20 @@ public class POIFSContainerDetector implements Detector {
      * container's lifetime -- so that allocation is reserved from the CacheMemoryBudget
      * before it is made. Returns null, and the caller uses the file, when the content is not
      * in memory, the budget has no room for the copy, or POI's stream loader rejects the
-     * object (it is stricter than the file loader on truncated objects). Without a budget
-     * only objects under the cache's threshold have an in-memory view, which bounds the copy.
+     * object (it is stricter than the file loader on truncated objects).
+     * <p>
+     * With no budget in the context there is no accounting at all, and a byte[]-backed
+     * stream has no spill threshold to bound it either, so the copy is capped outright:
+     * above {@link #MAX_UNBUDGETED_COPY} the file path -- which is what 4.0.0 always did --
+     * is used instead.
      */
+    /**
+     * Ceiling on POI's in-memory copy when no CacheMemoryBudget is present to account for it.
+     * Embedded OLE2 objects are typically a few hundred KB; past this the file loader's lazy
+     * block reads cost less than the heap.
+     */
+    private static final long MAX_UNBUDGETED_COPY = 16L * 1024 * 1024;
+
     private Set<String> getTopLevelNamesInMemory(TikaInputStream stream, ParseContext context)
             throws IOException {
         CacheMemoryBudget budget = context == null ? null : context.get(CacheMemoryBudget.class);
@@ -624,21 +635,27 @@ public class POIFSContainerDetector implements Detector {
             if (copy < 0) {
                 return null;
             }
-            if (budget != null) {
+            if (budget == null) {
+                if (copy > MAX_UNBUDGETED_COPY) {
+                    return null;
+                }
+            } else {
                 if (budget.tryReserve(copy) == 0) {
                     return null;
                 }
                 reserved = copy;
             }
+            // POI reads from wherever the channel sits; do not rely on it being fresh
+            channel.position(0);
             fs = new POIFSFileSystem(Channels.newInputStream(channel));
             Set<String> names = getTopLevelNames(fs.getRoot());
             stream.setOpenContainer(fs);
+            fs = null;   // published: the stream owns it now, the finally must not close it
             if (reserved > 0) {
                 long charged = reserved;
                 stream.addCloseableResource(() -> budget.release(charged));
                 reserved = 0;
             }
-            fs = null;
             return names;
         } catch (SecurityException e) {
             throw e;

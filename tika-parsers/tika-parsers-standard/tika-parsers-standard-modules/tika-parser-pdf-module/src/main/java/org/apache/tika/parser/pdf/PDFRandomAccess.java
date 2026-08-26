@@ -46,12 +46,25 @@ public final class PDFRandomAccess {
         }
         tis.enableRewind(context == null ? null : context.get(CacheMemoryBudget.class));
         SeekableByteChannel channel = tis.getSeekableByteChannel();
-        ByteBuffer view = TikaInputStream.inMemoryContent(channel);
-        if (view == null) {
-            // the drain spilled: the content is on disk now
-            channel.close();
-            return new RandomAccessReadBufferedFile(tis.getFile());
+        try {
+            ByteBuffer view = TikaInputStream.inMemoryContent(channel);
+            if (view == null) {
+                // the drain spilled: the content is on disk now
+                channel.close();
+                return new RandomAccessReadBufferedFile(tis.getFile());
+            }
+            return wrap(channel, view);
+        } catch (IOException | RuntimeException e) {
+            try {
+                channel.close();
+            } catch (IOException closeFailure) {
+                e.addSuppressed(closeFailure);
+            }
+            throw e;
         }
+    }
+
+    private static RandomAccessRead wrap(SeekableByteChannel channel, ByteBuffer view) {
         return new RandomAccessReadBuffer(view) {
             @Override
             public void close() throws IOException {

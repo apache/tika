@@ -17,6 +17,7 @@
 package org.apache.tika.detect.microsoft;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -114,9 +115,12 @@ public class POIFSDeclaredSizeTest extends TikaTest {
     }
 
     /**
-     * End to end: the crafted object is refused before any reservation, so POI never
-     * allocates its declared size and no POIFSFileSystem is retained -- even with a budget
-     * large enough to have said yes.
+     * End to end. NOTE: this asserts only that the crafted object does not become an open
+     * container and leaves nothing charged -- both of which also hold if the declared-size
+     * guard is deleted, because POI throws on the truncated read either way. The guard's
+     * real effect is the ~238MB POI would allocate first, and measuring that needs
+     * com.sun.management, which forbidden-apis bans. The guard's arithmetic and its input
+     * channel type are pinned by the unit tests above instead.
      */
     @Test
     public void testHostileHeaderDoesNotBecomeAnOpenContainer() throws Exception {
@@ -127,11 +131,24 @@ public class POIFSDeclaredSizeTest extends TikaTest {
         try (TemporaryResources tmp = new TemporaryResources()) {
             TikaInputStream tis = TikaInputStream.get(
                     new ByteArrayInputStream(header(3813)), tmp, metadata);
-            POIFSContainerDetector detector = new POIFSContainerDetector();
-            assertTrue(detector.detect(tis, metadata, context) != null);
+            new POIFSContainerDetector().detect(tis, metadata, context);
             assertNull(tis.getOpenContainer(),
                     "a header-only object must not be opened from memory");
         }
-        assertEquals(0, budget.getReservedBytes(), "nothing was ever reserved for it");
+        assertEquals(0, budget.getReservedBytes(), "nothing left charged");
+    }
+
+    /** The channel type production actually uses is in-memory, not a file. */
+    @Test
+    public void testLyingHeaderIsRejectedOverAnInMemoryChannel() throws Exception {
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(header(3813)), tmp,
+                    new Metadata());
+            tis.enableRewind(null);
+            try (SeekableByteChannel channel = tis.getSeekableByteChannel()) {
+                assertNotNull(TikaInputStream.inMemoryContent(channel), "precondition: in memory");
+                assertEquals(-1, POIFSContainerDetector.honestDeclaredSize(channel));
+            }
+        }
     }
 }

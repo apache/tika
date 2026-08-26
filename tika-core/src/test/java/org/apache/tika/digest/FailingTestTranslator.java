@@ -27,7 +27,9 @@ import org.apache.tika.metadata.Property;
 /**
  * Service-registered for tests only. Translates when the metadata carries {@link #MODE}:
  * "upper" upper-cases the bytes; "fail" writes half of them and then throws, the way a
- * translator meets a truncated container.
+ * translator meets a truncated container; "silent" claims the stream and writes nothing,
+ * like PSTEmailStreamTranslator; "closes" writes everything and then closes the stream it
+ * was handed, which it is not supposed to do.
  */
 public class FailingTestTranslator implements EmbeddedStreamTranslator {
 
@@ -41,14 +43,21 @@ public class FailingTestTranslator implements EmbeddedStreamTranslator {
     @Override
     public void translate(TikaInputStream inputStream, Metadata metadata, OutputStream os)
             throws IOException {
+        String mode = metadata.get(MODE);
+        if ("silent".equals(mode)) {
+            return;
+        }
         byte[] all = inputStream.readAllBytes();
-        boolean fail = "fail".equals(metadata.get(MODE));
+        boolean fail = "fail".equals(mode);
         int n = fail ? all.length / 2 : all.length;
         for (int i = 0; i < n; i++) {
             os.write(Character.toUpperCase((char) all[i]));
         }
         if (fail) {
             throw new IOException("translator gave up half way");
+        }
+        if ("closes".equals(mode)) {
+            os.close();
         }
     }
 }

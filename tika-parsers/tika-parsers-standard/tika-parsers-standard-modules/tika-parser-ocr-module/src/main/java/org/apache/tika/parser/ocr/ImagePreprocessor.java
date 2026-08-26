@@ -55,7 +55,7 @@ class ImagePreprocessor implements Serializable {
         double angle = config.isApplyRotation() ? getAngle(sourceFile, metadata) : 0d;
 
         if (config.isEnableImagePreprocessing() || (config.isApplyRotation() && angle != 0)) {
-            // process the image - parameter values can be set in TesseractOCRConfig.properties
+            // process the image - parameter values come from TesseractOCRConfig
             //
             // On Windows TesseractOCRParser.getImageMagickProg() returns "magick", i.e. the
             // ImageMagick 7 program. IM7's native command form is

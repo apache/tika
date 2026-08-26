@@ -402,8 +402,12 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     /**
-     * Whether the content is already on disk -- a real file, or a cache that spilled -- so
-     * {@link #getPath()} will return without copying anything.
+     * Whether the content is already on disk: a real file, or a stream cache that spilled.
+     * {@link #getPath()} then returns that file without re-copying anything already written
+     * to it -- but it is not free, and it is not a getter: for a cache that spilled
+     * mid-stream it first drains the rest of the source into the file, switches this stream
+     * to reading from that file, and sets {@code Content-Length} on the Metadata this stream
+     * was created with. Use {@link #hasLength()} if you only need the size.
      */
     public boolean hasFile() {
         TikaInputSource source = inputSource();
@@ -579,16 +583,11 @@ public class TikaInputStream extends TaggedInputStream {
     @Override
     public String toString() {
         String str = "TikaInputStream of ";
-        // never getPath() here: on a spilled cache it drains, reopens and writes metadata
-        if (in instanceof FileSource) {
-            try {
-                str += ((FileSource) in).getPath(null).toString();
-            } catch (IOException e) {
-                str += "unknown path";
-            }
-        } else {
-            str += in.toString();
-        }
+        // materializedPath(), never getPath(): on a spilled cache the latter drains the
+        // source, reopens it and writes metadata -- toString() must not do that
+        TikaInputSource source = inputSource();
+        Path materialized = source == null ? null : source.materializedPath();
+        str += materialized != null ? materialized.toString() : in.toString();
         if (openContainer != null) {
             str += " (in " + openContainer + ")";
         }
