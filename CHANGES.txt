@@ -1,5 +1,15 @@
 Release 4.1.0 - unreleased
 
+   * OOXML parsers flag package parts that are unreachable through the OPC
+     relationship graph: msoffice:has-unreferenced-parts (boolean) and
+     msoffice:unreferenced-part-names. Purely structural (no bytes are
+     inspected; content types come from [Content_Types].xml by extension), so
+     expect false positives from tools that leave orphan parts behind. A hiding
+     place a raw-ZIP scanner can still see, not a statement about what Tika
+     parsed. Applies to Word, Excel, PowerPoint and Visio OOXML (including
+     macro-enabled variants); XPS links content by markup rather than
+     relationships and is not checked (TIKA-4837).
+     
    * Shared pipes server (useSharedServer: true, not the default): a client whose
      in-flight parse was killed by another client's restart could restart the
      healthy replacement. ensureRunning holds its lock across the whole fork, so
