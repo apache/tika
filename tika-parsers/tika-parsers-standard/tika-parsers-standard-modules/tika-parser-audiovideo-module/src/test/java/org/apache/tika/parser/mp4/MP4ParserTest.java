@@ -203,9 +203,7 @@ public class MP4ParserTest extends TikaTest {
 
     @Test
     public void testVideoAudioTrackCodecs() throws Exception {
-        // a 1s clip with an H.264 video track and an AAC audio track: both track
-        // codecs must be exposed for a video/* file, where xmpDM:audioCompressor
-        // does not fire and xmpDM:videoCompressor carries the encoder name.
+        //a 1s clip with an H.264 video track and an AAC audio track
         XMLResult r = getXML("testMP4VideoAudio.mp4");
         assertEquals("video/mp4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("avc1", r.metadata.get(Video.FORMAT));

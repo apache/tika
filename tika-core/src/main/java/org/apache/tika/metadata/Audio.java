@@ -88,8 +88,8 @@ public interface Audio {
      * The audio track's four-character codec identifier from the MP4/QuickTime
      * sample description (e.g. "mp4a" for AAC, "alac", "ac-3"), or the protected
      * sample entry format ("drms"/"enca") for protected streams, where {@link #HAS_DRM}
-     * is also set. A per-stream value: with several audio tracks it reflects the last one.
-     * Distinct from {@link XMPDM#AUDIO_COMPRESSOR}, the human-readable codec name.
+     * is also set. Non-printable fourccs are not exposed. A per-stream value: with
+     * several audio tracks it reflects the last one.
      */
     Property FORMAT = Property.internalText("audio:format");
 

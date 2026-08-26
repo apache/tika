@@ -17,7 +17,6 @@
 package org.apache.tika.parser.mp4;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 import com.drew.imaging.mp4.Mp4Handler;
 import com.drew.metadata.Metadata;
@@ -35,12 +34,12 @@ import org.apache.tika.metadata.Video;
 class TikaMp4VideoHandler extends Mp4VideoHandler {
 
     /**
-     * Fixed size of a VisualSampleEntry (ISO/IEC 14496-12) before its child
-     * boxes: the 8 byte box header, 8 bytes of SampleEntry (6 reserved, 2 data
-     * reference index) and 70 bytes of visual fields ending with the 32 byte
-     * compressor name, the depth and a pre-defined field.
+     * Fixed size of a VisualSampleEntry (ISO/IEC 14496-12) after its box
+     * header, up to where the child boxes start: 8 bytes of SampleEntry (6
+     * reserved, 2 data reference index) and 70 bytes of visual fields ending
+     * with the 32 byte compressor name, the depth and a pre-defined field.
      */
-    private static final int VISUAL_ENTRY_SIZE = 86;
+    private static final int VISUAL_ENTRY_SIZE = 78;
 
     private final org.apache.tika.metadata.Metadata tikaMetadata;
 
@@ -59,31 +58,19 @@ class TikaMp4VideoHandler extends Mp4VideoHandler {
         return super.processBox(type, payload, boxSize, context);
     }
 
-    /**
-     * Walks the sample description entries: 4 bytes version and flags, a
-     * 4 byte entry count, then one sample entry per count, each starting with
-     * its own size and format fourcc.
-     */
     private void extractFromSampleDescriptions(byte[] b) {
-        if (b.length < 8) {
-            return;
+        Mp4SampleEntries.walk(b, this::sampleEntry);
+    }
+
+    private void sampleEntry(String format, byte[] b, int start, int end) {
+        //the format fourcc is the video codec ('avc1', 'hev1', ...) or, for
+        //protected streams, the protected sample entry format ('encv'/'drmi')
+        if (format != null) {
+            tikaMetadata.set(Video.FORMAT, format);
         }
-        long entryCount = EndianUtils.getUIntBE(b, 4);
-        int pos = 8;
-        for (long i = 0; i < entryCount && pos + 8 <= b.length; i++) {
-            long size = EndianUtils.getUIntBE(b, pos);
-            if (size < 16 || size > b.length - pos) {
-                break;
-            }
-            int end = pos + (int) size;
-            //the format fourcc is the video codec ('avc1', 'hev1', ...) or, for
-            //protected streams, the protected sample entry format ('encv'/'drmi')
-            tikaMetadata.set(Video.FORMAT, fourCc(b, pos + 4));
-            int bitRate = findBtrtAverageBitRate(b, pos + VISUAL_ENTRY_SIZE, end);
-            if (bitRate > 0) {
-                tikaMetadata.set(Video.BITRATE, bitRate);
-            }
-            pos = end;
+        int bitRate = findBtrtAverageBitRate(b, start + VISUAL_ENTRY_SIZE, end);
+        if (bitRate > 0) {
+            tikaMetadata.set(Video.BITRATE, bitRate);
         }
     }
 
@@ -98,7 +85,7 @@ class TikaMp4VideoHandler extends Mp4VideoHandler {
             if (size < 8 || size > end - pos) {
                 return 0;
             }
-            if ("btrt".equals(fourCc(b, pos + 4)) && pos + 20 <= end) {
+            if ("btrt".equals(Mp4SampleEntries.fourCc(b, pos + 4)) && pos + 20 <= end) {
                 long averageBitRate = EndianUtils.getUIntBE(b, pos + 16);
                 return averageBitRate > 0 && averageBitRate <= Integer.MAX_VALUE
                         ? (int) averageBitRate : 0;
@@ -106,9 +93,5 @@ class TikaMp4VideoHandler extends Mp4VideoHandler {
             pos += (int) size;
         }
         return 0;
-    }
-
-    private static String fourCc(byte[] b, int pos) {
-        return new String(b, pos, 4, StandardCharsets.ISO_8859_1);
     }
 }
