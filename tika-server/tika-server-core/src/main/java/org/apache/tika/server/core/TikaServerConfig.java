@@ -74,6 +74,7 @@ public class TikaServerConfig {
     private ArrayList<String> endpoints = new ArrayList<>();
 
     private TlsConfig tlsConfig = new TlsConfig();
+    private Integer metricsPort;
 
     /**
      * Config with only the defaults
@@ -107,6 +108,16 @@ public class TikaServerConfig {
         if (commandLine.hasOption("i")) {
             config.setId(commandLine.getOptionValue("i"));
             settings.add("id");
+        }
+
+        if (commandLine.hasOption("metricsPort")) {
+            String value = commandLine.getOptionValue("metricsPort");
+            try {
+                config.setMetricsPort(Integer.parseInt(value));
+            } catch (NumberFormatException e) {
+                throw new TikaConfigException("--metricsPort must be an integer, got '" + value + "'");
+            }
+            settings.add("metricsPort");
         }
 
         config.validateConsistency(settings);
@@ -180,6 +191,15 @@ public class TikaServerConfig {
             }
         }
         tlsConfig.checkInitialization();
+        if (metricsPort != null) {
+            if (metricsPort < 0 || metricsPort > 65535) {
+                throw new TikaConfigException("metricsPort must be 0-65535, got " + metricsPort);
+            }
+            if (metricsPort != 0 && metricsPort == port) {
+                throw new TikaConfigException("metricsPort (" + metricsPort
+                        + ") must differ from the server port");
+            }
+        }
     }
 
     public String getHost() {
@@ -267,6 +287,15 @@ public class TikaServerConfig {
 
     public void setTlsConfig(TlsConfig tlsConfig) {
         this.tlsConfig = tlsConfig;
+    }
+
+    /** Prometheus scrape port; null means metrics are off. The listener binds to {@link #getHost()}. */
+    public Integer getMetricsPort() {
+        return metricsPort;
+    }
+
+    public void setMetricsPort(Integer metricsPort) {
+        this.metricsPort = metricsPort;
     }
 
     public ArrayList<String> getEndpoints() {

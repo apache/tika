@@ -1,5 +1,7 @@
 Release 4.1.0 - unreleased
 
+   * Add Micrometer reporting and opt-in endpoint for tika-server (TIKA-4839).
+     
    * Improve spooling/decrease number of spills to disk (TIKA-4835).
 
    * Fixed a bug that made per-request (parse-context) configuration unusable

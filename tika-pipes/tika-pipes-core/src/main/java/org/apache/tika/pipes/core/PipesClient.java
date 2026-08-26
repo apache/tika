@@ -85,8 +85,8 @@ public class PipesClient implements Closeable {
     /**
      * The server generation this client's connection belongs to, captured in {@link #reconnect()}.
      * Starts at MAX_VALUE so a report made before we have ever connected is never mistaken for a
-     * stale one: dropping a legitimate report can wedge the pool, while an extra one only costs a
-     * restart, so the un-connected case must fail toward reporting.
+     * stale one: dropping a legitimate mark can wedge the pool, while an extra mark only costs a
+     * restart, so the un-connected case must fail toward marking.
      */
     private volatile long connectionGeneration = Long.MAX_VALUE;
     private int filesProcessed = 0;
@@ -225,11 +225,13 @@ public class PipesClient implements Closeable {
             throw e;
         } catch (ServerInitializationException e) {
             LOG.error("server initialization failed: {} ", t.getId(), e);
+            serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
             closeConnection();
             return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
                     intermediateResult.get(), e.getMessage());
         } catch (SecurityException e) {
             LOG.error("security exception during initialization: {} ", t.getId());
+            serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
             closeConnection();
             return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
                     intermediateResult.get());
@@ -258,6 +260,7 @@ public class PipesClient implements Closeable {
                     intermediateResult.get(), e.getMessage());
         } catch (Exception e) {
             LOG.error("exception waiting for server to complete task: {} ", t.getId(), e);
+            serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
             closeConnection();
             return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH, intermediateResult.get());
         }
@@ -332,8 +335,8 @@ public class PipesClient implements Closeable {
 
         // Get port after ensureRunning - this is the port we'll connect to
         int port = serverManager.getPort();
-        // Captured with the port: every report we make below is about THIS process, and must be
-        // dropped if a sibling has already replaced it.
+        // Captured with the port: every report we make below is about THIS process, and must
+        // be dropped if a sibling has already replaced it.
         connectionGeneration = serverManager.getGeneration();
         LOG.debug("pipesClientId={}: connecting to server", pipesClientId);
 
@@ -414,7 +417,7 @@ public class PipesClient implements Closeable {
                 LOG.warn("clientId={}: client-side backstop timeout: id={} elapsed={}ms limit={}ms " +
                                 "-- server should have self-terminated well before this", pipesClientId,
                         t.getId(), totalElapsed, clientBackstopMillis);
-                serverManager.markServerForRestart(connectionGeneration);
+                serverManager.markServerForRestart(RestartReason.TIMEOUT, connectionGeneration);
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get());
             }
@@ -430,19 +433,19 @@ public class PipesClient implements Closeable {
                 switch (msg.type()) {
                     case OOM:
                         String oomMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
-                        serverManager.markServerForRestart(connectionGeneration);
+                        serverManager.markServerForRestart(RestartReason.OOM, connectionGeneration);
                         closeConnection();
                         return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.OOM,
                                 intermediateResult.get(), oomMsg);
                     case TIMEOUT:
                         String timeoutMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
-                        serverManager.markServerForRestart(connectionGeneration);
+                        serverManager.markServerForRestart(RestartReason.TIMEOUT, connectionGeneration);
                         closeConnection();
                         return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT,
                                 intermediateResult.get(), timeoutMsg);
                     case UNSPECIFIED_CRASH:
                         String crashMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
-                        serverManager.markServerForRestart(connectionGeneration);
+                        serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
                         closeConnection();
                         return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH,
                                 intermediateResult.get(), crashMsg);
@@ -476,13 +479,14 @@ public class PipesClient implements Closeable {
             } catch (SocketTimeoutException e) {
                 LOG.warn("clientId={}: Socket timeout exception while waiting for server", pipesClientId, e);
                 // Mark for restart - server is stuck on current request and needs to be restarted
-                serverManager.markServerForRestart(connectionGeneration);
+                serverManager.markServerForRestart(RestartReason.TIMEOUT, connectionGeneration);
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get(),
                         ExceptionUtils.getStackTrace(e));
             } catch (PayloadLimitExceededException e) {
                 // Stream is desynchronized (payload bytes were not consumed); close the connection.
                 LOG.warn("clientId={}: payload too large for id={}: {}", pipesClientId, t.getId(), e.getMessage());
+                serverManager.connectionAbandoned();
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(),
                         PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED,
@@ -496,8 +500,10 @@ public class PipesClient implements Closeable {
                 PipesResult.RESULT_STATUS status = UNSPECIFIED_CRASH;
                 if (exitCode == PipesMessageType.OOM.getExitCode().orElse(-1)) {
                     status = PipesResult.RESULT_STATUS.OOM;
+                    serverManager.markServerForRestart(RestartReason.OOM, connectionGeneration);
                 } else if (exitCode == PipesMessageType.TIMEOUT.getExitCode().orElse(-1)) {
                     status = PipesResult.RESULT_STATUS.TIMEOUT;
+                    serverManager.markServerForRestart(RestartReason.TIMEOUT, connectionGeneration);
                 }
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), status, intermediateResult.get(),
