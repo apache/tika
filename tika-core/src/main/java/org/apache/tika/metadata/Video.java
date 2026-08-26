@@ -39,11 +39,12 @@ public interface Video {
     Property BITRATE = Property.internalInteger("video:bitrate");
 
     /**
-     * The video track's four-character codec identifier from the MP4/QuickTime
-     * sample description (e.g. "avc1" for H.264, "hvc1"/"hev1" for HEVC), or the
-     * protected sample entry format ("encv"/"drmi") for protected streams. Non-printable
-     * fourccs are not exposed. A per-stream value: with several video tracks it reflects
-     * the last one.
+     * The video track's codec as a four-character code (FourCC), as used by
+     * QuickTime/MP4 sample descriptions, AVI and other containers: e.g. "avc1"
+     * for H.264, "hvc1"/"hev1" for HEVC. Protected MP4 streams carry the protected
+     * sample entry format instead ("encv"/"drmi"). Trailing padding spaces are
+     * trimmed and non-printable codes are not exposed. A per-stream value: with
+     * several video tracks it reflects the last one.
      */
-    Property FORMAT = Property.internalText("video:format");
+    Property FOURCC = Property.internalText("video:fourcc");
 }

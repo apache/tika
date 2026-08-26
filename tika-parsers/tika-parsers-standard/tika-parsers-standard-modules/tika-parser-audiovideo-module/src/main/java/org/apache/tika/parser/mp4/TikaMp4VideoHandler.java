@@ -62,11 +62,11 @@ class TikaMp4VideoHandler extends Mp4VideoHandler {
         Mp4SampleEntries.walk(b, this::sampleEntry);
     }
 
-    private void sampleEntry(String format, byte[] b, int start, int end) {
-        //the format fourcc is the video codec ('avc1', 'hev1', ...) or, for
+    private void sampleEntry(String fourCC, byte[] b, int start, int end) {
+        //the FourCC is the video codec ('avc1', 'hev1', ...) or, for
         //protected streams, the protected sample entry format ('encv'/'drmi')
-        if (format != null) {
-            tikaMetadata.set(Video.FORMAT, format);
+        if (fourCC != null) {
+            tikaMetadata.set(Video.FOURCC, fourCC);
         }
         int bitRate = findBtrtAverageBitRate(b, start + VISUAL_ENTRY_SIZE, end);
         if (bitRate > 0) {
@@ -85,7 +85,7 @@ class TikaMp4VideoHandler extends Mp4VideoHandler {
             if (size < 8 || size > end - pos) {
                 return 0;
             }
-            if ("btrt".equals(Mp4SampleEntries.fourCc(b, pos + 4)) && pos + 20 <= end) {
+            if ("btrt".equals(Mp4SampleEntries.fourCC(b, pos + 4)) && pos + 20 <= end) {
                 long averageBitRate = EndianUtils.getUIntBE(b, pos + 16);
                 return averageBitRate > 0 && averageBitRate <= Integer.MAX_VALUE
                         ? (int) averageBitRate : 0;

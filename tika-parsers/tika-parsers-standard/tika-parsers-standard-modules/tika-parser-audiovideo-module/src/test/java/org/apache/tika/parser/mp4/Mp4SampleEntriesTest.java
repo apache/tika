@@ -37,7 +37,7 @@ public class Mp4SampleEntriesTest {
 
     @Test
     public void testLargesizeEntry() {
-        //size 1 announces a 64-bit size after the fourcc; the visitor's start
+        //size 1 announces a 64-bit size after the FourCC; the visitor's start
         //must skip the 16 byte header
         byte[] stsd = stsd(largeEntry(32, "avc1", 16), entry(24, "mp4a", 16));
         assertEquals(List.of("avc1:24:40", "mp4a:48:64"), walk(stsd));
@@ -67,24 +67,24 @@ public class Mp4SampleEntriesTest {
     }
 
     @Test
-    public void testPrintableFourCc() {
-        assertEquals("mp4a", Mp4SampleEntries.printableFourCc(ascii("mp4a"), 0));
+    public void testPrintableFourCC() {
+        assertEquals("mp4a", Mp4SampleEntries.printableFourCC(ascii("mp4a"), 0));
         //QuickTime pads short codes with spaces
-        assertEquals("raw", Mp4SampleEntries.printableFourCc(ascii("raw "), 0));
-        assertEquals("rle", Mp4SampleEntries.printableFourCc(ascii("rle "), 0));
-        assertNull(Mp4SampleEntries.printableFourCc(ascii("    "), 0));
-        assertNull(Mp4SampleEntries.printableFourCc(new byte[]{0, 1, 2, 3}, 0));
-        assertNull(Mp4SampleEntries.printableFourCc(new byte[]{'a', 'v', 'c', 0x7F}, 0));
-        assertNull(Mp4SampleEntries.printableFourCc(new byte[]{(byte) 0xE4, 'v', 'c', '1'}, 0));
-        //an unprintable format reaches the visitor as null but does not stop the walk
+        assertEquals("raw", Mp4SampleEntries.printableFourCC(ascii("raw "), 0));
+        assertEquals("rle", Mp4SampleEntries.printableFourCC(ascii("rle "), 0));
+        assertNull(Mp4SampleEntries.printableFourCC(ascii("    "), 0));
+        assertNull(Mp4SampleEntries.printableFourCC(new byte[]{0, 1, 2, 3}, 0));
+        assertNull(Mp4SampleEntries.printableFourCC(new byte[]{'a', 'v', 'c', 0x7F}, 0));
+        assertNull(Mp4SampleEntries.printableFourCC(new byte[]{(byte) 0xE4, 'v', 'c', '1'}, 0));
+        //an unprintable FourCC reaches the visitor as null but does not stop the walk
         byte[] stsd = stsd(entry(24, "\u0001vc1", 16), entry(24, "mp4a", 16));
         assertEquals(List.of("null:16:32", "mp4a:40:56"), walk(stsd));
     }
 
     private static List<String> walk(byte[] stsd) {
         List<String> seen = new ArrayList<>();
-        Mp4SampleEntries.walk(stsd, (format, b, start, end) ->
-                seen.add(format + ":" + start + ":" + end));
+        Mp4SampleEntries.walk(stsd, (fourCC, b, start, end) ->
+                seen.add(fourCC + ":" + start + ":" + end));
         return seen;
     }
 
@@ -97,17 +97,17 @@ public class Mp4SampleEntriesTest {
         return out.toByteArray();
     }
 
-    private static byte[] entry(int size, String fourCc, int bodyLength) {
+    private static byte[] entry(int size, String fourCC, int bodyLength) {
         byte[] b = new byte[8 + bodyLength];
         putInt(b, 0, size);
-        System.arraycopy(ascii(fourCc), 0, b, 4, 4);
+        System.arraycopy(ascii(fourCC), 0, b, 4, 4);
         return b;
     }
 
-    private static byte[] largeEntry(long size, String fourCc, int bodyLength) {
+    private static byte[] largeEntry(long size, String fourCC, int bodyLength) {
         byte[] b = new byte[16 + bodyLength];
         putInt(b, 0, 1);
-        System.arraycopy(ascii(fourCc), 0, b, 4, 4);
+        System.arraycopy(ascii(fourCC), 0, b, 4, 4);
         putInt(b, 8, (int) (size >>> 32));
         putInt(b, 12, (int) size);
         return b;

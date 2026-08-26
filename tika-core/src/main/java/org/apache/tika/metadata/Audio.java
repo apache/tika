@@ -85,13 +85,15 @@ public interface Audio {
     Property BITS_PER_SAMPLE = Property.internalInteger("audio:bits-per-sample");
 
     /**
-     * The audio track's four-character codec identifier from the MP4/QuickTime
-     * sample description (e.g. "mp4a" for AAC, "alac", "ac-3"), or the protected
-     * sample entry format ("drms"/"enca") for protected streams, where {@link #HAS_DRM}
-     * is also set. Non-printable fourccs are not exposed. A per-stream value: with
-     * several audio tracks it reflects the last one.
+     * The audio track's codec as a four-character code (FourCC), as used by
+     * QuickTime/MP4 sample descriptions, AVI and other containers: e.g. "mp4a"
+     * for MPEG-4 audio (AAC), "alac", "ac-3". Protected MP4 streams carry the
+     * protected sample entry format instead ("drms"/"enca"), where {@link #HAS_DRM}
+     * is also set. Trailing padding spaces are trimmed and non-printable codes are
+     * not exposed. A per-stream value: with several audio tracks it reflects the
+     * last one.
      */
-    Property FORMAT = Property.internalText("audio:format");
+    Property FOURCC = Property.internalText("audio:fourcc");
 
     /**
      * The raw javax.sound encoding name (e.g. "PCM_SIGNED"), as reported by {@code

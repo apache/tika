@@ -55,14 +55,14 @@ class TikaMp4SoundHandler extends Mp4SoundHandler {
         Mp4SampleEntries.walk(b, this::sampleEntry);
     }
 
-    private void sampleEntry(String format, byte[] b, int start, int end) {
-        //protected streams replace the codec fourcc with a protected sample
+    private void sampleEntry(String fourCC, byte[] b, int start, int end) {
+        //protected streams replace the codec FourCC with a protected sample
         //entry format: 'drms' (FairPlay) or 'enca' (ISO common encryption)
-        if ("drms".equals(format) || "enca".equals(format)) {
+        if ("drms".equals(fourCC) || "enca".equals(fourCC)) {
             tikaMetadata.set(Audio.HAS_DRM, true);
         }
-        if (format != null) {
-            tikaMetadata.set(Audio.FORMAT, format);
+        if (fourCC != null) {
+            tikaMetadata.set(Audio.FOURCC, fourCC);
         }
         if (start + Mp4SampleEntries.SAMPLE_ENTRY_FIELDS + 2 <= end) {
             //after the SampleEntry fields come the version-dependent fixed
@@ -110,7 +110,7 @@ class TikaMp4SoundHandler extends Mp4SoundHandler {
             if (size < 8 || size > end - pos) {
                 return 0;
             }
-            String type = Mp4SampleEntries.fourCc(b, pos + 4);
+            String type = Mp4SampleEntries.fourCC(b, pos + 4);
             if ("esds".equals(type)) {
                 return readEsdsAverageBitRate(b, pos + 8, pos + (int) size);
             }

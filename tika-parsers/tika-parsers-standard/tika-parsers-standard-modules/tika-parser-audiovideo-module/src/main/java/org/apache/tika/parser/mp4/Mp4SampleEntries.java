@@ -24,7 +24,7 @@ import org.apache.tika.io.EndianUtils;
  * Walks the sample entries of a SampleDescriptionBox ('stsd') payload, shared
  * by the sound and video handlers. The payload is 4 bytes version and flags,
  * a 4 byte entry count, then one sample entry per count. Each entry is a box:
- * a 32-bit size and a fourcc, where a size of 1 announces a 64-bit largesize
+ * a 32-bit size and a FourCC, where a size of 1 announces a 64-bit largesize
  * and a size of 0 extends the entry to the end of the payload (ISO/IEC
  * 14496-12, 4.2).
  */
@@ -38,12 +38,12 @@ final class Mp4SampleEntries {
 
     interface Visitor {
         /**
-         * @param format the entry's fourcc, or null if it is not printable
+         * @param fourCC the entry's FourCC, or null if it is not printable
          * @param b      the stsd payload
          * @param start  offset of the first byte after the entry's box header
          * @param end    offset one past the entry's last byte
          */
-        void entry(String format, byte[] b, int start, int end);
+        void entry(String fourCC, byte[] b, int start, int end);
     }
 
     private Mp4SampleEntries() {
@@ -59,7 +59,7 @@ final class Mp4SampleEntries {
             long size = EndianUtils.getUIntBE(b, pos);
             int header = 8;
             if (size == 1) {
-                //largesize: the 64-bit size follows the fourcc
+                //largesize: the 64-bit size follows the FourCC
                 if (pos + 16 > b.length) {
                     return;
                 }
@@ -74,25 +74,25 @@ final class Mp4SampleEntries {
                 return;
             }
             int end = pos + (int) size;
-            visitor.entry(printableFourCc(b, pos + 4), b, pos + header, end);
+            visitor.entry(printableFourCC(b, pos + 4), b, pos + header, end);
             pos = end;
         }
     }
 
     /**
-     * Reads a fourcc as it is, for comparing against known box types.
+     * Reads a FourCC as it is, for comparing against known box types.
      */
-    static String fourCc(byte[] b, int pos) {
+    static String fourCC(byte[] b, int pos) {
         return new String(b, pos, 4, StandardCharsets.ISO_8859_1);
     }
 
     /**
-     * Reads a fourcc for exposing it as a metadata value: null unless all four
+     * Reads a FourCC for exposing it as a metadata value: null unless all four
      * bytes are printable ASCII, with trailing spaces trimmed (QuickTime pads
      * short codes such as 'raw ' and 'rle ' with spaces). Codes that are blank
      * after trimming are null as well.
      */
-    static String printableFourCc(byte[] b, int pos) {
+    static String printableFourCC(byte[] b, int pos) {
         int len = 4;
         while (len > 0 && b[pos + len - 1] == ' ') {
             len--;
