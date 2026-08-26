@@ -365,8 +365,10 @@ fails immediately, listing the names that *are* available. Fetchers and emitters
 lazily, on first use; `pipes-iterator` and `pipes-reporters` instances are built during config
 load.
 
-An array is rejected outright in `fetchers`, `emitters` and `pipes-iterator`. `pipes-reporters` is
-the exception: an array there loads zero reporters and reports no error, so keep it an object.
+An array is rejected outright in `fetchers` and `emitters`, and in `pipes-iterator` — unless it is
+empty: `"pipes-iterator": []` is read as "no iterator configured" and reports no error.
+`pipes-reporters` is looser still — any array there, empty or not, loads zero reporters and reports
+no error. Keep both an object.
 
 == Developing without repackaging
 

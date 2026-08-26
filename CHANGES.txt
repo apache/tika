@@ -12,10 +12,12 @@ Release 4.1.0 - unreleased
      than lazily; under CONTENT_ONLY only a parse-context filter replaces the
      built-in one, not the top-level metadata-filters chain;
      _mime-include/_mime-exclude also accept a bare string; Tess4J locks
-     poolSize and maxImagePixels as well as the two paths. Also corrected the
-     config nesting shown in every pipes-plugin fetcher/emitter javadoc -- 23
-     of them, which had it inverted (the instance id is the outer key, the
-     component name the inner) -- and removed references to a
+     poolSize and maxImagePixels as well as the two paths; and pdf:trapped and
+     xmp:pdf:Trapped are new 4.x keys rather than renames (3.x captured the
+     flag only as pdf:docinfo:trapped and dropped the XMP value). Also
+     corrected the config nesting shown in every pipes-plugin fetcher/emitter
+     javadoc -- 23 of them, which had it inverted (the instance id is the
+     outer key, the component name the inner) -- and removed references to a
      TesseractOCRConfig.properties file that 4.x does not load (TIKA-4842).
 
    * Pipes plugins no longer bundle their own Jackson: jackson-core, -databind
