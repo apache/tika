@@ -31,8 +31,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "emitters": {
- *   "jdbc-emitter": {
- *     "my-jdbc-emitter": {
+ *   "my-jdbc-emitter": {
+ *     "jdbc-emitter": {
  *       "connection": "jdbc:postgresql://localhost/mydb",
  *       "insert": "insert into docs (id, content) values (?, ?)",
  *       "keys": {"id": "tk:content", "content": "content"}
