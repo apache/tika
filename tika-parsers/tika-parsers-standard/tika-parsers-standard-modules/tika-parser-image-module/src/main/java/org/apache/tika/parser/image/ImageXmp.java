@@ -17,8 +17,6 @@
 package org.apache.tika.parser.image;
 
 import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -28,6 +26,7 @@ import com.drew.imaging.jpeg.JpegProcessingException;
 import com.drew.imaging.jpeg.JpegSegmentData;
 import com.drew.imaging.jpeg.JpegSegmentReader;
 import com.drew.imaging.jpeg.JpegSegmentType;
+import com.drew.lang.StreamReader;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.xml.sax.SAXException;
@@ -81,12 +80,12 @@ final class ImageXmp {
         }
     }
 
-    /** JPEG: read APP1 segments, reassemble Extended XMP, parse each resulting packet. */
-    static void extractJpeg(File file, Metadata metadata, ParseContext context) {
+    /** JPEG: read APP1 segments, reassemble Extended XMP, parse each resulting packet. Consumes the stream. */
+    static void extractJpeg(InputStream stream, Metadata metadata, ParseContext context) {
         try {
             Iterable<byte[]> app1;
             try {
-                JpegSegmentData data = JpegSegmentReader.readSegments(file,
+                JpegSegmentData data = JpegSegmentReader.readSegments(new StreamReader(stream),
                         Collections.singletonList(JpegSegmentType.APP1));
                 app1 = data.getSegments(JpegSegmentType.APP1);
             } catch (JpegProcessingException e) {
@@ -105,10 +104,10 @@ final class ImageXmp {
         }
     }
 
-    /** WebP: pull the raw packet out of the RIFF {@code "XMP "} chunk and parse it. */
-    static void extractWebp(File file, Metadata metadata, ParseContext context) {
+    /** WebP: pull the raw packet out of the RIFF {@code "XMP "} chunk and parse it. Consumes the stream. */
+    static void extractWebp(InputStream stream, Metadata metadata, ParseContext context) {
         try {
-            byte[] xmp = readRiffChunk(file, "XMP ");
+            byte[] xmp = readRiffChunk(stream, "XMP ");
             if (xmp != null) {
                 new XmpExtractor().extract(xmp, metadata, context);
             }
@@ -123,28 +122,28 @@ final class ImageXmp {
     private static final long MAX_CHUNK = 64L * 1024 * 1024;
 
     /** Return the payload of the first top-level RIFF chunk with the given FourCC, or null. */
-    private static byte[] readRiffChunk(File file, String fourCC) throws IOException {
-        try (InputStream in = new BufferedInputStream(new FileInputStream(file))) {
-            byte[] head = new byte[12];
-            if (IOUtils.read(in, head, 0, 12) < 12 || head[0] != 'R' || head[1] != 'I' ||
-                    head[2] != 'F' || head[3] != 'F' || head[8] != 'W' || head[9] != 'E' ||
-                    head[10] != 'B' || head[11] != 'P') {
-                return null;
-            }
-            byte[] ch = new byte[8];
-            while (IOUtils.read(in, ch, 0, 8) == 8) {
-                long size = (ch[4] & 0xffL) | (ch[5] & 0xffL) << 8 |
-                        (ch[6] & 0xffL) << 16 | (ch[7] & 0xffL) << 24;
-                if (fourCC.equals(new String(ch, 0, 4, StandardCharsets.US_ASCII))) {
-                    if (size > MAX_CHUNK) {
-                        return null;   // target chunk too large to allocate
-                    }
-                    byte[] data = new byte[(int) size];
-                    return IOUtils.read(in, data, 0, data.length) == data.length ? data : null;
+    private static byte[] readRiffChunk(InputStream stream, String fourCC) throws IOException {
+        // not closed: the stream is the caller's, who rewinds it for the next pass
+        InputStream in = new BufferedInputStream(stream);
+        byte[] head = new byte[12];
+        if (IOUtils.read(in, head, 0, 12) < 12 || head[0] != 'R' || head[1] != 'I' ||
+                head[2] != 'F' || head[3] != 'F' || head[8] != 'W' || head[9] != 'E' ||
+                head[10] != 'B' || head[11] != 'P') {
+            return null;
+        }
+        byte[] ch = new byte[8];
+        while (IOUtils.read(in, ch, 0, 8) == 8) {
+            long size = (ch[4] & 0xffL) | (ch[5] & 0xffL) << 8 |
+                    (ch[6] & 0xffL) << 16 | (ch[7] & 0xffL) << 24;
+            if (fourCC.equals(new String(ch, 0, 4, StandardCharsets.US_ASCII))) {
+                if (size > MAX_CHUNK) {
+                    return null;   // target chunk too large to allocate
                 }
-                // a large foreign chunk before "XMP " must be skipped, not abort the scan
-                IOUtils.skipFully(in, size + (size & 1L));   // RIFF pads chunks to even length
+                byte[] data = new byte[(int) size];
+                return IOUtils.read(in, data, 0, data.length) == data.length ? data : null;
             }
+            // a large foreign chunk before "XMP " must be skipped, not abort the scan
+            IOUtils.skipFully(in, size + (size & 1L));   // RIFF pads chunks to even length
         }
         return null;
     }

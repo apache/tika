@@ -19,6 +19,8 @@ package org.apache.tika.parser.image;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
@@ -41,6 +43,7 @@ import com.drew.imaging.tiff.TiffProcessingException;
 import com.drew.imaging.webp.WebpMetadataReader;
 import com.drew.lang.ByteArrayReader;
 import com.drew.lang.GeoLocation;
+import com.drew.lang.RandomAccessReader;
 import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
@@ -70,6 +73,7 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.KeyPrefix;
@@ -135,6 +139,50 @@ public class ImageMetadataExtractor {
             new ExifReader(), new IccReader(), new PhotoshopReader(), new DuckyReader(),
             new IptcReader(), new AdobeJpegReader(), new JpegDhtReader(), new JpegDnlReader());
 
+    /**
+     * Reads from the file when one already exists (that path also yields metadata-extractor's
+     * file-system tags: img:File Name/Size/Modified Date, which describe the file, not the
+     * image), and from the stream otherwise. JPEG is read sequentially, so the stream costs
+     * no extra memory.
+     */
+    public void parseJpeg(TikaInputStream tis) throws IOException, SAXException, TikaException {
+        if (tis.hasFile()) {
+            parseJpeg(tis.getFile());
+        } else {
+            parseJpeg((InputStream) tis);
+        }
+    }
+
+    /**
+     * TIFF needs random access. In-memory content is read in place through a zero-copy view;
+     * anything else is read from the file. There is deliberately no InputStream overload:
+     * metadata-extractor's stream reader retains everything it reads.
+     */
+    public void parseTiff(TikaInputStream tis) throws IOException, SAXException, TikaException {
+        if (tis.hasFile()) {
+            parseTiff(tis.getFile());
+            return;
+        }
+        try (SeekableByteChannel channel = tis.getSeekableByteChannel()) {
+            ByteBuffer view = TikaInputStream.inMemoryContent(channel);
+            if (view != null) {
+                parseTiff(new ByteBufferReader(view));
+                return;
+            }
+        }
+        // the drain spilled: the content is on disk now
+        parseTiff(tis.getFile());
+    }
+
+    /** See {@link #parseJpeg(TikaInputStream)}; WebP is read sequentially too. */
+    public void parseWebP(TikaInputStream tis) throws IOException, TikaException {
+        if (tis.hasFile()) {
+            parseWebP(tis.getFile());
+        } else {
+            parseWebP((InputStream) tis);
+        }
+    }
+
     public void parseJpeg(File file) throws IOException, SAXException, TikaException {
         try {
             com.drew.metadata.Metadata jpegMetadata =
@@ -145,23 +193,41 @@ public class ImageMetadataExtractor {
         }
     }
 
+    public void parseJpeg(InputStream stream) throws IOException, SAXException, TikaException {
+        try {
+            handle(JpegMetadataReader.readMetadata(stream, JPEG_READERS_NO_XMP));
+        } catch (JpegProcessingException | MetadataException e) {
+            throw new TikaException("Can't read JPEG metadata", e);
+        }
+    }
+
     public void parseTiff(File file) throws IOException, SAXException, TikaException {
         try {
-            com.drew.metadata.Metadata tiffMetadata = TiffMetadataReader.readMetadata(file);
-            handle(tiffMetadata);
+            handle(TiffMetadataReader.readMetadata(file));
+        } catch (MetadataException | TiffProcessingException e) {
+            throw new TikaException("Can't read TIFF metadata", e);
+        }
+    }
+
+    private void parseTiff(RandomAccessReader reader) throws IOException, SAXException, TikaException {
+        try {
+            handle(TiffMetadataReader.readMetadata(reader));
         } catch (MetadataException | TiffProcessingException e) {
             throw new TikaException("Can't read TIFF metadata", e);
         }
     }
 
     public void parseWebP(File file) throws IOException, TikaException {
-
         try {
-            com.drew.metadata.Metadata webPMetadata = new com.drew.metadata.Metadata();
-            webPMetadata = WebpMetadataReader.readMetadata(file);
-            handle(webPMetadata);
-        } catch (IOException e) {
-            throw e;
+            handle(WebpMetadataReader.readMetadata(file));
+        } catch (RiffProcessingException | MetadataException e) {
+            throw new TikaException("Can't process Riff data", e);
+        }
+    }
+
+    public void parseWebP(InputStream stream) throws IOException, TikaException {
+        try {
+            handle(WebpMetadataReader.readMetadata(stream));
         } catch (RiffProcessingException | MetadataException e) {
             throw new TikaException("Can't process Riff data", e);
         }
