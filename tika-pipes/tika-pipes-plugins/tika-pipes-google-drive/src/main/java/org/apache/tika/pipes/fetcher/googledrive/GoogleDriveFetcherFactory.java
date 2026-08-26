@@ -32,8 +32,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "fetchers": {
- *   "google-drive-fetcher": {
- *     "my-drive-fetcher": {
+ *   "my-drive-fetcher": {
+ *     "google-drive-fetcher": {
  *       "serviceAccountCredentialsPath": "/path/to/credentials.json",
  *       "impersonatedUser": "user@example.com"
  *     }

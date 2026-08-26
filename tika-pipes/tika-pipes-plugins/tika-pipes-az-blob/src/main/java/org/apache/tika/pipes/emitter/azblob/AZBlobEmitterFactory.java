@@ -31,8 +31,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "emitters": {
- *   "az-blob-emitter": {
- *     "my-az-emitter": {
+ *   "my-az-emitter": {
+ *     "az-blob-emitter": {
  *       "sasToken": "your-sas-token",
  *       "endpoint": "https://account.blob.core.windows.net",
  *       "container": "my-container",

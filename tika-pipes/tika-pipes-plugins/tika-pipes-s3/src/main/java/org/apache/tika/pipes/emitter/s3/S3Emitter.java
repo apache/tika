@@ -68,8 +68,8 @@ import org.apache.tika.utils.StringUtils;
  * <pre>
  * {
  *   "emitters": {
- *     "s3-emitter": {
- *       "my-s3": {
+ *     "my-s3": {
+ *       "s3-emitter": {
  *         "region": "us-east-1",
  *         "bucket": "my-bucket",
  *         "credentialsProvider": "profile",

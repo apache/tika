@@ -88,8 +88,8 @@ applies. The Default column below is therefore the Kafka client's default.
 |One of `none`, `gzip`, `snappy`, `lz4`, `zstd`.
 
 |`connectionsMaxIdleMs`
-|_ignored_
-|Accepted by the config parser but never passed to the producer, so it has no effect. Kafka's own `connections.max.idle.ms` default of `540000` always applies.
+|`540000`
+|Passed through to the producer as `connections.max.idle.ms`.
 
 |`deliveryTimeoutMs`
 |`120000`

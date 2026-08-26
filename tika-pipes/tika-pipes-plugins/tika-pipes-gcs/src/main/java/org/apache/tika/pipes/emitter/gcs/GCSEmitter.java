@@ -49,8 +49,8 @@ import org.apache.tika.utils.StringUtils;
  * <pre>
  * {
  *   "emitters": {
- *     "gcs-emitter": {
- *       "my-gcs": {
+ *     "my-gcs": {
+ *       "gcs-emitter": {
  *         "projectId": "my-project-id",
  *         "bucket": "my-bucket",
  *         "prefix": "output",

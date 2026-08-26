@@ -320,7 +320,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.72.0</google.cloud.version>
-    <aws2.version>2.54.3</aws2.version>
+    <aws2.version>2.54.4</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -390,7 +390,7 @@
     <jhighlight.version>2.0.0</jhighlight.version>
     <jna.version>5.19.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
-    <jsoup.version>1.23.1</jsoup.version>
+    <jsoup.version>1.23.2</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit6.version>6.1.3</junit6.version>
     <juniversalchardet.version>2.5.0</juniversalchardet.version>

@@ -26,6 +26,36 @@ Release 4.1.0 - unreleased
      (PipesServer.IDLE_EXIT_CODE) instead of 0, so the parent can tell an idle
      exit from a requested shutdown (TIKA-4839).
 
+   * Documentation: corrected a batch of pages and javadocs that contradicted
+     the code. Notably: the ES/OpenSearch attachmentStrategy has no default
+     (unset means embedded documents get neither the parent field nor the
+     parent/child relation); Kafka's connectionsMaxIdleMs is passed to the
+     producer, not ignored; jdbc queryTimeoutSeconds is applied only when > 0,
+     so 0 does not mean "no limit"; the Solr emitter/iterator support only
+     basic auth, not ntlm, and only when a userName is set; pipes-reporters
+     silently loads zero reporters when given a JSON array, and
+     pipes-iterator/pipes-reporters instances are built at config load rather
+     than lazily; under CONTENT_ONLY only a parse-context filter replaces the
+     built-in one, not the top-level metadata-filters chain;
+     _mime-include/_mime-exclude also accept a bare string; Tess4J locks
+     poolSize and maxImagePixels as well as the two paths; and pdf:trapped and
+     xmp:pdf:Trapped are new 4.x keys rather than renames (3.x captured the
+     flag only as pdf:docinfo:trapped and dropped the XMP value). Also
+     corrected the config nesting shown in every pipes-plugin fetcher/emitter
+     javadoc -- 23 of them, which had it inverted (the instance id is the
+     outer key, the component name the inner) -- and removed references to a
+     TesseractOCRConfig.properties file that 4.x does not load (TIKA-4842).
+
+   * Pipes plugins no longer bundle their own Jackson: jackson-core, -databind
+     and -annotations are provided by the host (tika-serialization) and the
+     plugins parent pom now bans bundling them, so a mapper can cross the
+     plugin boundary without a second copy of the Jackson classes (seven plugin
+     zips shipped one). Plugin configuration JSON is parsed by one shared
+     mapper, PluginJson (tika-plugins-core), which rejects unknown keys,
+     numbers for enums and duplicate keys, and accepts
+     // and /* */ comments; the 33 per-plugin *Config classes use it instead of
+     their own bare ObjectMapper (TIKA-4840).
+
    * tika-server and tika-async-cli now start from a config that contains
      // or /* */ comments, as the configuration docs have always said they
      may. The main loader accepted them; the steps that re-read the user's

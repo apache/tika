@@ -4,10 +4,9 @@ description: >
   Multi-agent review of a PR or branch across eight dimensions — security,
   correctness, test coverage, API/compatibility, usability, documentation,
   code quality (simplification + comment terseness), and performance
-  (waste + benchmark-before-merge flags). Sizes the diff first, then either
-  reviews inline or launches parallel reviewers off a shared brief, verifies
-  findings against actual code, consolidates into one ranked list, then fixes
-  on approval. Use for "review this PR", "review the
+  (waste + benchmark-before-merge flags). Launches parallel
+  reviewers, verifies findings against actual code, consolidates into one
+  ranked list, then fixes on approval. Use for "review this PR", "review the
   branch", "/pr-review 3011"; add "thorough" for adversarial verification.
 ---
 
@@ -49,59 +48,7 @@ decisions, and re-reporting them wastes everyone's time. Ask the user only
 for constraints no document answers (e.g. "enforcement is process-level
 only"); forward constraints learned mid-review to running agents.
 
-## 2. Size the review, then pick the shape
-
-Measure before fanning out: `git diff --stat <sha>...<head>` — changed files,
-added lines, distinct modules, and whether the diff adds public API, a
-dependency, a module, or config surface.
-
-- **Inline** (roughly under ~150 added lines, one module, no new
-  API/deps/config) — no agents. Read every touched file in full and walk the
-  dimension list below yourself, in order. Cheaper, lower latency, and the
-  findings are ones you verified rather than ones you are relaying.
-- **Combined** (~150–600 lines, or two to three modules) — merge the related
-  dimensions below (2+3, 5+6, 7+8), keeping security and API/compat
-  standalone: five agents.
-- **Full fan-out** (600+ lines, four or more modules, or a new
-  module/dependency/public API) — one agent per dimension, as below.
-
-Risk overrides size, upward only: a 30-line change to a thread pool, a
-security guard, a parser bounds check, or process/exit-code handling earns the
-full correctness treatment however small it is. Size overrides nothing — a
-3000-line rename sweep does not earn seven agents; it earns sampling, plus one
-agent reading the whole sweep for a buried inversion.
-
-State the chosen shape and why in one line before starting, so the choice is
-reviewable.
-
-## 3. Launch reviewers in parallel
-
-### Hand agents a brief, not a pile of pointers
-
-Without one, every agent re-derives the same base facts — merge base, design
-docs, ground rules, the shape of the subsystem — and they may derive them
-differently. Write one scratchpad file and have every agent read it first:
-
-- the resolved base SHA and the exact diff command;
-- a one-line-per-file inventory of what changed;
-- the settled decisions and accepted deviations, **pasted in**, not linked;
-- subsystem facts an agent would otherwise burn a search on ("tika-server
-  forks a child, `TikaServerWatchDog` is the parent"; where config is parsed);
-- what you already checked directly, so nobody repeats hygiene;
-- the read-only / no-build / no-GitHub rules and the report format.
-
-**Facts and scope only — never verdicts about the code under review.** A brief
-asserting "the endpoint tag is bounded" guarantees nobody checks it, and one
-wrong fact returns as seven agreeing reports: the brief is a correlated-failure
-path, and "reached independently by 2+ reviewers" is worth nothing on anything
-the brief asserted. Claims about the diff belong in findings, not in inputs.
-
-Writing the inventory spends the context the fan-out exists to protect, so
-scale it: read the full diff for a medium PR; for a very large one use `--stat`
-plus targeted reads, or spend one scout agent on the inventory and keep your
-own context clean.
-
-### Dimensions
+## 2. Launch reviewers in parallel
 
 One background agent per dimension, launched in a single batch:
 
@@ -160,6 +107,7 @@ One background agent per dimension, launched in a single batch:
    redundant parse passes) and *benchmark before merge* (plausible overhead
    on a hot path that can't be judged statically — name what to measure).
 
+Scale to the diff: combine related dimensions (2+3, 5+6, 7+8) for small diffs.
 Parser/extraction changes → also recommend `.skills/tika-eval-compare/SKILL.md`.
 
 **Thorough mode** (on request): skeptic agents try to refute each significant
@@ -221,7 +169,7 @@ agent that builds must follow the Maven rules in `.skills/dev/SKILL.md` —
 in particular `-Dmaven.repo.local=$(pwd)/.local_m2_repo`, never the shared
 `~/.m2`.
 
-## 4. Release hygiene (run directly, no agent)
+## 3. Release hygiene (run directly, no agent)
 
 - JIRA ticket (`TIKA-XXXX`) referenced; CHANGES entry for user-visible changes.
 - New deps: ASF-compatible license, LICENSE/NOTICE updated.
@@ -235,16 +183,12 @@ in particular `-Dmaven.repo.local=$(pwd)/.local_m2_repo`, never the shared
   tokens/credentials. Use the grep in `.skills/dev/SKILL.md` Pre-Commit
   Checks; review hits by hand — a test document's expected value is allowed.
 
-## 5. Consolidate
+## 4. Consolidate
 
 Agents finish spread over many minutes: in attended sessions, surface each
 dimension's headline as its report lands; the ranked list waits for all.
 
 - Dedup across agents; promote findings reached independently by 2+ reviewers.
-- Severity gate: list only findings that change behavior or a documented
-  contract. Doc wording, comment terseness, naming and test-hygiene items go
-  in one "cleanups" line each, not as numbered findings — a 25-item list
-  where 5 matter reads as non-convergence.
 - One ranked list: severity, then cheapness of fix.
 - Split maintainer decisions (contract mismatches, policy choices) from
   mechanical fixes.
@@ -253,14 +197,11 @@ dimension's headline as its report lands; the ranked list waits for all.
 
 Present the list and stop.
 
-## 6. Fix on approval
+## 5. Fix on approval
 
 - Fix in priority order. Behavioral fixes get a regression test unless
   impractical (note why) or an existing test already fails without the fix;
   never add a duplicative test. Run touched modules' tests as you go.
-- Write the test before the fix and watch it fail. A fix round that rewrites
-  logic is new, unreviewed code; the test is what stops the next round from
-  finding the bug the fix introduced.
 - If a fix's premise falls (a constraint makes a guard unnecessary), prefer
   deleting the mechanism over patching it.
 - Doc fixes may be delegated to one agent; verify every doc claim against code.
@@ -268,17 +209,3 @@ Present the list and stop.
   Never commit (including merge commits), push, merge, or write to GitHub —
   the user does that (workflow default; see the precedence note in
   `.skills/dev/SKILL.md` Git Policy).
-
-## 7. Converging: the round after a fix round
-
-Full fan-out is for the first review of new code. After a fix round, review
-the delta only: one skeptic agent on `git diff <last-review-sha>..HEAD`,
-prompted to refute each fix and check it is complete (the same bug in the
-sibling class, the test that would pass without the fix). Stop when the
-skeptic pass returns nothing above low.
-
-Give the brief a short invariant list from the design doc or the PR itself
-("every restart is counted exactly once"; "every failure-path close marks a
-reason"). Agents can check an invariant mechanically; they cannot check
-"the design is right", and a fix that breaks an unstated invariant is how
-round N+1 finds new bugs in round N's code.

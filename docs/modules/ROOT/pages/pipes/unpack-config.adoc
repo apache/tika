@@ -203,7 +203,7 @@ Produces names like `document-embed-00000001.pdf`. Under the `DEFAULT` strategy 
 
 == Safety Limits
 
-`maxUnpackBytes` bounds zip bombs and other files that expand to enormous sizes. The 10 GB
+`maxUnpackBytes` bounds zip bombs and other files that expand to enormous sizes. The 10 GiB
 default suits most corpora; lower it for untrusted input.
 
 Hitting the limit is silent apart from a log line. The embedded file being written is
