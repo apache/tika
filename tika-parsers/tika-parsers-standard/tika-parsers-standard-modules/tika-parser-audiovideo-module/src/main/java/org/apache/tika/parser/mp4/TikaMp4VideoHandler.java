@@ -63,12 +63,20 @@ class TikaMp4VideoHandler extends Mp4VideoHandler {
     }
 
     private void sampleEntry(String fourCC, byte[] b, int start, int end) {
-        //the FourCC is the video codec ('avc1', 'hev1', ...) or, for
-        //protected streams, the protected sample entry format ('encv'/'drmi')
+        int children = start + VISUAL_ENTRY_SIZE;
+        //the FourCC is the video codec ('avc1', 'hev1', ...) or, for protected
+        //streams, the protected sample entry format ('encv'/'drmi') with the
+        //original one kept in a child 'sinf'/'frma' box
+        if (Mp4SampleEntries.isProtected(fourCC)) {
+            String original = Mp4SampleEntries.originalFormat(b, children, end);
+            if (original != null) {
+                fourCC = original;
+            }
+        }
         if (fourCC != null) {
             tikaMetadata.set(Video.FOURCC, fourCC);
         }
-        int bitRate = findBtrtAverageBitRate(b, start + VISUAL_ENTRY_SIZE, end);
+        int bitRate = findBtrtAverageBitRate(b, children, end);
         if (bitRate > 0) {
             tikaMetadata.set(Video.BITRATE, bitRate);
         }

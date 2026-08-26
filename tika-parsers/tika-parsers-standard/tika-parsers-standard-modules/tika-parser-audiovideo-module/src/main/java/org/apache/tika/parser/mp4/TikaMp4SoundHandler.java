@@ -56,19 +56,30 @@ class TikaMp4SoundHandler extends Mp4SoundHandler {
     }
 
     private void sampleEntry(String fourCC, byte[] b, int start, int end) {
-        //protected streams replace the codec FourCC with a protected sample
-        //entry format: 'drms' (FairPlay) or 'enca' (ISO common encryption)
-        if ("drms".equals(fourCC) || "enca".equals(fourCC)) {
-            tikaMetadata.set(Audio.HAS_DRM, true);
-        }
-        if (fourCC != null) {
-            tikaMetadata.set(Audio.FOURCC, fourCC);
-        }
+        int children = -1;
         if (start + Mp4SampleEntries.SAMPLE_ENTRY_FIELDS + 2 <= end) {
             //after the SampleEntry fields come the version-dependent fixed
             //sound fields, starting with the 2 byte version, then child boxes
             int version = EndianUtils.getUShortBE(b, start + Mp4SampleEntries.SAMPLE_ENTRY_FIELDS);
-            int bitRate = findEsdsAverageBitRate(b, start + soundEntrySize(version), end, 0);
+            children = start + soundEntrySize(version);
+        }
+        //protected streams replace the codec FourCC with a protected sample
+        //entry format, 'drms' (FairPlay) or 'enca' (ISO common encryption),
+        //and keep the original one in a child 'sinf'/'frma' box
+        if (Mp4SampleEntries.isProtected(fourCC)) {
+            tikaMetadata.set(Audio.HAS_DRM, true);
+            if (children >= 0) {
+                String original = Mp4SampleEntries.originalFormat(b, children, end);
+                if (original != null) {
+                    fourCC = original;
+                }
+            }
+        }
+        if (fourCC != null) {
+            tikaMetadata.set(Audio.FOURCC, fourCC);
+        }
+        if (children >= 0) {
+            int bitRate = findEsdsAverageBitRate(b, children, end, 0);
             if (bitRate > 0) {
                 tikaMetadata.set(Audio.BITRATE, bitRate);
             }

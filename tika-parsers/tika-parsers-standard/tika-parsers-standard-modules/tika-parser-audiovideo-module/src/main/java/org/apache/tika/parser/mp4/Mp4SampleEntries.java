@@ -80,6 +80,67 @@ final class Mp4SampleEntries {
     }
 
     /**
+     * Returns whether a sample entry FourCC marks a protected stream: 'drms'
+     * and 'drmi' (FairPlay) or 'enca' and 'encv' (ISO common encryption).
+     */
+    static boolean isProtected(String fourCC) {
+        return "drms".equals(fourCC) || "enca".equals(fourCC)
+                || "encv".equals(fourCC) || "drmi".equals(fourCC);
+    }
+
+    /**
+     * Looks up the original (unprotected) format of a protected sample entry:
+     * the ProtectionSchemeInfoBox 'sinf' among the entry's child boxes carries
+     * an OriginalFormatBox 'frma' whose payload is the codec FourCC that the
+     * protected format replaced (ISO/IEC 14496-12, 8.12). Returns null if
+     * there is none or it is not printable.
+     *
+     * @param pos offset of the entry's first child box
+     * @param end offset one past the entry's last byte
+     */
+    static String originalFormat(byte[] b, int pos, int end) {
+        int sinf = findBox(b, pos, end, "sinf");
+        if (sinf < 0) {
+            return null;
+        }
+        int frma = findBox(b, sinf + 8, boxEnd(b, sinf, end), "frma");
+        if (frma < 0 || frma + 12 > end) {
+            return null;
+        }
+        return printableFourCC(b, frma + 8);
+    }
+
+    /**
+     * Returns the offset of the first box of the given type among the boxes
+     * in [pos, end), or -1.
+     */
+    private static int findBox(byte[] b, int pos, int end, String type) {
+        while (pos >= 0 && pos + 8 <= end) {
+            int boxEnd = boxEnd(b, pos, end);
+            if (boxEnd < 0) {
+                return -1;
+            }
+            if (type.equals(fourCC(b, pos + 4))) {
+                return pos;
+            }
+            pos = boxEnd;
+        }
+        return -1;
+    }
+
+    /**
+     * Returns the offset one past the box starting at pos, or -1 if its size
+     * is invalid or runs past end.
+     */
+    private static int boxEnd(byte[] b, int pos, int end) {
+        long size = EndianUtils.getUIntBE(b, pos);
+        if (size < 8 || size > end - pos) {
+            return -1;
+        }
+        return pos + (int) size;
+    }
+
+    /**
      * Reads a FourCC as it is, for comparing against known box types.
      */
     static String fourCC(byte[] b, int pos) {

@@ -81,6 +81,49 @@ public class Mp4SampleEntriesTest {
         assertEquals(List.of("null:16:32", "mp4a:40:56"), walk(stsd));
     }
 
+    @Test
+    public void testOriginalFormat() {
+        byte[] sinf = boxOf("sinf", boxOf("frma", ascii("mp4a")),
+                boxOf("schm", new byte[]{0, 0, 0, 0, 'i', 't', 'u', 'n', 0, 1, 0, 0}));
+        byte[] children = concat(boxOf("esds", new byte[4]), sinf, boxOf("btrt", new byte[12]));
+        assertEquals("mp4a", Mp4SampleEntries.originalFormat(children, 0, children.length));
+        //no sinf
+        byte[] plain = boxOf("esds", new byte[4]);
+        assertNull(Mp4SampleEntries.originalFormat(plain, 0, plain.length));
+        //sinf without frma
+        byte[] noFrma = boxOf("sinf", boxOf("schi", new byte[0]));
+        assertNull(Mp4SampleEntries.originalFormat(noFrma, 0, noFrma.length));
+        //frma with an unprintable format
+        byte[] bad = boxOf("sinf", boxOf("frma", new byte[]{0, 0, 0, 0}));
+        assertNull(Mp4SampleEntries.originalFormat(bad, 0, bad.length));
+        //a child box claiming to run past the entry stops the scan
+        byte[] truncated = concat(boxOf("esds", new byte[4]), sinf);
+        putInt(truncated, 0, 1000);
+        assertNull(Mp4SampleEntries.originalFormat(truncated, 0, truncated.length));
+        //frma cut off before its payload
+        byte[] cut = new byte[16];
+        System.arraycopy(sinf, 0, cut, 0, 16);
+        putInt(cut, 0, 16);
+        assertNull(Mp4SampleEntries.originalFormat(cut, 0, cut.length));
+    }
+
+    private static byte[] boxOf(String type, byte[]... payloads) {
+        byte[] payload = concat(payloads);
+        byte[] b = new byte[8 + payload.length];
+        putInt(b, 0, b.length);
+        System.arraycopy(ascii(type), 0, b, 4, 4);
+        System.arraycopy(payload, 0, b, 8, payload.length);
+        return b;
+    }
+
+    private static byte[] concat(byte[]... parts) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for (byte[] part : parts) {
+            out.write(part, 0, part.length);
+        }
+        return out.toByteArray();
+    }
+
     private static List<String> walk(byte[] stsd) {
         List<String> seen = new ArrayList<>();
         Mp4SampleEntries.walk(stsd, (fourCC, b, start, end) ->
