@@ -10,6 +10,23 @@ Release 4.1.0 - unreleased
      macro-enabled variants); XPS links content by markup rather than
      relationships and is not checked (TIKA-4837).
 
+   * Pipes plugins no longer bundle their own Jackson: jackson-core, -databind
+     and -annotations are provided by the host (tika-serialization) and the
+     plugins parent pom now bans bundling them, so a mapper can cross the
+     plugin boundary without a second copy of the Jackson classes (seven plugin
+     zips shipped one). Plugin configuration JSON is parsed by one shared
+     mapper, PluginJson (tika-plugins-core), which rejects unknown keys,
+     numbers for enums and duplicate keys, and accepts
+     // and /* */ comments; the 33 per-plugin *Config classes use it instead of
+     their own bare ObjectMapper (TIKA-4840).
+
+   * tika-server and tika-async-cli now start from a config that contains
+     // or /* */ comments, as the configuration docs have always said they
+     may. The main loader accepted them; the steps that re-read the user's
+     file to merge in server/CLI overrides (ConfigMerger, ensurePluginRoots)
+     used their own bare parser and refused the whole file; they now use the
+     shared TikaObjectMapperFactory mapper (TIKA-4834).
+
    * The Kafka pipes iterator no longer stops at the first empty poll. A newly
      subscribed consumer spends its first poll(s) joining the group and returns
      empty even when the topic has a backlog, so the iterator could enqueue zero

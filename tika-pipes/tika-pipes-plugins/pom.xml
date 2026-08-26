@@ -88,6 +88,23 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+    <!-- host-supplied via tika-serialization: a plugin that bundles its own Jackson gets a
+         second ObjectMapper class, and any mapper crossing the plugin boundary fails to link -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <scope>provided</scope>
+    </dependency>
     <!-- logging is host-supplied -->
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -169,6 +186,7 @@
                   <excludes>
                     <exclude>org.slf4j</exclude>
                     <exclude>org.apache.logging.log4j</exclude>
+                    <exclude>com.fasterxml.jackson.core</exclude>
                   </excludes>
                   <!-- the artifacts this module declares provided; anything else in these
                        groups needs a provided declaration here before it may be depended on -->
@@ -178,8 +196,11 @@
                     <include>org.apache.logging.log4j:log4j-api</include>
                     <include>org.apache.logging.log4j:log4j-core</include>
                     <include>org.apache.logging.log4j:log4j-slf4j2-impl</include>
+                    <include>com.fasterxml.jackson.core:jackson-core</include>
+                    <include>com.fasterxml.jackson.core:jackson-databind</include>
+                    <include>com.fasterxml.jackson.core:jackson-annotations</include>
                   </includes>
-                  <message>logging is host-supplied: add a provided-scope declaration in tika-pipes-plugins/pom.xml (and to this rule's include list) rather than bundling this artifact in the plugin zip</message>
+                  <message>logging and Jackson are host-supplied: add a provided-scope declaration in tika-pipes-plugins/pom.xml (and to this rule's include list) rather than bundling this artifact in the plugin zip. A plugin whose SDK genuinely needs its own Jackson may bundle it (compile scope, skip this execution in its pom) but must then use no host Jackson type -- not PluginJson -- since the two ObjectMapper classes cannot be assigned to each other.</message>
                 </bannedDependencies>
               </rules>
               <fail>true</fail>
