@@ -198,7 +198,9 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
     @Test
     @Timeout(60000)
     public void testTimeout() throws Exception {
-        // With pipes-based parsing, timeout in a child process should NOT crash the server
+        // With pipes-based parsing, timeout in a child process should NOT crash the server.
+        // TEST_HEAVY_HANG relies on tika-config-server-pipes-basic.json's short
+        // progressTimeoutMillis to be detected: keep that short.
         startProcess(new String[]{"-config", getConfig("tika-config-server-pipes-basic.json")});
         awaitServerStartup();
 

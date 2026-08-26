@@ -71,6 +71,8 @@ public class SharedServerModeTest {
             "<throw class=\"java.lang.OutOfMemoryError\">oom message</throw>" +
             "</mock>";
 
+    // hangs 60s with no runtime TimeoutLimits override, so tika-config-shared-server.json's
+    // progressTimeoutMillis is what detects it: keep that short or this stops testing anything
     private static final String MOCK_TIMEOUT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
             "<mock>" +
             "<metadata action=\"add\" name=\"dc:creator\">Timeout Author</metadata>" +
