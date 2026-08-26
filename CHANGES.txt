@@ -22,6 +22,24 @@ Release 4.1.0 - unreleased
      img:File Modified Date), which described whatever file was read rather
      than the image; input backed by a file still carries them (TIKA-4835).
 
+   * Shared pipes server (useSharedServer: true, not the default): a client whose
+     in-flight parse was killed by another client's restart could restart the
+     healthy replacement. ensureRunning holds its lock across the whole fork, so
+     siblings cannot report a dead worker until after the replacement is up, and
+     the pending-restart flag carried no process identity -- so a report about
+     the process that just died was applied to its successor, which was then
+     destroyed and re-forked. One worker death produced two restarts and a second
+     round of destroyed in-flight work; under sustained concurrent load it
+     sustained itself at one spurious restart per round, appearing as periodic
+     unexplained worker churn and intermittent parse failures that succeed on
+     retry. Each fork now carries a generation that clients capture when they
+     connect and hand back with every report, and reports about a superseded
+     process are dropped. Also fixed in shared mode: ensureRunning could fork a
+     replacement after shutdown() that nothing owned and nothing would ever
+     destroy, and an interrupt during process teardown left the process handle
+     pointing at a killed process and leaked the temp directory. Affects 4.0.0
+     and earlier (TIKA-4844).
+
    * tika-pipes: the cache memory budget (how much rewindable content a forked
      worker keeps in memory before spilling to disk; new since 4.0.0, which had
      no budget at all) defaults to a quarter of the fork's heap, so raising

@@ -76,7 +76,9 @@ public class SharedServerManager implements ServerManager {
     private final Object lock = new Object();
     private final AtomicLong filesProcessed = new AtomicLong(0);
     private volatile boolean restarting = false;
-    private volatile boolean pendingRestart = false; // Set when a client reports fatal error or max files reached
+    private volatile boolean pendingRestart = false;
+    private volatile long generation;
+    private volatile boolean closed; // Set when a client reports fatal error or max files reached
     private volatile byte[] currentToken;
     private Process process;
     private Path tmpDir;
@@ -141,9 +143,13 @@ public class SharedServerManager implements ServerManager {
             if (isProcessAlive() && !pendingRestart) {
                 return;
             }
+            if (closed) {
+                throw new IllegalStateException("shared server manager is closed");
+            }
             restarting = true;
             try {
                 startServer();
+                generation++; // supersedes every report still in flight against the old process
                 pendingRestart = false; // Clear the flag after successful restart
                 filesProcessed.set(0); // Reset file counter on restart
             } finally {
@@ -169,6 +175,51 @@ public class SharedServerManager implements ServerManager {
             LOG.debug("Server marked for restart - will restart on next ensureRunning()");
             pendingRestart = true;
         }
+    }
+
+    @Override
+    public long getGeneration() {
+        synchronized (lock) {
+            return generation;
+        }
+    }
+
+    @Override
+    public void markServerForRestart(long generation) {
+        synchronized (lock) {
+            if (isSuperseded(generation)) {
+                return;
+            }
+            LOG.debug("Server marked for restart - will restart on next ensureRunning()");
+            pendingRestart = true;
+        }
+    }
+
+    @Override
+    public int handleCrashAndGetExitCode(long generation) {
+        synchronized (lock) {
+            if (isSuperseded(generation)) {
+                return -1;
+            }
+            pendingRestart = true;
+        }
+        return -1;
+    }
+
+    /**
+     * A restart kills the shared JVM out from under every sibling still parsing on it, and
+     * {@code ensureRunning} holds {@code lock} for the whole fork, so those siblings cannot
+     * report until after the replacement is up. Their reports describe the process that was
+     * already destroyed; applying them would destroy the healthy replacement too. Callers
+     * hold {@code lock}.
+     */
+    private boolean isSuperseded(long reportedGeneration) {
+        if (reportedGeneration >= generation) {
+            return false;
+        }
+        LOG.debug("dropping stale restart report for generation {}; current generation is {}",
+                reportedGeneration, generation);
+        return true;
     }
 
     /**
@@ -378,6 +429,11 @@ public class SharedServerManager implements ServerManager {
     @Override
     public void shutdown() throws InterruptedException {
         synchronized (lock) {
+            // Latch here, not in shutdownUnsafe(): startServer() calls that to reap the previous
+            // process on every restart, so latching there would brick the manager on restart #1.
+            // A request thread racing us into ensureRunning must fail rather than fork a
+            // replacement that nothing owns and nothing will ever destroy.
+            closed = true;
             shutdownUnsafe();
         }
     }
@@ -398,11 +454,16 @@ public class SharedServerManager implements ServerManager {
     private void destroyProcessUnsafe() throws InterruptedException {
         if (process != null) {
             process.destroyForcibly();
-            process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
-            if (process.isAlive()) {
-                LOG.error("Shared server process still alive after {}ms", WAIT_ON_DESTROY_MS);
+            try {
+                process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
+                if (process.isAlive()) {
+                    LOG.error("Shared server process still alive after {}ms", WAIT_ON_DESTROY_MS);
+                }
+            } finally {
+                // An interrupt here must not leave the field pointing at a SIGKILLed process:
+                // startServer() would then try to reap it again and tmpDir would never be deleted.
+                process = null;
             }
-            process = null;
         }
     }
 
