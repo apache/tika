@@ -54,6 +54,8 @@ public class AsyncChaosMonkeyTest {
             "<write element=\"p\">main_content</write>" +
             "</mock>";
 
+    // hangs 60s and the expected timeout count is asserted exactly, so the default config's
+    // (tika-config-basic.json) short progressTimeoutMillis is what detects it: keep it short
     private final String TIMEOUT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
             "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
             "<write element=\"p\">main_content</write>" +
