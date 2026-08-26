@@ -17,7 +17,6 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -45,48 +44,61 @@ public class OOXMLParser extends AbstractOfficeParser {
     protected static final String SIGNATURE_RELATIONSHIP =
             "http://schemas.openxmlformats.org/package/2006/relationships/digital-signature/origin";
     protected static final MediaType XPS = MediaType.application("vnd.ms-xpsdocument");
-    protected static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<>(Arrays.asList(MediaType
-                            .application("vnd.openxmlformats-officedocument" +
-                                    ".presentationml.presentation"),
-                    MediaType.application("vnd.ms-powerpoint.presentation.macroenabled.12"),
-                    MediaType.application(
-                            "vnd.openxmlformats-officedocument.presentationml.template"),
-                    MediaType.application(
-                                    "vnd.openxmlformats-officedocument.presentationml.slideshow"),
-                    MediaType.application("vnd.ms-powerpoint.slideshow.macroenabled.12"),
-                    MediaType.application("vnd.ms-powerpoint.addin.macroenabled.12"),
-                    MediaType.application("vnd.ms-powerpoint.template.macroenabled.12"),
-                    MediaType.application("vnd.ms-powerpoint.slide.macroenabled.12"),
-                    MediaType.application("vnd.openxmlformats-officedocument.presentationml.slide"),
+    private static final Set<MediaType> POWERPOINT_TYPES = Set.of(
+            MediaType.application("vnd.openxmlformats-officedocument.presentationml.presentation"),
+            MediaType.application("vnd.ms-powerpoint.presentation.macroenabled.12"),
+            MediaType.application("vnd.openxmlformats-officedocument.presentationml.template"),
+            MediaType.application("vnd.openxmlformats-officedocument.presentationml.slideshow"),
+            MediaType.application("vnd.ms-powerpoint.slideshow.macroenabled.12"),
+            MediaType.application("vnd.ms-powerpoint.addin.macroenabled.12"),
+            MediaType.application("vnd.ms-powerpoint.template.macroenabled.12"),
+            MediaType.application("vnd.ms-powerpoint.slide.macroenabled.12"),
+            MediaType.application("vnd.openxmlformats-officedocument.presentationml.slide"));
 
-                    MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-                    MediaType.application("vnd.ms-excel.sheet.macroenabled.12"),
-                    MediaType.application(
-                                    "vnd.openxmlformats-officedocument.spreadsheetml.template"),
-                    MediaType.application("vnd.ms-excel.template.macroenabled.12"),
-                    MediaType.application("vnd.ms-excel.addin.macroenabled.12"),
-                    MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12"),
+    private static final Set<MediaType> EXCEL_TYPES = Set.of(
+            MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+            MediaType.application("vnd.ms-excel.sheet.macroenabled.12"),
+            MediaType.application("vnd.openxmlformats-officedocument.spreadsheetml.template"),
+            MediaType.application("vnd.ms-excel.template.macroenabled.12"),
+            MediaType.application("vnd.ms-excel.addin.macroenabled.12"),
+            MediaType.application("vnd.ms-excel.sheet.binary.macroenabled.12"));
 
-                    MediaType.application(
-                            "vnd.openxmlformats-officedocument.wordprocessingml.document"),
-                    MediaType.application("vnd.ms-word.document.macroenabled.12"),
-                    MediaType.application(
-                                    "vnd.openxmlformats-officedocument.wordprocessingml.template"),
-                    MediaType.application("vnd.ms-word.template.macroenabled.12"),
+    private static final Set<MediaType> WORD_TYPES = Set.of(
+            MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.document"),
+            MediaType.application("vnd.ms-word.document.macroenabled.12"),
+            MediaType.application("vnd.openxmlformats-officedocument.wordprocessingml.template"),
+            MediaType.application("vnd.ms-word.template.macroenabled.12"));
 
-                    MediaType.application("vnd.ms-visio.drawing"),
-                    MediaType.application("vnd.ms-visio.drawing.macroenabled.12"),
-                    MediaType.application("vnd.ms-visio.stencil"),
-                    MediaType.application("vnd.ms-visio.stencil.macroenabled.12"),
-                    MediaType.application("vnd.ms-visio.template"),
-                    MediaType.application("vnd.ms-visio.template.macroenabled.12"),
-                    MediaType.application("vnd.ms-visio.drawing"),
-                    MediaType.application("vnd.ms-xpsdocument"),
-                    MediaType.parse("model/vnd.dwfx+xps")
-                    //  MediaType.application("x-tika-ooxml")
+    private static final Set<MediaType> VISIO_TYPES = Set.of(
+            MediaType.application("vnd.ms-visio.drawing"),
+            MediaType.application("vnd.ms-visio.drawing.macroenabled.12"),
+            MediaType.application("vnd.ms-visio.stencil"),
+            MediaType.application("vnd.ms-visio.stencil.macroenabled.12"),
+            MediaType.application("vnd.ms-visio.template"),
+            MediaType.application("vnd.ms-visio.template.macroenabled.12"));
 
-            )));
+    private static final Set<MediaType> XPS_TYPES = Set.of(
+            XPS,
+            MediaType.parse("model/vnd.dwfx+xps"));
+
+    /**
+     * Formats whose content is wired together by OPC relationships, so an unreferenced
+     * part is meaningful. XPS links pages/resources by markup instead.
+     */
+    static final Set<MediaType> OPC_RELATIONSHIP_TYPES =
+            union(WORD_TYPES, EXCEL_TYPES, POWERPOINT_TYPES, VISIO_TYPES);
+
+    protected static final Set<MediaType> SUPPORTED_TYPES =
+            union(OPC_RELATIONSHIP_TYPES, XPS_TYPES);
+
+    @SafeVarargs
+    private static Set<MediaType> union(Set<MediaType>... sets) {
+        Set<MediaType> all = new HashSet<>();
+        for (Set<MediaType> s : sets) {
+            all.addAll(s);
+        }
+        return Collections.unmodifiableSet(all);
+    }
     /**
      * We claim to support all OOXML files, but we actually don't support a small
      * number of them.
