@@ -6,7 +6,9 @@ Release 4.1.0 - unreleased
      inspected; content types come from [Content_Types].xml by extension), so
      expect false positives from tools that leave orphan parts behind. A hiding
      place a raw-ZIP scanner can still see, not a statement about what Tika
-     parsed (TIKA-4837).
+     parsed. Applies to Word, Excel, PowerPoint and Visio OOXML (including
+     macro-enabled variants); XPS links content by markup rather than
+     relationships and is not checked (TIKA-4837).
 
    * tika-pipes: the cache memory budget (how much rewindable content a forked
      worker keeps in memory before spilling to disk; new since 4.0.0, which had

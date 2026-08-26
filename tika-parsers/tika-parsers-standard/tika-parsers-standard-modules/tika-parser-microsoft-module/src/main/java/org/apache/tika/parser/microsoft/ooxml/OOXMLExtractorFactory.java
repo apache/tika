@@ -102,7 +102,6 @@ public class OOXMLExtractorFactory {
                 if (prc != null && prc.size() > 0) {
                     metadata.set(TikaCoreProperties.HAS_SIGNATURE, "true");
                 }
-                markUnreferencedParts(pkg, metadata);
             }
 
             MediaType type = null;
@@ -124,6 +123,10 @@ public class OOXMLExtractorFactory {
                 return;
             }
             metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
+
+            if (OOXMLParser.OPC_RELATIONSHIP_TYPES.contains(type)) {
+                markUnreferencedParts(pkg, metadata);
+            }
 
             // Detect format and create the appropriate extractor
             String coreContentType = getCorePartContentType(pkg);
