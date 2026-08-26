@@ -145,7 +145,9 @@ public class RTFParserTest extends TikaTest {
 
         //need flexibility for if tesseract is installed or not
         //TODO -- fix this test.  It is too fragile.
-        assertTrue(meta_jpg.names().length >= 52 && meta_jpg.names().length <= 60);
+        // in-memory embedded images no longer carry metadata-extractor's temp-file
+        // name/size/date tags (TIKA-4835), hence the lower bound
+        assertTrue(meta_jpg.names().length >= 49 && meta_jpg.names().length <= 60);
         assertTrue(meta_jpg_exif.names().length >= 100 && meta_jpg_exif.names().length <= 130);
     }
 

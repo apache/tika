@@ -242,8 +242,9 @@ architecture suggested it would be.
 * Several parsers and detectors asked for a `java.io.File` even when the
   document was already in memory: the JPEG/TIFF/WebP metadata extractors, the
   OLE2 container detector, the OpenDocument parser's inline pictures, the
-  digest of translated embedded streams, and the PDF incremental-update scan
-  each wrote the bytes out just to read them back.
+  digest of translated embedded streams, the PDF incremental-update scan, and
+  PDFParser's main document load and renderer each wrote the bytes out just to
+  read them back.
 
 On a spinning-disk host where the temp directory, the corpus, and the outputs
 share spindles, every temp byte is a seek taken away from a corpus read or an

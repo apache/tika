@@ -18,6 +18,7 @@ package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,6 +32,8 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaConfigException;
@@ -237,5 +240,58 @@ public class TikaServerConfigTest extends TikaTest {
                 .toString())});
         TikaServerConfig config = TikaServerConfig.load(commandLine);
         assertTrue(config.getTlsConfig().isClientAuthenticationRequired());
+    }
+    private static Options metricsOptions() {
+        return new Options()
+                .addOption(Option.builder("c").longOpt("config").hasArg().get())
+                .addOption(Option.builder("p").longOpt("port").hasArg().get())
+                .addOption(Option.builder().longOpt("metricsPort").hasArg().get());
+    }
+
+    @Test
+    public void testMetricsOffByDefault() throws Exception {
+        TikaServerConfig config = TikaServerConfig.load(
+                new DefaultParser().parse(metricsOptions(), new String[]{}));
+        assertNull(config.getMetricsPort());
+    }
+
+    @Test
+    public void testMetricsFromJson() throws Exception {
+        Path path = getConfigPath(getClass(), "tika-config-server-metrics.json");
+        TikaServerConfig config = TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
+                new String[]{"-c", ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())}));
+        assertEquals(9404, config.getMetricsPort());
+    }
+
+    @Test
+    public void testMetricsPortFromCommandLine() throws Exception {
+        TikaServerConfig config = TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
+                new String[]{"-p", "9998", "--metricsPort", "9500"}));
+        assertEquals(9500, config.getMetricsPort());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"abc, --metricsPort", "65536, 0-65535", "-1, 0-65535"})
+    public void testMetricsPortRejected(String value, String expectedMessage) throws Exception {
+        CommandLine commandLine = new DefaultParser().parse(metricsOptions(),
+                new String[]{"--metricsPort", value});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains(expectedMessage, ex.getMessage());
+    }
+
+    @Test
+    public void testMetricsPortZeroIsEphemeral() throws Exception {
+        assertEquals(0, TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
+                new String[]{"--metricsPort", "0"})).getMetricsPort());
+    }
+
+    @Test
+    public void testMetricsPortMustDifferFromServerPort() throws Exception {
+        CommandLine commandLine = new DefaultParser().parse(metricsOptions(),
+                new String[]{"-p", "9998", "--metricsPort", "9998"});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains("metricsPort", ex.getMessage());
     }
 }

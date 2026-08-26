@@ -81,6 +81,10 @@ public class AsyncResource {
         this.maxQueuePauseMillis = maxQueuePauseMillis;
     }
 
+    public AsyncProcessor getAsyncProcessor() {
+        return asyncProcessor;
+    }
+
     public ArrayBlockingQueue<FetchEmitTuple> getFetchEmitQueue(int queueSize) {
         this.queue = new ArrayBlockingQueue<>(queueSize);
         return queue;

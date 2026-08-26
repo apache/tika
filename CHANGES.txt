@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * tika-server: opt-in Micrometer metrics reporting and endpoint
+     (TIKA-4839).
+
    * Per-request (parse-context) config for parsers that lock fields
      (Tess4J, VLM, OpenAI image-embedding) threw even when empty; locked
      fields are still rejected when actually set (TIKA-4843).
