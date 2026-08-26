@@ -1,5 +1,23 @@
 Release 4.1.0 - unreleased
 
+   * Documentation: corrected a batch of pages and javadocs that contradicted
+     the code. Notably: the ES/OpenSearch attachmentStrategy has no default
+     (unset means embedded documents get neither the parent field nor the
+     parent/child relation); Kafka's connectionsMaxIdleMs is passed to the
+     producer, not ignored; jdbc queryTimeoutSeconds is applied only when > 0,
+     so 0 does not mean "no limit"; the Solr emitter/iterator support only
+     basic auth, not ntlm, and only when a userName is set; pipes-reporters
+     silently loads zero reporters when given a JSON array, and
+     pipes-iterator/pipes-reporters instances are built at config load rather
+     than lazily; under CONTENT_ONLY only a parse-context filter replaces the
+     built-in one, not the top-level metadata-filters chain;
+     _mime-include/_mime-exclude also accept a bare string; Tess4J locks
+     poolSize and maxImagePixels as well as the two paths. Also corrected the
+     config nesting shown in every pipes-plugin fetcher/emitter javadoc -- 23
+     of them, which had it inverted (the instance id is the outer key, the
+     component name the inner) -- and removed references to a
+     TesseractOCRConfig.properties file that 4.x does not load (TIKA-4842).
+
    * Pipes plugins no longer bundle their own Jackson: jackson-core, -databind
      and -annotations are provided by the host (tika-serialization) and the
      plugins parent pom now bans bundling them, so a mapper can cross the

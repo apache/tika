@@ -171,7 +171,9 @@ independent of casing (the name's origin).
   (`xmp*:`), EXIF/`tiff:`, `iptc:`, `photoshop:`, `geo:`, the CF/CMIP attributes under `cf:`,
   MAPI property names, email headers, the ECMA-376 OOXML core/extended property names
   (`AppVersion`, `lastModifiedBy`, `TotalTime`, …), and the PDF/A/X/VT/UA sub-namespaces
-  (`pdfaid:`, `pdfx:`, …) and PDF Info-dict names (`pdf:trapped`, `pdf:docinfo:producer`, …).
+  (`pdfaid:`, `pdfx:`, …). PDF Info-dict names (`pdf:docinfo:producer`, `pdf:docinfo:trapped`,
+  …) are lowercased rather than verbatim — the dictionary spells them `/Producer` and `/Trapped`
+  — but they are unchanged from 3.x.
 
 (The `access_permission:` prefix is also normalized to `access-permission:`. The
 `extended-properties:HiddedSlides` entry additionally corrects a long-standing spelling typo.)

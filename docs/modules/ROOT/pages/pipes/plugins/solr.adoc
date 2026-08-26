@@ -124,7 +124,9 @@ include::example$pipes-solr-emitter-zk.json[]
 
 |`authScheme`
 |`basic`
-|Credential scheme. `basic` or `ntlm`.
+|Credential scheme. Only `basic` is supported, and only when `userName` is set: the emitter then
+fails to build on any other value. With no `userName`, auth is skipped and this setting is ignored
+rather than rejected.
 
 |`proxyHost` / `proxyPort`
 |_none_ / `0`
@@ -179,7 +181,7 @@ In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.
 
 |`additionalFields`
 |_empty_
-|Further Solr fields to request alongside the four above.
+|Further Solr fields to request alongside those above. The field list always includes `id` as well, whether or not `idField` is set to it.
 
 |`rows`
 |`5000`

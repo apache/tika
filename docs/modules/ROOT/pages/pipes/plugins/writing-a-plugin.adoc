@@ -361,10 +361,12 @@ id, because a pipeline has one iterator and reporters are not referenced by id:
 
 Whatever object sits innermost is re-serialized to a string and handed to your factory as
 `ExtensionConfig.json()`. Configs are validated when the config loads — an unknown component name
-fails immediately, listing the names that *are* available — but instances are built lazily, on
-first use.
+fails immediately, listing the names that *are* available. Fetchers and emitters are then built
+lazily, on first use; `pipes-iterator` and `pipes-reporters` instances are built during config
+load.
 
-An array in any of these sections is rejected outright rather than silently ignored.
+An array is rejected outright in `fetchers`, `emitters` and `pipes-iterator`. `pipes-reporters` is
+the exception: an array there loads zero reporters and reports no error, so keep it an object.
 
 == Developing without repackaging
 
