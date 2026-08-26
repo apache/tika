@@ -25,6 +25,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Local override: `$TIKA_SKILLS_LOCAL/oss-fuzz/LOCAL.md` (default `~/.tika-skills`),
+read after this file, wins on conflict.
+
 # Tika OSS-Fuzz — local fuzzing
 
 Tika is already in OSS-Fuzz as the **`apache-tika`** project (not `tika`).
@@ -344,8 +347,15 @@ image corpus can surface exactly those; verify a fix locally, but disclose
 through the agreed channel, not by letting OSS-Fuzz file it. See the 4.0.1 TODO
 (image-parser DoS items) for what is under embargo.
 
+**Triage: JIRA or security@?** Per the
+https://tika.apache.org/security-model.html[security model]: a hostile file
+making an in-process parse throw, hang, or exhaust memory/stack is a bug
+(JIRA); anything reaching the host — path traversal, code execution, SSRF,
+data leaving the sandbox — is security@. If the page doesn't answer, ask on
+private@ before filing publicly.
+
 ## Git policy
 
 Editing files under a local `oss-fuzz` checkout is fine, but the same
-never-commit/never-push default applies (see `.skills/dev/SKILL.md`): stage and
+never-commit/never-push default applies (see `.skills/dev/ground-rules/SKILL.md`): stage and
 hand back a suggested message; the maintainer pushes to oss-fuzz.

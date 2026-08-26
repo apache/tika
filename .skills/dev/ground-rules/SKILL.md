@@ -1,5 +1,5 @@
 ---
-name: dev
+name: ground-rules
 description: >
   Ground rules for working in the Tika codebase — git policy, Maven
   wrapper/repo conventions, building and testing specific modules, code and
@@ -24,6 +24,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Local override: `$TIKA_SKILLS_LOCAL/ground-rules/LOCAL.md` (default `~/.tika-skills`),
+read after this file, wins on conflict.
+
 # Tika Development Skill
 
 Guidelines and checklist for developing against the Apache Tika codebase.
@@ -38,6 +41,9 @@ decades.  Steelman the use case first and question the vehicle, not the goal;
 pushback must name a concrete cost or a simpler path — never taste alone, and
 never no for the sake of no.  "The direction is right" is a valid conclusion.
 
+Feature whose shape isn't known yet: spike first, cut PRs after
+(`.skills/dev/feature-workflow/SKILL.md`).
+
 ## Git Policy (default — personally overridable)
 
 Never run `git commit` or `git push` — no commits of any kind, including
@@ -50,10 +56,11 @@ Read-only `gh` is fine.
 
 **Precedence**: these are conservative defaults for *workflow* — actions on
 the contributor's own machine and accounts.  A contributor's personal agent
-configuration (their own skills, CLAUDE.md/AGENTS.md, settings) may override
-them.  Everything else in this file — code and comment conventions, test
-discipline, hygiene, pre-commit checks — governs what lands in the repo and
-is project policy: personal configuration does not override it.
+configuration (their own skills, CLAUDE.md/AGENTS.md, settings, or a
+`LOCAL.md` overlay — see `AGENTS.md`) may override them.  Everything else in
+this file — code and comment conventions, test discipline, hygiene,
+pre-commit checks — governs what lands in the repo and is project policy:
+personal configuration does not override it.
 
 ## Session Start Checklist
 
@@ -99,6 +106,11 @@ is project policy: personal configuration does not override it.
   build — including `-Pfast test` — has run zero tests, and stale
   `target/surefire-reports/*` will look current. Verify with a plain
   (non-`-Pfast`) `test` run.
+
+- **Plugin zips resolve only after `package`** — a reactor `clean test`
+  fails on modules that depend on pipes plugin zips (`tika-server-core`,
+  `tika-app`, ...) unless the zips are already in the local repo.  Use
+  `clean install` (or `-Pfast install` first).
 
 - **Forked JVM tests** — Integration tests in `tika-pipes` fork new
   JVMs that load classes from the local Maven repo, not from
@@ -159,6 +171,10 @@ is project policy: personal configuration does not override it.
 - A behavioral change gets a regression test that fails without it.  Where
   impractical (timing, native binaries, external services, kill paths), say
   so explicitly and name the next-best check.
+- Prove a negative by reverting the fix: an "X does not happen" test that
+  still passes is not a test.  Assert on what the consumer is handed, not an
+  ambient side effect (a `@TempDir` watch misses `TemporaryResources` not
+  bound to it).
 - Cover error paths and the configuration/mode matrix — a behavior verified
   in only one parse mode or config shape is a gap (RMETA-only tests miss
   CONCATENATE-only bugs).
@@ -173,13 +189,13 @@ is project policy: personal configuration does not override it.
 
 Adding/renaming a metadata key touches the committed, build-gated registry in
 `tika-metadata-schema` — regeneration has real traps. See
-`.skills/metadata-schema/SKILL.md`.
+`.skills/dev/metadata-schema/SKILL.md`.
 
 ## Testing an End-to-End Change
 
 When a change affects parsing output (e.g., new parser behavior,
 encoding fix), run a before/after comparison using tika-eval.
-See `.skills/tika-eval-compare/SKILL.md` for the full procedure.
+See `.skills/dev/tika-eval-compare/SKILL.md` for the full procedure.
 
 ## Pre-Commit Checks
 

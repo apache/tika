@@ -30,6 +30,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Local override: `$TIKA_SKILLS_LOCAL/file-to-markdown/LOCAL.md` (default `~/.tika-skills`),
+read after this file, wins on conflict.
+
 # Using Apache Tika from an agent
 
 Apache Tika turns almost any document into text you can read, and reports

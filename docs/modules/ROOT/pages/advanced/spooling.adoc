@@ -49,15 +49,31 @@ Several file formats are most efficiently processed with random access vs stream
 The current architecture follows a simple principle: **each component that needs random
 access is responsible for obtaining it**.
 
-A detector or parser is handed a `TikaInputStream`; when it needs random access
-it simply asks for a file:
+A detector or parser is handed a `TikaInputStream`; for random access it asks
+for a seekable view and lets `TikaInputStream` decide whether memory or a file
+backs it:
 
 [source,java]
 ----
-Path path = tis.getPath();
-// or
-File file = tis.getFile();
+try (SeekableByteChannel channel = tis.getSeekableByteChannel()) {
+    ByteBuffer view = TikaInputStream.inMemoryContent(channel);
+    if (view != null) {
+        readInPlace(view);           // content is in memory: no copy, no temp file
+    } else {
+        readFromFile(tis.getFile()); // content spilled: the file already exists
+    }
+}
 ----
+
+`getFile()` / `getPath()` remain correct when a consumer genuinely needs a
+`java.io.File`, but they always materialise one — last resort, not first move.
+Two constraints:
+
+* The `ByteBuffer` aliases the cache's array and is valid **only while the
+  channel is open**; a view that outlives its channel still reads but is no
+  longer counted against the memory budget.
+* `inMemoryContent` returns `null` when content is on disk (file-backed input
+  or a spilled cache) — normal for large content, not an error.
 
 `TikaInputStream` handles the spooling transparently based on how it was initialized:
 
@@ -94,7 +110,10 @@ nothing is retained. Moving out of passthrough mode is only legal at position 0:
 
 |`enableRewind()`
 |Switches to caching mode: bytes are retained in memory, spilling to a temp file
-past 1 MB. `rewind()`, `mark()`/`reset()`, and random access all work afterwards.
+past a per-object threshold (1 MB by default; inside a pipes worker a
+process-wide `CacheMemoryBudget` raises that — see
+xref:pipes/configuration.adoc[]). `rewind()`, `mark()`/`reset()`, and random
+access all work afterwards.
 |`IOException` — "Cannot enable rewind: position is N, must be 0"
 
 |`getPath()` / `getFile()`
@@ -120,7 +139,8 @@ A `TikaInputStream` wrapping a plain `InputStream` starts in passthrough mode an
 Reading through it -- at any size -- writes nothing to disk. Only two things spool:
 
 * `getFile()` / `getPath()`, which materialise a file by definition;
-* `enableRewind()`, which starts caching and spills to disk past 1 MB.
+* `enableRewind()`, which starts caching and spills to disk past the per-object
+  threshold (1 MB by default; a pipes worker's `CacheMemoryBudget` raises it).
 
 `mark()`/`reset()` in passthrough mode delegate to an in-memory buffer and do not spool, which
 is why the usual detect-then-parse sequence (mark, peek, reset, `getFile()`) still works.
@@ -282,9 +302,10 @@ try (TikaInputStream tis = TikaInputStream.get(inputStream)) {
 
 4. **Consider memory vs. disk tradeoffs**: For very large files, spooling to disk
    may be needed. For small files processed in bulk, keeping data in memory may be
-   faster. There is no setting for this: the backing strategy is not configurable and
-   its implementations are package-private. You choose it entirely by which
-   `TikaInputStream.get(...)` overload you call — `get(Path)`/`get(File)` is file-backed,
-   `get(byte[])` is memory-backed, and `get(InputStream)` starts in passthrough mode and
-   only begins caching (in memory, spilling past 1 MB) once something calls
-   `enableRewind()` or asks for a `Path`/`File`.
+   faster. The backing source is fixed by which `TikaInputStream.get(...)`
+   overload you call — `get(Path)`/`get(File)` file-backed, `get(byte[])`
+   memory-backed, `get(InputStream)` passthrough until `enableRewind()` or a
+   `Path`/`File` request. How much a caching source holds before spilling is
+   tunable in pipes: 1 MB per object by default, raised by the worker's
+   `CacheMemoryBudget` (`-Dtika.pipes.cacheMemoryBudgetBytes` in
+   `forkedJvmArgs`; xref:pipes/configuration.adoc[]).

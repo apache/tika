@@ -234,11 +234,23 @@ To debug a specific fork, leave stdio on `inherit` (the default) and grep parent
 
 == Configuration knobs reference
 
+**Parent vs. fork.** Each knob says which JVM reads it. Fork-side properties
+must go in the config's `forkedJvmArgs`; set on the parent (`java -D...`,
+`MAVEN_OPTS`, surefire `argLine`) they silently do nothing — the fork uses its
+default and you get a plausible number for a setting you never applied.
+`tika.pipes.cacheMemoryBudgetBytes`, the fork's `-Dlog4j.configurationFile`,
+and any JFR/`-XX:` diagnostics on parse work are fork-side. When a knob "does
+nothing", check which JVM you set it on.
+
 [cols="2,3"]
 |===
 |System property / env var |Effect
 
-|`tika.pipes.server.stdio` (system property)
+|`tika.pipes.cacheMemoryBudgetBytes` (system property, **fork**)
+|Process-wide cap on in-memory stream caching in the forked server; `<=0`
+ disables. See xref:pipes/performance.adoc[Performance and Isolation Trade-offs].
+
+|`tika.pipes.server.stdio` (system property, **parent**)
 |`discard` suppresses fork stdout/stderr at the OS level. Anything else
  (or unset) inherits the fork's stdio from the parent JVM. Default: inherit.
 

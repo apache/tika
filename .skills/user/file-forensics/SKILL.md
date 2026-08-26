@@ -30,6 +30,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Local override: `$TIKA_SKILLS_LOCAL/file-forensics/LOCAL.md` (default `~/.tika-skills`),
+read after this file, wins on conflict.
+
 # File forensics with Apache Tika
 
 **What this can and cannot tell you.** Tika cannot tell you who wrote a
@@ -308,7 +311,16 @@ java -jar tika-app.jar --config=file-forensics-config.json -Z     --extract-dir=
   the embedded files as a zip over HTTP. **`/unpack` names differ from
   `-z`/`-Z`:** plain sequential names (`1.jpg`, `2.pdf`, ...) and **no
   sidecar JSON** — map names back via each rmeta entry's `tk:resource-name`
-  yourself.
+  yourself. Against the server started above (forensics config loaded):
+
+  ```bash
+  curl -T suspect.file http://localhost:9998/unpack > suspect-embedded.zip
+  mkdir -p evidence/suspect-embedded && unzip -q suspect-embedded.zip -d evidence/suspect-embedded
+  sha256sum evidence/suspect-embedded/*
+  ```
+
+  `/unpack/all` also includes the container's own text and metadata. Both
+  are `PUT`; `POST multipart/form-data` takes a per-request `config` part.
 
 **Macros:** Office macro code is surfaced as embedded entries typed `MACRO`,
 but only when macro extraction is enabled — it is **off by default**;

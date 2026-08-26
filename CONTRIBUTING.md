@@ -31,7 +31,18 @@ Full guidelines: <https://tika.apache.org/contribute.html>
    ./mvnw clean install
    ```
 
-3. **Submit a pull request** against the `main` branch with:
+   Keep PRs small and single-purpose. For a feature whose shape isn't
+   settled, prototype on a throwaway branch and cut PRs once the interfaces
+   stop moving (`.skills/dev/feature-workflow/SKILL.md`).
+
+3. **Self-review**: JIRA reference, `CHANGES.txt` entry for user-visible
+   changes, license headers, no machine-specific paths, a test that fails
+   without your change. With an AI assistant, `.skills/dev/pr-review/SKILL.md`
+   runs this as a pre-flight (agent skills: [AGENTS.md](./AGENTS.md)); fix
+   what it finds, don't paste its report. AI-assisted contributions follow the
+   [ASF Generative Tooling Guidance](https://www.apache.org/legal/generative-tooling.html).
+
+4. **Submit a pull request** against the `main` branch with:
    - JIRA issue ID in the title: `[TIKA-XXXX] Description`
    - Squashed commits
    - No merge conflicts
