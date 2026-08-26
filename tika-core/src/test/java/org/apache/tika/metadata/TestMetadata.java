@@ -486,6 +486,7 @@ public class TestMetadata extends TikaTest {
         String reservedKey = TikaCoreProperties.TIKA_META_PREFIX + "reserved";
         Metadata m = new Metadata();
         m.add(reservedKey, "value");
+
         assertNull(m.get(reservedKey));
     }
 
