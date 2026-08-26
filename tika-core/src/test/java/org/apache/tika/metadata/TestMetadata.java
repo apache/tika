@@ -478,19 +478,17 @@ public class TestMetadata extends TikaTest {
     }
 
     /**
-     * Reserved keys must be ignored when written to an untrusted Metadata
-     * instance (the default), so untrusted callers cannot inject them.
+     * Writing to reserved keys must throw an exception.
      */
     @Test
     public void testReservedKeyBlockedOnUntrustedMetadata() {
         String reservedKey = TikaCoreProperties.TIKA_META_PREFIX + "reserved";
         Metadata m = new Metadata();
-        m.addTrusted(reservedKey, "value");
-        assertNull(m.get(reservedKey));
+        assertThrows(IllegalArgumentException.class, () -> m.add(reservedKey, "value"));
     }
 
     /**
-     * Once a Metadata instance is marked trusted, reserved keys are accepted.
+     * Reserved keys are accepted when addTrusted() is used.
      */
     @Test
     public void testReservedKeyAllowedOnTrustedMetadata() {
