@@ -163,4 +163,27 @@ public interface ServerManager extends Closeable {
         markServerForRestart();
         return -1;
     }
+
+    /**
+     * The generation of the currently running process: a counter incremented every time this
+     * manager forks a replacement. A client captures it when it connects and hands it back with
+     * every report, so a report about a process that has already been replaced can be recognised
+     * and dropped rather than being applied to its healthy successor.
+     */
+    default long getGeneration() {
+        return 0;
+    }
+
+    /**
+     * As {@link #markServerForRestart()}, but only if {@code generation} is still current.
+     * Reports about a superseded process are dropped.
+     */
+    default void markServerForRestart(long generation) {
+        markServerForRestart();
+    }
+
+    /** As {@link #handleCrashAndGetExitCode()}, but only if {@code generation} is still current. */
+    default int handleCrashAndGetExitCode(long generation) {
+        return handleCrashAndGetExitCode();
+    }
 }
