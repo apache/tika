@@ -31,6 +31,7 @@ import com.healthmarketscience.jackcess.util.LinkResolver;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
@@ -108,9 +109,18 @@ public class JackcessParser extends AbstractParser {
                         "Jackcess doesn't process mdb versions before v97");
             }
             throw e;
+        } catch (IndexOutOfBoundsException e) {
+            // TIKA-4830
+            throw new CorruptedFileException(e.getMessage(), e);
         } catch (IllegalStateException e) {
-            if (e.getMessage() != null && e.getMessage().contains("Incorrect password")) {
-                throw new EncryptedDocumentException(e);
+            if (e.getMessage() != null) {
+                if (e.getMessage().contains("Incorrect password")) {
+                    throw new EncryptedDocumentException(e);
+                }
+                if (e.getMessage().startsWith("invalid page number ")) {
+                    // TIKA-4830
+                    throw new CorruptedFileException(e.getMessage(), e);
+                }
             }
             throw e;
         } finally {
