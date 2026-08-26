@@ -31,8 +31,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "emitters": {
- *   "solr-emitter": {
- *     "my-solr-emitter": {
+ *   "my-solr-emitter": {
+ *     "solr-emitter": {
  *       "solrCollection": "my-collection",
  *       "solrUrls": ["http://localhost:8983/solr"],
  *       "idField": "id",

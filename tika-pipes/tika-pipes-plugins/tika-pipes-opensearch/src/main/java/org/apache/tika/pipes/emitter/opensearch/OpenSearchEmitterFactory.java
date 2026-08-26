@@ -31,8 +31,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "emitters": {
- *   "opensearch-emitter": {
- *     "my-opensearch-emitter": {
+ *   "my-opensearch-emitter": {
+ *     "opensearch-emitter": {
  *       "openSearchUrl": "http://localhost:9200/my-index",
  *       "idField": "id",
  *       "attachmentStrategy": "PARENT_CHILD",
