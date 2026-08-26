@@ -19,6 +19,7 @@ package org.apache.tika.digest;
 import java.io.IOException;
 
 import org.apache.commons.io.output.CloseShieldOutputStream;
+import org.apache.commons.io.output.CountingOutputStream;
 
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
@@ -88,14 +89,28 @@ public class DigestHelper {
             try {
                 DigestSink sink = digester.digestSink(metadata, context);
                 try {
-                    // close-shielded: a translator that closes the sink must not be able to
-                    // publish on our behalf
-                    EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata,
-                            CloseShieldOutputStream.wrap(sink));
-                    // only a translation that ran to completion publishes
-                    sink.commit();
-                } finally {
+                    // Close-shielded so a translator that closes the stream cannot publish on
+                    // our behalf, and counted because "returned normally" is not "produced the
+                    // content": a translator that claims the stream and writes nothing (see
+                    // PSTEmailStreamTranslator) would otherwise publish the digest of zero
+                    // bytes -- the same value for every such object.
+                    CountingOutputStream counted =
+                            new CountingOutputStream(CloseShieldOutputStream.wrap(sink));
+                    EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, counted);
+                    if (counted.getByteCount() > 0) {
+                        sink.commit();
+                    }
                     sink.close();
+                } catch (Throwable t) {
+                    // close() can fail too; that must not erase why the translation failed
+                    try {
+                        sink.close();
+                    } catch (Throwable closeFailure) {
+                        if (closeFailure != t) {
+                            t.addSuppressed(closeFailure);
+                        }
+                    }
+                    throw t;
                 }
             } finally {
                 tis.rewind();

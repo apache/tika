@@ -213,10 +213,31 @@ public class InMemoryContentViewTest {
             assertNull(metadata.get(HttpHeaders.CONTENT_LENGTH),
                     "toString must not drain the source into the spill file");
             assertFalse(rendered.contains(tempDir.toString()),
-                    "no getPath() has run, so there is no path to name yet");
+                    "the cache file is still growing, so it is not named");
 
             // the rest of the stream is still there to read
             assertEquals(3 * 1024 * 1024, tis.readAllBytes().length);
+        }
+    }
+
+    /**
+     * Once the cache holds the whole source, toString() names its file even though no
+     * getPath() has run -- that is what lets an operator find the spool from a log line.
+     */
+    @Test
+    public void testToStringNamesTheCacheFileOnceComplete() throws Exception {
+        byte[] data = data(3 * 1024 * 1024);
+        Metadata metadata = new Metadata();
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            tmp.setTemporaryFileDirectory(tempDir);
+            TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data), tmp, metadata);
+            tis.enableRewind(null);
+            assertEquals(data.length, tis.readAllBytes().length);
+            assertTrue(tis.hasFile(), "the cache spilled");
+            assertTrue(tis.toString().contains(tempDir.toString()),
+                    "a complete cache file must be nameable without calling getPath()");
+            assertNull(metadata.get(HttpHeaders.CONTENT_LENGTH),
+                    "and naming it must still not drain or stamp metadata");
         }
     }
 

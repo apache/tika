@@ -43,9 +43,11 @@ interface TikaInputSource extends Closeable {
     boolean hasPath();
 
     /**
-     * The file backing this source right now, or {@code null} if the content is not (yet)
-     * on disk. Never creates one and never reads from the source, so it is safe where
-     * {@link #getPath(String)} is not -- logging, diagnostics, {@code toString()}.
+     * The file this source is already associated with, or {@code null}. Never creates one
+     * and never reads from the source, so it is safe where {@link #getPath(String)} is not
+     * -- logging, diagnostics, {@code toString()}. For diagnostics only: the file may since
+     * have been deleted, and for a stream cache the last bytes may still be buffered until
+     * {@link #getPath(String)} completes it.
      */
     Path materializedPath();
 

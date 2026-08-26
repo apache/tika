@@ -50,11 +50,11 @@ public interface Digester {
      * temp file. See {@link DigestSink} for the commit/close contract.
      * <p>
      * The default buffers what is written -- in memory below a fixed threshold, in a temp
-     * file above it -- and calls {@link #digest} on close, so an implementation that only
+     * file above it -- and runs {@link #digest} over it when committed, so one that only
      * overrides {@code digest} keeps working unchanged. It does <em>not</em> get the
      * streaming behaviour: override this method to provide it.
      *
-     * @param m            Metadata to set the values for on close
+     * @param m            Metadata the values are set on when the sink is committed
      * @param parseContext ParseContext
      * @return a sink; the caller must close it, and the values are set only if it was committed
      */

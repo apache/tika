@@ -15,7 +15,11 @@ Release 4.1.0 - unreleased
      gains digestSink(), a DigestSink that digests as it is written; nothing is
      written to the metadata unless the producer calls commit(), so any failure
      -- exception, Error, or a producer that closes the sink itself -- publishes
-     no digest rather than a digest of the bytes that happened to arrive.
+     no digest rather than a digest of the bytes that happened to arrive. A
+     translator that claims a stream and writes nothing likewise publishes
+     nothing: embedded PST mail items, whose translator is still a stub, no
+     longer carry the digest of zero bytes (the same value for every one of
+     them) and instead carry no digest at all.
      DigestHelper uses it for translated embedded streams, which no longer touch
      a temp file when the digester implements digestSink (all of Tika's do; one
      that only implements digest() still buffers).

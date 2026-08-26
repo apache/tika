@@ -100,7 +100,7 @@ class BufferingDigestSink extends DigestSink {
         }
         try {
             Files.deleteIfExists(spilled);
-        } catch (IOException e) {
+        } catch (IOException | RuntimeException e) {
             LOG.warn("could not delete {}; will delete on exit", spilled, e);
             spilled.toFile().deleteOnExit();
         }

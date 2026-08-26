@@ -164,8 +164,9 @@ public class DigestSinkTest {
         Metadata m = new Metadata();
         DigestSink sink = d.digestSink(m, new ParseContext());
         sink.write(data(100), 0, 100);
+        assertNull(m.get(MD5_KEY), "writing alone must not publish");
         sink.commit();
-        assertNull(m.get(MD5_KEY), "digest must not be visible before close");
+        assertNull(m.get(MD5_KEY), "committing alone must not publish either");
         sink.close();
         String first = m.get(MD5_KEY);
         assertNotNull(first);
@@ -298,5 +299,58 @@ public class DigestSinkTest {
         assertFalse(publishedAnything.get(), "no child may publish on the failure path");
         assertNull(m.get(MD5_KEY), "no digest of the zero bytes the children received");
         assertNull(m.get(HttpHeaders.CONTENT_LENGTH), "and no Content-Length: 0");
+    }
+
+    /** An uncommitted sink that spilled must still take its temp file with it. */
+    @Test
+    public void testUncommittedSpillIsDeleted() throws Exception {
+        InputStreamDigester inner = new InputStreamDigester("MD5", MD5_KEY, HEX);
+        long before = tempFiles();
+        Metadata m = new Metadata();
+        try (DigestSink sink = pullOnly(inner).digestSink(m, new ParseContext())) {
+            sink.write(data(BufferingDigestSink.MEMORY_THRESHOLD + 4096), 0,
+                    BufferingDigestSink.MEMORY_THRESHOLD + 4096);
+            assertEquals(before + 1, tempFiles(), "content is on disk");
+            // no commit
+        }
+        assertEquals(before, tempFiles(), "an uncommitted sink still deletes its spill file");
+        assertNull(m.get(MD5_KEY));
+    }
+
+    /** A child that refuses to commit must not strand its siblings' temp files. */
+    @Test
+    public void testCompositeClosesChildrenWhenACommitThrows() throws Exception {
+        InputStreamDigester inner = new InputStreamDigester("MD5", MD5_KEY, HEX);
+        Digester selfClosing = new Digester() {
+            @Override
+            public void digest(TikaInputStream tis, Metadata m, ParseContext ctx) {
+            }
+
+            @Override
+            public DigestSink digestSink(Metadata m, ParseContext ctx) {
+                return new DigestSink() {
+                    @Override
+                    public void write(int b) {
+                    }
+
+                    @Override
+                    public void write(byte[] b, int off, int len) throws IOException {
+                        close();   // legal, and it makes the parent's commit() throw
+                    }
+
+                    @Override
+                    protected void finish(boolean publish) {
+                    }
+                };
+            }
+        };
+        long before = tempFiles();
+        DigestSink sink = new CompositeDigester(pullOnly(inner), selfClosing)
+                .digestSink(new Metadata(), new ParseContext());
+        sink.write(data(BufferingDigestSink.MEMORY_THRESHOLD + 4096), 0,
+                BufferingDigestSink.MEMORY_THRESHOLD + 4096);
+        sink.commit();
+        assertThrows(IllegalStateException.class, sink::close);
+        assertEquals(before, tempFiles(), "the sibling's spill file was still cleaned up");
     }
 }

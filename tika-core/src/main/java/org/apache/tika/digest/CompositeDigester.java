@@ -77,12 +77,17 @@ public class CompositeDigester implements Digester {
 
             @Override
             protected void finish(boolean publish) throws IOException {
-                if (publish) {
-                    for (DigestSink sink : sinks) {
-                        sink.commit();
+                try {
+                    if (publish) {
+                        for (DigestSink sink : sinks) {
+                            sink.commit();
+                        }
                     }
+                } finally {
+                    // a child that refuses to commit must not strand the others: this sink is
+                    // already marked closed, so nothing else will ever close them
+                    TemporaryResources.closeAll(sinks);
                 }
-                TemporaryResources.closeAll(sinks);
             }
         };
     }
