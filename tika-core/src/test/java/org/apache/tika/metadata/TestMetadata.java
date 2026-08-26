@@ -40,7 +40,7 @@ import java.util.concurrent.Future;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
-import org.apache.tika.metadata.writefilter.MetadataWriteLimiter;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiter;
 import org.apache.tika.utils.DateUtils;
 
 //Junit imports
