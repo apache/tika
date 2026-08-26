@@ -26,6 +26,7 @@ import com.healthmarketscience.jackcess.Database;
 import com.healthmarketscience.jackcess.DatabaseBuilder;
 import com.healthmarketscience.jackcess.crypt.CryptCodecProvider;
 import com.healthmarketscience.jackcess.util.LinkResolver;
+import org.apache.tika.exception.CorruptedFileException;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
