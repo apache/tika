@@ -16,11 +16,6 @@
  */
 package org.apache.tika.pipes.reporter.opensearch;
 
-import java.io.IOException;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-
 /**
  * @param verifySsl When {@code true} (the default), the HTTP client validates server certificates
  *                  and hostnames using the JVM's default trust store.  Set {@code false} to trust
@@ -30,11 +25,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public record HttpClientConfig(String userName, String password,
                                String authScheme, int connectionTimeoutMillis, int socketTimeoutMillis, String proxyHost, int proxyPort,
                                Boolean verifySsl) {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    public static HttpClientConfig load(final String json) throws IOException {
-        return OBJECT_MAPPER.readValue(json, HttpClientConfig.class);
-    }
 
     /** Boxed so an absent {@code verifySsl} is distinguishable from an explicit {@code false}. */
     public boolean verifySslOrDefault() {

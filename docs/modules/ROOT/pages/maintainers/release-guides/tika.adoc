@@ -37,16 +37,16 @@ Before starting the release, run vulnerability and dependency audits:
 [source,bash]
 ----
 # Identify vulnerable dependencies (add -Possindex-fail to fail the build on findings)
-mvn ossindex:audit
+./mvnw ossindex:audit
 
 # Check for outdated plugins
-mvn versions:display-plugin-updates
+./mvnw versions:display-plugin-updates
 
 # Check for outdated dependencies
-mvn versions:display-dependency-updates
+./mvnw versions:display-dependency-updates
 
 # Run full regression tests
-mvn -Papache-release clean verify
+./mvnw -Papache-release clean verify
 ----
 
 == Release Process
@@ -83,7 +83,7 @@ Run the Apache RAT plugin to verify all files have proper license headers:
 
 [source,bash]
 ----
-mvn apache-rat:check
+./mvnw apache-rat:check
 ----
 
 === Step 5: Commit Changes
@@ -112,7 +112,7 @@ Execute the Maven release prepare goal:
 
 [source,bash]
 ----
-mvn release:prepare
+./mvnw release:prepare
 ----
 
 This will prompt you to confirm:
@@ -141,7 +141,7 @@ Execute the Maven release perform goal:
 
 [source,bash]
 ----
-mvn release:perform -Darguments="-DskipITs"
+./mvnw release:perform -Darguments="-DskipITs"
 ----
 
 `-DskipITs` skips integration tests during the inner build.  Tests already
@@ -315,7 +315,7 @@ module that failed rather than starting over:
 [source,bash]
 ----
 cd target/checkout
-mvn deploy -Papache-release -rf :<failed-module> -DskipITs
+./mvnw deploy -Papache-release -rf :<failed-module> -DskipITs
 ----
 
 If the failure was after all modules deployed and only the root-pom dist staging
@@ -324,7 +324,7 @@ needs re-running:
 [source,bash]
 ----
 cd target/checkout
-mvn deploy --non-recursive -Papache-release -Dmaven.deploy.skip=true
+./mvnw deploy --non-recursive -Papache-release -Dmaven.deploy.skip=true
 ----
 
 `--non-recursive` runs only the root pom, so the antrun fires with the right

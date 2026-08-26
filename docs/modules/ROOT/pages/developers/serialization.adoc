@@ -190,7 +190,7 @@ it needs it. `Parser` extends `SelfConfiguring`, so every parser is self-configu
 [source,java]
 ----
 @TikaComponent
-public class PDFParser implements Parser {
+public class PDFParser implements Parser, RenderingParser {
 
     private final PDFParserConfig defaultConfig = new PDFParserConfig();
 
@@ -276,8 +276,8 @@ the allowlist constrains.
 }
 ----
 
-That fails with "Unrecognized parse-context entry 'java.lang.Runtime'" — the class
-is not registered.
+That fails with "Unrecognized parse-context entry 'java.lang.Runtime'. Check for a typo; it does
+not match any registered component."
 
 === Untrusted (Wire) Input: Restricted Mode
 

@@ -16,24 +16,14 @@
  */
 package org.apache.tika.pipes.fetcher.fs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.PluginJson;
 
 public class FileSystemFetcherConfig {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     public static FileSystemFetcherConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json,
-                    FileSystemFetcherConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse FileSystemFetcherConfig from JSON", e);
-        }
+        return PluginJson.read(json, FileSystemFetcherConfig.class);
     }
 
     private String basePath;

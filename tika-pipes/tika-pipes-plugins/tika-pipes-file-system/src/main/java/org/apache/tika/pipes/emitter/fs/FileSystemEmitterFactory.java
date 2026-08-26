@@ -31,8 +31,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "emitters": {
- *   "file-system-emitter": {
- *     "my-emitter": {
+ *   "my-emitter": {
+ *     "file-system-emitter": {
  *       "basePath": "/path/to/output",
  *       "fileExtension": "json",
  *       "onExists": "SKIP",

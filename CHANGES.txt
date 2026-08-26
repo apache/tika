@@ -8,6 +8,71 @@ Release 4.1.0 - unreleased
      place a raw-ZIP scanner can still see, not a statement about what Tika
      parsed (TIKA-4837).
 
+   * tika-pipes: the cache memory budget (how much rewindable content a forked
+     worker keeps in memory before spilling to disk; new since 4.0.0, which had
+     no budget at all) defaults to a quarter of the fork's heap, so raising
+     -Xmx raises it. It is one pool per forked JVM shared by all of its threads.
+     -Dtika.pipes.cacheMemoryBudgetBytes in forkedJvmArgs overrides it (below
+     the quarter-heap ceiling; <=0 disables); the fork logs the value and its
+     source at startup. TikaInputStream.hasFile() now also reports content the
+     stream cache spilled on its own, not only content a getPath() call put on
+     disk; note getPath() may still have to drain the rest of the source into
+     that file. TikaInputStream.toString() no longer forces a spill, so logging
+     or debugger-inspecting a stream is side-effect-free.
+     TikaInputStream.inMemoryContent(channel) gives a zero-copy read-only view
+     of cached content for consumers that need random access. Digester
+     gains digestSink(), a DigestSink that digests as it is written; nothing is
+     written to the metadata unless the producer calls commit(), so any failure
+     -- exception, Error, or a producer that closes the sink itself -- publishes
+     no digest rather than a digest of the bytes that happened to arrive. A
+     translator that claims a stream and writes nothing likewise publishes
+     nothing: embedded PST mail items, whose translator is still a stub, no
+     longer carry the digest of zero bytes (the same value for every one of
+     them) and instead carry no digest at all. DigestHelper uses it for
+     translated embedded streams, which no longer touch a temp file when the
+     digester implements digestSink (all of Tika's do; one that only implements
+     digest() still buffers).
+     TemporaryResources.closeAll(Closeable...) closes every argument even when
+     one throws unchecked; TemporaryResources, CachingSource, CachingInputStream
+     and CompositeDigester use it (TIKA-4835).
+
+   * Documentation: corrected a batch of pages and javadocs that contradicted
+     the code. Notably: the ES/OpenSearch attachmentStrategy has no default
+     (unset means embedded documents get neither the parent field nor the
+     parent/child relation); Kafka's connectionsMaxIdleMs is passed to the
+     producer, not ignored; jdbc queryTimeoutSeconds is applied only when > 0,
+     so 0 does not mean "no limit"; the Solr emitter/iterator support only
+     basic auth, not ntlm, and only when a userName is set; pipes-reporters
+     silently loads zero reporters when given a JSON array, and
+     pipes-iterator/pipes-reporters instances are built at config load rather
+     than lazily; under CONTENT_ONLY only a parse-context filter replaces the
+     built-in one, not the top-level metadata-filters chain;
+     _mime-include/_mime-exclude also accept a bare string; Tess4J locks
+     poolSize and maxImagePixels as well as the two paths; and pdf:trapped and
+     xmp:pdf:Trapped are new 4.x keys rather than renames (3.x captured the
+     flag only as pdf:docinfo:trapped and dropped the XMP value). Also
+     corrected the config nesting shown in every pipes-plugin fetcher/emitter
+     javadoc -- 23 of them, which had it inverted (the instance id is the
+     outer key, the component name the inner) -- and removed references to a
+     TesseractOCRConfig.properties file that 4.x does not load (TIKA-4842).
+
+   * Pipes plugins no longer bundle their own Jackson: jackson-core, -databind
+     and -annotations are provided by the host (tika-serialization) and the
+     plugins parent pom now bans bundling them, so a mapper can cross the
+     plugin boundary without a second copy of the Jackson classes (seven plugin
+     zips shipped one). Plugin configuration JSON is parsed by one shared
+     mapper, PluginJson (tika-plugins-core), which rejects unknown keys,
+     numbers for enums and duplicate keys, and accepts
+     // and /* */ comments; the 33 per-plugin *Config classes use it instead of
+     their own bare ObjectMapper (TIKA-4840).
+
+   * tika-server and tika-async-cli now start from a config that contains
+     // or /* */ comments, as the configuration docs have always said they
+     may. The main loader accepted them; the steps that re-read the user's
+     file to merge in server/CLI overrides (ConfigMerger, ensurePluginRoots)
+     used their own bare parser and refused the whole file; they now use the
+     shared TikaObjectMapperFactory mapper (TIKA-4834).
+
    * The Kafka pipes iterator no longer stops at the first empty poll. A newly
      subscribed consumer spends its first poll(s) joining the group and returns
      empty even when the topic has a backlog, so the iterator could enqueue zero

@@ -31,8 +31,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "fetchers": {
- *   "file-system-fetcher": {
- *     "my-fetcher": {
+ *   "my-fetcher": {
+ *     "file-system-fetcher": {
  *       "basePath": "/path/to/files",
  *       "extractFileSystemMetadata": true
  *     }

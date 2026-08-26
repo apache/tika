@@ -308,6 +308,11 @@ class StreamCache implements Closeable {
     /**
      * Whether the cache has spilled to a file.
      */
+    /** The spill file, or null while the content is still in memory. Never creates one. */
+    Path spillFilePath() {
+        return spillFile;
+    }
+
     boolean isFileBacked() {
         return spillFile != null;
     }

@@ -68,23 +68,28 @@ rather than disk, and `/dev/shm` is commonly sized at half of RAM -- so if you p
 
 === Embedded-object cache memory budget
 
-Each fork holds a process-wide in-memory budget for stream caching (chiefly the rewind
-buffers used when digesting embedded documents), so small embedded objects stay in RAM
-instead of spilling to a temp file at the per-object 1MB threshold. The default is 256MB per
-fork, clamped to a quarter of the fork's max heap; the effective value is logged at fork
-startup. Tune it with a system property in `forkedJvmArgs` (plain bytes, no unit suffix;
-`<=0` disables the budget and restores the per-object threshold):
+Each fork holds a process-wide in-memory budget for stream caching (the rewind buffers used
+when digesting embedded documents, and the in-memory views parsers read random-access
+content from), so small embedded objects stay in RAM instead of spilling to a temp file at
+the per-object 1MB threshold. The default is a quarter of the fork's max heap, so raising
+`-Xmx` raises it; a value set via the system property is clamped to that same quarter-heap
+ceiling. The effective value and where it came from are logged at fork startup. Tune it with
+a system property in `forkedJvmArgs` (plain bytes, no unit suffix; `<=0` disables the
+budget and restores the per-object threshold):
 
 [source,json]
 ----
 "forkedJvmArgs": ["-Xmx1g", "-Dtika.pipes.cacheMemoryBudgetBytes=134217728"]
 ----
 
-Size `-Xmx` with the budget in mind: the budget is additional heap the fork may use on top
-of its parsing working set, and in per-client mode every fork holds its own budget
-(`numClients` x budget in aggregate). In shared-server mode all concurrent parses in the
-single forked server share one budget, so each in-flight document gets a smaller slice of
-the same value.
+Size `-Xmx` so that three quarters of it covers the parsing working set; the remaining
+quarter is what the budget may hold. It is a ceiling on live cached bytes, not a
+preallocation. In per-client mode every fork holds its own budget (`numClients` x a quarter
+of each fork's heap in aggregate). In shared-server mode all concurrent parses in the single
+forked server share one pool, so a single large document can take most of it and push its
+siblings to disk for a while. With no explicit heap flag the fork's heap is sized from the
+host (see `forkedJvmArgs`), and the budget scales with it -- on a large host that is
+several GB per fork by default.
 
 == Timeouts
 

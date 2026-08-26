@@ -99,6 +99,11 @@ class ByteArraySource extends InputStream implements TikaInputSource {
     }
 
     @Override
+    public Path materializedPath() {
+        return spilledPath;
+    }
+
+    @Override
     public boolean hasPath() {
         return spilledPath != null;
     }
@@ -107,10 +112,13 @@ class ByteArraySource extends InputStream implements TikaInputSource {
     public Path getPath(String suffix) throws IOException {
         if (spilledPath == null) {
             // Spill to temp file on first call
-            spilledPath = tmp.createTempFile(suffix);
-            try (OutputStream out = Files.newOutputStream(spilledPath)) {
+            // assign only on success: a failed write must not leave a truncated file that
+            // a later getPath() would hand back as if it were complete
+            Path p = tmp.createTempFile(suffix);
+            try (OutputStream out = Files.newOutputStream(p)) {
                 out.write(data, 0, length);
             }
+            spilledPath = p;
         }
         return spilledPath;
     }

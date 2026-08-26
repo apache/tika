@@ -69,9 +69,12 @@ xref:advanced/spooling.adoc[spooling] for the stream contract.
 `TikaInputStream` itself dropped several members in 4.0: `isTikaInputStream`, `cast`,
 `getPath(int)`, `get(InputStreamFactory)` (both overloads), `hasInputStreamFactory`,
 `getInputStreamFactory`, and `setOpenContainer(Object, long)` — along with the
-`InputStreamFactory` class. `get(byte[])` and `getFromContainer` no longer declare
-`IOException`. `enableRewind()` now throws a checked `IOException` when bytes have
-already been read.
+`InputStreamFactory` class.
+
+NOTE: Two further `TikaInputStream` changes are easy to mistake for 3.x deltas but are deltas
+against 4.0.0-beta-1: `get(byte[])` and `getFromContainer` no longer declaring `IOException`
+(neither declared it in 3.3.2), and `enableRewind()` throwing a checked `IOException` (the method
+did not exist in 3.3.2). Upgrading from 3.x, neither is a change you need to make.
 
 [#thin-launcher-zip]
 == `tika-app` and `tika-server` distributions: jar -> zip

@@ -32,8 +32,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "fetchers": {
- *   "gcs-fetcher": {
- *     "my-gcs-fetcher": {
+ *   "my-gcs-fetcher": {
+ *     "gcs-fetcher": {
  *       "projectId": "my-project",
  *       "bucket": "my-bucket",
  *       "spoolToTemp": true,

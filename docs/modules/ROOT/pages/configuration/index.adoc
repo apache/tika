@@ -81,8 +81,9 @@ produces no error and no effect:
   read;
 * the body of a self-configuring component under `parse-context` — it is handed to the component
   untouched;
-* `_mime-include` / `_mime-exclude` when the value is not a JSON array — a shape error yields an
-  empty filter rather than a failure;
+* `_mime-include` / `_mime-exclude` when the value is neither a JSON array nor a string — a bare
+  string is read as a one-element list, but any other shape yields an empty filter rather than a
+  failure;
 * a non-textual entry inside `default-parser`'s `exclude` list — the list expects plain strings,
   so an object or array entry such as `[{"pdf-parser": {}}]` is skipped and the component stays
   enabled. (An *unregistered name* in that list, and an unknown *key* in that same block, are

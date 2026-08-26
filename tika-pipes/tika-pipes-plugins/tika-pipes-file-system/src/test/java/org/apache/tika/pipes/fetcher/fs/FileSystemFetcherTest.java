@@ -18,6 +18,7 @@ package org.apache.tika.pipes.fetcher.fs;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -138,5 +139,17 @@ public class FileSystemFetcherTest {
                 testFile.toAbsolutePath().toString(), new Metadata(), new ParseContext())) {
             assertNotNull(tis);
         }
+    }
+
+    @Test
+    public void testUnknownKeyRejected() {
+        // guards the plugin actually parsing through PluginJson, not a lenient mapper
+        ObjectNode config = MAPPER.createObjectNode();
+        config.put("basePath", tempDir.toAbsolutePath().toString());
+        config.put("basePaht", "x");
+        ExtensionConfig pluginConfig = new ExtensionConfig("test", "test", config.toString());
+        TikaConfigException e = assertThrows(TikaConfigException.class,
+                () -> new FileSystemFetcherFactory().buildExtension(pluginConfig));
+        assertTrue(e.getMessage().contains("basePaht"), e.getMessage());
     }
 }

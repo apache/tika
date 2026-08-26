@@ -25,6 +25,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
@@ -400,6 +401,14 @@ public class TikaInputStream extends TaggedInputStream {
         tmp.addResource(closeable);
     }
 
+    /**
+     * Whether the content is already on disk: a real file, or a stream cache that spilled.
+     * {@link #getPath()} then returns that file without re-copying anything already written
+     * to it -- but it is not free, and it is not a getter: for a cache that spilled
+     * mid-stream it first drains the rest of the source into the file, switches this stream
+     * to reading from that file, and sets {@code Content-Length} on the Metadata this stream
+     * was created with. Use {@link #hasLength()} if you only need the size.
+     */
     public boolean hasFile() {
         TikaInputSource source = inputSource();
         return source != null && source.hasPath();
@@ -552,18 +561,33 @@ public class TikaInputStream extends TaggedInputStream {
         return source.getSeekableByteChannel();
     }
 
+    /**
+     * Zero-copy, read-only view of the content behind a channel from
+     * {@link #getSeekableByteChannel()}, or {@code null} when that content is on disk. Lets a
+     * consumer that wants random access (PDFBox, metadata-extractor) read what is already in
+     * memory without a second copy; when this returns null the caller should use the file.
+     * <p>
+     * The view aliases the cache's own array and is valid exactly while {@code channel} is
+     * open: the channel pins the array, and the content is fully drained before any channel
+     * is handed out. Keep the channel open for as long as the view is in use, then close it
+     * -- a view that outlives its channel still reads correctly but is no longer counted
+     * against the memory budget.
+     */
+    public static ByteBuffer inMemoryContent(SeekableByteChannel channel) throws IOException {
+        if (channel instanceof MemorySeekableByteChannel) {
+            return ((MemorySeekableByteChannel) channel).buffer();
+        }
+        return null;
+    }
+
     @Override
     public String toString() {
         String str = "TikaInputStream of ";
-        if (hasFile()) {
-            try {
-                str += getPath().toString();
-            } catch (IOException e) {
-                str += "unknown path";
-            }
-        } else {
-            str += in.toString();
-        }
+        // materializedPath(), never getPath(): on a spilled cache the latter drains the
+        // source, reopens it and writes metadata -- toString() must not do that
+        TikaInputSource source = inputSource();
+        Path materialized = source == null ? null : source.materializedPath();
+        str += materialized != null ? materialized.toString() : in.toString();
         if (openContainer != null) {
             str += " (in " + openContainer + ")";
         }

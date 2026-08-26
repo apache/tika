@@ -53,8 +53,8 @@ import org.apache.tika.utils.StringUtils;
  * <pre>
  * {
  *   "emitters": {
- *     "az-blob-emitter": {
- *       "my-azure": {
+ *     "my-azure": {
+ *       "az-blob-emitter": {
  *         "endpoint": "https://myaccount.blob.core.windows.net",
  *         "sasToken": "sv=2020-08-04&amp;ss=b...",
  *         "container": "my-container",

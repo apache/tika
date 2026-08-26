@@ -159,6 +159,23 @@ public class AsyncCliParserTest {
     @TempDir
     Path tempDir;
 
+    /** TIKA-4834: the config docs permit comments. */
+    @Test
+    public void testEnsurePluginRootsAcceptsComments() throws Exception {
+        Path configPath = tempDir.resolve("config-comments.json");
+        Files.writeString(configPath, """
+            // leading comment
+            {
+              /* block */
+              "pipes": { "numClients": 3 } // trailing
+            }
+            """);
+        Path result = TikaAsyncCLI.ensurePluginRoots(configPath, null);
+        JsonNode root = new ObjectMapper().readTree(result.toFile());
+        assertTrue(root.has("plugin-roots"));
+        assertEquals(3, root.get("pipes").get("numClients").asInt());
+    }
+
     @Test
     public void testEnsurePluginRootsAddsDefault() throws Exception {
         // Create a config without plugin-roots
