@@ -617,6 +617,8 @@ public class SharedServerModeTest {
 
             assertTrue(verifyResult.isSuccess(),
                     "After concurrent OOM, server should restart and process new request. Got: " + verifyResult.status());
+
+            assertRestartsAttributedToOom(pipesParser);
         }
     }
 
@@ -760,7 +762,33 @@ public class SharedServerModeTest {
                     "All 5 phase 2 requests should succeed after server recovery. " +
                     "Phase 1 had: " + phase1OomCount + " OOMs, " + phase1SuccessCount + " successes, " +
                     phase1CrashCount + " crashes");
+
+            assertRestartsAttributedToOom(pipesParser);
         }
+    }
+
+    /**
+     * The shared JVM died once, from OOM. Siblings whose in-flight parses were killed by that
+     * death report a crash <em>result</em>, which is correct; none of them is a second process
+     * death, so nothing may be booked as an extra restart.
+     */
+    private void assertRestartsAttributedToOom(PipesParser pipesParser) {
+        long oom = pipesParser.getRestartCount(RestartReason.OOM);
+        long crash = pipesParser.getRestartCount(RestartReason.CRASH);
+        String counts = " (oom=" + oom + ", crash=" + crash + ", timeout=" +
+                pipesParser.getRestartCount(RestartReason.TIMEOUT) + ", maxFiles=" +
+                pipesParser.getRestartCount(RestartReason.MAX_FILES) + ")";
+        assertTrue(oom >= 1, "the OOM death should be attributed to OOM" + counts);
+        assertEquals(0, crash,
+                "no restart may be attributed to CRASH: the only process death was the OOM" + counts);
+        // Reason tags alone cannot distinguish "the phantom restart is gone" from "the phantom
+        // restart is now labelled OOM". Total restarts is the honest observable: one death, one
+        // restart, whatever it is called.
+        long total = 0;
+        for (RestartReason r : RestartReason.values()) {
+            total += pipesParser.getRestartCount(r);
+        }
+        assertEquals(1, total, "exactly one restart may follow a single process death" + counts);
     }
 
     private Path setupInputDir(Path tmp) throws Exception {

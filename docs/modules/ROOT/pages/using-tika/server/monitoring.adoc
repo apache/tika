@@ -154,7 +154,9 @@ after `maxFilesProcessedPerProcess`), `idle` (the worker shut itself down after
 `socketTimeoutMillis` without a request -- exit code 24 -- and was started again on the
 next one; per-client mode only, a shared server stays up when idle),
 `connection_abandoned` (the client dropped the connection: a request was interrupted, or a
-worker reply exceeded `maxIpcPayloadBytes`). Alert on `oom`, `timeout` and `crash`; the rest are expected.
+worker reply exceeded `maxIpcPayloadBytes`), `shutdown` (the parent asked the worker to stop --
+usually after a failed health check prompted a reconnect -- and it exited cleanly).
+Alert on `oom`, `timeout` and `crash`; the rest are expected.
 
 `pool` separates two independent sets of forks: `sync` serves `/tika`, `/rmeta`, `/meta`,
 `/unpack`, `/detect` and `/pipes`; `async` serves `/async`. Each pool is sized by its own

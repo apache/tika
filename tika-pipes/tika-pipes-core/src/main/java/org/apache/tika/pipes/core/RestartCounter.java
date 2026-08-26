@@ -19,6 +19,7 @@ package org.apache.tika.pipes.core;
 import java.util.EnumMap;
 import java.util.concurrent.atomic.LongAdder;
 
+import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.server.PipesServer;
 
 /**
@@ -60,14 +61,42 @@ final class RestartCounter {
         restarted(previous.isAlive() ? -1 : previous.exitValue());
     }
 
-    /** Unmarked restarts are attributed by exit code: idle self-exit or crash. */
+    /** Unmarked restarts are attributed by the exit code the child chose. */
     void restarted(int exitCode) {
         RestartReason reason = pending;
         pending = null;
         if (reason == null) {
-            reason = exitCode == PipesServer.IDLE_EXIT_CODE ? RestartReason.IDLE : RestartReason.CRASH;
+            reason = fromExitCode(exitCode);
         }
         counts.get(reason).increment();
+    }
+
+    /**
+     * The child reports why it died in its exit status, and the parent may reach a restart
+     * without ever having read the corresponding frame (the socket can break first, or the
+     * child can outlive the parent's one-second wait). Every code the child can deliberately
+     * choose is honoured here; only genuinely unexplained deaths fall through to CRASH.
+     */
+    private static RestartReason fromExitCode(int exitCode) {
+        if (exitCode == PipesServer.IDLE_EXIT_CODE) {
+            return RestartReason.IDLE;
+        }
+        if (exitCode == 0) {
+            // Only PipesServer's SHUT_DOWN handler exits 0, and the parent is the only sender:
+            // a worker we asked to stop is not a crash, however we noticed it was gone.
+            return RestartReason.SHUTDOWN;
+        }
+        if (matches(PipesMessageType.OOM, exitCode)) {
+            return RestartReason.OOM;
+        }
+        if (matches(PipesMessageType.TIMEOUT, exitCode)) {
+            return RestartReason.TIMEOUT;
+        }
+        return RestartReason.CRASH;
+    }
+
+    private static boolean matches(PipesMessageType type, int exitCode) {
+        return type.getExitCode().orElse(Integer.MIN_VALUE) == exitCode;
     }
 
     long count(RestartReason reason) {

@@ -79,6 +79,8 @@ public class SharedServerManager implements ServerManager {
     private volatile boolean pendingRestart = false; // Set when a client reports fatal error or max files reached
     private final RestartCounter restarts = new RestartCounter();
     private volatile byte[] currentToken;
+    private volatile long generation;
+    private volatile boolean closed;
     private Process process;
     private Path tmpDir;
     private int serverPort = -1;
@@ -142,10 +144,14 @@ public class SharedServerManager implements ServerManager {
             if (isProcessAlive() && !pendingRestart) {
                 return;
             }
+            if (closed) {
+                throw new IllegalStateException("shared server manager is closed");
+            }
             restarting = true;
             Process previous = process;
             try {
                 startServer();
+                generation++; // supersedes every report still in flight against the old process
                 pendingRestart = false; // Clear the flag after successful restart
                 filesProcessed.set(0); // Reset file counter on restart
             } finally {
@@ -164,6 +170,11 @@ public class SharedServerManager implements ServerManager {
      * isRunning() still says otherwise; the next ensureRunning() restarts it.
      */
     @Override
+    public void markServerForRestart() {
+        markServerForRestart(RestartReason.CRASH);
+    }
+
+    @Override
     public void markServerForRestart(RestartReason reason) {
         synchronized (lock) {
             LOG.debug("Server marked for restart ({}) - will restart on next ensureRunning()", reason);
@@ -171,10 +182,44 @@ public class SharedServerManager implements ServerManager {
         }
     }
 
+    @Override
+    public void markServerForRestart(RestartReason reason, long generation) {
+        synchronized (lock) {
+            if (isSuperseded(generation, reason)) {
+                return;
+            }
+            LOG.debug("Server marked for restart ({}) - will restart on next ensureRunning()", reason);
+            markForRestart(reason);
+        }
+    }
+
+    /**
+     * A restart kills the shared JVM out from under every sibling still parsing on it, and
+     * {@code ensureRunning} holds {@code lock} for the whole fork, so those siblings cannot
+     * report until after the replacement is up. Their reports describe the process that was
+     * already destroyed and already counted; applying them would destroy the healthy
+     * replacement and book a second restart for a single death.
+     */
+    private boolean isSuperseded(long reportedGeneration, RestartReason reason) {
+        if (reportedGeneration >= generation) {
+            return false;
+        }
+        LOG.debug("dropping stale {} report for generation {}; current generation is {}",
+                reason, reportedGeneration, generation);
+        return true;
+    }
+
     /** Callers hold {@code lock}. */
     private void markForRestart(RestartReason reason) {
         restarts.mark(reason);
         pendingRestart = true;
+    }
+
+    @Override
+    public long getGeneration() {
+        synchronized (lock) {
+            return generation;
+        }
     }
 
     @Override
@@ -186,6 +231,18 @@ public class SharedServerManager implements ServerManager {
     @Override
     public int handleCrashAndGetExitCode() {
         synchronized (lock) {
+            restarts.markIfUnmarked(RestartReason.CRASH);
+            pendingRestart = true;
+        }
+        return -1;
+    }
+
+    @Override
+    public int handleCrashAndGetExitCode(long generation) {
+        synchronized (lock) {
+            if (isSuperseded(generation, RestartReason.CRASH)) {
+                return -1;
+            }
             restarts.markIfUnmarked(RestartReason.CRASH);
             pendingRestart = true;
         }
@@ -205,7 +262,10 @@ public class SharedServerManager implements ServerManager {
             synchronized (lock) {
                 LOG.info("Shared server reached max files limit ({}/{}), marking for restart",
                         count, maxFilesPerProcess);
-                markForRestart(RestartReason.MAX_FILES);
+                // A fatal reason already recorded for this same pending restart outranks a
+                // scheduled recycle: the boundary file may be the one that killed the worker.
+                restarts.markIfUnmarked(RestartReason.MAX_FILES);
+                pendingRestart = true;
             }
         }
     }
@@ -399,6 +459,11 @@ public class SharedServerManager implements ServerManager {
     @Override
     public void shutdown() throws InterruptedException {
         synchronized (lock) {
+            // Latch here, not in shutdownUnsafe(): startServer() calls that to reap the previous
+            // process on every restart, so latching there would brick the manager on restart #1.
+            // A request thread racing us into ensureRunning must fail rather than fork a
+            // replacement that nothing owns and nothing will ever destroy.
+            closed = true;
             shutdownUnsafe();
         }
     }
@@ -419,11 +484,16 @@ public class SharedServerManager implements ServerManager {
     private void destroyProcessUnsafe() throws InterruptedException {
         if (process != null) {
             process.destroyForcibly();
-            process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
-            if (process.isAlive()) {
-                LOG.error("Shared server process still alive after {}ms", WAIT_ON_DESTROY_MS);
+            try {
+                process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
+                if (process.isAlive()) {
+                    LOG.error("Shared server process still alive after {}ms", WAIT_ON_DESTROY_MS);
+                }
+            } finally {
+                // An interrupt here must not leave the field pointing at a SIGKILLed process:
+                // ensureRunning would then see process == previous and skip counting the restart.
+                process = null;
             }
-            process = null;
         }
     }
 

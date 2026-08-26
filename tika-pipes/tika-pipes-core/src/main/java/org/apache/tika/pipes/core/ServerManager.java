@@ -103,16 +103,42 @@ public interface ServerManager extends Closeable {
      * might still return true briefly. The next call to {@link #ensureRunning()} will
      * wait for the process to fully exit and then restart.
      * <p>
-     * Kept for implementations predating {@link RestartReason}; nothing in tika-pipes calls
-     * this form. Do not implement it by calling the reason form, which defaults to this one.
+     * The reason form below defaults to this one, so this must NOT default to the reason form:
+     * an implementation overriding neither would recurse until the stack blew. Concrete managers
+     * in tika-pipes override both, so callers of either spelling reach a real implementation.
      */
     default void markServerForRestart() {
-        // Default no-op for backward compatibility
+        // Default no-op: preserves implementations written before RestartReason existed.
     }
 
     /** As {@link #markServerForRestart()}, attributing the restart to {@code reason}. Override this one. */
     default void markServerForRestart(RestartReason reason) {
         markServerForRestart();
+    }
+
+    /**
+     * The generation of the currently running process: a counter incremented every time this
+     * manager forks a replacement. A client captures it when it connects and hands it back with
+     * every report, so a report about a process that has already been replaced can be recognised
+     * and dropped rather than being applied to its healthy successor.
+     */
+    default long getGeneration() {
+        return 0;
+    }
+
+    /**
+     * As {@link #markServerForRestart(RestartReason)}, but only if {@code generation} is still
+     * current. Reports about a superseded process are dropped.
+     */
+    default void markServerForRestart(RestartReason reason, long generation) {
+        markServerForRestart(reason);
+    }
+
+    /**
+     * As {@link #handleCrashAndGetExitCode()}, but only if {@code generation} is still current.
+     */
+    default int handleCrashAndGetExitCode(long generation) {
+        return handleCrashAndGetExitCode();
     }
 
     /** Restarts performed so far for {@code reason}; monotonic, never reset. */

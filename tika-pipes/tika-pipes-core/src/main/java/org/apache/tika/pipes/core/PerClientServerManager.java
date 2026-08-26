@@ -292,6 +292,11 @@ public class PerClientServerManager implements ServerManager {
     }
 
     @Override
+    public void markServerForRestart() {
+        markServerForRestart(RestartReason.CRASH);
+    }
+
+    @Override
     public void markServerForRestart(RestartReason reason) {
         LOG.info("clientId={}: marking server for restart ({})", clientId, reason);
         markForRestart(reason);

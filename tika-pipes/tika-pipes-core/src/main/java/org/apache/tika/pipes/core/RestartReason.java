@@ -27,5 +27,10 @@ public enum RestartReason {
     MAX_FILES,
     CONNECTION_ABANDONED,
     /** The worker exited on its own (exit 24) after sitting idle for socketTimeoutMillis. */
-    IDLE
+    IDLE,
+    /**
+     * The worker exited cleanly (exit 0) because the parent sent it SHUT_DOWN -- typically after a
+     * failed health check prompted a reconnect. The replacement is deliberate, not a failure.
+     */
+    SHUTDOWN
 }

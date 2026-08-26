@@ -25,6 +25,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.server.PipesServer;
 
 public class RestartCounterTest {
@@ -70,12 +71,32 @@ public class RestartCounterTest {
         }
     }
 
+    /**
+     * Enumerated from the codes the child can deliberately choose ({@link PipesMessageType} and
+     * {@link PipesServer}), not from RestartCounter's own branches: a table derived from the
+     * implementation cannot catch a case the implementation forgot.
+     */
     static Stream<Arguments> exitCodes() {
         return Stream.of(
                 Arguments.of(PipesServer.IDLE_EXIT_CODE, RestartReason.IDLE),
-                Arguments.of(0, RestartReason.CRASH),
+                Arguments.of(PipesMessageType.OOM.getExitCode().getAsInt(), RestartReason.OOM),
+                Arguments.of(PipesMessageType.TIMEOUT.getExitCode().getAsInt(), RestartReason.TIMEOUT),
+                Arguments.of(PipesMessageType.UNSPECIFIED_CRASH.getExitCode().getAsInt(), RestartReason.CRASH),
+                Arguments.of(0, RestartReason.SHUTDOWN),
                 Arguments.of(1, RestartReason.CRASH),
                 Arguments.of(-1, RestartReason.CRASH));
+    }
+
+    @Test
+    public void testFatalReasonOutranksScheduledRecycle() {
+        // The file-limit boundary document may be the one that killed the worker; a scheduled
+        // recycle must not overwrite the fatal reason recorded for the same pending restart.
+        RestartCounter c = new RestartCounter();
+        c.mark(RestartReason.OOM);
+        c.markIfUnmarked(RestartReason.MAX_FILES);
+        c.restarted(-1);
+        assertEquals(1, c.count(RestartReason.OOM));
+        assertEquals(0, c.count(RestartReason.MAX_FILES));
     }
 
     @Test
