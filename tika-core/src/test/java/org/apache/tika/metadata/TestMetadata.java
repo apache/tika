@@ -485,8 +485,7 @@ public class TestMetadata extends TikaTest {
     public void testReservedKeyBlockedOnUntrustedMetadata() {
         String reservedKey = TikaCoreProperties.TIKA_META_PREFIX + "reserved";
         Metadata m = new Metadata();
-        m.add(reservedKey, "value");
-
+        m.addTrusted(reservedKey, "value");
         assertNull(m.get(reservedKey));
     }
 
