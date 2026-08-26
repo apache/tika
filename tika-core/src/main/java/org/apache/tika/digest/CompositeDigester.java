@@ -18,6 +18,7 @@ package org.apache.tika.digest;
 
 import java.io.IOException;
 
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -36,5 +37,58 @@ public class CompositeDigester implements Digester {
         for (Digester digester : digesters) {
             digester.digest(tis, m, parseContext);
         }
+    }
+
+    /** Fans each write out to every child's sink; commit and close reach them all. */
+    @Override
+    public DigestSink digestSink(Metadata m, ParseContext parseContext) throws IOException {
+        DigestSink[] sinks = new DigestSink[digesters.length];
+        try {
+            for (int i = 0; i < digesters.length; i++) {
+                sinks[i] = digesters[i].digestSink(m, parseContext);
+            }
+        } catch (Throwable e) {
+            // uncommitted, so closing publishes nothing
+            try {
+                TemporaryResources.closeAll(sinks);
+            } catch (Throwable t) {
+                if (t != e) {
+                    e.addSuppressed(t);
+                }
+            }
+            throw e;
+        }
+        return new DigestSink() {
+            @Override
+            public void write(int b) throws IOException {
+                ensureOpen();
+                for (DigestSink sink : sinks) {
+                    sink.write(b);
+                }
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) throws IOException {
+                ensureOpen();
+                for (DigestSink sink : sinks) {
+                    sink.write(b, off, len);
+                }
+            }
+
+            @Override
+            protected void finish(boolean publish) throws IOException {
+                try {
+                    if (publish) {
+                        for (DigestSink sink : sinks) {
+                            sink.commit();
+                        }
+                    }
+                } finally {
+                    // a child that refuses to commit must not strand the others: this sink is
+                    // already marked closed, so nothing else will ever close them
+                    TemporaryResources.closeAll(sinks);
+                }
+            }
+        };
     }
 }

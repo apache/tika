@@ -137,4 +137,34 @@ public class InputStreamDigester implements Digester {
         tis.rewind();
     }
 
+    /** Streams: every write goes straight into the MessageDigest; close sets the values. */
+    @Override
+    public DigestSink digestSink(Metadata metadata, ParseContext parseContext) {
+        MessageDigest messageDigest = newMessageDigest();
+        return new DigestSink() {
+            private long total;
+
+            @Override
+            public void write(int b) throws IOException {
+                ensureOpen();
+                messageDigest.update((byte) b);
+                total++;
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) throws IOException {
+                ensureOpen();
+                messageDigest.update(b, off, len);
+                total += len;
+            }
+
+            @Override
+            protected void finish(boolean publish) {
+                if (publish) {
+                    setContentLength(total, metadata);
+                    metadata.set(metadataProperty, encoder.encode(messageDigest.digest()));
+                }
+            }
+        };
+    }
 }

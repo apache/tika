@@ -135,6 +135,16 @@ public interface ServerManager extends Closeable {
     }
 
     /**
+     * The reasonless spelling of the above, kept for callers that cannot attribute the failure.
+     * Routed through the reason form rather than the bare no-arg default: that default exists
+     * only to keep pre-RestartReason implementations working, and delegating here would leave
+     * this silently inert for any implementation that overrides only the reason form.
+     */
+    default void markServerForRestart(long generation) {
+        markServerForRestart(RestartReason.CRASH, generation);
+    }
+
+    /**
      * As {@link #handleCrashAndGetExitCode()}, but only if {@code generation} is still current.
      */
     default int handleCrashAndGetExitCode(long generation) {
@@ -199,4 +209,5 @@ public interface ServerManager extends Closeable {
         markServerForRestart(RestartReason.CRASH);
         return -1;
     }
+
 }

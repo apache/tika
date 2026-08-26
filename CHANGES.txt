@@ -26,6 +26,72 @@ Release 4.1.0 - unreleased
      (PipesServer.IDLE_EXIT_CODE) instead of 0, so the parent can tell an idle
      exit from a requested shutdown (TIKA-4839).
 
+   * Fixed a bug that made per-request (parse-context) configuration unusable
+     for parsers that lock some config fields against caller modification --
+     Tess4J, the VLM parsers and the OpenAI image-embedding parser. Any such
+     config threw, including an empty one: the defaults were deep-copied
+     through their own setters, which the runtime config overrides to reject
+     caller input, so the copy tripped the parser's own guards before the
+     caller's JSON was read. Locked fields are still rejected when a caller
+     actually sets them. Configuration supplied at initialization time (the
+     "parsers" section) was never affected (TIKA-4843).
+     
+   * OOXML parsers flag package parts that are unreachable through the OPC
+     relationship graph: msoffice:has-unreferenced-parts (boolean) and
+     msoffice:unreferenced-part-names. Purely structural (no bytes are
+     inspected; content types come from [Content_Types].xml by extension), so
+     expect false positives from tools that leave orphan parts behind. A hiding
+     place a raw-ZIP scanner can still see, not a statement about what Tika
+     parsed. Applies to Word, Excel, PowerPoint and Visio OOXML (including
+     macro-enabled variants); XPS links content by markup rather than
+     relationships and is not checked (TIKA-4837).
+     
+   * Shared pipes server (useSharedServer: true, not the default): a client whose
+     in-flight parse was killed by another client's restart could restart the
+     healthy replacement. ensureRunning holds its lock across the whole fork, so
+     siblings cannot report a dead worker until after the replacement is up, and
+     the pending-restart flag carried no process identity -- so a report about
+     the process that just died was applied to its successor, which was then
+     destroyed and re-forked. One worker death produced two restarts and a second
+     round of destroyed in-flight work; under sustained concurrent load it
+     sustained itself at one spurious restart per round, appearing as periodic
+     unexplained worker churn and intermittent parse failures that succeed on
+     retry. Each fork now carries a generation that clients capture when they
+     connect and hand back with every report, and reports about a superseded
+     process are dropped. Also fixed in shared mode: ensureRunning could fork a
+     replacement after shutdown() that nothing owned and nothing would ever
+     destroy, and an interrupt during process teardown left the process handle
+     pointing at a killed process and leaked the temp directory. Affects 4.0.0
+     and earlier (TIKA-4844).
+
+   * tika-pipes: the cache memory budget (how much rewindable content a forked
+     worker keeps in memory before spilling to disk; new since 4.0.0, which had
+     no budget at all) defaults to a quarter of the fork's heap, so raising
+     -Xmx raises it. It is one pool per forked JVM shared by all of its threads.
+     -Dtika.pipes.cacheMemoryBudgetBytes in forkedJvmArgs overrides it (below
+     the quarter-heap ceiling; <=0 disables); the fork logs the value and its
+     source at startup. TikaInputStream.hasFile() now also reports content the
+     stream cache spilled on its own, not only content a getPath() call put on
+     disk; note getPath() may still have to drain the rest of the source into
+     that file. TikaInputStream.toString() no longer forces a spill, so logging
+     or debugger-inspecting a stream is side-effect-free.
+     TikaInputStream.inMemoryContent(channel) gives a zero-copy read-only view
+     of cached content for consumers that need random access. Digester
+     gains digestSink(), a DigestSink that digests as it is written; nothing is
+     written to the metadata unless the producer calls commit(), so any failure
+     -- exception, Error, or a producer that closes the sink itself -- publishes
+     no digest rather than a digest of the bytes that happened to arrive. A
+     translator that claims a stream and writes nothing likewise publishes
+     nothing: embedded PST mail items, whose translator is still a stub, no
+     longer carry the digest of zero bytes (the same value for every one of
+     them) and instead carry no digest at all. DigestHelper uses it for
+     translated embedded streams, which no longer touch a temp file when the
+     digester implements digestSink (all of Tika's do; one that only implements
+     digest() still buffers).
+     TemporaryResources.closeAll(Closeable...) closes every argument even when
+     one throws unchecked; TemporaryResources, CachingSource, CachingInputStream
+     and CompositeDigester use it (TIKA-4835).
+
    * Documentation: corrected a batch of pages and javadocs that contradicted
      the code. Notably: the ES/OpenSearch attachmentStrategy has no default
      (unset means embedded documents get neither the parent field nor the

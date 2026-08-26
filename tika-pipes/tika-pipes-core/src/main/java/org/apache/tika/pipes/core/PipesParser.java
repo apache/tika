@@ -187,6 +187,15 @@ public class PipesParser implements Closeable {
      *
      * @return true if using shared server mode
      */
+    /**
+     * Total forks performed across this parser's server managers. One more than the number of
+     * restarts, since the first start of each manager is not a restart. Exposed for tests: it is
+     * the only observable that distinguishes a justified restart from a spurious one.
+     */
+    public long getGeneration() {
+        return serverManagers.stream().mapToLong(ServerManager::getGeneration).sum();
+    }
+
     public boolean isSharedMode() {
         return isSharedMode;
     }

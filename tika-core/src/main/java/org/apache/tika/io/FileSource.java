@@ -100,6 +100,11 @@ class FileSource extends InputStream implements TikaInputSource {
     }
 
     @Override
+    public Path materializedPath() {
+        return path;
+    }
+
+    @Override
     public boolean hasPath() {
         return true;
     }

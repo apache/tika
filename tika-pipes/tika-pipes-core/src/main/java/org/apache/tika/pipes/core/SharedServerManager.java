@@ -491,7 +491,8 @@ public class SharedServerManager implements ServerManager {
                 }
             } finally {
                 // An interrupt here must not leave the field pointing at a SIGKILLed process:
-                // ensureRunning would then see process == previous and skip counting the restart.
+                // ensureRunning would then see process == previous and skip counting the restart,
+                // startServer() would try to reap it again, and tmpDir would never be deleted.
                 process = null;
             }
         }
