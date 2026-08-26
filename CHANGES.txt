@@ -1,5 +1,15 @@
 Release 4.1.0 - unreleased
 
+   * Fixed a bug that made per-request (parse-context) configuration unusable
+     for parsers that lock some config fields against caller modification --
+     Tess4J, the VLM parsers and the OpenAI image-embedding parser. Any such
+     config threw, including an empty one: the defaults were deep-copied
+     through their own setters, which the runtime config overrides to reject
+     caller input, so the copy tripped the parser's own guards before the
+     caller's JSON was read. Locked fields are still rejected when a caller
+     actually sets them. Configuration supplied at initialization time (the
+     "parsers" section) was never affected (TIKA-4843).
+     
    * OOXML parsers flag package parts that are unreachable through the OPC
      relationship graph: msoffice:has-unreferenced-parts (boolean) and
      msoffice:unreferenced-part-names. Purely structural (no bytes are
