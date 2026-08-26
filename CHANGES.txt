@@ -1,5 +1,7 @@
 Release 4.1.0 - unreleased
 
+   * Improve spooling/decrease number of spills to disk (TIKA-4835).
+
    * Fixed a bug that made per-request (parse-context) configuration unusable
      for parsers that lock some config fields against caller modification --
      Tess4J, the VLM parsers and the OpenAI image-embedding parser. Any such
