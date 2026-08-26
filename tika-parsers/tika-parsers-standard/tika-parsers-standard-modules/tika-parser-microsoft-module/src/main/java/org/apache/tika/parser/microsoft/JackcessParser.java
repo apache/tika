@@ -114,9 +114,18 @@ public class JackcessParser implements Parser {
                         "Jackcess doesn't process mdb versions before v97");
             }
             throw e;
+        } catch (IndexOutOfBoundsException e) {
+            // TIKA-4830
+            throw new CorruptedFileException(e.getMessage(), e);
         } catch (IllegalStateException e) {
-            if (e.getMessage() != null && e.getMessage().contains("Incorrect password")) {
-                throw new EncryptedDocumentException(e);
+            if (e.getMessage() != null) {
+                if (e.getMessage().contains("Incorrect password")) {
+                    throw new EncryptedDocumentException(e);
+                }
+                if (e.getMessage().startsWith("invalid page number ")) {
+                    // TIKA-4830
+                    throw new CorruptedFileException(e.getMessage(), e);
+                }
             }
             throw e;
         } finally {
