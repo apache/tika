@@ -21,6 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.apache.commons.io.output.DeferredFileOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -34,12 +36,15 @@ import org.apache.tika.parser.ParseContext;
  */
 class BufferingDigestSink extends DigestSink {
 
+    private static final Logger LOG = LoggerFactory.getLogger(BufferingDigestSink.class);
+
     static final int MEMORY_THRESHOLD = 1024 * 1024;
 
     private final Digester digester;
     private final Metadata metadata;
     private final ParseContext context;
-    // created lazily, only if the content crosses the threshold
+    // the DeferredFileOutputStream is eager; the temp file behind it is created only if
+    // the content crosses the threshold
     private final DeferredFileOutputStream buffer = DeferredFileOutputStream.builder()
             .setThreshold(MEMORY_THRESHOLD)
             .setPrefix("apache-tika-")
@@ -66,18 +71,16 @@ class BufferingDigestSink extends DigestSink {
 
     @Override
     protected void finish(boolean publish) throws IOException {
-        Path spilled = null;
+        // read before close(): getPath() is non-null exactly when a file was created, and
+        // unlike isInMemory() it is a field read that cannot throw and cannot be stale
+        Path spilled = buffer.getPath();
         try {
             buffer.close();
-            if (!buffer.isInMemory()) {
-                spilled = buffer.getPath();
-            }
             if (!publish) {
                 return;
             }
             // A re-openable source: the pull digester's enableRewind()/rewind() re-open
-            // instead of copying the content into a second cache. Metadata is not passed
-            // so the temp file's name cannot leak into the document's metadata.
+            // instead of copying the content into a second cache.
             Path path = spilled;
             try (TemporaryResources tmp = new TemporaryResources();
                  TikaInputStream tis = path == null ?
@@ -86,9 +89,20 @@ class BufferingDigestSink extends DigestSink {
                 digester.digest(tis, metadata, context);
             }
         } finally {
-            if (spilled != null) {
-                Files.deleteIfExists(spilled);
-            }
+            deleteQuietly(spilled);
+        }
+    }
+
+    // a failed delete must not mask a digest that succeeded
+    private static void deleteQuietly(Path spilled) {
+        if (spilled == null) {
+            return;
+        }
+        try {
+            Files.deleteIfExists(spilled);
+        } catch (IOException e) {
+            LOG.warn("could not delete {}; will delete on exit", spilled, e);
+            spilled.toFile().deleteOnExit();
         }
     }
 }

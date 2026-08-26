@@ -8,13 +8,17 @@ Release 4.1.0 - unreleased
      the quarter-heap ceiling; <=0 disables); the fork logs the value and its
      source at startup. TikaInputStream.hasFile() now also reports content the
      stream cache spilled on its own, not only content a getPath() call put on
-     disk. TikaInputStream.inMemoryContent(channel) gives a zero-copy read-only
+     disk; note getPath() may still have to drain the rest of the source into
+     that file. TikaInputStream.toString() no longer forces a spill, so logging
+     or debugger-inspecting a stream is side-effect-free. TikaInputStream.inMemoryContent(channel) gives a zero-copy read-only
      view of cached content for consumers that need random access. Digester
-     gains digestSink(), a DigestSink that digests as it is written and can be
-     aborted; DigestHelper uses it for translated embedded streams, which no
-     longer touch a temp file when the digester implements digestSink (all of
-     Tika's do; one that only implements digest() still buffers), and a failed
-     translation now publishes no digest instead of a digest of the fragment.
+     gains digestSink(), a DigestSink that digests as it is written; nothing is
+     written to the metadata unless the producer calls commit(), so any failure
+     -- exception, Error, or a producer that closes the sink itself -- publishes
+     no digest rather than a digest of the bytes that happened to arrive.
+     DigestHelper uses it for translated embedded streams, which no longer touch
+     a temp file when the digester implements digestSink (all of Tika's do; one
+     that only implements digest() still buffers).
      TemporaryResources.closeAll(Closeable...) closes every argument even when
      one throws unchecked; TemporaryResources, CachingSource, CachingInputStream
      and CompositeDigester use it (TIKA-4835).

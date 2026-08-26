@@ -18,6 +18,7 @@ package org.apache.tika.io;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -34,6 +35,7 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 
 public class InMemoryContentViewTest {
@@ -187,6 +189,57 @@ public class InMemoryContentViewTest {
             assertTrue(budget.getReservedBytes() > 0, "open channel still pins the reservation");
             channel.close();
             assertEquals(0, budget.getReservedBytes(), "last close releases");
+        }
+    }
+
+    /**
+     * toString() must never force a spill. The at-risk state is a cache that spilled
+     * mid-stream: hasFile() is true but no getPath() has run, so getPath() would drain the
+     * rest of the source, flip the source to file mode and write Content-Length.
+     */
+    @Test
+    public void testToStringDoesNotMaterializeContent() throws Exception {
+        byte[] data = data(5 * 1024 * 1024);
+        Metadata metadata = new Metadata();
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            tmp.setTemporaryFileDirectory(tempDir);
+            TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data), tmp, metadata);
+            tis.enableRewind(null);
+            // read past the 1MB cache threshold but nowhere near EOF
+            assertEquals(2 * 1024 * 1024, tis.readNBytes(2 * 1024 * 1024).length);
+            assertTrue(tis.hasFile(), "the cache spilled on its own");
+
+            String rendered = tis.toString();
+            assertNull(metadata.get(HttpHeaders.CONTENT_LENGTH),
+                    "toString must not drain the source into the spill file");
+            assertFalse(rendered.contains(tempDir.toString()),
+                    "no getPath() has run, so there is no path to name yet");
+
+            // the rest of the stream is still there to read
+            assertEquals(3 * 1024 * 1024, tis.readAllBytes().length);
+        }
+    }
+
+    /** Once a path really exists, toString() names it so an operator can find the file. */
+    @Test
+    public void testToStringNamesTheSpillFileOnceItExists() throws Exception {
+        byte[] data = data(3 * 1024 * 1024);
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            tmp.setTemporaryFileDirectory(tempDir);
+            TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data), tmp, new Metadata());
+            tis.enableRewind(null);
+            Path spilled = tis.getPath();
+            assertTrue(tis.toString().contains(spilled.toString()));
+        }
+    }
+
+    /** A file-backed stream reports its path without any spill machinery. */
+    @Test
+    public void testToStringNamesARealFile() throws Exception {
+        Path file = tempDir.resolve("named.bin");
+        Files.write(file, data(50));
+        try (TikaInputStream tis = TikaInputStream.get(file)) {
+            assertTrue(tis.toString().contains(file.toString()));
         }
     }
 }

@@ -18,6 +18,8 @@ package org.apache.tika.digest;
 
 import java.io.IOException;
 
+import org.apache.commons.io.output.CloseShieldOutputStream;
+
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.CacheMemoryBudget;
@@ -83,19 +85,20 @@ public class DigestHelper {
         // desynchronize the digest from the bytes.
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
             tis.enableRewind(context.get(CacheMemoryBudget.class));
-            DigestSink sink = digester.digestSink(metadata, context);
             try {
-                EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, sink);
-            } catch (IOException | RuntimeException e) {
-                // close() publishes; a partial translation must publish nothing
-                sink.abort();
-                throw e;
-            } finally {
+                DigestSink sink = digester.digestSink(metadata, context);
                 try {
-                    sink.close();
+                    // close-shielded: a translator that closes the sink must not be able to
+                    // publish on our behalf
+                    EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata,
+                            CloseShieldOutputStream.wrap(sink));
+                    // only a translation that ran to completion publishes
+                    sink.commit();
                 } finally {
-                    tis.rewind();
+                    sink.close();
                 }
+            } finally {
+                tis.rewind();
             }
         } else {
             digester.digest(tis, metadata, context);

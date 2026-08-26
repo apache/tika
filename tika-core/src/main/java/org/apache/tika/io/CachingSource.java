@@ -258,6 +258,12 @@ class CachingSource extends InputStream implements TikaInputSource {
     }
 
     @Override
+    public Path materializedPath() {
+        // NOT the cache's own spill file: getPath() must still drain the remainder into it
+        return spilledPath;
+    }
+
+    @Override
     public boolean hasPath() {
         // the cache can spill on its own, without any getPath() call
         return spilledPath != null || (cachingStream != null && cachingStream.isFileBacked());

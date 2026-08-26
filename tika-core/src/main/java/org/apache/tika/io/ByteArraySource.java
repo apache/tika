@@ -99,6 +99,11 @@ class ByteArraySource extends InputStream implements TikaInputSource {
     }
 
     @Override
+    public Path materializedPath() {
+        return spilledPath;
+    }
+
+    @Override
     public boolean hasPath() {
         return spilledPath != null;
     }

@@ -45,9 +45,9 @@ public interface Digester {
 
     /**
      * A sink that digests whatever is written to it and sets the value(s) in the metadata
-     * when closed. For producers that only write (an embedded-stream translator, say) this
-     * digests the bytes as they are produced, with no buffer and no temp file. See
-     * {@link DigestSink} for the close/abort contract.
+     * when committed and closed. For producers that only write (an embedded-stream
+     * translator, say) this digests the bytes as they are produced, with no buffer and no
+     * temp file. See {@link DigestSink} for the commit/close contract.
      * <p>
      * The default buffers what is written -- in memory below a fixed threshold, in a temp
      * file above it -- and calls {@link #digest} on close, so an implementation that only
@@ -56,7 +56,7 @@ public interface Digester {
      *
      * @param m            Metadata to set the values for on close
      * @param parseContext ParseContext
-     * @return a sink; the caller must close it, and the values are set only on close
+     * @return a sink; the caller must close it, and the values are set only if it was committed
      */
     default DigestSink digestSink(Metadata m, ParseContext parseContext) throws IOException {
         return new BufferingDigestSink(this, m, parseContext);

@@ -39,7 +39,7 @@ public class CompositeDigester implements Digester {
         }
     }
 
-    /** Fans each write out to every child's sink; abort and close reach them all. */
+    /** Fans each write out to every child's sink; commit and close reach them all. */
     @Override
     public DigestSink digestSink(Metadata m, ParseContext parseContext) throws IOException {
         DigestSink[] sinks = new DigestSink[digesters.length];
@@ -47,11 +47,14 @@ public class CompositeDigester implements Digester {
             for (int i = 0; i < digesters.length; i++) {
                 sinks[i] = digesters[i].digestSink(m, parseContext);
             }
-        } catch (IOException | RuntimeException e) {
+        } catch (Throwable e) {
+            // uncommitted, so closing publishes nothing
             try {
                 TemporaryResources.closeAll(sinks);
             } catch (Throwable t) {
-                e.addSuppressed(t);
+                if (t != e) {
+                    e.addSuppressed(t);
+                }
             }
             throw e;
         }
@@ -74,9 +77,9 @@ public class CompositeDigester implements Digester {
 
             @Override
             protected void finish(boolean publish) throws IOException {
-                if (!publish) {
+                if (publish) {
                     for (DigestSink sink : sinks) {
-                        sink.abort();
+                        sink.commit();
                     }
                 }
                 TemporaryResources.closeAll(sinks);
