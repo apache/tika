@@ -18,6 +18,7 @@ package org.apache.tika.pipes.core.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.junit.jupiter.api.Test;
@@ -29,11 +30,26 @@ public class CacheMemoryBudgetSeedingTest {
 
     @Test
     public void testDefaultBudgetClampedToHeap() {
-        // No -Dtika.pipes.cacheMemoryBudgetBytes in the surefire JVM -> the 256MB default,
-        // clamped to a quarter of max heap
+        // No -Dtika.pipes.cacheMemoryBudgetBytes in the surefire JVM -> a quarter of max heap
         assertNotNull(PipesServer.CACHE_MEMORY_BUDGET);
-        long expected = Math.min(256L * 1024 * 1024, Runtime.getRuntime().maxMemory() / 4);
-        assertEquals(expected, PipesServer.CACHE_MEMORY_BUDGET.getMaxBytes());
+        assertEquals(Runtime.getRuntime().maxMemory() / 4, PipesServer.CACHE_MEMORY_BUDGET.getMaxBytes());
+    }
+
+    @Test
+    public void testInitBranches() {
+        long heap = 4L * 1024 * 1024 * 1024;
+        assertEquals(heap / 4, PipesServer.initCacheMemoryBudget(null, heap).getMaxBytes());
+        assertEquals(512L * 1024 * 1024,
+                PipesServer.initCacheMemoryBudget("536870912", heap).getMaxBytes(), "property honoured");
+        assertEquals(heap / 4,
+                PipesServer.initCacheMemoryBudget("9999999999", heap).getMaxBytes(), "clamped");
+        assertEquals(heap / 4,
+                PipesServer.initCacheMemoryBudget("not-a-number", heap).getMaxBytes(), "malformed => default");
+        assertNull(PipesServer.initCacheMemoryBudget("0", heap), "0 disables");
+        assertNull(PipesServer.initCacheMemoryBudget("-1", heap), "negative disables");
+        assertEquals(256L * 1024 * 1024,
+                PipesServer.initCacheMemoryBudget(null, Long.MAX_VALUE).getMaxBytes(),
+                "no heap limit reported => bounded fallback, not an unbounded budget");
     }
 
     @Test

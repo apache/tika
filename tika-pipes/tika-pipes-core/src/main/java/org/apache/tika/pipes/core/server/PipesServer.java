@@ -94,35 +94,49 @@ public class PipesServer implements AutoCloseable {
 
     // Process-wide budget bounding total in-memory stream caching (embedded-object digest rewind
     // buffers, etc.) so small embedded objects stay in RAM instead of spilling per-object at 1MB.
-    // NOTE: read in THIS (forked server) JVM -- set it via the config's forkedJvmArgs, not on the
-    // parent JVM. Tunable via -Dtika.pipes.cacheMemoryBudgetBytes; <=0 disables (falls back to
-    // the 1MB per-object default). Clamped to a quarter of the fork's max heap.
+    // One pool per forked JVM, shared by every thread in it. NOTE: read in THIS (forked server)
+    // JVM -- set -Dtika.pipes.cacheMemoryBudgetBytes via the config's forkedJvmArgs, not on the
+    // parent JVM.
     static final String CACHE_MEMORY_BUDGET_BYTES_PROP = "tika.pipes.cacheMemoryBudgetBytes";
 
-    static final CacheMemoryBudget CACHE_MEMORY_BUDGET = initCacheMemoryBudget();
+    // only reached when the JVM reports no heap limit at all (never on HotSpot)
+    private static final long FALLBACK_BUDGET_BYTES = 256L * 1024 * 1024;
 
-    private static CacheMemoryBudget initCacheMemoryBudget() {
-        long bytes = 256L * 1024 * 1024;
-        String val = System.getProperty(CACHE_MEMORY_BUDGET_BYTES_PROP);
+    static final CacheMemoryBudget CACHE_MEMORY_BUDGET =
+            initCacheMemoryBudget(System.getProperty(CACHE_MEMORY_BUDGET_BYTES_PROP),
+                    Runtime.getRuntime().maxMemory());
+
+    // package-private and pure so every branch is a unit test
+    static CacheMemoryBudget initCacheMemoryBudget(String val, long maxMemory) {
+        long clamp = maxMemory == Long.MAX_VALUE ? FALLBACK_BUDGET_BYTES : maxMemory / 4;
+        long bytes = clamp;
+        String source = "default, a quarter of max heap";
         if (val != null) {
             try {
                 bytes = Long.parseLong(val.trim());
+                source = "-D" + CACHE_MEMORY_BUDGET_BYTES_PROP;
             } catch (NumberFormatException e) {
                 LOG.warn("Could not parse -D{}={} (plain bytes required, no unit suffix); " +
                         "using the default {}", CACHE_MEMORY_BUDGET_BYTES_PROP, val, bytes);
             }
         }
-        if (bytes <= 0) {
-            LOG.info("Cache memory budget disabled; per-object 1MB spill threshold applies");
+        if (bytes < 0) {
+            LOG.warn("-D{}={} is negative; treating it as 0 -- cache memory budget disabled, " +
+                    "per-object 1MB spill threshold applies", CACHE_MEMORY_BUDGET_BYTES_PROP, val);
             return null;
         }
-        long clamp = Runtime.getRuntime().maxMemory() / 4;
-        if (bytes > clamp) {
-            LOG.warn("Cache memory budget {} exceeds a quarter of max heap; clamping to {}",
-                    bytes, clamp);
-            bytes = clamp;
+        if (bytes == 0) {
+            LOG.info("Cache memory budget disabled ({}); per-object 1MB spill threshold applies",
+                    source);
+            return null;
         }
-        LOG.info("Cache memory budget: {} bytes", bytes);
+        if (bytes > clamp) {
+            LOG.warn("-D{}={} exceeds a quarter of max heap; clamping to {} (raise -Xmx to " +
+                    "raise the ceiling)", CACHE_MEMORY_BUDGET_BYTES_PROP, bytes, clamp);
+            bytes = clamp;
+            source += ", clamped to a quarter of max heap";
+        }
+        LOG.info("Cache memory budget: {} bytes ({})", bytes, source);
         return new CacheMemoryBudget(bytes);
     }
 

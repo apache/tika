@@ -17,14 +17,13 @@
 package org.apache.tika.digest;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
+
+import org.apache.commons.io.output.CloseShieldOutputStream;
+import org.apache.commons.io.output.CountingOutputStream;
 
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.CacheMemoryBudget;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -83,15 +82,35 @@ public class DigestHelper {
 
         // The translator consumes `tis` (e.g. OLE2), so enableRewind() before and rewind()
         // after -- otherwise the caller would see an exhausted stream.
+        // Safe to tee here: the translator only writes, so no mark/reset/skip can
+        // desynchronize the digest from the bytes.
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
             tis.enableRewind(context.get(CacheMemoryBudget.class));
-            try (TemporaryResources tmp = new TemporaryResources()) {
-                Path tmpBytes = tmp.createTempFile();
-                try (OutputStream os = Files.newOutputStream(tmpBytes)) {
-                    EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, os);
-                }
-                try (TikaInputStream translated = TikaInputStream.get(tmpBytes)) {
-                    digester.digest(translated, metadata, context);
+            try {
+                DigestSink sink = digester.digestSink(metadata, context);
+                try {
+                    // Close-shielded so a translator that closes the stream cannot publish on
+                    // our behalf, and counted because "returned normally" is not "produced the
+                    // content": a translator that claims the stream and writes nothing (see
+                    // PSTEmailStreamTranslator) would otherwise publish the digest of zero
+                    // bytes -- the same value for every such object.
+                    CountingOutputStream counted =
+                            new CountingOutputStream(CloseShieldOutputStream.wrap(sink));
+                    EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, counted);
+                    if (counted.getByteCount() > 0) {
+                        sink.commit();
+                    }
+                    sink.close();
+                } catch (Throwable t) {
+                    // close() can fail too; that must not erase why the translation failed
+                    try {
+                        sink.close();
+                    } catch (Throwable closeFailure) {
+                        if (closeFailure != t) {
+                            t.addSuppressed(closeFailure);
+                        }
+                    }
+                    throw t;
                 }
             } finally {
                 tis.rewind();

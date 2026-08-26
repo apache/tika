@@ -46,6 +46,13 @@ class MemorySeekableByteChannel implements SeekableByteChannel {
         this.onClose = onClose;
     }
 
+    /** Read-only view of the whole content, independent of this channel's position. */
+    ByteBuffer buffer() throws IOException {
+        ensureOpen();
+        // slice(): capacity == limit == length, so clear() cannot expose the array's slack
+        return ByteBuffer.wrap(data, 0, length).slice().asReadOnlyBuffer();
+    }
+
     @Override
     public int read(ByteBuffer dst) throws IOException {
         ensureOpen();

@@ -17,7 +17,6 @@
 package org.apache.tika.io;
 
 import java.io.BufferedInputStream;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
@@ -259,8 +258,19 @@ class CachingSource extends InputStream implements TikaInputSource {
     }
 
     @Override
+    public Path materializedPath() {
+        if (spilledPath != null) {
+            return spilledPath;
+        }
+        // the cache spills on its own; offer that file only once it holds the whole source,
+        // since a mid-stream spill file is still growing
+        return cachingStream == null ? null : cachingStream.completeSpillFile();
+    }
+
+    @Override
     public boolean hasPath() {
-        return spilledPath != null;
+        // the cache can spill on its own, without any getPath() call
+        return spilledPath != null || (cachingStream != null && cachingStream.isFileBacked());
     }
 
     @Override
@@ -326,24 +336,7 @@ class CachingSource extends InputStream implements TikaInputSource {
 
     @Override
     public void close() throws IOException {
-        IOException exception = null;
-        for (Closeable closeable :
-                new Closeable[]{this::closeFileStream, cachingStream, passthroughStream, spilledSource}) {
-            if (closeable == null) {
-                continue;
-            }
-            try {
-                closeable.close();
-            } catch (IOException e) {
-                if (exception == null) {
-                    exception = e;
-                } else {
-                    exception.addSuppressed(e);
-                }
-            }
-        }
-        if (exception != null) {
-            throw exception;
-        }
+        TemporaryResources.closeAll(this::closeFileStream, cachingStream, passthroughStream,
+                spilledSource);
     }
 }
