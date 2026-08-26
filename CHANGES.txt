@@ -1,5 +1,18 @@
 Release 4.1.0 - unreleased
 
+   * tika-pipes: the cache memory budget (how much rewindable content a forked
+     worker keeps in memory before spilling to disk) now defaults to a quarter
+     of the fork's heap, so raising -Xmx raises it; it was a fixed 256MB. It is
+     one pool per forked JVM shared by all of its threads.
+     -Dtika.pipes.cacheMemoryBudgetBytes in forkedJvmArgs still overrides it
+     (below the quarter-heap ceiling; <=0 disables). TikaInputStream.hasFile()
+     now also reports content the stream cache spilled on its own, not only
+     content a getPath() call put on disk. Digester gains digestSink(), an
+     OutputStream that digests as it is written; DigestHelper uses it for
+     translated embedded streams, which no longer touch a temp file.
+     TemporaryResources and CachingSource now close every remaining resource
+     when one close() throws an unchecked exception (TIKA-4835).
+
    * Pipes plugins no longer bundle their own Jackson: jackson-core, -databind
      and -annotations are provided by the host (tika-serialization) and the
      plugins parent pom now bans bundling them, so a mapper can cross the

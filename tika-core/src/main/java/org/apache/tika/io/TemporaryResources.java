@@ -91,7 +91,7 @@ public class TemporaryResources implements Closeable {
         addResource(() -> {
             try {
                 Files.delete(path);
-            } catch (IOException e) {
+            } catch (IOException | RuntimeException e) {
                 // delete when exit if current delete fail
                 LOG.warn("delete tmp file fail, will delete it on exit");
                 path.toFile().deleteOnExit();
@@ -169,24 +169,42 @@ public class TemporaryResources implements Closeable {
      *                     could not be closed
      */
     public void close() throws IOException {
-        // Release all resources and keep track of any exceptions
-        IOException exception = null;
-        for (Closeable resource : resources) {
+        try {
+            closeAll(resources.toArray(new Closeable[0]));
+        } finally {
+            resources.clear();
+        }
+    }
+
+    /**
+     * Closes every closeable even when one throws, unchecked included: a tracked resource
+     * whose close() throws a RuntimeException must not leave the ones after it open. The
+     * first failure propagates with the rest attached as suppressed.
+     */
+    static void closeAll(Closeable... closeables) throws IOException {
+        Throwable first = null;
+        for (Closeable closeable : closeables) {
+            if (closeable == null) {
+                continue;
+            }
             try {
-                resource.close();
-            } catch (IOException e) {
-                if (exception == null) {
-                    exception = e;
+                closeable.close();
+            } catch (Throwable t) {
+                if (first == null) {
+                    first = t;
                 } else {
-                    exception.addSuppressed(e);
+                    first.addSuppressed(t);
                 }
             }
         }
-        resources.clear();
-
-        // Throw any exceptions that were captured from above
-        if (exception != null) {
-            throw exception;
+        if (first instanceof IOException) {
+            throw (IOException) first;
+        } else if (first instanceof RuntimeException) {
+            throw (RuntimeException) first;
+        } else if (first instanceof Error) {
+            throw (Error) first;
+        } else if (first != null) {
+            throw new IOException(first);
         }
     }
 

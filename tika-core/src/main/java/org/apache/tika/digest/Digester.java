@@ -17,6 +17,7 @@
 package org.apache.tika.digest;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -42,4 +43,22 @@ public interface Digester {
      * @throws IOException on I/O error
      */
     void digest(TikaInputStream tis, Metadata m, ParseContext parseContext) throws IOException;
+
+    /**
+     * A sink that digests whatever is written to it and sets the value(s) in the metadata
+     * when closed. For producers that only write (an embedded-stream translator, say) this
+     * digests the bytes as they are produced, with no buffer and no temp file.
+     * <p>
+     * The default buffers what is written -- in memory below a fixed threshold, in a temp
+     * file above it -- and calls {@link #digest} on close, so an implementation that only
+     * overrides {@code digest} keeps working unchanged. It does <em>not</em> get the
+     * streaming behaviour: override this method to provide it.
+     *
+     * @param m            Metadata to set the values for on close
+     * @param parseContext ParseContext
+     * @return a sink; the caller must close it, and the values are set only on close
+     */
+    default OutputStream digestSink(Metadata m, ParseContext parseContext) throws IOException {
+        return new BufferingDigestSink(this, m, parseContext);
+    }
 }

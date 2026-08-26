@@ -23,10 +23,13 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+
+import org.apache.tika.metadata.Metadata;
 
 public class StreamCacheBudgetTest {
 
@@ -154,5 +157,41 @@ public class StreamCacheBudgetTest {
         assertThrows(IOException.class, () -> cache.append(new byte[1], 0, 1));
         assertThrows(IOException.class, cache::toFile);
         assertNull(cache.getInMemorySeekableByteChannel());
+    }
+
+    /**
+     * A threshold spill inside the cache puts the content on disk; hasFile() must say so, or
+     * callers that branch on it read already-spilled content back into memory.
+     */
+    @Test
+    public void testHasFileAfterInternalCacheSpill() throws Exception {
+        // no budget => StreamCache's 1MB per-object threshold applies
+        byte[] big = new byte[3 * 1024 * 1024];
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            TikaInputStream tis =
+                    TikaInputStream.get(new ByteArrayInputStream(big), tmp, new Metadata());
+            assertFalse(tis.hasFile(), "nothing read yet, nothing spilled");
+            tis.enableRewind(null);
+            // drain through the cache; past the threshold it spills on its own
+            try (java.nio.channels.SeekableByteChannel c = tis.getSeekableByteChannel()) {
+                assertEquals(big.length, c.size());
+            }
+            assertTrue(tis.hasFile(), "cache spilled to disk; hasFile() must report it");
+            assertEquals(big.length, java.nio.file.Files.size(tis.getPath()));
+        }
+    }
+
+    @Test
+    public void testHasFileStaysFalseWhenCacheKeepsContentInMemory() throws Exception {
+        byte[] small = new byte[1024];
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            TikaInputStream tis =
+                    TikaInputStream.get(new ByteArrayInputStream(small), tmp, new Metadata());
+            tis.enableRewind(null);
+            try (java.nio.channels.SeekableByteChannel c = tis.getSeekableByteChannel()) {
+                assertEquals(small.length, c.size());
+            }
+            assertFalse(tis.hasFile(), "content fit in memory; no file exists");
+        }
     }
 }

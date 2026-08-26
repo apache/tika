@@ -18,13 +18,10 @@ package org.apache.tika.digest;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import org.apache.tika.extractor.DefaultEmbeddedStreamTranslator;
 import org.apache.tika.extractor.EmbeddedStreamTranslator;
 import org.apache.tika.io.CacheMemoryBudget;
-import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -82,17 +79,13 @@ public class DigestHelper {
         Digester digester = digesterFactory.build();
 
         // The translator consumes `tis` (e.g. OLE2), so enableRewind() before and rewind()
-        // after -- otherwise the caller would see an exhausted stream.
+        // after -- otherwise the caller would see an exhausted stream. The translated bytes
+        // go straight into the digest: the translator only writes, so nothing can mark,
+        // reset or skip between it and the digest.
         if (EMBEDDED_STREAM_TRANSLATOR.shouldTranslate(tis, metadata)) {
             tis.enableRewind(context.get(CacheMemoryBudget.class));
-            try (TemporaryResources tmp = new TemporaryResources()) {
-                Path tmpBytes = tmp.createTempFile();
-                try (OutputStream os = Files.newOutputStream(tmpBytes)) {
-                    EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, os);
-                }
-                try (TikaInputStream translated = TikaInputStream.get(tmpBytes)) {
-                    digester.digest(translated, metadata, context);
-                }
+            try (OutputStream sink = digester.digestSink(metadata, context)) {
+                EMBEDDED_STREAM_TRANSLATOR.translate(tis, metadata, sink);
             } finally {
                 tis.rewind();
             }

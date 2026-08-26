@@ -94,15 +94,17 @@ public class PipesServer implements AutoCloseable {
 
     // Process-wide budget bounding total in-memory stream caching (embedded-object digest rewind
     // buffers, etc.) so small embedded objects stay in RAM instead of spilling per-object at 1MB.
-    // NOTE: read in THIS (forked server) JVM -- set it via the config's forkedJvmArgs, not on the
-    // parent JVM. Tunable via -Dtika.pipes.cacheMemoryBudgetBytes; <=0 disables (falls back to
-    // the 1MB per-object default). Clamped to a quarter of the fork's max heap.
+    // One pool per forked JVM, shared by every thread in it. Default and ceiling: a quarter of
+    // the fork's max heap, so raising -Xmx raises it. NOTE: read in THIS (forked server) JVM --
+    // set -Dtika.pipes.cacheMemoryBudgetBytes via the config's forkedJvmArgs, not on the parent
+    // JVM; <=0 disables (falls back to the 1MB per-object default).
     static final String CACHE_MEMORY_BUDGET_BYTES_PROP = "tika.pipes.cacheMemoryBudgetBytes";
 
     static final CacheMemoryBudget CACHE_MEMORY_BUDGET = initCacheMemoryBudget();
 
     private static CacheMemoryBudget initCacheMemoryBudget() {
-        long bytes = 256L * 1024 * 1024;
+        long clamp = Runtime.getRuntime().maxMemory() / 4;
+        long bytes = clamp;
         String val = System.getProperty(CACHE_MEMORY_BUDGET_BYTES_PROP);
         if (val != null) {
             try {
@@ -116,7 +118,6 @@ public class PipesServer implements AutoCloseable {
             LOG.info("Cache memory budget disabled; per-object 1MB spill threshold applies");
             return null;
         }
-        long clamp = Runtime.getRuntime().maxMemory() / 4;
         if (bytes > clamp) {
             LOG.warn("Cache memory budget {} exceeds a quarter of max heap; clamping to {}",
                     bytes, clamp);

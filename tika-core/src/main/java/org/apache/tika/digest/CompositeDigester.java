@@ -17,6 +17,7 @@
 package org.apache.tika.digest;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -35,6 +36,64 @@ public class CompositeDigester implements Digester {
     public void digest(TikaInputStream tis, Metadata m, ParseContext parseContext) throws IOException {
         for (Digester digester : digesters) {
             digester.digest(tis, m, parseContext);
+        }
+    }
+
+    /** Fans each write out to every child's sink; close closes them all. */
+    @Override
+    public OutputStream digestSink(Metadata m, ParseContext parseContext) throws IOException {
+        OutputStream[] sinks = new OutputStream[digesters.length];
+        try {
+            for (int i = 0; i < digesters.length; i++) {
+                sinks[i] = digesters[i].digestSink(m, parseContext);
+            }
+        } catch (IOException | RuntimeException e) {
+            closeAll(sinks, e);
+            throw e;
+        }
+        return new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                for (OutputStream sink : sinks) {
+                    sink.write(b);
+                }
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) throws IOException {
+                for (OutputStream sink : sinks) {
+                    sink.write(b, off, len);
+                }
+            }
+
+            @Override
+            public void close() throws IOException {
+                closeAll(sinks, null);
+            }
+        };
+    }
+
+    // Closes every non-null sink even if one throws; the first failure is what propagates.
+    private static void closeAll(OutputStream[] sinks, Throwable pending) throws IOException {
+        IOException first = null;
+        for (OutputStream sink : sinks) {
+            if (sink == null) {
+                continue;
+            }
+            try {
+                sink.close();
+            } catch (IOException e) {
+                if (pending != null) {
+                    pending.addSuppressed(e);
+                } else if (first == null) {
+                    first = e;
+                } else {
+                    first.addSuppressed(e);
+                }
+            }
+        }
+        if (first != null) {
+            throw first;
         }
     }
 }

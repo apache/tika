@@ -29,11 +29,9 @@ public class CacheMemoryBudgetSeedingTest {
 
     @Test
     public void testDefaultBudgetClampedToHeap() {
-        // No -Dtika.pipes.cacheMemoryBudgetBytes in the surefire JVM -> the 256MB default,
-        // clamped to a quarter of max heap
+        // No -Dtika.pipes.cacheMemoryBudgetBytes in the surefire JVM -> a quarter of max heap
         assertNotNull(PipesServer.CACHE_MEMORY_BUDGET);
-        long expected = Math.min(256L * 1024 * 1024, Runtime.getRuntime().maxMemory() / 4);
-        assertEquals(expected, PipesServer.CACHE_MEMORY_BUDGET.getMaxBytes());
+        assertEquals(Runtime.getRuntime().maxMemory() / 4, PipesServer.CACHE_MEMORY_BUDGET.getMaxBytes());
     }
 
     @Test
