@@ -319,8 +319,8 @@
     <metadata.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.71.0</google.cloud.version>
-    <aws2.version>2.54.2</aws2.version>
+    <google.cloud.version>2.72.0</google.cloud.version>
+    <aws2.version>2.54.3</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -414,7 +414,7 @@
     <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.17.Final</netty.version>
-    <oak.jackrabbit.version>2.4.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>2.6.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.11</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
@@ -1520,9 +1520,6 @@
         <version>3.3.1</version>
         <configuration>
           <autoVersionSubmodules>true</autoVersionSubmodules>
-          <!-- 'install' (not the default 'verify') so the install-only pf4j plugin zips
-               (attach=false, installed via install:install-file; see tika-pipes plugins)
-               are available in the local repo for sibling modules that depend on them. -->
           <preparationGoals>clean install</preparationGoals>
         </configuration>
         <dependencies>

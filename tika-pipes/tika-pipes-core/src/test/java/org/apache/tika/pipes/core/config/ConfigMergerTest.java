@@ -82,6 +82,40 @@ public class ConfigMergerTest {
         Files.deleteIfExists(result.configPath());
     }
 
+    /** TIKA-4834: the config docs permit comments; the merge step must not reject them. */
+    @Test
+    public void testMergeWithCommentedConfig() throws IOException {
+        String existingConfig = """
+                // leading line comment
+                {
+                    /* block comment */
+                    "fetchers": {
+                        "existing-fetcher": { // trailing comment
+                            "file-system-fetcher": {
+                                "basePath": "/existing/path"
+                            }
+                        }
+                    },
+                    "plugin-roots": "existing-plugins"
+                }
+                """;
+        Path existingPath = tempDir.resolve("commented-config.json");
+        Files.writeString(existingPath, existingConfig);
+
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .addFetcher("new-fetcher", "file-system-fetcher", Map.of("basePath", "/new/path"))
+                .build();
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(existingPath, overrides);
+
+        // The merged file is plain JSON: readable by a strict mapper, content intact.
+        JsonNode root = new ObjectMapper().readTree(result.configPath().toFile());
+        assertEquals("/existing/path", root.get("fetchers").get("existing-fetcher")
+                .get("file-system-fetcher").get("basePath").asText());
+        assertTrue(root.get("fetchers").has("new-fetcher"));
+        assertEquals("existing-plugins", root.get("plugin-roots").asText());
+        Files.deleteIfExists(result.configPath());
+    }
+
     @Test
     public void testMergeWithExistingConfig() throws IOException {
         // Create existing config
