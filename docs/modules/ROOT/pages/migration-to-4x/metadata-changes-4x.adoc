@@ -171,12 +171,20 @@ independent of casing (the name's origin).
   (`xmp*:`), EXIF/`tiff:`, `iptc:`, `photoshop:`, `geo:`, the CF/CMIP attributes under `cf:`,
   MAPI property names, email headers, the ECMA-376 OOXML core/extended property names
   (`AppVersion`, `lastModifiedBy`, `TotalTime`, …), and the PDF/A/X/VT/UA sub-namespaces
-  (`pdfaid:`, `pdfx:`, …). PDF Info-dict names (`pdf:docinfo:producer`, `pdf:docinfo:trapped`,
-  …) are lowercased rather than verbatim — the dictionary spells them `/Producer` and `/Trapped`
-  — but they are unchanged from 3.x.
+  (`pdfaid:`, `pdfx:`, …). PDF's own names are the exception: both the Info-dict keys under
+  `pdf:docinfo:` and the normalized `pdf:` keys they feed are lowercased rather than verbatim
+  (`/Producer` -> `pdf:docinfo:producer`, `pdf:producer`), even though the Info dictionary and
+  the XMP `pdf:` schema both capitalize them. The verbatim XMP spelling survives separately
+  under `xmp:pdf:` (`xmp:pdf:Producer`). None of those spellings changed in 4.x.
 
 (The `access_permission:` prefix is also normalized to `access-permission:`. The
 `extended-properties:HiddedSlides` entry additionally corrects a long-standing spelling typo.)
+
+NOTE: `pdf:trapped` and `xmp:pdf:Trapped` are *new* in 4.x rather than renames. 3.x recorded the
+trapped flag only as `pdf:docinfo:trapped` and discarded the XMP `pdf:Trapped` value entirely.
+`pdf:trapped` now behaves like `pdf:producer` and the `dc:` keys: it takes the XMP value when the
+document has one and falls back to the Info-dict value otherwise, while `xmp:pdf:Trapped` and
+`pdf:docinfo:trapped` continue to record which source each value came from.
 
 .3.x -> 4.0.0 format-namespace key casing
 [cols="1,1"]
