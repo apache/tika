@@ -177,11 +177,10 @@ public class TemporaryResources implements Closeable {
     }
 
     /**
-     * Closes every closeable even when one throws, unchecked included: a tracked resource
-     * whose close() throws a RuntimeException must not leave the ones after it open. The
-     * first failure propagates with the rest attached as suppressed.
+     * Closes every closeable even when one throws, unchecked included. The first failure
+     * propagates with the rest attached as suppressed; nulls are skipped.
      */
-    static void closeAll(Closeable... closeables) throws IOException {
+    public static void closeAll(Closeable... closeables) throws IOException {
         Throwable first = null;
         for (Closeable closeable : closeables) {
             if (closeable == null) {
@@ -192,7 +191,7 @@ public class TemporaryResources implements Closeable {
             } catch (Throwable t) {
                 if (first == null) {
                     first = t;
-                } else {
+                } else if (t != first) {   // addSuppressed rejects self-suppression
                     first.addSuppressed(t);
                 }
             }

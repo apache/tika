@@ -19,10 +19,16 @@ package org.apache.tika.digest;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HexFormat;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +39,7 @@ import org.apache.tika.parser.ParseContext;
 
 /**
  * The sink must produce exactly what the pull-style digest produces for the same bytes,
- * through every Digester shape: streaming, composite, and the buffering default.
+ * through every Digester shape, and must honour the DigestSink contract on every exit.
  */
 public class DigestSinkTest {
 
@@ -47,6 +53,10 @@ public class DigestSinkTest {
             d[i] = (byte) (i * 131 + 17);
         }
         return d;
+    }
+
+    private static Digester pullOnly(InputStreamDigester inner) {
+        return (tis, m, ctx) -> inner.digest(tis, m, ctx);
     }
 
     private static Metadata viaStream(Digester digester, byte[] data) throws IOException {
@@ -77,6 +87,12 @@ public class DigestSinkTest {
         return m;
     }
 
+    private static long tempFiles() throws IOException {
+        try (Stream<Path> s = Files.list(Path.of(System.getProperty("java.io.tmpdir")))) {
+            return s.filter(p -> p.getFileName().toString().startsWith("apache-tika-")).count();
+        }
+    }
+
     @Test
     public void testStreamingSinkMatchesPullDigest() throws Exception {
         Digester d = new InputStreamDigester("MD5", MD5_KEY, HEX);
@@ -100,36 +116,160 @@ public class DigestSinkTest {
         assertEquals(expected.get(SHA_KEY), actual.get(SHA_KEY));
     }
 
-    /** A third-party Digester that only implements digest() gets the buffering default. */
     @Test
-    public void testDefaultBuffersForPullOnlyDigester() throws Exception {
+    public void testMixedCompositeStreamingAndPullOnly() throws Exception {
+        InputStreamDigester sha = new InputStreamDigester("SHA-256", SHA_KEY, HEX);
+        Digester d = new CompositeDigester(new InputStreamDigester("MD5", MD5_KEY, HEX), pullOnly(sha));
+        byte[] data = data(30_000);
+        Metadata expected = viaStream(d, data);
+        Metadata actual = viaSink(d, data);
+        assertEquals(expected.get(MD5_KEY), actual.get(MD5_KEY));
+        assertEquals(expected.get(SHA_KEY), actual.get(SHA_KEY));
+    }
+
+    @Test
+    public void testDefaultBuffersLargeContentThroughATempFile() throws Exception {
         InputStreamDigester inner = new InputStreamDigester("SHA-256", SHA_KEY, HEX);
-        Digester pullOnly = (tis, m, ctx) -> inner.digest(tis, m, ctx);
-        // past the buffering threshold so the temp-file branch runs too
+        long before = tempFiles();
         byte[] data = data(BufferingDigestSink.MEMORY_THRESHOLD + 12_345);
         Metadata expected = viaStream(inner, data);
-        Metadata actual = viaSink(pullOnly, data);
+        Metadata actual = viaSink(pullOnly(inner), data);
         assertEquals(expected.get(SHA_KEY), actual.get(SHA_KEY));
         assertEquals(Integer.toString(data.length), actual.get(HttpHeaders.CONTENT_LENGTH));
+        assertEquals(before, tempFiles(), "spill file must be deleted on close");
     }
 
     @Test
-    public void testDefaultBuffersSmallInMemory() throws Exception {
+    public void testDefaultBuffersSmallContentWithNoTempFile() throws Exception {
         InputStreamDigester inner = new InputStreamDigester("MD5", MD5_KEY, HEX);
-        Digester pullOnly = (tis, m, ctx) -> inner.digest(tis, m, ctx);
         byte[] data = data(1234);
-        assertEquals(viaStream(inner, data).get(MD5_KEY), viaSink(pullOnly, data).get(MD5_KEY));
+        Metadata m = new Metadata();
+        long before = tempFiles();
+        try (OutputStream sink = pullOnly(inner).digestSink(m, new ParseContext())) {
+            sink.write(data, 0, data.length);
+            assertEquals(before, tempFiles(), "under the threshold nothing may touch disk");
+        }
+        assertEquals(viaStream(inner, data).get(MD5_KEY), m.get(MD5_KEY));
     }
 
     @Test
-    public void testValuesSetOnlyOnClose() throws Exception {
+    public void testValuesSetOnlyOnCloseAndCloseIsIdempotent() throws Exception {
         Digester d = new InputStreamDigester("MD5", MD5_KEY, HEX);
         Metadata m = new Metadata();
-        OutputStream sink = d.digestSink(m, new ParseContext());
+        DigestSink sink = d.digestSink(m, new ParseContext());
         sink.write(data(100), 0, 100);
         assertNull(m.get(MD5_KEY), "digest must not be visible before close");
         sink.close();
-        assertNotNull(m.get(MD5_KEY));
-        sink.close();   // idempotent
+        String first = m.get(MD5_KEY);
+        assertNotNull(first);
+        sink.close();
+        assertEquals(first, m.get(MD5_KEY));
+    }
+
+    @Test
+    public void testAbortPublishesNothing() throws Exception {
+        for (Digester d : new Digester[]{
+                new InputStreamDigester("MD5", MD5_KEY, HEX),
+                pullOnly(new InputStreamDigester("MD5", MD5_KEY, HEX)),
+                new CompositeDigester(new InputStreamDigester("MD5", MD5_KEY, HEX),
+                        pullOnly(new InputStreamDigester("SHA-256", SHA_KEY, HEX)))}) {
+            Metadata m = new Metadata();
+            DigestSink sink = d.digestSink(m, new ParseContext());
+            sink.write(data(5000), 0, 5000);
+            sink.abort();
+            sink.close();
+            assertNull(m.get(MD5_KEY), "aborted sink must not publish: " + d.getClass());
+            assertNull(m.get(SHA_KEY));
+            assertNull(m.get(HttpHeaders.CONTENT_LENGTH));
+        }
+    }
+
+    @Test
+    public void testWriteAfterCloseOrAbortThrows() throws Exception {
+        for (Digester d : new Digester[]{
+                new InputStreamDigester("MD5", MD5_KEY, HEX),
+                pullOnly(new InputStreamDigester("MD5", MD5_KEY, HEX)),
+                new CompositeDigester(new InputStreamDigester("MD5", MD5_KEY, HEX))}) {
+            DigestSink closed = d.digestSink(new Metadata(), new ParseContext());
+            closed.close();
+            assertThrows(IOException.class, () -> closed.write(1));
+            DigestSink aborted = d.digestSink(new Metadata(), new ParseContext());
+            aborted.abort();
+            assertThrows(IOException.class, () -> aborted.write(new byte[3], 0, 3));
+            aborted.close();
+        }
+    }
+
+    /** A child whose close() throws unchecked must not leave the children after it open. */
+    @Test
+    public void testCompositeClosesEveryChildWhenOneThrows() throws Exception {
+        AtomicInteger closedChildren = new AtomicInteger();
+        Digester counting = new Digester() {
+            @Override
+            public void digest(TikaInputStream tis, Metadata m, ParseContext ctx) {
+            }
+
+            @Override
+            public DigestSink digestSink(Metadata m, ParseContext ctx) {
+                return new DigestSink() {
+                    @Override
+                    public void write(int b) {
+                    }
+
+                    @Override
+                    protected void finish(boolean publish) {
+                        closedChildren.incrementAndGet();
+                    }
+                };
+            }
+        };
+        Digester throwing = (tis, m, ctx) -> {
+            throw new IllegalStateException("boom");
+        };
+        // the thrower is a pull-only digester, so its BufferingDigestSink throws from close()
+        Digester d = new CompositeDigester(counting, throwing, counting);
+        DigestSink sink = d.digestSink(new Metadata(), new ParseContext());
+        sink.write(1);
+        assertThrows(IllegalStateException.class, sink::close);
+        assertEquals(2, closedChildren.get(), "children after the throwing one still closed");
+    }
+
+    @Test
+    public void testCompositeCleansUpWhenAChildSinkCannotBeCreated() throws Exception {
+        AtomicInteger closedChildren = new AtomicInteger();
+        Digester ok = new Digester() {
+            @Override
+            public void digest(TikaInputStream tis, Metadata m, ParseContext ctx) {
+            }
+
+            @Override
+            public DigestSink digestSink(Metadata m, ParseContext ctx) {
+                return new DigestSink() {
+                    @Override
+                    public void write(int b) {
+                    }
+
+                    @Override
+                    protected void finish(boolean publish) {
+                        closedChildren.incrementAndGet();
+                    }
+                };
+            }
+        };
+        Digester failing = new Digester() {
+            @Override
+            public void digest(TikaInputStream tis, Metadata m, ParseContext ctx) {
+            }
+
+            @Override
+            public DigestSink digestSink(Metadata m, ParseContext ctx) throws IOException {
+                throw new IOException("cannot open");
+            }
+        };
+        IOException e = assertThrows(IOException.class,
+                () -> new CompositeDigester(ok, failing).digestSink(new Metadata(), new ParseContext()));
+        assertEquals("cannot open", e.getMessage(), "the original failure propagates");
+        assertEquals(1, closedChildren.get(), "already-created sinks are closed");
+        assertTrue(e.getSuppressed().length == 0, "clean closes add nothing");
     }
 }

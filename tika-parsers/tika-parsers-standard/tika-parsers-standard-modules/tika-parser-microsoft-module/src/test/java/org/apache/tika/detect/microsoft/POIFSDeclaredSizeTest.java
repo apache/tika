@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.SeekableByteChannel;
@@ -41,7 +42,8 @@ import org.apache.tika.parser.ParseContext;
 /**
  * POI sizes its in-memory OLE2 buffer from the header's declared BAT count rather than the
  * actual length, so a 512-byte object can demand hundreds of MB. The in-memory detection path
- * must reject those on the declared size, not on the real one.
+ * only believes a header the bytes in hand can account for, and reserves that from the
+ * budget before POI allocates it.
  */
 public class POIFSDeclaredSizeTest extends TikaTest {
 
@@ -69,39 +71,58 @@ public class POIFSDeclaredSizeTest extends TikaTest {
     }
 
     @Test
-    public void testDeclaredSizeFollowsHeaderNotLength() throws Exception {
-        // (1 + 3813 * 128) * 512 == 249_889_280, just under POI's 250MB allocation ceiling
+    public void testLyingHeaderIsRejected() throws Exception {
+        // (1 + 3813 * 128) * 512 == 249_889_280, just under POI's 250MB allocation ceiling,
+        // declared by 512 bytes of content
         try (SeekableByteChannel channel = channelFor(header(3813), "hostile.ole")) {
-            long declared = POIFSContainerDetector.declaredInMemorySize(channel);
-            assertEquals(249_889_280L, declared,
-                    "a 512-byte object declares a ~238MB in-memory buffer");
+            assertEquals(-1, POIFSContainerDetector.honestDeclaredSize(channel),
+                    "the content cannot account for what the header declares");
             assertEquals(0, channel.position(), "the size probe must not move the channel");
         }
     }
 
     @Test
-    public void testModestHeaderIsNotRejected() throws Exception {
+    public void testHonestHeaderIsBelievedWithinOneBatBlock() throws Exception {
+        // header only, declaring one BAT block: 129 sectors, 512 bytes present -- within slack
         try (SeekableByteChannel channel = channelFor(header(1), "modest.ole")) {
-            assertEquals((1 + 128) * 512L, POIFSContainerDetector.declaredInMemorySize(channel));
+            assertEquals((1 + 128) * 512L, POIFSContainerDetector.honestDeclaredSize(channel));
+        }
+        // two BAT blocks declared by 512 bytes: one block past what the content covers
+        try (SeekableByteChannel channel = channelFor(header(2), "twoblocks.ole")) {
+            assertEquals(-1, POIFSContainerDetector.honestDeclaredSize(channel));
         }
     }
 
     @Test
-    public void testTooShortForAHeaderReportsZero() throws Exception {
+    public void testRealDocumentHeaderIsHonest() throws Exception {
+        byte[] bytes;
+        try (InputStream is = getResourceAsStream("/test-documents/testWORD.doc")) {
+            bytes = is.readAllBytes();
+        }
+        try (SeekableByteChannel channel = channelFor(bytes, "real.doc")) {
+            long declared = POIFSContainerDetector.honestDeclaredSize(channel);
+            assertTrue(declared >= bytes.length && declared <= bytes.length + 128 * 512L,
+                    "a real header declares about its own size: " + declared + " vs " + bytes.length);
+        }
+    }
+
+    @Test
+    public void testTooShortForAHeaderIsRejected() throws Exception {
         try (SeekableByteChannel channel = channelFor(new byte[16], "short.bin")) {
-            assertEquals(0, POIFSContainerDetector.declaredInMemorySize(channel),
-                    "no header to read; leave the rejection to POI");
+            assertEquals(-1, POIFSContainerDetector.honestDeclaredSize(channel));
         }
     }
 
     /**
-     * End to end: the crafted object must not be opened in memory, so no POIFSFileSystem is
-     * retained. Before the declared-size check this allocated ~238MB first.
+     * End to end: the crafted object is refused before any reservation, so POI never
+     * allocates its declared size and no POIFSFileSystem is retained -- even with a budget
+     * large enough to have said yes.
      */
     @Test
     public void testHostileHeaderDoesNotBecomeAnOpenContainer() throws Exception {
         ParseContext context = new ParseContext();
-        context.set(CacheMemoryBudget.class, new CacheMemoryBudget(64L * 1024 * 1024));
+        CacheMemoryBudget budget = new CacheMemoryBudget(1024L * 1024 * 1024);
+        context.set(CacheMemoryBudget.class, budget);
         Metadata metadata = new Metadata();
         try (TemporaryResources tmp = new TemporaryResources()) {
             TikaInputStream tis = TikaInputStream.get(
@@ -111,5 +132,6 @@ public class POIFSDeclaredSizeTest extends TikaTest {
             assertNull(tis.getOpenContainer(),
                     "a header-only object must not be opened from memory");
         }
+        assertEquals(0, budget.getReservedBytes(), "nothing was ever reserved for it");
     }
 }

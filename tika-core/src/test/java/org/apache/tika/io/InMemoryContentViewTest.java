@@ -36,11 +36,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
 
-/**
- * {@link TikaInputStream#inMemoryContent} hands a library the cache's own array. These pin
- * the contract: the view is exact, read-only, and stays valid for the life of the channel
- * even when the stream is spilled or advanced underneath it.
- */
 public class InMemoryContentViewTest {
 
     @TempDir
@@ -71,6 +66,7 @@ public class InMemoryContentViewTest {
                 assertNotNull(view, "small stream-backed content must be served from memory");
                 // exact bounds: the cache array is over-allocated, the view must not be
                 assertEquals(data.length, view.remaining());
+                assertEquals(data.length, view.capacity(), "clear() must not expose the array's slack");
                 assertArrayEquals(data, contents(view));
                 assertTrue(view.isReadOnly());
                 assertThrows(ReadOnlyBufferException.class, () -> view.put(0, (byte) 1));
@@ -87,13 +83,11 @@ public class InMemoryContentViewTest {
             ByteBuffer view = TikaInputStream.inMemoryContent(channel);
             assertEquals(0, view.position());
             assertEquals(data.length, view.limit());
-            // reading through the view does not move the channel either
             view.get(new byte[100]);
             assertEquals(4_000, channel.position());
         }
     }
 
-    /** The whole point: a library may hold the view while something else spills the stream. */
     @Test
     public void testViewSurvivesSpillWhileChannelOpen() throws Exception {
         byte[] data = data(20_000);
@@ -109,9 +103,9 @@ public class InMemoryContentViewTest {
                 assertTrue(Files.exists(spilled));
                 assertEquals(data.length, Files.size(spilled));
                 assertArrayEquals(data, contents(view), "view must still read the content");
-                // and the stream itself is still usable from the file
                 tis.rewind();
                 assertArrayEquals(data, tis.readAllBytes());
+                assertArrayEquals(data, contents(view), "view unaffected by the stream moving");
             }
         }
     }
@@ -128,6 +122,35 @@ public class InMemoryContentViewTest {
                 assertNull(TikaInputStream.inMemoryContent(channel), "spilled content has no view");
                 assertTrue(tis.hasFile());
             }
+        }
+    }
+
+    @Test
+    public void testNullWhenBudgetIsExhausted() throws Exception {
+        CacheMemoryBudget budget = new CacheMemoryBudget(4 * 1024 * 1024);
+        assertEquals(budget.getMaxBytes(), budget.tryReserve(budget.getMaxBytes()), "precondition");
+        byte[] data = data(2 * 1024 * 1024);
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            tmp.setTemporaryFileDirectory(tempDir);
+            TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(data), tmp, new Metadata());
+            tis.enableRewind(budget);
+            try (SeekableByteChannel channel = tis.getSeekableByteChannel()) {
+                assertNull(TikaInputStream.inMemoryContent(channel), "over threshold with no room => on disk");
+                assertTrue(tis.hasFile());
+            }
+        }
+    }
+
+    @Test
+    public void testViewOverReopenableSource() throws Exception {
+        byte[] data = data(10_000);
+        try (TemporaryResources tmp = new TemporaryResources();
+             TikaInputStream tis = TikaInputStream.get(() -> new ByteArrayInputStream(data), tmp, null);
+             SeekableByteChannel channel = tis.getSeekableByteChannel()) {
+            ByteBuffer view = TikaInputStream.inMemoryContent(channel);
+            assertNotNull(view, "a re-openable source buffers small content in memory");
+            assertEquals(data.length, view.capacity());
+            assertArrayEquals(data, contents(view));
         }
     }
 
@@ -150,7 +173,6 @@ public class InMemoryContentViewTest {
         }
     }
 
-    /** Budget accounting: the view's pin holds the reservation, closing the channel releases it. */
     @Test
     public void testPinHoldsBudgetUntilChannelCloses() throws Exception {
         byte[] data = data(2 * 1024 * 1024);

@@ -259,9 +259,7 @@ class CachingSource extends InputStream implements TikaInputSource {
 
     @Override
     public boolean hasPath() {
-        // A threshold spill inside the cache puts the content on disk without going through
-        // getPath(). Reporting only the getPath() case sends callers that branch on
-        // hasFile() down the read-it-into-memory path for content already on disk.
+        // the cache can spill on its own, without any getPath() call
         return spilledPath != null || (cachingStream != null && cachingStream.isFileBacked());
     }
 

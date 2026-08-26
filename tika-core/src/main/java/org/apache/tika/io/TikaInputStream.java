@@ -401,6 +401,10 @@ public class TikaInputStream extends TaggedInputStream {
         tmp.addResource(closeable);
     }
 
+    /**
+     * Whether the content is already on disk -- a real file, or a cache that spilled -- so
+     * {@link #getPath()} will return without copying anything.
+     */
     public boolean hasFile() {
         TikaInputSource source = inputSource();
         return source != null && source.hasPath();
@@ -560,9 +564,10 @@ public class TikaInputStream extends TaggedInputStream {
      * memory without a second copy; when this returns null the caller should use the file.
      * <p>
      * The view aliases the cache's own array and is valid exactly while {@code channel} is
-     * open: the channel pins the array (no release, no reuse), and the content is fully
-     * drained before any channel is handed out (no growth). Keep the channel open for as
-     * long as the view is in use, then close it.
+     * open: the channel pins the array, and the content is fully drained before any channel
+     * is handed out. Keep the channel open for as long as the view is in use, then close it
+     * -- a view that outlives its channel still reads correctly but is no longer counted
+     * against the memory budget.
      */
     public static ByteBuffer inMemoryContent(SeekableByteChannel channel) throws IOException {
         if (channel instanceof MemorySeekableByteChannel) {
@@ -574,9 +579,10 @@ public class TikaInputStream extends TaggedInputStream {
     @Override
     public String toString() {
         String str = "TikaInputStream of ";
-        if (hasFile()) {
+        // never getPath() here: on a spilled cache it drains, reopens and writes metadata
+        if (in instanceof FileSource) {
             try {
-                str += getPath().toString();
+                str += ((FileSource) in).getPath(null).toString();
             } catch (IOException e) {
                 str += "unknown path";
             }

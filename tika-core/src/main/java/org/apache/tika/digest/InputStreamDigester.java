@@ -17,7 +17,6 @@
 package org.apache.tika.digest;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -140,32 +139,31 @@ public class InputStreamDigester implements Digester {
 
     /** Streams: every write goes straight into the MessageDigest; close sets the values. */
     @Override
-    public OutputStream digestSink(Metadata metadata, ParseContext parseContext) {
+    public DigestSink digestSink(Metadata metadata, ParseContext parseContext) {
         MessageDigest messageDigest = newMessageDigest();
-        return new OutputStream() {
+        return new DigestSink() {
             private long total;
-            private boolean closed;
 
             @Override
-            public void write(int b) {
+            public void write(int b) throws IOException {
+                ensureOpen();
                 messageDigest.update((byte) b);
                 total++;
             }
 
             @Override
-            public void write(byte[] b, int off, int len) {
+            public void write(byte[] b, int off, int len) throws IOException {
+                ensureOpen();
                 messageDigest.update(b, off, len);
                 total += len;
             }
 
             @Override
-            public void close() {
-                if (closed) {
-                    return;
+            protected void finish(boolean publish) {
+                if (publish) {
+                    setContentLength(total, metadata);
+                    metadata.set(metadataProperty, encoder.encode(messageDigest.digest()));
                 }
-                closed = true;
-                setContentLength(total, metadata);
-                metadata.set(metadataProperty, encoder.encode(messageDigest.digest()));
             }
         };
     }

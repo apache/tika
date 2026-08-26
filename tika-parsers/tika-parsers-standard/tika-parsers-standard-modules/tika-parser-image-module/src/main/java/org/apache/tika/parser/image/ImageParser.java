@@ -28,6 +28,7 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.MemoryCacheImageInputStream;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.slf4j.Logger;
@@ -169,8 +170,11 @@ public class ImageParser extends AbstractImageParser {
             if (iterator.hasNext()) {
                 ImageReader reader = iterator.next();
                 try {
-                    try (ImageInputStream imageStream = ImageIO
-                            .createImageInputStream(CloseShieldInputStream.wrap(stream))) {
+                    // Not ImageIO.createImageInputStream(InputStream): with the JDK default
+                    // useCache=true that is a FileCacheImageInputStream, which writes every byte
+                    // it reads to a temp file. Header reads are small; keep them in memory.
+                    try (ImageInputStream imageStream =
+                            new MemoryCacheImageInputStream(CloseShieldInputStream.wrap(stream))) {
                         reader.setInput(imageStream);
                         try {
                             int numImages = reader.getNumImages(true);

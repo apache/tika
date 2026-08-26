@@ -562,13 +562,6 @@ public class POIFSContainerDetector implements Detector {
     }
 
 
-    /**
-     * Largest object opened from memory. POI's stream loader copies the whole object into a
-     * heap array, so this bounds that copy; the cache underneath is already budget-bounded.
-     * Embedded OLE2 objects are typically a few hundred KB.
-     */
-    private static final long MAX_IN_MEMORY_POIFS = 8L * 1024 * 1024;
-
     private Set<String> getTopLevelNames(TikaInputStream stream, ParseContext context)
             throws IOException {
         if (!stream.hasFile()) {
@@ -605,27 +598,46 @@ public class POIFSContainerDetector implements Detector {
     }
 
     /**
-     * Opens the container from memory. Returns null -- and the caller uses the file -- when
-     * the object is too large, its header would make POI allocate too much, or POI's stream
-     * loader rejects it (it is stricter than the file loader on truncated objects).
+     * Opens the container from memory. POI's stream loader copies the object into its own
+     * heap array, sized from the header rather than the content, and keeps it for the
+     * container's lifetime -- so that allocation is reserved from the CacheMemoryBudget
+     * before it is made. Returns null, and the caller uses the file, when the content is not
+     * in memory, the budget has no room for the copy, or POI's stream loader rejects the
+     * object (it is stricter than the file loader on truncated objects). Without a budget
+     * only objects under the cache's threshold have an in-memory view, which bounds the copy.
      */
     private Set<String> getTopLevelNamesInMemory(TikaInputStream stream, ParseContext context)
             throws IOException {
-        if (stream.hasLength() && stream.getLength() > MAX_IN_MEMORY_POIFS) {
-            return null;
-        }
+        CacheMemoryBudget budget = context == null ? null : context.get(CacheMemoryBudget.class);
         // the budget decides how much the drain below keeps in memory
-        stream.enableRewind(context == null ? null : context.get(CacheMemoryBudget.class));
+        stream.enableRewind(budget);
         POIFSFileSystem fs = null;
+        long reserved = 0;
         try (SeekableByteChannel channel = stream.getSeekableByteChannel()) {
-            if (TikaInputStream.inMemoryContent(channel) == null ||
-                    channel.size() > MAX_IN_MEMORY_POIFS ||
-                    declaredInMemorySize(channel) > MAX_IN_MEMORY_POIFS) {
+            if (TikaInputStream.inMemoryContent(channel) == null) {
                 return null;
+            }
+            // POI allocates what the header declares. The bytes in hand are the truth: a
+            // header that declares more than they can account for is lying, and the file
+            // loader (block by block, no such allocation) is the only safe way to read it.
+            long copy = honestDeclaredSize(channel);
+            if (copy < 0) {
+                return null;
+            }
+            if (budget != null) {
+                if (budget.tryReserve(copy) == 0) {
+                    return null;
+                }
+                reserved = copy;
             }
             fs = new POIFSFileSystem(Channels.newInputStream(channel));
             Set<String> names = getTopLevelNames(fs.getRoot());
             stream.setOpenContainer(fs);
+            if (reserved > 0) {
+                long charged = reserved;
+                stream.addCloseableResource(() -> budget.release(charged));
+                reserved = 0;
+            }
             fs = null;
             return names;
         } catch (SecurityException e) {
@@ -633,6 +645,9 @@ public class POIFSContainerDetector implements Detector {
         } catch (IOException | RuntimeException e) {
             return null;
         } finally {
+            if (reserved > 0) {
+                budget.release(reserved);
+            }
             if (fs != null) {
                 closeQuietly(fs);
             }
@@ -640,12 +655,14 @@ public class POIFSContainerDetector implements Detector {
     }
 
     /**
-     * The heap POI would allocate for this object if opened from a stream. It sizes that buffer
-     * from the header's declared BAT count rather than the actual length, so a 512-byte object
-     * can demand hundreds of MB; the file loader reads block by block and never allocates it.
-     * Returns 0 when the header cannot be read, leaving the rejection to POI.
+     * The heap POI's stream loader would allocate for this object -- sized from the header's
+     * declared BAT count, not the content -- or -1 when the header cannot be read or declares
+     * more than the content can account for. A valid header covers at most one BAT block of
+     * unused entries beyond the actual size; anything past that is a malformed or hostile
+     * header (a 512-byte object can declare hundreds of MB) and must not be opened from a
+     * stream at all.
      */
-    static long declaredInMemorySize(SeekableByteChannel channel) throws IOException {
+    static long honestDeclaredSize(SeekableByteChannel channel) throws IOException {
         byte[] header = new byte[POIFSConstants.SMALLER_BIG_BLOCK_SIZE];
         long start = channel.position();
         try {
@@ -655,16 +672,21 @@ public class POIFSContainerDetector implements Detector {
                 // fill the header block
             }
             if (buffer.hasRemaining()) {
-                return 0;
+                return -1;
             }
         } finally {
             channel.position(start);
         }
         try {
-            return BATBlock.calculateMaximumSize(
-                    new HeaderBlock(UnsynchronizedByteArrayInputStream.builder().setByteArray(header).get()));
+            HeaderBlock hb = new HeaderBlock(
+                    UnsynchronizedByteArrayInputStream.builder().setByteArray(header).get());
+            long declared = BATBlock.calculateMaximumSize(hb);
+            long oneBatSpan = (long) hb.getBigBlockSize().getBigBlockSize() *
+                    hb.getBigBlockSize().getBATEntriesPerBlock();
+            long actual = channel.size();
+            return declared > actual + oneBatSpan ? -1 : declared;
         } catch (IOException | RuntimeException e) {
-            return 0;
+            return -1;
         }
     }
 

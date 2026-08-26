@@ -68,4 +68,49 @@ public class POIFSContainerDetectorNoTempFileTest extends TikaTest {
             assertEquals(0xd0, tis.read(), "stream still readable from the start");
         }
     }
+
+    /** POI's copy is charged to the budget for the container's lifetime, then released. */
+    @Test
+    public void testInMemoryCopyIsChargedAndReleased() throws Exception {
+        byte[] bytes;
+        try (InputStream is = getResourceAsStream("/test-documents/testWORD.doc")) {
+            bytes = is.readAllBytes();
+        }
+        CacheMemoryBudget budget = new CacheMemoryBudget(64L * 1024 * 1024);
+        ParseContext context = new ParseContext();
+        context.set(CacheMemoryBudget.class, budget);
+        Metadata metadata = new Metadata();
+        TikaInputStream tis;
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            tis = TikaInputStream.get(new ByteArrayInputStream(bytes), tmp, metadata);
+            assertEquals(MediaType.application("msword"),
+                    new POIFSContainerDetector().detect(tis, metadata, context));
+            assertTrue(tis.getOpenContainer() instanceof POIFSFileSystem);
+            assertTrue(budget.getReservedBytes() >= bytes.length,
+                    "POI's header-sized copy is charged while the container is open");
+        }
+        assertEquals(0, budget.getReservedBytes(), "released with the stream");
+    }
+
+    /** No room in the budget for POI's copy: detection still succeeds, from the file. */
+    @Test
+    public void testFallsBackToFileWhenBudgetRefusesTheCopy() throws Exception {
+        byte[] bytes;
+        try (InputStream is = getResourceAsStream("/test-documents/testWORD.doc")) {
+            bytes = is.readAllBytes();
+        }
+        CacheMemoryBudget budget = new CacheMemoryBudget(4096);
+        ParseContext context = new ParseContext();
+        context.set(CacheMemoryBudget.class, budget);
+        Metadata metadata = new Metadata();
+        try (TemporaryResources tmp = new TemporaryResources()) {
+            tmp.setTemporaryFileDirectory(tempDir);
+            TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(bytes), tmp, metadata);
+            assertEquals(MediaType.application("msword"),
+                    new POIFSContainerDetector().detect(tis, metadata, context));
+            assertTrue(tis.getOpenContainer() instanceof POIFSFileSystem);
+            assertTrue(tis.hasFile(), "opened from the file instead");
+        }
+        assertEquals(0, budget.getReservedBytes(), "nothing left charged");
+    }
 }
