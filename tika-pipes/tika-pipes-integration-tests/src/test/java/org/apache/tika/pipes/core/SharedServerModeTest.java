@@ -24,13 +24,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
@@ -781,6 +784,83 @@ public class SharedServerModeTest {
                 "expected the initial fork plus exactly " + deaths + " replacement(s); a sibling's "
                         + "report about an already-replaced process must not restart its healthy "
                         + "successor (forks=" + forks + ")");
+    }
+
+    /**
+     * The conservation law behind every restart-accounting bug in this class: a fork must be
+     * caused by something. At most {@code ooms} worker deaths can occur (one document can kill the
+     * shared JVM once), no file limit is reached in these short rounds, so the manager may fork at
+     * most that many replacements on top of its initial start.
+     * <p>
+     * Unlike the fixed OOM fixtures, this does not depend on catching one lucky interleaving --
+     * it holds under every schedule, so a spurious restart is caught whether or not the timing
+     * that produced it happened to repeat. Seeds are fixed so a failure is reproducible; the
+     * concurrency supplies the variation.
+     */
+    @Test
+    @Timeout(600)
+    public void testForksNeverExceedInjectedFaults(@TempDir Path tmp) throws Exception {
+        for (int seed = 1; seed <= 3; seed++) {
+            runFaultRound(seed, Files.createDirectories(tmp.resolve("seed" + seed)));
+        }
+    }
+
+    private void runFaultRound(int seed, Path tmp) throws Exception {
+        Random random = new Random(seed);
+        Path inputDir = setupInputDir(tmp);
+
+        int ooms = 1 + random.nextInt(2);
+        List<String> names = new ArrayList<>();
+        for (int i = 0; i < ooms; i++) {
+            String name = "oom" + i + ".xml";
+            Files.writeString(inputDir.resolve(name), MOCK_OOM, StandardCharsets.UTF_8);
+            names.add(name);
+        }
+        for (int i = 0; i < 4; i++) {
+            String name = "slow" + i + ".xml";
+            Files.writeString(inputDir.resolve(name), MOCK_SLOW, StandardCharsets.UTF_8);
+            names.add(name);
+        }
+        for (int i = 0; i < 6; i++) {
+            String name = "ok" + i + ".xml";
+            Files.writeString(inputDir.resolve(name), MOCK_OK, StandardCharsets.UTF_8);
+            names.add(name);
+        }
+        Collections.shuffle(names, random);
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+            ExecutorService executor = Executors.newFixedThreadPool(6);
+            try {
+                List<Future<PipesResult>> futures = new ArrayList<>();
+                for (String name : names) {
+                    futures.add(executor.submit(() -> pipesParser.parse(new FetchEmitTuple(
+                            name,
+                            new FetchKey(FETCHER_NAME, name),
+                            new EmitKey(EMITTER_NAME, ""),
+                            new Metadata(),
+                            new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP))));
+                }
+                for (Future<PipesResult> future : futures) {
+                    future.get();
+                }
+            } finally {
+                executor.shutdown();
+                executor.awaitTermination(30, TimeUnit.SECONDS);
+            }
+
+            long forks = pipesParser.getGeneration();
+            assertTrue(forks - 1 <= ooms,
+                    "seed=" + seed + ": the shared worker forked " + (forks - 1) + " replacement(s) "
+                            + "but at most " + ooms + " death(s) could have occurred; a report about "
+                            + "an already-replaced process must not restart its healthy successor");
+            assertTrue(forks >= 1, "seed=" + seed + ": the worker must have started at least once");
+        }
     }
 
     private Path setupInputDir(Path tmp) throws Exception {
