@@ -10,6 +10,8 @@ Release 4.1.0 - unreleased
      EmbeddedDocumentUtil.recordException* / ParserUtils.recordParserFailure
      overloads are deprecated (TIKA-4848).
 
+   * New file-system-jsonl-reporter pipes reporter (TIKA-4846).
+   
    * Stop spooling OLE2 objects whose header over-reserves BAT capacity
      (TIKA-4845).
 

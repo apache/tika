@@ -47,6 +47,8 @@ Reporters live under the plural top-level `pipes-reporters` key. The keys inside
 
 Each entry's outer key is the reporter's component name — there is no separate ID layer because reporters do not get referenced by other components.
 
+Every configured reporter receives every call even if another reporter throws; the first exception is rethrown afterward and stops the run.
+
 [#plugins]
 == Available Reporters
 
@@ -57,6 +59,10 @@ Each entry's outer key is the reporter's component name — there is no separate
 |xref:pipes/plugins/filesystem.adoc[File System]
 |`file-system-reporter`
 |Writes a JSON status file periodically. Pair with an external watcher — see xref:pipes/plugins/filesystem.adoc#watching[Live status for watching applications].
+
+|xref:pipes/plugins/filesystem.adoc#file-system-jsonl-reporter[File System]
+|`file-system-jsonl-reporter`
+|Appends one JSON line per document to a file. The record of documents whose worker crashed (by default nothing reaches the emitter for those).
 
 |xref:pipes/plugins/jdbc.adoc[JDBC]
 |`jdbc-reporter`
