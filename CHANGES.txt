@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * FileSystemEmitter writes to a sibling ".tmp" file and renames it into
+     place, so readers of the output directory never see a partially written
+     file. Set "atomicWrites": false on the emitter to restore in-place
+     writes (TIKA-4848).
+
    * tika-eval: Profile/Compare accept the batch run's jsonl crash ledger
      (--pipesReport, -pa/-pb) and a run-info json (--runInfo, -ra/-rb), and
      read both from <extracts>/.run-info/ by default (refusing an ambiguous
