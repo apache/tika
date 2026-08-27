@@ -109,7 +109,9 @@ done; a fresh context walks a different subset and the series never
 converges. Where the object is a closed set — worker exit paths × reason
 counters, lifecycle states × methods, config knobs × modes — enumerate it and
 report the matrix, so "complete" means something. A lane with no closed set
-says so. Each dimension notes which it is.
+says so. Each dimension notes which it is. Skeptics
+refuting findings is not a completeness check (TIKA-4844 survived five
+review rounds).
 
 ### Dimensions
 
