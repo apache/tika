@@ -309,7 +309,14 @@ public class PerClientServerManager implements ServerManager {
         return generation;
     }
 
-    private void markForRestart(RestartReason reason) {
+    /**
+     * Takes the same monitor as {@link #ensureRunning()}, which consumes the mark: recording the
+     * reason and raising the flag must not straddle a restart, or a reason lands against a
+     * restart that has already been counted. Correctness here previously rested on an
+     * undocumented one-client-per-manager invariant; shared mode, where siblings are the norm,
+     * already locked for this and TIKA-4844 is what a stale mark costs.
+     */
+    private synchronized void markForRestart(RestartReason reason) {
         restarts.mark(reason);
         pendingRestart = true;
     }
