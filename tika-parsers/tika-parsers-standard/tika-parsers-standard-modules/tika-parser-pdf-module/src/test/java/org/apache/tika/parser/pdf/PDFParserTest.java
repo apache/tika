@@ -1719,6 +1719,16 @@ public class PDFParserTest extends TikaTest {
         getXML("testPDF_jsActionOnPage.pdf", context);
     }
 
+    // A page with no /Resources (typical of minimal crafted PDFs) must not NPE font extraction.
+    @Test
+    public void testExtractFontNamesPageWithoutResources() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.setExtractFontNames(true);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        getXML("testPDF_jsActionOnPage.pdf", context);
+    }
+
     /**
     @Test
     public void testWriteLimit() throws Exception {

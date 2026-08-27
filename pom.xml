@@ -150,6 +150,13 @@
                     <fail message="Release staging missing: tika-${project.version}-src.zip">
                       <condition><not><available file="${basedir}/target/${project.version}/tika-${project.version}-src.zip" /></not></condition>
                     </fail>
+                    <!-- assembly.xml's **/.*/** exclude drops .skills unless re-added; AGENTS.md points at it -->
+                    <resourcecount property="src.zip.skills.count">
+                      <zipfileset src="${basedir}/target/${project.version}/tika-${project.version}-src.zip" includes="tika-${project.version}/.skills/devs/development/SKILL.md" />
+                    </resourcecount>
+                    <fail message="tika-${project.version}-src.zip does not contain .skills/devs/development/SKILL.md; check assembly.xml">
+                      <condition><equals arg1="${src.zip.skills.count}" arg2="0" /></condition>
+                    </fail>
                     <fail message="Release staging missing: tika-parser-scientific-package-${project.version}-shaded.jar">
                       <condition><not><available file="${basedir}/target/${project.version}/tika-parser-scientific-package-${project.version}-shaded.jar" /></not></condition>
                     </fail>
