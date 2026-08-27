@@ -91,6 +91,6 @@ final class SentinelServerManager implements ServerManager {
 
     @Override
     public void close() {
-        // nothing to close
+        closed = true;
     }
 }

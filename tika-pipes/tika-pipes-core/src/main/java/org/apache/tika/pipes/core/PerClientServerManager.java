@@ -298,7 +298,7 @@ public class PerClientServerManager implements ServerManager {
      * Shared mode is where staleness is real.
      */
     @Override
-    public void markServerForRestart(RestartReason reason, long generation) {
+    public void markServerForRestart(RestartReason reason, long ignoredGeneration) {
         LOG.info("clientId={}: marking server for restart ({})", clientId, reason);
         markForRestart(reason);
     }
