@@ -380,7 +380,7 @@ public class ZipParser extends AbstractArchiveParser {
                 } catch (java.util.zip.ZipException ze) {
                     // Truncated/corrupt central directory: stop iteration but keep
                     // entries already extracted. Record the failure as a warning.
-                    ParserUtils.recordParserFailure(this, ze, metadata);
+                    ParserUtils.recordParserFailure(this, ze, metadata, context);
                     break;
                 }
                 if (entry == null) {

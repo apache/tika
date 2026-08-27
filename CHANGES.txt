@@ -1,5 +1,15 @@
 Release 4.1.0 - unreleased
 
+   * New exception-reporting parse-context config controls how much of an
+     exception is written to tk:exception:* metadata for the container and
+     embedded documents alike: FULL (default), MESSAGE_REDACTED (stack trace
+     without messages) or REDACTED (class names only), plus a maxLength.
+     Config-only; rejected in per-request parse-context. Parsers should
+     format exceptions via ExceptionUtils.format(Throwable, ParseContext);
+     ExceptionUtils.getStackTrace/getFilteredStackTrace and the ParseContext-less
+     EmbeddedDocumentUtil.recordException* / ParserUtils.recordParserFailure
+     overloads are deprecated (TIKA-4848).
+
    * tika-pipes: the cache memory budget (how much rewindable content a forked
      worker keeps in memory before spilling to disk; new since 4.0.0, which had
      no budget at all) defaults to a quarter of the fork's heap, so raising

@@ -29,8 +29,10 @@ public class EvalExceptionUtils {
             Pattern.compile("(Caused by: [^:]+):[^\\r\\n]+");
 
     //strips the exception message off the first line, so that the same cause with
-    //differing runtime detail collapses to one entry
-    private final static Pattern MSG_PATTERN = Pattern.compile(":[^\\r\\n]+");
+    //differing runtime detail collapses to one entry. Anchored to the first line: a
+    //message-redacted trace has no ':' on line one, and the first ':' would otherwise
+    //be a frame's line number.
+    private final static Pattern MSG_PATTERN = Pattern.compile("^([^\\r\\n:]*):[^\\r\\n]+");
 
     public static String normalize(String stacktrace) {
         if (StringUtils.isBlank(stacktrace)) {
@@ -46,7 +48,7 @@ public class EvalExceptionUtils {
     private static String trimMessage(String trace) {
         Matcher msgMatcher = MSG_PATTERN.matcher(trace);
         if (msgMatcher.find()) {
-            return msgMatcher.replaceFirst("");
+            return msgMatcher.replaceFirst("$1");
         }
         return trace;
     }

@@ -170,8 +170,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
             if (WriteLimitReachedException.isWriteLimitReached(e)) {
                 metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
             } else {
-                String stackTrace = ExceptionUtils.getFilteredStackTrace(e);
-                metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, stackTrace);
+                metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
+                        ExceptionUtils.format(ExceptionUtils.unwrapTikaException(e), context));
                 throw e;
             }
         } finally {
@@ -272,7 +272,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                     throw e;
                 } else {
                     if (catchEmbeddedExceptions) {
-                        ParserUtils.recordParserFailure(this, e, metadata);
+                        ParserUtils.recordParserFailure(this, e, metadata, context);
                     } else {
                         throw e;
                     }
@@ -287,7 +287,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                         e instanceof ZeroByteFileException) {
                     //do nothing
                 } else if (catchEmbeddedExceptions) {
-                    ParserUtils.recordParserFailure(this, e, metadata);
+                    ParserUtils.recordParserFailure(this, e, metadata, context);
                 } else {
                     throw e;
                 }

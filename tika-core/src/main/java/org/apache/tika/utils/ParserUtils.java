@@ -22,6 +22,7 @@ import java.util.Arrays;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 
@@ -82,9 +83,18 @@ public class ParserUtils {
      * {@link Exception} wasn't immediately thrown (eg when several different
      * Parsers are used)
      */
-    public static void recordParserFailure(Parser parser, Throwable failure, Metadata metadata) {
-        String trace = ExceptionUtils.getStackTrace(failure);
-        metadata.add(EMBEDDED_EXCEPTION, trace);
+    public static void recordParserFailure(Parser parser, Throwable failure, Metadata metadata,
+                                           ParseContext context) {
+        metadata.add(EMBEDDED_EXCEPTION, ExceptionUtils.format(failure, context));
         metadata.add(TikaCoreProperties.EMBEDDED_PARSER, getParserClassname(parser));
+    }
+
+    /**
+     * @deprecated use {@link #recordParserFailure(Parser, Throwable, Metadata, ParseContext)}
+     * so the configured {@link org.apache.tika.config.ExceptionReporting} applies
+     */
+    @Deprecated
+    public static void recordParserFailure(Parser parser, Throwable failure, Metadata metadata) {
+        recordParserFailure(parser, failure, metadata, null);
     }
 }

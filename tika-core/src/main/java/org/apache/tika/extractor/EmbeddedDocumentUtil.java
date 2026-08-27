@@ -231,14 +231,33 @@ public class EmbeddedDocumentUtil {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
     }
 
-    public static void recordException(Throwable t, Metadata m) {
-        String ex = ExceptionUtils.getFilteredStackTrace(t);
-        m.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, ex);
+    public static void recordException(Throwable t, Metadata m, ParseContext context) {
+        m.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                ExceptionUtils.format(ExceptionUtils.unwrapTikaException(t), context));
     }
 
+    /**
+     * @deprecated use {@link #recordException(Throwable, Metadata, ParseContext)} so the
+     * configured {@link org.apache.tika.config.ExceptionReporting} applies
+     */
+    @Deprecated
+    public static void recordException(Throwable t, Metadata m) {
+        recordException(t, m, null);
+    }
+
+    public static void recordEmbeddedStreamException(Throwable t, Metadata m,
+                                                     ParseContext context) {
+        m.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
+                ExceptionUtils.format(ExceptionUtils.unwrapTikaException(t), context));
+    }
+
+    /**
+     * @deprecated use {@link #recordEmbeddedStreamException(Throwable, Metadata, ParseContext)}
+     * so the configured {@link org.apache.tika.config.ExceptionReporting} applies
+     */
+    @Deprecated
     public static void recordEmbeddedStreamException(Throwable t, Metadata m) {
-        String ex = ExceptionUtils.getFilteredStackTrace(t);
-        m.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM, ex);
+        recordEmbeddedStreamException(t, m, null);
     }
 
     /**
