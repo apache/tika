@@ -80,6 +80,9 @@ public class MarkdownSummaryWriter {
 
     private static void writeRunInfo(Connection c, BufferedWriter w)
             throws IOException, SQLException {
+        if (!tableExists(c, "RUN_INFO")) {
+            return; // db from a tika-eval before run_info existed
+        }
         w.write("## Run Info\n\n");
         w.write("### Eval\n\n");
         writeQueryAsTable(c, w, "select run_key as RUN_KEY, run_value as RUN_VALUE from run_info order by run_key");
@@ -93,44 +96,35 @@ public class MarkdownSummaryWriter {
     /** Splits NO_EXTRACT_FILE etc. by what the batch run's jsonl reporter said about the container. */
     private static void writePipesCrashSummary(Connection c, BufferedWriter w)
             throws IOException, SQLException {
+        if (!tableExists(c, "PIPES_CLASS_A")) {
+            return; // built by the reports' before-sql; absent on a pre-ledger db
+        }
         w.write("## Extract File Issues by Pipes Status\n\n");
-        w.write("CRASH = OOM/TIMEOUT/UNSPECIFIED_CRASH recorded for this file; LOST_TO_WORKER_RESTART = " +
-                "shared-server crash while in flight, outcome unknown (retry once, alone); NO_PIPES_RECORD = " +
-                "reporter ran but has no line for this file; NO_PIPES_REPORT_SUPPLIED = no --pipesReport given.\n\n");
+        w.write("CRASH = OOM/TIMEOUT/UNSPECIFIED_CRASH recorded for this file; any other recorded status is shown as-is; " +
+                "NO_PIPES_RECORD = a ledger was supplied but has no line for this file (the batch recorded no failure for it); " +
+                "BATCH_WITHOUT_LEDGER = run-info present but the batch wrote no ledger (pre-4.1 tika-app); " +
+                "NO_PIPES_REPORT_SUPPLIED = neither given.\n\n");
         for (String side : new String[]{"a", "b"}) {
             w.write("### Extract " + side.toUpperCase(java.util.Locale.ROOT) + "\n\n");
             writeQueryAsTable(c, w,
-                    "select classification as CLASSIFICATION, extract_exception_description as TYPE, count(1) as COUNT from (" +
-                    "select t.extract_exception_description, " + pipesClassification(side) +
-                    " from extract_exceptions_" + side + " e " +
-                    "join containers c on c.container_id = e.container_id " +
-                    "join ref_extract_exception_types t on t.extract_exception_id = e.extract_exception_id) " +
-                    "group by classification, extract_exception_description order by COUNT desc");
+                    "select p.classification as CLASSIFICATION, t.extract_exception_description as TYPE, count(1) as COUNT " +
+                    "from extract_exceptions_" + side + " e " +
+                    "join pipes_class_" + side + " p on p.container_id = e.container_id " +
+                    "join ref_extract_exception_types t on t.extract_exception_id = e.extract_exception_id " +
+                    "group by p.classification, t.extract_exception_description order by COUNT desc");
             w.write("\n");
         }
         w.write("### Crash status but extract present (success, status lost)\n\n");
         writeQueryAsTable(c, w,
-                "select 'A' as SIDE, c.file_path as FILE, c.pipes_status_a as STATUS from containers c " +
-                "where c.pipes_status_a in ('OOM', 'TIMEOUT', 'UNSPECIFIED_CRASH') " +
+                "select 'A' as SIDE, c.file_path as FILE, p.pipes_status as STATUS from containers c " +
+                "join pipes_class_a p on p.container_id = c.container_id where p.classification = 'CRASH' " +
                 "and not exists (select 1 from extract_exceptions_a e where e.container_id = c.container_id) " +
                 "union all " +
-                "select 'B', c.file_path, c.pipes_status_b from containers c " +
-                "where c.pipes_status_b in ('OOM', 'TIMEOUT', 'UNSPECIFIED_CRASH') " +
+                "select 'B', c.file_path, p.pipes_status from containers c " +
+                "join pipes_class_b p on p.container_id = c.container_id where p.classification = 'CRASH' " +
                 "and not exists (select 1 from extract_exceptions_b e where e.container_id = c.container_id) " +
                 "order by 1, 2 limit " + TOP_N);
         w.write("\n");
-    }
-
-    // keep in sync with the same case expression in comparison-reports.xml / profile-reports.xml
-    private static String pipesClassification(String side) {
-        String st = "c.pipes_status_" + side;
-        String msg = "c.pipes_message_" + side;
-        return "case when " + st + " in ('OOM', 'TIMEOUT') then 'CRASH' " +
-                "when " + st + " = 'UNSPECIFIED_CRASH' and " + msg + " like '%outcome unknown%' then 'LOST_TO_WORKER_RESTART' " +
-                "when " + st + " = 'UNSPECIFIED_CRASH' then 'CRASH' " +
-                "when " + st + " is not null then " + st + " " +
-                "when exists (select 1 from run_info_" + side + " where run_key = 'pipes_report.path') then 'NO_PIPES_RECORD' " +
-                "else 'NO_PIPES_REPORT_SUPPLIED' end as classification";
     }
 
     private static void writeOverview(Connection c, BufferedWriter w)
@@ -640,10 +634,14 @@ public class MarkdownSummaryWriter {
     }
 
     private static boolean isComparisonDb(Connection c) throws SQLException {
+        return tableExists(c, "CONTENT_COMPARISONS");
+    }
+
+    private static boolean tableExists(Connection c, String table) throws SQLException {
         DatabaseMetaData md = c.getMetaData();
         try (ResultSet rs = md.getTables(null, null, "%", null)) {
             while (rs.next()) {
-                if ("CONTENT_COMPARISONS".equalsIgnoreCase(rs.getString(3))) {
+                if (table.equalsIgnoreCase(rs.getString(3))) {
                     return true;
                 }
             }

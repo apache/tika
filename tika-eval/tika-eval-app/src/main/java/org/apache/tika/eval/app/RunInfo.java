@@ -21,19 +21,25 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.security.CodeSource;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Types;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -67,8 +73,34 @@ public class RunInfo {
     public static final String PIPES_REPORT_PATH_KEY = "pipes_report.path";
     /** Written by run-batch.sh inside the extracts dir; skipped by the crawl and the fingerprint. */
     public static final String RUN_INFO_DIR = ".run-info";
+    static final String LEDGER_PREFIX = "crashes-";
+    static final String LEDGER_SUFFIX = ".jsonl";
+
+    // secrets in jdbc urls / argv / -D flags; the value after the separator is replaced
+    private static final Pattern SECRET_KV = Pattern.compile("(?i)((?:password|passwd|pwd|secret|token|credential)[a-z_.-]*\\s*[=:]\\s*)[^&;,\\s'\"]*");
+    private static final Pattern SECRET_URL_USERINFO = Pattern.compile("(//[^/:@\\s]+:)[^@\\s]+(@)");
 
     private RunInfo() {
+    }
+
+    /** One side's batch inputs: the ledger (may be null) and the flattened run-info (may be empty). */
+    public record Side(PipesReport pipesReport, Map<String, String> batchInfo) {
+        public Path pipesReportPath() {
+            return pipesReport == null ? null : pipesReport.getPath();
+        }
+    }
+
+    /**
+     * Resolves and loads one side's ledger and run-info: an explicit path wins, otherwise
+     * {@code <extracts>/.run-info/} is searched, and the pair is refused if it is from two runs.
+     */
+    public static Side loadSide(Path explicitPipesReport, Path explicitRunInfo, Path extracts) throws IOException {
+        Path pr = explicitPipesReport != null ? explicitPipesReport : discoverPipesReport(extracts);
+        Path ri = explicitRunInfo != null ? explicitRunInfo : discoverRunInfo(extracts);
+        PipesReport report = pr == null ? null : PipesReport.load(pr);
+        Map<String, String> batch = ri == null ? Map.of() : loadBatch(ri);
+        checkRunId(batch, pr);
+        return new Side(report, batch);
     }
 
     /**
@@ -81,7 +113,7 @@ public class RunInfo {
     }
 
     public static Path discoverPipesReport(Path extracts) throws IOException {
-        return discover(extracts, "crashes-", ".jsonl");
+        return discover(extracts, LEDGER_PREFIX, LEDGER_SUFFIX);
     }
 
     private static Path discover(Path extracts, String prefix, String suffix) throws IOException {
@@ -128,15 +160,20 @@ public class RunInfo {
     /**
      * A pipes report produced by a different batch run than the run-info describes is the
      * failure mode nobody can see after the fact; refuse it. The script names the ledger
-     * {@code crashes-<run.id>.jsonl}.
+     * {@code crashes-<run.id>.jsonl}; a run-info with a blank {@code run.id} cannot vouch for any ledger.
      */
     public static void checkRunId(Map<String, String> batch, Path pipesReport) {
-        if (batch == null || pipesReport == null) {
+        if (batch == null || pipesReport == null || !batch.containsKey(RUN_ID_KEY)) {
             return;
         }
         String runId = batch.get(RUN_ID_KEY);
-        if (runId != null && !pipesReport.getFileName().toString().contains(runId)) {
-            throw new IllegalArgumentException("run.id mismatch: run-info says '" + runId + "' but the pipes report is " + pipesReport);
+        if (runId == null || runId.isBlank()) {
+            throw new IllegalArgumentException("run-info has a blank run.id; cannot tie it to " + pipesReport);
+        }
+        String expected = LEDGER_PREFIX + runId + LEDGER_SUFFIX;
+        if (!pipesReport.getFileName().toString().equals(expected)) {
+            throw new IllegalArgumentException("run.id mismatch: run-info says '" + runId + "' (ledger should be " + expected +
+                    ") but the pipes report is " + pipesReport);
         }
     }
 
@@ -154,25 +191,40 @@ public class RunInfo {
         return m;
     }
 
-    /** Count and a sha256 over the sorted "relpath size" lines of the extract set. */
+    /**
+     * Count and a sha256 over the sorted "relpath size" lines of the extract set.
+     * @throws IllegalArgumentException if {@code extracts} is not a directory
+     */
     public static Map<String, String> extractsInfo(Path extracts) throws IOException {
+        if (!Files.isDirectory(extracts)) {
+            throw new IllegalArgumentException("extracts dir does not exist: " + extracts);
+        }
         Map<String, String> m = new LinkedHashMap<>();
         m.put("extracts.path", extracts.toAbsolutePath().toString());
         long start = System.currentTimeMillis();
-        long count = 0;
-        MessageDigest md = sha256();
-        try (Stream<Path> s = Files.walk(extracts)) {
-            Iterator<Path> it = s.filter(Files::isRegularFile).map(extracts::relativize)
-                    .filter(p -> !isRunInfoPath(p.toString())).sorted().iterator();
-            while (it.hasNext()) {
-                Path p = it.next();
-                md.update((PipesReport.normalize(p.toString()) + " " + Files.size(extracts.resolve(p)) + "\n").getBytes(StandardCharsets.UTF_8));
-                count++;
+        List<String> lines = new ArrayList<>();
+        Files.walkFileTree(extracts, new SimpleFileVisitor<>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+                return isRunInfoPath(extracts.relativize(dir).toString()) ? FileVisitResult.SKIP_SUBTREE : FileVisitResult.CONTINUE;
             }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                if (attrs.isRegularFile()) {
+                    lines.add(PipesReport.normalize(extracts.relativize(file).toString()) + " " + attrs.size() + "\n");
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+        Collections.sort(lines);
+        MessageDigest md = sha256();
+        for (String line : lines) {
+            md.update(line.getBytes(StandardCharsets.UTF_8));
         }
-        m.put("extracts.count", Long.toString(count));
+        m.put("extracts.count", Long.toString(lines.size()));
         m.put("extracts.fingerprint", HexFormat.of().formatHex(md.digest()));
-        LOG.info("fingerprinted {} extracts under {} in {} ms", count, extracts, System.currentTimeMillis() - start);
+        LOG.info("fingerprinted {} extracts under {} in {} ms", lines.size(), extracts, System.currentTimeMillis() - start);
         return m;
     }
 
@@ -184,11 +236,20 @@ public class RunInfo {
         m.put("eval.host", hostName());
         m.put("eval.user", System.getProperty("user.name"));
         m.put("eval.java", System.getProperty("java.vendor") + " " + System.getProperty("java.version"));
-        m.put("eval.args", String.join(" ", args));
-        m.put("eval.config", config.toString());
-        m.put("db.path", jdbcString);
+        m.put("eval.args", redact(String.join(" ", args)));
+        m.put("eval.config", redact(config.toString()));
+        m.put("db.path", redact(jdbcString));
         m.put("input.path", inputDir.toAbsolutePath().toString());
         return m;
+    }
+
+    /** Masks password-like values so the tables can travel with the reports. */
+    public static String redact(String s) {
+        if (s == null) {
+            return null;
+        }
+        String r = SECRET_URL_USERINFO.matcher(s).replaceAll("$1***$2");
+        return SECRET_KV.matcher(r).replaceAll("$1***");
     }
 
     public static void write(IDBWriter writer, TableInfo table, Map<String, String> info) throws IOException {
@@ -200,8 +261,29 @@ public class RunInfo {
         }
     }
 
-    public static void writeEnd(IDBWriter writer, TableInfo table) throws IOException {
-        write(writer, table, Map.of("eval.end", Instant.now().toString()));
+    /**
+     * Records the end time and the join outcome of each ledger, then flushes. Never throws:
+     * this runs in the runners' {@code finally}, where an exception would mask the real
+     * failure and skip the executor/connection shutdown after it.
+     */
+    public static void finish(IDBWriter writer, TableInfo evalTable, Map<TableInfo, PipesReport> reportsByTable) {
+        try {
+            write(writer, evalTable, Map.of("eval.end", Instant.now().toString()));
+            for (Map.Entry<TableInfo, PipesReport> e : reportsByTable.entrySet()) {
+                PipesReport r = e.getValue();
+                if (r == null) {
+                    continue;
+                }
+                write(writer, e.getKey(), Map.of("pipes_report.joined", Long.toString(r.getJoined())));
+                if (r.size() > 0 && r.getJoined() == 0) {
+                    LOG.warn("no container matched any of the {} rows in {}: wrong ledger for this extracts dir, or the crawl " +
+                            "never saw those files (crawling extracts without -i cannot see files that crashed)", r.size(), r.getPath());
+                }
+            }
+            writer.close();
+        } catch (IOException | RuntimeException e) {
+            LOG.warn("couldn't write run_info end", e);
+        }
     }
 
     private static String ownJarSha256() {

@@ -106,17 +106,16 @@ public class ExtractProfileRunner {
         if (commandLine.hasOption('m')) {
             evalConfig.setMaxExtractLength(Long.parseLong(commandLine.getOptionValue('m')));
         }
-        Path pipesReportPath = commandLine.hasOption("pr") ? Paths.get(commandLine.getOptionValue("pr")) : RunInfo.discoverPipesReport(extractsDir);
-        Path runInfoPath = commandLine.hasOption("ri") ? Paths.get(commandLine.getOptionValue("ri")) : RunInfo.discoverRunInfo(extractsDir);
-        PipesReport pipesReport = pipesReportPath == null ? null : PipesReport.load(pipesReportPath);
-        Map<String, String> batchInfo = runInfoPath == null ? Map.of() : RunInfo.loadBatch(runInfoPath);
-        RunInfo.checkRunId(batchInfo, pipesReport == null ? null : pipesReport.getPath());
-
+        RunInfo.Side side = RunInfo.loadSide(optPath(commandLine, "pr"), optPath(commandLine, "ri"), extractsDir);
         Map<String, String> runInfo = new LinkedHashMap<>(RunInfo.evalInfo(args, evalConfig, jdbcString, inputDir));
-        runInfo.putAll(batchInfo);
-        runInfo.putAll(RunInfo.pipesReportInfo(pipesReport));
+        runInfo.putAll(side.batchInfo());
+        runInfo.putAll(RunInfo.pipesReportInfo(side.pipesReport()));
         runInfo.putAll(RunInfo.extractsInfo(extractsDir));
-        execute(inputDir, extractsDir, jdbcString, evalConfig, pipesReport, runInfo);
+        execute(inputDir, extractsDir, jdbcString, evalConfig, side.pipesReport(), runInfo);
+    }
+
+    private static Path optPath(CommandLine commandLine, String opt) {
+        return commandLine.hasOption(opt) ? Paths.get(commandLine.getOptionValue(opt)) : null;
     }
 
     private static String getJdbcConnectionString(String dbPath) {
@@ -191,8 +190,9 @@ public class ExtractProfileRunner {
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         } finally {
-            RunInfo.writeEnd(runInfoWriter, RunInfo.RUN_INFO_TABLE);
-            runInfoWriter.close();
+            Map<TableInfo, PipesReport> ledgers = new HashMap<>();
+            ledgers.put(RunInfo.RUN_INFO_TABLE, pipesReport);
+            RunInfo.finish(runInfoWriter, RunInfo.RUN_INFO_TABLE, ledgers);
             mimeBuffer.close();
             executorService.shutdownNow();
         }

@@ -22,7 +22,20 @@
 
 
   <before>
-    <!-- <sql>create index on x</sql>-->
+    <!-- one classification per container; the crash-ledger reports and summary.md join on it -->
+    <sql>drop table if exists pipes_class</sql>
+    <sql>create table pipes_class (container_id integer, pipes_status varchar(64), classification varchar(64))
+      as
+      select c.container_id, c.pipes_status,
+      case
+        when c.pipes_status in ('OOM', 'TIMEOUT', 'UNSPECIFIED_CRASH') then 'CRASH'
+        when c.pipes_status is not null then c.pipes_status
+        when exists (select 1 from run_info where run_key = 'pipes_report.path') then 'NO_PIPES_RECORD'
+        when exists (select 1 from run_info where run_key = 'batch.run.id') then 'BATCH_WITHOUT_LEDGER'
+        else 'NO_PIPES_REPORT_SUPPLIED'
+      end
+      from containers c
+    </sql>
   </before>
 
 
@@ -278,22 +291,11 @@
           format="xlsx"
           includeSql="true">
     <sql>
-      select classification, extract_exception_description, count(1) cnt
-      from (
-        select t.extract_exception_description,
-      case
-        when c.pipes_status in ('OOM', 'TIMEOUT') then 'CRASH'
-        when c.pipes_status = 'UNSPECIFIED_CRASH' and c.pipes_message like '%outcome unknown%' then 'LOST_TO_WORKER_RESTART'
-        when c.pipes_status = 'UNSPECIFIED_CRASH' then 'CRASH'
-        when c.pipes_status is not null then c.pipes_status
-        when exists (select 1 from run_info where run_key = 'pipes_report.path') then 'NO_PIPES_RECORD'
-        else 'NO_PIPES_REPORT_SUPPLIED'
-      end as classification
-        from extract_exceptions e
-        join containers c on c.container_id = e.container_id
-        join ref_extract_exception_types t on t.extract_exception_id = e.extract_exception_id
-      )
-      group by classification, extract_exception_description
+      select p.classification, t.extract_exception_description, count(1) cnt
+      from extract_exceptions e
+      join pipes_class p on p.container_id = e.container_id
+      join ref_extract_exception_types t on t.extract_exception_id = e.extract_exception_id
+      group by p.classification, t.extract_exception_description
       order by cnt desc
     </sql>
   </report>
@@ -303,32 +305,24 @@
           format="xlsx"
           includeSql="true">
     <sql>
-      select c.file_path, t.extract_exception_description, c.pipes_status as pipes_status,
-      case
-        when c.pipes_status in ('OOM', 'TIMEOUT') then 'CRASH'
-        when c.pipes_status = 'UNSPECIFIED_CRASH' and c.pipes_message like '%outcome unknown%' then 'LOST_TO_WORKER_RESTART'
-        when c.pipes_status = 'UNSPECIFIED_CRASH' then 'CRASH'
-        when c.pipes_status is not null then c.pipes_status
-        when exists (select 1 from run_info where run_key = 'pipes_report.path') then 'NO_PIPES_RECORD'
-        else 'NO_PIPES_REPORT_SUPPLIED'
-      end as classification,
-      c.pipes_message as pipes_message
+      select c.file_path, t.extract_exception_description, p.pipes_status, p.classification, c.pipes_message as pipes_message
       from extract_exceptions e
       join containers c on c.container_id = e.container_id
+      join pipes_class p on p.container_id = e.container_id
       join ref_extract_exception_types t on t.extract_exception_id = e.extract_exception_id
-      order by classification, c.file_path
+      order by p.classification, c.file_path
     </sql>
   </report>
 
-  <!-- a crash status with an extract present is a success whose status was lost, not a failure -->
   <report reportName="Crash Status but Extract Present"
           reportFilename="exceptions/crash_status_extract_present.xlsx"
           format="xlsx"
           includeSql="true">
     <sql>
-      select c.file_path, c.pipes_status as pipes_status, c.pipes_message as pipes_message
+      select c.file_path, p.pipes_status, c.pipes_message as pipes_message
       from containers c
-      where c.pipes_status in ('OOM', 'TIMEOUT', 'UNSPECIFIED_CRASH')
+      join pipes_class p on p.container_id = c.container_id
+      where p.classification = 'CRASH'
       and not exists (select 1 from extract_exceptions e where e.container_id = c.container_id)
       order by c.file_path
     </sql>

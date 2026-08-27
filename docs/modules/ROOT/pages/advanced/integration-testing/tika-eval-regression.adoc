@@ -219,6 +219,8 @@ Options:
   both the reports and the db.
 * `-n` / `--numWorkers` — comparison worker count.
 * `-c` / `--config` — optional tika-eval JSON config.
+* `-pa`/`-pb`, `-ra`/`-rb` — crash ledger and run-info per side; see
+  <<Joining the batch crash ledger and run provenance>>
 
 == Step 5: read the reports
 
@@ -244,9 +246,10 @@ A crash result (`OOM`, `TIMEOUT`, `UNSPECIFIED_CRASH`) leaves nothing in the
 extract set, so tika-eval alone reports it as `NO_EXTRACT_FILE` -- the same as
 a file that parsed to nothing. Two inputs close that gap:
 
-* the per-document JSONL written during the batch run by the
-  xref:pipes/plugins/filesystem.adoc#file-system-jsonl-reporter[`file-system-jsonl-reporter`]
-  (`--pipesReport` / `-pr` on Profile, `--pipesReportA`/`-pa` and `-pb` on Compare)
+* the per-document JSONL written during the batch run by the file-system
+  plugin's `file-system-jsonl-reporter` (TIKA-4846; see
+  xref:pipes/plugins/filesystem.adoc[]) -- `--pipesReport` / `-pr` on Profile,
+  `--pipesReportA`/`-pa` and `-pb` on Compare
 * a `run-info.json` describing what ran (`--runInfo` / `-ri`; `-ra`/`-rb` on Compare)
 
 The reporter line's `id` is the source-relative path (filesystem iterator), which is
@@ -258,29 +261,38 @@ reclassify extract-file problems:
 |===
 |Classification |Meaning
 
-|`CRASH` |`OOM`/`TIMEOUT` recorded, or `UNSPECIFIED_CRASH` without the shared-mode marker
-|`LOST_TO_WORKER_RESTART` |`UNSPECIFIED_CRASH` whose message says `outcome unknown`: a shared-server crash while this request was in flight. Retry once, alone, before blaming the file.
-|`NO_PIPES_RECORD` |A report was supplied but has no line for this file
-|`NO_PIPES_REPORT_SUPPLIED` |No `--pipesReport` given
+|`CRASH` |`OOM`, `TIMEOUT` or `UNSPECIFIED_CRASH` recorded for this file. In shared-server mode a crash takes every in-flight request down with it; those are not yet distinguishable from the file that caused it, so retry a `CRASH` once, alone, before blaming the file.
+|any other status |Passed through as recorded (`FETCH_EXCEPTION`, `PAYLOAD_LIMIT_EXCEEDED`, ...)
+|`NO_PIPES_RECORD` |A ledger was supplied but has no line for this file: the batch recorded no failure for it. The ledger normally lists failures only, so for a container with an extract this is the expected value.
+|`BATCH_WITHOUT_LEDGER` |A run-info was supplied but the batch wrote no ledger (tika-app without the reporter)
+|`NO_PIPES_REPORT_SUPPLIED` |Neither given
 |===
 
+The classification is materialized once per container by the reports' before-SQL
+into `pipes_class` (`pipes_class_a`/`pipes_class_b`); custom queries can join it.
 A crash status with an extract present is a success whose status was lost (the
 document emitted before the worker died); it is listed in
 `exceptions/crash_status_extract_present*.xlsx`, not counted as a failure.
 
 `run-info.json` is loaded generically: every key is flattened with dots under
 `batch.` into the `run_info` table (`run_info_a`/`run_info_b` on Compare), alongside
-`eval.*` (tika-eval version, jar sha256, host, args, start/end) and `extracts.*`
-(count and a sha256 fingerprint of sorted name+size). If `run-info.json` carries
-`run.id`, the pipes report's file name must contain it, or tika-eval refuses to
-start -- rerunning a batch into the same extracts dir is otherwise invisible.
-`summary.md` opens with the `run_info` tables.
+`eval.*` (tika-eval version, jar sha256, host, user, args, start/end), `extracts.*`
+(count and a sha256 fingerprint of sorted name+size) and `pipes_report.*` (path, row
+count, and `joined` -- how many containers matched a ledger row; zero with a non-empty
+ledger means the wrong ledger, or a crawl without `-i`, which never sees files that
+crashed). Password-like values in the jdbc string, arguments and config are masked, since
+these tables travel with the reports. If `run-info.json` carries `run.id`, the ledger must
+be named `crashes-<run.id>.jsonl`, or tika-eval refuses to start -- rerunning a batch into
+the same extracts dir is otherwise invisible. `summary.md` opens with the `run_info` tables.
 
 The batch-side script that produces both files, `.skills/devs/tika-eval-compare/run-batch.sh`,
 writes them to `<extracts>/.run-info/`. tika-eval skips that directory when crawling and
 excludes it from the fingerprint, and uses its contents by default when the flags above are
-absent -- refusing if it holds more than one run-info, since that means the extracts dir was
-written by more than one run.
+absent -- refusing if it holds more than one run-info or more than one ledger, since that
+means the extracts dir was written by more than one run.
+
+`Report` on a database written by an earlier tika-eval (no `pipes_status` columns, no
+`run_info`) skips the reports and summary sections that need them and logs a warning for each.
 
 == Tips
 
@@ -402,7 +414,9 @@ Key tables: `profiles_a`/`profiles_b` (one row per extracted file: `file_name`,
 `mime_id`, `length`, …), `contents_a`/`contents_b` (text profile: `oov`,
 `languageness`, `num_tokens`, `lang_id_1`, `num_replacement` (U+FFFD count),
 `num_non_ascii`, …), `content_comparisons`
-(`dice_coefficient`, `overlap`), `mimes`, `containers`. *A and B are paired by
+(`dice_coefficient`, `overlap`), `mimes`, `containers` (`pipes_status_a/b`,
+`pipes_message_a/b` from the crash ledger), `run_info`/`run_info_a`/`run_info_b`
+(key/value provenance). *A and B are paired by
 `id`* — the same row `id` is the same file in both runs (this is how the built-in
 reports join: `join profiles_b pb on pa.id = pb.id`). Always join on `id`.
 

@@ -89,10 +89,6 @@ public class ExtractProfiler extends ProfilerBase {
     private final ExtractReader extractReader;
     private final PipesReport pipesReport;
 
-    ExtractProfiler(Path inputDir, Path extracts, ExtractReader extractReader, IDBWriter dbWriter) {
-        this(inputDir, extracts, extractReader, dbWriter, null);
-    }
-
     ExtractProfiler(Path inputDir, Path extracts, ExtractReader extractReader, IDBWriter dbWriter, PipesReport pipesReport) {
         super(dbWriter);
         this.inputDir = inputDir;

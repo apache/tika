@@ -21,11 +21,15 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.eval.app.RunInfo;
 
@@ -55,15 +59,34 @@ public class PipesReportTest {
     }
 
     @Test
-    public void testRunInfoFlattenAndRunId() throws Exception {
+    public void testJoinedCount() throws Exception {
+        PipesReport r = PipesReport.load(res("crashes-run-a1.jsonl"));
+        assertEquals(0, r.getJoined());
+        r.get(Paths.get("file1.pdf"));
+        r.get(Paths.get("nope.pdf"));
+        r.get(Paths.get("file1.pdf"));
+        assertEquals(2, r.getJoined());
+    }
+
+    @Test
+    public void testMalformed(@TempDir Path tmp) throws Exception {
+        Path p = tmp.resolve("x.jsonl");
+        Files.writeString(p, "\uFEFF{\"id\":\"a\",\"status\":\"OOM\"}\r\n\r\n{\"id\":\"a\",\"status\":\"TIMEOUT\"}\r\n", StandardCharsets.UTF_8);
+        PipesReport r = PipesReport.load(p);
+        assertEquals(1, r.size());
+        assertEquals("TIMEOUT", r.get(Paths.get("a")).status(), "last row wins");
+
+        Files.writeString(p, "{\"id\":\"a\"}\n", StandardCharsets.UTF_8);
+        assertTrue(assertThrows(IOException.class, () -> PipesReport.load(p)).getMessage().contains(":1"));
+        Files.writeString(p, "{\"id\":\"a\",\"status\":\"OOM\"}\nnot json\n", StandardCharsets.UTF_8);
+        assertTrue(assertThrows(IOException.class, () -> PipesReport.load(p)).getMessage().contains(":2"));
+    }
+
+    @Test
+    public void testRunInfoFlatten() throws Exception {
         Map<String, String> batch = RunInfo.loadBatch(res("run-info-run-a1.json"));
         assertEquals("run-a1", batch.get("batch.run.id"));
         assertEquals("4.0.0", batch.get("batch.tika.version"));
         assertEquals("[\"-Xmx4g\",\"-XX:+UseG1GC\"]", batch.get("batch.jvm.args"));
-
-        RunInfo.checkRunId(batch, res("crashes-run-a1.jsonl"));
-        RunInfo.checkRunId(batch, null);
-        RunInfo.checkRunId(Map.of(), res("crashes-run-b1.jsonl"));
-        assertThrows(IllegalArgumentException.class, () -> RunInfo.checkRunId(batch, res("crashes-run-b1.jsonl")));
     }
 }

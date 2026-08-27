@@ -73,9 +73,29 @@ public class ComparerOneSidedLedgerTest {
                     assertEquals(3, rs.getInt(1), "extracts.* only");
                 }
             }
+            try (Connection c = new H2Util(db).getConnection(); Statement st = c.createStatement()) {
+                try (ResultSet rs = st.executeQuery("select p.classification from pipes_class_a p join containers c on c.container_id = p.container_id " +
+                        "where c.file_path='file9_noextract.txt'")) {
+                    assertTrue(rs.next());
+                    assertEquals("NO_PIPES_REPORT_SUPPLIED", rs.getString(1));
+                }
+                try (ResultSet rs = st.executeQuery("select p.classification, count(1) from pipes_class_b p join containers c on c.container_id = p.container_id " +
+                        "where c.file_path in ('file9_noextract.txt', 'file10_permahang.txt', 'file1.pdf') group by p.classification order by 1")) {
+                    assertTrue(rs.next());
+                    assertEquals("CRASH", rs.getString(1));
+                    assertEquals(1, rs.getInt(2));
+                    assertTrue(rs.next());
+                    assertEquals("EMIT_SUCCESS", rs.getString(1));
+                    assertTrue(rs.next());
+                    assertEquals("NO_PIPES_RECORD", rs.getString(1));
+                }
+            }
             String summary = Files.readString(reports.resolve("summary.md"), StandardCharsets.UTF_8);
-            assertTrue(summary.contains("| NO_PIPES_REPORT_SUPPLIED | NO_EXTRACT_FILE |"), summary);
-            assertTrue(summary.contains("| CRASH | NO_EXTRACT_FILE |"), summary);
+            int section = summary.indexOf("## Extract File Issues by Pipes Status");
+            int a = summary.indexOf("### Extract A", section);
+            int b = summary.indexOf("### Extract B", section);
+            assertTrue(summary.substring(a, b).contains("| NO_PIPES_REPORT_SUPPLIED | NO_EXTRACT_FILE |"), summary);
+            assertTrue(summary.substring(b).contains("| CRASH | NO_EXTRACT_FILE |"), summary);
         } finally {
             FileUtils.deleteDirectory(dir.toFile());
         }

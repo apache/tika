@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.LongAdder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,18 +37,19 @@ import org.slf4j.LoggerFactory;
  * The per-tuple ledger written by tika-pipes' {@code file-system-jsonl-reporter} during a
  * batch run, keyed by {@code FetchEmitTuple.id}. For the filesystem iterator the id is the
  * source-relative path, so it joins to {@code containers.file_path}; both sides are
- * normalized to '/' here.
+ * normalized to '/' here. Read-only after {@link #load}; {@link #get} is thread-safe.
  */
 public class PipesReport {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesReport.class);
 
-    public record Row(String status, String message, long elapsedMs) {
+    public record Row(String status, String message) {
     }
 
     private final Path path;
     private final Map<String, Row> rows;
     private final List<String> errors;
+    private final LongAdder joined = new LongAdder();
 
     private PipesReport(Path path, Map<String, Row> rows, List<String> errors) {
         this.path = path;
@@ -64,6 +66,9 @@ public class PipesReport {
             String line;
             while ((line = r.readLine()) != null) {
                 lineNo++;
+                if (lineNo == 1 && line.startsWith("\uFEFF")) {
+                    line = line.substring(1);
+                }
                 if (line.isBlank()) {
                     continue;
                 }
@@ -81,8 +86,7 @@ public class PipesReport {
                     throw new IOException("missing id/status at " + path + ":" + lineNo);
                 }
                 String id = normalize(n.get("id").asText());
-                Row row = new Row(n.get("status").asText(), n.hasNonNull("message") ? n.get("message").asText() : null,
-                        n.hasNonNull("elapsedMs") ? n.get("elapsedMs").asLong() : -1);
+                Row row = new Row(n.get("status").asText(), n.hasNonNull("message") ? n.get("message").asText() : null);
                 // a retried tuple reports more than once; the last word wins
                 rows.put(id, row);
             }
@@ -96,7 +100,11 @@ public class PipesReport {
     }
 
     public Row get(Path relativeSourcePath) {
-        return rows.get(normalize(relativeSourcePath.toString()));
+        Row r = rows.get(normalize(relativeSourcePath.toString()));
+        if (r != null) {
+            joined.increment();
+        }
+        return r;
     }
 
     public Path getPath() {
@@ -105,6 +113,11 @@ public class PipesReport {
 
     public int size() {
         return rows.size();
+    }
+
+    /** Number of {@link #get} calls that found a row. */
+    public long getJoined() {
+        return joined.sum();
     }
 
     /** Final {@code {"error":...}} lines: the pipeline died before the run finished. */

@@ -114,6 +114,15 @@ public class ExtractComparerRunner {
         Path extractsBDir = commandLine.hasOption('b') ? Paths.get(commandLine.getOptionValue('b')) : Paths.get(USAGE_FAIL("Must specify extractsB dir: -b"));
         Path inputDir = commandLine.hasOption('i') ? Paths.get(commandLine.getOptionValue('i')) : extractsADir;
 
+        RunInfo.Side sideA = RunInfo.loadSide(optPath(commandLine, "pa"), optPath(commandLine, "ra"), extractsADir);
+        RunInfo.Side sideB = RunInfo.loadSide(optPath(commandLine, "pb"), optPath(commandLine, "rb"), extractsBDir);
+        Map<String, String> runInfoA = new LinkedHashMap<>(sideA.batchInfo());
+        runInfoA.putAll(RunInfo.pipesReportInfo(sideA.pipesReport()));
+        runInfoA.putAll(RunInfo.extractsInfo(extractsADir));
+        Map<String, String> runInfoB = new LinkedHashMap<>(sideB.batchInfo());
+        runInfoB.putAll(RunInfo.pipesReportInfo(sideB.pipesReport()));
+        runInfoB.putAll(RunInfo.extractsInfo(extractsBDir));
+
         boolean usesTempDb = !commandLine.hasOption('d');
         Path tempDbDir = null;
         String dbPath;
@@ -132,26 +141,10 @@ public class ExtractComparerRunner {
             evalConfig.setMaxExtractLength(Long.parseLong(commandLine.getOptionValue('m')));
         }
 
-        Path prA = commandLine.hasOption("pa") ? Paths.get(commandLine.getOptionValue("pa")) : RunInfo.discoverPipesReport(extractsADir);
-        Path prB = commandLine.hasOption("pb") ? Paths.get(commandLine.getOptionValue("pb")) : RunInfo.discoverPipesReport(extractsBDir);
-        Path riA = commandLine.hasOption("ra") ? Paths.get(commandLine.getOptionValue("ra")) : RunInfo.discoverRunInfo(extractsADir);
-        Path riB = commandLine.hasOption("rb") ? Paths.get(commandLine.getOptionValue("rb")) : RunInfo.discoverRunInfo(extractsBDir);
-        PipesReport pipesReportA = prA == null ? null : PipesReport.load(prA);
-        PipesReport pipesReportB = prB == null ? null : PipesReport.load(prB);
-        Map<String, String> batchInfoA = riA == null ? Map.of() : RunInfo.loadBatch(riA);
-        Map<String, String> batchInfoB = riB == null ? Map.of() : RunInfo.loadBatch(riB);
-        RunInfo.checkRunId(batchInfoA, pipesReportA == null ? null : pipesReportA.getPath());
-        RunInfo.checkRunId(batchInfoB, pipesReportB == null ? null : pipesReportB.getPath());
         try {
             String jdbcString = getJdbcConnectionString(dbPath);
             Map<String, String> runInfo = RunInfo.evalInfo(args, evalConfig, jdbcString, inputDir);
-            Map<String, String> runInfoA = new LinkedHashMap<>(batchInfoA);
-            runInfoA.putAll(RunInfo.pipesReportInfo(pipesReportA));
-            runInfoA.putAll(RunInfo.extractsInfo(extractsADir));
-            Map<String, String> runInfoB = new LinkedHashMap<>(batchInfoB);
-            runInfoB.putAll(RunInfo.pipesReportInfo(pipesReportB));
-            runInfoB.putAll(RunInfo.extractsInfo(extractsBDir));
-            execute(inputDir, extractsADir, extractsBDir, jdbcString, evalConfig, pipesReportA, pipesReportB, runInfo, runInfoA, runInfoB);
+            execute(inputDir, extractsADir, extractsBDir, jdbcString, evalConfig, sideA.pipesReport(), sideB.pipesReport(), runInfo, runInfoA, runInfoB);
 
             if (commandLine.hasOption('r')) {
                 String reportsDir = commandLine.getOptionValue("rd", "reports");
@@ -178,6 +171,10 @@ public class ExtractComparerRunner {
                 deleteDirectory(tempDbDir);
             }
         }
+    }
+
+    private static Path optPath(CommandLine commandLine, String opt) {
+        return commandLine.hasOption(opt) ? Paths.get(commandLine.getOptionValue(opt)) : null;
     }
 
     private static String getJdbcConnectionString(String dbPath) {
@@ -256,8 +253,10 @@ public class ExtractComparerRunner {
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         } finally {
-            RunInfo.writeEnd(runInfoWriter, RunInfo.RUN_INFO_TABLE);
-            runInfoWriter.close();
+            Map<TableInfo, PipesReport> ledgers = new HashMap<>();
+            ledgers.put(RunInfo.RUN_INFO_TABLE_A, pipesReportA);
+            ledgers.put(RunInfo.RUN_INFO_TABLE_B, pipesReportB);
+            RunInfo.finish(runInfoWriter, RunInfo.RUN_INFO_TABLE, ledgers);
             mimeBuffer.close();
             executorService.shutdownNow();
             try {
