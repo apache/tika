@@ -409,8 +409,11 @@ public class GeoGebraParser implements Parser {
         }
         try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
             if (type == null) {
+                //spool so the stream can be rewound after detection
+                tisZip.getFile();
                 MediaType mediaType = EmbeddedDocumentUtil.getDetector(context)
                         .detect(tisZip, embeddedMetadata, context);
+                tisZip.reset();
                 if (mediaType != null) {
                     embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, mediaType.toString());
                 }

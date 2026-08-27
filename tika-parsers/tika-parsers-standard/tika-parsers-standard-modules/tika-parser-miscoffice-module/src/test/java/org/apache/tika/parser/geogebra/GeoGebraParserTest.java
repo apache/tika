@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +46,7 @@ public class GeoGebraParserTest extends TikaTest {
 
     private static final String XML_HEAD = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
 
-    private static final String PNG = "\u0089PNG";
+    private static final byte[] PNG = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
 
     @Test
     public void testGGB() throws Exception {
@@ -202,8 +203,9 @@ public class GeoGebraParserTest extends TikaTest {
         Metadata metadata = parse(entries).get(0);
         assertEquals(2, (int) metadata.getInt(PagedText.N_PAGES));
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
-        assertContains("Zero", content);
-        assertContains("One", content);
+        //the CRLF line ending of the text run does not leak into the paragraph
+        assertContains("<p>Zero</p>", content);
+        assertContains("<p>One</p>", content);
     }
 
     @Test
@@ -214,8 +216,8 @@ public class GeoGebraParserTest extends TikaTest {
         entries.put("_slide0/geogebra.xml", XML_HEAD + "<geogebra><construction>"
                 + "<expression label=\"t\" exp=\"&quot;Broken&quot;\"/><unclosed>");
         entries.put("_slide1/geogebra.xml", slide("Fine"));
-        entries.put("_slide1/geogebra_thumbnail.png", PNG);
-        List<Metadata> metadataList = parse(entries);
+        List<Metadata> metadataList = parse(entries,
+                Collections.singletonMap("_slide1/geogebra_thumbnail.png", PNG), null);
         Metadata metadata = metadataList.get(0);
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
         assertContains("Fine", content);
@@ -231,10 +233,11 @@ public class GeoGebraParserTest extends TikaTest {
         Map<String, String> entries = new LinkedHashMap<>();
         entries.put("_slide0/geogebra.xml", slide("Zero"));
         entries.put("_slide1/geogebra.xml", slide("One"));
-        entries.put("_slide1/geogebra_thumbnail.png", PNG);
         entries.put("_slide2/geogebra.xml", slide("Two"));
-        entries.put("_slide2/geogebra_thumbnail.png", PNG);
-        List<Metadata> metadataList = parse(entries, new GeoGebraParser());
+        Map<String, byte[]> thumbnails = new LinkedHashMap<>();
+        thumbnails.put("_slide1/geogebra_thumbnail.png", PNG);
+        thumbnails.put("_slide2/geogebra_thumbnail.png", PNG);
+        List<Metadata> metadataList = parse(entries, thumbnails, new GeoGebraParser());
         assertEquals(2, metadataList.size());
         Metadata thumbnail = byName(metadataList, "_slide1/geogebra_thumbnail.png");
         assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
@@ -294,11 +297,15 @@ public class GeoGebraParserTest extends TikaTest {
     private static String slide(String text) {
         return geogebra("notes", "5.2.0.0", "slide-" + text, "<construction>"
                 + "<element type=\"inlinetext\" label=\"a\"><content val=\"[{&quot;text&quot;:&quot;"
-                + text + "\\n&quot;}]\"/></element></construction>");
+                + text + "\\r\\n&quot;}]\"/></element></construction>");
     }
 
     private List<Metadata> parse(Map<String, String> entries) throws Exception {
         return parse(entries, null);
+    }
+
+    private List<Metadata> parse(Map<String, String> entries, Parser parser) throws Exception {
+        return parse(entries, Collections.emptyMap(), parser);
     }
 
     /**
@@ -306,12 +313,19 @@ public class GeoGebraParserTest extends TikaTest {
      * detection would not attribute to GeoGebra (a slides file without
      * structure.json), with the parser directly.
      */
-    private List<Metadata> parse(Map<String, String> entries, Parser parser) throws Exception {
+    private List<Metadata> parse(Map<String, String> textEntries,
+                                 Map<String, byte[]> binaryEntries, Parser parser)
+            throws Exception {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(bos)) {
-            for (Map.Entry<String, String> e : entries.entrySet()) {
+            for (Map.Entry<String, String> e : textEntries.entrySet()) {
                 zos.putNextEntry(new ZipEntry(e.getKey()));
-                zos.write(e.getValue().getBytes(StandardCharsets.ISO_8859_1));
+                zos.write(e.getValue().getBytes(StandardCharsets.UTF_8));
+                zos.closeEntry();
+            }
+            for (Map.Entry<String, byte[]> e : binaryEntries.entrySet()) {
+                zos.putNextEntry(new ZipEntry(e.getKey()));
+                zos.write(e.getValue());
                 zos.closeEntry();
             }
         }

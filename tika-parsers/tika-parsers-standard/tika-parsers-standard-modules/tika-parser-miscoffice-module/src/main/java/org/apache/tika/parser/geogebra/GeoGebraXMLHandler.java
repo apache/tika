@@ -152,7 +152,7 @@ class GeoGebraXMLHandler extends DefaultHandler {
         for (String text : root.findValuesAsText("text")) {
             sb.append(text);
         }
-        for (String line : sb.toString().split("\n")) {
+        for (String line : sb.toString().split("\r\n|[\r\n]")) {
             paragraph(line);
         }
     }
