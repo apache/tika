@@ -23,6 +23,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Local override: `$TIKA_SKILLS_LOCAL/tika-eval-h2-query/LOCAL.md` (default `~/.tika-skills`),
+read after this file, wins on conflict.
+
 # Query the tika-eval H2 database directly
 
 `tika-eval` (Compare / Profile / Report) stores everything in an **H2** database

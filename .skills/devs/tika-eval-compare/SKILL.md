@@ -23,6 +23,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Local override: `$TIKA_SKILLS_LOCAL/tika-eval-compare/LOCAL.md` (default `~/.tika-skills`),
+read after this file, wins on conflict.
+
 # tika-eval: Compare Before/After Extracts
 
 Compare the output of two versions of Tika against a corpus of files

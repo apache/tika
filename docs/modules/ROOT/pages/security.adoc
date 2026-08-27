@@ -36,6 +36,11 @@ directly in your application. Tika's limits (`output-limits.writeLimit`,
 `embedded-limits.maxCount`, the metadata limiter) bound what a parse *produces*, not the work
 it does to produce it.
 
+Concretely: an uncaught `RuntimeException`, `StackOverflowError`, or `OutOfMemoryError` from an
+in-process parse of a malformed or malicious file is a bug — please report it in
+https://issues.apache.org/jira/projects/TIKA[JIRA] — but it is not a security vulnerability.
+We fix such bugs as we find them; we cannot promise they do not exist.
+
 The sandboxing that changes this is process isolation, and it is a mechanism rather than
 advice. xref:pipes/index.adoc[Tika Pipes] — or `PipesForkParser`, if you are embedding Tika
 in a Java application — along with xref:using-tika/server/index.adoc[tika-server] and

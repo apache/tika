@@ -25,6 +25,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Local override: `$TIKA_SKILLS_LOCAL/update-site-for-release/LOCAL.md` (default `~/.tika-skills`),
+read after this file, wins on conflict.
+
 # Update the Tika website for a release
 
 Step 17 ("Update Tika site") of the Release Process

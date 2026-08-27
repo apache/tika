@@ -1,11 +1,9 @@
 Release 4.1.0 - unreleased
 
-   * New file-system-jsonl-reporter pipes reporter: an append-only, one-JSON-
-     line-per-document audit log written by the driver process. Documents whose
-     forked worker crashed (OOM, TIMEOUT, UNSPECIFIED_CRASH) produce nothing in
-     the emitter's output by default; this file is the record that they were attempted.
-     Refuses to start over an existing file unless onExists is APPEND or
-     REPLACE (TIKA-4846).
+   * New file-system-jsonl-reporter pipes reporter (TIKA-4846).
+   
+   * Stop spooling OLE2 objects whose header over-reserves BAT capacity
+     (TIKA-4845).
 
    * Add Micrometer reporting and opt-in endpoint for tika-server (TIKA-4839).
      
@@ -162,17 +160,79 @@ Release 4.1.0 - unreleased
      failing or returning empty output. The legacy MS-ONESTORE walker bounds
      its recursion (depth caps plus file-node-list and fragment-chain cycle
      guards) and now honors shouldParseEmbedded for embedded file data
+   * PDF: extractFontNames threw NullPointerException on a page with no
+     /Resources dictionary (TIKA-4842).
+
+   * tika-server: opt-in Micrometer metrics reporting and endpoint
+     (TIKA-4839).
+
+   * Per-request (parse-context) config for parsers that lock fields
+     (Tess4J, VLM, OpenAI image-embedding) threw even when empty; locked
+     fields are still rejected when actually set (TIKA-4843).
+
+   * OOXML: new msoffice:has-unreferenced-parts and
+     msoffice:unreferenced-part-names flag package parts unreachable via the
+     OPC relationship graph. Structural only, expect false positives; not
+     applied to XPS (TIKA-4837).
+
+   * Shared pipes server (useSharedServer: true): a worker death could trigger
+     a second, spurious restart that killed the healthy replacement. Forks now
+     carry a generation; stale reports are dropped. Also fixed: a fork after
+     shutdown() that was never destroyed, and a temp-dir leak on interrupt
+     during teardown (TIKA-4844).
+
+   * tika-pipes cache memory budget defaults to a quarter of the fork heap;
+     override with -Dtika.pipes.cacheMemoryBudgetBytes in forkedJvmArgs
+     (<=0 disables). TikaInputStream: hasFile() also reports cache spills,
+     toString() no longer spills, new inMemoryContent(channel). Digester gains
+     digestSink(); a digest is published only on commit(), so failed or empty
+     translations (e.g. stub PST items) publish no digest. New
+     TemporaryResources.closeAll(Closeable...) (TIKA-4835).
+
+   * Docs/javadocs reconciled with the code: ES/OpenSearch attachmentStrategy
+     has no default; Kafka connectionsMaxIdleMs is honored; jdbc
+     queryTimeoutSeconds 0 is not "no limit"; Solr basic auth only; pipes
+     reporters/iterators are built at config load; Tess4J also locks poolSize
+     and maxImagePixels; pdf:trapped is new, not renamed; plugin config
+     nesting fixed in 23 javadocs (TIKA-4842).
+
+   * Pipes plugins no longer bundle Jackson; the host provides it. Plugin
+     config is parsed by a shared strict PluginJson mapper (rejects unknown
+     and duplicate keys; accepts comments) (TIKA-4840).
+
+   * tika-server and tika-async-cli accept // and /* */ comments in config
+     during override merging, as documented (TIKA-4834).
+
+   * Kafka pipes iterator no longer stops on the first empty poll; waits for
+     partition assignment (assignmentTimeoutMs, 30s) and a quiet window
+     (drainIdleMs, 1s). groupInitialRebalanceDelayMs is deprecated
+     (TIKA-4833).
+
+   * Pipes IPC carries inline bytes as a raw binary field, not in the tuple;
+     Smile 7-bit binary encoding disabled. 4.0.0 tuples with an "inline-bytes"
+     parse-context entry are rejected (TIKA-4829).
+
+   * Digesting embedded documents no longer spools each to a temp file; a
+     process-wide CacheMemoryBudget (default 256MB) keeps them in memory. New
+     TikaInputStream API: get(IOSupplier,...), enableRewind(CacheMemoryBudget),
+     getSeekableByteChannel(). Zip-family parsing and detection use seekable
+     channels, so hasFile() may be false afterward; getPath() still spools on
+     demand (TIKA-4828).
+
+   * Pipes carries the client Content-Type into the forked worker as a
+     detection hint for all forked endpoints; honored only when it equals or
+     specializes the detected type, or when there is no magic. The
+     user-override key is not carried (TIKA-4825).
+
+   * OneNote: document-order extraction, superseded revisions omitted, embedded
+     BLOBs extracted, warnings and relationship IDs in metadata, bounded
+     recursion/allocation; malformed files fall back to the legacy string dump
      (TIKA-4814).
 
-   * RawTiffParser extracts the camera-generated JPEG previews embedded in
-     TIFF-based raw images (Nikon NEF/NRW, Sony ARW/SRF/SR2, Pentax PEF/PTX,
-     Adobe DNG and Canon CR2, including BigTIFF DNG containers) as thumbnail
-     embedded documents. image/x-raw-{nikon,sony,pentax,adobe} are now
-     sub-classes of image/tiff, so a named NEF/ARW/PEF/DNG that used to detect
-     as image/tiff (TiffParser, metadata only) now detects as image/x-raw-* and
-     emits thumbnail-N.jpg attachments in /rmeta and /unpack; CR2 keeps its
-     detection but also gains the attachments. Disable via
-     "raw-tiff-parser": {"extractPreviews": false} (TIKA-4824).
+   * RawTiffParser extracts embedded JPEG previews from NEF/NRW, ARW/SRF/SR2,
+     PEF/PTX, DNG and CR2 as thumbnail embedded documents. image/x-raw-* are
+     now subtypes of image/tiff, so named raw files detect as image/x-raw-*.
+     Disable with "raw-tiff-parser": {"extractPreviews": false} (TIKA-4824).
 
 Release 4.0.0 - 8/18/2026
 
