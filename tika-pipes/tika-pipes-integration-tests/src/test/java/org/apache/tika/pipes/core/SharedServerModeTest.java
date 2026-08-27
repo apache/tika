@@ -24,13 +24,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
@@ -71,6 +74,8 @@ public class SharedServerModeTest {
             "<throw class=\"java.lang.OutOfMemoryError\">oom message</throw>" +
             "</mock>";
 
+    // hangs 60s with no runtime TimeoutLimits override, so tika-config-shared-server.json's
+    // progressTimeoutMillis is what detects it: keep that short or this stops testing anything
     private static final String MOCK_TIMEOUT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
             "<mock>" +
             "<metadata action=\"add\" name=\"dc:creator\">Timeout Author</metadata>" +
@@ -617,6 +622,9 @@ public class SharedServerModeTest {
 
             assertTrue(verifyResult.isSuccess(),
                     "After concurrent OOM, server should restart and process new request. Got: " + verifyResult.status());
+
+            assertRestartsAttributedToOom(pipesParser);
+            assertOneForkPerDeath(pipesParser, 1);
         }
     }
 
@@ -760,7 +768,125 @@ public class SharedServerModeTest {
                     "All 5 phase 2 requests should succeed after server recovery. " +
                     "Phase 1 had: " + phase1OomCount + " OOMs, " + phase1SuccessCount + " successes, " +
                     phase1CrashCount + " crashes");
+
+            assertRestartsAttributedToOom(pipesParser);
+            assertOneForkPerDeath(pipesParser, 1);
         }
+    }
+
+    /**
+     * The shared JVM died {@code deaths} times. Siblings whose in-flight parses were killed by a
+     * death report a crash <em>result</em>, which is correct -- but none of them is another death,
+     * so none may cause another fork. Generation counts forks directly, so it cannot be satisfied
+     * by relabelling a spurious restart: one death, one replacement.
+     */
+    private void assertOneForkPerDeath(PipesParser pipesParser, int deaths) {
+        long forks = pipesParser.getGeneration();
+        assertEquals(deaths + 1, forks,
+                "expected the initial fork plus exactly " + deaths + " replacement(s); a sibling's "
+                        + "report about an already-replaced process must not restart its healthy "
+                        + "successor (forks=" + forks + ")");
+    }
+
+    /**
+     * The conservation law behind every restart-accounting bug in this class: a fork must be
+     * caused by something. At most {@code ooms} worker deaths can occur (one document can kill the
+     * shared JVM once), no file limit is reached in these short rounds, so the manager may fork at
+     * most that many replacements on top of its initial start.
+     * <p>
+     * Unlike the fixed OOM fixtures, this does not depend on catching one lucky interleaving --
+     * it holds under every schedule, so a spurious restart is caught whether or not the timing
+     * that produced it happened to repeat. Seeds are fixed so a failure is reproducible; the
+     * concurrency supplies the variation.
+     */
+    @Test
+    @Timeout(600)
+    public void testForksNeverExceedInjectedFaults(@TempDir Path tmp) throws Exception {
+        for (int seed = 1; seed <= 3; seed++) {
+            runFaultRound(seed, Files.createDirectories(tmp.resolve("seed" + seed)));
+        }
+    }
+
+    private void runFaultRound(int seed, Path tmp) throws Exception {
+        Random random = new Random(seed);
+        Path inputDir = setupInputDir(tmp);
+
+        int ooms = 1 + random.nextInt(2);
+        List<String> names = new ArrayList<>();
+        for (int i = 0; i < ooms; i++) {
+            String name = "oom" + i + ".xml";
+            Files.writeString(inputDir.resolve(name), MOCK_OOM, StandardCharsets.UTF_8);
+            names.add(name);
+        }
+        for (int i = 0; i < 4; i++) {
+            String name = "slow" + i + ".xml";
+            Files.writeString(inputDir.resolve(name), MOCK_SLOW, StandardCharsets.UTF_8);
+            names.add(name);
+        }
+        for (int i = 0; i < 6; i++) {
+            String name = "ok" + i + ".xml";
+            Files.writeString(inputDir.resolve(name), MOCK_OK, StandardCharsets.UTF_8);
+            names.add(name);
+        }
+        Collections.shuffle(names, random);
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+            ExecutorService executor = Executors.newFixedThreadPool(6);
+            try {
+                List<Future<PipesResult>> futures = new ArrayList<>();
+                for (String name : names) {
+                    futures.add(executor.submit(() -> pipesParser.parse(new FetchEmitTuple(
+                            name,
+                            new FetchKey(FETCHER_NAME, name),
+                            new EmitKey(EMITTER_NAME, ""),
+                            new Metadata(),
+                            new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP))));
+                }
+                for (Future<PipesResult> future : futures) {
+                    future.get();
+                }
+            } finally {
+                executor.shutdown();
+                executor.awaitTermination(30, TimeUnit.SECONDS);
+            }
+
+            long forks = pipesParser.getGeneration();
+            assertTrue(forks - 1 <= ooms,
+                    "seed=" + seed + ": the shared worker forked " + (forks - 1) + " replacement(s) "
+                            + "but at most " + ooms + " death(s) could have occurred; a report about "
+                            + "an already-replaced process must not restart its healthy successor");
+            assertTrue(forks >= 1, "seed=" + seed + ": the worker must have started at least once");
+        }
+    }
+
+    /**
+     * The shared JVM died once, from OOM. Siblings whose in-flight parses were killed by that
+     * death report a crash <em>result</em>, which is correct; none of them is a second process
+     * death, so nothing may be booked as an extra restart.
+     */
+    private void assertRestartsAttributedToOom(PipesParser pipesParser) {
+        long oom = pipesParser.getRestartCount(RestartReason.OOM);
+        long crash = pipesParser.getRestartCount(RestartReason.CRASH);
+        String counts = " (oom=" + oom + ", crash=" + crash + ", timeout=" +
+                pipesParser.getRestartCount(RestartReason.TIMEOUT) + ", maxFiles=" +
+                pipesParser.getRestartCount(RestartReason.MAX_FILES) + ")";
+        assertTrue(oom >= 1, "the OOM death should be attributed to OOM" + counts);
+        assertEquals(0, crash,
+                "no restart may be attributed to CRASH: the only process death was the OOM" + counts);
+        // Reason tags alone cannot distinguish "the phantom restart is gone" from "the phantom
+        // restart is now labelled OOM". Total restarts is the honest observable: one death, one
+        // restart, whatever it is called.
+        long total = 0;
+        for (RestartReason r : RestartReason.values()) {
+            total += pipesParser.getRestartCount(r);
+        }
+        assertEquals(1, total, "exactly one restart may follow a single process death" + counts);
     }
 
     private Path setupInputDir(Path tmp) throws Exception {

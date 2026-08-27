@@ -511,10 +511,6 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * Add a key-value pair to pass to Tesseract using its -c command line option.
      * To see the possible options, run tesseract --print-parameters.
-     * <p>
-     * You may also add these parameters in TesseractOCRConfig.properties; any
-     * key-value pair in the properties file where the key contains an underscore
-     * is passed directly to Tesseract.
      *
      * @param key
      * @param value

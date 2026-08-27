@@ -64,6 +64,21 @@ Any crash, timeout, or `OutOfMemoryError` kills the one server process, so **all
 requests are lost**, not just the offending one. The server is then restarted and clients
 reconnect (see <<_recovery_behavior,Recovery Behavior>>).
 
+=== Emit status is lost with the process
+
+A crash also takes the *results* of the other in-flight requests with it, not just their
+work. When the server process does the emitting (`emitStrategy` `EMIT_ALL`, or `DYNAMIC` for
+extracts over the threshold), the client only learns a document was emitted when the server
+reports back. If worker A parses and emits its document and, before that report is sent,
+worker B's document OOMs the process, A's client sees only "crash" — it cannot tell whether
+its document reached the emitter. The document may well be safely emitted, but the
+application has no way to know, so it must either re-run the request (and tolerate a
+duplicate emit) or reconcile against the emit target. `PASSBACK_ALL` avoids this ambiguity —
+the parent emits, so a crash means "not emitted" — at the cost of carrying every extract back
+across IPC (see xref:pipes/configuration.adoc#_emit_strategy[Emit Strategy]). In per-client
+mode each JVM handles one request at a time, so a crash can only mean the request that
+crashed.
+
 === Shared resources
 
 All concurrent parses share one heap, CPU allocation, and file-handle table. A memory-hungry
@@ -84,7 +99,8 @@ Consider shared mode only when all of these hold:
 
 * You have strict memory constraints and cannot run N separate JVMs
 * Your documents are well-behaved and unlikely to cause OOM or timeouts
-* You can tolerate occasional loss of multiple in-flight requests
+* You can tolerate occasional loss of multiple in-flight requests, including not
+  knowing whether a lost request's document was already emitted
 * You have tested thoroughly with your specific document corpus
 
 == Configuration

@@ -307,11 +307,12 @@ public class Tess4JConfig implements Serializable {
      * pool settings during parse-time configuration.
      * <p>
      * <b>Always blocked:</b> {@code dataPath}, {@code nativeLibPath},
-     * {@code poolSize}.
+     * {@code poolSize}, {@code maxImagePixels}.
      * <p>
      * Paths are blocked to prevent file-system access attacks.
-     * Pool size is blocked because the pool is built at init time and
-     * cannot be resized at runtime.
+     * Pool size is blocked because the pool is built at init time and cannot
+     * be resized.  {@code maxImagePixels} is read per parse, but it is the
+     * OOM guard on image decode, so a caller must not be able to raise it.
      */
     public static class RuntimeConfig extends Tess4JConfig {
 

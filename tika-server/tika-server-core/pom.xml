@@ -89,6 +89,18 @@
       <artifactId>jakarta.servlet-api</artifactId>
     </dependency>
     <dependency>
+      <groupId>jakarta.annotation</groupId>
+      <artifactId>jakarta.annotation-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.apache.cxf</groupId>
       <artifactId>cxf-rt-rs-security-cors</artifactId>
     </dependency>
@@ -123,6 +135,14 @@
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j2-impl</artifactId>
+    </dependency>
+    <!-- The zip deps are what force reactor ordering; the zips are consumed by dependency-plugin below. -->
+    <dependency>
+      <groupId>org.apache.tika</groupId>
+      <artifactId>tika-pipes-file-system</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+      <type>zip</type>
     </dependency>
   </dependencies>
 

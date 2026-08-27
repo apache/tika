@@ -130,6 +130,7 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("Stereo", metadata.get(XMPDM.AUDIO_CHANNEL_TYPE));
         assertEquals("2", metadata.get(Audio.CHANNELS));
         assertEquals("16", metadata.get(Audio.BITS_PER_SAMPLE));
+        assertEquals("mp4a", metadata.get(Audio.FOURCC));
         assertEquals("M4A", metadata.get(XMPDM.AUDIO_COMPRESSOR));
         assertEquals("0.07", metadata.get(XMPDM.DURATION));
 
@@ -197,6 +198,16 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("video/mp4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("10.0", r.metadata.get(Video.FRAME_RATE));
         assertEquals("6536", r.metadata.get(Video.BITRATE));
+        assertEquals("avc1", r.metadata.get(Video.FOURCC));
+    }
+
+    @Test
+    public void testVideoAudioTrackCodecs() throws Exception {
+        //a 1s clip with an H.264 video track and an AAC audio track
+        XMLResult r = getXML("testMP4VideoAudio.mp4");
+        assertEquals("video/mp4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("avc1", r.metadata.get(Video.FOURCC));
+        assertEquals("mp4a", r.metadata.get(Audio.FOURCC));
     }
 
     @Test
@@ -352,10 +363,44 @@ public class MP4ParserTest extends TikaTest {
 
     @Test
     public void testDrmProtectedM4a() throws Exception {
-        //the sample description declares a protected 'drms' sample entry
+        //a bare protected 'drms' sample entry without a 'sinf' box: has-drm is
+        //set and, with no original format to recover, the fourcc is the
+        //protected sample entry format itself
         Metadata metadata = new Metadata();
         getText("testMP4_drm.m4a", metadata);
         assertEquals("true", metadata.get(Audio.HAS_DRM));
+        assertEquals("drms", metadata.get(Audio.FOURCC));
+    }
+
+    @Test
+    public void testDrmProtectedM4aWithOriginalFormat() throws Exception {
+        //a FairPlay 'drms' entry as iTunes writes it: the AAC 'esds' plus a
+        //'sinf' whose 'frma' names the original 'mp4a' (ISO/IEC 14496-12, 8.12)
+        Metadata metadata = new Metadata();
+        getText("testMP4_drm_frma.m4a", metadata);
+        assertEquals("true", metadata.get(Audio.HAS_DRM));
+        assertEquals("mp4a", metadata.get(Audio.FOURCC));
+        assertEquals("128000", metadata.get(Audio.BITRATE));
+    }
+
+    @Test
+    public void testCommonEncryptionVideo() throws Exception {
+        //testMP4Video.mp4 with its 'avc1' entry turned into an 'encv' one, the
+        //'sinf' (frma avc1, schm cenc, schi/tenc) inserted before 'btrt'
+        XMLResult r = getXML("testMP4_encv.mp4");
+        assertEquals("avc1", r.metadata.get(Video.FOURCC));
+        assertEquals("6536", r.metadata.get(Video.BITRATE));
+    }
+
+    @Test
+    public void testLastSampleEntryWins() throws Exception {
+        //a track with two sample entries, AAC then AC-3: like the bitrate, the
+        //fourcc is a per-stream value and reflects the last entry
+        Metadata metadata = new Metadata();
+        getText("testMP4_twoSampleEntries.m4a", metadata);
+        assertEquals("ac-3", metadata.get(Audio.FOURCC));
+        assertEquals("128000", metadata.get(Audio.BITRATE));
+        assertNull(metadata.get(Audio.HAS_DRM));
     }
 
     @Test

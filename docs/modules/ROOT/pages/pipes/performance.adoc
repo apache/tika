@@ -26,13 +26,14 @@ for it.
 
 [NOTE]
 ====
-Closing the throughput gap of the default isolated mode — *without* giving up the
-crash/OOM isolation it provides — is an area of active work. Treat the figures on
-this page as a snapshot of the 4.0.0 release, not a fixed ceiling: expect the
-isolated-mode gap to narrow in future releases. Note also that this gap is
-specific to the *upload* endpoints on small documents — for file-system inputs
-and outputs the fetch/emit endpoints already match or beat 3.x while staying
-fully isolated (see <<endpoint-choice>>).
+The tables in the first half of this page were measured on the **4.0.0
+release** and are kept as that snapshot. After 4.0.0 shipped we traced the
+batch slowdown against 3.x to a specific cause — temp-file volume, not the
+pipes architecture — and fixed it for **4.1.0**. The findings, the fix, and a
+worked configuration from the box where it was diagnosed are in
+<<found-in-400>> and <<corpora-case-study>>. The upload-endpoint gap on tiny
+documents (<<endpoint-choice>>) is a separate, smaller effect and still
+applies.
 ====
 
 == Deployment shapes
@@ -68,7 +69,7 @@ one parsing JVM serving all concurrency, with the front-end/watchdog restarting
 it on failure. The practical 4.x default choice is between **per-client**
 (strongest isolation) and **shared-server** (highest throughput).
 
-== Throughput
+== Throughput (4.0.0 measurements)
 
 The pipes per-request overhead — temp-spool of large payloads, socket IPC, and
 result serialization — is roughly *fixed per request*. It therefore dominates
@@ -99,7 +100,7 @@ Two things to note:
   smaller, independently-warming worker heaps.
 
 [#endpoint-choice]
-== Endpoint choice: uploading bytes vs fetch-and-emit
+== Endpoint choice: uploading bytes vs fetch-and-emit (4.0.0 measurements)
 
 How a document reaches the parser matters as much as the parsing mode. The
 classic endpoints (`/tika`, `/rmeta`, `/meta`) receive the document *in the HTTP
@@ -222,19 +223,175 @@ while a worker restarts.
   xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing]; configure per-parse
   limits with xref:pipes/timeouts.adoc[Timeouts].
 
-== Benchmarking your own workload
+[#found-in-400]
+== What we found in 4.0.0, and what 4.1.0 changes
 
-The numbers above are illustrative. Throughput depends on your document mix,
-document sizes, requested output format, concurrency, host CPU/heap, and disk
-speed (large payloads spool to a temp directory). Measure with *your* corpus:
+Our own regression testing runs `tika-app` in batch mode over a 1.2-million-file
+corpus (file system in, file system out) on a box with spinning disks. That run
+took about 4 hours on Tika 3.x and about 7.5 hours on 4.0.0. The investigation
+that followed is worth summarizing, because the cause was not where the
+architecture suggested it would be.
 
-* Fix concurrency equal to the worker count so the comparison is apples to
-  apples.
-* Exclude a warm-up phase — forked workers pay a one-time fork + JIT cost on
-  their first requests.
-* Hold the output format constant across the versions or modes you compare.
-* Watch peak RSS across the whole process tree (front-end plus workers), not
-  just one process.
+=== The cause: temp-file volume
+
+4.0.0 wrote **8–30 times more temp bytes** than 3.x for the same documents:
+
+* Digesting an embedded document (MD5/SHA-256 per embedded object) buffered a
+  rewindable copy of it that spilled to a temp file past 1 MB — one file per
+  embedded object, hundreds of thousands of them over a large corpus.
+* Several parsers and detectors asked for a `java.io.File` even when the
+  document was already in memory: the JPEG/TIFF/WebP metadata extractors, the
+  OLE2 container detector, the OpenDocument parser's inline pictures, the
+  digest of translated embedded streams, the PDF incremental-update scan, and
+  PDFParser's main document load and renderer each wrote the bytes out just to
+  read them back.
+
+On a spinning-disk host where the temp directory, the corpus, and the outputs
+share spindles, every temp byte is a seek taken away from a corpus read or an
+extract write. Wall clock tracked temp volume almost linearly.
+
+=== What it was *not*
+
+Each of these was measured and ruled out, so they need not be re-chased:
+
+* Pipes IPC and result passback — about 1% of worker time.
+* The driver's emit path — with the default `DYNAMIC` strategy the workers
+  already write nearly all extract bytes themselves; more emitter threads made
+  no difference.
+* Reading each container twice for the digest pre-pass — the second read is
+  served from the page cache; disk reads were equal to or lower than 3.x's.
+* The parsers — on identical embedded objects most 4.x parsers are as fast or
+  faster; the JPEG parser is 4x faster in isolation.
+* 4.x extracting more embedded objects (it does, about 3% more) — negligible
+  cost.
+
+=== The fix (4.1.0, unreleased at the time of writing)
+
+* TIKA-4828/TIKA-4829: embedded zip entries are re-read from the archive on
+  rewind instead of being copied, and a process-wide `CacheMemoryBudget`
+  (seeded by the forked worker, tunable via
+  `-Dtika.pipes.cacheMemoryBudgetBytes` in `forkedJvmArgs`, `<=0` disables)
+  governs how much rewindable content stays in memory.
+* TIKA-4835: the parsers and detectors above no longer spool in-memory input
+  to disk; they rewind or read through a seekable channel, within the same
+  budget, and fall back to a file only past it.
+
+Measured on the diagnosis box (20,000 randomly sampled files of the corpus,
+page cache evicted before each run, extracts written to the corpus disk):
+
+[cols="3,1,1"]
+|===
+|Build and configuration |Temp written |Wall
+
+|Tika 3.x, 10 consumer threads (three runs)     |0.33 GB |245 / 287 / 328 s
+|4.0.0, per-client, 8 workers (the 7.5 h shape) |10.5 GB |500 s
+|4.1.0 with TIKA-4828/29 only, corrected config |2.8 GB  |341 s
+|4.1.0, shared server, 10 threads                |0.26 GB |277 s
+|4.1.0, per-client, 7 workers                    |1.1 GB  |287 s
+|===
+
+The like-for-like pair is 2.8 GB → 1.1 GB (both per-client); the 0.26 GB row
+also changes shape to shared-server, which pools the cache budget across
+threads.
+
+4.1.0 writes less temp than 3.x did, and matches or beats 3.x throughput while
+keeping process isolation. These are subset measurements on one host; we have
+not re-timed the full run, and remote emitters (Solr, OpenSearch, S3) were not
+measured.
+
+[#corpora-case-study]
+== A worked configuration: the regression-test box
+
+The diagnosis box is an 8-core/16-thread Ryzen with 62 GB of RAM and two
+spinning disks in RAID1, holding the temp directory, the 4 TB corpus, and the
+outputs on the same pair of spindles. The corpus is far larger than RAM, so
+every run is effectively cold-cache. The configuration we settled on:
+
+* **Per-client mode, `numClients = 7`.** Tika auto-injects
+  `-XX:ActiveProcessorCount` per fork as `(cores − 2) / numClients` but only
+  when that slice is at least 2. On 16 logical cores, 8 workers give 1.75 and
+  the cap is *skipped* — eight JVMs each sizing GC and JIT for 16 cores, which
+  is what the 7.5 h run did. Seven workers get 2 cores each and the cap
+  applies. Per-client cost about 4% versus shared-server here (287 s vs 277 s)
+  and dropped no files, where the shared worker loses the in-flight documents
+  of every other client when one document crashes it.
+* **`-Xmx4g` per fork.** The cache budget clamps to a quarter of the fork heap,
+  so this gives each worker 1 GB of in-memory rewind space; seven of them
+  leave about 30 GB for the page cache, which matters more than heap on a
+  cold-cache corpus. Archive-heavy corpora do better with `-Xmx6g` (1.5 GB
+  budget) — the tar/gz subset only reached parity with the budget raised.
+* Digest MD5 (SHA-256 measured within noise), default emit strategy, temp
+  directory left on disk.
+
+=== Reading your own deployment
+
+Three questions decided the result above, and they are cheap to answer for any
+box:
+
+* **Do temp, corpus, and outputs share spindles?** `/proc/mdstat`,
+  `lsblk`, or your cloud volume layout will say. If they do, temp volume is
+  wall clock; if temp is on separate fast storage, the 4.0.0 regression may
+  never have shown.
+* **Is the corpus larger than RAM?** If so, benchmark cold — evict the page
+  cache (or use a subset you have not touched) and write outputs to the real
+  destination. Warm-cache runs with outputs on tmpfs hid this entire problem
+  from us for weeks.
+* **Does your `numClients` trip the cap skip?** Check the startup log for the
+  `ActiveProcessorCount` decision; if it reports `skipped`, lower
+  `numClients` or set the cap yourself in `forkedJvmArgs`.
+
+Beyond those: fix concurrency equal to the worker count when comparing, exclude
+a warm-up phase, hold the output format constant, and watch peak RSS across the
+whole process tree rather than one JVM.
+
+=== Diagnosing temp-file volume in your own run
+
+The tmpfs check in the appendix says *whether* temp volume is the bottleneck.
+To find *which* code path writes it, record `jdk.FileWrite` with JFR: path,
+bytes written, full stack trace — the per-call-site table you need. Two traps:
+
+**Flags go in `forkedJvmArgs`.** Parsing happens in the forked worker, which
+does not inherit the driver's `-D`/`-XX` flags (see
+xref:pipes/troubleshooting.adoc#_configuration_knobs_reference[Troubleshooting]).
+A recording on the driver shows near-zero bytes — a clean bill of health on
+exactly the wrong question.
+
+**Default thresholds hide temp writes.** `jdk.FileWrite` records only writes
+over 20 ms (`default`) or 10 ms (`profile`); temp spills finish well under
+that. A 200-write probe on Temurin 17: 201 events with the override, 0
+without. Override it:
+
+[source,json]
+----
+"forkedJvmArgs": [
+  "-XX:FlightRecorderOptions=maxchunksize=1m",
+  "-XX:StartFlightRecording=settings=profile,jdk.FileWrite#threshold=0ms,maxsize=500M,filename=/var/tmp/spill.jfr,dumponexit=true"
+]
+----
+
+`maxchunksize` belongs to `FlightRecorderOptions`; on `StartFlightRecording`
+it is ignored with only a warning.
+
+Group events by `path` for per-file bytes and by the top `org.apache.tika`
+frame for the call site. Stream the text form (`jfr print --events
+jdk.FileWrite`); `jfr print --json` on a large recording expands to tens of
+GB.
+
+Caveats:
+
+* **Observer effect.** On a host where temp, corpus and output share spindles,
+  JFR writes ~1 MB/s of chunk data to those same disks. Record to another
+  volume, or read the *ranking* rather than the totals.
+* **Hard kills lose the current chunk.** Workers are `destroyForcibly()`'d on
+  every teardown path; `maxchunksize` bounds the loss. `maxsize` rolls off the
+  *earliest* data — size it for the run or use `dumponexit` on a bounded
+  corpus.
+
+Once a site is found, lock it with a test rather than re-running the
+diagnostic: wrap the parser's `TikaInputStream` so any `getFile()`/`getPath()`
+call is recorded, and assert none happened. A watched temp directory is not
+enough — not every `TemporaryResources` on the path is bound to it — and a
+test that passes with the fix reverted is not a test.
 
 == Appendix: approaches considered and set aside
 
@@ -256,8 +413,20 @@ close it, recorded here so they need not be re-litigated:
 * **Swapping the garbage collector.** ParallelGC helped tiny documents marginally
   and hurt larger ones — no reliable win over the default across a mixed corpus.
 
-What is left is structural: the fixed per-request IPC + temp-spool + result
-serialization cost, and running several CPU-partitioned JVMs instead of one. The
-productive directions are shrinking that per-request cost (RAM-disk temp directory,
-keeping more payloads inline, leaner serialization) and fork-pool sizing — not a
-single JVM flag.
+* **Driver-side emitter parallelism (`numEmitters`) and worker-direct emit
+  (`EMIT_ALL`) for file-system output.** Neither moved the batch numbers: under
+  the default `DYNAMIC` strategy the workers already write nearly all extract
+  bytes directly.
+* **A RAM-disk temp directory.** It does recover the 4.0.0 batch loss, and it is
+  a useful *diagnostic* (if moving temp to tmpfs makes a run fast, temp volume
+  is your problem) — but do not run with it. Temp on tmpfs is bounded only by
+  RAM: a single large archive expanding into it can exhaust memory for every
+  process on the host, starve the page cache a cold-corpus run depends on, or
+  count against a container's memory limit and get the pod evicted. A slow run
+  is recoverable; that is not. 4.1.0 removes the temp writes instead of hiding
+  them.
+
+What remains structural on the *upload* endpoints is the fixed per-request IPC +
+result-serialization cost and running several CPU-partitioned JVMs instead of one;
+the productive directions there are keeping more payloads inline, leaner
+serialization, and fork-pool sizing — not a single JVM flag.

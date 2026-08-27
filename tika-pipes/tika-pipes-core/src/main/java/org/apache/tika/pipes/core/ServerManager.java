@@ -103,11 +103,57 @@ public interface ServerManager extends Closeable {
      * might still return true briefly. The next call to {@link #ensureRunning()} will
      * wait for the process to fully exit and then restart.
      * <p>
-     * In per-client mode, this is typically a no-op since the client owns the server.
-     * In shared mode, this is important for coordinating restarts among multiple clients.
+     * The reason form below defaults to this one, so this must NOT default to the reason form:
+     * an implementation overriding neither would recurse until the stack blew. Concrete managers
+     * in tika-pipes override both, so callers of either spelling reach a real implementation.
      */
     default void markServerForRestart() {
-        // Default no-op for backward compatibility
+        // Default no-op: preserves implementations written before RestartReason existed.
+    }
+
+    /** As {@link #markServerForRestart()}, attributing the restart to {@code reason}. Override this one. */
+    default void markServerForRestart(RestartReason reason) {
+        markServerForRestart();
+    }
+
+    /**
+     * The generation of the currently running process: a counter incremented every time this
+     * manager forks a replacement. A client captures it when it connects and hands it back with
+     * every report, so a report about a process that has already been replaced can be recognised
+     * and dropped rather than being applied to its healthy successor.
+     */
+    default long getGeneration() {
+        return 0;
+    }
+
+    /**
+     * As {@link #markServerForRestart(RestartReason)}, but only if {@code generation} is still
+     * current. Reports about a superseded process are dropped.
+     */
+    default void markServerForRestart(RestartReason reason, long generation) {
+        markServerForRestart(reason);
+    }
+
+    /**
+     * The reasonless spelling of the above, kept for callers that cannot attribute the failure.
+     * Routed through the reason form rather than the bare no-arg default: that default exists
+     * only to keep pre-RestartReason implementations working, and delegating here would leave
+     * this silently inert for any implementation that overrides only the reason form.
+     */
+    default void markServerForRestart(long generation) {
+        markServerForRestart(RestartReason.CRASH, generation);
+    }
+
+    /**
+     * As {@link #handleCrashAndGetExitCode()}, but only if {@code generation} is still current.
+     */
+    default int handleCrashAndGetExitCode(long generation) {
+        return handleCrashAndGetExitCode();
+    }
+
+    /** Restarts performed so far for {@code reason}; monotonic, never reset. */
+    default long getRestartCount(RestartReason reason) {
+        return 0;
     }
 
     /**
@@ -160,7 +206,8 @@ public interface ServerManager extends Closeable {
      * @return the exit code if available, or -1 if the process is still running or unavailable
      */
     default int handleCrashAndGetExitCode() {
-        markServerForRestart();
+        markServerForRestart(RestartReason.CRASH);
         return -1;
     }
+
 }

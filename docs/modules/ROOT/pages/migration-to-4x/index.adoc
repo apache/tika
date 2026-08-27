@@ -25,8 +25,8 @@ Guides and background for upgrading from Apache Tika 3.x.
   SPI signatures, JSON configuration, and the API changes every upgrader hits
 * xref:migration-to-4x/migrating-tika-server-4x.adoc[Tika Server Migration] -- endpoint,
   wire-format, and configuration changes in tika-server 4.x
-* xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes] -- the full 3.x -> 4.x
-  key rename tables and the reserved-key write guard
+* xref:migration-to-4x/metadata-changes-4x.adoc[Metadata Changes] -- the 3.x -> 4.x key rename
+  tables, summarised by prefix, and the reserved-key write guard
 
 == Background Documentation
 

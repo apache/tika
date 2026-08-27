@@ -168,11 +168,34 @@ public class PipesParser implements Closeable {
         return serverManagers.stream().filter(ServerManager::isRunning).count();
     }
 
+    public int getNumClients() {
+        return pipesConfig.getNumClients();
+    }
+
+    /** Clients not currently borrowed by a {@link #parse} call. */
+    public int getIdleClientCount() {
+        return clientQueue.size();
+    }
+
+    /** Forked-server restarts performed so far for {@code reason}, summed over all servers. */
+    public long getRestartCount(RestartReason reason) {
+        return serverManagers.stream().mapToLong(m -> m.getRestartCount(reason)).sum();
+    }
+
     /**
      * Returns whether this parser is using shared server mode.
      *
      * @return true if using shared server mode
      */
+    /**
+     * Total forks performed across this parser's server managers. One more than the number of
+     * restarts, since the first start of each manager is not a restart. Exposed for tests: it is
+     * the only observable that distinguishes a justified restart from a spurious one.
+     */
+    public long getGeneration() {
+        return serverManagers.stream().mapToLong(ServerManager::getGeneration).sum();
+    }
+
     public boolean isSharedMode() {
         return isSharedMode;
     }

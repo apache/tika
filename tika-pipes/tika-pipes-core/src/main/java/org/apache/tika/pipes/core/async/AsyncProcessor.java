@@ -50,6 +50,7 @@ import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesResults;
+import org.apache.tika.pipes.core.RestartReason;
 import org.apache.tika.pipes.core.ServerManager;
 import org.apache.tika.pipes.core.SharedServerManager;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
@@ -245,6 +246,16 @@ public class AsyncProcessor implements Closeable {
 
     public int getCapacity() {
         return fetchEmitTuples.remainingCapacity();
+    }
+
+    /** Tuples accepted but not yet picked up by a worker. */
+    public int getQueueDepth() {
+        return fetchEmitTuples.size();
+    }
+
+    /** Restarts of this processor's own forks, summed over all servers, for {@code reason}. */
+    public long getRestartCount(RestartReason reason) {
+        return serverManagers.stream().mapToLong(m -> m.getRestartCount(reason)).sum();
     }
 
     /**

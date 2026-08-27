@@ -70,6 +70,9 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.config.ConfigMerger;
 import org.apache.tika.pipes.core.config.ConfigOverrides;
+import org.apache.tika.server.core.metrics.MetricsServer;
+import org.apache.tika.server.core.metrics.TikaMetricsFilter;
+import org.apache.tika.server.core.metrics.TikaServerMetrics;
 import org.apache.tika.server.core.resource.AsyncResource;
 import org.apache.tika.server.core.resource.DetectorResource;
 import org.apache.tika.server.core.resource.LanguageResource;
@@ -118,6 +121,9 @@ public class TikaServerProcess {
         options.addOption("p", "port", true, "listen port");
         options.addOption("c", "config", true, "Tika Configuration xml file to override default config with.");
         options.addOption("i", "id", true, "id for this server, written to the startup log");
+        options.addOption(null, "metricsPort", true,
+                "serve Prometheus metrics on this port (9404 by convention); "
+                        + "unset means metrics are off\n");
         options.addOption("?", "help", false, "this help message");
         return options;
     }
@@ -137,8 +143,8 @@ public class TikaServerProcess {
             LOG.debug("forked config: {}", tikaServerConfig);
 
             ServerDetails serverDetails = initServer(tikaServerConfig);
-            startServer(serverDetails);
             registerOrderedShutdown(serverDetails);
+            startServer(serverDetails);
 
         } catch (Exception e) {
             LOG.error("Can't start: ", e);
@@ -157,6 +163,10 @@ public class TikaServerProcess {
     }
 
     private static void startServer(ServerDetails serverDetails) {
+        // Metrics first: a scrape-port clash must not leave the parse port briefly open.
+        if (serverDetails.metricsServer != null) {
+            startMetricsServer(serverDetails);
+        }
         try {
             //start the server
             serverDetails.server = serverDetails.sf.create();
@@ -168,6 +178,21 @@ public class TikaServerProcess {
             System.exit(DO_NOT_RESTART_EXIT_VALUE);
         }
         LOG.info("Started Apache Tika server {} at {}", serverDetails.serverId, serverDetails.url);
+    }
+
+    private static void startMetricsServer(ServerDetails serverDetails) {
+        try {
+            serverDetails.metricsServer.start();
+        } catch (Exception e) {
+            LOG.warn("exception starting metrics server", e);
+            if (isBindException(e)) {
+                System.exit(BIND_EXCEPTION);
+            }
+            System.exit(DO_NOT_RESTART_EXIT_VALUE);
+        }
+        LOG.info("Started metrics listener (plain HTTP) on http://{}:{}{}",
+                serverDetails.metricsServer.getHost(), serverDetails.metricsServer.getPort(),
+                MetricsServer.PATH);
     }
 
     /**
@@ -185,8 +210,18 @@ public class TikaServerProcess {
                     LOG.warn("Error stopping HTTP server", e);
                 }
             }
+            if (serverDetails.metricsServer != null) {
+                try {
+                    serverDetails.metricsServer.close();
+                } catch (Exception e) {
+                    LOG.warn("Error stopping metrics server", e);
+                }
+            }
             if (serverDetails.pipesParsingHelper != null) {
                 serverDetails.pipesParsingHelper.shutdown();
+            }
+            if (serverDetails.metrics != null) {
+                serverDetails.metrics.close();
             }
         }));
     }
@@ -249,6 +284,24 @@ public class TikaServerProcess {
         List<Object> providers = new ArrayList<>();
         loadAllProviders(tikaServerConfig, serverStatus, tikaResource, resourceProviders, providers);
 
+        TikaServerMetrics metrics = null;
+        MetricsServer metricsServer = null;
+        if (tikaServerConfig.getMetricsPort() != null) {
+            metrics = new TikaServerMetrics();
+            metrics.bindJvm();
+            metrics.bindServerStatus(serverStatus);
+            if (pipesParsingHelper != null) {
+                metrics.bindSyncPool(pipesParsingHelper.getPipesParser());
+            }
+            AsyncResource asyncResource = findAsyncResource(resourceProviders);
+            if (asyncResource != null) {
+                metrics.bindAsyncPool(asyncResource.getAsyncProcessor());
+            }
+            providers.add(new TikaMetricsFilter(metrics, Set.copyOf(VALID_ENDPOINTS)));
+            metricsServer = new MetricsServer(tikaServerConfig.getHost(),
+                    tikaServerConfig.getMetricsPort(), metrics);
+        }
+
         sf.setResourceProviders(resourceProviders);
 
         sf.setProviders(providers);
@@ -290,7 +343,19 @@ public class TikaServerProcess {
         details.serverId = tikaServerConfig.getId();
         details.serverStatus = serverStatus;
         details.pipesParsingHelper = pipesParsingHelper;
+        details.metrics = metrics;
+        details.metricsServer = metricsServer;
         return details;
+    }
+
+    private static AsyncResource findAsyncResource(List<ResourceProvider> resourceProviders) {
+        for (ResourceProvider p : resourceProviders) {
+            if (p instanceof SingletonResourceProvider s
+                    && s.getInstance(null) instanceof AsyncResource asyncResource) {
+                return asyncResource;
+            }
+        }
+        return null;
     }
 
     private static TLSServerParameters getTlsParams(TlsConfig tlsConfig)
@@ -753,5 +818,7 @@ public class TikaServerProcess {
         String url;
         ServerStatus serverStatus;
         PipesParsingHelper pipesParsingHelper;
+        TikaServerMetrics metrics;
+        MetricsServer metricsServer;
     }
 }

@@ -31,7 +31,7 @@
   <properties>
     <microsoft-graph.version>6.67.0</microsoft-graph.version>
     <wiremock.version>3.3.1</wiremock.version>
-    <msal4j.version>1.25.1</msal4j.version>
+    <msal4j.version>1.26.0</msal4j.version>
     <microsoft-kiota.version>1.9.3</microsoft-kiota.version>
   </properties>
 
@@ -210,15 +210,15 @@
         <artifactId>maven-install-plugin</artifactId>
         <executions>
           <!--
-            The assembly attaches the zip with <attach>false</attach> (TIKA-4723)
-            so it is not added to the Maven artifact set and therefore is not
-            deployed to Maven Central. Sibling modules declare this plugin zip
-            as a test-scope Maven dep, so we install-file it locally to satisfy
-            reactor resolution without making it part of the project artifacts.
+            The assembly builds the zip with <attach>false</attach> (TIKA-4723) so it
+            stays out of the Maven artifact set and off Maven Central. Sibling modules
+            declare it as a test-scope zip dep, so install-file puts it in the local
+            repo instead. Bound to package, not install: CI and contributors run
+            `mvn package`, which has to resolve it too.
           -->
           <execution>
             <id>install-plugin-zip-locally</id>
-            <phase>install</phase>
+            <phase>package</phase>
             <goals>
               <goal>install-file</goal>
             </goals>

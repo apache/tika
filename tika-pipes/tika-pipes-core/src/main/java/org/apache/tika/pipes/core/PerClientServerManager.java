@@ -180,6 +180,7 @@ public class PerClientServerManager implements ServerManager {
     private volatile int port = -1;
     private long filesProcessed = 0;
     private volatile boolean pendingRestart = false;
+    private final RestartCounter restarts = new RestartCounter();
     // Set once by shutdown()/close(); guards a request thread from starting a fresh
     // process after the manager has been torn down (which would leak the child).
     private volatile boolean closed = false;
@@ -281,7 +282,7 @@ public class PerClientServerManager implements ServerManager {
         if (filesProcessed >= maxFilesPerProcess) {
             LOG.info("clientId={}: reached max files limit ({}/{}), marking for restart",
                     clientId, filesProcessed, maxFilesPerProcess);
-            pendingRestart = true;
+            markForRestart(RestartReason.MAX_FILES);
         }
     }
 
@@ -292,18 +293,34 @@ public class PerClientServerManager implements ServerManager {
 
     @Override
     public void markServerForRestart() {
-        LOG.info("clientId={}: marking server for restart", clientId);
+        markServerForRestart(RestartReason.CRASH);
+    }
+
+    @Override
+    public void markServerForRestart(RestartReason reason) {
+        LOG.info("clientId={}: marking server for restart ({})", clientId, reason);
+        markForRestart(reason);
+    }
+
+    private void markForRestart(RestartReason reason) {
+        restarts.mark(reason);
         pendingRestart = true;
+    }
+
+    @Override
+    public long getRestartCount(RestartReason reason) {
+        return restarts.count(reason);
     }
 
     @Override
     public void connectionAbandoned() {
         LOG.info("clientId={}: connection abandoned, worker will be recycled on next use", clientId);
-        pendingRestart = true;
+        markForRestart(RestartReason.CONNECTION_ABANDONED);
     }
 
     @Override
     public int handleCrashAndGetExitCode() {
+        // Not marked: RestartCounter attributes by exit code; the caller refines OOM/TIMEOUT.
         pendingRestart = true;
         if (process != null) {
             try {
@@ -311,7 +328,10 @@ public class PerClientServerManager implements ServerManager {
                 if (!process.isAlive()) {
                     int exitValue = process.exitValue();
                     if (exitValue == 0) {
-                        LOG.info("clientId={}: process exited cleanly", clientId);
+                        LOG.warn("clientId={}: process exited with code 0 without a shutdown request; " +
+                                "counted as a crash restart", clientId);
+                    } else if (exitValue == PipesServer.IDLE_EXIT_CODE) {
+                        LOG.info("clientId={}: process exited after idle timeout", clientId);
                     } else {
                         LOG.warn("clientId={}: process exited with code {}", clientId, exitValue);
                     }
@@ -335,7 +355,15 @@ public class PerClientServerManager implements ServerManager {
         if (isRunning() && !pendingRestart) {
             return;
         }
-        startServer();
+        Process previous = process;
+        try {
+            startServer();
+        } finally {
+            // Count the old process once it is really gone, even if the new start failed.
+            if (process != previous) {
+                restarts.restarted(previous);
+            }
+        }
     }
 
     @Override
@@ -366,9 +394,15 @@ public class PerClientServerManager implements ServerManager {
                 }
                 if (!p.isAlive()) {
                     int exitValue = p.exitValue();
-                    LOG.error("clientId={}: Process exited with code {} before connecting to socket",
-                            clientId, exitValue);
-                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
+                    if (exitValue == 0 || exitValue == PipesServer.IDLE_EXIT_CODE) {
+                        // Idle/SHUT_DOWN exit raced the reconnect; not a crash.
+                        LOG.info("clientId={}: process exited with code {} before connecting",
+                                clientId, exitValue);
+                    } else {
+                        LOG.error("clientId={}: Process exited with code {} before connecting to socket",
+                                clientId, exitValue);
+                        ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
+                    }
                     // Always treat pre-connect death as retryable.
                     // The only non-retryable paths are:
                     // 1. pb.start() fails (can't launch process) - handled in startServer()

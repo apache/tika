@@ -18,7 +18,6 @@ package org.apache.tika.parser.image;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.xml.sax.ContentHandler;
@@ -89,7 +88,10 @@ public abstract class AbstractImageParser implements Parser {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             Path path = tis.getPath();
-            try (InputStream pathStream = Files.newInputStream(path)) {
+            // a TikaInputStream over the path, not a raw stream: the content is already on
+            // disk, so this takes the file path in extractMetadata instead of caching a
+            // second copy in memory whose budget reservation nothing here would release
+            try (TikaInputStream pathStream = TikaInputStream.get(path)) {
                 extractMetadata(pathStream, new EmbeddedContentHandler(xhtml), metadata, context);
             } catch (SecurityException e) {
                 throw e;

@@ -127,7 +127,9 @@ the Tika process. Outside Docker the equivalent is the `tika.extras.dir` system 
 `/tika`, `/rmeta`, `/meta` and `/unpack` work out of the box. The pipes endpoints (`/pipes`,
 `/async`) need the fetcher and emitter plugins for whatever they talk to. The image ships
 `tika-pipes-file-system` under `/opt/tika-server/plugins/`; mount any other plugin into that
-directory, one subdirectory per plugin.
+directory, one subdirectory per plugin. Plugins publish as `.zip`, so unzip yours first and mount
+the resulting directory — the container cannot expand the zip in place, because
+`/opt/tika-server` is copied in root-owned while the server runs as UID 35002.
 
 [source,bash]
 ----

@@ -39,5 +39,10 @@
         <exclude>.develocity/**</exclude>
       </excludes>
     </fileSet>
+    <!-- Re-add .skills (dropped by **/.*/** above); AGENTS.md points at it. -->
+    <fileSet>
+      <directory>${project.basedir}/.skills</directory>
+      <outputDirectory>.skills</outputDirectory>
+    </fileSet>
   </fileSets>
 </assembly>

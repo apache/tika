@@ -124,8 +124,12 @@ public class MyFetcher extends AbstractTikaExtension implements Fetcher {
     }
 }
 ----
-<1> Config arrives as a **JSON string**, and the plugin parses it with its own Jackson. Nothing
-richer crosses the boundary — see <<classloading>>.
+<1> Config arrives as a **JSON string**; nothing richer crosses the boundary — see
+<<classloading>>. The in-tree plugins parse it with `org.apache.tika.plugins.PluginJson`
+(`PluginJson.read(json, MyFetcherConfig.class)`), the host's strict mapper: comments allowed,
+unknown keys, duplicate keys and numbers-for-enums rejected. Using it is optional — the
+boundary is the `Fetcher`, not how it is configured — but see the Jackson rule under
+<<classloading>> before deciding.
 
 IMPORTANT: `Fetcher` implementations must be thread-safe. One instance serves every concurrent
 request against that fetcher id.
@@ -275,6 +279,20 @@ of a plugin that loads cleanly and then behaves as if it were not there — or o
 The same reasoning covers logging: leave `org.slf4j` and `org.apache.logging.log4j` to the host so
 plugin logs land in the host's configuration.
 
+Jackson is the one library with a choice, and it is either/or:
+
+* **Host Jackson (the default, what the in-tree plugins do):** `jackson-core`, `jackson-databind`
+  and `jackson-annotations` `provided`, absent from `lib/`. Every Tika host carries them (via
+  `tika-serialization`), and you may then use `PluginJson` and other host Jackson types.
+* **Your own Jackson:** only if a library you depend on needs a version the host does not ship.
+  Bundle it (`compile` scope), and then never touch a host Jackson object — not `PluginJson`, not
+  `JsonMetadataList`, nothing returning an `ObjectMapper` or `JsonNode`. Your `ObjectMapper` and
+  the host's are different `Class` objects, and the first assignment between them fails with a
+  `LinkageError` or `ClassCastException`. Parse `ExtensionConfig.json()` with your own mapper.
+
+Never both. The in-tree plugins' parent pom enforces the first choice; a third-party plugin
+choosing the second must not inherit that rule.
+
 Everything else — your own transitive libraries — belongs in `lib/`.
 
 == Installing and configuring
@@ -343,10 +361,14 @@ id, because a pipeline has one iterator and reporters are not referenced by id:
 
 Whatever object sits innermost is re-serialized to a string and handed to your factory as
 `ExtensionConfig.json()`. Configs are validated when the config loads — an unknown component name
-fails immediately, listing the names that *are* available — but instances are built lazily, on
-first use.
+fails immediately, listing the names that *are* available. Fetchers and emitters are then built
+lazily, on first use; `pipes-iterator` and `pipes-reporters` instances are built during config
+load.
 
-An array in any of these sections is rejected outright rather than silently ignored.
+An array is rejected outright in `fetchers` and `emitters`, and in `pipes-iterator` — unless it is
+empty: `"pipes-iterator": []` is read as "no iterator configured" and reports no error.
+`pipes-reporters` is looser still — any array there, empty or not, loads zero reporters and reports
+no error. Keep both an object.
 
 == Developing without repackaging
 
@@ -367,6 +389,8 @@ java -Dtika.plugin.dev.mode=true ...
 * `tika-core`, `tika-pipes-api`, `tika-plugins-core`, `tika-serialization`,
   `tika-pipes-core`, `tika-pipes-iterator-commons`, `pf4j` and the logging
   implementations `provided`, and absent from `lib/`.
+* Jackson either `provided` (and then `PluginJson` is yours to use) or bundled (and then no host
+  Jackson type is) — never a mix.
 * The zip — not an unpacked directory — dropped in a `plugin-roots` directory.
 * `getName()` unique against every other loaded plugin.
 

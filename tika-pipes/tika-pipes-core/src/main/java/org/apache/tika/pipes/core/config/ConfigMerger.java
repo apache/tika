@@ -27,13 +27,13 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.pipes.api.ComponentIds;
 
 /**
@@ -90,8 +90,8 @@ public class ConfigMerger {
      */
     public static MergeResult mergeOrCreate(Path existingConfig, ConfigOverrides overrides)
             throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        // The shared config mapper: same comment and strictness rules as the main loader.
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
 
         ObjectNode root;
         if (existingConfig != null && Files.exists(existingConfig)) {
