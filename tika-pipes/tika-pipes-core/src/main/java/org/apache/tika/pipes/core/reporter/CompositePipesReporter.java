@@ -33,12 +33,31 @@ public class CompositePipesReporter implements PipesReporter {
         pipesReporters = pipesReporterList;
     }
 
+    /**
+     * Every reporter sees every call, even if an earlier one throws; the first
+     * exception is rethrown after the loop with the rest suppressed.
+     */
     @Override
     public void report(FetchEmitTuple t, PipesResult result, long elapsed) {
+        RuntimeException first = null;
         for (PipesReporter reporter : pipesReporters) {
-            reporter.report(t, result, elapsed);
+            try {
+                reporter.report(t, result, elapsed);
+            } catch (RuntimeException e) {
+                first = collect(first, e);
+            }
         }
+        if (first != null) {
+            throw first;
+        }
+    }
 
+    private static RuntimeException collect(RuntimeException first, RuntimeException e) {
+        if (first == null) {
+            return e;
+        }
+        first.addSuppressed(e);
+        return first;
     }
 
     @Override
@@ -60,15 +79,31 @@ public class CompositePipesReporter implements PipesReporter {
 
     @Override
     public void error(Throwable t) {
+        RuntimeException first = null;
         for (PipesReporter reporter : pipesReporters) {
-            reporter.error(t);
+            try {
+                reporter.error(t);
+            } catch (RuntimeException e) {
+                first = collect(first, e);
+            }
+        }
+        if (first != null) {
+            throw first;
         }
     }
 
     @Override
     public void error(String msg) {
+        RuntimeException first = null;
         for (PipesReporter reporter : pipesReporters) {
-            reporter.error(msg);
+            try {
+                reporter.error(msg);
+            } catch (RuntimeException e) {
+                first = collect(first, e);
+            }
+        }
+        if (first != null) {
+            throw first;
         }
     }
 

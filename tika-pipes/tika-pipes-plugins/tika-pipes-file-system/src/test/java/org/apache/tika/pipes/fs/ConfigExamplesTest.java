@@ -16,12 +16,25 @@
  */
 package org.apache.tika.pipes.fs;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
+import java.util.Collections;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.core.testutil.AbstractConfigExamplesTest;
+import org.apache.tika.pipes.reporter.fs.FileSystemJsonlReporterConfig;
+import org.apache.tika.pipes.reporter.fs.FileSystemJsonlReporterFactory;
 
 /**
- * Validates file system fetcher/emitter configuration examples used in documentation.
+ * Validates file system plugin configuration examples used in documentation.
  * <p>
  * The JSON configuration examples are stored in {@code src/test/resources/config-examples/}
  * and are included directly in the AsciiDoc documentation via the {@code include::} directive.
@@ -41,5 +54,32 @@ public class ConfigExamplesTest extends AbstractConfigExamplesTest {
     @Test
     public void testFileSystemPipelineConfig() throws Exception {
         loadAndValidate("file-system-pipeline.json");
+    }
+
+    @Test
+    public void testFileSystemJsonlReporterConfig() throws Exception {
+        loadAndValidate("file-system-jsonl-reporter.json");
+
+        JsonNode inner = innerComponent(readExample("file-system-jsonl-reporter.json"),
+                "pipes-reporters", null, "file-system-jsonl-reporter");
+        FileSystemJsonlReporterConfig config = FileSystemJsonlReporterConfig.load(inner.toString());
+        assertEquals(Paths.get("/var/log/tika/pipes-audit.jsonl"), config.path());
+        assertEquals(FileSystemJsonlReporterConfig.ON_EXISTS.EXCEPTION, config.onExists());
+        assertEquals(10000, config.maxMessageLength());
+        assertTrue(config.includes().contains("OOM"));
+        assertNull(config.excludes());
+    }
+
+    // the plugin only resolves by name if the factory made it into pf4j's index
+    @Test
+    public void testJsonlReporterFactoryIsRegistered() throws Exception {
+        // test-classes carries its own (empty) index that shadows main's, so scan them all
+        StringBuilder all = new StringBuilder();
+        for (URL url : Collections.list(getClass().getClassLoader().getResources("META-INF/extensions.idx"))) {
+            try (InputStream is = url.openStream()) {
+                all.append(new String(is.readAllBytes(), StandardCharsets.UTF_8));
+            }
+        }
+        assertTrue(all.toString().contains(FileSystemJsonlReporterFactory.class.getName()), all.toString());
     }
 }

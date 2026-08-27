@@ -83,4 +83,28 @@ public class TikaConfigAsyncWriterTest {
         assertEquals(60000L, timeouts.path("progressTimeoutMillis").asLong());
         assertTrue(timeouts.path("throwOnDeadline").asBoolean());
     }
+
+    @Test
+    public void testOnExistsReachesJsonlReporter(@TempDir Path dir) throws Exception {
+        Path config = dir.resolve("config.json");
+        Files.writeString(config, """
+                {
+                  "pipes-reporters": {
+                    "file-system-jsonl-reporter": { "path": "audit.jsonl" }
+                  }
+                }
+                """);
+        for (String[] pair : new String[][]{{"REPLACE", "REPLACE"}, {"SKIP", "APPEND"}, {"EXCEPTION", "EXCEPTION"}}) {
+            SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
+                    null, null, null, config.toAbsolutePath().toString().replace("\\", "/"),
+                    BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                    SimpleAsyncConfig.ExtractBytesMode.NONE, null);
+            simpleAsyncConfig.setOnExists(pair[0]);
+            Path tmp = Files.createTempFile(dir, "plugins-", ".json");
+            new PluginsWriter(simpleAsyncConfig, null).write(tmp);
+            JsonNode root = new ObjectMapper().readTree(tmp.toFile());
+            assertEquals(pair[1], root.path("pipes-reporters").path("file-system-jsonl-reporter")
+                    .path("onExists").asText(), pair[0]);
+        }
+    }
 }
