@@ -1,0 +1,6 @@
+{"id":"file1.pdf","status":"EMIT_SUCCESS","category":"SUCCESS","message":null,"elapsedMs":12,"timestamp":"2026-08-27T10:00:00Z"}
+{"id":"file9_noextract.txt","status":"OOM","category":"PROCESS_CRASH","message":"java.lang.OutOfMemoryError: Java heap space","elapsedMs":3000,"timestamp":"2026-08-27T10:00:01Z"}
+{"id":"file10_permahang.txt","status":"TIMEOUT","category":"PROCESS_CRASH","message":"timed out after 60000ms","elapsedMs":60000,"timestamp":"2026-08-27T10:01:01Z"}
+{"id":"file11_oom.txt","status":"OOM","category":"PROCESS_CRASH","message":"java.lang.OutOfMemoryError: Java heap space","elapsedMs":900,"timestamp":"2026-08-27T10:01:02Z"}
+{"id":"file12_es.txt","status":"UNSPECIFIED_CRASH","category":"PROCESS_CRASH","message":"shared server died while this request was in flight (generation 3); outcome unknown","elapsedMs":5,"timestamp":"2026-08-27T10:01:03Z"}
+{"error":"java.lang.IllegalStateException: pipeline died","timestamp":"2026-08-27T10:01:04Z"}

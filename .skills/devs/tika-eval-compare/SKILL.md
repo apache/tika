@@ -91,6 +91,21 @@ Each run walks the input directory recursively and writes one
 equivalent to `tika-app -J`).  The directory structure mirrors
 the input.
 
+### Provenance + crash ledger (preferred)
+
+`run-batch.sh` (next to this file) wraps the same invocation and records what
+ran, so an extract set can be tied to a build after the fact and a crashed
+file is distinguishable from one that parsed to nothing:
+
+```bash
+.skills/devs/tika-eval-compare/run-batch.sh --app <before> --input <input-dir> --extracts <extracts-a-dir> --note baseline
+.skills/devs/tika-eval-compare/run-batch.sh --app <after>  --input <input-dir> --extracts <extracts-b-dir> --note candidate [--config cfg.json]
+```
+
+It writes `run-info-<run.id>.json` and (4.1+ only) `crashes-<run.id>.jsonl`
+into `<extracts>/.run-info/`; Compare picks them up from there by default
+(`-ra/-rb`, `-pa/-pb` override). A 3.x baseline gets run-info but no ledger.
+
 ### Notes
 
 - Do NOT pass `-n <N>` as a trailing argument — it confuses the
@@ -123,6 +138,14 @@ java -jar <tika-eval>/tika-eval-app-*.jar Compare \
 | `-rd` | Reports output directory (default: `reports`) |
 | `-z` | Gzip the H2 db (`<db>.mv.db.gz`) after Compare for transfer; requires `-d` (no-op + warning for a temp db). Combine with `-r` to package both. |
 | `-n` | Number of worker threads |
+| `-pa`/`-pb` | jsonl ledger for A/B (default: `<extracts>/.run-info/crashes-*.jsonl`); fills `containers.pipes_status_a/b` |
+| `-ra`/`-rb` | run-info json for A/B (default: `<extracts>/.run-info/run-info-*.json`); lands in `run_info_a/b`. Refused if its `run.id` is not in the matching `-pa`/`-pb` file name |
+
+With `-pa`/`-pb`, `summary.md` and `exceptions/extract_exceptions_by_pipes_status_*.xlsx`
+split `NO_EXTRACT_FILE` into `CRASH` (OOM/TIMEOUT), `LOST_TO_WORKER_RESTART`
+(shared-server collateral; retry once, alone), `NO_PIPES_RECORD`, and
+`NO_PIPES_REPORT_SUPPLIED`. A crash status *with* an extract present is a
+success whose status was lost — listed separately, not a failure.
 
 ## Step 3 — Review Results
 

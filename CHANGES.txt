@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * tika-eval: Profile/Compare accept the batch run's jsonl crash ledger
+     (--pipesReport, -pa/-pb) and a run-info json (--runInfo, -ra/-rb).
+     containers gains pipes_status/pipes_message; a new run_info table records
+     eval and batch provenance; reports and summary.md split NO_EXTRACT_FILE
+     into CRASH / LOST_TO_WORKER_RESTART / NO_PIPES_RECORD (TIKA-4847).
+
    * Stop spooling OLE2 objects whose header over-reserves BAT capacity
      (TIKA-4845).
 

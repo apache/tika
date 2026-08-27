@@ -1090,6 +1090,131 @@
       on e.extract_exception_id=t.extract_exception_id
     </sql>
   </report>
+
+  <!-- PIPES CRASH LEDGER (pipesReport A option) -->
+  <report reportName="Extract Exceptions by Pipes Status A"
+          reportFilename="exceptions/extract_exceptions_by_pipes_status_a.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select classification, extract_exception_description, count(1) cnt
+      from (
+        select t.extract_exception_description,
+      case
+        when c.pipes_status_a in ('OOM', 'TIMEOUT') then 'CRASH'
+        when c.pipes_status_a = 'UNSPECIFIED_CRASH' and c.pipes_message_a like '%outcome unknown%' then 'LOST_TO_WORKER_RESTART'
+        when c.pipes_status_a = 'UNSPECIFIED_CRASH' then 'CRASH'
+        when c.pipes_status_a is not null then c.pipes_status_a
+        when exists (select 1 from run_info_a where run_key = 'pipes_report.path') then 'NO_PIPES_RECORD'
+        else 'NO_PIPES_REPORT_SUPPLIED'
+      end as classification
+        from extract_exceptions_a e
+        join containers c on c.container_id = e.container_id
+        join ref_extract_exception_types t on t.extract_exception_id = e.extract_exception_id
+      )
+      group by classification, extract_exception_description
+      order by cnt desc
+    </sql>
+  </report>
+
+  <report reportName="Extract Exceptions with Pipes Status Details A"
+          reportFilename="exceptions/extract_exceptions_pipes_details_a.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select c.file_path, t.extract_exception_description, c.pipes_status_a as pipes_status,
+      case
+        when c.pipes_status_a in ('OOM', 'TIMEOUT') then 'CRASH'
+        when c.pipes_status_a = 'UNSPECIFIED_CRASH' and c.pipes_message_a like '%outcome unknown%' then 'LOST_TO_WORKER_RESTART'
+        when c.pipes_status_a = 'UNSPECIFIED_CRASH' then 'CRASH'
+        when c.pipes_status_a is not null then c.pipes_status_a
+        when exists (select 1 from run_info_a where run_key = 'pipes_report.path') then 'NO_PIPES_RECORD'
+        else 'NO_PIPES_REPORT_SUPPLIED'
+      end as classification,
+      c.pipes_message_a as pipes_message
+      from extract_exceptions_a e
+      join containers c on c.container_id = e.container_id
+      join ref_extract_exception_types t on t.extract_exception_id = e.extract_exception_id
+      order by classification, c.file_path
+    </sql>
+  </report>
+
+  <!-- a crash status with an extract present is a success whose status was lost, not a failure -->
+  <report reportName="Crash Status but Extract Present A"
+          reportFilename="exceptions/crash_status_extract_present_a.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select c.file_path, c.pipes_status_a as pipes_status, c.pipes_message_a as pipes_message
+      from containers c
+      where c.pipes_status_a in ('OOM', 'TIMEOUT', 'UNSPECIFIED_CRASH')
+      and not exists (select 1 from extract_exceptions_a e where e.container_id = c.container_id)
+      order by c.file_path
+    </sql>
+  </report>
+
+  <!-- PIPES CRASH LEDGER (pipesReport B option) -->
+  <report reportName="Extract Exceptions by Pipes Status B"
+          reportFilename="exceptions/extract_exceptions_by_pipes_status_b.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select classification, extract_exception_description, count(1) cnt
+      from (
+        select t.extract_exception_description,
+      case
+        when c.pipes_status_b in ('OOM', 'TIMEOUT') then 'CRASH'
+        when c.pipes_status_b = 'UNSPECIFIED_CRASH' and c.pipes_message_b like '%outcome unknown%' then 'LOST_TO_WORKER_RESTART'
+        when c.pipes_status_b = 'UNSPECIFIED_CRASH' then 'CRASH'
+        when c.pipes_status_b is not null then c.pipes_status_b
+        when exists (select 1 from run_info_b where run_key = 'pipes_report.path') then 'NO_PIPES_RECORD'
+        else 'NO_PIPES_REPORT_SUPPLIED'
+      end as classification
+        from extract_exceptions_b e
+        join containers c on c.container_id = e.container_id
+        join ref_extract_exception_types t on t.extract_exception_id = e.extract_exception_id
+      )
+      group by classification, extract_exception_description
+      order by cnt desc
+    </sql>
+  </report>
+
+  <report reportName="Extract Exceptions with Pipes Status Details B"
+          reportFilename="exceptions/extract_exceptions_pipes_details_b.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select c.file_path, t.extract_exception_description, c.pipes_status_b as pipes_status,
+      case
+        when c.pipes_status_b in ('OOM', 'TIMEOUT') then 'CRASH'
+        when c.pipes_status_b = 'UNSPECIFIED_CRASH' and c.pipes_message_b like '%outcome unknown%' then 'LOST_TO_WORKER_RESTART'
+        when c.pipes_status_b = 'UNSPECIFIED_CRASH' then 'CRASH'
+        when c.pipes_status_b is not null then c.pipes_status_b
+        when exists (select 1 from run_info_b where run_key = 'pipes_report.path') then 'NO_PIPES_RECORD'
+        else 'NO_PIPES_REPORT_SUPPLIED'
+      end as classification,
+      c.pipes_message_b as pipes_message
+      from extract_exceptions_b e
+      join containers c on c.container_id = e.container_id
+      join ref_extract_exception_types t on t.extract_exception_id = e.extract_exception_id
+      order by classification, c.file_path
+    </sql>
+  </report>
+
+  <!-- a crash status with an extract present is a success whose status was lost, not a failure -->
+  <report reportName="Crash Status but Extract Present B"
+          reportFilename="exceptions/crash_status_extract_present_b.xlsx"
+          format="xlsx"
+          includeSql="true">
+    <sql>
+      select c.file_path, c.pipes_status_b as pipes_status, c.pipes_message_b as pipes_message
+      from containers c
+      where c.pipes_status_b in ('OOM', 'TIMEOUT', 'UNSPECIFIED_CRASH')
+      and not exists (select 1 from extract_exceptions_b e where e.container_id = c.container_id)
+      order by c.file_path
+    </sql>
+  </report>
+
   <report reportName="fixedCatastrophicExtractExceptions"
           reportFilename="exceptions/fixed_catastrophic_exceptions_in_b.xlsx"
           format="xlsx"
