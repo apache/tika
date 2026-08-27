@@ -240,7 +240,8 @@ public class PipesClient implements Closeable {
             // or AsyncProcessor.close(), which interrupts workers without awaiting them. Nothing
             // to restart and nothing to recover -- but report it rather than letting an unchecked
             // exception escape PipesParser.parse() to a caller that cannot act on it.
-            LOG.warn("clientId={}: server manager closed while initializing {}", pipesClientId, t.getId());
+            LOG.warn("clientId={}: server manager closed while initializing {}", pipesClientId,
+                    t.getId(), e);
             closeConnection();
             return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
                     intermediateResult.get(), e.getMessage());

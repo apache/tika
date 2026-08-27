@@ -27,6 +27,8 @@ final class SentinelServerManager implements ServerManager {
     private final int port;
     volatile boolean abandoned;
     volatile RestartReason marked;
+    /** When set, {@link #ensureRunning()} throws like a real manager that has been closed. */
+    volatile boolean closed;
 
     SentinelServerManager(int port) {
         this.port = port;
@@ -44,6 +46,9 @@ final class SentinelServerManager implements ServerManager {
 
     @Override
     public void ensureRunning() {
+        if (closed) {
+            throw new IllegalStateException("sentinel server manager is closed");
+        }
         // the scripted server is already listening
     }
 
