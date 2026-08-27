@@ -170,19 +170,6 @@ public class SharedServerManager implements ServerManager {
      * isRunning() still says otherwise; the next ensureRunning() restarts it.
      */
     @Override
-    public void markServerForRestart() {
-        markServerForRestart(RestartReason.CRASH);
-    }
-
-    @Override
-    public void markServerForRestart(RestartReason reason) {
-        synchronized (lock) {
-            LOG.debug("Server marked for restart ({}) - will restart on next ensureRunning()", reason);
-            markForRestart(reason);
-        }
-    }
-
-    @Override
     public void markServerForRestart(RestartReason reason, long generation) {
         synchronized (lock) {
             if (isSuperseded(generation, reason)) {
@@ -228,15 +215,6 @@ public class SharedServerManager implements ServerManager {
     }
 
     /** Another client may already have attributed this crash (OOM/TIMEOUT); don't overwrite it. */
-    @Override
-    public int handleCrashAndGetExitCode() {
-        synchronized (lock) {
-            restarts.markIfUnmarked(RestartReason.CRASH);
-            pendingRestart = true;
-        }
-        return -1;
-    }
-
     @Override
     public int handleCrashAndGetExitCode(long generation) {
         synchronized (lock) {

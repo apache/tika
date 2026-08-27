@@ -1,5 +1,14 @@
 Release 4.1.0 - unreleased
 
+   * tika-pipes: a parse that raced PipesParser.close()/AsyncProcessor.close()
+     threw IllegalStateException out of PipesParser.parse() in per-client mode;
+     both modes now return a FAILED_TO_INITIALIZE result, which a caller can act
+     on. ServerManager's restart-reporting surface is reduced to one spelling --
+     markServerForRestart(RestartReason, long) and handleCrashAndGetExitCode(long),
+     both abstract. The previous no-arg and reasonless forms defaulted to one
+     another, so an implementation that overrode only one left the others
+     silently inert (TIKA-4839).
+
    * Add Micrometer reporting and opt-in endpoint for tika-server (TIKA-4839).
      
    * Improve spooling/decrease number of spills to disk (TIKA-4835).

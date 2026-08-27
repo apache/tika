@@ -26,6 +26,7 @@ import java.nio.file.Path;
 final class SentinelServerManager implements ServerManager {
     private final int port;
     volatile boolean abandoned;
+    volatile RestartReason marked;
 
     SentinelServerManager(int port) {
         this.port = port;
@@ -66,6 +67,21 @@ final class SentinelServerManager implements ServerManager {
     @Override
     public Path getTempDirectory() {
         return null;
+    }
+
+    @Override
+    public long getGeneration() {
+        return 0;
+    }
+
+    @Override
+    public void markServerForRestart(RestartReason reason, long generation) {
+        marked = reason;
+    }
+
+    @Override
+    public int handleCrashAndGetExitCode(long generation) {
+        return -1;
     }
 
     @Override
