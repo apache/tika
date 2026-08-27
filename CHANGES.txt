@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * Stop spooling OLE2 objects whose header over-reserves BAT capacity
+     (TIKA-4845).
+
    * Add Micrometer reporting and opt-in endpoint for tika-server (TIKA-4839).
      
    * Improve spooling/decrease number of spills to disk (TIKA-4835).
@@ -224,6 +227,21 @@ Release 4.1.0 - unreleased
      recursion/allocation; malformed files fall back to the legacy string dump
      (TIKA-4814).
 
+   * New GeoGebraParser for *.ggb/*.ggs/*.ggt: geogebra:* metadata, text and
+     the thumbnail as a THUMBNAIL embedded document, with content-based
+     detection. Previously typed application/zip with every entry as an
+     attachment. *.ggs and *.ggp are new mime types; *.ggp is glob-only
+     (TIKA-4831).
+
+   * RawTiffParser extracts the camera-generated JPEG previews embedded in
+     TIFF-based raw images (Nikon NEF/NRW, Sony ARW/SRF/SR2, Pentax PEF/PTX,
+     Adobe DNG and Canon CR2, including BigTIFF DNG containers) as thumbnail
+     embedded documents. image/x-raw-{nikon,sony,pentax,adobe} are now
+     sub-classes of image/tiff, so a named NEF/ARW/PEF/DNG that used to detect
+     as image/tiff (TiffParser, metadata only) now detects as image/x-raw-* and
+     emits thumbnail-N.jpg attachments in /rmeta and /unpack; CR2 keeps its
+     detection but also gains the attachments. Disable via
+     "raw-tiff-parser": {"extractPreviews": false} (TIKA-4824).
    * RawTiffParser extracts embedded JPEG previews from NEF/NRW, ARW/SRF/SR2,
      PEF/PTX, DNG and CR2 as thumbnail embedded documents. image/x-raw-* are
      now subtypes of image/tiff, so named raw files detect as image/x-raw-*.

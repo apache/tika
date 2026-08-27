@@ -605,6 +605,11 @@ public class POIFSContainerDetector implements Detector {
      * in memory, the budget has no room for the copy, or POI's stream loader rejects the
      * object (it is stricter than the file loader on truncated objects).
      * <p>
+     * None of this would be needed if POI could be handed the bytes it already has. Its API
+     * takes a File or FileChannel (no copy) or an InputStream (copy sized by the header) with
+     * nothing in between, and POIFSFileSystem._data is protected while readCoreContents() is
+     * private, so a subclass cannot supply a ByteArrayBackedDataSource either.
+     * <p>
      * With no budget in the context there is no accounting at all, and a byte[]-backed
      * stream has no spill threshold to bound it either, so the copy is capped outright:
      * above {@link #MAX_UNBUDGETED_COPY} the file path -- which is what 4.0.0 always did --
@@ -616,6 +621,16 @@ public class POIFSContainerDetector implements Detector {
      * block reads cost less than the heap.
      */
     private static final long MAX_UNBUDGETED_COPY = 16L * 1024 * 1024;
+
+    /**
+     * BAT blocks a small object may reserve regardless of its length. Every valid header
+     * declares at least one, and writers round up; the unit is the sector size, so this is
+     * 256KB for 512-byte sectors and 16MB for 4K ones.
+     */
+    private static final int MIN_DECLARED_BAT_BLOCKS = 4;
+
+    /** Past this multiple of the bytes in hand the header is not describing this object. */
+    private static final int MAX_DECLARED_AMPLIFICATION = 16;
 
     private Set<String> getTopLevelNamesInMemory(TikaInputStream stream, ParseContext context)
             throws IOException {
@@ -674,10 +689,15 @@ public class POIFSContainerDetector implements Detector {
     /**
      * The heap POI's stream loader would allocate for this object -- sized from the header's
      * declared BAT count, not the content -- or -1 when the header cannot be read or declares
-     * more than the content can account for. A valid header covers at most one BAT block of
-     * unused entries beyond the actual size; anything past that is a malformed or hostile
-     * header (a 512-byte object can declare hundreds of MB) and must not be opened from a
-     * stream at all.
+     * an implausible multiple of the bytes in hand.
+     * <p>
+     * The bound is on amplification, over a floor of a few BAT blocks. Real writers reserve
+     * BAT capacity ahead of use -- SolidWorks declares 26 BAT blocks where 16 would do, and
+     * small objects routinely declare several times their own length -- so "one BAT block of
+     * slack" rejects valid files. The floor is in sectors rather than bytes because a 4K-sector
+     * object cannot declare less than 4MB even when it is nearly empty. What must not get
+     * through is a 512-byte object declaring hundreds of MB, four orders of magnitude past
+     * anything a writer produces.
      */
     static long honestDeclaredSize(SeekableByteChannel channel) throws IOException {
         byte[] header = new byte[POIFSConstants.SMALLER_BIG_BLOCK_SIZE];
@@ -698,10 +718,12 @@ public class POIFSContainerDetector implements Detector {
             HeaderBlock hb = new HeaderBlock(
                     UnsynchronizedByteArrayInputStream.builder().setByteArray(header).get());
             long declared = BATBlock.calculateMaximumSize(hb);
-            long oneBatSpan = (long) hb.getBigBlockSize().getBigBlockSize() *
-                    hb.getBigBlockSize().getBATEntriesPerBlock();
+            long sector = hb.getBigBlockSize().getBigBlockSize();
+            long batSpan = sector * hb.getBigBlockSize().getBATEntriesPerBlock();
             long actual = channel.size();
-            return declared > actual + oneBatSpan ? -1 : declared;
+            long ceiling = Math.max(sector + MIN_DECLARED_BAT_BLOCKS * batSpan,
+                    actual * MAX_DECLARED_AMPLIFICATION);
+            return declared > ceiling ? -1 : declared;
         } catch (IOException | RuntimeException e) {
             return -1;
         }
