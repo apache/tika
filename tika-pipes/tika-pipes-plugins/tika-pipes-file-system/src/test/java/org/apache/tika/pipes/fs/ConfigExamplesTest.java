@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.Collections;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -62,7 +63,7 @@ public class ConfigExamplesTest extends AbstractConfigExamplesTest {
         JsonNode inner = innerComponent(readExample("file-system-jsonl-reporter.json"),
                 "pipes-reporters", null, "file-system-jsonl-reporter");
         FileSystemJsonlReporterConfig config = FileSystemJsonlReporterConfig.load(inner.toString());
-        assertEquals("/var/log/tika/pipes-audit.jsonl", config.path().toString());
+        assertEquals(Paths.get("/var/log/tika/pipes-audit.jsonl"), config.path());
         assertEquals(FileSystemJsonlReporterConfig.ON_EXISTS.EXCEPTION, config.onExists());
         assertEquals(10000, config.maxMessageLength());
         assertTrue(config.includes().contains("OOM"));

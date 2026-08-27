@@ -146,6 +146,9 @@ public class AsyncProcessor implements Closeable {
                     } catch (InterruptedException e) {
                         return WATCHER_FUTURE_CODE;
                     } catch (RuntimeException e) {
+                        if (failure.get() == null) {
+                            throw e;
+                        }
                         // already latched in failure; rethrowing would make this future a second one
                         return WATCHER_FUTURE_CODE;
                     }
@@ -353,7 +356,12 @@ public class AsyncProcessor implements Closeable {
             } catch (ExecutionException e) {
                 if (failure.compareAndSet(null, e)) {
                     LOG.error("execution exception", e);
-                    this.pipesReporter.error(e);
+                    try {
+                        this.pipesReporter.error(e);
+                    } catch (RuntimeException re) {
+                        // the worker failure is the primary; don't let the reporter mask it
+                        e.addSuppressed(re);
+                    }
                 }
                 throw new RuntimeException(e);
             }
