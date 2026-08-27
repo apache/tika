@@ -56,8 +56,10 @@ public class MarkdownSummaryWriter {
         try (BufferedWriter w = Files.newBufferedWriter(summaryPath)) {
             w.write("# Tika Eval Comparison Summary\n\n");
 
+            writeRunInfo(c, w);
             writeOverview(c, w);
             writeExtractExceptionSummary(c, w);
+            writePipesCrashSummary(c, w);
             writeExceptionSummary(c, w);
             writeContentQualitySummary(c, w);
             writeOovComparison(c, w);
@@ -74,6 +76,55 @@ public class MarkdownSummaryWriter {
             writeMissingExtracts(c, w);
         }
         LOG.info("Wrote markdown summary to {}", summaryPath);
+    }
+
+    private static void writeRunInfo(Connection c, BufferedWriter w)
+            throws IOException, SQLException {
+        if (!tableExists(c, "RUN_INFO")) {
+            return; // db from a tika-eval before run_info existed
+        }
+        w.write("## Run Info\n\n");
+        w.write("### Eval\n\n");
+        writeQueryAsTable(c, w, "select run_key as RUN_KEY, run_value as RUN_VALUE from run_info order by run_key");
+        w.write("\n### Batch A\n\n");
+        writeQueryAsTable(c, w, "select run_key as RUN_KEY, run_value as RUN_VALUE from run_info_a order by run_key");
+        w.write("\n### Batch B\n\n");
+        writeQueryAsTable(c, w, "select run_key as RUN_KEY, run_value as RUN_VALUE from run_info_b order by run_key");
+        w.write("\n");
+    }
+
+    /** Splits NO_EXTRACT_FILE etc. by what the batch run's jsonl reporter said about the container. */
+    private static void writePipesCrashSummary(Connection c, BufferedWriter w)
+            throws IOException, SQLException {
+        if (!tableExists(c, "PIPES_CLASS_A")) {
+            return; // built by the reports' before-sql; absent on a pre-ledger db
+        }
+        w.write("## Extract File Issues by Pipes Status\n\n");
+        w.write("CRASH = OOM/TIMEOUT/UNSPECIFIED_CRASH recorded for this file; any other recorded status is shown as-is; " +
+                "NO_PIPES_RECORD = a ledger was supplied but has no line for this file (the batch recorded no failure for it); " +
+                "BATCH_WITHOUT_LEDGER = run-info present but the batch wrote no ledger (pre-4.1 tika-app); " +
+                "NO_PIPES_REPORT_SUPPLIED = neither given.\n\n");
+        for (String side : new String[]{"a", "b"}) {
+            w.write("### Extract " + side.toUpperCase(java.util.Locale.ROOT) + "\n\n");
+            writeQueryAsTable(c, w,
+                    "select p.classification as CLASSIFICATION, t.extract_exception_description as TYPE, count(1) as COUNT " +
+                    "from extract_exceptions_" + side + " e " +
+                    "join pipes_class_" + side + " p on p.container_id = e.container_id " +
+                    "join ref_extract_exception_types t on t.extract_exception_id = e.extract_exception_id " +
+                    "group by p.classification, t.extract_exception_description order by COUNT desc");
+            w.write("\n");
+        }
+        w.write("### Crash status but extract present (success, status lost)\n\n");
+        writeQueryAsTable(c, w,
+                "select 'A' as SIDE, c.file_path as FILE, p.pipes_status as STATUS from containers c " +
+                "join pipes_class_a p on p.container_id = c.container_id where p.classification = 'CRASH' " +
+                "and not exists (select 1 from extract_exceptions_a e where e.container_id = c.container_id) " +
+                "union all " +
+                "select 'B', c.file_path, p.pipes_status from containers c " +
+                "join pipes_class_b p on p.container_id = c.container_id where p.classification = 'CRASH' " +
+                "and not exists (select 1 from extract_exceptions_b e where e.container_id = c.container_id) " +
+                "order by 1, 2 limit " + TOP_N);
+        w.write("\n");
     }
 
     private static void writeOverview(Connection c, BufferedWriter w)
@@ -583,10 +634,14 @@ public class MarkdownSummaryWriter {
     }
 
     private static boolean isComparisonDb(Connection c) throws SQLException {
+        return tableExists(c, "CONTENT_COMPARISONS");
+    }
+
+    private static boolean tableExists(Connection c, String table) throws SQLException {
         DatabaseMetaData md = c.getMetaData();
         try (ResultSet rs = md.getTables(null, null, "%", null)) {
             while (rs.next()) {
-                if ("CONTENT_COMPARISONS".equalsIgnoreCase(rs.getString(3))) {
+                if (table.equalsIgnoreCase(rs.getString(3))) {
                     return true;
                 }
             }

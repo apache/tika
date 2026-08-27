@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -62,6 +63,7 @@ import org.apache.tika.eval.app.io.DBWriter;
 import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
+import org.apache.tika.eval.app.io.PipesReport;
 import org.apache.tika.eval.app.reports.ResultsReporter;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MimeTypes;
@@ -92,6 +94,14 @@ public class ExtractComparerRunner {
                 .addOption(Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get())
                 .addOption(Option.builder("r").longOpt("report").desc("automatically run Report and tgz after Compare").get())
                 .addOption(Option.builder("rd").longOpt("reportsDir").hasArg().desc("directory for reports (default: 'reports')").get())
+                .addOption(Option.builder("pa").longOpt("pipesReportA").hasArg()
+                        .desc("optional: jsonl from tika-pipes' file-system-jsonl-reporter for A; default: <extractsA>/.run-info/crashes-*.jsonl").get())
+                .addOption(Option.builder("pb").longOpt("pipesReportB").hasArg()
+                        .desc("optional: same, for B").get())
+                .addOption(Option.builder("ra").longOpt("runInfoA").hasArg()
+                        .desc("optional: run-info json from run-batch.sh for A; default: <extractsA>/.run-info/run-info-*.json").get())
+                .addOption(Option.builder("rb").longOpt("runInfoB").hasArg()
+                        .desc("optional: same, for B").get())
                 .addOption(Option.builder("z").longOpt("gzip").desc("gzip the H2 db file (<db>.mv.db.gz) after Compare for transfer; requires -d").get())
                 ;
     }
@@ -103,6 +113,15 @@ public class ExtractComparerRunner {
         Path extractsADir = commandLine.hasOption('a') ? Paths.get(commandLine.getOptionValue('a')) : Paths.get(USAGE_FAIL("Must specify extractsA dir: -a"));
         Path extractsBDir = commandLine.hasOption('b') ? Paths.get(commandLine.getOptionValue('b')) : Paths.get(USAGE_FAIL("Must specify extractsB dir: -b"));
         Path inputDir = commandLine.hasOption('i') ? Paths.get(commandLine.getOptionValue('i')) : extractsADir;
+
+        RunInfo.Side sideA = RunInfo.loadSide(optPath(commandLine, "pa"), optPath(commandLine, "ra"), extractsADir);
+        RunInfo.Side sideB = RunInfo.loadSide(optPath(commandLine, "pb"), optPath(commandLine, "rb"), extractsBDir);
+        Map<String, String> runInfoA = new LinkedHashMap<>(sideA.batchInfo());
+        runInfoA.putAll(RunInfo.pipesReportInfo(sideA.pipesReport()));
+        runInfoA.putAll(RunInfo.extractsInfo(extractsADir));
+        Map<String, String> runInfoB = new LinkedHashMap<>(sideB.batchInfo());
+        runInfoB.putAll(RunInfo.pipesReportInfo(sideB.pipesReport()));
+        runInfoB.putAll(RunInfo.extractsInfo(extractsBDir));
 
         boolean usesTempDb = !commandLine.hasOption('d');
         Path tempDbDir = null;
@@ -124,7 +143,8 @@ public class ExtractComparerRunner {
 
         try {
             String jdbcString = getJdbcConnectionString(dbPath);
-            execute(inputDir, extractsADir, extractsBDir, jdbcString, evalConfig);
+            Map<String, String> runInfo = RunInfo.evalInfo(args, evalConfig, inputDir);
+            execute(inputDir, extractsADir, extractsBDir, jdbcString, evalConfig, sideA.pipesReport(), sideB.pipesReport(), runInfo, runInfoA, runInfoB);
 
             if (commandLine.hasOption('r')) {
                 String reportsDir = commandLine.getOptionValue("rd", "reports");
@@ -153,6 +173,10 @@ public class ExtractComparerRunner {
         }
     }
 
+    private static Path optPath(CommandLine commandLine, String opt) {
+        return commandLine.hasOption(opt) ? Paths.get(commandLine.getOptionValue(opt)) : null;
+    }
+
     private static String getJdbcConnectionString(String dbPath) {
         if (dbPath.startsWith("jdbc:")) {
             return dbPath;
@@ -163,7 +187,9 @@ public class ExtractComparerRunner {
 
     }
 
-    private static void execute(Path inputDir, Path extractsA, Path extractsB, String dbPath, EvalConfig evalConfig) throws SQLException, IOException {
+    private static void execute(Path inputDir, Path extractsA, Path extractsB, String dbPath, EvalConfig evalConfig, PipesReport pipesReportA,
+                                PipesReport pipesReportB, Map<String, String> runInfo, Map<String, String> runInfoA, Map<String, String> runInfoB)
+            throws SQLException, IOException {
 
         //parameterize this? if necesssary
         try {
@@ -176,6 +202,12 @@ public class ExtractComparerRunner {
         ExtractComparerBuilder builder = new ExtractComparerBuilder();
         MimeBuffer mimeBuffer = initTables(jdbcUtil, builder, dbPath, evalConfig);
         builder.populateRefTables(jdbcUtil, mimeBuffer);
+        // before workers start, so an aborted run still says what it was
+        IDBWriter runInfoWriter = builder.getDBWriter(List.of(RunInfo.RUN_INFO_TABLE, RunInfo.RUN_INFO_TABLE_A, RunInfo.RUN_INFO_TABLE_B), jdbcUtil, mimeBuffer);
+        RunInfo.write(runInfoWriter, RunInfo.RUN_INFO_TABLE, runInfo);
+        RunInfo.write(runInfoWriter, RunInfo.RUN_INFO_TABLE_A, runInfoA);
+        RunInfo.write(runInfoWriter, RunInfo.RUN_INFO_TABLE_B, runInfoB);
+        runInfoWriter.close();
 
         AtomicInteger enqueued = new AtomicInteger(0);
         AtomicInteger processed = new AtomicInteger(0);
@@ -195,7 +227,7 @@ public class ExtractComparerRunner {
         for (int i = 0; i < evalConfig.getNumWorkers(); i++) {
             ExtractReader extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS, evalConfig.getMinExtractLength(), evalConfig.getMaxExtractLength());
             ExtractComparer extractComparer = new ExtractComparer(inputDir, extractsA, extractsB, extractReader,
-                    builder.getDBWriter(builder.getNonRefTableInfos(), jdbcUtil, mimeBuffer));
+                    builder.getDBWriter(builder.getNonRefTableInfos(), jdbcUtil, mimeBuffer), pipesReportA, pipesReportB);
             executorCompletionService.submit(new ComparerWorker(queue, extractComparer, processed));
         }
 
@@ -221,6 +253,10 @@ public class ExtractComparerRunner {
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         } finally {
+            Map<TableInfo, PipesReport> ledgers = new HashMap<>();
+            ledgers.put(RunInfo.RUN_INFO_TABLE_A, pipesReportA);
+            ledgers.put(RunInfo.RUN_INFO_TABLE_B, pipesReportB);
+            RunInfo.finish(runInfoWriter, RunInfo.RUN_INFO_TABLE, ledgers);
             mimeBuffer.close();
             executorService.shutdownNow();
             try {
@@ -379,6 +415,9 @@ public class ExtractComparerRunner {
                     queue.put(PipesIterator.COMPLETED_SEMAPHORE);
                     return COMPARER_WORKER_COMPLETED_VALUE;
                 }
+                if (RunInfo.isRunInfoPath(t.getFetchKey().getFetchKey())) {
+                    continue;
+                }
                 extractComparer.processFileResource(t.getFetchKey());
                 processed.incrementAndGet();
             }
@@ -414,6 +453,9 @@ public class ExtractComparerRunner {
             tableInfosAandB.add(ExtractComparer.COMPARISON_CONTAINERS);
             tableInfosAandB.add(ExtractComparer.CONTENT_COMPARISONS);
             tableInfosAandB.add(ProfilerBase.MIME_TABLE);
+            tableInfosAandB.add(RunInfo.RUN_INFO_TABLE);
+            tableInfosAandB.add(RunInfo.RUN_INFO_TABLE_A);
+            tableInfosAandB.add(RunInfo.RUN_INFO_TABLE_B);
 
             List<TableInfo> refTableInfos = new ArrayList<>();
             refTableInfos.add(ExtractComparer.REF_PAIR_NAMES);

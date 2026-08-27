@@ -1,0 +1,6 @@
+{
+  "run": {"id": "run-a1", "note": "baseline", "start": "2026-08-27T09:59:00Z", "host": "box-a", "user": "tester"},
+  "tika": {"app_path": "/opt/tika/tika-app-4.0.0.jar", "app_sha256": "abc123", "version": "4.0.0", "git_commit": "deadbeef"},
+  "config": {"path": "/opt/tika/tika-config.json", "sha256": "cfg123"},
+  "jvm": {"version": "17.0.9", "args": ["-Xmx4g", "-XX:+UseG1GC"]}
+}

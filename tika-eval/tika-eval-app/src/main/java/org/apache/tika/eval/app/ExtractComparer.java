@@ -38,6 +38,7 @@ import org.apache.tika.eval.app.db.TableInfo;
 import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
+import org.apache.tika.eval.app.io.PipesReport;
 import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
 import org.apache.tika.eval.core.tokens.ContrastStatistics;
 import org.apache.tika.eval.core.tokens.TokenContraster;
@@ -57,7 +58,9 @@ public class ExtractComparer extends ProfilerBase {
     public static TableInfo COMPARISON_CONTAINERS =
             new TableInfo("containers", new ColInfo(Cols.CONTAINER_ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.FILE_PATH, Types.VARCHAR, FILE_PATH_MAX_LEN),
                     new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12), new ColInfo(Cols.LENGTH, Types.BIGINT), new ColInfo(Cols.EXTRACT_FILE_LENGTH_A, Types.BIGINT),
-                    new ColInfo(Cols.EXTRACT_FILE_LENGTH_B, Types.BIGINT));
+                    new ColInfo(Cols.EXTRACT_FILE_LENGTH_B, Types.BIGINT),
+                    new ColInfo(Cols.PIPES_STATUS_A, Types.VARCHAR, PIPES_STATUS_MAX_LEN), new ColInfo(Cols.PIPES_MESSAGE_A, Types.VARCHAR, PIPES_MESSAGE_MAX_LEN),
+                    new ColInfo(Cols.PIPES_STATUS_B, Types.VARCHAR, PIPES_STATUS_MAX_LEN), new ColInfo(Cols.PIPES_MESSAGE_B, Types.VARCHAR, PIPES_MESSAGE_MAX_LEN));
     public static TableInfo CONTENT_COMPARISONS =
             new TableInfo("content_comparisons", new ColInfo(Cols.ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_A, Types.VARCHAR, 1024),
                     new ColInfo(Cols.TOP_10_UNIQUE_TOKEN_DIFFS_B, Types.VARCHAR, 1024), new ColInfo(Cols.TOP_10_MORE_IN_A, Types.VARCHAR, 1024),
@@ -87,13 +90,22 @@ public class ExtractComparer extends ProfilerBase {
     private final Path extractsB;
     private final TokenContraster tokenContraster = new TokenContraster();
     private final ExtractReader extractReader;
+    private final PipesReport pipesReportA;
+    private final PipesReport pipesReportB;
 
     public ExtractComparer(Path inputDir, Path extractsA, Path extractsB, ExtractReader extractReader, IDBWriter writer) {
+        this(inputDir, extractsA, extractsB, extractReader, writer, null, null);
+    }
+
+    public ExtractComparer(Path inputDir, Path extractsA, Path extractsB, ExtractReader extractReader, IDBWriter writer,
+                           PipesReport pipesReportA, PipesReport pipesReportB) {
         super(writer);
         this.inputDir = inputDir;
         this.extractsA = extractsA;
         this.extractsB = extractsB;
         this.extractReader = extractReader;
+        this.pipesReportA = pipesReportA;
+        this.pipesReportB = pipesReportB;
     }
 
     public static void USAGE() throws IOException {
@@ -172,6 +184,8 @@ public class ExtractComparer extends ProfilerBase {
         long extractFileLengthB = getFileLength(fpsB.getExtractFile());
         contData.put(Cols.EXTRACT_FILE_LENGTH_B, extractFileLengthB > NON_EXISTENT_FILE_LENGTH ? Long.toString(extractFileLengthB) : "");
 
+        putPipesResult(contData, pipesReportA, fpsA, Cols.PIPES_STATUS_A, Cols.PIPES_MESSAGE_A);
+        putPipesResult(contData, pipesReportB, fpsB, Cols.PIPES_STATUS_B, Cols.PIPES_MESSAGE_B);
         writer.writeRow(COMPARISON_CONTAINERS, contData);
 
         if (extractExceptionA != null) {
