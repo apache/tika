@@ -49,6 +49,12 @@ class GeoGebraXMLHandler extends DefaultHandler {
      */
     private static final Pattern STRING_LITERAL = Pattern.compile("\"([^\"]*)\"");
 
+    /**
+     * Longest content JSON that is parsed; a real inline text, table or mind
+     * map is a few kilobytes, anything far beyond that is not worth a tree.
+     */
+    private static final int MAX_CONTENT_LENGTH = 1024 * 1024;
+
     private final XHTMLContentHandler xhtml;
     private final Metadata metadata;
     private final boolean documentMetadata;
@@ -138,7 +144,8 @@ class GeoGebraXMLHandler extends DefaultHandler {
             return;
         }
         String trimmed = val.trim();
-        if (trimmed.isEmpty() || (trimmed.charAt(0) != '[' && trimmed.charAt(0) != '{')) {
+        if (trimmed.isEmpty() || trimmed.length() > MAX_CONTENT_LENGTH
+                || (trimmed.charAt(0) != '[' && trimmed.charAt(0) != '{')) {
             //not a JSON document; a plain string carries no text runs
             return;
         }

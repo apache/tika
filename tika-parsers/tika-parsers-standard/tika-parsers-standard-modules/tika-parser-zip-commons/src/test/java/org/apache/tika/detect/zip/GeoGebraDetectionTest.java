@@ -17,7 +17,9 @@
 package org.apache.tika.detect.zip;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.io.InputStream;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -36,8 +38,9 @@ import org.apache.tika.parser.ParseContext;
 public class GeoGebraDetectionTest extends TikaTest {
 
     private List<Metadata> getRecursiveMetadataWithoutName(String fileName) throws Exception {
-        try (TikaInputStream tis = TikaInputStream.get(
-                getClass().getResourceAsStream("/test-documents/" + fileName), new Metadata())) {
+        InputStream is = getClass().getResourceAsStream("/test-documents/" + fileName);
+        assertNotNull(is, "missing test resource " + fileName);
+        try (TikaInputStream tis = TikaInputStream.get(is, new Metadata())) {
             return getRecursiveMetadata(tis, AUTO_DETECT_PARSER, new Metadata(),
                     new ParseContext(), true);
         }
