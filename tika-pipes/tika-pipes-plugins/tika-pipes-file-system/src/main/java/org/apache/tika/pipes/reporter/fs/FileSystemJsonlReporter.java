@@ -18,14 +18,15 @@ package org.apache.tika.pipes.reporter.fs;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.RandomAccessFile;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -44,24 +45,18 @@ import org.apache.tika.utils.ExceptionUtils;
  * accepted by the includes/excludes filter. The line's {@code id} is the
  * {@link FetchEmitTuple#getId()} verbatim, so consumers join on it.
  * <p>
- * A single writer thread drains a bounded queue and flushes whenever the queue
- * runs dry, so a crash line is on disk within moments of being reported. A
- * writer failure (disk full, etc.) fails the next {@link #report} rather than
- * silently dropping lines.
+ * Each line is written and flushed synchronously in {@link #report}, so it is on
+ * disk before the driver moves on. A write failure (disk full, etc.) throws from
+ * that {@link #report} and every later one rather than dropping lines silently.
  */
 public class FileSystemJsonlReporter extends PipesReporterBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemJsonlReporter.class);
 
-    private static final int QUEUE_SIZE = 10_000;
-    private static final long MAX_OFFER_WAIT_MS = 60_000;
-    private static final long CLOSE_WAIT_MS = 60_000;
-    private static final Line END = new Line(null, null, null, -1, null);
-
-    public record Line(String id, String status, String message, long elapsedMs, String ts) {
+    private record Line(String id, String status, String category, String message, long elapsedMs, String timestamp) {
     }
 
-    private record ErrorLine(String error, String ts) {
+    private record ErrorLine(String error, String timestamp) {
     }
 
     public static FileSystemJsonlReporter build(ExtensionConfig pluginConfig) throws TikaConfigException, IOException {
@@ -71,11 +66,9 @@ public class FileSystemJsonlReporter extends PipesReporterBase {
 
     private final FileSystemJsonlReporterConfig config;
     private final ObjectMapper mapper = new ObjectMapper();
-    private final ArrayBlockingQueue<Object> queue = new ArrayBlockingQueue<>(QUEUE_SIZE);
-    private final Thread writerThread;
     private final BufferedWriter writer;
-    private volatile IOException writerFailure;
-    private volatile boolean closed;
+    private IOException writerFailure;
+    private boolean closed;
 
     public FileSystemJsonlReporter(ExtensionConfig pluginConfig, FileSystemJsonlReporterConfig config) throws TikaConfigException, IOException {
         super(pluginConfig, config.includes(), config.excludes());
@@ -84,13 +77,13 @@ public class FileSystemJsonlReporter extends PipesReporterBase {
             throw new TikaConfigException("must initialize 'path'");
         }
         this.writer = open(config);
-        this.writerThread = new Thread(this::drain, "tika-jsonl-reporter");
-        writerThread.setDaemon(true);
-        writerThread.start();
     }
 
     private static BufferedWriter open(FileSystemJsonlReporterConfig config) throws TikaConfigException, IOException {
         Path path = config.path();
+        if (Files.isDirectory(path)) {
+            throw new TikaConfigException("'" + path + "' is a directory; 'path' must be a file");
+        }
         if (path.getParent() != null) {
             Files.createDirectories(path.getParent());
         }
@@ -99,10 +92,30 @@ public class FileSystemJsonlReporter extends PipesReporterBase {
             case APPEND -> new StandardOpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.APPEND};
             case REPLACE -> new StandardOpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING};
         };
+        boolean needsNewline = config.onExists() == FileSystemJsonlReporterConfig.ON_EXISTS.APPEND && lacksTrailingNewline(path);
         try {
-            return Files.newBufferedWriter(path, StandardCharsets.UTF_8, options);
+            // lone surrogates in ids/messages must not kill the log; default encoder would throw
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(path, options),
+                    StandardCharsets.UTF_8.newEncoder()
+                            .onMalformedInput(CodingErrorAction.REPLACE)
+                            .onUnmappableCharacter(CodingErrorAction.REPLACE)));
+            if (needsNewline) {
+                writer.newLine();
+            }
+            return writer;
         } catch (FileAlreadyExistsException e) {
             throw new TikaConfigException("'" + path + "' already exists; set onExists to APPEND or REPLACE to reuse it", e);
+        }
+    }
+
+    // a previous run killed mid-write leaves a partial last line; terminate it so it stays one line
+    private static boolean lacksTrailingNewline(Path path) throws IOException {
+        if (!Files.isRegularFile(path) || Files.size(path) == 0) {
+            return false;
+        }
+        try (RandomAccessFile raf = new RandomAccessFile(path.toFile(), "r")) {
+            raf.seek(raf.length() - 1);
+            return raf.read() != '\n';
         }
     }
 
@@ -111,57 +124,35 @@ public class FileSystemJsonlReporter extends PipesReporterBase {
         if (!accept(result.status())) {
             return;
         }
-        enqueue(new Line(t.getId(), result.status().name(), truncate(result.message()), elapsed, Instant.now().toString()));
+        write(new Line(t.getId(), result.status().name(), result.status().getCategory().name(),
+                truncate(result.message()), elapsed, Instant.now().toString()), t.getId());
     }
 
     private String truncate(String msg) {
-        if (msg == null || msg.length() <= config.maxMessageLength()) {
+        int max = config.maxMessageLength();
+        if (msg == null || msg.length() <= max) {
             return msg;
         }
-        return msg.substring(0, config.maxMessageLength()) + "...[truncated " + (msg.length() - config.maxMessageLength()) + " chars]";
+        int cut = Character.isHighSurrogate(msg.charAt(max - 1)) ? max - 1 : max;
+        return msg.substring(0, cut) + "...[truncated " + (msg.length() - cut) + " chars]";
     }
 
-    private void enqueue(Object line) {
+    private synchronized void write(Object line, String id) {
         if (writerFailure != null) {
-            throw new IllegalStateException("jsonl reporter writer failed; refusing to drop lines silently", writerFailure);
+            throw new IllegalStateException("jsonl reporter writer failed earlier; refusing to drop lines silently", writerFailure);
         }
         if (closed) {
-            throw new IllegalStateException("jsonl reporter is closed");
+            LOG.warn("jsonl reporter already closed; dropping report for {}", id);
+            return;
         }
         try {
-            if (!queue.offer(line, MAX_OFFER_WAIT_MS, TimeUnit.MILLISECONDS)) {
-                throw new IllegalStateException("jsonl reporter queue full for " + MAX_OFFER_WAIT_MS + " ms");
-            }
-        } catch (InterruptedException e) {
-            LOG.warn("interrupted before queuing report for {}; line dropped", line);
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    private void drain() {
-        try {
-            while (true) {
-                Object line = queue.take();
-                if (line == END) {
-                    return;
-                }
-                writer.write(mapper.writeValueAsString(line));
-                writer.newLine();
-                if (queue.isEmpty()) {
-                    writer.flush();
-                }
-            }
+            writer.write(mapper.writeValueAsString(line));
+            writer.newLine();
+            writer.flush();
         } catch (IOException e) {
             LOG.error("jsonl reporter failed writing {}", config.path(), e);
             writerFailure = e;
-        } catch (InterruptedException e) {
-            //fall through to close
-        } finally {
-            try {
-                writer.close();
-            } catch (IOException e) {
-                LOG.warn("problem closing {}", config.path(), e);
-            }
+            throw new IllegalStateException("jsonl reporter failed writing " + config.path(), e);
         }
     }
 
@@ -181,37 +172,33 @@ public class FileSystemJsonlReporter extends PipesReporterBase {
     }
 
     @Override
-    public void error(String msg) {
+    public synchronized void error(String msg) {
         // close() may never be called after this; get the line on disk now
         try {
-            enqueue(new ErrorLine(truncate(msg), Instant.now().toString()));
+            write(new ErrorLine(truncate(msg), Instant.now().toString()), "<error>");
         } catch (IllegalStateException e) {
             LOG.warn("couldn't record error in jsonl reporter", e);
         }
-        finish();
+        try {
+            closeWriter();
+        } catch (IOException e) {
+            LOG.warn("problem closing {}", config.path(), e);
+        }
     }
 
     @Override
-    public void close() throws IOException {
-        finish();
+    public synchronized void close() throws IOException {
+        closeWriter();
         if (writerFailure != null) {
             throw writerFailure;
         }
     }
 
-    private void finish() {
+    private void closeWriter() throws IOException {
         if (closed) {
             return;
         }
         closed = true;
-        try {
-            if (!queue.offer(END, CLOSE_WAIT_MS, TimeUnit.MILLISECONDS)) {
-                LOG.warn("jsonl reporter queue never drained; interrupting writer");
-                writerThread.interrupt();
-            }
-            writerThread.join(CLOSE_WAIT_MS);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        writer.close();
     }
 }

@@ -16,9 +16,15 @@
  */
 package org.apache.tika.pipes.fs;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.pipes.core.testutil.AbstractConfigExamplesTest;
+import org.apache.tika.pipes.reporter.fs.FileSystemJsonlReporterConfig;
 
 /**
  * Validates file system fetcher/emitter configuration examples used in documentation.
@@ -46,5 +52,14 @@ public class ConfigExamplesTest extends AbstractConfigExamplesTest {
     @Test
     public void testFileSystemJsonlReporterConfig() throws Exception {
         loadAndValidate("file-system-jsonl-reporter.json");
+
+        JsonNode inner = innerComponent(readExample("file-system-jsonl-reporter.json"),
+                "pipes-reporters", null, "file-system-jsonl-reporter");
+        FileSystemJsonlReporterConfig config = FileSystemJsonlReporterConfig.load(inner.toString());
+        assertEquals("/var/log/tika/pipes-audit.jsonl", config.path().toString());
+        assertEquals(FileSystemJsonlReporterConfig.ON_EXISTS.EXCEPTION, config.onExists());
+        assertEquals(10000, config.maxMessageLength());
+        assertTrue(config.includes().contains("OOM"));
+        assertNull(config.excludes());
     }
 }

@@ -34,7 +34,10 @@ public record FileSystemJsonlReporterConfig(Path path, Set<String> includes, Set
         if (onExists == null) {
             onExists = ON_EXISTS.EXCEPTION;
         }
-        if (maxMessageLength <= 0) {
+        if (maxMessageLength < 0) {
+            throw new IllegalArgumentException("maxMessageLength must be >= 0; 0 means the default (" + DEFAULT_MAX_MESSAGE_LENGTH + ")");
+        }
+        if (maxMessageLength == 0) {
             maxMessageLength = DEFAULT_MAX_MESSAGE_LENGTH;
         }
     }

@@ -256,13 +256,12 @@ Tradeoffs:
 * The reporter thread sleeps between writes, so the worst-case staleness of the file is `reportUpdateMs` milliseconds plus serialization time.
 * Per-record `report()` calls are cheap (counter increment only). The cost of "watching" is bounded by the periodic write, not by document throughput.
 
-[#security-notes]
 [#file-system-jsonl-reporter]
 == File System JSONL Reporter (`file-system-jsonl-reporter`)
 
 Append-only per-document audit log: one JSON object per line for every result that passes the `includes`/`excludes` filter. Where the status reporter above summarizes counts, this one records *which* documents ended in which state, so a downstream process (a dead-letter queue, `tika-eval`) can act on them.
 
-A crash result (`OOM`, `TIMEOUT`, `UNSPECIFIED_CRASH`) leaves nothing in the emitter's output; this file is the only record that the document was attempted. The driver process writes it, so it survives the forked worker's death.
+With the default `emitIntermediateResults: false` (see xref:pipes/configuration.adoc[]), a crash result (`OOM`, `TIMEOUT`, `UNSPECIFIED_CRASH`) leaves nothing in the emitter's output; this file is then the only record that the document was attempted. The driver process writes it, so it survives the forked worker's death.
 
 [source,json]
 ----
@@ -273,16 +272,19 @@ include::example$pipes-fs-jsonl-reporter.json[]
 
 [source,json]
 ----
-{"id":"reports/q3.pdf","status":"OOM","message":"...","elapsedMs":4120,"ts":"2026-08-27T14:02:11.482Z"}
+{"id":"reports/q3.pdf","status":"OOM","category":"PROCESS_CRASH","message":"...","elapsedMs":4120,"timestamp":"2026-08-27T14:02:11.482Z"}
 ----
 
-* `id` — `FetchEmitTuple.getId()` verbatim. For the file system iterator that is the path relative to `basePath`, so it matches the emitted file name minus the extract suffix.
+* `id` — `FetchEmitTuple.getId()` verbatim. For the file system iterator that is the path relative to `basePath`, so it matches the emitted file name minus the emitter's `fileExtension`.
 * `status` — `PipesResult.RESULT_STATUS` name.
-* `message` — the result's message (a stack trace for crashes), capped at `maxMessageLength`.
-* `elapsedMs` — wall-clock time the driver spent on this document.
-* `ts` — ISO-8601 UTC timestamp of the report.
+* `category` — the status's `PipesResult.CATEGORY` (`PROCESS_CRASH`, `TASK_EXCEPTION`, ...), so consumers can group without tracking every status.
+* `message` — the result's message when the worker managed to send one (a stack trace for crashes); `null` when it did not. Capped at `maxMessageLength`.
+* `elapsedMs` — wall-clock time the driver spent on this document: fetch, parse, and any wait for the emit queue; not the emit itself.
+* `timestamp` — ISO-8601 UTC timestamp of the report.
 
-If the pipeline dies, a final line of the form `{"error":"<stack trace>","ts":"..."}` is written and the file is flushed.
+If the pipeline dies, a final line of a different shape, `{"error":"<stack trace>","timestamp":"..."}`, is written and the file is closed. Readers should dispatch on the presence of `id` vs `error`.
+
+Fields may be added in later releases; existing fields will not be renamed or removed.
 
 === Configuration
 
@@ -292,11 +294,11 @@ If the pipeline dies, a final line of the form `{"error":"<stack trace>","ts":".
 
 |`path`
 |_required_
-|Path of the JSONL file. Missing parent directories are created at startup.
+|Path of the JSONL file, resolved against the driver's working directory if relative. Missing parent directories are created at startup.
 
 |`onExists`
 |`EXCEPTION`
-|What to do when `path` already exists at startup: `EXCEPTION` refuses to start, `APPEND` continues the existing file, `REPLACE` truncates it. The default is deliberately strict — appending a new run onto an old ledger is the mistake this reporter exists to prevent.
+|What to do when `path` already exists at startup: `EXCEPTION` refuses to start, `APPEND` continues the existing file (terminating a partial last line left by a killed run), `REPLACE` truncates it. There is no `SKIP`, unlike the emitter's `onExists`. The default is deliberately strict — appending a new run onto an old ledger is the mistake this reporter exists to prevent.
 
 |`includes` / `excludes`
 |_all statuses_
@@ -304,11 +306,12 @@ If the pipeline dies, a final line of the form `{"error":"<stack trace>","ts":".
 
 |`maxMessageLength`
 |`10000`
-|Characters of `message` to keep; longer messages are truncated with a suffix stating how many characters were dropped.
+|Characters of `message` (and of the final `error` line) to keep; longer messages are truncated with a suffix stating how many characters were dropped. `0` means the default; negative values are rejected.
 |===
 
-Reports are queued and written by a single background thread that flushes whenever the queue is empty, so the ordering across documents is the order the driver finished them, not the iterator's order. If the writer fails (disk full), the next `report()` throws rather than dropping lines silently.
+Each line is written and flushed before `report()` returns, so the ordering across documents is the order the driver finished them, not the iterator's order. If a write fails (disk full), that `report()` and every later one throw, which aborts the pipeline rather than dropping lines silently.
 
+[#security-notes]
 == Security Notes
 
 * **`basePath` is the sandbox boundary, and it is the only one.** With `basePath` set, the fetcher and emitter reject any key that resolves outside it, including absolute paths and `../` traversal. `allowAbsolutePaths` has no effect in this state.
