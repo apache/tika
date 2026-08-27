@@ -966,6 +966,10 @@ public class PipesClientTest {
             assertTrue(elapsed < 10000,
                     "client backstop should fire within a few seconds of its ~1800ms " +
                             "deadline, not wait for the 60s default SO_TIMEOUT (took " + elapsed + "ms)");
+            // Returning TIMEOUT is only half the job: the worker is still wedged on this
+            // request, so it must also be marked, or the pool hands it the next document.
+            assertEquals(RestartReason.TIMEOUT, fakeServerManager.marked,
+                    "a worker that blew the client backstop must be marked for restart");
         }
     }
 
@@ -979,6 +983,7 @@ public class PipesClientTest {
     private static class ChattyNeverFinishingServerManager implements ServerManager {
         private final ServerSocket serverSocket;
         private volatile boolean running = true;
+        volatile RestartReason marked;
 
         ChattyNeverFinishingServerManager() throws IOException {
             serverSocket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
@@ -1046,6 +1051,21 @@ public class PipesClientTest {
         @Override
         public Path getTempDirectory() {
             return null;
+        }
+
+        @Override
+        public long getGeneration() {
+            return 0;
+        }
+
+        @Override
+        public void markServerForRestart(RestartReason reason, long generation) {
+            marked = reason;
+        }
+
+        @Override
+        public int handleCrashAndGetExitCode(long generation) {
+            return -1;
         }
 
         @Override

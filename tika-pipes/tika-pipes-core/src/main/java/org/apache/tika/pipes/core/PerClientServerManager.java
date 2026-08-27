@@ -179,6 +179,7 @@ public class PerClientServerManager implements ServerManager {
     private volatile Path tmpDir;
     private volatile int port = -1;
     private long filesProcessed = 0;
+    private volatile long generation;
     private volatile boolean pendingRestart = false;
     private final RestartCounter restarts = new RestartCounter();
     // Set once by shutdown()/close(); guards a request thread from starting a fresh
@@ -291,18 +292,31 @@ public class PerClientServerManager implements ServerManager {
         return pendingRestart;
     }
 
+    /**
+     * One client owns one manager here, so {@code generation} carries no information a sibling
+     * could invalidate and is accepted only to satisfy the single {@link ServerManager} spelling.
+     * Shared mode is where staleness is real.
+     */
     @Override
-    public void markServerForRestart() {
-        markServerForRestart(RestartReason.CRASH);
-    }
-
-    @Override
-    public void markServerForRestart(RestartReason reason) {
+    public void markServerForRestart(RestartReason reason, long ignoredGeneration) {
         LOG.info("clientId={}: marking server for restart ({})", clientId, reason);
         markForRestart(reason);
     }
 
-    private void markForRestart(RestartReason reason) {
+    /** Counts forks so {@code PipesParser.getGeneration()} is meaningful in per-client mode too. */
+    @Override
+    public long getGeneration() {
+        return generation;
+    }
+
+    /**
+     * Takes the same monitor as {@link #ensureRunning()}, which consumes the mark: recording the
+     * reason and raising the flag must not straddle a restart, or a reason lands against a
+     * restart that has already been counted. Correctness here previously rested on an
+     * undocumented one-client-per-manager invariant; shared mode, where siblings are the norm,
+     * already locked for this and TIKA-4844 is what a stale mark costs.
+     */
+    private synchronized void markForRestart(RestartReason reason) {
         restarts.mark(reason);
         pendingRestart = true;
     }
@@ -319,7 +333,7 @@ public class PerClientServerManager implements ServerManager {
     }
 
     @Override
-    public int handleCrashAndGetExitCode() {
+    public int handleCrashAndGetExitCode(long generation) {
         // Not marked: RestartCounter attributes by exit code; the caller refines OOM/TIMEOUT.
         pendingRestart = true;
         if (process != null) {
@@ -475,6 +489,7 @@ public class PerClientServerManager implements ServerManager {
 
         try {
             process = pb.start();
+            generation++;
         } catch (Exception e) {
             deleteDir(tmpDir);
             tmpDir = null;
@@ -531,11 +546,17 @@ public class PerClientServerManager implements ServerManager {
     private void destroyProcess() throws InterruptedException {
         if (process != null) {
             process.destroyForcibly();
-            process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
-            if (process.isAlive()) {
-                LOG.error("clientId={}: process still alive after {}ms", clientId, WAIT_ON_DESTROY_MS);
+            try {
+                process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
+                if (process.isAlive()) {
+                    LOG.error("clientId={}: process still alive after {}ms", clientId, WAIT_ON_DESTROY_MS);
+                }
+            } finally {
+                // An interrupt here must not leave the field pointing at a SIGKILLed process:
+                // ensureRunning would then see process == previous and skip counting the restart,
+                // startServer() would try to reap it again, and tmpDir would never be deleted.
+                process = null;
             }
-            process = null;
         }
     }
 

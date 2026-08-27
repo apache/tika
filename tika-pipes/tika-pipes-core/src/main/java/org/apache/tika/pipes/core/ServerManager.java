@@ -96,60 +96,27 @@ public interface ServerManager extends Closeable {
     java.nio.file.Path getTempDirectory();
 
     /**
-     * Marks the server for restart due to a fatal error (OOM, timeout, etc.).
-     * <p>
-     * This is called by clients when they receive a fatal error status from the server.
-     * It signals that the server process is stopping, even if {@link #isRunning()}
-     * might still return true briefly. The next call to {@link #ensureRunning()} will
-     * wait for the process to fully exit and then restart.
-     * <p>
-     * The reason form below defaults to this one, so this must NOT default to the reason form:
-     * an implementation overriding neither would recurse until the stack blew. Concrete managers
-     * in tika-pipes override both, so callers of either spelling reach a real implementation.
-     */
-    default void markServerForRestart() {
-        // Default no-op: preserves implementations written before RestartReason existed.
-    }
-
-    /** As {@link #markServerForRestart()}, attributing the restart to {@code reason}. Override this one. */
-    default void markServerForRestart(RestartReason reason) {
-        markServerForRestart();
-    }
-
-    /**
      * The generation of the currently running process: a counter incremented every time this
      * manager forks a replacement. A client captures it when it connects and hands it back with
      * every report, so a report about a process that has already been replaced can be recognised
      * and dropped rather than being applied to its healthy successor.
      */
-    default long getGeneration() {
-        return 0;
-    }
+    long getGeneration();
 
     /**
-     * As {@link #markServerForRestart(RestartReason)}, but only if {@code generation} is still
-     * current. Reports about a superseded process are dropped.
+     * Marks the server for restart due to a fatal error, attributed to {@code reason}, but only
+     * if {@code generation} is still current -- reports about a superseded process are dropped.
+     * <p>
+     * Called by a client that received a fatal status: the process is stopping even if
+     * {@link #isRunning()} still says otherwise, and the next {@link #ensureRunning()} waits for
+     * it to exit and restarts it.
+     * <p>
+     * Deliberately the only spelling, and deliberately abstract. Earlier revisions offered a
+     * no-arg and a reasonless form defaulting to one another; an implementation that overrode
+     * only one left the others silently inert, which is how a worker known to be poisoned kept
+     * being handed documents.
      */
-    default void markServerForRestart(RestartReason reason, long generation) {
-        markServerForRestart(reason);
-    }
-
-    /**
-     * The reasonless spelling of the above, kept for callers that cannot attribute the failure.
-     * Routed through the reason form rather than the bare no-arg default: that default exists
-     * only to keep pre-RestartReason implementations working, and delegating here would leave
-     * this silently inert for any implementation that overrides only the reason form.
-     */
-    default void markServerForRestart(long generation) {
-        markServerForRestart(RestartReason.CRASH, generation);
-    }
-
-    /**
-     * As {@link #handleCrashAndGetExitCode()}, but only if {@code generation} is still current.
-     */
-    default int handleCrashAndGetExitCode(long generation) {
-        return handleCrashAndGetExitCode();
-    }
+    void markServerForRestart(RestartReason reason, long generation);
 
     /** Restarts performed so far for {@code reason}; monotonic, never reset. */
     default long getRestartCount(RestartReason reason) {
@@ -205,9 +172,6 @@ public interface ServerManager extends Closeable {
      *
      * @return the exit code if available, or -1 if the process is still running or unavailable
      */
-    default int handleCrashAndGetExitCode() {
-        markServerForRestart(RestartReason.CRASH);
-        return -1;
-    }
+    int handleCrashAndGetExitCode(long generation);
 
 }
