@@ -39,7 +39,6 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -75,10 +74,6 @@ public class RunInfo {
     public static final String RUN_INFO_DIR = ".run-info";
     static final String LEDGER_PREFIX = "crashes-";
     static final String LEDGER_SUFFIX = ".jsonl";
-
-    // secrets in jdbc urls / argv / -D flags; the value after the separator is replaced
-    private static final Pattern SECRET_KV = Pattern.compile("(?i)((?:password|passwd|pwd|secret|token|credential)[a-z_.-]*\\s*[=:]\\s*)[^&;,\\s'\"]*");
-    private static final Pattern SECRET_URL_USERINFO = Pattern.compile("(//[^/:@\\s]+:)[^@\\s]+(@)");
 
     private RunInfo() {
     }
@@ -228,7 +223,7 @@ public class RunInfo {
         return m;
     }
 
-    public static Map<String, String> evalInfo(String[] args, EvalConfig config, String jdbcString, Path inputDir) {
+    public static Map<String, String> evalInfo(String[] args, EvalConfig config, Path inputDir) {
         Map<String, String> m = new LinkedHashMap<>();
         m.put("eval.tika_version", Tika.getString());
         m.put("eval.jar_sha256", ownJarSha256());
@@ -236,20 +231,10 @@ public class RunInfo {
         m.put("eval.host", hostName());
         m.put("eval.user", System.getProperty("user.name"));
         m.put("eval.java", System.getProperty("java.vendor") + " " + System.getProperty("java.version"));
-        m.put("eval.args", redact(String.join(" ", args)));
-        m.put("eval.config", redact(config.toString()));
-        m.put("db.path", redact(jdbcString));
+        m.put("eval.args", String.join(" ", args));
+        m.put("eval.config", config.toString());
         m.put("input.path", inputDir.toAbsolutePath().toString());
         return m;
-    }
-
-    /** Masks password-like values so the tables can travel with the reports. */
-    public static String redact(String s) {
-        if (s == null) {
-            return null;
-        }
-        String r = SECRET_URL_USERINFO.matcher(s).replaceAll("$1***$2");
-        return SECRET_KV.matcher(r).replaceAll("$1***");
     }
 
     public static void write(IDBWriter writer, TableInfo table, Map<String, String> info) throws IOException {

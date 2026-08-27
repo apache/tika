@@ -143,7 +143,7 @@ public class ExtractComparerRunner {
 
         try {
             String jdbcString = getJdbcConnectionString(dbPath);
-            Map<String, String> runInfo = RunInfo.evalInfo(args, evalConfig, jdbcString, inputDir);
+            Map<String, String> runInfo = RunInfo.evalInfo(args, evalConfig, inputDir);
             execute(inputDir, extractsADir, extractsBDir, jdbcString, evalConfig, sideA.pipesReport(), sideB.pipesReport(), runInfo, runInfoA, runInfoB);
 
             if (commandLine.hasOption('r')) {

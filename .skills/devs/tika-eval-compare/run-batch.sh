@@ -137,10 +137,8 @@ RB_LIB_SHA="$LIB_SHA" RB_PLUGINS_DIR="$APP_DIR/plugins" RB_CONFIG="$CONFIG_ABS" 
 RB_INPUT="$(abs "$INPUT")" RB_EXTRACTS="$(abs "$EXTRACTS")" \
 RB_JAVA="$(java -version 2>&1 | head -1)" RB_JVM_ARGS="$JVM_ARGS" RB_LEDGER="$( $USE_LEDGER && echo "$LEDGER" || true )" \
 python3 - "$RUN_INFO" <<'PY'
-import glob, hashlib, json, os, re, socket, sys
+import glob, hashlib, json, os, socket, sys
 e = os.environ.get
-def redact(s):
-    return re.sub(r'(?i)((?:password|passwd|pwd|secret|token|credential)[\w.-]*\s*[=:]\s*)[^\s,;&]*', r'\1***', s or "")
 plugins = {}
 for z in sorted(glob.glob(os.path.join(e("RB_PLUGINS_DIR", ""), "*.zip"))):
     plugins[os.path.basename(z)] = hashlib.sha256(open(z, "rb").read()).hexdigest()
@@ -153,7 +151,7 @@ json.dump({
   "config": {"path": e("RB_CONFIG"), "sha256": e("RB_CONFIG_SHA")},
   "input": {"path": e("RB_INPUT")},
   "extracts": {"path": e("RB_EXTRACTS")},
-  "jvm": {"version": e("RB_JAVA"), "args": redact(e("RB_JVM_ARGS"))},
+  "jvm": {"version": e("RB_JAVA"), "args": e("RB_JVM_ARGS", "")},
   "ledger": {"path": e("RB_LEDGER")},
 }, open(sys.argv[1], "w"), indent=2)
 PY

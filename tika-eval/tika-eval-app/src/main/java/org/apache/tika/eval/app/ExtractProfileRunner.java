@@ -107,7 +107,7 @@ public class ExtractProfileRunner {
             evalConfig.setMaxExtractLength(Long.parseLong(commandLine.getOptionValue('m')));
         }
         RunInfo.Side side = RunInfo.loadSide(optPath(commandLine, "pr"), optPath(commandLine, "ri"), extractsDir);
-        Map<String, String> runInfo = new LinkedHashMap<>(RunInfo.evalInfo(args, evalConfig, jdbcString, inputDir));
+        Map<String, String> runInfo = new LinkedHashMap<>(RunInfo.evalInfo(args, evalConfig, inputDir));
         runInfo.putAll(side.batchInfo());
         runInfo.putAll(RunInfo.pipesReportInfo(side.pipesReport()));
         runInfo.putAll(RunInfo.extractsInfo(extractsDir));

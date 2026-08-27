@@ -102,13 +102,4 @@ public class RunInfoTest {
         assertThrows(IllegalArgumentException.class, () -> RunInfo.extractsInfo(extracts.resolve("nope")));
     }
 
-    @Test
-    public void testRedact() {
-        assertEquals("jdbc:postgresql://h/db?user=u&password=***",
-                RunInfo.redact("jdbc:postgresql://h/db?user=u&password=s3cr3t"));
-        assertEquals("jdbc:mysql://bob:***@h/db", RunInfo.redact("jdbc:mysql://bob:hunter2@h/db"));
-        assertEquals("-Dfoo=1 -Djavax.net.ssl.keyStorePassword=*** -Dbar=2",
-                RunInfo.redact("-Dfoo=1 -Djavax.net.ssl.keyStorePassword=changeit -Dbar=2"));
-        assertEquals("EvalConfig{jdbcString='jdbc:h2:file:/x'}", RunInfo.redact("EvalConfig{jdbcString='jdbc:h2:file:/x'}"));
-    }
 }

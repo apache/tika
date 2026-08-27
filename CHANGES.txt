@@ -4,7 +4,7 @@ Release 4.1.0 - unreleased
      (--pipesReport, -pa/-pb) and a run-info json (--runInfo, -ra/-rb), and
      read both from <extracts>/.run-info/ by default (refusing an ambiguous
      dir). containers gains pipes_status/pipes_message; a new run_info table
-     records eval and batch provenance (jdbc passwords redacted); reports and
+     records eval and batch provenance; reports and
      summary.md classify NO_EXTRACT_FILE by ledger status (CRASH, the raw
      status, NO_PIPES_RECORD, BATCH_WITHOUT_LEDGER, NO_PIPES_REPORT_SUPPLIED).
      Report on a db from an earlier tika-eval skips the reports it cannot run
