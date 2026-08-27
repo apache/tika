@@ -242,8 +242,9 @@ architecture suggested it would be.
 * Several parsers and detectors asked for a `java.io.File` even when the
   document was already in memory: the JPEG/TIFF/WebP metadata extractors, the
   OLE2 container detector, the OpenDocument parser's inline pictures, the
-  digest of translated embedded streams, and the PDF incremental-update scan
-  each wrote the bytes out just to read them back.
+  digest of translated embedded streams, the PDF incremental-update scan, and
+  PDFParser's main document load and renderer each wrote the bytes out just to
+  read them back.
 
 On a spinning-disk host where the temp directory, the corpus, and the outputs
 share spindles, every temp byte is a seek taken away from a corpus read or an
@@ -288,6 +289,10 @@ page cache evicted before each run, extracts written to the corpus disk):
 |4.1.0, shared server, 10 threads                |0.26 GB |277 s
 |4.1.0, per-client, 7 workers                    |1.1 GB  |287 s
 |===
+
+The like-for-like pair is 2.8 GB → 1.1 GB (both per-client); the 0.26 GB row
+also changes shape to shared-server, which pools the cache budget across
+threads.
 
 4.1.0 writes less temp than 3.x did, and matches or beats 3.x throughput while
 keeping process isolation. These are subset measurements on one host; we have
@@ -338,6 +343,55 @@ box:
 Beyond those: fix concurrency equal to the worker count when comparing, exclude
 a warm-up phase, hold the output format constant, and watch peak RSS across the
 whole process tree rather than one JVM.
+
+=== Diagnosing temp-file volume in your own run
+
+The tmpfs check in the appendix says *whether* temp volume is the bottleneck.
+To find *which* code path writes it, record `jdk.FileWrite` with JFR: path,
+bytes written, full stack trace — the per-call-site table you need. Two traps:
+
+**Flags go in `forkedJvmArgs`.** Parsing happens in the forked worker, which
+does not inherit the driver's `-D`/`-XX` flags (see
+xref:pipes/troubleshooting.adoc#_configuration_knobs_reference[Troubleshooting]).
+A recording on the driver shows near-zero bytes — a clean bill of health on
+exactly the wrong question.
+
+**Default thresholds hide temp writes.** `jdk.FileWrite` records only writes
+over 20 ms (`default`) or 10 ms (`profile`); temp spills finish well under
+that. A 200-write probe on Temurin 17: 201 events with the override, 0
+without. Override it:
+
+[source,json]
+----
+"forkedJvmArgs": [
+  "-XX:FlightRecorderOptions=maxchunksize=1m",
+  "-XX:StartFlightRecording=settings=profile,jdk.FileWrite#threshold=0ms,maxsize=500M,filename=/var/tmp/spill.jfr,dumponexit=true"
+]
+----
+
+`maxchunksize` belongs to `FlightRecorderOptions`; on `StartFlightRecording`
+it is ignored with only a warning.
+
+Group events by `path` for per-file bytes and by the top `org.apache.tika`
+frame for the call site. Stream the text form (`jfr print --events
+jdk.FileWrite`); `jfr print --json` on a large recording expands to tens of
+GB.
+
+Caveats:
+
+* **Observer effect.** On a host where temp, corpus and output share spindles,
+  JFR writes ~1 MB/s of chunk data to those same disks. Record to another
+  volume, or read the *ranking* rather than the totals.
+* **Hard kills lose the current chunk.** Workers are `destroyForcibly()`'d on
+  every teardown path; `maxchunksize` bounds the loss. `maxsize` rolls off the
+  *earliest* data — size it for the run or use `dumponexit` on a bounded
+  corpus.
+
+Once a site is found, lock it with a test rather than re-running the
+diagnostic: wrap the parser's `TikaInputStream` so any `getFile()`/`getPath()`
+call is recorded, and assert none happened. A watched temp directory is not
+enough — not every `TemporaryResources` on the path is bound to it — and a
+test that passes with the fix reverted is not a test.
 
 == Appendix: approaches considered and set aside
 

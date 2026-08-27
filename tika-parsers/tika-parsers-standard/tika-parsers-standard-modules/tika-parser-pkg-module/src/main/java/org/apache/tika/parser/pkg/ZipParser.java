@@ -127,6 +127,8 @@ public class ZipParser extends AbstractArchiveParser {
                 "application/vnd.apple.keynote", "application/vnd.apple.numbers",
                 "application/vnd.apple.pages", "application/vnd.apple.unknown.13",
                 "application/vnd.etsi.asic-e+zip", "application/vnd.etsi.asic-s+zip",
+                "application/vnd.geogebra.file", "application/vnd.geogebra.slides",
+                "application/vnd.geogebra.tool",
                 "application/vnd.google-earth.kmz", "application/vnd.mindjet.mindmanager",
                 "application/vnd.ms-excel.addin.macroenabled.12",
                 "application/vnd.ms-excel.sheet.binary.macroenabled.12",

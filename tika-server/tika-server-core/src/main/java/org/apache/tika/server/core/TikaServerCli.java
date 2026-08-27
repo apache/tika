@@ -39,6 +39,9 @@ public class TikaServerCli {
         options.addOption("?", "help", false, "this help message");
         options.addOption("c", "config", true, "tika-config file");
         options.addOption("i", "id", true, "id for this server, written to the startup log");
+        options.addOption(null, "metricsPort", true,
+                "serve Prometheus metrics on this port (9404 by convention); "
+                        + "unset means metrics are off\n");
         return options;
     }
 

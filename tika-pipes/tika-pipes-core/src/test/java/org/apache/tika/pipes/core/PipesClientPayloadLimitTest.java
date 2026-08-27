@@ -18,6 +18,7 @@ package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.DataInputStream;
@@ -72,6 +73,9 @@ public class PipesClientPayloadLimitTest {
                 assertTrue(result.message().contains("maxIpcPayloadBytes"),
                         "message should name the limit, got: " + result.message());
                 assertFalse(manager.abandoned, "nothing was sent; no reason to abandon");
+                assertNull(manager.marked,
+                        "the request was refused before anything was written; the worker is "
+                                + "healthy and must not be recycled");
                 assertFalse(connectionClosed.await(300, TimeUnit.MILLISECONDS),
                         "nothing was sent; the connection must stay usable");
             }

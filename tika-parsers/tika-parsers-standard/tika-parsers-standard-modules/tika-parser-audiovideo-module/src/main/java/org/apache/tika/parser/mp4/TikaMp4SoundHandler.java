@@ -17,7 +17,6 @@
 package org.apache.tika.parser.mp4;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 import com.drew.imaging.mp4.Mp4Handler;
 import com.drew.metadata.Metadata;
@@ -52,55 +51,54 @@ class TikaMp4SoundHandler extends Mp4SoundHandler {
         return super.processBox(type, payload, boxSize, context);
     }
 
-    /**
-     * Walks the sample description entries: 4 bytes version and flags, a
-     * 4 byte entry count, then one sample entry per count, each starting with
-     * its own size and format fourcc.
-     */
     private void extractFromSampleDescriptions(byte[] b) {
-        if (b.length < 8) {
-            return;
+        Mp4SampleEntries.walk(b, this::sampleEntry);
+    }
+
+    private void sampleEntry(String fourCC, byte[] b, int start, int end) {
+        int children = -1;
+        if (start + Mp4SampleEntries.SAMPLE_ENTRY_FIELDS + 2 <= end) {
+            //after the SampleEntry fields come the version-dependent fixed
+            //sound fields, starting with the 2 byte version, then child boxes
+            int version = EndianUtils.getUShortBE(b, start + Mp4SampleEntries.SAMPLE_ENTRY_FIELDS);
+            children = start + soundEntrySize(version);
         }
-        long entryCount = EndianUtils.getUIntBE(b, 4);
-        int pos = 8;
-        for (long i = 0; i < entryCount && pos + 8 <= b.length; i++) {
-            long size = EndianUtils.getUIntBE(b, pos);
-            if (size < 16 || size > b.length - pos) {
-                break;
-            }
-            int end = pos + (int) size;
-            String format = fourCc(b, pos + 4);
-            //protected streams replace the codec fourcc with a protected
-            //entry format: 'drms' (FairPlay) or 'enca' (ISO common encryption)
-            if ("drms".equals(format) || "enca".equals(format)) {
-                tikaMetadata.set(Audio.HAS_DRM, true);
-            }
-            if (pos + 18 <= end) {
-                //sample entry: 8 byte header, 6 reserved, 2 data ref index,
-                //then version-dependent fixed sound fields before child boxes
-                int version = EndianUtils.getUShortBE(b, pos + 16);
-                int bitRate = findEsdsAverageBitRate(b, pos + soundEntrySize(version), end, 0);
-                if (bitRate > 0) {
-                    tikaMetadata.set(Audio.BITRATE, bitRate);
+        //protected streams replace the codec FourCC with a protected sample
+        //entry format, 'drms' (FairPlay) or 'enca' (ISO common encryption),
+        //and keep the original one in a child 'sinf'/'frma' box
+        if (Mp4SampleEntries.isProtected(fourCC)) {
+            tikaMetadata.set(Audio.HAS_DRM, true);
+            if (children >= 0) {
+                String original = Mp4SampleEntries.originalFormat(b, children, end);
+                if (original != null) {
+                    fourCC = original;
                 }
             }
-            pos = end;
+        }
+        if (fourCC != null) {
+            tikaMetadata.set(Audio.FOURCC, fourCC);
+        }
+        if (children >= 0) {
+            int bitRate = findEsdsAverageBitRate(b, children, end, 0);
+            if (bitRate > 0) {
+                tikaMetadata.set(Audio.BITRATE, bitRate);
+            }
         }
     }
 
     /**
-     * Size of the fixed part of a sound sample entry, after which the child
-     * boxes start: 36 bytes for version 0, 52 for version 1 (four extra
-     * 32-bit QuickTime fields), 72 for version 2.
+     * Size of a sound sample entry after its box header, up to where the
+     * child boxes start: 28 bytes for version 0, 44 for version 1 (four extra
+     * 32-bit QuickTime fields), 64 for version 2.
      */
     private static int soundEntrySize(int version) {
         if (version == 1) {
-            return 52;
+            return 44;
         }
         if (version == 2) {
-            return 72;
+            return 64;
         }
-        return 36;
+        return 28;
     }
 
     //real files nest 'wave' at most one level; this only bounds crafted input,
@@ -123,7 +121,7 @@ class TikaMp4SoundHandler extends Mp4SoundHandler {
             if (size < 8 || size > end - pos) {
                 return 0;
             }
-            String type = fourCc(b, pos + 4);
+            String type = Mp4SampleEntries.fourCC(b, pos + 4);
             if ("esds".equals(type)) {
                 return readEsdsAverageBitRate(b, pos + 8, pos + (int) size);
             }
@@ -194,9 +192,5 @@ class TikaMp4SoundHandler extends Mp4SoundHandler {
             pos++;
         }
         return pos + 1;
-    }
-
-    private static String fourCc(byte[] b, int pos) {
-        return new String(b, pos, 4, StandardCharsets.ISO_8859_1);
     }
 }

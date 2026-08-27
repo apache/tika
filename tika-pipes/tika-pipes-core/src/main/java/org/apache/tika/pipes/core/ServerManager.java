@@ -96,18 +96,31 @@ public interface ServerManager extends Closeable {
     java.nio.file.Path getTempDirectory();
 
     /**
-     * Marks the server for restart due to a fatal error (OOM, timeout, etc.).
-     * <p>
-     * This is called by clients when they receive a fatal error status from the server.
-     * It signals that the server process is stopping, even if {@link #isRunning()}
-     * might still return true briefly. The next call to {@link #ensureRunning()} will
-     * wait for the process to fully exit and then restart.
-     * <p>
-     * In per-client mode, this is typically a no-op since the client owns the server.
-     * In shared mode, this is important for coordinating restarts among multiple clients.
+     * The generation of the currently running process: a counter incremented every time this
+     * manager forks a replacement. A client captures it when it connects and hands it back with
+     * every report, so a report about a process that has already been replaced can be recognised
+     * and dropped rather than being applied to its healthy successor.
      */
-    default void markServerForRestart() {
-        // Default no-op for backward compatibility
+    long getGeneration();
+
+    /**
+     * Marks the server for restart due to a fatal error, attributed to {@code reason}, but only
+     * if {@code generation} is still current -- reports about a superseded process are dropped.
+     * <p>
+     * Called by a client that received a fatal status: the process is stopping even if
+     * {@link #isRunning()} still says otherwise, and the next {@link #ensureRunning()} waits for
+     * it to exit and restarts it.
+     * <p>
+     * Deliberately the only spelling, and deliberately abstract. Earlier revisions offered a
+     * no-arg and a reasonless form defaulting to one another; an implementation that overrode
+     * only one left the others silently inert, which is how a worker known to be poisoned kept
+     * being handed documents.
+     */
+    void markServerForRestart(RestartReason reason, long generation);
+
+    /** Restarts performed so far for {@code reason}; monotonic, never reset. */
+    default long getRestartCount(RestartReason reason) {
+        return 0;
     }
 
     /**
@@ -159,8 +172,6 @@ public interface ServerManager extends Closeable {
      *
      * @return the exit code if available, or -1 if the process is still running or unavailable
      */
-    default int handleCrashAndGetExitCode() {
-        markServerForRestart();
-        return -1;
-    }
+    int handleCrashAndGetExitCode(long generation);
+
 }

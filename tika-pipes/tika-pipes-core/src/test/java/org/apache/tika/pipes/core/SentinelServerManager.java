@@ -26,6 +26,9 @@ import java.nio.file.Path;
 final class SentinelServerManager implements ServerManager {
     private final int port;
     volatile boolean abandoned;
+    volatile RestartReason marked;
+    /** When set, {@link #ensureRunning()} throws like a real manager that has been closed. */
+    volatile boolean closed;
 
     SentinelServerManager(int port) {
         this.port = port;
@@ -43,6 +46,9 @@ final class SentinelServerManager implements ServerManager {
 
     @Override
     public void ensureRunning() {
+        if (closed) {
+            throw new IllegalStateException("sentinel server manager is closed");
+        }
         // the scripted server is already listening
     }
 
@@ -69,7 +75,22 @@ final class SentinelServerManager implements ServerManager {
     }
 
     @Override
+    public long getGeneration() {
+        return 0;
+    }
+
+    @Override
+    public void markServerForRestart(RestartReason reason, long generation) {
+        marked = reason;
+    }
+
+    @Override
+    public int handleCrashAndGetExitCode(long generation) {
+        return -1;
+    }
+
+    @Override
     public void close() {
-        // nothing to close
+        closed = true;
     }
 }

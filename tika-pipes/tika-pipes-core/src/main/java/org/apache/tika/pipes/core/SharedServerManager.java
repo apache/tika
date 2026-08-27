@@ -77,7 +77,10 @@ public class SharedServerManager implements ServerManager {
     private final AtomicLong filesProcessed = new AtomicLong(0);
     private volatile boolean restarting = false;
     private volatile boolean pendingRestart = false; // Set when a client reports fatal error or max files reached
+    private final RestartCounter restarts = new RestartCounter();
     private volatile byte[] currentToken;
+    private volatile long generation;
+    private volatile boolean closed;
     private Process process;
     private Path tmpDir;
     private int serverPort = -1;
@@ -141,12 +144,21 @@ public class SharedServerManager implements ServerManager {
             if (isProcessAlive() && !pendingRestart) {
                 return;
             }
+            if (closed) {
+                throw new IllegalStateException("shared server manager is closed");
+            }
             restarting = true;
+            Process previous = process;
             try {
                 startServer();
+                generation++; // supersedes every report still in flight against the old process
                 pendingRestart = false; // Clear the flag after successful restart
                 filesProcessed.set(0); // Reset file counter on restart
             } finally {
+                // Count the old process once it is really gone, even if the new start failed.
+                if (process != previous) {
+                    restarts.restarted(previous);
+                }
                 restarting = false;
                 lock.notifyAll(); // Wake up any threads waiting in getPort()
             }
@@ -154,21 +166,65 @@ public class SharedServerManager implements ServerManager {
     }
 
     /**
-     * Marks the server for restart due to a fatal error (OOM, timeout).
-     * <p>
-     * This is called by clients when they receive OOM or TIMEOUT status.
-     * It signals that the server process is stopping (System.exit was called),
-     * even if isRunning() might still return true briefly.
-     * <p>
-     * The next call to ensureRunning() will wait for the process to fully
-     * exit and then restart the server.
+     * Called by a client that received OOM or TIMEOUT: the process is exiting even if
+     * isRunning() still says otherwise; the next ensureRunning() restarts it.
      */
     @Override
-    public void markServerForRestart() {
+    public void markServerForRestart(RestartReason reason, long generation) {
         synchronized (lock) {
-            LOG.debug("Server marked for restart - will restart on next ensureRunning()");
+            if (isSuperseded(generation, reason)) {
+                return;
+            }
+            LOG.debug("Server marked for restart ({}) - will restart on next ensureRunning()", reason);
+            markForRestart(reason);
+        }
+    }
+
+    /**
+     * A restart kills the shared JVM out from under every sibling still parsing on it, and
+     * {@code ensureRunning} holds {@code lock} for the whole fork, so those siblings cannot
+     * report until after the replacement is up. Their reports describe the process that was
+     * already destroyed and already counted; applying them would destroy the healthy
+     * replacement and book a second restart for a single death.
+     */
+    private boolean isSuperseded(long reportedGeneration, RestartReason reason) {
+        if (reportedGeneration >= generation) {
+            return false;
+        }
+        LOG.debug("dropping stale {} report for generation {}; current generation is {}",
+                reason, reportedGeneration, generation);
+        return true;
+    }
+
+    /** Callers hold {@code lock}. */
+    private void markForRestart(RestartReason reason) {
+        restarts.mark(reason);
+        pendingRestart = true;
+    }
+
+    @Override
+    public long getGeneration() {
+        synchronized (lock) {
+            return generation;
+        }
+    }
+
+    @Override
+    public long getRestartCount(RestartReason reason) {
+        return restarts.count(reason);
+    }
+
+    /** Another client may already have attributed this crash (OOM/TIMEOUT); don't overwrite it. */
+    @Override
+    public int handleCrashAndGetExitCode(long generation) {
+        synchronized (lock) {
+            if (isSuperseded(generation, RestartReason.CRASH)) {
+                return -1;
+            }
+            restarts.markIfUnmarked(RestartReason.CRASH);
             pendingRestart = true;
         }
+        return -1;
     }
 
     /**
@@ -184,6 +240,9 @@ public class SharedServerManager implements ServerManager {
             synchronized (lock) {
                 LOG.info("Shared server reached max files limit ({}/{}), marking for restart",
                         count, maxFilesPerProcess);
+                // A fatal reason already recorded for this same pending restart outranks a
+                // scheduled recycle: the boundary file may be the one that killed the worker.
+                restarts.markIfUnmarked(RestartReason.MAX_FILES);
                 pendingRestart = true;
             }
         }
@@ -378,6 +437,11 @@ public class SharedServerManager implements ServerManager {
     @Override
     public void shutdown() throws InterruptedException {
         synchronized (lock) {
+            // Latch here, not in shutdownUnsafe(): startServer() calls that to reap the previous
+            // process on every restart, so latching there would brick the manager on restart #1.
+            // A request thread racing us into ensureRunning must fail rather than fork a
+            // replacement that nothing owns and nothing will ever destroy.
+            closed = true;
             shutdownUnsafe();
         }
     }
@@ -398,11 +462,17 @@ public class SharedServerManager implements ServerManager {
     private void destroyProcessUnsafe() throws InterruptedException {
         if (process != null) {
             process.destroyForcibly();
-            process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
-            if (process.isAlive()) {
-                LOG.error("Shared server process still alive after {}ms", WAIT_ON_DESTROY_MS);
+            try {
+                process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
+                if (process.isAlive()) {
+                    LOG.error("Shared server process still alive after {}ms", WAIT_ON_DESTROY_MS);
+                }
+            } finally {
+                // An interrupt here must not leave the field pointing at a SIGKILLed process:
+                // ensureRunning would then see process == previous and skip counting the restart,
+                // startServer() would try to reap it again, and tmpDir would never be deleted.
+                process = null;
             }
-            process = null;
         }
     }
 

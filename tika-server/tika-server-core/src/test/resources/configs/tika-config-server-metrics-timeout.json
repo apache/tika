@@ -1,0 +1,21 @@
+{
+  "server": {
+    "port": 9999,
+    "allowPipes": true,
+    "endpoints": [
+      "rmeta"
+    ]
+  },
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 5000
+    }
+  },
+  "pipes": {
+    "numClients": 1,
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ]
+  },
+  "plugin-roots": "target/plugins"
+}

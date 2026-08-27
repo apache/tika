@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.core;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.DataInputStream;
@@ -96,6 +97,11 @@ public class PipesClientInterruptTest {
                 assertTrue(manager.abandoned,
                         "the manager was not told; a per-client worker never dials back, so the "
                                 + "next connect() would wait out the accept timeout for nothing");
+                // Recycling on an abandoned connection travels connectionAbandoned(), which the
+                // real managers attribute to CONNECTION_ABANDONED. Marking here too would double
+                // count the restart and overwrite that reason with a less specific one.
+                assertNull(manager.marked,
+                        "an interrupt must recycle via connectionAbandoned(), not by marking");
             }
         }
     }

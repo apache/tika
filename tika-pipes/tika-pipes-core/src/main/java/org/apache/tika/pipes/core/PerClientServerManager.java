@@ -179,7 +179,9 @@ public class PerClientServerManager implements ServerManager {
     private volatile Path tmpDir;
     private volatile int port = -1;
     private long filesProcessed = 0;
+    private volatile long generation;
     private volatile boolean pendingRestart = false;
+    private final RestartCounter restarts = new RestartCounter();
     // Set once by shutdown()/close(); guards a request thread from starting a fresh
     // process after the manager has been torn down (which would leak the child).
     private volatile boolean closed = false;
@@ -281,7 +283,7 @@ public class PerClientServerManager implements ServerManager {
         if (filesProcessed >= maxFilesPerProcess) {
             LOG.info("clientId={}: reached max files limit ({}/{}), marking for restart",
                     clientId, filesProcessed, maxFilesPerProcess);
-            pendingRestart = true;
+            markForRestart(RestartReason.MAX_FILES);
         }
     }
 
@@ -290,20 +292,49 @@ public class PerClientServerManager implements ServerManager {
         return pendingRestart;
     }
 
+    /**
+     * One client owns one manager here, so {@code generation} carries no information a sibling
+     * could invalidate and is accepted only to satisfy the single {@link ServerManager} spelling.
+     * Shared mode is where staleness is real.
+     */
     @Override
-    public void markServerForRestart() {
-        LOG.info("clientId={}: marking server for restart", clientId);
+    public void markServerForRestart(RestartReason reason, long ignoredGeneration) {
+        LOG.info("clientId={}: marking server for restart ({})", clientId, reason);
+        markForRestart(reason);
+    }
+
+    /** Counts forks so {@code PipesParser.getGeneration()} is meaningful in per-client mode too. */
+    @Override
+    public long getGeneration() {
+        return generation;
+    }
+
+    /**
+     * Takes the same monitor as {@link #ensureRunning()}, which consumes the mark: recording the
+     * reason and raising the flag must not straddle a restart, or a reason lands against a
+     * restart that has already been counted. Correctness here previously rested on an
+     * undocumented one-client-per-manager invariant; shared mode, where siblings are the norm,
+     * already locked for this and TIKA-4844 is what a stale mark costs.
+     */
+    private synchronized void markForRestart(RestartReason reason) {
+        restarts.mark(reason);
         pendingRestart = true;
+    }
+
+    @Override
+    public long getRestartCount(RestartReason reason) {
+        return restarts.count(reason);
     }
 
     @Override
     public void connectionAbandoned() {
         LOG.info("clientId={}: connection abandoned, worker will be recycled on next use", clientId);
-        pendingRestart = true;
+        markForRestart(RestartReason.CONNECTION_ABANDONED);
     }
 
     @Override
-    public int handleCrashAndGetExitCode() {
+    public int handleCrashAndGetExitCode(long generation) {
+        // Not marked: RestartCounter attributes by exit code; the caller refines OOM/TIMEOUT.
         pendingRestart = true;
         if (process != null) {
             try {
@@ -311,7 +342,10 @@ public class PerClientServerManager implements ServerManager {
                 if (!process.isAlive()) {
                     int exitValue = process.exitValue();
                     if (exitValue == 0) {
-                        LOG.info("clientId={}: process exited cleanly", clientId);
+                        LOG.warn("clientId={}: process exited with code 0 without a shutdown request; " +
+                                "counted as a crash restart", clientId);
+                    } else if (exitValue == PipesServer.IDLE_EXIT_CODE) {
+                        LOG.info("clientId={}: process exited after idle timeout", clientId);
                     } else {
                         LOG.warn("clientId={}: process exited with code {}", clientId, exitValue);
                     }
@@ -335,7 +369,15 @@ public class PerClientServerManager implements ServerManager {
         if (isRunning() && !pendingRestart) {
             return;
         }
-        startServer();
+        Process previous = process;
+        try {
+            startServer();
+        } finally {
+            // Count the old process once it is really gone, even if the new start failed.
+            if (process != previous) {
+                restarts.restarted(previous);
+            }
+        }
     }
 
     @Override
@@ -366,9 +408,15 @@ public class PerClientServerManager implements ServerManager {
                 }
                 if (!p.isAlive()) {
                     int exitValue = p.exitValue();
-                    LOG.error("clientId={}: Process exited with code {} before connecting to socket",
-                            clientId, exitValue);
-                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
+                    if (exitValue == 0 || exitValue == PipesServer.IDLE_EXIT_CODE) {
+                        // Idle/SHUT_DOWN exit raced the reconnect; not a crash.
+                        LOG.info("clientId={}: process exited with code {} before connecting",
+                                clientId, exitValue);
+                    } else {
+                        LOG.error("clientId={}: Process exited with code {} before connecting to socket",
+                                clientId, exitValue);
+                        ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
+                    }
                     // Always treat pre-connect death as retryable.
                     // The only non-retryable paths are:
                     // 1. pb.start() fails (can't launch process) - handled in startServer()
@@ -441,6 +489,7 @@ public class PerClientServerManager implements ServerManager {
 
         try {
             process = pb.start();
+            generation++;
         } catch (Exception e) {
             deleteDir(tmpDir);
             tmpDir = null;
@@ -497,11 +546,17 @@ public class PerClientServerManager implements ServerManager {
     private void destroyProcess() throws InterruptedException {
         if (process != null) {
             process.destroyForcibly();
-            process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
-            if (process.isAlive()) {
-                LOG.error("clientId={}: process still alive after {}ms", clientId, WAIT_ON_DESTROY_MS);
+            try {
+                process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
+                if (process.isAlive()) {
+                    LOG.error("clientId={}: process still alive after {}ms", clientId, WAIT_ON_DESTROY_MS);
+                }
+            } finally {
+                // An interrupt here must not leave the field pointing at a SIGKILLed process:
+                // ensureRunning would then see process == previous and skip counting the restart,
+                // startServer() would try to reap it again, and tmpDir would never be deleted.
+                process = null;
             }
-            process = null;
         }
     }
 
