@@ -50,12 +50,10 @@ Release 4.1.0 - unreleased
      guards) and now honors shouldParseEmbedded for embedded file data
      (TIKA-4814).
 
-   * Content-based detection and a parser for the GeoGebra formats. *.ggb and
-     *.ggt are now sub-classes of application/zip and a zip container detector
-     identifies worksheets, Notes/Slides (*.ggs, new mime type, along with the
-     JSON-based *.ggp pinboard) and tools without a filename. GeoGebraParser
-     extracts the construction metadata and user-visible text and emits the
-     representative geogebra_thumbnail.png as a thumbnail embedded document
+   * New GeoGebraParser for *.ggb/*.ggs/*.ggt: geogebra:* metadata, text and
+     the thumbnail as a THUMBNAIL embedded document, with content-based
+     detection. Previously typed application/zip with every entry as an
+     attachment. *.ggs and *.ggp are new mime types; *.ggp is glob-only
      (TIKA-4831).
 
    * RawTiffParser extracts the camera-generated JPEG previews embedded in

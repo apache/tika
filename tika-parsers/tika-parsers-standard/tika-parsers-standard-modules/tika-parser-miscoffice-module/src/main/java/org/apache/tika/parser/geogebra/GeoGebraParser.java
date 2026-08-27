@@ -22,9 +22,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,11 +40,14 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PageAnchoring;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -60,21 +65,26 @@ import org.apache.tika.zip.utils.ZipFileHelper;
  * <p>
  * The construction metadata (title, author, date) and the application
  * name/version are read from {@code geogebra.xml} (or, for a tool, from
- * {@code geogebra_macro.xml}), and the user-visible text (text objects, ink
- * notes, captions) is emitted as XHTML paragraphs. For Notes/Slides, the slide
- * order is taken from {@code structure.json} and each slide becomes a
- * {@code <div class="slide">}.
+ * {@code geogebra_macro.xml}), and the user-visible text (text objects, inline
+ * text, captions, tool names and help) is emitted as XHTML paragraphs. For
+ * Notes/Slides, each {@code _slideN/geogebra.xml} becomes a
+ * {@code <div class="slide">}, in the order given by {@code structure.json}.
  * <p>
- * The representative rendering of the document — {@code geogebra_thumbnail.png}
- * at the root of a worksheet or tool, or the first slide's thumbnail of a
- * Notes/Slides file — is emitted as an embedded document marked with
+ * The representative rendering of the document, {@code geogebra_thumbnail.png}
+ * at the root of a worksheet or tool, or the first available slide thumbnail
+ * of a Notes/Slides file, is emitted as an embedded document marked with
  * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}, so that clients
  * (e.g. the unpacker's sidecar metadata) can pick it as the preview image.
  * Thumbnails of the remaining slides are renderings of content that is already
- * extracted, so they are skipped. Any other embedded file (e.g. inserted
- * pictures) is emitted as an embedded document.
+ * extracted, so they are skipped. The document script
+ * {@code geogebra_javascript.js} is emitted as a
+ * {@link TikaCoreProperties.EmbeddedResourceType#MACRO}, and any other
+ * embedded file (e.g. inserted pictures) as an embedded document.
+ * <p>
+ * A part that cannot be read (an unsupported zip entry, malformed XML) is
+ * recorded in the metadata and skipped; the remaining parts are still parsed.
  */
-@TikaComponent
+@TikaComponent(name = "geogebra-parser")
 public class GeoGebraParser implements Parser {
 
     /**
@@ -89,19 +99,19 @@ public class GeoGebraParser implements Parser {
      * e.g. "classic", "notes", "graphing".
      */
     public static final Property APP_NAME =
-            Property.internalText(GEOGEBRA_PREFIX + "appName");
+            Property.internalText(GEOGEBRA_PREFIX + "app-name");
 
     /**
      * The GeoGebra application version the file was written with.
      */
     public static final Property APP_VERSION =
-            Property.internalText(GEOGEBRA_PREFIX + "appVersion");
+            Property.internalText(GEOGEBRA_PREFIX + "app-version");
 
     /**
      * The GeoGebra XML format version.
      */
     public static final Property FORMAT_VERSION =
-            Property.internalText(GEOGEBRA_PREFIX + "formatVersion");
+            Property.internalText(GEOGEBRA_PREFIX + "format-version");
 
     /**
      * The unique id GeoGebra assigns to the document.
@@ -116,7 +126,8 @@ public class GeoGebraParser implements Parser {
 
     /**
      * The tool names of the macros in a tool file (or in a worksheet with
-     * embedded macros).
+     * embedded macros). The name is the {@code toolName} attribute of the
+     * macro element.
      */
     public static final Property TOOL_NAME =
             Property.internalTextBag(GEOGEBRA_PREFIX + "toolName");
@@ -130,20 +141,29 @@ public class GeoGebraParser implements Parser {
     private static final String MACRO_XML = "geogebra_macro.xml";
     private static final String STRUCTURE_JSON = "structure.json";
     private static final String THUMBNAIL_PNG = "geogebra_thumbnail.png";
+    private static final String JAVASCRIPT_JS = "geogebra_javascript.js";
 
     /**
-     * Housekeeping entries every ggb-like container may carry; everything
-     * else is user content and worth emitting as an embedded document.
+     * Housekeeping entries at the root or in a slide directory that carry no
+     * user content of their own. The XML files are parsed for text and the
+     * thumbnails handled separately.
      */
-    private static final Set<String> KNOWN_ENTRY_NAMES = Collections.unmodifiableSet(
+    private static final Set<String> HOUSEKEEPING_NAMES = Collections.unmodifiableSet(
             new HashSet<>(Arrays.asList(GEOGEBRA_XML, MACRO_XML, THUMBNAIL_PNG,
-                    "geogebra_defaults2d.xml", "geogebra_defaults3d.xml",
-                    "geogebra_javascript.js")));
+                    "geogebra_defaults2d.xml", "geogebra_defaults3d.xml")));
+
+    private static final String SLIDE_DIR_PREFIX = "_slide";
 
     private static final Pattern SLIDE_XML_PATTERN =
-            Pattern.compile("^(_slide\\d+)/" + Pattern.quote(GEOGEBRA_XML) + "$");
+            Pattern.compile("^(" + SLIDE_DIR_PREFIX + "\\d+)/" + Pattern.quote(GEOGEBRA_XML) + "$");
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    /**
+     * structure.json only lists chapters, pages and element ids; a real one is
+     * a few kilobytes.
+     */
+    private static final long MAX_STRUCTURE_JSON_LENGTH = 1024 * 1024;
+
+    static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -168,22 +188,52 @@ public class GeoGebraParser implements Parser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         List<String> slideIds = getSlideIds(zipFile);
-        if (!slideIds.isEmpty()) {
-            parseSlides(zipFile, slideIds, xhtml, metadata, context, embeddedDocumentExtractor);
-        } else {
-            parseWorksheet(zipFile, xhtml, metadata, context, embeddedDocumentExtractor);
+        ZipArchiveEntry rootXml = zipFile.getEntry(GEOGEBRA_XML);
+        ZipArchiveEntry macroXml = zipFile.getEntry(MACRO_XML);
+        //document metadata comes from the first XML parsed: a worksheet's
+        //geogebra.xml, a tool's geogebra_macro.xml, or the first slide
+        boolean documentMetadataPending = true;
+        if (rootXml != null) {
+            documentMetadataPending = false;
+            parseGeoGebraXml(zipFile, rootXml, xhtml, metadata, true, context);
         }
+        if (macroXml != null) {
+            //a worksheet with macros carries both XMLs; the macro one only
+            //contributes the tool names then, not the document metadata
+            parseGeoGebraXml(zipFile, macroXml, xhtml, metadata, documentMetadataPending, context);
+            documentMetadataPending = false;
+        }
+        Map<String, Integer> pageNumbers = new HashMap<>();
+        if (!slideIds.isEmpty()) {
+            metadata.set(PagedText.N_PAGES, slideIds.size());
+            int page = 1;
+            for (String slideId : slideIds) {
+                pageNumbers.put(slideId, page++);
+                xhtml.startElement("div", "class", "slide");
+                try {
+                    ZipArchiveEntry slideXml = zipFile.getEntry(slideId + "/" + GEOGEBRA_XML);
+                    parseGeoGebraXml(zipFile, slideXml, xhtml, metadata, documentMetadataPending,
+                            context);
+                    documentMetadataPending = false;
+                } finally {
+                    xhtml.endElement("div");
+                }
+            }
+        }
+        handleThumbnail(zipFile, slideIds, xhtml, metadata, context, embeddedDocumentExtractor);
+        handleOtherEntries(zipFile, pageNumbers, xhtml, metadata, context,
+                embeddedDocumentExtractor);
         xhtml.endDocument();
     }
 
     /**
      * Returns the ordered slide directory names of a Notes/Slides file, or an
-     * empty list if this is not a Notes/Slides file. The order comes from
-     * {@code structure.json}; slides present in the zip but missing from
-     * {@code structure.json} are appended in numeric order.
+     * empty list if there are no slides. The slides are the
+     * {@code _slideN/geogebra.xml} entries; {@code structure.json} only
+     * supplies their order, slides it does not list (or all of them, if it is
+     * missing or unreadable) follow in numeric order.
      */
     private List<String> getSlideIds(ZipFile zipFile) {
-        Set<String> inZip = new LinkedHashSet<>();
         List<String> numericallySorted = new ArrayList<>();
         Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
         while (entries.hasMoreElements()) {
@@ -192,120 +242,117 @@ public class GeoGebraParser implements Parser {
                 numericallySorted.add(m.group(1));
             }
         }
-        //compare the digit suffixes numerically without parsing them: a shorter
-        //digit string is the smaller number, equal lengths compare lexicographically.
-        //Parsing would throw for a crafted id with more digits than an int holds.
-        numericallySorted.sort((a, b) -> {
-            String da = a.substring("_slide".length());
-            String db = b.substring("_slide".length());
-            return da.length() != db.length()
-                    ? Integer.compare(da.length(), db.length()) : da.compareTo(db);
-        });
-
-        ZipArchiveEntry structure = zipFile.getEntry(STRUCTURE_JSON);
-        if (structure == null || numericallySorted.isEmpty()) {
+        if (numericallySorted.isEmpty()) {
             return Collections.emptyList();
         }
-        Set<String> knownSlideIds = new HashSet<>(numericallySorted);
-        try (InputStream is = zipFile.getInputStream(structure)) {
-            JsonNode root = OBJECT_MAPPER.readTree(is);
-            for (JsonNode chapter : root.path("chapters")) {
-                for (JsonNode page : chapter.path("pages")) {
-                    for (JsonNode element : page.path("elements")) {
-                        String id = element.path("id").asText("");
-                        if (knownSlideIds.contains(id)) {
-                            inZip.add(id);
+        numericallySorted.sort(GeoGebraParser::compareSlideIds);
+
+        Set<String> ordered = new LinkedHashSet<>();
+        ZipArchiveEntry structure = zipFile.getEntry(STRUCTURE_JSON);
+        if (structure != null && zipFile.canReadEntryData(structure)) {
+            Set<String> knownSlideIds = new HashSet<>(numericallySorted);
+            try (InputStream is = new BoundedInputStream(MAX_STRUCTURE_JSON_LENGTH,
+                    zipFile.getInputStream(structure))) {
+                JsonNode root = OBJECT_MAPPER.readTree(is);
+                for (JsonNode chapter : root.path("chapters")) {
+                    for (JsonNode page : chapter.path("pages")) {
+                        for (JsonNode element : page.path("elements")) {
+                            String id = element.path("id").asText("");
+                            if (knownSlideIds.contains(id)) {
+                                ordered.add(id);
+                            }
                         }
                     }
                 }
-            }
-        } catch (IOException e) {
-            //fall through to the numeric order
-        }
-        for (String id : numericallySorted) {
-            inZip.add(id);
-        }
-        return new ArrayList<>(inZip);
-    }
-
-    private void parseWorksheet(ZipFile zipFile, XHTMLContentHandler xhtml, Metadata metadata,
-                                ParseContext context, EmbeddedDocumentExtractor embeddedDocumentExtractor)
-            throws IOException, SAXException, TikaException {
-        //a worksheet with macros carries both geogebra.xml and geogebra_macro.xml
-        for (String xmlName : new String[]{GEOGEBRA_XML, MACRO_XML}) {
-            ZipArchiveEntry contentXml = zipFile.getEntry(xmlName);
-            if (contentXml != null) {
-                parseGeoGebraXml(zipFile, contentXml, xhtml, metadata, context);
+            } catch (IOException e) {
+                //fall through to the numeric order
             }
         }
-        handleThumbnail(zipFile, zipFile.getEntry(THUMBNAIL_PNG), xhtml, context,
-                embeddedDocumentExtractor);
-        handleOtherEntries(zipFile, xhtml, context, embeddedDocumentExtractor);
-    }
-
-    private void parseSlides(ZipFile zipFile, List<String> slideIds, XHTMLContentHandler xhtml,
-                             Metadata metadata, ParseContext context,
-                             EmbeddedDocumentExtractor embeddedDocumentExtractor)
-            throws IOException, SAXException, TikaException {
-        metadata.set(PagedText.N_PAGES, slideIds.size());
-        boolean first = true;
-        for (String slideId : slideIds) {
-            xhtml.startElement("div", "class", "slide");
-            ZipArchiveEntry contentXml = zipFile.getEntry(slideId + "/" + GEOGEBRA_XML);
-            if (contentXml != null) {
-                //document-level metadata comes from the first slide
-                parseGeoGebraXml(zipFile, contentXml, xhtml, first ? metadata : null, context);
-            }
-            xhtml.endElement("div");
-            if (first) {
-                handleThumbnail(zipFile, zipFile.getEntry(slideId + "/" + THUMBNAIL_PNG), xhtml,
-                        context, embeddedDocumentExtractor);
-            }
-            first = false;
-        }
-        handleOtherEntries(zipFile, xhtml, context, embeddedDocumentExtractor);
-    }
-
-    private void parseGeoGebraXml(ZipFile zipFile, ZipArchiveEntry entry,
-                                  XHTMLContentHandler xhtml, Metadata metadata,
-                                  ParseContext context)
-            throws IOException, SAXException, TikaException {
-        try (InputStream is = zipFile.getInputStream(entry)) {
-            XMLReaderUtils.parseSAX(is,
-                    new EmbeddedContentHandler(new GeoGebraXMLHandler(xhtml, metadata)), context);
-        }
+        ordered.addAll(numericallySorted);
+        return new ArrayList<>(ordered);
     }
 
     /**
-     * Emits the representative thumbnail as an embedded document marked
-     * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}.
+     * Compares the digit suffixes of two slide ids numerically without
+     * parsing them (a crafted id may carry more digits than a long holds):
+     * leading zeros aside, a shorter digit string is the smaller number and
+     * equal lengths compare lexicographically.
      */
-    private void handleThumbnail(ZipFile zipFile, ZipArchiveEntry entry, XHTMLContentHandler xhtml,
-                                 ParseContext context, EmbeddedDocumentExtractor embeddedDocumentExtractor)
-            throws IOException, SAXException {
+    private static int compareSlideIds(String a, String b) {
+        String da = stripLeadingZeros(a.substring(SLIDE_DIR_PREFIX.length()));
+        String db = stripLeadingZeros(b.substring(SLIDE_DIR_PREFIX.length()));
+        if (da.length() != db.length()) {
+            return Integer.compare(da.length(), db.length());
+        }
+        int byValue = da.compareTo(db);
+        return byValue != 0 ? byValue : a.compareTo(b);
+    }
+
+    private static String stripLeadingZeros(String digits) {
+        int i = 0;
+        while (i < digits.length() - 1 && digits.charAt(i) == '0') {
+            i++;
+        }
+        return digits.substring(i);
+    }
+
+    /**
+     * Parses one GeoGebra XML for its text and, if {@code documentMetadata}
+     * is set, the document metadata. A part that cannot be read or is not
+     * well-formed is recorded in the metadata and skipped.
+     */
+    private void parseGeoGebraXml(ZipFile zipFile, ZipArchiveEntry entry,
+                                  XHTMLContentHandler xhtml, Metadata metadata,
+                                  boolean documentMetadata, ParseContext context)
+            throws SAXException {
         if (entry == null) {
             return;
         }
-        Metadata embeddedMetadata = Metadata.newInstance(context);
-        embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, entry.getName());
-        embeddedMetadata.set(TikaCoreProperties.INTERNAL_PATH, entry.getName());
-        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
-        embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
-        if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
-            try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
-                embeddedDocumentExtractor.parseEmbedded(tisZip, new EmbeddedContentHandler(xhtml),
-                        embeddedMetadata, context, false);
+        if (!zipFile.canReadEntryData(entry)) {
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(
+                    new IOException("Unsupported zip entry: " + entry.getName()), metadata);
+            return;
+        }
+        try (InputStream is = zipFile.getInputStream(entry)) {
+            XMLReaderUtils.parseSAX(is, new EmbeddedContentHandler(
+                    new GeoGebraXMLHandler(xhtml, metadata, documentMetadata)), context);
+        } catch (SAXException e) {
+            if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                throw e;
             }
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+        } catch (IOException | TikaException e) {
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
         }
     }
 
     /**
-     * Emits everything that is not GeoGebra housekeeping (e.g. inserted
-     * pictures) as an embedded document. Housekeeping entries are matched by
-     * their basename so the rule covers slide subdirectories, too.
+     * Emits the representative thumbnail: the root one of a worksheet or
+     * tool, or the first slide thumbnail (in slide order) of a Notes/Slides
+     * file.
      */
-    private void handleOtherEntries(ZipFile zipFile, XHTMLContentHandler xhtml,
+    private void handleThumbnail(ZipFile zipFile, List<String> slideIds, XHTMLContentHandler xhtml,
+                                 Metadata metadata, ParseContext context,
+                                 EmbeddedDocumentExtractor embeddedDocumentExtractor)
+            throws IOException, SAXException {
+        ZipArchiveEntry entry = zipFile.getEntry(THUMBNAIL_PNG);
+        for (int i = 0; entry == null && i < slideIds.size(); i++) {
+            entry = zipFile.getEntry(slideIds.get(i) + "/" + THUMBNAIL_PNG);
+        }
+        if (entry != null) {
+            handleEmbedded(zipFile, entry, TikaCoreProperties.EmbeddedResourceType.THUMBNAIL,
+                    null, xhtml, metadata, context, embeddedDocumentExtractor);
+        }
+    }
+
+    /**
+     * Emits everything that is not GeoGebra housekeeping: the document script
+     * as a macro, and inserted pictures and other files as embedded documents.
+     * Housekeeping is matched at the root and in the slide directories only,
+     * so a file of the same name elsewhere is still emitted.
+     */
+    private void handleOtherEntries(ZipFile zipFile, Map<String, Integer> pageNumbers,
+                                    XHTMLContentHandler xhtml, Metadata metadata,
                                     ParseContext context,
                                     EmbeddedDocumentExtractor embeddedDocumentExtractor)
             throws IOException, SAXException {
@@ -316,25 +363,68 @@ public class GeoGebraParser implements Parser {
                 continue;
             }
             String name = entry.getName();
-            if (STRUCTURE_JSON.equals(name)) {
+            String dir = "";
+            String basename = name;
+            int slash = name.indexOf('/');
+            if (slash >= 0) {
+                dir = name.substring(0, slash);
+                basename = name.substring(slash + 1);
+            }
+            boolean knownDir = dir.isEmpty() || pageNumbers.containsKey(dir);
+            if (knownDir && (HOUSEKEEPING_NAMES.contains(basename)
+                    || (dir.isEmpty() && STRUCTURE_JSON.equals(basename)))) {
                 continue;
             }
-            String basename = name.substring(name.lastIndexOf('/') + 1);
-            if (KNOWN_ENTRY_NAMES.contains(basename)) {
-                continue;
+            TikaCoreProperties.EmbeddedResourceType type = null;
+            if (knownDir && JAVASCRIPT_JS.equals(basename)) {
+                type = TikaCoreProperties.EmbeddedResourceType.MACRO;
             }
-            Metadata embeddedMetadata = Metadata.newInstance(context);
-            embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
-            embeddedMetadata.set(TikaCoreProperties.INTERNAL_PATH, name);
-            embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                    TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
-                try (TikaInputStream tisZip =
-                             TikaInputStream.get(zipFile.getInputStream(entry))) {
-                    embeddedDocumentExtractor.parseEmbedded(tisZip, new EmbeddedContentHandler(xhtml),
-                            embeddedMetadata, context, false);
+            handleEmbedded(zipFile, entry, type, pageNumbers.get(dir), xhtml, metadata, context,
+                    embeddedDocumentExtractor);
+        }
+    }
+
+    /**
+     * Emits one zip entry as an embedded document. Without a given resource
+     * type, pictures are marked {@link TikaCoreProperties.EmbeddedResourceType#INLINE}
+     * and other files {@link TikaCoreProperties.EmbeddedResourceType#ATTACHMENT}.
+     * An entry in a slide directory is tagged with the slide's page number.
+     */
+    private void handleEmbedded(ZipFile zipFile, ZipArchiveEntry entry,
+                                TikaCoreProperties.EmbeddedResourceType type, Integer page,
+                                XHTMLContentHandler xhtml, Metadata parentMetadata,
+                                ParseContext context,
+                                EmbeddedDocumentExtractor embeddedDocumentExtractor)
+            throws IOException, SAXException {
+        if (!zipFile.canReadEntryData(entry)) {
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(
+                    new IOException("Unsupported zip entry: " + entry.getName()), parentMetadata);
+            return;
+        }
+        Metadata embeddedMetadata = Metadata.newInstance(context);
+        embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, entry.getName());
+        embeddedMetadata.set(TikaCoreProperties.INTERNAL_PATH, entry.getName());
+        if (page != null) {
+            PageAnchoring.applyPageMetadata(embeddedMetadata, Collections.singleton(page));
+        }
+        try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
+            if (type == null) {
+                MediaType mediaType = EmbeddedDocumentUtil.getDetector(context)
+                        .detect(tisZip, embeddedMetadata, context);
+                if (mediaType != null) {
+                    embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, mediaType.toString());
                 }
+                type = mediaType != null && "image".equals(mediaType.getType())
+                        ? TikaCoreProperties.EmbeddedResourceType.INLINE
+                        : TikaCoreProperties.EmbeddedResourceType.ATTACHMENT;
             }
+            embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, type.toString());
+            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
+                embeddedDocumentExtractor.parseEmbedded(tisZip, new EmbeddedContentHandler(xhtml),
+                        embeddedMetadata, context, false);
+            }
+        } catch (IOException e) {
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
         }
     }
 }

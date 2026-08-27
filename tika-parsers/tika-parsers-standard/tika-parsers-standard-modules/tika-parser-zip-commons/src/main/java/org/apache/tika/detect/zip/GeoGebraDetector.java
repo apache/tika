@@ -46,15 +46,26 @@ public class GeoGebraDetector implements ZipContainerDetector {
     private static final MediaType GGS = MediaType.application("vnd.geogebra.slides");
     private static final MediaType GGT = MediaType.application("vnd.geogebra.tool");
 
+    private static final String GEOGEBRA_XML = "geogebra.xml";
+    private static final String MACRO_XML = "geogebra_macro.xml";
+    private static final String STRUCTURE_JSON = "structure.json";
+
     private static final Pattern SLIDE_XML_PATTERN =
             Pattern.compile("^_slide\\d+/geogebra\\.xml$");
 
     @Override
     public MediaType detect(ZipFile zip, TikaInputStream tis) throws IOException {
+        //this runs for every zip Tika sees: look the root names up and only
+        //walk the entries for a slide when there is a structure.json
         Names names = new Names();
-        Enumeration<ZipArchiveEntry> entries = zip.getEntries();
-        while (entries.hasMoreElements()) {
-            names.update(entries.nextElement().getName());
+        names.geogebraXml = zip.getEntry(GEOGEBRA_XML) != null;
+        names.macroXml = zip.getEntry(MACRO_XML) != null;
+        names.structureJson = zip.getEntry(STRUCTURE_JSON) != null;
+        if (names.structureJson) {
+            Enumeration<ZipArchiveEntry> entries = zip.getEntries();
+            while (!names.slideXml && entries.hasMoreElements()) {
+                names.slideXml = isSlideXml(entries.nextElement().getName());
+            }
         }
         return names.decide();
     }
@@ -77,6 +88,10 @@ public class GeoGebraDetector implements ZipContainerDetector {
         return names == null ? null : names.decide();
     }
 
+    private static boolean isSlideXml(String name) {
+        return SLIDE_XML_PATTERN.matcher(name).matches();
+    }
+
     private static class Names {
         private boolean geogebraXml;
         private boolean macroXml;
@@ -84,13 +99,13 @@ public class GeoGebraDetector implements ZipContainerDetector {
         private boolean slideXml;
 
         void update(String name) {
-            if ("geogebra.xml".equals(name)) {
+            if (GEOGEBRA_XML.equals(name)) {
                 geogebraXml = true;
-            } else if ("geogebra_macro.xml".equals(name)) {
+            } else if (MACRO_XML.equals(name)) {
                 macroXml = true;
-            } else if ("structure.json".equals(name)) {
+            } else if (STRUCTURE_JSON.equals(name)) {
                 structureJson = true;
-            } else if (SLIDE_XML_PATTERN.matcher(name).matches()) {
+            } else if (isSlideXml(name)) {
                 slideXml = true;
             }
         }

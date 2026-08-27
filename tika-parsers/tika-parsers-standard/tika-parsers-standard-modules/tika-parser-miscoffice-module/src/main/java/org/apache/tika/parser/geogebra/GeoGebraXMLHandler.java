@@ -17,9 +17,10 @@
 package org.apache.tika.parser.geogebra;
 
 import java.io.IOException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -28,47 +29,57 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * SAX handler for {@code geogebra.xml} and {@code geogebra_macro.xml}.
  * <p>
- * Extracts the document metadata from the {@code &lt;geogebra&gt;} root and
- * the {@code &lt;construction&gt;} element (when a {@link Metadata} object is
- * given), and emits the user-visible text as XHTML paragraphs: string-literal
- * {@code &lt;expression&gt;}s of text objects, the rich text of
- * {@code &lt;content&gt;} elements (ink notes, inline text), element
- * {@code &lt;caption&gt;}s and macro names/help texts.
+ * Extracts the document metadata from the {@code <geogebra>} root and its
+ * {@code <construction>} child (when asked to), and emits the user-visible
+ * text as XHTML paragraphs: the string literals of text object
+ * {@code <expression>}s, the text runs of {@code <content>} elements (inline
+ * text, tables, mind maps), element {@code <caption>}s and macro names and
+ * help texts.
  */
 class GeoGebraXMLHandler extends DefaultHandler {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    /**
+     * A GeoGebra string literal. GeoGebra writes strings between plain
+     * double quotes without any escaping, so a literal never contains one.
+     */
+    private static final Pattern STRING_LITERAL = Pattern.compile("\"([^\"]*)\"");
 
     private final XHTMLContentHandler xhtml;
     private final Metadata metadata;
+    private final boolean documentMetadata;
     private int depth = 0;
 
     /**
-     * @param xhtml    the handler paragraphs are written to
-     * @param metadata the metadata to fill from the root and construction
-     *                 elements, or {@code null} to extract text only
+     * @param xhtml            the handler paragraphs are written to
+     * @param metadata         the metadata tool names are added to
+     * @param documentMetadata whether to also fill the document metadata from
+     *                         the root and construction elements
      */
-    GeoGebraXMLHandler(XHTMLContentHandler xhtml, Metadata metadata) {
+    GeoGebraXMLHandler(XHTMLContentHandler xhtml, Metadata metadata, boolean documentMetadata) {
         this.xhtml = xhtml;
         this.metadata = metadata;
+        this.documentMetadata = documentMetadata;
     }
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes)
             throws SAXException {
         if (depth == 0 && "geogebra".equals(localName)) {
-            if (metadata != null) {
+            if (documentMetadata) {
                 setIfNotBlank(GeoGebraParser.APP_NAME, attributes.getValue("app"));
                 setIfNotBlank(GeoGebraParser.APP_VERSION, attributes.getValue("version"));
                 setIfNotBlank(GeoGebraParser.FORMAT_VERSION, attributes.getValue("format"));
                 setIfNotBlank(GeoGebraParser.ID, attributes.getValue("id"));
             }
-        } else if ("construction".equals(localName)) {
-            if (metadata != null) {
+        } else if (depth == 1 && "construction".equals(localName)) {
+            //only the document's own construction; a macro's construction is
+            //nested one level deeper inside its <macro> element
+            if (documentMetadata) {
                 setIfNotBlank(TikaCoreProperties.TITLE, attributes.getValue("title"));
                 setIfNotBlank(TikaCoreProperties.CREATOR, attributes.getValue("author"));
                 setIfNotBlank(GeoGebraParser.DATE, attributes.getValue("date"));
@@ -81,11 +92,11 @@ class GeoGebraXMLHandler extends DefaultHandler {
             paragraph(attributes.getValue("val"));
         } else if ("macro".equals(localName)) {
             String toolName = attributes.getValue("toolName");
-            if (isBlank(toolName)) {
+            if (StringUtils.isBlank(toolName)) {
                 toolName = attributes.getValue("cmdName");
             }
-            if (metadata != null && !isBlank(toolName)) {
-                metadata.add(GeoGebraParser.TOOL_NAME, toolName);
+            if (!StringUtils.isBlank(toolName)) {
+                metadata.add(GeoGebraParser.TOOL_NAME, toolName.trim());
             }
             paragraph(toolName);
             paragraph(attributes.getValue("toolHelp"));
@@ -99,16 +110,21 @@ class GeoGebraXMLHandler extends DefaultHandler {
     }
 
     /**
-     * Emits a text object's expression, which is a GeoGebra string literal
-     * like {@code "some text"}. Computational expressions (anything not
-     * quoted) are geometry, not text, and are skipped.
+     * Emits the string literals of an expression. A text object's expression
+     * is either a single literal like {@code "some text"} or, for a dynamic
+     * text, literals combined with values like {@code "Area = " + a}; the
+     * literals are the user's text, everything else is geometry and skipped.
      */
     private void handleExpression(String exp) throws SAXException {
-        if (exp == null || exp.length() < 2 || exp.charAt(0) != '"' ||
-                exp.charAt(exp.length() - 1) != '"') {
+        if (exp == null || exp.indexOf('"') < 0) {
             return;
         }
-        paragraph(exp.substring(1, exp.length() - 1).replace("\\\"", "\""));
+        StringBuilder sb = new StringBuilder();
+        Matcher m = STRING_LITERAL.matcher(exp);
+        while (m.find()) {
+            sb.append(m.group(1));
+        }
+        paragraph(sb.toString());
     }
 
     /**
@@ -118,14 +134,18 @@ class GeoGebraXMLHandler extends DefaultHandler {
      * emitted one paragraph per line.
      */
     private void handleContent(String val) throws SAXException {
-        if (val == null || val.isEmpty()) {
+        if (val == null) {
+            return;
+        }
+        String trimmed = val.trim();
+        if (trimmed.isEmpty() || (trimmed.charAt(0) != '[' && trimmed.charAt(0) != '{')) {
+            //not a JSON document; a plain string carries no text runs
             return;
         }
         JsonNode root;
         try {
-            root = OBJECT_MAPPER.readTree(val);
+            root = GeoGebraParser.OBJECT_MAPPER.readTree(trimmed);
         } catch (IOException e) {
-            //not JSON; ignore
             return;
         }
         StringBuilder sb = new StringBuilder();
@@ -138,18 +158,14 @@ class GeoGebraXMLHandler extends DefaultHandler {
     }
 
     private void paragraph(String text) throws SAXException {
-        if (!isBlank(text)) {
+        if (!StringUtils.isBlank(text)) {
             xhtml.element("p", text.trim());
         }
     }
 
     private void setIfNotBlank(Property property, String value) {
-        if (!isBlank(value)) {
+        if (!StringUtils.isBlank(value)) {
             metadata.set(property, value.trim());
         }
-    }
-
-    private static boolean isBlank(String s) {
-        return s == null || s.trim().isEmpty();
     }
 }
