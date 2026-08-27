@@ -821,7 +821,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             unmappedUnicodeCharsPerPage = 0;
         }
 
-        if (config.isExtractFontNames()) {
+        if (config.isExtractFontNames() && page.getResources() != null) {
             for (COSName n : page.getResources().getFontNames()) {
                 PDFont font = page.getResources().getFont(n);
                 if (font != null && font.getFontDescriptor() != null) {

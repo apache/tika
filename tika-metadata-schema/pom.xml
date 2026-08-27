@@ -85,7 +85,7 @@
        MetadataFieldTableTest regenerate in-memory and fail if they go stale. Regenerate with:
          ./mvnw -pl tika-metadata-schema -Pregen-metadata-schema process-classes
        Forking exec goal is deliberate: exec:java runs in-process, scans the wrong classpath, and
-       silently emits a near-empty registry. See .skills/metadata-schema/SKILL.md. -->
+       silently emits a near-empty registry. See .skills/devs/metadata-schema/SKILL.md. -->
   <profiles>
     <profile>
       <id>regen-metadata-schema</id>
