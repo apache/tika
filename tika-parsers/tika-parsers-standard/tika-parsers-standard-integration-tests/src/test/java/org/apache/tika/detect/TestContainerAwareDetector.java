@@ -456,7 +456,8 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
 
     @Test
     public void testDetectGeoGebra() throws Exception {
-        assertTypeByData("testGeoGebra.ggb", "application/vnd.geogebra.file");
+        assertTypeByData("testGeoGebra_classic.ggb", "application/vnd.geogebra.file");
+        assertTypeByData("testGeoGebra_notes.ggs", "application/vnd.geogebra.slides");
     }
 
     @Test

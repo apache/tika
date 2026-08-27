@@ -120,6 +120,67 @@ public class GeoGebraParserTest extends TikaTest {
                 script.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
+    /**
+     * A worksheet written by GeoGebra Classic 5.4 itself: three text objects,
+     * one of them dynamic ("Hypotenuse c = " + c), no thumbnail.
+     */
+    @Test
+    public void testClassicWorksheet() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testGeoGebra_classic.ggb");
+        Metadata metadata = metadataList.get(0);
+        assertEquals("application/vnd.geogebra.file", metadata.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("classic", metadata.get(GeoGebraParser.APP_NAME));
+        assertEquals("5.4.929.3", metadata.get(GeoGebraParser.APP_VERSION));
+        assertEquals("5.0", metadata.get(GeoGebraParser.FORMAT_VERSION));
+        assertEquals("6b9c92b5-ee50-4943-a8a0-388a33f639f8", metadata.get(GeoGebraParser.ID));
+        //blank construction attributes are not set
+        assertNull(metadata.get(TikaCoreProperties.TITLE));
+        String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+        assertContains("<p>In a right triangle a² + b² = c²</p>", content);
+        assertContains("<p>Hypotenuse c =</p>", content);
+        assertContains("<p>Drag the vertices to explore.</p>", content);
+        //the point and segment expressions are geometry, not text
+        assertNotContained("(0, 0)", content);
+        assertNotContained("Segment", content);
+
+        assertEquals(2, metadataList.size());
+        Metadata script = byName(metadataList, "geogebra_javascript.js");
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.MACRO.toString(),
+                script.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
+     * A two page Notes file written by GeoGebra Notes 5.4 itself, with a
+     * thumbnail per page and a picture inserted on the second page.
+     */
+    @Test
+    public void testNotes() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testGeoGebra_notes.ggs");
+        Metadata metadata = metadataList.get(0);
+        assertEquals("application/vnd.geogebra.slides", metadata.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("notes", metadata.get(GeoGebraParser.APP_NAME));
+        assertEquals("5.4.929.3", metadata.get(GeoGebraParser.APP_VERSION));
+        assertEquals(2, (int) metadata.getInt(PagedText.N_PAGES));
+        String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+        assertContains("<p>First page text</p>", content);
+        assertContains("<p>Second page text</p>", content);
+        assertTrue(content.indexOf("First page") < content.indexOf("Second page"), content);
+
+        //main document, first thumbnail, two scripts and the picture
+        assertEquals(5, metadataList.size());
+        Metadata thumbnail = byName(metadataList, "_slide0/geogebra_thumbnail.png");
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                thumbnail.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("image/png", thumbnail.get(HttpHeaders.CONTENT_TYPE));
+        assertNull(byName(metadataList, "_slide1/geogebra_thumbnail.png"));
+        Metadata picture = byName(metadataList,
+                "_slide1/29812c8a66471e456649e2d2cfeee1c6/29812c8a66471e456649e2d2cfeee1c6.png");
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                picture.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("image/png", picture.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("2", picture.get(TikaPagedText.PAGE_NUMBERS));
+    }
+
     @Test
     public void testGGT() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testGeoGebraTool.ggt");
