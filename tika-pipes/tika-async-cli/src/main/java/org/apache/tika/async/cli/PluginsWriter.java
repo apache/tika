@@ -162,6 +162,7 @@ public class PluginsWriter {
             if (!StringUtils.isBlank(simpleAsyncConfig.getOnExists())) {
                 patchFileSystemField(root, "emitters", "file-system-emitter",
                         "onExists", simpleAsyncConfig.getOnExists());
+                patchJsonlReporterOnExists(root, simpleAsyncConfig.getOnExists());
             }
 
             // merge, don't replace: other configured timeout-limits fields must survive
@@ -213,6 +214,16 @@ public class PluginsWriter {
                 target.put(field, value);
             }
         }
+    }
+
+    // the jsonl reporter has no SKIP; a rerun that keeps old outputs should keep the old ledger too
+    private static void patchJsonlReporterOnExists(ObjectNode root, String emitterOnExists) {
+        JsonNode reporters = root.get("pipes-reporters");
+        if (reporters == null || !reporters.isObject() || !reporters.has("file-system-jsonl-reporter")) {
+            return;
+        }
+        String mapped = "SKIP".equalsIgnoreCase(emitterOnExists) ? "APPEND" : emitterOnExists;
+        ((ObjectNode) reporters.get("file-system-jsonl-reporter")).put("onExists", mapped);
     }
 
     /**
