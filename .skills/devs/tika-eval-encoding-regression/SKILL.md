@@ -23,6 +23,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Local override: `$TIKA_SKILLS_LOCAL/tika-eval-encoding-regression/LOCAL.md` (default `~/.tika-skills`),
+read after this file, wins on conflict.
+
 # tika-eval for encoding-detector regression hunts
 
 A condensed pattern for finding SBCS→CJK style charset-detector regressions

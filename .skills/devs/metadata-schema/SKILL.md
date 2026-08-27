@@ -24,6 +24,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Local override: `$TIKA_SKILLS_LOCAL/metadata-schema/LOCAL.md` (default `~/.tika-skills`),
+read after this file, wins on conflict.
+
 # Metadata Key Registry & Schema Skill
 
 Working with `tika-metadata-schema` — the committed, build-gated registry of Tika's metadata keys.

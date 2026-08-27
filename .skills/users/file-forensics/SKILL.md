@@ -30,6 +30,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Local override: `$TIKA_SKILLS_LOCAL/file-forensics/LOCAL.md` (default `~/.tika-skills`),
+read after this file, wins on conflict.
+
 # File forensics with Apache Tika
 
 **What this can and cannot tell you.** Tika cannot tell you who wrote a
@@ -88,23 +91,33 @@ configuration — in one command.
 This skill is **not** "run Tika and read the output into context." It's two
 phases:
 
-**Phase 1 — capture** (once per file): parse to disk, with a digest, and
-make a compact metadata-only view for the conversation:
+**Phase 1 — capture** (once per file): parse to disk with a digest,
+**extract every embedded file to disk**, and make a compact metadata-only
+view for the conversation:
 
 ```bash
 java -jar tika-app.jar --config=file-forensics-config.json -J suspect.file > suspect.rmeta.json
+java -jar tika-app.jar --config=file-forensics-config.json -Z --extract-dir=evidence/suspect-embedded suspect.file
 # (--digest=sha256 is only needed if you are NOT using the config;
 #  the config's built-in digester already covers it)
 # or, against the docker rig from the isolation section above:
 # curl -T suspect.file http://localhost:9998/rmeta > suspect.rmeta.json
+# curl -T suspect.file http://localhost:9998/unpack > suspect-embedded.zip
+# mkdir -p evidence/suspect-embedded && unzip -q suspect-embedded.zip -d evidence/suspect-embedded
 
 jq 'map(del(."tk:content"))' suspect.rmeta.json > suspect.meta.json
+ls -lR evidence/suspect-embedded && sha256sum evidence/suspect-embedded/*/* 2>/dev/null || sha256sum evidence/suspect-embedded/*
 ```
 
 `suspect.rmeta.json` is the full evidence record — a JSON array where entry
 0 is the file and entries 1+ are everything embedded in it, content
 included. `suspect.meta.json` is the same array with the (possibly huge)
 extracted text stripped out: small enough to inspect freely.
+`evidence/suspect-embedded/` holds **the literal embedded files** —
+attachments, images, macro source, each prior PDF revision as an openable
+PDF — and the examiner needs those, not descriptions of them. Extraction
+is part of capture, not a follow-up; tell the human where the directory is
+and what's in it as soon as it exists.
 
 **Phase 2 — investigate conversationally.** Each question the user asks
 becomes a targeted query against the saved files, and only the answering
@@ -120,6 +133,34 @@ jq '.[2]."tk:content"' suspect.rmeta.json               # content of ONE entry,
                                                         # only when asked
 ```
 
+Two queries worth running early on any file:
+
+```bash
+# inventory: one line per entry -- index, depth, type, name, content-type
+jq -r 'to_entries[] | [.key, .value."tk:embedded-depth", .value."tk:embedded-resource-type",
+       .value."tk:resource-name", .value."Content-Type"] | @tsv' suspect.meta.json
+# every key that appears anywhere in the array -- what there is to ask about
+jq '[.[] | keys[]] | unique' suspect.meta.json
+```
+
+**When the human wants to see everything**, they get three things: the
+extracted-files directory (open the images, the attachments, the prior
+revisions — with whatever tools they normally use), and both JSON files:
+`suspect.rmeta.json` is the complete record, content included;
+`suspect.meta.json` is the same thing without the text, which is what you
+want when the text runs to megabytes and drowns the metadata in a viewer.
+Point them at whatever is already on the machine:
+
+- `jq . suspect.rmeta.json | less` — pretty-printed, pageable, no install
+  (`python3 -m json.tool` if `jq` is missing)
+- `jq '.[0]' suspect.meta.json` — the container entry's metadata alone, the
+  usual first look
+- Open it in a browser: Firefox and Chrome render `.json` files as a
+  collapsible tree with search
+- `jless`, `fx`, or `visidata` if installed (see "Showing the human the
+  evidence" below)
+
+The size caution applies to the *agent's* context, not the human's screen.
 Never load the full rmeta JSON into context — a document with a large text
 body or many attachments makes it enormous, and the conversation only ever
 needs slices. The saved files also make the session auditable: the evidence
@@ -128,9 +169,9 @@ the answers came from is on disk, unchanged, re-queryable.
 ## The forensics config: turn on what default parsing leaves off
 
 This skill ships `file-forensics-config.json` (in this skill's directory):
-one config for every surface — its `"server": {}` element is required for
-tika-server's `-c` and harmlessly ignored by tika-app; don't remove it.
-the named, explicit parse configuration for investigation work. Use it on
+one config for every surface, and the named, explicit parse configuration
+for investigation work. (Its `"server": {}` element is required for
+tika-server's `-c` and harmlessly ignored by tika-app; don't remove it.) Use it on
 every surface, every time — an examination should be able to state exactly
 what configuration produced its output, and "whatever that tool defaults
 to" is not that. It also makes results identical across surfaces, because
@@ -172,9 +213,10 @@ The full switch list:
   (tracked-change deletions and moved-away text in the output),
   `includeMissingRows` (spreadsheet row gaps)
 - `jsoup-parser.extractScripts` — script bodies in HTML (including HTML
-  email bodies and HTML attachments) appear in output instead of being
-  silently dropped: JavaScript in a document is something a reviewer should
-  see
+  email bodies and HTML attachments) become their own `MACRO`-typed embedded
+  entries instead of being silently dropped: JavaScript in a document is
+  something a reviewer should see. Note they do NOT appear in the page's own
+  `tk:content`; look for the extra entries (and the extracted files)
 
 Some defaults are already forensics-friendly and are deliberately NOT
 changed: overlapping/duplicate text is kept
@@ -281,13 +323,12 @@ archive members, prior VERSIONs — each with its own metadata,
 `THUMBNAIL`, `VERSION`, ...), `tk:embedded-depth`, and path.
 
 **Show the human the literal files.** The metadata inventory is for the
-agent; the extracted bytes are for the person. Extract everything embedded
-to disk so they can open the images, hand an attachment to another tool, or
-open a prior PDF revision side-by-side with the final:
-
-```bash
-java -jar tika-app.jar --config=file-forensics-config.json -Z     --extract-dir=evidence/suspect-embedded suspect.file
-```
+agent; the extracted bytes are for the person. Phase 1 already extracted
+everything to `evidence/suspect-embedded/` (`-Z --extract-dir=...`, or
+`/unpack` on the server) so they can open the images, hand an attachment
+to another tool, or open a prior PDF revision side-by-side with the final.
+If that step was skipped, do it now — an examination without the extracted
+files is incomplete.
 
 - With the forensics config, this includes **macro source** (MACRO entries)
   and **each prior PDF revision as a standalone, openable PDF** (VERSION
@@ -308,7 +349,16 @@ java -jar tika-app.jar --config=file-forensics-config.json -Z     --extract-dir=
   the embedded files as a zip over HTTP. **`/unpack` names differ from
   `-z`/`-Z`:** plain sequential names (`1.jpg`, `2.pdf`, ...) and **no
   sidecar JSON** — map names back via each rmeta entry's `tk:resource-name`
-  yourself.
+  yourself. Against the server started above (forensics config loaded):
+
+  ```bash
+  curl -T suspect.file http://localhost:9998/unpack > suspect-embedded.zip
+  mkdir -p evidence/suspect-embedded && unzip -q suspect-embedded.zip -d evidence/suspect-embedded
+  sha256sum evidence/suspect-embedded/*
+  ```
+
+  `/unpack/all` also includes the container's own text and metadata. Both
+  are `PUT`; `POST multipart/form-data` takes a per-request `config` part.
 
 **Macros:** Office macro code is surfaced as embedded entries typed `MACRO`,
 but only when macro extraction is enabled — it is **off by default**;
@@ -320,7 +370,13 @@ plenty of legitimate spreadsheets have them.
 
 - `pdf:action-triggers`, `pdf:action-types`, `pdf:js-name` — automatic
   actions and JavaScript wired into a PDF (open actions are a common
-  malicious-document mechanism, and also used legitimately by forms)
+  malicious-document mechanism, and also used legitimately by forms). With
+  the forensics config's `extractActions`, **each JavaScript body is its
+  own embedded entry**: `tk:embedded-resource-type: MACRO`, `Content-Type:
+  text/javascript`, `pdf:action-trigger` naming what fires it
+  (`PAGE_OPEN`, ...), and the code in `tk:content` — and `-Z` writes it to
+  disk as a file. A one-page PDF with no text and a `PAGE_OPEN` script is
+  the classic shape; `demo/invoice.pdf` is one.
 - `pdf:has-xfa`, `pdf:has-acro-form-fields` — active form machinery
 - `tk:encrypted` — the file (or an embedded item) is encrypted; content
   Tika couldn't read is content nobody scanned
@@ -353,10 +409,11 @@ in a JSON config.)
 
 ## Demo files
 
-The `demo/` directory in this skill ships four small real files with real
+The `demo/` directory in this skill ships six small real files with real
 findings — a PDF with revision history, a macro-bearing Word document, a docx with
-embedded content, and an xlsx whose metadata records the absolute path where
-it was last saved — plus a README of suggested questions. They're
+embedded content, an xlsx whose metadata records the absolute path where
+it was last saved, a text-free PDF with a page-open JavaScript action, and
+an HTML page with an embedded script — plus a README of suggested questions. They're
 for showing a human what this skill does on files where the default parse
 looks unremarkable, and for smoke-testing your setup end-to-end.
 

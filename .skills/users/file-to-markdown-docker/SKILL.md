@@ -29,6 +29,9 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
+Local override: `$TIKA_SKILLS_LOCAL/file-to-markdown-docker/LOCAL.md` (default `~/.tika-skills`),
+read after this file, wins on conflict.
+
 # Running Apache Tika via Docker
 
 Two images on Docker Hub: `apache/tika` (REST server, port 9998) and
