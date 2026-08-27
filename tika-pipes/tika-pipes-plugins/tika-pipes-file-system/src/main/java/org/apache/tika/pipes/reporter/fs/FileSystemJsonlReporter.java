@@ -19,9 +19,11 @@ package org.apache.tika.pipes.reporter.fs;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -45,9 +47,10 @@ import org.apache.tika.utils.ExceptionUtils;
  * accepted by the includes/excludes filter. The line's {@code id} is the
  * {@link FetchEmitTuple#getId()} verbatim, so consumers join on it.
  * <p>
- * Each line is written and flushed synchronously in {@link #report}, so it is on
- * disk before the driver moves on. A write failure (disk full, etc.) throws from
- * that {@link #report} and every later one rather than dropping lines silently.
+ * Each line is written and flushed to the OS synchronously in {@link #report}, so
+ * it survives the driver process dying (not a host crash; there is no fsync). A
+ * write failure (disk full, etc.) throws from that {@link #report} and every later
+ * one rather than dropping lines silently.
  */
 public class FileSystemJsonlReporter extends PipesReporterBase {
 
@@ -93,6 +96,9 @@ public class FileSystemJsonlReporter extends PipesReporterBase {
             case REPLACE -> new StandardOpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING};
         };
         boolean needsNewline = config.onExists() == FileSystemJsonlReporterConfig.ON_EXISTS.APPEND && lacksTrailingNewline(path);
+        if (needsNewline) {
+            LOG.warn("'{}' ends in a partial line (a previous run died mid-write); terminating it at offset {}", path, Files.size(path));
+        }
         try {
             // lone surrogates in ids/messages must not kill the log; default encoder would throw
             BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(path, options),
@@ -100,7 +106,7 @@ public class FileSystemJsonlReporter extends PipesReporterBase {
                             .onMalformedInput(CodingErrorAction.REPLACE)
                             .onUnmappableCharacter(CodingErrorAction.REPLACE)));
             if (needsNewline) {
-                writer.newLine();
+                writer.write('\n');
             }
             return writer;
         } catch (FileAlreadyExistsException e) {
@@ -108,14 +114,19 @@ public class FileSystemJsonlReporter extends PipesReporterBase {
         }
     }
 
-    // a previous run killed mid-write leaves a partial last line; terminate it so it stays one line
     private static boolean lacksTrailingNewline(Path path) throws IOException {
         if (!Files.isRegularFile(path) || Files.size(path) == 0) {
             return false;
         }
-        try (RandomAccessFile raf = new RandomAccessFile(path.toFile(), "r")) {
-            raf.seek(raf.length() - 1);
-            return raf.read() != '\n';
+        try (SeekableByteChannel ch = Files.newByteChannel(path, StandardOpenOption.READ)) {
+            ByteBuffer last = ByteBuffer.allocate(1);
+            ch.position(ch.size() - 1);
+            ch.read(last);
+            return last.get(0) != '\n';
+        } catch (AccessDeniedException e) {
+            // write-only file: can't inspect, so don't require read permission just for this
+            LOG.warn("can't read '{}' to check for a partial last line; appending as-is", path);
+            return false;
         }
     }
 
@@ -146,8 +157,9 @@ public class FileSystemJsonlReporter extends PipesReporterBase {
             return;
         }
         try {
+            // always \n, never the platform separator: jsonl is \n-delimited
             writer.write(mapper.writeValueAsString(line));
-            writer.newLine();
+            writer.write('\n');
             writer.flush();
         } catch (IOException e) {
             LOG.error("jsonl reporter failed writing {}", config.path(), e);

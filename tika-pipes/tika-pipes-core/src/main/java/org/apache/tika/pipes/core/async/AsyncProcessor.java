@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,6 +80,8 @@ public class AsyncProcessor implements Closeable {
     private final List<ServerManager> serverManagers = new ArrayList<>();
     private final AtomicLong totalProcessed = new AtomicLong(0);
     private final AtomicBoolean applicationErrorOccurred = new AtomicBoolean(false);
+    // first worker/emitter failure; reported to the reporter exactly once
+    private final AtomicReference<ExecutionException> failure = new AtomicReference<>();
     private static long MAX_OFFER_WAIT_MS = 120000;
     private volatile int numParserThreadsFinished = 0;
     private volatile int numEmitterThreadsFinished = 0;
@@ -141,6 +144,9 @@ public class AsyncProcessor implements Closeable {
                         Thread.sleep(500);
                         checkActive();
                     } catch (InterruptedException e) {
+                        return WATCHER_FUTURE_CODE;
+                    } catch (RuntimeException e) {
+                        // already latched in failure; rethrowing would make this future a second one
                         return WATCHER_FUTURE_CODE;
                     }
                 }
@@ -322,7 +328,9 @@ public class AsyncProcessor implements Closeable {
     }
 
     public synchronized boolean checkActive() throws InterruptedException {
-
+        if (failure.get() != null) {
+            throw new RuntimeException(failure.get());
+        }
         Future<Integer> future = executorCompletionService.poll();
         if (future != null) {
             try {
@@ -343,8 +351,10 @@ public class AsyncProcessor implements Closeable {
                         throw new IllegalArgumentException("Don't recognize this future code: " + i);
                 }
             } catch (ExecutionException e) {
-                LOG.error("execution exception", e);
-                this.pipesReporter.error(e);
+                if (failure.compareAndSet(null, e)) {
+                    LOG.error("execution exception", e);
+                    this.pipesReporter.error(e);
+                }
                 throw new RuntimeException(e);
             }
         }
@@ -448,10 +458,16 @@ public class AsyncProcessor implements Closeable {
                                     describeStopReason(result),
                                     result.status());
                             applicationErrorOccurred.set(true);
-                            pipesReporter.report(t, result, System.currentTimeMillis() - start);
-                            throw new PipesException(describeStopReason(result) + ": " +
+                            PipesException stop = new PipesException(describeStopReason(result) + ": " +
                                     result.status() +
                                     (result.message() != null ? " - " + result.message() : ""));
+                            try {
+                                pipesReporter.report(t, result, System.currentTimeMillis() - start);
+                            } catch (RuntimeException e) {
+                                // the stop reason is the primary failure; don't let the reporter mask it
+                                stop.addSuppressed(e);
+                            }
+                            throw stop;
                         }
                         if (LOG.isTraceEnabled()) {
                             LOG.trace("timer -- pipes client process: {} ms",
@@ -474,10 +490,22 @@ public class AsyncProcessor implements Closeable {
                                     System.currentTimeMillis() - offerStart);
                         }
                         long elapsed = System.currentTimeMillis() - start;
-                        pipesReporter.report(t, result, elapsed);
+                        report(t, result, elapsed);
                         totalProcessed.incrementAndGet();
                     }
                 }
+            }
+        }
+
+        // a reporter that throws must stop every worker, or the other workers keep
+        // emitting documents that never get an audit line
+        private void report(FetchEmitTuple t, PipesResult result, long elapsed) throws PipesException {
+            try {
+                pipesReporter.report(t, result, elapsed);
+            } catch (RuntimeException e) {
+                LOG.error("reporter failed; stopping all processing", e);
+                applicationErrorOccurred.set(true);
+                throw new PipesException("reporter failed", e);
             }
         }
 

@@ -322,7 +322,7 @@ as usual.
 |File list, one path per line, relative to `--inputDir` or absolute.
 
 |`--on-exists=<mode>`
-|Behavior when an output file already exists: `exception` (default), `replace`, `skip`.
+|Behavior when an output file already exists: `exception` (default), `replace`, `skip`. Also applied to a configured `file-system-jsonl-reporter` (`skip` becomes `APPEND` there).
 |===
 
 === Output formatting

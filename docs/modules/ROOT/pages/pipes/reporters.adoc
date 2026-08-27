@@ -47,6 +47,8 @@ Reporters live under the plural top-level `pipes-reporters` key. The keys inside
 
 Each entry's outer key is the reporter's component name — there is no separate ID layer because reporters do not get referenced by other components.
 
+Every configured reporter receives every call even if another reporter throws; the first exception is rethrown afterward and stops the run.
+
 [#plugins]
 == Available Reporters
 

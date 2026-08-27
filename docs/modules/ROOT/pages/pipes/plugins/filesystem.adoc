@@ -279,8 +279,10 @@ include::example$pipes-fs-jsonl-reporter.json[]
 * `status` — `PipesResult.RESULT_STATUS` name.
 * `category` — the status's `PipesResult.CATEGORY` (`PROCESS_CRASH`, `TASK_EXCEPTION`, ...), so consumers can group without tracking every status.
 * `message` — the result's message when the worker managed to send one (a stack trace for crashes); `null` when it did not. Capped at `maxMessageLength`.
-* `elapsedMs` — wall-clock time the driver spent on this document: fetch, parse, and any wait for the emit queue; not the emit itself.
+* `elapsedMs` — wall-clock time the driver spent on this document: fetch, parse, any emit done inside the worker (`EMIT_SUCCESS*` statuses), and any wait for the driver's emit queue. Emits batched by the driver (`PARSE_SUCCESS*`) happen later and are not included.
 * `timestamp` — ISO-8601 UTC timestamp of the report.
+
+Each line is flushed to the OS before `report` returns, so it survives the driver process dying; there is no fsync, so a host crash can lose the last lines. A write failure (disk full, etc.) stops the whole run rather than continuing without a record.
 
 If the pipeline dies, a final line of a different shape, `{"error":"<stack trace>","timestamp":"..."}`, is written and the file is closed. Readers should dispatch on the presence of `id` vs `error`.
 
@@ -298,7 +300,7 @@ Fields may be added in later releases; existing fields will not be renamed or re
 
 |`onExists`
 |`EXCEPTION`
-|What to do when `path` already exists at startup: `EXCEPTION` refuses to start, `APPEND` continues the existing file (terminating a partial last line left by a killed run), `REPLACE` truncates it. There is no `SKIP`, unlike the emitter's `onExists`. The default is deliberately strict — appending a new run onto an old ledger is the mistake this reporter exists to prevent.
+|What to do when `path` already exists at startup: `EXCEPTION` refuses to start, `APPEND` continues the existing file (terminating a partial last line left by a killed run, with a warning), `REPLACE` truncates it. There is no `SKIP`, unlike the emitter's `onExists`; `tika-async-cli --on-exists` applies to this reporter too, mapping `skip` to `APPEND`. The default is deliberately strict — appending a new run onto an old ledger is the mistake this reporter exists to prevent.
 
 |`includes` / `excludes`
 |_all statuses_
