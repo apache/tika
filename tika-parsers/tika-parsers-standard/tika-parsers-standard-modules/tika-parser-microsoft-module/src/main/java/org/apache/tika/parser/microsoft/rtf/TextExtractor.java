@@ -51,6 +51,7 @@ import org.apache.tika.metadata.OfficeOpenXMLExtended;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.CharsetUtils;
 
 /* Tokenizes and performs a "shallow" parse of the RTF
@@ -338,10 +339,12 @@ final class TextExtractor {
     //this is an arbitrary limit on the size of the stack
     //to defend against DoS with memory consumption
     private int maxStackSize = 1000;
+    private final ParseContext context;
 
     public TextExtractor(ContentHandler out, Metadata metadata,
-                         RTFEmbObjHandler embObjHandler) {
+                         RTFEmbObjHandler embObjHandler, ParseContext context) {
         this.metadata = metadata;
+        this.context = context;
         this.out = out;
         this.embObjHandler = embObjHandler;
     }
@@ -1033,7 +1036,7 @@ final class TextExtractor {
                     try {
                         embObjHandler.writeBytes(in, param);
                     } catch (IOException | TikaException e) {
-                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                         embObjHandler.reset();
                     }
                 } else {
@@ -1500,7 +1503,7 @@ final class TextExtractor {
             try {
                 embObjHandler.handleCompletedObject();
             } catch (TikaException | IOException e) {
-                EmbeddedDocumentUtil.recordException(e, metadata);
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             } catch (SecurityException e) {
                 // Security-relevant exceptions must always propagate
                 // immediately -- never swallow them as a warning.
@@ -1510,7 +1513,7 @@ final class TextExtractor {
                 // EmptyFileException; other malformed embedded payloads
                 // can surface as a variety of runtime exceptions. Record
                 // and continue rather than aborting the outer RTF parse.
-                EmbeddedDocumentUtil.recordException(e, metadata);
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
             groupState.objdata = false;
         } else if (groupState.pictDepth > 0) {

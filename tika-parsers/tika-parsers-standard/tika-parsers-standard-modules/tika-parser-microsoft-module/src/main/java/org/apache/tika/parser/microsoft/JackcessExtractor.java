@@ -327,7 +327,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 try {
                     tis = TikaInputStream.get(spc.getStream());
                 } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
                     break;
                 }
                 if (tis != null) {
@@ -347,7 +347,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 try {
                     ocStream = TikaInputStream.get(oc.getStream());
                 } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordException(e, parentMetadata);
+                    EmbeddedDocumentUtil.recordException(e, parentMetadata, parseContext);
                 }
                 try {
                     handleEmbeddedResource(ocStream, null,//filename
@@ -373,14 +373,14 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             try {
                 is = cc.getStream();
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
                 return;
             }
 
             try {
                 fileSystem = new POIFSFileSystem(is);
             } catch (Exception e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
                 return;
             }
 

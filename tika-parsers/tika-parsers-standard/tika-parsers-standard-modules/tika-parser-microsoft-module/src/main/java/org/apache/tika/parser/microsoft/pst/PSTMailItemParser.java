@@ -222,7 +222,7 @@ public class PSTMailItemParser implements Parser {
                 PSTAttachment attachment = email.getAttachment(i);
                 parseMailAttachment(xhtml, attachment, metadata, embeddedExtractor, context);
             } catch (Exception e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
             }
         }
     }
@@ -268,7 +268,7 @@ public class PSTMailItemParser implements Parser {
             try {
                 tis = TikaInputStream.get(attachment.getFileInputStream());
             } catch (NullPointerException e) { //TIKA-2488
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                 return;
             }
 

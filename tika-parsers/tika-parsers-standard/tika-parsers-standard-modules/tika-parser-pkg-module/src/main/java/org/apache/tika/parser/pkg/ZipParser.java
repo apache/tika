@@ -471,7 +471,7 @@ public class ZipParser extends AbstractArchiveParser {
         String name = detectEntryName(entry, context, config);
 
         if (entry.getGeneralPurposeBit().usesEncryption()) {
-            handleEncryptedEntry(name, parentMetadata, xhtml);
+            handleEncryptedEntry(name, parentMetadata, xhtml, context);
             return;
         }
 
@@ -483,7 +483,7 @@ public class ZipParser extends AbstractArchiveParser {
         if (!zipFile.canReadEntryData(entry)) {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(
                     new TikaException("Can't read archive stream (" + name + ")"),
-                    parentMetadata);
+                    parentMetadata, context);
             if (name != null && !name.isEmpty()) {
                 xhtml.element("p", name);
             }
@@ -502,7 +502,7 @@ public class ZipParser extends AbstractArchiveParser {
                     () -> zipFile.getInputStream(entry), tmp, entryMetadata)) {
                 extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);
             } catch (UnsupportedZipFeatureException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
             } finally {
                 tmp.dispose();
             }
@@ -519,14 +519,14 @@ public class ZipParser extends AbstractArchiveParser {
 
         if (!zis.canReadEntryData(entry)) {
             if (entry.getGeneralPurposeBit().usesEncryption()) {
-                handleEncryptedEntry(name, parentMetadata, xhtml);
+                handleEncryptedEntry(name, parentMetadata, xhtml, context);
             } else if (entry.getGeneralPurposeBit().usesDataDescriptor()
                     && entry.getMethod() == java.util.zip.ZipEntry.STORED) {
                 throw new UnsupportedZipFeatureException(Feature.DATA_DESCRIPTOR, entry);
             } else {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(
                         new TikaException("Can't read archive stream (" + name + ")"),
-                        parentMetadata);
+                        parentMetadata, context);
                 if (name != null && !name.isEmpty()) {
                     xhtml.element("p", name);
                 }
@@ -544,7 +544,7 @@ public class ZipParser extends AbstractArchiveParser {
                 TikaInputStream tis = TikaInputStream.get(zis, tmp, entryMetadata);
                 extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);
             } catch (UnsupportedZipFeatureException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
             } finally {
                 tmp.dispose();
             }
@@ -594,10 +594,10 @@ public class ZipParser extends AbstractArchiveParser {
     }
 
     private void handleEncryptedEntry(String name, Metadata parentMetadata,
-                                       XHTMLContentHandler xhtml) throws SAXException {
+                                       XHTMLContentHandler xhtml, ParseContext context) throws SAXException {
         EmbeddedDocumentUtil.recordEmbeddedStreamException(
                 new EncryptedDocumentException("stream (" + name + ") is encrypted"),
-                parentMetadata);
+                parentMetadata, context);
         if (name != null && !name.isEmpty()) {
             xhtml.element("p", name);
         }

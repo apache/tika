@@ -39,10 +39,10 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
@@ -52,7 +52,6 @@ import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFNumberingShim;
 import org.apache.tika.parser.microsoft.ooxml.xwpf.XWPFStylesShim;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -254,8 +253,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
 
         if (config.isIncludeHeadersAndFooters()) {
@@ -278,8 +276,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     }
                 }
             } catch (InvalidFormatException | ZipException e) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        ExceptionUtils.getStackTrace(e));
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
         }
 
@@ -294,8 +291,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     handlePart(documentPart, styles, listManager, xhtml, inlinePartMap);
             emittedCommentIds = mainBodyHandler.getEmittedCommentIds();
         } catch (ZipException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
         //dump remaining components at end (diagrams, charts, footers)
         for (String rel : new String[]{AbstractOOXMLExtractor.RELATION_DIAGRAM_DATA,
@@ -320,8 +316,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     }
                 }
             } catch (InvalidFormatException | ZipException e) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        ExceptionUtils.getStackTrace(e));
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
         }
         //dump any comments that were NOT inlined via commentReference
@@ -353,8 +348,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                         context);
                 xhtml.endElement("div");
             } catch (TikaException | IOException | SAXException e) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        ExceptionUtils.getStackTrace(e));
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
         }
     }
@@ -379,16 +373,14 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                             config.isPreferAlternateContentChoice())), context);
         } catch (SAXException e) {
             WriteLimitReachedException.throwIfWriteLimitReached(e);
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
             // The partial parse may have left <p>, <td>, <tr>, <table>, or
             // formatting tags open on the XHTML stream. Close them now so
             // subsequent parts -- and the outer </body></html> -- land in a
             // balanced spot.
             bodyHandler.closeAnyPending();
         } catch (TikaException | IOException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
             bodyHandler.closeAnyPending();
         }
         Map<String, EmbeddedPartMetadata> partMetadata = bodyHandler.getEmbeddedPartMetadataMap();
@@ -480,8 +472,7 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
             }
             return collector.getContentMap();
         } catch (InvalidFormatException | IOException | TikaException | SAXException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
             return Collections.emptyMap();
         }
     }

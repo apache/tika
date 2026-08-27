@@ -182,7 +182,7 @@ abstract class AbstractPOIFSExtractor {
                     throw e;
                 } catch (Exception e) {
                     //if there's a stream error while detecting, give up
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                     return;
                 }
                 handleEmbeddedResource(tis, metadata,null, dir.getName(), dir.getStorageClsid(),
@@ -295,7 +295,7 @@ abstract class AbstractPOIFSExtractor {
         try {
             contentsEntry = (DocumentEntry) parentDir.getEntry(contentsEntryName);
         } catch (FileNotFoundException fnfe) {
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(fnfe, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(fnfe, parentMetadata, context);
             return;
         }
 
@@ -306,7 +306,7 @@ abstract class AbstractPOIFSExtractor {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
             return;
         }
         try (TikaInputStream tis = TikaInputStream.get(inp)) {
@@ -378,7 +378,7 @@ abstract class AbstractPOIFSExtractor {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
             return;
         }
         if (data == null) {

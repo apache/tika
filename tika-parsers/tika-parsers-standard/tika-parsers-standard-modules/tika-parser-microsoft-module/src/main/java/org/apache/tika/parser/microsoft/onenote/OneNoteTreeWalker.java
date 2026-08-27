@@ -429,7 +429,7 @@ class OneNoteTreeWalker {
             dif.read(buf);
         } catch (IOException e) {
             //store this exception in the parent's metadata
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
             return;
         }
         Metadata embeddedMetadata = Metadata.newInstance(this.parseContext);

@@ -133,7 +133,6 @@ import org.apache.tika.renderer.pdf.pdfbox.VectorGraphicsOnlyPDFRenderer;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
 class AbstractPDF2XHTML extends PDFTextStripper {
@@ -288,7 +287,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                         pdfDocument.getDocumentCatalog().getMetadata().exportXMPMetadata())) {
                     extractXMPAsEmbeddedFile(tis, XMP_DOCUMENT_CATALOG_LOCATION);
                 } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                 }
             }
             //now iterate through the pages
@@ -298,7 +297,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     try (TikaInputStream tis = TikaInputStream.get(page.getMetadata().exportXMPMetadata())) {
                         extractXMPAsEmbeddedFile(tis, XMP_PAGE_LOCATION_PREFIX + pageNumber);
                     } catch (IOException e) {
-                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                     }
                 }
                 pageNumber++;
@@ -319,7 +318,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 try {
                     bytes = pdfDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes();
                 } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                 }
                 if (bytes != null) {
                     try (TikaInputStream tis = TikaInputStream.get(bytes)) {
@@ -508,7 +507,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             tis = TikaInputStream.get(pdEmbeddedFile.createInputStream());
         } catch (IOException e) {
             //store this exception in the parent's metadata
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
             return;
         }
 
@@ -768,8 +767,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             //image rendering can throw a variety of runtime exceptions, not just
             // IOExceptions...
             //need to have a wide catch
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
 
             return new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, pageMetadata);
         }
@@ -1356,7 +1354,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 is = new BufferedInputStream(
                         UnsynchronizedByteArrayInputStream.builder().setByteArray(pdxfa.getBytes()).get());
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
             }
             if (is != null) {
                 try {
@@ -1364,7 +1362,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     return;
                 } catch (XMLStreamException e) {
                     //if there was an xml parse exception in xfa, try the AcroForm
-                    EmbeddedDocumentUtil.recordException(e, metadata);
+                    EmbeddedDocumentUtil.recordException(e, metadata, context);
                 } finally {
                     IOUtils.closeQuietly(is);
                 }

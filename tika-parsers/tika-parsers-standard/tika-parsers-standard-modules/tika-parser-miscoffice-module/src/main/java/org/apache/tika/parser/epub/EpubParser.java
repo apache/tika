@@ -451,7 +451,7 @@ public class EpubParser implements Parser {
             tis = TikaInputStream.get(zipFile.getInputStream(ze));
         } catch (IOException e) {
             //store this exception in the parent's metadata
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
             return;
         }
 

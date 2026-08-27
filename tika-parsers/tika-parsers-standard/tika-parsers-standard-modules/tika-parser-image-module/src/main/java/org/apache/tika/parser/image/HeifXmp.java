@@ -68,7 +68,7 @@ final class HeifXmp {
         } catch (SecurityException e) {
             throw e;
         } catch (IOException | SAXException | TikaException | RuntimeException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);   // bad XMP must not fail the parse
+            EmbeddedDocumentUtil.recordException(e, metadata, context);   // bad XMP must not fail the parse
         }
         return true;
     }
