@@ -58,6 +58,10 @@ Each entry's outer key is the reporter's component name — there is no separate
 |`file-system-reporter`
 |Writes a JSON status file periodically. Pair with an external watcher — see xref:pipes/plugins/filesystem.adoc#watching[Live status for watching applications].
 
+|xref:pipes/plugins/filesystem.adoc#file-system-jsonl-reporter[File System]
+|`file-system-jsonl-reporter`
+|Appends one JSON line per document to a file. The record of documents whose worker crashed (nothing reaches the emitter for those).
+
 |xref:pipes/plugins/jdbc.adoc[JDBC]
 |`jdbc-reporter`
 |Writes per-doc status rows to a SQL table.

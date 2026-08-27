@@ -42,4 +42,9 @@ public class ConfigExamplesTest extends AbstractConfigExamplesTest {
     public void testFileSystemPipelineConfig() throws Exception {
         loadAndValidate("file-system-pipeline.json");
     }
+
+    @Test
+    public void testFileSystemJsonlReporterConfig() throws Exception {
+        loadAndValidate("file-system-jsonl-reporter.json");
+    }
 }

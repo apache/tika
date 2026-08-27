@@ -1,5 +1,12 @@
 Release 4.1.0 - unreleased
 
+   * New file-system-jsonl-reporter pipes reporter: an append-only, one-JSON-
+     line-per-document audit log written by the driver process. Documents whose
+     forked worker crashed (OOM, TIMEOUT, UNSPECIFIED_CRASH) produce nothing in
+     the emitter's output; this file is the record that they were attempted.
+     Refuses to start over an existing file unless onExists is APPEND or
+     REPLACE (TIKA-4846).
+
    * Add Micrometer reporting and opt-in endpoint for tika-server (TIKA-4839).
      
    * Improve spooling/decrease number of spills to disk (TIKA-4835).

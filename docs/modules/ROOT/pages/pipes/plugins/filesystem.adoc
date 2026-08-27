@@ -40,6 +40,10 @@ The File System plugin (`tika-pipes-file-system`) is the most common starting po
 |Reporter
 |`file-system-reporter`
 |`FileSystemStatusReporter`
+
+|Reporter
+|`file-system-jsonl-reporter`
+|`FileSystemJsonlReporter`
 |===
 
 == Complete Pipeline Example
@@ -253,6 +257,58 @@ Tradeoffs:
 * Per-record `report()` calls are cheap (counter increment only). The cost of "watching" is bounded by the periodic write, not by document throughput.
 
 [#security-notes]
+[#file-system-jsonl-reporter]
+== File System JSONL Reporter (`file-system-jsonl-reporter`)
+
+Append-only per-document audit log: one JSON object per line for every result that passes the `includes`/`excludes` filter. Where the status reporter above summarizes counts, this one records *which* documents ended in which state, so a downstream process (a dead-letter queue, `tika-eval`) can act on them.
+
+A crash result (`OOM`, `TIMEOUT`, `UNSPECIFIED_CRASH`) leaves nothing in the emitter's output; this file is the only record that the document was attempted. The driver process writes it, so it survives the forked worker's death.
+
+[source,json]
+----
+include::example$pipes-fs-jsonl-reporter.json[]
+----
+
+=== Line format
+
+[source,json]
+----
+{"id":"reports/q3.pdf","status":"OOM","message":"...","elapsedMs":4120,"ts":"2026-08-27T14:02:11.482Z"}
+----
+
+* `id` — `FetchEmitTuple.getId()` verbatim. For the file system iterator that is the path relative to `basePath`, so it matches the emitted file name minus the extract suffix.
+* `status` — `PipesResult.RESULT_STATUS` name.
+* `message` — the result's message (a stack trace for crashes), capped at `maxMessageLength`.
+* `elapsedMs` — wall-clock time the driver spent on this document.
+* `ts` — ISO-8601 UTC timestamp of the report.
+
+If the pipeline dies, a final line of the form `{"error":"<stack trace>","ts":"..."}` is written and the file is flushed.
+
+=== Configuration
+
+[cols="1,1,3"]
+|===
+|Field |Default |Description
+
+|`path`
+|_required_
+|Path of the JSONL file. Missing parent directories are created at startup.
+
+|`onExists`
+|`EXCEPTION`
+|What to do when `path` already exists at startup: `EXCEPTION` refuses to start, `APPEND` continues the existing file, `REPLACE` truncates it. The default is deliberately strict — appending a new run onto an old ledger is the mistake this reporter exists to prevent.
+
+|`includes` / `excludes`
+|_all statuses_
+|Mutually exclusive sets of `RESULT_STATUS` names. For a crash ledger, `includes` the crash and exception statuses; leave both unset for a full per-document audit trail.
+
+|`maxMessageLength`
+|`10000`
+|Characters of `message` to keep; longer messages are truncated with a suffix stating how many characters were dropped.
+|===
+
+Reports are queued and written by a single background thread that flushes whenever the queue is empty, so the ordering across documents is the order the driver finished them, not the iterator's order. If the writer fails (disk full), the next `report()` throws rather than dropping lines silently.
+
 == Security Notes
 
 * **`basePath` is the sandbox boundary, and it is the only one.** With `basePath` set, the fetcher and emitter reject any key that resolves outside it, including absolute paths and `../` traversal. `allowAbsolutePaths` has no effect in this state.
