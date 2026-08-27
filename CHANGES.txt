@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * PDF: extractFontNames threw NullPointerException on a page with no
+     /Resources dictionary (TIKA-4842).
+
    * tika-server: opt-in Micrometer metrics reporting and endpoint
      (TIKA-4839).
 
