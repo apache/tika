@@ -105,6 +105,9 @@ public class Mp4SampleEntriesTest {
         System.arraycopy(sinf, 0, cut, 0, 16);
         putInt(cut, 0, 16);
         assertNull(Mp4SampleEntries.originalFormat(cut, 0, cut.length));
+        //a header-only frma (size 8) must not read its format from the next box
+        byte[] shortFrma = boxOf("sinf", boxOf("frma"), boxOf("mp4a", new byte[0]));
+        assertNull(Mp4SampleEntries.originalFormat(shortFrma, 0, shortFrma.length));
     }
 
     private static byte[] boxOf(String type, byte[]... payloads) {

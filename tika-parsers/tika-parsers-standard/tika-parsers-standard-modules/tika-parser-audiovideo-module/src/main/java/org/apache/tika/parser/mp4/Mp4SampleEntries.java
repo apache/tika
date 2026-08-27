@@ -103,8 +103,10 @@ final class Mp4SampleEntries {
         if (sinf < 0) {
             return null;
         }
-        int frma = findBox(b, sinf + 8, boxEnd(b, sinf, end), "frma");
-        if (frma < 0 || frma + 12 > end) {
+        int sinfEnd = boxEnd(b, sinf, end);
+        int frma = findBox(b, sinf + 8, sinfEnd, "frma");
+        if (frma < 0 || boxEnd(b, frma, sinfEnd) < frma + 12) {
+            //the box must hold its 4 byte payload, not borrow it from the next box
             return null;
         }
         return printableFourCC(b, frma + 8);
