@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * Stop spooling OLE2 objects whose header over-reserves BAT capacity
+     (TIKA-4845).
+
    * Add Micrometer reporting and opt-in endpoint for tika-server (TIKA-4839).
      
    * Improve spooling/decrease number of spills to disk (TIKA-4835).
