@@ -27,6 +27,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,9 @@ import org.apache.tika.utils.StringUtils;
  * </pre>
  */
 public class FileSystemEmitter extends AbstractStreamEmitter {
+
+    // in-progress writes; crawlers of the output dir should ignore these
+    static final String TMP_SUFFIX = ".tmp";
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemEmitter.class);
 
@@ -127,17 +131,44 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
             }
         }
 
-        if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
-            try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE_NEW)) { //CREATE_NEW forces an IOException if the file already exists
+        Path tmp = tmpFor(output);
+        try {
+            try (Writer writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE_NEW)) {
                 JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
-            } catch (FileAlreadyExistsException e) {
+            }
+            publish(tmp, output, config.onExists());
+        } finally {
+            Files.deleteIfExists(tmp);
+        }
+    }
+
+    private static Path tmpFor(Path output) {
+        // sibling so the rename stays on one filesystem (and therefore atomic)
+        return output.resolveSibling(output.getFileName() + "." + UUID.randomUUID() + TMP_SUFFIX);
+    }
+
+    /**
+     * Moves the fully written {@code tmp} onto {@code output} with a single rename, so a
+     * concurrent reader never sees a partial file. Ownership of {@code tmp} passes to this
+     * method: it is gone on return, whether moved or discarded.
+     */
+    private static void publish(Path tmp, Path output, FileSystemEmitterConfig.ON_EXISTS onExists)
+            throws IOException {
+        if (onExists == FileSystemEmitterConfig.ON_EXISTS.REPLACE) {
+            Files.move(tmp, output, StandardCopyOption.REPLACE_EXISTING,
+                    StandardCopyOption.ATOMIC_MOVE);
+            return;
+        }
+        // no REPLACE_EXISTING: Files.move refuses an existing target rather than clobbering it
+        try {
+            Files.move(tmp, output);
+        } catch (FileAlreadyExistsException e) {
+            Files.deleteIfExists(tmp);
+            if (onExists == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
                 throw alreadyExistsException(output);
             }
-        } else {
-            try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
-                JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
-            }
+            LOG.debug("Skipping existing file: {}", output);
         }
     }
 
@@ -174,22 +205,16 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         if (!Files.isDirectory(output.getParent())) {
             Files.createDirectories(output.getParent());
         }
-        if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.REPLACE) {
-            Files.copy(inputStream, output, StandardCopyOption.REPLACE_EXISTING);
-        } else if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
-            try {
-                Files.copy(inputStream, output);
-            } catch (FileAlreadyExistsException e) {
-                throw alreadyExistsException(output);
-            }
-        } else if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.SKIP) {
-            if (!Files.isRegularFile(output)) {
-                try {
-                    Files.copy(inputStream, output);
-                } catch (FileAlreadyExistsException e) {
-                    //swallow
-                }
-            }
+        if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.SKIP && Files.exists(output)) {
+            LOG.debug("Skipping existing file: {}", output);
+            return;
+        }
+        Path tmp = tmpFor(output);
+        try {
+            Files.copy(inputStream, tmp);
+            publish(tmp, output, config.onExists());
+        } finally {
+            Files.deleteIfExists(tmp);
         }
     }
 
