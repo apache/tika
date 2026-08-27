@@ -2,7 +2,8 @@ Release 4.1.0 - unreleased
 
    * FileSystemEmitter writes to a sibling ".tmp" file and renames it into
      place, so readers of the output directory never see a partially written
-     file (TIKA-4848).
+     file. Set "atomicWrites": false on the emitter to restore in-place
+     writes (TIKA-4848).
 
    * Stop spooling OLE2 objects whose header over-reserves BAT capacity
      (TIKA-4845).

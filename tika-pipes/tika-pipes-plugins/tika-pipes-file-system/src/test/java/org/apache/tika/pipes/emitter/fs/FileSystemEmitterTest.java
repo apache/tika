@@ -55,6 +55,11 @@ public class FileSystemEmitterTest {
 
     private StreamEmitter createEmitter(Path basePath, Boolean allowAbsolutePaths, String onExists)
             throws TikaConfigException, IOException {
+        return createEmitter(basePath, allowAbsolutePaths, onExists, null);
+    }
+
+    private StreamEmitter createEmitter(Path basePath, Boolean allowAbsolutePaths, String onExists,
+                                        Boolean atomicWrites) throws TikaConfigException, IOException {
         ObjectNode config = MAPPER.createObjectNode();
         if (basePath != null) {
             config.put("basePath", basePath.toAbsolutePath().toString());
@@ -63,6 +68,9 @@ public class FileSystemEmitterTest {
             config.put("allowAbsolutePaths", allowAbsolutePaths);
         }
         config.put("onExists", onExists);
+        if (atomicWrites != null) {
+            config.put("atomicWrites", atomicWrites);
+        }
         ExtensionConfig pluginConfig = new ExtensionConfig("test", "test", config.toString());
         return (StreamEmitter) new FileSystemEmitterFactory().buildExtension(pluginConfig);
     }
@@ -179,5 +187,29 @@ public class FileSystemEmitterTest {
         writer.join();
         assertTrue(minSeen == Long.MAX_VALUE || minSeen > 1 << 20,
                 "observed partial file of size " + minSeen);
+    }
+
+    @Test
+    public void testAtomicWritesOff() throws Exception {
+        Path basePath = tempDir.resolve("base");
+        Path existing = seed(basePath, "a.json", "original");
+        StreamEmitter exc = createEmitter(basePath, null, "EXCEPTION", false);
+        assertThrows(IOException.class, () ->
+                exc.emit("a.json", List.of(new Metadata()), new ParseContext()));
+        assertThrows(IOException.class, () -> exc.emit("a.json",
+                new ByteArrayInputStream("x".getBytes(StandardCharsets.UTF_8)), new Metadata(),
+                new ParseContext()));
+        StreamEmitter skip = createEmitter(basePath, null, "SKIP", false);
+        skip.emit("a.json", List.of(new Metadata()), new ParseContext());
+        skip.emit("a.json", new ByteArrayInputStream("x".getBytes(StandardCharsets.UTF_8)),
+                new Metadata(), new ParseContext());
+        assertEquals("original", Files.readString(existing));
+        StreamEmitter replace = createEmitter(basePath, null, "REPLACE", false);
+        replace.emit("a.json", new ByteArrayInputStream("x".getBytes(StandardCharsets.UTF_8)),
+                new Metadata(), new ParseContext());
+        assertEquals("x", Files.readString(existing));
+        replace.emit("b.json", List.of(new Metadata()), new ParseContext());
+        assertTrue(Files.isRegularFile(basePath.resolve("b.json")));
+        assertEquals(0, tmpFiles(basePath));
     }
 }

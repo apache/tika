@@ -131,6 +131,10 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
             }
         }
 
+        if (!config.atomicWrites()) {
+            writeInPlace(metadataList, output, config);
+            return;
+        }
         Path tmp = tmpFor(output);
         try {
             try (Writer writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8,
@@ -140,6 +144,23 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
             publish(tmp, output, config.onExists());
         } finally {
             Files.deleteIfExists(tmp);
+        }
+    }
+
+    // atomicWrites=false: the pre-TIKA-4848 behavior; readers can observe a partial file
+    private static void writeInPlace(List<Metadata> metadataList, Path output,
+                                     FileSystemEmitterConfig config) throws IOException {
+        if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
+            try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8,
+                    StandardOpenOption.CREATE_NEW)) {
+                JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
+            } catch (FileAlreadyExistsException e) {
+                throw alreadyExistsException(output);
+            }
+        } else {
+            try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
+                JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
+            }
         }
     }
 
@@ -209,12 +230,31 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
             LOG.debug("Skipping existing file: {}", output);
             return;
         }
+        if (!config.atomicWrites()) {
+            copyInPlace(inputStream, output, config.onExists());
+            return;
+        }
         Path tmp = tmpFor(output);
         try {
             Files.copy(inputStream, tmp);
             publish(tmp, output, config.onExists());
         } finally {
             Files.deleteIfExists(tmp);
+        }
+    }
+
+    private static void copyInPlace(InputStream inputStream, Path output,
+                                    FileSystemEmitterConfig.ON_EXISTS onExists) throws IOException {
+        if (onExists == FileSystemEmitterConfig.ON_EXISTS.REPLACE) {
+            Files.copy(inputStream, output, StandardCopyOption.REPLACE_EXISTING);
+            return;
+        }
+        try {
+            Files.copy(inputStream, output);
+        } catch (FileAlreadyExistsException e) {
+            if (onExists == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
+                throw alreadyExistsException(output);
+            }
         }
     }
 
@@ -245,7 +285,8 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
                 // Merge runtime config into default config while preserving basePath and the
                 // init-time allowAbsolutePaths -- neither may be changed at runtime.
                 config = new FileSystemEmitterConfig(fileSystemEmitterConfig.basePath(), runtimeConfig.getFileExtension(), runtimeConfig.getOnExists(),
-                        runtimeConfig.isPrettyPrint(), fileSystemEmitterConfig.allowAbsolutePaths());
+                        runtimeConfig.isPrettyPrint(), fileSystemEmitterConfig.allowAbsolutePaths(),
+                        fileSystemEmitterConfig.atomicWrites());
                 checkConfig(config);
             }
         }

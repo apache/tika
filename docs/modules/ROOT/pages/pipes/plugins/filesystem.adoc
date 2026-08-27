@@ -139,6 +139,10 @@ Writes parsed results as files under `basePath`. The relative output path is der
 |`prettyPrint`
 |`false`
 |Pretty-print JSON output. Has no effect in `CONTENT_ONLY` mode (raw bytes are written).
+
+|`atomicWrites`
+|`true`
+|Write each output to a sibling `<name>.<uuid>.tmp` and rename it into place, so a reader of the output directory never sees a partial file. Set to `false` to write in place (one fewer rename per file; needed on filesystems where rename is slow or not atomic). Init-time only.
 |===
 
 [#file-system-iterator]
