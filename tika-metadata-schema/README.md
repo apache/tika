@@ -42,7 +42,7 @@ Regenerate after adding/changing a `Property` **or** a `KeyPrefix` (writes all t
 tika-metadata-schema/regen.sh
 ```
 Installs the dependency modules, regenerates the registries via the forked-exec profile, sanity-checks
-the key-count diff, and runs the gate tests — see `.skills/dev/metadata-schema/SKILL.md` for flags and the
+the key-count diff, and runs the gate tests — see `.skills/devs/metadata-schema/SKILL.md` for flags and the
 manual steps this replaces.
 
 ## `metadata-open-namespaces.json` — the open sets (generated + gated)

@@ -17,9 +17,9 @@ limitations under the License.
 
 # Agent Guidance for Apache Tika
 
-Detailed guidance lives in **`.skills/`** — `dev/` for working on Tika,
-`user/` for using it as a tool; one directory per skill, each with a
-`SKILL.md`. Read `.skills/dev/ground-rules/SKILL.md` before doing anything else — it has
+Detailed guidance lives in **`.skills/`** — `devs/` for working on Tika,
+`users/` for using it as a tool; one directory per skill, each with a
+`SKILL.md`. Read `.skills/devs/development/SKILL.md` before doing anything else — it has
 the ground rules: build with `./mvnw` (always `clean`, `-Pfast` for quick
 builds), never run `git commit`/`git push` or write to GitHub, code and test
 conventions, pre-commit checks.
@@ -41,15 +41,15 @@ Contributor-facing — building, testing, and releasing this codebase.
 
 | Skill | Use when |
 |-------|----------|
-| `.skills/dev/ground-rules/SKILL.md` | Any development task — load at session start |
-| `.skills/dev/feature-workflow/SKILL.md` | Multi-PR features; reviews keep changing interfaces; splitting a large branch |
-| `.skills/dev/pr-review/SKILL.md` | Reviewing a PR or branch, or self-reviewing before submitting |
-| `.skills/dev/metadata-schema/SKILL.md` | Adding/renaming metadata keys; schema gate failures |
-| `.skills/dev/tika-eval-compare/SKILL.md` | Before/after corpus comparison of two Tika builds |
-| `.skills/dev/tika-eval-encoding-regression/SKILL.md` | Charset-detector regression hunts |
-| `.skills/dev/tika-eval-h2-query/SKILL.md` | Querying the tika-eval H2 database directly |
-| `.skills/dev/update-site-for-release/SKILL.md` | Updating tika.apache.org for a release |
-| `.skills/dev/oss-fuzz/SKILL.md` | Fuzzing a parser locally (OSS-Fuzz Jazzer targets); reproducing an OSS-Fuzz crash |
+| `.skills/devs/development/SKILL.md` | Any development task — load at session start |
+| `.skills/devs/feature-workflow/SKILL.md` | Multi-PR features; reviews keep changing interfaces; splitting a large branch |
+| `.skills/devs/pr-review/SKILL.md` | Reviewing a PR or branch, or self-reviewing before submitting |
+| `.skills/devs/metadata-schema/SKILL.md` | Adding/renaming metadata keys; schema gate failures |
+| `.skills/devs/tika-eval-compare/SKILL.md` | Before/after corpus comparison of two Tika builds |
+| `.skills/devs/tika-eval-encoding-regression/SKILL.md` | Charset-detector regression hunts |
+| `.skills/devs/tika-eval-h2-query/SKILL.md` | Querying the tika-eval H2 database directly |
+| `.skills/devs/update-site-for-release/SKILL.md` | Updating tika.apache.org for a release |
+| `.skills/devs/oss-fuzz/SKILL.md` | Fuzzing a parser locally (OSS-Fuzz Jazzer targets); reproducing an OSS-Fuzz crash |
 
 ## Using Tika
 
@@ -58,9 +58,9 @@ whether or not you're working on Tika's own source.
 
 | Skill | Use when |
 |-------|----------|
-| `.skills/user/file-to-markdown/SKILL.md` | Turning a file (PDF, Office, email, archives, images, ...) into Markdown + metadata via tika-app or tika-server |
-| `.skills/user/file-to-markdown-docker/SKILL.md` | Need guaranteed OCR/GDAL with no local install, or a disposable containerized Tika — running tika-server via Docker |
-| `.skills/user/file-forensics/SKILL.md` | What a file claims vs. contains: provenance, tamper signals, hidden/embedded content, macros, digests — evidence, not verdicts |
+| `.skills/users/file-to-markdown/SKILL.md` | Turning a file (PDF, Office, email, archives, images, ...) into Markdown + metadata via tika-app or tika-server |
+| `.skills/users/file-to-markdown-docker/SKILL.md` | Need guaranteed OCR/GDAL with no local install, or a disposable containerized Tika — running tika-server via Docker |
+| `.skills/users/file-forensics/SKILL.md` | What a file claims vs. contains: provenance, tamper signals, hidden/embedded content, macros, digests — evidence, not verdicts |
 
 ## Security
 

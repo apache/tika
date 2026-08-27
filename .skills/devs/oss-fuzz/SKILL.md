@@ -357,5 +357,5 @@ private@ before filing publicly.
 ## Git policy
 
 Editing files under a local `oss-fuzz` checkout is fine, but the same
-never-commit/never-push default applies (see `.skills/dev/ground-rules/SKILL.md`): stage and
+never-commit/never-push default applies (see `.skills/devs/development/SKILL.md`): stage and
 hand back a suggested message; the maintainer pushes to oss-fuzz.

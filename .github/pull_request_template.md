@@ -26,7 +26,7 @@ Before opening the pull request, please verify that
   - and placed in front of your commit messages surrounded by square brackets (`[TIKA-XXXX] Issue or pull request title`)
 * commits are squashed into a single one (or few commits for larger changes)
 * Tika builds and unit tests pass with `./mvnw clean install` (`clean test` alone cannot resolve the pipes plugin zips)
-* if you used a generative AI tool: follow the [ASF Generative Tooling Guidance](https://www.apache.org/legal/generative-tooling.html) (`Generated-by: <tool>` in the commit message), and consider running the pre-flight in `.skills/dev/pr-review/SKILL.md` — fix what it finds; don't paste its report here
+* if you used a generative AI tool: follow the [ASF Generative Tooling Guidance](https://www.apache.org/legal/generative-tooling.html) (`Generated-by: <tool>` in the commit message), and consider running the pre-flight in `.skills/devs/pr-review/SKILL.md` — fix what it finds; don't paste its report here
 * there should be no conflicts when merging the pull request branch into the *recent* `main` branch. If there are conflicts, please try to rebase the pull request branch on top of a freshly pulled `main` branch
 * if you add new module that downstream users will depend upon add it to relevant group in `tika-bom/pom.xml`.
 

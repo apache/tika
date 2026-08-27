@@ -22,9 +22,9 @@ recursive extraction (`-J` / `/rmeta`), and process isolation so a hostile
 document takes down a fork, not your service.
 
 Ready-to-use agent skills live in [`.skills/`](.skills/):
-[`file-to-markdown`](.skills/user/file-to-markdown/SKILL.md) (parsing via tika-app
+[`file-to-markdown`](.skills/users/file-to-markdown/SKILL.md) (parsing via tika-app
 or tika-server) and
-[`file-to-markdown-docker`](.skills/user/file-to-markdown-docker/SKILL.md)
+[`file-to-markdown-docker`](.skills/users/file-to-markdown-docker/SKILL.md)
 (containerized Tika with guaranteed OCR). They are standalone — copy them into
 any agent's skill directory; nothing in them requires this repository.
 

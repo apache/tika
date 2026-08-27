@@ -1,5 +1,5 @@
 ---
-name: ground-rules
+name: development
 description: >
   Ground rules for working in the Tika codebase — git policy, Maven
   wrapper/repo conventions, building and testing specific modules, code and
@@ -24,7 +24,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-Local override: `$TIKA_SKILLS_LOCAL/ground-rules/LOCAL.md` (default `~/.tika-skills`),
+Local override: `$TIKA_SKILLS_LOCAL/development/LOCAL.md` (default `~/.tika-skills`),
 read after this file, wins on conflict.
 
 # Tika Development Skill
@@ -42,7 +42,7 @@ pushback must name a concrete cost or a simpler path — never taste alone, and
 never no for the sake of no.  "The direction is right" is a valid conclusion.
 
 Feature whose shape isn't known yet: spike first, cut PRs after
-(`.skills/dev/feature-workflow/SKILL.md`).
+(`.skills/devs/feature-workflow/SKILL.md`).
 
 ## Git Policy (default — personally overridable)
 
@@ -189,13 +189,13 @@ personal configuration does not override it.
 
 Adding/renaming a metadata key touches the committed, build-gated registry in
 `tika-metadata-schema` — regeneration has real traps. See
-`.skills/dev/metadata-schema/SKILL.md`.
+`.skills/devs/metadata-schema/SKILL.md`.
 
 ## Testing an End-to-End Change
 
 When a change affects parsing output (e.g., new parser behavior,
 encoding fix), run a before/after comparison using tika-eval.
-See `.skills/dev/tika-eval-compare/SKILL.md` for the full procedure.
+See `.skills/devs/tika-eval-compare/SKILL.md` for the full procedure.
 
 ## Pre-Commit Checks
 

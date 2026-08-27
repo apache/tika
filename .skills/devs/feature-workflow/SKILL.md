@@ -38,7 +38,7 @@ Keep learning and shipping on different branches.
 ## 1. Spike
 
 Throwaway branch. Build end to end, roughly: no CHANGES, docs, or polish;
-change neighbors freely. Review it (`.skills/dev/pr-review/SKILL.md`) and let
+change neighbors freely. Review it (`.skills/devs/pr-review/SKILL.md`) and let
 findings reshape interfaces.
 
 **Exit:** the last review changed edge-case handling, not an interface. While

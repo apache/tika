@@ -182,7 +182,7 @@ One background agent per dimension, one batch:
    I/O per record, redundant passes) and *benchmark before merge* (name what
    to measure). No speculative micro-optimization. *Bottom:* none.
 
-Parser/extraction changes → also `.skills/dev/tika-eval-compare/SKILL.md`.
+Parser/extraction changes → also `.skills/devs/tika-eval-compare/SKILL.md`.
 
 **Thorough mode** (on request): skeptic agents try to refute each
 significant finding; report survivors, mark the refuted with reasons.
@@ -223,7 +223,7 @@ Correctness costs ~3x the others on a large PR — spend there first. An agent
 that delegates to a sub-agent says so in a status line. Reviewers are
 read-only by default: concurrent `clean` builds in one tree delete each
 other's `target/`. Build only to confirm a finding, one agent at a time,
-following the Maven rules in `.skills/dev/ground-rules/SKILL.md`
+following the Maven rules in `.skills/devs/development/SKILL.md`
 (`-Dmaven.repo.local=$(pwd)/.local_m2_repo`).
 
 ## 4. Release hygiene (run directly)
@@ -235,7 +235,7 @@ following the Maven rules in `.skills/dev/ground-rules/SKILL.md`
   PRs rely on CI (`gh pr checks`) and spot-build core modules; pre-flight
   has no CI yet, so build locally.
 - No local paths, usernames, emails, hostnames, or credentials in added
-  lines — the grep in `.skills/dev/ground-rules/SKILL.md` Pre-Commit Checks;
+  lines — the grep in `.skills/devs/development/SKILL.md` Pre-Commit Checks;
   a test document's expected value is allowed.
 
 ## 5. Consolidate
@@ -258,7 +258,7 @@ Surface each dimension's headline as it lands; the list waits for all.
 
 - **still spiking** — any `contract` finding. Fix the contract on a spike
   branch and re-cut; don't patch edge cases yet
-  (`.skills/dev/feature-workflow/SKILL.md`).
+  (`.skills/devs/feature-workflow/SKILL.md`).
 - **converging** — `edge-case` only. Fix, then one §7 pass.
 - **ready** — `hygiene` or nothing.
 
@@ -278,7 +278,7 @@ Present and stop.
 - Doc fixes may go to one agent; verify every claim against code.
 - Finish with full tests on touched modules and a suggested commit message.
   Never commit, push, merge, or write to GitHub (workflow default; see Git
-  Policy in `.skills/dev/ground-rules/SKILL.md`).
+  Policy in `.skills/devs/development/SKILL.md`).
 
 ## 7. Converging: the round after a fix round
 
@@ -293,5 +293,5 @@ is counted exactly once"). Agents can check an invariant; they cannot check
 N+1 finds bugs in round N's code.
 
 A third round is a signal, not a task: either a fix changed an interface
-(not done spiking — `.skills/dev/feature-workflow/SKILL.md`) or findings
+(not done spiking — `.skills/devs/feature-workflow/SKILL.md`) or findings
 drifted out of scope (punt list). Name which and stop.

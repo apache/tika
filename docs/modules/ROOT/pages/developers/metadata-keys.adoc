@@ -89,7 +89,7 @@ diff, and runs the gate tests. Commit the Java change and the regenerated JSON t
 
 Flags are on `regen.sh --help`. The registry design is in `tika-metadata-schema/README.md`;
 the traps this script routes around (classpath scanning quirks, `exec:java` vs. a forked
-classpath) are in `.skills/dev/metadata-schema/SKILL.md`.
+classpath) are in `.skills/devs/metadata-schema/SKILL.md`.
 
 == After a rename
 
