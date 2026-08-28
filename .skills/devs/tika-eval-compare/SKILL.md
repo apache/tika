@@ -91,6 +91,23 @@ Each run walks the input directory recursively and writes one
 equivalent to `tika-app -J`).  The directory structure mirrors
 the input.
 
+### Provenance + crash ledger (preferred)
+
+`run-batch.sh` (next to this file) wraps the same invocation and records what
+ran, so an extract set can be tied to a build after the fact and a crashed
+file is distinguishable from one that parsed to nothing:
+
+```bash
+.skills/devs/tika-eval-compare/run-batch.sh --app <before> --input <input-dir> --extracts <extracts-a-dir> --note baseline
+.skills/devs/tika-eval-compare/run-batch.sh --app <after>  --input <input-dir> --extracts <extracts-b-dir> --note candidate [--config cfg.json]
+```
+
+It writes `run-info-<run.id>.json` and, when the app's file-system plugin
+ships the jsonl reporter (TIKA-4846), `crashes-<run.id>.jsonl` into
+`<extracts>/.run-info/`; Compare picks them up from there by default
+(`-ra/-rb`, `-pa/-pb` override). A baseline without the reporter gets
+run-info but no ledger. Needs python3.
+
 ### Notes
 
 - Do NOT pass `-n <N>` as a trailing argument — it confuses the
@@ -123,6 +140,17 @@ java -jar <tika-eval>/tika-eval-app-*.jar Compare \
 | `-rd` | Reports output directory (default: `reports`) |
 | `-z` | Gzip the H2 db (`<db>.mv.db.gz`) after Compare for transfer; requires `-d` (no-op + warning for a temp db). Combine with `-r` to package both. |
 | `-n` | Number of worker threads |
+| `-pa`/`-pb` | jsonl ledger for A/B (default: `<extracts>/.run-info/crashes-*.jsonl`); fills `containers.pipes_status_a/b` |
+| `-ra`/`-rb` | run-info json for A/B (default: `<extracts>/.run-info/run-info-*.json`); lands in `run_info_a/b`. Refused unless the matching ledger is named `crashes-<run.id>.jsonl`; discovery refuses a `.run-info` holding more than one run-info or ledger |
+
+With `-pa`/`-pb`, `summary.md` and `exceptions/extract_exceptions_by_pipes_status_*.xlsx`
+split `NO_EXTRACT_FILE` into `CRASH` (OOM/TIMEOUT/UNSPECIFIED_CRASH), any other
+recorded status as-is, `NO_PIPES_RECORD` (ledger has no line: the batch recorded
+no failure), `BATCH_WITHOUT_LEDGER`, and `NO_PIPES_REPORT_SUPPLIED`. A crash
+status *with* an extract present is a success whose status was lost — listed
+separately, not a failure. `run_info_a/b.pipes_report.joined` says how many
+containers matched a ledger row; zero with a non-empty ledger means the wrong
+ledger, or a crawl without `-i` (which never sees files that crashed).
 
 ## Step 3 — Review Results
 
