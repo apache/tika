@@ -369,11 +369,14 @@ public class PDFParserTest extends TikaTest {
         assertContains("igalsh", r.xml);
     }
 
-    // TIKA-4622 / PDFBOX-6145 make sure that annotations aren't missed if no page content stream
+    // TIKA-4622 / PDFBOX-6145 make sure that annotations aren't missed if no page content stream.
+    // testLinkAnnotationsButNoContents.pdf = Page 5 of file OLECK2R2YDFFW2RBVX5OBYR2DBLJRJPW.
+    // file testPDFFileEmbInAnnotation_noContents.pdf doesn't fail properly with
+    // initial PDFBOX-6145 change because file attachments are done separately.
     @Test
     public void testAnnotationNoContents() throws Exception {
-        XMLResult r = getXML("testPDFFileEmbInAnnotation_noContents.pdf");
-        assertContains("Excel.xlsx", r.xml);
+        XMLResult r = getXML("testLinkAnnotationsButNoContents.pdf");
+        assertContains("www.ScottsdaleAZ.gov/bldgresources/forms.asp", r.xml);
     }
 
     @Test
