@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.serialization.serdes.ParseContextDeserializer;
@@ -84,6 +85,30 @@ public class WireRestrictedParseContextTest {
                 () -> restrictedMapper().readValue(json, ParseContext.class));
         assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
                 "expected wire-blocked rejection, got: " + rootMessage(e));
+    }
+
+    @Test
+    public void restrictedRejectsExceptionReporting() {
+        // Operator policy on how much exception detail leaves the server; a caller must not be
+        // able to relax it per request.
+        String json = "{\"exception-reporting\":{\"level\":\"FULL\"}}";
+        Exception e = assertThrows(Exception.class,
+                () -> restrictedMapper().readValue(json, ParseContext.class));
+        assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
+                "expected wire-blocked rejection, got: " + rootMessage(e));
+    }
+
+    @Test
+    public void trustedAllowsExceptionReporting() throws Exception {
+        String json = "{\"exception-reporting\":{\"level\":\"REDACTED\",\"maxLength\":100}}";
+        ObjectMapper mapper = TikaObjectMapperFactory.createMapper();
+        SimpleModule module = new SimpleModule();
+        module.addDeserializer(ParseContext.class, new ParseContextDeserializer(false));
+        mapper.registerModule(module);
+        ParseContext ctx = mapper.readValue(json, ParseContext.class);
+        ParseContextUtils.resolveAll(ctx, ParseContextUtils.class.getClassLoader());
+        assertEquals(new ExceptionReporting(ExceptionReporting.Level.REDACTED, 100),
+                ctx.get(ExceptionReporting.class));
     }
 
     @Test

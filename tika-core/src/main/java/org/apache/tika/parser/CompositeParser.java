@@ -341,7 +341,7 @@ public class CompositeParser implements Parser {
             return;
         }
         for (Exception e : record.getExceptions()) {
-            metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, ExceptionUtils.getStackTrace(e));
+            metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION, ExceptionUtils.format(e, context));
         }
         for (String msg : record.getWarnings()) {
             metadata.add(TikaCoreProperties.EMBEDDED_WARNING, msg);

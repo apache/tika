@@ -277,8 +277,8 @@ public abstract class AbstractMultipleParser implements Parser {
                     p.parse(tis, handler, metadata, context);
                 } catch (Exception e) {
                     // Record the failure such that it can't get lost / overwritten
-                    recordParserFailure(p, e, originalMetadata);
-                    recordParserFailure(p, e, metadata);
+                    recordParserFailure(p, e, originalMetadata, context);
+                    recordParserFailure(p, e, metadata, context);
                     failure = e;
                 }
 

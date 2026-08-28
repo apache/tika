@@ -47,6 +47,10 @@ throughout the parse.
 |`standard-metadata-limiter-factory`
 |`StandardMetadataLimiterFactory`
 |Metadata size, per-field size, key size, values per field, field allow/deny lists.
+
+|`exception-reporting`
+|`ExceptionReporting`
+|How much of an exception (stack trace, message, class name) is reported, and its length.
 |===
 
 == Configuring limits
@@ -346,9 +350,52 @@ if ("true".equals(metadata.get(TikaCoreProperties.TRUNCATED_METADATA))) {
 }
 ----
 
+== Exception reporting
+
+`ExceptionReporting` controls how much detail Tika reports when a parse fails:
+the `tk:exception:container-exception`, `tk:exception:embedded-exception`,
+`tk:exception:warn` and `tk:exception:embedded-stream` metadata values. Stack
+traces and exception messages can carry file paths, hostnames and fragments of
+the document; the metadata limiter deliberately never truncates them (see
+<<Always-included fields>>), so this is the only bound on them.
+
+[cols="2,1,3"]
+|===
+|Setting |Default |Description
+
+|`level`
+|`FULL`
+|`FULL`: the complete stack trace. `MESSAGE_REDACTED`: the complete stack
+trace with every exception message removed (class names, frames and the cause
+chain are kept). `REDACTED`: exception class names only, no frames.
+
+|`maxLength`
+|-1 (unlimited)
+|Maximum characters in the formatted exception; longer values end with
+`...[truncated]`.
+|===
+
+[source,json]
+----
+"exception-reporting": {
+  "level": "MESSAGE_REDACTED",
+  "maxLength": 10000
+}
+----
+
+The same policy applies to the container and to every embedded document. It is
+loaded from the config only and is rejected in a per-request `parse-context`
+(tika-server `/rmeta/config` and friends, `/pipes`, `/async`), so a caller cannot
+turn redaction back off.
+
+Programmatically, parsers and callers should format exceptions through
+`ExceptionUtils.format(Throwable, ParseContext)`.
+
 == Recommendations
 
 . Set limits whenever the content is untrusted.
+. Set `exception-reporting` to `MESSAGE_REDACTED` with a finite `maxLength`
+  when the caller is not the operator.
 . Use `includeFields` to capture only the metadata you need.
 . Check `tk:warn:truncated-metadata` rather than guessing.
 . Combine with process isolation — limits protect against memory blowups,

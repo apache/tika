@@ -1,5 +1,15 @@
 Release 4.1.0 - unreleased
 
+   * New exception-reporting parse-context config controls how much of an
+     exception is written to tk:exception:* metadata for the container and
+     embedded documents alike: FULL (default), MESSAGE_REDACTED (stack trace
+     without messages) or REDACTED (class names only), plus a maxLength.
+     Config-only; rejected in per-request parse-context. Parsers should
+     format exceptions via ExceptionUtils.format(Throwable, ParseContext);
+     ExceptionUtils.getStackTrace/getFilteredStackTrace and the ParseContext-less
+     EmbeddedDocumentUtil.recordException* / ParserUtils.recordParserFailure
+     overloads are deprecated (TIKA-4848).
+
    * FileSystemEmitter writes to a sibling ".tmp" file and renames it into
      place, so readers of the output directory never see a partially written
      file. Set "atomicWrites": false on the emitter to restore in-place
