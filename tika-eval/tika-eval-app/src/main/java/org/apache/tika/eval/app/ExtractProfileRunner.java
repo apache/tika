@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -56,6 +57,7 @@ import org.apache.tika.eval.app.io.DBWriter;
 import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
+import org.apache.tika.eval.app.io.PipesReport;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -82,6 +84,10 @@ public class ExtractProfileRunner {
                 .addOption(Option.builder("c").longOpt("config").hasArg().desc("tika-eval json config file").get())
                 .addOption(Option.builder("n").longOpt("numWorkers").hasArg().desc("number of worker threads").get())
                 .addOption(Option.builder("m").longOpt("maxExtractLength").hasArg().desc("maximum extract length").get())
+                .addOption(Option.builder("pr").longOpt("pipesReport").hasArg()
+                        .desc("optional: jsonl from tika-pipes' file-system-jsonl-reporter; default: <extracts>/.run-info/crashes-*.jsonl").get())
+                .addOption(Option.builder("ri").longOpt("runInfo").hasArg()
+                        .desc("optional: run-info json written by run-batch.sh; default: <extracts>/.run-info/run-info-*.json").get())
         ;
     }
 
@@ -100,7 +106,16 @@ public class ExtractProfileRunner {
         if (commandLine.hasOption('m')) {
             evalConfig.setMaxExtractLength(Long.parseLong(commandLine.getOptionValue('m')));
         }
-        execute(inputDir, extractsDir, jdbcString, evalConfig);
+        RunInfo.Side side = RunInfo.loadSide(optPath(commandLine, "pr"), optPath(commandLine, "ri"), extractsDir);
+        Map<String, String> runInfo = new LinkedHashMap<>(RunInfo.evalInfo(args, evalConfig, inputDir));
+        runInfo.putAll(side.batchInfo());
+        runInfo.putAll(RunInfo.pipesReportInfo(side.pipesReport()));
+        runInfo.putAll(RunInfo.extractsInfo(extractsDir));
+        execute(inputDir, extractsDir, jdbcString, evalConfig, side.pipesReport(), runInfo);
+    }
+
+    private static Path optPath(CommandLine commandLine, String opt) {
+        return commandLine.hasOption(opt) ? Paths.get(commandLine.getOptionValue(opt)) : null;
     }
 
     private static String getJdbcConnectionString(String dbPath) {
@@ -113,7 +128,8 @@ public class ExtractProfileRunner {
 
     }
 
-    private static void execute(Path inputDir, Path extractsDir, String dbPath, EvalConfig evalConfig) throws SQLException, IOException {
+    private static void execute(Path inputDir, Path extractsDir, String dbPath, EvalConfig evalConfig, PipesReport pipesReport,
+                                Map<String, String> runInfo) throws SQLException, IOException {
 
         //parameterize this? if necesssary
         try {
@@ -126,6 +142,10 @@ public class ExtractProfileRunner {
         ExtractProfilerBuilder builder = new ExtractProfilerBuilder();
         MimeBuffer mimeBuffer = initTables(jdbcUtil, builder, dbPath, evalConfig);
         builder.populateRefTables(jdbcUtil, mimeBuffer);
+        // before workers start, so an aborted run still says what it was
+        IDBWriter runInfoWriter = builder.getDBWriter(List.of(RunInfo.RUN_INFO_TABLE), jdbcUtil, mimeBuffer);
+        RunInfo.write(runInfoWriter, RunInfo.RUN_INFO_TABLE, runInfo);
+        runInfoWriter.close();
 
         AtomicInteger processed = new AtomicInteger(0);
         AtomicInteger activeWorkers = new AtomicInteger(evalConfig.getNumWorkers());
@@ -143,7 +163,8 @@ public class ExtractProfileRunner {
         executorCompletionService.submit(pipesIterator);
         for (int i = 0; i < evalConfig.getNumWorkers(); i++) {
             ExtractReader extractReader = new ExtractReader(ExtractReader.ALTER_METADATA_LIST.AS_IS, evalConfig.getMinExtractLength(), evalConfig.getMaxExtractLength());
-            ExtractProfiler extractProfiler = new ExtractProfiler(inputDir, extractsDir, extractReader, builder.getDBWriter(builder.tableInfos, jdbcUtil, mimeBuffer));
+            ExtractProfiler extractProfiler = new ExtractProfiler(inputDir, extractsDir, extractReader, builder.getDBWriter(builder.tableInfos, jdbcUtil, mimeBuffer),
+                    pipesReport);
             executorCompletionService.submit(new ProfileWorker(queue, extractProfiler, processed));
         }
 
@@ -169,6 +190,9 @@ public class ExtractProfileRunner {
         } catch (ExecutionException e) {
             throw new RuntimeException(e);
         } finally {
+            Map<TableInfo, PipesReport> ledgers = new HashMap<>();
+            ledgers.put(RunInfo.RUN_INFO_TABLE, pipesReport);
+            RunInfo.finish(runInfoWriter, RunInfo.RUN_INFO_TABLE, ledgers);
             mimeBuffer.close();
             executorService.shutdownNow();
         }
@@ -238,6 +262,9 @@ public class ExtractProfileRunner {
                     queue.put(PipesIterator.COMPLETED_SEMAPHORE);
                     return PROFILE_WORKER_COMPLETED_VALUE;
                 }
+                if (RunInfo.isRunInfoPath(t.getFetchKey().getFetchKey())) {
+                    continue;
+                }
                 extractProfiler.processFileResource(t.getFetchKey());
                 processed.incrementAndGet();
             }
@@ -259,6 +286,7 @@ public class ExtractProfileRunner {
             tableInfos.add(ExtractProfiler.ENCODINGS_TABLE);
             tableInfos.add(ExtractProfiler.TAGS_TABLE);
             tableInfos.add(ExtractProfiler.EMBEDDED_FILE_PATH_TABLE);
+            tableInfos.add(RunInfo.RUN_INFO_TABLE);
             this.tableInfos = Collections.unmodifiableList(tableInfos);
 
             List<TableInfo> refTableInfos = new ArrayList<>();

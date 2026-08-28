@@ -312,7 +312,13 @@ public class ResultsReporter {
             for (String sql : before) {
                 long start = System.currentTimeMillis();
                 LOG.info("processing 'before': {}", sql);
-                st.execute(sql);
+                try {
+                    st.execute(sql);
+                } catch (SQLException e) {
+                    // a db from an older tika-eval lacks newer columns/tables; keep going
+                    LOG.warn("'before' failed, skipping: {}", e.getMessage());
+                    continue;
+                }
                 if (!c.getAutoCommit()) {
                     c.commit();
                     LOG.info("committing");
@@ -321,7 +327,11 @@ public class ResultsReporter {
                 LOG.info("finished in {} ms", elapsed);
             }
             for (Report r : reports) {
-                r.writeReport(c, reportsDirectory);
+                try {
+                    r.writeReport(c, reportsDirectory);
+                } catch (SQLException e) {
+                    LOG.warn("report '{}' failed, skipping: {}", r.reportName, e.getMessage());
+                }
             }
             MarkdownSummaryWriter.write(c, reportsDirectory);
             for (String sql : after) {

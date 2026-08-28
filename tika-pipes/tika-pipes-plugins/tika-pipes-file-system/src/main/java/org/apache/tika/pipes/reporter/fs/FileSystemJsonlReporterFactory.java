@@ -14,31 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.emitter.fs;
+package org.apache.tika.pipes.reporter.fs;
+
+import java.io.IOException;
+
+import org.pf4j.Extension;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.plugins.PluginJson;
+import org.apache.tika.pipes.api.reporter.PipesReporterFactory;
+import org.apache.tika.plugins.ExtensionConfig;
 
-public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_EXISTS onExists, boolean prettyPrint, boolean allowAbsolutePaths,
-        Boolean atomicWrites) {
+@Extension
+public class FileSystemJsonlReporterFactory implements PipesReporterFactory {
 
-    enum ON_EXISTS {
-        SKIP, EXCEPTION, REPLACE
+    public static final String NAME = "file-system-jsonl-reporter";
+
+    @Override
+    public String getName() {
+        return NAME;
     }
 
-    /** onExists absent means EXCEPTION, atomicWrites absent means true -- the documented defaults. */
-    public FileSystemEmitterConfig {
-        if (onExists == null) {
-            onExists = ON_EXISTS.EXCEPTION;
-        }
-        if (atomicWrites == null) {
-            atomicWrites = Boolean.TRUE;
-        }
+    @Override
+    public FileSystemJsonlReporter buildExtension(ExtensionConfig extensionConfig) throws IOException, TikaConfigException {
+        return FileSystemJsonlReporter.build(extensionConfig);
     }
-
-    public static FileSystemEmitterConfig load(final String json)
-            throws TikaConfigException {
-        return PluginJson.read(json, FileSystemEmitterConfig.class);
-    }
-
 }

@@ -10,6 +10,23 @@ Release 4.1.0 - unreleased
      EmbeddedDocumentUtil.recordException* / ParserUtils.recordParserFailure
      overloads are deprecated (TIKA-4848).
 
+   * FileSystemEmitter writes to a sibling ".tmp" file and renames it into
+     place, so readers of the output directory never see a partially written
+     file. Set "atomicWrites": false on the emitter to restore in-place
+     writes (TIKA-4848).
+
+   * tika-eval: Profile/Compare accept the batch run's jsonl crash ledger
+     (--pipesReport, -pa/-pb) and a run-info json (--runInfo, -ra/-rb), and
+     read both from <extracts>/.run-info/ by default (refusing an ambiguous
+     dir). containers gains pipes_status/pipes_message; a new run_info table
+     records eval and batch provenance; reports and
+     summary.md classify NO_EXTRACT_FILE by ledger status (CRASH, the raw
+     status, NO_PIPES_RECORD, BATCH_WITHOUT_LEDGER, NO_PIPES_REPORT_SUPPLIED).
+     Report on a db from an earlier tika-eval skips the reports it cannot run
+     instead of aborting (TIKA-4847).
+
+   * New file-system-jsonl-reporter pipes reporter (TIKA-4846).
+   
    * Stop spooling OLE2 objects whose header over-reserves BAT capacity
      (TIKA-4845).
 

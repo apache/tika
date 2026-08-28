@@ -14,31 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.emitter.fs;
+package org.apache.tika.pipes.reporter.fs;
+
+import java.nio.file.Path;
+import java.util.Set;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.PluginJson;
 
-public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_EXISTS onExists, boolean prettyPrint, boolean allowAbsolutePaths,
-        Boolean atomicWrites) {
+public record FileSystemJsonlReporterConfig(Path path, Set<String> includes, Set<String> excludes, ON_EXISTS onExists, int maxMessageLength) {
 
-    enum ON_EXISTS {
-        SKIP, EXCEPTION, REPLACE
+    public enum ON_EXISTS {
+        EXCEPTION, APPEND, REPLACE
     }
 
-    /** onExists absent means EXCEPTION, atomicWrites absent means true -- the documented defaults. */
-    public FileSystemEmitterConfig {
+    public static final int DEFAULT_MAX_MESSAGE_LENGTH = 10_000;
+
+    public FileSystemJsonlReporterConfig {
         if (onExists == null) {
             onExists = ON_EXISTS.EXCEPTION;
         }
-        if (atomicWrites == null) {
-            atomicWrites = Boolean.TRUE;
+        if (maxMessageLength < 0) {
+            throw new IllegalArgumentException("maxMessageLength must be >= 0; 0 means the default (" + DEFAULT_MAX_MESSAGE_LENGTH + ")");
+        }
+        if (maxMessageLength == 0) {
+            maxMessageLength = DEFAULT_MAX_MESSAGE_LENGTH;
         }
     }
 
-    public static FileSystemEmitterConfig load(final String json)
-            throws TikaConfigException {
-        return PluginJson.read(json, FileSystemEmitterConfig.class);
+    public static FileSystemJsonlReporterConfig load(final String json) throws TikaConfigException {
+        return PluginJson.read(json, FileSystemJsonlReporterConfig.class);
     }
-
 }
