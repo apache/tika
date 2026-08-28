@@ -424,10 +424,10 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             try {
                 bufferedImage = writeToBuffer(pdImage, suffix, useDirectJPEG, buffer);
             } catch (MissingImageReaderException e) {
-                EmbeddedDocumentUtil.recordException(e, parentMetadata);
+                EmbeddedDocumentUtil.recordException(e, parentMetadata, parseContext);
                 return;
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, parseContext);
                 return;
             }
             try (TikaInputStream tis = TikaInputStream.get(buffer.toByteArray())) {

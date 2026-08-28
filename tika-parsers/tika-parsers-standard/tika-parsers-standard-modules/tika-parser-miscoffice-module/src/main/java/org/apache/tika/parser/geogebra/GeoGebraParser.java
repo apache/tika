@@ -310,7 +310,7 @@ public class GeoGebraParser implements Parser {
         }
         if (!zipFile.canReadEntryData(entry)) {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(
-                    new IOException("Unsupported zip entry: " + entry.getName()), metadata);
+                    new IOException("Unsupported zip entry: " + entry.getName()), metadata, context);
             return;
         }
         try (InputStream is = zipFile.getInputStream(entry)) {
@@ -320,9 +320,9 @@ public class GeoGebraParser implements Parser {
             if (WriteLimitReachedException.isWriteLimitReached(e)) {
                 throw e;
             }
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
         } catch (IOException | TikaException e) {
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
         }
     }
 
@@ -398,7 +398,7 @@ public class GeoGebraParser implements Parser {
             throws IOException, SAXException {
         if (!zipFile.canReadEntryData(entry)) {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(
-                    new IOException("Unsupported zip entry: " + entry.getName()), parentMetadata);
+                    new IOException("Unsupported zip entry: " + entry.getName()), parentMetadata, context);
             return;
         }
         Metadata embeddedMetadata = Metadata.newInstance(context);
@@ -427,7 +427,7 @@ public class GeoGebraParser implements Parser {
                         embeddedMetadata, context, false);
             }
         } catch (IOException e) {
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
         }
     }
 }

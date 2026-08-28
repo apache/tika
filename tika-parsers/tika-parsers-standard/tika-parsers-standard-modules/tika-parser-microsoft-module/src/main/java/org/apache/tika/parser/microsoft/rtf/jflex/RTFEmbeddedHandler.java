@@ -151,7 +151,7 @@ public class RTFEmbeddedHandler {
                 extractObj(tis, metadata);
             }
         } catch (IOException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         } finally {
             objParser.close();
             objParser = null;
@@ -180,7 +180,7 @@ public class RTFEmbeddedHandler {
                 }
             }
         } catch (IOException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         } finally {
             pictParser = null;
             reset();
@@ -227,7 +227,7 @@ public class RTFEmbeddedHandler {
                 embeddedDocumentExtractor.parseEmbedded(
                         tis, new EmbeddedContentHandler(handler), meta, context, true);
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, meta);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, meta, context);
             }
         }
     }

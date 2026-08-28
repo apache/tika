@@ -186,7 +186,7 @@ public class PackageParser extends AbstractArchiveParser {
         } else {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(
                     new TikaException("Can't read archive stream (" + name + ")"),
-                    parentMetadata);
+                    parentMetadata, context);
             if (name != null && !name.isEmpty()) {
                 xhtml.element("p", name);
             }

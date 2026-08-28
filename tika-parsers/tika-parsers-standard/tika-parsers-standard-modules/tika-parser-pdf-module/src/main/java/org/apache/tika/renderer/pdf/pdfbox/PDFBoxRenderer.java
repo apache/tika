@@ -162,7 +162,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
                 m.set(TikaPagedText.PAGE_ROTATION, (double)pdDocument.getPage(i - 1).getRotation());
                 results.add(renderPage(renderer, id, i, m, parseContext));
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordException(e, m);
+                EmbeddedDocumentUtil.recordException(e, m, parseContext);
                 results.add(new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, m));
             }
         }

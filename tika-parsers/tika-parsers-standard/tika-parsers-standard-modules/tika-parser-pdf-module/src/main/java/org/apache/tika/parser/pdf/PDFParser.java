@@ -457,7 +457,7 @@ public class PDFParser implements Parser, RenderingParser {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            EmbeddedDocumentUtil.recordException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
             return;
         }
         context.get(PDFRenderingState.class).setRenderResults(renderResults);
@@ -472,7 +472,7 @@ public class PDFParser implements Parser, RenderingParser {
                     } catch (SecurityException e) {
                         throw e;
                     } catch (Exception e) {
-                        EmbeddedDocumentUtil.recordException(e, parentMetadata);
+                        EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
                     }
                 }
             }

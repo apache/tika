@@ -1007,7 +1007,7 @@ public class MSOneStorePackage {
                         embeddedMetadata, this.parseContext, false);
             }
         } catch (IOException e) {
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
         }
     }
 

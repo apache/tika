@@ -64,7 +64,7 @@ final class ImageXmp {
         } catch (SecurityException e) {
             throw e;
         } catch (IOException | SAXException | TikaException | RuntimeException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
         return false;
     }
@@ -76,7 +76,7 @@ final class ImageXmp {
         } catch (SecurityException e) {
             throw e;
         } catch (IOException | SAXException | TikaException | RuntimeException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
     }
 
@@ -100,7 +100,7 @@ final class ImageXmp {
         } catch (SecurityException e) {
             throw e;
         } catch (IOException | SAXException | TikaException | RuntimeException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
     }
 
@@ -114,7 +114,7 @@ final class ImageXmp {
         } catch (SecurityException e) {
             throw e;
         } catch (IOException | SAXException | TikaException | RuntimeException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
     }
 

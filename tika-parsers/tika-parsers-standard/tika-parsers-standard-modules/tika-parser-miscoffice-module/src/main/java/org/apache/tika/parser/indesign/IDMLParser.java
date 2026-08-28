@@ -174,7 +174,7 @@ public class IDMLParser implements Parser {
             } catch (SecurityException e) {
                 throw e;
             } catch (IOException | SAXException | TikaException | RuntimeException e) {
-                EmbeddedDocumentUtil.recordException(e, metadata);   // malformed XMP must not fail the IDML
+                EmbeddedDocumentUtil.recordException(e, metadata, context);   // malformed XMP must not fail the IDML
             }
         } else if (entry.getName().contains("MasterSpreads")) {
             Metadata embeddedMeta = Metadata.newInstance(context);

@@ -349,7 +349,7 @@ class HtmlHandler extends TextContentHandler {
             try (TikaInputStream tis = TikaInputStream.get(string.getBytes(StandardCharsets.UTF_8))) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
             }
         }
     }
@@ -376,7 +376,7 @@ class HtmlHandler extends TextContentHandler {
             try (TikaInputStream tis = TikaInputStream.get(dataURIScheme.getInputStream())) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
             }
         }
     }

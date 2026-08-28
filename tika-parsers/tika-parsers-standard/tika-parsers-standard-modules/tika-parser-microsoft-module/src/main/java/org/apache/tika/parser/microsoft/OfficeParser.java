@@ -128,7 +128,7 @@ public class OfficeParser extends AbstractOfficeParser {
             m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                     TikaCoreProperties.EmbeddedResourceType.MACRO.toString());
             m.set(HttpHeaders.CONTENT_TYPE, "text/x-vbasic");
-            EmbeddedDocumentUtil.recordException(e, m);
+            EmbeddedDocumentUtil.recordException(e, m, context);
             if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
                 embeddedDocumentExtractor.parseEmbedded(
                         //pass in space character so that we don't trigger a zero-byte exception

@@ -186,12 +186,12 @@ class RTFEmbObjHandler {
 
         byte[] bytes = os.toByteArray();
         if (state == EMB_STATE.OBJDATA) {
-            RTFObjDataParser objParser = new RTFObjDataParser(memoryLimitInKb);
+            RTFObjDataParser objParser = new RTFObjDataParser(memoryLimitInKb, context);
             try {
                 byte[] objBytes = objParser.parse(bytes, metadata, unknownFilenameCount);
                 extractObj(objBytes, handler, metadata);
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordException(e, metadata);
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
         } else if (state == EMB_STATE.PICT) {
             String filePath = metadata.get(RTFMetadata.RTF_PICT_META_PREFIX + "wzDescription");
@@ -253,10 +253,10 @@ class RTFEmbObjHandler {
                                     context, true);
                 } catch (IOException e) {
                     balancer.drainOpenElements();
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                 } catch (SAXException e) {
                     balancer.drainOpenElements();
-                    EmbeddedDocumentUtil.recordException(e, metadata);
+                    EmbeddedDocumentUtil.recordException(e, metadata, context);
                 }
             }
         }

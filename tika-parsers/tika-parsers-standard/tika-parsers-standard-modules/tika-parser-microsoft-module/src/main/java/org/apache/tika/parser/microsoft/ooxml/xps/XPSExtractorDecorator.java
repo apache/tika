@@ -130,7 +130,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
             tis = getZipStream(zipPath, pkg);
         } catch (IOException | TikaException e) {
             //store this exception in the parent's metadata
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
             return;
         }
 

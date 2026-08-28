@@ -240,7 +240,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             WriteLimitReachedException.throwIfWriteLimitReached(ex);
             //swallow otherwise
             metadata.add(TikaCoreProperties.EMBEDDED_EXCEPTION,
-                    ExceptionUtils.getStackTrace(ex));
+                    ExceptionUtils.format(ex, context));
         }
     }
 
@@ -265,7 +265,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
                     } catch (SAXException | SecurityException e) {
                         throw e;
                     } catch (Exception e) {
-                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                     }
                 }
             }
@@ -378,7 +378,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         try {
             fs = new POIFSFileSystem(part.getInputStream());
         } catch (Exception e) {
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
             return;
         }
         TikaInputStream tis = null;
@@ -438,7 +438,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         } catch (Ole10NativeException e) {
             // Could not process an OLE 1.0 entry, so skip this part
         } catch (IOException e) {
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
         } finally {
             fs.close();
             if (tis != null) {
@@ -641,7 +641,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             }
 
         } catch (InvalidFormatException e) {
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
         }
         return linkedRelationships;
     }
@@ -685,8 +685,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         try {
             relatedPartPRC = parentPart.getRelationshipsByType(contentType);
         } catch (InvalidFormatException e) {
-            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
         }
         if (relatedPartPRC != null && relatedPartPRC.size() > 0) {
             AttributesImpl attributes = new AttributesImpl();
@@ -715,17 +714,14 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
                     } catch (IOException | TikaException e) {
                         balancer.drainOpenElements();
-                        parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                                ExceptionUtils.getStackTrace(e));
+                        EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
                     } catch (SAXException e) {
                         balancer.drainOpenElements();
                         WriteLimitReachedException.throwIfWriteLimitReached(e);
-                        parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                                ExceptionUtils.getStackTrace(e));
+                        EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
                     }
                 } catch (InvalidFormatException e) {
-                    parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                            ExceptionUtils.getStackTrace(e));
+                    EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
                 }
             }
             contentHandler.endElement("", "div", "div");

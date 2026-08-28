@@ -67,6 +67,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
 
 /**
  * Tika parser for Time Stamped Data Envelope (application/timestamped-data)
@@ -189,8 +190,7 @@ public class TSDParser implements Parser {
                     }
                 } catch (IOException e) {
                     // Truncated file - record exception and work with what we got
-                    metadata.set(TikaCoreProperties.EMBEDDED_EXCEPTION,
-                            e.getClass().getName() + ": " + e.getMessage());
+                    metadata.set(TikaCoreProperties.EMBEDDED_EXCEPTION, ExceptionUtils.format(e, context));
                     LOG.debug("Error reading TSD content (possibly truncated)", e);
                 }
 

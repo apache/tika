@@ -410,7 +410,7 @@ public class MarkdownParser extends AbstractEncodingDetectorParser {
                 try (TikaInputStream tis = TikaInputStream.get(dataURIScheme.getInputStream())) {
                     extractor.parseEmbedded(tis, xhtml, m, context, true);
                 } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                 } catch (SAXException e) {
                     throw new RuntimeSAXException(e);
                 }

@@ -166,7 +166,7 @@ public class RawTiffParser extends TiffParser {
         } catch (TiffStructureException | IOException e) {
             //a file we cannot walk for previews should not fail the parse;
             //the TIFF metadata has already been extracted at this point
-            EmbeddedDocumentUtil.recordException(e, metadata);
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
             return;
         }
         if (previews.isEmpty()) {

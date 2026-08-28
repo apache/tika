@@ -268,7 +268,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     }
                 }
             } catch (IOException | TikaException e) {
-                EmbeddedDocumentUtil.recordException(e, parentMetadata);
+                EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
             }
             i++;
         }
@@ -428,10 +428,10 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         OfficeParser.extractMacros(poifsFileSystem, xhtml,
                                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context), context);
                     } catch (IOException | SAXException | TikaException inner) {
-                        EmbeddedDocumentUtil.recordException(inner, parentMetadata);
+                        EmbeddedDocumentUtil.recordException(inner, parentMetadata, context);
                     }
                 } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);//swallow
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);//swallow
                 }
             }
         }
@@ -586,7 +586,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
             } catch (SecurityException e) {
                 throw e;
             } catch (Exception e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                 continue;
             }
             try (TikaInputStream picIs = TikaInputStream.get(data)) {
@@ -619,7 +619,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     pd = ((HSLFPictureShape) shape).getPictureData();
                 } catch (IndexOutOfBoundsException e) {
                     // corrupt Escher BSE record -- skip page anchoring for this shape
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                     continue;
                 }
                 if (pd != null) {
@@ -648,7 +648,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     data = oleShape.getObjectData();
                 } catch (NullPointerException e) {
                     /* getObjectData throws NPE some times. */
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                     continue;
                 }
 
@@ -668,7 +668,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                     try {
                         dataStream = data.getInputStream();
                     } catch (Exception e) {
-                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                         continue;
                     }
                     handleDataStream(dataStream, objID, oleShape.getProgId(), xhtml);
@@ -703,7 +703,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            EmbeddedDocumentUtil.recordException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
         }
     }
 
@@ -714,7 +714,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
         } catch (NullPointerException e) {
             // Sometimes HSLF hits problems
             // Please open POI bugs for any you come across!
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
             return null;
         }
     }

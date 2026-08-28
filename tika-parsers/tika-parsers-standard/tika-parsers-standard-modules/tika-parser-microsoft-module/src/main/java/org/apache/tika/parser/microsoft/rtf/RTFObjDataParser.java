@@ -45,6 +45,7 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 
 /**
@@ -56,9 +57,11 @@ class RTFObjDataParser {
 
     private final static String WIN_ASCII = "WINDOWS-1252";
     private final int memoryLimitInKb;
+    private final ParseContext context;
 
-    RTFObjDataParser(int memoryLimitInKb) {
+    RTFObjDataParser(int memoryLimitInKb, ParseContext context) {
         this.memoryLimitInKb = memoryLimitInKb;
+        this.context = context;
     }
 
     /**
@@ -123,14 +126,14 @@ class RTFObjDataParser {
             try {
                 hasPoifs = hasPOIFSHeader(embIs);
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                 return embObjBytes;
             }
             if (hasPoifs) {
                 try {
                     return handleEmbeddedPOIFS(embIs, metadata, unknownFilenameCount);
                 } catch (Exception e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                 }
             }
         }
