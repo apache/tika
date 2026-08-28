@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core.server;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,6 +30,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -293,6 +295,11 @@ class ServerProtocolIOTest {
      * sends ACK, and returns the deserialized stack trace string.
      */
     private String exchangeCrash(Throwable t, int maxPayloadBytes) throws Exception {
+        return exchangeCrash(t, maxPayloadBytes, ExceptionReporting.DEFAULT);
+    }
+
+    private String exchangeCrash(Throwable t, int maxPayloadBytes, ExceptionReporting reporting)
+            throws Exception {
         PipedOutputStream serverOutPipe = new PipedOutputStream();
         PipedInputStream clientInPipe = new PipedInputStream(serverOutPipe, 1024 * 1024);
         PipedOutputStream clientOutPipe = new PipedOutputStream();
@@ -320,7 +327,7 @@ class ServerProtocolIOTest {
         ServerProtocolIO io = new ServerProtocolIO(
                 new DataInputStream(serverInPipe),
                 new DataOutputStream(serverOutPipe),
-                maxPayloadBytes);
+                maxPayloadBytes, reporting);
         io.writeCrash(PipesMessageType.UNSPECIFIED_CRASH, t);
 
         clientThread.join(5000);
@@ -357,5 +364,14 @@ class ServerProtocolIOTest {
 
         // Empty string fallback: the trace was too large, we get an empty payload.
         assertEquals("", returned);
+    }
+
+    @Test
+    void testCrashHonorsExceptionReporting() throws Exception {
+        RuntimeException ex = new RuntimeException("something failed");
+        String returned = exchangeCrash(ex, PipesMessage.MAX_PAYLOAD_BYTES,
+                new ExceptionReporting(ExceptionReporting.Level.MESSAGE_REDACTED, -1));
+        assertTrue(returned.contains("java.lang.RuntimeException"));
+        assertFalse(returned.contains("something failed"));
     }
 }
