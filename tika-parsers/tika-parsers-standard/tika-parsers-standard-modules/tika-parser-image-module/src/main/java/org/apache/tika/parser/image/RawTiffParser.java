@@ -57,7 +57,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Pentax PEF/PTX, Adobe DNG and Canon CR2.
  * <p>
  * These formats are TIFF containers: metadata extraction is inherited from
- * {@link TiffParser}. In addition, this parser extracts the camera-generated
+ * {@link TiffParser}. Samsung SRW is handled the same way. In addition, this parser extracts the camera-generated
  * JPEG preview images embedded in the raw file and hands them to the
  * {@link EmbeddedDocumentExtractor}. Previews are referenced from the IFD
  * chain or from SubIFDs, either via the JPEGInterchangeFormat/
@@ -89,6 +89,7 @@ public class RawTiffParser extends TiffParser {
                     MediaType.image("x-raw-nikon"),
                     MediaType.image("x-raw-sony"),
                     MediaType.image("x-raw-pentax"),
+                    MediaType.image("x-raw-samsung"),
                     MediaType.image("x-raw-adobe"),
                     MediaType.image("x-canon-cr2"))));
 
