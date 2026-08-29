@@ -141,8 +141,14 @@ public class UnpackerThumbnailTest extends CXFTestBase {
         assertEquals(204, response.getStatus());
     }
 
+    /**
+     * Sends the file name along, as a client would: raw camera formats are
+     * detected by their extension.
+     */
     private JsonNode thumbnail(String resource) throws Exception {
+        String fileName = resource.substring(resource.lastIndexOf('/') + 1);
         Response response = WebClient.create(endPoint + THUMBNAIL_PATH)
+                .header("Content-Disposition", "attachment; filename=" + fileName)
                 .put(ClassLoader.getSystemResourceAsStream(resource));
         assertEquals(200, response.getStatus());
         assertEquals("application/json", response.getMediaType().toString());

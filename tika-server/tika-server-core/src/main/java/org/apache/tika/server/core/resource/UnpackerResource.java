@@ -354,8 +354,9 @@ public class UnpackerResource {
      */
     private void configureThumbnailParse(ParseContext pc) {
         if (pc.getJsonConfig("pdf-parser") == null) {
-            pc.setJsonConfig("pdf-parser",
-                    "{\"imageStrategy\": \"RENDER_PAGES_AT_PAGE_END\", \"maxPages\": 1}");
+            //the first page only, rendered at 96 dpi: a preview, not a scan
+            pc.setJsonConfig("pdf-parser", "{\"imageStrategy\": \"RENDER_PAGES_AT_PAGE_END\", "
+                    + "\"maxPages\": 1, \"ocr\": {\"dpi\": 96}}");
         }
         for (String parser : new String[]{"emf-parser", "wmf-parser"}) {
             if (pc.getJsonConfig(parser) == null) {
