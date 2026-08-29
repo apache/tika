@@ -119,9 +119,16 @@ public class IWorkPackageParser implements Parser {
             if (IWORK_THUMBNAIL_ENTRY.equals(entry.getName()) && zip.canReadEntryData(entry)) {
                 thumbnailMetadata = thumbnailMetadata(context);
                 if (extractor.shouldParseEmbedded(thumbnailMetadata, context)) {
-                    thumbnail = IOUtils.toByteArray(
-                            BoundedInputStream.builder().setInputStream(zip)
-                                    .setMaxCount(MAX_THUMBNAIL_BYTES).get());
+                    //read one byte past the limit so an oversized entry is
+                    //recognized and skipped instead of emitted truncated
+                    thumbnail = BoundedInputStream.builder().setInputStream(zip)
+                            .setMaxCount(MAX_THUMBNAIL_BYTES + 1).get().readAllBytes();
+                    if (thumbnail.length > MAX_THUMBNAIL_BYTES) {
+                        thumbnail = null;
+                        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                                IWORK_THUMBNAIL_ENTRY + " exceeds " + MAX_THUMBNAIL_BYTES
+                                        + " bytes and was skipped");
+                    }
                 }
                 entry = zip.getNextEntry();
                 continue;
