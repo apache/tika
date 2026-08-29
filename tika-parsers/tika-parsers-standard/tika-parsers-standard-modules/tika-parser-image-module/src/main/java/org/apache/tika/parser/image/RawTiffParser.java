@@ -25,6 +25,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -68,6 +69,11 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Both classic TIFF and BigTIFF containers (allowed for DNG since spec
  * version 1.7) are supported for preview extraction; for BigTIFF, EXIF
  * metadata extraction is skipped until metadata-extractor supports it.
+ * <p>
+ * The largest preview is emitted first, marked
+ * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}; any smaller
+ * ones follow as {@link TikaCoreProperties.EmbeddedResourceType#INLINE}
+ * images (TIKA-4851).
  */
 @TikaComponent
 public class RawTiffParser extends TiffParser {
@@ -172,6 +178,11 @@ public class RawTiffParser extends TiffParser {
         if (previews.isEmpty()) {
             return;
         }
+        //the largest preview is the file's thumbnail and goes first; the
+        //smaller ones (the camera's own thumbnail, intermediate previews)
+        //are renderings of the same image and follow as inline images.
+        //The JPEG length is a reliable proxy for its dimensions here.
+        previews.sort(Comparator.comparingLong(Preview::length).reversed());
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         int count = 0;
@@ -179,11 +190,19 @@ public class RawTiffParser extends TiffParser {
         try (FileChannel channel = FileChannel.open(tis.getPath())) {
             for (Preview preview : previews) {
                 Metadata previewMetadata = Metadata.newInstance(context);
-                previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
                 previewMetadata.set(HttpHeaders.CONTENT_TYPE, JPEG_MIME);
-                EmbeddedDocumentUtil.setGeneratedResourceName(previewMetadata,
-                        EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL, count, JPEG_MIME);
+                if (count == 0) {
+                    previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                            TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+                    EmbeddedDocumentUtil.setGeneratedResourceName(previewMetadata,
+                            EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL, 0, JPEG_MIME);
+                } else {
+                    previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                            TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+                    EmbeddedDocumentUtil.setGeneratedResourceName(previewMetadata,
+                            EmbeddedDocumentUtil.EmbeddedResourcePrefix.IMAGE, count - 1,
+                            JPEG_MIME);
+                }
                 count++;
                 if (!extractor.shouldParseEmbedded(previewMetadata, context)) {
                     continue;

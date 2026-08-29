@@ -43,12 +43,27 @@ public class RawTiffParserTest extends TikaTest {
         return getRecursiveMetadata(fileName, metadata);
     }
 
-    private void assertPreview(Metadata preview, int index, int width, int height) {
+    /**
+     * The largest preview: the file's thumbnail, always emitted first.
+     */
+    private void assertThumbnail(Metadata preview, int width, int height) {
+        assertPreview(preview, TikaCoreProperties.EmbeddedResourceType.THUMBNAIL,
+                "thumbnail-0.jpg", width, height);
+    }
+
+    /**
+     * A smaller preview, emitted after the thumbnail as an inline image.
+     */
+    private void assertInlinePreview(Metadata preview, int index, int width, int height) {
+        assertPreview(preview, TikaCoreProperties.EmbeddedResourceType.INLINE,
+                "image-" + index + ".jpg", width, height);
+    }
+
+    private void assertPreview(Metadata preview, TikaCoreProperties.EmbeddedResourceType type,
+                               String name, int width, int height) {
         assertEquals("image/jpeg", preview.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals("thumbnail-" + index + ".jpg",
-                preview.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
-                preview.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(name, preview.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals(type.toString(), preview.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals(Integer.toString(width), preview.get(TIFF.IMAGE_WIDTH));
         assertEquals(Integer.toString(height), preview.get(TIFF.IMAGE_LENGTH));
     }
@@ -63,7 +78,7 @@ public class RawTiffParserTest extends TikaTest {
         assertEquals("NIKON CORPORATION", container.get(TIFF.EQUIPMENT_MAKE));
         assertEquals("NIKON D3000", container.get(TIFF.EQUIPMENT_MODEL));
 
-        assertPreview(metadataList.get(1), 0, 64, 48);
+        assertThumbnail(metadataList.get(1), 64, 48);
     }
 
     @Test
@@ -72,7 +87,7 @@ public class RawTiffParserTest extends TikaTest {
         //it is extracted once, not per referencing IFD
         List<Metadata> metadataList = parseByName("testNEF_dup.nef");
         assertEquals(2, metadataList.size());
-        assertPreview(metadataList.get(1), 0, 64, 48);
+        assertThumbnail(metadataList.get(1), 64, 48);
     }
 
     @Test
@@ -85,9 +100,9 @@ public class RawTiffParserTest extends TikaTest {
         assertEquals("SONY", container.get(TIFF.EQUIPMENT_MAKE));
         assertEquals("NEX-6", container.get(TIFF.EQUIPMENT_MODEL));
 
-        //full-size preview from IFD0, then the thumbnail from IFD1
-        assertPreview(metadataList.get(1), 0, 64, 48);
-        assertPreview(metadataList.get(2), 1, 32, 24);
+        //full-size preview from IFD0, then the camera thumbnail from IFD1
+        assertThumbnail(metadataList.get(1), 64, 48);
+        assertInlinePreview(metadataList.get(2), 0, 32, 24);
     }
 
     @Test
@@ -99,9 +114,10 @@ public class RawTiffParserTest extends TikaTest {
         assertEquals("image/x-raw-pentax", container.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("PENTAX K-7", container.get(TIFF.EQUIPMENT_MODEL));
 
-        //thumbnail from IFD1, then the full-size preview from IFD2
-        assertPreview(metadataList.get(1), 0, 32, 24);
-        assertPreview(metadataList.get(2), 1, 64, 48);
+        //the camera thumbnail comes first in the file (IFD1), the full-size
+        //preview second (IFD2): the larger one is still emitted first
+        assertThumbnail(metadataList.get(1), 64, 48);
+        assertInlinePreview(metadataList.get(2), 0, 32, 24);
     }
 
     @Test
@@ -115,7 +131,7 @@ public class RawTiffParserTest extends TikaTest {
         assertEquals("image/x-raw-adobe", container.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("PENTAX K-x", container.get(TIFF.EQUIPMENT_MODEL));
 
-        assertPreview(metadataList.get(1), 0, 64, 48);
+        assertThumbnail(metadataList.get(1), 64, 48);
     }
 
     @Test
@@ -129,8 +145,8 @@ public class RawTiffParserTest extends TikaTest {
         assertEquals("Canon EOS 7D", container.get(TIFF.EQUIPMENT_MODEL));
 
         //full-size preview stored as a strip in IFD0, thumbnail from IFD1
-        assertPreview(metadataList.get(1), 0, 64, 48);
-        assertPreview(metadataList.get(2), 1, 32, 24);
+        assertThumbnail(metadataList.get(1), 64, 48);
+        assertInlinePreview(metadataList.get(2), 0, 32, 24);
     }
 
     @Test
@@ -151,7 +167,7 @@ public class RawTiffParserTest extends TikaTest {
         assertEquals("image/x-raw-adobe", container.get(HttpHeaders.CONTENT_TYPE));
         assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
 
-        assertPreview(metadataList.get(1), 0, 64, 48);
+        assertThumbnail(metadataList.get(1), 64, 48);
     }
 
     @Test
@@ -203,7 +219,7 @@ public class RawTiffParserTest extends TikaTest {
                 getRecursiveMetadata("testARW.arw", parser, metadata, new ParseContext(), false);
 
         assertEquals(2, metadataList.size());
-        assertPreview(metadataList.get(1), 0, 64, 48);
+        assertThumbnail(metadataList.get(1), 64, 48);
     }
 
     @Test
