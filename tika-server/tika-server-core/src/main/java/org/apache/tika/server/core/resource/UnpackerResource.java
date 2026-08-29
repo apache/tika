@@ -356,14 +356,19 @@ public class UnpackerResource {
         //the text is not part of the answer: do not extract it
         tikaResource.setupContentHandlerFactory(pc, "ignore");
         if (pc.getJsonConfig("pdf-parser") == null) {
-            //the first page only, rendered at 96 dpi: a preview, not a scan
+            //the first page only, rendered at 96 dpi: a preview, not a scan,
+            //and no OCR of the rendering
             pc.setJsonConfig("pdf-parser", "{\"imageStrategy\": \"RENDER_PAGES_AT_PAGE_END\", "
-                    + "\"maxPages\": 1, \"ocr\": {\"dpi\": 96}}");
+                    + "\"maxPages\": 1, \"ocr\": {\"strategy\": \"NO_OCR\", \"dpi\": 96}}");
         }
         for (String parser : new String[]{"emf-parser", "wmf-parser"}) {
             if (pc.getJsonConfig(parser) == null) {
                 pc.setJsonConfig(parser, "{\"renderImage\": true}");
             }
+        }
+        if (pc.getJsonConfig("tesseract-ocr-parser") == null) {
+            //the images are wanted as bytes, their text is not
+            pc.setJsonConfig("tesseract-ocr-parser", "{\"skipOcr\": true}");
         }
         StandardUnpackSelector selector = new StandardUnpackSelector();
         selector.setIncludeEmbeddedResourceTypes(new HashSet<>(Arrays.asList(
