@@ -321,6 +321,12 @@ public class UnpackerResource {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final String METADATA_SUFFIX = ".metadata.json";
+    /**
+     * A thumbnail travels base64-encoded inside a JSON object, so it is
+     * bounded here regardless of the unpack limits; camera previews and
+     * page renderings are a few MB at most.
+     */
+    static final long MAX_THUMBNAIL_BYTES = 32L * 1024 * 1024;
 
     /**
      * Parses in unpack mode with the thumbnail configuration, then selects
@@ -354,9 +360,18 @@ public class UnpackerResource {
             if (imageEntry == null) {
                 throw new WebApplicationException(Response.Status.NO_CONTENT);
             }
+            if (imageEntry.getSize() > MAX_THUMBNAIL_BYTES) {
+                throw new WebApplicationException("thumbnail larger than " + MAX_THUMBNAIL_BYTES + " bytes",
+                        Response.Status.REQUEST_ENTITY_TOO_LARGE);
+            }
             byte[] image;
             try (InputStream is = zip.getInputStream(imageEntry)) {
-                image = is.readAllBytes();
+                //the entry size is a claim; read one byte past the limit to know
+                image = is.readNBytes((int) MAX_THUMBNAIL_BYTES + 1);
+            }
+            if (image.length > MAX_THUMBNAIL_BYTES) {
+                throw new WebApplicationException("thumbnail larger than " + MAX_THUMBNAIL_BYTES + " bytes",
+                        Response.Status.REQUEST_ENTITY_TOO_LARGE);
             }
             StringWriter metadataJson = new StringWriter();
             JsonMetadata.toJson(thumbnail, metadataJson);
