@@ -70,7 +70,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * version 1.7) are supported for preview extraction; for BigTIFF, EXIF
  * metadata extraction is skipped until metadata-extractor supports it.
  * <p>
- * The largest preview is marked
+ * Of the previews that are extracted (see the length limits in
+ * {@link RawTiffParserConfig}), the largest by JPEG byte length is marked
  * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}, any smaller
  * ones are {@link TikaCoreProperties.EmbeddedResourceType#INLINE} images
  * (TIKA-4851).
@@ -178,10 +179,10 @@ public class RawTiffParser extends TiffParser {
         if (previews.isEmpty()) {
             return;
         }
-        //the largest preview is the file's thumbnail and goes first; the
-        //smaller ones (the camera's own thumbnail, intermediate previews)
-        //are renderings of the same image and follow as inline images.
-        //The JPEG length is a reliable proxy for its dimensions here.
+        //of the extracted previews, the largest by JPEG length is the file's
+        //thumbnail; the smaller ones (the camera's own thumbnail, intermediate
+        //previews) are renderings of the same image and are inline images.
+        //The JPEG length is a reliable proxy for the dimensions here.
         previews.sort(Comparator.comparingLong(Preview::length).reversed());
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);

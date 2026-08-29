@@ -44,7 +44,8 @@ public class RawTiffParserTest extends TikaTest {
     }
 
     /**
-     * The largest preview: the file's thumbnail, always emitted first.
+     * The largest extracted preview: the file's thumbnail, which the parser
+     * emits before the smaller ones.
      */
     private void assertThumbnail(Metadata preview, int width, int height) {
         assertPreview(preview, TikaCoreProperties.EmbeddedResourceType.THUMBNAIL,
