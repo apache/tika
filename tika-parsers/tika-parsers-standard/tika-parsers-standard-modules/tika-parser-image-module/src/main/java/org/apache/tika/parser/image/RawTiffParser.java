@@ -70,10 +70,10 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * version 1.7) are supported for preview extraction; for BigTIFF, EXIF
  * metadata extraction is skipped until metadata-extractor supports it.
  * <p>
- * The largest preview is emitted first, marked
- * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}; any smaller
- * ones follow as {@link TikaCoreProperties.EmbeddedResourceType#INLINE}
- * images (TIKA-4851).
+ * The largest preview is marked
+ * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}, any smaller
+ * ones are {@link TikaCoreProperties.EmbeddedResourceType#INLINE} images
+ * (TIKA-4851).
  */
 @TikaComponent
 public class RawTiffParser extends TiffParser {

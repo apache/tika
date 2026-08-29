@@ -1,10 +1,10 @@
 Release 4.1.0 - unreleased
 
-   * RawTiffParser emits the largest embedded JPEG preview first, as the
-     THUMBNAIL embedded document; the smaller previews of the same image
-     follow as INLINE images named image-N.jpg. Previously every preview was
-     a THUMBNAIL in IFD order, so the camera's small thumbnail often came
-     first (TIKA-4851).
+   * RawTiffParser marks only the largest embedded JPEG preview as the
+     THUMBNAIL embedded document; the smaller previews of the same image are
+     INLINE images named image-N.jpg. Previously every preview was a
+     THUMBNAIL, so a client had to compare them to find the representative
+     one (TIKA-4851).
 
    * New exception-reporting parse-context config controls how much of an
      exception is written to tk:exception:* metadata for the container and
