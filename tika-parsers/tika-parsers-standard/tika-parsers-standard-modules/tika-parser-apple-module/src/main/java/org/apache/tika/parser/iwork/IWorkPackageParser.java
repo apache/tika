@@ -107,15 +107,22 @@ public class IWorkPackageParser implements Parser {
         ZipArchiveInputStream zip = new ZipArchiveInputStream(tis);
         ZipArchiveEntry entry = zip.getNextEntry();
         //the package is read as a stream, so the preview may come before the
-        //content: hold it back and emit it once the content is written
+        //content: hold it back and emit it once the content is written, and
+        //only when the embedded document extractor wants it at all
+        EmbeddedDocumentExtractor extractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        Metadata thumbnailMetadata = null;
         byte[] thumbnail = null;
         XHTMLContentHandler xhtml = null;
 
         while (entry != null) {
             if (IWORK_THUMBNAIL_ENTRY.equals(entry.getName()) && zip.canReadEntryData(entry)) {
-                thumbnail = IOUtils.toByteArray(
-                        BoundedInputStream.builder().setInputStream(zip)
-                                .setMaxCount(MAX_THUMBNAIL_BYTES).get());
+                thumbnailMetadata = thumbnailMetadata(context);
+                if (extractor.shouldParseEmbedded(thumbnailMetadata, context)) {
+                    thumbnail = IOUtils.toByteArray(
+                            BoundedInputStream.builder().setInputStream(zip)
+                                    .setMaxCount(MAX_THUMBNAIL_BYTES).get());
+                }
                 entry = zip.getNextEntry();
                 continue;
             }
@@ -167,7 +174,10 @@ public class IWorkPackageParser implements Parser {
         }
         if (xhtml != null) {
             if (thumbnail != null) {
-                handleThumbnail(thumbnail, xhtml, context);
+                try (TikaInputStream thumbnailStream = TikaInputStream.get(thumbnail)) {
+                    extractor.parseEmbedded(thumbnailStream, xhtml, thumbnailMetadata, context,
+                            true);
+                }
             }
             xhtml.endDocument();
         }
@@ -175,25 +185,17 @@ public class IWorkPackageParser implements Parser {
     }
 
     /**
-     * Emits the document preview as a
+     * The metadata of the document preview, a
      * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL} embedded
      * document.
      */
-    private static void handleThumbnail(byte[] thumbnail, XHTMLContentHandler xhtml,
-                                        ParseContext context)
-            throws IOException, SAXException {
-        EmbeddedDocumentExtractor extractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+    private static Metadata thumbnailMetadata(ParseContext context) {
         Metadata embeddedMetadata = Metadata.newInstance(context);
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, IWORK_THUMBNAIL_ENTRY);
         embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
-        if (extractor.shouldParseEmbedded(embeddedMetadata, context)) {
-            try (TikaInputStream thumbnailStream = TikaInputStream.get(thumbnail)) {
-                extractor.parseEmbedded(thumbnailStream, xhtml, embeddedMetadata, context, true);
-            }
-        }
+        return embeddedMetadata;
     }
 
     private IWORKDocumentType detectType(InputStream entryStream, int markLimit) throws IOException {
