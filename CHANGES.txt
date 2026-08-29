@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * RawTiffParser marks only the largest embedded JPEG preview as the
+     THUMBNAIL embedded document; the smaller previews of the same image are
+     INLINE images named image-N.jpg. Previously every preview was a
+     THUMBNAIL, so a client had to compare them to find the representative
+     one (TIKA-4851).
+
    * New exception-reporting parse-context config controls how much of an
      exception is written to tk:exception:* metadata for the container and
      embedded documents alike: FULL (default), MESSAGE_REDACTED (stack trace
