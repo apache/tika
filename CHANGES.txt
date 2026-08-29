@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * tika-server: /unpack/thumbnail returns the document thumbnail as JSON
+     (its metadata and the image as base64). renderThumbnails=true on /rmeta,
+     /unpack and /unpack/all lays the same thumbnail defaults under a request
+     (first PDF page rendered, EMF/WMF thumbnail rendered); the defaults can
+     be replaced per parser with a thumbnail-defaults block in the server
+     config. PDFParserConfig gains maxRenderedPages, bounding the page
+     rendering independently of maxPages (TIKA-4856).
+
    * RawTiffParser marks only the largest embedded JPEG preview as the
      THUMBNAIL embedded document; the smaller previews of the same image are
      INLINE images named image-N.jpg. Previously every preview was a

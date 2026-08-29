@@ -42,6 +42,7 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -83,10 +84,15 @@ import org.apache.tika.serialization.JsonMetadata;
  * {@code /unpack/thumbnail} returns the document's thumbnail as JSON: the
  * {@code /rmeta} metadata object of the embedded document that is the thumbnail
  * and the image as base64, or {@code 204} if the document has none. It parses
- * with a fixed configuration (the first PDF page rendered, EMF/WMF thumbnails
- * rendered) and picks, in this order, the raster THUMBNAIL directly below the
- * document, the rendering of a vector THUMBNAIL, or the RENDERING of the first
- * page. It extracts what the document carries; it does not resize or convert.
+ * with the {@link ThumbnailDefaults} (the first PDF page rendered, the EMF/WMF
+ * thumbnail rendered), without text extraction or OCR, and picks, in this
+ * order, the raster THUMBNAIL directly below the document, the rendering of a
+ * vector THUMBNAIL, or the RENDERING of the first page. It extracts what the
+ * document carries; it does not resize or convert.
+ * <p>
+ * {@code ?renderThumbnails=true} on {@code /unpack} and {@code /unpack/all}
+ * applies the same defaults under the request's own config, so the zip holds
+ * the thumbnail as a raster image among the embedded documents.
  * <pre>
  * {
  *   "metadata": { "Content-Type": "image/png", "tiff:ImageWidth": "800", ... },
@@ -186,12 +192,16 @@ public class UnpackerResource {
     @jakarta.ws.rs.Path("/{id:(/.*)?}")
     @PUT
     @Produces("application/zip")
-    public Response unpack(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Response unpack(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info,
+                           @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
             TikaResource.logRequest(LOG, "/unpack", metadata);
+            if (renderThumbnails) {
+                tikaResource.getThumbnailDefaults().applyTo(pc);
+            }
             return doUnpack(tis, metadata, pc, false);
         }
     }
@@ -209,11 +219,16 @@ public class UnpackerResource {
     @POST
     @Consumes("multipart/form-data")
     @Produces("application/zip")
-    public Response unpackWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Response unpackWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info,
+                                     @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
             TikaResource.logRequest(LOG, "/unpack", metadata);
+            if (renderThumbnails) {
+                //under the request's config, which setupMultipartConfig has already merged
+                tikaResource.getThumbnailDefaults().applyTo(pc);
+            }
             return doUnpack(tis, metadata, pc, false);
         }
     }
@@ -230,12 +245,16 @@ public class UnpackerResource {
     @jakarta.ws.rs.Path("/all{id:(/.*)?}")
     @PUT
     @Produces("application/zip")
-    public Response unpackAll(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Response unpackAll(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info,
+                           @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
             TikaResource.logRequest(LOG, "/unpack/all", metadata);
+            if (renderThumbnails) {
+                tikaResource.getThumbnailDefaults().applyTo(pc);
+            }
             return doUnpack(tis, metadata, pc, true);
         }
     }
@@ -253,11 +272,16 @@ public class UnpackerResource {
     @POST
     @Consumes("multipart/form-data")
     @Produces("application/zip")
-    public Response unpackAllWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Response unpackAllWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info,
+                                     @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
             TikaResource.logRequest(LOG, "/unpack/all", metadata);
+            if (renderThumbnails) {
+                //under the request's config, which setupMultipartConfig has already merged
+                tikaResource.getThumbnailDefaults().applyTo(pc);
+            }
             return doUnpack(tis, metadata, pc, true);
         }
     }
@@ -346,32 +370,19 @@ public class UnpackerResource {
     }
 
     /**
-     * The fixed parse configuration of {@code /unpack/thumbnail}: the first
-     * PDF page and EMF/WMF images rendered, only THUMBNAIL and RENDERING
-     * embedded documents extracted, together with their metadata, down to
-     * the rendering of a thumbnail (depth 2). Request-supplied parser
+     * The {@link ThumbnailDefaults} plus what only makes sense when the thumbnail
+     * is all the caller wants: no text, no OCR of the rendering, only THUMBNAIL
+     * and RENDERING embedded documents extracted, together with their metadata,
+     * down to the rendering of a thumbnail (depth 2). The request's own parser
      * configuration wins where present.
      */
     private void configureThumbnailParse(ParseContext pc) {
         //the text is not part of the answer: do not extract it
         tikaResource.setupContentHandlerFactory(pc, "ignore");
-        if (pc.getJsonConfig("pdf-parser") == null) {
-            //the first page only, rendered at 96 dpi: a preview, not a scan,
-            //and no OCR of the rendering
-            pc.setJsonConfig("pdf-parser", "{\"imageStrategy\": \"RENDER_PAGES_AT_PAGE_END\", "
-                    + "\"maxPages\": 1, \"ocr\": {\"strategy\": \"NO_OCR\", \"dpi\": 96}}");
-        }
-        for (String parser : new String[]{"emf-parser", "wmf-parser"}) {
-            if (pc.getJsonConfig(parser) == null) {
-                //the thumbnail, not the pictures of embedded objects
-                pc.setJsonConfig(parser, "{\"renderImage\": true, "
-                        + "\"renderOnlyEmbeddedResourceTypes\": [\"THUMBNAIL\"]}");
-            }
-        }
-        if (pc.getJsonConfig("tesseract-ocr-parser") == null) {
-            //the images are wanted as bytes, their text is not
-            pc.setJsonConfig("tesseract-ocr-parser", "{\"skipOcr\": true}");
-        }
+        tikaResource.getThumbnailDefaults()
+                .with("{\"pdf-parser\": {\"ocr\": {\"strategy\": \"NO_OCR\"}}, "
+                        + "\"tesseract-ocr-parser\": {\"skipOcr\": true}}")
+                .applyTo(pc);
         StandardUnpackSelector selector = new StandardUnpackSelector();
         selector.setIncludeEmbeddedResourceTypes(new HashSet<>(Arrays.asList(
                 TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name(),

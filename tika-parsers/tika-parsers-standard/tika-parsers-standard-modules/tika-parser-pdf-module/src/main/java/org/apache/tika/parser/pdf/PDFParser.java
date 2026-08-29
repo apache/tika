@@ -484,8 +484,10 @@ public class PDFParser implements Parser, RenderingParser {
             throws IOException, TikaException {
         Metadata metadata = Metadata.newInstance(parseContext);
         metadata.set(TikaCoreProperties.TYPE, MEDIA_TYPE.toString());
-        return renderer.render(
-                tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);
+        int maxRenderedPages = localConfig.getMaxRenderedPages();
+        PageRangeRequest pages = maxRenderedPages > 0
+                ? new PageRangeRequest(1, maxRenderedPages) : PageRangeRequest.RENDER_ALL;
+        return renderer.render(tstream, metadata, parseContext, pages);
     }
 
     protected PDDocument getPDDocument(TikaInputStream tis, String password,

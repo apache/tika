@@ -162,6 +162,10 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         if (config.getImageStrategy() != PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
             return;
         }
+        int maxRenderedPages = config.getMaxRenderedPages();
+        if (maxRenderedPages > 0 && getCurrentPageNo() > maxRenderedPages) {
+            return;
+        }
         PDFRenderingState state = context.get(PDFRenderingState.class);
         //this is the document's inputstream/PDDocument
         //TODO: figure out if we can send in the PDPage in the TikaInputStream

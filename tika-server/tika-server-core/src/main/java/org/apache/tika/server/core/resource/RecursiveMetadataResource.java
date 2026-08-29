@@ -27,6 +27,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MultivaluedMap;
@@ -63,8 +64,23 @@ public class RecursiveMetadataResource {
                                                MultivaluedMap<String, String> httpHeaders,
                                                String handlerTypeName)
             throws Exception {
+        return parseMetadata(tis, metadata, httpHeaders, handlerTypeName, false);
+    }
+
+    /**
+     * @param renderThumbnails whether to lay the {@link ThumbnailDefaults} under the
+     *                         request, so the parse yields the document thumbnail as
+     *                         a raster image among the embedded documents
+     */
+    public List<Metadata> parseMetadata(TikaInputStream tis, Metadata metadata,
+                                        MultivaluedMap<String, String> httpHeaders,
+                                        String handlerTypeName, boolean renderThumbnails)
+            throws Exception {
 
         final ParseContext context = tikaResource.createRequestContext();
+        if (renderThumbnails) {
+            tikaResource.getThumbnailDefaults().applyTo(context);
+        }
 
         fillMetadata(null, metadata, httpHeaders);
         TikaResource.logRequest(LOG, "/rmeta", metadata);
@@ -104,10 +120,11 @@ public class RecursiveMetadataResource {
     @Consumes("multipart/form-data")
     @Produces({"application/json"})
     @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
-    public Response getMetadataFromMultipart(Attachment att, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
+    public Response getMetadataFromMultipart(Attachment att, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName,
+                                             @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
             List<Metadata> metadataList = parseMetadata(tis, tikaResource.newRequestMetadata(), att.getHeaders(),
-                    handlerTypeName);
+                    handlerTypeName, renderThumbnails);
             return Response.ok(new MetadataList(metadataList)).build();
         }
     }
@@ -123,11 +140,16 @@ public class RecursiveMetadataResource {
     @Path("config")
     public Response getMetadataWithConfig(
             List<Attachment> attachments,
-            @Context HttpHeaders httpHeaders) throws Exception {
+            @Context HttpHeaders httpHeaders,
+            @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
 
         ParseContext context = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, context)) {
+            if (renderThumbnails) {
+                //under the request's config, which setupMultipartConfig has already merged
+                tikaResource.getThumbnailDefaults().applyTo(context);
+            }
 
             TikaResource.logRequest(LOG, "/rmeta/config", metadata);
 
@@ -164,6 +186,11 @@ public class RecursiveMetadataResource {
      * /rmeta/text     (store the content as text)<br/>
      * /rmeta/markdown (store the content as markdown)<br/>
      * /rmeta/ignore   (don't record any content)<br/>
+     * <p>
+     * With {@code ?renderThumbnails=true} the {@link ThumbnailDefaults} are laid
+     * under the request, so the list also holds the document thumbnail as a raster
+     * image where rendering is needed for that (the first PDF page, the EMF/WMF
+     * thumbnail of an Office document).
      *
      * @param handlerTypeName which type of handler to use
      * @return InputStream that can be deserialized as a list of {@link Metadata} objects
@@ -173,11 +200,12 @@ public class RecursiveMetadataResource {
     @PUT
     @Produces("application/json")
     @Path("{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
-    public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
+    public Response getMetadata(InputStream is, @Context HttpHeaders httpHeaders, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName,
+                                @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             List<Metadata> metadataList = parseMetadata(tis, metadata, httpHeaders.getRequestHeaders(),
-                    handlerTypeName);
+                    handlerTypeName, renderThumbnails);
             return Response.ok(new MetadataList(metadataList)).build();
         }
     }

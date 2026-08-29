@@ -42,10 +42,19 @@ public class ThumbnailSelectorTest {
     public void testVectorThumbnailFallsBackToItsRendering() {
         Metadata emf = embedded("THUMBNAIL", "image/emf", 1, "/thumbnail.emf");
         Metadata wmfInside = embedded("ATTACHMENT", "image/wmf", 2, "/thumbnail.emf/embedded-1.wmf");
-        Metadata rendering = embedded("RENDERING", "image/png", 2, "/thumbnail.emf/thumbnail.png");
+        //the metafile parsers emit the rendering of a THUMBNAIL as a THUMBNAIL
+        Metadata rendering = embedded("THUMBNAIL", "image/png", 2, "/thumbnail.emf/thumbnail.png");
         Metadata otherRendering = embedded("RENDERING", "image/png", 2, "/embedded-1.emf/rendering.png");
         assertSame(rendering,
                 ThumbnailSelector.select(Arrays.asList(emf, wmfInside, otherRendering, rendering)));
+    }
+
+    @Test
+    public void testRenderingTypedRenderingUnderTheThumbnailIsAccepted() {
+        //an injected renderer may type the rendering as RENDERING
+        Metadata emf = embedded("THUMBNAIL", "image/emf", 1, "/thumbnail.emf");
+        Metadata rendering = embedded("RENDERING", "image/png", 2, "/thumbnail.emf/thumbnail.png");
+        assertSame(rendering, ThumbnailSelector.select(Arrays.asList(emf, rendering)));
     }
 
     @Test

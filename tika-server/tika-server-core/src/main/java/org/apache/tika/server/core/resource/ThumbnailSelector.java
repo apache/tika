@@ -16,11 +16,8 @@
  */
 package org.apache.tika.server.core.resource;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Locale;
 
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -30,28 +27,19 @@ import org.apache.tika.metadata.TikaCoreProperties;
  * Picks the document thumbnail among the embedded documents of a parse, for
  * {@code /unpack/thumbnail}. In order of preference:
  * <ol>
- *   <li>a raster {@code THUMBNAIL} directly below the document (the docProps
- *       thumbnail of an Office document, the cover art of an audio file, the
- *       preview of a raw camera file, ...);</li>
- *   <li>the {@code RENDERING} of a vector {@code THUMBNAIL} directly below the
- *       document, as the metafile renderer emits it for the EMF/WMF thumbnails
- *       of Office documents;</li>
- *   <li>a {@code RENDERING} directly below the document, as the PDF parser
- *       emits it for the first page.</li>
+ *   <li>a raster {@code THUMBNAIL} directly below the document: the stored
+ *       thumbnail of most formats;</li>
+ *   <li>a raster image directly below a {@code THUMBNAIL} of the document:
+ *       the rendering of an EMF/WMF thumbnail, which the metafile parsers
+ *       emit as a {@code THUMBNAIL} as well;</li>
+ *   <li>a raster {@code RENDERING} directly below the document: the first
+ *       page of a PDF.</li>
  * </ol>
- * Only embedded documents directly below the container are considered, so
- * the thumbnail of a document inside an archive is not the archive's, and a
- * rendering is only accepted where it renders the document or its thumbnail,
- * not the picture of some embedded object.
+ * Only the document's own children count, so the thumbnail of a document
+ * inside an archive is not the archive's, and the picture of an embedded
+ * object is never mistaken for the document's rendering.
  */
 final class ThumbnailSelector {
-
-    /**
-     * Image types a client cannot display without a rasterizer.
-     */
-    private static final Set<String> VECTOR_TYPES = Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList("image/emf", "image/x-emf", "image/wmf", "image/x-wmf",
-                    "image/svg+xml", "application/postscript")));
 
     private ThumbnailSelector() {
     }
@@ -62,56 +50,34 @@ final class ThumbnailSelector {
      * @return the metadata of the thumbnail, or null if there is none
      */
     static Metadata select(List<Metadata> embedded) {
-        Metadata vectorThumbnail = null;
         for (Metadata m : embedded) {
-            if (!isDirectChild(m) || !isType(m, TikaCoreProperties.EmbeddedResourceType.THUMBNAIL)) {
+            if (depth(m) == 1 && isThumbnail(m) && isRaster(m)) {
+                return m;
+            }
+        }
+        for (Metadata thumbnail : embedded) {
+            if (depth(thumbnail) != 1 || !isThumbnail(thumbnail)) {
                 continue;
             }
-            if (isRaster(m)) {
-                return m;
+            String path = thumbnail.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+            if (path == null) {
+                continue;
             }
-            if (vectorThumbnail == null && isVector(m)) {
-                vectorThumbnail = m;
-            }
-        }
-        if (vectorThumbnail != null) {
-            Metadata rendering = renderingOf(vectorThumbnail, embedded);
-            if (rendering != null) {
-                return rendering;
+            for (Metadata m : embedded) {
+                String candidatePath = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
+                if (depth(m) == 2 && isRaster(m) && candidatePath != null
+                        && candidatePath.startsWith(path + "/")
+                        && (isThumbnail(m) || isRendering(m))) {
+                    return m;
+                }
             }
         }
         for (Metadata m : embedded) {
-            if (isDirectChild(m) && isType(m, TikaCoreProperties.EmbeddedResourceType.RENDERING)
-                    && isRaster(m)) {
+            if (depth(m) == 1 && isRendering(m) && isRaster(m)) {
                 return m;
             }
         }
         return null;
-    }
-
-    /**
-     * The rendering emitted while parsing the thumbnail itself: a raster
-     * {@code RENDERING} one level below it, on its embedded resource path.
-     */
-    private static Metadata renderingOf(Metadata thumbnail, List<Metadata> embedded) {
-        String path = thumbnail.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
-        if (path == null) {
-            return null;
-        }
-        for (Metadata m : embedded) {
-            String candidatePath = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH);
-            if (depth(m) == depth(thumbnail) + 1
-                    && isType(m, TikaCoreProperties.EmbeddedResourceType.RENDERING)
-                    && isRaster(m)
-                    && candidatePath != null && candidatePath.startsWith(path + "/")) {
-                return m;
-            }
-        }
-        return null;
-    }
-
-    private static boolean isDirectChild(Metadata m) {
-        return depth(m) == 1;
     }
 
     private static int depth(Metadata m) {
@@ -119,26 +85,30 @@ final class ThumbnailSelector {
         return depth == null ? -1 : depth;
     }
 
-    private static boolean isType(Metadata m, TikaCoreProperties.EmbeddedResourceType type) {
-        return type.name().equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    private static boolean isThumbnail(Metadata m) {
+        return TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name()
+                .equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
+    private static boolean isRendering(Metadata m) {
+        return TikaCoreProperties.EmbeddedResourceType.RENDERING.name()
+                .equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
+     * An image a client can display without a rasterizer: PNG, JPEG, GIF,
+     * WebP, ..., but not a metafile or SVG.
+     */
     private static boolean isRaster(Metadata m) {
-        String contentType = contentType(m);
-        return contentType.startsWith("image/") && !VECTOR_TYPES.contains(contentType);
-    }
-
-    private static boolean isVector(Metadata m) {
-        return VECTOR_TYPES.contains(contentType(m));
-    }
-
-    private static String contentType(Metadata m) {
         String contentType = m.get(HttpHeaders.CONTENT_TYPE);
         if (contentType == null) {
-            return "";
+            return false;
         }
         int semicolon = contentType.indexOf(';');
-        return (semicolon > 0 ? contentType.substring(0, semicolon) : contentType).trim()
-                .toLowerCase(java.util.Locale.ROOT);
+        String type = (semicolon > 0 ? contentType.substring(0, semicolon) : contentType)
+                .trim().toLowerCase(Locale.ROOT);
+        return type.startsWith("image/") && !type.equals("image/emf")
+                && !type.equals("image/x-emf") && !type.equals("image/wmf")
+                && !type.equals("image/x-wmf") && !type.equals("image/svg+xml");
     }
 }

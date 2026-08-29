@@ -42,10 +42,13 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.serialization.config.JsonConfigHelper;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
+import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.resource.UnpackerResource;
+import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 
 /**
  * {@code /unpack/thumbnail} end to end: the document thumbnail comes back as
@@ -61,15 +64,18 @@ public class UnpackerThumbnailTest extends CXFTestBase {
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
-        sf.setResourceClasses(UnpackerResource.class);
+        sf.setResourceClasses(UnpackerResource.class, RecursiveMetadataResource.class);
         sf.setResourceProvider(UnpackerResource.class,
                 new SingletonResourceProvider(new UnpackerResource(tikaResource)));
+        sf.setResourceProvider(RecursiveMetadataResource.class,
+                new SingletonResourceProvider(new RecursiveMetadataResource(tikaResource)));
     }
 
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper());
+        providers.add(new MetadataListMessageBodyWriter());
         sf.setProviders(providers);
     }
 
@@ -139,6 +145,35 @@ public class UnpackerThumbnailTest extends CXFTestBase {
         Response response = WebClient.create(endPoint + THUMBNAIL_PATH)
                 .put(ClassLoader.getSystemResourceAsStream("test-documents/2pic.docx"));
         assertEquals(204, response.getStatus());
+    }
+
+    /**
+     * {@code /rmeta?renderThumbnails=true} lays the thumbnail defaults under a
+     * normal metadata request: the first page rendering joins the list, the
+     * text is still extracted. Without the switch nothing is rendered.
+     */
+    @Test
+    public void testRmetaRenderThumbnails() throws Exception {
+        JsonNode plain = rmeta("test-documents/testPDFTwoTextBoxes.pdf", false);
+        assertEquals(1, plain.size());
+
+        JsonNode rendered = rmeta("test-documents/testPDFTwoTextBoxes.pdf", true);
+        assertEquals(2, rendered.size());
+        assertTrue(rendered.get(0).get(TikaCoreProperties.TIKA_CONTENT.getName()).asText()
+                .contains("Left column"), rendered.get(0).toString());
+        JsonNode rendering = rendered.get(1);
+        assertEquals("image/png", rendering.get("Content-Type").asText());
+        assertEquals("RENDERING", rendering.get("tk:embedded-resource-type").asText());
+        assertEquals("1", rendering.get("tk:page:number").asText());
+        assertTrue(rendering.get("tiff:ImageWidth").asInt() > 100);
+    }
+
+    private JsonNode rmeta(String resource, boolean renderThumbnails) throws Exception {
+        Response response = WebClient.create(endPoint + "/rmeta/text"
+                        + (renderThumbnails ? "?renderThumbnails=true" : ""))
+                .put(ClassLoader.getSystemResourceAsStream(resource));
+        assertEquals(200, response.getStatus());
+        return MAPPER.readTree((InputStream) response.getEntity());
     }
 
     /**
