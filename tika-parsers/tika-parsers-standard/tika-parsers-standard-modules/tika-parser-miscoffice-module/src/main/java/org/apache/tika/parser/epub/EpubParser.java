@@ -282,8 +282,9 @@ public class EpubParser implements Parser {
                     continue;
                 }
                 if (shouldHandleEmbedded(hRefMediaPair.media)) {
-                    handleEmbedded(zipFile, relativePath, hRefMediaPair, embeddedDocumentExtractor,
-                            xhtml, metadata, context);
+                    handleEmbedded(zipFile, relativePath, hRefMediaPair,
+                            id.equals(contentOrderScraper.getCoverId()),
+                            embeddedDocumentExtractor, xhtml, metadata, context);
                 }
             }
         }
@@ -423,7 +424,12 @@ public class EpubParser implements Parser {
         return true;
     }
 
+    /**
+     * @param cover whether this is the publication's cover image, emitted as
+     *              the {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}
+     */
     private void handleEmbedded(ZipFile zipFile, String relativePath, HRefMediaPair hRefMediaPair,
+                                boolean cover,
                                 EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                 XHTMLContentHandler xhtml, Metadata parentMetadata,
                                 ParseContext context)
@@ -442,6 +448,10 @@ public class EpubParser implements Parser {
             embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, hRefMediaPair.media);
         }
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fullPath);
+        if (cover) {
+            embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+        }
         if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             return;
         }
@@ -524,8 +534,19 @@ public class EpubParser implements Parser {
 
         Map<String, HRefMediaPair> locationMap = new HashMap<>();
         List<String> contentItems = new ArrayList<>();
+        //the cover image: EPUB 3 marks its manifest item with the
+        //cover-image property, EPUB 2 names the item id in a cover meta
+        String coverImageItem;
+        String coverMetaItem;
         boolean inManifest = false;
         boolean inSpine = false;
+
+        /**
+         * The manifest id of the cover image, or null if the OPF names none.
+         */
+        String getCoverId() {
+            return coverImageItem != null ? coverImageItem : coverMetaItem;
+        }
 
         @Override
         public void startElement(String uri, String localName, String name, Attributes atts)
@@ -547,7 +568,19 @@ public class EpubParser implements Parser {
                             //swallow
                         }
                         locationMap.put(id, new HRefMediaPair(href, mime));
+                        String properties = XMLReaderUtils.getAttrValue("properties", atts);
+                        if (coverImageItem == null && properties != null
+                                && Arrays.asList(properties.trim().split("\\s+"))
+                                .contains("cover-image")) {
+                            coverImageItem = id;
+                        }
                     }
+                }
+            } else if ("meta".equalsIgnoreCase(localName) && coverMetaItem == null
+                    && "cover".equals(XMLReaderUtils.getAttrValue("name", atts))) {
+                String content = XMLReaderUtils.getAttrValue("content", atts);
+                if (!StringUtils.isBlank(content)) {
+                    coverMetaItem = content.trim();
                 }
             }
             if (inSpine) {

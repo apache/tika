@@ -1,5 +1,9 @@
 Release 4.1.0 - unreleased
 
+   * EpubParser emits the cover image named by the OPF (the EPUB 3
+     cover-image manifest property, or the EPUB 2 cover meta) as a THUMBNAIL
+     embedded document (TIKA-4852).
+
    * RawTiffParser marks only the largest embedded JPEG preview as the
      THUMBNAIL embedded document; the smaller previews of the same image are
      INLINE images named image-N.jpg. Previously every preview was a
