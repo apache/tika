@@ -416,7 +416,7 @@ public class DWGReadParser extends AbstractDWGParser {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         Metadata embeddedMetadata = new Metadata();
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "thumbnail");
-        //the drawing's preview image, not a picture placed in the drawing
+        // The drawing's preview image, not a picture placed in the drawing
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
         if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
