@@ -9,7 +9,14 @@ Release 4.1.0 - unreleased
      default and restrictable to e.g. THUMBNAIL embedded documents with
      "renderOnlyEmbeddedResourceTypes", and OfficeParser emits the SummaryInformation thumbnail of the
      OLE2 formats (a WMF) as a THUMBNAIL embedded document, as the OOXML
-     parsers do with the docProps thumbnail (TIKA-XXXX).
+     parsers do with the docProps thumbnail (TIKA-4855).
+
+   * DWGReadParser emits the drawing's THUMBNAILIMAGE as a THUMBNAIL embedded
+     document instead of INLINE (TIKA-4853).
+
+   * EpubParser emits the cover image named by the OPF (the EPUB 3
+     cover-image manifest property, or the EPUB 2 cover meta) as a THUMBNAIL
+     embedded document (TIKA-4852).
 
    * RawTiffParser marks only the largest embedded JPEG preview as the
      THUMBNAIL embedded document; the smaller previews of the same image are
