@@ -73,6 +73,8 @@ public class IWork18PackageParser implements Parser {
             zipFile = (ZipFile) container;
         } else if (tis.hasFile()) {
             zipFile = ZipFile.builder().setFile(tis.getFile()).get();
+            //closed with the stream, as the zip container detector does it
+            tis.setOpenContainer(zipFile);
         } else {
             zipStream = new ZipInputStream(tis);
         }
