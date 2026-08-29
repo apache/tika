@@ -6,6 +6,12 @@ Release 4.1.0 - unreleased
      no front cover, and the first covr image of an MP4. Further pictures
      stay INLINE. Clients that looked for cover art as INLINE need to
      accept THUMBNAIL as well (TIKA-4850).
+ 
+   * RawTiffParser marks only the largest embedded JPEG preview as the
+     THUMBNAIL embedded document; the smaller previews of the same image are
+     INLINE images named image-N.jpg. Previously every preview was a
+     THUMBNAIL, so a client had to compare them to find the representative
+     one (TIKA-4851).
 
    * New exception-reporting parse-context config controls how much of an
      exception is written to tk:exception:* metadata for the container and
