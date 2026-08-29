@@ -35,6 +35,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -42,9 +45,12 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RenderingParser;
+import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -62,11 +68,38 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * We'd have to do something like what PDFBox or XPS do to sort the
  * runs and then put the cow back together from the hamburger...lol...
  */
+/**
+ * Extracts the text of an EMF image and its embedded WMF and multi-format
+ * pictures. With {@link MetafileParserConfig#setRenderImage(boolean)}
+ * ("emf-parser": {"renderImage": true}) the image is also rendered through the
+ * configured {@link Renderer}, the
+ * {@link org.apache.tika.renderer.microsoft.POIMetafileRenderer} by
+ * default, and emitted as a
+ * {@link TikaCoreProperties.EmbeddedResourceType#RENDERING} embedded document,
+ * the way the PDF parser emits page renderings, so a client can obtain a
+ * raster preview of a vector thumbnail such as the docProps thumbnail of a
+ * Word document.
+ */
 @TikaComponent
-public class EMFParser implements Parser {
+public class EMFParser implements Parser, RenderingParser {
 
     public static Property EMF_ICON_ONLY = Property.internalBoolean("emf:icon-only");
     public static Property EMF_ICON_STRING = Property.internalText("emf:icon-string");
+
+    private final MetafileParserConfig defaultConfig;
+    private Renderer renderer;
+
+    public EMFParser() {
+        this(new MetafileParserConfig());
+    }
+
+    public EMFParser(MetafileParserConfig config) {
+        this.defaultConfig = config;
+    }
+
+    public EMFParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, MetafileParserConfig.class));
+    }
 
     private static String ICON_ONLY = "IconOnly";
 
@@ -139,6 +172,11 @@ public class EMFParser implements Parser {
                 xhtml.characters(buffer.toString());
                 xhtml.endElement("p");
             }
+            MetafileParserConfig config = getConfig(context);
+            if (config.isRenderImage()) {
+                MetafileRendering.render(renderer, config, MEDIA_TYPE, ex, xhtml, metadata,
+                        context);
+            }
 
         } catch (RecordFormatException e) { //POI's hemfparser can throw these for "parse
             // exceptions"
@@ -147,6 +185,21 @@ public class EMFParser implements Parser {
             throw new TikaException(e.getMessage(), e);
         }
         xhtml.endDocument();
+    }
+
+    private MetafileParserConfig getConfig(ParseContext context)
+            throws TikaException, IOException {
+        return ParseContextConfig.getConfig(context, "emf-parser",
+                MetafileParserConfig.class, defaultConfig);
+    }
+
+    @Override
+    public void setRenderer(Renderer renderer) {
+        this.renderer = renderer;
+    }
+
+    public Renderer getRenderer() {
+        return renderer;
     }
 
     private void handleExtTextOut(HemfText.EmfExtTextOutA record, ParseState parseState,

@@ -32,24 +32,55 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.RenderingParser;
+import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * This parser offers a very rough capability to extract text if there
  * is text stored in the WMF files.
  */
+/**
+ * Extracts the text of a WMF image. With
+ * {@link MetafileParserConfig#setRenderImage(boolean)}
+ * ("wmf-parser": {"renderImage": true}) the image is also rendered through the
+ * configured {@link Renderer}, the
+ * {@link org.apache.tika.renderer.microsoft.POIMetafileRenderer} by
+ * default, and emitted as a
+ * {@link TikaCoreProperties.EmbeddedResourceType#RENDERING} embedded document,
+ * the way the PDF parser emits page renderings.
+ */
 @TikaComponent
-public class WMFParser implements Parser {
+public class WMFParser implements Parser, RenderingParser {
 
     private static final MediaType MEDIA_TYPE = MediaType.image("wmf");
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.singleton(MEDIA_TYPE);
+
+    private final MetafileParserConfig defaultConfig;
+    private Renderer renderer;
+
+    public WMFParser() {
+        this(new MetafileParserConfig());
+    }
+
+    public WMFParser(MetafileParserConfig config) {
+        this.defaultConfig = config;
+    }
+
+    public WMFParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, MetafileParserConfig.class));
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -95,6 +126,11 @@ public class WMFParser implements Parser {
                     xhtml.endElement("p");
                 }
             }
+            MetafileParserConfig config = getConfig(context);
+            if (config.isRenderImage()) {
+                MetafileRendering.render(renderer, config, MEDIA_TYPE, picture, xhtml, metadata,
+                        context);
+            }
         } catch (RecordFormatException e) { //POI's hwmfparser can \ throw these for "parse
             // exceptions"
             throw new TikaException(e.getMessage(), e);
@@ -108,4 +144,18 @@ public class WMFParser implements Parser {
         xhtml.endDocument();
     }
 
+    private MetafileParserConfig getConfig(ParseContext context)
+            throws TikaException, IOException {
+        return ParseContextConfig.getConfig(context, "wmf-parser",
+                MetafileParserConfig.class, defaultConfig);
+    }
+
+    @Override
+    public void setRenderer(Renderer renderer) {
+        this.renderer = renderer;
+    }
+
+    public Renderer getRenderer() {
+        return renderer;
+    }
 }

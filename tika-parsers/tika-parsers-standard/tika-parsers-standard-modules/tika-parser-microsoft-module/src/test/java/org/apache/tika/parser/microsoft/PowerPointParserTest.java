@@ -331,7 +331,8 @@ public class PowerPointParserTest extends TikaTest {
     @Test
     public void testGroups() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_groups.ppt");
-        assertEquals(3, metadataList.size());
+        //two pictures and the SummaryInformation thumbnail
+        assertEquals(4, metadataList.size());
         String content = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         //this tests that we're ignoring text shapes at depth=0
         //i.e. POI has already included them in the slide's getTextParagraphs()
@@ -379,7 +380,8 @@ public class PowerPointParserTest extends TikaTest {
     @Test
     public void testEmbeddedXLSInOLEObject() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_oleWorkbook.ppt");
-        assertEquals(3, metadataList.size());
+        //the workbook, its picture and the SummaryInformation thumbnail
+        assertEquals(4, metadataList.size());
         Metadata xlsx = metadataList.get(1);
         assertContains("<h1>Sheet1</h1>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("<td>1</td>", xlsx.get(TikaCoreProperties.TIKA_CONTENT));
