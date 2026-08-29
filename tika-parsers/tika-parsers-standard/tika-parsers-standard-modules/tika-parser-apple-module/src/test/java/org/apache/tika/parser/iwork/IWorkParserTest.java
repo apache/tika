@@ -56,6 +56,45 @@ public class IWorkParserTest extends TikaTest {
     }
 
     /**
+     * The QuickLook preview of a Pages '09 package is the document's
+     * THUMBNAIL embedded document, emitted after the content.
+     */
+    @Test
+    public void testPagesThumbnail() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testPages.pages");
+        assertEquals(2, metadataList.size());
+        assertEquals("application/vnd.apple.pages",
+                metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+        Metadata thumbnail = metadataList.get(1);
+        assertEquals("QuickLook/Thumbnail.jpg", thumbnail.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("image/jpeg", thumbnail.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                thumbnail.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    @Test
+    public void testNumbersThumbnail() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testNumbers.numbers");
+        assertEquals(2, metadataList.size());
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
+     * Keynote '09 also carries per-slide thumbnails under thumbs/; only the
+     * QuickLook document preview is the thumbnail
+     */
+    @Test
+    public void testKeynoteThumbnail() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testKeynote.key");
+        assertEquals(2, metadataList.size());
+        assertEquals("QuickLook/Thumbnail.jpg",
+                metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
      * Check the given InputStream is not closed by the Parser (TIKA-1117).
      *
      * @throws Exception
