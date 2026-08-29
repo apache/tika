@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Locale;
@@ -50,6 +51,7 @@ import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.audio.CoverArt;
 import org.apache.tika.parser.audio.NumberAndTotal;
 import org.apache.tika.parser.mp3.ID3Tags;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -222,7 +224,7 @@ public abstract class OggAudioParser extends AbstractParser {
     private static void extractPictures(XHTMLContentHandler xhtml,
             VorbisStyleComments comments, ParseContext context)
             throws IOException, SAXException {
-        EmbeddedDocumentExtractor extractor = null;
+        List<PictureBlock> pictures = new ArrayList<>();
         for (String block : comments.getComments(METADATA_BLOCK_PICTURE)) {
             byte[] decoded;
             try {
@@ -231,80 +233,107 @@ public abstract class OggAudioParser extends AbstractParser {
                 //not valid base64, skip
                 continue;
             }
-            if (extractor == null) {
-                extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+            PictureBlock picture = PictureBlock.parse(decoded);
+            if (picture != null) {
+                pictures.add(picture);
             }
-            extractPictureBlock(decoded, xhtml, context, extractor);
         }
+        extractPictures(pictures, xhtml, context);
     }
 
     /**
-     * Parses one FLAC picture block and sends the picture it holds to the
-     * embedded document extractor. Native FLAC PICTURE metadata blocks use
-     * the very same structure, so {@link FlacParser} shares this method.
-     * Malformed or truncated blocks are skipped silently.
+     * Sends parsed picture blocks to the embedded document extractor: the
+     * front cover (or the first picture, if there is none) as the file's
+     * thumbnail, the others as inline pictures. Native FLAC PICTURE
+     * metadata blocks use the very same structure, so {@link FlacParser}
+     * shares this method.
      */
-    static void extractPictureBlock(byte[] block, XHTMLContentHandler xhtml,
-            ParseContext context, EmbeddedDocumentExtractor extractor)
-            throws IOException, SAXException {
-        // The picture block holds a 32 bit BE picture type, the mime
-        // type, the description, the image geometry and the picture
-        // data, with mime type, description and data length prefixed
-        int pictureType;
-        String mimeType;
-        String description;
-        byte[] picture;
-        try {
-            ByteBuffer buffer = ByteBuffer.wrap(block);
-            pictureType = buffer.getInt();
-            mimeType = getPrefixedString(buffer, StandardCharsets.ISO_8859_1);
-            if (mimeType == null || "-->".equals(mimeType)) {
-                // Malformed, or a link to a picture rather than an
-                // embedded one
-                return;
-            }
-            description = getPrefixedString(buffer, StandardCharsets.UTF_8);
-            if (description == null) {
-                return;
-            }
-            // Width, height, color depth and number of colors
-            buffer.position(buffer.position() + 16);
-            int dataLength = buffer.getInt();
-            if (dataLength <= 0 || dataLength > buffer.remaining()) {
-                return;
-            }
-            picture = new byte[dataLength];
-            buffer.get(picture);
-        } catch (BufferUnderflowException | IllegalArgumentException e) {
-            //truncated picture block, skip
+    static void extractPictures(List<PictureBlock> pictures, XHTMLContentHandler xhtml,
+            ParseContext context) throws IOException, SAXException {
+        if (pictures.isEmpty()) {
             return;
         }
-
-        Metadata pictureMetadata = Metadata.newInstance(context);
-        pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-        if (!mimeType.isEmpty()) {
-            pictureMetadata.set(HttpHeaders.CONTENT_TYPE, mimeType);
+        List<Integer> pictureTypes = new ArrayList<>();
+        for (PictureBlock picture : pictures) {
+            pictureTypes.add(picture.pictureType);
         }
-        if (!description.isEmpty()) {
-            pictureMetadata.set(TikaCoreProperties.TITLE, description);
-        }
-        //the FLAC picture block reuses the ID3v2 APIC picture types
-        if (pictureType >= 0 && pictureType < ID3Tags.PICTURE_TYPES.length) {
-            pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
-                    ID3Tags.PICTURE_TYPES[pictureType]);
-        }
-        if (extractor.shouldParseEmbedded(pictureMetadata, context)) {
-            try (TikaInputStream pictureStream = TikaInputStream.get(picture)) {
-                extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context, true);
+        int thumbnailIndex = CoverArt.thumbnailIndex(pictureTypes);
+        EmbeddedDocumentExtractor extractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        for (int i = 0; i < pictures.size(); i++) {
+            PictureBlock picture = pictures.get(i);
+            Metadata pictureMetadata = Metadata.newInstance(context);
+            pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    CoverArt.resourceType(i, thumbnailIndex).toString());
+            if (!picture.mimeType.isEmpty()) {
+                pictureMetadata.set(HttpHeaders.CONTENT_TYPE, picture.mimeType);
+            }
+            if (!picture.description.isEmpty()) {
+                pictureMetadata.set(TikaCoreProperties.TITLE, picture.description);
+            }
+            //the FLAC picture block reuses the ID3v2 APIC picture types
+            if (picture.pictureType >= 0 && picture.pictureType < ID3Tags.PICTURE_TYPES.length) {
+                pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
+                        ID3Tags.PICTURE_TYPES[picture.pictureType]);
+            }
+            if (extractor.shouldParseEmbedded(pictureMetadata, context)) {
+                try (TikaInputStream pictureStream = TikaInputStream.get(picture.data)) {
+                    extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context, true);
+                }
             }
         }
     }
 
     /**
-     * Reads a 32 bit length prefixed string from the buffer, or null if the
-     * declared length is invalid for the remaining data.
+     * A FLAC picture block: a 32 bit BE picture type, the mime type, the
+     * description, the image geometry and the picture data, with mime type,
+     * description and data length prefixed.
      */
+    static final class PictureBlock {
+        final int pictureType;
+        final String mimeType;
+        final String description;
+        final byte[] data;
+
+        private PictureBlock(int pictureType, String mimeType, String description, byte[] data) {
+            this.pictureType = pictureType;
+            this.mimeType = mimeType;
+            this.description = description;
+            this.data = data;
+        }
+
+        /**
+         * Parses a picture block, or returns null for a malformed or
+         * truncated one, or one that links to a picture instead of
+         * embedding it.
+         */
+        static PictureBlock parse(byte[] block) {
+            try {
+                ByteBuffer buffer = ByteBuffer.wrap(block);
+                int pictureType = buffer.getInt();
+                String mimeType = getPrefixedString(buffer, StandardCharsets.ISO_8859_1);
+                if (mimeType == null || "-->".equals(mimeType)) {
+                    return null;
+                }
+                String description = getPrefixedString(buffer, StandardCharsets.UTF_8);
+                if (description == null) {
+                    return null;
+                }
+                // Width, height, color depth and number of colors
+                buffer.position(buffer.position() + 16);
+                int dataLength = buffer.getInt();
+                if (dataLength <= 0 || dataLength > buffer.remaining()) {
+                    return null;
+                }
+                byte[] data = new byte[dataLength];
+                buffer.get(data);
+                return new PictureBlock(pictureType, mimeType, description, data);
+            } catch (BufferUnderflowException | IllegalArgumentException e) {
+                return null;
+            }
+        }
+    }
+
     private static String getPrefixedString(ByteBuffer buffer, Charset charset) {
         int length = buffer.getInt();
         if (length < 0 || length > buffer.remaining()) {

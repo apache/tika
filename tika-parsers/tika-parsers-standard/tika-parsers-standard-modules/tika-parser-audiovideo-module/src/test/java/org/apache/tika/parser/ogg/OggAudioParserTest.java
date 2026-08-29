@@ -113,19 +113,66 @@ public class OggAudioParserTest {
      */
     @Test
     public void testMetadataBlockPictureBecomesEmbeddedDocument() throws Exception {
+        String block = pictureBlock(4, "Back cover");//picture type: cover (back)
+
+        List<Metadata> pictures = new ArrayList<>();
+        ParseContext context = collectingContext(pictures);
+
+        Metadata metadata = extractComments(context, "metadata_block_picture", block);
+
+        assertEquals(1, pictures.size());
+        Metadata pictureMetadata = pictures.get(0);
+        assertEquals("image/jpeg", pictureMetadata.get(HttpHeaders.CONTENT_TYPE));
+        //the only picture is the file's thumbnail, front cover or not
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("Back cover", pictureMetadata.get(TikaCoreProperties.TITLE));
+        assertEquals("Cover (back)", pictureMetadata.get(TikaCoreProperties.DESCRIPTION));
+        assertNull(metadata.get("vorbis:metadata_block_picture"));
+    }
+
+    /**
+     * The front cover is the thumbnail even when another picture comes
+     * first; the others are inline pictures.
+     */
+    @Test
+    public void testFrontCoverIsTheThumbnail() throws Exception {
+        List<Metadata> pictures = new ArrayList<>();
+        ParseContext context = collectingContext(pictures);
+
+        extractComments(context, "metadata_block_picture", pictureBlock(4, "Back cover"),
+                "metadata_block_picture", pictureBlock(3, "Front cover"),
+                "metadata_block_picture", pictureBlock(8, "Artist"));
+
+        assertEquals(3, pictures.size());
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                pictures.get(0).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("Front cover", pictures.get(1).get(TikaCoreProperties.TITLE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                pictures.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                pictures.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
+     * Builds a base64 metadata_block_picture comment holding a jpeg of the
+     * given picture type and description.
+     */
+    private static String pictureBlock(int pictureType, String descriptionText) {
         byte[] pictureData = new byte[]{1, 2, 3, 4};
         byte[] mime = "image/jpeg".getBytes(StandardCharsets.ISO_8859_1);
-        byte[] description = "Back cover".getBytes(StandardCharsets.UTF_8);
+        byte[] description = descriptionText.getBytes(StandardCharsets.UTF_8);
         ByteBuffer buffer = ByteBuffer.allocate(4 + 4 + mime.length + 4 + description.length +
                 16 + 4 + pictureData.length);
-        buffer.putInt(4);//picture type: cover (back)
+        buffer.putInt(pictureType);
         buffer.putInt(mime.length).put(mime);
         buffer.putInt(description.length).put(description);
         buffer.putInt(1).putInt(1).putInt(24).putInt(0);//width, height, depth, colors
         buffer.putInt(pictureData.length).put(pictureData);
-        String block = Base64.getEncoder().encodeToString(buffer.array());
+        return Base64.getEncoder().encodeToString(buffer.array());
+    }
 
-        List<Metadata> pictures = new ArrayList<>();
+    private static ParseContext collectingContext(List<Metadata> pictures) {
         ParseContext context = new ParseContext();
         context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
             @Override
@@ -139,17 +186,7 @@ public class OggAudioParserTest {
                 pictures.add(metadata);
             }
         });
-
-        Metadata metadata = extractComments(context, "metadata_block_picture", block);
-
-        assertEquals(1, pictures.size());
-        Metadata pictureMetadata = pictures.get(0);
-        assertEquals("image/jpeg", pictureMetadata.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
-                pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-        assertEquals("Back cover", pictureMetadata.get(TikaCoreProperties.TITLE));
-        assertEquals("Cover (back)", pictureMetadata.get(TikaCoreProperties.DESCRIPTION));
-        assertNull(metadata.get("vorbis:metadata_block_picture"));
+        return context;
     }
 
     private static Metadata extractComments(String... keysAndValues) throws Exception {

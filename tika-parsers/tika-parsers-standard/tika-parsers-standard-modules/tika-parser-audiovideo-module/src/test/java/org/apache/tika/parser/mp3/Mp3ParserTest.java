@@ -145,7 +145,8 @@ public class Mp3ParserTest extends TikaTest {
 
         Metadata pictureMetadata = metadataList.get(1);
         assertEquals("image/png", pictureMetadata.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+        //the front cover is the file's thumbnail
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("Test Cover", pictureMetadata.get(TikaCoreProperties.TITLE));
         assertEquals("Cover (front)", pictureMetadata.get(TikaCoreProperties.DESCRIPTION));
@@ -182,7 +183,7 @@ public class Mp3ParserTest extends TikaTest {
         //the 30x30 back cover second
         Metadata front = metadataList.get(1);
         assertEquals("image/png", front.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 front.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("Front Cover", front.get(TikaCoreProperties.TITLE));
         assertEquals("Cover (front)", front.get(TikaCoreProperties.DESCRIPTION));

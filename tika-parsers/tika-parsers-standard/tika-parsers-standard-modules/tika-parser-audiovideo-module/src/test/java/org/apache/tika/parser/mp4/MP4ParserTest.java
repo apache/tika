@@ -165,7 +165,8 @@ public class MP4ParserTest extends TikaTest {
 
         Metadata pictureMetadata = metadataList.get(1);
         assertEquals("image/png", pictureMetadata.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+        //the cover is the file's thumbnail
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
@@ -179,9 +180,10 @@ public class MP4ParserTest extends TikaTest {
 
         assertEquals(3, metadataList.size());
         //a png data atom (well-known type 14) followed by a jpeg one (13)
+        //covr carries no picture type, so the first image is the thumbnail
         Metadata front = metadataList.get(1);
         assertEquals("image/png", front.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 front.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         Metadata back = metadataList.get(2);
         assertEquals("image/jpeg", back.get(HttpHeaders.CONTENT_TYPE));

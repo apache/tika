@@ -20,6 +20,8 @@ import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -36,8 +38,6 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -143,7 +143,7 @@ public class FlacParser extends AbstractParser {
      */
     private static void extractNativePictures(Path path, XHTMLContentHandler xhtml,
             ParseContext context) throws IOException, SAXException {
-        EmbeddedDocumentExtractor extractor = null;
+        List<OggAudioParser.PictureBlock> pictures = new ArrayList<>();
         try (InputStream stream = new BufferedInputStream(Files.newInputStream(path))) {
             byte[] magic = stream.readNBytes(4);
             if (magic.length != 4 || magic[0] != 'f' || magic[1] != 'L'
@@ -156,7 +156,7 @@ public class FlacParser extends AbstractParser {
                 //  24 bit BE block length
                 byte[] header = stream.readNBytes(4);
                 if (header.length != 4) {
-                    return;
+                    break;
                 }
                 lastBlock = (header[0] & 0x80) != 0;
                 int blockType = header[0] & 0x7F;
@@ -165,21 +165,22 @@ public class FlacParser extends AbstractParser {
                 if (blockType == PICTURE_BLOCK_TYPE) {
                     byte[] block = stream.readNBytes(blockLength);
                     if (block.length != blockLength) {
-                        return;
+                        break;
                     }
-                    if (extractor == null) {
-                        extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+                    OggAudioParser.PictureBlock picture = OggAudioParser.PictureBlock.parse(block);
+                    if (picture != null) {
+                        pictures.add(picture);
                     }
-                    OggAudioParser.extractPictureBlock(block, xhtml, context, extractor);
                 } else {
                     try {
                         stream.skipNBytes(blockLength);
                     } catch (EOFException e) {
                         //truncated block, stop the walk
-                        return;
+                        break;
                     }
                 }
             }
         }
+        OggAudioParser.extractPictures(pictures, xhtml, context);
     }
 }

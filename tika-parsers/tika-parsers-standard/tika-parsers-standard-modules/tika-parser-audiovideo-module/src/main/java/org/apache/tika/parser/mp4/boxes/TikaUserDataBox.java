@@ -37,6 +37,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.audio.CoverArt;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class TikaUserDataBox {
@@ -52,6 +53,8 @@ public class TikaUserDataBox {
     private String coordinateString;
 
     private boolean isQuickTime = false;
+    //covr carries no picture type, so the first cover is the thumbnail
+    private int coverCount = 0;
     private final Metadata metadata;
     private final XHTMLContentHandler xhtml;
     private final ParseContext parseContext;
@@ -228,16 +231,17 @@ public class TikaUserDataBox {
 
 
     /**
-     * Sends one embedded cover image to the embedded document extractor.
-     * The image only becomes an embedded document, no metadata is recorded
-     * on the audio document itself.
+     * Sends one embedded cover image to the embedded document extractor:
+     * the first as the file's thumbnail, any further one as an inline
+     * picture. The image only becomes an embedded document, no metadata is
+     * recorded on the audio document itself.
      */
     private void handleCoverArt(SequentialReader reader, long valueType, int length)
             throws IOException {
         byte[] picture = reader.getBytes(length);
         Metadata pictureMetadata = Metadata.newInstance(parseContext);
         pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+                CoverArt.resourceType(coverCount++, 0).toString());
         //the data atom's well-known value type declares the image format;
         //for any other type leave the content type for auto-detection
         if (valueType == 13) {
