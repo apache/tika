@@ -353,6 +353,8 @@ public class UnpackerResource {
      * configuration wins where present.
      */
     private void configureThumbnailParse(ParseContext pc) {
+        //the text is not part of the answer: do not extract it
+        tikaResource.setupContentHandlerFactory(pc, "ignore");
         if (pc.getJsonConfig("pdf-parser") == null) {
             //the first page only, rendered at 96 dpi: a preview, not a scan
             pc.setJsonConfig("pdf-parser", "{\"imageStrategy\": \"RENDER_PAGES_AT_PAGE_END\", "
