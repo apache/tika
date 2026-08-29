@@ -130,7 +130,12 @@ public class IWorkPackageParser implements Parser {
             entryStream.reset(); // 4096 fails on github
 
             if (type != null) {
-                xhtml = new XHTMLContentHandler(handler, metadata, context);
+                if (xhtml == null) {
+                    //a package carries one content entry; guard against a
+                    //crafted one with several so the document is started once
+                    xhtml = new XHTMLContentHandler(handler, metadata, context);
+                    xhtml.startDocument();
+                }
                 ContentHandler contentHandler;
 
                 switch (type) {
@@ -152,7 +157,6 @@ public class IWorkPackageParser implements Parser {
                 }
 
                 metadata.set(HttpHeaders.CONTENT_TYPE, type.getType().toString());
-                xhtml.startDocument();
                 if (contentHandler != null) {
                     XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(entryStream),
                             contentHandler, context);

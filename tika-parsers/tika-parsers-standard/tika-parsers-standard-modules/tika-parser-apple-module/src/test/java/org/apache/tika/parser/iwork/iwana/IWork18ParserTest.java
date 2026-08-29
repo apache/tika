@@ -18,12 +18,14 @@ package org.apache.tika.parser.iwork.iwana;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.Test;
 
@@ -54,7 +56,7 @@ public class IWork18ParserTest extends TikaTest {
                 out.closeEntry();
             }
             out.putNextEntry(new ZipEntry("Presentation.key/preview.jpg"));
-            out.write(new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xD9});
+            out.write(jpeg());
             out.closeEntry();
         }
         List<Metadata> metadataList;
@@ -70,6 +72,16 @@ public class IWork18ParserTest extends TikaTest {
                 thumbnail.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 thumbnail.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
+     * A small but well-formed JPEG, so the preview parses like a real one.
+     */
+    private static byte[] jpeg() throws Exception {
+        BufferedImage image = new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB);
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ImageIO.write(image, "jpeg", bos);
+        return bos.toByteArray();
     }
 
     /**
