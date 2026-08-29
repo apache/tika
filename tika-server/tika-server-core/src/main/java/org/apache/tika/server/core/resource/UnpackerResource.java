@@ -363,7 +363,9 @@ public class UnpackerResource {
         }
         for (String parser : new String[]{"emf-parser", "wmf-parser"}) {
             if (pc.getJsonConfig(parser) == null) {
-                pc.setJsonConfig(parser, "{\"renderImage\": true}");
+                //the thumbnail, not the pictures of embedded objects
+                pc.setJsonConfig(parser, "{\"renderImage\": true, "
+                        + "\"renderOnlyEmbeddedResourceTypes\": [\"THUMBNAIL\"]}");
             }
         }
         if (pc.getJsonConfig("tesseract-ocr-parser") == null) {
