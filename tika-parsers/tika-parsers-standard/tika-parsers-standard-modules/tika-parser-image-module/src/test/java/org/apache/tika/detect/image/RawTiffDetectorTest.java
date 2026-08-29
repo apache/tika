@@ -115,6 +115,60 @@ public class RawTiffDetectorTest {
         assertEquals(RawTiffDetector.ADOBE, RawTiffDetector.detect(tiff, tiff.length));
     }
 
+    /**
+     * The NRW layout: a JPEG-compressed thumbnail in IFD0, the raw image with
+     * its CFA data in a SubIFD. The non-vendor Compression of IFD0 does not
+     * end the search.
+     */
+    @Test
+    public void testRawInSubIfd() {
+        byte[] tiff = new TiffBuilder(false)
+                .ifd(entry(0x0103, 3, 6), entry(0x010F, "NIKON CORPORATION"), subIfds(1))
+                .ifd(entry(0x0103, 3, 1), entry(0x0106, 3, 32803))
+                .build();
+        assertEquals(RawTiffDetector.NIKON, RawTiffDetector.detect(tiff, tiff.length));
+    }
+
+    /**
+     * BigTIFF: 8-byte counts, offsets and inline values, a LONG8 SubIFDs
+     * entry, and the vendor code inside the SubIFD.
+     */
+    @Test
+    public void testBigTiffWithLong8SubIfd() {
+        byte[] tiff = new TiffBuilder(true)
+                .ifd(entry(0x010F, "SONY"), subIfds(1))
+                .ifd(entry(0x0103, 3, 32767))
+                .build();
+        assertEquals(RawTiffDetector.SONY, RawTiffDetector.detect(tiff, tiff.length));
+    }
+
+    @Test
+    public void testSamsungCompressionCodes() {
+        for (int code : new int[]{32770, 32772}) {
+            byte[] tiff = tiff("SAMSUNG", code, 2, false);
+            assertEquals(RawTiffDetector.SAMSUNG, RawTiffDetector.detect(tiff, tiff.length));
+        }
+    }
+
+    /**
+     * An IFD chain that points back at itself, and a SubIFDs array with many
+     * pointers to the same IFD: the walk ends.
+     */
+    @Test
+    public void testCyclesEnd() {
+        byte[] tiff = new TiffBuilder(false)
+                .ifd(entry(0x010F, "NIKON"), entry(0x0106, 3, 32803))
+                .nextPointsToSelf()
+                .build();
+        assertEquals(RawTiffDetector.NIKON, RawTiffDetector.detect(tiff, tiff.length));
+
+        tiff = new TiffBuilder(false)
+                .ifd(entry(0x010F, "Unknown"), subIfds(64))
+                .ifd(entry(0x0103, 3, 1))
+                .build();
+        assertEquals(MediaType.OCTET_STREAM, RawTiffDetector.detect(tiff, tiff.length));
+    }
+
     @Test
     public void testTruncatedPrefixIsHarmless() {
         byte[] tiff = tiff("NIKON CORPORATION", 34713, 32803, false);
@@ -157,6 +211,170 @@ public class RawTiffDetectorTest {
         } else {
             le32(out, value);
         }
+    }
+
+    private static Entry entry(int tag, int type, long value) {
+        return new Entry(tag, type, 1, null, value);
+    }
+
+    private static Entry entry(int tag, String ascii) {
+        byte[] bytes = (ascii + "\0").getBytes(StandardCharsets.US_ASCII);
+        return new Entry(tag, 2, bytes.length, bytes, 0);
+    }
+
+    /**
+     * A SubIFDs entry with {@code count} pointers, all to the IFD that
+     * follows the current one.
+     */
+    private static Entry subIfds(int count) {
+        return new Entry(0x014A, -1, count, null, 0);
+    }
+
+    private record Entry(int tag, int type, long count, byte[] data, long value) {
+    }
+
+    /**
+     * Lays out IFDs one after the other, each followed by its out-of-line
+     * data; classic or BigTIFF, little endian.
+     */
+    private static final class TiffBuilder {
+        private final boolean bigTiff;
+        private final java.util.List<Entry[]> ifds = new java.util.ArrayList<>();
+        private boolean nextPointsToSelf;
+
+        TiffBuilder(boolean bigTiff) {
+            this.bigTiff = bigTiff;
+        }
+
+        TiffBuilder ifd(Entry... entries) {
+            ifds.add(entries);
+            return this;
+        }
+
+        TiffBuilder nextPointsToSelf() {
+            nextPointsToSelf = true;
+            return this;
+        }
+
+        byte[] build() {
+            int headerSize = bigTiff ? 16 : 8;
+            int countSize = bigTiff ? 8 : 2;
+            int entrySize = bigTiff ? 20 : 12;
+            int offsetSize = bigTiff ? 8 : 4;
+            int inline = bigTiff ? 8 : 4;
+            //first pass: where does each IFD start
+            long[] starts = new long[ifds.size()];
+            long pos = headerSize;
+            for (int i = 0; i < ifds.size(); i++) {
+                starts[i] = pos;
+                pos += countSize + (long) ifds.get(i).length * entrySize + offsetSize;
+                for (Entry e : ifds.get(i)) {
+                    pos += outOfLineSize(e, inline);
+                }
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            out.writeBytes(new byte[]{'I', 'I', (byte) (bigTiff ? 43 : 42), 0});
+            if (bigTiff) {
+                le16(out, 8);
+                le16(out, 0);
+                le64(out, starts[0]);
+            } else {
+                le32(out, (int) starts[0]);
+            }
+            for (int i = 0; i < ifds.size(); i++) {
+                Entry[] entries = ifds.get(i);
+                long dataPos = starts[i] + countSize + (long) entries.length * entrySize + offsetSize;
+                if (bigTiff) {
+                    le64(out, entries.length);
+                } else {
+                    le16(out, entries.length);
+                }
+                ByteArrayOutputStream data = new ByteArrayOutputStream();
+                for (Entry e : entries) {
+                    le16(out, e.tag());
+                    if (e.tag() == 0x014A) {
+                        int type = bigTiff ? 16 : 4;
+                        int size = bigTiff ? 8 : 4;
+                        le16(out, type);
+                        count(out, e.count());
+                        long target = i + 1 < starts.length ? starts[i + 1] : 0;
+                        if (e.count() * size <= inline) {
+                            for (int k = 0; k < e.count(); k++) {
+                                offset(out, target, size);
+                            }
+                            pad(out, (int) (inline - e.count() * size));
+                        } else {
+                            offset(out, dataPos + data.size(), inline);
+                            for (int k = 0; k < e.count(); k++) {
+                                offset(data, target, size);
+                            }
+                        }
+                    } else if (e.data() != null) {
+                        le16(out, e.type());
+                        count(out, e.count());
+                        if (e.data().length <= inline) {
+                            out.writeBytes(e.data());
+                            pad(out, inline - e.data().length);
+                        } else {
+                            offset(out, dataPos + data.size(), inline);
+                            data.writeBytes(e.data());
+                        }
+                    } else {
+                        le16(out, e.type());
+                        count(out, 1);
+                        if (e.type() == 3) {
+                            le16(out, (int) e.value());
+                            pad(out, inline - 2);
+                        } else {
+                            le32(out, (int) e.value());
+                            pad(out, inline - 4);
+                        }
+                    }
+                }
+                long next = nextPointsToSelf ? starts[i] : 0;
+                offset(out, next, offsetSize);
+                out.writeBytes(data.toByteArray());
+            }
+            return out.toByteArray();
+        }
+
+        private long outOfLineSize(Entry e, int inline) {
+            if (e.tag() == 0x014A) {
+                int size = bigTiff ? 8 : 4;
+                return e.count() * size <= inline ? 0 : e.count() * size;
+            }
+            if (e.data() != null) {
+                return e.data().length <= inline ? 0 : e.data().length;
+            }
+            return 0;
+        }
+
+        private void count(ByteArrayOutputStream out, long count) {
+            if (bigTiff) {
+                le64(out, count);
+            } else {
+                le32(out, (int) count);
+            }
+        }
+
+        private static void offset(ByteArrayOutputStream out, long value, int size) {
+            if (size == 8) {
+                le64(out, value);
+            } else {
+                le32(out, (int) value);
+            }
+        }
+
+        private static void pad(ByteArrayOutputStream out, int n) {
+            for (int i = 0; i < n; i++) {
+                out.write(0);
+            }
+        }
+    }
+
+    private static void le64(ByteArrayOutputStream out, long v) {
+        le32(out, (int) (v & 0xFFFFFFFFL));
+        le32(out, (int) ((v >>> 32) & 0xFFFFFFFFL));
     }
 
     private static void le16(ByteArrayOutputStream out, int v) {

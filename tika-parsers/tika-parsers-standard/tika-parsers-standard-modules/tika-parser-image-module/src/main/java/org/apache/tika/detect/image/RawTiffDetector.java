@@ -40,7 +40,7 @@ import org.apache.tika.parser.ParseContext;
  *   <li>a {@code DNGVersion} tag (0xC612) makes a DNG, whoever wrote it;</li>
  *   <li>a vendor-specific {@code Compression} value (0x0103) in any IFD
  *       names the format: 34713 Nikon, 32767 Sony, 65535 Pentax,
- *       32770 Samsung (this is how ExifTool identifies them);</li>
+ *       32770 and 32772 Samsung (this is how ExifTool identifies them);</li>
  *   <li>otherwise an image with {@code PhotometricInterpretation} 32803
  *       (CFA) or 34892 (LinearRaw) in any IFD marks a raw, and the
  *       {@code Make} tag (0x010F) picks the vendor: this catches the
@@ -74,6 +74,7 @@ public class RawTiffDetector implements Detector {
     private static final int COMPRESSION_SONY = 32767;
     private static final int COMPRESSION_PENTAX = 65535;
     private static final int COMPRESSION_SAMSUNG = 32770;
+    private static final int COMPRESSION_SAMSUNG_2 = 32772;
 
     private static final int PHOTOMETRIC_CFA = 32803;
     private static final int PHOTOMETRIC_LINEAR_RAW = 34892;
@@ -101,7 +102,9 @@ public class RawTiffDetector implements Detector {
         if (tis == null) {
             return MediaType.OCTET_STREAM;
         }
-        tis.mark(PREFIX_LENGTH);
+        //one more than is read: a BufferedInputStream drops the mark once the
+        //read limit is reached, and reset() in finally must always succeed
+        tis.mark(PREFIX_LENGTH + 1);
         try {
             byte[] header = new byte[8];
             if (tis.readNBytes(header, 0, 8) < 8 || !isTiff(header)) {
@@ -183,25 +186,29 @@ public class RawTiffDetector implements Detector {
                         dng = true;
                         break;
                     case TAG_SUB_IFDS:
-                        for (long sub : longValues(buf, length, valueField, bigEndian, bigTiff, type, count)) {
+                        //only MAX_IFDS can ever be visited: do not read more pointers
+                        for (long sub : longValues(buf, length, valueField, bigEndian, bigTiff, type,
+                                Math.min(count, MAX_IFDS))) {
                             if (toVisit.size() < MAX_IFDS) {
                                 toVisit.add(sub);
                             }
                         }
                         break;
                     case TAG_COMPRESSION:
-                        if (byCompression == null) {
+                        if (byCompression == null && count == 1) {
                             long[] v = longValues(buf, length, valueField, bigEndian, bigTiff, type, count);
                             byCompression = v.length == 1 ? vendorByCompression(v[0]) : null;
                         }
                         break;
-                    case TAG_PHOTOMETRIC_INTERPRETATION: {
-                        long[] v = longValues(buf, length, valueField, bigEndian, bigTiff, type, count);
-                        if (v.length == 1 && (v[0] == PHOTOMETRIC_CFA || v[0] == PHOTOMETRIC_LINEAR_RAW)) {
-                            rawImage = true;
+                    case TAG_PHOTOMETRIC_INTERPRETATION:
+                        if (count == 1) {
+                            long[] v = longValues(buf, length, valueField, bigEndian, bigTiff, type, count);
+                            if (v.length == 1
+                                    && (v[0] == PHOTOMETRIC_CFA || v[0] == PHOTOMETRIC_LINEAR_RAW)) {
+                                rawImage = true;
+                            }
                         }
                         break;
-                    }
                     case TAG_MAKE:
                         if (make == null && type == TYPE_ASCII) {
                             make = asciiValue(buf, length, valueField, bigEndian, bigTiff, count);
@@ -240,7 +247,7 @@ public class RawTiffDetector implements Detector {
             return SONY;
         } else if (compression == COMPRESSION_PENTAX) {
             return PENTAX;
-        } else if (compression == COMPRESSION_SAMSUNG) {
+        } else if (compression == COMPRESSION_SAMSUNG || compression == COMPRESSION_SAMSUNG_2) {
             return SAMSUNG;
         }
         return null;
