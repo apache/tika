@@ -379,8 +379,8 @@ public class UnpackerResource {
         pc.set(UnpackSelector.class, selector);
         if (pc.get(EmbeddedLimits.class) == null) {
             EmbeddedLimits limits = new EmbeddedLimits();
-            //the thumbnail is at depth 1, its rendering at depth 2; the limit
-            //counts the parents whose children are still parsed
+            //the thumbnail is at depth 1, its rendering at depth 2; 3 because of
+            //TIKA-4857 (the limit is off by one), lower to 2 once that is fixed
             limits.setMaxDepth(3);
             pc.set(EmbeddedLimits.class, limits);
         }
