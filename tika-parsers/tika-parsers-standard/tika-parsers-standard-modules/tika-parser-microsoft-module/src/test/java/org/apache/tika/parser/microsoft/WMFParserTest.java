@@ -67,7 +67,7 @@ public class WMFParserTest extends TikaTest {
 
     /**
      * The docProps thumbnail of this workbook is a WMF; with rendering on its
-     * PNG rendering follows it, one level deeper.
+     * PNG rendering follows it, one level deeper, as a THUMBNAIL as well.
      */
     @Test
     public void testXlsxThumbnailRendering() throws Exception {
@@ -77,10 +77,13 @@ public class WMFParserTest extends TikaTest {
         Metadata thumbnail = null;
         Metadata rendering = null;
         for (Metadata m : metadataList) {
-            String type = m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
-            if (TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name().equals(type)) {
+            if (!TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name()
+                    .equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE))) {
+                continue;
+            }
+            if ("image/wmf".equals(m.get(HttpHeaders.CONTENT_TYPE))) {
                 thumbnail = m;
-            } else if (TikaCoreProperties.EmbeddedResourceType.RENDERING.name().equals(type)) {
+            } else {
                 rendering = m;
             }
         }

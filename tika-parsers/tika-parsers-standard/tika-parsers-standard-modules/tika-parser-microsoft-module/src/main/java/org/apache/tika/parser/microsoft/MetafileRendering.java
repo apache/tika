@@ -38,9 +38,11 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Shared by {@link EMFParser} and {@link WMFParser}: renders a parsed
- * metafile through a {@link Renderer} and emits the result as a
- * {@link TikaCoreProperties.EmbeddedResourceType#RENDERING} embedded
- * document, the way the PDF parser emits page renderings.
+ * metafile through a {@link Renderer} and emits the result as an embedded
+ * document, the way the PDF parser emits page renderings. The rendering of
+ * a {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL} is itself a
+ * THUMBNAIL (it is the same picture in a form a client can display); any
+ * other rendering is a {@link TikaCoreProperties.EmbeddedResourceType#RENDERING}.
  */
 final class MetafileRendering {
 
@@ -77,6 +79,11 @@ final class MetafileRendering {
                 Metadata renderingMetadata = result.getMetadata();
                 renderingMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
                         renderingName(metadata, renderingMetadata));
+                if (TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name()
+                        .equals(metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE))) {
+                    renderingMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                            TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
+                }
                 if (extractor.shouldParseEmbedded(renderingMetadata, context)) {
                     try (TikaInputStream tis = result.getInputStream()) {
                         extractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),

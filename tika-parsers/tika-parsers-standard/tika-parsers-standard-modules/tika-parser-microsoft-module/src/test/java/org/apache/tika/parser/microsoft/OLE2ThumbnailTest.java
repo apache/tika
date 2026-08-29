@@ -41,7 +41,8 @@ public class OLE2ThumbnailTest extends TikaTest {
     @Test
     public void testPptThumbnail() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_various.ppt");
-        Metadata thumbnail = byType(metadataList, TikaCoreProperties.EmbeddedResourceType.THUMBNAIL);
+        Metadata thumbnail = byTypeAndContentType(metadataList,
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL, "image/wmf");
         assertNotNull(thumbnail);
         assertEquals("image/wmf", thumbnail.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("thumbnail.wmf", thumbnail.get(TikaCoreProperties.RESOURCE_NAME_KEY));
@@ -55,9 +56,10 @@ public class OLE2ThumbnailTest extends TikaTest {
         ParseContext context = new ParseContext();
         context.setJsonConfig("wmf-parser", "{\"renderImage\": true, \"renderWidth\": 400}");
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_various.ppt", context);
-        Metadata rendering = byType(metadataList, TikaCoreProperties.EmbeddedResourceType.RENDERING);
+        //the rendering of the thumbnail is a THUMBNAIL as well
+        Metadata rendering = byTypeAndContentType(metadataList,
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL, "image/png");
         assertNotNull(rendering);
-        assertEquals("image/png", rendering.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("thumbnail.png", rendering.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("2", rendering.get(TikaCoreProperties.EMBEDDED_DEPTH));
         assertTrue(Long.parseLong(rendering.get(HttpHeaders.CONTENT_LENGTH)) > 100);
@@ -73,12 +75,13 @@ public class OLE2ThumbnailTest extends TikaTest {
         ParseContext context = new ParseContext();
         context.setJsonConfig("wmf-parser", "{\"renderImage\": true}");
         List<Metadata> metadataList = getRecursiveMetadata("testControlCharacters.doc", context);
-        Metadata thumbnail = byType(metadataList, TikaCoreProperties.EmbeddedResourceType.THUMBNAIL);
+        Metadata thumbnail = byTypeAndContentType(metadataList,
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL, "image/wmf");
         assertNotNull(thumbnail);
         assertEquals("image/wmf", thumbnail.get(HttpHeaders.CONTENT_TYPE));
-        Metadata rendering = byType(metadataList, TikaCoreProperties.EmbeddedResourceType.RENDERING);
+        Metadata rendering = byTypeAndContentType(metadataList,
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL, "image/png");
         assertNotNull(rendering);
-        assertEquals("image/png", rendering.get(HttpHeaders.CONTENT_TYPE));
         assertNull(thumbnail.get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
     }
 
@@ -91,10 +94,12 @@ public class OLE2ThumbnailTest extends TikaTest {
         assertEquals(0, count(metadataList, TikaCoreProperties.EmbeddedResourceType.THUMBNAIL));
     }
 
-    private static Metadata byType(List<Metadata> metadataList,
-                                   TikaCoreProperties.EmbeddedResourceType type) {
+    private static Metadata byTypeAndContentType(List<Metadata> metadataList,
+                                                 TikaCoreProperties.EmbeddedResourceType type,
+                                                 String contentType) {
         for (Metadata m : metadataList) {
-            if (type.name().equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE))) {
+            if (type.name().equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE))
+                    && contentType.equals(m.get(HttpHeaders.CONTENT_TYPE))) {
                 return m;
             }
         }

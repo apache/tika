@@ -81,7 +81,8 @@ public class EMFParserTest extends TikaTest {
         List<Metadata> metadataList =
                 getRecursiveMetadata("testEMF.emf", parser, metadata, new ParseContext(), false);
         assertEquals(2, metadataList.size());
-        assertRendering(metadataList.get(1), "testEMF.png");
+        assertRendering(metadataList.get(1), "testEMF.png",
+                TikaCoreProperties.EmbeddedResourceType.RENDERING);
     }
 
     /**
@@ -94,7 +95,8 @@ public class EMFParserTest extends TikaTest {
         context.setJsonConfig("emf-parser", "{\"renderImage\": true}");
         List<Metadata> metadataList = getRecursiveMetadata("testEMF.emf", context);
         assertEquals(2, metadataList.size());
-        assertRendering(metadataList.get(1), "testEMF.png");
+        assertRendering(metadataList.get(1), "testEMF.png",
+                TikaCoreProperties.EmbeddedResourceType.RENDERING);
         assertEquals("1", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_DEPTH));
     }
 
@@ -116,7 +118,8 @@ public class EMFParserTest extends TikaTest {
                 thumbnail.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("1", thumbnail.get(TikaCoreProperties.EMBEDDED_DEPTH));
         Metadata rendering = byName(metadataList, "thumbnail.png");
-        assertRendering(rendering, "thumbnail.png");
+        assertRendering(rendering, "thumbnail.png",
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL);
         assertEquals("2", rendering.get(TikaCoreProperties.EMBEDDED_DEPTH));
         assertEquals("/thumbnail.emf/thumbnail.png",
                 rendering.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
@@ -132,7 +135,8 @@ public class EMFParserTest extends TikaTest {
         context.setJsonConfig("emf-parser",
                 "{\"renderImage\": true, \"renderOnlyEmbeddedResourceTypes\": [\"THUMBNAIL\"]}");
         List<Metadata> metadataList = getRecursiveMetadata("testDOCX_Thumbnail.docx", context);
-        assertRendering(byName(metadataList, "thumbnail.png"), "thumbnail.png");
+        assertRendering(byName(metadataList, "thumbnail.png"), "thumbnail.png",
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL);
 
         //a bare EMF is the document itself, not a THUMBNAIL: no rendering
         metadataList = getRecursiveMetadata("testEMF.emf", context);
@@ -151,11 +155,12 @@ public class EMFParserTest extends TikaTest {
     /**
      * There is no image parser on this module's test classpath, so the PNG
      * is checked by its type, name and size rather than its dimensions.
+     * The rendering of a THUMBNAIL is a THUMBNAIL, any other a RENDERING.
      */
-    private static void assertRendering(Metadata rendering, String name) {
+    private static void assertRendering(Metadata rendering, String name,
+                                        TikaCoreProperties.EmbeddedResourceType type) {
         assertEquals("image/png", rendering.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.RENDERING.name(),
-                rendering.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(type.name(), rendering.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals(name, rendering.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals("poi-metafile-renderer", rendering.get(Rendering.RENDERED_BY));
         assertTrue(Long.parseLong(rendering.get(HttpHeaders.CONTENT_LENGTH)) > 100);
