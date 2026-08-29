@@ -17,6 +17,8 @@
 package org.apache.tika.parser.epub;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
@@ -74,6 +76,11 @@ public class EpubParserTest extends TikaTest {
         //test attachments
         assertEquals(2, metadataList.size());
         assertEquals("image/jpeg", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
+        //the EPUB 2 cover meta names the cover image, emitted as the thumbnail
+        assertEquals("OPS/CoverDesign.jpg",
+                metadataList.get(1).get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
         int tocIndex = xml.indexOf("h3 class=\"toc_heading\">Table of Contents<");
         int ch1 = xml.indexOf("<h1>Chapter 1");
@@ -122,6 +129,27 @@ public class EpubParserTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata("cole-voyage-of-life.epub");
         assertEquals("pre-paginated", metadataList.get(0).get(Epub.RENDITION_LAYOUT));
+    }
+
+    /**
+     * The EPUB 3 cover-image manifest property names the cover; the other
+     * images are not thumbnails.
+     */
+    @Test
+    public void testEpub3CoverImageIsTheThumbnail() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testEPUB_multi-metadata-vals.epub");
+        Metadata cover = null;
+        for (Metadata m : metadataList) {
+            if ("epub/images/cover.jpg".equals(m.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
+                cover = m;
+            } else {
+                assertNotEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                        m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+            }
+        }
+        assertNotNull(cover);
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                cover.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
     @Test
