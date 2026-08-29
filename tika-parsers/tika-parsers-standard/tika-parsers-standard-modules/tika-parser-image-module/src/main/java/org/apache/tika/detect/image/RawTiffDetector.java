@@ -17,6 +17,7 @@
 package org.apache.tika.detect.image;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -41,17 +42,23 @@ import org.apache.tika.parser.ParseContext;
  *   <li>a vendor-specific {@code Compression} value (0x0103) in any IFD
  *       names the format: 34713 Nikon, 32767 Sony, 65535 Pentax,
  *       32770 and 32772 Samsung (this is how ExifTool identifies them);</li>
- *   <li>otherwise an image with {@code PhotometricInterpretation} 32803
- *       (CFA) or 34892 (LinearRaw) in any IFD marks a raw, and the
- *       {@code Make} tag (0x010F) picks the vendor: this catches the
- *       uncompressed variants. A plain TIFF from the same camera has RGB
- *       data and stays {@code image/tiff}.</li>
+ *   <li>otherwise sensor data in any IFD marks a raw, and the {@code Make}
+ *       tag (0x010F) picks the vendor: an image with
+ *       {@code PhotometricInterpretation} 32803 (CFA) or 34892 (LinearRaw),
+ *       or a full-resolution image (NewSubfileType 0) of one 9 to 16 bit
+ *       sample without any PhotometricInterpretation, which a regular TIFF
+ *       must have (Samsung NX1). This catches the uncompressed variants. A
+ *       plain TIFF from the same camera has RGB data and stays
+ *       {@code image/tiff}.</li>
  * </ol>
- * The detector reads a bounded prefix of the stream into memory and walks
- * the IFD chain and the SubIFDs (0x014A) inside it; raw files keep their
- * directories at the start, ahead of the image data. Anything it cannot
- * decide is left to the other detectors as {@code application/octet-stream}.
- * Canon CR2 has a fixed signature and is matched by the mime magic instead.
+ * The detector reads the stream into memory as far as the directories
+ * require, up to {@link #MAX_PREFIX_LENGTH}, and walks the IFD chain and the
+ * SubIFDs (0x014A) inside that prefix; raw files keep their directories
+ * ahead of the sensor data, though behind the embedded previews (some
+ * hundred KB). A plain TIFF with its directory at the start costs a few KB.
+ * Anything it cannot decide is left to the other detectors as
+ * {@code application/octet-stream}. Canon CR2 has a fixed signature and is
+ * matched by the mime magic instead.
  */
 @TikaComponent
 public class RawTiffDetector implements Detector {
@@ -59,11 +66,19 @@ public class RawTiffDetector implements Detector {
     private static final long serialVersionUID = 1L;
 
     /**
-     * How much of the stream is examined. The directories of a raw file
-     * sit at its start; a few hundred KB cover them with room to spare.
+     * How far into the stream the directories may lie. The IFD tables of a
+     * raw file follow its embedded previews: 265 KB for a Nikon Z 6, 458 KB
+     * for a Samsung NX1.
      */
-    static final int PREFIX_LENGTH = 256 * 1024;
+    static final int MAX_PREFIX_LENGTH = 1024 * 1024;
 
+    /**
+     * The stream is read in chunks of this size, as the directories require.
+     */
+    private static final int CHUNK_LENGTH = 64 * 1024;
+
+    private static final int TAG_NEW_SUBFILE_TYPE = 0x00FE;
+    private static final int TAG_BITS_PER_SAMPLE = 0x0102;
     private static final int TAG_MAKE = 0x010F;
     private static final int TAG_COMPRESSION = 0x0103;
     private static final int TAG_PHOTOMETRIC_INTERPRETATION = 0x0106;
@@ -104,18 +119,68 @@ public class RawTiffDetector implements Detector {
         }
         //one more than is read: a BufferedInputStream drops the mark once the
         //read limit is reached, and reset() in finally must always succeed
-        tis.mark(PREFIX_LENGTH + 1);
+        tis.mark(MAX_PREFIX_LENGTH + 1);
         try {
-            byte[] header = new byte[8];
-            if (tis.readNBytes(header, 0, 8) < 8 || !isTiff(header)) {
+            byte[] header = new byte[16];
+            if (tis.readNBytes(header, 0, 16) < 16 || !isTiff(header)) {
                 return MediaType.OCTET_STREAM;
             }
-            byte[] prefix = new byte[PREFIX_LENGTH];
-            System.arraycopy(header, 0, prefix, 0, 8);
-            int length = 8 + tis.readNBytes(prefix, 8, PREFIX_LENGTH - 8);
-            return detect(prefix, length);
+            return detect(new Prefix(header, 16, tis, MAX_PREFIX_LENGTH));
         } finally {
             tis.reset();
+        }
+    }
+
+    /**
+     * The start of the file, read further from the stream as the
+     * directories require, up to a limit.
+     */
+    static final class Prefix {
+        private byte[] buf;
+        private int length;
+        private final InputStream in;
+        private final int limit;
+
+        /**
+         * @param buf    the bytes read so far
+         * @param length how many of them are valid
+         * @param in     where to read more from, or null if this is all
+         * @param limit  how far to read at most
+         */
+        Prefix(byte[] buf, int length, InputStream in, int limit) {
+            this.buf = buf;
+            this.length = length;
+            this.in = in;
+            this.limit = limit;
+        }
+
+        /**
+         * Makes the bytes up to {@code end} (exclusive) available if the
+         * file has them and they are within the limit.
+         *
+         * @return whether {@code buf[0..end)} is valid now
+         */
+        boolean ensure(long end) throws IOException {
+            if (end <= length) {
+                return true;
+            }
+            if (in == null || end > limit) {
+                return false;
+            }
+            int wanted = (int) Math.min(limit, ((end + CHUNK_LENGTH - 1) / CHUNK_LENGTH) * CHUNK_LENGTH);
+            if (buf.length < wanted) {
+                byte[] bigger = new byte[wanted];
+                System.arraycopy(buf, 0, bigger, 0, length);
+                buf = bigger;
+            }
+            while (length < wanted) {
+                int n = in.read(buf, length, wanted - length);
+                if (n < 0) {
+                    break;
+                }
+                length += n;
+            }
+            return end <= length;
         }
     }
 
@@ -136,9 +201,20 @@ public class RawTiffDetector implements Detector {
      * does not show one
      */
     static MediaType detect(byte[] buf, int length) {
-        if (length < 8 || !isTiff(buf)) {
+        try {
+            return detect(new Prefix(buf, length, null, length));
+        } catch (IOException e) {
+            //no stream, nothing to read
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static MediaType detect(Prefix prefix) throws IOException {
+        if (!prefix.ensure(8) || !isTiff(prefix.buf)) {
             return MediaType.OCTET_STREAM;
         }
+        byte[] buf = prefix.buf;
+        int length = prefix.length;
         boolean bigEndian = buf[0] == 'M';
         boolean bigTiff = getUInt16(buf, 2, bigEndian) == 43;
         int countSize = bigTiff ? 8 : 2;
@@ -147,7 +223,7 @@ public class RawTiffDetector implements Detector {
         int inlineSize = bigTiff ? 8 : 4;
         long firstIfd;
         if (bigTiff) {
-            if (length < 16 || getUInt16(buf, 4, bigEndian) != 8) {
+            if (!prefix.ensure(16) || getUInt16(buf, 4, bigEndian) != 8) {
                 return MediaType.OCTET_STREAM;
             }
             firstIfd = getUInt64(buf, 8, bigEndian);
@@ -165,16 +241,22 @@ public class RawTiffDetector implements Detector {
         toVisit.add(firstIfd);
         while (!toVisit.isEmpty() && visited.size() < MAX_IFDS) {
             long ifdOffset = toVisit.poll();
-            if (ifdOffset <= 0 || ifdOffset > length - countSize || !visited.add(ifdOffset)) {
+            if (ifdOffset <= 0 || !visited.add(ifdOffset) || !prefix.ensure(ifdOffset + countSize)) {
                 continue;
             }
+            buf = prefix.buf;
             int ifd = (int) ifdOffset;
             long numEntries = bigTiff ? getUInt64(buf, ifd, bigEndian) : getUInt16(buf, ifd, bigEndian);
             if (numEntries < 0 || numEntries > MAX_ENTRIES_PER_IFD
-                    || ifd + countSize + numEntries * entrySize + offsetSize > length) {
+                    || !prefix.ensure(ifd + countSize + numEntries * entrySize + offsetSize)) {
                 continue;
             }
+            buf = prefix.buf;
+            length = prefix.length;
             int entries = ifd + countSize;
+            long subfileType = -1;
+            boolean photometricPresent = false;
+            long[] bitsPerSample = new long[0];
             for (int i = 0; i < numEntries; i++) {
                 int e = entries + i * entrySize;
                 int tag = getUInt16(buf, e, bigEndian);
@@ -201,12 +283,24 @@ public class RawTiffDetector implements Detector {
                         }
                         break;
                     case TAG_PHOTOMETRIC_INTERPRETATION:
+                        photometricPresent = true;
                         if (count == 1) {
                             long[] v = longValues(buf, length, valueField, bigEndian, bigTiff, type, count);
                             if (v.length == 1
                                     && (v[0] == PHOTOMETRIC_CFA || v[0] == PHOTOMETRIC_LINEAR_RAW)) {
                                 rawImage = true;
                             }
+                        }
+                        break;
+                    case TAG_NEW_SUBFILE_TYPE:
+                        if (count == 1) {
+                            long[] v = longValues(buf, length, valueField, bigEndian, bigTiff, type, count);
+                            subfileType = v.length == 1 ? v[0] : -1;
+                        }
+                        break;
+                    case TAG_BITS_PER_SAMPLE:
+                        if (count <= 4) {
+                            bitsPerSample = longValues(buf, length, valueField, bigEndian, bigTiff, type, count);
                         }
                         break;
                     case TAG_MAKE:
@@ -217,6 +311,12 @@ public class RawTiffDetector implements Detector {
                     default:
                         break;
                 }
+            }
+            //sensor data without a PhotometricInterpretation: a full-resolution
+            //image of one deep sample, which no regular TIFF describes that way
+            if (!photometricPresent && subfileType == 0 && bitsPerSample.length == 1
+                    && bitsPerSample[0] >= 9 && bitsPerSample[0] <= 16) {
+                rawImage = true;
             }
             int follower = (int) (entries + numEntries * entrySize);
             long next = bigTiff ? getUInt64(buf, follower, bigEndian) : getUInt32(buf, follower, bigEndian);

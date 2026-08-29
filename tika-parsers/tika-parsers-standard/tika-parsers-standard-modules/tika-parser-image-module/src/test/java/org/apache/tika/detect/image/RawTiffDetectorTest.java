@@ -169,6 +169,53 @@ public class RawTiffDetectorTest {
         assertEquals(MediaType.OCTET_STREAM, RawTiffDetector.detect(tiff, tiff.length));
     }
 
+    /**
+     * The Samsung NX1 layout: the raw SubIFD has no PhotometricInterpretation
+     * and a compression code that is also PackBits, so only the shape of the
+     * image (full resolution, one 14 bit sample) and the Make say raw.
+     */
+    @Test
+    public void testDeepSingleSampleWithoutPhotometric() {
+        byte[] tiff = new TiffBuilder(false)
+                .ifd(entry(0x010F, "SAMSUNG"), subIfds(1))
+                .ifd(entry(0x00FE, 4, 0), entry(0x0102, 3, 14), entry(0x0103, 4, 32773))
+                .build();
+        assertEquals(RawTiffDetector.SAMSUNG, RawTiffDetector.detect(tiff, tiff.length));
+        //the same image with RGB data is a TIFF
+        tiff = new TiffBuilder(false)
+                .ifd(entry(0x010F, "SAMSUNG"), subIfds(1))
+                .ifd(entry(0x00FE, 4, 0), entry(0x0102, 3, 8), entry(0x0106, 3, 2))
+                .build();
+        assertEquals(MediaType.OCTET_STREAM, RawTiffDetector.detect(tiff, tiff.length));
+    }
+
+    /**
+     * Directories behind a few hundred KB of preview data are read on demand;
+     * beyond the limit they are not, and the file stays a TIFF.
+     */
+    @Test
+    public void testDirectoriesBehindPreviewData() throws Exception {
+        byte[] tiff = new TiffBuilder(false)
+                .ifd(entry(0x010F, "NIKON CORPORATION"), subIfds(1))
+                .gap(600 * 1024)
+                .ifd(entry(0x0103, 3, 34713))
+                .build();
+        try (TikaInputStream tis = TikaInputStream.get(tiff)) {
+            assertEquals(RawTiffDetector.NIKON,
+                    new RawTiffDetector().detect(tis, new Metadata(), new ParseContext()));
+            assertEquals(0, tis.getPosition());
+        }
+        tiff = new TiffBuilder(false)
+                .ifd(entry(0x010F, "NIKON CORPORATION"), subIfds(1))
+                .gap(RawTiffDetector.MAX_PREFIX_LENGTH + 1024)
+                .ifd(entry(0x0103, 3, 34713))
+                .build();
+        try (TikaInputStream tis = TikaInputStream.get(tiff)) {
+            assertEquals(MediaType.OCTET_STREAM,
+                    new RawTiffDetector().detect(tis, new Metadata(), new ParseContext()));
+        }
+    }
+
     @Test
     public void testTruncatedPrefixIsHarmless() {
         byte[] tiff = tiff("NIKON CORPORATION", 34713, 32803, false);
@@ -241,6 +288,15 @@ public class RawTiffDetectorTest {
         private final boolean bigTiff;
         private final java.util.List<Entry[]> ifds = new java.util.ArrayList<>();
         private boolean nextPointsToSelf;
+        private final java.util.Map<Integer, Integer> gaps = new java.util.HashMap<>();
+
+        /**
+         * Filler bytes between the last added IFD and the next one.
+         */
+        TiffBuilder gap(int bytes) {
+            gaps.put(ifds.size(), bytes);
+            return this;
+        }
 
         TiffBuilder(boolean bigTiff) {
             this.bigTiff = bigTiff;
@@ -266,6 +322,7 @@ public class RawTiffDetectorTest {
             long[] starts = new long[ifds.size()];
             long pos = headerSize;
             for (int i = 0; i < ifds.size(); i++) {
+                pos += gaps.getOrDefault(i, 0);
                 starts[i] = pos;
                 pos += countSize + (long) ifds.get(i).length * entrySize + offsetSize;
                 for (Entry e : ifds.get(i)) {
@@ -282,6 +339,7 @@ public class RawTiffDetectorTest {
                 le32(out, (int) starts[0]);
             }
             for (int i = 0; i < ifds.size(); i++) {
+                pad(out, gaps.getOrDefault(i, 0));
                 Entry[] entries = ifds.get(i);
                 long dataPos = starts[i] + countSize + (long) entries.length * entrySize + offsetSize;
                 if (bigTiff) {
