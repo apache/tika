@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * DWGReadParser emits the drawing's THUMBNAILIMAGE as a THUMBNAIL embedded
+     document instead of INLINE (TIKA-4853).
+
    * RawTiffParser marks only the largest embedded JPEG preview as the
      THUMBNAIL embedded document; the smaller previews of the same image are
      INLINE images named image-N.jpg. Previously every preview was a
