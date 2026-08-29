@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * Enum values in JSON configuration are matched case-insensitively, so the
+     documented "no_ocr" works as well as "NO_OCR" (TIKA-4859).
+
    * DWGReadParser emits the drawing's THUMBNAILIMAGE as a THUMBNAIL embedded
      document instead of INLINE (TIKA-4853).
 

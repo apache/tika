@@ -19,6 +19,7 @@ package org.apache.tika.config.loader;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.slf4j.Logger;
@@ -125,6 +126,10 @@ public class TikaObjectMapperFactory {
 
         // Ensure enums are properly validated (not just numeric values)
         mapper.configure(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS, true);
+
+        // Accept enum values in any case ("no_ocr" as well as "NO_OCR"), the
+        // documented examples and hand-written requests use both
+        mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true);
 
         // Catch duplicate keys in JSON objects
         mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
