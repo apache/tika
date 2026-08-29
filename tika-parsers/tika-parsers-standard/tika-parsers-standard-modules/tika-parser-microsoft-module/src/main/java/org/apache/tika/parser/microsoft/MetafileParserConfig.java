@@ -17,7 +17,11 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.renderer.microsoft.POIMetafileRenderer;
 
 /**
@@ -30,6 +34,7 @@ public class MetafileParserConfig implements Serializable {
 
     private boolean renderImage = false;
     private int renderWidth = 800;
+    private Set<String> renderOnlyEmbeddedResourceTypes = new HashSet<>();
 
     /**
      * Whether to render the image and emit the rendering as a RENDERING
@@ -50,6 +55,35 @@ public class MetafileParserConfig implements Serializable {
      */
     public int getRenderWidth() {
         return renderWidth;
+    }
+
+    /**
+     * Restricts the rendering to images that are embedded documents of one
+     * of these {@code tk:embedded-resource-type}s, e.g. {@code ["THUMBNAIL"]}
+     * to render the thumbnail of an Office document but not the pictures of
+     * its embedded objects. Empty (the default) renders every image.
+     */
+    public Set<String> getRenderOnlyEmbeddedResourceTypes() {
+        return renderOnlyEmbeddedResourceTypes;
+    }
+
+    public void setRenderOnlyEmbeddedResourceTypes(Set<String> renderOnlyEmbeddedResourceTypes) {
+        this.renderOnlyEmbeddedResourceTypes = renderOnlyEmbeddedResourceTypes == null
+                ? new HashSet<>() : new HashSet<>(renderOnlyEmbeddedResourceTypes);
+    }
+
+    /**
+     * Whether an image with this metadata is to be rendered.
+     */
+    public boolean shouldRender(Metadata metadata) {
+        if (!renderImage) {
+            return false;
+        }
+        if (renderOnlyEmbeddedResourceTypes.isEmpty()) {
+            return true;
+        }
+        String type = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
+        return type != null && renderOnlyEmbeddedResourceTypes.contains(type);
     }
 
     public void setRenderWidth(int renderWidth) {

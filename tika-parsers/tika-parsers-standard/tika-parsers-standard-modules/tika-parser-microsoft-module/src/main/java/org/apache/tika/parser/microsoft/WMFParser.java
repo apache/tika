@@ -127,7 +127,7 @@ public class WMFParser implements Parser, RenderingParser {
                 }
             }
             MetafileParserConfig config = getConfig(context);
-            if (config.isRenderImage()) {
+            if (config.shouldRender(metadata)) {
                 MetafileRendering.render(renderer, config, MEDIA_TYPE, picture, xhtml, metadata,
                         context);
             }

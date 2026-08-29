@@ -6,7 +6,8 @@ Release 4.1.0 - unreleased
      directly), EMFParser and WMFParser are RenderingParsers that emit the
      rendering as a RENDERING embedded document with "emf-parser" /
      "wmf-parser": {"renderImage": true, "renderWidth": 800}, off by
-     default, and OfficeParser emits the SummaryInformation thumbnail of the
+     default and restrictable to e.g. THUMBNAIL embedded documents with
+     "renderOnlyEmbeddedResourceTypes", and OfficeParser emits the SummaryInformation thumbnail of the
      OLE2 formats (a WMF) as a THUMBNAIL embedded document, as the OOXML
      parsers do with the docProps thumbnail (TIKA-XXXX).
 

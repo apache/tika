@@ -173,7 +173,7 @@ public class EMFParser implements Parser, RenderingParser {
                 xhtml.endElement("p");
             }
             MetafileParserConfig config = getConfig(context);
-            if (config.isRenderImage()) {
+            if (config.shouldRender(metadata)) {
                 MetafileRendering.render(renderer, config, MEDIA_TYPE, ex, xhtml, metadata,
                         context);
             }

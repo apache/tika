@@ -122,6 +122,23 @@ public class EMFParserTest extends TikaTest {
                 rendering.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
+    /**
+     * Restricted to THUMBNAIL embedded documents, the parser renders the
+     * document's thumbnail but not a picture that is merely embedded.
+     */
+    @Test
+    public void testRenderOnlyThumbnails() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("emf-parser",
+                "{\"renderImage\": true, \"renderOnlyEmbeddedResourceTypes\": [\"THUMBNAIL\"]}");
+        List<Metadata> metadataList = getRecursiveMetadata("testDOCX_Thumbnail.docx", context);
+        assertRendering(byName(metadataList, "thumbnail.png"), "thumbnail.png");
+
+        //a bare EMF is the document itself, not a THUMBNAIL: no rendering
+        metadataList = getRecursiveMetadata("testEMF.emf", context);
+        assertEquals(1, metadataList.size());
+    }
+
     private static Metadata byName(List<Metadata> metadataList, String name) {
         for (Metadata m : metadataList) {
             if (name.equals(m.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
