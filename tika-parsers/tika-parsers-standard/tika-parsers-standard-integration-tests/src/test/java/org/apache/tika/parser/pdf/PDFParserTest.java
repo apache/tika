@@ -468,6 +468,17 @@ public class PDFParserTest extends TikaTest {
     }
 
     @Test
+    public void testPdfiumToPpmInOCR() throws Exception {
+        assumeTrue(canRunOCR(), "can't run OCR");
+        assumeTrue(ProcessUtils.checkCommand(new String[]{"pdfiumtoppm", "-v"}),
+                "does not have pdfiumtoppm");
+        Parser p = TikaLoaderHelper.getLoader("tika-rendering-pdfiumtoppm-config.json")
+                .loadAutoDetectParser();
+        String text = getText(getResourceAsStream("/test-documents/testOCR.pdf"), p);
+        assertContains("Happy", text.trim());
+    }
+
+    @Test
     public void testIncrementalUpdatesInAnAttachedPDF() throws Exception {
         PDFParserConfig pdfParserConfig = new PDFParserConfig();
         pdfParserConfig.setParseIncrementalUpdates(true);

@@ -1,5 +1,12 @@
 Release 4.1.0 - unreleased
 
+   * New pdfiumtoppm-renderer for PDF page rendering and OCR: drives the
+     external pdfiumtoppm command (PDFium behind a pdftoppm-compatible
+     command line) with -max-pixels and -max-memory limits for untrusted
+     input; exit 4 surfaces as TikaMemoryLimitException. Output is PNG, or
+     PPM/PGM with png=false (no encode/decode; pair with the OCR engine's
+     explicit DPI, e.g. tesseract user_defined_dpi).
+
    * New exception-reporting parse-context config controls how much of an
      exception is written to tk:exception:* metadata for the container and
      embedded documents alike: FULL (default), MESSAGE_REDACTED (stack trace
