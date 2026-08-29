@@ -1,5 +1,9 @@
 Release 4.1.0 - unreleased
 
+   * embedded-limits maxDepth counts embedding levels again instead of the
+     parsers a parse passes through; with AutoDetectParser over DefaultParser
+     every value above 1 used to stop one level early (TIKA-4857).
+
    * DWGReadParser emits the drawing's THUMBNAILIMAGE as a THUMBNAIL embedded
      document instead of INLINE (TIKA-4853).
 
