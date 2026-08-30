@@ -11,6 +11,15 @@ Release 4.1.0 - unreleased
      OLE2 formats (a WMF) as a THUMBNAIL embedded document, as the OOXML
      parsers do with the docProps thumbnail (TIKA-4855).
 
+   * Raw camera formats are detected by content: RawTiffDetector tells
+     Nikon NEF/NRW, Pentax PEF/PTX, Sony ARW/SRF/SR2, Samsung SRW and Adobe
+     DNG from a plain TIFF by their image directory (DNGVersion, the vendor
+     Compression codes, or a CFA/LinearRaw image plus Make), and Fuji RAF,
+     Panasonic RW2, Minolta MRW and the remaining Olympus ORF byte orders
+     get magic entries. Streams without a file name used to be image/tiff.
+     image/x-raw-samsung (*.srw) is new and parsed by RawTiffParser
+     (TIKA-4861).
+
    * DWGReadParser emits the drawing's THUMBNAILIMAGE as a THUMBNAIL embedded
      document instead of INLINE (TIKA-4853).
 
