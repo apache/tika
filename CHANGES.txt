@@ -2,8 +2,9 @@ Release 4.1.0 - unreleased
 
    * tika-server: /unpack/thumbnail returns the document thumbnail as JSON
      (its metadata and the image as base64). renderThumbnails=true on /rmeta,
-     /unpack and /unpack/all lays the same thumbnail defaults under a request
-     (first PDF page rendered, EMF/WMF thumbnail rendered); the defaults can
+     /unpack, /unpack/all and /unpack/thumbnail lays the thumbnail defaults
+     under a request (first PDF page rendered, EMF/WMF thumbnail rendered);
+     without it only stored thumbnails are found. The defaults can
      be replaced per parser with a thumbnail-defaults block in the server
      config. PDFParserConfig gains maxRenderedPages, bounding the page
      rendering independently of maxPages (TIKA-4856).

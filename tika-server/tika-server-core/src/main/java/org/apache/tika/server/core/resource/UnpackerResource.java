@@ -84,15 +84,16 @@ import org.apache.tika.serialization.JsonMetadata;
  * {@code /unpack/thumbnail} returns the document's thumbnail as JSON: the
  * {@code /rmeta} metadata object of the embedded document that is the thumbnail
  * and the image as base64, or {@code 204} if the document has none. It parses
- * with the {@link ThumbnailDefaults} (the first PDF page rendered, the EMF/WMF
- * thumbnail rendered), without text extraction or OCR, and picks, in this
- * order, the raster THUMBNAIL directly below the document, the rendering of a
+ * without text extraction or OCR, with the {@link ThumbnailDefaults} (the first
+ * PDF page rendered, the EMF/WMF thumbnail rendered) when asked to, and picks,
+ * in this order, the raster THUMBNAIL directly below the document, the rendering of a
  * vector THUMBNAIL, or the RENDERING of the first page. It extracts what the
  * document carries; it does not resize or convert.
  * <p>
- * {@code ?renderThumbnails=true} on {@code /unpack} and {@code /unpack/all}
- * applies the same defaults under the request's own config, so the zip holds
- * the thumbnail as a raster image among the embedded documents.
+ * {@code ?renderThumbnails=true} applies the {@link ThumbnailDefaults} under
+ * the request's own config, on {@code /unpack/thumbnail} as on {@code /unpack}
+ * and {@code /unpack/all}; without it, only stored thumbnails are found and
+ * a document that needs rendering answers 204.
  * <pre>
  * {
  *   "metadata": { "Content-Type": "image/png", "tiff:ImageWidth": "800", ... },
@@ -292,13 +293,14 @@ public class UnpackerResource {
     @jakarta.ws.rs.Path("/thumbnail")
     @PUT
     @Produces("application/json")
-    public Response unpackThumbnail(InputStream is, @Context HttpHeaders httpHeaders) throws Exception {
+    public Response unpackThumbnail(InputStream is, @Context HttpHeaders httpHeaders,
+                                    @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
             TikaResource.logRequest(LOG, "/unpack/thumbnail", metadata);
-            return doUnpackThumbnail(tis, metadata, pc);
+            return doUnpackThumbnail(tis, metadata, pc, renderThumbnails);
         }
     }
 
@@ -309,13 +311,14 @@ public class UnpackerResource {
     @POST
     @Consumes("multipart/form-data")
     @Produces("application/json")
-    public Response unpackThumbnailMultipart(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
+    public Response unpackThumbnailMultipart(List<Attachment> attachments, @Context HttpHeaders httpHeaders,
+                                             @QueryParam("renderThumbnails") boolean renderThumbnails)
             throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
             TikaResource.logRequest(LOG, "/unpack/thumbnail", metadata);
-            return doUnpackThumbnail(tis, metadata, pc);
+            return doUnpackThumbnail(tis, metadata, pc, renderThumbnails);
         }
     }
 
@@ -332,13 +335,13 @@ public class UnpackerResource {
      * Parses in unpack mode with the thumbnail configuration, then selects
      * the thumbnail among the extracted embedded documents.
      */
-    private Response doUnpackThumbnail(TikaInputStream tis, Metadata metadata, ParseContext pc)
-            throws Exception {
+    private Response doUnpackThumbnail(TikaInputStream tis, Metadata metadata, ParseContext pc,
+                                       boolean renderThumbnails) throws Exception {
         PipesParsingHelper helper = tikaResource.getPipesParsingHelper();
         if (helper == null) {
             throw new WebApplicationException("Pipes-based parsing is not enabled", Response.Status.SERVICE_UNAVAILABLE);
         }
-        configureThumbnailParse(pc);
+        configureThumbnailParse(pc, renderThumbnails);
 
         PipesParsingHelper.UnpackResult result = helper.parseUnpack(tis, metadata, pc, false);
         if (result.zipFile() == null) {
@@ -385,19 +388,21 @@ public class UnpackerResource {
     }
 
     /**
-     * The {@link ThumbnailDefaults} plus what only makes sense when the thumbnail
-     * is all the caller wants: no text, no OCR of the rendering, only THUMBNAIL
-     * and RENDERING embedded documents extracted, together with their metadata,
-     * down to the rendering of a thumbnail (depth 2). The request's own parser
+     * What only makes sense when the thumbnail is all the caller wants: no
+     * text, no OCR, only THUMBNAIL and RENDERING embedded documents extracted,
+     * together with their metadata, down to the rendering of a thumbnail
+     * (depth 2). With {@code renderThumbnails} the {@link ThumbnailDefaults}
+     * are laid under that, the same switch as on the other endpoints; without
+     * it only stored thumbnails are found. The request's own parser
      * configuration wins where present.
      */
-    private void configureThumbnailParse(ParseContext pc) {
+    private void configureThumbnailParse(ParseContext pc, boolean renderThumbnails) {
         //the text is not part of the answer: do not extract it
         tikaResource.setupContentHandlerFactory(pc, "ignore");
-        tikaResource.getThumbnailDefaults()
+        ThumbnailDefaults noOcr = ThumbnailDefaults.none()
                 .with("{\"pdf-parser\": {\"ocr\": {\"strategy\": \"NO_OCR\"}}, "
-                        + "\"tesseract-ocr-parser\": {\"skipOcr\": true}}")
-                .applyTo(pc);
+                        + "\"tesseract-ocr-parser\": {\"skipOcr\": true}}");
+        (renderThumbnails ? tikaResource.getThumbnailDefaults().with(noOcr) : noOcr).applyTo(pc);
         StandardUnpackSelector selector = new StandardUnpackSelector();
         selector.setIncludeEmbeddedResourceTypes(new HashSet<>(Arrays.asList(
                 TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name(),

@@ -77,6 +77,24 @@ public final class ThumbnailDefaults {
         this.components = components;
     }
 
+    /**
+     * No defaults at all, a base to {@link #with(String)} settings on.
+     */
+    public static ThumbnailDefaults none() {
+        return new ThumbnailDefaults(new LinkedHashMap<>());
+    }
+
+    /**
+     * These defaults with another set merged in, field by field.
+     */
+    public ThumbnailDefaults with(ThumbnailDefaults other) {
+        ThumbnailDefaults merged = this;
+        for (Map.Entry<String, ObjectNode> component : other.components.entrySet()) {
+            merged = merged.with("{\"" + component.getKey() + "\": " + component.getValue() + "}");
+        }
+        return merged;
+    }
+
     public static ThumbnailDefaults builtIn() {
         return new ThumbnailDefaults(readComponents(parse(BUILT_IN)));
     }

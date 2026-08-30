@@ -125,11 +125,16 @@ public class UnpackerThumbnailTest extends CXFTestBase {
     }
 
     /**
-     * A PDF has no thumbnail; the rendering of its first page stands in.
+     * A PDF has no thumbnail; with renderThumbnails the rendering of its first
+     * page stands in, without it there is nothing.
      */
     @Test
     public void testPdfPageRendering() throws Exception {
-        JsonNode json = thumbnail("test-documents/testPDFTwoTextBoxes.pdf");
+        Response plain = WebClient.create(endPoint + THUMBNAIL_PATH)
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/testPDFTwoTextBoxes.pdf"));
+        assertEquals(204, plain.getStatus());
+
+        JsonNode json = thumbnail("test-documents/testPDFTwoTextBoxes.pdf?renderThumbnails=true");
         JsonNode metadata = json.get("metadata");
         assertEquals("image/png", metadata.get("Content-Type").asText());
         assertEquals("RENDERING", metadata.get("tk:embedded-resource-type").asText());
@@ -181,8 +186,14 @@ public class UnpackerThumbnailTest extends CXFTestBase {
      * detected by their extension.
      */
     private JsonNode thumbnail(String resource) throws Exception {
+        String query = "";
+        int q = resource.indexOf('?');
+        if (q >= 0) {
+            query = resource.substring(q);
+            resource = resource.substring(0, q);
+        }
         String fileName = resource.substring(resource.lastIndexOf('/') + 1);
-        Response response = WebClient.create(endPoint + THUMBNAIL_PATH)
+        Response response = WebClient.create(endPoint + THUMBNAIL_PATH + query)
                 .header("Content-Disposition", "attachment; filename=" + fileName)
                 .put(ClassLoader.getSystemResourceAsStream(resource));
         assertEquals(200, response.getStatus());
