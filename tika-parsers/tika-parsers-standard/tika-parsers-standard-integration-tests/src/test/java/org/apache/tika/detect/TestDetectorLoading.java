@@ -37,14 +37,14 @@ public class TestDetectorLoading {
         assertEquals("org.apache.tika.detect.apple.BPListDetector", detectors.get(0).getClass().getName());
         assertEquals("org.apache.tika.detect.gzip.GZipSpecializationDetector",
                 detectors.get(1).getClass().getName());
-        assertEquals("org.apache.tika.detect.microsoft.POIFSContainerDetector",
-                detectors.get(2).getClass().getName());
-        assertEquals("org.apache.tika.detect.mkv.MatroskaDetector", detectors.get(3).getClass().getName());
-        assertEquals("org.apache.tika.detect.ogg.OggDetector", detectors.get(4).getClass().getName());
-        assertEquals("org.apache.tika.detect.ole.MiscOLEDetector", detectors.get(5).getClass().getName());
-        assertEquals("org.apache.tika.detect.zip.DefaultZipContainerDetector",
-                detectors.get(6).getClass().getName());
         assertEquals("org.apache.tika.detect.image.RawTiffDetector",
+                detectors.get(2).getClass().getName());
+        assertEquals("org.apache.tika.detect.microsoft.POIFSContainerDetector",
+                detectors.get(3).getClass().getName());
+        assertEquals("org.apache.tika.detect.mkv.MatroskaDetector", detectors.get(4).getClass().getName());
+        assertEquals("org.apache.tika.detect.ogg.OggDetector", detectors.get(5).getClass().getName());
+        assertEquals("org.apache.tika.detect.ole.MiscOLEDetector", detectors.get(6).getClass().getName());
+        assertEquals("org.apache.tika.detect.zip.DefaultZipContainerDetector",
                 detectors.get(7).getClass().getName());
     }
 }
