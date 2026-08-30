@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -894,7 +895,17 @@ public class TestMimeTypes {
         assertTypeByName("image/x-raw-minolta", "x.mrw");
         assertTypeByName("image/x-raw-nikon", "x.nef");
         assertTypeByName("image/x-raw-nikon", "x.nrw");
+        assertTypeByName("image/x-raw-samsung", "x.srw");
+        //MimeTypes alone sees a TIFF; RawTiffDetector tells the raw formats apart,
+        //see TestContainerAwareDetector
         assertTypeByData("image/tiff", "testNEF.nef");
+        //formats with a fixed signature (TIKA-4861)
+        assertTypeByData("image/x-raw-fuji", "FUJIFILMCCD-RAW 0201FF393103".getBytes(US_ASCII));
+        assertTypeByData("image/x-raw-panasonic", new byte[]{'I', 'I', 'U', 0, 0x18, 0, 0, 0});
+        assertTypeByData("image/x-raw-minolta", new byte[]{0, 'M', 'R', 'M', 0, 0, 0, 0});
+        assertTypeByData("image/x-raw-olympus", new byte[]{'I', 'I', 'R', 'O', 8, 0, 0, 0});
+        assertTypeByData("image/x-raw-olympus", new byte[]{'I', 'I', 'R', 'S', 8, 0, 0, 0});
+        assertTypeByData("image/x-raw-olympus", new byte[]{'M', 'M', 'O', 'R', 0, 0, 0, 8});
         assertTypeByNameAndData("image/x-raw-nikon", "testNEF.nef");
         assertTypeByData("image/tiff", "testARW.arw");
         assertTypeByNameAndData("image/x-raw-sony", "testARW.arw");

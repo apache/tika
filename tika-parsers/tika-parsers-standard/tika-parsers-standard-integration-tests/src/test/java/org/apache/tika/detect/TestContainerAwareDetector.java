@@ -123,6 +123,22 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         }
     }
 
+    /**
+     * TIFF-based raw camera formats, told apart by RawTiffDetector without a
+     * file name (TIKA-4861); a plain TIFF and a CR2 (fixed signature) are
+     * untouched.
+     */
+    @Test
+    public void testRawCameraFormatsByData() throws Exception {
+        assertTypeByData("testNEF.nef", "image/x-raw-nikon");
+        assertTypeByData("testARW.arw", "image/x-raw-sony");
+        assertTypeByData("testPEF.pef", "image/x-raw-pentax");
+        assertTypeByData("testDNG.dng", "image/x-raw-adobe");
+        assertTypeByData("testDNG_bigtiff.dng", "image/x-raw-adobe");
+        assertTypeByData("testCR2.cr2", "image/x-canon-cr2");
+        assertTypeByData("testTIFF.tif", "image/tiff");
+    }
+
     @Test
     public void testDetectOLE2() throws Exception {
 /*        // Microsoft office types known by POI
