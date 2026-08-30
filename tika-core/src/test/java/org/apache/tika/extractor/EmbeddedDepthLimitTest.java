@@ -111,7 +111,8 @@ public class EmbeddedDepthLimitTest {
         }
         List<Metadata> documents = handler.getMetadataList();
         assertEquals(expectedDocuments, documents.size(), documents.toString());
-        //the wrapper lists a document once it is finished, so the deepest comes first
+        //the container is first; embedded documents follow in the order they
+        //finish, so the deepest of them comes right after it
         Set<Integer> depths = new HashSet<>();
         for (Metadata document : documents) {
             depths.add(document.getInt(TikaCoreProperties.EMBEDDED_DEPTH));

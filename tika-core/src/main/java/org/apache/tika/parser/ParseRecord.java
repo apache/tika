@@ -208,6 +208,9 @@ public class ParseRecord {
      * Marks the end of an embedded document's parse.
      */
     public void exitEmbedded() {
+        if (embeddedDepth <= 0) {
+            throw new IllegalStateException("exitEmbedded() without a matching enterEmbedded()");
+        }
         embeddedDepth--;
     }
 
