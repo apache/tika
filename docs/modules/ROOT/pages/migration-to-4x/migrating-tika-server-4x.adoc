@@ -67,7 +67,7 @@ POST endpoints accept multipart requests with a `file` part and optional `config
 # Parse with custom PDF parser settings (requires allowPerRequestConfig)
 curl -X POST http://localhost:9998/tika/config/json \
   -F "file=@document.pdf" \
-  -F "config={\"pdf-parser\":{\"ocr\":{\"strategy\":\"no_ocr\"}}};type=application/json"
+  -F "config={\"pdf-parser\":{\"ocr\":{\"strategy\":\"NO_OCR\"}}};type=application/json"
 ----
 
 == Breaking Changes
