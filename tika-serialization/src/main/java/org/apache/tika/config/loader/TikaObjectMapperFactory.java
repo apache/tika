@@ -127,8 +127,8 @@ public class TikaObjectMapperFactory {
         // Ensure enums are properly validated (not just numeric values)
         mapper.configure(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS, true);
 
-        // Accept enum values in any case ("no_ocr" as well as "NO_OCR"), the
-        // documented examples and hand-written requests use both
+        // Accept enum values in any case ("no_ocr" as well as "NO_OCR"): hand-written
+        // requests and older examples spell them either way
         mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true);
 
         // Catch duplicate keys in JSON objects
