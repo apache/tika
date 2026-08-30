@@ -30,6 +30,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.BoundedInputStream;
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.xml.sax.ContentHandler;
@@ -38,9 +39,12 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.XmlRootExtractor;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -87,12 +91,48 @@ public class IWorkPackageParser implements Parser {
         return supportedTypes;
     }
 
+    /**
+     * The document preview of an iWork '09 package.
+     */
+    public final static String IWORK_THUMBNAIL_ENTRY = "QuickLook/Thumbnail.jpg";
+
+    /**
+     * Bound on the preview held in memory until the content has been
+     * parsed; a real one is well under a megabyte.
+     */
+    private static final long MAX_THUMBNAIL_BYTES = 20 * 1024 * 1024;
+
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         ZipArchiveInputStream zip = new ZipArchiveInputStream(tis);
         ZipArchiveEntry entry = zip.getNextEntry();
+        //the package is read as a stream, so the preview may come before the
+        //content: hold it back and emit it once the content is written, and
+        //only when the embedded document extractor wants it at all
+        EmbeddedDocumentExtractor extractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        Metadata thumbnailMetadata = null;
+        byte[] thumbnail = null;
+        XHTMLContentHandler xhtml = null;
 
         while (entry != null) {
+            if (IWORK_THUMBNAIL_ENTRY.equals(entry.getName()) && zip.canReadEntryData(entry)) {
+                thumbnailMetadata = thumbnailMetadata(context);
+                if (extractor.shouldParseEmbedded(thumbnailMetadata, context)) {
+                    //read one byte past the limit so an oversized entry is
+                    //recognized and skipped instead of emitted truncated
+                    thumbnail = BoundedInputStream.builder().setInputStream(zip)
+                            .setMaxCount(MAX_THUMBNAIL_BYTES + 1).get().readAllBytes();
+                    if (thumbnail.length > MAX_THUMBNAIL_BYTES) {
+                        thumbnail = null;
+                        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                                IWORK_THUMBNAIL_ENTRY + " exceeds " + MAX_THUMBNAIL_BYTES
+                                        + " bytes and was skipped");
+                    }
+                }
+                entry = zip.getNextEntry();
+                continue;
+            }
             if (!IWORK_CONTENT_ENTRIES.contains(entry.getName())) {
                 entry = zip.getNextEntry();
                 continue;
@@ -104,7 +144,12 @@ public class IWorkPackageParser implements Parser {
             entryStream.reset(); // 4096 fails on github
 
             if (type != null) {
-                XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
+                if (xhtml == null) {
+                    //a package carries one content entry; guard against a
+                    //crafted one with several so the document is started once
+                    xhtml = new XHTMLContentHandler(handler, metadata, context);
+                    xhtml.startDocument();
+                }
                 ContentHandler contentHandler;
 
                 switch (type) {
@@ -126,17 +171,38 @@ public class IWorkPackageParser implements Parser {
                 }
 
                 metadata.set(HttpHeaders.CONTENT_TYPE, type.getType().toString());
-                xhtml.startDocument();
                 if (contentHandler != null) {
                     XMLReaderUtils.parseSAX(CloseShieldInputStream.wrap(entryStream),
                             contentHandler, context);
                 }
-                xhtml.endDocument();
             }
 
             entry = zip.getNextEntry();
         }
+        if (xhtml != null) {
+            if (thumbnail != null) {
+                try (TikaInputStream thumbnailStream = TikaInputStream.get(thumbnail)) {
+                    extractor.parseEmbedded(thumbnailStream, xhtml, thumbnailMetadata, context,
+                            true);
+                }
+            }
+            xhtml.endDocument();
+        }
         // Don't close the zip InputStream (TIKA-1117).
+    }
+
+    /**
+     * The metadata of the document preview, a
+     * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL} embedded
+     * document.
+     */
+    private static Metadata thumbnailMetadata(ParseContext context) {
+        Metadata embeddedMetadata = Metadata.newInstance(context);
+        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+        embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, IWORK_THUMBNAIL_ENTRY);
+        embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
+        return embeddedMetadata;
     }
 
     private IWORKDocumentType detectType(InputStream entryStream, int markLimit) throws IOException {
