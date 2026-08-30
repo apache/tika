@@ -1,5 +1,9 @@
 Release 4.1.0 - unreleased
 
+   * GeoGebraParser emits the icon of a tool (*.ggt, the macro's iconFile)
+     as its THUMBNAIL embedded document; tool files have no thumbnail of
+     their own (TIKA-4831).
+
    * Raw camera formats are detected by content: RawTiffDetector tells
      Nikon NEF/NRW, Pentax PEF/PTX, Sony ARW/SRF/SR2, Samsung SRW and Adobe
      DNG from a plain TIFF by their image directory (DNGVersion, the vendor

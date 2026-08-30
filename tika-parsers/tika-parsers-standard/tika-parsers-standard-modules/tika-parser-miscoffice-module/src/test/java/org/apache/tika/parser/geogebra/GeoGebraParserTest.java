@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -197,6 +198,57 @@ public class GeoGebraParserTest extends TikaTest {
         //no document metadata
         assertEquals(1, metadataList.size());
         assertNull(metadata.get(TikaCoreProperties.TITLE));
+    }
+
+    /**
+     * A tool with an icon: GeoGebra stores it in a directory with a generated
+     * name and points to it with the macro's iconFile. It is the tool's
+     * thumbnail, and is not emitted a second time as a picture.
+     */
+    @Test
+    public void testGGTIconIsTheThumbnail() throws Exception {
+        String icon = "5d41402abc4b2a76b9719d911017c592/Midpoint.png";
+        Map<String, String> entries = new HashMap<>();
+        entries.put("geogebra_macro.xml", geogebra("classic", "5.0.815.0", "tool-1",
+                "<macro cmdName=\"Mid\" toolName=\"Midpoint\" toolHelp=\"Two points\" iconFile=\""
+                        + icon + "\"><construction/></macro>"));
+        List<Metadata> metadataList = parse(entries, Collections.singletonMap(icon, PNG), null);
+        assertEquals("application/vnd.geogebra.tool",
+                metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(2, metadataList.size());
+        Metadata thumbnail = byName(metadataList, icon);
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                thumbnail.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("image/png", thumbnail.get(HttpHeaders.CONTENT_TYPE));
+
+        //an iconFile that is not in the zip: no thumbnail, no error
+        metadataList = parse(entries);
+        assertEquals(1, metadataList.size());
+        assertNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
+    }
+
+    /**
+     * A worksheet keeps its own thumbnail; the icon of an embedded tool is
+     * just a picture then.
+     */
+    @Test
+    public void testWorksheetThumbnailBeatsToolIcon() throws Exception {
+        String icon = "5d41402abc4b2a76b9719d911017c592/Midpoint.png";
+        Map<String, String> entries = new HashMap<>();
+        entries.put("geogebra.xml", geogebra("classic", "5.0.815.0", "ws-1", "<construction/>"));
+        entries.put("geogebra_macro.xml", geogebra("classic", "5.0.815.0", "ws-1",
+                "<macro cmdName=\"Mid\" toolName=\"Midpoint\" iconFile=\"" + icon
+                        + "\"><construction/></macro>"));
+        Map<String, byte[]> binary = new HashMap<>();
+        binary.put("geogebra_thumbnail.png", PNG);
+        binary.put(icon, PNG);
+        List<Metadata> metadataList = parse(entries, binary, null);
+        assertEquals(3, metadataList.size());
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                byName(metadataList, "geogebra_thumbnail.png")
+                        .get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                byName(metadataList, icon).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
     @Test
