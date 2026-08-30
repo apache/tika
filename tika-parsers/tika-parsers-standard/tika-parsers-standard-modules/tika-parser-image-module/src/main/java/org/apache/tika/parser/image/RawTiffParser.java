@@ -54,7 +54,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for TIFF-based camera raw images: Nikon NEF/NRW, Sony ARW/SRF/SR2,
- * Pentax PEF/PTX, Adobe DNG and Canon CR2.
+ * Pentax PEF/PTX, Samsung SRW, Adobe DNG and Canon CR2.
  * <p>
  * These formats are TIFF containers: metadata extraction is inherited from
  * {@link TiffParser}. In addition, this parser extracts the camera-generated
@@ -89,6 +89,7 @@ public class RawTiffParser extends TiffParser {
                     MediaType.image("x-raw-nikon"),
                     MediaType.image("x-raw-sony"),
                     MediaType.image("x-raw-pentax"),
+                    MediaType.image("x-raw-samsung"),
                     MediaType.image("x-raw-adobe"),
                     MediaType.image("x-canon-cr2"))));
 
