@@ -42,6 +42,8 @@ public class ThumbnailDefaultsTest {
         assertEquals("RENDER_PAGES_AT_PAGE_END", pdf.get("imageStrategy").asText());
         assertEquals(1, pdf.get("maxRenderedPages").asInt());
         assertEquals(96, pdf.get("ocr").get("dpi").asInt());
+        //a thumbnail is in colour; the renderer defaults to the grayscale OCR wants
+        assertEquals("RGB", pdf.get("ocr").get("imageType").asText());
         //no OCR setting: the indexing request keeps whatever the server does
         assertNull(pdf.get("ocr").get("strategy"));
         assertEquals("THUMBNAIL",

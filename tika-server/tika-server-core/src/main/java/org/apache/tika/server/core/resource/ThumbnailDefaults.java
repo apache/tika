@@ -33,7 +33,8 @@ import org.apache.tika.parser.ParseContext;
  * The parser configuration that makes a parse yield the document thumbnail
  * as a raster image: the first PDF page rendered, the EMF/WMF thumbnail of
  * an Office document rendered (that one only, not the pictures of embedded
- * objects). The stored thumbnails of the other formats need no configuration.
+ * objects), in colour: the renderer's default is the grayscale OCR wants.
+ * The stored thumbnails of the other formats need no configuration.
  * <p>
  * Applied by {@code renderThumbnails=true} on {@code /rmeta}, {@code /unpack}
  * and {@code /unpack/all}, and by {@code /unpack/thumbnail}. Three layers,
@@ -61,7 +62,7 @@ public final class ThumbnailDefaults {
               "pdf-parser": {
                 "imageStrategy": "RENDER_PAGES_AT_PAGE_END",
                 "maxRenderedPages": 1,
-                "ocr": {"dpi": 96}
+                "ocr": {"dpi": 96, "imageType": "RGB"}
               },
               "emf-parser": {"renderImage": true, "renderOnlyEmbeddedResourceTypes": ["THUMBNAIL"]},
               "wmf-parser": {"renderImage": true, "renderOnlyEmbeddedResourceTypes": ["THUMBNAIL"]}
