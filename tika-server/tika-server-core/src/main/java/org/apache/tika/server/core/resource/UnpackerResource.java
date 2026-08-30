@@ -330,6 +330,13 @@ public class UnpackerResource {
      * page renderings are a few MB at most.
      */
     static final long MAX_THUMBNAIL_BYTES = 32L * 1024 * 1024;
+    /**
+     * What {@code /unpack/thumbnail} adds regardless of rendering: the text
+     * of the images is not wanted.
+     */
+    private static final ThumbnailDefaults NO_OCR = ThumbnailDefaults.none()
+            .with("{\"pdf-parser\": {\"ocr\": {\"strategy\": \"NO_OCR\"}}, "
+                    + "\"tesseract-ocr-parser\": {\"skipOcr\": true}}");
 
     /**
      * Parses in unpack mode with the thumbnail configuration, then selects
@@ -399,10 +406,7 @@ public class UnpackerResource {
     private void configureThumbnailParse(ParseContext pc, boolean renderThumbnails) {
         //the text is not part of the answer: do not extract it
         tikaResource.setupContentHandlerFactory(pc, "ignore");
-        ThumbnailDefaults noOcr = ThumbnailDefaults.none()
-                .with("{\"pdf-parser\": {\"ocr\": {\"strategy\": \"NO_OCR\"}}, "
-                        + "\"tesseract-ocr-parser\": {\"skipOcr\": true}}");
-        (renderThumbnails ? tikaResource.getThumbnailDefaults().with(noOcr) : noOcr).applyTo(pc);
+        (renderThumbnails ? tikaResource.getThumbnailDefaults().with(NO_OCR) : NO_OCR).applyTo(pc);
         StandardUnpackSelector selector = new StandardUnpackSelector();
         selector.setIncludeEmbeddedResourceTypes(new HashSet<>(Arrays.asList(
                 TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name(),

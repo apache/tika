@@ -182,8 +182,8 @@ public class UnpackerThumbnailTest extends CXFTestBase {
     }
 
     /**
-     * Sends the file name along, as a client would: raw camera formats are
-     * detected by their extension.
+     * Sends the file name along, as a client would; since TIKA-4861 the raw
+     * camera formats are detected by content as well.
      */
     private JsonNode thumbnail(String resource) throws Exception {
         String query = "";
