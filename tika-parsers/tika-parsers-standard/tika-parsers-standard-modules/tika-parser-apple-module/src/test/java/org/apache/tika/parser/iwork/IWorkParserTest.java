@@ -76,8 +76,11 @@ public class IWorkParserTest extends TikaTest {
     public void testNumbersThumbnail() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testNumbers.numbers");
         assertEquals(2, metadataList.size());
+        Metadata thumbnail = metadataList.get(1);
+        assertEquals("QuickLook/Thumbnail.jpg", thumbnail.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("image/jpeg", thumbnail.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
-                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+                thumbnail.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
     /**

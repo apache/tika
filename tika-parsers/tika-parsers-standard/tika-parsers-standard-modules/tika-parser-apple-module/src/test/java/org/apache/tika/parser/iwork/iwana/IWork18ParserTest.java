@@ -17,6 +17,7 @@
 package org.apache.tika.parser.iwork.iwana;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -80,7 +81,7 @@ public class IWork18ParserTest extends TikaTest {
     private static byte[] jpeg() throws Exception {
         BufferedImage image = new BufferedImage(8, 8, BufferedImage.TYPE_INT_RGB);
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
-        ImageIO.write(image, "jpeg", bos);
+        assertTrue(ImageIO.write(image, "jpeg", bos), "no JPEG writer available");
         return bos.toByteArray();
     }
 
