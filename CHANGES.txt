@@ -1,5 +1,9 @@
 Release 4.1.0 - unreleased
 
+   * The preview image of iWork '09 packages (QuickLook/Thumbnail.jpg) and of
+     iWork '18 packages (preview.jpg) is emitted as a THUMBNAIL embedded
+     document, as it already was for iWork '13 (TIKA-4854).
+
    * Raw camera formats are detected by content: RawTiffDetector tells
      Nikon NEF/NRW, Pentax PEF/PTX, Sony ARW/SRF/SR2, Samsung SRW and Adobe
      DNG from a plain TIFF by their image directory (DNGVersion, the vendor
