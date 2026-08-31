@@ -98,6 +98,11 @@ May the gods of dependency management fix this in the future.
     </dependency>
   </dependencies>
 
+  <properties>
+    <!-- TIKA-4816 metadata string-key ban, main sources; see tika-parent -->
+    <forbiddenapis.module.signaturesFile>${metadata.forbiddenapis.signaturesFile}</forbiddenapis.module.signaturesFile>
+  </properties>
+
   <build>
     <plugins>
       <!-- because of protobuf 3.25.6. The actual problem is in netcdf4. Might be a false alarm,
@@ -136,21 +141,6 @@ May the gods of dependency management fix this in the future.
               <!-- needed for tika-parsers-extended-integration-tests -->
               <goal>test-jar</goal>
             </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <!-- TIKA-4816 metadata string-key ban, main sources; see tika-parent -->
-      <plugin>
-        <groupId>de.thetaphi</groupId>
-        <artifactId>forbiddenapis</artifactId>
-        <executions>
-          <execution>
-            <id>forbiddenapis-check</id>
-            <configuration>
-              <signaturesFiles>
-                <signaturesFile>${metadata.forbiddenapis.signaturesFile}</signaturesFile>
-              </signaturesFiles>
-            </configuration>
           </execution>
         </executions>
       </plugin>

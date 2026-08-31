@@ -236,6 +236,12 @@ public class TikaResource {
         // Copy jsonConfigs for lazy resolution by parsers (e.g., pdf-parser config)
         for (Map.Entry<String, JsonConfig> entry : configuredContext.getJsonConfigs().entrySet()) {
             context.setJsonConfig(entry.getKey(), entry.getValue().json());
+            // Keep the jsonConfig->instance association: serialization uses it to send the
+            // original JSON rather than re-serializing the resolved instance.
+            Object resolved = configuredContext.getResolvedConfig(entry.getKey());
+            if (resolved != null) {
+                context.setResolvedConfig(entry.getKey(), resolved);
+            }
             LOG.debug("Merged jsonConfig entry {} into context", entry.getKey());
         }
     }

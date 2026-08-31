@@ -30,13 +30,3 @@ org.apache.tika.metadata.Metadata#setTrusted(java.lang.String,java.lang.String) 
 org.apache.tika.metadata.Metadata#addTrusted(java.lang.String,java.lang.String) @ trusted route; not for parser code (filters/serialization/pipes only)
 org.apache.tika.metadata.Metadata#reconstruct(java.lang.String,java.lang.String,boolean) @ trusted route; not for parser code (filters/serialization/pipes only)
 org.apache.tika.metadata.Metadata#putAll(org.apache.tika.metadata.Metadata) @ trusted route; not for parser code (filters/serialization/pipes only)
-
-# TIKA-4848: the ExceptionReporting policy reaches a parser only through the ParseContext, so
-# the pre-4.1 overloads that take no context silently report FULL. They stay for compatibility;
-# these bans keep parser code off them. (tika-core defines them and does not opt into this file.)
-
-org.apache.tika.utils.ExceptionUtils#getStackTrace(java.lang.Throwable) @ use format(Throwable, ParseContext) so the exception-reporting policy applies
-org.apache.tika.utils.ExceptionUtils#getFilteredStackTrace(java.lang.Throwable) @ use format(Throwable, ParseContext) so the exception-reporting policy applies
-org.apache.tika.extractor.EmbeddedDocumentUtil#recordException(java.lang.Throwable,org.apache.tika.metadata.Metadata) @ use the ParseContext overload so the exception-reporting policy applies
-org.apache.tika.extractor.EmbeddedDocumentUtil#recordEmbeddedStreamException(java.lang.Throwable,org.apache.tika.metadata.Metadata) @ use the ParseContext overload so the exception-reporting policy applies
-org.apache.tika.utils.ParserUtils#recordParserFailure(org.apache.tika.parser.Parser,java.lang.Throwable,org.apache.tika.metadata.Metadata) @ use the ParseContext overload so the exception-reporting policy applies

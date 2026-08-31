@@ -147,6 +147,14 @@ public class ExceptionUtilsTest {
     }
 
     @Test
+    public void nullReportingIsFull() {
+        // formatting someone else's exception must never NPE
+        Throwable t = chain();
+        assertEquals(format(t, Level.FULL),
+                ExceptionUtils.format(t, (ExceptionReporting) null));
+    }
+
+    @Test
     public void getFilteredStackTraceStillUnwrapsBareTikaException() {
         Throwable t = chain();
         assertEquals(ExceptionUtils.format(t.getCause(), (ParseContext) null),

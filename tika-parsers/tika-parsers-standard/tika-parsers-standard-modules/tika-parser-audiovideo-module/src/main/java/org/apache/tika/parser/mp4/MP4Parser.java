@@ -41,6 +41,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -56,6 +57,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -149,8 +151,13 @@ public class MP4Parser implements Parser {
             metadata.set(HttpHeaders.CONTENT_TYPE, AUDIO_MP4.toString());
         }
 
-        for (String m : errorMessages) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, m);
+        //the library's error strings quote document content: FULL-only, nothing survives redaction
+        ExceptionReporting reporting = ExceptionReporting.get(context);
+        if (reporting.getLevel() == ExceptionReporting.Level.FULL) {
+            for (String m : errorMessages) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        ExceptionUtils.truncate(m, reporting.getMaxLength()));
+            }
         }
         xhtml.endDocument();
     }

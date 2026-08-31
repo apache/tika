@@ -17,6 +17,7 @@
 package org.apache.tika.server.core;
 
 
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -38,13 +39,22 @@ public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServe
     }
 
     /**
-     * Always 500: in 4.x a parse failure comes back as container-exception metadata from the
-     * fork, so what reaches here is a fetch/spool/IPC failure, never a document's own
-     * exception. The cause is formatted rather than the wrapper so the body does not open
-     * with this server's own frames.
+     * 500 unless a {@link WebApplicationException} is in the cause chain: in 4.x a parse
+     * failure comes back as container-exception metadata from the fork, so what reaches here
+     * is a fetch/spool/IPC failure, never a document's own exception. Third-party
+     * {@code TikaServerResource} providers that wrapped a {@code WebApplicationException}
+     * chose their own response (status, headers); that passes through untouched. The cause is
+     * formatted rather than the wrapper so the body does not open with this server's own
+     * frames.
      */
     public Response toResponse(TikaServerParseException e) {
         Throwable cause = e.getCause();
+        int depth = 0;
+        for (Throwable t = cause; t != null && depth < 8; t = t.getCause(), depth++) {
+            if (t instanceof WebApplicationException wae) {
+                return wae.getResponse();
+            }
+        }
         return Response
                 .status(500)
                 .entity(ExceptionUtils.format(cause != null ? cause : e, exceptionReporting))

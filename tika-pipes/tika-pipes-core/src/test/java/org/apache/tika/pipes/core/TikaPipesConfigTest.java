@@ -18,6 +18,7 @@ package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -60,6 +61,24 @@ public class TikaPipesConfigTest extends TikaTest {
         PipesConfig config = new PipesConfig();
         assertEquals(PipesConfig.DEFAULT_MAX_IPC_PAYLOAD_BYTES, config.getMaxIpcPayloadBytes());
         assertEquals(100 * 1024 * 1024, config.getMaxIpcPayloadBytes());
+    }
+
+    @Test
+    void testExplicitNullParseContextDefaultsKeepDefaults() throws Exception {
+        // an explicit JSON null must not bind a null policy that NPEs on the crash path
+        String json = """
+                {
+                  "pipes": {},
+                  "parse-context": {
+                    "timeout-limits": null,
+                    "exception-reporting": null
+                  }
+                }
+                """;
+        PipesConfig config = PipesConfig.load(TikaJsonConfig.load(
+                new ByteArrayInputStream(json.getBytes(StandardCharsets.UTF_8))));
+        assertNotNull(config.getDefaultTimeoutLimits());
+        assertNotNull(config.getDefaultExceptionReporting());
     }
 
     @Test

@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
@@ -77,5 +78,25 @@ public class TikaServerParseExceptionMapperTest {
         assertEquals(500, r.getStatus());
         String body = (String) r.getEntity();
         assertTrue(body.contains("Parsing interrupted"), body);
+    }
+
+    @Test
+    public void webApplicationExceptionCausePassesThrough() {
+        // a third-party TikaServerResource provider chose its own response; keep it
+        Response chosen = Response.status(429).header("Retry-After", "7").build();
+        Response r = new TikaServerParseExceptionMapper(new ExceptionReporting())
+                .toResponse(new TikaServerParseException(
+                        new WebApplicationException(chosen)));
+        assertEquals(429, r.getStatus());
+        assertEquals("7", r.getHeaderString("Retry-After"));
+    }
+
+    @Test
+    public void nestedWebApplicationExceptionCausePassesThrough() {
+        Response chosen = Response.status(503).build();
+        Response r = new TikaServerParseExceptionMapper(new ExceptionReporting())
+                .toResponse(new TikaServerParseException(
+                        new RuntimeException(new WebApplicationException(chosen))));
+        assertEquals(503, r.getStatus());
     }
 }

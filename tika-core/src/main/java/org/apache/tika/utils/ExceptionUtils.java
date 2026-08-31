@@ -54,6 +54,10 @@ public class ExceptionUtils {
      * responses and pipes crash messages.
      */
     public static String format(Throwable t, ExceptionReporting reporting) {
+        if (reporting == null) {
+            //never NPE while formatting someone else's exception
+            reporting = new ExceptionReporting();
+        }
         String s;
         switch (reporting.getLevel()) {
             case REDACTED:
@@ -98,7 +102,11 @@ public class ExceptionUtils {
         return result.toString();
     }
 
-    private static String truncate(String s, int maxLength) {
+    /**
+     * Truncates {@code s} to the policy's {@link ExceptionReporting#getMaxLength()} (no-op when
+     * unlimited), for channels that report exception text they did not format themselves.
+     */
+    public static String truncate(String s, int maxLength) {
         if (maxLength < 0 || s.length() <= maxLength) {
             return s;
         }

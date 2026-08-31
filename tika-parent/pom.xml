@@ -314,9 +314,16 @@
     <spotless.goal>apply</spotless.goal>
     <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
     <!-- TIKA-4816: Metadata#set/add(String,String) etc. ban for migrated parser modules;
-         opted into per-module via a "forbiddenapis-check" execution override (main sources
-         only: see that execution's id in the forbiddenapis plugin below). -->
+         opted into per-module by overriding forbiddenapis.module.signaturesFile (main
+         sources only). -->
     <metadata.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
+    <!-- TIKA-4848: default-on in every module's main sources (see forbiddenapis-check below) -->
+    <exception.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
+    <!-- Per-module extra main-source bans; a module overrides this (e.g. to
+         ${metadata.forbiddenapis.signaturesFile}) instead of overriding the
+         forbiddenapis-check execution, whose child list would REPLACE the parent's
+         and silently drop the default-on file. -->
+    <forbiddenapis.module.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.72.0</google.cloud.version>
@@ -1449,14 +1456,21 @@
         </configuration>
         <executions>
           <!-- Split into id'd executions (was one execution running both goals) so that
-               individual modules can layer additional main-only signaturesFiles onto
-               "forbiddenapis-check" (matching execution id merges config) without also
-               applying them to test sources via "forbiddenapis-testcheck". -->
+               main-only signaturesFiles below don't also apply to test sources via
+               "forbiddenapis-testcheck". Modules layer extra main-only bans by overriding
+               the forbiddenapis.module.signaturesFile property, NOT this execution: a
+               child execution's <signaturesFiles> would replace this list wholesale. -->
           <execution>
             <id>forbiddenapis-check</id>
             <goals>
               <goal>check</goal>
             </goals>
+            <configuration>
+              <signaturesFiles>
+                <signaturesFile>${exception.forbiddenapis.signaturesFile}</signaturesFile>
+                <signaturesFile>${forbiddenapis.module.signaturesFile}</signaturesFile>
+              </signaturesFiles>
+            </configuration>
           </execution>
           <execution>
             <id>forbiddenapis-testcheck</id>
@@ -1783,6 +1797,8 @@
         <spotless.header.file>${session.executionRootDirectory}/tika-parent/license-header.txt</spotless.header.file>
         <checkstyle.configLocation>${session.executionRootDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
         <metadata.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
+        <exception.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
+        <forbiddenapis.module.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
       </properties>
     </profile>
     <!-- Fast profile: ./mvnw install -Pfast -T1C -->

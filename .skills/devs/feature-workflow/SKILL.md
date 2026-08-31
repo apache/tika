@@ -77,3 +77,30 @@ widen a PR during review.
 | PR review changes an interface | pull piece back to spike |
 | PR review finds out-of-scope issue | todo doc, not this PR |
 | Third review round on a PR | one of the two above applies |
+
+## Cross-cutting refactors (chokepoints, wire formats)
+
+A refactor claiming "every X goes through Y" — a policy chokepoint, a single
+serialization route — is a contract too, with three extra rules. (Learned on
+TIKA-4848, where all three were violated and each violation became a
+post-merge review round.)
+
+- **Enforcement ships with the invariant, default-on.** The PR that creates
+  the chokepoint also adds the build-breaking check (forbidden-apis ban,
+  architecture test) that keeps call sites on it — every module, explicit
+  opt-outs. Opt-in checks document an invariant; only default-on maintains
+  it. Without this, each missed call site is a review finding instead of a
+  compile failure.
+
+- **One thin end-to-end test per transport surface.** A knob that crosses a
+  JVM boundary is exercised through each surface it rides (in-JVM, server,
+  pipes fork, grpc) in the invariant's own PR. Diff review cannot see a
+  parent-resolves/fork-deserializes seam; a wire test can.
+
+- **Producer and consumer change together.** Both halves of a
+  serializer/deserializer or parent/fork protocol pair go in the same PR.
+  Cutting by module puts every seam between two reviews, and seams are where
+  cross-cutting bugs live.
+
+No compat shim without a caller: grep before deprecating-in-place. A shim
+for an API nothing calls is dead weight that still carries bugs.

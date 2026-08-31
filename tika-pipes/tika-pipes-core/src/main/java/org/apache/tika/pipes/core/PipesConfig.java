@@ -213,7 +213,8 @@ public class PipesConfig {
         ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
         JsonNode parseContextNode = tikaJsonConfig.getRootNode().path("parse-context");
         JsonNode limitsNode = parseContextNode.path("timeout-limits");
-        if (!limitsNode.isMissingNode()) {
+        //isNull: an explicit JSON null keeps the default rather than binding a null field
+        if (!limitsNode.isMissingNode() && !limitsNode.isNull()) {
             try {
                 config.defaultTimeoutLimits = mapper.treeToValue(limitsNode, TimeoutLimits.class);
             } catch (JsonProcessingException e) {
@@ -221,7 +222,7 @@ public class PipesConfig {
             }
         }
         JsonNode reportingNode = parseContextNode.path("exception-reporting");
-        if (!reportingNode.isMissingNode()) {
+        if (!reportingNode.isMissingNode() && !reportingNode.isNull()) {
             try {
                 config.defaultExceptionReporting =
                         mapper.treeToValue(reportingNode, ExceptionReporting.class);

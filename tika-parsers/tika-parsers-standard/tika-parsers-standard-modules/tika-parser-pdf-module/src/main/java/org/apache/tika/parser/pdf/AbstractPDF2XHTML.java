@@ -616,7 +616,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         PDFRenderingState renderingState = context.get(PDFRenderingState.class);
         if (renderingState == null) {
             Metadata pageMetadata = getCurrentPageMetadata(pdPage);
-            noContextRenderCurrentPage(pageMetadata, tmpResources);
+            return noContextRenderCurrentPage(pageMetadata, tmpResources);
         }
         //if the full document has already been rendered, then reuse that file
         //TODO: we need to prevent this if only a portion of the page or portions

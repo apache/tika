@@ -25,8 +25,9 @@ public class EvalExceptionUtils {
 
     //these remove runtime info from the stacktraces so
     //that actual causes can be counted.
+    //\t*: a suppressed exception's cause is tab-indented by printStackTrace
     private final static Pattern CAUSED_BY_SNIPPER =
-            Pattern.compile("(?m)^(Caused by: [^:\\r\\n]+):[^\\r\\n]+");
+            Pattern.compile("(?m)^(\\t*Caused by: [^:\\r\\n]+):[^\\r\\n]+");
 
     //strips the exception message off the first line, so that the same cause with
     //differing runtime detail collapses to one entry. Anchored to the first line: a

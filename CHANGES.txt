@@ -3,6 +3,13 @@ Release 4.1.0 - unreleased
    * Add "exception-reporting" parse-context config to redact and bound
      exception text in metadata, tika-server error bodies and pipes/grpc
      messages; FileSystemEmitter writes atomically (TIKA-4848).
+     Compat notes: a truncated TSD envelope now records its read failure
+     under tk:exception:embedded-stream-exception rather than
+     tk:exception:embedded-exception; recordException and
+     recordEmbeddedStreamException no longer strip a bare TikaException
+     wrapper, so the first line of tk:exception:* values may name the
+     wrapper (affects consumers keyed on that line, e.g. eval cause
+     counts across the 4.1 boundary).
 
    * Allow image compression settings in PDFBox-based renderer (TIKA-4862).
 

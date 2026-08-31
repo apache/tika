@@ -203,19 +203,10 @@ public class PipesServer implements AutoCloseable {
         ParseContext configContext = null;
         try {
             TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
-            TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
-            PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-
-            // Set socket timeout from config after loading PipesConfig
-            socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
-            socket.setTcpNoDelay(true);
-
-            MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
-            ContentHandlerFactory contentHandlerFactory = tikaLoader.loadContentHandlerFactory();
+            //load before constructing so the catch block below can redact per config
             configContext = tikaLoader.loadParseContext();
-            MetadataWriteLimiterFactory metadataWriteLimiterFactory = configContext.get(MetadataWriteLimiterFactory.class);
-            PipesServer pipesServer = new PipesServer(pipesClientId, tikaLoader, pipesConfig, socket, dis, dos, metadataFilter, contentHandlerFactory, metadataWriteLimiterFactory,
-                    ExceptionReporting.get(configContext));
+            PipesServer pipesServer =
+                    new PipesServer(pipesClientId, socket, dis, dos, tikaLoader, configContext);
             pipesServer.initializeResources();
             LOG.debug("PipesServer loaded and ready");
             return pipesServer;
@@ -237,39 +228,26 @@ public class PipesServer implements AutoCloseable {
         }
     }
 
-    /**
-     * @deprecated since 4.1, use the overload taking an {@link ExceptionReporting}
-     */
-    @Deprecated
-    public PipesServer(String pipesClientId, TikaLoader tikaLoader, PipesConfig pipesConfig, Socket socket, DataInputStream in,
-                       DataOutputStream out, MetadataFilter metadataFilter, ContentHandlerFactory contentHandlerFactory,
-                       MetadataWriteLimiterFactory metadataWriteLimiterFactory) throws TikaConfigException,
-            IOException {
-        this(pipesClientId, tikaLoader, pipesConfig, socket, in, out, metadataFilter,
-                contentHandlerFactory, metadataWriteLimiterFactory, new ExceptionReporting());
-    }
-
-    public PipesServer(String pipesClientId, TikaLoader tikaLoader, PipesConfig pipesConfig, Socket socket, DataInputStream in,
-                       DataOutputStream out, MetadataFilter metadataFilter, ContentHandlerFactory contentHandlerFactory,
-                       MetadataWriteLimiterFactory metadataWriteLimiterFactory,
-                       ExceptionReporting exceptionReporting) throws TikaConfigException,
-            IOException {
+    private PipesServer(String pipesClientId, Socket socket, DataInputStream in,
+                        DataOutputStream out, TikaLoader tikaLoader, ParseContext configContext)
+            throws TikaConfigException, IOException {
 
         this.pipesClientId = pipesClientId;
         this.tikaLoader = tikaLoader;
-        this.pipesConfig = pipesConfig;
+        this.pipesConfig = PipesConfig.load(tikaLoader.getConfig());
         this.socket = socket;
-        this.defaultMetadataFilter = metadataFilter;
-        this.defaultContentHandlerFactory = contentHandlerFactory;
-        this.defaultMetadataWriteLimiterFactory = metadataWriteLimiterFactory;
-        this.input = new DataInputStream(in);
-        this.output = new DataOutputStream(out);
+        socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
+        this.defaultMetadataFilter = tikaLoader.loadMetadataFilters();
+        this.defaultContentHandlerFactory = tikaLoader.loadContentHandlerFactory();
+        this.defaultMetadataWriteLimiterFactory = configContext.get(MetadataWriteLimiterFactory.class);
+        this.input = in;
+        this.output = out;
         this.heartbeatIntervalMillis = pipesConfig.getHeartbeatIntervalMillis();
         validateHeartbeatInterval(pipesConfig);
 
         emitStrategy = pipesConfig.getEmitStrategy().getType();
         this.protocolIO = new ServerProtocolIO(input, output, pipesConfig.getMaxIpcPayloadBytes(),
-                exceptionReporting);
+                ExceptionReporting.get(configContext));
     }
 
 
