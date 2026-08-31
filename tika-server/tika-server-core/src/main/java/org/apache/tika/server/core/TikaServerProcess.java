@@ -431,7 +431,7 @@ public class TikaServerProcess {
         writers.add(new JSONMessageBodyWriter());
         writers.add(new TextMessageBodyWriter());
         writers.addAll(loadWriterServices());
-        writers.add(new TikaServerParseExceptionMapper());
+        writers.add(new TikaServerParseExceptionMapper(tikaResource.getExceptionReporting()));
         writers.add(new BadRequestExceptionMapper());
         writers.add(new JSONObjWriter());
 

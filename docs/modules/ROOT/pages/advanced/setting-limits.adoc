@@ -383,8 +383,10 @@ chain are kept). `REDACTED`: exception class names only, no frames.
 }
 ----
 
-The same policy applies to the container and to every embedded document. It is
-loaded from the config only and is rejected in a per-request `parse-context`
+The same policy applies to the container and to every embedded document, to
+parser-level warnings (`tk:exception:warn`, `tk:exception:embedded-stream`), to
+the messages a pipes worker returns on fetch/emit/crash, and to tika-server's
+`422` error bodies. It is loaded from the config only and is rejected in a per-request `parse-context`
 (tika-server `/rmeta/config` and friends, `/pipes`, `/async`), so a caller cannot
 turn redaction back off.
 

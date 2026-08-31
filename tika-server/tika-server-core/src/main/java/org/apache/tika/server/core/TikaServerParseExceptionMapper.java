@@ -17,25 +17,28 @@
 package org.apache.tika.server.core;
 
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
-
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
+import org.apache.tika.utils.ExceptionUtils;
 
 @Provider
 public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServerParseException> {
 
+    private final ExceptionReporting exceptionReporting;
 
     public TikaServerParseExceptionMapper() {
+        this(ExceptionReporting.DEFAULT);
+    }
+
+    public TikaServerParseExceptionMapper(ExceptionReporting exceptionReporting) {
+        this.exceptionReporting = exceptionReporting;
     }
 
     public Response toResponse(TikaServerParseException e) {
@@ -70,28 +73,13 @@ public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServe
     }
 
     private Response buildResponse(Throwable cause, int i) {
-        if (cause != null) {
-            Writer result = new StringWriter();
-            PrintWriter writer = new PrintWriter(result);
-            cause.printStackTrace(writer);
-            writer.flush();
-            try {
-                result.flush();
-            } catch (IOException e) {
-                //something went seriously wrong
-                return Response
-                        .status(500)
-                        .build();
-            }
-            return Response
-                    .status(i)
-                    .entity(result.toString())
-                    .type("text/plain")
-                    .build();
-        } else {
-            return Response
-                    .status(i)
-                    .build();
+        if (cause == null) {
+            return Response.status(i).build();
         }
+        return Response
+                .status(i)
+                .entity(ExceptionUtils.format(cause, exceptionReporting))
+                .type("text/plain")
+                .build();
     }
 }
