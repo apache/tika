@@ -5,6 +5,11 @@ Release 4.1.0 - unreleased
      pf4j default, and a WARN names the resolved directory when no plugins
      directory exists (TIKA-4865).
 
+   * The tika-server full and tika-grpc Docker images install fonts-noto-cjk:
+     without any CJK face, PDFs using non-embedded CJK fonts render (and OCR)
+     as .notdef boxes in every renderer, even though the images ship Japanese
+     tesseract data (TIKA-4866).
+     
    * The default plugins directory is resolved against the install layout
      (next to the jar, or next to its lib/ directory) and always as an
      absolute path, shared by tika-server, PipesForkParser and the async
