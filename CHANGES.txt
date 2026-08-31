@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * The tika-server full and tika-grpc Docker images install fonts-noto-cjk:
+     without any CJK face, PDFs using non-embedded CJK fonts render (and OCR)
+     as .notdef boxes in every renderer, even though the images ship Japanese
+     tesseract data (TIKA-XXXX).
+
    * tika-server error bodies (the 422/500 exception mapper, /meta/{field})
      now honor the exception-reporting policy; /meta/{field} returns the
      already-formatted container exception instead of re-wrapping it with

@@ -66,6 +66,7 @@ RUN set -eux \
         xfonts-utils \
         fonts-freefont-ttf \
         fonts-liberation \
+        fonts-noto-cjk \
         ttf-mscorefonts-installer \
         wget \
         cabextract \
