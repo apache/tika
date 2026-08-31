@@ -727,28 +727,40 @@ public class TikaServerProcess {
 
     /**
      * Resolves the default plugins directory. Looks for a "plugins" directory
-     * next to the running jar first, then falls back to the current working directory.
+     * next to the jar this class was loaded from, then next to that directory's
+     * parent (the class may live in a "lib" directory beside the server jar),
+     * then in the current working directory. Always returns an absolute path,
+     * so the forked pipes server does not depend on its own working directory.
      */
     private static String resolveDefaultPluginsDir() {
+        Path codeSourceDir = null;
         try {
             Path jarPath = Path.of(
                     TikaServerProcess.class.getProtectionDomain()
                             .getCodeSource().getLocation().toURI());
-            Path jarDir = jarPath.getParent();
-            if (jarDir != null) {
-                Path pluginsNextToJar = jarDir.resolve(DEFAULT_PLUGINS_DIR);
-                if (Files.isDirectory(pluginsNextToJar)) {
-                    return pluginsNextToJar.toAbsolutePath().toString();
+            codeSourceDir = jarPath.getParent();
+        } catch (Exception e) {
+            // no code source, probe the working directory only
+        }
+        return resolveDefaultPluginsDir(codeSourceDir, Path.of("")).toString();
+    }
+
+    // package-private for testing
+    static Path resolveDefaultPluginsDir(Path codeSourceDir, Path cwd) {
+        if (codeSourceDir != null) {
+            Path nextToJar = codeSourceDir.resolve(DEFAULT_PLUGINS_DIR);
+            if (Files.isDirectory(nextToJar)) {
+                return nextToJar.toAbsolutePath();
+            }
+            Path parent = codeSourceDir.getParent();
+            if (parent != null) {
+                Path nextToParent = parent.resolve(DEFAULT_PLUGINS_DIR);
+                if (Files.isDirectory(nextToParent)) {
+                    return nextToParent.toAbsolutePath();
                 }
             }
-        } catch (Exception e) {
-            // Fall through to cwd-relative
         }
-        Path cwdPlugins = Path.of(DEFAULT_PLUGINS_DIR);
-        if (Files.isDirectory(cwdPlugins)) {
-            return cwdPlugins.toAbsolutePath().toString();
-        }
-        return DEFAULT_PLUGINS_DIR;
+        return cwd.resolve(DEFAULT_PLUGINS_DIR).toAbsolutePath();
     }
 
     /**
