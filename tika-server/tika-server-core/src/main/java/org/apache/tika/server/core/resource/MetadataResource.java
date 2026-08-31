@@ -27,8 +27,10 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
@@ -36,7 +38,6 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.SkipEmbeddedDocumentSelector;
 import org.apache.tika.io.TikaInputStream;
@@ -46,7 +47,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.server.core.TikaServerParseException;
 
 
 @Path("/meta")
@@ -153,7 +153,13 @@ public class MetadataResource {
 
         String containerException = metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
         if (containerException != null && !containerException.isEmpty()) {
-            throw new TikaServerParseException(new TikaException(containerException));
+            // Already policy-formatted; wrapping it as an exception message would let the
+            // mapper redact it away and append this server's own frames.
+            throw new WebApplicationException(Response
+                    .status(422)
+                    .entity(containerException)
+                    .type(MediaType.TEXT_PLAIN)
+                    .build());
         }
 
         if (metadata.get(field) == null) {
