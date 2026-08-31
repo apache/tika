@@ -323,7 +323,7 @@ public class OfficeParser extends AbstractOfficeParser {
         Metadata embeddedMetadata = Metadata.newInstance(context);
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "thumbnail.wmf");
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
         embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, "image/wmf");
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);

@@ -72,8 +72,16 @@ final class MetafileRendering {
             }
             for (RenderResult result : results.getResults()) {
                 if (result.getStatus() != RenderResult.STATUS.SUCCESS) {
-                    EmbeddedDocumentUtil.recordException(
-                            new TikaException("metafile rendering failed"), metadata, context);
+                    //carry the renderer's diagnostics over to the metafile
+                    String[] warnings = result.getMetadata()
+                            .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+                    if (warnings.length == 0) {
+                        EmbeddedDocumentUtil.recordException(
+                                new TikaException("metafile rendering failed"), metadata, context);
+                    }
+                    for (String warning : warnings) {
+                        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+                    }
                     continue;
                 }
                 Metadata renderingMetadata = result.getMetadata();
