@@ -70,6 +70,7 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.config.ConfigMerger;
 import org.apache.tika.pipes.core.config.ConfigOverrides;
+import org.apache.tika.pipes.core.config.DefaultPluginsDir;
 import org.apache.tika.server.core.metrics.MetricsServer;
 import org.apache.tika.server.core.metrics.TikaMetricsFilter;
 import org.apache.tika.server.core.metrics.TikaServerMetrics;
@@ -724,34 +725,6 @@ public class TikaServerProcess {
         return helper;
     }
 
-    private static final String DEFAULT_PLUGINS_DIR = "plugins";
-
-    /**
-     * Resolves the default plugins directory. Looks for a "plugins" directory
-     * next to the running jar first, then falls back to the current working directory.
-     */
-    private static String resolveDefaultPluginsDir() {
-        try {
-            Path jarPath = Path.of(
-                    TikaServerProcess.class.getProtectionDomain()
-                            .getCodeSource().getLocation().toURI());
-            Path jarDir = jarPath.getParent();
-            if (jarDir != null) {
-                Path pluginsNextToJar = jarDir.resolve(DEFAULT_PLUGINS_DIR);
-                if (Files.isDirectory(pluginsNextToJar)) {
-                    return pluginsNextToJar.toAbsolutePath().toString();
-                }
-            }
-        } catch (Exception e) {
-            // Fall through to cwd-relative
-        }
-        Path cwdPlugins = Path.of(DEFAULT_PLUGINS_DIR);
-        if (Files.isDirectory(cwdPlugins)) {
-            return cwdPlugins.toAbsolutePath().toString();
-        }
-        return DEFAULT_PLUGINS_DIR;
-    }
-
     /**
      * Creates or merges server configuration using ConfigMerger.
      * <p>
@@ -784,7 +757,7 @@ public class TikaServerProcess {
                 // Use PASSBACK_ALL strategy - results returned through socket
                 .setEmitStrategy(EmitStrategy.PASSBACK_ALL)
                 // Set plugin roots
-                .setPluginRoots(resolveDefaultPluginsDir());
+                .setPluginRoots(DefaultPluginsDir.resolve(TikaServerProcess.class));
 
         // Only set default pipes config if there's no existing config
         // This allows user-provided config to specify their own numClients, etc.

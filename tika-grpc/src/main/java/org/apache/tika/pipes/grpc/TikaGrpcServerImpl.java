@@ -54,6 +54,7 @@ import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
+import org.apache.tika.pipes.core.config.DefaultPluginsDir;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherReply;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherRequest;
@@ -138,8 +139,20 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             pluginManager.loadPlugins();
             pluginManager.startPlugins();
         } catch (TikaConfigException e) {
-            LOG.warn("Could not load plugin manager, using default: {}", e.getMessage());
-            pluginManager = new org.pf4j.DefaultPluginManager();
+            // plugin-roots not configured: probe the install layout like the
+            // other pipes entry points (TIKA-4864/TIKA-4865)
+            String defaultRoot = DefaultPluginsDir.resolve(TikaGrpcServerImpl.class);
+            LOG.warn("plugin-roots not configured ({}); falling back to {}",
+                    e.getMessage(), defaultRoot);
+            try {
+                pluginManager = TikaPluginManager.loadFromPaths(defaultRoot);
+                pluginManager.loadPlugins();
+                pluginManager.startPlugins();
+            } catch (TikaConfigException | IOException e2) {
+                LOG.warn("could not load plugins from {}, starting with none: {}",
+                        defaultRoot, e2.getMessage());
+                pluginManager = new org.pf4j.DefaultPluginManager();
+            }
         }
 
         if (pluginManager.getPlugins().isEmpty()) {

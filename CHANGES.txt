@@ -11,6 +11,30 @@ Release 4.1.0 - unreleased
      wrapper (affects consumers keyed on that line, e.g. eval cause
      counts across the 4.1 boundary).
 
+   * tika-grpc resolves its plugin-roots fallback against the install
+     layout via DefaultPluginsDir instead of a working-directory-relative
+     pf4j default, and a WARN names the resolved directory when no plugins
+     directory exists (TIKA-4865).
+
+   * The tika-server full and tika-grpc Docker images install fonts-noto-cjk:
+     without any CJK face, PDFs using non-embedded CJK fonts render (and OCR)
+     as .notdef boxes in every renderer, even though the images ship Japanese
+     tesseract data (TIKA-4866).
+     
+   * The default plugins directory is resolved against the install layout
+     (next to the jar, or next to its lib/ directory) and always as an
+     absolute path, shared by tika-server, PipesForkParser and the async
+     CLI; it no longer depends on the working directory (TIKA-4864).
+
+   * tika-server error bodies (the 422/500 exception mapper, /meta/{field})
+     now honor the exception-reporting policy; /meta/{field} returns the
+     already-formatted container exception instead of re-wrapping it with
+     server frames. Completes TIKA-4848 (TIKA-4848).
+
+   * The exception-reporting policy now also governs the messages a pipes
+     worker returns (fetch/emit/crash) and the container exception it
+     records; part of TIKA-4848 step 3 (TIKA-4848).
+     
    * Allow image compression settings in PDFBox-based renderer (TIKA-4862).
 
    * The tika-server full and tika-grpc Docker images set OMP_THREAD_LIMIT=1:

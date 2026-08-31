@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
+import org.apache.tika.pipes.core.config.DefaultPluginsDir;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.utils.StringUtils;
 
@@ -73,7 +74,7 @@ public class PluginsWriter {
                     pluginString = plugins.toAbsolutePath().toString();
                 }
             } else {
-                pluginString = TikaAsyncCLI.resolveDefaultPluginsDir();
+                pluginString = DefaultPluginsDir.resolve(PluginsWriter.class);
             }
             root.put("plugin-roots", pluginString);
 
