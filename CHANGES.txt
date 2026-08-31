@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * tika-grpc resolves its plugin-roots fallback against the install
+     layout via DefaultPluginsDir instead of a working-directory-relative
+     pf4j default, and a WARN names the resolved directory when no plugins
+     directory exists (TIKA-4865).
+
    * The default plugins directory is resolved against the install layout
      (next to the jar, or next to its lib/ directory) and always as an
      absolute path, shared by tika-server, PipesForkParser and the async
