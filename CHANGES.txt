@@ -9,6 +9,11 @@ Release 4.1.0 - unreleased
      config. PDFParserConfig gains maxRenderedPages, bounding the page
      rendering independently of maxPages (TIKA-4856).
 
+   * The default plugins directory is resolved against the install layout
+     (next to the jar, or next to its lib/ directory) and always as an
+     absolute path, shared by tika-server, PipesForkParser and the async
+     CLI; it no longer depends on the working directory (TIKA-4864).
+
    * tika-server error bodies (the 422/500 exception mapper, /meta/{field})
      now honor the exception-reporting policy; /meta/{field} returns the
      already-formatted container exception instead of re-wrapping it with
