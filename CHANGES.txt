@@ -1,13 +1,9 @@
 Release 4.1.0 - unreleased
 
-   * PDF page rendering writes compressed PNGs: PDFBoxRenderer gained an
-     imageQuality setting (new default 0.5) and OcrConfig.imageQuality's
-     default moved from 1.0 to 0.5. ImageIO's PNG "quality" is an inverted
-     effort knob - 1.0 wrote uncompressed files (~3.9 MB per 200-dpi gray
-     page) and the renderer's previous unset value spent ~10x the encode
-     time of 0.5 for a few percent smaller output; 0.5 is both fast and
-     small, and PNG stays lossless. Set ocr.imageQuality to restore old
-     behavior (TIKA-4862).
+   * Allow image compression settings in PDFBox-based renderer (TIKA-4862).
+     
+   * The tika-server full and tika-grpc Docker images set OMP_THREAD_LIMIT=1:
+     to avoid oversubscribing the CPU under forked parse workers (TIKA-4863).
 
    * embedded-limits maxDepth counts embedding levels again instead of the
      parsers a parse passes through; with AutoDetectParser over DefaultParser
