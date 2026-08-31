@@ -203,6 +203,8 @@ public class AsyncCliParserTest {
         // not the string, so the separator does not break the test on Windows
         assertEquals("plugins", Path.of(pluginRoots).getFileName().toString(),
                 "plugin-roots should name a 'plugins' directory, got: " + pluginRoots);
+        assertTrue(Path.of(pluginRoots).isAbsolute(),
+                "the default plugin-roots must be absolute (TIKA-4864), got: " + pluginRoots);
 
         // Original config values should be preserved
         assertTrue(root.has("pipes"));
