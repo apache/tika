@@ -43,6 +43,7 @@ optional; anything you omit uses its defaults.
   "auto-detect-parser": { /* AutoDetectParser options */ },
   "parse-context": {
     "timeout-limits": { /* progress + total task timeouts */ },
+    "exception-reporting": { /* how much exception detail is reported */ },
     "unpack-config": { /* embedded-byte extraction */ }
     /* other SelfConfiguring components by component name */
   },
