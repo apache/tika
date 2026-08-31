@@ -59,6 +59,7 @@ jobs:
       # forgetting only makes this job slower, it does not weaken it.
       - name: Build with Maven (tr_TR locale)
         run: |
+          mvn install -Pfast -pl :tika-annotation-processor -am -B -q
           mvn clean test install -Pci -T1C \
             -pl '!:tika-pipes-es-integration-tests,!:tika-pipes-kafka-integration-tests,!:tika-pipes-opensearch-integration-tests,!:tika-pipes-s3-integration-tests,!:tika-pipes-solr-integration-tests' \
             -Duser.language=tr -Duser.country=TR \

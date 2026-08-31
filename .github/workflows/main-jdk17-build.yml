@@ -75,11 +75,16 @@ jobs:
           mvn apache-rat:check -Pci \
             -pl "$(echo "$IT_MODULES" | sed 's/:/!:/g')" \
             -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+      # Pre-install tika-annotation-processor before any -T1C invocation:
+      # annotationProcessorPaths resolves from the LOCAL REPO, not the reactor,
+      # so parallel Maven schedules consumers before the processor's install
+      # and the build races to "Could not find artifact tika-annotation-processor".
       # javadoc:aggregate is push-only: it is an aggregate-docs artifact, is
       # single-threaded, and javadoc breakage is caught on main within the hour;
       # PR pushes should not wait on it.
       - name: Build with Maven
         run: |
+          mvn install -Pfast -pl :tika-annotation-processor -am -B -q
           mvn clean test install ${{ github.event_name == 'push' && 'javadoc:aggregate' || '' }} -Pci -T1C \
             -pl "$(echo "$IT_MODULES" | sed 's/:/!:/g')" \
             -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
@@ -108,7 +113,7 @@ jobs:
       # jar-packaging reactor module, so -am cannot supply them. -Pfast keeps it
       # to ~3 min; the tests themselves run in the next step.
       - name: Install all modules (produces the plugin zips)
-        run: mvn clean install -Pfast -T1C -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        run: mvn install -Pfast -pl :tika-annotation-processor -am -B -q && mvn clean install -Pfast -T1C -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
       # apache-rat:check here too -- the build job no longer sees these modules,
       # so without this they would drop out of license checking entirely.
       - name: Run integration tests
@@ -143,7 +148,7 @@ jobs:
       # what puts each zip in the local repo. -Pfast (skipTests + rat/checkstyle/spotless
       # off) because the build job owns all of that; this job only needs the artifacts.
       - name: Install all modules (produces the plugin zips)
-        run: mvn clean install -Pfast -T1C -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        run: mvn install -Pfast -pl :tika-annotation-processor -am -B -q && mvn clean install -Pfast -T1C -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
       # -pl must name the leaf modules: tika-e2e-tests is an aggregator pom, and Maven does
       # not pull in a selected aggregator's children, so this job built two pom-only modules
       # and ran zero tests while reporting green.
