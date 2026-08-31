@@ -73,6 +73,8 @@ RUN set -eux \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ARG TIKA_VERSION
 ENV TIKA_VERSION=$TIKA_VERSION
+# tesseract links libgomp; one thread per OCR process - parallelism comes from the forked parse workers
+ENV OMP_THREAD_LIMIT=1
 
 COPY --from=fetch_tika /opt/tika-server /opt/tika-server
 # WORKDIR sets the CWD so tika-server's plugin-root fallback resolves
