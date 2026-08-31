@@ -8,6 +8,20 @@ Release 4.1.0 - unreleased
      stay INLINE. Clients that looked for cover art as INLINE need to
      accept THUMBNAIL as well (TIKA-4850).
 
+   * tika-server error bodies (the 422/500 exception mapper, /meta/{field})
+     now honor the exception-reporting policy; /meta/{field} returns the
+     already-formatted container exception instead of re-wrapping it with
+     server frames. Completes TIKA-4848 (TIKA-4848).
+
+   * The exception-reporting policy now also governs the messages a pipes
+     worker returns (fetch/emit/crash) and the container exception it
+     records; part of TIKA-4848 step 3 (TIKA-4848).
+     
+   * Allow image compression settings in PDFBox-based renderer (TIKA-4862).
+     
+   * The tika-server full and tika-grpc Docker images set OMP_THREAD_LIMIT=1:
+     to avoid oversubscribing the CPU under forked parse workers (TIKA-4863).
+
    * embedded-limits maxDepth counts embedding levels again instead of the
      parsers a parse passes through; with AutoDetectParser over DefaultParser
      every value above 1 used to stop one level early (TIKA-4857).

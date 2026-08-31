@@ -51,6 +51,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.Tika;
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.OutputLimits;
 import org.apache.tika.config.loader.TikaLoader;
@@ -92,6 +93,7 @@ public class TikaResource {
     // createRequestContext); the forked worker loads these same defaults from the same config.
     private final MetadataWriteLimiterFactory configMetadataWriteLimiterFactory;
     private final OutputLimits configOutputLimits;
+    private final ExceptionReporting configExceptionReporting;
     private final boolean configSuppliesContentHandlerFactory;
 
     /**
@@ -110,6 +112,7 @@ public class TikaResource {
         ParseContext configDefaults = loadConfigDefaults();
         this.configMetadataWriteLimiterFactory = configDefaults.get(MetadataWriteLimiterFactory.class);
         this.configOutputLimits = OutputLimits.get(configDefaults);
+        this.configExceptionReporting = ExceptionReporting.get(configDefaults);
         this.configSuppliesContentHandlerFactory =
                 configDefaults.get(ContentHandlerFactory.class) != null;
     }
@@ -121,6 +124,11 @@ public class TikaResource {
      */
     public PipesParsingHelper getPipesParsingHelper() {
         return pipesParsingHelper;
+    }
+
+    /** The config's exception-reporting policy, for channels that have no ParseContext. */
+    public ExceptionReporting getExceptionReporting() {
+        return configExceptionReporting;
     }
 
     /**

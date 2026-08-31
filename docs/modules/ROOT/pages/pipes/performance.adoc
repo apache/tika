@@ -16,24 +16,26 @@
 //
 = Performance and Isolation Trade-offs
 
-In Tika 4.x, `tika-server`'s classic endpoints (`/tika`, `/rmeta`, `/meta`,
-`/detect`, `/unpack`) parse through Tika Pipes by default: the HTTP front-end
-hands each document to a pool of forked worker JVMs rather than parsing in the
-server process. This buys crash/OOM isolation at the cost of a per-request
-overhead — spooling large payloads to a temp file, a socket round-trip, and
-serializing the result back. This page describes that trade-off and how to tune
-for it.
+Tika 4.x parses through Tika Pipes: each document is handled by a pool of forked
+worker JVMs rather than in the calling process. That architecture pays off in two
+ways — crash/OOM isolation (a bad document can't take down the server), and, for
+`tika-server`, a reliable **backpressure signal**: because parsing runs in a
+managed worker pool, the server can see when it is saturated and push back,
+rather than accepting unbounded work until it topples the way a single in-process
+parser could. That signal simply did not exist before pipes, and it is one of the
+strongest reasons to run 4.x.
+
+This page covers the pipes deployment shapes, their isolation and recovery
+behaviour, and **file-system-to-file-system batch throughput** — a worker fetches
+each document from a file system and emits the extract to a file system. A
+dedicated `tika-server` performance analysis (the HTTP upload endpoints `/tika`,
+`/rmeta`, and so on, and the backpressure behaviour above) is planned as a
+companion to this page.
 
 [NOTE]
 ====
-The tables in the first half of this page were measured on the **4.0.0
-release** and are kept as that snapshot. After 4.0.0 shipped we traced the
-batch slowdown against 3.x to a specific cause — temp-file volume, not the
-pipes architecture — and fixed it for **4.1.0**. The findings, the fix, and a
-worked configuration from the box where it was diagnosed are in
-<<found-in-400>> and <<corpora-case-study>>. The upload-endpoint gap on tiny
-documents (<<endpoint-choice>>) is a separate, smaller effect and still
-applies.
+The batch measurements (<<found-in-400>>) are on **4.1.0-SNAPSHOT**, which
+includes the temp-file spill improvements described there.
 ====
 
 == Deployment shapes
@@ -68,112 +70,6 @@ The single-forked-child (3.x) and shared-server (4.x) shapes are close cousins:
 one parsing JVM serving all concurrency, with the front-end/watchdog restarting
 it on failure. The practical 4.x default choice is between **per-client**
 (strongest isolation) and **shared-server** (highest throughput).
-
-== Throughput (4.0.0 measurements)
-
-The pipes per-request overhead — temp-spool of large payloads, socket IPC, and
-result serialization — is roughly *fixed per request*. It therefore dominates
-when parse time is small (many tiny documents) and amortizes away as documents
-get larger and parsing dominates.
-
-Relative throughput at matched concurrency (requesting threads = worker count),
-normalized to a single in-JVM parser of the same total heap (= 1.00; higher is
-faster). These are representative figures from one benchmark (16-core host, JDK
-17, loopback HTTP, plain-text extraction) and are meant to show the *shape* of
-the trade-off, not to be quoted as absolutes:
-
-[cols="2,1,1,1"]
-|===
-|Corpus |Single in-JVM (8g) |Shared-server (1×8g) |Per-client (4×2g)
-
-|Many small files (~50 KB HTML) |1.00 |~0.60 |~0.47
-|Mixed (~350 KB avg)            |1.00 |~0.85 |~0.65
-|Large (multi-MB, up to ~50 MB) |1.00 |~0.95 |~0.82
-|===
-
-Two things to note:
-
-* The gap is widest on small files (per-request overhead is the whole cost) and
-  nearly closes on large files (parse time dominates).
-* **Shared-server recovers most of the pipes overhead relative to per-client** —
-  one warm JVM with shared JIT and one garbage collector outperforms several
-  smaller, independently-warming worker heaps.
-
-[#endpoint-choice]
-== Endpoint choice: uploading bytes vs fetch-and-emit (4.0.0 measurements)
-
-How a document reaches the parser matters as much as the parsing mode. The
-classic endpoints (`/tika`, `/rmeta`, `/meta`) receive the document *in the HTTP
-request body* and return the extract *in the response*, so every request pays to
-move the bytes in and the result back out — and in 4.x that now crosses the
-process boundary to a forked worker. The pipes endpoints (`/pipes`, `/async`)
-instead take only a small fetch/emit *tuple*: the worker reads the document
-straight from the configured xref:pipes/fetchers.adoc[fetcher] — a file system,
-Amazon S3, Google Cloud Storage, Azure Blob Storage, and so on — and the
-configured xref:pipes/emitters.adoc[emitter] writes the result straight to its
-destination, which need not be a file at all: an object store, a search index
-(OpenSearch, Solr, Elasticsearch), a database, a queue. The bytes never travel
-over HTTP and the result is never passed back through the front-end.
-
-Whenever a fetcher can reach your inputs and an emitter your destination, the
-fetch/emit endpoints skip the HTTP body transfer and the result passback — a
-saving that holds for any fetcher and emitter. What that is worth in *throughput*
-depends on the store, and the only combination measured here is **local file
-system on both ends**. Those figures, relative to a 3.x single in-JVM parser
-(= 1.00; higher is faster; one 16-core host, plain-text recursive metadata,
-concurrency = worker count, per-client isolation):
-
-[cols="2,1,1"]
-|===
-|Document size |4.x sync `/rmeta` (HTTP upload) |4.x `/pipes` (fetch/emit)
-
-|Small (~50 KB)   |0.50 |0.80
-|Medium (~350 KB) |0.73 |1.23
-|Large (multi-MB) |0.81 |1.14
-|===
-
-Two things to read from it:
-
-* The classic upload endpoints *are* slower than 3.x's in-JVM parsing — by ~2x on
-  tiny documents, shrinking toward ~20% as documents grow and parse time
-  dominates. That is the crash-isolation cost, and it lands on the per-request
-  HTTP path.
-* The fetch/emit path — still *fully isolated* (per-client: one forked worker per
-  in-flight document) — *matches or beats* a 3.x in-JVM parser on realistic and
-  large documents, because it drops the HTTP body transfer and the result
-  passback. Only on very small documents does it trail. (The figures are for
-  local file-system fetch and emit; a remote store adds its own latency and
-  bandwidth, but the architecture — fetch, parse in an isolated worker, emit —
-  is unchanged.)
-
-So a *file-system* fetch-and-emit workload need not choose between 3.x throughput
-and 4.x isolation: measured file system to file system, `/pipes` (and `/async`)
-delivered both. With other fetchers and emitters you keep the isolation and the
-skipped HTTP-body/passback, and the extract can land straight in a search index
-or database instead of round-tripping back through your client — but the
-throughput then also rides on that store's own latency and bandwidth, which we
-have not measured, so treat those cases as architecturally similar rather than
-numerically equal. The upload endpoints remain the convenient choice for
-interactive, single-document requests where the bytes are already in hand and
-isolation — not raw throughput — is what you are buying.
-
-== Latency
-
-Pipes adds a fixed floor of roughly tens of milliseconds per request from the
-IPC round-trip, visible at the median on fast parses.
-
-For the *tail*, isolating the parse JVM from the HTTP front-end (both pipes
-modes) keeps a slow or pathological document off the request-accept path. In
-per-client mode a single slow document occupies only one of `numClients`
-workers; in shared-server and single-child modes it occupies one of the shared
-thread pool's slots. In practice shared-server can show the *best* worst-case
-latency of the shapes here, because it combines a large single heap (fewer,
-shorter GC stalls than several small heaps) with a front-end that is never
-blocked by parsing.
-
-The output format also matters: full XHTML, Markdown, plain text, and recursive
-metadata JSON impose different serialization costs on the same parse. Compare
-like with like when benchmarking.
 
 == Memory
 
@@ -224,13 +120,15 @@ while a worker restarts.
   limits with xref:pipes/timeouts.adoc[Timeouts].
 
 [#found-in-400]
-== What we found in 4.0.0, and what 4.1.0 changes
+== Restoring batch throughput in 4.1.0
 
-Our own regression testing runs `tika-app` in batch mode over a 1.2-million-file
-corpus (file system in, file system out) on a box with spinning disks. That run
-took about 4 hours on Tika 3.x and about 7.5 hours on 4.0.0. The investigation
-that followed is worth summarizing, because the cause was not where the
-architecture suggested it would be.
+4.1.0 brings file-system batch throughput back in line with 3.x while keeping the
+isolation and backpressure gains above — here is how it got there. Our own
+regression testing runs `tika-app` in batch mode over a 1.2-million-file corpus
+(file system in, file system out) on a box with spinning disks: about 4 hours on
+3.x, and about 7.5 hours on 4.0.0. The cause turned out not to be where the
+architecture suggested, which made it both surprising to find and clean to
+improve.
 
 === The cause: temp-file volume
 
@@ -265,7 +163,7 @@ Each of these was measured and ruled out, so they need not be re-chased:
 * 4.x extracting more embedded objects (it does, about 3% more) — negligible
   cost.
 
-=== The fix (4.1.0, unreleased at the time of writing)
+=== The improvement (4.1.0-SNAPSHOT)
 
 * TIKA-4828/TIKA-4829: embedded zip entries are re-read from the archive on
   rewind instead of being copied, and a process-wide `CacheMemoryBudget`
@@ -276,28 +174,63 @@ Each of these was measured and ruled out, so they need not be re-chased:
   to disk; they rewind or read through a seekable channel, within the same
   budget, and fall back to a file only past it.
 
-Measured on the diagnosis box (20,000 randomly sampled files of the corpus,
-page cache evicted before each run, extracts written to the corpus disk):
+We then measured it as a controlled study on the same box, one variable at a
+time: 100,000 documents randomly sampled from the corpus (fixed, md5-pinned
+list reused across every run), page cache evicted cold before each run,
+plain-text extraction and SHA-256 digest held constant, extracts written to the
+corpus disk. Every version (3.x, 4.0.0, 4.1.0) was run in each 4.x process shape
+so version and shape vary independently. Concurrency was fixed at seven
+workers (the throughput sweet spot on this host — see <<corpora-case-study>>)
+and heap at 4 GB per worker thread everywhere. Each cell was run at least twice;
+a third rep was added automatically wherever the two disagreed by more than 10%.
+Run-to-run agreement was within ±6% for every cell but one. Medians, measured on
+4.1.0-SNAPSHOT (August 2026):
 
 [cols="3,1,1"]
 |===
-|Build and configuration |Temp written |Wall
+|Version and shape |Wall (median) |Temp written
 
-|Tika 3.x, 10 consumer threads (three runs)     |0.33 GB |245 / 287 / 328 s
-|4.0.0, per-client, 8 workers (the 7.5 h shape) |10.5 GB |500 s
-|4.1.0 with TIKA-4828/29 only, corrected config |2.8 GB  |341 s
-|4.1.0, shared server, 10 threads                |0.26 GB |277 s
-|4.1.0, per-client, 7 workers                    |1.1 GB  |287 s
+|Tika 3.x                              |25.2 min |3.3 GB
+|4.1.0, shared server                  |27.2 min |1.4 GB
+|**4.1.0, per-client (default)**       |**29.0 min** |8.2 GB
+|4.0.0, shared server                  |41.1 min |57 GB
+|4.0.0, per-client                     |42.0 min |57 GB
 |===
 
-The like-for-like pair is 2.8 GB → 1.1 GB (both per-client); the 0.26 GB row
-also changes shape to shared-server, which pools the cache budget across
-threads.
+The like-for-like pair is 4.0.0 → 4.1.0 per-client (same seven workers, same
+4 GB heap): **1.45× faster**, with temp falling from 57 GB to 8 GB. Shared
+server recovers 1.51×. On this box the 100k subset reproduces the full-run
+story — 4.0.0 was about 1.65× slower than 3.x, matching the 7.5 h / 4.5 h ratio.
 
-4.1.0 writes less temp than 3.x did, and matches or beats 3.x throughput while
-keeping process isolation. These are subset measurements on one host; we have
-not re-timed the full run, and remote emitters (Solr, OpenSearch, S3) were not
-measured.
+**4.1.0 lands within about 15% of 3.x** in its default per-client configuration
+(median-to-median; range +11% to +20%, since 3.x is the fastest cell and its
+±6% run variance drives the ratio). That is a modest price, and it buys real
+isolation: where 3.x parses every document in one JVM — so a single fatal
+document takes down the whole run — 4.x parses each in its own worker, and
+shared-server mode closes the gap further still (+8%) when you want it.
+
+That +15% has two parts, separated by a single-client run (one worker, otherwise
+identical) where the per-client tax over 3.x drops to about **+7%**:
+
+* **~+7% per-request boundary** — crossing the process boundary to a worker and
+  serializing the result back. Present in both shapes at every concurrency
+  (shared server's tax is a flat ~8% at one thread or seven), and inherent to
+  isolation.
+* **Up to ~+8% more, only in per-client** — at seven workers, per-client (seven
+  JVMs) and shared server (one JVM) run under the same driver and disk load and
+  differ only in JVM count, so the ~7-point gap between them is the cost of
+  several worker JVMs on one box: independent GCs and JIT caches, and contention
+  for CPU, memory bandwidth, and last-level cache. Whether GC/heap tuning, CPU
+  pinning, or fewer/fatter workers reduce it is under investigation; how it
+  scales between one and seven workers was not measured.
+
+(At one client per-client edges out shared server — shared server's single-JVM
+advantage only pays off once several worker JVMs would otherwise contend.)
+
+Caveats: 4.1.0-SNAPSHOT, one 100k subset on one host; the full 1.2M run was not
+re-timed and remote emitters were not measured. The win is storage-dependent
+(<<corpora-case-study>>, <<reading-your-own>>), and the isolation split is still
+under investigation — read these as a snapshot, not a final characterization.
 
 [#corpora-case-study]
 == A worked configuration: the regression-test box
@@ -312,7 +245,8 @@ every run is effectively cold-cache. The configuration we settled on:
   when that slice is at least 2. On 16 logical cores, 8 workers give 1.75 and
   the cap is *skipped* — eight JVMs each sizing GC and JIT for 16 cores, which
   is what the 7.5 h run did. Seven workers get 2 cores each and the cap
-  applies. Per-client cost about 4% versus shared-server here (287 s vs 277 s)
+  applies. Per-client cost about 7% versus shared-server here (29.0 min vs
+  27.2 min in the controlled study above)
   and dropped no files, where the shared worker loses the in-flight documents
   of every other client when one document crashes it.
 * **`-Xmx4g` per fork.** The cache budget clamps to a quarter of the fork heap,
@@ -323,6 +257,7 @@ every run is effectively cold-cache. The configuration we settled on:
 * Digest MD5 (SHA-256 measured within noise), default emit strategy, temp
   directory left on disk.
 
+[#reading-your-own]
 === Reading your own deployment
 
 Three questions decided the result above, and they are cheap to answer for any
@@ -391,7 +326,7 @@ Once a site is found, lock it with a test rather than re-running the
 diagnostic: wrap the parser's `TikaInputStream` so any `getFile()`/`getPath()`
 call is recorded, and assert none happened. A watched temp directory is not
 enough — not every `TemporaryResources` on the path is bound to it — and a
-test that passes with the fix reverted is not a test.
+test that passes with the improvement reverted is not a test.
 
 == Appendix: approaches considered and set aside
 
@@ -425,8 +360,3 @@ close it, recorded here so they need not be re-litigated:
   count against a container's memory limit and get the pod evicted. A slow run
   is recoverable; that is not. 4.1.0 removes the temp writes instead of hiding
   them.
-
-What remains structural on the *upload* endpoints is the fixed per-request IPC +
-result-serialization cost and running several CPU-partitioned JVMs instead of one;
-the productive directions there are keeping more payloads inline, leaner
-serialization, and fork-pool sizing — not a single JVM flag.

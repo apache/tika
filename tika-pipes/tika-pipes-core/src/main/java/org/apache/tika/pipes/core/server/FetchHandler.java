@@ -46,7 +46,7 @@ class FetchHandler {
     }
 
     public TisOrResult fetch(FetchEmitTuple fetchEmitTuple, Metadata metadata, ParseContext parseContext) {
-        FetcherOrResult fetcherResult = getFetcher(fetchEmitTuple);
+        FetcherOrResult fetcherResult = getFetcher(fetchEmitTuple, parseContext);
         if (fetcherResult.pipesResult != null) {
             return new TisOrResult(null, fetcherResult.pipesResult);
         }
@@ -55,11 +55,12 @@ class FetchHandler {
                     fetchEmitTuple.getFetchKey().getFetchKey(), metadata, parseContext);
             return new TisOrResult(tis, null);
         } catch (IOException | TikaException e) {
-            return new TisOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e)));
+            return new TisOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
+                    ExceptionUtils.format(e, parseContext)));
         }
     }
 
-    private FetcherOrResult getFetcher(FetchEmitTuple t) {
+    private FetcherOrResult getFetcher(FetchEmitTuple t, ParseContext parseContext) {
         String fetcherId = t.getFetchKey().getFetcherId();
         // Built in, not configured: the bytes come with the request, so there is nothing for an
         // operator to point at and no reason for it to occupy an id in the ConfigStore.
@@ -75,7 +76,7 @@ class FetchHandler {
         } catch (IOException | TikaException e) {
             LOG.warn("Couldn't initialize fetcher for fetch id={}", t.getId(), e);
             return new FetcherOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION,
-                    ExceptionUtils.getStackTrace(e)));
+                    ExceptionUtils.format(e, parseContext)));
         }
     }
 

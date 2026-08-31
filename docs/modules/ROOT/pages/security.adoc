@@ -34,7 +34,10 @@ process, and containing that is the caller's responsibility: the project does no
 of service as a security issue when you opt out of the built-in sandboxing and parse files
 directly in your application. Tika's limits (`output-limits.writeLimit`,
 `embedded-limits.maxCount`, the metadata limiter) bound what a parse *produces*, not the work
-it does to produce it.
+it does to produce it. Exception detail (stack traces, messages that may quote paths or document
+text) is reported in full by default; `exception-reporting` in the `parse-context` section
+redacts and bounds it for callers less trusted than the operator
+(xref:advanced/setting-limits.adoc#_exception_reporting[details]).
 
 Concretely: an uncaught `RuntimeException`, `StackOverflowError`, or `OutOfMemoryError` from an
 in-process parse of a malformed or malicious file is a bug — please report it in
