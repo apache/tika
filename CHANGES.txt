@@ -1,5 +1,9 @@
 Release 4.1.0 - unreleased
 
+   * The exception-reporting policy now also governs the messages a pipes
+     worker returns (fetch/emit/crash) and the container exception it
+     records; part of TIKA-4848 step 3 (TIKA-4848).
+     
    * Allow image compression settings in PDFBox-based renderer (TIKA-4862).
      
    * The tika-server full and tika-grpc Docker images set OMP_THREAD_LIMIT=1:
