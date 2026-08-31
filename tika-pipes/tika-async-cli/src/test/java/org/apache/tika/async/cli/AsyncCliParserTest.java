@@ -199,8 +199,10 @@ public class AsyncCliParserTest {
         JsonNode root = mapper.readTree(result.toFile());
         assertTrue(root.has("plugin-roots"), "Merged config should have plugin-roots");
         String pluginRoots = root.get("plugin-roots").asText();
-        assertTrue(pluginRoots.equals("plugins") || pluginRoots.endsWith("/plugins"),
-                "plugin-roots should be 'plugins' or end with '/plugins', got: " + pluginRoots);
+        // the default is an absolute path since TIKA-4864; compare the file name,
+        // not the string, so the separator does not break the test on Windows
+        assertEquals("plugins", Path.of(pluginRoots).getFileName().toString(),
+                "plugin-roots should name a 'plugins' directory, got: " + pluginRoots);
 
         // Original config values should be preserved
         assertTrue(root.has("pipes"));
