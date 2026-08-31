@@ -59,6 +59,7 @@ public class ParseRecord {
 
     // Embedded document tracking
     private int embeddedCount = 0;
+    private int embeddedDepth = 0;
     private int maxEmbeddedDepth = -1;
     private int maxEmbeddedCount = -1;
     private boolean throwOnMaxDepth = false;
@@ -191,6 +192,36 @@ public class ParseRecord {
      */
     public void incrementEmbeddedCount() {
         embeddedCount++;
+    }
+
+    /**
+     * Marks the start of an embedded document's parse: the documents parsed
+     * until {@link #exitEmbedded()} are one level deeper than the current one.
+     * Unlike {@link #getDepth()}, which counts the parsers a parse passes
+     * through, this counts embedding levels only.
+     */
+    public void enterEmbedded() {
+        embeddedDepth++;
+    }
+
+    /**
+     * Marks the end of an embedded document's parse.
+     */
+    public void exitEmbedded() {
+        if (embeddedDepth <= 0) {
+            throw new IllegalStateException("exitEmbedded() without a matching enterEmbedded()");
+        }
+        embeddedDepth--;
+    }
+
+    /**
+     * Gets the embedding depth of the document currently being parsed:
+     * 0 for the container, 1 for its embedded documents, and so on.
+     *
+     * @return the embedding depth of the current document
+     */
+    public int getEmbeddedDepth() {
+        return embeddedDepth;
     }
 
     /**
