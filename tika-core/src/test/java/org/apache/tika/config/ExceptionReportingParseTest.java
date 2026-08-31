@@ -58,7 +58,10 @@ public class ExceptionReportingParseTest extends TikaTest {
         for (Level level : Level.values()) {
             List<Metadata> list =
                     getRecursiveMetadata("embedded_then_npe.xml", context(level, -1), true);
-            assertLevel(level, list.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION));
+            String trace = list.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
+            assertLevel(level, trace);
+            // the wrapper is kept: it names the failing parser and matches pipes output
+            assertTrue(trace.startsWith("org.apache.tika.exception.TikaException"), trace);
         }
     }
 

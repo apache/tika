@@ -71,7 +71,6 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     //TODO: what else
             };
 
-    private final ParseContext context;
     private final Metadata metadata;
     private final CommentAuthors commentAuthors = new CommentAuthors();
     private PackagePart mainDocument = null;
@@ -89,7 +88,6 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                                              XSLFEventBasedPowerPointExtractor extractor) {
         super(context, extractor.getPackage());
         this.metadata = metadata;
-        this.context = context;
         for (String contentType : MAIN_STORY_PART_RELATIONS) {
             List<PackagePart> pps = opcPackage.getPartsByContentType(contentType);
             if (pps.size() > 0) {

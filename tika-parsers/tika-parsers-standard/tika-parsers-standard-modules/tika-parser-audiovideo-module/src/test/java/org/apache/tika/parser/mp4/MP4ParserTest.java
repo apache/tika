@@ -45,6 +45,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.HttpHeaders;
@@ -216,6 +217,28 @@ public class MP4ParserTest extends TikaTest {
         XMLResult r = getXML("testMP4_truncated.m4a");
         assertEquals("audio/mp4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("M4A", r.metadata.get(XMPDM.AUDIO_COMPRESSOR));
+    }
+
+    // TIKA-4848: the box walk's own IOException is reported through the policy, not as a
+    // bare message copied out of the library's error list
+    @Test
+    public void testTruncatedStreamWarningIsFormatted() throws Exception {
+        String[] warnings = getXML("testMP4_truncated.m4a", new ParseContext()).metadata
+                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertTrue(Arrays.stream(warnings)
+                        .anyMatch(w -> w.startsWith("java.io.") && w.contains("\tat ")),
+                Arrays.toString(warnings));
+
+        ParseContext redacted = new ParseContext();
+        redacted.set(ExceptionReporting.class, new ExceptionReporting(
+                ExceptionReporting.Level.REDACTED, ExceptionReporting.UNLIMITED));
+        String[] redactedWarnings = getXML("testMP4_truncated.m4a", redacted).metadata
+                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertTrue(Arrays.stream(redactedWarnings).anyMatch(w -> w.startsWith("java.io.")),
+                Arrays.toString(redactedWarnings));
+        for (String w : redactedWarnings) {
+            assertFalse(w.contains("\tat "), w);
+        }
     }
 
     @Test
@@ -544,7 +567,7 @@ public class MP4ParserTest extends TikaTest {
         //must return without a StackOverflowError
         assertDoesNotThrow(() ->
                 TikaMp4Reader.extract(new ByteArrayInputStream(boxes), handler, 1000L,
-                        boxes.length));
+                        boxes.length, new Metadata(), new ParseContext()));
     }
 
     @Test
@@ -575,7 +598,8 @@ public class MP4ParserTest extends TikaTest {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(new DefaultHandler(), tikaMetadata);
         TikaMp4BoxHandler handler =
                 new TikaMp4BoxHandler(mp4Metadata, tikaMetadata, xhtml, new ParseContext());
-        TikaMp4Reader.extract(new ByteArrayInputStream(boxes), handler, maxBoxSize, boxes.length);
+        TikaMp4Reader.extract(new ByteArrayInputStream(boxes), handler, maxBoxSize, boxes.length,
+                tikaMetadata, new ParseContext());
         Mp4Directory dir = mp4Metadata.getFirstDirectoryOfType(Mp4Directory.class);
         return dir == null ? null : dir.getString(Mp4Directory.TAG_MAJOR_BRAND);
     }

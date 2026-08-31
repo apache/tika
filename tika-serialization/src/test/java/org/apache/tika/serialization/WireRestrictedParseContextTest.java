@@ -18,6 +18,7 @@ package org.apache.tika.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -62,6 +63,12 @@ public class WireRestrictedParseContextTest {
         Set<Class<?>> union = new HashSet<>(allowed);
         union.addAll(blocked);
         assertEquals(all, union, "wire-allowed union wire-blocked must equal CONTEXT_KEY_INTERFACES");
+        Set<Class<?>> blockedConfig = ComponentNameResolver.getWireBlockedConfigKeys();
+        assertFalse(blockedConfig.isEmpty(), "wire-blocked config-DTO list must not be empty");
+        for (Class<?> c : blockedConfig) {
+            assertFalse(all.contains(c),
+                    c.getName() + " must not be both a config DTO and a context-key interface");
+        }
     }
 
     @Test
@@ -89,8 +96,7 @@ public class WireRestrictedParseContextTest {
 
     @Test
     public void restrictedRejectsExceptionReporting() {
-        // Operator policy on how much exception detail leaves the server; a caller must not be
-        // able to relax it per request.
+        // operator policy: a caller must not be able to relax it per request
         String json = "{\"exception-reporting\":{\"level\":\"FULL\"}}";
         Exception e = assertThrows(Exception.class,
                 () -> restrictedMapper().readValue(json, ParseContext.class));

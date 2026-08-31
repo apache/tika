@@ -107,7 +107,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
 
     private final EmbeddedDocumentExtractor embeddedExtractor;
-    private final ParseContext context;
+    protected final ParseContext context;
     protected OfficeParserConfig config;
     protected OPCPackage opcPackage;
 
@@ -128,9 +128,6 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
         return new SAXBasedMetadataExtractor(opcPackage, context);
     }
 
-    ParseContext getParseContext() {
-        return context;
-    }
     /**
      * @see
      * org.apache.tika.parser.microsoft.ooxml.OOXMLExtractor#getXHTML(ContentHandler, Metadata,

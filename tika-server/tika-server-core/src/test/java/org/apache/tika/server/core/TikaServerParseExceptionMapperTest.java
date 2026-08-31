@@ -24,37 +24,58 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.ExceptionReporting;
-import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.core.PipesException;
 
+/**
+ * The live shapes: a {@code PipesException} cause (PipesParsingHelper) and a message-only
+ * wrapper (interrupted parse). Both are 500, and the body is the cause, not this server's
+ * wrapper.
+ */
 public class TikaServerParseExceptionMapperTest {
 
     private static final String SECRET = "secret /path/to/file";
 
-    private static String body(ExceptionReporting reporting) {
-        Response r = new TikaServerParseExceptionMapper(reporting)
-                .toResponse(new TikaServerParseException(new TikaException(SECRET)));
-        assertEquals(422, r.getStatus());
-        return (String) r.getEntity();
+    private static Response respond(ExceptionReporting reporting) {
+        return new TikaServerParseExceptionMapper(reporting)
+                .toResponse(new TikaServerParseException(new PipesException(SECRET)));
     }
 
     @Test
     public void fullByDefault() {
-        String body = body(null);
-        assertTrue(body.contains("org.apache.tika.exception.TikaException: " + SECRET), body);
+        Response r = respond(new ExceptionReporting());
+        assertEquals(500, r.getStatus());
+        String body = (String) r.getEntity();
+        assertTrue(body.startsWith("org.apache.tika.pipes.core.PipesException: " + SECRET), body);
+        // the wrapper is not the first line and contributes no frames of its own
+        assertFalse(body.contains("TikaServerParseException:"), body);
     }
 
     @Test
     public void messageRedacted() {
-        String body = body(new ExceptionReporting(ExceptionReporting.Level.MESSAGE_REDACTED, -1));
-        assertTrue(body.contains("org.apache.tika.exception.TikaException"), body);
+        Response r = respond(new ExceptionReporting(ExceptionReporting.Level.MESSAGE_REDACTED, -1));
+        assertEquals(500, r.getStatus());
+        String body = (String) r.getEntity();
+        assertTrue(body.startsWith("org.apache.tika.pipes.core.PipesException"), body);
         assertTrue(body.contains("\tat "), body);
         assertFalse(body.contains(SECRET), body);
     }
 
     @Test
     public void maxLength() {
-        String body = body(new ExceptionReporting(ExceptionReporting.Level.FULL, 30));
+        // 50 cuts mid-message: the start of SECRET survives but not all of it
+        Response r = respond(new ExceptionReporting(ExceptionReporting.Level.FULL, 50));
+        String body = (String) r.getEntity();
         assertTrue(body.endsWith("...[truncated]"), body);
+        assertTrue(body.contains("secret"), body);
         assertFalse(body.contains(SECRET), body);
+    }
+
+    @Test
+    public void noCauseFallsBackToTheWrapper() {
+        Response r = new TikaServerParseExceptionMapper(new ExceptionReporting())
+                .toResponse(new TikaServerParseException("Parsing interrupted"));
+        assertEquals(500, r.getStatus());
+        String body = (String) r.getEntity();
+        assertTrue(body.contains("Parsing interrupted"), body);
     }
 }

@@ -155,7 +155,9 @@ at least a `status` field:
 ----
 
 A `message` field is included when one is available and may contain a server-side stack
-trace, e.g. `{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`.
+trace, e.g. `{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`. How much of
+that trace is returned is set by `parse-context.exception-reporting` (default `FULL`) — see
+xref:advanced/setting-limits.adoc#_exception_reporting[Exception reporting].
 
 The HTTP status codes are also more precise:
 
@@ -329,8 +331,14 @@ The following `TikaServerConfig` options have been removed:
   exception detail — including messages carrying file paths and document fragments —
   continued to travel in `tk:exception:*` metadata on successful parses and inside
   `/unpack` zips. Setting it to `false` did not keep stack traces inside the server, which
-  is what the name implied. Exception detail is now always returned; filter Tika's output
-  with a `MetadataFilter` before forwarding it somewhere less trusted.
+  is what the name implied. The replacement is `parse-context.exception-reporting`
+  (`MESSAGE_REDACTED` or `REDACTED`, plus a `maxLength`), one operator-set policy over every
+  channel that turns an exception into caller-visible text — metadata values, error bodies and
+  pipes result messages alike. See
+  xref:advanced/setting-limits.adoc#_exception_reporting[Exception reporting]. A
+  `MetadataFilter` dropping `tk:exception:*` is a convenience, not the replacement: it reaches
+  neither error bodies nor pipes result messages, and with `allowPerRequestConfig` on, a filter
+  supplied in a request's config *replaces* the operator's rather than adding to it.
 
 * `taskTimeoutMillis` - Was the total time allowed per task before the forked process was
   killed; that is now `parse-context.timeout-limits.totalTaskTimeoutMillis` (same

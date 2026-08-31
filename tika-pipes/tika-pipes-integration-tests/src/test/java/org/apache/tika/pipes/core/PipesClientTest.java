@@ -626,6 +626,9 @@ public class PipesClientTest {
                             pipesResult.message().contains("not found") ||
                             pipesResult.message().contains("fetcher"),
                     "Error message should mention the missing fetcher");
+
+            // the configured fetcher ids must not be disclosed to the caller
+            assertFalse(pipesResult.message().contains("fsf"), pipesResult.message());
         }
     }
 
@@ -672,6 +675,9 @@ public class PipesClientTest {
                             pipesResult.message().contains("not found") ||
                             pipesResult.message().contains("emitter"),
                     "Error message should mention the missing emitter");
+
+            // the configured emitter ids must not be disclosed to the caller
+            assertFalse(pipesResult.message().contains("fse"), pipesResult.message());
         }
     }
 

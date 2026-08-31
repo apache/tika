@@ -26,7 +26,7 @@ public class EvalExceptionUtils {
     //these remove runtime info from the stacktraces so
     //that actual causes can be counted.
     private final static Pattern CAUSED_BY_SNIPPER =
-            Pattern.compile("(Caused by: [^:]+):[^\\r\\n]+");
+            Pattern.compile("(?m)^(Caused by: [^:\\r\\n]+):[^\\r\\n]+");
 
     //strips the exception message off the first line, so that the same cause with
     //differing runtime detail collapses to one entry. Anchored to the first line: a
@@ -46,10 +46,6 @@ public class EvalExceptionUtils {
     }
 
     private static String trimMessage(String trace) {
-        Matcher msgMatcher = MSG_PATTERN.matcher(trace);
-        if (msgMatcher.find()) {
-            return msgMatcher.replaceFirst("$1");
-        }
-        return trace;
+        return MSG_PATTERN.matcher(trace).replaceFirst("$1");
     }
 }

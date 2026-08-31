@@ -86,6 +86,9 @@ public class StackTraceTest extends CXFTestBase {
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper());
+        // production registers this too, and CXF hands it every WebApplicationException;
+        // without it here the 422/404 paths below are exercised in a different chain
+        providers.add(new CatchAllExceptionMapper(tikaResource.getExceptionReporting()));
         providers.add(new JSONMessageBodyWriter());
         providers.add(new CSVMessageBodyWriter());
         //providers.add(new XMPMessageBodyWriter());

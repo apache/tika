@@ -427,7 +427,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                 EmbeddedDocumentUtil.recordException(e, parentMetadata, parseContext);
                 return;
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, parseContext);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
                 return;
             }
             try (TikaInputStream tis = TikaInputStream.get(buffer.toByteArray())) {
@@ -499,11 +499,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                 throw e;
             }
 
-            String msg = e.getMessage();
-            if (msg == null) {
-                msg = "IOException, no message";
-            }
-            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, msg);
+            EmbeddedDocumentUtil.recordException(e, parentMetadata, parseContext);
             exceptions.add(e);
         } else {
             throw e;

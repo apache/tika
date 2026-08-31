@@ -90,8 +90,9 @@ public class ParserUtils {
     }
 
     /**
-     * @deprecated use {@link #recordParserFailure(Parser, Throwable, Metadata, ParseContext)}
-     * so the configured {@link org.apache.tika.config.ExceptionReporting} applies
+     * @deprecated since 4.1, removal planned for 5.0; use
+     * {@link #recordParserFailure(Parser, Throwable, Metadata, ParseContext)} so the
+     * configured {@link org.apache.tika.config.ExceptionReporting} applies
      */
     @Deprecated
     public static void recordParserFailure(Parser parser, Throwable failure, Metadata metadata) {

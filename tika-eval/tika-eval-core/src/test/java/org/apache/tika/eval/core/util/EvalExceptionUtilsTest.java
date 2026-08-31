@@ -36,10 +36,16 @@ public class EvalExceptionUtilsTest {
 
     @Test
     public void messageRedactedTraceNormalizesToSameKey() {
+        // The redacted "Caused by:" line has no colon; the snipper must not run past the
+        // newline into the following frame.
         String full = "org.apache.tika.exception.TikaException: secret\n"
-                + "\tat org.apache.tika.Foo.bar(Foo.java:12)\n";
+                + "\tat org.apache.tika.Foo.bar(Foo.java:12)\n"
+                + "Caused by: java.io.IOException: other secret\n"
+                + "\tat org.apache.tika.Foo.baz(Foo.java:34)\n";
         String redacted = "org.apache.tika.exception.TikaException\n"
-                + "\tat org.apache.tika.Foo.bar(Foo.java:12)\n";
+                + "\tat org.apache.tika.Foo.bar(Foo.java:12)\n"
+                + "Caused by: java.io.IOException\n"
+                + "\tat org.apache.tika.Foo.baz(Foo.java:34)\n";
         assertEquals(EvalExceptionUtils.normalize(full), EvalExceptionUtils.normalize(redacted));
     }
 }

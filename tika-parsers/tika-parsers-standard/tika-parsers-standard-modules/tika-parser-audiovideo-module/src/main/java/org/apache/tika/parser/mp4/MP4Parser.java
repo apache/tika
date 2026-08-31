@@ -134,7 +134,7 @@ public class MP4Parser implements Parser {
         //the input holds is skipped rather than allocated
         long inputLength = tis.hasLength() ? tis.getLength() : -1;
         try {
-            TikaMp4Reader.extract(tis, boxHandler, maxBoxSize, inputLength);
+            TikaMp4Reader.extract(tis, boxHandler, maxBoxSize, inputLength, metadata, context);
         } catch (RuntimeSAXException e) {
             throw (SAXException) e.getCause();
         }

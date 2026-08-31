@@ -29,8 +29,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.util.StdConverter;
 
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
@@ -204,21 +206,35 @@ public class PipesConfig {
         if (config == null) {
             config = new PipesConfig();
         }
-        // Carry the config-default limits to the client (for its backstop) without full
-        // parse-context resolution -- the client JVM may lack the plugin classes it needs.
-        JsonNode limitsNode = tikaJsonConfig.getRootNode().path("parse-context").path("timeout-limits");
+        // Carry the config-default limits and reporting policy to the client (for its backstop
+        // and for the results it fabricates itself) without full parse-context resolution --
+        // the client JVM may lack the plugin classes it needs. Bind with Tika's own mapper so
+        // the parent reads these two exactly as the fork does.
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
+        JsonNode parseContextNode = tikaJsonConfig.getRootNode().path("parse-context");
+        JsonNode limitsNode = parseContextNode.path("timeout-limits");
         if (!limitsNode.isMissingNode()) {
             try {
-                config.defaultTimeoutLimits =
-                        new ObjectMapper().treeToValue(limitsNode, TimeoutLimits.class);
+                config.defaultTimeoutLimits = mapper.treeToValue(limitsNode, TimeoutLimits.class);
             } catch (JsonProcessingException e) {
                 throw new TikaConfigException("problem parsing parse-context.timeout-limits", e);
+            }
+        }
+        JsonNode reportingNode = parseContextNode.path("exception-reporting");
+        if (!reportingNode.isMissingNode()) {
+            try {
+                config.defaultExceptionReporting =
+                        mapper.treeToValue(reportingNode, ExceptionReporting.class);
+            } catch (JsonProcessingException e) {
+                throw new TikaConfigException("problem parsing parse-context.exception-reporting", e);
             }
         }
         return config;
     }
 
     private TimeoutLimits defaultTimeoutLimits = new TimeoutLimits();
+
+    private ExceptionReporting defaultExceptionReporting = new ExceptionReporting();
 
     /**
      * The config-level {@code parse-context.timeout-limits} defaults -- what the forked
@@ -227,6 +243,16 @@ public class PipesConfig {
     @JsonIgnore
     public TimeoutLimits getDefaultTimeoutLimits() {
         return defaultTimeoutLimits;
+    }
+
+    /**
+     * The config-level {@code parse-context.exception-reporting} policy. The parent JVM needs
+     * it for the results it fabricates itself (crash, timeout, failed-to-initialize): the
+     * request's own ParseContext can never carry the policy -- it is wire-blocked.
+     */
+    @JsonIgnore
+    public ExceptionReporting getDefaultExceptionReporting() {
+        return defaultExceptionReporting;
     }
 
     public long getSocketTimeoutMillis() {

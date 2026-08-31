@@ -200,6 +200,7 @@ public class PipesServer implements AutoCloseable {
 
             DataInputStream dis = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+        ParseContext configContext = null;
         try {
             TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
             TikaJsonConfig tikaJsonConfig = tikaLoader.getConfig();
@@ -211,20 +212,20 @@ public class PipesServer implements AutoCloseable {
 
             MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
             ContentHandlerFactory contentHandlerFactory = tikaLoader.loadContentHandlerFactory();
-            MetadataWriteLimiterFactory metadataWriteLimiterFactory = tikaLoader.loadParseContext().get(MetadataWriteLimiterFactory.class);
-            PipesServer pipesServer = new PipesServer(pipesClientId, tikaLoader, pipesConfig, socket, dis, dos, metadataFilter, contentHandlerFactory, metadataWriteLimiterFactory);
+            configContext = tikaLoader.loadParseContext();
+            MetadataWriteLimiterFactory metadataWriteLimiterFactory = configContext.get(MetadataWriteLimiterFactory.class);
+            PipesServer pipesServer = new PipesServer(pipesClientId, tikaLoader, pipesConfig, socket, dis, dos, metadataFilter, contentHandlerFactory, metadataWriteLimiterFactory,
+                    ExceptionReporting.get(configContext));
             pipesServer.initializeResources();
             LOG.debug("PipesServer loaded and ready");
             return pipesServer;
         } catch (Exception e) {
             LOG.error("Failed to start up", e);
             try {
-                // Config may be what failed to load, so no ExceptionReporting policy is available.
-                String msg = ExceptionUtils.format(e, ExceptionReporting.DEFAULT);
+                // a null configContext means the config is what failed: built-in defaults then
+                String msg = ExceptionUtils.format(e, ExceptionReporting.get(configContext));
                 byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
                 PipesMessage.startupFailed(bytes).write(dos);
-                // pipesConfig may not have loaded successfully (that may be why we're
-                // here); use the built-in default rather than an unreliable reference.
                 PipesMessage ackMsg = PipesMessage.read(dis);
                 if (ackMsg.type() != PipesMessageType.ACK) {
                     LOG.warn("Expected ACK but got: {}", ackMsg.type());
@@ -236,9 +237,22 @@ public class PipesServer implements AutoCloseable {
         }
     }
 
+    /**
+     * @deprecated since 4.1, use the overload taking an {@link ExceptionReporting}
+     */
+    @Deprecated
     public PipesServer(String pipesClientId, TikaLoader tikaLoader, PipesConfig pipesConfig, Socket socket, DataInputStream in,
                        DataOutputStream out, MetadataFilter metadataFilter, ContentHandlerFactory contentHandlerFactory,
                        MetadataWriteLimiterFactory metadataWriteLimiterFactory) throws TikaConfigException,
+            IOException {
+        this(pipesClientId, tikaLoader, pipesConfig, socket, in, out, metadataFilter,
+                contentHandlerFactory, metadataWriteLimiterFactory, new ExceptionReporting());
+    }
+
+    public PipesServer(String pipesClientId, TikaLoader tikaLoader, PipesConfig pipesConfig, Socket socket, DataInputStream in,
+                       DataOutputStream out, MetadataFilter metadataFilter, ContentHandlerFactory contentHandlerFactory,
+                       MetadataWriteLimiterFactory metadataWriteLimiterFactory,
+                       ExceptionReporting exceptionReporting) throws TikaConfigException,
             IOException {
 
         this.pipesClientId = pipesClientId;
@@ -255,7 +269,7 @@ public class PipesServer implements AutoCloseable {
 
         emitStrategy = pipesConfig.getEmitStrategy().getType();
         this.protocolIO = new ServerProtocolIO(input, output, pipesConfig.getMaxIpcPayloadBytes(),
-                ExceptionReporting.get(tikaLoader.loadParseContext()));
+                exceptionReporting);
     }
 
 

@@ -115,6 +115,10 @@ For Pipes-mode options see <<_tika_pipes_processing,Tika Pipes Processing>>.
 Redirect to save: `--convert-config-xml-to-json=tika-config.xml > tika-config.json`.
 |===
 
+The config's `parse-context` applies to the CLI too, so `exception-reporting` bounds the
+`tk:exception:*` values in `-J`/`-j` output — see
+xref:advanced/setting-limits.adoc#_exception_reporting[Exception reporting].
+
 === Output Formatting
 
 [cols="1,3"]

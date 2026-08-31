@@ -227,8 +227,11 @@ public class PipesClient implements Closeable {
             LOG.error("server initialization failed: {} ", t.getId(), e);
             serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
             closeConnection();
+            // Config policy, not t.getParseContext(): a request context can never carry
+            // ExceptionReporting (wire-blocked), so it would always report FULL. Applies to
+            // every message this class fabricates below.
             return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
-                    intermediateResult.get(), e.getMessage());
+                    intermediateResult.get(), ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
         } catch (SecurityException e) {
             LOG.error("security exception during initialization: {} ", t.getId());
             serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
@@ -244,7 +247,7 @@ public class PipesClient implements Closeable {
                     t.getId(), e);
             closeConnection();
             return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
-                    intermediateResult.get(), e.getMessage());
+                    intermediateResult.get(), ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
         }
 
         try {
@@ -267,7 +270,7 @@ public class PipesClient implements Closeable {
                     e.getMessage());
             return buildFatalResult(t.getId(), t.getEmitKey(),
                     PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED,
-                    intermediateResult.get(), e.getMessage());
+                    intermediateResult.get(), ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
         } catch (Exception e) {
             LOG.error("exception waiting for server to complete task: {} ", t.getId(), e);
             serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
@@ -492,7 +495,7 @@ public class PipesClient implements Closeable {
                 serverManager.markServerForRestart(RestartReason.TIMEOUT, connectionGeneration);
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get(),
-                        ExceptionUtils.getStackTrace(e));
+                        ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
             } catch (PayloadLimitExceededException e) {
                 // Stream is desynchronized (payload bytes were not consumed); close the connection.
                 LOG.warn("clientId={}: payload too large for id={}: {}", pipesClientId, t.getId(), e.getMessage());
@@ -500,7 +503,7 @@ public class PipesClient implements Closeable {
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(),
                         PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED,
-                        intermediateResult.get(), e.getMessage());
+                        intermediateResult.get(), ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
             } catch (SecurityException e) {
                 throw e;
             } catch (Exception e) {
@@ -517,7 +520,7 @@ public class PipesClient implements Closeable {
                 }
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), status, intermediateResult.get(),
-                        ExceptionUtils.getStackTrace(e));
+                        ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
             }
         }
     }

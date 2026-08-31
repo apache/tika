@@ -431,7 +431,7 @@ public class HSLFExtractor extends AbstractPOIFSExtractor {
                         EmbeddedDocumentUtil.recordException(inner, parentMetadata, context);
                     }
                 } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);//swallow
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                 }
             }
         }

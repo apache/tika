@@ -360,7 +360,14 @@ public class TikaResource {
                 String configJson = new String(configAtt.getObject(InputStream.class).readAllBytes(),
                         StandardCharsets.UTF_8);
                 LOG.debug("setupMultipartConfig: processing config JSON of length {}", configJson.length());
-                mergeParseContextFromConfig(configJson, context);
+                try {
+                    mergeParseContextFromConfig(configJson, context);
+                } catch (IOException | TikaConfigException e) {
+                    // Caller error (bad JSON, or a wire-blocked component): 400 with the
+                    // reason, not a 500 whose reason the reporting policy may redact away.
+                    throw new BadRequestException(
+                            "Could not resolve the request config: " + e.getMessage(), e);
+                }
             }
             handedOff = true;
             return tis;
