@@ -68,9 +68,6 @@ RUN set -eux \
 ARG TIKA_VERSION
 ENV TIKA_VERSION=$TIKA_VERSION
 COPY --from=fetch_tika /opt/tika-server /opt/tika-server
-# WORKDIR sets the CWD so tika-server's plugin-root fallback resolves
-# `plugins/` relative to /opt/tika-server (its `getCodeSource()` returns a
-# lib/* path, not the top-level jar, so the "next-to-jar" resolution misses).
 WORKDIR /opt/tika-server
 USER $UID_GID
 EXPOSE 9998

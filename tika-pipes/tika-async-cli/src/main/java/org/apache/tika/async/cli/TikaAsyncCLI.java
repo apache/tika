@@ -47,6 +47,7 @@ import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.pipesiterator.PipesIterator;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
+import org.apache.tika.pipes.core.config.DefaultPluginsDir;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.pipesiterator.PipesIteratorManager;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -403,38 +404,6 @@ public class TikaAsyncCLI {
         parseContext.set(UnpackConfig.class, config);
     }
 
-    private static final String DEFAULT_PLUGINS_DIR = "plugins";
-
-    /**
-     * Resolves the default plugins directory. Looks for a "plugins" directory
-     * next to the running jar first, then falls back to the current working directory.
-     *
-     * @return the resolved plugins directory path, or "plugins" if neither location exists
-     */
-    static String resolveDefaultPluginsDir() {
-        try {
-            Path jarPath = Paths.get(
-                    TikaAsyncCLI.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-            Path jarDir = jarPath.getParent();
-            if (jarDir != null) {
-                // The jar is typically in lib/, so look for plugins/ as a sibling of lib/
-                Path parent = jarDir.getParent();
-                if (parent != null) {
-                    Path pluginsDir = parent.resolve(DEFAULT_PLUGINS_DIR);
-                    if (Files.isDirectory(pluginsDir)) {
-                        return pluginsDir.toAbsolutePath().toString();
-                    }
-                }
-            }
-        } catch (Exception e) {
-            // Fall through to cwd-relative
-        }
-        Path cwdPlugins = Paths.get(DEFAULT_PLUGINS_DIR);
-        if (Files.isDirectory(cwdPlugins)) {
-            return cwdPlugins.toAbsolutePath().toString();
-        }
-        return DEFAULT_PLUGINS_DIR;
-    }
 
     /**
      * Ensures plugin-roots is set in the config. If missing, creates a merged config
@@ -462,7 +431,7 @@ public class TikaAsyncCLI {
             pluginString = Files.isDirectory(plugins) ?
                     plugins.toAbsolutePath().toString() : pluginsDir;
         } else {
-            pluginString = resolveDefaultPluginsDir();
+            pluginString = DefaultPluginsDir.resolve(TikaAsyncCLI.class);
         }
         mutableRoot.put("plugin-roots", pluginString);
 
