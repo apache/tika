@@ -331,6 +331,22 @@ public class TestParseContextSerialization {
     }
 
     @Test
+    public void testMutatedResolvedInstanceWinsOverOriginalJson() throws Exception {
+        // The server mutates resolved instances before forwarding (parseUnpack does); the
+        // live registered instance, not the original jsonConfig, must cross the wire.
+        ParseContext parseContext = new ParseContext();
+        parseContext.setJsonConfig("timeout-limits", "{\"progressTimeoutMillis\": 1000}");
+        ParseContextUtils.resolveAll(parseContext, Thread.currentThread().getContextClassLoader());
+        parseContext.get(TimeoutLimits.class).setProgressTimeoutMillis(7777);
+
+        ObjectMapper mapper = createMapper();
+        ParseContext deser = mapper.readValue(mapper.writeValueAsString(parseContext),
+                ParseContext.class);
+        ParseContextUtils.resolveAll(deser, Thread.currentThread().getContextClassLoader());
+        assertEquals(7777, deser.get(TimeoutLimits.class).getProgressTimeoutMillis());
+    }
+
+    @Test
     public void testContextKeyDeserialization() throws Exception {
         // Test that components with @TikaComponent(contextKey=...) are stored
         // in ParseContext with the contextKey, not the component class.

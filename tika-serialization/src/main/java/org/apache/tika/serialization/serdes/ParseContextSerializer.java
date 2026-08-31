@@ -55,10 +55,11 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
         // Friendly names written from the context map, so we skip them when writing jsonConfigs.
         Set<String> serializedNames = new HashSet<>();
 
-        // An instance that resolveAll materialized from a jsonConfig serializes as that original
-        // JSON instead: re-serializing the instance would drop setter-only properties, and the
-        // instance may be an unregistered internal type (e.g. the composite that "metadata-filters"
-        // resolves to).
+        // Unregistered instances that resolveAll materialized from a jsonConfig (e.g. the
+        // composite behind "metadata-filters") cannot be serialized themselves; their original
+        // JSON below carries them. Registered instances are always written from the instance:
+        // callers may mutate a resolved instance before serialization (parseUnpack does), so
+        // the live object, not the original JSON, is the truth for them.
         Map<String, JsonConfig> jsonConfigs = parseContext.getJsonConfigs();
         Set<Object> resolvedFromJson = Collections.newSetFromMap(new IdentityHashMap<>());
         for (String name : jsonConfigs.keySet()) {
@@ -78,14 +79,13 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                 continue;
             }
 
-            // Resolved from a jsonConfig: the original JSON below carries this entry.
-            if (resolvedFromJson.contains(value)) {
-                continue;
-            }
-
             // Find the friendly component name — all serializable components must be registered
             String keyName = ComponentNameResolver.getFriendlyName(value.getClass());
             if (keyName == null) {
+                if (resolvedFromJson.contains(value)) {
+                    // unserializable, but its original jsonConfig is written below
+                    continue;
+                }
                 throw new IOException(
                         "Cannot serialize ParseContext entry: " + value.getClass().getName() +
                         " is not registered. Components must be registered via " +
