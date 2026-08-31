@@ -71,7 +71,8 @@ import org.apache.tika.zip.utils.ZipFileHelper;
  * {@code <div class="slide">}, in the order given by {@code structure.json}.
  * <p>
  * The representative rendering of the document, {@code geogebra_thumbnail.png}
- * at the root of a worksheet or tool, or the first available slide thumbnail
+ * at the root of a worksheet, the icon of a tool ({@code iconFile} of its
+ * macro), or the first available slide thumbnail
  * of a Notes/Slides file, is emitted as an embedded document marked with
  * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}, so that clients
  * (e.g. the unpacker's sidecar metadata) can pick it as the preview image.
@@ -193,6 +194,7 @@ public class GeoGebraParser implements Parser {
         //document metadata comes from the first XML parsed: a worksheet's
         //geogebra.xml, a tool's geogebra_macro.xml, or the first slide
         boolean documentMetadataPending = true;
+        List<String> iconFiles = new ArrayList<>();
         if (rootXml != null) {
             documentMetadataPending = false;
             parseGeoGebraXml(zipFile, rootXml, xhtml, metadata, true, context);
@@ -200,7 +202,8 @@ public class GeoGebraParser implements Parser {
         if (macroXml != null) {
             //a worksheet with macros carries both XMLs; the macro one only
             //contributes the tool names then, not the document metadata
-            parseGeoGebraXml(zipFile, macroXml, xhtml, metadata, documentMetadataPending, context);
+            iconFiles = parseGeoGebraXml(zipFile, macroXml, xhtml, metadata,
+                    documentMetadataPending, context);
             documentMetadataPending = false;
         }
         Map<String, Integer> pageNumbers = new HashMap<>();
@@ -220,8 +223,9 @@ public class GeoGebraParser implements Parser {
                 }
             }
         }
-        handleThumbnail(zipFile, slideIds, xhtml, metadata, context, embeddedDocumentExtractor);
-        handleOtherEntries(zipFile, pageNumbers, xhtml, metadata, context,
+        String thumbnail = handleThumbnail(zipFile, slideIds, iconFiles, xhtml, metadata, context,
+                embeddedDocumentExtractor);
+        handleOtherEntries(zipFile, pageNumbers, thumbnail, xhtml, metadata, context,
                 embeddedDocumentExtractor);
         xhtml.endDocument();
     }
@@ -300,22 +304,24 @@ public class GeoGebraParser implements Parser {
      * Parses one GeoGebra XML for its text and, if {@code documentMetadata}
      * is set, the document metadata. A part that cannot be read or is not
      * well-formed is recorded in the metadata and skipped.
+     *
+     * @return the icon files of the macros in the XML, in document order
      */
-    private void parseGeoGebraXml(ZipFile zipFile, ZipArchiveEntry entry,
-                                  XHTMLContentHandler xhtml, Metadata metadata,
-                                  boolean documentMetadata, ParseContext context)
+    private List<String> parseGeoGebraXml(ZipFile zipFile, ZipArchiveEntry entry,
+                                          XHTMLContentHandler xhtml, Metadata metadata,
+                                          boolean documentMetadata, ParseContext context)
             throws SAXException {
         if (entry == null) {
-            return;
+            return Collections.emptyList();
         }
         if (!zipFile.canReadEntryData(entry)) {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(
                     new IOException("Unsupported zip entry: " + entry.getName()), metadata, context);
-            return;
+            return Collections.emptyList();
         }
+        GeoGebraXMLHandler xmlHandler = new GeoGebraXMLHandler(xhtml, metadata, documentMetadata);
         try (InputStream is = zipFile.getInputStream(entry)) {
-            XMLReaderUtils.parseSAX(is, new EmbeddedContentHandler(
-                    new GeoGebraXMLHandler(xhtml, metadata, documentMetadata)), context);
+            XMLReaderUtils.parseSAX(is, new EmbeddedContentHandler(xmlHandler), context);
         } catch (SAXException e) {
             if (WriteLimitReachedException.isWriteLimitReached(e)) {
                 throw e;
@@ -324,25 +330,37 @@ public class GeoGebraParser implements Parser {
         } catch (IOException | TikaException e) {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
         }
+        return xmlHandler.getIconFiles();
     }
 
     /**
-     * Emits the representative thumbnail: the root one of a worksheet or
-     * tool, or the first slide thumbnail (in slide order) of a Notes/Slides
-     * file.
+     * Emits the representative thumbnail: the root one of a worksheet, the
+     * first slide thumbnail (in slide order) of a Notes/Slides file, or the
+     * icon of the first tool that has one. A tool file has no rendering of
+     * its own; its icon (a picture in a directory with a generated name,
+     * referenced by the macro's {@code iconFile}) is what GeoGebra shows for
+     * it.
+     *
+     * @return the name of the entry emitted, or null if there is none
      */
-    private void handleThumbnail(ZipFile zipFile, List<String> slideIds, XHTMLContentHandler xhtml,
-                                 Metadata metadata, ParseContext context,
-                                 EmbeddedDocumentExtractor embeddedDocumentExtractor)
+    private String handleThumbnail(ZipFile zipFile, List<String> slideIds, List<String> iconFiles,
+                                   XHTMLContentHandler xhtml, Metadata metadata,
+                                   ParseContext context,
+                                   EmbeddedDocumentExtractor embeddedDocumentExtractor)
             throws IOException, SAXException {
         ZipArchiveEntry entry = zipFile.getEntry(THUMBNAIL_PNG);
         for (int i = 0; entry == null && i < slideIds.size(); i++) {
             entry = zipFile.getEntry(slideIds.get(i) + "/" + THUMBNAIL_PNG);
         }
-        if (entry != null) {
-            handleEmbedded(zipFile, entry, TikaCoreProperties.EmbeddedResourceType.THUMBNAIL,
-                    null, xhtml, metadata, context, embeddedDocumentExtractor);
+        for (int i = 0; entry == null && i < iconFiles.size(); i++) {
+            entry = zipFile.getEntry(iconFiles.get(i));
         }
+        if (entry == null) {
+            return null;
+        }
+        handleEmbedded(zipFile, entry, TikaCoreProperties.EmbeddedResourceType.THUMBNAIL,
+                null, xhtml, metadata, context, embeddedDocumentExtractor);
+        return entry.getName();
     }
 
     /**
@@ -352,8 +370,8 @@ public class GeoGebraParser implements Parser {
      * so a file of the same name elsewhere is still emitted.
      */
     private void handleOtherEntries(ZipFile zipFile, Map<String, Integer> pageNumbers,
-                                    XHTMLContentHandler xhtml, Metadata metadata,
-                                    ParseContext context,
+                                    String thumbnail, XHTMLContentHandler xhtml,
+                                    Metadata metadata, ParseContext context,
                                     EmbeddedDocumentExtractor embeddedDocumentExtractor)
             throws IOException, SAXException {
         Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
@@ -363,6 +381,10 @@ public class GeoGebraParser implements Parser {
                 continue;
             }
             String name = entry.getName();
+            if (name.equals(thumbnail)) {
+                //already emitted as the thumbnail (a tool icon)
+                continue;
+            }
             String dir = "";
             String basename = name;
             int slash = name.indexOf('/');
