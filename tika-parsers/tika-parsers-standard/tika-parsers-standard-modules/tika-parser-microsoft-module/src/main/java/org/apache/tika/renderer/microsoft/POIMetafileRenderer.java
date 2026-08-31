@@ -39,6 +39,7 @@ import org.apache.poi.hwmf.usermodel.HwmfPicture;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -123,6 +124,8 @@ public class POIMetafileRenderer implements Renderer {
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
+            //record the cause, as PDFBoxRenderer does, so the failure is diagnosable
+            EmbeddedDocumentUtil.recordException(e, renderingMetadata, parseContext);
             results.add(new RenderResult(RenderResult.STATUS.EXCEPTION, id, null,
                     renderingMetadata));
         }

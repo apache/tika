@@ -65,7 +65,7 @@ final class MetafileRendering {
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         try (TikaInputStream pictureStream = TikaInputStream.get(new byte[0]);
-             RenderResults results = render(renderer, pictureStream, picture, renderMetadata,
+             RenderResults results = render(renderer, pictureStream, picture, metadata,
                      context)) {
             if (results == null) {
                 return;
@@ -94,17 +94,21 @@ final class MetafileRendering {
         }
     }
 
+    /**
+     * @param metadata the metafile's metadata; a rendering failure is
+     *                 recorded there, so it is not silently swallowed
+     */
     private static RenderResults render(Renderer renderer, TikaInputStream pictureStream,
-                                        Object picture, Metadata renderMetadata,
+                                        Object picture, Metadata metadata,
                                         ParseContext context) throws IOException {
         //hand the parsed picture over instead of re-reading the stream
         pictureStream.setOpenContainer(picture);
         try {
-            return renderer.render(pictureStream, renderMetadata, context);
+            return renderer.render(pictureStream, metadata, context);
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            EmbeddedDocumentUtil.recordException(e, renderMetadata, context);
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
             return null;
         }
     }

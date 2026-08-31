@@ -7,9 +7,10 @@ Release 4.1.0 - unreleased
      rendering as a RENDERING embedded document with "emf-parser" /
      "wmf-parser": {"renderImage": true, "renderWidth": 800}, off by
      default and restrictable to e.g. THUMBNAIL embedded documents with
-     "renderOnlyEmbeddedResourceTypes", and OfficeParser emits the SummaryInformation thumbnail of the
-     OLE2 formats (a WMF) as a THUMBNAIL embedded document, as the OOXML
-     parsers do with the docProps thumbnail (TIKA-4855).
+     "renderOnlyEmbeddedResourceTypes", and OfficeParser emits the
+     SummaryInformation thumbnail of the OLE2 formats (a WMF) as a THUMBNAIL
+     embedded document, as the OOXML parsers do with the docProps thumbnail
+     (TIKA-4855).
 
    * Raw camera formats are detected by content: RawTiffDetector tells
      Nikon NEF/NRW, Pentax PEF/PTX, Sony ARW/SRF/SR2, Samsung SRW and Adobe

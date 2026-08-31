@@ -67,11 +67,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * We're also relying on storage order for text order, which isn't great.
  * We'd have to do something like what PDFBox or XPS do to sort the
  * runs and then put the cow back together from the hamburger...lol...
- */
-/**
- * Extracts the text of an EMF image and its embedded WMF and multi-format
- * pictures. With {@link MetafileParserConfig#setRenderImage(boolean)}
- * ("emf-parser": {"renderImage": true}) the image is also rendered through the
+ * <p/>
+ * With {@link MetafileParserConfig#setRenderImage(boolean)}
+ * ("emf-parser": {"renderImage": true}) the image is rendered through the
  * configured {@link Renderer}, the
  * {@link org.apache.tika.renderer.microsoft.POIMetafileRenderer} by
  * default, and emitted as a
