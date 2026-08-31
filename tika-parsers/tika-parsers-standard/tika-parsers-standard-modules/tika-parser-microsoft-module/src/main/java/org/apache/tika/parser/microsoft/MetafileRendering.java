@@ -65,8 +65,8 @@ final class MetafileRendering {
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         try (TikaInputStream pictureStream = TikaInputStream.get(new byte[0]);
-             RenderResults results = render(renderer, pictureStream, picture, metadata,
-                     context)) {
+             RenderResults results = render(renderer, pictureStream, picture, renderMetadata,
+                     metadata, context)) {
             if (results == null) {
                 return;
             }
@@ -95,20 +95,23 @@ final class MetafileRendering {
     }
 
     /**
-     * @param metadata the metafile's metadata; a rendering failure is
-     *                 recorded there, so it is not silently swallowed
+     * @param renderMetadata what the renderer is told about the picture (its
+     *                       type, so a composite renderer can route it)
+     * @param parentMetadata the metafile's metadata; a rendering failure is
+     *                       recorded there, so it is not silently swallowed
      */
     private static RenderResults render(Renderer renderer, TikaInputStream pictureStream,
-                                        Object picture, Metadata metadata,
-                                        ParseContext context) throws IOException {
+                                        Object picture, Metadata renderMetadata,
+                                        Metadata parentMetadata, ParseContext context)
+            throws IOException {
         //hand the parsed picture over instead of re-reading the stream
         pictureStream.setOpenContainer(picture);
         try {
-            return renderer.render(pictureStream, metadata, context);
+            return renderer.render(pictureStream, renderMetadata, context);
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
-            EmbeddedDocumentUtil.recordException(e, metadata, context);
+            EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
             return null;
         }
     }
