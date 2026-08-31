@@ -36,12 +36,21 @@ public final class CoverArt {
      */
     public static final int FRONT_COVER = 3;
 
+    /**
+     * The ID3v2 APIC picture type "Other". Many taggers store the main
+     * cover art with this type instead of marking it a front cover.
+     */
+    public static final int OTHER = 0;
+
     private CoverArt() {
     }
 
     /**
      * Returns the index of the picture to mark as the thumbnail: the first
-     * front cover, or the first picture if there is no front cover.
+     * front cover; else the first picture whose type is "Other" or unknown,
+     * which is where taggers put the main art when they do not classify it,
+     * rather than e.g. a back cover or a leaflet that happens to come first;
+     * else the first picture.
      *
      * @param pictureTypes the picture types in file order; a negative value
      *                     for a picture whose type is unknown
@@ -52,7 +61,15 @@ public final class CoverArt {
             return -1;
         }
         int front = pictureTypes.indexOf(FRONT_COVER);
-        return front >= 0 ? front : 0;
+        if (front >= 0) {
+            return front;
+        }
+        for (int i = 0; i < pictureTypes.size(); i++) {
+            if (pictureTypes.get(i) <= OTHER) {
+                return i;
+            }
+        }
+        return 0;
     }
 
     /**
