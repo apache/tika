@@ -26,6 +26,7 @@ import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -82,8 +83,15 @@ public class ServerProtocolIO {
     private final DataInputStream input;
     private final DataOutputStream output;
     private final int maxIpcPayloadBytes;
+    private final ExceptionReporting exceptionReporting;
 
     public ServerProtocolIO(DataInputStream input, DataOutputStream output, int maxIpcPayloadBytes) {
+        this(input, output, maxIpcPayloadBytes, ExceptionReporting.DEFAULT);
+    }
+
+    public ServerProtocolIO(DataInputStream input, DataOutputStream output, int maxIpcPayloadBytes,
+                            ExceptionReporting exceptionReporting) {
+        this.exceptionReporting = exceptionReporting;
         if (maxIpcPayloadBytes < MIN_FALLBACK_PAYLOAD_BYTES) {
             throw new IllegalArgumentException(String.format(Locale.ROOT,
                     "maxIpcPayloadBytes %d is below the minimum %d required to carry a PAYLOAD_LIMIT_EXCEEDED response",
@@ -196,7 +204,7 @@ public class ServerProtocolIO {
      * @throws IOException on serialization, I/O, or unexpected ACK response
      */
     public void writeCrash(PipesMessageType crashType, Throwable t) throws IOException {
-        String msg = (t != null) ? ExceptionUtils.getStackTrace(t) : "";
+        String msg = (t != null) ? ExceptionUtils.format(t, exceptionReporting) : "";
         BoundedOutputStream bos = new BoundedOutputStream(maxIpcPayloadBytes);
         try {
             JsonPipesIpc.toStream(msg, bos);
