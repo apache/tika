@@ -320,7 +320,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.72.0</google.cloud.version>
-    <aws2.version>2.54.5</aws2.version>
+    <aws2.version>2.54.6</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -353,7 +353,7 @@
     <fakeload.version>0.7.0</fakeload.version>
     <fastutil.version>8.5.18</fastutil.version>
     <felix.scr.version>1.12.0</felix.scr.version>
-    <freemarker.version>2.3.34</freemarker.version>
+    <freemarker.version>2.3.35</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.14.0</gson.version>
     <grpc.version>1.83.1</grpc.version>
@@ -437,7 +437,7 @@
     <!-- SolrJ 10 splits the Jetty client/ZK code into solr-solrj-jetty / solr-solrj-zookeeper -->
     <solrj.version>10.0.0</solrj.version>
     <spring.version>7.0.9</spring.version>
-    <sqlite.version>3.53.2.1</sqlite.version>
+    <sqlite.version>3.53.4.0</sqlite.version>
     <stax.ex.version>2.1.0</stax.ex.version>
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
@@ -1600,7 +1600,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.10.0</version>
+        <version>3.10.1</version>
         <configuration>
           <lineEndings>UNIX</lineEndings>
           <java>

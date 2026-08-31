@@ -7189,6 +7189,9 @@
 
   <mime-type type="image/x-raw-fuji">
     <_comment>Fuji raw image</_comment>
+    <magic priority="50">
+      <match value="FUJIFILMCCD-RAW" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.raf"/>
   </mime-type>
 
@@ -7243,6 +7246,9 @@
 
   <mime-type type="image/x-raw-minolta">
     <_comment>Minolta raw image</_comment>
+    <magic priority="50">
+      <match value="\x00MRM" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.mrw"/>
   </mime-type>
 
@@ -7255,8 +7261,11 @@
 
   <mime-type type="image/x-raw-olympus">
     <_comment>Olympus raw image</_comment>
+    <!-- IIRO and IIRS little endian, MMOR big endian -->
     <magic priority="50">
       <match offset="0" type="string" value="\x49\x49\x52\x4F"/>
+      <match offset="0" type="string" value="\x49\x49\x52\x53"/>
+      <match offset="0" type="string" value="\x4D\x4D\x4F\x52"/>
     </magic>
     <glob pattern="*.orf"/>
   </mime-type>
@@ -7266,6 +7275,12 @@
     <sub-class-of type="image/tiff" />
     <glob pattern="*.ptx"/>
     <glob pattern="*.pef"/>
+  </mime-type>
+
+  <mime-type type="image/x-raw-samsung">
+    <_comment>Samsung raw image</_comment>
+    <sub-class-of type="image/tiff" />
+    <glob pattern="*.srw"/>
   </mime-type>
 
   <mime-type type="image/x-raw-sony">
@@ -7298,6 +7313,10 @@
 
   <mime-type type="image/x-raw-panasonic">
     <_comment>Panasonic raw image</_comment>
+    <!-- RW2: a TIFF-like header with its own magic number 0x55 -->
+    <magic priority="50">
+      <match value="IIU\x00" type="string" offset="0"/>
+    </magic>
     <glob pattern="*.raw"/>
     <glob pattern="*.rw2"/>
   </mime-type>
