@@ -276,16 +276,17 @@ public class DWGParserTest extends TikaTest {
         assertNotNull(root.get(DWG.APPLICATION_COMMENT));
         assertContains("AutoCAD", root.get(DWG.PRODUCT_INFO));
 
-        // Thumbnail embedded as INLINE
+        // the THUMBNAILIMAGE section is the drawing's THUMBNAIL embedded document
         Metadata thumb = null;
         for (int i = 1; i < metadataList.size(); i++) {
             String type = metadataList.get(i).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
-            if (TikaCoreProperties.EmbeddedResourceType.INLINE.name().equals(type)) {
+            if (TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name().equals(type)) {
                 thumb = metadataList.get(i);
                 break;
             }
         }
-        assertNotNull(thumb, "Expected an INLINE thumbnail attachment");
+        assertNotNull(thumb, "Expected a THUMBNAIL embedded document");
+        assertEquals("thumbnail", thumb.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test

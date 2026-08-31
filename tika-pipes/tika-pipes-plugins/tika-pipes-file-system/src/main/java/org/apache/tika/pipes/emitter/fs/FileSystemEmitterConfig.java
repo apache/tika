@@ -19,16 +19,20 @@ package org.apache.tika.pipes.emitter.fs;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.PluginJson;
 
-public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_EXISTS onExists, boolean prettyPrint, boolean allowAbsolutePaths) {
+public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_EXISTS onExists, boolean prettyPrint, boolean allowAbsolutePaths,
+        Boolean atomicWrites) {
 
     enum ON_EXISTS {
         SKIP, EXCEPTION, REPLACE
     }
 
-    /** onExists is optional; absent means EXCEPTION, the documented default. */
+    /** onExists absent means EXCEPTION, atomicWrites absent means true -- the documented defaults. */
     public FileSystemEmitterConfig {
         if (onExists == null) {
             onExists = ON_EXISTS.EXCEPTION;
+        }
+        if (atomicWrites == null) {
+            atomicWrites = Boolean.TRUE;
         }
     }
 

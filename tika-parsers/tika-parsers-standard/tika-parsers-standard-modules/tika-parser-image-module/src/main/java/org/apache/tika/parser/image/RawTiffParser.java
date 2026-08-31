@@ -25,6 +25,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +54,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for TIFF-based camera raw images: Nikon NEF/NRW, Sony ARW/SRF/SR2,
- * Pentax PEF/PTX, Adobe DNG and Canon CR2.
+ * Pentax PEF/PTX, Samsung SRW, Adobe DNG and Canon CR2.
  * <p>
  * These formats are TIFF containers: metadata extraction is inherited from
  * {@link TiffParser}. In addition, this parser extracts the camera-generated
@@ -68,6 +69,12 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Both classic TIFF and BigTIFF containers (allowed for DNG since spec
  * version 1.7) are supported for preview extraction; for BigTIFF, EXIF
  * metadata extraction is skipped until metadata-extractor supports it.
+ * <p>
+ * Of the previews that are extracted (see the length limits in
+ * {@link RawTiffParserConfig}), the largest by JPEG byte length is marked
+ * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}, any smaller
+ * ones are {@link TikaCoreProperties.EmbeddedResourceType#INLINE} images
+ * (TIKA-4851).
  */
 @TikaComponent
 public class RawTiffParser extends TiffParser {
@@ -82,6 +89,7 @@ public class RawTiffParser extends TiffParser {
                     MediaType.image("x-raw-nikon"),
                     MediaType.image("x-raw-sony"),
                     MediaType.image("x-raw-pentax"),
+                    MediaType.image("x-raw-samsung"),
                     MediaType.image("x-raw-adobe"),
                     MediaType.image("x-canon-cr2"))));
 
@@ -172,6 +180,11 @@ public class RawTiffParser extends TiffParser {
         if (previews.isEmpty()) {
             return;
         }
+        //of the extracted previews, the largest by JPEG length is the file's
+        //thumbnail; the smaller ones (the camera's own thumbnail, intermediate
+        //previews) are renderings of the same image and are inline images.
+        //The JPEG length is a reliable proxy for the dimensions here.
+        previews.sort(Comparator.comparingLong(Preview::length).reversed());
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         int count = 0;
@@ -179,11 +192,19 @@ public class RawTiffParser extends TiffParser {
         try (FileChannel channel = FileChannel.open(tis.getPath())) {
             for (Preview preview : previews) {
                 Metadata previewMetadata = Metadata.newInstance(context);
-                previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
                 previewMetadata.set(HttpHeaders.CONTENT_TYPE, JPEG_MIME);
-                EmbeddedDocumentUtil.setGeneratedResourceName(previewMetadata,
-                        EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL, count, JPEG_MIME);
+                if (count == 0) {
+                    previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                            TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+                    EmbeddedDocumentUtil.setGeneratedResourceName(previewMetadata,
+                            EmbeddedDocumentUtil.EmbeddedResourcePrefix.THUMBNAIL, 0, JPEG_MIME);
+                } else {
+                    previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                            TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+                    EmbeddedDocumentUtil.setGeneratedResourceName(previewMetadata,
+                            EmbeddedDocumentUtil.EmbeddedResourcePrefix.IMAGE, count - 1,
+                            JPEG_MIME);
+                }
                 count++;
                 if (!extractor.shouldParseEmbedded(previewMetadata, context)) {
                     continue;

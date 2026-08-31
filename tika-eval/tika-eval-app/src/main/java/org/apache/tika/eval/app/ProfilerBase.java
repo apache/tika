@@ -45,6 +45,7 @@ import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
+import org.apache.tika.eval.app.io.PipesReport;
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
 import org.apache.tika.eval.core.metadata.TikaEvalMetadataFilter;
 import org.apache.tika.eval.core.textstats.BasicTokenCountStatsCalculator;
@@ -86,6 +87,8 @@ public abstract class ProfilerBase {
     protected static final AtomicInteger ID = new AtomicInteger();
     static final long NON_EXISTENT_FILE_LENGTH = -1l;
     final static int FILE_PATH_MAX_LEN = 1024;//max len for varchar for file_path
+    final static int PIPES_STATUS_MAX_LEN = 64;
+    final static int PIPES_MESSAGE_MAX_LEN = 4096;
     //Container exception key from the 1.x branch; read-only lookup against legacy extract JSON, so a plain String key suffices.
     private static final String CONTAINER_EXCEPTION_1X = "X-TIKA" + ":EXCEPTION:runtime";
     private static final Logger LOG = LoggerFactory.getLogger(ProfilerBase.class);
@@ -360,6 +363,18 @@ public abstract class ProfilerBase {
     public void setMaxTokens(int maxTokens) {
         this.maxTokens = maxTokens;
         initAnalyzersAndTokenCounter(maxTokens, new LanguageIDWrapper());
+    }
+
+    protected static void putPipesResult(Map<Cols, String> row, PipesReport report, EvalFilePaths fps, Cols statusCol, Cols messageCol) {
+        if (report == null) {
+            return;
+        }
+        PipesReport.Row r = report.get(fps.getRelativeSourceFilePath());
+        if (r == null) {
+            return;
+        }
+        row.put(statusCol, r.status());
+        row.put(messageCol, r.message());
     }
 
     protected void writeExtractException(TableInfo extractExceptionTable, String containerId, String filePath, ExtractReaderException.TYPE type) throws IOException {

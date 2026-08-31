@@ -44,6 +44,8 @@ RUN set -eux \
     && apt-get clean -y \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ENV TIKA_VERSION=$TIKA_VERSION
+# tesseract links libgomp; one thread per OCR process - parallelism comes from the forked parse workers
+ENV OMP_THREAD_LIMIT=1
 # Snapshot workflow tars the bin distribution into <context>/tika-server/, so
 # this COPY lands the thin jar + lib/ + plugins/ at /opt/tika-server/, matching
 # the release-variant Dockerfile.

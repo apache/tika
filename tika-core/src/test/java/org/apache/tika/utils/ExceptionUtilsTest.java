@@ -75,6 +75,7 @@ public class ExceptionUtilsTest {
         assertTrue(redacted.contains(" more\n"), "common-frame elision kept");
         // Strip ": message" from every header line of FULL; the rest must be identical.
         String expected = full.replaceAll("(?m)^((?:\\t*Suppressed: |Caused by: )?[\\w.$]+Exception): .*$", "$1");
+        expected = expected.replace("\r", ""); // windows
         assertEquals(expected, redacted);
     }
 
