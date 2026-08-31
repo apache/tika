@@ -121,7 +121,12 @@ public class OcrConfig implements Serializable {
     private int dpi = 300;
     private ImageType imageType = ImageType.GRAY;
     private ImageFormat imageFormat = ImageFormat.PNG;
-    private float imageQuality = 1.0f;
+    /**
+     * Compression quality handed to ImageIO when writing rendered pages. For PNG this is
+     * an inverted effort knob, not fidelity: 1.0 writes an uncompressed file, 0.0 spends
+     * ~10x the time of 0.5 for a few percent smaller output. PNG is always lossless.
+     */
+    private float imageQuality = 0.5f;
 
     /**
      * Maximum total pixels (width &times; height) allowed for a rendered

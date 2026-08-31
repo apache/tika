@@ -161,7 +161,7 @@ class EmitHandler {
             return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_NOT_FOUND, noEmitterMsg);
         } catch (IOException | TikaException e) {
             LOG.warn("Couldn't initialize emitter for task id '" + taskId + "'", e);
-            return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_INITIALIZATION_EXCEPTION, ExceptionUtils.getStackTrace(e));
+            return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_INITIALIZATION_EXCEPTION, ExceptionUtils.format(e, parseContext));
         }
         try {
             ParseMode parseMode = parseContext.get(ParseMode.class);
@@ -175,7 +175,7 @@ class EmitHandler {
             }
         } catch (IOException e) {
             LOG.warn("emit exception", e);
-            String msg = ExceptionUtils.getStackTrace(e);
+            String msg = ExceptionUtils.format(e, parseContext);
             //for now, we're hiding the parse exception if there was also an emit exception
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION, msg);
         }
