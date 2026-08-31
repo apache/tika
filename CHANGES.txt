@@ -7,6 +7,10 @@ Release 4.1.0 - unreleased
      stay INLINE. Clients that looked for cover art as INLINE need to
      accept THUMBNAIL as well (TIKA-4850).
 
+   * embedded-limits maxDepth counts embedding levels again instead of the
+     parsers a parse passes through; with AutoDetectParser over DefaultParser
+     every value above 1 used to stop one level early (TIKA-4857).
+
    * GeoGebraParser emits the icon of a tool (*.ggt, the macro's iconFile)
      as its THUMBNAIL embedded document; tool files have no thumbnail of
      their own (TIKA-4831).

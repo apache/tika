@@ -152,10 +152,10 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
         // Depth limit only applies to current depth - siblings at shallower levels
         // can still be parsed. The flag is set for reporting purposes.
-        // depth is 1-indexed (main doc is depth 1), so embedded depth limit of N
-        // means we allow parsing up to depth N+1
+        // The child would be one level below the current document, so with
+        // maxDepth N the children of documents at depth N are not parsed.
         int maxDepth = parseRecord.getMaxEmbeddedDepth();
-        if (maxDepth >= 0 && parseRecord.getDepth() > maxDepth + 1) {
+        if (maxDepth >= 0 && parseRecord.getEmbeddedDepth() + 1 > maxDepth) {
             parseRecord.setEmbeddedDepthLimitReached(true);
             if (parseRecord.isThrowOnMaxDepth()) {
                 throw new EmbeddedLimitReachedException(
@@ -206,6 +206,9 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
         // Use the delegate parser to parse this entry
         boolean parsedCleanly = false;
+        if (parseRecord != null) {
+            parseRecord.enterEmbedded();
+        }
         try {
             tis.setCloseShield();
             DELEGATING_PARSER.parse(tis,
@@ -221,6 +224,9 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         } catch (TikaException e) {
             recordException(e, context);
         } finally {
+            if (parseRecord != null) {
+                parseRecord.exitEmbedded();
+            }
             tis.removeCloseShield();
             if (outputHtml) {
                 // Only an aborted parse can leave elements open; on a clean parse

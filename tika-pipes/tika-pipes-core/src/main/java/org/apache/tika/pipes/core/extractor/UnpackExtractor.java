@@ -100,6 +100,9 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         }
 
         // Use the delegate parser to parse this entry
+        if (parseRecord != null) {
+            parseRecord.enterEmbedded();
+        }
         try {
             tis.setCloseShield();
             UnpackHandler bytesHandler = context.get(UnpackHandler.class);
@@ -117,6 +120,9 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         } catch (TikaException e) {
             recordException(e, context);
         } finally {
+            if (parseRecord != null) {
+                parseRecord.exitEmbedded();
+            }
             tis.removeCloseShield();
         }
 
