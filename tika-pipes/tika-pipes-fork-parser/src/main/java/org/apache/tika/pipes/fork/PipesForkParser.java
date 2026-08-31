@@ -41,6 +41,7 @@ import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.config.ConfigMerger;
 import org.apache.tika.pipes.core.config.ConfigOverrides;
+import org.apache.tika.pipes.core.config.DefaultPluginsDir;
 import org.apache.tika.pipes.core.fetcher.BytesFetcher;
 import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.pipes.core.fetcher.PayloadRouter;
@@ -426,7 +427,7 @@ public class PipesForkParser implements Closeable {
         if (config.getPluginsDir() != null) {
             builder.setPluginRoots(config.getPluginsDir().toAbsolutePath().toString());
         } else {
-            builder.setPluginRoots(resolveDefaultPluginsDir());
+            builder.setPluginRoots(DefaultPluginsDir.resolve(PipesForkParser.class));
         }
 
         ConfigOverrides overrides = builder.build();
@@ -435,31 +436,5 @@ public class PipesForkParser implements Closeable {
         return ConfigMerger.mergeOrCreate(config.getUserConfigPath(), overrides);
     }
 
-    private static final String DEFAULT_PLUGINS_DIR = "plugins";
-
-    /**
-     * Mirrors tika-server's resolution: a "plugins" directory beside the running jar, else one in
-     * the working directory, else the bare name so pf4j reports the missing root itself.
-     */
-    private static String resolveDefaultPluginsDir() {
-        try {
-            Path jarPath = Path.of(PipesForkParser.class.getProtectionDomain()
-                    .getCodeSource().getLocation().toURI());
-            Path jarDir = jarPath.getParent();
-            if (jarDir != null) {
-                Path pluginsNextToJar = jarDir.resolve(DEFAULT_PLUGINS_DIR);
-                if (Files.isDirectory(pluginsNextToJar)) {
-                    return pluginsNextToJar.toAbsolutePath().toString();
-                }
-            }
-        } catch (Exception e) {
-            // fall through to the working directory
-        }
-        Path cwdPlugins = Path.of(DEFAULT_PLUGINS_DIR);
-        if (Files.isDirectory(cwdPlugins)) {
-            return cwdPlugins.toAbsolutePath().toString();
-        }
-        return DEFAULT_PLUGINS_DIR;
-    }
 
 }
