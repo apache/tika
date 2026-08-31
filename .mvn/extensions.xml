@@ -3,6 +3,6 @@
   <extension>
     <groupId>eu.maveniverse.maven.nisse</groupId>
     <artifactId>extension</artifactId>
-    <version>0.9.7</version>
+    <version>0.9.9</version>
   </extension>
 </extensions>

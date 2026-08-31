@@ -17,6 +17,8 @@
 package org.apache.tika.parser.geogebra;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -59,6 +61,11 @@ class GeoGebraXMLHandler extends DefaultHandler {
     private final Metadata metadata;
     private final boolean documentMetadata;
     private int depth = 0;
+    /**
+     * The {@code iconFile} of every macro, in document order: the path of
+     * the tool's icon inside the zip, if the tool has one.
+     */
+    private final List<String> iconFiles = new ArrayList<>();
 
     /**
      * @param xhtml            the handler paragraphs are written to
@@ -106,8 +113,16 @@ class GeoGebraXMLHandler extends DefaultHandler {
             }
             paragraph(toolName);
             paragraph(attributes.getValue("toolHelp"));
+            String iconFile = attributes.getValue("iconFile");
+            if (!StringUtils.isBlank(iconFile)) {
+                iconFiles.add(iconFile.trim());
+            }
         }
         depth++;
+    }
+
+    List<String> getIconFiles() {
+        return iconFiles;
     }
 
     @Override

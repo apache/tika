@@ -1,5 +1,43 @@
 Release 4.1.0 - unreleased
 
+   * embedded-limits maxDepth counts embedding levels again instead of the
+     parsers a parse passes through; with AutoDetectParser over DefaultParser
+     every value above 1 used to stop one level early (TIKA-4857).
+
+   * GeoGebraParser emits the icon of a tool (*.ggt, the macro's iconFile)
+     as its THUMBNAIL embedded document; tool files have no thumbnail of
+     their own (TIKA-4831).
+
+   * Enum values in JSON configuration are matched case-insensitively, so
+     "no_ocr" works as well as "NO_OCR"; the server docs used the lower-case
+     form in their examples (TIKA-4859).
+
+   * The preview image of iWork '09 packages (QuickLook/Thumbnail.jpg) and of
+     iWork '18 packages (preview.jpg) is emitted as a THUMBNAIL embedded
+     document, as it already was for iWork '13 (TIKA-4854).
+
+   * Raw camera formats are detected by content: RawTiffDetector tells
+     Nikon NEF/NRW, Pentax PEF/PTX, Sony ARW/SRF/SR2, Samsung SRW and Adobe
+     DNG from a plain TIFF by their image directory (DNGVersion, the vendor
+     Compression codes, or a CFA/LinearRaw image plus Make), and Fuji RAF,
+     Panasonic RW2, Minolta MRW and the remaining Olympus ORF byte orders
+     get magic entries. Streams without a file name used to be image/tiff.
+     image/x-raw-samsung (*.srw) is new and parsed by RawTiffParser
+     (TIKA-4861).
+
+   * DWGReadParser emits the drawing's THUMBNAILIMAGE as a THUMBNAIL embedded
+     document instead of INLINE (TIKA-4853).
+
+   * EpubParser emits the cover image named by the OPF (the EPUB 3
+     cover-image manifest property, or the EPUB 2 cover meta) as a THUMBNAIL
+     embedded document (TIKA-4852).
+
+   * RawTiffParser marks only the largest embedded JPEG preview as the
+     THUMBNAIL embedded document; the smaller previews of the same image are
+     INLINE images named image-N.jpg. Previously every preview was a
+     THUMBNAIL, so a client had to compare them to find the representative
+     one (TIKA-4851).
+
    * New exception-reporting parse-context config controls how much of an
      exception is written to tk:exception:* metadata for the container and
      embedded documents alike: FULL (default), MESSAGE_REDACTED (stack trace
