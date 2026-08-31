@@ -4,6 +4,10 @@ Release 4.1.0 - unreleased
      parsers a parse passes through; with AutoDetectParser over DefaultParser
      every value above 1 used to stop one level early (TIKA-4857).
 
+   * GeoGebraParser emits the icon of a tool (*.ggt, the macro's iconFile)
+     as its THUMBNAIL embedded document; tool files have no thumbnail of
+     their own (TIKA-4831).
+
    * Enum values in JSON configuration are matched case-insensitively, so
      "no_ocr" works as well as "NO_OCR"; the server docs used the lower-case
      form in their examples (TIKA-4859).
