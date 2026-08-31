@@ -38,11 +38,7 @@ import org.gagravarr.vorbis.VorbisStyleComments;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
-import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -53,7 +49,6 @@ import org.apache.tika.parser.AbstractParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.audio.CoverArt;
 import org.apache.tika.parser.audio.NumberAndTotal;
-import org.apache.tika.parser.mp3.ID3Tags;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -119,8 +114,14 @@ public abstract class OggAudioParser extends AbstractParser {
         }
     }
 
-    protected static void extractComments(Metadata metadata, XHTMLContentHandler xhtml,
-            VorbisStyleComments comments, ParseContext context)
+    /**
+     * @return the pictures carried in the comments; the caller emits them
+     * through {@link #extractPictures(List, XHTMLContentHandler, ParseContext)},
+     * {@link FlacParser} first merges them with the native PICTURE blocks so
+     * one file yields one thumbnail
+     */
+    protected static List<PictureBlock> extractComments(Metadata metadata,
+            XHTMLContentHandler xhtml, VorbisStyleComments comments, ParseContext context)
             throws IOException, TikaException, SAXException {
         // Get the specific known comments
         metadata.set(TikaCoreProperties.TITLE, comments.getTitle());
@@ -209,21 +210,16 @@ public abstract class OggAudioParser extends AbstractParser {
         }
         xhtml.element("p", comments.getGenre());
 
-        // Any embedded pictures, such as cover art, become
-        //  embedded documents of the audio file
-        extractPictures(xhtml, comments, context);
+        // The pictures are the caller's to emit
+        return parsePictures(comments);
     }
 
     /**
-     * Sends the embedded pictures, such as cover art, from the comments to
-     * the embedded document extractor. The pictures are carried as base64
-     * encoded FLAC picture blocks; malformed blocks are skipped silently.
-     * The pictures only become embedded documents, no metadata is recorded
-     * on the audio document itself.
+     * Parses the embedded pictures, such as cover art, out of the comments.
+     * The pictures are carried as base64 encoded FLAC picture blocks;
+     * malformed blocks are skipped silently.
      */
-    private static void extractPictures(XHTMLContentHandler xhtml,
-            VorbisStyleComments comments, ParseContext context)
-            throws IOException, SAXException {
+    private static List<PictureBlock> parsePictures(VorbisStyleComments comments) {
         List<PictureBlock> pictures = new ArrayList<>();
         for (String block : comments.getComments(METADATA_BLOCK_PICTURE)) {
             byte[] decoded;
@@ -238,50 +234,23 @@ public abstract class OggAudioParser extends AbstractParser {
                 pictures.add(picture);
             }
         }
-        extractPictures(pictures, xhtml, context);
+        return pictures;
     }
 
     /**
-     * Sends parsed picture blocks to the embedded document extractor: the
-     * front cover (or the first picture, if there is none) as the file's
-     * thumbnail, the others as inline pictures. Native FLAC PICTURE
-     * metadata blocks use the very same structure, so {@link FlacParser}
-     * shares this method.
+     * Sends parsed picture blocks to the embedded document extractor;
+     * {@link CoverArt#thumbnailIndex(List)} decides which of them is the
+     * file's thumbnail. Native FLAC PICTURE metadata blocks use the very
+     * same structure, so {@link FlacParser} shares this method.
      */
     static void extractPictures(List<PictureBlock> pictures, XHTMLContentHandler xhtml,
             ParseContext context) throws IOException, SAXException {
-        if (pictures.isEmpty()) {
-            return;
-        }
-        List<Integer> pictureTypes = new ArrayList<>();
+        List<CoverArt.Picture> mapped = new ArrayList<>();
         for (PictureBlock picture : pictures) {
-            pictureTypes.add(picture.pictureType);
+            mapped.add(new CoverArt.Picture(picture.pictureType, picture.mimeType,
+                    picture.description, picture.data));
         }
-        int thumbnailIndex = CoverArt.thumbnailIndex(pictureTypes);
-        EmbeddedDocumentExtractor extractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        for (int i = 0; i < pictures.size(); i++) {
-            PictureBlock picture = pictures.get(i);
-            Metadata pictureMetadata = Metadata.newInstance(context);
-            pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                    CoverArt.resourceType(i, thumbnailIndex).toString());
-            if (!picture.mimeType.isEmpty()) {
-                pictureMetadata.set(HttpHeaders.CONTENT_TYPE, picture.mimeType);
-            }
-            if (!picture.description.isEmpty()) {
-                pictureMetadata.set(TikaCoreProperties.TITLE, picture.description);
-            }
-            //the FLAC picture block reuses the ID3v2 APIC picture types
-            if (picture.pictureType >= 0 && picture.pictureType < ID3Tags.PICTURE_TYPES.length) {
-                pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
-                        ID3Tags.PICTURE_TYPES[picture.pictureType]);
-            }
-            if (extractor.shouldParseEmbedded(pictureMetadata, context)) {
-                try (TikaInputStream pictureStream = TikaInputStream.get(picture.data)) {
-                    extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context, true);
-                }
-            }
-        }
+        CoverArt.extractPictures(mapped, xhtml, context);
     }
 
     /**

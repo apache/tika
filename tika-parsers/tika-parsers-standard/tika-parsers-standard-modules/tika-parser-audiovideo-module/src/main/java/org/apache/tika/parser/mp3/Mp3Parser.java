@@ -28,8 +28,6 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TailStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
@@ -309,51 +307,21 @@ public class Mp3Parser implements Parser {
 
     /**
      * Sends the embedded pictures, such as cover art, from the ID3v2 tags
-     * to the embedded document extractor. The front cover (or the first
-     * picture, if there is none) is the file's thumbnail, the others are
-     * inline pictures. The pictures only become embedded documents, no
-     * metadata is recorded on the audio document itself.
+     * to the embedded document extractor;
+     * {@link CoverArt#thumbnailIndex(java.util.List)} decides which of them
+     * is the file's thumbnail.
      */
     private static void extractPictures(ID3Tags[] tags, XHTMLContentHandler xhtml,
                                         ParseContext context)
             throws IOException, SAXException {
-        List<ID3Picture> pictures = new ArrayList<>();
+        List<CoverArt.Picture> pictures = new ArrayList<>();
         for (ID3Tags tag : tags) {
-            pictures.addAll(tag.getPictures());
-        }
-        if (pictures.isEmpty()) {
-            return;
-        }
-        List<Integer> pictureTypes = new ArrayList<>();
-        for (ID3Picture picture : pictures) {
-            pictureTypes.add(picture.getPictureType());
-        }
-        int thumbnailIndex = CoverArt.thumbnailIndex(pictureTypes);
-        EmbeddedDocumentExtractor extractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        for (int i = 0; i < pictures.size(); i++) {
-            ID3Picture picture = pictures.get(i);
-            Metadata pictureMetadata = Metadata.newInstance(context);
-            pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                    CoverArt.resourceType(i, thumbnailIndex).toString());
-            if (picture.getMimeType() != null) {
-                pictureMetadata.set(HttpHeaders.CONTENT_TYPE, picture.getMimeType());
-            }
-            if (picture.getDescription() != null && !picture.getDescription().isEmpty()) {
-                pictureMetadata.set(TikaCoreProperties.TITLE, picture.getDescription());
-            }
-            if (picture.getPictureType() >= 0 &&
-                    picture.getPictureType() < ID3Tags.PICTURE_TYPES.length) {
-                pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
-                        ID3Tags.PICTURE_TYPES[picture.getPictureType()]);
-            }
-            if (extractor.shouldParseEmbedded(pictureMetadata, context)) {
-                try (TikaInputStream pictureStream = TikaInputStream.get(picture.getData())) {
-                    extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context,
-                            true);
-                }
+            for (ID3Picture picture : tag.getPictures()) {
+                pictures.add(new CoverArt.Picture(picture.getPictureType(),
+                        picture.getMimeType(), picture.getDescription(), picture.getData()));
             }
         }
+        CoverArt.extractPictures(pictures, xhtml, context);
     }
 
     /**

@@ -18,9 +18,15 @@ package org.apache.tika.parser.ogg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.HttpHeaders;
@@ -74,5 +80,49 @@ public class FlacParserTest extends TikaTest {
         assertEquals("Cover (back)", back.get(TikaCoreProperties.DESCRIPTION));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 back.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
+     * A PICTURE block that declares more data than the file has left ends
+     * the walk, but the pictures before it survive: the walk breaks instead
+     * of returning or throwing (regression guard for the return-vs-break in
+     * readNativePictures).
+     */
+    @Test
+    public void testTruncatedPictureBlockKeepsEarlierPictures(@TempDir Path tmp) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.write("fLaC".getBytes(StandardCharsets.US_ASCII));
+        byte[] picture = pictureBlock(3, "image/png", "front");
+        out.write(blockHeader(false, 6, picture.length));
+        out.write(picture);
+        //a second PICTURE block declaring far more data than follows
+        out.write(blockHeader(true, 6, 0x00FFFF));
+        out.write(new byte[]{1, 2, 3});
+        Path flac = tmp.resolve("truncated.flac");
+        Files.write(flac, out.toByteArray());
+
+        List<OggAudioParser.PictureBlock> pictures = FlacParser.readNativePictures(flac);
+        assertEquals(1, pictures.size());
+    }
+
+    private static byte[] blockHeader(boolean last, int type, int length) {
+        return new byte[]{(byte) ((last ? 0x80 : 0) | type),
+                (byte) (length >>> 16), (byte) (length >>> 8), (byte) length};
+    }
+
+    private static byte[] pictureBlock(int pictureType, String mimeType, String description)
+            throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        DataOutputStream data = new DataOutputStream(out);
+        data.writeInt(pictureType);
+        data.writeInt(mimeType.length());
+        data.writeBytes(mimeType);
+        data.writeInt(description.length());
+        data.writeBytes(description);
+        data.write(new byte[16]); //geometry
+        byte[] image = {(byte) 0x89, 'P', 'N', 'G'};
+        data.writeInt(image.length);
+        data.write(image);
+        return out.toByteArray();
     }
 }

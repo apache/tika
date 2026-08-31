@@ -100,15 +100,18 @@ public class FlacParser extends AbstractParser {
             metadata.set(HttpHeaders.CONTENT_TYPE, NATIVE_FLAC.toString());
         }
 
-        // Extract any Vorbis-style comments
-        OggAudioParser.extractComments(metadata, xhtml, flac.getTags(), context);
+        // Extract any Vorbis-style comments; their pictures are emitted
+        //  below, together with any native PICTURE blocks, so one file
+        //  yields exactly one thumbnail
+        List<OggAudioParser.PictureBlock> pictures =
+                OggAudioParser.extractComments(metadata, xhtml, flac.getTags(), context);
 
-        // Extract any embedded pictures, such as cover art, from native
-        //  FLAC PICTURE metadata blocks (Ogg-contained FLAC carries its
-        //  pictures in metadata_block_picture comments instead)
+        // Native FLAC carries its pictures in PICTURE metadata blocks
+        //  (Ogg-contained FLAC uses metadata_block_picture comments instead)
         if (!(flac instanceof FlacOggFile)) {
-            extractNativePictures(path, xhtml, context);
+            pictures.addAll(readNativePictures(path));
         }
+        OggAudioParser.extractPictures(pictures, xhtml, context);
 
         // Extract duration if available from header
         FlacInfo info = flac.getInfo();
@@ -128,8 +131,8 @@ public class FlacParser extends AbstractParser {
     }
 
     /**
-     * Walks the metadata blocks of a native FLAC file and sends any
-     * PICTURE blocks to the embedded document extractor. Their payload is
+     * Walks the metadata blocks of a native FLAC file and returns any
+     * PICTURE blocks. Their payload is
      * identical to the metadata_block_picture comments handled by
      * {@link OggAudioParser}. vorbis-java parses these blocks but keeps
      * them without a public accessor, so they are read through a second
@@ -140,14 +143,13 @@ public class FlacParser extends AbstractParser {
      * FlacFile.getOtherMetadata(), present on their master but unreleased
      * as of 0.8, see https://github.com/Gagravarr/VorbisJava/issues/46
      */
-    private static void extractNativePictures(Path path, XHTMLContentHandler xhtml,
-            ParseContext context) throws IOException, SAXException {
+    static List<OggAudioParser.PictureBlock> readNativePictures(Path path) throws IOException {
         List<OggAudioParser.PictureBlock> pictures = new ArrayList<>();
         try (InputStream stream = new BufferedInputStream(Files.newInputStream(path))) {
             byte[] magic = stream.readNBytes(4);
             if (magic.length != 4 || magic[0] != 'f' || magic[1] != 'L'
                     || magic[2] != 'a' || magic[3] != 'C') {
-                return;
+                return pictures;
             }
             boolean lastBlock = false;
             while (!lastBlock) {
@@ -180,6 +182,6 @@ public class FlacParser extends AbstractParser {
                 }
             }
         }
-        OggAudioParser.extractPictures(pictures, xhtml, context);
+        return pictures;
     }
 }

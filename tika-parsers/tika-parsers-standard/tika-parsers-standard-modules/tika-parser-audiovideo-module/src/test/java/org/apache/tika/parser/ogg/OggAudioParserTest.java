@@ -210,7 +210,10 @@ public class OggAudioParserTest {
         Metadata metadata = new Metadata();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(new DefaultHandler(), metadata);
         xhtml.startDocument();
-        OggAudioParser.extractComments(metadata, xhtml, comments, context);
+        //emit the returned pictures, as the parsers do
+        OggAudioParser.extractPictures(
+                OggAudioParser.extractComments(metadata, xhtml, comments, context),
+                xhtml, context);
         xhtml.endDocument();
         return metadata;
     }

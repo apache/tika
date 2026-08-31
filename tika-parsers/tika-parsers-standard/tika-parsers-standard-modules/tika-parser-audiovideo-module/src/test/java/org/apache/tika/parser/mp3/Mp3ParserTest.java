@@ -522,6 +522,73 @@ public class Mp3ParserTest extends TikaTest {
     }
 
     // wraps the audio of testMP3noid3.mp3 in an ID3v2.3 tag holding the single given frame
+    /**
+     * The thumbnail follows the picture types, not the file order: a back
+     * cover that comes first stays INLINE, the front cover behind it is
+     * the THUMBNAIL.
+     */
+    @Test
+    public void testBackCoverBeforeFrontCover() throws Exception {
+        byte[] mp3 = mp3WithFrames(
+                id3Frame("APIC", apicBody(4, "the back")),
+                id3Frame("APIC", apicBody(3, "the front")));
+        try (TikaInputStream tis = TikaInputStream.get(mp3)) {
+            List<Metadata> metadataList =
+                    getRecursiveMetadata(tis, new Metadata(), new ParseContext(), false);
+            assertEquals(3, metadataList.size());
+            assertEquals("Cover (back)", metadataList.get(1).get(TikaCoreProperties.DESCRIPTION));
+            assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
+                    metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+            assertEquals("Cover (front)", metadataList.get(2).get(TikaCoreProperties.DESCRIPTION));
+            assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name(),
+                    metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        }
+    }
+
+    private static byte[] apicBody(int pictureType, String description) throws Exception {
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        body.write(0); //ISO-8859-1
+        body.write("image/png".getBytes(StandardCharsets.ISO_8859_1));
+        body.write(0);
+        body.write(pictureType);
+        body.write(description.getBytes(StandardCharsets.ISO_8859_1));
+        body.write(0);
+        body.write(new byte[]{(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'});
+        return body.toByteArray();
+    }
+
+    private static byte[] id3Frame(String frameId, byte[] body) throws Exception {
+        ByteArrayOutputStream frame = new ByteArrayOutputStream();
+        frame.write(frameId.getBytes(StandardCharsets.US_ASCII));
+        //ID3v2.3 frame sizes are plain 32 bit big endian
+        frame.write(new byte[]{(byte) (body.length >>> 24), (byte) (body.length >>> 16),
+                (byte) (body.length >>> 8), (byte) body.length});
+        frame.write(new byte[]{0, 0});
+        frame.write(body);
+        return frame.toByteArray();
+    }
+
+    private byte[] mp3WithFrames(byte[]... frames) throws Exception {
+        byte[] audio;
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testMP3noid3.mp3")) {
+            audio = tis.readAllBytes();
+        }
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        for (byte[] frame : frames) {
+            body.write(frame);
+        }
+        ByteArrayOutputStream mp3 = new ByteArrayOutputStream();
+        mp3.write("ID3".getBytes(StandardCharsets.US_ASCII));
+        mp3.write(new byte[]{3, 0, 0});
+        //the tag size is synchsafe (7 bits per byte)
+        int size = body.size();
+        mp3.write(new byte[]{(byte) ((size >>> 21) & 0x7f), (byte) ((size >>> 14) & 0x7f),
+                (byte) ((size >>> 7) & 0x7f), (byte) (size & 0x7f)});
+        mp3.write(body.toByteArray());
+        mp3.write(audio);
+        return mp3.toByteArray();
+    }
+
     private byte[] mp3WithFrame(String frameId, byte[] body) throws Exception {
         byte[] audio;
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testMP3noid3.mp3")) {

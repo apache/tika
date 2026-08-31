@@ -41,6 +41,17 @@ public class CoverArtTest {
     }
 
     @Test
+    public void testTypesBeyondTheId3TableCountAsUnknown() {
+        assertEquals(-1, new CoverArt.Picture(200, null, null, new byte[0]).normalizedType());
+        assertEquals(CoverArt.FRONT_COVER,
+                new CoverArt.Picture(CoverArt.FRONT_COVER, null, null, new byte[0])
+                        .normalizedType());
+        //a back cover first, then an out-of-table type: the unknown one wins
+        assertEquals(1, CoverArt.thumbnailIndex(Arrays.asList(4,
+                new CoverArt.Picture(200, null, null, new byte[0]).normalizedType())));
+    }
+
+    @Test
     public void testFirstPictureAsLastResort() {
         assertEquals(0, CoverArt.thumbnailIndex(Arrays.asList(4, 5)));
         assertEquals(-1, CoverArt.thumbnailIndex(Collections.emptyList()));
