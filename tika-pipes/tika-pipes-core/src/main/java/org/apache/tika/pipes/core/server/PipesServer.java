@@ -45,6 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
@@ -218,7 +219,8 @@ public class PipesServer implements AutoCloseable {
         } catch (Exception e) {
             LOG.error("Failed to start up", e);
             try {
-                String msg = ExceptionUtils.getStackTrace(e);
+                // Config may be what failed to load, so no ExceptionReporting policy is available.
+                String msg = ExceptionUtils.format(e, ExceptionReporting.DEFAULT);
                 byte[] bytes = msg.getBytes(StandardCharsets.UTF_8);
                 PipesMessage.startupFailed(bytes).write(dos);
                 // pipesConfig may not have loaded successfully (that may be why we're
@@ -252,7 +254,8 @@ public class PipesServer implements AutoCloseable {
         validateHeartbeatInterval(pipesConfig);
 
         emitStrategy = pipesConfig.getEmitStrategy().getType();
-        this.protocolIO = new ServerProtocolIO(input, output, pipesConfig.getMaxIpcPayloadBytes());
+        this.protocolIO = new ServerProtocolIO(input, output, pipesConfig.getMaxIpcPayloadBytes(),
+                ExceptionReporting.get(tikaLoader.loadParseContext()));
     }
 
 

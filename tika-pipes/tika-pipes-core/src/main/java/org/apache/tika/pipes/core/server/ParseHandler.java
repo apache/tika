@@ -244,19 +244,19 @@ class ParseHandler {
         try {
             autoDetectParser.parse(stream, handler, metadata, parseContext);
         } catch (SAXException e) {
-            containerException = ExceptionUtils.getStackTrace(e);
+            containerException = ExceptionUtils.format(e, parseContext);
             LOG.warn("sax problem:" + fetchEmitTuple.getId(), e);
             if (WriteLimitReachedException.isWriteLimitReached(e)) {
                 writeLimitReached = true;
             }
         } catch (EncryptedDocumentException e) {
-            containerException = ExceptionUtils.getStackTrace(e);
+            containerException = ExceptionUtils.format(e, parseContext);
             LOG.warn("encrypted document:" + fetchEmitTuple.getId(), e);
         } catch (SecurityException e) {
             LOG.warn("security exception:" + fetchEmitTuple.getId(), e);
             throw e;
         } catch (Exception e) {
-            containerException = ExceptionUtils.getStackTrace(e);
+            containerException = ExceptionUtils.format(e, parseContext);
             LOG.warn("parse exception: " + fetchEmitTuple.getId(), e);
         } finally {
             // BasicContentHandlerFactory's "ignore" handler's toString() returns "" (not

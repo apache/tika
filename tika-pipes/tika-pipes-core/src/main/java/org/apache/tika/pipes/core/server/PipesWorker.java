@@ -198,7 +198,7 @@ class PipesWorker implements Callable<PipesResult> {
         } catch (IOException e) {
             LOG.warn("Failed to create zip file", e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
-                    "Failed to create zip file: " + ExceptionUtils.getStackTrace(e));
+                    "Failed to create zip file: " + ExceptionUtils.format(e, parseContext));
         }
 
         // Emit the zip file
@@ -208,7 +208,7 @@ class PipesWorker implements Callable<PipesResult> {
         } catch (IOException e) {
             LOG.warn("Failed to emit zip file", e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
-                    "Failed to emit zip file: " + ExceptionUtils.getStackTrace(e));
+                    "Failed to emit zip file: " + ExceptionUtils.format(e, parseContext));
         }
 
         LOG.debug("Successfully zipped and emitted {} embedded files to {}",
@@ -289,7 +289,7 @@ class PipesWorker implements Callable<PipesResult> {
         } catch (IOException e) {
             LOG.warn("Failed to create Frictionless zip file", e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
-                    "Failed to create Frictionless zip file: " + ExceptionUtils.getStackTrace(e));
+                    "Failed to create Frictionless zip file: " + ExceptionUtils.format(e, parseContext));
         }
 
         // Emit the zip file
@@ -299,7 +299,7 @@ class PipesWorker implements Callable<PipesResult> {
         } catch (IOException e) {
             LOG.warn("Failed to emit Frictionless zip file", e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
-                    "Failed to emit Frictionless zip file: " + ExceptionUtils.getStackTrace(e));
+                    "Failed to emit Frictionless zip file: " + ExceptionUtils.format(e, parseContext));
         }
 
         LOG.debug("Successfully emitted Frictionless package with {} resources to {}",
@@ -351,7 +351,7 @@ class PipesWorker implements Callable<PipesResult> {
         } catch (IOException e) {
             LOG.warn("Failed to emit Frictionless directory output", e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
-                    "Failed to emit Frictionless directory output: " + ExceptionUtils.getStackTrace(e));
+                    "Failed to emit Frictionless directory output: " + ExceptionUtils.format(e, parseContext));
         }
 
         LOG.debug("Successfully emitted Frictionless package with {} resources (directory mode) to {}",
@@ -484,7 +484,7 @@ class PipesWorker implements Callable<PipesResult> {
         } catch (IOException e) {
             LOG.warn("fetcher initialization exception id={}", fetchEmitTuple.getId(), e);
             return new ParseDataOrPipesResult(null,
-                    new PipesResult(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, ExceptionUtils.getStackTrace(e)));
+                    new PipesResult(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION, ExceptionUtils.format(e, parseContext)));
         }
         // Use newMetadata() to apply any configured write limits
         Metadata metadata = localContext.newMetadata();
@@ -503,7 +503,7 @@ class PipesWorker implements Callable<PipesResult> {
         } catch (TikaException | IOException e) {
             LOG.warn("fetch exception id={}", fetchEmitTuple.getId(), e);
             return new ParseDataOrPipesResult(null,
-                    new PipesResult(PipesResult.RESULT_STATUS.UNSPECIFIED_CRASH, ExceptionUtils.getStackTrace(e)));
+                    new PipesResult(PipesResult.RESULT_STATUS.UNSPECIFIED_CRASH, ExceptionUtils.format(e, parseContext)));
         }
     }
 

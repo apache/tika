@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
@@ -64,6 +65,7 @@ public class SharedServerResources {
     private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
     private final EmitStrategy emitStrategy;
     private final ConfigStore configStore;
+    private final ExceptionReporting exceptionReporting;
 
     private SharedServerResources(TikaLoader tikaLoader, PipesConfig pipesConfig,
                                   AutoDetectParser autoDetectParser, Detector detector,
@@ -71,7 +73,9 @@ public class SharedServerResources {
                                   EmitterManager emitterManager, MetadataFilter defaultMetadataFilter,
                                   ContentHandlerFactory defaultContentHandlerFactory,
                                   MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory,
-                                  EmitStrategy emitStrategy, ConfigStore configStore) {
+                                  EmitStrategy emitStrategy, ConfigStore configStore,
+                                  ExceptionReporting exceptionReporting) {
+        this.exceptionReporting = exceptionReporting;
         this.tikaLoader = tikaLoader;
         this.pipesConfig = pipesConfig;
         this.autoDetectParser = autoDetectParser;
@@ -117,14 +121,16 @@ public class SharedServerResources {
         // Load filters and factories
         MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
         ContentHandlerFactory contentHandlerFactory = tikaLoader.loadContentHandlerFactory();
+        ParseContext configContext = tikaLoader.loadParseContext();
         MetadataWriteLimiterFactory metadataWriteLimiterFactory =
-                tikaLoader.loadParseContext().get(MetadataWriteLimiterFactory.class);
+                configContext.get(MetadataWriteLimiterFactory.class);
 
         EmitStrategy emitStrategy = pipesConfig.getEmitStrategy().getType();
 
         return new SharedServerResources(tikaLoader, pipesConfig, autoDetectParser, detector,
                 rMetaParser, fetcherManager, emitterManager, metadataFilter, contentHandlerFactory,
-                metadataWriteLimiterFactory, emitStrategy, configStore);
+                metadataWriteLimiterFactory, emitStrategy, configStore,
+                ExceptionReporting.get(configContext));
     }
 
     private static ConfigStore createConfigStore(PipesConfig pipesConfig, TikaPluginManager tikaPluginManager)
@@ -204,6 +210,10 @@ public class SharedServerResources {
 
     public EmitStrategy getEmitStrategy() {
         return emitStrategy;
+    }
+
+    public ExceptionReporting getExceptionReporting() {
+        return exceptionReporting;
     }
 
     public ConfigStore getConfigStore() {
