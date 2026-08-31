@@ -304,8 +304,7 @@ public class GeoGebraParser implements Parser {
      * Parses one GeoGebra XML for its text and, if {@code documentMetadata}
      * is set, the document metadata. A part that cannot be read or is not
      * well-formed is recorded in the metadata and skipped.
-     */
-    /**
+     *
      * @return the icon files of the macros in the XML, in document order
      */
     private List<String> parseGeoGebraXml(ZipFile zipFile, ZipArchiveEntry entry,
