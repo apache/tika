@@ -70,6 +70,7 @@ import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.config.ConfigMerger;
 import org.apache.tika.pipes.core.config.ConfigOverrides;
+import org.apache.tika.pipes.core.config.DefaultPluginsDir;
 import org.apache.tika.server.core.metrics.MetricsServer;
 import org.apache.tika.server.core.metrics.TikaMetricsFilter;
 import org.apache.tika.server.core.metrics.TikaServerMetrics;
@@ -723,46 +724,6 @@ public class TikaServerProcess {
         return helper;
     }
 
-    private static final String DEFAULT_PLUGINS_DIR = "plugins";
-
-    /**
-     * Resolves the default plugins directory. Looks for a "plugins" directory
-     * next to the jar this class was loaded from, then next to that directory's
-     * parent (the class may live in a "lib" directory beside the server jar),
-     * then in the current working directory. Always returns an absolute path,
-     * so the forked pipes server does not depend on its own working directory.
-     */
-    private static String resolveDefaultPluginsDir() {
-        Path codeSourceDir = null;
-        try {
-            Path jarPath = Path.of(
-                    TikaServerProcess.class.getProtectionDomain()
-                            .getCodeSource().getLocation().toURI());
-            codeSourceDir = jarPath.getParent();
-        } catch (Exception e) {
-            // no code source, probe the working directory only
-        }
-        return resolveDefaultPluginsDir(codeSourceDir, Path.of("")).toString();
-    }
-
-    // package-private for testing
-    static Path resolveDefaultPluginsDir(Path codeSourceDir, Path cwd) {
-        if (codeSourceDir != null) {
-            Path nextToJar = codeSourceDir.resolve(DEFAULT_PLUGINS_DIR);
-            if (Files.isDirectory(nextToJar)) {
-                return nextToJar.toAbsolutePath();
-            }
-            Path parent = codeSourceDir.getParent();
-            if (parent != null) {
-                Path nextToParent = parent.resolve(DEFAULT_PLUGINS_DIR);
-                if (Files.isDirectory(nextToParent)) {
-                    return nextToParent.toAbsolutePath();
-                }
-            }
-        }
-        return cwd.resolve(DEFAULT_PLUGINS_DIR).toAbsolutePath();
-    }
-
     /**
      * Creates or merges server configuration using ConfigMerger.
      * <p>
@@ -795,7 +756,7 @@ public class TikaServerProcess {
                 // Use PASSBACK_ALL strategy - results returned through socket
                 .setEmitStrategy(EmitStrategy.PASSBACK_ALL)
                 // Set plugin roots
-                .setPluginRoots(resolveDefaultPluginsDir());
+                .setPluginRoots(DefaultPluginsDir.resolve(TikaServerProcess.class));
 
         // Only set default pipes config if there's no existing config
         // This allows user-provided config to specify their own numClients, etc.

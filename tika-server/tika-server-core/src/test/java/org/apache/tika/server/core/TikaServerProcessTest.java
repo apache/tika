@@ -23,14 +23,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.server.core.resource.MetadataResource;
@@ -42,36 +39,6 @@ public class TikaServerProcessTest {
         c.setEndpoints(new ArrayList<>(List.of(endpoints)));
         c.setAllowPipes(allowPipes);
         return c;
-    }
-
-    @Test
-    public void pluginsDirNextToTheCodeSourceJar(@TempDir Path install) throws Exception {
-        Path plugins = Files.createDirectories(install.resolve("plugins"));
-        assertEquals(plugins.toAbsolutePath(),
-                TikaServerProcess.resolveDefaultPluginsDir(install, Path.of("")));
-    }
-
-    @Test
-    public void pluginsDirBesideTheLibDirectory(@TempDir Path install) throws Exception {
-        // the resolving class lives in lib/, the plugins next to the server jar
-        Path lib = Files.createDirectories(install.resolve("lib"));
-        Path plugins = Files.createDirectories(install.resolve("plugins"));
-        assertEquals(plugins.toAbsolutePath(),
-                TikaServerProcess.resolveDefaultPluginsDir(lib, Path.of("")));
-    }
-
-    @Test
-    public void pluginsDirFromTheWorkingDirectory(@TempDir Path install, @TempDir Path cwd)
-            throws Exception {
-        Path plugins = Files.createDirectories(cwd.resolve("plugins"));
-        assertEquals(plugins.toAbsolutePath(),
-                TikaServerProcess.resolveDefaultPluginsDir(install.resolve("lib"), cwd));
-    }
-
-    @Test
-    public void missingPluginsDirStaysAbsolute(@TempDir Path cwd) {
-        // the forked pipes server must not re-resolve the path against its own cwd
-        assertTrue(TikaServerProcess.resolveDefaultPluginsDir(null, cwd).isAbsolute());
     }
 
     @Test
