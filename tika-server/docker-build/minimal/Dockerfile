@@ -68,7 +68,6 @@ RUN set -eux \
 ARG TIKA_VERSION
 ENV TIKA_VERSION=$TIKA_VERSION
 COPY --from=fetch_tika /opt/tika-server /opt/tika-server
-# Base directory for relative user-supplied paths.
 WORKDIR /opt/tika-server
 USER $UID_GID
 EXPOSE 9998
