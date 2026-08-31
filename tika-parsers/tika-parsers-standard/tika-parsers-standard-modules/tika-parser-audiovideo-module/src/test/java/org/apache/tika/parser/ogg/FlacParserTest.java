@@ -83,6 +83,33 @@ public class FlacParserTest extends TikaTest {
     }
 
     /**
+     * A file carrying a picture in a metadata_block_picture comment and
+     * another in a native PICTURE block still has exactly one thumbnail:
+     * both sources are merged before the pick (both are front covers here,
+     * so the first one, from the comment, wins).
+     */
+    @Test
+    public void testCommentAndNativePictureYieldOneThumbnail() throws Exception {
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testFLAC_commentAndNativePicture.flac");
+
+        assertEquals(3, metadataList.size());
+        int thumbnails = 0;
+        for (Metadata m : metadataList) {
+            if (TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name()
+                    .equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE))) {
+                thumbnails++;
+            }
+        }
+        assertEquals(1, thumbnails);
+        assertEquals("Comment cover", metadataList.get(1).get(TikaCoreProperties.TITLE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name(),
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
      * A PICTURE block that declares more data than the file has left ends
      * the walk, but the pictures before it survive: the walk breaks instead
      * of returning or throwing (regression guard for the return-vs-break in
