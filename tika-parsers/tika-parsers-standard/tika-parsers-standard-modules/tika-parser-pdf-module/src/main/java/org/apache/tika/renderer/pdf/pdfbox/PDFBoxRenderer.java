@@ -90,6 +90,13 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
     private ImageType defaultImageType = ImageType.GRAY;
     private String defaultImageFormatName = "png";
 
+    /**
+     * ImageIO's "compression quality"; for PNG it is an inverted effort knob:
+     * 1.0 writes an uncompressed file, 0.0 spends ~10x the time of the default for a
+     * few percent smaller output. 0.5 is both fast and small.
+     */
+    private float defaultImageQuality = 0.5f;
+
 
     @Override
     public RenderResults render(TikaInputStream tis, Metadata metadata, ParseContext parseContext,
@@ -185,7 +192,8 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
             metadata.set(PDFBOX_RENDERING_TIME_MS, renderingElapsed);
             start = System.currentTimeMillis();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
-                ImageIOUtil.writeImage(image, getImageFormatName(parseContext), os, getDPI(parseContext));
+                ImageIOUtil.writeImage(image, getImageFormatName(parseContext), os, getDPI(parseContext),
+                        getImageQuality(parseContext));
             }
             long elapsedWrite = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_IMAGE_WRITING_TIME_MS, elapsedWrite);
@@ -214,6 +222,18 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
 
     public void setImageFormatName(String imageFormatName) {
         this.defaultImageFormatName = imageFormatName;
+    }
+
+    public void setImageQuality(float imageQuality) {
+        this.defaultImageQuality = imageQuality;
+    }
+
+    protected float getImageQuality(ParseContext parseContext) {
+        PDFParserConfig pdfParserConfig = parseContext.get(PDFParserConfig.class);
+        if (pdfParserConfig == null) {
+            return defaultImageQuality;
+        }
+        return pdfParserConfig.getOcr().getImageQuality();
     }
 
     protected int getDPI(ParseContext parseContext) {

@@ -1,10 +1,9 @@
 Release 4.1.0 - unreleased
 
+   * Allow image compression settings in PDFBox-based renderer (TIKA-4862).
+     
    * The tika-server full and tika-grpc Docker images set OMP_THREAD_LIMIT=1:
-     the distro tesseract links OpenMP and runs up to 4 threads per OCR
-     process, which oversubscribes the CPU under forked parse workers;
-     single-threaded tesseract with process-level parallelism is the
-     tesseract project's guidance for servers (TIKA-XXXX).
+     to avoid oversubscribing the CPU under forked parse workers (TIKA-4863).
 
    * embedded-limits maxDepth counts embedding levels again instead of the
      parsers a parse passes through; with AutoDetectParser over DefaultParser
