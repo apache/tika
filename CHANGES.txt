@@ -6,8 +6,11 @@ Release 4.1.0 - unreleased
      memory growth path. MimeTypes.forName is deprecated (unchanged
      behavior) in favor of forNameAndRegister, which names the
      registration side effect, and getRegisteredMimeType for
-     side-effect-free lookups; forName will be removed in Tika 5
-     (TIKA-4826).
+     side-effect-free lookups; forName will be removed in Tika 5.
+     Extension lookup now resolves parameterized content types to their
+     base type, so a type such as "text/plain; charset=UTF-8" yields
+     ".txt" where it previously yielded ".bin"; this can change the
+     names written for embedded documents (TIKA-4826).
 
    * Add "exception-reporting" parse-context config to redact and bound
      exception text in metadata, tika-server error bodies and pipes/grpc

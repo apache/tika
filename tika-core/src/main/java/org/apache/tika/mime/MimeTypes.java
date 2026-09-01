@@ -411,11 +411,11 @@ public final class MimeTypes implements Detector, Serializable {
     /**
      * Returns the registered, normalised media type with the given name (or alias).
      *
-     * <p>Unlike {@link #forName(String)}, this function will <em>not</em> create a
+     * <p>Unlike {@link #forNameAndRegister(String)}, this function will <em>not</em> create a
      * new MimeType and register it. Instead, <code>null</code> will be returned if
      * there is no definition available for the given name.
      *
-     * <p>Also, unlike {@link #forName(String)}, this function may return a
+     * <p>Also, unlike {@link #forNameAndRegister(String)}, this function may return a
      * mime type that has fewer parameters than were included in the supplied name.
      * If the registered mime type has parameters (e.g.
      * <code>application/dita+xml;format=map</code>), then those will be maintained.

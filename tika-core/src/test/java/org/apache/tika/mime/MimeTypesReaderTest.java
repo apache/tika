@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
@@ -342,19 +343,25 @@ public class MimeTypesReaderTest {
 
     @Test
     public void testMultiThreaded() throws Exception {
-        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
-        Executors.newFixedThreadPool(1).execute(() -> {
-            try {
-                for (int i = 0; i < 500 && !stop; i++) {
-                    mimeTypes.forName("abc" + i + "/abc");
+        // private instance: registering 500 junk types must not leak into the shared default
+        MimeTypes mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
+        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        try {
+            executorService.execute(() -> {
+                try {
+                    for (int i = 0; i < 500 && !stop; i++) {
+                        mimeTypes.forNameAndRegister("abc" + i + "/abc");
+                    }
+                } catch (MimeTypeException e) {
+                    e.printStackTrace();
                 }
-            } catch (MimeTypeException e) {
-                e.printStackTrace();
-            }
-        });
+            });
 
-        for (int i = 0; i < 500 & !stop; i++) {
-            mimeTypes.getMediaTypeRegistry().getAliases(MediaType.APPLICATION_ZIP);
+            for (int i = 0; i < 500 & !stop; i++) {
+                mimeTypes.getMediaTypeRegistry().getAliases(MediaType.APPLICATION_ZIP);
+            }
+        } finally {
+            executorService.shutdownNow();
         }
     }
 
