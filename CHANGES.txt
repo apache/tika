@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * Markdown output is ~4x faster on large documents:
+     ToMarkdownContentHandler now buffers the commonmark renderer's
+     per-character writes instead of paying the synchronized
+     Writer.write(int) cost for every character (TIKA-4868).
+
    * Raster previews for the vector thumbnails of Office documents: the new
      poi-metafile-renderer draws EMF and WMF images through POI (a PNG of
      a configurable width; Word's bitmap-in-WMF thumbnails from the bitmap

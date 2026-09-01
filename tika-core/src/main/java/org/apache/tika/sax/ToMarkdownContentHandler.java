@@ -417,9 +417,80 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         if (finished) {
             return;
         }
-        renderer.render(document, writer);
-        writer.flush();
+        // MarkdownRenderer emits mostly one char at a time; Writer.write(int) is
+        // synchronized and allocating in every stock Writer, which made rendering
+        // ~4x slower than the render logic itself on multi-MB documents. The
+        // unsynchronized buffer turns those calls into array stores.
+        RenderBuffer buffered = new RenderBuffer(writer);
+        renderer.render(document, buffered);
+        buffered.flush();
         finished = true;
+    }
+
+    /** Unsynchronized bulk buffer between the renderer and the target writer. */
+    private static final class RenderBuffer extends Writer {
+        private final Writer out;
+        private final char[] buf = new char[8192];
+        private int n;
+
+        RenderBuffer(Writer out) {
+            this.out = out;
+        }
+
+        @Override
+        public void write(int c) throws IOException {
+            if (n == buf.length) {
+                drain();
+            }
+            buf[n++] = (char) c;
+        }
+
+        @Override
+        public void write(char[] c, int off, int len) throws IOException {
+            if (len >= buf.length) {
+                drain();
+                out.write(c, off, len);
+                return;
+            }
+            if (n + len > buf.length) {
+                drain();
+            }
+            System.arraycopy(c, off, buf, n, len);
+            n += len;
+        }
+
+        @Override
+        public void write(String s, int off, int len) throws IOException {
+            if (len >= buf.length) {
+                drain();
+                out.write(s, off, len);
+                return;
+            }
+            if (n + len > buf.length) {
+                drain();
+            }
+            s.getChars(off, off + len, buf, n);
+            n += len;
+        }
+
+        private void drain() throws IOException {
+            if (n > 0) {
+                out.write(buf, 0, n);
+                n = 0;
+            }
+        }
+
+        /** Flushes through to the target; the target's lifecycle stays the caller's. */
+        @Override
+        public void flush() throws IOException {
+            drain();
+            out.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            flush();
+        }
     }
 
     @Override
