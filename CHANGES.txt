@@ -12,6 +12,16 @@ Release 4.1.0 - unreleased
      embedded document, as the OOXML parsers do with the docProps thumbnail
      (TIKA-4855).
 
+   * tika-grpc resolves its plugin-roots fallback against the install
+     layout via DefaultPluginsDir instead of a working-directory-relative
+     pf4j default, and a WARN names the resolved directory when no plugins
+     directory exists (TIKA-4865).
+
+   * The tika-server full and tika-grpc Docker images install fonts-noto-cjk:
+     without any CJK face, PDFs using non-embedded CJK fonts render (and OCR)
+     as .notdef boxes in every renderer, even though the images ship Japanese
+     tesseract data (TIKA-4866).
+     
    * The default plugins directory is resolved against the install layout
      (next to the jar, or next to its lib/ directory) and always as an
      absolute path, shared by tika-server, PipesForkParser and the async
