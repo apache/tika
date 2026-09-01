@@ -68,14 +68,14 @@ public class MP4TrackDetectorTest extends TikaTest {
     }
 
     /**
-     * Without a file to seek in, only a movie box near the start is found;
-     * anything further in is left to the magic.
+     * A movie box further in than the prefix is reached by spooling the
+     * stream, which is what the parse would do next anyway.
      */
     @Test
     public void testMovieBoxBeyondTheStreamPrefix() throws Exception {
         byte[] mp4 = mp4(mdat(1024 * 1024), moov("soun"));
         try (TikaInputStream tis = TikaInputStream.get(mp4)) {
-            assertEquals("application/octet-stream", detect(tis));
+            assertEquals("audio/mp4", detect(tis));
         }
     }
 

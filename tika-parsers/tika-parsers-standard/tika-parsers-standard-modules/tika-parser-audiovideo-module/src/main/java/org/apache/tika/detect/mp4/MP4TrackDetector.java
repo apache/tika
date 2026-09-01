@@ -84,8 +84,9 @@ public class MP4TrackDetector implements Detector {
     private static final int MAX_MOOV_BYTES = 8 * 1024 * 1024;
 
     /**
-     * Without a file to seek in, only a movie box within this many bytes of
-     * the start is found.
+     * How far into a stream the movie box is looked for before the stream is
+     * spooled: a file written for streaming has it right behind the file type
+     * box, and answering those costs nothing.
      */
     private static final int MAX_PREFIX_BYTES = 256 * 1024;
 
@@ -126,18 +127,30 @@ public class MP4TrackDetector implements Detector {
      * is none within the limits.
      */
     private static byte[] movieBox(TikaInputStream tis) throws IOException {
-        if (tis.hasFile()) {
-            try (SeekableByteChannel channel = Files.newByteChannel(tis.getPath())) {
-                return movieBox(new ChannelBoxes(channel));
+        if (!tis.hasFile()) {
+            //a movie box at the front is answered without touching the disk
+            tis.mark(MAX_PREFIX_BYTES);
+            byte[] prefix = new byte[MAX_PREFIX_BYTES];
+            int length;
+            try {
+                length = IOUtils.read(tis, prefix, 0, MAX_PREFIX_BYTES);
+            } finally {
+                tis.reset();
+            }
+            byte[] fromPrefix = movieBox(new ArrayBoxes(prefix, Math.max(length, 0)));
+            if (fromPrefix != null) {
+                return fromPrefix;
+            }
+            if (length < MAX_PREFIX_BYTES) {
+                //the whole file was in the prefix, so there is nothing further in
+                return null;
             }
         }
-        tis.mark(MAX_PREFIX_BYTES);
-        try {
-            byte[] prefix = new byte[MAX_PREFIX_BYTES];
-            int length = IOUtils.read(tis, prefix, 0, MAX_PREFIX_BYTES);
-            return movieBox(new ArrayBoxes(prefix, Math.max(length, 0)));
-        } finally {
-            tis.reset();
+        //a movie box behind the media data, where recorders that do not write
+        //for streaming put it, is only reachable by seeking; the spooled file
+        //is the one the parse reads afterwards, so it is not read twice
+        try (SeekableByteChannel channel = Files.newByteChannel(tis.getPath())) {
+            return movieBox(new ChannelBoxes(channel));
         }
     }
 
