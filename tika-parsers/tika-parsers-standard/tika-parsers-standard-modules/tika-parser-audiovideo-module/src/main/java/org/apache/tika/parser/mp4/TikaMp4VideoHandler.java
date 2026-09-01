@@ -93,7 +93,7 @@ class TikaMp4VideoHandler extends Mp4VideoHandler {
             if (size < 8 || size > end - pos) {
                 return 0;
             }
-            if ("btrt".equals(Mp4SampleEntries.fourCC(b, pos + 4)) && pos + 20 <= end) {
+            if ("btrt".equals(Mp4Boxes.fourCC(b, pos + 4)) && pos + 20 <= end) {
                 long averageBitRate = EndianUtils.getUIntBE(b, pos + 16);
                 return averageBitRate > 0 && averageBitRate <= Integer.MAX_VALUE
                         ? (int) averageBitRate : 0;

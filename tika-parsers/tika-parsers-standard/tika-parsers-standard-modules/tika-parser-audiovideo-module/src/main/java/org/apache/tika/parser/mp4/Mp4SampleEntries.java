@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.mp4;
 
-import java.nio.charset.StandardCharsets;
 
 import org.apache.tika.io.EndianUtils;
 
@@ -35,6 +34,12 @@ final class Mp4SampleEntries {
      * entry: 6 reserved bytes and the 2 byte data reference index.
      */
     static final int SAMPLE_ENTRY_FIELDS = 8;
+
+    /**
+     * How many child boxes of an entry are looked at when resolving a
+     * protected entry's original format.
+     */
+    private static final int MAX_CHILD_BOXES = 64;
 
     interface Visitor {
         /**
@@ -74,7 +79,7 @@ final class Mp4SampleEntries {
                 return;
             }
             int end = pos + (int) size;
-            visitor.entry(printableFourCC(b, pos + 4), b, pos + header, end);
+            visitor.entry(Mp4Boxes.printableFourCC(b, pos + 4), b, pos + header, end);
             pos = end;
         }
     }
@@ -99,76 +104,18 @@ final class Mp4SampleEntries {
      * @param end offset one past the entry's last byte
      */
     static String originalFormat(byte[] b, int pos, int end) {
-        int sinf = findBox(b, pos, end, "sinf");
+        int sinf = Mp4Boxes.findBox(b, pos, end, "sinf", MAX_CHILD_BOXES);
         if (sinf < 0) {
             return null;
         }
-        int sinfEnd = boxEnd(b, sinf, end);
-        int frma = findBox(b, sinf + 8, sinfEnd, "frma");
-        if (frma < 0 || boxEnd(b, frma, sinfEnd) < frma + 12) {
+        int sinfEnd = Mp4Boxes.boxEnd(b, sinf, end);
+        int frma = sinfEnd < 0 ? -1
+                : Mp4Boxes.findBox(b, sinf + 8, sinfEnd, "frma", MAX_CHILD_BOXES);
+        if (frma < 0 || Mp4Boxes.boxEnd(b, frma, sinfEnd) < frma + 12) {
             //the box must hold its 4 byte payload, not borrow it from the next box
             return null;
         }
-        return printableFourCC(b, frma + 8);
+        return Mp4Boxes.printableFourCC(b, frma + 8);
     }
 
-    /**
-     * Returns the offset of the first box of the given type among the boxes
-     * in [pos, end), or -1.
-     */
-    private static int findBox(byte[] b, int pos, int end, String type) {
-        while (pos >= 0 && pos + 8 <= end) {
-            int boxEnd = boxEnd(b, pos, end);
-            if (boxEnd < 0) {
-                return -1;
-            }
-            if (type.equals(fourCC(b, pos + 4))) {
-                return pos;
-            }
-            pos = boxEnd;
-        }
-        return -1;
-    }
-
-    /**
-     * Returns the offset one past the box starting at pos, or -1 if its size
-     * is invalid or runs past end.
-     */
-    private static int boxEnd(byte[] b, int pos, int end) {
-        long size = EndianUtils.getUIntBE(b, pos);
-        if (size < 8 || size > end - pos) {
-            return -1;
-        }
-        return pos + (int) size;
-    }
-
-    /**
-     * Reads a FourCC as it is, for comparing against known box types.
-     */
-    static String fourCC(byte[] b, int pos) {
-        return new String(b, pos, 4, StandardCharsets.ISO_8859_1);
-    }
-
-    /**
-     * Reads a FourCC for exposing it as a metadata value: null unless all four
-     * bytes are printable ASCII, with trailing spaces trimmed (QuickTime pads
-     * short codes such as 'raw ' and 'rle ' with spaces). Codes that are blank
-     * after trimming are null as well.
-     */
-    static String printableFourCC(byte[] b, int pos) {
-        int len = 4;
-        while (len > 0 && b[pos + len - 1] == ' ') {
-            len--;
-        }
-        if (len == 0) {
-            return null;
-        }
-        for (int i = 0; i < len; i++) {
-            int c = b[pos + i] & 0xFF;
-            if (c < 0x20 || c > 0x7E) {
-                return null;
-            }
-        }
-        return new String(b, pos, len, StandardCharsets.US_ASCII);
-    }
 }
