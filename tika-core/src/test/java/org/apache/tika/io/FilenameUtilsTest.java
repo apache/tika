@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.utils.StringUtils;
 
 public class FilenameUtilsTest {
@@ -255,6 +256,19 @@ public class FilenameUtilsTest {
 
     private String sanitizeFilename(String name, String mimeType) {
         return FilenameUtils.getSanitizedEmbeddedFileName(getMetadata(name, mimeType), ".bin", 50);
+    }
+
+    @Test
+    public void testCalculateExtension() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
+        assertEquals(".pdf", FilenameUtils.calculateExtension(metadata, ".tmp"));
+
+        // TIKA-4826: unknown types must not grow the shared registry
+        String unknown = "application/x-tika-4826-filenameutils";
+        metadata.set(HttpHeaders.CONTENT_TYPE, unknown);
+        assertEquals(".bin", FilenameUtils.calculateExtension(metadata, ".tmp"));
+        assertNull(MimeTypes.getDefaultMimeTypes().getRegisteredMimeType(unknown));
     }
 
     private String sanitizeFilename(String name) {

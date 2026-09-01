@@ -100,10 +100,13 @@ public class ExtractEmbeddedFiles {
 
             if (name.indexOf('.') == -1 && contentType != null) {
                 try {
-                    name += tikaLoader
+                    // not forName: don't intern untrusted types into the registry (TIKA-4826)
+                    MimeType mimeType = tikaLoader
                             .getMimeTypes()
-                            .forName(contentType.toString())
-                            .getExtension();
+                            .getRegisteredMimeType(contentType.toString());
+                    if (mimeType != null) {
+                        name += mimeType.getExtension();
+                    }
                 } catch (MimeTypeException e) {
                     e.printStackTrace();
                 }

@@ -266,7 +266,7 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
                 String interpretedAttr = attributes.getValue(INTERPRETED_ATTR);
                 boolean interpreted = "true".equals(interpretedAttr);
                 try {
-                    type = types.forName(name);
+                    type = types.forNameAndRegister(name);
                     type.setInterpreted(interpreted);
                 } catch (MimeTypeException e) {
                     handleMimeError(name, e, qName, attributes);

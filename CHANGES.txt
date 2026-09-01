@@ -1,5 +1,14 @@
 Release 4.1.0 - unreleased
 
+   * Content-type hints from untrusted input (request headers, document
+     metadata) are no longer interned into the shared MimeTypes registry
+     during detection and extension lookup, closing a slow unbounded
+     memory growth path. MimeTypes.forName is deprecated (unchanged
+     behavior) in favor of forNameAndRegister, which names the
+     registration side effect, and getRegisteredMimeType for
+     side-effect-free lookups; forName will be removed in Tika 5
+     (TIKA-4826).
+
    * Add "exception-reporting" parse-context config to redact and bound
      exception text in metadata, tika-server error bodies and pipes/grpc
      messages; FileSystemEmitter writes atomically (TIKA-4848).

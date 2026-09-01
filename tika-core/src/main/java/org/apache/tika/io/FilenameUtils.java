@@ -27,6 +27,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.utils.StringUtils;
@@ -405,11 +406,10 @@ public class FilenameUtils {
 
     private static String lookupExtension(String mime) {
         try {
-            String ext = MIME_TYPES
-                    .forName(mime)
-                    .getExtension();
-            if (!StringUtils.isBlank(ext)) {
-                return ext;
+            // not forName: don't intern untrusted types into the registry (TIKA-4826)
+            MimeType mimeType = MIME_TYPES.getRegisteredMimeType(mime);
+            if (mimeType != null && !StringUtils.isBlank(mimeType.getExtension())) {
+                return mimeType.getExtension();
             }
         } catch (MimeTypeException e) {
             //swallow

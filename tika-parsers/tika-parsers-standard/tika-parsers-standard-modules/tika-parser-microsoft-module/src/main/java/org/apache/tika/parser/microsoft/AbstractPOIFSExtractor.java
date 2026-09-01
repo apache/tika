@@ -314,9 +314,12 @@ abstract class AbstractPOIFSExtractor {
             MediaType mediaType = getDetector().detect(tis, metadata, context);
             String extension = type.getExtension();
             try {
-                MimeType mimeType =
-                        EmbeddedDocumentUtil.getMimeTypes(context).forName(mediaType.toString());
-                extension = mimeType.getExtension();
+                // not forName: don't intern untrusted types into the registry (TIKA-4826)
+                MimeType mimeType = EmbeddedDocumentUtil.getMimeTypes(context)
+                        .getRegisteredMimeType(mediaType.toString());
+                if (mimeType != null) {
+                    extension = mimeType.getExtension();
+                }
             } catch (MimeTypeException mte) {
                 // No details on this type are known
             }

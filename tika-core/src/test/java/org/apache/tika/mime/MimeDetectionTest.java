@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -106,6 +107,25 @@ public class MimeDetectionTest {
         testUrlWithoutContent("application/octet-stream", "http://test.com/test.jsp");
         // But in case the protocol is not http or https, the script is probably not interpreted
         testUrlWithoutContent("text/x-php", "ftp://test.com/test.php");
+    }
+
+    @Test
+    public void testUnknownContentTypeHintNotInterned() throws Exception {
+        // TIKA-4826: unknown content-type hints must not grow the registry
+        MimeTypes mimeTypes = MimeTypesFactory.create("tika-mimetypes.xml");
+        String unknown = "application/x-tika-4826-unknown";
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, unknown);
+        assertEquals(unknown, mimeTypes.detect(null, metadata, new ParseContext()).toString());
+        assertNull(mimeTypes.getRegisteredMimeType(unknown));
+
+        ProbabilisticMimeDetectionSelector selector =
+                new ProbabilisticMimeDetectionSelector(mimeTypes);
+        String unknown2 = "application/x-tika-4826-unknown2";
+        metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, unknown2);
+        selector.detect(null, metadata, new ParseContext());
+        assertNull(mimeTypes.getRegisteredMimeType(unknown2));
     }
 
     @Test

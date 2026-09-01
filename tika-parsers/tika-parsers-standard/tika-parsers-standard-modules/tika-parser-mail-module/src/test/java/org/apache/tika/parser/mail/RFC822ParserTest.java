@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -51,6 +52,7 @@ import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -477,6 +479,19 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("image/gif", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
         assertEquals("/logo.gif",
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+    }
+
+    @Test
+    public void testUnknownContentTypesNotInterned() throws Exception {
+        // TIKA-4826 tripwire: a full parse must not grow the shared registry
+        MimeTypes mimeTypes = MimeTypes.getDefaultMimeTypes();
+        int before = mimeTypes.getMediaTypeRegistry().getTypes().size();
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testRFC822-unknown-content-type.eml");
+        assertEquals(3, metadataList.size());
+        assertNull(mimeTypes.getRegisteredMimeType("application/x-tika-4826-eml-unknown"));
+        assertNull(mimeTypes.getRegisteredMimeType("application/x-tika-4826-eml-unknown-noname"));
+        assertEquals(before, mimeTypes.getMediaTypeRegistry().getTypes().size());
     }
 
     @Test

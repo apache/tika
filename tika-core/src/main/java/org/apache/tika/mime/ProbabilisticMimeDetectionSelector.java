@@ -176,7 +176,7 @@ public class ProbabilisticMimeDetectionSelector implements Detector {
         if (typeName != null) {
             try {
                 // MimeType hint = forName(typeName);
-                metaHint = mimeTypes.forName(typeName);
+                metaHint = mimeTypes.forNameWithoutRegistration(typeName);
                 // possibleTypes = applyHint(possibleTypes, hint);
             } catch (MimeTypeException e) {
                 // Malformed type name, ignore

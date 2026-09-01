@@ -206,7 +206,7 @@ public final class MimeTypes implements Detector, Serializable {
      */
     @Deprecated
     public MimeType getMimeType(File file) throws MimeTypeException, IOException {
-        return forName(new Tika(this).detect(file));
+        return forNameAndRegister(new Tika(this).detect(file));
     }
 
     /**
@@ -296,7 +296,8 @@ public final class MimeTypes implements Detector, Serializable {
         try {
             TextDetector detector = new TextDetector(getMinLength());
             try (TikaInputStream tis = TikaInputStream.get(data)) {
-                MimeType type = forName(detector.detect(tis, new Metadata(), new ParseContext()).toString());
+                MimeType type = forNameAndRegister(
+                        detector.detect(tis, new Metadata(), new ParseContext()).toString());
                 return Collections.singletonList(type);
             }
         } catch (Exception e) {
@@ -347,8 +348,27 @@ public final class MimeTypes implements Detector, Serializable {
      * @param name media type name (case-insensitive)
      * @return the registered media type with the given name or alias
      * @throws MimeTypeException if the given media type name is invalid
+     * @deprecated since 4.1.0: the name hides the registration side effect.
+     * Use {@link #forNameAndRegister(String)}; on untrusted input,
+     * {@link #forNameWithoutRegistration(String)} (drop-in) or
+     * {@link #getRegisteredMimeType(String)} (null if unknown). Removal in Tika 5.
      */
+    @Deprecated
     public MimeType forName(String name) throws MimeTypeException {
+        return forNameAndRegister(name);
+    }
+
+    /**
+     * Returns the registered media type with the given name (or alias),
+     * permanently registering it if valid but unknown. Never call with
+     * untrusted names — each unknown name grows the registry (TIKA-4826);
+     * use {@link #forNameWithoutRegistration(String)} instead.
+     *
+     * @param name media type name (case-insensitive)
+     * @return the registered media type with the given name or alias
+     * @throws MimeTypeException if the given media type name is invalid
+     */
+    public MimeType forNameAndRegister(String name) throws MimeTypeException {
         MediaType type = MediaType.parse(name);
         if (type == null) {
             throw new MimeTypeException("Invalid media type name: " + name);
@@ -369,6 +389,23 @@ public final class MimeTypes implements Detector, Serializable {
             }
         }
         return mime;
+    }
+
+    /**
+     * Like {@link #forNameAndRegister(String)}, but never modifies the
+     * registry: unknown names get a transient MimeType (TIKA-4826).
+     *
+     * @param name media type name (case-insensitive)
+     * @return the registered media type, or a transient one if unknown
+     * @throws MimeTypeException if the given media type name is invalid
+     */
+    public MimeType forNameWithoutRegistration(String name) throws MimeTypeException {
+        MediaType type = MediaType.parse(name);
+        if (type == null) {
+            throw new MimeTypeException("Invalid media type name: " + name);
+        }
+        MimeType mime = types.get(registry.normalize(type));
+        return mime != null ? mime : new MimeType(type);
     }
 
     /**
@@ -574,7 +611,7 @@ public final class MimeTypes implements Detector, Serializable {
         String typeName = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (typeName != null) {
             try {
-                MimeType hint = forName(typeName);
+                MimeType hint = forNameWithoutRegistration(typeName);
                 possibleTypes = applyHint(possibleTypes, hint);
             } catch (MimeTypeException e) {
                 // Malformed type name, ignore

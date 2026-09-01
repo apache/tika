@@ -101,7 +101,11 @@ public class MimeBuffer extends AbstractDBBuffer {
          * @throws MimeTypeException thrown if MimeTypes can't parse the contentType
          */
         public static String getExtension(String contentType, MimeTypes mimeTypes) throws MimeTypeException {
-            MimeType mime = mimeTypes.forName(contentType);
+            // not forName: don't intern untrusted types into the registry (TIKA-4826)
+            MimeType mime = mimeTypes.getRegisteredMimeType(contentType);
+            if (mime == null) {
+                return tryTextyTypes(MediaType.parse(contentType));
+            }
             return getExtension(mime);
         }
 

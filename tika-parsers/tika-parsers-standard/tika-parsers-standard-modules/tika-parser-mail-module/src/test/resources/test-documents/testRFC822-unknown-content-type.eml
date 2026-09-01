@@ -1,0 +1,21 @@
+From: sender@example.com
+To: recipient@example.com
+Subject: TIKA-4826 unknown content types
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="tika4826boundary"
+
+--tika4826boundary
+Content-Type: text/plain; charset=us-ascii
+
+Body text.
+--tika4826boundary
+Content-Type: application/x-tika-4826-eml-unknown
+Content-Disposition: attachment; filename="payload.dat"
+
+not really binary, but an unknown declared content type
+--tika4826boundary
+Content-Type: application/x-tika-4826-eml-unknown-noname
+Content-Disposition: attachment
+
+a second attachment with no filename
+--tika4826boundary--
