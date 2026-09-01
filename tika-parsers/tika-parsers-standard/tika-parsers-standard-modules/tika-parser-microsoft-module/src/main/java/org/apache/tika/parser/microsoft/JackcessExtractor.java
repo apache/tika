@@ -76,13 +76,11 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
     final DateFormat shortDateTimeFormatter;
 
     final Parser htmlParser;
-    final ParseContext parseContext;
 
     protected JackcessExtractor(Metadata metadata, ParseContext context, Locale locale) {
         super(context, metadata);
         currencyFormatter = NumberFormat.getCurrencyInstance(locale);
         shortDateTimeFormatter = DateFormat.getDateInstance(DateFormat.SHORT, locale);
-        this.parseContext = context;
         Parser tmpHtmlParser =
                 EmbeddedDocumentUtil.tryToFindExistingLeafParser(JSoupParser.class, context);
         if (tmpHtmlParser == null) {
@@ -217,10 +215,10 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             String v = toString(obj, c.getType());
             if (isRichText(c)) {
                 BodyContentHandler h = new BodyContentHandler();
-                Metadata m = Metadata.newInstance(parseContext);
+                Metadata m = Metadata.newInstance(context);
                 m.set(HttpHeaders.CONTENT_TYPE, "text/html; charset=UTF-8");
                 try (TikaInputStream tis = TikaInputStream.get(v.getBytes(UTF_8))) {
-                    htmlParser.parse(tis, h, m, parseContext);
+                    htmlParser.parse(tis, h, m, context);
                     handler.characters(h.toString());
                 } catch (SAXException e) {
                     WriteLimitReachedException.throwIfWriteLimitReached(e);
@@ -327,7 +325,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 try {
                     tis = TikaInputStream.get(spc.getStream());
                 } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                     break;
                 }
                 if (tis != null) {
@@ -347,7 +345,7 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
                 try {
                     ocStream = TikaInputStream.get(oc.getStream());
                 } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordException(e, parentMetadata, parseContext);
+                    EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
                 }
                 try {
                     handleEmbeddedResource(ocStream, null,//filename
@@ -373,14 +371,14 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             try {
                 is = cc.getStream();
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                 return;
             }
 
             try {
                 fileSystem = new POIFSFileSystem(is);
             } catch (Exception e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
                 return;
             }
 

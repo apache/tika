@@ -141,6 +141,10 @@ set `EMIT`. Nothing reads the value from this section.
 |When `false`, stop the pipeline on configuration errors (missing fetcher/emitter). When `true`, only stop on fatal initialization failures. Use `true` for server mode, `false` for batch mode.
 |===
 
+How much of a failure is written into `tk:exception:*` metadata and into a `PipesResult`
+message is set by `parse-context.exception-reporting`, not here -- see
+xref:advanced/setting-limits.adoc#_exception_reporting[Exception reporting].
+
 == Async / Emit Batching
 
 These settings control how parsed results are batched before sending to emitters.

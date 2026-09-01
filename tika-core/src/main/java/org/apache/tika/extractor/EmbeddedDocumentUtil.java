@@ -233,12 +233,15 @@ public class EmbeddedDocumentUtil {
 
     public static void recordException(Throwable t, Metadata m, ParseContext context) {
         m.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                ExceptionUtils.format(ExceptionUtils.unwrapTikaException(t), context));
+                ExceptionUtils.format(t, context));
     }
 
     /**
-     * @deprecated use {@link #recordException(Throwable, Metadata, ParseContext)} so the
-     * configured {@link org.apache.tika.config.ExceptionReporting} applies
+     * @deprecated since 4.1, removal planned for 5.0; use
+     * {@link #recordException(Throwable, Metadata, ParseContext)} so the configured
+     * {@link org.apache.tika.config.ExceptionReporting} applies. Unlike in 4.0.0, this now
+     * keeps a bare {@link org.apache.tika.exception.TikaException} wrapper rather than
+     * stripping it, so the first line of the recorded value may name the wrapper.
      */
     @Deprecated
     public static void recordException(Throwable t, Metadata m) {
@@ -248,12 +251,15 @@ public class EmbeddedDocumentUtil {
     public static void recordEmbeddedStreamException(Throwable t, Metadata m,
                                                      ParseContext context) {
         m.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
-                ExceptionUtils.format(ExceptionUtils.unwrapTikaException(t), context));
+                ExceptionUtils.format(t, context));
     }
 
     /**
-     * @deprecated use {@link #recordEmbeddedStreamException(Throwable, Metadata, ParseContext)}
-     * so the configured {@link org.apache.tika.config.ExceptionReporting} applies
+     * @deprecated since 4.1, removal planned for 5.0; use
+     * {@link #recordEmbeddedStreamException(Throwable, Metadata, ParseContext)} so the
+     * configured {@link org.apache.tika.config.ExceptionReporting} applies. Unlike in 4.0.0,
+     * this now keeps a bare {@link org.apache.tika.exception.TikaException} wrapper rather
+     * than stripping it, so the first line of the recorded value may name the wrapper.
      */
     @Deprecated
     public static void recordEmbeddedStreamException(Throwable t, Metadata m) {

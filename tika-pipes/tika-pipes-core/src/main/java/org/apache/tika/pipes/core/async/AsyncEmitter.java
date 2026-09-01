@@ -35,7 +35,6 @@ import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
-import org.apache.tika.utils.ExceptionUtils;
 
 /**
  * Worker thread that takes EmitData off the queue, batches it
@@ -134,7 +133,7 @@ public class AsyncEmitter implements Callable<Integer> {
                     LOG.warn("emitter id={} failed on instantiation", e.getKey(), ex);
                     return;
                 }
-                tryToEmit(emitter, e.getValue());
+                tryToEmit(e.getKey(), emitter, e.getValue());
                 emitted += e.getValue().size();
             }
 
@@ -145,13 +144,13 @@ public class AsyncEmitter implements Callable<Integer> {
             lastEmitted = Instant.now();
         }
 
-        private void tryToEmit(Emitter emitter, List<? extends EmitData> emitData) {
+        private void tryToEmit(String emitterId, Emitter emitter,
+                               List<? extends EmitData> emitData) {
 
             try {
                 emitter.emit(emitData);
             } catch (IOException e) {
-                LOG.warn("emitter class ({}): {}", emitter.getClass(),
-                        ExceptionUtils.getStackTrace(e));
+                LOG.warn("emitter id={} ({}) failed", emitterId, emitter.getClass(), e);
             }
         }
     }

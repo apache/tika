@@ -85,13 +85,16 @@ public class ServerProtocolIO {
     private final int maxIpcPayloadBytes;
     private final ExceptionReporting exceptionReporting;
 
+    /**
+     * @deprecated since 4.1, use the overload taking an {@link ExceptionReporting}
+     */
+    @Deprecated
     public ServerProtocolIO(DataInputStream input, DataOutputStream output, int maxIpcPayloadBytes) {
-        this(input, output, maxIpcPayloadBytes, ExceptionReporting.DEFAULT);
+        this(input, output, maxIpcPayloadBytes, new ExceptionReporting());
     }
 
     public ServerProtocolIO(DataInputStream input, DataOutputStream output, int maxIpcPayloadBytes,
                             ExceptionReporting exceptionReporting) {
-        this.exceptionReporting = exceptionReporting;
         if (maxIpcPayloadBytes < MIN_FALLBACK_PAYLOAD_BYTES) {
             throw new IllegalArgumentException(String.format(Locale.ROOT,
                     "maxIpcPayloadBytes %d is below the minimum %d required to carry a PAYLOAD_LIMIT_EXCEEDED response",
@@ -100,6 +103,7 @@ public class ServerProtocolIO {
         this.input = input;
         this.output = output;
         this.maxIpcPayloadBytes = maxIpcPayloadBytes;
+        this.exceptionReporting = exceptionReporting;
     }
 
     /**

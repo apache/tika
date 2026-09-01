@@ -29,9 +29,9 @@ import org.apache.tika.parser.ParseContext;
 
 /**
  * Turns a {@link Throwable} into the string Tika reports to callers, under the
- * {@link ExceptionReporting} policy in effect. Every place Tika records or emits an exception
- * as text should go through {@link #format(Throwable, ParseContext)} so that one config
- * setting governs all channels.
+ * {@link ExceptionReporting} policy in effect. Tika's own channels record and emit exception
+ * text through {@link #format(Throwable, ParseContext)} so that one config setting governs
+ * them all; exception text produced by third-party libraries is outside its reach.
  * <p>
  * NOTE: If your stacktraces are truncated, make sure to start your jvm
  * with: -XX:-OmitStackTraceInFastThrow
@@ -43,20 +43,20 @@ public class ExceptionUtils {
 
     /**
      * Formats {@code t} under the {@link ExceptionReporting} found in {@code context}
-     * (or {@link ExceptionReporting#DEFAULT} if the context is null or has none).
+     * (or the default policy if the context is null or has none).
      */
     public static String format(Throwable t, ParseContext context) {
         return format(t, ExceptionReporting.get(context));
     }
 
     /**
-     * Formats {@code t} under {@code reporting}; a null policy means
-     * {@link ExceptionReporting#DEFAULT}. For channels that have no ParseContext, such as
-     * server error responses and pipes crash messages.
+     * Formats {@code t} for channels that have no ParseContext, such as server error
+     * responses and pipes crash messages.
      */
     public static String format(Throwable t, ExceptionReporting reporting) {
         if (reporting == null) {
-            reporting = ExceptionReporting.DEFAULT;
+            //never NPE while formatting someone else's exception
+            reporting = new ExceptionReporting();
         }
         String s;
         switch (reporting.getLevel()) {
@@ -73,31 +73,25 @@ public class ExceptionUtils {
     }
 
     /**
-     * A bare {@link TikaException} wrapper adds nothing to a report; returns its cause
-     * instead. Subclasses and unwrapped throwables are returned as is.
-     */
-    public static Throwable unwrapTikaException(Throwable t) {
-        if (t.getClass().equals(TikaException.class) && t.getCause() != null) {
-            return t.getCause();
-        }
-        return t;
-    }
-
-    /**
-     * @deprecated use {@link #format(Throwable, ParseContext)} on
-     * {@link #unwrapTikaException(Throwable)} so the configured policy applies
+     * @deprecated since 4.1, removal planned for 5.0; use
+     * {@link #format(Throwable, ParseContext)} so the configured policy applies. Unlike this
+     * method, it keeps a bare {@link TikaException} wrapper.
      */
     @Deprecated
     public static String getFilteredStackTrace(Throwable t) {
-        return format(unwrapTikaException(t), ExceptionReporting.DEFAULT);
+        //legacy semantics: a bare TikaException wrapper is stripped, subclasses are not
+        Throwable unwrapped = t.getClass().equals(TikaException.class) && t.getCause() != null ?
+                t.getCause() : t;
+        return format(unwrapped, new ExceptionReporting());
     }
 
     /**
-     * @deprecated use {@link #format(Throwable, ParseContext)} so the configured policy applies
+     * @deprecated since 4.1, removal planned for 5.0; use
+     * {@link #format(Throwable, ParseContext)} so the configured policy applies
      */
     @Deprecated
     public static String getStackTrace(Throwable t) {
-        return format(t, ExceptionReporting.DEFAULT);
+        return format(t, new ExceptionReporting());
     }
 
     private static String full(Throwable t) {
@@ -108,11 +102,16 @@ public class ExceptionUtils {
         return result.toString();
     }
 
-    private static String truncate(String s, int maxLength) {
+    /**
+     * Truncates {@code s} to the policy's {@link ExceptionReporting#getMaxLength()} (no-op when
+     * unlimited), for channels that report exception text they did not format themselves.
+     */
+    public static String truncate(String s, int maxLength) {
         if (maxLength < 0 || s.length() <= maxLength) {
             return s;
         }
         int cut = maxLength;
+        //don't split a surrogate pair
         if (Character.isHighSurrogate(s.charAt(cut - 1))) {
             cut--;
         }
@@ -153,11 +152,11 @@ public class ExceptionUtils {
                     .append(t.getClass().getName()).append("]\n");
             return;
         }
-        seen.add(t);
         if (depth > MAX_CAUSE_DEPTH) {
             sb.append(prefix).append("... cause chain truncated\n");
             return;
         }
+        seen.add(t);
         sb.append(prefix).append(caption).append(t.getClass().getName()).append('\n');
         StackTraceElement[] trace = t.getStackTrace();
         if (frames) {

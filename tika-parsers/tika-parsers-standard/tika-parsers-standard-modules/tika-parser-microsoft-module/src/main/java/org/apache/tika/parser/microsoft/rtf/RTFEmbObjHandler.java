@@ -186,9 +186,9 @@ class RTFEmbObjHandler {
 
         byte[] bytes = os.toByteArray();
         if (state == EMB_STATE.OBJDATA) {
-            RTFObjDataParser objParser = new RTFObjDataParser(memoryLimitInKb, context);
+            RTFObjDataParser objParser = new RTFObjDataParser(memoryLimitInKb);
             try {
-                byte[] objBytes = objParser.parse(bytes, metadata, unknownFilenameCount);
+                byte[] objBytes = objParser.parse(bytes, metadata, context, unknownFilenameCount);
                 extractObj(objBytes, handler, metadata);
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordException(e, metadata, context);

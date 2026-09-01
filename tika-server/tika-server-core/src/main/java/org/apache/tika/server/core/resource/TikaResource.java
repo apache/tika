@@ -236,6 +236,12 @@ public class TikaResource {
         // Copy jsonConfigs for lazy resolution by parsers (e.g., pdf-parser config)
         for (Map.Entry<String, JsonConfig> entry : configuredContext.getJsonConfigs().entrySet()) {
             context.setJsonConfig(entry.getKey(), entry.getValue().json());
+            // Keep the jsonConfig->instance association: serialization uses it to send the
+            // original JSON rather than re-serializing the resolved instance.
+            Object resolved = configuredContext.getResolvedConfig(entry.getKey());
+            if (resolved != null) {
+                context.setResolvedConfig(entry.getKey(), resolved);
+            }
             LOG.debug("Merged jsonConfig entry {} into context", entry.getKey());
         }
     }
@@ -360,7 +366,14 @@ public class TikaResource {
                 String configJson = new String(configAtt.getObject(InputStream.class).readAllBytes(),
                         StandardCharsets.UTF_8);
                 LOG.debug("setupMultipartConfig: processing config JSON of length {}", configJson.length());
-                mergeParseContextFromConfig(configJson, context);
+                try {
+                    mergeParseContextFromConfig(configJson, context);
+                } catch (IOException | TikaConfigException e) {
+                    // Caller error (bad JSON, or a wire-blocked component): 400 with the
+                    // reason, not a 500 whose reason the reporting policy may redact away.
+                    throw new BadRequestException(
+                            "Could not resolve the request config: " + e.getMessage(), e);
+                }
             }
             handedOff = true;
             return tis;

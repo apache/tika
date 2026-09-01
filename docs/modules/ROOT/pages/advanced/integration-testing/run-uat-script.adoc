@@ -73,6 +73,11 @@ Coverage includes:
   4.0.0-alpha-1 and beta-1: the resource failed to load and the endpoint 406'd
 * Removed endpoints stay removed (`/translate/*` returns 404)
 * 404 / 405 error handling
+* Exception reporting on a corrupt document (TIKA-4848): `/rmeta` embeds
+  `tk:exception:container-exception` at `200`; raw `/tika` returns `422` with a
+  content-only body; `/unpack` and `/meta/\{field}` carry the container exception
+  in their `422` bodies, asserted free of this server's own frames
+  (`PipesParsingHelper`, `MetadataResource`)
 * OCR (`PUT /tika/text` of an image whose text only exists as pixels): skipped when the
   server has no tesseract (the minimal image / a plain `java -jar` server), and a hard
   failure when `TIKA_UAT_REQUIRE_OCR=1` is set. `docker-tool.sh test-uat` sets that env

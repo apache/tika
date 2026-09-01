@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import static org.apache.tika.parser.microsoft.onenote.OneNoteParser.ONE_NOTE_PREFIX;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -44,6 +45,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -59,30 +61,60 @@ public class OneNoteParserTest extends TikaTest {
 
     //test recursive parser wrapper for image files
 
+    private static final String[][] FUZZ_RESOURCES = {
+            {"testOneNote-fuzz1.one", "Missing dependent revision"},
+            {"testOneNote-fuzz2.one", "unified property count"},
+            {"testOneNote-fuzz3.one", "Invalid GUID string"}
+    };
+
+    private static Metadata parseFuzzResource(String resource, ParseContext context)
+            throws Exception {
+        InputStream input = OneNoteParserTest.class
+                .getResourceAsStream("/test-documents/" + resource);
+        assertNotNull(input, resource);
+        Metadata metadata = new Metadata();
+        try (InputStream stream = input; TikaInputStream tis = TikaInputStream.get(stream)) {
+            new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata, context);
+        }
+        return metadata;
+    }
+
     @Test
     public void testFuzzerRegressionInputsFallBackToLegacyDump() throws Exception {
-        // a structural failure falls back to the legacy string dump; the failure is
-        // pinned in the parse-warning metadata
-        String[][] resources = {
-                {"testOneNote-fuzz1.one", "Missing dependent revision"},
-                {"testOneNote-fuzz2.one", "unified property count"},
-                {"testOneNote-fuzz3.one", "Invalid GUID string"}
-        };
-        for (String[] resource : resources) {
-            InputStream input = getClass().getResourceAsStream("/test-documents/" + resource[0]);
-            assertNotNull(input, resource[0]);
-            try (InputStream stream = input;
-                 TikaInputStream tis = TikaInputStream.get(stream)) {
-                Metadata metadata = new Metadata();
-                new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata,
-                        new ParseContext());
-                assertTrue(Arrays.stream(
-                                metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
-                        .anyMatch(warning -> warning.contains(resource[1])
-                                && warning.contains("falling back to legacy text dump")),
-                        () -> resource[0] + ": " + Arrays.toString(metadata.getValues(
-                                TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)));
+        // a structural failure falls back to the legacy string dump; the human warning names
+        // no exception text -- the throwable is recorded separately, under the policy
+        for (String[] resource : FUZZ_RESOURCES) {
+            Metadata metadata = parseFuzzResource(resource[0], new ParseContext());
+            String[] warnings =
+                    metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+            assertTrue(Arrays.stream(warnings)
+                            .anyMatch(w -> w.contains("falling back to legacy text dump")
+                                    && !w.contains(resource[1])),
+                    () -> resource[0] + ": " + Arrays.toString(warnings));
+            assertTrue(Arrays.stream(warnings)
+                            .anyMatch(w -> w.contains(resource[1]) && w.contains("\tat ")),
+                    () -> resource[0] + ": " + Arrays.toString(warnings));
+        }
+    }
+
+    @Test
+    public void testFallbackWarningHonorsExceptionReporting() throws Exception {
+        ParseContext context = new ParseContext();
+        context.set(ExceptionReporting.class, new ExceptionReporting(
+                ExceptionReporting.Level.REDACTED, ExceptionReporting.UNLIMITED));
+        for (String[] resource : FUZZ_RESOURCES) {
+            Metadata metadata = parseFuzzResource(resource[0], context);
+            String[] warnings =
+                    metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+            for (String warning : warnings) {
+                assertFalse(warning.contains(resource[1]),
+                        () -> resource[0] + ": " + Arrays.toString(warnings));
+                assertFalse(warning.contains("\tat "),
+                        () -> resource[0] + ": " + Arrays.toString(warnings));
             }
+            assertTrue(Arrays.stream(warnings)
+                            .anyMatch(w -> w.contains("falling back to legacy text dump")),
+                    () -> resource[0] + ": " + Arrays.toString(warnings));
         }
     }
 
@@ -102,7 +134,7 @@ public class OneNoteParserTest extends TikaTest {
                 new OneNoteDirectFileResource(file.toFile())) {
             // fresh package = the walk completed without emitting anything
             OneNoteParser.legacyFallbackIfNoContent(new MSOneStorePackage(), metadata, xhtml,
-                    resource);
+                    resource, new ParseContext());
             assertTrue(writer.toString().contains("recoverable legacy dump text"));
             assertTrue(metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)
                     .contains("produced no content"));
@@ -112,7 +144,8 @@ public class OneNoteParserTest extends TikaTest {
             XHTMLContentHandler xhtml2 = new XHTMLContentHandler(
                     new ToTextContentHandler(exceptionPath), metadata, new ParseContext());
             xhtml2.startDocument();
-            OneNoteParser.legacyFallbackIfNoContent(null, metadata, xhtml2, resource);
+            OneNoteParser.legacyFallbackIfNoContent(null, metadata, xhtml2, resource,
+                    new ParseContext());
             xhtml2.endDocument();
             assertTrue(exceptionPath.toString().isBlank());
         }

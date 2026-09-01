@@ -17,7 +17,6 @@
 package org.apache.tika.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
 import org.junit.jupiter.api.Test;
 
@@ -25,7 +24,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.parser.ParseContext;
 
-public class ExceptionReportingTest extends TikaTest {
+public class ExceptionReportingConfigLoadTest extends TikaTest {
 
     @Test
     public void testLoadFromConfig() throws Exception {
@@ -33,13 +32,5 @@ public class ExceptionReportingTest extends TikaTest {
         ParseContext context = loader.loadParseContext();
         ExceptionReporting reporting = ExceptionReporting.get(context);
         assertEquals(new ExceptionReporting(ExceptionReporting.Level.MESSAGE_REDACTED, 500), reporting);
-    }
-
-    @Test
-    public void testDefaults() {
-        assertSame(ExceptionReporting.DEFAULT, ExceptionReporting.get(null));
-        assertSame(ExceptionReporting.DEFAULT, ExceptionReporting.get(new ParseContext()));
-        assertEquals(ExceptionReporting.Level.FULL, ExceptionReporting.DEFAULT.getLevel());
-        assertEquals(ExceptionReporting.UNLIMITED, ExceptionReporting.DEFAULT.getMaxLength());
     }
 }

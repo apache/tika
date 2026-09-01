@@ -75,7 +75,6 @@ public class SharedServerResources {
                                   MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory,
                                   EmitStrategy emitStrategy, ConfigStore configStore,
                                   ExceptionReporting exceptionReporting) {
-        this.exceptionReporting = exceptionReporting;
         this.tikaLoader = tikaLoader;
         this.pipesConfig = pipesConfig;
         this.autoDetectParser = autoDetectParser;
@@ -88,6 +87,7 @@ public class SharedServerResources {
         this.defaultMetadataWriteLimiterFactory = defaultMetadataWriteLimiterFactory;
         this.emitStrategy = emitStrategy;
         this.configStore = configStore;
+        this.exceptionReporting = exceptionReporting;
     }
 
     /**

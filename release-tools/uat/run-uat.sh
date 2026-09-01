@@ -141,6 +141,50 @@ assert_status "T33 unknown handler name -> 400" "400" "$BADH"
 XMP=$(curl -s -X PUT -T "$PDF" -H 'Accept: application/rdf+xml' "$BASE/meta")
 assert_contains "T34 PUT /meta as rdf+xml" "rdf:RDF" "$XMP"
 
+# --- exception reporting (TIKA-4848), default FULL policy ---
+# Truncate the PDF, not the docx: a truncated zip gets rescued by zip salvage,
+# a truncated PDF reliably fails the parse.
+CORRUPT=$(mktemp); head -c 400 "$PDF" > "$CORRUPT"
+
+# put_corrupt <path> -- PUTs the corrupt file and sets CODE/BODY
+put_corrupt() {
+  local resp
+  resp=$(curl -s -w '\n%{http_code}' -X PUT -T "$CORRUPT" "$BASE/$1")
+  CODE=$(printf '%s' "$resp" | tail -1)
+  BODY=$(printf '%s' "$resp" | sed '$d')
+}
+
+put_corrupt rmeta
+if [[ "$CODE" == "200" ]] && printf '%s' "$BODY" | grep -qF 'tk:exception:container-exception'; then
+  ok "T36 corrupt PUT /rmeta -> 200 + container-exception"
+else
+  bad "T36 corrupt PUT /rmeta" "200 with tk:exception:container-exception" "HTTP $CODE $BODY"
+fi
+
+put_corrupt tika/text
+if [[ "$CODE" == "422" ]] && ! printf '%s' "$BODY" | grep -qiF 'exception'; then
+  ok "T37 corrupt PUT /tika/text -> 422, content-only body"
+else
+  bad "T37 corrupt PUT /tika/text" "422 with no exception text in body" "HTTP $CODE $BODY"
+fi
+
+put_corrupt unpack/all
+if [[ "$CODE" == "422" ]] && printf '%s' "$BODY" | grep -qF 'Exception' \
+    && ! printf '%s' "$BODY" | grep -qF 'PipesParsingHelper'; then
+  ok "T38 corrupt PUT /unpack/all -> 422, container exception only"
+else
+  bad "T38 corrupt PUT /unpack/all" "422 with exception, no PipesParsingHelper frames" "HTTP $CODE $BODY"
+fi
+
+put_corrupt meta/Content-Type
+if [[ "$CODE" == "422" ]] && printf '%s' "$BODY" | grep -qF 'Exception' \
+    && ! printf '%s' "$BODY" | grep -qF 'MetadataResource'; then
+  ok "T39 corrupt PUT /meta/{field} -> 422, container exception only"
+else
+  bad "T39 corrupt PUT /meta/{field}" "422 with exception, no MetadataResource frames" "HTTP $CODE $BODY"
+fi
+rm -f "$CORRUPT"
+
 # --- removed endpoints must be gone, not silently doing something ---
 TR404=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -T "$PDF" "$BASE/translate/all/foo/en/es")
 assert_status "T35 /translate removed -> 404" "404" "$TR404"

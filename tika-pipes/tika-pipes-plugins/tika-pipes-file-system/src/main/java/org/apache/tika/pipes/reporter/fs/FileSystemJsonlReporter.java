@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -180,7 +181,7 @@ public class FileSystemJsonlReporter extends PipesReporterBase {
 
     @Override
     public void error(Throwable t) {
-        error(ExceptionUtils.getStackTrace(t));
+        error(ExceptionUtils.format(t, new ExceptionReporting()));
     }
 
     @Override

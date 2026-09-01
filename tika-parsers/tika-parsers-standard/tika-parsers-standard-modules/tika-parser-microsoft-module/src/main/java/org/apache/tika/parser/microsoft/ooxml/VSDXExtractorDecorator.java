@@ -49,11 +49,8 @@ public class VSDXExtractorDecorator extends AbstractOOXMLExtractor {
     private static final String VISIO_PAGE_REL =
             "http://schemas.microsoft.com/visio/2010/relationships/page";
 
-    private final ParseContext context;
-
     public VSDXExtractorDecorator(ParseContext context, OPCPackage pkg) {
         super(context, pkg);
-        this.context = context;
     }
 
     @Override

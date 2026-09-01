@@ -32,6 +32,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -159,7 +160,7 @@ public class FileSystemStatusReporter extends AbstractTikaExtension implements P
     public void error(Throwable t) {
         crashed = true;
         interuptThread();
-        crash(ExceptionUtils.getStackTrace(t));
+        crash(ExceptionUtils.format(t, new ExceptionReporting()));
     }
 
     @Override

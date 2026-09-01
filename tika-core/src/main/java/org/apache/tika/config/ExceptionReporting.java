@@ -36,20 +36,11 @@ import org.apache.tika.parser.ParseContext;
  *   <li>{@link Level#REDACTED} - exception class names only (the cause chain, no frames,
  *   no messages)</li>
  * </ul>
- * {@code maxLength} truncates the formatted string to that many characters (-1 = unlimited).
+ * {@code maxLength} caps the formatted string: a longer value is cut to {@code maxLength}
+ * characters and a {@code ...[truncated]} marker is appended (-1 = unlimited).
  * <p>
  * Loaded from the {@code parse-context} section of the config and deliberately not settable
  * per request: a caller could otherwise turn redaction back off.
- * <pre>
- * {
- *   "parse-context": {
- *     "exception-reporting": {
- *       "level": "MESSAGE_REDACTED",
- *       "maxLength": 10000
- *     }
- *   }
- * }
- * </pre>
  *
  * @since Apache Tika 4.1
  */
@@ -63,8 +54,6 @@ public class ExceptionReporting implements Serializable {
     }
 
     public static final int UNLIMITED = -1;
-
-    public static final ExceptionReporting DEFAULT = new ExceptionReporting();
 
     private Level level = Level.FULL;
     private int maxLength = UNLIMITED;
@@ -89,10 +78,8 @@ public class ExceptionReporting implements Serializable {
         return maxLength;
     }
 
-    /**
-     * @param maxLength maximum characters in the formatted exception, or -1 for unlimited
-     */
     public void setMaxLength(int maxLength) {
+        //0 is rejected rather than treated as "report nothing": it would emit only the marker
         if (maxLength < UNLIMITED || maxLength == 0) {
             throw new IllegalArgumentException(
                     "maxLength must be positive or -1 for unlimited, was " + maxLength);
@@ -101,15 +88,14 @@ public class ExceptionReporting implements Serializable {
     }
 
     /**
-     * @return the ExceptionReporting from the context, or {@link #DEFAULT} if the context is
-     * null or has none
+     * @return the context's policy, or a new instance with the defaults
      */
     public static ExceptionReporting get(ParseContext context) {
         if (context == null) {
-            return DEFAULT;
+            return new ExceptionReporting();
         }
         ExceptionReporting reporting = context.get(ExceptionReporting.class);
-        return reporting != null ? reporting : DEFAULT;
+        return reporting != null ? reporting : new ExceptionReporting();
     }
 
     @Override
