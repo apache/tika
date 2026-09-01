@@ -60,6 +60,12 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 final class MotionPhoto {
 
+    /**
+     * The name the video is emitted under, with the extension of whatever it
+     * turns out to be.
+     */
+    private static final String NAME = "motion-photo";
+
     private static final String ITEM = "]/Container:Item/";
     private static final String DIRECTORY = "xmp-raw:Container:Directory[";
 
@@ -108,10 +114,10 @@ final class MotionPhoto {
             return;
         }
         Metadata videoMetadata = Metadata.newInstance(context);
-        //the file's own Item:Mime names the video where it has one; detection
-        //only says whether something is there at all
-        videoMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                "motion-photo" + extension(declared.mime != null ? declared.mime : type));
+        //the name has to be set before the parse, which is the only thing here
+        //that knows the format for sure, so it follows the file's own
+        //declaration and carries no extension where there is none to follow
+        videoMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, NAME + extension(declared.mime));
         videoMetadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
         videoMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
@@ -235,6 +241,9 @@ final class MotionPhoto {
      * The usual extension of a type, {@code .mp4} for video/mp4.
      */
     private static String extension(MediaType type) {
+        if (type == null) {
+            return "";
+        }
         try {
             String extension = MimeTypes.getDefaultMimeTypes().forName(type.toString())
                     .getExtension();

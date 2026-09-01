@@ -54,8 +54,8 @@ public class MotionPhotoVideoTest extends TikaTest {
         //gets it as far as quicktime; the integration test pins video/mp4
         assertTrue(video.get(HttpHeaders.CONTENT_TYPE).startsWith("video/"),
                 video.get(HttpHeaders.CONTENT_TYPE));
-        assertTrue(video.get(TikaCoreProperties.RESOURCE_NAME_KEY).startsWith("motion-photo."),
-                video.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        //the Motion Photo format declares the type of its video
+        assertEquals("motion-photo.mp4", video.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name(),
                 video.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
@@ -71,6 +71,8 @@ public class MotionPhotoVideoTest extends TikaTest {
         Metadata video = metadataList.get(1);
         assertTrue(video.get(HttpHeaders.CONTENT_TYPE).startsWith("video/"),
                 video.get(HttpHeaders.CONTENT_TYPE));
+        //the MicroVideo format declares no type, so the name carries no extension
+        assertEquals("motion-photo", video.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name(),
                 video.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
