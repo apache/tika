@@ -53,14 +53,12 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
             "http://schemas.openxps.org/oxps/v1.0/fixedrepresentation";
     private static String XPS_DOCUMENT =
             "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
-    private final ParseContext context;
     private final ZipPackage pkg;
     Map<String, Metadata> embeddedImages = new LinkedHashMap<>();
 
     public XPSExtractorDecorator(ParseContext context, OPCPackage opcPackage)
             throws TikaException {
         super(context, opcPackage);
-        this.context = context;
         if (opcPackage instanceof ZipPackage) {
             this.pkg = (ZipPackage) opcPackage;
         } else {

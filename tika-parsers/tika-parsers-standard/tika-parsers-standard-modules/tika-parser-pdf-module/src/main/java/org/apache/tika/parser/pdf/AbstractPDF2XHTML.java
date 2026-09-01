@@ -157,7 +157,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     private static final MediaType XFA_MEDIA_TYPE = MediaType.application("vnd.adobe.xdp+xml");
     private static final MediaType XMP_MEDIA_TYPE = MediaType.application("rdf+xml");
 
-    final List<IOException> exceptions = new ArrayList<>();
+    final List<Exception> exceptions = new ArrayList<>();
     final PDDocument pdDocument;
     final XHTMLContentHandler xhtml;
     final ParseContext context;
@@ -268,8 +268,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         writeParagraphStart();
     }
 
-    private void extractXMPXFA(PDDocument pdfDocument, Metadata parentMetadata,
-                               ParseContext context) throws IOException, SAXException {
+    private void extractXMPXFA() throws IOException, SAXException {
         Set<MediaType> supportedTypes = Collections.EMPTY_SET;
         Parser embeddedParser = context.get(Parser.class);
         if (embeddedParser != null) {
@@ -282,22 +281,22 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
         if (supportedTypes.contains(XMP_MEDIA_TYPE)) {
             //try the main metadata
-            if (pdfDocument.getDocumentCatalog().getMetadata() != null) {
+            if (pdDocument.getDocumentCatalog().getMetadata() != null) {
                 try (TikaInputStream tis = TikaInputStream.get(
-                        pdfDocument.getDocumentCatalog().getMetadata().exportXMPMetadata())) {
+                        pdDocument.getDocumentCatalog().getMetadata().exportXMPMetadata())) {
                     extractXMPAsEmbeddedFile(tis, XMP_DOCUMENT_CATALOG_LOCATION);
                 } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                 }
             }
             //now iterate through the pages
             int pageNumber = 1;
-            for (PDPage page : pdfDocument.getPages()) {
+            for (PDPage page : pdDocument.getPages()) {
                 if (page.getMetadata() != null) {
                     try (TikaInputStream tis = TikaInputStream.get(page.getMetadata().exportXMPMetadata())) {
                         extractXMPAsEmbeddedFile(tis, XMP_PAGE_LOCATION_PREFIX + pageNumber);
                     } catch (IOException e) {
-                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                     }
                 }
                 pageNumber++;
@@ -305,8 +304,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         //now try the xfa
-        if (pdfDocument.getDocumentCatalog().getAcroForm(null) != null &&
-                pdfDocument.getDocumentCatalog().getAcroForm(null).getXFA() != null) {
+        if (pdDocument.getDocumentCatalog().getAcroForm(null) != null &&
+                pdDocument.getDocumentCatalog().getAcroForm(null).getXFA() != null) {
 
             Metadata xfaMetadata = Metadata.newInstance(context);
             xfaMetadata.set(HttpHeaders.CONTENT_TYPE, XFA_MEDIA_TYPE.toString());
@@ -316,9 +315,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     supportedTypes.contains(XFA_MEDIA_TYPE)) {
                 byte[] bytes = null;
                 try {
-                    bytes = pdfDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes();
+                    bytes = pdDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes();
                 } catch (IOException e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                 }
                 if (bytes != null) {
                     try (TikaInputStream tis = TikaInputStream.get(bytes)) {
@@ -533,12 +532,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         if (config.isCatchIntermediateIOExceptions()) {
-
-            String msg = e.getMessage();
-            if (msg == null) {
-                msg = "IOException, no message";
-            }
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, msg);
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
             exceptions.add(e);
         } else {
             throw e;
@@ -546,27 +540,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     /**
-     * Mirrors {@link #handleCatchableIOE(IOException)}'s policy (governed by the same
-     * {@code catchIntermediateIOExceptions} config flag) for a single page's OCR call
-     * timing out. Without this, a per-page OCR timeout previously propagated as a plain
-     * {@link IOException} out of {@link #endPage(PDPage)}, aborting the whole document
-     * parse and losing every page after it -- the flagship "one image times out, siblings
-     * continue" behavior this timeout model is built around didn't actually hold for the
-     * most common OCR path. Recording into {@code exceptions} (rather than swallowing
-     * outright) preserves the class's existing contract: remaining pages are still
-     * processed and their content still reaches the handler, but the caller
-     * (PDF2XHTML/OCR2XHTML/etc.) still surfaces a TikaException wrapping the first
-     * recorded failure once every page has been attempted -- exactly like any other
-     * per-page IOException already does via {@link #handleCatchableIOE}.
+     * Mirrors {@link #handleCatchableIOE(IOException)} for a per-page OCR timeout: remaining
+     * pages are still processed, and the caller still surfaces a TikaException wrapping the
+     * first recorded failure once every page has been attempted.
      */
     void handleCatchableTimeout(TikaTimeoutException e) throws TikaTimeoutException {
         if (config.isCatchIntermediateIOExceptions()) {
-            String msg = e.getMessage();
-            if (msg == null) {
-                msg = "TikaTimeoutException, no message";
-            }
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, msg);
-            exceptions.add(new IOException(msg, e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
+            exceptions.add(e);
         } else {
             throw e;
         }
@@ -605,7 +586,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         try (TemporaryResources tmp = new TemporaryResources()) {
-            try (RenderResult renderResult = renderCurrentPage(pdPage, context, tmp)) {
+            try (RenderResult renderResult = renderCurrentPage(pdPage, tmp)) {
                 Metadata renderMetadata = renderResult.getMetadata();
                 try (TikaInputStream tis = renderResult.getInputStream()) {
                     renderMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
@@ -630,13 +611,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    private RenderResult renderCurrentPage(PDPage pdPage, ParseContext parseContext,
-                                           TemporaryResources tmpResources)
+    private RenderResult renderCurrentPage(PDPage pdPage, TemporaryResources tmpResources)
             throws IOException, TikaException {
-        PDFRenderingState renderingState = parseContext.get(PDFRenderingState.class);
+        PDFRenderingState renderingState = context.get(PDFRenderingState.class);
         if (renderingState == null) {
             Metadata pageMetadata = getCurrentPageMetadata(pdPage);
-            noContextRenderCurrentPage(pageMetadata, parseContext, tmpResources);
+            return noContextRenderCurrentPage(pageMetadata, tmpResources);
         }
         //if the full document has already been rendered, then reuse that file
         //TODO: we need to prevent this if only a portion of the page or portions
@@ -652,7 +632,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         }
         Metadata pageMetadata = getCurrentPageMetadata(pdPage);
-        Renderer thisRenderer = getPDFRenderer(renderer);
+        Renderer thisRenderer = getPDFRenderer();
         //if there's a configured renderer and if the rendering strategy is "all"
         if (thisRenderer != null &&
                 config.getOcr().getRenderingStrategy() == OcrConfig.RenderingStrategy.ALL) {
@@ -662,7 +642,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 //do not do autocloseable.  We need to leave the pdDocument open!
                 TikaInputStream tis = TikaInputStream.get(new byte[0]);
                 tis.setOpenContainer(pdDocument);
-                return thisRenderer.render(tis, pageMetadata, parseContext, pageRangeRequest)
+                return thisRenderer.render(tis, pageMetadata, context, pageRangeRequest)
                         .getResults().get(0);
 
             } else {
@@ -670,17 +650,17 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 if (state == null) {
                     throw new IllegalArgumentException("RenderingState must not be null");
                 }
-                return thisRenderer.render(state.getTikaInputStream(), pageMetadata, parseContext,
+                return thisRenderer.render(state.getTikaInputStream(), pageMetadata, context,
                         pageRangeRequest).getResults().get(0);
             }
         } else {
-            return noContextRenderCurrentPage(pageMetadata, parseContext, tmpResources);
+            return noContextRenderCurrentPage(pageMetadata, tmpResources);
         }
     }
 
-    private Renderer getPDFRenderer(Renderer renderer) {
+    private Renderer getPDFRenderer() {
         if (renderer == null) {
-            return renderer;
+            return null;
         }
         if (renderer instanceof CompositeRenderer) {
             return ((CompositeRenderer) renderer).getLeafRenderer(PDFParser.MEDIA_TYPE);
@@ -700,7 +680,6 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     private RenderResult noContextRenderCurrentPage(Metadata pageMetadata,
-                                                    ParseContext parseContext,
                                                     TemporaryResources tmpResources)
             throws IOException, TikaException {
         PDFRenderer renderer = null;
@@ -722,10 +701,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         int dpi = config.getOcr().getDpi();
         Path tmpFile = null;
 
-        RenderingTracker renderingTracker = parseContext.get(RenderingTracker.class);
+        RenderingTracker renderingTracker = context.get(RenderingTracker.class);
         if (renderingTracker == null) {
             renderingTracker = new RenderingTracker();
-            parseContext.set(RenderingTracker.class, renderingTracker);
+            context.set(RenderingTracker.class, renderingTracker);
         }
         int id = renderingTracker.getNextId();
 
@@ -1178,7 +1157,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 handleCatchableIOE(e);
             }
 
-            extractXMPXFA(pdf, metadata, context);
+            extractXMPXFA();
 
             //extract acroform data at end of doc
             if (config.isExtractAcroFormContent() == true) {

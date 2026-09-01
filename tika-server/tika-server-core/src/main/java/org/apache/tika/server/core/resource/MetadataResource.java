@@ -27,10 +27,8 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
@@ -153,13 +151,7 @@ public class MetadataResource {
 
         String containerException = metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
         if (containerException != null && !containerException.isEmpty()) {
-            // Already policy-formatted; wrapping it as an exception message would let the
-            // mapper redact it away and append this server's own frames.
-            throw new WebApplicationException(Response
-                    .status(422)
-                    .entity(containerException)
-                    .type(MediaType.TEXT_PLAIN)
-                    .build());
+            throw PipesParsingHelper.containerExceptionResponse(containerException);
         }
 
         if (metadata.get(field) == null) {

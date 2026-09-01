@@ -37,6 +37,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OneNote;
@@ -173,9 +174,9 @@ public class OneNoteParser implements Parser {
                     }
                 }
                 if (!walked) {
-                    legacyFallbackDump("OneNote parse failed; falling back to legacy text dump: " +
-                                    failureMessage(structureFailure), structureFailure, metadata,
-                            xhtml, oneNoteDirectFileResource);
+                    legacyFallbackDump("OneNote parse failed; falling back to legacy text dump",
+                            structureFailure, metadata, xhtml, oneNoteDirectFileResource,
+                            context);
                 }
             } else if (header.isLegacyOrAlternativePackaging()) {
                 MSOneStorePackage pkg = null;
@@ -195,12 +196,12 @@ public class OneNoteParser implements Parser {
                 } catch (Exception e) {
                     rethrowIfLimitReached(e);
                     legacyFallbackDump(
-                            "OneNote FSSHTTPB parse failed; falling back to legacy text dump: " +
-                                    failureMessage(e), e, metadata, xhtml,
-                            oneNoteDirectFileResource);
+                            "OneNote FSSHTTPB parse failed; falling back to legacy text dump",
+                            e, metadata, xhtml, oneNoteDirectFileResource, context);
                     pkg = null;
                 }
-                legacyFallbackIfNoContent(pkg, metadata, xhtml, oneNoteDirectFileResource);
+                legacyFallbackIfNoContent(pkg, metadata, xhtml, oneNoteDirectFileResource,
+                        context);
             } else {
                 throw new TikaException("Invalid OneStore document - could not parse headers");
             }
@@ -223,32 +224,32 @@ public class OneNoteParser implements Parser {
         }
     }
 
-    private static String failureMessage(Exception e) {
-        return e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-    }
-
     // the walk completed but every page dangled - without this a degraded
     // file would yield empty output where the dump still finds its text
     static void legacyFallbackIfNoContent(MSOneStorePackage pkg, Metadata metadata,
                                           XHTMLContentHandler xhtml,
-                                          OneNoteDirectFileResource oneNoteDirectFileResource)
+                                          OneNoteDirectFileResource oneNoteDirectFileResource,
+                                          ParseContext context)
             throws TikaException, SAXException {
         if (pkg != null && !pkg.hasEmittedContent()) {
             legacyFallbackDump("OneNote FSSHTTPB parse produced no content; " +
                             "falling back to legacy text dump", null, metadata, xhtml,
-                    oneNoteDirectFileResource);
+                    oneNoteDirectFileResource, context);
         }
     }
 
     private static void legacyFallbackDump(String warning, Exception cause, Metadata metadata,
                                            XHTMLContentHandler xhtml,
-                                           OneNoteDirectFileResource oneNoteDirectFileResource)
+                                           OneNoteDirectFileResource oneNoteDirectFileResource,
+                                           ParseContext context)
             throws TikaException, SAXException {
         LOG.warn(warning);
+        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         if (cause != null) {
             LOG.debug("OneNote parse failure", cause);
+            //the failure text is the policy's business, so it goes through format, not here
+            EmbeddedDocumentUtil.recordException(cause, metadata, context);
         }
-        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         new OneNoteLegacyDumpStrings(oneNoteDirectFileResource, xhtml).dump();
     }
 

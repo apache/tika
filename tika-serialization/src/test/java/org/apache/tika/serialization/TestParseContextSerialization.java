@@ -299,6 +299,54 @@ public class TestParseContextSerialization {
     }
 
     @Test
+    public void testResolvedContextSerializesOriginalJson() throws Exception {
+        // TIKA-4848 review: a parent JVM (server/grpc) resolves the request's ParseContext
+        // before forwarding it to the fork. The materialized instances (e.g. the unregistered
+        // CompositeMetadataFilter) must not break -- or lossily replace -- serialization;
+        // the original jsonConfigs must be what crosses the wire.
+        ParseContext parseContext = new ParseContext();
+        parseContext.setJsonConfig("metadata-filters", """
+            [
+              "attachment-counting-list-filter",
+              "mock-upper-case-filter"
+            ]
+        """);
+        ParseContextUtils.resolveAll(parseContext, Thread.currentThread().getContextClassLoader());
+        assertEquals(CompositeMetadataFilter.class,
+                parseContext.get(MetadataFilter.class).getClass());
+
+        ObjectMapper mapper = createMapper();
+        String json = mapper.writeValueAsString(parseContext);
+
+        JsonNode filters = mapper.readTree(json).get("metadata-filters");
+        assertNotNull(filters, "original metadata-filters json should survive serialization");
+        assertTrue(filters.isArray());
+        assertEquals("attachment-counting-list-filter", filters.get(0).asText());
+
+        // and the fork side can resolve it again
+        ParseContext deser = mapper.readValue(json, ParseContext.class);
+        ParseContextUtils.resolveAll(deser, Thread.currentThread().getContextClassLoader());
+        CompositeMetadataFilter refilter = (CompositeMetadataFilter) deser.get(MetadataFilter.class);
+        assertEquals(MockUpperCaseFilter.class, refilter.getFilters().get(1).getClass());
+    }
+
+    @Test
+    public void testMutatedResolvedInstanceWinsOverOriginalJson() throws Exception {
+        // The server mutates resolved instances before forwarding (parseUnpack does); the
+        // live registered instance, not the original jsonConfig, must cross the wire.
+        ParseContext parseContext = new ParseContext();
+        parseContext.setJsonConfig("timeout-limits", "{\"progressTimeoutMillis\": 1000}");
+        ParseContextUtils.resolveAll(parseContext, Thread.currentThread().getContextClassLoader());
+        parseContext.get(TimeoutLimits.class).setProgressTimeoutMillis(7777);
+
+        ObjectMapper mapper = createMapper();
+        ParseContext deser = mapper.readValue(mapper.writeValueAsString(parseContext),
+                ParseContext.class);
+        ParseContextUtils.resolveAll(deser, Thread.currentThread().getContextClassLoader());
+        assertEquals(7777, deser.get(TimeoutLimits.class).getProgressTimeoutMillis());
+    }
+
+    @Test
     public void testContextKeyDeserialization() throws Exception {
         // Test that components with @TikaComponent(contextKey=...) are stored
         // in ParseContext with the contextKey, not the component class.

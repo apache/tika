@@ -124,7 +124,7 @@ class ServerProtocolIOTest {
         ServerProtocolIO io = new ServerProtocolIO(
                 new DataInputStream(serverInPipe),
                 new DataOutputStream(serverOutPipe),
-                maxPayloadBytes);
+                maxPayloadBytes, new ExceptionReporting());
         io.writeFinished(toWrite);
 
         clientThread.join(5000);
@@ -295,7 +295,7 @@ class ServerProtocolIOTest {
      * sends ACK, and returns the deserialized stack trace string.
      */
     private String exchangeCrash(Throwable t, int maxPayloadBytes) throws Exception {
-        return exchangeCrash(t, maxPayloadBytes, ExceptionReporting.DEFAULT);
+        return exchangeCrash(t, maxPayloadBytes, new ExceptionReporting());
     }
 
     private String exchangeCrash(Throwable t, int maxPayloadBytes, ExceptionReporting reporting)

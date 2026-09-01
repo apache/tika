@@ -36,10 +36,29 @@ public class EvalExceptionUtilsTest {
 
     @Test
     public void messageRedactedTraceNormalizesToSameKey() {
+        // The redacted "Caused by:" line has no colon; the snipper must not run past the
+        // newline into the following frame.
         String full = "org.apache.tika.exception.TikaException: secret\n"
-                + "\tat org.apache.tika.Foo.bar(Foo.java:12)\n";
+                + "\tat org.apache.tika.Foo.bar(Foo.java:12)\n"
+                + "Caused by: java.io.IOException: other secret\n"
+                + "\tat org.apache.tika.Foo.baz(Foo.java:34)\n";
         String redacted = "org.apache.tika.exception.TikaException\n"
-                + "\tat org.apache.tika.Foo.bar(Foo.java:12)\n";
+                + "\tat org.apache.tika.Foo.bar(Foo.java:12)\n"
+                + "Caused by: java.io.IOException\n"
+                + "\tat org.apache.tika.Foo.baz(Foo.java:34)\n";
         assertEquals(EvalExceptionUtils.normalize(full), EvalExceptionUtils.normalize(redacted));
+    }
+
+    @Test
+    public void suppressedCauseMessageIsSnipped() {
+        // printStackTrace tab-indents a suppressed exception's cause; traces differing
+        // only in that runtime detail must normalize to the same key.
+        String a = "org.apache.tika.exception.TikaException: top\n"
+                + "\tSuppressed: java.io.IOException: close failed\n"
+                + "\t\tat org.apache.tika.Foo.close(Foo.java:56)\n"
+                + "\tCaused by: java.nio.file.NoSuchFileException: /tmp/spool-123.tmp\n"
+                + "\tat org.apache.tika.Foo.bar(Foo.java:12)\n";
+        String b = a.replace("/tmp/spool-123.tmp", "/tmp/spool-456.tmp");
+        assertEquals(EvalExceptionUtils.normalize(a), EvalExceptionUtils.normalize(b));
     }
 }

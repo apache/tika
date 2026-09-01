@@ -108,7 +108,12 @@
         </dependency>
     </dependencies>
 
-    <build>
+    <properties>
+    <!-- TIKA-4816 metadata string-key ban, main sources; see tika-parent -->
+    <forbiddenapis.module.signaturesFile>${metadata.forbiddenapis.signaturesFile}</forbiddenapis.module.signaturesFile>
+  </properties>
+
+  <build>
         <plugins>
             <plugin>
                 <groupId>org.apache.rat</groupId>
@@ -119,21 +124,6 @@
                         <inputExclude>src/test/resources/test-documents/testJournalParser.pdf</inputExclude>
                     </inputExcludes>
                 </configuration>
-            </plugin>
-            <!-- TIKA-4816 metadata string-key ban, main sources; see tika-parent -->
-            <plugin>
-                <groupId>de.thetaphi</groupId>
-                <artifactId>forbiddenapis</artifactId>
-                <executions>
-                    <execution>
-                        <id>forbiddenapis-check</id>
-                        <configuration>
-                            <signaturesFiles>
-                                <signaturesFile>${metadata.forbiddenapis.signaturesFile}</signaturesFile>
-                            </signaturesFiles>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

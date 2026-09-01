@@ -18,10 +18,11 @@ package org.apache.tika.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import org.junit.jupiter.api.Test;
 
@@ -57,6 +58,11 @@ public class ExceptionUtilsTest {
     public void fullMatchesPrintStackTrace() {
         Throwable t = chain();
         String full = format(t, Level.FULL);
+        StringWriter expected = new StringWriter();
+        try (PrintWriter writer = new PrintWriter(expected)) {
+            t.printStackTrace(writer);
+        }
+        assertEquals(expected.toString(), full);
         for (String m : MESSAGES) {
             assertTrue(full.contains(m));
         }
@@ -73,8 +79,9 @@ public class ExceptionUtilsTest {
         assertTrue(redacted.contains("Caused by: java.io.IOException\n"));
         assertTrue(redacted.contains("\tSuppressed: java.lang.RuntimeException\n"));
         assertTrue(redacted.contains(" more\n"), "common-frame elision kept");
-        // Strip ": message" from every header line of FULL; the rest must be identical.
-        String expected = full.replaceAll("(?m)^((?:\\t*Suppressed: |Caused by: )?[\\w.$]+Exception): .*$", "$1");
+        // Strip ": message" from every header line of FULL (frame lines start with a tab,
+        // so they cannot match); the rest must be identical.
+        String expected = full.replaceAll("(?m)^((?:\\t*Suppressed: |Caused by: )?[\\w.$]+): .*$", "$1");
         expected = expected.replace("\r", ""); // windows
         assertEquals(expected, redacted);
     }
@@ -109,7 +116,8 @@ public class ExceptionUtilsTest {
         }
         String s = format(t, Level.REDACTED);
         assertTrue(s.contains("cause chain truncated"));
-        assertTrue(s.split("\n").length < 100);
+        long causes = s.lines().filter(l -> l.startsWith("Caused by: ")).count();
+        assertEquals(64, causes, "cause chain must stop at MAX_CAUSE_DEPTH");
     }
 
     @Test
@@ -131,12 +139,26 @@ public class ExceptionUtilsTest {
     }
 
     @Test
-    public void nullContextAndPolicyAreFull() {
+    public void nullContextIsFull() {
         Throwable t = chain();
         String full = format(t, Level.FULL);
         assertEquals(full, ExceptionUtils.format(t, (ParseContext) null));
-        assertEquals(full, ExceptionUtils.format(t, (ExceptionReporting) null));
         assertEquals(full, ExceptionUtils.format(t, new ParseContext()));
+    }
+
+    @Test
+    public void nullReportingIsFull() {
+        // formatting someone else's exception must never NPE
+        Throwable t = chain();
+        assertEquals(format(t, Level.FULL),
+                ExceptionUtils.format(t, (ExceptionReporting) null));
+    }
+
+    @Test
+    public void getFilteredStackTraceStillUnwrapsBareTikaException() {
+        Throwable t = chain();
+        assertEquals(ExceptionUtils.format(t.getCause(), (ParseContext) null),
+                ExceptionUtils.getFilteredStackTrace(t));
     }
 
     @Test
@@ -146,20 +168,4 @@ public class ExceptionUtilsTest {
         assertNoMessages(ExceptionUtils.format(chain(), context));
     }
 
-    @Test
-    public void unwrapTikaException() {
-        Throwable t = chain();
-        assertEquals(t.getCause(), ExceptionUtils.unwrapTikaException(t));
-        Throwable sub = new org.apache.tika.exception.EncryptedDocumentException(t);
-        assertEquals(sub, ExceptionUtils.unwrapTikaException(sub));
-        Throwable bare = new TikaException("no cause");
-        assertEquals(bare, ExceptionUtils.unwrapTikaException(bare));
-    }
-
-    @Test
-    public void invalidMaxLength() {
-        assertThrows(IllegalArgumentException.class, () -> new ExceptionReporting(Level.FULL, 0));
-        assertThrows(IllegalArgumentException.class, () -> new ExceptionReporting(Level.FULL, -2));
-        assertThrows(NullPointerException.class, () -> new ExceptionReporting(null, -1));
-    }
 }

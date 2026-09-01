@@ -385,6 +385,19 @@ public class PipesParsingHelper {
 
 
     /**
+     * 422 whose body is the already policy-formatted container exception. Re-wrapping it as
+     * an exception message would let the mapper redact it a second time and append this
+     * server's own frames.
+     */
+    public static WebApplicationException containerExceptionResponse(String containerException) {
+        return new WebApplicationException(Response
+                .status(422)
+                .entity(containerException)
+                .type(MediaType.TEXT_PLAIN)
+                .build());
+    }
+
+    /**
      * Maps PipesResult status to HTTP response status. Private so no caller can map a
      * status without the Retry-After headers {@link #responseBuilder} attaches.
      */
@@ -627,11 +640,7 @@ public class PipesParsingHelper {
                 Metadata containerMetadata = metadataList.get(0);
                 String containerException = containerMetadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
                 if (containerException != null) {
-                    Response response = Response.status(422)
-                            .entity(containerException)
-                            .type("text/plain")
-                            .build();
-                    throw new WebApplicationException(response);
+                    throw containerExceptionResponse(containerException);
                 }
             }
 

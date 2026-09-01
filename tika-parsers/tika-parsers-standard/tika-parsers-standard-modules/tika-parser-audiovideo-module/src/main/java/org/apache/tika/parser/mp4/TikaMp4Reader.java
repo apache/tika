@@ -25,6 +25,10 @@ import com.drew.metadata.mp4.Mp4BoxHandler;
 import com.drew.metadata.mp4.Mp4Context;
 import com.drew.metadata.mp4.Mp4MediaHandler;
 
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+
 /**
  * A size-bounded reimplementation of com.drew.imaging.mp4.Mp4Reader.
  * <p>
@@ -55,15 +59,16 @@ final class TikaMp4Reader {
      *                    than allocated (StreamReader.getBytes allocates before reading).
      */
     static void extract(InputStream inputStream, Mp4BoxHandler handler, long maxBoxSize,
-                        long inputLength) {
+                        long inputLength, Metadata metadata, ParseContext parseContext) {
         StreamReader reader = new StreamReader(inputStream);
         reader.setMotorolaByteOrder(true);
-        processBoxes(reader, -1, handler, new Mp4Context(), maxBoxSize, inputLength, 0);
+        processBoxes(reader, -1, handler, new Mp4Context(), maxBoxSize, inputLength, 0, metadata,
+                parseContext);
     }
 
     private static void processBoxes(StreamReader reader, long atomEnd, Mp4Handler<?> handler,
                                      Mp4Context context, long maxBoxSize, long inputLength,
-                                     int depth) {
+                                     int depth, Metadata metadata, ParseContext parseContext) {
         if (depth > MAX_BOX_DEPTH) {
             handler.addError("MP4 box nesting exceeds the maximum depth of " + MAX_BOX_DEPTH);
             return;
@@ -90,7 +95,7 @@ final class TikaMp4Reader {
                 if (acceptContainer(handler, boxType)) {
                     processBoxes(reader, reader.getPosition() + payloadLength,
                             processBox(handler, boxType, null, boxSize, context), context,
-                            maxBoxSize, inputLength, depth + 1);
+                            maxBoxSize, inputLength, depth + 1, metadata, parseContext);
                 } else if (acceptBox(handler, boxType)) {
                     //StreamReader.getBytes allocates the whole payload up front, so skip
                     //(a lazy stream advance) any box over the cap, or one that claims more
@@ -116,8 +121,8 @@ final class TikaMp4Reader {
                 }
             }
         } catch (IOException e) {
-            handler.addError(e.getMessage() == null ? "IOException reading MP4 boxes"
-                    : e.getMessage());
+            //not handler.addError: the library's error strings bypass the reporting policy
+            EmbeddedDocumentUtil.recordException(e, metadata, parseContext);
         }
     }
 

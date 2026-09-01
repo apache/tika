@@ -156,8 +156,10 @@ class EmitHandler {
         try {
             emitter = emitterManager.getEmitter(emitKey.getEmitterId());
         } catch (org.apache.tika.pipes.api.emitter.EmitterNotFoundException e) {
-            String noEmitterMsg = getNoEmitterMsg(taskId);
-            LOG.warn(noEmitterMsg);
+            String noEmitterMsg = "Emitter '" + emitKey.getEmitterId() + "' not found.";
+            // configured ids are operator-facing; log them, don't return them to the caller
+            LOG.warn("{} The configured emitterManager supports: {}", noEmitterMsg,
+                    emitterManager.getSupported());
             return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_NOT_FOUND, noEmitterMsg);
         } catch (IOException | TikaException e) {
             LOG.warn("Couldn't initialize emitter for task id '" + taskId + "'", e);
@@ -304,21 +306,6 @@ class EmitHandler {
         } catch (TikaException e) {
             LOG.warn("failed to filter metadata list", e);
         }
-    }
-
-    private String getNoEmitterMsg(String emitterName) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Emitter '").append(emitterName).append("'");
-        sb.append(" not found.");
-        sb.append("\nThe configured emitterManager supports:");
-        int i = 0;
-        for (String e : emitterManager.getSupported()) {
-            if (i++ > 0) {
-                sb.append(", ");
-            }
-            sb.append(e);
-        }
-        return sb.toString();
     }
 
 }

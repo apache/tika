@@ -146,7 +146,7 @@ Writes parsed results as files under `basePath`. The relative output path is der
 
 |`atomicWrites`
 |`true`
-|Write each output to a sibling `<name>.<uuid>.tmp` and rename it into place, so a reader of the output directory never sees a partial file. Set to `false` to write in place (one fewer rename per file; needed on filesystems where rename is slow or not atomic). Init-time only.
+|Write each output to a sibling `<name>.<uuid>.tmp` and rename it into place. A reader of the output directory never sees a partial file, but it does see the tmp files: crawlers and watchers over the output directory must ignore `*.tmp`. A worker killed mid-write leaves its `.tmp` behind, and nothing sweeps them. The `onExists: EXCEPTION`/`SKIP` check runs immediately before the rename and is best-effort against two workers emitting the same key concurrently (last writer wins) -- give workers distinct emit keys if that matters. Set to `false` to write in place (one fewer rename per file; required on mounts without rename, e.g. mountpoint-s3). Init-time only.
 |===
 
 [#file-system-iterator]
