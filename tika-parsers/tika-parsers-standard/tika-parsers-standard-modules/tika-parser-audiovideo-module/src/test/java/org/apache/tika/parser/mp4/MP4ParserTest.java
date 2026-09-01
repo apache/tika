@@ -203,7 +203,9 @@ public class MP4ParserTest extends TikaTest {
             file = is.readAllBytes();
         }
         //append a copy of the file's udta box (with its covr) at the top level
-        int udta = indexOf(file, "udta".getBytes(StandardCharsets.ISO_8859_1)) - 4;
+        int udtaName = indexOf(file, "udta".getBytes(StandardCharsets.ISO_8859_1));
+        assertTrue(udtaName >= 4, "fixture must contain a udta box");
+        int udta = udtaName - 4;
         int size = ByteBuffer.wrap(file, udta, 4).getInt();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         bos.write(file);

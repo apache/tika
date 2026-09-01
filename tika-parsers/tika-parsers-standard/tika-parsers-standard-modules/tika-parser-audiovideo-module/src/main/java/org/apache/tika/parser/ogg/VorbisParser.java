@@ -76,7 +76,7 @@ public class VorbisParser extends OggAudioParser {
         extractInfo(metadata, vorbis.getInfo());
 
         // Extract any Vorbis comments
-        extractPictures(extractComments(metadata, xhtml, vorbis.getComment(), context),
+        extractPictures(extractComments(metadata, xhtml, vorbis.getComment()),
                 xhtml, context);
 
         // Extract the audio length

@@ -77,7 +77,7 @@ public class OpusParser extends OggAudioParser {
         extractInfo(metadata, opus.getInfo());
 
         // Extract any Vorbis comments
-        extractPictures(extractComments(metadata, xhtml, opus.getTags(), context),
+        extractPictures(extractComments(metadata, xhtml, opus.getTags()),
                 xhtml, context);
 
         // Extract the audio length

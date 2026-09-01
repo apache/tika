@@ -142,10 +142,12 @@ public class FlacParserTest extends TikaTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         DataOutputStream data = new DataOutputStream(out);
         data.writeInt(pictureType);
-        data.writeInt(mimeType.length());
-        data.writeBytes(mimeType);
-        data.writeInt(description.length());
-        data.writeBytes(description);
+        byte[] mime = mimeType.getBytes(StandardCharsets.ISO_8859_1);
+        data.writeInt(mime.length);
+        data.write(mime);
+        byte[] desc = description.getBytes(StandardCharsets.UTF_8);
+        data.writeInt(desc.length);
+        data.write(desc);
         data.write(new byte[16]); //geometry
         byte[] image = {(byte) 0x89, 'P', 'N', 'G'};
         data.writeInt(image.length);

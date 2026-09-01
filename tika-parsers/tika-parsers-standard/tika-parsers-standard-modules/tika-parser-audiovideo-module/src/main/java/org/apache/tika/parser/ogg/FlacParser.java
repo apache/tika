@@ -104,7 +104,7 @@ public class FlacParser extends AbstractParser {
         //  below, together with any native PICTURE blocks, so one file
         //  yields exactly one thumbnail
         List<OggAudioParser.PictureBlock> pictures =
-                OggAudioParser.extractComments(metadata, xhtml, flac.getTags(), context);
+                OggAudioParser.extractComments(metadata, xhtml, flac.getTags());
 
         // Native FLAC carries its pictures in PICTURE metadata blocks
         //  (Ogg-contained FLAC uses metadata_block_picture comments instead)

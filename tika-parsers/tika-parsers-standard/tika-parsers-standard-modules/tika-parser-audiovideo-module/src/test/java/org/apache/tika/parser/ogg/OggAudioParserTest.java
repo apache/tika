@@ -212,7 +212,7 @@ public class OggAudioParserTest {
         xhtml.startDocument();
         //emit the returned pictures, as the parsers do
         OggAudioParser.extractPictures(
-                OggAudioParser.extractComments(metadata, xhtml, comments, context),
+                OggAudioParser.extractComments(metadata, xhtml, comments),
                 xhtml, context);
         xhtml.endDocument();
         return metadata;

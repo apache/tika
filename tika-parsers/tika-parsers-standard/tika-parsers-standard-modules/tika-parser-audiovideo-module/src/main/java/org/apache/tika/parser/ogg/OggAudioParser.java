@@ -121,7 +121,7 @@ public abstract class OggAudioParser extends AbstractParser {
      * one file yields one thumbnail
      */
     protected static List<PictureBlock> extractComments(Metadata metadata,
-            XHTMLContentHandler xhtml, VorbisStyleComments comments, ParseContext context)
+            XHTMLContentHandler xhtml, VorbisStyleComments comments)
             throws IOException, TikaException, SAXException {
         // Get the specific known comments
         metadata.set(TikaCoreProperties.TITLE, comments.getTitle());
