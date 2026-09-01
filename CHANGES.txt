@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * Pipes workers no longer stall between pre-parse and parse waiting
+     for the client to acknowledge the intermediate-result frame; the
+     ACK round trip now overlaps the parse. Adds opt-in per-request
+     timing logs on org.apache.tika.pipes.timing.* (TIKA-4868).
+
    * DefaultDetector honors CONTENT_TYPE_USER_OVERRIDE and
      CONTENT_TYPE_PARSER_OVERRIDE before running magic detection, matching
      CompositeDetector's contract. Removes the second full magic scan every
