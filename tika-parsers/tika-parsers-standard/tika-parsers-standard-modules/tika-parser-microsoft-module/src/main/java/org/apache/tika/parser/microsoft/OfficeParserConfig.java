@@ -36,6 +36,8 @@ public class OfficeParserConfig implements Serializable {
 
     private boolean writeSelectHeadersInBody = false;
 
+    private boolean extractThumbnail = true;
+
     /**
      * Maximum bytes per embedded object/pict when extracting from RTF within
      * MSG files.  Since embedded data is streamed to disk (not held in memory),
@@ -301,5 +303,18 @@ public class OfficeParserConfig implements Serializable {
 
     public void setRtfEmbeddedMaxBytesInKb(int rtfEmbeddedMaxBytesInKb) {
         this.rtfEmbeddedMaxBytesInKb = rtfEmbeddedMaxBytesInKb;
+    }
+
+    /**
+     * Whether to emit the document thumbnail an OLE2 file stores in its
+     * SummaryInformation (a WMF) as a THUMBNAIL embedded document, the way
+     * the OOXML parsers emit the docProps thumbnail. On by default.
+     */
+    public boolean isExtractThumbnail() {
+        return extractThumbnail;
+    }
+
+    public void setExtractThumbnail(boolean extractThumbnail) {
+        this.extractThumbnail = extractThumbnail;
     }
 }

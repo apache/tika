@@ -214,7 +214,8 @@ public class OfficeParser extends AbstractOfficeParser {
             throws IOException, SAXException, TikaException {
 
         // Parse summary entries first, to make metadata available early
-        new SummaryExtractor(metadata).parseSummaries(root);
+        SummaryExtractor summaryExtractor = new SummaryExtractor(metadata);
+        summaryExtractor.parseSummaries(root);
 
         // Parse remaining document entries
         POIFSDocumentType type = POIFSDocumentType.detectType(root);
@@ -305,6 +306,36 @@ public class OfficeParser extends AbstractOfficeParser {
                 // For unsupported / unhandled types, just the metadata
                 //  is extracted, which happened above
                 break;
+        }
+        OfficeParserConfig config = context.get(OfficeParserConfig.class);
+        if (config == null || config.isExtractThumbnail()) {
+            handleThumbnail(summaryExtractor.getThumbnailWmf(), xhtml, context);
+        }
+    }
+
+    /**
+     * Emits the document thumbnail from the SummaryInformation, a WMF, as a
+     * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL} embedded
+     * document, as the OOXML parsers do with the docProps thumbnail. Switched
+     * off with {@code "office-parser": {"extractThumbnail": false}}.
+     */
+    private void handleThumbnail(byte[] wmf, XHTMLContentHandler xhtml, ParseContext context)
+            throws IOException, SAXException {
+        if (wmf == null) {
+            return;
+        }
+        Metadata embeddedMetadata = Metadata.newInstance(context);
+        embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "thumbnail.wmf");
+        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
+        embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, "image/wmf");
+        EmbeddedDocumentExtractor extractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        if (extractor.shouldParseEmbedded(embeddedMetadata, context)) {
+            try (TikaInputStream tis = TikaInputStream.get(wmf)) {
+                extractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml), embeddedMetadata,
+                        context, false);
+            }
         }
     }
 

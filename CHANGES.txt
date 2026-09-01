@@ -1,5 +1,18 @@
 Release 4.1.0 - unreleased
 
+   * Raster previews for the vector thumbnails of Office documents: the new
+     poi-metafile-renderer draws EMF and WMF images through POI (a PNG of
+     a configurable width; Word's bitmap-in-WMF thumbnails from the bitmap
+     directly), EMFParser and WMFParser are RenderingParsers that emit the
+     rendering as a RENDERING embedded document with "emf-parser" /
+     "wmf-parser": {"renderImage": true, "renderWidth": 800}, off by
+     default and restrictable to e.g. THUMBNAIL embedded documents with
+     "renderOnlyEmbeddedResourceTypes", and OfficeParser emits the
+     SummaryInformation thumbnail of the OLE2 formats (a WMF) as a THUMBNAIL
+     embedded document, as the OOXML parsers do with the docProps thumbnail,
+     switchable with "office-parser": {"extractThumbnail": false}
+     (TIKA-4855).
+
    * Content-type hints from untrusted input (request headers, document
      metadata) are no longer interned into the shared MimeTypes registry
      during detection and extension lookup, closing a slow unbounded
