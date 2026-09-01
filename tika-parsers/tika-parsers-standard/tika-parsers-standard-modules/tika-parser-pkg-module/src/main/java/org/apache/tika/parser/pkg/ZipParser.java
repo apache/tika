@@ -594,7 +594,7 @@ public class ZipParser extends AbstractArchiveParser {
     }
 
     private void handleEncryptedEntry(String name, Metadata parentMetadata,
-                                       XHTMLContentHandler xhtml, ParseContext context) throws SAXException {
+                                      XHTMLContentHandler xhtml, ParseContext context) throws SAXException {
         EmbeddedDocumentUtil.recordEmbeddedStreamException(
                 new EncryptedDocumentException("stream (" + name + ") is encrypted"),
                 parentMetadata, context);

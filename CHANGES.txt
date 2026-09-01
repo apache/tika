@@ -9,6 +9,25 @@ Release 4.1.0 - unreleased
      config. PDFParserConfig gains maxRenderedPages, bounding the page
      rendering independently of maxPages (TIKA-4856).
 
+   * Add "exception-reporting" parse-context config to redact and bound
+     exception text in metadata, tika-server error bodies and pipes/grpc
+     messages; FileSystemEmitter writes atomically (TIKA-4848).
+     Compat notes: a truncated TSD envelope now records its read failure
+     under tk:exception:embedded-stream-exception rather than
+     tk:exception:embedded-exception; recordException and
+     recordEmbeddedStreamException no longer strip a bare TikaException
+     wrapper, so the first line of tk:exception:* values may name the
+     wrapper (affects consumers keyed on that line, e.g. eval cause
+     counts across the 4.1 boundary).
+     
+   * Audio cover art is emitted as a THUMBNAIL embedded document, like the
+     preview image of the document container formats: the front cover (ID3
+     APIC and FLAC/Vorbis picture type 3), else the first picture of type
+     "Other" or unknown, else the first picture, and the first covr image
+     of an MP4. Further pictures
+     stay INLINE. Clients that looked for cover art as INLINE need to
+     accept THUMBNAIL as well (TIKA-4850).
+
    * tika-grpc resolves its plugin-roots fallback against the install
      layout via DefaultPluginsDir instead of a working-directory-relative
      pf4j default, and a WARN names the resolved directory when no plugins
@@ -34,7 +53,7 @@ Release 4.1.0 - unreleased
      records; part of TIKA-4848 step 3 (TIKA-4848).
      
    * Allow image compression settings in PDFBox-based renderer (TIKA-4862).
-     
+
    * The tika-server full and tika-grpc Docker images set OMP_THREAD_LIMIT=1:
      to avoid oversubscribing the CPU under forked parse workers (TIKA-4863).
 
@@ -75,21 +94,6 @@ Release 4.1.0 - unreleased
      INLINE images named image-N.jpg. Previously every preview was a
      THUMBNAIL, so a client had to compare them to find the representative
      one (TIKA-4851).
-
-   * New exception-reporting parse-context config controls how much of an
-     exception is written to tk:exception:* metadata for the container and
-     embedded documents alike: FULL (default), MESSAGE_REDACTED (stack trace
-     without messages) or REDACTED (class names only), plus a maxLength.
-     Config-only; rejected in per-request parse-context. Parsers should
-     format exceptions via ExceptionUtils.format(Throwable, ParseContext);
-     ExceptionUtils.getStackTrace/getFilteredStackTrace and the ParseContext-less
-     EmbeddedDocumentUtil.recordException* / ParserUtils.recordParserFailure
-     overloads are deprecated (TIKA-4848).
-
-   * FileSystemEmitter writes to a sibling ".tmp" file and renames it into
-     place, so readers of the output directory never see a partially written
-     file. Set "atomicWrites": false on the emitter to restore in-place
-     writes (TIKA-4848).
 
    * tika-eval: Profile/Compare accept the batch run's jsonl crash ledger
      (--pipesReport, -pa/-pb) and a run-info json (--runInfo, -ra/-rb), and

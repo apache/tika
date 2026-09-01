@@ -23,9 +23,6 @@ import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 
 import org.apache.tika.config.ExceptionReporting;
-import org.apache.tika.exception.EncryptedDocumentException;
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.utils.ExceptionUtils;
 
 @Provider
@@ -34,51 +31,33 @@ public class TikaServerParseExceptionMapper implements ExceptionMapper<TikaServe
     private final ExceptionReporting exceptionReporting;
 
     public TikaServerParseExceptionMapper() {
-        this(ExceptionReporting.DEFAULT);
+        this(new ExceptionReporting());
     }
 
     public TikaServerParseExceptionMapper(ExceptionReporting exceptionReporting) {
         this.exceptionReporting = exceptionReporting;
     }
 
+    /**
+     * 500 unless a {@link WebApplicationException} is in the cause chain: in 4.x a parse
+     * failure comes back as container-exception metadata from the fork, so what reaches here
+     * is a fetch/spool/IPC failure, never a document's own exception. Third-party
+     * {@code TikaServerResource} providers that wrapped a {@code WebApplicationException}
+     * chose their own response (status, headers); that passes through untouched. The cause is
+     * formatted rather than the wrapper so the body does not open with this server's own
+     * frames.
+     */
     public Response toResponse(TikaServerParseException e) {
-        if (e.getMessage() != null && e
-                .getMessage()
-                .equals(Response.Status.UNSUPPORTED_MEDIA_TYPE.toString())) {
-            return buildResponse(e, 415);
-        }
         Throwable cause = e.getCause();
-        if (cause == null) {
-            return buildResponse(e, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode());
-        } else {
-            if (cause instanceof EncryptedDocumentException) {
-                return buildResponse(cause, 422);
-            } else if (cause instanceof TikaException) {
-                //unsupported media type
-                Throwable causeOfCause = cause.getCause();
-                if (causeOfCause instanceof WebApplicationException) {
-                    return ((WebApplicationException) causeOfCause).getResponse();
-                }
-                return buildResponse(cause, 422);
-            } else if (cause instanceof IllegalStateException) {
-                return buildResponse(cause, 422);
-            } else if (cause instanceof UnsupportedFormatException) {
-                return buildResponse(cause, 422);
-            } else if (cause instanceof WebApplicationException) {
-                return ((WebApplicationException) e.getCause()).getResponse();
-            } else {
-                return buildResponse(e, 500);
+        int depth = 0;
+        for (Throwable t = cause; t != null && depth < 8; t = t.getCause(), depth++) {
+            if (t instanceof WebApplicationException wae) {
+                return wae.getResponse();
             }
         }
-    }
-
-    private Response buildResponse(Throwable cause, int i) {
-        if (cause == null) {
-            return Response.status(i).build();
-        }
         return Response
-                .status(i)
-                .entity(ExceptionUtils.format(cause, exceptionReporting))
+                .status(500)
+                .entity(ExceptionUtils.format(cause != null ? cause : e, exceptionReporting))
                 .type("text/plain")
                 .build();
     }

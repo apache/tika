@@ -201,6 +201,13 @@ request. Keys are parse-context component names; values are their JSON configs.
 See `META-INF/tika/parse-context.idx` (generated at build time from `@TikaComponent` annotations)
 for the available component names.
 
+A few components are operator-only and never accepted from the wire —
+`exception-reporting` (xref:advanced/setting-limits.adoc#_exception_reporting[Exception
+reporting]) is one. A request naming one is rejected at the API boundary with
+`INVALID_ARGUMENT` and the reason, before the forked worker sees it. A misspelled or
+unregistered component name is refused the same way, so a typo is a client error rather
+than a silent fallback to the server's defaults.
+
 NOTE: This is disabled by default. A request setting `parse_context_json` or
 `additional_fetch_config_json` is rejected with `PERMISSION_DENIED` unless `allowPerRequestConfig`
 is enabled — see <<_capability_flags,Capability flags>>.

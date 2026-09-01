@@ -44,10 +44,10 @@ public class TSDParserTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata("testTSD_broken_pdf.tsd", parseContext);
         assertEquals(2, list.size());
         assertEquals("application/pdf", list.get(1).get(HttpHeaders.CONTENT_TYPE));
-        assertNotNull(list.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
+        assertNotNull(list.get(1).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
         // Exception occurs during TSD content extraction (truncated file)
         assertContains("EOFException",
-                list.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
+                list.get(1).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
     }
 
     @Test

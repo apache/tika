@@ -70,8 +70,10 @@ class FetchHandler {
         try {
             return new FetcherOrResult(fetcherManager.getFetcher(fetcherId), null);
         } catch (FetcherNotFoundException e) {
-            String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherId());
-            LOG.warn(noFetcherMsg);
+            String noFetcherMsg = "Fetcher '" + t.getFetchKey().getFetcherId() + "' not found.";
+            // configured ids are operator-facing; log them, don't return them to the caller
+            LOG.warn("{} The configured FetcherManager supports: {}", noFetcherMsg,
+                    fetcherManager.getSupported());
             return new FetcherOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, noFetcherMsg));
         } catch (IOException | TikaException e) {
             LOG.warn("Couldn't initialize fetcher for fetch id={}", t.getId(), e);
@@ -80,21 +82,6 @@ class FetchHandler {
         }
     }
 
-
-    private String getNoFetcherMsg(String fetcherId) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Fetcher '").append(fetcherId).append("'");
-        sb.append(" not found.");
-        sb.append("\nThe configured FetcherManager supports:");
-        int i = 0;
-        for (String f : fetcherManager.getSupported()) {
-            if (i++ > 0) {
-                sb.append(", ");
-            }
-            sb.append(f);
-        }
-        return sb.toString();
-    }
 
     private record FetcherOrResult(Fetcher fetcher, PipesResult pipesResult) {
 

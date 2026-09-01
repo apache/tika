@@ -95,7 +95,6 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
 
             };
 
-    private final ParseContext context;
     private final Metadata metadata;
     private final Map<String, EmbeddedPartMetadata> embeddedPartMetadataMap = new HashMap<>();
 
@@ -104,7 +103,6 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                                        XWPFEventBasedWordExtractor extractor) {
         super(context, extractor.getPackage());
         this.metadata = metadata;
-        this.context = context;
     }
 
     @Override

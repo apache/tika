@@ -77,6 +77,9 @@ import org.apache.tika.pipes.grpc.proto.SavePipesIteratorRequest;
 import org.apache.tika.pipes.grpc.proto.TikaGrpc;
 import org.apache.tika.plugins.ExtensionConfig;
 import org.apache.tika.plugins.TikaPluginManager;
+import org.apache.tika.serialization.ComponentNameResolver;
+import org.apache.tika.serialization.ParseContextUtils;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaGrpcServerImpl.class);
@@ -274,7 +277,11 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         if (denyPerRequestConfig(request, responseObserver)) {
             return;
         }
-        fetchAndParseImpl(request, responseObserver);
+        ParseContext parseContext = buildRequestParseContext(request, responseObserver);
+        if (parseContext == null) {
+            return;
+        }
+        fetchAndParseImpl(request, parseContext, responseObserver);
         responseObserver.onCompleted();
     }
 
@@ -287,7 +294,12 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 if (denyPerRequestConfig(fetchAndParseRequest, responseObserver)) {
                     return;
                 }
-                fetchAndParseImpl(fetchAndParseRequest, responseObserver);
+                ParseContext parseContext =
+                        buildRequestParseContext(fetchAndParseRequest, responseObserver);
+                if (parseContext == null) {
+                    return;
+                }
+                fetchAndParseImpl(fetchAndParseRequest, parseContext, responseObserver);
             }
 
             @Override
@@ -308,11 +320,65 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         if (denyPerRequestConfig(request, responseObserver)) {
             return;
         }
-        fetchAndParseImpl(request, responseObserver);
+        ParseContext parseContext = buildRequestParseContext(request, responseObserver);
+        if (parseContext == null) {
+            return;
+        }
+        fetchAndParseImpl(request, parseContext, responseObserver);
         responseObserver.onCompleted();
     }
 
-    private void fetchAndParseImpl(FetchAndParseRequest request,
+    /**
+     * Builds the per-request {@link ParseContext} from {@code parse_context_json}, or closes the
+     * call with {@code INVALID_ARGUMENT} and returns {@code null}. The caller must {@code return}
+     * immediately on {@code null}.
+     * <p>
+     * The request is untrusted wire input, so it is deserialized restricted and resolved here, as
+     * the tika-server resources do. Left to the fork, the same refusal (of
+     * {@code exception-reporting}, say) is a deserialization failure that exits it: a JVM restart
+     * per bad request, and a crash status with no reason for the caller. The trade-off, accepted
+     * deliberately: a component registered only on the fork's classpath is refused here too --
+     * fail-fast validation runs against this JVM's registries. Serialization still forwards the
+     * caller's original jsonConfigs, not the instances resolution materializes.
+     */
+    private ParseContext buildRequestParseContext(FetchAndParseRequest request,
+                                                  StreamObserver<?> responseObserver) {
+        ParseContext parseContext = new ParseContext();
+        String parseContextJson = request.getParseContextJson();
+        if (StringUtils.isNotBlank(parseContextJson)) {
+            try {
+                parseContext = ParseContextDeserializer.readParseContext(
+                        OBJECT_MAPPER.readTree(parseContextJson), true);
+                ParseContextUtils.resolveAll(parseContext, getClass().getClassLoader());
+            } catch (IOException | TikaConfigException e) {
+                responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                        .withDescription("Invalid parse_context_json: " + e.getMessage())
+                        .asRuntimeException());
+                return null;
+            }
+        }
+        String additionalFetchConfigJson = request.getAdditionalFetchConfigJson();
+        if (StringUtils.isNotBlank(additionalFetchConfigJson)) {
+            // The fork reads this jsonConfig by the fetcher's registered component name
+            // (e.g. "http-fetcher"). An unregistered key fails the fork's resolveAll and a
+            // wire-blocked one is refused by its restricted tuple deserialization -- both
+            // exit the worker. Enforce here: a 400, not a JVM restart per request.
+            var info = ComponentNameResolver.getComponentInfo(request.getFetcherId());
+            if (info.isEmpty() || ComponentNameResolver.isWireBlocked(
+                    ComponentNameResolver.determineContextKey(info.get()))) {
+                responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                        .withDescription("additional_fetch_config_json requires fetcher_id to "
+                                + "be a registered, wire-allowed component name; got '"
+                                + request.getFetcherId() + "'")
+                        .asRuntimeException());
+                return null;
+            }
+            parseContext.setJsonConfig(request.getFetcherId(), additionalFetchConfigJson);
+        }
+        return parseContext;
+    }
+
+    private void fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
                                    StreamObserver<FetchAndParseReply> responseObserver) {
         Fetcher fetcher;
         try {
@@ -323,17 +389,6 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
         Metadata tikaMetadata = new Metadata();
         try {
-            ParseContext parseContext = new ParseContext();
-            String additionalFetchConfigJson = request.getAdditionalFetchConfigJson();
-            if (StringUtils.isNotBlank(additionalFetchConfigJson)) {
-                parseContext.setJsonConfig(request.getFetcherId(), additionalFetchConfigJson);
-            }
-            String parseContextJson = request.getParseContextJson();
-            if (StringUtils.isNotBlank(parseContextJson)) {
-                com.fasterxml.jackson.databind.JsonNode contextNode = OBJECT_MAPPER.readTree(parseContextJson);
-                contextNode.fields().forEachRemaining(entry ->
-                        parseContext.setJsonConfig(entry.getKey(), entry.getValue().toString()));
-            }
             PipesResult pipesResult = pipesParser.parse(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcher.getExtensionConfig().id(), request.getFetchKey()),
                     new EmitKey(), tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =

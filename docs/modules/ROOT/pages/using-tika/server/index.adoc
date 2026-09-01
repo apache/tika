@@ -482,8 +482,14 @@ spooled file's path, the source filename, and fragments of the document. That de
 `tk:exception:*` metadata on **successful** parses as well as in error bodies — including inside
 the `*.metadata.json` entries of an `/unpack` zip.
 
-One config setting governs all of those channels — the metadata values, the `422` bodies above,
-and the `message` of a `/pipes` or `/async` result:
+One config setting governs every one of those channels — the metadata values, every error body
+built from an exception (`422`, `500`; a `400` echoes the caller's own request problem, `415` and
+`404`/`405` carry no exception text, and the plain-text `413` from the request-size filter is
+fixed text), and the `message` of a `/pipes` or `/async` result. That includes the
+results the parent fabricates when the fork never reported one (`FAILED_TO_INITIALIZE`,
+`PAYLOAD_LIMIT_EXCEEDED`, a `TIMEOUT`/`OOM`/crash the fork died before reporting): those carry
+either no message at all or the trace of the parent's own infrastructure exception — never
+document content — formatted under the same policy:
 
 [source,json]
 ----
@@ -493,10 +499,12 @@ and the `message` of a `/pipes` or `/async` result:
 ----
 
 `MESSAGE_REDACTED` keeps class names and frames but strips every message; `REDACTED` keeps class
-names only. It is refused in a per-request config so callers cannot turn it back off. See
+names only. A per-request config carrying it is refused with a `400` naming the reason, so callers
+cannot turn it back off. See
 xref:advanced/setting-limits.adoc#_exception_reporting[Exception reporting]. Set it whenever the
-server's callers are less trusted than its operator; a `MetadataFilter` can additionally drop the
-`tk:exception:*` fields outright.
+server's callers are less trusted than its operator. Prefer it to a `MetadataFilter` that drops
+`tk:exception:*`: a filter supplied in a per-request config *replaces* the operator's rather than
+adding to it.
 ====
 
 === Truncated results (`PARTIAL_TIMEOUT`)

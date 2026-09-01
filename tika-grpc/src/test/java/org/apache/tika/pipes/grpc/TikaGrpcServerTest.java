@@ -62,6 +62,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherReply;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherRequest;
@@ -267,6 +268,97 @@ public class TikaGrpcServerTest {
                         .setParseContextJson("{\"basic-content-handler-factory\":{\"type\":\"HTML\"}}")
                         .build()));
         assertEquals(Status.Code.PERMISSION_DENIED, ex.getStatus().getCode());
+    }
+
+    @Test
+    public void testWireBlockedParseContextIsRejected(Resources resources) throws Exception {
+        // exception-reporting is operator policy, not a request knob. Ungated, the fork refuses it
+        // at deserialization time and exits: UNSPECIFIED_CRASH with no reason, plus a restart.
+        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfigUnlocked);
+
+        StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
+                blockingStub.fetchAndParse(FetchAndParseRequest
+                        .newBuilder()
+                        .setFetcherId(createFetcherId(1))
+                        .setFetchKey("no-such-file")
+                        .setParseContextJson("{\"exception-reporting\":{\"level\":\"FULL\"}}")
+                        .build()));
+        assertEquals(Status.Code.INVALID_ARGUMENT, ex.getStatus().getCode());
+        assertTrue(String.valueOf(ex.getStatus().getDescription())
+                        .contains("may not be supplied via a request parseContext"),
+                "the caller must be told why: " + ex.getStatus().getDescription());
+
+        // ...and the server must still serve the next request.
+        String fetchKey = "wire-blocked-" + UUID.randomUUID() + ".html";
+        File testFile = new File("target", fetchKey);
+        FileUtils.writeStringToFile(testFile,
+                "<html><body>still serving</body></html>", StandardCharsets.UTF_8);
+        try {
+            FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(createFetcherId(1))
+                    .setFetchKey(fetchKey)
+                    .build());
+            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(), reply.getStatus());
+        } finally {
+            FileUtils.deleteQuietly(testFile);
+        }
+    }
+
+    @Test
+    public void testPerRequestParseContextStillReachesTheFork(Resources resources)
+            throws Exception {
+        // The gate resolves the request context in this JVM; a legal entry must still round-trip
+        // to the worker. Both shapes: one resolved here, one (self-configuring) left as JSON.
+        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfigUnlocked);
+        String fetchKey = "per-request-" + UUID.randomUUID() + ".html";
+        File testFile = new File("target", fetchKey);
+        FileUtils.writeStringToFile(testFile,
+                "<html><body>per request</body></html>", StandardCharsets.UTF_8);
+        try {
+            FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(createFetcherId(1))
+                    .setFetchKey(fetchKey)
+                    .setParseContextJson("{\"basic-content-handler-factory\":{\"type\":\"IGNORE\"},"
+                            + "\"pdf-parser\":{\"sortByPosition\":true}}")
+                    .build());
+            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(), reply.getStatus());
+            String contentKey = TikaCoreProperties.TIKA_CONTENT.getName();
+            String ignored = reply.getFieldsMap().get(contentKey);
+            assertTrue(ignored == null || ignored.isBlank(),
+                    "type=IGNORE must reach the worker: " + reply.getFieldsMap());
+
+            FetchAndParseReply withContent = blockingStub.fetchAndParse(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(createFetcherId(1))
+                    .setFetchKey(fetchKey)
+                    .build());
+            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(), withContent.getStatus());
+            String content = withContent.getFieldsMap().get(contentKey);
+            assertTrue(content != null && !content.isBlank(),
+                    "without the override there must be content, or the check above proves "
+                            + "nothing: " + withContent.getFieldsMap());
+        } finally {
+            FileUtils.deleteQuietly(testFile);
+        }
+    }
+
+    @Test
+    public void testUnrecognizedParseContextEntryIsRejected(Resources resources) throws Exception {
+        // Same boundary, other trigger: an unregistered name fails resolveAll in the fork.
+        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfigUnlocked);
+
+        StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
+                blockingStub.fetchAndParse(FetchAndParseRequest
+                        .newBuilder()
+                        .setFetcherId(createFetcherId(1))
+                        .setFetchKey("no-such-file")
+                        .setParseContextJson("{\"no-such-component\":{}}")
+                        .build()));
+        assertEquals(Status.Code.INVALID_ARGUMENT, ex.getStatus().getCode());
+        assertTrue(String.valueOf(ex.getStatus().getDescription()).contains("no-such-component"),
+                "the caller must be told which entry: " + ex.getStatus().getDescription());
     }
 
     @Test

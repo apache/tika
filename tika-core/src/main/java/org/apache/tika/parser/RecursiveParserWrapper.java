@@ -171,7 +171,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 metadata.set(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
             } else {
                 metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
-                        ExceptionUtils.format(ExceptionUtils.unwrapTikaException(e), context));
+                        ExceptionUtils.format(e, context));
                 throw e;
             }
         } finally {

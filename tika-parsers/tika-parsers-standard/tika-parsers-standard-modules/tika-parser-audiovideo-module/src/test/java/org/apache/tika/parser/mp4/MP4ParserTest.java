@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -45,6 +46,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
 import org.apache.tika.metadata.HttpHeaders;
@@ -165,7 +167,8 @@ public class MP4ParserTest extends TikaTest {
 
         Metadata pictureMetadata = metadataList.get(1);
         assertEquals("image/png", pictureMetadata.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+        //the cover is the file's thumbnail
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
@@ -179,14 +182,54 @@ public class MP4ParserTest extends TikaTest {
 
         assertEquals(3, metadataList.size());
         //a png data atom (well-known type 14) followed by a jpeg one (13)
+        //covr carries no picture type, so the first image is the thumbnail
         Metadata front = metadataList.get(1);
         assertEquals("image/png", front.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 front.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         Metadata back = metadataList.get(2);
         assertEquals("image/jpeg", back.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
                 back.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
+     * A cover in a second udta box is still an inline picture: the first
+     * cover of the file is its thumbnail, not the first of every box
+     */
+    @Test
+    public void testCoversAcrossUserDataBoxes() throws Exception {
+        byte[] file;
+        try (InputStream is = getResourceAsStream("/test-documents/testMP4_coverArt.m4a")) {
+            file = is.readAllBytes();
+        }
+        //append a copy of the file's udta box (with its covr) at the top level
+        int udtaName = indexOf(file, "udta".getBytes(StandardCharsets.ISO_8859_1));
+        assertTrue(udtaName >= 4, "fixture must contain a udta box");
+        int udta = udtaName - 4;
+        int size = ByteBuffer.wrap(file, udta, 4).getInt();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write(file);
+        bos.write(file, udta, size);
+
+        List<Metadata> metadataList;
+        try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
+            metadataList = getRecursiveMetadata(tis, new Metadata(), new ParseContext(), false);
+        }
+        assertEquals(3, metadataList.size());
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    private static int indexOf(byte[] haystack, byte[] needle) {
+        for (int i = 0; i <= haystack.length - needle.length; i++) {
+            if (Arrays.equals(Arrays.copyOfRange(haystack, i, i + needle.length), needle)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     // TODO Test an old QuickTime Video File
@@ -216,6 +259,28 @@ public class MP4ParserTest extends TikaTest {
         XMLResult r = getXML("testMP4_truncated.m4a");
         assertEquals("audio/mp4", r.metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("M4A", r.metadata.get(XMPDM.AUDIO_COMPRESSOR));
+    }
+
+    // TIKA-4848: the box walk's own IOException is reported through the policy, not as a
+    // bare message copied out of the library's error list
+    @Test
+    public void testTruncatedStreamWarningIsFormatted() throws Exception {
+        String[] warnings = getXML("testMP4_truncated.m4a", new ParseContext()).metadata
+                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertTrue(Arrays.stream(warnings)
+                        .anyMatch(w -> w.startsWith("java.io.") && w.contains("\tat ")),
+                Arrays.toString(warnings));
+
+        ParseContext redacted = new ParseContext();
+        redacted.set(ExceptionReporting.class, new ExceptionReporting(
+                ExceptionReporting.Level.REDACTED, ExceptionReporting.UNLIMITED));
+        String[] redactedWarnings = getXML("testMP4_truncated.m4a", redacted).metadata
+                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertTrue(Arrays.stream(redactedWarnings).anyMatch(w -> w.startsWith("java.io.")),
+                Arrays.toString(redactedWarnings));
+        for (String w : redactedWarnings) {
+            assertFalse(w.contains("\tat "), w);
+        }
     }
 
     @Test
@@ -544,7 +609,7 @@ public class MP4ParserTest extends TikaTest {
         //must return without a StackOverflowError
         assertDoesNotThrow(() ->
                 TikaMp4Reader.extract(new ByteArrayInputStream(boxes), handler, 1000L,
-                        boxes.length));
+                        boxes.length, new Metadata(), new ParseContext()));
     }
 
     @Test
@@ -575,7 +640,8 @@ public class MP4ParserTest extends TikaTest {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(new DefaultHandler(), tikaMetadata);
         TikaMp4BoxHandler handler =
                 new TikaMp4BoxHandler(mp4Metadata, tikaMetadata, xhtml, new ParseContext());
-        TikaMp4Reader.extract(new ByteArrayInputStream(boxes), handler, maxBoxSize, boxes.length);
+        TikaMp4Reader.extract(new ByteArrayInputStream(boxes), handler, maxBoxSize, boxes.length,
+                tikaMetadata, new ParseContext());
         Mp4Directory dir = mp4Metadata.getFirstDirectoryOfType(Mp4Directory.class);
         return dir == null ? null : dir.getString(Mp4Directory.TAG_MAJOR_BRAND);
     }
