@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
@@ -34,6 +35,7 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * The video a motion photo carries after the image becomes an embedded
@@ -144,5 +146,50 @@ public class MotionPhotoVideoTest extends TikaTest {
         }
         assertEquals(1, metadataList.size());
         assertNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    /**
+     * The video is the last thing in the file, so its own Item:Length is the
+     * whole distance to the end: an item behind it is not added on, and neither
+     * is a Padding, which the format only allows on the primary image. Lengths
+     * are read from the file, so summing them could be made to overflow.
+     */
+    @Test
+    public void testTheDeclarationIsTheVideosOwnLength() {
+        Metadata metadata = new Metadata();
+        item(metadata, 1, "Primary", "3000", null);
+        item(metadata, 2, "MotionPhoto", "1583", String.valueOf(Long.MAX_VALUE));
+        //a shared resource is declared with a length of 0, and may follow the video
+        item(metadata, 3, "Segment", "0", null);
+        assertEquals(1583, MotionPhoto.declaration(metadata).length);
+    }
+
+    /**
+     * A length no file could hold ends it, rather than an offset that wraps
+     * around into the file and reads somewhere else.
+     */
+    @Test
+    public void testAbsurdDeclaredLength() throws Exception {
+        Metadata metadata = new Metadata();
+        item(metadata, 1, "Primary", "3000", null);
+        item(metadata, 2, "MotionPhoto", String.valueOf(Long.MAX_VALUE), null);
+        assertEquals(Long.MAX_VALUE, MotionPhoto.declaration(metadata).length);
+
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/testJPEG_MotionPhoto.jpg"))) {
+            XHTMLContentHandler xhtml =
+                    new XHTMLContentHandler(new DefaultHandler(), metadata, new ParseContext());
+            MotionPhoto.extract(tis, metadata, xhtml, new ParseContext());
+        }
+    }
+
+    private static void item(Metadata metadata, int index, String semantic, String length,
+                             String padding) {
+        String item = "xmp-raw:Container:Directory[" + index + "]/Container:Item/";
+        metadata.set(item + "Item:Semantic", semantic);
+        metadata.set(item + "Item:Length", length);
+        if (padding != null) {
+            metadata.set(item + "Item:Padding", padding);
+        }
     }
 }

@@ -31,8 +31,6 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -42,8 +40,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * XMP the image parsers already extract (TIKA-4869):
  * <ul>
  *   <li>a Motion Photo lists its parts in {@code Container:Directory}: the
- *       primary image first, the rest tightly packed after it, each with an
- *       {@code Item:Length} and an optional {@code Item:Padding};</li>
+ *       primary image first, the video last with nothing after it, each with
+ *       an {@code Item:Length};</li>
  *   <li>the older MicroVideo gives {@code Camera:MicroVideoOffset}, the
  *       number of bytes from the end of the file to the start of the video.</li>
  * </ul>
@@ -53,9 +51,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * make a wrong length pass as a video, and nothing is emitted when detection
  * recognizes nothing.
  * <p>
- * The same holds for HEIC and AVIF motion photos, whose video sits in a
- * trailing {@code mpvd} box; its 8 byte header is the primary item's padding,
- * so the video still ends at the end of the file.
+ * The same holds for HEIC motion photos, whose video sits in a trailing
+ * {@code mpvd} box; its 8 byte header is the primary item's padding, so the
+ * video still ends at the end of the file.
  */
 final class MotionPhoto {
 
@@ -100,9 +98,16 @@ final class MotionPhoto {
         if (declared == null) {
             return;
         }
-        long length = declared.length;
-        Path file = tis.getPath();
-        long start = Files.size(file) - length;
+        //a length the file cannot hold is settled from what the stream already
+        //knows, before an image gets spilled to disk on the strength of it
+        if (tis.hasLength() && declared.length >= tis.getLength()) {
+            return;
+        }
+        Path file = file(tis);
+        if (file == null) {
+            return;
+        }
+        long start = Files.size(file) - declared.length;
         if (start <= 0) {
             return;
         }
@@ -111,10 +116,13 @@ final class MotionPhoto {
             return;
         }
         Metadata videoMetadata = Metadata.newInstance(context);
-        //the name has to be set before the parse, which is the only thing here
-        //that knows the format for sure, so it follows the file's own
+        //the name has to be set before the parse, so it follows the file's own
         //declaration and carries no extension where there is none to follow
-        videoMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, NAME + extension(declared.mime));
+        String extension = extension(declared.mime);
+        videoMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, NAME + extension);
+        if (!extension.isEmpty()) {
+            videoMetadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
+        }
         videoMetadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
         videoMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
@@ -157,41 +165,25 @@ final class MotionPhoto {
     }
 
     /**
-     * The bytes from the start of the video to the end of the file: its own
-     * length and that of anything the directory lists after it. In practice
-     * the video is the last item, in Ultra HDR files as well, where the gain
-     * map comes before it.
+     * The video item's own length, which is what separates it from the end of
+     * the file: the format has it last and lets nothing follow it, in Ultra HDR
+     * files as well, where the gain map comes before it.
      */
     private static Declaration directoryDeclaration(Metadata metadata) {
-        int video = -1;
-        int items = 0;
         for (int i = 1; i <= MAX_ITEMS; i++) {
-            String semantic = metadata.get(DIRECTORY + i + ITEM + "Item:Semantic");
+            String item = DIRECTORY + i + ITEM;
+            String semantic = metadata.get(item + "Item:Semantic");
             if (semantic == null) {
-                break;
-            }
-            items = i;
-            if (video < 0 && MOTION_PHOTO.equals(semantic)) {
-                video = i;
-            }
-        }
-        if (video < 0) {
-            return null;
-        }
-        long length = 0;
-        for (int i = video; i <= items; i++) {
-            long itemLength = positiveLong(metadata.get(DIRECTORY + i + ITEM + "Item:Length"));
-            if (itemLength <= 0) {
                 return null;
             }
-            length += itemLength;
-            long padding = positiveLong(metadata.get(DIRECTORY + i + ITEM + "Item:Padding"));
-            if (padding > 0) {
-                length += padding;
+            if (MOTION_PHOTO.equals(semantic)) {
+                long length = positiveLong(metadata.get(item + "Item:Length"));
+                return length > 0
+                        ? new Declaration(length, MediaType.parse(metadata.get(item + "Item:Mime")))
+                        : null;
             }
         }
-        return new Declaration(length,
-                MediaType.parse(metadata.get(DIRECTORY + video + ITEM + "Item:Mime")));
+        return null;
     }
 
     private static long positiveLong(String value) {
@@ -221,6 +213,19 @@ final class MotionPhoto {
     }
 
     /**
+     * The image as a file, or null where it was read from a stream that cannot
+     * go back to the start: a video out of reach is no reason to fail an image
+     * that parsed.
+     */
+    private static Path file(TikaInputStream tis) {
+        try {
+            return tis.getPath();
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /**
      * The file from the offset to its end.
      */
     private static InputStream region(Path file, long start) throws IOException {
@@ -235,21 +240,11 @@ final class MotionPhoto {
     }
 
     /**
-     * The usual extension of a type, {@code .mp4} for video/mp4.
+     * The usual extension of a type, {@code .mp4} for video/mp4, and none for
+     * a type the registry does not know: the declaration comes from the file,
+     * and a name is no place to repeat what it claims.
      */
     private static String extension(MediaType type) {
-        if (type == null) {
-            return "";
-        }
-        try {
-            String extension = MimeTypes.getDefaultMimeTypes().forName(type.toString())
-                    .getExtension();
-            if (!extension.isEmpty()) {
-                return extension;
-            }
-        } catch (MimeTypeException e) {
-            //fall through to the subtype
-        }
-        return "." + type.getSubtype();
+        return type == null ? "" : EmbeddedDocumentUtil.getExtensionForMediaType(type.toString());
     }
 }
