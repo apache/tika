@@ -17,7 +17,6 @@
 package org.apache.tika.parser.image;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -101,7 +100,7 @@ public class MotionPhotoVideoTest extends TikaTest {
 
     /**
      * The length fits the file, but what is there is not a video: no embedded
-     * document, and the image says why.
+     * document, and no complaint either.
      */
     @Test
     public void testDeclaredVideoIsNotOne(@TempDir Path tmp) throws Exception {
@@ -120,12 +119,13 @@ public class MotionPhotoVideoTest extends TikaTest {
                     new ParseContext(), false);
         }
         assertEquals(1, metadataList.size());
-        assertNotNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 
     /**
-     * A declared length the file cannot hold: no embedded document, and the
-     * image says why.
+     * A declared length the file cannot hold, which is what stripping the
+     * video out of a motion photo leaves: no embedded document, and no
+     * complaint about a file that is otherwise fine.
      */
     @Test
     public void testDeclaredLengthBeyondTheFile(@TempDir Path tmp) throws Exception {
@@ -143,6 +143,6 @@ public class MotionPhotoVideoTest extends TikaTest {
                     new ParseContext(), false);
         }
         assertEquals(1, metadataList.size());
-        assertNotNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 }

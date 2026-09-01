@@ -23,7 +23,6 @@ import java.nio.file.Path;
 
 import org.xml.sax.SAXException;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -90,7 +89,10 @@ final class MotionPhoto {
     /**
      * Emits the video as an embedded document, or nothing when the image
      * declares none, when the declared length does not fit the file, or when
-     * the bytes there are not recognized.
+     * the bytes there are not recognized. The last two are what sharing a
+     * motion photo out of a gallery leaves behind, a common enough thing that
+     * it is not worth an exception on a file that is otherwise fine; the XMP
+     * that promised the video is in the metadata for a client to see.
      */
     static void extract(TikaInputStream tis, Metadata metadata, XHTMLContentHandler xhtml,
                         ParseContext context) throws IOException, SAXException {
@@ -102,15 +104,10 @@ final class MotionPhoto {
         Path file = tis.getPath();
         long start = Files.size(file) - length;
         if (start <= 0) {
-            EmbeddedDocumentUtil.recordException(new TikaException(
-                    "motion photo video of " + length + " bytes does not fit the file"),
-                    metadata, context);
             return;
         }
         MediaType type = detect(file, start, context);
         if (type == null || MediaType.OCTET_STREAM.equals(type)) {
-            EmbeddedDocumentUtil.recordException(new TikaException(
-                    "no motion photo video at the declared offset"), metadata, context);
             return;
         }
         Metadata videoMetadata = Metadata.newInstance(context);
