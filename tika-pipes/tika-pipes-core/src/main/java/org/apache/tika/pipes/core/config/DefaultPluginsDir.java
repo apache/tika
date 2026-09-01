@@ -19,6 +19,9 @@ package org.apache.tika.pipes.core.config;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Resolves the default {@code plugins} directory when {@code plugin-roots}
  * is not configured (TIKA-4864). The probe order matches the install
@@ -36,6 +39,8 @@ import java.nio.file.Path;
  * parent's, so a relative default would make the two processes disagree.
  */
 public final class DefaultPluginsDir {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultPluginsDir.class);
 
     /**
      * The directory name probed in each location.
@@ -88,6 +93,11 @@ public final class DefaultPluginsDir {
                 }
             }
         }
-        return cwd.resolve(PLUGINS_DIR_NAME).toAbsolutePath();
+        Path fallback = cwd.resolve(PLUGINS_DIR_NAME).toAbsolutePath();
+        if (!Files.isDirectory(fallback)) {
+            LOG.warn("no plugins directory found in the install layout or at {}; "
+                    + "pipes plugins will not load unless plugin-roots is configured", fallback);
+        }
+        return fallback;
     }
 }
