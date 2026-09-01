@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * The video of a Google/Android motion photo, appended after the image and
+     described by the Motion Photo or MicroVideo XMP, is emitted as an
+     ATTACHMENT embedded document named motion-photo.<ext>. Nothing is emitted
+     when the declared length does not fit the file or the bytes there are not
+     recognized (TIKA-4869).
+
    * Raster previews for the vector thumbnails of Office documents: the new
      poi-metafile-renderer draws EMF and WMF images through POI (a PNG of
      a configurable width; Word's bitmap-in-WMF thumbnails from the bitmap
