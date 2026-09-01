@@ -19,7 +19,6 @@ package org.apache.tika.parser.csv;
 import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.PushbackReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,8 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.io.input.ProxyReader;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -39,7 +36,6 @@ class CSVSniffer {
     static final int CARRIAGE_RETURN = '\r';
     private static final int DEFAULT_MARK_LIMIT = 10000;
     private static final double DEFAULT_MIN_CONFIDENCE = 0.50;
-    private static final int PUSH_BACK = 2;
     private static final int SPACE = ' ';
 
     private final Set<Character> delimiters;
@@ -60,18 +56,53 @@ class CSVSniffer {
         if (!reader.markSupported()) {
             reader = new BufferedReader(reader);
         }
+        // Every snifflet examines the same window, so read it once into a buffer
+        // instead of once per delimiter through a mark/reset + pushback stack.
+        char[] buf = new char[markLimit];
+        reader.mark(markLimit);
+        int len = 0;
+        try {
+            while (len < markLimit) {
+                int n = reader.read(buf, len, markLimit - len);
+                if (n == -1) {
+                    break;
+                }
+                len += n;
+            }
+        } finally {
+            reader.reset();
+        }
+        boolean hasQuote = false;
+        for (int i = 0; i < len; i++) {
+            if (buf[i] == '"') {
+                hasQuote = true;
+                break;
+            }
+        }
         List<CSVResult> ret = new ArrayList<>();
         for (char delimiter : delimiters) {
-            reader.mark(markLimit);
-            try {
-                CSVResult result = new Snifflet(delimiter).sniff(reader);
-                ret.add(result);
-            } finally {
-                reader.reset();
+            // A window with no delimiter and no quote can only produce single-column
+            // rows: consistency and encapsulation are both 0, so the full pass is a
+            // foregone conclusion.
+            if (!hasQuote && !contains(buf, len, delimiter)) {
+                ret.add(new CSVResult(0.0,
+                        delimiter == '\t' ? TextAndCSVParser.TSV : TextAndCSVParser.CSV,
+                        delimiter));
+                continue;
             }
+            ret.add(new Snifflet(delimiter, buf, len).sniff());
         }
         Collections.sort(ret);
         return ret;
+    }
+
+    private static boolean contains(char[] buf, int len, char c) {
+        for (int i = 0; i < len; i++) {
+            if (buf[i] == c) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -135,28 +166,37 @@ class CSVSniffer {
         //hardcode this for now
         private final char quoteCharacter = '"';
 
+        // The shared window read once by sniff(Reader); pos is the cursor, so
+        // "unread" is a decrement and the mark-limit check is a bounds check.
+        private final char[] buf;
+        private final int len;
+        private int pos = 0;
+
         Map<Integer, MutableInt> rowLengthCounts = new HashMap<>();
-        int charsRead = 0;
         int colCount = 0;
         boolean rowZero = true;
         boolean rowZeroEmpty = false;
         int encapsulated = 0; //number of cells that are encapsulated in dquotes (for now)
         boolean parseException = false;
+        // Cell content is never analyzed (see the unquoted() TODO that was here);
+        // only whether the current cell is non-empty matters.
+        private int unquotedLen = 0;
 
-        public Snifflet(char delimiter) {
+        public Snifflet(char delimiter, char[] buf, int len) {
             this.delimiter = delimiter;
+            this.buf = buf;
+            this.len = len;
         }
 
-        CSVResult sniff(Reader r) throws IOException {
+        CSVResult sniff() throws IOException {
             boolean eof = false;
             boolean hitMarkLimit = false;
             int lastC = -1;
-            StringBuilder unquoted = new StringBuilder();
-            try (PushbackReader reader = new PushbackReader(new CloseShieldReader(r), PUSH_BACK)) {
-                int c = read(reader);
+            try {
+                int c = read();
                 while (c != EOF) {
                     if (c == quoteCharacter) {
-                        handleUnquoted(unquoted);
+                        unquotedLen = 0;
                         //test to make sure there isn't an unencapsulated quote character
                         // in the middle of a cell
                         if (lastC > -1 && lastC != delimiter && lastC != NEW_LINE &&
@@ -166,27 +206,27 @@ class CSVSniffer {
                         }
                         //TODO: test to make sure cell doesn't start with escaped
                         // ""the quick brown cat"
-                        boolean correctlyEncapsulated = consumeQuoted(reader, quoteCharacter);
+                        boolean correctlyEncapsulated = consumeQuoted(quoteCharacter);
                         if (!correctlyEncapsulated) {
                             parseException = true;
                             return calcResult();
                         }
                     } else if (c == delimiter) {
-                        handleUnquoted(unquoted);
+                        unquotedLen = 0;
                         endColumn();
-                        consumeSpaceCharacters(reader);
+                        consumeSpaceCharacters();
                     } else if (c == NEW_LINE || c == CARRIAGE_RETURN) {
-                        if (unquoted.length() > 0) {
+                        if (unquotedLen > 0) {
                             endColumn();
                         }
-                        handleUnquoted(unquoted);
+                        unquotedLen = 0;
                         endRow();
-                        consumeNewLines(reader);
+                        consumeNewLines();
                     } else {
-                        unquoted.append((char) c);
+                        unquotedLen++;
                     }
                     lastC = c;
-                    c = read(reader);
+                    c = read();
                 }
             } catch (HitMarkLimitException e) {
                 hitMarkLimit = true;
@@ -194,19 +234,13 @@ class CSVSniffer {
                 //totally ignore
             } catch (EOFException e) {
                 //the consume* throw this to avoid
-                //having to check -1 every time and
-                //having to rely on potentially wonky
-                //inputstreams not consistently returning -1
-                //after hitting EOF and returning the first -1.
-                //Yes.  That's a thing.
+                //having to check -1 every time
                 eof = true;
-            } finally {
-                r.reset();
             }
             //if you've hit the marklimit or an eof on a truncated file
             //don't add the last row's info
             if (!hitMarkLimit && !eof && lastC != NEW_LINE && lastC != CARRIAGE_RETURN) {
-                handleUnquoted(unquoted);
+                unquotedLen = 0;
                 endColumn();
                 endRow();
             }
@@ -222,22 +256,15 @@ class CSVSniffer {
             return new CSVResult(confidence, mediaType, delimiter);
         }
 
-        private void handleUnquoted(StringBuilder unquoted) {
-            if (unquoted.length() > 0) {
-                unquoted(unquoted.toString());
-                unquoted.setLength(0);
-            }
-        }
-
-        void consumeSpaceCharacters(PushbackReader reader) throws IOException {
-            int c = read(reader);
+        void consumeSpaceCharacters() throws IOException {
+            int c = read();
             while (c == SPACE) {
-                c = read(reader);
+                c = read();
             }
             if (c == EOF) {
                 throw new UnsurprisingEOF();
             }
-            unread(reader, c);
+            unread(c);
         }
 
 
@@ -249,15 +276,15 @@ class CSVSniffer {
          * @throws EOFException    if the file ended in the middle of the encapsulated section
          * @throws IOException     on other IOExceptions
          */
-        boolean consumeQuoted(PushbackReader reader, int quoteCharacter) throws IOException {
+        boolean consumeQuoted(int quoteCharacter) throws IOException {
             //this currently assumes excel "escaping" of double quotes:
             //'the " quick' -> "the "" quick"
             //we can make this more interesting later with other
             //escaping options
-            int c = read(reader);
+            int c = read();
             while (c != -1) {
                 if (c == quoteCharacter) {
-                    int nextC = read(reader);
+                    int nextC = read();
                     if (nextC == EOF) {
                         encapsulated++;
                         endColumn();
@@ -265,58 +292,57 @@ class CSVSniffer {
                     } else if (nextC != quoteCharacter) {
                         encapsulated++;
                         endColumn();
-                        unread(reader, nextC);
-                        consumeSpaceCharacters(reader);
+                        unread(nextC);
+                        consumeSpaceCharacters();
                         //now make sure that the next character is eof, \r\n
                         //or a delimiter
-                        nextC = read(reader);
+                        nextC = read();
                         if (nextC == EOF) {
                             throw new UnsurprisingEOF();
                         } else if (nextC == NEW_LINE || nextC == CARRIAGE_RETURN) {
-                            unread(reader, nextC);
+                            unread(nextC);
                             return true;
                         } else if (nextC != delimiter) {
-                            unread(reader, nextC);
+                            unread(nextC);
                             return false;
                         }
-                        unread(reader, nextC);
+                        unread(nextC);
                         return true;
                     }
                 }
-                c = read(reader);
+                c = read();
             }
             throw new EOFException();
         }
 
-        private int read(PushbackReader reader) throws IOException {
-            if (charsRead >= markLimit - 1) {
+        private int read() throws IOException {
+            // pos tracks chars consumed exactly as charsRead did (unread decrements
+            // both), so the original off-by-one mark-limit semantics are preserved.
+            if (pos >= markLimit - 1) {
                 throw new HitMarkLimitException();
             }
-            int c = reader.read();
-            if (c == EOF) {
+            if (pos >= len) {
                 return EOF;
             }
-            charsRead++;
-            return c;
+            return buf[pos++];
         }
 
-        private void unread(PushbackReader reader, int c) throws IOException {
+        private void unread(int c) {
             if (c != EOF) {
-                reader.unread(c);
-                charsRead--;
+                pos--;
             }
         }
 
         //consume all consecutive '\r\n' in any order
-        void consumeNewLines(PushbackReader reader) throws IOException {
-            int c = read(reader);
+        void consumeNewLines() throws IOException {
+            int c = read();
             while (c == NEW_LINE || c == CARRIAGE_RETURN) {
-                c = read(reader);
+                c = read();
             }
             if (c == EOF) {
                 throw new EOFException();
             }
-            unread(reader, c);
+            unread(c);
         }
 
 
@@ -338,11 +364,6 @@ class CSVSniffer {
             }
             colCount = 0;
             rowZero = false;
-        }
-
-        void unquoted(String string) {
-            //TODO -- do some analysis to make sure you don't have
-            //large tokens like 2,3,2,3,2,3,
         }
 
         double getConfidence() {
@@ -400,14 +421,4 @@ class CSVSniffer {
 
     }
 
-    private static class CloseShieldReader extends ProxyReader {
-        public CloseShieldReader(Reader r) {
-            super(r);
-        }
-
-        @Override
-        public void close() throws IOException {
-            //do nothing
-        }
-    }
 }

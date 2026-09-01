@@ -1,5 +1,12 @@
 Release 4.1.0 - unreleased
 
+   * CSVSniffer reads its detection window once into a shared buffer and
+     runs every delimiter hypothesis against it, instead of re-reading the
+     stream through a pushback/mark-reset stack per delimiter; windows with
+     no delimiter and no quote skip the scan outright. Identical results
+     on a 1,125-file differential; ~28% off small-text parse time in
+     tika-server (TIKA-4868).
+
    * Pipes workers no longer stall between pre-parse and parse waiting
      for the client to acknowledge the intermediate-result frame; the
      ACK round trip now overlaps the parse. Adds opt-in per-request
