@@ -18,6 +18,7 @@ package org.apache.tika.parser.mp4.boxes;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.drew.lang.SequentialByteArrayReader;
 import com.drew.lang.SequentialReader;
@@ -52,15 +53,30 @@ public class TikaUserDataBox {
     private String coordinateString;
 
     private boolean isQuickTime = false;
+    //covr carries no picture type, so the first cover of the file is the
+    //thumbnail; the count is shared across the file's udta boxes
+    private final AtomicInteger coverCount;
     private final Metadata metadata;
     private final XHTMLContentHandler xhtml;
     private final ParseContext parseContext;
     public TikaUserDataBox(@NotNull String box, byte[] payload, Metadata metadata,
                            XHTMLContentHandler xhtml, ParseContext parseContext)
             throws IOException, SAXException {
+        this(box, payload, metadata, xhtml, parseContext, new AtomicInteger());
+    }
+
+    /**
+     * @param coverCount the number of cover images already emitted for the
+     *                   file, shared across its udta boxes
+     */
+    public TikaUserDataBox(@NotNull String box, byte[] payload, Metadata metadata,
+                           XHTMLContentHandler xhtml, ParseContext parseContext,
+                           AtomicInteger coverCount)
+            throws IOException, SAXException {
         this.metadata = metadata;
         this.xhtml = xhtml;
         this.parseContext = parseContext;
+        this.coverCount = coverCount;
         int length = payload.length;
         SequentialReader reader = new SequentialByteArrayReader(payload);
         while (reader.getPosition() < (long) length) {
@@ -228,16 +244,19 @@ public class TikaUserDataBox {
 
 
     /**
-     * Sends one embedded cover image to the embedded document extractor.
-     * The image only becomes an embedded document, no metadata is recorded
-     * on the audio document itself.
+     * Sends one embedded cover image to the embedded document extractor:
+     * the first as the file's thumbnail, any further one as an inline
+     * picture. The image only becomes an embedded document, no metadata is
+     * recorded on the audio document itself.
      */
     private void handleCoverArt(SequentialReader reader, long valueType, int length)
             throws IOException {
         byte[] picture = reader.getBytes(length);
         Metadata pictureMetadata = Metadata.newInstance(parseContext);
         pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+                (coverCount.getAndIncrement() == 0
+                        ? TikaCoreProperties.EmbeddedResourceType.THUMBNAIL
+                        : TikaCoreProperties.EmbeddedResourceType.INLINE).name());
         //the data atom's well-known value type declares the image format;
         //for any other type leave the content type for auto-detection
         if (valueType == 13) {
