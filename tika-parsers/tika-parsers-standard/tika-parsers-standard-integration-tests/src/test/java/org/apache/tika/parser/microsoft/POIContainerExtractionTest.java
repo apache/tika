@@ -160,10 +160,10 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(TYPE_PNG, handler.mediaTypes.get(15)); //    PNG inside .xls
 
 
-        // PowerPoint with excel and word
+        // PowerPoint with excel and word; its SummaryInformation thumbnail comes last
         handler = process("testPPT_embeded.ppt", extractor, false);
-        assertEquals(7, handler.filenames.size());
-        assertEquals(7, handler.mediaTypes.size());
+        assertEquals(8, handler.filenames.size());
+        assertEquals(8, handler.mediaTypes.size());
 
         // Embedded objects get OLE IDs, slide images now get generated names
         assertEquals("1", handler.filenames.get(0));
@@ -171,6 +171,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         for (int i = 2; i < 7; i++) {
             assertNotNull(handler.filenames.get(i));
         }
+        assertEquals("thumbnail.wmf", handler.filenames.get(7));
         // But we do know their types
         assertEquals(TYPE_XLS, handler.mediaTypes.get(0)); // Embedded office doc
         assertEquals(TYPE_DOC, handler.mediaTypes.get(1)); // Embedded office doc
@@ -179,11 +180,12 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(TYPE_PNG, handler.mediaTypes.get(4)); // Embedded image
         assertEquals(TYPE_PNG, handler.mediaTypes.get(5)); // Embedded image
         assertEquals(TYPE_PNG, handler.mediaTypes.get(6)); // Embedded image
+        assertEquals(TYPE_WMF, handler.mediaTypes.get(7)); // Document thumbnail
 
         // Run again on PowerPoint but with recursion
         handler = process("testPPT_embeded.ppt", extractor, true);
-        assertEquals(11, handler.filenames.size());
-        assertEquals(11, handler.mediaTypes.size());
+        assertEquals(12, handler.filenames.size());
+        assertEquals(12, handler.mediaTypes.size());
 
         assertEquals("1", handler.filenames.get(0));
         assertEquals(null, handler.filenames.get(1));
@@ -195,6 +197,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         for (int i = 6; i < 11; i++) {
             assertNotNull(handler.filenames.get(i));
         }
+        assertEquals("thumbnail.wmf", handler.filenames.get(11));
 
         assertEquals(TYPE_XLS, handler.mediaTypes.get(0)); // Embedded office doc
         assertEquals(TYPE_PNG, handler.mediaTypes.get(1)); //    PNG inside .xls
@@ -207,6 +210,7 @@ public class POIContainerExtractionTest extends AbstractPOIContainerExtractionTe
         assertEquals(TYPE_PNG, handler.mediaTypes.get(8)); // Embedded image
         assertEquals(TYPE_PNG, handler.mediaTypes.get(9)); // Embedded image
         assertEquals(TYPE_PNG, handler.mediaTypes.get(10)); // Embedded image
+        assertEquals(TYPE_WMF, handler.mediaTypes.get(11)); // Document thumbnail
 
 
         // Word, with a non-office file (PDF)

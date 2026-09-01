@@ -17,15 +17,31 @@
 package org.apache.tika.parser.microsoft;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
 
 public class EMFParserTest extends TikaTest {
 
@@ -52,6 +68,151 @@ public class EMFParserTest extends TikaTest {
         assertContains("some word doc", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertContains("a very long name that should be wrapped.docx",
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    /**
+     * Rendering is off by default: an EMF yields no embedded document of
+     * its own.
+     */
+    @Test
+    public void testNoRenderingByDefault() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testEMF.emf");
+        assertEquals(1, metadataList.size());
+    }
+
+    @Test
+    public void testRenderingFromConfig() throws Exception {
+        Parser parser = TikaLoader
+                .load(getConfigPath(EMFParserTest.class, "tika-config-emf-render.json"))
+                .loadParsers();
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "testEMF.emf");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/emf");
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testEMF.emf", parser, metadata, new ParseContext(), false);
+        assertEquals(2, metadataList.size());
+        assertRendering(metadataList.get(1), "testEMF.png",
+                TikaCoreProperties.EmbeddedResourceType.RENDERING);
+    }
+
+    /**
+     * The per-request form: the parser config is supplied through the
+     * ParseContext, as tika-server does for a multipart config part.
+     */
+    @Test
+    public void testRenderingFromParseContext() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("emf-parser", "{\"renderImage\": true}");
+        List<Metadata> metadataList = getRecursiveMetadata("testEMF.emf", context);
+        assertEquals(2, metadataList.size());
+        assertRendering(metadataList.get(1), "testEMF.png",
+                TikaCoreProperties.EmbeddedResourceType.RENDERING);
+        assertEquals("1", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_DEPTH));
+    }
+
+    /**
+     * The docProps thumbnail of a Word document is an EMF; with rendering on
+     * its PNG rendering follows it, one level deeper.
+     */
+    @Test
+    public void testDocxThumbnailRendering() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("emf-parser", "{\"renderImage\": true, \"renderWidth\": 200}");
+        List<Metadata> metadataList = getRecursiveMetadata("testDOCX_Thumbnail.docx", context);
+        //the document, its thumbnail, the WMF picture inside the thumbnail's
+        //EMF and the thumbnail's rendering
+        assertEquals(4, metadataList.size());
+        Metadata thumbnail = byName(metadataList, "thumbnail.emf");
+        assertEquals("image/emf", thumbnail.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name(),
+                thumbnail.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals("1", thumbnail.get(TikaCoreProperties.EMBEDDED_DEPTH));
+        Metadata rendering = byName(metadataList, "thumbnail.png");
+        assertRendering(rendering, "thumbnail.png",
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL);
+        assertEquals("2", rendering.get(TikaCoreProperties.EMBEDDED_DEPTH));
+        assertEquals("/thumbnail.emf/thumbnail.png",
+                rendering.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+    }
+
+    /**
+     * Restricted to THUMBNAIL embedded documents, the parser renders the
+     * document's thumbnail but not a picture that is merely embedded.
+     */
+    @Test
+    public void testRenderOnlyThumbnails() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("emf-parser",
+                "{\"renderImage\": true, \"renderOnlyEmbeddedResourceTypes\": [\"THUMBNAIL\"]}");
+        List<Metadata> metadataList = getRecursiveMetadata("testDOCX_Thumbnail.docx", context);
+        assertRendering(byName(metadataList, "thumbnail.png"), "thumbnail.png",
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL);
+
+        //a bare EMF is the document itself, not a THUMBNAIL: no rendering
+        metadataList = getRecursiveMetadata("testEMF.emf", context);
+        assertEquals(1, metadataList.size());
+    }
+
+    /**
+     * The configured width reaches the renderer the parser was handed, which
+     * is the SPI-injected one in a default setup, not the parser's own
+     * instance.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {200, 400})
+    public void testRenderWidth(int width) throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("emf-parser",
+                "{\"renderImage\": true, \"renderWidth\": " + width + "}");
+        List<byte[]> renderings = new ArrayList<>();
+        context.set(EmbeddedDocumentExtractor.class, collector(renderings));
+        try (InputStream is = getResourceAsStream("/test-documents/testEMF.emf")) {
+            AUTO_DETECT_PARSER.parse(TikaInputStream.get(is), new BodyContentHandler(-1),
+                    new Metadata(), context);
+        }
+        assertEquals(1, renderings.size());
+        //the PNG header carries the width at offset 16
+        assertEquals(width, ByteBuffer.wrap(renderings.get(0), 16, 4).getInt());
+    }
+
+    private static EmbeddedDocumentExtractor collector(List<byte[]> renderings) {
+        return new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                                      Metadata metadata, ParseContext parseContext,
+                                      boolean outputHtml) throws IOException {
+                renderings.add(stream.readAllBytes());
+            }
+        };
+    }
+
+    private static Metadata byName(List<Metadata> metadataList, String name) {
+        for (Metadata m : metadataList) {
+            if (name.equals(m.get(TikaCoreProperties.RESOURCE_NAME_KEY))) {
+                return m;
+            }
+        }
+        throw new AssertionError("no embedded document named " + name);
+    }
+
+    /**
+     * There is no image parser on this module's test classpath, so the PNG
+     * is checked by its type, name and size rather than its dimensions.
+     * The rendering of a THUMBNAIL is a THUMBNAIL, any other a RENDERING.
+     */
+    private static void assertRendering(Metadata rendering, String name,
+                                        TikaCoreProperties.EmbeddedResourceType type) {
+        assertEquals("image/png", rendering.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(type.name(), rendering.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(name, rendering.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("poi-metafile-renderer", rendering.get(Rendering.RENDERED_BY));
+        assertTrue(Long.parseLong(rendering.get(HttpHeaders.CONTENT_LENGTH)) > 100);
+        assertNull(rendering.get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
     }
 
     @Test
