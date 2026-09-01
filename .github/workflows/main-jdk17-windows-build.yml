@@ -61,4 +61,8 @@ jobs:
         # The -Duser.* args MUST stay quoted: PowerShell splits an unquoted dotted
         # -D property before it reaches mvn, so the locale silently never applies
         # and the leftover fragment fails the build as an unknown lifecycle phase.
+        # No -T1C here (TIKA-4867): this is the heaviest job (locale + e2e + javadoc)
+        # on a 4-core runner; parallel modules starved the tika-server integration
+        # tests into startup timeouts. Serial reactor also needs no annotation-
+        # processor pre-install.
         run: mvn clean test install javadoc:aggregate -Pci -Pe2e "-Duser.language=de" "-Duser.country=DE" -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
