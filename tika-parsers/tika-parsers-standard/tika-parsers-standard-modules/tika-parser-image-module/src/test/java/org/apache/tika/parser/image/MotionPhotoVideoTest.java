@@ -84,6 +84,44 @@ public class MotionPhotoVideoTest extends TikaTest {
     }
 
     /**
+     * Sharing a motion photo out of the Android gallery leaves the image with
+     * the Camera:MotionPhoto flag but without the video and without the
+     * directory that would locate it: nothing to emit, and nothing to
+     * complain about.
+     */
+    @Test
+    public void testMotionPhotoFlagWithoutAVideo() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata("testJPEG_MotionPhoto_noVideo.jpg");
+        assertEquals(1, metadataList.size());
+        assertEquals("1", metadataList.get(0).get("Camera:MotionPhoto"));
+        assertNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    /**
+     * The length fits the file, but what is there is not a video: no embedded
+     * document, and the image says why.
+     */
+    @Test
+    public void testDeclaredVideoIsNotOne(@TempDir Path tmp) throws Exception {
+        byte[] file;
+        try (InputStream is = getResourceAsStream("/test-documents/testJPEG_MotionPhoto.jpg")) {
+            file = is.readAllBytes();
+        }
+        //keep the length, replace the video with something unrecognizable
+        java.util.Arrays.fill(file, file.length - 1583, file.length, (byte) 0);
+        Path overwritten = tmp.resolve("no-video.jpg");
+        Files.write(overwritten, file);
+
+        List<Metadata> metadataList;
+        try (TikaInputStream tis = TikaInputStream.get(overwritten)) {
+            metadataList = getRecursiveMetadata(tis, AUTO_DETECT_PARSER, new Metadata(),
+                    new ParseContext(), false);
+        }
+        assertEquals(1, metadataList.size());
+        assertNotNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    /**
      * A declared length the file cannot hold: no embedded document, and the
      * image says why.
      */
