@@ -68,8 +68,16 @@ public class MetafileParserConfig implements Serializable {
     }
 
     public void setRenderOnlyEmbeddedResourceTypes(Set<String> renderOnlyEmbeddedResourceTypes) {
-        this.renderOnlyEmbeddedResourceTypes = renderOnlyEmbeddedResourceTypes == null
-                ? new HashSet<>() : new HashSet<>(renderOnlyEmbeddedResourceTypes);
+        if (renderOnlyEmbeddedResourceTypes == null) {
+            this.renderOnlyEmbeddedResourceTypes = new HashSet<>();
+            return;
+        }
+        Set<String> types = new HashSet<>();
+        for (String type : renderOnlyEmbeddedResourceTypes) {
+            //a typo would silently disable rendering
+            types.add(TikaCoreProperties.EmbeddedResourceType.valueOf(type).name());
+        }
+        this.renderOnlyEmbeddedResourceTypes = types;
     }
 
     /**

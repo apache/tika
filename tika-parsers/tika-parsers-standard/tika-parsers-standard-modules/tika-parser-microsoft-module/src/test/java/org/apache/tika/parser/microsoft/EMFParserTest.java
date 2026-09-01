@@ -20,18 +20,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.extractor.EmbeddedDocumentExtractor;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.sax.BodyContentHandler;
 
 public class EMFParserTest extends TikaTest {
 
@@ -141,6 +151,44 @@ public class EMFParserTest extends TikaTest {
         //a bare EMF is the document itself, not a THUMBNAIL: no rendering
         metadataList = getRecursiveMetadata("testEMF.emf", context);
         assertEquals(1, metadataList.size());
+    }
+
+    /**
+     * The configured width reaches the renderer the parser was handed, which
+     * is the SPI-injected one in a default setup, not the parser's own
+     * instance.
+     */
+    @ParameterizedTest
+    @ValueSource(ints = {200, 400})
+    public void testRenderWidth(int width) throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("emf-parser",
+                "{\"renderImage\": true, \"renderWidth\": " + width + "}");
+        List<byte[]> renderings = new ArrayList<>();
+        context.set(EmbeddedDocumentExtractor.class, collector(renderings));
+        try (InputStream is = getResourceAsStream("/test-documents/testEMF.emf")) {
+            AUTO_DETECT_PARSER.parse(TikaInputStream.get(is), new BodyContentHandler(-1),
+                    new Metadata(), context);
+        }
+        assertEquals(1, renderings.size());
+        //the PNG header carries the width at offset 16
+        assertEquals(width, ByteBuffer.wrap(renderings.get(0), 16, 4).getInt());
+    }
+
+    private static EmbeddedDocumentExtractor collector(List<byte[]> renderings) {
+        return new EmbeddedDocumentExtractor() {
+            @Override
+            public boolean shouldParseEmbedded(Metadata metadata, ParseContext parseContext) {
+                return true;
+            }
+
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                                      Metadata metadata, ParseContext parseContext,
+                                      boolean outputHtml) throws IOException {
+                renderings.add(stream.readAllBytes());
+            }
+        };
     }
 
     private static Metadata byName(List<Metadata> metadataList, String name) {

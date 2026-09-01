@@ -19,8 +19,10 @@ package org.apache.tika.parser.microsoft;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -92,6 +94,31 @@ public class OLE2ThumbnailTest extends TikaTest {
     public void testUnusableThumbnailIsSkipped() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testEXCEL_embeddedPDF_mac.xls");
         assertEquals(0, count(metadataList, TikaCoreProperties.EmbeddedResourceType.THUMBNAIL));
+    }
+
+    /**
+     * The thumbnail can be switched off for callers that do not want the
+     * extra embedded document.
+     */
+    @Test
+    public void testThumbnailCanBeSwitchedOff() throws Exception {
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setExtractThumbnail(false);
+        ParseContext context = new ParseContext();
+        context.set(OfficeParserConfig.class, config);
+        List<Metadata> metadataList = getRecursiveMetadata("testPPT_various.ppt", context);
+        assertEquals(0, count(metadataList, TikaCoreProperties.EmbeddedResourceType.THUMBNAIL));
+    }
+
+    /**
+     * A misspelt resource type would silently disable rendering.
+     */
+    @Test
+    public void testRenderOnlyTypesAreValidated() {
+        MetafileParserConfig config = new MetafileParserConfig();
+        assertThrows(IllegalArgumentException.class,
+                () -> config.setRenderOnlyEmbeddedResourceTypes(
+                        Collections.singleton("THUMBNAILS")));
     }
 
     private static Metadata byTypeAndContentType(List<Metadata> metadataList,

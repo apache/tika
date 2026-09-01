@@ -23,6 +23,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -54,8 +55,8 @@ final class MetafileRendering {
      * @param picture  the parsed {@code HemfPicture} or {@code HwmfPicture}
      */
     static void render(Renderer injected, MetafileParserConfig config, MediaType type,
-                       Object picture, XHTMLContentHandler xhtml, Metadata metadata,
-                       ParseContext context) throws IOException, SAXException {
+                       TikaInputStream source, Object picture, XHTMLContentHandler xhtml,
+                       Metadata metadata, ParseContext context) throws IOException, SAXException {
         //like the PDF parser: the injected renderer if it handles the type,
         //the default one otherwise
         Renderer renderer = injected != null && injected.getSupportedTypes(context).contains(type)
@@ -64,7 +65,17 @@ final class MetafileRendering {
         renderMetadata.set(TikaCoreProperties.TYPE, type.toString());
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        try (TikaInputStream pictureStream = TikaInputStream.get(new byte[0]);
+        //rendering is the expensive part: ask before paying for it. The name
+        //assumes the renderer's default format; the result's own metadata
+        //replaces it below.
+        Metadata gate = Metadata.newInstance(context);
+        gate.set(TikaCoreProperties.RESOURCE_NAME_KEY, renderingName(metadata, "png"));
+        gate.set(HttpHeaders.CONTENT_TYPE, "image/png");
+        gate.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, renderingType(metadata).name());
+        if (!extractor.shouldParseEmbedded(gate, context)) {
+            return;
+        }
+        try (TikaInputStream pictureStream = pictureStream(source);
              RenderResults results = render(renderer, pictureStream, picture, renderMetadata,
                      metadata, context)) {
             if (results == null) {
@@ -86,12 +97,9 @@ final class MetafileRendering {
                 }
                 Metadata renderingMetadata = result.getMetadata();
                 renderingMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY,
-                        renderingName(metadata, renderingMetadata));
-                if (TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name()
-                        .equals(metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE))) {
-                    renderingMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                            TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name());
-                }
+                        renderingName(metadata, extension(renderingMetadata)));
+                renderingMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                        renderingType(metadata).name());
                 if (extractor.shouldParseEmbedded(renderingMetadata, context)) {
                     try (TikaInputStream tis = result.getInputStream()) {
                         extractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
@@ -100,6 +108,36 @@ final class MetafileRendering {
                 }
             }
         }
+    }
+
+    /**
+     * The stream the renderer reads the picture from: the metafile itself
+     * where the parser spooled it, so a renderer that does not know the
+     * open-container shortcut still sees the bytes.
+     */
+    private static TikaInputStream pictureStream(TikaInputStream source) throws IOException {
+        if (source != null && source.hasFile()) {
+            return TikaInputStream.get(source.getPath());
+        }
+        return TikaInputStream.get(new byte[0]);
+    }
+
+    /**
+     * The rendering of a THUMBNAIL is itself a THUMBNAIL: it is the same
+     * picture in a form a client can display. Any other rendering is a
+     * RENDERING.
+     */
+    private static TikaCoreProperties.EmbeddedResourceType renderingType(Metadata metadata) {
+        return TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name()
+                .equals(metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE))
+                ? TikaCoreProperties.EmbeddedResourceType.THUMBNAIL
+                : TikaCoreProperties.EmbeddedResourceType.RENDERING;
+    }
+
+    private static String extension(Metadata renderingMetadata) {
+        String contentType = renderingMetadata.get(HttpHeaders.CONTENT_TYPE);
+        return contentType != null && contentType.startsWith("image/")
+                ? contentType.substring("image/".length()) : "png";
     }
 
     /**
@@ -131,20 +169,15 @@ final class MetafileRendering {
     }
 
     /**
-     * The rendering is named after the image, with the rendering's format
-     * as its extension.
+     * The rendering is named after the image, with the rendering's format as
+     * its extension.
      */
-    private static String renderingName(Metadata metadata, Metadata renderingMetadata) {
-        String contentType = renderingMetadata.get(HttpHeaders.CONTENT_TYPE);
-        String extension = contentType != null && contentType.startsWith("image/")
-                ? contentType.substring("image/".length()) : "png";
-        String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+    private static String renderingName(Metadata metadata, String extension) {
+        String name = FilenameUtils.getName(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         if (name == null || name.isEmpty()) {
             return "rendering." + extension;
         }
-        int slash = Math.max(name.lastIndexOf('/'), name.lastIndexOf('\\'));
-        String base = name.substring(slash + 1);
-        int dot = base.lastIndexOf('.');
-        return (dot > 0 ? base.substring(0, dot) : base) + "." + extension;
+        int dot = name.lastIndexOf('.');
+        return (dot > 0 ? name.substring(0, dot) : name) + "." + extension;
     }
 }

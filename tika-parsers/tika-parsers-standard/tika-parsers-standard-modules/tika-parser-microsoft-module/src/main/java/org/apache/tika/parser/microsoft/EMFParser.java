@@ -37,7 +37,6 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -48,8 +47,6 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -79,24 +76,26 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * Word document.
  */
 @TikaComponent
-public class EMFParser implements Parser, RenderingParser {
+public class EMFParser extends AbstractMetafileParser {
 
     public static Property EMF_ICON_ONLY = Property.internalBoolean("emf:icon-only");
     public static Property EMF_ICON_STRING = Property.internalText("emf:icon-string");
-
-    private final MetafileParserConfig defaultConfig;
-    private Renderer renderer;
 
     public EMFParser() {
         this(new MetafileParserConfig());
     }
 
     public EMFParser(MetafileParserConfig config) {
-        this.defaultConfig = config;
+        super(config);
     }
 
     public EMFParser(JsonConfig jsonConfig) {
         this(ConfigDeserializer.buildConfig(jsonConfig, MetafileParserConfig.class));
+    }
+
+    @Override
+    String componentName() {
+        return "emf-parser";
     }
 
     private static String ICON_ONLY = "IconOnly";
@@ -133,6 +132,8 @@ public class EMFParser implements Parser, RenderingParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         try {
+            MetafileParserConfig config = getConfig(context);
+            prepareForRendering(tis, config, metadata);
             HemfPicture ex = new HemfPicture(tis);
             ParseState parseState = new ParseState();
             long fudgeFactorX = 10;//derive this from the font or frame/bounds information
@@ -170,10 +171,9 @@ public class EMFParser implements Parser, RenderingParser {
                 xhtml.characters(buffer.toString());
                 xhtml.endElement("p");
             }
-            MetafileParserConfig config = getConfig(context);
             if (config.shouldRender(metadata)) {
-                MetafileRendering.render(renderer, config, MEDIA_TYPE, ex, xhtml, metadata,
-                        context);
+                MetafileRendering.render(getRenderer(), config, MEDIA_TYPE, tis, ex, xhtml,
+                        metadata, context);
             }
 
         } catch (RecordFormatException e) { //POI's hemfparser can throw these for "parse
@@ -183,21 +183,6 @@ public class EMFParser implements Parser, RenderingParser {
             throw new TikaException(e.getMessage(), e);
         }
         xhtml.endDocument();
-    }
-
-    private MetafileParserConfig getConfig(ParseContext context)
-            throws TikaException, IOException {
-        return ParseContextConfig.getConfig(context, "emf-parser",
-                MetafileParserConfig.class, defaultConfig);
-    }
-
-    @Override
-    public void setRenderer(Renderer renderer) {
-        this.renderer = renderer;
-    }
-
-    public Renderer getRenderer() {
-        return renderer;
     }
 
     private void handleExtTextOut(HemfText.EmfExtTextOutA record, ParseState parseState,

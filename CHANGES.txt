@@ -9,7 +9,8 @@ Release 4.1.0 - unreleased
      default and restrictable to e.g. THUMBNAIL embedded documents with
      "renderOnlyEmbeddedResourceTypes", and OfficeParser emits the
      SummaryInformation thumbnail of the OLE2 formats (a WMF) as a THUMBNAIL
-     embedded document, as the OOXML parsers do with the docProps thumbnail
+     embedded document, as the OOXML parsers do with the docProps thumbnail,
+     switchable with "office-parser": {"extractThumbnail": false}
      (TIKA-4855).
      
    * Audio cover art is emitted as a THUMBNAIL embedded document, like the

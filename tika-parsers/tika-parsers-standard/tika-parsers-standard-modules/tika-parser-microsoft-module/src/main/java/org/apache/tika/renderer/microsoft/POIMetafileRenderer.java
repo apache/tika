@@ -38,6 +38,7 @@ import org.apache.poi.hwmf.record.HwmfRecord;
 import org.apache.poi.hwmf.usermodel.HwmfPicture;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -48,6 +49,7 @@ import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.MetafileParserConfig;
 import org.apache.tika.renderer.RenderRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
@@ -79,6 +81,14 @@ public class POIMetafileRenderer implements Renderer {
 
     private static final int MAX_WIDTH = 10000;
 
+    /**
+     * A metafile declares its own aspect ratio, so a hostile one could ask
+     * for an arbitrarily tall canvas at any width. The renderer refuses
+     * beyond this height; an OutOfMemoryError would escape every catch in
+     * the parse.
+     */
+    private static final int MAX_HEIGHT = 10000;
+
     private int width = 800;
     private String imageFormatName = "png";
 
@@ -107,6 +117,7 @@ public class POIMetafileRenderer implements Renderer {
             parseContext.set(RenderingTracker.class, tracker);
         }
         int id = tracker.getNextId();
+        int width = width(parseContext, metadata);
         Metadata renderingMetadata = Metadata.newInstance(parseContext);
         renderingMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
@@ -114,7 +125,7 @@ public class POIMetafileRenderer implements Renderer {
         try {
             long start = System.currentTimeMillis();
             BufferedImage image = picture instanceof HemfPicture
-                    ? draw((HemfPicture) picture) : draw((HwmfPicture) picture);
+                    ? draw((HemfPicture) picture, width) : draw((HwmfPicture) picture, width);
             Path tmpFile = write(image, id);
             renderingMetadata.set(Rendering.RENDERED_MS, System.currentTimeMillis() - start);
             renderingMetadata.add(Rendering.RENDERED_BY, RENDERED_BY);
@@ -132,9 +143,9 @@ public class POIMetafileRenderer implements Renderer {
         return results;
     }
 
-    private BufferedImage draw(HemfPicture picture) throws IOException {
+    private BufferedImage draw(HemfPicture picture, int width) throws IOException {
         Dimension2D size = picture.getSize();
-        BufferedImage image = canvas(size);
+        BufferedImage image = canvas(size, width);
         Graphics2D graphics = image.createGraphics();
         try {
             picture.draw(graphics, new Rectangle2D.Double(0, 0, image.getWidth(),
@@ -145,19 +156,20 @@ public class POIMetafileRenderer implements Renderer {
         return image;
     }
 
-    private BufferedImage draw(HwmfPicture picture) throws IOException {
+    private BufferedImage draw(HwmfPicture picture, int width) throws IOException {
         Dimension2D size;
         try {
             size = picture.getSize();
-        } catch (RuntimeException e) {
-            //no usable window records: a bitmap wrapped in a metafile
+        } catch (IllegalStateException e) {
+            //POI throws this for "window records are incomplete": a bitmap
+            //wrapped in a metafile, as Word's .doc thumbnails are
             BufferedImage bitmap = firstBitmap(picture);
             if (bitmap == null) {
                 throw new IOException("WMF without bounds and without a bitmap", e);
             }
-            return scale(bitmap);
+            return scale(bitmap, width);
         }
-        BufferedImage image = canvas(size);
+        BufferedImage image = canvas(size, width);
         Graphics2D graphics = image.createGraphics();
         try {
             picture.draw(graphics, new Rectangle2D.Double(0, 0, image.getWidth(),
@@ -180,12 +192,34 @@ public class POIMetafileRenderer implements Renderer {
         return null;
     }
 
-    private BufferedImage canvas(Dimension2D size) throws IOException {
+    /**
+     * The width of the rendering: the {@code renderWidth} of the metafile
+     * parser's configuration where the parse has one, else this renderer's
+     * own {@link #setWidth(int)}. The parser configuration wins so that a
+     * request configuring {@code "emf-parser": {"renderWidth": N}} reaches
+     * the renderer the parser was handed, which need not be this instance.
+     */
+    private int width(ParseContext parseContext, Metadata metadata)
+            throws IOException, TikaException {
+        MetafileParserConfig config = parseContext.get(MetafileParserConfig.class);
+        if (config == null) {
+            String component = WMF.toString().equals(metadata.get(TikaCoreProperties.TYPE))
+                    ? "wmf-parser" : "emf-parser";
+            if (parseContext.getJsonConfig(component) == null) {
+                return width;
+            }
+            config = ParseContextConfig.getConfig(parseContext, component,
+                    MetafileParserConfig.class, new MetafileParserConfig());
+        }
+        return config.getRenderWidth();
+    }
+
+    private BufferedImage canvas(Dimension2D size, int width) throws IOException {
         if (size == null || size.getWidth() <= 0 || size.getHeight() <= 0) {
             throw new IOException("metafile without a usable size: " + size);
         }
-        int height = (int) Math.max(1, Math.round(size.getHeight() * width / size.getWidth()));
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(width, height(size.getWidth(), size.getHeight(),
+                width), BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
         try {
             graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -195,16 +229,31 @@ public class POIMetafileRenderer implements Renderer {
             graphics.setRenderingHint(RenderingHints.KEY_RENDERING,
                     RenderingHints.VALUE_RENDER_QUALITY);
             graphics.setColor(Color.WHITE);
-            graphics.fillRect(0, 0, width, height);
+            graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
         } finally {
             graphics.dispose();
         }
         return image;
     }
 
-    private BufferedImage scale(BufferedImage bitmap) {
-        int height = (int) Math.max(1,
-                Math.round((double) bitmap.getHeight() * width / bitmap.getWidth()));
+    /**
+     * The height that keeps the aspect ratio at the rendering's width.
+     *
+     * @throws IOException if the ratio asks for an image taller than
+     *                     {@link #MAX_HEIGHT}
+     */
+    private static int height(double sourceWidth, double sourceHeight, int width)
+            throws IOException {
+        long height = Math.max(1, Math.round(sourceHeight * width / sourceWidth));
+        if (height > MAX_HEIGHT) {
+            throw new IOException("metafile aspect ratio asks for a " + height
+                    + " pixel high rendering at width " + width + ", the maximum is " + MAX_HEIGHT);
+        }
+        return (int) height;
+    }
+
+    private BufferedImage scale(BufferedImage bitmap, int width) throws IOException {
+        int height = height(bitmap.getWidth(), bitmap.getHeight(), width);
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D graphics = image.createGraphics();
         try {

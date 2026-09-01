@@ -307,13 +307,17 @@ public class OfficeParser extends AbstractOfficeParser {
                 //  is extracted, which happened above
                 break;
         }
-        handleThumbnail(summaryExtractor.getThumbnailWmf(), xhtml, context);
+        OfficeParserConfig config = context.get(OfficeParserConfig.class);
+        if (config == null || config.isExtractThumbnail()) {
+            handleThumbnail(summaryExtractor.getThumbnailWmf(), xhtml, context);
+        }
     }
 
     /**
      * Emits the document thumbnail from the SummaryInformation, a WMF, as a
      * {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL} embedded
-     * document, as the OOXML parsers do with the docProps thumbnail.
+     * document, as the OOXML parsers do with the docProps thumbnail. Switched
+     * off with {@code "office-parser": {"extractThumbnail": false}}.
      */
     private void handleThumbnail(byte[] wmf, XHTMLContentHandler xhtml, ParseContext context)
             throws IOException, SAXException {
