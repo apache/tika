@@ -1,5 +1,12 @@
 Release 4.1.0 - unreleased
 
+   * DefaultDetector honors CONTENT_TYPE_USER_OVERRIDE and
+     CONTENT_TYPE_PARSER_OVERRIDE before running magic detection, matching
+     CompositeDetector's contract. Removes the second full magic scan every
+     pipes parse paid per document. Compat note: with a user override set,
+     DefaultDetector no longer lets a more specific magic result overrule
+     the override (TIKA-4868).
+
    * Markdown output is ~4x faster on large documents:
      ToMarkdownContentHandler now buffers the commonmark renderer's
      per-character writes instead of paying the synchronized
