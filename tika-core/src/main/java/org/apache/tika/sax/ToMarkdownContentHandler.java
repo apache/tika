@@ -659,7 +659,18 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     }
 
     private static String collapseLineBreaks(String s) {
-        return s.replace('\r', ' ').replace('\n', ' ');
+        // single pass, and no copy at all for the common clean run
+        char[] chars = null;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '\r' || c == '\n') {
+                if (chars == null) {
+                    chars = s.toCharArray();
+                }
+                chars[i] = ' ';
+            }
+        }
+        return chars == null ? s : new String(chars);
     }
 
     private static String withTrailingNewline(String s) {

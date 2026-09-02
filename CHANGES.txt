@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * WordExtractor (.doc) cleans each character run in one pass instead of
+     four chained replace/replaceAll copies, and tests paragraph blankness
+     without a regex replaceAll; ToMarkdownContentHandler collapses line
+     breaks in one pass with no copy for clean runs. ~39% off parsing a
+     text-heavy 2MB .doc (TIKA-4868).
+
    * tika-server's raw-output endpoints (/tika, /tika/text, ...) carry the
      extracted content as raw UTF-8 bytes from the pipes worker to the HTTP
      response instead of a Smile-encoded string: one encode in the worker
