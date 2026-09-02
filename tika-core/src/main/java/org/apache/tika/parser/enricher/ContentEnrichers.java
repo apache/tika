@@ -37,22 +37,11 @@ import org.apache.tika.parser.Parser;
 /**
  * Resolves the content enricher for a media type.
  * <p>
- * Contract for call sites:
- * <ul>
- *   <li>The caller owns placement: wrap the handler (e.g. an
- *       {@code EmbeddedContentHandler} over a {@code BodyContentHandler}) so the enricher
- *       cannot emit its own document structure or metadata dump into the caller's XHTML.</li>
- *   <li>The caller owns invocation granularity: once per image, per rendered page, per
- *       segment; the slot does not dictate.</li>
- *   <li>Resolve against the <em>detected</em> media type, captured at parse entry before
- *       the parser can refine Content-Type (e.g. a PDF re-typed to Illustrator mid-parse
- *       must still fire the enricher selected for the type it was dispatched on).</li>
- *   <li>The enricher writes into the caller's {@link Metadata}; the caller must not assume
- *       the metadata is untouched beyond the derived content.</li>
- *   <li>An enricher that re-enters parsing must propagate the caller's
- *       {@link ParseContext}: the recursion guard (like Tika's other in-parse limits)
- *       rides the context, so a fresh context defeats it.</li>
- * </ul>
+ * Call sites: wrap the handler (an {@code EmbeddedContentHandler} over a
+ * {@code BodyContentHandler}) so the enricher cannot dump structure or metadata into the
+ * caller's XHTML; resolve on the <em>detected</em> type, captured before a parser can
+ * refine Content-Type mid-parse; and pass the caller's own {@link ParseContext} through --
+ * the recursion guard rides it, so a fresh context defeats it.
  *
  * @since Apache Tika 4.1
  */
@@ -63,18 +52,14 @@ public final class ContentEnrichers {
 
     /**
      * Returns the enricher to invoke for one media type, or null when none applies.
-     * A configured {@code "content-enrichers"} list is authoritative: every configured
-     * enricher matching the type runs, in config order, behind the single Parser
-     * returned here, and a type no configured enricher matches gets no enrichment --
-     * never a classpath engine the user did not name. Only when no list is configured
-     * at all does the legacy {@code image/ocr-*} dispatch through the composite parser
-     * apply. Returns null while an enrichment is already in progress in this context,
-     * so an enricher that is (or invokes) a container parser cannot recurse into
-     * enrichment.
+     * A configured list is authoritative: every matching enricher runs, in config order,
+     * behind the Parser returned here, and an uncovered type gets no enrichment -- never a
+     * classpath engine nobody named. Legacy {@code image/ocr-*} dispatch applies only when
+     * no list is configured. Null while an enrichment is already in progress in this
+     * context, so an enricher that is (or invokes) a container parser cannot recurse.
      *
-     * @param enrichers  the injected composite; may be null when none is configured
+     * @param enrichers the injected composite; may be null when none is configured
      * @param mediaType the real, normalized media type of the bytes; may be null
-     * @param context   the parse context
      */
     public static Parser get(CompositeContentEnricher enrichers, MediaType mediaType,
                              ParseContext context) {
@@ -102,13 +87,10 @@ public final class ContentEnrichers {
     }
 
     /**
-     * Runs each enricher in config order, best-effort: one enricher's failure does not
-     * stop the others. The first failure is rethrown after the chain completes, with
-     * later failures attached as suppressed, so call sites report every failure through
-     * their existing exception handling. Timeouts, SecurityException, SAXException
-     * (incl. write-limit aborts) and other runtime exceptions propagate immediately --
-     * a spent budget or a suspect handler must not fund further enrichments -- with any
-     * earlier recorded failure attached as suppressed.
+     * Runs each enricher in config order, best-effort: the first failure is rethrown once
+     * the chain completes, later ones suppressed onto it. Timeouts, SecurityException,
+     * SAXException (incl. write-limit aborts) and runtime exceptions abort immediately,
+     * carrying any earlier failure -- a spent budget must not fund more enrichments.
      */
     private static final class SequentialEnricher implements Parser {
 
@@ -167,9 +149,8 @@ public final class ContentEnrichers {
     }
 
     /**
-     * Marks enrichment in progress around the delegate so {@link #get} refuses re-entry,
-     * and restores Content-Type afterwards: an enricher derives content, it does not get
-     * to re-type the caller's document.
+     * Marks enrichment in progress so {@link #get} refuses re-entry, and restores
+     * Content-Type: an enricher derives content, it does not re-type the document.
      */
     private static final class GuardedEnricher implements Parser {
 
@@ -195,8 +176,7 @@ public final class ContentEnrichers {
                 context.set(ActiveEnrichment.class, active);
             }
             String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
-            // restore rather than clear: a nested invocation must not strip the
-            // outer enrichment's re-entry protection when it completes
+            // restore, don't clear: a nested call must not lift the outer guard
             boolean wasActive = active.active;
             active.active = true;
             try {

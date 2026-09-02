@@ -34,15 +34,12 @@ import org.apache.tika.parser.Parser;
 
 /**
  * Reproduces the pre-4.1 {@code image/ocr-*} dispatch when no {@code "content-enrichers"}
- * list is configured: mints the synthetic {@code ocr-} media type, sets
- * {@link TikaCoreProperties#CONTENT_TYPE_PARSER_OVERRIDE} and re-enters the composite
- * parser, restoring the metadata afterwards. Whichever engine won the {@code ocr-*}
- * registration in the composite still wins here, so precedence-by-presence (adding
- * e.g. tika-parser-tess4j-module to the classpath) is preserved exactly.
- * <p>
- * This confines the pseudo-mime dance formerly hand-rolled in both
- * {@code AbstractImageParser} and {@code AbstractPDF2XHTML} to one class, to be retired
- * once OCR engines are selected by name.
+ * list is configured: mints the synthetic {@code ocr-} type, sets
+ * {@link TikaCoreProperties#CONTENT_TYPE_PARSER_OVERRIDE}, re-enters the composite parser
+ * and restores the metadata. Whichever engine won the {@code ocr-*} registration still wins,
+ * so precedence-by-presence is preserved exactly. Confines the pseudo-mime dance formerly
+ * hand-rolled in {@code AbstractImageParser} and {@code AbstractPDF2XHTML} to one class;
+ * retire it once every engine is selected by name.
  *
  * @since Apache Tika 4.1
  */
@@ -57,10 +54,9 @@ public class LegacyDispatchEnricher implements Parser {
     private final Parser composite;
 
     /**
-     * @param mediaType the real (already normalized) media type of the bytes to derive from
-     * @param composite the composite parser to re-enter; the caller has already verified
-     *                  it claims the synthetic {@code ocr-} type (re-verifying here would
-     *                  rebuild the composite's full supported-types map per invocation)
+     * @param mediaType the real (already normalized) media type of the bytes
+     * @param composite the composite to re-enter; the caller has already verified it claims
+     *                  the {@code ocr-} type -- re-checking rebuilds its full type map
      */
     public LegacyDispatchEnricher(MediaType mediaType, Parser composite) {
         this.mediaType = mediaType;

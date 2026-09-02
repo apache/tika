@@ -149,11 +149,11 @@ order listed — so an OCR engine followed by a VLM that tags images is two entr
 per image. The list is authoritative: a media type no configured enricher matches gets no
 enrichment — never a classpath engine you did not name — and a named engine that reports no
 media types at startup (missing native binary, unreachable inference server) fails config load
-rather than going silently inert. Failures are best-effort: one enricher failing does not stop the others, and every
-failure is still reported through the parser's normal exception handling (timeouts abort the
-chain immediately). With no `content-enrichers` configured, behavior is unchanged — whichever
-OCR engine is on the classpath is used, exactly as before, and a WARN is logged at startup when
-several engines collide. Engine names: `tesseract-ocr-parser`, `tess4j-parser`, `openai-vlm-parser`,
+rather than going silently inert. Failures are best-effort: one enricher failing does not stop
+the others, and every failure is still reported through the parser's normal exception handling
+(timeouts abort the chain immediately). With no `content-enrichers` configured, behavior is
+unchanged — whichever OCR engine is on the classpath is used, exactly as before, and a WARN is
+logged at startup when several engines collide. Engine names: `tesseract-ocr-parser`, `tess4j-parser`, `openai-vlm-parser`,
 `claude-vlm-parser`, `gemini-vlm-parser`.
 
 == Windows file paths

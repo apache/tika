@@ -84,9 +84,8 @@ public class PipesClientTest {
     }
 
     /**
-     * Wire test for the content-enrichers slot (TIKA-4872): a config-named enricher must
-     * be injected into the fork's parsers and its output must survive the fork boundary.
-     * Uses MockEnricher, so no OCR binary is needed.
+     * Wire test for the content-enrichers slot (TIKA-4872): a config-named enricher is
+     * injected into the fork's parsers and its output survives the fork boundary.
      */
     @Test
     public void testContentEnricherInFork(@TempDir Path tmp) throws Exception {

@@ -1662,9 +1662,8 @@ public class PDFParserTest extends TikaTest {
     }
 
     /**
-     * A content enricher selected by name -- advertising real image types, never the
-     * ocr- pseudo types, with no composite-parser registration at all -- receives every
-     * rendered page when OCR runs (TIKA-4872).
+     * A named enricher advertising real image types, with no composite registration at all,
+     * receives every rendered page when OCR runs (TIKA-4872).
      */
     @Test
     public void testExplicitContentEnricherReceivesRenderedPages() throws Exception {

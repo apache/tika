@@ -133,7 +133,6 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
     @Override
     protected Parser postProcess(Parser parser, LoaderContext context)
             throws TikaConfigException {
-        // Inject EncodingDetector, Renderer and content enrichers into parsers that need them
         EncodingDetector encodingDetector = context.getEncodingDetector();
         Renderer renderer = context.getRenderer();
         CompositeContentEnricher contentEnrichers = context.getContentEnrichers();
@@ -170,12 +169,11 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
     }
 
     /**
-     * The image/ocr-* pseudo-types are claimed by several OCR engines whose availability
-     * is environmental, and the composite resolves a collision by last registration with
-     * no warning. Name the collision and the winner once at load so engine selection is
-     * debuggable; select an engine explicitly with "content-enrichers". Skipped when
-     * content-enrichers is configured: the list is authoritative and legacy ocr-*
-     * dispatch never runs, so the collision is moot and the advice already taken.
+     * Several OCR engines can claim the same image/ocr-* pseudo-type -- availability is
+     * environmental -- and the composite resolves the collision silently by last
+     * registration; name the collision and the winner once at load. The caller skips this
+     * when content-enrichers is configured: that list is authoritative, so legacy dispatch
+     * never runs and the advice is already taken.
      */
     private void warnOnAmbiguousOcrRegistrations(Parser parser) {
         if (!(parser instanceof CompositeParser cp)) {

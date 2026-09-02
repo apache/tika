@@ -30,10 +30,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.EnrichingParser;
 
-/**
- * Fixture for asserting that ParserLoader injects the configured content enrichers
- * into parsers implementing {@link EnrichingParser}.
- */
+/** Fixture: asserts ParserLoader injects the enrichers into an {@link EnrichingParser}. */
 @TikaComponent(name = "enriching-test-parser", spi = false)
 public class EnrichingTestParser implements Parser, EnrichingParser {
 

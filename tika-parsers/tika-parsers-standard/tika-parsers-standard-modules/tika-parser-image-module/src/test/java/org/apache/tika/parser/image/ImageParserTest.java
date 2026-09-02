@@ -227,9 +227,8 @@ public class ImageParserTest extends TikaTest {
     }
 
     /**
-     * A content enricher selected by name advertises real types and is invoked by the
-     * image parser, which keeps extracting its own metadata -- the enricher does not
-     * displace it (TIKA-4872).
+     * A named enricher is invoked by the image parser, which keeps extracting its own
+     * metadata -- the enricher does not displace it (TIKA-4872).
      */
     @Test
     public void testExplicitContentEnricher() throws Exception {
@@ -261,9 +260,8 @@ public class ImageParserTest extends TikaTest {
     }
 
     /**
-     * The enricher is selected on the DETECTED media type, captured before the parser
-     * can refine Content-Type mid-parse (TIKA-4872): a parser that re-types the document
-     * during metadata extraction must still fire the enricher chosen at dispatch.
+     * A parser that re-types the document mid-parse must still fire the enricher chosen
+     * for the DETECTED type it was dispatched on (TIKA-4872).
      */
     @Test
     public void testEnricherSelectedOnDetectedTypeNotRefinedType() throws Exception {

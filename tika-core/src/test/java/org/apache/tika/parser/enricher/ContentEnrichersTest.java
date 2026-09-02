@@ -124,8 +124,7 @@ public class ContentEnrichersTest {
 
     @Test
     public void testConfiguredListIsAuthoritative() throws Exception {
-        // the composite claims ocr-tiff, but a configured list that doesn't cover tiff
-        // must yield no enricher -- never a classpath engine the user did not name
+        // the composite claims ocr-tiff, but a list that doesn't cover tiff wins anyway
         RecordingParser explicit = new RecordingParser(Collections.singleton(PNG));
         RecordingParser composite =
                 new RecordingParser(Collections.singleton(MediaType.image("ocr-tiff")));
@@ -299,9 +298,8 @@ public class ContentEnrichersTest {
     }
 
     /**
-     * Legacy engines (Tesseract, the VLM parsers) advertise image/ocr-* pseudo-types;
-     * naming one as an enricher must still match the real type — and an engine
-     * advertising both the real and the pseudo form of a type must run once, not twice.
+     * A legacy engine's image/ocr-* advertisement must match the real type, and an engine
+     * advertising both forms must run once, not twice.
      */
     @Test
     public void testLegacyOcrTypeAdvertisementsMatchRealTypes() throws Exception {

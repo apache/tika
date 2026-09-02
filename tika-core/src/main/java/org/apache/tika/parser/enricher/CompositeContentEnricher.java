@@ -29,24 +29,15 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
 /**
- * Media-type-keyed registry of content enrichers: ordinary {@link Parser}s that a
- * container parser <em>invokes</em> on bytes it has already parsed to obtain derived
- * content (OCR text for an image, for a rendered PDF page, ...), rather than being
- * dispatched to by the composite parser.
+ * Media-type-keyed registry of content enrichers: ordinary {@link Parser}s that a container
+ * parser <em>invokes</em> on bytes it has already parsed (OCR text for an image or a
+ * rendered PDF page), rather than being dispatched to by the composite parser. Configured
+ * as the top-level {@code "content-enrichers"} list, mirroring {@code "renderers"}.
  * <p>
- * Configured as the top-level {@code "content-enrichers"} list, mirroring
- * {@code "renderers"}; members advertise their <em>real</em> media types
- * ({@code image/png}). Legacy OCR engines that still advertise the {@code image/ocr-*}
- * pseudo-types are keyed under the corresponding real type, so they are nameable here
- * without modification. An enricher registered here does not
- * compete with the parser registered for the same type: the parser still runs and calls
- * the enricher.
- * <p>
- * <b>Every</b> enricher matching a media type runs, in config order — e.g. an OCR engine
- * followed by a VLM tagger for the same image. Output lands at the caller's chosen
- * position in that order. Failures are best-effort: one enricher's failure does not stop
- * the others; the first failure is rethrown after the chain completes with later ones
- * suppressed. Timeouts, SecurityException and SAXException abort the chain immediately.
+ * Members advertise their <em>real</em> media types ({@code image/png}); legacy engines
+ * still advertising the {@code image/ocr-*} pseudo-types are keyed under the real type, so
+ * they are nameable here unmodified. An enricher does not compete with the parser
+ * registered for the same type: that parser still runs and calls the enricher.
  *
  * @since Apache Tika 4.1
  */
@@ -61,8 +52,7 @@ public class CompositeContentEnricher implements Serializable {
         ParseContext empty = new ParseContext();
         for (Parser enricher : enrichers) {
             for (MediaType mediaType : enricher.getSupportedTypes(empty)) {
-                // legacy engines (Tesseract, VLM, ...) still advertise the image/ocr-*
-                // pseudo-types; key them under the real type so they are nameable here
+                // legacy engines advertise image/ocr-*; key under the real type
                 MediaType keyType = stripLegacyOcrPrefix(mediaType.getBaseType());
                 List<Parser> forType = tmp.computeIfAbsent(keyType, k -> new ArrayList<>());
                 if (!forType.contains(enricher)) {
@@ -84,8 +74,8 @@ public class CompositeContentEnricher implements Serializable {
     }
 
     /**
-     * @return the enrichers configured for this media type (parameters ignored; alias
-     *         normalization is the caller's job), in config order; empty when none
+     * @return the enrichers for this media type in config order, empty when none;
+     *         parameters are ignored, alias normalization is the caller's job
      */
     public List<Parser> getEnrichers(MediaType mediaType) {
         List<Parser> enrichers = enricherMap.get(mediaType.getBaseType());

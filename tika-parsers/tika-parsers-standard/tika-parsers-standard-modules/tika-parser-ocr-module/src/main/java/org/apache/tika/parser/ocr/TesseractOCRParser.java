@@ -96,7 +96,7 @@ import org.apache.tika.utils.XMLReaderUtils;
  * parseContext.set(TesseractOCRConfig.class, config);<br>
  * </p>
  */
-// name pinned: it is the documented "content-enrichers" selector for this engine
+// name pinned: the documented "content-enrichers" selector for this engine
 @TikaComponent(name = "tesseract-ocr-parser")
 public class TesseractOCRParser extends AbstractExternalProcessParser implements Initializable {
 

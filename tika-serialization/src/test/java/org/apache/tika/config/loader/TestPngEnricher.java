@@ -28,10 +28,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
-/**
- * Content-enricher fixture: an ordinary parser advertising a real media type,
- * selectable by name in the "content-enrichers" list.
- */
+/** Fixture: an ordinary parser advertising a real media type, nameable in "content-enrichers". */
 @TikaComponent(name = "test-png-enricher", spi = false)
 public class TestPngEnricher implements Parser {
 

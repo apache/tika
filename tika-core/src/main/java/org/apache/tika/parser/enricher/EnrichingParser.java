@@ -17,8 +17,8 @@
 package org.apache.tika.parser.enricher;
 
 /**
- * A parser that invokes content enrichers (e.g. OCR on its images or rendered pages).
- * The configured {@link CompositeContentEnricher} is injected at load time, the way
+ * A parser that invokes content enrichers (OCR on its images or rendered pages). The
+ * configured {@link CompositeContentEnricher} is injected at load time, as
  * {@link org.apache.tika.parser.RenderingParser} receives its renderer.
  *
  * @since Apache Tika 4.1

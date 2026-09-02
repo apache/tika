@@ -29,10 +29,9 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 
 /**
- * Loads the top-level {@code "content-enrichers"} list: ordinary parsers, selected by
- * component name, that container parsers invoke for derived content (OCR, ...). Members
- * come from the same registry as {@code "parsers"} entries but do not join the composite
- * parser's media-type dispatch.
+ * Loads the top-level {@code "content-enrichers"} list: parsers selected by component name
+ * that container parsers invoke for derived content (OCR, ...). Members come from the same
+ * registry as {@code "parsers"} entries but never join the composite's media-type dispatch.
  */
 class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher> {
 
@@ -55,9 +54,8 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
                 throw new TikaConfigException(
                         "Failed to load content enricher: " + entry.getKey(), e);
             }
-            // engines report no types when unusable (missing binary, unreachable server);
-            // the media-type snapshot taken here lasts the life of the process, so an
-            // explicitly named engine that can never run must fail load, not go silent
+            // this type snapshot lasts the life of the process, so an engine reporting
+            // nothing (missing binary, dead server) must fail load, not go silently inert
             if (enricher.getSupportedTypes(empty).isEmpty()) {
                 throw new TikaConfigException("Content enricher \"" + entry.getKey()
                         + "\" advertises no media types. Is the engine unavailable "

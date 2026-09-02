@@ -69,8 +69,7 @@ public class ContentEnricherLoaderTest {
 
     @Test
     public void testZeroTypeEnricherFailsLoad() throws Exception {
-        // an explicitly named engine that cannot run (missing binary, unreachable
-        // server) must fail config load, not become a silent no-op
+        // a named engine that cannot run must fail load, not become a silent no-op
         TikaLoader loader = load("""
                 {
                   "content-enrichers": [ {"test-unavailable-enricher": {}} ]

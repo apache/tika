@@ -28,10 +28,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
-/**
- * Content-enricher fixture mimicking an engine that is unusable at load time
- * (missing binary, unreachable server): it advertises no media types.
- */
+/** Fixture: an engine unusable at load time (missing binary, dead server) advertises nothing. */
 @TikaComponent(name = "test-unavailable-enricher", spi = false)
 public class TestUnavailableEnricher implements Parser {
 
