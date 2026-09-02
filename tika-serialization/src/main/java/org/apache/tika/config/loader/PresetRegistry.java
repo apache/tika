@@ -50,8 +50,10 @@ import org.apache.tika.serialization.serdes.ParseContextDeserializer;
  * {@code false}/{@code null} is an explicit no-op. Catalog jars can never activate
  * themselves. Presets do not compose.
  * <p>
- * The catalog is discovered from {@code META-INF/tika/presets.idx} resources, each line
- * {@code name=/classpath/resource.json}; blank lines and {@code #} comments ignored.
+ * The catalog is discovered from {@code META-INF/tika/preset-catalog.properties}
+ * resources (hand-authored, unlike the annotation processor's generated
+ * {@code META-INF/tika/*.idx}), each line {@code name=/classpath/resource.json};
+ * blank lines and {@code #} comments ignored.
  * <pre>
  * "presets": {
  *   "some-catalog-preset": true,
@@ -65,7 +67,7 @@ public final class PresetRegistry {
 
     public static final String CONFIG_KEY = "presets";
 
-    private static final String INDEX_RESOURCE = "META-INF/tika/presets.idx";
+    private static final String INDEX_RESOURCE = "META-INF/tika/preset-catalog.properties";
 
     // Names ride in URL paths and config keys
     private static final Pattern NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,99}");

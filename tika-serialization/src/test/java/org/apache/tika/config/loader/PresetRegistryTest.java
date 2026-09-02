@@ -53,7 +53,7 @@ public class PresetRegistryTest {
 
     @Test
     public void testCatalogPresetInertUntilActivated() throws Exception {
-        // src/test/resources/META-INF/tika/presets.idx contributes builtin-sample,
+        // src/test/resources/META-INF/tika/preset-catalog.properties contributes builtin-sample,
         // but a catalog jar must never activate itself
         PresetRegistry registry = PresetRegistry.load(null, getClass().getClassLoader());
         assertTrue(registry.names().isEmpty());
@@ -204,7 +204,7 @@ public class PresetRegistryTest {
         Path dir = tmp.resolve(dirName);
         Files.createDirectories(dir.resolve("META-INF/tika"));
         // resource path unique per dir: identical paths would shadow on the classpath
-        Files.writeString(dir.resolve("META-INF/tika/presets.idx"),
+        Files.writeString(dir.resolve("META-INF/tika/preset-catalog.properties"),
                 presetName + "=/presets-" + dirName + "/" + presetName + ".json\n");
         Files.createDirectories(dir.resolve("presets-" + dirName));
         Files.writeString(dir.resolve("presets-" + dirName + "/" + presetName + ".json"), json);
