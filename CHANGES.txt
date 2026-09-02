@@ -1,5 +1,9 @@
 Release 4.1.0 - unreleased
 
+   * AVIF images are parsed rather than only detected: HeifParser accepts
+     image/avif, which is the same ISO-BMFF container, so dimensions, EXIF
+     and XMP come out of it the way they do for HEIC (TIKA-4870).
+
    * The video of a Google/Android motion photo, appended after the image and
      described by the Motion Photo or MicroVideo XMP, is emitted as an
      ATTACHMENT embedded document named after what the file declares it to
