@@ -4,8 +4,8 @@ Release 4.1.0 - unreleased
      described by the Motion Photo or MicroVideo XMP, is emitted as an
      ATTACHMENT embedded document named after what the file declares it to
      be. Nothing is emitted, and nothing is recorded, when the declared
-     length does not fit the file or the bytes there are not a video, which
-     is what sharing a motion photo out of a gallery leaves behind
+     length does not fit the file or the bytes there are not recognized,
+     which is what sharing a motion photo out of a gallery leaves behind
      (TIKA-4869).
 
    * Raster previews for the vector thumbnails of Office documents: the new

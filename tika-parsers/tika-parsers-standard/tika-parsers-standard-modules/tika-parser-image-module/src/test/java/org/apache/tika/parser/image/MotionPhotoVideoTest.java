@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -106,20 +108,13 @@ public class MotionPhotoVideoTest extends TikaTest {
      */
     @Test
     public void testDeclaredVideoIsNotOne(@TempDir Path tmp) throws Exception {
-        byte[] file;
-        try (InputStream is = getResourceAsStream("/test-documents/testJPEG_MotionPhoto.jpg")) {
-            file = is.readAllBytes();
-        }
+        byte[] file = fixture();
         //keep the length, replace the video with something unrecognizable
-        java.util.Arrays.fill(file, file.length - 1583, file.length, (byte) 0);
+        java.util.Arrays.fill(file, file.length - declaredLength(), file.length, (byte) 0);
         Path overwritten = tmp.resolve("no-video.jpg");
         Files.write(overwritten, file);
 
-        List<Metadata> metadataList;
-        try (TikaInputStream tis = TikaInputStream.get(overwritten)) {
-            metadataList = getRecursiveMetadata(tis, AUTO_DETECT_PARSER, new Metadata(),
-                    new ParseContext(), false);
-        }
+        List<Metadata> metadataList = parse(overwritten);
         assertEquals(1, metadataList.size());
         assertNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
@@ -131,19 +126,12 @@ public class MotionPhotoVideoTest extends TikaTest {
      */
     @Test
     public void testDeclaredLengthBeyondTheFile(@TempDir Path tmp) throws Exception {
-        byte[] file;
-        try (InputStream is = getResourceAsStream("/test-documents/testJPEG_MotionPhoto.jpg")) {
-            file = is.readAllBytes();
-        }
+        byte[] file = fixture();
         //cut the video the XMP still declares
         Path truncated = tmp.resolve("truncated.jpg");
-        Files.write(truncated, java.util.Arrays.copyOf(file, file.length - 1583));
+        Files.write(truncated, java.util.Arrays.copyOf(file, file.length - declaredLength()));
 
-        List<Metadata> metadataList;
-        try (TikaInputStream tis = TikaInputStream.get(truncated)) {
-            metadataList = getRecursiveMetadata(tis, AUTO_DETECT_PARSER, new Metadata(),
-                    new ParseContext(), false);
-        }
+        List<Metadata> metadataList = parse(truncated);
         assertEquals(1, metadataList.size());
         assertNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
@@ -190,6 +178,77 @@ public class MotionPhotoVideoTest extends TikaTest {
         metadata.set(item + "Item:Length", length);
         if (padding != null) {
             metadata.set(item + "Item:Padding", padding);
+        }
+    }
+
+    /**
+     * What is appended is typed by content, and what is there is emitted even
+     * where it is not the video the XMP promised. The name follows the bytes
+     * then, not the declaration.
+     */
+    @Test
+    public void testTrailerThatIsNotAVideo(@TempDir Path tmp) throws Exception {
+        byte[] file = fixture();
+        byte[] pdf = new byte[declaredLength()];
+        java.util.Arrays.fill(pdf, (byte) ' ');
+        System.arraycopy("%PDF-1.4\n".getBytes(StandardCharsets.US_ASCII), 0, pdf, 0, 9);
+        System.arraycopy(pdf, 0, file, file.length - pdf.length, pdf.length);
+        Path swapped = tmp.resolve("pdf-trailer.jpg");
+        Files.write(swapped, file);
+
+        List<Metadata> metadataList = parse(swapped);
+        assertEquals(2, metadataList.size());
+        Metadata trailer = metadataList.get(1);
+        assertEquals("application/pdf", trailer.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("motion-photo.pdf", trailer.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("true",
+                trailer.get(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED));
+    }
+
+    /**
+     * An image appended to an image is emitted, but is not searched for a
+     * trailer of its own: a file that nests itself would otherwise chain as
+     * deep as it cares to.
+     */
+    @Test
+    public void testANestedMotionPhotoDoesNotChain(@TempDir Path tmp) throws Exception {
+        byte[] inner = fixture();
+        //the fixture is as long as the length it declares has digits, so the
+        //outer file can declare the whole inner one without moving anything
+        byte[] outer = new String(fixture(), StandardCharsets.ISO_8859_1)
+                .replace("Item:Length=\"" + declaredLength() + "\"",
+                        "Item:Length=\"" + inner.length + "\"")
+                .getBytes(StandardCharsets.ISO_8859_1);
+        Path nested = tmp.resolve("nested.jpg");
+        try (OutputStream out = Files.newOutputStream(nested)) {
+            out.write(outer);
+            out.write(inner);
+        }
+
+        List<Metadata> metadataList = parse(nested);
+        assertEquals(2, metadataList.size());
+        assertEquals("image/jpeg", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
+    }
+
+    private byte[] fixture() throws Exception {
+        try (InputStream is = getResourceAsStream("/test-documents/testJPEG_MotionPhoto.jpg")) {
+            return is.readAllBytes();
+        }
+    }
+
+    /**
+     * The length the fixture's XMP declares, rather than that number spelled
+     * out in every test that needs it.
+     */
+    private int declaredLength() throws Exception {
+        return (int) MotionPhoto.declaration(
+                getRecursiveMetadata("testJPEG_MotionPhoto.jpg").get(0)).length;
+    }
+
+    private List<Metadata> parse(Path file) throws Exception {
+        try (TikaInputStream tis = TikaInputStream.get(file)) {
+            return getRecursiveMetadata(tis, AUTO_DETECT_PARSER, new Metadata(),
+                    new ParseContext(), false);
         }
     }
 }

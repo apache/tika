@@ -81,11 +81,21 @@ final class MotionPhoto {
      */
     private static final int DETECTION_PREFIX = 8 * 1024;
 
+    /**
+     * The branch below an emitted trailer, which is not searched for a trailer
+     * of its own: what is appended to an image may be an image again, and a
+     * crafted file can nest that as deep as it likes.
+     */
+    private static final class Nested {
+    }
+
+    private static final Nested NESTED = new Nested();
+
     private MotionPhoto() {
     }
 
     /**
-     * Emits the video as an embedded document, or nothing when the image
+     * Emits the trailer as an embedded document, or nothing when the image
      * declares none, when the declared length does not fit the file, or when
      * the bytes there are not recognized. The last two are what sharing a
      * motion photo out of a gallery leaves behind, a common enough thing that
@@ -94,6 +104,9 @@ final class MotionPhoto {
      */
     static void extract(TikaInputStream tis, Metadata metadata, XHTMLContentHandler xhtml,
                         ParseContext context) throws IOException, SAXException {
+        if (context.get(Nested.class) != null) {
+            return;
+        }
         Declaration declared = declaration(metadata);
         if (declared == null) {
             return;
@@ -103,36 +116,94 @@ final class MotionPhoto {
         if (tis.hasLength() && declared.length >= tis.getLength()) {
             return;
         }
-        Path file = file(tis);
-        if (file == null) {
+        Trailer trailer = locate(tis, declared, context);
+        if (trailer == null) {
             return;
         }
-        long start = Files.size(file) - declared.length;
-        if (start <= 0) {
-            return;
+        Metadata trailerMetadata = Metadata.newInstance(context);
+        //the name has to be set before the parse, and the declaration names the
+        //format the file was written with, which detection cannot always tell
+        //apart: an MP4 with the isom brand types as quicktime (TIKA-3646), and
+        //the MicroVideo format declares nothing at all. Where the two disagree
+        //about the kind of file it is, the bytes win.
+        boolean fromDetection = declared.mime != null
+                && !declared.mime.startsWith(trailer.type.getType() + "/");
+        String extension = declared.mime == null ? "" : EmbeddedDocumentUtil
+                .getExtensionForMediaType(
+                        fromDetection ? trailer.type.toString() : declared.mime);
+        trailerMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, NAME + extension);
+        if (fromDetection && !extension.isEmpty()) {
+            trailerMetadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
         }
-        MediaType type = detect(file, start, context);
-        if (type == null || MediaType.OCTET_STREAM.equals(type)) {
-            return;
-        }
-        Metadata videoMetadata = Metadata.newInstance(context);
-        //the name has to be set before the parse, so it follows the file's own
-        //declaration and carries no extension where there is none to follow
-        String extension = extension(declared.mime);
-        videoMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, NAME + extension);
-        if (!extension.isEmpty()) {
-            videoMetadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
-        }
-        videoMetadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
-        videoMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+        trailerMetadata.set(HttpHeaders.CONTENT_TYPE, trailer.type.toString());
+        trailerMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        if (extractor.shouldParseEmbedded(videoMetadata, context)) {
-            try (TikaInputStream video = TikaInputStream.get(region(file, start))) {
-                extractor.parseEmbedded(video, new EmbeddedContentHandler(xhtml), videoMetadata,
-                        context, false);
+        if (!extractor.shouldParseEmbedded(trailerMetadata, context)) {
+            return;
+        }
+        InputStream bytes = open(trailer);
+        if (bytes == null) {
+            return;
+        }
+        context.set(Nested.class, NESTED);
+        try (TikaInputStream embedded = TikaInputStream.get(bytes)) {
+            extractor.parseEmbedded(embedded, new EmbeddedContentHandler(xhtml), trailerMetadata,
+                    context, true);
+        } finally {
+            context.set(Nested.class, null);
+        }
+    }
+
+    /**
+     * What the declaration points at: where the bytes start and what they turn
+     * out to be, or null when they are not there, are not recognized, or
+     * cannot be read. An image that parsed is not failed over a trailer that
+     * is out of reach.
+     */
+    private static Trailer locate(TikaInputStream tis, Declaration declared,
+                                  ParseContext context) {
+        try {
+            Path file = tis.getPath();
+            long start = Files.size(file) - declared.length;
+            if (start <= 0) {
+                return null;
             }
+            MediaType type = detect(file, start, context);
+            if (type == null || MediaType.OCTET_STREAM.equals(type)) {
+                return null;
+            }
+            return new Trailer(file, start, type);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /**
+     * The trailer as a stream, or null where the file stopped being readable
+     * after it was located.
+     */
+    private static InputStream open(Trailer trailer) {
+        try {
+            return region(trailer.file, trailer.start);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /**
+     * The bytes behind the image: where they start and what they are.
+     */
+    private static final class Trailer {
+        final Path file;
+        final long start;
+        final MediaType type;
+
+        Trailer(Path file, long start, MediaType type) {
+            this.file = file;
+            this.start = start;
+            this.type = type;
         }
     }
 
@@ -156,9 +227,9 @@ final class MotionPhoto {
      */
     static final class Declaration {
         final long length;
-        final MediaType mime;
+        final String mime;
 
-        Declaration(long length, MediaType mime) {
+        Declaration(long length, String mime) {
             this.length = length;
             this.mime = mime;
         }
@@ -179,7 +250,7 @@ final class MotionPhoto {
             if (MOTION_PHOTO.equals(semantic)) {
                 long length = positiveLong(metadata.get(item + "Item:Length"));
                 return length > 0
-                        ? new Declaration(length, MediaType.parse(metadata.get(item + "Item:Mime")))
+                        ? new Declaration(length, metadata.get(item + "Item:Mime"))
                         : null;
             }
         }
@@ -213,19 +284,6 @@ final class MotionPhoto {
     }
 
     /**
-     * The image as a file, or null where it was read from a stream that cannot
-     * go back to the start: a video out of reach is no reason to fail an image
-     * that parsed.
-     */
-    private static Path file(TikaInputStream tis) {
-        try {
-            return tis.getPath();
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    /**
      * The file from the offset to its end.
      */
     private static InputStream region(Path file, long start) throws IOException {
@@ -237,14 +295,5 @@ final class MotionPhoto {
             throw e;
         }
         return is;
-    }
-
-    /**
-     * The usual extension of a type, {@code .mp4} for video/mp4, and none for
-     * a type the registry does not know: the declaration comes from the file,
-     * and a name is no place to repeat what it claims.
-     */
-    private static String extension(MediaType type) {
-        return type == null ? "" : EmbeddedDocumentUtil.getExtensionForMediaType(type.toString());
     }
 }
