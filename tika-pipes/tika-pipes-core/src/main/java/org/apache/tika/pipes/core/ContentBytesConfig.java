@@ -25,10 +25,9 @@ import org.apache.tika.annotation.TikaComponent;
  * {@code TIKA_CONTENT} into raw UTF-8 bytes on the {@code EmitData}, which travel
  * as binary over the IPC instead of a Smile-encoded string. A caller who sets this
  * must read {@code EmitData.getContentBytes()}; the metadata no longer carries the
- * content. tika-server sets it for the raw-output endpoints. Results routed to a
- * regular Emitter get the content restored into the metadata first
- * ({@code EmitDataImpl#restoreContentFromBytes()}), so the move only sticks for
- * consumers on the passback path.
+ * content. tika-server sets it for the raw-output endpoints. Results routed to
+ * a regular Emitter get the content restored first (see
+ * {@code EmitDataImpl#restoreContentFromBytes}).
  */
 @TikaComponent(name = "content-bytes-config")
 public class ContentBytesConfig implements Serializable {

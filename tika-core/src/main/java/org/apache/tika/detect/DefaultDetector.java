@@ -135,10 +135,7 @@ public class DefaultDetector extends CompositeDetector {
     @Override
     public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
-        // 0. An override short-circuits detection entirely, as in CompositeDetector.
-        // Without this check the magic scan below runs even when a prior detect pass
-        // recorded its result as CONTENT_TYPE_PARSER_OVERRIDE -- doubling detection
-        // cost on every pipes parse.
+        // An override short-circuits detection entirely, as in CompositeDetector.
         MediaType override = detectOverrides(metadata);
         if (override != null) {
             return override;

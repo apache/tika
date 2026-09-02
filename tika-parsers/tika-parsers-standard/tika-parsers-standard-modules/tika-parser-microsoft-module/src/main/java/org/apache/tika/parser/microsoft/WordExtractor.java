@@ -106,8 +106,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         return count;
     }
 
-    // matches the old regex [\r\n\s]+ ( \s == [ \t\n\x0B\f\r] ), without the
-    // full replaceAll copy it used to make per paragraph
+    // blank == matches [\r\n\s]+ ( \s == [ \t\n\x0B\f\r] )
     private static boolean isBlankParagraph(String text) {
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);
@@ -492,11 +491,6 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             // Strip the table cell end marker
             text = text.substring(0, text.length() - 1);
         }
-        // One pass over the run replaces what used to be four chained
-        // replace/replaceAll copies (this runs once per character run):
-        // \r and every other control char become line breaks, POI's char 30
-        // (non-breaking hyphen) and char 31 (non-required hyphen) become
-        // their Unicode equivalents.
         text = cleanControlCharacters(text);
         xhtml.characters(text);
     }

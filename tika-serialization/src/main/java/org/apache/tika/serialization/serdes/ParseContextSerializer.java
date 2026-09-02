@@ -80,9 +80,8 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                 continue;
             }
 
-            // Per-parse runtime state (ParseRecord, ParseTimeout, parser-map cache)
-            // is never configuration; a context that has been through a parse must
-            // still serialize.
+            // per-parse runtime state (ParseRecord, ParseTimeout, ...) is never
+            // configuration; a context that has been through a parse must still serialize
             if (value instanceof TransientParseState) {
                 continue;
             }

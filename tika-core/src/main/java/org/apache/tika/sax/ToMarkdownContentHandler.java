@@ -420,10 +420,8 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         if (finished) {
             return;
         }
-        // MarkdownRenderer emits mostly one char at a time; Writer.write(int) is
-        // synchronized and allocating in every stock Writer, which made rendering
-        // ~4x slower than the render logic itself on multi-MB documents. The
-        // unsynchronized buffer turns those calls into array stores.
+        // The renderer writes mostly one char at a time; stock Writers take a
+        // synchronized, allocating write(int) for each. The buffer makes those array stores.
         RenderBuffer buffered = new RenderBuffer(writer);
         renderer.render(document, buffered);
         buffered.flush();

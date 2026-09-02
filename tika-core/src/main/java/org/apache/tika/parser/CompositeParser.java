@@ -249,11 +249,9 @@ public class CompositeParser implements Parser {
 
     /**
      * Cache of built parser maps, stored in the ParseContext so every embedded
-     * document in a parse reuses the container's map instead of rebuilding it
-     * (a full walk of every parser's supported types). Keyed by parser instance
-     * because nested composites share one context. The map is built once per
-     * (parser, context) and lives as long as the context: a context entry that
-     * would change a parser's supported types is not picked up mid-parse, nor on
+     * document in a parse reuses the container's map. Keyed by parser instance
+     * because nested composites share one context. Lives as long as the context:
+     * a change to a parser's supported types is not picked up mid-parse, nor on
      * later parses that reuse the same ParseContext instance.
      */
     private static final class ParserMapCache implements TransientParseState {

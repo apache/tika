@@ -57,10 +57,8 @@ class CSVSniffer {
         if (!reader.markSupported()) {
             reader = new BufferedReader(reader);
         }
-        // Every snifflet examines the same window, so read it once into a buffer
-        // instead of once per delimiter through a mark/reset + pushback stack.
-        // Grown on demand: markLimit is user-configurable and most inputs are
-        // far smaller, so an eager char[markLimit] would be waste per parse.
+        // Every snifflet examines the same window, so read it once. Grown on
+        // demand: markLimit is user-configurable and usually far exceeds the input.
         char[] buf = new char[Math.min(markLimit, 8192)];
         reader.mark(markLimit);
         int len = 0;
@@ -172,8 +170,7 @@ class CSVSniffer {
         //hardcode this for now
         private final char quoteCharacter = '"';
 
-        // The shared window read once by sniff(Reader); pos is the cursor, so
-        // "unread" is a decrement and the mark-limit check is a bounds check.
+        // the shared window from sniff(Reader); pos is the cursor
         private final char[] buf;
         private final int len;
         private int pos = 0;
@@ -184,8 +181,7 @@ class CSVSniffer {
         boolean rowZeroEmpty = false;
         int encapsulated = 0; //number of cells that are encapsulated in dquotes (for now)
         boolean parseException = false;
-        // Cell content is never analyzed (see the unquoted() TODO that was here);
-        // only whether the current cell is non-empty matters.
+        // only cell non-emptiness matters; content is never analyzed
         private int unquotedLen = 0;
 
         public Snifflet(char delimiter, char[] buf, int len) {
@@ -322,8 +318,7 @@ class CSVSniffer {
         }
 
         private int read() throws IOException {
-            // pos tracks chars consumed exactly as charsRead did (unread decrements
-            // both), so the original off-by-one mark-limit semantics are preserved.
+            // markLimit - 1, not markLimit: HitMarkLimit must win over EOF at the boundary
             if (pos >= markLimit - 1) {
                 throw new HitMarkLimitException();
             }

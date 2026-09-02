@@ -1,80 +1,66 @@
 Release 4.1.0 - unreleased
 
-   * Mojibuster's adaptive probe strips incrementally instead of
-     re-stripping the whole buffer on every read (quadratic in read count
-     on tag-heavy pages; a 293KB page's probe drops 4.5ms -> 0.8ms).
-     Byte-identical: the resumable scanner holds back at a chunk-final
-     "<!" so chunked == single-shot at every boundary (exhaustive
-     boundary tests), and detection output was unchanged across a
-     3,034-file differential. JunkDetector's Unicode block lookup also
-     uses a precomputed BMP table (exhaustive equivalence test)
-     (TIKA-4868).
+   * TikaInputStream.hasReliableLength() distinguishes measured lengths
+     from declared Content-Length hints, and one-shot streams now carry a
+     declared length without spooling; detection sizes its magic read only
+     from measured lengths, so a lying declared length can no longer
+     truncate it (TIKA-4868).
 
-   * Markdown rendering is another ~8x faster on large documents:
-     a custom Text-node renderer emits unescaped spans in bulk instead of
-     commonmark's per-character escape-check-and-append (9MB render
-     42ms -> 4ms; byte-identical output on a 1,900-document differential
-     across the test corpus and real-world HTML) (TIKA-4868).
+   * ParseContext entries holding per-parse runtime state (ParseRecord,
+     ParseTimeout, the parser-map cache) are skipped during serialization
+     instead of failing as unregistered components (TIKA-4868).
+
+   * Mojibuster's adaptive probe strips incrementally instead of
+     re-stripping the whole buffer on every read (quadratic on tag-heavy
+     pages); JunkDetector's Unicode block lookup uses a precomputed BMP
+     table. Output unchanged (TIKA-4868).
+
+   * Markdown rendering is another ~8x faster on large documents: a custom
+     Text-node renderer emits unescaped spans in bulk instead of
+     commonmark's per-character escape-check-and-append. Byte-identical
+     output, guarded by a fast-vs-stock differential test (TIKA-4868).
 
    * ZipParser no longer re-decompresses an entry on every rewind when the
      entry uses a legacy compression method (implode, shrink, bzip2, ...):
-     those decode per-bit, so the rewind-by-reopen trade that works for
-     STORED/DEFLATED entries re-decoded the whole entry for each of the
-     several rewinds the embedded pipeline performs. Such entries now
-     replay from the budgeted cache. An imploded 606KB zip drops from
-     610ms to 102ms in tika-server (TIKA-4868).
+     such entries replay from the budgeted cache instead of re-opening.
+     An imploded 606KB zip drops from 610ms to 102ms (TIKA-4868).
 
    * More detection/dispatch savings: the message/rfc822 priority-45 magic
-     is gated behind a ':' scan of the first 30 bytes (every match provably
-     has one, so results are unchanged and non-mail text skips its ~40
-     clauses); CompositeParser caches the built type->parser map in the
-     ParseContext, so embedded documents reuse the container's map instead
-     of rebuilding it per document. Plain-text detection drops from 334us
-     (4.1.0-dev ran it twice) to 52us per document; eml requests ~-45%,
-     ppt ~-35% in tika-server. MagicDetector also precomputes a 256-entry
-     first-byte table per pattern (mask and case fold become one array
-     load per scanned position). Adds a RESOURCE_TIMING log on
-     org.apache.tika.pipes.timing.resource, silenced by default in the
-     shipped log4j2 configs (TIKA-4868).
+     is gated behind a lossless ':' scan of the first 30 bytes;
+     CompositeParser caches the built type->parser map in the ParseContext
+     so embedded documents reuse the container's map; MagicDetector
+     precomputes a per-pattern first-byte table. Adds a RESOURCE_TIMING
+     log, silenced by default in the shipped log4j2 configs (TIKA-4868).
 
-   * WordExtractor (.doc) cleans each character run in one pass instead of
-     four chained replace/replaceAll copies, and tests paragraph blankness
-     without a regex replaceAll; ToMarkdownContentHandler collapses line
-     breaks in one pass with no copy for clean runs. ~39% off parsing a
-     text-heavy 2MB .doc (TIKA-4868).
+   * WordExtractor (.doc) cleans each character run and tests paragraph
+     blankness in single passes; ToMarkdownContentHandler collapses line
+     breaks copy-free for clean runs. ~39% off a text-heavy 2MB .doc
+     (TIKA-4868).
 
    * tika-server's raw-output endpoints (/tika, /tika/text, ...) carry the
      extracted content as raw UTF-8 bytes from the pipes worker to the HTTP
-     response instead of a Smile-encoded string: one encode in the worker
-     replaces a string transcode on both sides of the IPC plus a re-encode
-     at the HTTP layer (9MB text: 115ms -> 75ms end-to-end). Opt-in via
-     the new content-bytes-config parse-context component, which moves
-     CONTENT_ONLY passback content out of tk:content into
-     EmitData.getContentBytes() (TIKA-4868).
+     response instead of a Smile-encoded string (9MB text: 115ms -> 75ms).
+     Opt-in via the new content-bytes-config parse-context component, which
+     moves CONTENT_ONLY passback content out of tk:content into
+     EmitData.getContentBytes(); results routed to a regular Emitter get
+     the content restored to the metadata (TIKA-4868).
 
    * Detection hot-path cleanups: MagicMatch resolves its detector via
-     double-checked locking instead of a synchronized method per eval;
-     glob patterns are compiled once at registration instead of per
-     lookup; MimeTypes.forName reads a ConcurrentHashMap (fixing an
-     unsynchronized-read race) and indexes the normalized key so
-     parameterized aliases stop re-locking per call; resource names
+     double-checked locking; glob patterns are compiled once at
+     registration; MimeTypes.forName reads a ConcurrentHashMap (fixing an
+     unsynchronized-read race) and indexes normalized keys; resource names
      containing spaces skip the URI-parse-by-exception; the magic-header
-     buffer is sized by the stream's known length instead of a fixed
-     64KB per detection; and the Adobe Illustrator ranged regex is
-     gated behind a literal scan (detection results unchanged,
-     ~28us off every non-AI detection) (TIKA-4868).
+     buffer is sized by the stream's measured length instead of a fixed
+     64KB; the Adobe Illustrator ranged regex is gated behind a literal
+     scan. Detection results unchanged (TIKA-4868).
 
    * Magic detection is ~35% faster on unmatched (e.g. plain-text) input:
-     MagicDetector range scans find first-byte candidates with a tight
-     scan before running the full masked/case-folded compare, instead of
-     paying it at every offset in the range (TIKA-4868).
+     range scans find first-byte candidates before running the full
+     masked/case-folded compare (TIKA-4868).
 
    * CSVSniffer reads its detection window once into a shared buffer and
-     runs every delimiter hypothesis against it, instead of re-reading the
-     stream through a pushback/mark-reset stack per delimiter; windows with
-     no delimiter and no quote skip the scan outright. Identical results
-     on a 1,125-file differential; ~28% off small-text parse time in
-     tika-server (TIKA-4868).
+     runs every delimiter hypothesis against it; windows with no delimiter
+     and no quote skip the scan outright. Results unchanged (TIKA-4868).
 
    * Pipes workers no longer stall between pre-parse and parse waiting
      for the client to acknowledge the intermediate-result frame; the

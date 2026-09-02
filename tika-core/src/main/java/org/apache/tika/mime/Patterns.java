@@ -52,10 +52,9 @@ class Patterns implements Serializable {
             new TreeMap<>(new LengthComparator());
 
     /**
-     * Compiled forms of {@link #globs}' keys. Matching recompiled every glob regex
-     * per lookup before; for names that miss the name/extension indexes that was
-     * a Pattern.compile per glob per call. Transient with a lazy rebuild so a
-     * serialized form from a build without this field still deserializes.
+     * Compiled forms of {@link #globs}' keys, so a lookup does not
+     * Pattern.compile per glob. Transient with a lazy rebuild so a serialized
+     * form from a build without this field still deserializes.
      */
     private transient Map<String, Pattern> compiledGlobs = new HashMap<>();
     private int minExtensionLength = Integer.MAX_VALUE;

@@ -507,9 +507,8 @@ public class MagicDetector implements Detector {
                 }
             }
         } else {
-            // Range scans (e.g. "\nHeader:" over 0:1024) dominate detection time, so
-            // find first-byte candidates with a tight scan and run the full compare
-            // only there, instead of paying the masked/case machinery at every offset.
+            // Range scans (e.g. "\nHeader:" over 0:1024) dominate detection cost:
+            // scan for first-byte candidates, run the full compare only there.
             if (length == 0) {
                 // degenerate empty pattern: preserves the old loop's outcome
                 return startOffset <= endOffset && startOffset <= buffer.length;
