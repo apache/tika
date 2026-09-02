@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -39,10 +40,10 @@ import org.apache.tika.parser.ParseContext;
 @TikaComponent
 public class HeifParser extends AbstractImageParser {
 
-    private static final Set<MediaType> SUPPORTED_TYPES = new HashSet<>(
-            Arrays.asList(MediaType.image("heif"), MediaType.image("heif-sequence"),
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(MediaType.image("heif"), MediaType.image("heif-sequence"),
                     MediaType.image("heic"), MediaType.image("heic-sequence"),
-                    MediaType.image("avif")));
+                    MediaType.image("avif"))));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
