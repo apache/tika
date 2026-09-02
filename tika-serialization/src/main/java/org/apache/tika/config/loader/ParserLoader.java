@@ -19,9 +19,12 @@ package org.apache.tika.config.loader;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.EncodingDetector;
@@ -30,9 +33,12 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.RenderingParser;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.EnrichingParser;
 import org.apache.tika.renderer.Renderer;
 
 /**
@@ -40,10 +46,12 @@ import org.apache.tika.renderer.Renderer;
  * <ul>
  *   <li>SPI fallback via "default-parser" marker with exclusions</li>
  *   <li>Mime type filtering decorations (_mime-include, _mime-exclude)</li>
- *   <li>EncodingDetector and Renderer dependency injection</li>
+ *   <li>EncodingDetector, Renderer and content-enricher dependency injection</li>
  * </ul>
  */
 public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ParserLoader.class);
 
     public ParserLoader() {
         super("parsers", "default-parser", Parser.class);
@@ -125,10 +133,12 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
     @Override
     protected Parser postProcess(Parser parser, LoaderContext context)
             throws TikaConfigException {
-        // Inject EncodingDetector and Renderer into parsers that need them
+        // Inject EncodingDetector, Renderer and content enrichers into parsers that need them
         EncodingDetector encodingDetector = context.getEncodingDetector();
         Renderer renderer = context.getRenderer();
-        injectDependenciesRecursively(parser, encodingDetector, renderer);
+        CompositeContentEnricher contentEnrichers = context.getContentEnrichers();
+        injectDependenciesRecursively(parser, encodingDetector, renderer, contentEnrichers);
+        warnOnAmbiguousOcrRegistrations(parser);
         return parser;
     }
 
@@ -136,19 +146,59 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
      * Recursively inject dependencies into a parser and its children.
      */
     private void injectDependenciesRecursively(Parser parser, EncodingDetector encodingDetector,
-                                                Renderer renderer) {
+                                                Renderer renderer,
+                                                CompositeContentEnricher contentEnrichers) {
         if (encodingDetector != null && parser instanceof AbstractEncodingDetectorParser aedp) {
             aedp.setEncodingDetector(encodingDetector);
         }
         if (renderer != null && parser instanceof RenderingParser rp) {
             rp.setRenderer(renderer);
         }
+        if (contentEnrichers != null && parser instanceof EnrichingParser dp) {
+            dp.setContentEnrichers(contentEnrichers);
+        }
         if (parser instanceof CompositeParser cp) {
             for (Parser child : cp.getAllComponentParsers()) {
-                injectDependenciesRecursively(child, encodingDetector, renderer);
+                injectDependenciesRecursively(child, encodingDetector, renderer, contentEnrichers);
             }
         } else if (parser instanceof ParserDecorator pd) {
-            injectDependenciesRecursively(pd.getWrappedParser(), encodingDetector, renderer);
+            injectDependenciesRecursively(pd.getWrappedParser(), encodingDetector, renderer,
+                    contentEnrichers);
+        }
+    }
+
+    /**
+     * The image/ocr-* pseudo-types are claimed by several OCR engines whose availability
+     * is environmental, and the composite resolves a collision by last registration with
+     * no warning. Name the collision and the winner once at load so engine selection is
+     * debuggable; select an engine explicitly with "content-enrichers".
+     */
+    private void warnOnAmbiguousOcrRegistrations(Parser parser) {
+        if (!(parser instanceof CompositeParser cp)) {
+            return;
+        }
+        ParseContext empty = new ParseContext();
+        Map<MediaType, List<Parser>> duplicates = cp.findDuplicateParsers(empty);
+        if (duplicates.isEmpty()) {
+            return;
+        }
+        Map<MediaType, Parser> winners = cp.getParsers(empty);
+        for (Map.Entry<MediaType, List<Parser>> e : duplicates.entrySet()) {
+            if (!e.getKey().getSubtype().startsWith("ocr-")) {
+                continue;
+            }
+            StringBuilder claimants = new StringBuilder();
+            for (Parser p : e.getValue()) {
+                if (claimants.length() > 0) {
+                    claimants.append(", ");
+                }
+                claimants.append(p.getClass().getName());
+            }
+            Parser winner = winners.get(e.getKey());
+            LOG.warn("Multiple OCR engines claim {}: [{}]; {} wins by registration order. "
+                            + "Select one explicitly with \"content-enrichers\".",
+                    e.getKey(), claimants,
+                    winner == null ? "unknown" : winner.getClass().getName());
         }
     }
 

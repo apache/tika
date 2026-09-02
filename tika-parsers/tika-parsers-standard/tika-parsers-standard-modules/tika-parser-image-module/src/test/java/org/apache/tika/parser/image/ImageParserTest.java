@@ -30,6 +30,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.LegacyDispatchEnricher;
 
 public class ImageParserTest extends TikaTest {
 
@@ -222,7 +223,86 @@ public class ImageParserTest extends TikaTest {
     @Test
     public void testMimeTypeToOCRMimeTypeConversion() throws Exception {
         assertEquals(new MediaType("image", "OCR-png"),
-                AbstractImageParser.convertToOCRMediaType(MediaType.image("png")));
+                LegacyDispatchEnricher.toOcrMediaType(MediaType.image("png")));
+    }
+
+    /**
+     * A content enricher selected by name advertises real types and is invoked by the
+     * image parser, which keeps extracting its own metadata -- the enricher does not
+     * displace it (TIKA-4872).
+     */
+    @Test
+    public void testExplicitContentEnricher() throws Exception {
+        Parser enricher = new Parser() {
+            @Override
+            public java.util.Set<MediaType> getSupportedTypes(ParseContext context) {
+                return java.util.Collections.singleton(MediaType.image("png"));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, org.xml.sax.ContentHandler handler,
+                              Metadata metadata, ParseContext context) {
+                metadata.set("derived-by", "test-enricher");
+            }
+        };
+        ImageParser imageParser = new ImageParser();
+        imageParser.setContentEnrichers(
+                new org.apache.tika.parser.enricher.CompositeContentEnricher(
+                        java.util.List.of(enricher)));
+
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPNG.png")) {
+            imageParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        }
+        assertEquals("test-enricher", metadata.get("derived-by"));
+        // the image parser still ran and extracted its own metadata
+        assertEquals("100", metadata.get(TIFF.IMAGE_WIDTH));
+    }
+
+    /**
+     * The enricher is selected on the DETECTED media type, captured before the parser
+     * can refine Content-Type mid-parse (TIKA-4872): a parser that re-types the document
+     * during metadata extraction must still fire the enricher chosen at dispatch.
+     */
+    @Test
+    public void testEnricherSelectedOnDetectedTypeNotRefinedType() throws Exception {
+        Parser enricher = new Parser() {
+            @Override
+            public java.util.Set<MediaType> getSupportedTypes(ParseContext context) {
+                return java.util.Collections.singleton(MediaType.image("png"));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, org.xml.sax.ContentHandler handler,
+                              Metadata metadata, ParseContext context) {
+                metadata.set("enriched-for", "image/png");
+            }
+        };
+        AbstractImageParser retypingParser = new AbstractImageParser() {
+            @Override
+            public java.util.Set<MediaType> getSupportedTypes(ParseContext context) {
+                return java.util.Collections.singleton(MediaType.image("png"));
+            }
+
+            @Override
+            void extractMetadata(java.io.InputStream is, org.xml.sax.ContentHandler handler,
+                                 Metadata metadata, ParseContext context) {
+                // simulates a parser refining detection mid-parse
+                metadata.set(HttpHeaders.CONTENT_TYPE, "application/illustrator");
+            }
+        };
+        retypingParser.setContentEnrichers(
+                new org.apache.tika.parser.enricher.CompositeContentEnricher(
+                        java.util.List.of(enricher)));
+
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPNG.png")) {
+            retypingParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        }
+        assertEquals("image/png", metadata.get("enriched-for"));
+        assertEquals("application/illustrator", metadata.get(HttpHeaders.CONTENT_TYPE));
     }
 
     @Test

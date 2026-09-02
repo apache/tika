@@ -24,7 +24,9 @@ structured XHTML.
 
 Three implementations are provided out of the box. None is auto-loaded: each must be
 named explicitly in your configuration. (Changed in 4.1.0: `openai-vlm-parser` previously
-auto-registered via SPI.)
+auto-registered via SPI.) To use a VLM as the OCR engine for embedded images and rendered
+PDF pages, name it in the `content-enrichers` list — see
+xref:configuration/index.adoc[Configuration].
 
 [cols="1,2,1"]
 |===

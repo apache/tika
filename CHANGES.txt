@@ -1,5 +1,22 @@
 Release 4.1.0 - unreleased
 
+   * New "content-enrichers" config list (TIKA-4872): select the OCR engine
+     ("tesseract-ocr-parser", "tess4j-parser", "openai-vlm-parser", ...) by
+     name instead of by classpath registration of the image/ocr-* pseudo
+     media types. Enrichers advertise real media types (legacy engines that
+     still advertise image/ocr-* are mapped to the real type, so all are
+     nameable) and are invoked by the image and PDF parsers rather than
+     dispatched to by the composite, so an enricher no longer displaces the
+     parser registered for the same type. Enricher selection uses the
+     detected media type, captured before a parser can refine Content-Type.
+     Every enricher matching a media type runs, in config order (e.g. an
+     OCR engine then a VLM tagger for the same image), best-effort: one
+     enricher's failure does not stop the others and is still reported;
+     timeouts abort the chain. With no "content-enrichers" configured, the
+     legacy ocr-* dispatch applies unchanged; a WARN at config load now
+     names colliding OCR engines and the winner. TesseractOCRParser's
+     component name is pinned as "tesseract-ocr-parser".
+
    * Inference/OCR hardening (TIKA-4871): OpenAIVLMParser no longer
      auto-registers via SPI, matching its Claude/Gemini siblings; select
      it by name ("openai-vlm-parser") in config. Per-request parse-context

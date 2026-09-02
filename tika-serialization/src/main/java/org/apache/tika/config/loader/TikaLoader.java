@@ -48,6 +48,7 @@ import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -123,6 +124,10 @@ public class TikaLoader {
         ComponentConfig.builder("renderers", Renderer.class)
                 .loadAsList()
                 .wrapWith(list -> new CompositeRenderer((List<Renderer>) list))
+                .register();
+
+        ComponentConfig.builder("content-enrichers", CompositeContentEnricher.class)
+                .customLoader(new ContentEnricherLoader())
                 .register();
 
         ComponentConfig.builder("translator", Translator.class)
@@ -787,6 +792,10 @@ public class TikaLoader {
             output.set("renderers", serializeComponent(componentCache.get(Renderer.class), "renderers"));
         } else if (config.hasArrayComponents("renderers")) {
             output.set("renderers", config.getRootNode().get("renderers"));
+        }
+
+        if (config.hasArrayComponents("content-enrichers")) {
+            output.set("content-enrichers", config.getRootNode().get("content-enrichers"));
         }
 
         // Preserve auto-detect-parser config if present

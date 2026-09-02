@@ -83,6 +83,37 @@ public class PipesClientTest {
         }
     }
 
+    /**
+     * Wire test for the content-enrichers slot (TIKA-4872): a config-named enricher must
+     * be injected into the fork's parsers and its output must survive the fork boundary.
+     * Uses MockEnricher, so no OCR binary is needed.
+     */
+    @Test
+    public void testContentEnricherInFork(@TempDir Path tmp) throws Exception {
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                "tika-config-content-enrichers.json", tmp, tmp.resolve("input"),
+                tmp.resolve("output"), false);
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+        java.awt.image.BufferedImage image =
+                new java.awt.image.BufferedImage(10, 10, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        javax.imageio.ImageIO.write(image, "png", inputDir.resolve("test.png").toFile());
+
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple("test.png", new FetchKey(fetcherName, "test.png"),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+            assertEquals("ENRICHED", metadata.get(MockEnricher.MARKER_KEY));
+            assertTrue(metadata.get(TikaCoreProperties.TIKA_CONTENT)
+                    .contains(MockEnricher.MARKER_TEXT));
+        }
+    }
+
     @Test
     public void testMetadataFilter(@TempDir Path tmp) throws Exception {
         ParseContext parseContext = new ParseContext();

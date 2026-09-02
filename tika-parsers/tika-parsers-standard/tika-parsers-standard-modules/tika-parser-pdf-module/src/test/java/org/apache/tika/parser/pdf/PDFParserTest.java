@@ -1661,6 +1661,49 @@ public class PDFParserTest extends TikaTest {
         assertContains("chunk-page-2", chunks);
     }
 
+    /**
+     * A content enricher selected by name -- advertising real image types, never the
+     * ocr- pseudo types, with no composite-parser registration at all -- receives every
+     * rendered page when OCR runs (TIKA-4872).
+     */
+    @Test
+    public void testExplicitContentEnricherReceivesRenderedPages() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+
+        Parser enricher = new Parser() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(MediaType.image("png"));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws IOException, SAXException {
+                assertEquals("image/png",
+                        metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE));
+                XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+                xhtml.startDocument();
+                xhtml.characters("DERIVED-PAGE-" + context.get(OCRPageCounter.class).getCount());
+                xhtml.endDocument();
+            }
+        };
+        PDFParser parser = new PDFParser();
+        parser.setContentEnrichers(
+                new org.apache.tika.parser.enricher.CompositeContentEnricher(List.of(enricher)));
+
+        Metadata metadata = new Metadata();
+        ToXMLContentHandler xmlHandler = new ToXMLContentHandler();
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPDF_bookmarks.pdf")) {
+            parser.parse(tis, xmlHandler, metadata, context);
+        }
+        String xml = xmlHandler.toString();
+        assertContains("DERIVED-PAGE-1", xml);
+        assertContains("DERIVED-PAGE-2", xml);
+    }
+
     @Test
     public void testMergeChunkArrays() {
         assertEquals("[b]", AbstractPDF2XHTML.mergeChunkArrays(null, "[b]"));
