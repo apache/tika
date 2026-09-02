@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * Markdown rendering is another ~8x faster on large documents:
+     a custom Text-node renderer emits unescaped spans in bulk instead of
+     commonmark's per-character escape-check-and-append (9MB render
+     42ms -> 4ms; byte-identical output on a 1,900-document differential
+     across the test corpus and real-world HTML) (TIKA-4868).
+
    * ZipParser no longer re-decompresses an entry on every rewind when the
      entry uses a legacy compression method (implode, shrink, bzip2, ...):
      those decode per-bit, so the rewind-by-reopen trade that works for

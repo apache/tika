@@ -89,7 +89,9 @@ public class ToMarkdownContentHandler extends DefaultHandler {
 
     private final Writer writer;
     private final MarkdownRenderer renderer =
-            MarkdownRenderer.builder().extensions(EXTENSIONS).build();
+            MarkdownRenderer.builder().extensions(EXTENSIONS)
+                    // registered first, so it wins Text rendering from the core renderer
+                    .nodeRendererFactory(FastMarkdownTextRenderer.FACTORY).build();
 
     private final Document document = new Document();
     private final Deque<Node> stack = new ArrayDeque<>();
