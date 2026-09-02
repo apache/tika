@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * A plain MP4 is typed by the tracks it holds rather than by its brand:
+     MP4TrackDetector reads the handler types in the movie box and returns
+     video/mp4, audio/mp4 or application/mp4. The brand of most MP4 files,
+     isom, says nothing about their content, so the mime magic could only
+     fall back to video/quicktime (TIKA-3646, TIKA-2935).
+
    * Raster previews for the vector thumbnails of Office documents: the new
      poi-metafile-renderer draws EMF and WMF images through POI (a PNG of
      a configurable width; Word's bitmap-in-WMF thumbnails from the bitmap

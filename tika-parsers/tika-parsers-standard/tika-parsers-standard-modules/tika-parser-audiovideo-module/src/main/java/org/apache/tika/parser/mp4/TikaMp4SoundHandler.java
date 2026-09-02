@@ -121,7 +121,7 @@ class TikaMp4SoundHandler extends Mp4SoundHandler {
             if (size < 8 || size > end - pos) {
                 return 0;
             }
-            String type = Mp4SampleEntries.fourCC(b, pos + 4);
+            String type = Mp4Boxes.fourCC(b, pos + 4);
             if ("esds".equals(type)) {
                 return readEsdsAverageBitRate(b, pos + 8, pos + (int) size);
             }

@@ -68,14 +68,14 @@ public class Mp4SampleEntriesTest {
 
     @Test
     public void testPrintableFourCC() {
-        assertEquals("mp4a", Mp4SampleEntries.printableFourCC(ascii("mp4a"), 0));
+        assertEquals("mp4a", Mp4Boxes.printableFourCC(ascii("mp4a"), 0));
         //QuickTime pads short codes with spaces
-        assertEquals("raw", Mp4SampleEntries.printableFourCC(ascii("raw "), 0));
-        assertEquals("rle", Mp4SampleEntries.printableFourCC(ascii("rle "), 0));
-        assertNull(Mp4SampleEntries.printableFourCC(ascii("    "), 0));
-        assertNull(Mp4SampleEntries.printableFourCC(new byte[]{0, 1, 2, 3}, 0));
-        assertNull(Mp4SampleEntries.printableFourCC(new byte[]{'a', 'v', 'c', 0x7F}, 0));
-        assertNull(Mp4SampleEntries.printableFourCC(new byte[]{(byte) 0xE4, 'v', 'c', '1'}, 0));
+        assertEquals("raw", Mp4Boxes.printableFourCC(ascii("raw "), 0));
+        assertEquals("rle", Mp4Boxes.printableFourCC(ascii("rle "), 0));
+        assertNull(Mp4Boxes.printableFourCC(ascii("    "), 0));
+        assertNull(Mp4Boxes.printableFourCC(new byte[]{0, 1, 2, 3}, 0));
+        assertNull(Mp4Boxes.printableFourCC(new byte[]{'a', 'v', 'c', 0x7F}, 0));
+        assertNull(Mp4Boxes.printableFourCC(new byte[]{(byte) 0xE4, 'v', 'c', '1'}, 0));
         //an unprintable FourCC reaches the visitor as null but does not stop the walk
         byte[] stsd = stsd(entry(24, "\u0001vc1", 16), entry(24, "mp4a", 16));
         assertEquals(List.of("null:16:32", "mp4a:40:56"), walk(stsd));
