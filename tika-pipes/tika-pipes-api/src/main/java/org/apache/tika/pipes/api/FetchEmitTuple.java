@@ -38,8 +38,7 @@ public class FetchEmitTuple implements Serializable {
     private final Metadata metadata;
     private final ParseContext parseContext;
     private final ON_PARSE_EXCEPTION onParseException;
-    // Name of an operator-defined preset the server resolves from its own config
-    // at config-tier trust; only the name travels, never the preset's content.
+    // Preset selector only: the server resolves the content from its own config
     private final String presetName;
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey) {
@@ -58,6 +57,7 @@ public class FetchEmitTuple implements Serializable {
         this(id, fetchKey, emitKey, metadata, parseContext, onParseException, null);
     }
 
+    /** @since Apache Tika 4.1.0 */
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ParseContext parseContext,
                           ON_PARSE_EXCEPTION onParseException, String presetName) {
         this.id = id;
@@ -95,7 +95,11 @@ public class FetchEmitTuple implements Serializable {
         return onParseException;
     }
 
-    /** The selected preset's name, or null for none. */
+    /**
+     * The selected preset's name, or null for none.
+     *
+     * @since Apache Tika 4.1.0
+     */
     public String getPresetName() {
         return presetName;
     }

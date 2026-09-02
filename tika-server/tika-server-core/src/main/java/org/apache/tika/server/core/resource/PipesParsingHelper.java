@@ -245,11 +245,7 @@ public class PipesParsingHelper {
         }
     }
 
-    /**
-     * Lifts the in-process {@link PresetSelection} carrier out of the context and onto the
-     * tuple's own preset field: only the name travels; the forked worker resolves the
-     * preset's content from its own config at config-tier trust.
-     */
+    // Only the name travels: the worker resolves the preset from its own config.
     private static String liftPresetSelection(ParseContext parseContext) {
         PresetSelection preset = parseContext.get(PresetSelection.class);
         if (preset == null) {

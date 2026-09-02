@@ -3,21 +3,17 @@ Release 4.1.0 - unreleased
    * tika-server: named configuration presets (TIKA-4856). A preset is a
      vetted parse-context fragment activated in the server config (top-level
      "presets" key: an object defines one in place, true activates a
-     definition from the classpath catalog so its content tracks the Tika
-     version) and selected whole by inserting preset/{name} after the
-     resource root: /tika/preset/{name}[/text|...],
+     classpath-catalog definition) and selected whole via preset/{name}
+     after the resource root: /tika/preset/{name}[/text|...],
      /rmeta/preset/{name}[/{handlerType}], /unpack/preset/{name}[/all].
-     Exactly one preset per request, never combined with a config part, and
-     usable without allowPerRequestConfig -- the preset routes are network-
-     addressable separately from the /config endpoints, and nothing on the
-     classpath can activate a preset by itself. Only the preset's name
-     travels: the forked worker resolves the content from its own config at
-     config-tier trust, so presets may bind wire-blocked components and
-     raise timeout limits above the per-request clamp, and every active
-     preset resolves at startup or fails it. FetchEmitTuples submitted to
-     /pipes and /async may carry a "preset" field, resolved the same way
-     (unknown names answer the new PRESET_NOT_FOUND task status / HTTP 400;
-     the REST preset routes 404 before submission).
+     One preset per request, never combined with a config part, usable
+     without allowPerRequestConfig, and network-addressable separately from
+     /config. Only the name travels: the forked worker resolves the content
+     from its own config at config-tier trust, so presets may bind
+     wire-blocked components and raise timeout limits above the per-request
+     clamp; every active preset resolves at startup or fails it.
+     FetchEmitTuples on /pipes and /async may carry a "preset" field
+     (unknown names: new PRESET_NOT_FOUND status / HTTP 400).
 
    * Raster previews for the vector thumbnails of Office documents: the new
      poi-metafile-renderer draws EMF and WMF images through POI (a PNG of

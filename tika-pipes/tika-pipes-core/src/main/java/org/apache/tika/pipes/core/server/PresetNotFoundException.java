@@ -19,9 +19,10 @@ package org.apache.tika.pipes.core.server;
 import org.apache.tika.exception.TikaConfigException;
 
 /**
- * A request selected a preset name this server's config does not activate. A caller
- * error, not a server fault: answered with a {@code PRESET_NOT_FOUND} result rather
- * than the crash path other pre-parse failures take.
+ * A request named a preset this server's config does not activate: a caller error,
+ * answered with a {@code PRESET_NOT_FOUND} result rather than the crash path.
+ *
+ * @since Apache Tika 4.1.0
  */
 public class PresetNotFoundException extends TikaConfigException {
 

@@ -145,11 +145,8 @@ public class UnpackerResource {
      * @param info URI info
      * @return streaming zip response
      */
-    /**
-     * The wildcard {@code id} on the pre-existing routes would otherwise silently absorb a
-     * transposed preset URL ({@code /unpack/all/preset/x}, {@code /unpack/preset} with no
-     * name) and run with no preset applied -- a silent wrong-config success.
-     */
+    // The wildcard id would otherwise absorb a transposed preset URL (/unpack/all/preset/x)
+    // and silently run with no preset applied.
     private static void rejectPresetInWildcard(UriInfo info) {
         String id = info.getPathParameters().getFirst("id");
         if (id != null && (id.equals("/preset") || id.startsWith("/preset/"))) {

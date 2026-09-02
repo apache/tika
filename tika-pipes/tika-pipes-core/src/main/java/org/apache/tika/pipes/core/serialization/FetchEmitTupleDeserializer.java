@@ -150,10 +150,7 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         }
     }
 
-    /**
-     * A preset name is only a selector: the server resolves it against its own config,
-     * so the sole check here is the shared name syntax (which also bounds its length).
-     */
+    // A preset name is only a selector; the shared syntax rule also bounds its length.
     private static String readPresetName(JsonNode root) throws IOException {
         String presetName = readVal(PRESET, root, null, false);
         if (presetName != null && !PresetRegistry.isValidName(presetName)) {

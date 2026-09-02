@@ -17,12 +17,12 @@
 package org.apache.tika.server.core.resource;
 
 /**
- * In-process carrier for a request's selected preset name, riding the request
- * ParseContext between the resource and {@link PipesParsingHelper}, which lifts it
- * onto the tuple's own preset field before serialization. Never travels on the wire
- * itself (the wire serializer refuses unregistered context entries, so a leak fails
- * loudly). The preset's content is resolved by the forked worker from its own config
- * at config-tier trust.
+ * In-process carrier for a request's selected preset name: rides the request
+ * ParseContext until {@link PipesParsingHelper} lifts it onto the tuple's preset
+ * field. Never serialized (the wire serializer refuses unregistered entries, so a
+ * leak fails loudly).
+ *
+ * @since Apache Tika 4.1.0
  */
 public record PresetSelection(String name) {
 }

@@ -131,12 +131,10 @@ public class TikaResource {
     }
 
     /**
-     * A request context carrying the named preset selection. Only the name is recorded
-     * here: the forked worker resolves the preset from its own copy of this config at
-     * config-tier trust, so preset content is never treated as caller-supplied wire
-     * data (which would screen out wire-blocked components and clamp its timeouts).
-     * A preset is selected whole and exclusively -- the {@code preset} routes take
-     * no config part, so it never combines with request-supplied configuration.
+     * A request context carrying only the preset selection: the forked worker resolves
+     * the content from its own copy of this config at config-tier trust, so a preset is
+     * never treated as caller-supplied wire data (which would screen out wire-blocked
+     * components and clamp its timeouts).
      *
      * @throws NotFoundException if no preset has this name
      */
@@ -622,15 +620,12 @@ public class TikaResource {
 
     // ==================== PUT preset endpoints ====================
 
-    // Mirrors of the PUT endpoints above with a vetted, named parse-context fragment
-    // applied: /tika/preset/{name}[/text|/html|/xml|/md|/json[/{handlerType}]]. The
-    // preset segment sits directly after the resource root so network-layer rules can
-    // address /tika/preset/* -- or a single preset -- independently of /tika/config*.
+    // Mirrors of the PUT endpoints above: /tika/preset/{name}[/text|/html|/xml|/md|
+    // /json[/{handlerType}]]. The preset segment sits directly after the resource root
+    // so network-layer rules can address /tika/preset/* independently of /tika/config*.
     // These routes take no config part; a preset never combines with request config.
-
-    // explicitHandlerType semantics: non-null (an explicit format segment in the URL) wins
-    // over everything, including a factory the preset itself binds; null defers to the
-    // preset's factory, then the config's, then the endpoint default.
+    // explicitHandlerType: non-null (an explicit format segment) wins over everything,
+    // including the preset's own factory; null defers preset -> config -> default.
 
     private Response putRawPreset(InputStream is, HttpHeaders httpHeaders, String presetName,
                                   String explicitHandlerType) throws IOException {

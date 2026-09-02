@@ -39,35 +39,27 @@ import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 /**
- * Named, vetted parse-context fragments a caller can select whole ("presets").
- * A preset's content has the shape of a {@code parse-context} block: parser and
- * component configurations keyed by friendly name. A caller references a preset
- * by name only, so the configuration itself stays in Tika and in the server's
- * config rather than in consuming applications.
+ * Named, vetted parse-context fragments a caller selects whole, by name only ("presets").
+ * A preset is operator config, not caller input: resolved with the same trust as the
+ * config's own {@code parse-context} block, and fully resolved at load so a bad preset
+ * fails startup, not its first request.
  * <p>
- * A preset is operator-authored config, not caller input: it is resolved with
- * the same trust as the config's own {@code parse-context} block (no wire-block
- * screening), and only its <em>name</em> ever travels on a request. Every
- * active preset is fully resolved at load time, so a preset that cannot
- * resolve fails startup rather than its first request.
+ * Nothing is active unless the config's {@code presets} block names it: {@code true}
+ * activates the classpath-catalog definition of that name (error if absent), an object
+ * defines the preset in place (replacing any catalog definition wholesale),
+ * {@code false}/{@code null} is an explicit no-op. Catalog jars can never activate
+ * themselves. Presets do not compose.
  * <p>
- * Nothing is active unless the config's {@code presets} block names it: an
- * entry with value {@code true} activates the catalog definition of that name
- * (content shipped on the classpath, so it tracks the Tika version); an object
- * value defines the preset in place (replacing any catalog definition
- * wholesale); {@code false} or {@code null} is an explicit no-op. Catalog jars
- * can never activate themselves -- every active preset is a visible line in
- * the operator's config. Presets do not compose.
- * <p>
- * The catalog is discovered from {@code META-INF/tika/presets.idx} resources,
- * each line {@code name=/classpath/resource.json}. Blank lines and {@code #}
- * comments are ignored.
+ * The catalog is discovered from {@code META-INF/tika/presets.idx} resources, each line
+ * {@code name=/classpath/resource.json}; blank lines and {@code #} comments ignored.
  * <pre>
  * "presets": {
  *   "some-catalog-preset": true,
  *   "ocr-heavy": { "pdf-parser": { "ocr": { "strategy": "OCR_AND_TEXT_EXTRACTION" } } }
  * }
  * </pre>
+ *
+ * @since Apache Tika 4.1.0
  */
 public final class PresetRegistry {
 
@@ -90,16 +82,12 @@ public final class PresetRegistry {
     }
 
     /**
-     * Builds the active roster from the config's {@code presets} block: only
-     * names it lists are active. {@code true} activates a catalog definition
-     * (startup error if the catalog has no such name); an object defines the
-     * preset in place; {@code false}/{@code null} deactivates explicitly.
-     * Every active preset is resolved here, so a preset whose content cannot
-     * bind is a startup error.
+     * Builds the active roster from the config's {@code presets} block (see the class
+     * javadoc for the value semantics), resolving every active preset.
      *
      * @param config the loaded config, may be null (empty roster)
-     * @param classLoader loader to scan for catalog preset indexes and resolve
-     *                    preset components, may be null for the thread context loader
+     * @param classLoader for catalog scanning and component resolution; null for the
+     *                    thread context loader
      */
     public static PresetRegistry load(TikaJsonConfig config, ClassLoader classLoader)
             throws TikaConfigException {
@@ -147,10 +135,7 @@ public final class PresetRegistry {
         return new PresetRegistry(presets, withContentHandlerFactory, loader);
     }
 
-    /**
-     * Trusted-tier resolution: presets are operator config, so no wire-block screening
-     * -- identical treatment to the config's own {@code parse-context} block.
-     */
+    // Trusted-tier resolution: operator config, so no wire-block screening.
     private static ParseContext resolve(String name, JsonNode content, ClassLoader loader)
             throws TikaConfigException {
         try {
@@ -232,10 +217,9 @@ public final class PresetRegistry {
     }
 
     /**
-     * True if {@code name} is a legal preset name: the character/length rule above, and
-     * not starting with "config" (tika-server gates {@code /config} endpoints on that
-     * path fragment, so such a name would be unreachable there). Public so wire
-     * deserializers can bound a preset-name field with the same rule.
+     * Legal preset name: the NAME rule, and not "config"-prefixed (tika-server gates
+     * {@code /config} endpoints on that path fragment). Public so wire deserializers
+     * can bound a preset-name field with the same rule.
      */
     public static boolean isValidName(String name) {
         return name != null && NAME.matcher(name).matches()
@@ -250,29 +234,23 @@ public final class PresetRegistry {
         return name != null && presets.containsKey(name);
     }
 
-    /**
-     * The preset's content -- a {@code parse-context}-shaped JSON object of
-     * component configurations -- or null if no preset has this name.
-     */
+    /** The preset's {@code parse-context}-shaped JSON, or null for an unknown name. */
     public String parseContextJson(String name) {
         JsonNode node = name == null ? null : presets.get(name);
         return node == null ? null : node.toString();
     }
 
     /**
-     * A fresh, fully resolved ParseContext for the named preset, or null if no preset
-     * has this name. Fresh per call: callers mutate the result per request.
+     * A fully resolved ParseContext for the preset, or null for an unknown name.
+     * Fresh per call: callers mutate the result per request.
      */
     public ParseContext newParseContext(String name) throws TikaConfigException {
         JsonNode content = name == null ? null : presets.get(name);
         return content == null ? null : resolve(name, content, classLoader);
     }
 
-    /**
-     * True if the named preset binds a {@link ContentHandlerFactory}: a route with no
-     * explicit format segment should then leave the choice to the preset rather than
-     * forcing its own default.
-     */
+    /** True if the preset binds a {@link ContentHandlerFactory} (it then owns the
+     * output format on routes with no explicit format segment). */
     public boolean suppliesContentHandlerFactory(String name) {
         return name != null && withContentHandlerFactory.contains(name);
     }

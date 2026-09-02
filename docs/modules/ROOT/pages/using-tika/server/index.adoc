@@ -110,6 +110,8 @@ callers change how documents are parsed, widening what anyone who can reach the 
 A *preset* is a named, vetted parse-context fragment: parser and component configurations keyed
 by friendly name, defined once in the server config (or shipped with Tika) and selected whole by
 name. Callers apply one by inserting `preset/{name}` directly after the resource root:
+`/tika/preset/{name}[/text|/html|/xml|/md|/json[/{handlerType}]]`,
+`/rmeta/preset/{name}[/{handlerType}]`, `/unpack/preset/{name}[/all]`.
 
 [source,bash]
 ----
@@ -136,30 +138,28 @@ the catalog fails startup:
 ----
 
 Presets are deliberately narrow: a request selects exactly one, the preset routes take no
-`config` part, and a preset never combines with request-supplied configuration — a caller who
-needs a variant asks the operator to define it as another preset. Because the content of a
-preset is operator- or Tika-vetted, the preset routes do *not* require `allowPerRequestConfig`:
-they are the safe public knob, while free-form `/config` stays the privileged one. The
-`preset/{name}` path segment also gives network controls an addressable surface — a reverse
-proxy can allow `/rmeta/preset/render-thumbnails` (or all of `/rmeta/preset/`) while blocking
-`/rmeta/config` entirely. An unknown preset name answers `404`. Preset names may not start
-with `config` (that path fragment gates the `/config` endpoints).
+`config` part, and a preset never combines with request-supplied configuration — a variant is
+another preset. Because preset content is operator- or Tika-vetted, the preset routes do *not*
+require `allowPerRequestConfig`, and the `preset/{name}` path segment gives network controls an
+addressable surface — a reverse proxy can allow `/rmeta/preset/` while blocking `/rmeta/config`
+entirely. An unknown preset name answers `404`. Names are letters, digits, `.`, `_`, `-`
+(max 100 chars) and may not start with `config` (that path fragment gates the `/config`
+endpoints).
 
 Only the preset's *name* travels with a request: the forked parse worker resolves the content
 from its own copy of the server config, with the same trust as the config's own
-`parse-context` block. A preset can therefore configure components that per-request `/config`
-input may not (detectors, embedded-document extraction, exception reporting, ...) and raise
-timeout limits above the per-request clamp. Every active preset is fully resolved at startup,
-so a preset that cannot resolve fails the server rather than its first request.
+`parse-context` block. A preset can therefore bind components per-request `/config` input may
+not (detectors, embedded-document extraction, exception reporting, ...) and raise timeout
+limits above the per-request clamp. Every active preset resolves at startup, so a bad preset
+fails the server, not its first request.
 
-Output format on the preset routes: an explicit format segment in the URL
-(`/tika/preset/{name}/text`, `/rmeta/preset/{name}/xml`) always wins. Without one, a
-`ContentHandlerFactory` the preset itself binds decides the format; otherwise the config's
-factory, and finally the endpoint's usual default (Markdown).
+Output format on the preset routes: an explicit format segment (`/tika/preset/{name}/text`)
+always wins; without one, a `ContentHandlerFactory` the preset binds decides, then the
+config's, then the endpoint default (Markdown).
 
-Presets also work on the batch surfaces: a `FetchEmitTuple` submitted to `/pipes` or `/async`
-may carry a top-level `"preset": "name"` field, resolved the same way and overlaid beneath
-whatever `parseContext` the tuple itself supplies.
+On the batch surfaces, a `FetchEmitTuple` submitted to `/pipes` or `/async` may carry a
+top-level `"preset": "name"` field, resolved the same way beneath the tuple's own
+`parseContext`; an unknown name there answers the `PRESET_NOT_FOUND` status (HTTP `400`).
 
 === `allowPipes` — the `/pipes` and `/async` endpoints
 

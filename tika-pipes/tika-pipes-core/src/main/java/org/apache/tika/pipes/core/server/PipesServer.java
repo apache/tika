@@ -761,8 +761,8 @@ public class PipesServer implements AutoCloseable {
 
     /**
      * Overlays the named preset, resolved from this server's own config at config-tier
-     * trust. Only the name arrived on the wire; the caller's untrusted delta is copied
-     * on top afterwards and remains subject to the wire screens and timeout clamping.
+     * trust; only the name arrived on the wire. The caller's untrusted delta is copied
+     * on top afterwards and stays subject to wire screening and timeout clamping.
      */
     static void mergePreset(PresetRegistry registry, String presetName, ParseContext merged)
             throws TikaConfigException {
