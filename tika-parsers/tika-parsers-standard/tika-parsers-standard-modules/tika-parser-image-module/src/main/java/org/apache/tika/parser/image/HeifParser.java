@@ -41,7 +41,8 @@ public class HeifParser extends AbstractImageParser {
 
     private static final Set<MediaType> SUPPORTED_TYPES = new HashSet<>(
             Arrays.asList(MediaType.image("heif"), MediaType.image("heif-sequence"),
-                    MediaType.image("heic"), MediaType.image("heic-sequence")));
+                    MediaType.image("heic"), MediaType.image("heic-sequence"),
+                    MediaType.image("avif")));
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {

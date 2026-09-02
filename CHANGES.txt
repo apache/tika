@@ -1,5 +1,9 @@
 Release 4.1.0 - unreleased
 
+   * AVIF images are parsed rather than only detected: HeifParser accepts
+     image/avif, which is the same ISO-BMFF container, so dimensions, EXIF
+     and XMP come out of it the way they do for HEIC (TIKA-4870).
+
    * Raster previews for the vector thumbnails of Office documents: the new
      poi-metafile-renderer draws EMF and WMF images through POI (a PNG of
      a configurable width; Word's bitmap-in-WMF thumbnails from the bitmap
