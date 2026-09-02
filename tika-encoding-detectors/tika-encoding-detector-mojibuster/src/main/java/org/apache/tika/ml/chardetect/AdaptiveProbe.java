@@ -61,6 +61,10 @@ public final class AdaptiveProbe {
             int cap = Math.min(rawCap, contentTarget);
             byte[] buf = new byte[cap];
             byte[] stripDst = new byte[cap];
+            // Resumable strip: each byte is scanned once. Re-stripping from offset 0
+            // per read made this loop quadratic in read count on tag-heavy pages.
+            // Absolute cursor positions stay valid across the copyOf growth below.
+            HtmlByteStripper.Cursor cursor = new HtmlByteStripper.Cursor();
             int total = 0;
             while (total < rawCap) {
                 int want = Math.min(rawCap - total, contentTarget);
@@ -71,10 +75,10 @@ public final class AdaptiveProbe {
                 }
                 int n = IOUtils.read(tis, buf, total, want);
                 total += n;
-                HtmlByteStripper.Result r =
-                        HtmlByteStripper.stripTags(buf, 0, total, stripDst, 0);
-                int content = r.tagCount > 0 ? r.length : total;
-                if (content >= contentTarget || n < want) {
+                boolean eof = n < want;
+                HtmlByteStripper.stripTags(buf, total, stripDst, cursor, eof);
+                int content = cursor.tagCount() > 0 ? cursor.contentLength() : total;
+                if (content >= contentTarget || eof) {
                     break; // enough body text, or EOF
                 }
             }

@@ -1,5 +1,15 @@
 Release 4.1.0 - unreleased
 
+   * Mojibuster's adaptive probe strips incrementally instead of
+     re-stripping the whole buffer on every read (quadratic in read count
+     on tag-heavy pages; a 293KB page's probe drops 4.5ms -> 0.8ms).
+     Byte-identical: the resumable scanner holds back at a chunk-final
+     "<!" so chunked == single-shot at every boundary (exhaustive
+     boundary tests), and detection output was unchanged across a
+     3,034-file differential. JunkDetector's Unicode block lookup also
+     uses a precomputed BMP table (exhaustive equivalence test)
+     (TIKA-4868).
+
    * Markdown rendering is another ~8x faster on large documents:
      a custom Text-node renderer emits unescaped spans in bulk instead of
      commonmark's per-character escape-check-and-append (9MB render
