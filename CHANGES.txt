@@ -6,6 +6,18 @@ Release 4.1.0 - unreleased
      camera previews and the audio cover art set the length they read from
      the file (TIKA-4873).
 
+   * AVIF images are parsed rather than only detected: HeifParser accepts
+     image/avif, which is the same ISO-BMFF container, so dimensions, EXIF
+     and XMP come out of it the way they do for HEIC (TIKA-4870).
+
+   * The video of a Google/Android motion photo, appended after the image and
+     described by the Motion Photo or MicroVideo XMP, is emitted as an
+     ATTACHMENT embedded document named after what the file declares it to
+     be. Nothing is emitted, and nothing is recorded, when the declared
+     length does not fit the file or the bytes there are not recognized,
+     which is what sharing a motion photo out of a gallery leaves behind
+     (TIKA-4869).
+
    * Raster previews for the vector thumbnails of Office documents: the new
      poi-metafile-renderer draws EMF and WMF images through POI (a PNG of
      a configurable width; Word's bitmap-in-WMF thumbnails from the bitmap
