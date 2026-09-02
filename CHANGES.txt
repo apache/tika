@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * Embedded documents carry their size: ParsingEmbeddedDocumentExtractor
+     sets Content-Length from the stream where the stream knows it and the
+     parser did not say, which never spools to measure one, and the raw
+     camera previews and the audio cover art set the length they read from
+     the file (TIKA-4873).
+
    * Raster previews for the vector thumbnails of Office documents: the new
      poi-metafile-renderer draws EMF and WMF images through POI (a PNG of
      a configurable width; Word's bitmap-in-WMF thumbnails from the bitmap
