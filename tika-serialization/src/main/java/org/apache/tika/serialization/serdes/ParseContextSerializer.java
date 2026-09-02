@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.TransientParseState;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.serialization.ComponentNameResolver;
@@ -76,6 +77,13 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
 
             // Skip null values
             if (value == null) {
+                continue;
+            }
+
+            // Per-parse runtime state (ParseRecord, ParseTimeout, parser-map cache)
+            // is never configuration; a context that has been through a parse must
+            // still serialize.
+            if (value instanceof TransientParseState) {
                 continue;
             }
 

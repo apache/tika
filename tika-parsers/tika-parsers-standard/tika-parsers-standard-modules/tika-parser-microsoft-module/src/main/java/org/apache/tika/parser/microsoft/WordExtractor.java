@@ -106,10 +106,6 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         return count;
     }
 
-    /**
-     * Given a style name, return what tag should be used, and
-     * what style should be applied to it.
-     */
     // matches the old regex [\r\n\s]+ ( \s == [ \t\n\x0B\f\r] ), without the
     // full replaceAll copy it used to make per paragraph
     private static boolean isBlankParagraph(String text) {

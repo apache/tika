@@ -459,15 +459,6 @@ public class MagicDetector implements Detector {
         }
     }
 
-    /**
-     * Core matching logic that checks if the pattern matches anywhere in the buffer
-     * within the specified offset range.
-     *
-     * @param buffer the byte array to search in
-     * @param startOffset the first position in the buffer to start matching (inclusive)
-     * @param endOffset the last position in the buffer to start matching (inclusive)
-     * @return true if a match is found, false otherwise
-     */
     // Which raw first bytes can begin a match; encodes mask[0] and the case fold so the
     // scan loop is a single table load. Built lazily, idempotent under racing builds.
     private transient volatile boolean[] firstByteMatches;
@@ -485,6 +476,15 @@ public class MagicDetector implements Detector {
         return table;
     }
 
+    /**
+     * Core matching logic that checks if the pattern matches anywhere in the buffer
+     * within the specified offset range.
+     *
+     * @param buffer the byte array to search in
+     * @param startOffset the first position in the buffer to start matching (inclusive)
+     * @param endOffset the last position in the buffer to start matching (inclusive)
+     * @return true if a match is found, false otherwise
+     */
     private boolean matchesBuffer(byte[] buffer, int startOffset, int endOffset) {
         if (this.isRegex) {
             int bufferLen = Math.min(buffer.length - startOffset, length + (endOffset - startOffset));

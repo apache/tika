@@ -31,6 +31,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.config.TransientParseState;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -247,16 +248,19 @@ public class CompositeParser implements Parser {
     }
 
     /**
-     * Per-parse cache of built parser maps, stored in the ParseContext so every
-     * embedded document in a parse reuses the container's map instead of
-     * rebuilding it (a full walk of every parser's supported types). Keyed by
-     * parser instance because nested composites share one context. The map is
-     * built once per (parser, context); a context entry that would change a
-     * parser's supported types mid-parse is not picked up until the next parse.
+     * Cache of built parser maps, stored in the ParseContext so every embedded
+     * document in a parse reuses the container's map instead of rebuilding it
+     * (a full walk of every parser's supported types). Keyed by parser instance
+     * because nested composites share one context. The map is built once per
+     * (parser, context) and lives as long as the context: a context entry that
+     * would change a parser's supported types is not picked up mid-parse, nor on
+     * later parses that reuse the same ParseContext instance.
      */
-    private static final class ParserMapCache {
+    private static final class ParserMapCache implements TransientParseState {
+        // synchronized: contexts are occasionally shared across threads, and a
+        // concurrent put into a bare IdentityHashMap can corrupt it
         private final Map<CompositeParser, Map<MediaType, Parser>> maps =
-                new IdentityHashMap<>();
+                Collections.synchronizedMap(new IdentityHashMap<>());
     }
 
     private Map<MediaType, Parser> getParsersCached(ParseContext context) {

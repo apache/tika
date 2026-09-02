@@ -90,7 +90,8 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     private final Writer writer;
     private final MarkdownRenderer renderer =
             MarkdownRenderer.builder().extensions(EXTENSIONS)
-                    // registered first, so it wins Text rendering from the core renderer
+                    // registered before the core fallback, which is the only other
+                    // renderer claiming Text, so first-wins registration picks this one
                     .nodeRendererFactory(FastMarkdownTextRenderer.FACTORY).build();
 
     private final Document document = new Document();

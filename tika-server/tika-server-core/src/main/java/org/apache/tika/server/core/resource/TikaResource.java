@@ -697,13 +697,13 @@ public class TikaResource {
 
     // ==================== Internal methods ====================
 
-    /**
-     * Produces raw streaming output (text, html, xml, md) using pipes-based parsing.
-     */
     /** Per-request resource-layer latency; joins the pipes lines by adjacency at c=1. */
     private static final org.slf4j.Logger TIMING_LOG =
             org.slf4j.LoggerFactory.getLogger("org.apache.tika.pipes.timing.resource");
 
+    /**
+     * Produces raw streaming output (text, html, xml, md) using pipes-based parsing.
+     */
     private Response produceRawOutput(TikaInputStream tis, Metadata metadata,
                                               MultivaluedMap<String, String> httpHeaders,
                                               String handlerTypeName) throws IOException {

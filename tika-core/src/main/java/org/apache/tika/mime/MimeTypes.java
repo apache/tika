@@ -542,8 +542,9 @@ public final class MimeTypes implements Detector, Serializable {
         // Get type based on magic prefix
         if (tis != null) {
             int toRead = getMinLength();
-            // hasLength() is non-forcing; getLength() would only spool when unknown
-            if (tis.hasLength()) {
+            // Only a measured length may shrink the read: a lying declared
+            // Content-Length would silently truncate the magic prefix.
+            if (tis.hasReliableLength()) {
                 long known = tis.getLength() - tis.getPosition();
                 if (known >= 0 && known < toRead) {
                     toRead = (int) known;

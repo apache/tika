@@ -33,8 +33,9 @@ Release 4.1.0 - unreleased
      (4.1.0-dev ran it twice) to 52us per document; eml requests ~-45%,
      ppt ~-35% in tika-server. MagicDetector also precomputes a 256-entry
      first-byte table per pattern (mask and case fold become one array
-     load per scanned position). Adds an opt-in RESOURCE_TIMING log on
-     org.apache.tika.pipes.timing.resource (TIKA-4868).
+     load per scanned position). Adds a RESOURCE_TIMING log on
+     org.apache.tika.pipes.timing.resource, silenced by default in the
+     shipped log4j2 configs (TIKA-4868).
 
    * WordExtractor (.doc) cleans each character run in one pass instead of
      four chained replace/replaceAll copies, and tests paragraph blankness
@@ -77,15 +78,19 @@ Release 4.1.0 - unreleased
 
    * Pipes workers no longer stall between pre-parse and parse waiting
      for the client to acknowledge the intermediate-result frame; the
-     ACK round trip now overlaps the parse. Adds opt-in per-request
-     timing logs on org.apache.tika.pipes.timing.* (TIKA-4868).
+     ACK round trip now overlaps the parse. Adds per-request timing logs
+     on org.apache.tika.pipes.timing.*, silenced by default in the shipped
+     log4j2 configs; raise that logger to info to enable (TIKA-4868).
 
    * DefaultDetector honors CONTENT_TYPE_USER_OVERRIDE and
      CONTENT_TYPE_PARSER_OVERRIDE before running magic detection, matching
      CompositeDetector's contract. Removes the second full magic scan every
-     pipes parse paid per document. Compat note: with a user override set,
+     pipes parse paid per document. Compat note: with either override set,
      DefaultDetector no longer lets a more specific magic result overrule
-     the override (TIKA-4868).
+     it; parts whose parser declares a type from container headers (e.g.
+     inline text/* mail parts) now report the declared type, and
+     CONTENT_TYPE_MAGIC_DETECTED is not recorded when an override short
+     circuits detection (TIKA-4868).
 
    * Markdown output is ~4x faster on large documents:
      ToMarkdownContentHandler now buffers the commonmark renderer's

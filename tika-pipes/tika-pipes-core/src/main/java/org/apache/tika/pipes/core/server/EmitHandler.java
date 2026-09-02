@@ -172,11 +172,12 @@ class EmitHandler {
             return;
         }
         Metadata m = metadataList.get(0);
-        String content = m.get(TikaCoreProperties.TIKA_CONTENT);
-        if (content == null) {
+        String[] content = m.getValues(TikaCoreProperties.TIKA_CONTENT);
+        // remove() drops every value; only move when that loses nothing
+        if (content.length != 1) {
             return;
         }
-        emitData.setContentBytes(content.getBytes(StandardCharsets.UTF_8));
+        emitData.setContentBytes(content[0].getBytes(StandardCharsets.UTF_8));
         m.remove(TikaCoreProperties.TIKA_CONTENT);
     }
 

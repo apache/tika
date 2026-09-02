@@ -40,10 +40,11 @@ import org.commonmark.text.AsciiMatcher;
  * {@code raw()} call.
  * <p>
  * The escaping semantics replicate {@code CoreMarkdownNodeRenderer#visit(Text)} for
- * commonmark 0.27.x exactly: the line-start disambiguation cases, the heading escape
- * variant, the {@code !}-before-link case, and the {@code \n} numeric reference. The
- * differential test in {@code ToMarkdownContentHandlerTest} and the corpus differential
- * guard the equivalence.
+ * the commonmark version pinned in tika-parent exactly: the line-start disambiguation
+ * cases, the heading escape variant, the {@code !}-before-link case, and the
+ * {@code \n} numeric reference. {@code FastMarkdownTextRendererTest} renders ASTs
+ * through this renderer and the stock one and requires byte-identical output; a
+ * commonmark upgrade that changes escaping fails there and must be re-synced here.
  * <p>
  * Text inside a table cell renders through the stock per-char path: the tables extension
  * pushes a raw-escape for {@code |} onto the writer there, and hand-emitted escapes would

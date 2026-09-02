@@ -54,9 +54,10 @@ class Patterns implements Serializable {
     /**
      * Compiled forms of {@link #globs}' keys. Matching recompiled every glob regex
      * per lookup before; for names that miss the name/extension indexes that was
-     * a Pattern.compile per glob per call.
+     * a Pattern.compile per glob per call. Transient with a lazy rebuild so a
+     * serialized form from a build without this field still deserializes.
      */
-    private final Map<String, Pattern> compiledGlobs = new HashMap<>();
+    private transient Map<String, Pattern> compiledGlobs = new HashMap<>();
     private int minExtensionLength = Integer.MAX_VALUE;
     private int maxExtensionLength = 0;
 
@@ -120,11 +121,23 @@ class Patterns implements Serializable {
         }
     }
 
+    private Map<String, Pattern> compiledGlobs() {
+        Map<String, Pattern> compiled = compiledGlobs;
+        if (compiled == null) {
+            compiled = new HashMap<>();
+            for (String glob : globs.keySet()) {
+                compiled.put(glob, Pattern.compile(glob));
+            }
+            compiledGlobs = compiled;
+        }
+        return compiled;
+    }
+
     private void addGlob(String glob, MimeType type) throws MimeTypeException {
         MimeType previous = globs.get(glob);
         if (previous == null || registry.isSpecializationOf(previous.getType(), type.getType())) {
             globs.put(glob, type);
-            compiledGlobs.put(glob, Pattern.compile(glob));
+            compiledGlobs().put(glob, Pattern.compile(glob));
         } else if (previous == type ||
                 registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
@@ -167,8 +180,9 @@ class Patterns implements Serializable {
         }
 
         // And finally, try complex regexp matching
+        Map<String, Pattern> compiled = compiledGlobs();
         for (Map.Entry<String, MimeType> entry : globs.entrySet()) {
-            Pattern glob = compiledGlobs.get(entry.getKey());
+            Pattern glob = compiled.get(entry.getKey());
             boolean matched = glob != null ? glob.matcher(name).matches()
                     : name.matches(entry.getKey());
             if (matched) {

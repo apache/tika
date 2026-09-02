@@ -21,6 +21,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -58,13 +59,18 @@ class CSVSniffer {
         }
         // Every snifflet examines the same window, so read it once into a buffer
         // instead of once per delimiter through a mark/reset + pushback stack.
-        char[] buf = new char[markLimit];
+        // Grown on demand: markLimit is user-configurable and most inputs are
+        // far smaller, so an eager char[markLimit] would be waste per parse.
+        char[] buf = new char[Math.min(markLimit, 8192)];
         reader.mark(markLimit);
         int len = 0;
         try {
             while (len < markLimit) {
-                int n = reader.read(buf, len, markLimit - len);
-                if (n == -1) {
+                if (len == buf.length) {
+                    buf = Arrays.copyOf(buf, (int) Math.min((long) buf.length * 2, markLimit));
+                }
+                int n = reader.read(buf, len, buf.length - len);
+                if (n <= 0) {
                     break;
                 }
                 len += n;
