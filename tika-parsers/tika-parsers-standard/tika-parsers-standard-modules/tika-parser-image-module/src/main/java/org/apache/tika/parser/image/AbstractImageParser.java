@@ -78,6 +78,7 @@ public abstract class AbstractImageParser implements Parser {
             extractMetadata(tis, handler, metadata, context);
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
+            MotionPhoto.extract(tis, metadata, xhtml, context);
             xhtml.endDocument();
             return;
         }
@@ -98,7 +99,6 @@ public abstract class AbstractImageParser implements Parser {
             } catch (Exception e) {
                 metadataException = e;
             }
-
             try (TikaInputStream pathStream = TikaInputStream.get(path)) {
                 //specify ocr content type
                 String originalParserOverride =
@@ -126,6 +126,7 @@ public abstract class AbstractImageParser implements Parser {
                     }
                 }
             }
+            MotionPhoto.extract(tis, metadata, xhtml, context);
             xhtml.endDocument();
         } finally {
             tmpResources.close();
