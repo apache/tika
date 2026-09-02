@@ -136,6 +136,9 @@ final class MotionPhoto {
             trailerMetadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
         }
         trailerMetadata.set(HttpHeaders.CONTENT_TYPE, trailer.type.toString());
+        //the declaration is exact: the trailer runs from there to the end of
+        //the file, and a client should not have to read it to learn its size
+        trailerMetadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(declared.length));
         trailerMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name());
         EmbeddedDocumentExtractor extractor =

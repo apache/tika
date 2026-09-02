@@ -61,6 +61,8 @@ public class MotionPhotoVideoTest extends TikaTest {
         assertEquals("motion-photo.mp4", video.get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.name(),
                 video.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        //the length is known from the declaration, as it is for a zip entry
+        assertEquals(String.valueOf(declaredLength()), video.get(HttpHeaders.CONTENT_LENGTH));
         assertNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 
