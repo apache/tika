@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 /**
  * Defines a MimeType pattern.
@@ -49,6 +50,13 @@ class Patterns implements Serializable {
      */
     private final SortedMap<String, MimeType> globs =
             new TreeMap<>(new LengthComparator());
+
+    /**
+     * Compiled forms of {@link #globs}' keys. Matching recompiled every glob regex
+     * per lookup before; for names that miss the name/extension indexes that was
+     * a Pattern.compile per glob per call.
+     */
+    private final Map<String, Pattern> compiledGlobs = new HashMap<>();
     private int minExtensionLength = Integer.MAX_VALUE;
     private int maxExtensionLength = 0;
 
@@ -116,6 +124,7 @@ class Patterns implements Serializable {
         MimeType previous = globs.get(glob);
         if (previous == null || registry.isSpecializationOf(previous.getType(), type.getType())) {
             globs.put(glob, type);
+            compiledGlobs.put(glob, Pattern.compile(glob));
         } else if (previous == type ||
                 registry.isSpecializationOf(type.getType(), previous.getType())) {
             // do nothing
@@ -159,7 +168,10 @@ class Patterns implements Serializable {
 
         // And finally, try complex regexp matching
         for (Map.Entry<String, MimeType> entry : globs.entrySet()) {
-            if (name.matches(entry.getKey())) {
+            Pattern glob = compiledGlobs.get(entry.getKey());
+            boolean matched = glob != null ? glob.matcher(name).matches()
+                    : name.matches(entry.getKey());
+            if (matched) {
                 return entry.getValue();
             }
         }

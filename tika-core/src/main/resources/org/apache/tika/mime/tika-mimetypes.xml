@@ -312,7 +312,11 @@
     <!-- we can do more specific versions by focusing on the integer in the regex below -->
     <tika:link>http://justsolve.archiveteam.org/wiki/Adobe_Illustrator_Artwork</tika:link>
     <magic priority="60">
-      <match value="[\r\n]%AI5_FileFormat [1-4][\r\n]" type="regex" offset="0:8192"/>
+      <!-- literal gate first: the ranged regex only runs when the marker exists,
+           so non-AI files pay a cheap string scan instead of 8K regex attempts -->
+      <match value="%AI5_FileFormat " type="string" offset="0:8192">
+        <match value="[\r\n]%AI5_FileFormat [1-4][\r\n]" type="regex" offset="0:8192"/>
+      </match>
     </magic>
     <sub-class-of type="application/postscript"/>
   </mime-type>

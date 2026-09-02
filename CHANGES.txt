@@ -1,5 +1,22 @@
 Release 4.1.0 - unreleased
 
+   * Detection hot-path cleanups: MagicMatch resolves its detector via
+     double-checked locking instead of a synchronized method per eval;
+     glob patterns are compiled once at registration instead of per
+     lookup; MimeTypes.forName reads a ConcurrentHashMap (fixing an
+     unsynchronized-read race) and indexes the normalized key so
+     parameterized aliases stop re-locking per call; resource names
+     containing spaces skip the URI-parse-by-exception; the magic-header
+     buffer is sized by the stream's known length instead of a fixed
+     64KB per detection; and the Adobe Illustrator ranged regex is
+     gated behind a literal scan (detection results unchanged,
+     ~28us off every non-AI detection) (TIKA-4868).
+
+   * Magic detection is ~35% faster on unmatched (e.g. plain-text) input:
+     MagicDetector range scans find first-byte candidates with a tight
+     scan before running the full masked/case-folded compare, instead of
+     paying it at every offset in the range (TIKA-4868).
+
    * CSVSniffer reads its detection window once into a shared buffer and
      runs every delimiter hypothesis against it, instead of re-reading the
      stream through a pushback/mark-reset stack per delimiter; windows with

@@ -490,15 +490,29 @@ public class MagicDetector implements Detector {
                 }
             }
         } else {
-            // Loop until we've covered the entire offset range
+            // Range scans (e.g. "\nHeader:" over 0:1024) dominate detection time, so
+            // find first-byte candidates with a tight scan and run the full compare
+            // only there, instead of paying the masked/case machinery at every offset.
+            if (length == 0) {
+                // degenerate empty pattern: preserves the old loop's outcome
+                return startOffset <= endOffset && startOffset <= buffer.length;
+            }
+            int first = pattern[0];
+            byte firstMask = mask[0];
             for (int i = startOffset; i <= endOffset; i++) {
                 if (i + length > buffer.length) {
                     break;
                 }
+                int masked0 = buffer[i] & firstMask;
+                if (this.isStringIgnoreCase) {
+                    masked0 = Character.toLowerCase(masked0);
+                }
+                if (masked0 != first) {
+                    continue;
+                }
                 boolean match = true;
-                int masked;
-                for (int j = 0; match && j < length; j++) {
-                    masked = (buffer[i + j] & mask[j]);
+                for (int j = 1; match && j < length; j++) {
+                    int masked = (buffer[i + j] & mask[j]);
                     if (this.isStringIgnoreCase) {
                         masked = Character.toLowerCase(masked);
                     }
