@@ -225,6 +225,43 @@ public class UnpackerResource {
     }
 
     /**
+     * As {@code /unpack}, with the named preset's parse-context fragment applied.
+     * Takes no config part -- a preset never combines with request configuration.
+     */
+    @jakarta.ws.rs.Path("/preset/{presetName}")
+    @PUT
+    @Produces("application/zip")
+    public Response unpackWithPreset(InputStream is, @Context HttpHeaders httpHeaders,
+                                     @jakarta.ws.rs.PathParam("presetName") String presetName)
+            throws Exception {
+        ParseContext pc = tikaResource.createPresetContext(presetName);
+        Metadata metadata = tikaResource.newRequestMetadata();
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
+            TikaResource.logRequest(LOG, "/unpack", metadata);
+            return doUnpack(tis, metadata, pc, false);
+        }
+    }
+
+    /**
+     * As {@code /unpack/all}, with the named preset's parse-context fragment applied.
+     */
+    @jakarta.ws.rs.Path("/preset/{presetName}/all")
+    @PUT
+    @Produces("application/zip")
+    public Response unpackAllWithPreset(InputStream is, @Context HttpHeaders httpHeaders,
+                                        @jakarta.ws.rs.PathParam("presetName") String presetName)
+            throws Exception {
+        ParseContext pc = tikaResource.createPresetContext(presetName);
+        Metadata metadata = tikaResource.newRequestMetadata();
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
+            TikaResource.logRequest(LOG, "/unpack/all", metadata);
+            return doUnpack(tis, metadata, pc, true);
+        }
+    }
+
+    /**
      * Core unpack logic using pipes-based parsing.
      * The child process creates the zip file, and we stream it directly back.
      *

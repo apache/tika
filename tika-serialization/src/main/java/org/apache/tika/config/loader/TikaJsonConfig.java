@@ -116,6 +116,7 @@ public class TikaJsonConfig {
             "translator",
             "auto-detect-parser",
             "parse-context",
+            "presets",
             "server",
             "grpc",
 

@@ -105,6 +105,45 @@ WARNING: Enable this only behind network controls (firewalls, private subnets), 
 or xref:using-tika/server/tls.adoc[2-way TLS authentication]. Per-request configuration lets
 callers change how documents are parsed, widening what anyone who can reach the server can do.
 
+=== Presets — named configuration without `/config`
+
+A *preset* is a named, vetted parse-context fragment: parser and component configurations keyed
+by friendly name, defined once in the server config (or shipped with Tika) and selected whole by
+name. Callers apply one by inserting `preset/{name}` directly after the resource root:
+
+[source,bash]
+----
+curl -T document.pdf http://localhost:9998/tika/preset/my-preset/text
+curl -T document.pdf http://localhost:9998/rmeta/preset/my-preset/text
+curl -T document.pdf http://localhost:9998/unpack/preset/my-preset
+----
+
+Nothing is active unless the top-level `presets` key names it. `true` activates a preset from
+the classpath *catalog* (definitions shipped with Tika, so their content tracks the Tika
+version); an object defines a preset in place, replacing any same-named catalog definition
+wholesale; `false`/`null` is an explicit no-op. Catalog jars can never activate themselves —
+every active preset is a visible line in the operator's config, and `true` naming nothing in
+the catalog fails startup:
+
+[source,json]
+----
+{
+  "presets": {
+    "some-catalog-preset": true,
+    "no-ocr": { "pdf-parser": { "ocr": { "strategy": "NO_OCR" } } }
+  }
+}
+----
+
+Presets are deliberately narrow: a request selects exactly one, the preset routes take no
+`config` part, and a preset never combines with request-supplied configuration — a caller who
+needs a variant asks the operator to define it as another preset. Because the content of a
+preset is operator- or Tika-vetted, the preset routes do *not* require `allowPerRequestConfig`:
+they are the safe public knob, while free-form `/config` stays the privileged one. The
+`preset/{name}` path segment also gives network controls an addressable surface — a reverse
+proxy can allow `/rmeta/preset/render-thumbnails` (or all of `/rmeta/preset/`) while blocking
+`/rmeta/config` entirely. An unknown preset name answers `404`.
+
 === `allowPipes` — the `/pipes` and `/async` endpoints
 
 `/pipes` and `/async` drive process-isolated batch parsing through your configured fetchers and

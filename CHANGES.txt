@@ -1,5 +1,17 @@
 Release 4.1.0 - unreleased
 
+   * tika-server: named configuration presets (TIKA-4856). A preset is a
+     vetted parse-context fragment activated in the server config (top-level
+     "presets" key: an object defines one in place, true activates a
+     definition from the classpath catalog so its content tracks the Tika
+     version) and selected whole by inserting preset/{name} after the
+     resource root: /tika/preset/{name}[/text|...],
+     /rmeta/preset/{name}[/{handlerType}], /unpack/preset/{name}[/all].
+     Exactly one preset per request, never combined with a config part, and
+     usable without allowPerRequestConfig -- the preset routes are network-
+     addressable separately from the /config endpoints, and nothing on the
+     classpath can activate a preset by itself.
+
    * Raster previews for the vector thumbnails of Office documents: the new
      poi-metafile-renderer draws EMF and WMF images through POI (a PNG of
      a configurable width; Word's bitmap-in-WMF thumbnails from the bitmap

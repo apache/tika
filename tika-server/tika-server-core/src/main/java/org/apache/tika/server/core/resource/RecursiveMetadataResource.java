@@ -137,6 +137,40 @@ public class RecursiveMetadataResource {
         }
     }
 
+    /** As the bare {@code /rmeta} endpoint, with the named preset applied. */
+    @PUT
+    @Produces("application/json")
+    @Path("preset/{presetName}")
+    public Response getMetadataWithPresetDefaultHandler(InputStream is,
+                                                        @Context HttpHeaders httpHeaders,
+                                                        @PathParam("presetName") String presetName)
+            throws Exception {
+        return getMetadataWithPreset(is, httpHeaders, presetName, null);
+    }
+
+    /**
+     * As {@code /rmeta/{handlerType}}, with the named preset's parse-context
+     * fragment applied. Takes no config part -- a preset never combines with
+     * request-supplied configuration.
+     */
+    @PUT
+    @Produces("application/json")
+    @Path("preset/{presetName}/{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
+    public Response getMetadataWithPreset(InputStream is, @Context HttpHeaders httpHeaders,
+                                          @PathParam("presetName") String presetName,
+                                          @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
+            throws Exception {
+        ParseContext context = tikaResource.createPresetContext(presetName);
+        Metadata metadata = tikaResource.newRequestMetadata();
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
+            TikaResource.logRequest(LOG, "/rmeta", metadata);
+            return Response
+                    .ok(parseMetadataWithContext(tis, metadata, handlerTypeName, context))
+                    .build();
+        }
+    }
+
     private MetadataList parseMetadataWithContext(TikaInputStream tis, Metadata metadata,
                                                   String handlerTypeName, ParseContext context) throws Exception {
         tikaResource.setupContentHandlerFactoryIfNeeded(context, handlerTypeName);
