@@ -24,7 +24,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -34,8 +33,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
 /**
- * Reproduces the pre-4.1 {@code image/ocr-*} dispatch when no enricher is configured for
- * a media type: mints the synthetic {@code ocr-} media type, sets
+ * Reproduces the pre-4.1 {@code image/ocr-*} dispatch when no {@code "content-enrichers"}
+ * list is configured: mints the synthetic {@code ocr-} media type, sets
  * {@link TikaCoreProperties#CONTENT_TYPE_PARSER_OVERRIDE} and re-enters the composite
  * parser, restoring the metadata afterwards. Whichever engine won the {@code ocr-*}
  * registration in the composite still wins here, so precedence-by-presence (adding
@@ -55,11 +54,17 @@ public class LegacyDispatchEnricher implements Parser {
 
     private final MediaType mediaType;
 
+    private final Parser composite;
+
     /**
      * @param mediaType the real (already normalized) media type of the bytes to derive from
+     * @param composite the composite parser to re-enter; the caller has already verified
+     *                  it claims the synthetic {@code ocr-} type (re-verifying here would
+     *                  rebuild the composite's full supported-types map per invocation)
      */
-    public LegacyDispatchEnricher(MediaType mediaType) {
+    public LegacyDispatchEnricher(MediaType mediaType, Parser composite) {
         this.mediaType = mediaType;
+        this.composite = composite;
     }
 
     /**
@@ -81,9 +86,7 @@ public class LegacyDispatchEnricher implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         MediaType ocrMediaType = toOcrMediaType(mediaType);
-        Parser composite = EmbeddedDocumentUtil.getStatelessParser(context);
-        if (composite == null
-                || !composite.getSupportedTypes(context).contains(ocrMediaType)) {
+        if (composite == null) {
             throw new TikaException("No parser is registered for " + ocrMediaType);
         }
         String originalOverride = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);

@@ -68,6 +68,23 @@ public class ContentEnricherLoaderTest {
     }
 
     @Test
+    public void testZeroTypeEnricherFailsLoad() throws Exception {
+        // an explicitly named engine that cannot run (missing binary, unreachable
+        // server) must fail config load, not become a silent no-op
+        TikaLoader loader = load("""
+                {
+                  "content-enrichers": [ {"test-unavailable-enricher": {}} ]
+                }
+                """);
+        org.apache.tika.exception.TikaConfigException e =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        org.apache.tika.exception.TikaConfigException.class,
+                        () -> loader.get(CompositeContentEnricher.class));
+        assertTrue(e.getMessage().contains("advertises no media types"),
+                "unexpected message: " + e.getMessage());
+    }
+
+    @Test
     public void testNoContentEnrichersConfigured() throws Exception {
         TikaLoader loader = load("""
                 {

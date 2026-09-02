@@ -28,6 +28,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -48,6 +49,9 @@ import org.apache.tika.parser.Parser;
  *       must still fire the enricher selected for the type it was dispatched on).</li>
  *   <li>The enricher writes into the caller's {@link Metadata}; the caller must not assume
  *       the metadata is untouched beyond the derived content.</li>
+ *   <li>An enricher that re-enters parsing must propagate the caller's
+ *       {@link ParseContext}: the recursion guard (like Tika's other in-parse limits)
+ *       rides the context, so a fresh context defeats it.</li>
  * </ul>
  *
  * @since Apache Tika 4.1
@@ -59,12 +63,14 @@ public final class ContentEnrichers {
 
     /**
      * Returns the enricher to invoke for one media type, or null when none applies.
-     * Explicitly configured enrichers win: every one matching the type runs, in config
-     * order, behind the single Parser returned here. Otherwise the legacy
-     * {@code image/ocr-*} dispatch through the composite parser applies when an engine
-     * claims the synthetic type. Returns null while a enrichment is already in progress
-     * in this context, so an enricher that is (or invokes) a container parser cannot
-     * recurse into enrichment.
+     * A configured {@code "content-enrichers"} list is authoritative: every configured
+     * enricher matching the type runs, in config order, behind the single Parser
+     * returned here, and a type no configured enricher matches gets no enrichment --
+     * never a classpath engine the user did not name. Only when no list is configured
+     * at all does the legacy {@code image/ocr-*} dispatch through the composite parser
+     * apply. Returns null while an enrichment is already in progress in this context,
+     * so an enricher that is (or invokes) a container parser cannot recurse into
+     * enrichment.
      *
      * @param enrichers  the injected composite; may be null when none is configured
      * @param mediaType the real, normalized media type of the bytes; may be null
@@ -81,15 +87,16 @@ public final class ContentEnrichers {
         }
         if (enrichers != null) {
             List<Parser> matched = enrichers.getEnrichers(mediaType);
-            if (!matched.isEmpty()) {
-                return new GuardedEnricher(matched.size() == 1
-                        ? matched.get(0) : new SequentialEnricher(matched));
+            if (matched.isEmpty()) {
+                return null;
             }
+            return new GuardedEnricher(matched.size() == 1
+                    ? matched.get(0) : new SequentialEnricher(matched));
         }
         Parser composite = EmbeddedDocumentUtil.getStatelessParser(context);
         if (composite != null && composite.getSupportedTypes(context)
                 .contains(LegacyDispatchEnricher.toOcrMediaType(mediaType))) {
-            return new GuardedEnricher(new LegacyDispatchEnricher(mediaType));
+            return new GuardedEnricher(new LegacyDispatchEnricher(mediaType, composite));
         }
         return null;
     }
@@ -98,9 +105,10 @@ public final class ContentEnrichers {
      * Runs each enricher in config order, best-effort: one enricher's failure does not
      * stop the others. The first failure is rethrown after the chain completes, with
      * later failures attached as suppressed, so call sites report every failure through
-     * their existing exception handling. Timeouts, SecurityException and SAXException
-     * (incl. write-limit aborts) propagate immediately -- a spent budget or a suspect
-     * handler must not fund further enrichments.
+     * their existing exception handling. Timeouts, SecurityException, SAXException
+     * (incl. write-limit aborts) and other runtime exceptions propagate immediately --
+     * a spent budget or a suspect handler must not fund further enrichments -- with any
+     * earlier recorded failure attached as suppressed.
      */
     private static final class SequentialEnricher implements Parser {
 
@@ -137,6 +145,11 @@ public final class ContentEnrichers {
                     } else {
                         first.addSuppressed(e);
                     }
+                } catch (RuntimeException e) {
+                    if (first != null) {
+                        e.addSuppressed(first);
+                    }
+                    throw e;
                 }
             }
             if (first instanceof IOException e) {
@@ -153,7 +166,11 @@ public final class ContentEnrichers {
         boolean active;
     }
 
-    /** Marks enrichment in progress around the delegate so {@link #get} refuses re-entry. */
+    /**
+     * Marks enrichment in progress around the delegate so {@link #get} refuses re-entry,
+     * and restores Content-Type afterwards: an enricher derives content, it does not get
+     * to re-type the caller's document.
+     */
     private static final class GuardedEnricher implements Parser {
 
         private static final long serialVersionUID = 1L;
@@ -177,11 +194,20 @@ public final class ContentEnrichers {
                 active = new ActiveEnrichment();
                 context.set(ActiveEnrichment.class, active);
             }
+            String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
+            // restore rather than clear: a nested invocation must not strip the
+            // outer enrichment's re-entry protection when it completes
+            boolean wasActive = active.active;
             active.active = true;
             try {
                 delegate.parse(tis, handler, metadata, context);
             } finally {
-                active.active = false;
+                active.active = wasActive;
+                if (contentType == null) {
+                    metadata.remove(HttpHeaders.CONTENT_TYPE);
+                } else {
+                    metadata.set(HttpHeaders.CONTENT_TYPE, contentType);
+                }
             }
         }
     }

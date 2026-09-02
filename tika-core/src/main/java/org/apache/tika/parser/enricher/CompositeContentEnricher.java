@@ -63,7 +63,7 @@ public class CompositeContentEnricher implements Serializable {
             for (MediaType mediaType : enricher.getSupportedTypes(empty)) {
                 // legacy engines (Tesseract, VLM, ...) still advertise the image/ocr-*
                 // pseudo-types; key them under the real type so they are nameable here
-                MediaType keyType = stripLegacyOcrPrefix(mediaType);
+                MediaType keyType = stripLegacyOcrPrefix(mediaType.getBaseType());
                 List<Parser> forType = tmp.computeIfAbsent(keyType, k -> new ArrayList<>());
                 if (!forType.contains(enricher)) {
                     forType.add(enricher);
@@ -84,11 +84,11 @@ public class CompositeContentEnricher implements Serializable {
     }
 
     /**
-     * @return the enrichers configured for this exact media type, in config order;
-     *         empty when none
+     * @return the enrichers configured for this media type (parameters ignored; alias
+     *         normalization is the caller's job), in config order; empty when none
      */
     public List<Parser> getEnrichers(MediaType mediaType) {
-        List<Parser> enrichers = enricherMap.get(mediaType);
+        List<Parser> enrichers = enricherMap.get(mediaType.getBaseType());
         return enrichers == null ? Collections.emptyList() : enrichers;
     }
 

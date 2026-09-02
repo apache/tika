@@ -576,8 +576,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
                 throw new TikaException(
                         "I regret that I couldn't find an OCR engine to handle " +
-                                imageMediaType + ". Configure one in \"content-enrichers\", " +
-                                "add one to the classpath, or set the OCR strategy to NO_OCR.");
+                                imageMediaType + ". Name one that covers it in " +
+                                "\"content-enrichers\" (a configured list is authoritative), " +
+                                "add one to the classpath when no list is configured, " +
+                                "or set the OCR strategy to NO_OCR.");
             } else if (ocrStrategy == AUTO) {
                 //silently skip if there's no engine to run ocr
                 return;

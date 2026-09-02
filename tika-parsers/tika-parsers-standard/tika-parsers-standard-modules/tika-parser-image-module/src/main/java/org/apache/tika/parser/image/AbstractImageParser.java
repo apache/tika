@@ -34,16 +34,11 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.parser.enricher.EnrichingParser;
-import org.apache.tika.parser.enricher.LegacyDispatchEnricher;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public abstract class AbstractImageParser implements Parser, EnrichingParser {
-
-    /** @deprecated use {@link LegacyDispatchEnricher#OCR_MEDIATYPE_PREFIX} */
-    @Deprecated
-    public static String OCR_MEDIATYPE_PREFIX = LegacyDispatchEnricher.OCR_MEDIATYPE_PREFIX;
 
     private CompositeContentEnricher contentEnrichers;
 

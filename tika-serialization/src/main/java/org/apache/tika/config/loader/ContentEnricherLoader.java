@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 
@@ -43,15 +44,27 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
             return null;
         }
         List<Parser> enrichers = new ArrayList<>();
+        ParseContext empty = new ParseContext();
         for (Map.Entry<String, JsonNode> entry : entries) {
+            Parser enricher;
             try {
                 ObjectNode wrapper = context.getObjectMapper().createObjectNode();
                 wrapper.set(entry.getKey(), entry.getValue());
-                enrichers.add(context.getObjectMapper().treeToValue(wrapper, Parser.class));
+                enricher = context.getObjectMapper().treeToValue(wrapper, Parser.class);
             } catch (Exception e) {
                 throw new TikaConfigException(
                         "Failed to load content enricher: " + entry.getKey(), e);
             }
+            // engines report no types when unusable (missing binary, unreachable server);
+            // the media-type snapshot taken here lasts the life of the process, so an
+            // explicitly named engine that can never run must fail load, not go silent
+            if (enricher.getSupportedTypes(empty).isEmpty()) {
+                throw new TikaConfigException("Content enricher \"" + entry.getKey()
+                        + "\" advertises no media types. Is the engine unavailable "
+                        + "(missing native binary, unreachable inference server) or "
+                        + "configured to skip enrichment?");
+            }
+            enrichers.add(enricher);
         }
         return new CompositeContentEnricher(enrichers);
     }

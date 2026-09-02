@@ -123,6 +123,98 @@ public class ContentEnrichersTest {
     }
 
     @Test
+    public void testConfiguredListIsAuthoritative() throws Exception {
+        // the composite claims ocr-tiff, but a configured list that doesn't cover tiff
+        // must yield no enricher -- never a classpath engine the user did not name
+        RecordingParser explicit = new RecordingParser(Collections.singleton(PNG));
+        RecordingParser composite =
+                new RecordingParser(Collections.singleton(MediaType.image("ocr-tiff")));
+        CompositeContentEnricher enrichers = new CompositeContentEnricher(List.of(explicit));
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, composite);
+
+        assertNull(ContentEnrichers.get(enrichers, MediaType.image("tiff"), context));
+        // with no list configured, the same composite is reachable via legacy dispatch
+        assertNotNull(ContentEnrichers.get(null, MediaType.image("tiff"), context));
+    }
+
+    @Test
+    public void testParametersIgnoredInMatching() throws Exception {
+        RecordingParser explicit = new RecordingParser(Collections.singleton(PNG));
+        CompositeContentEnricher enrichers = new CompositeContentEnricher(List.of(explicit));
+        ParseContext context = new ParseContext();
+
+        Parser enricher = ContentEnrichers.get(enrichers,
+                MediaType.parse("image/png; charset=binary"), context);
+        assertNotNull(enricher, "parameterized type must match the base-type registration");
+        invoke(enricher, new Metadata(), context);
+        assertEquals(1, explicit.calls);
+    }
+
+    @Test
+    public void testEnricherCannotRewriteContentType() throws Exception {
+        Parser rewriting = new Parser() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(PNG);
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) {
+                metadata.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
+            }
+        };
+        CompositeContentEnricher enrichers = new CompositeContentEnricher(List.of(rewriting));
+        ParseContext context = new ParseContext();
+
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, PNG.toString());
+        invoke(ContentEnrichers.get(enrichers, PNG, context), metadata, context);
+        assertEquals(PNG.toString(), metadata.get(HttpHeaders.CONTENT_TYPE));
+
+        Metadata unset = new Metadata();
+        invoke(ContentEnrichers.get(enrichers, PNG, context), unset, context);
+        assertNull(unset.get(HttpHeaders.CONTENT_TYPE));
+    }
+
+    @Test
+    public void testRuntimeFailureAbortsChainWithEarlierFailureSuppressed() throws Exception {
+        List<String> order = new java.util.ArrayList<>();
+        Parser failing = namedEnricher("failing", order, true);
+        Parser blowingUp = new Parser() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(PNG);
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) {
+                order.add("blowingUp");
+                throw new NullPointerException("boom");
+            }
+        };
+        Parser third = namedEnricher("third", order, false);
+        CompositeContentEnricher enrichers =
+                new CompositeContentEnricher(List.of(failing, blowingUp, third));
+        ParseContext context = new ParseContext();
+
+        Parser enricher = ContentEnrichers.get(enrichers, PNG, context);
+        assertNotNull(enricher);
+        NullPointerException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                NullPointerException.class, () -> invoke(enricher, new Metadata(), context));
+        assertEquals(List.of("failing", "blowingUp"), order);
+        // the recorded checked failure rides along instead of vanishing
+        assertEquals(1, thrown.getSuppressed().length);
+        assertEquals("failing failed", thrown.getSuppressed()[0].getMessage());
+    }
+
+    @Test
     public void testAllMatchingEnrichersRunInOrder() throws Exception {
         List<String> order = new java.util.ArrayList<>();
         Parser first = namedEnricher("first", order, false);
