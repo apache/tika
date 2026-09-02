@@ -1619,6 +1619,58 @@ public class PDFParserTest extends TikaTest {
         assertTrue(sawTimeoutWarning,
                 "the timeout must be recorded, not silently dropped, once caught and continued past");
     }
+
+    /**
+     * tk:chunks written by the OCR-slot parser (e.g. an image-embedding parser) on each
+     * rendered page must all reach the parent metadata, not just the first page's.
+     */
+    @Test
+    public void testChunksFromAllOcrPagesReachParent() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new Parser() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(
+                        MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName()));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws IOException, SAXException, TikaException {
+                int currentPage = context.get(OCRPageCounter.class).getCount();
+                metadata.setTrusted(TikaCoreProperties.TIKA_CHUNKS.getName(),
+                        "[{\"text\":\"chunk-page-" + currentPage + "\"}]");
+                XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+                xhtml.startDocument();
+                xhtml.endDocument();
+            }
+        });
+
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPDF_bookmarks.pdf")) {
+            new PDFParser().parse(tis, new ToXMLContentHandler(), metadata, context);
+        }
+
+        String chunks = metadata.get(TikaCoreProperties.TIKA_CHUNKS);
+        assertNotNull(chunks);
+        assertContains("chunk-page-1", chunks);
+        assertContains("chunk-page-2", chunks);
+    }
+
+    @Test
+    public void testMergeChunkArrays() {
+        assertEquals("[b]", AbstractPDF2XHTML.mergeChunkArrays(null, "[b]"));
+        assertEquals("[b]", AbstractPDF2XHTML.mergeChunkArrays(" ", "[b]"));
+        assertEquals("[a,b]", AbstractPDF2XHTML.mergeChunkArrays("[a]", "[b]"));
+        assertEquals("[a]", AbstractPDF2XHTML.mergeChunkArrays("[a]", "[]"));
+        assertEquals("[b]", AbstractPDF2XHTML.mergeChunkArrays("[]", "[b]"));
+        assertEquals("[b]", AbstractPDF2XHTML.mergeChunkArrays("not-an-array", "[b]"));
+    }
+
     /**
      * TODO -- need to test signature extraction
      */

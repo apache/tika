@@ -1,5 +1,16 @@
 Release 4.1.0 - unreleased
 
+   * Inference/OCR hardening (TIKA-4871): OpenAIVLMParser no longer
+     auto-registers via SPI, matching its Claude/Gemini siblings; select
+     it by name ("openai-vlm-parser") in config. Per-request parse-context
+     config for the embedding filters now works and is validated:
+     {"openai-embedding-filter": {"skipEmbedding": true}} (likewise
+     "jina-embedding-filter") merges over the server config, and
+     baseUrl/apiKey/model may not be changed at runtime. The embedding
+     filters release their HTTP client resources on close(). Inline PDF
+     page OCR now accumulates tk:chunks from every OCR'd page onto the
+     parent document instead of keeping only the first page's.
+
    * Raster previews for the vector thumbnails of Office documents: the new
      poi-metafile-renderer draws EMF and WMF images through POI (a PNG of
      a configurable width; Word's bitmap-in-WMF thumbnails from the bitmap

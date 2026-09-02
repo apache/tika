@@ -598,8 +598,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 // from image embedding parsers) back to the parent document so it isn't
                 // silently discarded when the renderMetadata goes out of scope.
                 String renderChunks = renderMetadata.get(TikaCoreProperties.TIKA_CHUNKS);
-                if (renderChunks != null && metadata.get(TikaCoreProperties.TIKA_CHUNKS) == null) {
-                    metadata.set(TikaCoreProperties.TIKA_CHUNKS, renderChunks);
+                if (renderChunks != null) {
+                    metadata.setTrusted(TikaCoreProperties.TIKA_CHUNKS.getName(),
+                            mergeChunkArrays(metadata.get(TikaCoreProperties.TIKA_CHUNKS),
+                                    renderChunks));
                 }
             }
         } catch (IOException e) {
@@ -609,6 +611,31 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } catch (SAXException e) {
             throw new IOException("error writing OCR content from PDF", e);
         }
+    }
+
+    /**
+     * Appends two serialized tk:chunks JSON arrays without a JSON dependency, so each
+     * OCR'd page's chunks accumulate on the parent instead of first-page-wins.
+     * Falls back to the new value if either side is not an array.
+     */
+    static String mergeChunkArrays(String existing, String added) {
+        if (existing == null || existing.isBlank()) {
+            return added;
+        }
+        String e = existing.trim();
+        String a = added.trim();
+        if (!e.startsWith("[") || !e.endsWith("]") || !a.startsWith("[") || !a.endsWith("]")) {
+            return a;
+        }
+        String eBody = e.substring(1, e.length() - 1).trim();
+        String aBody = a.substring(1, a.length() - 1).trim();
+        if (eBody.isEmpty()) {
+            return a;
+        }
+        if (aBody.isEmpty()) {
+            return e;
+        }
+        return "[" + eBody + "," + aBody + "]";
     }
 
     private RenderResult renderCurrentPage(PDPage pdPage, TemporaryResources tmpResources)
