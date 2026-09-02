@@ -25,6 +25,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Google;
 import org.apache.tika.metadata.HttpHeaders;
@@ -146,12 +147,13 @@ final class MotionPhoto {
         if (!extractor.shouldParseEmbedded(trailerMetadata, context)) {
             return;
         }
-        InputStream bytes = open(trailer);
-        if (bytes == null) {
-            return;
-        }
         context.set(Nested.class, NESTED);
-        try (TikaInputStream embedded = TikaInputStream.get(bytes)) {
+        //an opener rather than a stream: the trailer is a region of a file, so
+        //the parse can go back to the start of it without a copy, and it knows
+        //its length from the metadata above rather than by spooling for it
+        try (TemporaryResources tmp = new TemporaryResources();
+                TikaInputStream embedded = TikaInputStream.get(
+                        () -> region(trailer.file, trailer.start), tmp, trailerMetadata)) {
             extractor.parseEmbedded(embedded, new EmbeddedContentHandler(xhtml), trailerMetadata,
                     context, true);
         } finally {
@@ -178,18 +180,6 @@ final class MotionPhoto {
                 return null;
             }
             return new Trailer(file, start, type);
-        } catch (IOException e) {
-            return null;
-        }
-    }
-
-    /**
-     * The trailer as a stream, or null where the file stopped being readable
-     * after it was located.
-     */
-    private static InputStream open(Trailer trailer) {
-        try {
-            return region(trailer.file, trailer.start);
         } catch (IOException e) {
             return null;
         }
