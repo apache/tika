@@ -18,15 +18,31 @@ package org.apache.tika.server.core.resource;
 
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -37,10 +53,15 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.EmbeddedLimits;
+import org.apache.tika.extractor.UnpackSelector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.core.extractor.StandardUnpackSelector;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
+import org.apache.tika.serialization.JsonMetadata;
 
 /**
  * JAX-RS resource for unpacking embedded documents from container files.
@@ -54,7 +75,31 @@ import org.apache.tika.pipes.core.extractor.UnpackConfig;
  *   <li>POST /unpack - Extract with config (multipart: file + optional JSON config)</li>
  *   <li>PUT /unpack/all - Extract embedded + container text/metadata</li>
  *   <li>POST /unpack/all - Extract all with config (multipart)</li>
+ *   <li>PUT /unpack/thumbnail - Return the document thumbnail with its metadata</li>
+ *   <li>POST /unpack/thumbnail - The same, multipart</li>
  * </ul>
+ * <p>
+ * <b>Thumbnail:</b>
+ * <p>
+ * {@code /unpack/thumbnail} returns the document's thumbnail as JSON: the
+ * {@code /rmeta} metadata object of the embedded document that is the thumbnail
+ * and the image as base64, or {@code 204} if the document has none. It parses
+ * without text extraction or OCR, with the {@link ThumbnailDefaults} (the first
+ * PDF page rendered, the EMF/WMF thumbnail rendered) when asked to, and picks,
+ * in this order, the raster THUMBNAIL directly below the document, the rendering of a
+ * vector THUMBNAIL, or the RENDERING of the first page. It extracts what the
+ * document carries; it does not resize or convert.
+ * <p>
+ * {@code ?renderThumbnails=true} applies the {@link ThumbnailDefaults} under
+ * the request's own config, on {@code /unpack/thumbnail} as on {@code /unpack}
+ * and {@code /unpack/all}; without it, only stored thumbnails are found and
+ * a document that needs rendering answers 204.
+ * <pre>
+ * {
+ *   "metadata": { "Content-Type": "image/png", "tiff:ImageWidth": "800", ... },
+ *   "image": "iVBORw0KGgo..."
+ * }
+ * </pre>
  * <p>
  * <b>Configuration:</b>
  * <p>
@@ -148,12 +193,16 @@ public class UnpackerResource {
     @jakarta.ws.rs.Path("/{id:(/.*)?}")
     @PUT
     @Produces("application/zip")
-    public Response unpack(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Response unpack(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info,
+                           @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
             TikaResource.logRequest(LOG, "/unpack", metadata);
+            if (renderThumbnails) {
+                tikaResource.getThumbnailDefaults().applyTo(pc);
+            }
             return doUnpack(tis, metadata, pc, false);
         }
     }
@@ -171,11 +220,16 @@ public class UnpackerResource {
     @POST
     @Consumes("multipart/form-data")
     @Produces("application/zip")
-    public Response unpackWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Response unpackWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info,
+                                     @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
             TikaResource.logRequest(LOG, "/unpack", metadata);
+            if (renderThumbnails) {
+                //under the request's config, which setupMultipartConfig has already merged
+                tikaResource.getThumbnailDefaults().applyTo(pc);
+            }
             return doUnpack(tis, metadata, pc, false);
         }
     }
@@ -192,12 +246,16 @@ public class UnpackerResource {
     @jakarta.ws.rs.Path("/all{id:(/.*)?}")
     @PUT
     @Produces("application/zip")
-    public Response unpackAll(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Response unpackAll(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info,
+                           @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
             TikaResource.logRequest(LOG, "/unpack/all", metadata);
+            if (renderThumbnails) {
+                tikaResource.getThumbnailDefaults().applyTo(pc);
+            }
             return doUnpack(tis, metadata, pc, true);
         }
     }
@@ -215,13 +273,184 @@ public class UnpackerResource {
     @POST
     @Consumes("multipart/form-data")
     @Produces("application/zip")
-    public Response unpackAllWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+    public Response unpackAllWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info,
+                                     @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
             TikaResource.logRequest(LOG, "/unpack/all", metadata);
+            if (renderThumbnails) {
+                //under the request's config, which setupMultipartConfig has already merged
+                tikaResource.getThumbnailDefaults().applyTo(pc);
+            }
             return doUnpack(tis, metadata, pc, true);
         }
+    }
+
+    /**
+     * Returns the document thumbnail with its metadata (simple PUT).
+     */
+    @jakarta.ws.rs.Path("/thumbnail")
+    @PUT
+    @Produces("application/json")
+    public Response unpackThumbnail(InputStream is, @Context HttpHeaders httpHeaders,
+                                    @QueryParam("renderThumbnails") boolean renderThumbnails) throws Exception {
+        ParseContext pc = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
+            TikaResource.logRequest(LOG, "/unpack/thumbnail", metadata);
+            return doUnpackThumbnail(tis, metadata, pc, renderThumbnails);
+        }
+    }
+
+    /**
+     * Returns the document thumbnail with its metadata (multipart POST, "file" part).
+     */
+    @jakarta.ws.rs.Path("/thumbnail")
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("application/json")
+    public Response unpackThumbnailMultipart(List<Attachment> attachments, @Context HttpHeaders httpHeaders,
+                                             @QueryParam("renderThumbnails") boolean renderThumbnails)
+            throws Exception {
+        ParseContext pc = tikaResource.createRequestContext();
+        Metadata metadata = tikaResource.newRequestMetadata();
+        try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
+            TikaResource.logRequest(LOG, "/unpack/thumbnail", metadata);
+            return doUnpackThumbnail(tis, metadata, pc, renderThumbnails);
+        }
+    }
+
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final String METADATA_SUFFIX = ".metadata.json";
+    /**
+     * A thumbnail travels base64-encoded inside a JSON object, so it is
+     * bounded here regardless of the unpack limits; camera previews and
+     * page renderings are a few MB at most.
+     */
+    static final long MAX_THUMBNAIL_BYTES = 32L * 1024 * 1024;
+    /**
+     * What {@code /unpack/thumbnail} adds regardless of rendering: the text
+     * of the images is not wanted.
+     */
+    private static final ThumbnailDefaults NO_OCR = ThumbnailDefaults.none()
+            .with("{\"pdf-parser\": {\"ocr\": {\"strategy\": \"NO_OCR\"}}, "
+                    + "\"tesseract-ocr-parser\": {\"skipOcr\": true}}");
+
+    /**
+     * Parses in unpack mode with the thumbnail configuration, then selects
+     * the thumbnail among the extracted embedded documents.
+     */
+    private Response doUnpackThumbnail(TikaInputStream tis, Metadata metadata, ParseContext pc,
+                                       boolean renderThumbnails) throws Exception {
+        PipesParsingHelper helper = tikaResource.getPipesParsingHelper();
+        if (helper == null) {
+            throw new WebApplicationException("Pipes-based parsing is not enabled", Response.Status.SERVICE_UNAVAILABLE);
+        }
+        configureThumbnailParse(pc, renderThumbnails);
+
+        PipesParsingHelper.UnpackResult result = helper.parseUnpack(tis, metadata, pc, false);
+        if (result.zipFile() == null) {
+            throw new WebApplicationException(Response.Status.NO_CONTENT);
+        }
+        try (ZipFile zip = new ZipFile(result.zipFile().toFile())) {
+            Map<String, Metadata> extracted = readExtractedMetadata(zip);
+            Metadata thumbnail = ThumbnailSelector.select(new ArrayList<>(extracted.values()));
+            if (thumbnail == null) {
+                throw new WebApplicationException(Response.Status.NO_CONTENT);
+            }
+            String entryName = null;
+            for (Map.Entry<String, Metadata> e : extracted.entrySet()) {
+                //the selector returns one of these very objects
+                if (e.getValue() == thumbnail) {
+                    entryName = e.getKey();
+                    break;
+                }
+            }
+            ZipEntry imageEntry = entryName == null ? null : zip.getEntry(entryName);
+            if (imageEntry == null) {
+                throw new WebApplicationException(Response.Status.NO_CONTENT);
+            }
+            if (imageEntry.getSize() > MAX_THUMBNAIL_BYTES) {
+                throw new WebApplicationException("thumbnail larger than " + MAX_THUMBNAIL_BYTES + " bytes",
+                        Response.Status.REQUEST_ENTITY_TOO_LARGE);
+            }
+            byte[] image;
+            try (InputStream is = zip.getInputStream(imageEntry)) {
+                //the entry size is a claim; read one byte past the limit to know
+                image = is.readNBytes((int) MAX_THUMBNAIL_BYTES + 1);
+            }
+            if (image.length > MAX_THUMBNAIL_BYTES) {
+                throw new WebApplicationException("thumbnail larger than " + MAX_THUMBNAIL_BYTES + " bytes",
+                        Response.Status.REQUEST_ENTITY_TOO_LARGE);
+            }
+            StringWriter metadataJson = new StringWriter();
+            JsonMetadata.toJson(thumbnail, metadataJson);
+            ObjectNode root = MAPPER.createObjectNode();
+            root.set("metadata", MAPPER.readTree(metadataJson.toString()));
+            root.put("image", Base64.getEncoder().encodeToString(image));
+            return Response.ok(MAPPER.writeValueAsString(root)).type("application/json").build();
+        } finally {
+            result.cleanup();
+        }
+    }
+
+    /**
+     * What only makes sense when the thumbnail is all the caller wants: no
+     * text, no OCR, only THUMBNAIL and RENDERING embedded documents extracted,
+     * together with their metadata, down to the rendering of a thumbnail
+     * (depth 2). With {@code renderThumbnails} the {@link ThumbnailDefaults}
+     * are laid under that, the same switch as on the other endpoints; without
+     * it only stored thumbnails are found. The request's own parser
+     * configuration wins where present.
+     */
+    private void configureThumbnailParse(ParseContext pc, boolean renderThumbnails) {
+        //the text is not part of the answer: do not extract it
+        tikaResource.setupContentHandlerFactory(pc, "ignore");
+        (renderThumbnails ? tikaResource.getThumbnailDefaults().with(NO_OCR) : NO_OCR).applyTo(pc);
+        StandardUnpackSelector selector = new StandardUnpackSelector();
+        selector.setIncludeEmbeddedResourceTypes(new HashSet<>(Arrays.asList(
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name(),
+                TikaCoreProperties.EmbeddedResourceType.RENDERING.name())));
+        pc.set(UnpackSelector.class, selector);
+        if (pc.get(EmbeddedLimits.class) == null) {
+            EmbeddedLimits limits = new EmbeddedLimits();
+            //the thumbnail is at depth 1, its rendering at depth 2
+            limits.setMaxDepth(2);
+            pc.set(EmbeddedLimits.class, limits);
+        }
+        UnpackConfig unpackConfig = pc.get(UnpackConfig.class);
+        if (unpackConfig == null) {
+            unpackConfig = tikaResource.newConfigUnpackConfig();
+            if (unpackConfig == null) {
+                unpackConfig = new UnpackConfig();
+            }
+        }
+        unpackConfig.setIncludeMetadataInZip(true);
+        pc.set(UnpackConfig.class, unpackConfig);
+    }
+
+    /**
+     * Reads the {@code *.metadata.json} entries of the unpack zip, keyed by
+     * the name of the file they describe, in zip order.
+     */
+    private static Map<String, Metadata> readExtractedMetadata(ZipFile zip) throws IOException {
+        Map<String, Metadata> extracted = new LinkedHashMap<>();
+        Enumeration<? extends ZipEntry> entries = zip.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+            String name = entry.getName();
+            if (!name.endsWith(METADATA_SUFFIX)) {
+                continue;
+            }
+            try (InputStreamReader reader = new InputStreamReader(zip.getInputStream(entry),
+                    StandardCharsets.UTF_8)) {
+                extracted.put(name.substring(0, name.length() - METADATA_SUFFIX.length()),
+                        JsonMetadata.fromJson(reader));
+            }
+        }
+        return extracted;
     }
 
     /**

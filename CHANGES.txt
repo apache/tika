@@ -1,5 +1,14 @@
 Release 4.1.0 - unreleased
 
+   * tika-server: /unpack/thumbnail returns the document thumbnail as JSON
+     (its metadata and the image as base64). renderThumbnails=true on /rmeta,
+     /unpack, /unpack/all and /unpack/thumbnail lays the thumbnail defaults
+     under a request (first PDF page rendered, EMF/WMF thumbnail rendered);
+     without it only stored thumbnails are found. The defaults can
+     be replaced per parser with a thumbnail-defaults block in the server
+     config. PDFParserConfig gains maxRenderedPages, bounding the page
+     rendering independently of maxPages (TIKA-4856).
+
    * Raster previews for the vector thumbnails of Office documents: the new
      poi-metafile-renderer draws EMF and WMF images through POI (a PNG of
      a configurable width; Word's bitmap-in-WMF thumbnails from the bitmap

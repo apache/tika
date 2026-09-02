@@ -95,6 +95,8 @@ public class TikaResource {
     private final OutputLimits configOutputLimits;
     private final ExceptionReporting configExceptionReporting;
     private final boolean configSuppliesContentHandlerFactory;
+    // What renderThumbnails=true and /unpack/thumbnail lay under a request.
+    private final ThumbnailDefaults thumbnailDefaults;
 
     /**
      * @param tikaLoader the Tika loader
@@ -115,6 +117,18 @@ public class TikaResource {
         this.configExceptionReporting = ExceptionReporting.get(configDefaults);
         this.configSuppliesContentHandlerFactory =
                 configDefaults.get(ContentHandlerFactory.class) != null;
+        this.thumbnailDefaults = ThumbnailDefaults.fromConfig(
+                tikaLoader == null ? null : tikaLoader.getConfig());
+    }
+
+    /**
+     * The parser configuration that makes a parse yield the document thumbnail
+     * as a raster image: the built-in defaults, overridden by the config's
+     * {@code thumbnail-defaults}. Applied under a request's own config where
+     * the request asks for {@code renderThumbnails=true}.
+     */
+    public ThumbnailDefaults getThumbnailDefaults() {
+        return thumbnailDefaults;
     }
 
     /**

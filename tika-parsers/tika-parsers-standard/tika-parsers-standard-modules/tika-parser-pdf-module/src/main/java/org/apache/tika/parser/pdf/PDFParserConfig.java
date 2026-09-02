@@ -149,6 +149,8 @@ public class PDFParserConfig implements Serializable {
 
     private int maxPages = -1;
 
+    private int maxRenderedPages = -1;
+
     private boolean throwOnEncryptedPayload = false;
 
     /**
@@ -679,6 +681,32 @@ public class PDFParserConfig implements Serializable {
                     "maxPages must be -1 (no limit) or >= 1, got: " + maxPages);
         }
         this.maxPages = maxPages;
+    }
+
+    /**
+     * @return maximum number of pages to render with the
+     * {@code RENDER_PAGES_BEFORE_PARSE} and {@code RENDER_PAGES_AT_PAGE_END}
+     * image strategies, or -1 for no limit
+     */
+    public int getMaxRenderedPages() {
+        return maxRenderedPages;
+    }
+
+    /**
+     * Set the maximum number of pages to render, counted from the first
+     * page, independent of {@link #setMaxPages(int)}: text extraction can
+     * cover the whole document while only its first page is rendered, as
+     * for a thumbnail. Use -1 (the default) for no limit.
+     *
+     * @param maxRenderedPages must be -1 or &gt;= 1
+     * @throws IllegalArgumentException if the value is 0 or less than -1
+     */
+    public void setMaxRenderedPages(int maxRenderedPages) {
+        if (maxRenderedPages != -1 && maxRenderedPages < 1) {
+            throw new IllegalArgumentException(
+                    "maxRenderedPages must be -1 (no limit) or >= 1, got: " + maxRenderedPages);
+        }
+        this.maxRenderedPages = maxRenderedPages;
     }
 
     public void setThrowOnEncryptedPayload(boolean throwOnEncryptedPayload) {

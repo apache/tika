@@ -269,6 +269,34 @@ curl -T document.docx http://localhost:9998/rmeta/markdown  # or /md
 curl -T document.pdf http://localhost:9998/rmeta/ignore     # metadata only
 ----
 
+The thumbnail of a document is one of its embedded documents, typed
+`tk:embedded-resource-type=THUMBNAIL`. Most formats store one (Office, iWork, EPUB, DWG, the
+cover art of audio files, the preview of a raw camera file) and it is listed without further
+ado. Where a raster image only exists after rendering (the first page of a PDF, the EMF/WMF
+thumbnail of an Office document), `?renderThumbnails=true` lays the *thumbnail defaults*
+under the request: the first PDF page rendered at 96 dpi, the EMF/WMF thumbnail rendered (that
+one only, not the pictures of embedded objects). The text is extracted as usual; the rendering
+appears as an embedded document with its dimensions. The same switch works on `/unpack`,
+`/unpack/all` and `/unpack/thumbnail`; without it only stored thumbnails are found.
+
+[source,bash]
+----
+curl -T document.pdf "http://localhost:9998/rmeta/text?renderThumbnails=true"
+----
+
+The built-in defaults can be replaced per parser in the server config, with the same shape a
+request config has; a request's own `config` part still wins over both:
+
+[source,json]
+----
+{
+  "thumbnail-defaults": {
+    "pdf-parser": {"imageStrategy": "RENDER_PAGES_AT_PAGE_END", "maxRenderedPages": 1,
+                   "ocr": {"dpi": 150}}
+  }
+}
+----
+
 === Metadata only (`/meta`)
 
 Returns container-document metadata only — no recursive embedded list, no content. With no
@@ -310,9 +338,12 @@ enables everything below except `status`, which is opt-in and must be listed exp
 |===
 |Path |Config name |Notes
 
-|`/unpack`
+|`/unpack`, `/unpack/all`, `/unpack/thumbnail`
 |`unpack`
-|Returns embedded files as a zip. Forked.
+|Returns embedded files as a zip; `/all` adds the container's text and metadata;
+`/thumbnail` returns the document thumbnail as JSON (metadata plus the image as base64), or
+204 if there is none. `?renderThumbnails=true` applies the thumbnail defaults on all three, see
+<<_recursive_metadata_rmeta,`/rmeta`>>. Forked.
 
 |`/detect`
 |`detect`
