@@ -45,6 +45,7 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.ContentBytesConfig;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PipesConfig;
@@ -179,6 +180,30 @@ public class PipesParsingHelper {
      */
     public List<Metadata> parse(TikaInputStream tis, Metadata metadata,
                                  ParseContext parseContext, ParseMode parseMode) throws IOException {
+        return parseInternal(tis, metadata, parseContext, parseMode, false).metadataList();
+    }
+
+    /**
+     * The metadata plus, when requested via {@code content-bytes-config}, the extracted
+     * content as raw UTF-8 -- {@code TIKA_CONTENT} is then absent from the metadata.
+     */
+    public record ParseOutput(List<Metadata> metadataList, byte[] contentBytes) {
+    }
+
+    /**
+     * Like {@link #parse} but asks the worker for the content as raw UTF-8 bytes, which
+     * travel as binary over the IPC instead of a Smile-encoded string -- the win is one
+     * UTF-8 encode in the worker instead of a string transcode on both sides plus a
+     * re-encode at the HTTP layer. CONTENT_ONLY only.
+     */
+    public ParseOutput parseContentOnlyToBytes(TikaInputStream tis, Metadata metadata,
+                                               ParseContext parseContext) throws IOException {
+        return parseInternal(tis, metadata, parseContext, ParseMode.CONTENT_ONLY, true);
+    }
+
+    private ParseOutput parseInternal(TikaInputStream tis, Metadata metadata,
+                                      ParseContext parseContext, ParseMode parseMode,
+                                      boolean contentAsBytes) throws IOException {
         String requestId = UUID.randomUUID().toString();
         PayloadRouter.Routed routed = null;
         String callerSuppliedName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
@@ -209,6 +234,9 @@ public class PipesParsingHelper {
 
             // Set parse mode in context
             parseContext.set(ParseMode.class, parseMode);
+            if (contentAsBytes) {
+                parseContext.set(ContentBytesConfig.class, new ContentBytesConfig());
+            }
 
             // This parser is shared with /pipes, whose own default is EMIT_ALL. No
             // emitter is configured for /tika/rmeta/unpack requests (EmitKey.NO_EMIT
@@ -235,10 +263,12 @@ public class PipesParsingHelper {
             if (relativeName != null) {
                 stripSpoolIdentity(metadataList, relativeName, callerSuppliedName);
             }
+            byte[] contentBytes = (contentAsBytes && result.emitData() != null)
+                    ? result.emitData().getContentBytes() : null;
             postNanos = System.nanoTime() - postStart;
             logTiming(requestId, routed.route().name(), routeNanos, pipesNanos, postNanos,
                     System.nanoTime() - entryNanos);
-            return metadataList;
+            return new ParseOutput(metadataList, contentBytes);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

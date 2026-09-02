@@ -31,6 +31,9 @@ public class EmitDataImpl implements EmitData {
     // ParseContext is not serialized - it's set by PipesClient after deserialization
     private ParseContext parseContext;
 
+    // Raw UTF-8 content under content-bytes-config; rides the IPC as binary
+    private byte[] contentBytes;
+
     public EmitDataImpl(String emitKey, List<Metadata> metadataList) {
         this(emitKey, metadataList, StringUtils.EMPTY);
     }
@@ -54,8 +57,21 @@ public class EmitDataImpl implements EmitData {
         return containerStackTrace;
     }
 
+    @Override
+    public byte[] getContentBytes() {
+        return contentBytes;
+    }
+
+    public void setContentBytes(byte[] contentBytes) {
+        this.contentBytes = contentBytes;
+    }
+
     public long getEstimatedSizeBytes() {
-        return estimateSizeInBytes(getEmitKey(), getMetadataList(), containerStackTrace);
+        long sz = estimateSizeInBytes(getEmitKey(), getMetadataList(), containerStackTrace);
+        if (contentBytes != null) {
+            sz += 36 + contentBytes.length;
+        }
+        return sz;
     }
 
     /**
@@ -97,6 +113,8 @@ public class EmitDataImpl implements EmitData {
     @Override
     public String toString() {
         return "EmitData{" + "emitKey=" + emitKey + ", metadataList=" + metadataList +
-                ", containerStackTrace='" + containerStackTrace + '\'' + '}';
+                ", containerStackTrace='" + containerStackTrace + '\'' +
+                ", contentBytes.length=" + (contentBytes == null ? "null" : contentBytes.length) +
+                '}';
     }
 }

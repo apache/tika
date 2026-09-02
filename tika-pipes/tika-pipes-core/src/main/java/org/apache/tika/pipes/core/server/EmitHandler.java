@@ -43,6 +43,7 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.StreamEmitter;
+import org.apache.tika.pipes.core.ContentBytesConfig;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PassbackFilter;
@@ -133,6 +134,9 @@ class EmitHandler {
                     && emitterId != null
                     && emitterManager.getAllIds().contains(emitterId);
             boolean willEmit = forceEmit || shouldEmit(parseMode, parseData, emitDataTuple, parseContext);
+            if (!willEmit) {
+                maybeMoveContentToBytes(parseMode, emitDataTuple, parseContext);
+            }
             if (willEmit) {
                 return emit(t.getId(), emitKey, parseMode == ParseMode.UNPACK,
                         parseData, stack, parseContext);
@@ -146,6 +150,34 @@ class EmitHandler {
         } else {
             return new PipesResult(PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT, stack);
         }
+    }
+
+    /**
+     * Under {@code content-bytes-config} + CONTENT_ONLY, moves the extracted content out of
+     * {@code TIKA_CONTENT} into raw UTF-8 bytes on the passback {@code EmitData}. One encode
+     * here replaces a Smile string encode, the client-side string decode, and the consumer's
+     * re-encode. Passback only -- the direct-emit path streams the string itself.
+     */
+    private static void maybeMoveContentToBytes(ParseMode parseMode, EmitDataImpl emitData,
+                                                ParseContext parseContext) {
+        if (parseMode != ParseMode.CONTENT_ONLY) {
+            return;
+        }
+        ContentBytesConfig config = parseContext.get(ContentBytesConfig.class);
+        if (config == null || !config.isEnabled()) {
+            return;
+        }
+        List<Metadata> metadataList = emitData.getMetadataList();
+        if (metadataList == null || metadataList.isEmpty()) {
+            return;
+        }
+        Metadata m = metadataList.get(0);
+        String content = m.get(TikaCoreProperties.TIKA_CONTENT);
+        if (content == null) {
+            return;
+        }
+        emitData.setContentBytes(content.getBytes(StandardCharsets.UTF_8));
+        m.remove(TikaCoreProperties.TIKA_CONTENT);
     }
 
     private PipesResult emit(String taskId, EmitKey emitKey,

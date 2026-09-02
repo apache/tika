@@ -22,8 +22,6 @@ import static org.apache.tika.server.core.resource.RecursiveMetadataResource.HAN
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -404,6 +402,20 @@ public class TikaResource {
      * @return list of metadata objects from parsing
      * @throws IOException if parsing fails
      */
+    private PipesParsingHelper.ParseOutput parseWithPipesRaw(TikaInputStream tis,
+            Metadata metadata, ParseContext parseContext) throws IOException {
+        if (pipesParsingHelper == null) {
+            throw new IllegalStateException("Pipes-based parsing is not enabled");
+        }
+        String fileName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        long taskId = serverStatus.start(ServerStatus.TASK.PARSE, fileName);
+        try {
+            return pipesParsingHelper.parseContentOnlyToBytes(tis, metadata, parseContext);
+        } finally {
+            serverStatus.complete(taskId);
+        }
+    }
+
     public List<Metadata> parseWithPipes(TikaInputStream tis, Metadata metadata,
                                                  ParseContext parseContext, ParseMode parseMode)
             throws IOException {
@@ -715,22 +727,26 @@ public class TikaResource {
                 handlerTypeName, context.get(ContentHandlerFactory.class));
 
         // Parse with pipes using CONTENT_ONLY mode - the metadata filter in
-        // EmitHandler will strip everything except tk:content
-        List<Metadata> metadataList =
-                parseWithPipes(tis, metadata, context, ParseMode.CONTENT_ONLY);
+        // EmitHandler will strip everything except tk:content, and the content comes
+        // back as raw UTF-8 bytes rather than a Smile-encoded string
+        PipesParsingHelper.ParseOutput parsed =
+                parseWithPipesRaw(tis, metadata, context);
+        List<Metadata> metadataList = parsed.metadataList();
 
         LOG.debug("produceRawOutput: parseWithPipes returned {} metadata objects", metadataList.size());
 
         // Extract content before checking for an exception -- content must not be
         // discarded just because a container-level exception also occurred.
-        String content = "";
+        byte[] content = parsed.contentBytes();
         boolean hasException = false;
         String exceptionMessage = null;
         if (!metadataList.isEmpty()) {
-            String extracted = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
-            LOG.debug("produceRawOutput: TIKA_CONTENT length={}", extracted != null ? extracted.length() : 0);
-            if (extracted != null) {
-                content = extracted;
+            if (content == null) {
+                // fallback: results built without the byte path (crash/error metadata)
+                String extracted = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+                if (extracted != null) {
+                    content = extracted.getBytes(UTF_8);
+                }
             }
             exceptionMessage = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
             hasException = exceptionMessage != null && !exceptionMessage.isEmpty();
@@ -742,13 +758,11 @@ public class TikaResource {
         // 422 status signals the partial parse and the body carries the extracted content
         // only -- never the server-side exception/stack trace. Clients that need the
         // container exception should use /rmeta.
-        final String finalContent = content;
+        final byte[] finalContent = content == null ? new byte[0] : content;
 
         StreamingOutput streamingOutput = outputStream -> {
-            try (Writer writer = new OutputStreamWriter(outputStream, UTF_8)) {
-                writer.write(finalContent);
-                writer.flush();
-            }
+            outputStream.write(finalContent);
+            outputStream.flush();
         };
         return Response.status(hasException ? 422 : Response.Status.OK.getStatusCode())
                 .entity(streamingOutput)

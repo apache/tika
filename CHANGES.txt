@@ -1,5 +1,14 @@
 Release 4.1.0 - unreleased
 
+   * tika-server's raw-output endpoints (/tika, /tika/text, ...) carry the
+     extracted content as raw UTF-8 bytes from the pipes worker to the HTTP
+     response instead of a Smile-encoded string: one encode in the worker
+     replaces a string transcode on both sides of the IPC plus a re-encode
+     at the HTTP layer (9MB text: 115ms -> 75ms end-to-end). Opt-in via
+     the new content-bytes-config parse-context component, which moves
+     CONTENT_ONLY passback content out of tk:content into
+     EmitData.getContentBytes() (TIKA-4868).
+
    * Detection hot-path cleanups: MagicMatch resolves its detector via
      double-checked locking instead of a synchronized method per eval;
      glob patterns are compiled once at registration instead of per
