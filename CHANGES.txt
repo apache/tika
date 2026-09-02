@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * ZipParser no longer re-decompresses an entry on every rewind when the
+     entry uses a legacy compression method (implode, shrink, bzip2, ...):
+     those decode per-bit, so the rewind-by-reopen trade that works for
+     STORED/DEFLATED entries re-decoded the whole entry for each of the
+     several rewinds the embedded pipeline performs. Such entries now
+     replay from the budgeted cache. An imploded 606KB zip drops from
+     610ms to 102ms in tika-server (TIKA-4868).
+
    * More detection/dispatch savings: the message/rfc822 priority-45 magic
      is gated behind a ':' scan of the first 30 bytes (every match provably
      has one, so results are unchanged and non-mail text skips its ~40
