@@ -161,6 +161,12 @@ public class RecursiveMetadataResource {
                                           @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws Exception {
         ParseContext context = tikaResource.createPresetContext(presetName);
+        // An explicit format segment wins over a factory the preset itself binds; with no
+        // segment, parseMetadataWithContext defers to the preset's factory, then the
+        // config's, then the endpoint default.
+        if (handlerTypeName != null && !handlerTypeName.isBlank()) {
+            tikaResource.setupContentHandlerFactory(context, handlerTypeName);
+        }
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());

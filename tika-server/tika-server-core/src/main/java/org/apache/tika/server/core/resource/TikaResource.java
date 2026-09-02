@@ -124,32 +124,28 @@ public class TikaResource {
             this.presetRegistry = PresetRegistry.load(tikaLoader.getConfig(),
                     tikaLoader.getClassLoader());
         } catch (TikaConfigException e) {
-            // config error: fail startup, not the first preset request
+            // config error (including a preset that cannot resolve): fail startup,
+            // not the first preset request
             throw new IllegalStateException("Invalid 'presets' configuration", e);
         }
     }
 
     /**
-     * A request context with the named preset's parse-context fragment merged in.
+     * A request context carrying the named preset selection. Only the name is recorded
+     * here: the forked worker resolves the preset from its own copy of this config at
+     * config-tier trust, so preset content is never treated as caller-supplied wire
+     * data (which would screen out wire-blocked components and clamp its timeouts).
      * A preset is selected whole and exclusively -- the {@code preset} routes take
      * no config part, so it never combines with request-supplied configuration.
      *
      * @throws NotFoundException if no preset has this name
      */
     public ParseContext createPresetContext(String presetName) {
-        String fragment = presetRegistry.parseContextJson(presetName);
-        if (fragment == null) {
+        if (!presetRegistry.hasPreset(presetName)) {
             throw new NotFoundException("No such preset: " + presetName);
         }
         ParseContext context = createRequestContext();
-        try {
-            mergeParseContextFromConfig(fragment, context);
-        } catch (IOException | TikaConfigException e) {
-            // the preset came from Tika or the server config, so this is a
-            // server-side configuration error, not a caller error
-            throw new WebApplicationException(
-                    "Preset '" + presetName + "' failed to resolve: " + e.getMessage(), 500);
-        }
+        context.set(PresetSelection.class, new PresetSelection(presetName));
         return context;
     }
 
@@ -501,11 +497,19 @@ public class TikaResource {
      * @param handlerTypeName the handler type name
      */
     public void setupContentHandlerFactoryIfNeeded(ParseContext context, String handlerTypeName) {
+        if (context.get(ContentHandlerFactory.class) != null) {
+            return;
+        }
+        // A selected preset that binds its own factory decides the format on routes with no
+        // explicit format segment; the worker resolves it from the preset at config tier.
+        PresetSelection preset = context.get(PresetSelection.class);
+        if (preset != null && presetRegistry.suppliesContentHandlerFactory(preset.name())) {
+            return;
+        }
         // A config-declared factory still takes precedence; it is no longer visible in the
         // request context, so leaving the context untouched lets the worker resolve it from
         // the same config.
-        if (context.get(ContentHandlerFactory.class) == null
-                && !configSuppliesContentHandlerFactory) {
+        if (!configSuppliesContentHandlerFactory) {
             setupContentHandlerFactory(context, handlerTypeName);
         }
     }
@@ -624,27 +628,40 @@ public class TikaResource {
     // address /tika/preset/* -- or a single preset -- independently of /tika/config*.
     // These routes take no config part; a preset never combines with request config.
 
+    // explicitHandlerType semantics: non-null (an explicit format segment in the URL) wins
+    // over everything, including a factory the preset itself binds; null defers to the
+    // preset's factory, then the config's, then the endpoint default.
+
     private Response putRawPreset(InputStream is, HttpHeaders httpHeaders, String presetName,
-                                  String handlerTypeName) throws IOException {
+                                  String explicitHandlerType) throws IOException {
         ParseContext context = createPresetContext(presetName);
         Metadata metadata = newRequestMetadata();
         fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
+        if (explicitHandlerType != null) {
+            setupContentHandlerFactory(context, explicitHandlerType);
+        }
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            return produceRawOutputWithContext(tis, metadata, context, handlerTypeName);
+            return produceRawOutputWithContext(tis, metadata, context, explicitHandlerType);
         }
     }
 
     private Metadata putJsonPreset(InputStream is, HttpHeaders httpHeaders, String presetName,
-                                   String handlerTypeName) throws IOException {
+                                   String explicitHandlerType) throws IOException {
         ParseContext context = createPresetContext(presetName);
         Metadata metadata = newRequestMetadata();
         fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
+        if (explicitHandlerType != null) {
+            setupContentHandlerFactory(context, explicitHandlerType);
+        }
         try (TikaInputStream tis = TikaInputStream.get(is)) {
-            return produceJsonWithContext(tis, metadata, context, handlerTypeName);
+            return produceJsonWithContext(tis, metadata, context, explicitHandlerType);
         }
     }
 
-    /** As the bare /tika endpoint (Markdown), with the named preset applied. */
+    /**
+     * As the bare /tika endpoint, with the named preset applied. A factory the preset
+     * binds decides the output format here; without one the Markdown default applies.
+     */
     @PUT
     @Consumes("*/*")
     @Produces("text/plain;charset=UTF-8")
@@ -652,7 +669,7 @@ public class TikaResource {
     public Response getDefaultWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
                                          @PathParam("presetName") String presetName)
             throws IOException {
-        return putRawPreset(is, httpHeaders, presetName, "md");
+        return putRawPreset(is, httpHeaders, presetName, null);
     }
 
     /** As /tika/text, with the named preset applied. */

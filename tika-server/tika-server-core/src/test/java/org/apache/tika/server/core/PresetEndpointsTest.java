@@ -18,6 +18,7 @@ package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -59,6 +60,10 @@ public class PresetEndpointsTest extends CXFTestBase {
         ObjectNode presets = config.putObject("presets");
         presets.putObject("xml-content")
                 .putObject("basic-content-handler-factory").put("type", "XML");
+        // exception-reporting is wire-blocked for caller-supplied config; a preset is
+        // operator config and must be able to bind it (resolved worker-side)
+        presets.putObject("reporting")
+                .putObject("exception-reporting").put("maxLength", 512);
         return new ByteArrayInputStream(
                 MAPPER.writeValueAsString(config).getBytes(UTF_8));
     }
@@ -129,6 +134,51 @@ public class PresetEndpointsTest extends CXFTestBase {
         String content = getStringFromInputStream((InputStream) response.getEntity());
         // the preset's XML content handler wins over the endpoint's markdown default
         assertContains("<body><p>hello world</p>", content);
+    }
+
+    @Test
+    public void testExplicitFormatSegmentWinsOverPresetFactory() throws Exception {
+        // /tika/preset/xml-content/text: the URL's own format segment beats the XML
+        // factory the preset binds -- it rides the request delta, which the worker
+        // overlays on top of the preset
+        Response response = WebClient
+                .create(endPoint + "/tika/preset/xml-content/text")
+                .accept("text/plain")
+                .put(ClassLoader.getSystemResourceAsStream(HELLO_WORLD));
+        assertEquals(200, response.getStatus());
+        String content = getStringFromInputStream((InputStream) response.getEntity());
+        assertContains("hello world", content);
+        assertFalse(content.contains("<body>"), "explicit /text segment must win: " + content);
+    }
+
+    @Test
+    public void testWireBlockedComponentWorksInPreset() throws Exception {
+        // previously this 500'd: the preset was pushed through the untrusted wire
+        // deserializer, which refuses exception-reporting
+        Response response = WebClient
+                .create(endPoint + "/tika/preset/reporting")
+                .accept("text/plain")
+                .put(ClassLoader.getSystemResourceAsStream(HELLO_WORLD));
+        assertEquals(200, response.getStatus());
+        assertContains("hello world",
+                getStringFromInputStream((InputStream) response.getEntity()));
+    }
+
+    @Test
+    public void testTransposedUnpackPresetUrlIs404() throws Exception {
+        // /unpack/all/preset/{name} would otherwise fall into the /all{id} wildcard
+        // and run with no preset applied -- a silent wrong-config success
+        Response response = WebClient
+                .create(endPoint + "/unpack/all/preset/xml-content")
+                .accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream(HELLO_WORLD));
+        assertEquals(404, response.getStatus());
+
+        response = WebClient
+                .create(endPoint + "/unpack/preset")
+                .accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream(HELLO_WORLD));
+        assertEquals(404, response.getStatus());
     }
 
     @Test

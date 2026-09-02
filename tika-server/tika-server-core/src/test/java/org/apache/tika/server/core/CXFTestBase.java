@@ -357,6 +357,12 @@ public abstract class CXFTestBase {
             if (metadataFilters != null && !metadataFilters.isEmpty()) {
                 root.set("metadata-filters", metadataFilters);
             }
+            // The worker resolves preset names from its own config, so presets must be
+            // visible there just like the parse-context defaults above.
+            JsonNode presets = tikaConfig.get("presets");
+            if (presets != null && !presets.isEmpty()) {
+                root.set("presets", presets);
+            }
         } catch (Exception e) {
             LOG.debug("Could not carry config into the worker config: {}", e.getMessage());
         }

@@ -145,10 +145,24 @@ public class UnpackerResource {
      * @param info URI info
      * @return streaming zip response
      */
+    /**
+     * The wildcard {@code id} on the pre-existing routes would otherwise silently absorb a
+     * transposed preset URL ({@code /unpack/all/preset/x}, {@code /unpack/preset} with no
+     * name) and run with no preset applied -- a silent wrong-config success.
+     */
+    private static void rejectPresetInWildcard(UriInfo info) {
+        String id = info.getPathParameters().getFirst("id");
+        if (id != null && (id.equals("/preset") || id.startsWith("/preset/"))) {
+            throw new jakarta.ws.rs.NotFoundException(
+                    "preset routes are PUT /unpack/preset/{name}[/all]");
+        }
+    }
+
     @jakarta.ws.rs.Path("/{id:(/.*)?}")
     @PUT
     @Produces("application/zip")
     public Response unpack(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+        rejectPresetInWildcard(info);
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
@@ -172,6 +186,7 @@ public class UnpackerResource {
     @Consumes("multipart/form-data")
     @Produces("application/zip")
     public Response unpackWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+        rejectPresetInWildcard(info);
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
@@ -193,6 +208,7 @@ public class UnpackerResource {
     @PUT
     @Produces("application/zip")
     public Response unpackAll(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+        rejectPresetInWildcard(info);
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
@@ -216,6 +232,7 @@ public class UnpackerResource {
     @Consumes("multipart/form-data")
     @Produces("application/zip")
     public Response unpackAllWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
+        rejectPresetInWildcard(info);
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {

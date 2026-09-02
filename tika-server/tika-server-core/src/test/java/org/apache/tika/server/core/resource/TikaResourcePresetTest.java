@@ -17,6 +17,7 @@
 package org.apache.tika.server.core.resource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Files;
@@ -28,7 +29,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
 import org.apache.tika.server.core.ServerStatus;
 
@@ -54,12 +54,14 @@ public class TikaResourcePresetTest {
     }
 
     @Test
-    public void testPresetExpandsIntoRequestContext() throws Exception {
+    public void testPresetSelectionRidesRequestContextByNameOnly() throws Exception {
+        // only the name is recorded: the forked worker resolves the content from its
+        // own config at config-tier trust, so nothing preset-shaped may enter the
+        // request (caller-tier) context here
         ParseContext context =
                 newTikaResource(CONFIG, true).createPresetContext("xml-content");
-        BasicContentHandlerFactory chf =
-                (BasicContentHandlerFactory) context.get(ContentHandlerFactory.class);
-        assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.XML, chf.getType());
+        assertEquals("xml-content", context.get(PresetSelection.class).name());
+        assertNull(context.get(ContentHandlerFactory.class));
     }
 
     @Test
@@ -68,9 +70,7 @@ public class TikaResourcePresetTest {
         // free-form per-request-config privilege
         ParseContext context =
                 newTikaResource(CONFIG, false).createPresetContext("xml-content");
-        BasicContentHandlerFactory chf =
-                (BasicContentHandlerFactory) context.get(ContentHandlerFactory.class);
-        assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.XML, chf.getType());
+        assertEquals("xml-content", context.get(PresetSelection.class).name());
     }
 
     @Test
@@ -83,5 +83,14 @@ public class TikaResourcePresetTest {
     public void testInvalidPresetsConfigFailsStartup() {
         assertThrows(IllegalStateException.class,
                 () -> newTikaResource("{\"presets\": {\"bad\": \"a string\"}}", true));
+    }
+
+    @Test
+    public void testUnresolvablePresetFailsStartup() {
+        // preset content is resolved at load: a malformed component fails startup,
+        // not the first preset request
+        assertThrows(IllegalStateException.class, () -> newTikaResource("""
+                {"presets": {"bad": {"basic-content-handler-factory": {"type": "NOPE"}}}}
+                """, true));
     }
 }

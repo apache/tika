@@ -202,6 +202,8 @@ public class PipesParsingHelper {
             // Set parse mode in context
             parseContext.set(ParseMode.class, parseMode);
 
+            String presetName = liftPresetSelection(parseContext);
+
             // This parser is shared with /pipes, whose own default is EMIT_ALL. No
             // emitter is configured for /tika/rmeta/unpack requests (EmitKey.NO_EMIT
             // below) -- results must come back over the socket, so set PASSBACK_ALL
@@ -213,7 +215,9 @@ public class PipesParsingHelper {
                     fetchKey,
                     EmitKey.NO_EMIT,
                     metadata,
-                    parseContext
+                    parseContext,
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT,
+                    presetName
             );
 
             // Execute parse via pipes - results will be passed back through socket
@@ -239,6 +243,20 @@ public class PipesParsingHelper {
                 routed.close();
             }
         }
+    }
+
+    /**
+     * Lifts the in-process {@link PresetSelection} carrier out of the context and onto the
+     * tuple's own preset field: only the name travels; the forked worker resolves the
+     * preset's content from its own config at config-tier trust.
+     */
+    private static String liftPresetSelection(ParseContext parseContext) {
+        PresetSelection preset = parseContext.get(PresetSelection.class);
+        if (preset == null) {
+            return null;
+        }
+        parseContext.set(PresetSelection.class, null);
+        return preset.name();
     }
 
     /** Longest suffix carried over from a client filename; keeps well clear of NAME_MAX. */
@@ -418,7 +436,7 @@ public class PipesParsingHelper {
             // The caller named a fetcher/emitter this server does not have. Nothing failed
             // on our side, and retrying the same request will never succeed -- 500 told
             // clients to retry a request that is permanently malformed.
-            case FETCHER_NOT_FOUND, EMITTER_NOT_FOUND ->
+            case FETCHER_NOT_FOUND, EMITTER_NOT_FOUND, PRESET_NOT_FOUND ->
                     Response.Status.BAD_REQUEST;
             case PAYLOAD_LIMIT_EXCEEDED ->
                     Response.Status.REQUEST_ENTITY_TOO_LARGE;
@@ -566,6 +584,8 @@ public class PipesParsingHelper {
             // Set parse mode to UNPACK
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
 
+            String presetName = liftPresetSelection(parseContext);
+
             // Shared parser (see parse() above) -- PASSBACK_ALL is also required here
             // for correctness: with UNPACK mode, EmitHandler.shouldEmit() only skips
             // re-emitting metadata (already emitted as part of the zip) when the
@@ -602,7 +622,9 @@ public class PipesParsingHelper {
                 fetchKey,
                 emitKey,
                 metadata,
-                parseContext
+                parseContext,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT,
+                presetName
         );
 
             // Execute parse via pipes

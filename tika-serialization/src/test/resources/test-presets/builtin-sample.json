@@ -1,3 +1,4 @@
 {
+  // catalog files use the same JSON dialect as the config: comments allowed
   "basic-content-handler-factory": {"type": "TEXT"}
 }

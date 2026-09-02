@@ -22,6 +22,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -32,6 +33,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.serialization.ParseContextUtils;
+import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 /**
  * Named, vetted parse-context fragments a caller can select whole ("presets").
@@ -39,6 +44,12 @@ import org.apache.tika.exception.TikaConfigException;
  * component configurations keyed by friendly name. A caller references a preset
  * by name only, so the configuration itself stays in Tika and in the server's
  * config rather than in consuming applications.
+ * <p>
+ * A preset is operator-authored config, not caller input: it is resolved with
+ * the same trust as the config's own {@code parse-context} block (no wire-block
+ * screening), and only its <em>name</em> ever travels on a request. Every
+ * active preset is fully resolved at load time, so a preset that cannot
+ * resolve fails startup rather than its first request.
  * <p>
  * Nothing is active unless the config's {@code presets} block names it: an
  * entry with value {@code true} activates the catalog definition of that name
@@ -67,10 +78,15 @@ public final class PresetRegistry {
     // Names ride in URL paths and config keys
     private static final Pattern NAME = Pattern.compile("[A-Za-z0-9][A-Za-z0-9._-]{0,99}");
 
-    private final Map<String, String> presets;
+    private final Map<String, JsonNode> presets;
+    private final Set<String> withContentHandlerFactory;
+    private final ClassLoader classLoader;
 
-    private PresetRegistry(Map<String, String> presets) {
+    private PresetRegistry(Map<String, JsonNode> presets, Set<String> withContentHandlerFactory,
+                           ClassLoader classLoader) {
         this.presets = presets;
+        this.withContentHandlerFactory = withContentHandlerFactory;
+        this.classLoader = classLoader;
     }
 
     /**
@@ -78,14 +94,18 @@ public final class PresetRegistry {
      * names it lists are active. {@code true} activates a catalog definition
      * (startup error if the catalog has no such name); an object defines the
      * preset in place; {@code false}/{@code null} deactivates explicitly.
+     * Every active preset is resolved here, so a preset whose content cannot
+     * bind is a startup error.
      *
      * @param config the loaded config, may be null (empty roster)
-     * @param classLoader loader to scan for catalog preset indexes, may be null
-     *                    for the thread context loader
+     * @param classLoader loader to scan for catalog preset indexes and resolve
+     *                    preset components, may be null for the thread context loader
      */
     public static PresetRegistry load(TikaJsonConfig config, ClassLoader classLoader)
             throws TikaConfigException {
-        Map<String, String> presets = new LinkedHashMap<>();
+        ClassLoader loader = classLoader != null ? classLoader
+                : Thread.currentThread().getContextClassLoader();
+        Map<String, JsonNode> presets = new LinkedHashMap<>();
         if (config != null && config.hasKey(CONFIG_KEY)) {
             JsonNode block = config.getRootNode().get(CONFIG_KEY);
             if (block == null || !block.isObject()) {
@@ -93,18 +113,16 @@ public final class PresetRegistry {
                         "'" + CONFIG_KEY + "' must be an object of preset definitions");
             }
             // load the inert catalog only when the config can reference it
-            ClassLoader loader = classLoader != null ? classLoader
-                    : Thread.currentThread().getContextClassLoader();
-            Map<String, String> catalog = loadCatalog(loader);
+            Map<String, JsonNode> catalog = loadCatalog(loader);
             Iterator<Map.Entry<String, JsonNode>> fields = block.fields();
             while (fields.hasNext()) {
                 Map.Entry<String, JsonNode> e = fields.next();
                 String name = e.getKey();
                 JsonNode value = e.getValue();
                 if (value.isNull() || (value.isBoolean() && !value.asBoolean())) {
-                    presets.remove(name);
+                    continue; // explicit no-op
                 } else if (value.isBoolean()) {
-                    String content = catalog.get(name);
+                    JsonNode content = catalog.get(name);
                     if (content == null) {
                         throw new TikaConfigException("preset '" + name +
                                 "': true activates a catalog preset, but no catalog " +
@@ -112,26 +130,54 @@ public final class PresetRegistry {
                     }
                     presets.put(validName(name), content);
                 } else if (value.isObject()) {
-                    presets.put(validName(name), value.toString());
+                    presets.put(validName(name), value);
                 } else {
                     throw new TikaConfigException("preset '" + name + "' must be an " +
                             "object, true (activate catalog definition), or false/null");
                 }
             }
         }
-        return new PresetRegistry(presets);
+        Set<String> withContentHandlerFactory = new HashSet<>();
+        for (Map.Entry<String, JsonNode> e : presets.entrySet()) {
+            ParseContext resolved = resolve(e.getKey(), e.getValue(), loader);
+            if (resolved.get(ContentHandlerFactory.class) != null) {
+                withContentHandlerFactory.add(e.getKey());
+            }
+        }
+        return new PresetRegistry(presets, withContentHandlerFactory, loader);
     }
 
-    private static Map<String, String> loadCatalog(ClassLoader loader)
+    /**
+     * Trusted-tier resolution: presets are operator config, so no wire-block screening
+     * -- identical treatment to the config's own {@code parse-context} block.
+     */
+    private static ParseContext resolve(String name, JsonNode content, ClassLoader loader)
             throws TikaConfigException {
-        Map<String, String> presets = new LinkedHashMap<>();
-        ObjectMapper mapper = new ObjectMapper();
+        try {
+            ParseContext context = ParseContextDeserializer.readParseContext(content, false);
+            ParseContextUtils.resolveAll(context, loader);
+            return context;
+        } catch (IOException | TikaConfigException e) {
+            throw new TikaConfigException(
+                    "preset '" + name + "' failed to resolve: " + e.getMessage(), e);
+        }
+    }
+
+    private static Map<String, JsonNode> loadCatalog(ClassLoader loader)
+            throws TikaConfigException {
+        Map<String, JsonNode> presets = new LinkedHashMap<>();
+        Map<String, URL> sources = new LinkedHashMap<>();
+        // Same JSON dialect as the config itself (comments allowed, duplicate keys refused)
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
         try {
             Enumeration<URL> indexes = loader.getResources(INDEX_RESOURCE);
             while (indexes.hasMoreElements()) {
                 URL index = indexes.nextElement();
-                for (String line : new String(index.openStream().readAllBytes(),
-                        StandardCharsets.UTF_8).split("\n")) {
+                String indexContent;
+                try (InputStream is = index.openStream()) {
+                    indexContent = new String(is.readAllBytes(), StandardCharsets.UTF_8);
+                }
+                for (String line : indexContent.split("\n")) {
                     line = line.trim();
                     if (line.isEmpty() || line.startsWith("#")) {
                         continue;
@@ -154,7 +200,14 @@ public final class PresetRegistry {
                             throw new TikaConfigException("preset '" + name +
                                     "' must contain a JSON object: " + resource);
                         }
-                        presets.put(name, content.toString());
+                        JsonNode previous = presets.put(name, content);
+                        // classpath order is not a config statement: refuse a silent last-wins
+                        if (previous != null && !previous.equals(content)) {
+                            throw new TikaConfigException("catalog preset '" + name +
+                                    "' is defined with different content by " +
+                                    sources.get(name) + " and " + index);
+                        }
+                        sources.put(name, index);
                     }
                 }
             }
@@ -169,15 +222,32 @@ public final class PresetRegistry {
     }
 
     private static String validName(String name) throws TikaConfigException {
-        if (!NAME.matcher(name).matches()) {
+        if (!isValidName(name)) {
             throw new TikaConfigException("invalid preset name (letters, digits, " +
-                    "'.', '_', '-'; max 100 chars): '" + name + "'");
+                    "'.', '_', '-'; max 100 chars; may not start with 'config', which is " +
+                    "reserved so preset URL routes stay distinct from /config endpoint " +
+                    "gating): '" + name + "'");
         }
         return name;
     }
 
+    /**
+     * True if {@code name} is a legal preset name: the character/length rule above, and
+     * not starting with "config" (tika-server gates {@code /config} endpoints on that
+     * path fragment, so such a name would be unreachable there). Public so wire
+     * deserializers can bound a preset-name field with the same rule.
+     */
+    public static boolean isValidName(String name) {
+        return name != null && NAME.matcher(name).matches()
+                && !name.regionMatches(true, 0, "config", 0, 6);
+    }
+
     public Set<String> names() {
         return Collections.unmodifiableSet(presets.keySet());
+    }
+
+    public boolean hasPreset(String name) {
+        return name != null && presets.containsKey(name);
     }
 
     /**
@@ -185,6 +255,25 @@ public final class PresetRegistry {
      * component configurations -- or null if no preset has this name.
      */
     public String parseContextJson(String name) {
-        return name == null ? null : presets.get(name);
+        JsonNode node = name == null ? null : presets.get(name);
+        return node == null ? null : node.toString();
+    }
+
+    /**
+     * A fresh, fully resolved ParseContext for the named preset, or null if no preset
+     * has this name. Fresh per call: callers mutate the result per request.
+     */
+    public ParseContext newParseContext(String name) throws TikaConfigException {
+        JsonNode content = name == null ? null : presets.get(name);
+        return content == null ? null : resolve(name, content, classLoader);
+    }
+
+    /**
+     * True if the named preset binds a {@link ContentHandlerFactory}: a route with no
+     * explicit format segment should then leave the choice to the preset rather than
+     * forcing its own default.
+     */
+    public boolean suppliesContentHandlerFactory(String name) {
+        return name != null && withContentHandlerFactory.contains(name);
     }
 }

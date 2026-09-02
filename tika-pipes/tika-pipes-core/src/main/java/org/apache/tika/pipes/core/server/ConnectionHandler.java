@@ -165,7 +165,8 @@ public class ConnectionHandler implements Runnable, Closeable {
                         }
                         ParseContext mergedContext = null;
                         try {
-                            mergedContext = resources.createMergedParseContext(fetchEmitTuple.getParseContext());
+                            mergedContext = resources.createMergedParseContext(
+                                    fetchEmitTuple.getParseContext(), fetchEmitTuple.getPresetName());
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
                             ServerProtocolIO.validateParseContext(mergedContext);
                             ServerProtocolIO.clampRequestTimeoutLimits(
@@ -184,6 +185,11 @@ public class ConnectionHandler implements Runnable, Closeable {
                             executorCompletionService.submit(pipesWorker);
 
                             loopUntilDone(fetchEmitTuple, mergedContext, intermediateResult, countDownLatch, parseTimeout);
+                        } catch (PresetNotFoundException e) {
+                            // caller error, not a server fault: answer it and keep serving
+                            LOG.warn("handlerId={}: id={}: {}", handlerId, fetchEmitTuple.getId(), e.getMessage());
+                            protocolIO.writeFinished(new PipesResult(
+                                    PipesResult.RESULT_STATUS.PRESET_NOT_FOUND, e.getMessage()));
                         } catch (TikaConfigException e) {
                             LOG.error("handlerId={}: config error processing request", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);

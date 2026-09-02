@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -30,7 +32,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.parser.ParseContext;
 
 public class PresetRegistryTest {
 
@@ -117,6 +121,94 @@ public class PresetRegistryTest {
         assertThrows(TikaConfigException.class, () -> load("""
                 {"presets": {"bad/name": {}}}
                 """));
+    }
+
+    @Test
+    public void testConfigPrefixedNameRejected() {
+        // tika-server gates /config endpoints on the path fragment, so such a
+        // preset would be unreachable there; refuse it at definition time
+        assertThrows(TikaConfigException.class, () -> load("""
+                {"presets": {"config-fast": {}}}
+                """));
+        assertThrows(TikaConfigException.class, () -> load("""
+                {"presets": {"CONFIGX": {}}}
+                """));
+        assertTrue(PresetRegistry.isValidName("fast-config"));
+    }
+
+    @Test
+    public void testUnresolvablePresetFailsLoad() {
+        // a known component with malformed content must fail at load, not first use
+        assertThrows(TikaConfigException.class, () -> load("""
+                {"presets": {"bad": {"basic-content-handler-factory": {"type": "NO_SUCH_TYPE"}}}}
+                """));
+    }
+
+    @Test
+    public void testNewParseContextIsTrustedAndFresh() throws Exception {
+        // exception-reporting is wire-blocked for caller-supplied contexts; a preset is
+        // operator config and must be able to bind it
+        PresetRegistry registry = load("""
+                {"presets": {"reporting": {"exception-reporting": {"maxLength": 512}}}}
+                """);
+        ParseContext first = registry.newParseContext("reporting");
+        assertTrue(first.get(ExceptionReporting.class) != null);
+        // fresh per call: callers mutate the result per request
+        assertTrue(first != registry.newParseContext("reporting"));
+        assertNull(registry.newParseContext("nope"));
+        assertNull(registry.newParseContext(null));
+    }
+
+    @Test
+    public void testSuppliesContentHandlerFactory() throws Exception {
+        PresetRegistry registry = load("""
+                {"presets": {
+                  "with-chf": {"basic-content-handler-factory": {"type": "XML"}},
+                  "without-chf": {"embedded-limits": {"maxDepth": 2}}}}
+                """);
+        assertTrue(registry.suppliesContentHandlerFactory("with-chf"));
+        assertFalse(registry.suppliesContentHandlerFactory("without-chf"));
+        assertFalse(registry.suppliesContentHandlerFactory("nope"));
+        assertFalse(registry.suppliesContentHandlerFactory(null));
+    }
+
+    @Test
+    public void testCatalogNameCollisionAcrossJarsFails() throws Exception {
+        Path dirA = catalogDir("a", "colliding", "{\"embedded-limits\": {\"maxDepth\": 1}}");
+        Path dirB = catalogDir("b", "colliding", "{\"embedded-limits\": {\"maxDepth\": 2}}");
+        // parent is the test loader, so component classes still resolve; its own
+        // catalog contributes only the distinct builtin-sample name
+        try (URLClassLoader loader = new URLClassLoader(
+                new URL[]{dirA.toUri().toURL(), dirB.toUri().toURL()},
+                getClass().getClassLoader())) {
+            assertThrows(TikaConfigException.class, () -> PresetRegistry.load(
+                    config("{\"presets\": {\"colliding\": true}}"), loader));
+        }
+    }
+
+    @Test
+    public void testCatalogIdenticalDuplicateTolerated() throws Exception {
+        // the same jar visible twice on a classpath is noise, not a conflict
+        Path dirA = catalogDir("a2", "dup", "{\"embedded-limits\": {\"maxDepth\": 3}}");
+        Path dirB = catalogDir("b2", "dup", "{\"embedded-limits\": {\"maxDepth\": 3}}");
+        try (URLClassLoader loader = new URLClassLoader(
+                new URL[]{dirA.toUri().toURL(), dirB.toUri().toURL()},
+                getClass().getClassLoader())) {
+            PresetRegistry registry = PresetRegistry.load(
+                    config("{\"presets\": {\"dup\": true}}"), loader);
+            assertTrue(registry.hasPreset("dup"));
+        }
+    }
+
+    private Path catalogDir(String dirName, String presetName, String json) throws Exception {
+        Path dir = tmp.resolve(dirName);
+        Files.createDirectories(dir.resolve("META-INF/tika"));
+        // resource path unique per dir: identical paths would shadow on the classpath
+        Files.writeString(dir.resolve("META-INF/tika/presets.idx"),
+                presetName + "=/presets-" + dirName + "/" + presetName + ".json\n");
+        Files.createDirectories(dir.resolve("presets-" + dirName));
+        Files.writeString(dir.resolve("presets-" + dirName + "/" + presetName + ".json"), json);
+        return dir;
     }
 
     @Test

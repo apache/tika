@@ -48,6 +48,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
@@ -185,6 +186,7 @@ public class PipesServer implements AutoCloseable {
     private RecursiveParserWrapper rMetaParser;
     private FetcherManager fetcherManager;
     private EmitterManager emitterManager;
+    private PresetRegistry presetRegistry;
     private ConfigStore configStore;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final ExecutorCompletionService<PipesResult> executorCompletionService = new ExecutorCompletionService<>(executorService);
@@ -441,7 +443,8 @@ public class PipesServer implements AutoCloseable {
                         ParseContext mergedContext;
                         ParseTimeout parseTimeout;
                         try {
-                            mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
+                            mergedContext = createMergedParseContext(
+                                    fetchEmitTuple.getParseContext(), fetchEmitTuple.getPresetName());
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
                             ServerProtocolIO.validateParseContext(mergedContext);
                             ServerProtocolIO.clampRequestTimeoutLimits(
@@ -454,6 +457,12 @@ public class PipesServer implements AutoCloseable {
                             // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
                             // sees this instance rather than racing to install its own.
                             parseTimeout = ParseTimeout.getOrCreate(mergedContext);
+                        } catch (PresetNotFoundException e) {
+                            // caller error, not a server fault: answer it and keep serving
+                            LOG.warn("id={}: {}", fetchEmitTuple.getId(), e.getMessage());
+                            writeFinished(new PipesResult(
+                                    PipesResult.RESULT_STATUS.PRESET_NOT_FOUND, e.getMessage()));
+                            break;
                         } catch (Exception e) {
                             // write the reason to the client instead of a bare exit code
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
@@ -719,7 +728,8 @@ public class PipesServer implements AutoCloseable {
         this.autoDetectParser = (AutoDetectParser) tikaLoader.loadAutoDetectParser();
         this.detector = this.autoDetectParser.getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
-
+        // fails startup on an unresolvable preset, mirroring the front-end's own load
+        this.presetRegistry = PresetRegistry.load(tikaJsonConfig, tikaLoader.getClassLoader());
     }
 
     /**
@@ -729,9 +739,11 @@ public class PipesServer implements AutoCloseable {
      * Creates a fresh context each time to avoid shared state between requests.
      *
      * @param requestContext the ParseContext from FetchEmitTuple
-     * @return a new ParseContext with defaults + request overrides
+     * @param presetName name of the preset to overlay at config-tier trust, or null
+     * @return a new ParseContext with defaults + preset + request overrides
      */
-    private ParseContext createMergedParseContext(ParseContext requestContext) throws TikaConfigException {
+    private ParseContext createMergedParseContext(ParseContext requestContext, String presetName)
+            throws TikaConfigException {
         // Create fresh context with defaults from tika-config (e.g., DigesterFactory)
         ParseContext mergedContext = tikaLoader.loadParseContext();
         // EmbeddedDocumentExtractor is deliberately left unset here: setting a default (even
@@ -740,10 +752,29 @@ public class PipesServer implements AutoCloseable {
         // no-ops whenever one is already bound), silently disabling embedded content
         // extraction for every non-UNPACK parse mode. UNPACK mode sets its own
         // EmbeddedDocumentExtractor + UnpackedByteCount in PipesWorker's UNPACK-mode setup.
-        // Request-level values override config defaults
+        mergePreset(presetRegistry, presetName, mergedContext);
+        // Request-level values override config defaults and the preset
         mergedContext.copyFrom(requestContext);
         seedCacheMemoryBudget(mergedContext);
         return mergedContext;
+    }
+
+    /**
+     * Overlays the named preset, resolved from this server's own config at config-tier
+     * trust. Only the name arrived on the wire; the caller's untrusted delta is copied
+     * on top afterwards and remains subject to the wire screens and timeout clamping.
+     */
+    static void mergePreset(PresetRegistry registry, String presetName, ParseContext merged)
+            throws TikaConfigException {
+        if (presetName == null) {
+            return;
+        }
+        ParseContext presetContext = registry.newParseContext(presetName);
+        if (presetContext == null) {
+            throw new PresetNotFoundException(
+                    "No preset named '" + presetName + "' is active in this server's config");
+        }
+        merged.copyFrom(presetContext);
     }
 
     private ConfigStore createConfigStore(PipesConfig pipesConfig, TikaPluginManager tikaPluginManager) throws TikaException {
