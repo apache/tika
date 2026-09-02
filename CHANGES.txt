@@ -1,5 +1,17 @@
 Release 4.1.0 - unreleased
 
+   * More detection/dispatch savings: the message/rfc822 priority-45 magic
+     is gated behind a ':' scan of the first 30 bytes (every match provably
+     has one, so results are unchanged and non-mail text skips its ~40
+     clauses); CompositeParser caches the built type->parser map in the
+     ParseContext, so embedded documents reuse the container's map instead
+     of rebuilding it per document. Plain-text detection drops from 334us
+     (4.1.0-dev ran it twice) to 52us per document; eml requests ~-45%,
+     ppt ~-35% in tika-server. MagicDetector also precomputes a 256-entry
+     first-byte table per pattern (mask and case fold become one array
+     load per scanned position). Adds an opt-in RESOURCE_TIMING log on
+     org.apache.tika.pipes.timing.resource (TIKA-4868).
+
    * WordExtractor (.doc) cleans each character run in one pass instead of
      four chained replace/replaceAll copies, and tests paragraph blankness
      without a regex replaceAll; ToMarkdownContentHandler collapses line

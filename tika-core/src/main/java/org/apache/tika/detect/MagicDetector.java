@@ -468,6 +468,23 @@ public class MagicDetector implements Detector {
      * @param endOffset the last position in the buffer to start matching (inclusive)
      * @return true if a match is found, false otherwise
      */
+    // Which raw first bytes can begin a match; encodes mask[0] and the case fold so the
+    // scan loop is a single table load. Built lazily, idempotent under racing builds.
+    private transient volatile boolean[] firstByteMatches;
+
+    private boolean[] buildFirstByteTable() {
+        boolean[] table = new boolean[256];
+        int first = pattern[0];
+        for (int b = 0; b < 256; b++) {
+            int masked = ((byte) b) & mask[0];
+            if (this.isStringIgnoreCase) {
+                masked = Character.toLowerCase(masked);
+            }
+            table[b] = (masked == first);
+        }
+        return table;
+    }
+
     private boolean matchesBuffer(byte[] buffer, int startOffset, int endOffset) {
         if (this.isRegex) {
             int bufferLen = Math.min(buffer.length - startOffset, length + (endOffset - startOffset));
@@ -497,17 +514,17 @@ public class MagicDetector implements Detector {
                 // degenerate empty pattern: preserves the old loop's outcome
                 return startOffset <= endOffset && startOffset <= buffer.length;
             }
-            int first = pattern[0];
-            byte firstMask = mask[0];
+            // one array load per scanned position instead of mask + case-fold + compare
+            boolean[] firstMatch = firstByteMatches;
+            if (firstMatch == null) {
+                firstMatch = buildFirstByteTable();
+                firstByteMatches = firstMatch;
+            }
             for (int i = startOffset; i <= endOffset; i++) {
                 if (i + length > buffer.length) {
                     break;
                 }
-                int masked0 = buffer[i] & firstMask;
-                if (this.isStringIgnoreCase) {
-                    masked0 = Character.toLowerCase(masked0);
-                }
-                if (masked0 != first) {
+                if (!firstMatch[buffer[i] & 0xFF]) {
                     continue;
                 }
                 boolean match = true;

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -245,8 +246,35 @@ public class CompositeParser implements Parser {
         return getParser(metadata, new ParseContext());
     }
 
+    /**
+     * Per-parse cache of built parser maps, stored in the ParseContext so every
+     * embedded document in a parse reuses the container's map instead of
+     * rebuilding it (a full walk of every parser's supported types). Keyed by
+     * parser instance because nested composites share one context. The map is
+     * built once per (parser, context); a context entry that would change a
+     * parser's supported types mid-parse is not picked up until the next parse.
+     */
+    private static final class ParserMapCache {
+        private final Map<CompositeParser, Map<MediaType, Parser>> maps =
+                new IdentityHashMap<>();
+    }
+
+    private Map<MediaType, Parser> getParsersCached(ParseContext context) {
+        ParserMapCache cache = context.get(ParserMapCache.class);
+        if (cache == null) {
+            cache = new ParserMapCache();
+            context.set(ParserMapCache.class, cache);
+        }
+        Map<MediaType, Parser> map = cache.maps.get(this);
+        if (map == null) {
+            map = getParsers(context);
+            cache.maps.put(this, map);
+        }
+        return map;
+    }
+
     protected Parser getParser(Metadata metadata, ParseContext context) {
-        Map<MediaType, Parser> map = getParsers(context);
+        Map<MediaType, Parser> map = getParsersCached(context);
         //check for parser override first
         String contentTypeString = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
         if (contentTypeString == null) {

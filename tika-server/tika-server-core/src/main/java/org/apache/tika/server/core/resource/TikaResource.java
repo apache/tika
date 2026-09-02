@@ -700,13 +700,18 @@ public class TikaResource {
     /**
      * Produces raw streaming output (text, html, xml, md) using pipes-based parsing.
      */
+    /** Per-request resource-layer latency; joins the pipes lines by adjacency at c=1. */
+    private static final org.slf4j.Logger TIMING_LOG =
+            org.slf4j.LoggerFactory.getLogger("org.apache.tika.pipes.timing.resource");
+
     private Response produceRawOutput(TikaInputStream tis, Metadata metadata,
                                               MultivaluedMap<String, String> httpHeaders,
                                               String handlerTypeName) throws IOException {
+        long entryNanos = System.nanoTime();
         fillMetadata(null, metadata, httpHeaders);
         ParseContext context = createRequestContext();
         setupContentHandlerFactory(context, handlerTypeName);
-        return produceRawOutputWithContext(tis, metadata, context, handlerTypeName);
+        return produceRawOutputWithContext(tis, metadata, context, handlerTypeName, entryNanos);
     }
 
     /**
@@ -718,6 +723,14 @@ public class TikaResource {
     private Response produceRawOutputWithContext(TikaInputStream tis, Metadata metadata,
                                               ParseContext context,
                                               String handlerTypeName) throws IOException {
+        return produceRawOutputWithContext(tis, metadata, context, handlerTypeName,
+                System.nanoTime());
+    }
+
+    private Response produceRawOutputWithContext(TikaInputStream tis, Metadata metadata,
+                                              ParseContext context,
+                                              String handlerTypeName, long entryNanos)
+            throws IOException {
         logRequest(LOG, "/tika", metadata);
 
         // Ensure content handler factory is set (config may have set it)
@@ -729,8 +742,10 @@ public class TikaResource {
         // Parse with pipes using CONTENT_ONLY mode - the metadata filter in
         // EmitHandler will strip everything except tk:content, and the content comes
         // back as raw UTF-8 bytes rather than a Smile-encoded string
+        long parseStartNanos = System.nanoTime();
         PipesParsingHelper.ParseOutput parsed =
                 parseWithPipesRaw(tis, metadata, context);
+        long parseEndNanos = System.nanoTime();
         List<Metadata> metadataList = parsed.metadataList();
 
         LOG.debug("produceRawOutput: parseWithPipes returned {} metadata objects", metadataList.size());
@@ -760,9 +775,23 @@ public class TikaResource {
         // container exception should use /rmeta.
         final byte[] finalContent = content == null ? new byte[0] : content;
 
+        final long buildEndNanos = System.nanoTime();
         StreamingOutput streamingOutput = outputStream -> {
+            long writeStart = System.nanoTime();
             outputStream.write(finalContent);
             outputStream.flush();
+            if (TIMING_LOG.isInfoEnabled()) {
+                // pre = header/context setup before the pipes call; build = result
+                // unpacking after it; write = streaming the body (invoked later by the
+                // JAX-RS runtime, so anything left over vs the client-observed total is
+                // the HTTP stack itself)
+                TIMING_LOG.info("RESOURCE_TIMING pre_us={} pipes_us={} build_us={} write_us={} bytes={}",
+                        (parseStartNanos - entryNanos) / 1000,
+                        (parseEndNanos - parseStartNanos) / 1000,
+                        (buildEndNanos - parseEndNanos) / 1000,
+                        (System.nanoTime() - writeStart) / 1000,
+                        finalContent.length);
+            }
         };
         return Response.status(hasException ? 422 : Response.Status.OK.getStatusCode())
                 .entity(streamingOutput)

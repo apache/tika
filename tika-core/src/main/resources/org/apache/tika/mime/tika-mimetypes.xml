@@ -7447,6 +7447,10 @@
       </match>
     </magic>
     <magic priority="45">
+      <!-- gate: the first branch below requires a known header at offset 0 (or after a
+           BOM), and every such header puts a ':' within the first 30 bytes, so files
+           without an early colon skip the ~40-clause evaluation entirely -->
+      <match value=":" type="string" offset="0:29">
       <!-- be a bit more flexible, but require one from each of these -->
       <match minShouldMatch="2">
 
@@ -7514,6 +7518,7 @@
           <match value="\nDKIM-" type="string" offset="0:1024"/>
           <match value="\nARC-" type="string" offset="0:1024"/>
         </match>
+      </match>
       </match>
     </magic>
     <magic priority="40">
