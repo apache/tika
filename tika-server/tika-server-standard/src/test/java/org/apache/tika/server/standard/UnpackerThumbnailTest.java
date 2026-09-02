@@ -37,9 +37,11 @@ import javax.imageio.ImageIO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -204,5 +206,14 @@ public class UnpackerThumbnailTest extends CXFTestBase {
     private static BufferedImage decode(JsonNode json) throws IOException {
         byte[] bytes = Base64.getDecoder().decode(json.get("image").asText());
         return ImageIO.read(new ByteArrayInputStream(bytes));
+    }
+
+    @Override
+    @AfterAll
+    public void tearDown() throws Exception {
+        super.tearDown();
+        if (unpackTempDir != null && Files.exists(unpackTempDir)) {
+            FileUtils.deleteDirectory(unpackTempDir.toFile());
+        }
     }
 }

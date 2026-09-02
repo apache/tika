@@ -362,8 +362,10 @@ public class UnpackerResource {
             }
             String entryName = null;
             for (Map.Entry<String, Metadata> e : extracted.entrySet()) {
+                //the selector returns one of these very objects
                 if (e.getValue() == thumbnail) {
                     entryName = e.getKey();
+                    break;
                 }
             }
             ZipEntry imageEntry = entryName == null ? null : zip.getEntry(entryName);

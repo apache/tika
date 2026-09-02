@@ -89,11 +89,7 @@ public final class ThumbnailDefaults {
      * These defaults with another set merged in, field by field.
      */
     public ThumbnailDefaults with(ThumbnailDefaults other) {
-        ThumbnailDefaults merged = this;
-        for (Map.Entry<String, ObjectNode> component : other.components.entrySet()) {
-            merged = merged.with("{\"" + component.getKey() + "\": " + component.getValue() + "}");
-        }
-        return merged;
+        return with(other.components);
     }
 
     public static ThumbnailDefaults builtIn() {
@@ -137,14 +133,19 @@ public final class ThumbnailDefaults {
      * indexing request would run on the rendering.
      */
     public ThumbnailDefaults with(String json) {
+        return with(readComponents(parse(json)));
+    }
+
+    private ThumbnailDefaults with(Map<String, ObjectNode> other) {
         Map<String, ObjectNode> merged = new LinkedHashMap<>();
         for (Map.Entry<String, ObjectNode> component : components.entrySet()) {
             merged.put(component.getKey(), component.getValue().deepCopy());
         }
-        for (Map.Entry<String, ObjectNode> component : readComponents(parse(json)).entrySet()) {
+        for (Map.Entry<String, ObjectNode> component : other.entrySet()) {
             ObjectNode existing = merged.get(component.getKey());
             if (existing == null) {
-                merged.put(component.getKey(), component.getValue());
+                //a copy, so the two sets of defaults do not share a node
+                merged.put(component.getKey(), component.getValue().deepCopy());
             } else {
                 deepMerge(existing, component.getValue());
             }
