@@ -415,7 +415,6 @@ public class PerClientServerManager implements ServerManager {
                     } else {
                         LOG.error("clientId={}: Process exited with code {} before connecting to socket",
                                 clientId, exitValue);
-                        ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
                     }
                     // Always treat pre-connect death as retryable.
                     // The only non-retryable paths are:
@@ -430,7 +429,6 @@ public class PerClientServerManager implements ServerManager {
                 long elapsed = System.currentTimeMillis() - startTime;
                 if (elapsed > SOCKET_CONNECT_TIMEOUT_MS) {
                     LOG.error("clientId={}: Timed out waiting for server to connect after {}ms", clientId, elapsed);
-                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
                     throw new ServerInitializationException(
                             "Server did not connect within " + SOCKET_CONNECT_TIMEOUT_MS + "ms");
                 }
@@ -439,6 +437,7 @@ public class PerClientServerManager implements ServerManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private synchronized void startServer() throws IOException, InterruptedException, TimeoutException, ServerInitializationException {
         if (closed) {
             throw new IllegalStateException("PerClientServerManager is closed");
@@ -457,7 +456,7 @@ public class PerClientServerManager implements ServerManager {
 
         LOG.trace("clientId={}: starting server on port={}", clientId, port);
 
-        tmpDir = pipesConfig.createTempDirectory("pipes-server-" + clientId + "-");
+        tmpDir = pipesConfig.createTempDirectory(PipesServer.TEMP_DIR_PREFIX + clientId + "-");
         ProcessBuilder pb = new ProcessBuilder(getCommandline(tmpDir));
         // Tell the child our PID so it can watch ProcessHandle.onExit() and
         // self-terminate promptly if we die. Without this, an orphan child
@@ -536,6 +535,8 @@ public class PerClientServerManager implements ServerManager {
         destroyProcess();
 
         if (tmpDir != null) {
+            // never delete a crash log unread
+            ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
             deleteDir(tmpDir);
             tmpDir = null;
         }

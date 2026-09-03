@@ -130,6 +130,14 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
             for (RenderRequest renderRequest : requests) {
                 processRequest(renderRequest, pdDocument, metadata, parseContext, results);
             }
+        } catch (Throwable t) {
+            // results never reach the caller; nothing else would delete the pages
+            try {
+                results.close();
+            } catch (IOException e) {
+                t.addSuppressed(e);
+            }
+            throw t;
         } finally {
             if (mustClose) {
                 pdDocument.close();

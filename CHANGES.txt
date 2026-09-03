@@ -2,6 +2,17 @@ Release 4.1.0 - unreleased
 
    * tika-server: named configuration presets (TIKA-4856).
 
+   * Temp files follow -Djava.io.tmpdir on the parent JVM (Tika, its
+     libraries, and forks all honor it); TikaLoader fails at config load
+     if it is unusable. pipes.tempDirectory is deprecated for removal in
+     5.0: it only covered the forks. Do not use tmpfs: spool size is
+     bounded by input, and an orphaned fork dir pins RAM (TIKA-4877).
+
+   * A fork whose parent dies deletes its own temp dir; the parent
+     surfaces a fork's hs_err log before every delete. Failure-path temp
+     file leaks fixed in PDFBoxRenderer, PopplerRenderer, truncated RTF,
+     and MarianTranslator (TIKA-4877).
+     
    * tika-eval Profile/Compare speedups: single-pass URL/mail stripping
      replaces the bounded regexes in langdetect preprocessing (same output,
      17-290x faster on web text), the default H2 db URL drops MVStore chunk

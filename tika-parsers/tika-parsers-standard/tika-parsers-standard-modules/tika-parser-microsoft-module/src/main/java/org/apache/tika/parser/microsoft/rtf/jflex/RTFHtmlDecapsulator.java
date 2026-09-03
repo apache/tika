@@ -75,150 +75,155 @@ public class RTFHtmlDecapsulator {
         boolean inHtmlTag = false;
 
         RTFToken tok;
-        while ((tok = tokenizer.yylex()) != null) {
-            RTFTokenType type = tok.getType();
-            if (type == RTFTokenType.EOF) {
-                break;
-            }
-
-            // Flush pending bytes before charset-changing events
-            if (type == RTFTokenType.GROUP_CLOSE
-                    || (type == RTFTokenType.CONTROL_WORD && "f".equals(tok.getName())
-                        && tok.hasParameter())) {
-                flushPendingBytes(pendingBytes, html, state);
-            }
-
-            boolean consumed = state.processToken(tok);
-
-            // Embedded handler processes objdata/pict/sp in the same pass
-            if (!consumed) {
-                RTFGroupState closingGroup =
-                        (type == RTFTokenType.GROUP_CLOSE) ? state.getLastClosedGroup() : null;
-                try {
-                    embHandler.processToken(tok, state, closingGroup);
-                } catch (TikaException | IOException e) {
-                    // don't let a bad embedded object kill decapsulation
+        // EOF inside {\object or {\pict leaves a stream parser open
+        try {
+            while ((tok = tokenizer.yylex()) != null) {
+                RTFTokenType type = tok.getType();
+                if (type == RTFTokenType.EOF) {
+                    break;
                 }
-            }
 
-            RTFGroupState group = state.getCurrentGroup();
+                // Flush pending bytes before charset-changing events
+                if (type == RTFTokenType.GROUP_CLOSE
+                        || (type == RTFTokenType.CONTROL_WORD && "f".equals(tok.getName())
+                            && tok.hasParameter())) {
+                    flushPendingBytes(pendingBytes, html, state);
+                }
 
-            // Skip tokens that are part of objdata/pict hex streams
-            if (!consumed && (group.objdata || group.pictDepth > 0)) {
-                continue;
-            }
+                boolean consumed = state.processToken(tok);
 
-            switch (type) {
-                case GROUP_OPEN:
-                    sawIgnorable = false;
-                    break;
-
-                case GROUP_CLOSE:
-                    if (inHtmlTag && state.getDepth() < htmlTagDepth) {
-                        flushPendingBytes(pendingBytes, html, state);
-                        inHtmlTag = false;
-                        htmlTagDepth = -1;
+                // Embedded handler processes objdata/pict/sp in the same pass
+                if (!consumed) {
+                    RTFGroupState closingGroup =
+                            (type == RTFTokenType.GROUP_CLOSE) ? state.getLastClosedGroup() : null;
+                    try {
+                        embHandler.processToken(tok, state, closingGroup);
+                    } catch (TikaException | IOException e) {
+                        // don't let a bad embedded object kill decapsulation
                     }
-                    break;
+                }
 
-                case CONTROL_SYMBOL:
-                    if (tok.getChar() == '*') {
-                        sawIgnorable = true;
-                    }
-                    if (!foundHtmlTag || inHtmlRtfSkip) {
+                RTFGroupState group = state.getCurrentGroup();
+
+                // Skip tokens that are part of objdata/pict hex streams
+                if (!consumed && (group.objdata || group.pictDepth > 0)) {
+                    continue;
+                }
+
+                switch (type) {
+                    case GROUP_OPEN:
+                        sawIgnorable = false;
                         break;
-                    }
-                    if (inHtmlTag || htmlTagDepth == -1) {
-                        char sym = tok.getChar();
-                        if (sym == '{' || sym == '}' || sym == '\\') {
+
+                    case GROUP_CLOSE:
+                        if (inHtmlTag && state.getDepth() < htmlTagDepth) {
                             flushPendingBytes(pendingBytes, html, state);
-                            html.append(sym);
+                            inHtmlTag = false;
+                            htmlTagDepth = -1;
                         }
-                    }
-                    break;
-
-                case CONTROL_WORD:
-                    if (consumed) {
                         break;
-                    }
-                    String name = tok.getName();
 
-                    if ("fromhtml".equals(name)) {
-                        foundFromHtml = true;
-                        break;
-                    }
-                    if ("htmltag".equals(name) && sawIgnorable) {
-                        if (!foundFromHtml) {
+                    case CONTROL_SYMBOL:
+                        if (tok.getChar() == '*') {
+                            sawIgnorable = true;
+                        }
+                        if (!foundHtmlTag || inHtmlRtfSkip) {
                             break;
                         }
-                        foundHtmlTag = true;
-                        flushPendingBytes(pendingBytes, html, state);
-                        inHtmlTag = true;
-                        htmlTagDepth = state.getDepth();
-                        break;
-                    }
-                    if ("htmlrtf".equals(name)) {
-                        flushPendingBytes(pendingBytes, html, state);
-                        inHtmlRtfSkip = !(tok.hasParameter() && tok.getParameter() == 0);
-                        break;
-                    }
-                    if (!foundHtmlTag || inHtmlRtfSkip) {
-                        break;
-                    }
-                    if (inHtmlTag || htmlTagDepth == -1) {
-                        flushPendingBytes(pendingBytes, html, state);
-                        switch (name) {
-                            case "par":
-                            case "pard":
-                                html.append('\n');
-                                break;
-                            case "tab":
-                                html.append('\t');
-                                break;
-                            case "line":
-                                html.append("<br>");
-                                break;
-                            default:
-                                break;
+                        if (inHtmlTag || htmlTagDepth == -1) {
+                            char sym = tok.getChar();
+                            if (sym == '{' || sym == '}' || sym == '\\') {
+                                flushPendingBytes(pendingBytes, html, state);
+                                html.append(sym);
+                            }
                         }
-                    }
-                    break;
-
-                case HEX_ESCAPE:
-                    if (consumed || !foundHtmlTag || inHtmlRtfSkip) {
                         break;
-                    }
-                    if (inHtmlTag || htmlTagDepth == -1) {
-                        pendingBytes.write(tok.getHexValue());
-                    }
-                    break;
 
-                case UNICODE_ESCAPE:
-                    if (!foundHtmlTag || inHtmlRtfSkip) {
-                        break;
-                    }
-                    if (inHtmlTag || htmlTagDepth == -1) {
-                        flushPendingBytes(pendingBytes, html, state);
-                        int cp = tok.getParameter();
-                        if (Character.isValidCodePoint(cp)) {
-                            html.appendCodePoint(cp);
+                    case CONTROL_WORD:
+                        if (consumed) {
+                            break;
                         }
-                    }
-                    break;
+                        String name = tok.getName();
 
-                case TEXT:
-                    if (consumed || !foundHtmlTag || inHtmlRtfSkip) {
+                        if ("fromhtml".equals(name)) {
+                            foundFromHtml = true;
+                            break;
+                        }
+                        if ("htmltag".equals(name) && sawIgnorable) {
+                            if (!foundFromHtml) {
+                                break;
+                            }
+                            foundHtmlTag = true;
+                            flushPendingBytes(pendingBytes, html, state);
+                            inHtmlTag = true;
+                            htmlTagDepth = state.getDepth();
+                            break;
+                        }
+                        if ("htmlrtf".equals(name)) {
+                            flushPendingBytes(pendingBytes, html, state);
+                            inHtmlRtfSkip = !(tok.hasParameter() && tok.getParameter() == 0);
+                            break;
+                        }
+                        if (!foundHtmlTag || inHtmlRtfSkip) {
+                            break;
+                        }
+                        if (inHtmlTag || htmlTagDepth == -1) {
+                            flushPendingBytes(pendingBytes, html, state);
+                            switch (name) {
+                                case "par":
+                                case "pard":
+                                    html.append('\n');
+                                    break;
+                                case "tab":
+                                    html.append('\t');
+                                    break;
+                                case "line":
+                                    html.append("<br>");
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
                         break;
-                    }
-                    if (inHtmlTag || htmlTagDepth == -1) {
-                        flushPendingBytes(pendingBytes, html, state);
-                        html.append(tok.getChar());
-                    }
-                    break;
 
-                default:
-                    break;
+                    case HEX_ESCAPE:
+                        if (consumed || !foundHtmlTag || inHtmlRtfSkip) {
+                            break;
+                        }
+                        if (inHtmlTag || htmlTagDepth == -1) {
+                            pendingBytes.write(tok.getHexValue());
+                        }
+                        break;
+
+                    case UNICODE_ESCAPE:
+                        if (!foundHtmlTag || inHtmlRtfSkip) {
+                            break;
+                        }
+                        if (inHtmlTag || htmlTagDepth == -1) {
+                            flushPendingBytes(pendingBytes, html, state);
+                            int cp = tok.getParameter();
+                            if (Character.isValidCodePoint(cp)) {
+                                html.appendCodePoint(cp);
+                            }
+                        }
+                        break;
+
+                    case TEXT:
+                        if (consumed || !foundHtmlTag || inHtmlRtfSkip) {
+                            break;
+                        }
+                        if (inHtmlTag || htmlTagDepth == -1) {
+                            flushPendingBytes(pendingBytes, html, state);
+                            html.append(tok.getChar());
+                        }
+                        break;
+
+                    default:
+                        break;
+                }
             }
+        } finally {
+            embHandler.close();
         }
 
         flushPendingBytes(pendingBytes, html, state);

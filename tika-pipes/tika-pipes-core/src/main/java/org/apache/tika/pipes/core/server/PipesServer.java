@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -158,6 +159,10 @@ public class PipesServer implements AutoCloseable {
     /** Env var the parent manager sets so the child can watch the parent's
      *  process handle and exit promptly if the parent dies. */
     public static final String PARENT_PID_ENV = "TIKA_PIPES_PARENT_PID";
+
+    /** Prefixes of the temp dirs the parent creates for forks; a fork deletes only a dir so named. */
+    public static final String TEMP_DIR_PREFIX = "pipes-server-";
+    public static final String SHARED_TEMP_DIR_PREFIX = "pipes-shared-server-";
 
     /** Exit code used when the child self-terminates because its parent JVM
      *  disappeared. Distinct from UNSPECIFIED_CRASH (19) so log readers can
@@ -746,15 +751,41 @@ public class PipesServer implements AutoCloseable {
         if (parent.isEmpty()) {
             LOG.error("parent pid {} not found at startup; exiting to avoid orphan",
                     parentPid);
-            System.exit(PARENT_GONE_EXIT_CODE);
+            exitParentGone();
             return;
         }
         parent.get().onExit().thenRun(() -> {
             LOG.error("parent pid {} exited; shutting down to avoid orphan",
                     parentPid);
-            System.exit(PARENT_GONE_EXIT_CODE);
+            exitParentGone();
         });
         LOG.info("watching parent pid {} for exit", parentPid);
+    }
+
+    /** Only when the parent is gone: on the fork's own crash the dir must survive for the parent to read. */
+    private static void exitParentGone() {
+        try {
+            deleteOwnTempDir(Paths.get(System.getProperty("java.io.tmpdir")));
+        } finally {
+            System.exit(PARENT_GONE_EXIT_CODE);
+        }
+    }
+
+    /** @return true if {@code dir} is parent-created (by name) and is now deleted */
+    static boolean deleteOwnTempDir(Path dir) {
+        String name = dir.getFileName() == null ? "" : dir.getFileName().toString();
+        if (!name.startsWith(TEMP_DIR_PREFIX) && !name.startsWith(SHARED_TEMP_DIR_PREFIX)) {
+            LOG.warn("java.io.tmpdir={} was not created by a parent manager; leaving it", dir);
+            return false;
+        }
+        try {
+            FileUtils.deleteDirectory(dir.toFile());
+            LOG.info("deleted own temp dir {}", dir);
+            return true;
+        } catch (IOException e) {
+            LOG.warn("couldn't delete own temp dir {}: {}", dir, e.toString());
+            return false;
+        }
     }
 
     /** Below this, ordinary documents -- not just pathological ones -- start OOMing. */
