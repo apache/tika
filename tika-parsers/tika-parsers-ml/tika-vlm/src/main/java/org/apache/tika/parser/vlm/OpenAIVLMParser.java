@@ -57,7 +57,8 @@ import org.apache.tika.utils.StringUtils;
  *
  * @since Apache Tika 4.0
  */
-@TikaComponent(name = "openai-vlm-parser")
+// spi = false: VLM parsers are selected by name in config, never auto-registered (TIKA-4871)
+@TikaComponent(name = "openai-vlm-parser", spi = false)
 public class OpenAIVLMParser extends AbstractVLMParser {
 
     private static final long serialVersionUID = 1L;

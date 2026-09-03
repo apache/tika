@@ -22,6 +22,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.renderer.Renderer;
 
 /**
@@ -96,6 +97,16 @@ public class LoaderContext {
      */
     public Renderer getRenderer() throws TikaConfigException {
         return get(Renderer.class);
+    }
+
+    /**
+     * Get the configured content enrichers for injection into enriching parsers.
+     *
+     * @return the composite, or null when no "content-enrichers" are configured
+     * @throws TikaConfigException if loading fails
+     */
+    public CompositeContentEnricher getContentEnrichers() throws TikaConfigException {
+        return get(CompositeContentEnricher.class);
     }
 
     /**
