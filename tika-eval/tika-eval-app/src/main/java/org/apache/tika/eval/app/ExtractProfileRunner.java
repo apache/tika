@@ -124,8 +124,8 @@ public class ExtractProfileRunner {
         }
         //default to h2
         Path p = Paths.get(dbPath);
-        return "jdbc:h2:file:" + p.toAbsolutePath();
-
+        // drop the 45s MVStore chunk retention (bloat + growing compaction cost); CACHE_SIZE is KB
+        return "jdbc:h2:file:" + p.toAbsolutePath() + ";RETENTION_TIME=0;CACHE_SIZE=1048576";
     }
 
     private static void execute(Path inputDir, Path extractsDir, String dbPath, EvalConfig evalConfig, PipesReport pipesReport,

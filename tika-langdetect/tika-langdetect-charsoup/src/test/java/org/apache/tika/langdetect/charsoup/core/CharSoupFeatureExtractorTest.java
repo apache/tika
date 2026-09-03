@@ -21,6 +21,11 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.regex.Pattern;
+
 import org.junit.jupiter.api.Test;
 
 
@@ -91,6 +96,87 @@ public class CharSoupFeatureExtractorTest {
         int[] countsC = ext.extract(composed);
         int[] countsD = ext.extract(decomposed);
         assertArrayEquals(countsC, countsD);
+    }
+
+    @Test
+    public void testUrlMailStrippingMatchesGreedyRegexReference() {
+        // TIKA-4875: the scanners must stay byte-identical to the regexes they replaced --
+        // the langdetect and junkdetect models were trained on this exact preprocessing.
+        // Inputs are NFC-stable, so preprocessNoTruncate's NFC step is an identity here.
+        Pattern greedyUrl = Pattern.compile("https?://[-_.?&~;+=/#0-9A-Za-z]{10,10000}");
+        Pattern greedyMail = Pattern.compile("[-_.0-9A-Za-z]{1,100}@[-_0-9A-Za-z]{1,100}[-_.0-9A-Za-z]{1,100}");
+
+        List<String> cases = new ArrayList<>();
+        // middle mail repeat must backtrack to feed the dot-class tail
+        cases.add("a@bb");
+        cases.add("a@b");
+        cases.add("a@.b");
+        cases.add("a@b..c");
+        cases.add("a@" + "b".repeat(250));
+        cases.add("a".repeat(150) + "@x.y");
+        cases.add("a".repeat(200) + "@");
+        cases.add("local@local@local");
+        cases.add("x@y.z a@bb user@example.com");
+        cases.add("@@@@@@");
+        cases.add("a@a@a@a@a@a@");
+        // mail caps: head {1,100} then tail {1,100} over one long run
+        cases.add("a@" + "b".repeat(100) + "." + "c".repeat(150));
+        cases.add("a@" + "b".repeat(99) + "." + "c".repeat(99));
+        cases.add("a@" + "b".repeat(300));
+        // find() resumes after a match: leftover run chars are not a fresh local part
+        cases.add("aa@bb cc@dd ee@ff");
+        cases.add("a@bb@cc@dd");
+        // URL length boundaries: min 10 after scheme, cap 10000
+        cases.add("http://" + "a".repeat(9));
+        cases.add("http://" + "a".repeat(10));
+        cases.add("https://" + "a".repeat(10000));
+        cases.add("https://" + "a".repeat(10001));
+        cases.add("https://" + "a".repeat(10005) + "@bb");
+        cases.add("http://http://aaaaaaaaaa");
+        cases.add("http://aaaahttp://bbbbbbbbbb");
+        cases.add("hhttp://aaaaaaaaaaa");
+        cases.add("http:/notaurl http//nope https:/x");
+        // the URL pass runs first; its replacement is a barrier for the mail pass
+        cases.add("http://aaaaaaaaaa@bb");
+        cases.add("a@http://aaaaaaaaaa");
+        cases.add("a@httpx.y");
+        cases.add("user@example.com/http://foobarbazqux");
+        // non-ASCII neighbors exercise the < 128 guards
+        cases.add("é@bb");
+        cases.add("aé@bb");
+        cases.add("a@büc.d");
+        cases.add("http://aéaaaaaaaaaa");
+        cases.add("see http://example.com/a/b?q=1#f and mail bob.smith@sub-domain_x.example.org.");
+
+        long seed = new Random().nextLong();
+        Random random = new Random(seed);
+        String[] atoms = {"a", "B", "9", ".", "-", "_", "@", ":", "/", "#", "?", "=", " ",
+                "http://", "https://", "http", "://", "@a.", "é", "aaaaaaaaaa"};
+        for (int i = 0; i < 5000; i++) {
+            int len = 1 + random.nextInt(60);
+            StringBuilder sb = new StringBuilder();
+            for (int j = 0; j < len; j++) {
+                sb.append(atoms[random.nextInt(atoms.length)]);
+            }
+            cases.add(sb.toString());
+        }
+        // long-run shapes that hit the 100/10000 caps
+        for (int i = 0; i < 50; i++) {
+            StringBuilder sb = new StringBuilder();
+            while (sb.length() < 3000) {
+                sb.append("a".repeat(1 + random.nextInt(400)));
+                sb.append(atoms[random.nextInt(atoms.length)]);
+            }
+            cases.add(sb.toString());
+        }
+
+        for (String text : cases) {
+            String expected = greedyMail
+                    .matcher(greedyUrl.matcher(text).replaceAll(" "))
+                    .replaceAll(" ");
+            String actual = CharSoupFeatureExtractor.preprocessNoTruncate(text);
+            assertEquals(expected, actual, "seed=" + seed + " input=" + text);
+        }
     }
 
     @Test

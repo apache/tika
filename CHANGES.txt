@@ -1,5 +1,12 @@
 Release 4.1.0 - unreleased
 
+   * tika-eval Profile/Compare speedups: single-pass URL/mail stripping
+     replaces the bounded regexes in langdetect preprocessing (same output,
+     17-290x faster on web text), the default H2 db URL drops MVStore chunk
+     retention and raises the page cache, and the status log adds a
+     last-interval docs-per-sec rate next to the cumulative average
+     (TIKA-4875).
+
    * AVIF images are parsed rather than only detected: HeifParser accepts
      image/avif, which is the same ISO-BMFF container, so dimensions, EXIF
      and XMP come out of it the way they do for HEIC (TIKA-4870).
