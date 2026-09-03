@@ -89,7 +89,10 @@ public class ToMarkdownContentHandler extends DefaultHandler {
 
     private final Writer writer;
     private final MarkdownRenderer renderer =
-            MarkdownRenderer.builder().extensions(EXTENSIONS).build();
+            MarkdownRenderer.builder().extensions(EXTENSIONS)
+                    // registered before the core fallback, which is the only other
+                    // renderer claiming Text, so first-wins registration picks this one
+                    .nodeRendererFactory(FastMarkdownTextRenderer.FACTORY).build();
 
     private final Document document = new Document();
     private final Deque<Node> stack = new ArrayDeque<>();
@@ -417,9 +420,78 @@ public class ToMarkdownContentHandler extends DefaultHandler {
         if (finished) {
             return;
         }
-        renderer.render(document, writer);
-        writer.flush();
+        // The renderer writes mostly one char at a time; stock Writers take a
+        // synchronized, allocating write(int) for each. The buffer makes those array stores.
+        RenderBuffer buffered = new RenderBuffer(writer);
+        renderer.render(document, buffered);
+        buffered.flush();
         finished = true;
+    }
+
+    /** Unsynchronized bulk buffer between the renderer and the target writer. */
+    private static final class RenderBuffer extends Writer {
+        private final Writer out;
+        private final char[] buf = new char[8192];
+        private int n;
+
+        RenderBuffer(Writer out) {
+            this.out = out;
+        }
+
+        @Override
+        public void write(int c) throws IOException {
+            if (n == buf.length) {
+                drain();
+            }
+            buf[n++] = (char) c;
+        }
+
+        @Override
+        public void write(char[] c, int off, int len) throws IOException {
+            if (len >= buf.length) {
+                drain();
+                out.write(c, off, len);
+                return;
+            }
+            if (n + len > buf.length) {
+                drain();
+            }
+            System.arraycopy(c, off, buf, n, len);
+            n += len;
+        }
+
+        @Override
+        public void write(String s, int off, int len) throws IOException {
+            if (len >= buf.length) {
+                drain();
+                out.write(s, off, len);
+                return;
+            }
+            if (n + len > buf.length) {
+                drain();
+            }
+            s.getChars(off, off + len, buf, n);
+            n += len;
+        }
+
+        private void drain() throws IOException {
+            if (n > 0) {
+                out.write(buf, 0, n);
+                n = 0;
+            }
+        }
+
+        /** Flushes through to the target; the target's lifecycle stays the caller's. */
+        @Override
+        public void flush() throws IOException {
+            drain();
+            out.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            flush();
+        }
     }
 
     @Override
@@ -588,7 +660,18 @@ public class ToMarkdownContentHandler extends DefaultHandler {
     }
 
     private static String collapseLineBreaks(String s) {
-        return s.replace('\r', ' ').replace('\n', ' ');
+        // single pass, and no copy at all for the common clean run
+        char[] chars = null;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '\r' || c == '\n') {
+                if (chars == null) {
+                    chars = s.toCharArray();
+                }
+                chars[i] = ' ';
+            }
+        }
+        return chars == null ? s : new String(chars);
     }
 
     private static String withTrailingNewline(String s) {

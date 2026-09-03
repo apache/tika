@@ -53,6 +53,8 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     private final TemporaryResources tmp;
     private final String suffix;
     private long length;
+    // getLength() is a declared hint until a drain/spill measures it
+    private boolean lengthMeasured;
 
     private InputStream currentStream; // lazily opened
     private long position;
@@ -160,6 +162,7 @@ class ReopenableSource extends InputStream implements TikaInputSource {
             spilledPath = p;
             // The spooled size is ground truth, even over a lying declared length
             length = Files.size(p);
+            lengthMeasured = true;
         }
         return spilledPath;
     }
@@ -167,6 +170,11 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     @Override
     public long getLength() {
         return length;
+    }
+
+    @Override
+    public boolean hasReliableLength() {
+        return lengthMeasured;
     }
 
     @Override
@@ -291,6 +299,7 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         retainedReservation = reservedHere;
         // The full read is ground truth, even over a lying declared length
         length = total;
+        lengthMeasured = true;
         return true;
     }
 

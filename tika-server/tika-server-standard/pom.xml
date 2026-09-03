@@ -122,7 +122,8 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <redirectTestOutputToFile>true</redirectTestOutputToFile>
-          <argLine>-da -XX:+HeapDumpOnOutOfMemoryError -Xmx512m</argLine>
+          <!-- this argLine replaces tika-parent's, so it has to repeat the tmpdir isolation -->
+          <argLine>-da -XX:+HeapDumpOnOutOfMemoryError -Xmx512m "-Djava.io.tmpdir=${tika.test.tmpdir}"</argLine>
           <systemPropertyVariables>
             <java.util.logging.config.file>
               ${basedir}/src/main/resources/log4j2.xml

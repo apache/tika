@@ -79,6 +79,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RenderingParser;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.EnrichingParser;
 import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
 import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
 import org.apache.tika.parser.pdf.updates.StartXRefOffset;
@@ -122,7 +124,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * {@link PDFParserConfig#setExtractMarkedContent(boolean)}
  */
 @TikaComponent
-public class PDFParser implements Parser, RenderingParser {
+public class PDFParser implements Parser, RenderingParser, EnrichingParser {
 
     public static final MediaType MEDIA_TYPE = MediaType.application("pdf");
     /**
@@ -136,6 +138,7 @@ public class PDFParser implements Parser, RenderingParser {
     private static COSName ENCRYPTED_PAYLOAD = COSName.getPDFName("EncryptedPayload");
     private PDFParserConfig defaultConfig = new PDFParserConfig();
     private Renderer renderer;
+    private CompositeContentEnricher contentEnrichers;
 
     public PDFParser() {
     }
@@ -220,14 +223,14 @@ public class PDFParser implements Parser, RenderingParser {
                 } else if (localConfig.getOcr().getStrategy()
                         .equals(OcrConfig.Strategy.OCR_ONLY)) {
                     OCR2XHTML.process(pdfDocument, handler, context, metadata,
-                            localConfig, renderer);
+                            localConfig, renderer, contentEnrichers);
                 } else if (hasMarkedContent && localConfig.isExtractMarkedContent()) {
                     PDFMarkedContent2XHTML
                             .process(pdfDocument, handler, context, metadata,
-                                    localConfig, renderer);
+                                    localConfig, renderer, contentEnrichers);
                 } else {
                     PDF2XHTML.process(pdfDocument, handler, context, metadata,
-                            localConfig, renderer);
+                            localConfig, renderer, contentEnrichers);
                 }
             }
         } catch (InvalidPasswordException e) {
@@ -790,6 +793,15 @@ public class PDFParser implements Parser, RenderingParser {
     @Override
     public void setRenderer(Renderer renderer) {
         this.renderer = renderer;
+    }
+
+    @Override
+    public void setContentEnrichers(CompositeContentEnricher contentEnrichers) {
+        this.contentEnrichers = contentEnrichers;
+    }
+
+    public CompositeContentEnricher getContentEnrichers() {
+        return contentEnrichers;
     }
 
     public Renderer getRenderer() {

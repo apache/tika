@@ -233,6 +233,11 @@ around.
 `parse-context` can carry a per-request `metadata-filters` list, which *replaces* the configured
 one for that request rather than adding to it.
 
+Since 4.1.0, the embedding filters also accept per-request config under their own name --
+e.g. `{"parse-context": {"openai-embedding-filter": {"skipEmbedding": true}}}` (likewise
+`jina-embedding-filter`) -- which is merged over the server-side config for that request.
+Endpoint fields (`baseUrl`, `apiKey`, `model`) cannot be changed per request.
+
 NOTE: In `CONTENT_ONLY` xref:pipes/parse-modes.adoc[parse mode], Tika applies an
 `include-field-metadata-filter` for `tk:content` and `tk:exception:container-exception` when you have
 configured no filter of your own. Only a filter that reaches the `parse-context` replaces it —
