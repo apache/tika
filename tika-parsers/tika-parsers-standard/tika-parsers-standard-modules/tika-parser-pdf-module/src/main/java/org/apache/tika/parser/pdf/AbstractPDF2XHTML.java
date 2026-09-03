@@ -640,7 +640,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
             if (thisRenderer instanceof PDDocumentRenderer) {
                 //do not do autocloseable.  We need to leave the pdDocument open!
-                TikaInputStream tis = TikaInputStream.get(new byte[0]);
+                TikaInputStream tis = TikaInputStream.getPlaceholder();
                 tis.setOpenContainer(pdDocument);
                 return thisRenderer.render(tis, pageMetadata, context, pageRangeRequest)
                         .getResults().get(0);

@@ -149,6 +149,18 @@ public class TikaInputStream extends TaggedInputStream {
         return new TikaInputStream(inputSource, tmp, ext);
     }
 
+    /**
+     * An empty stream standing in for content that is never extracted -- a metadata-only
+     * entry, a rendering carried as an open container. It reports an <em>unknown</em>
+     * length, so nothing mistakes the placeholder's size for the document's. Pair it with
+     * {@link org.apache.tika.parser.MetadataOnlyParse} to register an entry without
+     * parsing it, unless an open container supplies the content.
+     */
+    public static TikaInputStream getPlaceholder() {
+        TemporaryResources tmp = new TemporaryResources();
+        return new TikaInputStream(new PlaceholderSource(tmp), tmp, "");
+    }
+
     public static TikaInputStream get(Path path) throws IOException {
         return get(path, new Metadata());
     }
@@ -473,7 +485,7 @@ public class TikaInputStream extends TaggedInputStream {
             return -1;
         }
         long len = source.getLength();
-        if (len == -1) {
+        if (len == -1 && !source.isPlaceholder()) {
             // Force spill to get length
             getPath();
             len = source.getLength();
