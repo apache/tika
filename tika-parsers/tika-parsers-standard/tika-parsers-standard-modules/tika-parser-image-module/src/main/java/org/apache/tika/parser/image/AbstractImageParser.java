@@ -24,34 +24,23 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.ContentEnrichers;
+import org.apache.tika.parser.enricher.EnrichingParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-public abstract class AbstractImageParser implements Parser {
+public abstract class AbstractImageParser implements Parser, EnrichingParser {
 
-    public static String OCR_MEDIATYPE_PREFIX = "ocr-";
-
-    /**
-     *
-     * @param mediaType
-     * @return ocr media type if mediatype is not null; returns null if mediatype is null
-     */
-    static MediaType convertToOCRMediaType(MediaType mediaType) {
-        if (mediaType == null) {
-            return null;
-        }
-        return new MediaType(mediaType.getType(), OCR_MEDIATYPE_PREFIX + mediaType.getSubtype());
-    }
+    private CompositeContentEnricher contentEnrichers;
 
     abstract void extractMetadata(InputStream is, ContentHandler contentHandler, Metadata metadata,
                                   ParseContext parseContext)
@@ -64,6 +53,11 @@ public abstract class AbstractImageParser implements Parser {
     }
 
     @Override
+    public void setContentEnrichers(CompositeContentEnricher contentEnrichers) {
+        this.contentEnrichers = contentEnrichers;
+    }
+
+    @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
@@ -71,10 +65,8 @@ public abstract class AbstractImageParser implements Parser {
         //note: mediaType can be null if mediaTypeString is null or
         //not parseable.
         MediaType mediaType = normalizeMediaType(MediaType.parse(mediaTypeString));
-        MediaType ocrMediaType = convertToOCRMediaType(mediaType);
-        Parser ocrParser = EmbeddedDocumentUtil.getStatelessParser(context);
-        if (ocrMediaType == null ||
-                ocrParser == null || !ocrParser.getSupportedTypes(context).contains(ocrMediaType)) {
+        Parser enricher = ContentEnrichers.get(contentEnrichers, mediaType, context);
+        if (enricher == null) {
             extractMetadata(tis, handler, metadata, context);
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
@@ -100,31 +92,11 @@ public abstract class AbstractImageParser implements Parser {
                 metadataException = e;
             }
             try (TikaInputStream pathStream = TikaInputStream.get(path)) {
-                //specify ocr content type
-                String originalParserOverride =
-                        metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
-                String originalContentType = metadata.get(HttpHeaders.CONTENT_TYPE);
-                metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
-                        ocrMediaType.toString());
                 //need to use bodycontenthandler to filter out re-dumping of metadata
                 //in xhtmlhandler
-                try {
-                    ocrParser.parse(pathStream,
-                            new EmbeddedContentHandler(new BodyContentHandler(xhtml)), metadata,
-                            context);
-                } finally {
-                    if (originalParserOverride == null) {
-                        metadata.remove(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE.getName());
-                    } else {
-                        metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
-                                originalParserOverride);
-                    }
-                    if (originalContentType == null) {
-                        metadata.remove(HttpHeaders.CONTENT_TYPE);
-                    } else {
-                        metadata.set(HttpHeaders.CONTENT_TYPE, originalContentType);
-                    }
-                }
+                enricher.parse(pathStream,
+                        new EmbeddedContentHandler(new BodyContentHandler(xhtml)), metadata,
+                        context);
             }
             MotionPhoto.extract(tis, metadata, xhtml, context);
             xhtml.endDocument();

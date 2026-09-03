@@ -70,6 +70,14 @@ interface TikaInputSource extends Closeable {
     boolean hasReliableLength();
 
     /**
+     * Whether this source stands in for content that is never extracted. Spooling one
+     * measures nothing, so its unknown length must not cost a temp file to confirm.
+     */
+    default boolean isPlaceholder() {
+        return false;
+    }
+
+    /**
      * Enables full rewind capability.
      * <p>
      * For ByteArraySource and FileSource, this is a no-op (always rewindable).

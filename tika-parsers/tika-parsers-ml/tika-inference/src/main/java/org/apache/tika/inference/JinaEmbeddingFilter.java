@@ -62,6 +62,11 @@ public class JinaEmbeddingFilter extends OpenAIEmbeddingFilter {
     }
 
     @Override
+    protected String getComponentName() {
+        return "jina-embedding-filter";
+    }
+
+    @Override
     String buildRequest(List<Chunk> chunks, InferenceConfig config) {
         ObjectNode root = MAPPER.createObjectNode();
         if (!StringUtils.isBlank(config.getModel())) {

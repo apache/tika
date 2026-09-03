@@ -116,6 +116,8 @@ import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
 import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
 import org.apache.tika.parser.pdf.updates.StartXRefOffset;
@@ -164,8 +166,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final Metadata metadata;
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
-    final Parser ocrParser;
     final Renderer renderer;
+    final CompositeContentEnricher contentEnrichers;
     /**
      * Format used for signature dates
      * TODO Make this thread-safe
@@ -202,19 +204,16 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     int num3DAnnotations = 0;
 
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
-                      Metadata metadata, PDFParserConfig config, Renderer renderer) throws IOException {
+                      Metadata metadata, PDFParserConfig config, Renderer renderer,
+                      CompositeContentEnricher contentEnrichers) throws IOException {
         this.pdDocument = pdDocument;
         this.xhtml = new XHTMLContentHandler(handler, metadata, context);
         this.context = context;
         this.metadata = metadata;
         this.config = config;
         this.renderer = renderer;
+        this.contentEnrichers = contentEnrichers;
         embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        if (config.getOcr().getStrategy() == NO_OCR) {
-            ocrParser = null;
-        } else {
-            ocrParser = EmbeddedDocumentUtil.getStatelessParser(context);
-        }
     }
 
     private static void addNonNullAttribute(String name, String value, AttributesImpl attributes) {
@@ -570,17 +569,19 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (maxPagesToOcr > 0 && c != null && c.getCount() > maxPagesToOcr) {
             return;
         }
-        MediaType ocrImageMediaType = MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName());
-        Set<MediaType> supportedTypes = ocrParser.getSupportedTypes(context);
-        if (supportedTypes == null || !supportedTypes.contains(ocrImageMediaType)) {
+        MediaType imageMediaType =
+                MediaType.image(config.getOcr().getImageFormat().getFormatName());
+        Parser enricher = ContentEnrichers.get(contentEnrichers, imageMediaType, context);
+        if (enricher == null) {
             if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
                 throw new TikaException(
-                        "" + "I regret that I couldn't find an OCR parser to handle " +
-                                ocrImageMediaType + "." +
-                                "Please set the OCR_STRATEGY to NO_OCR or configure your" +
-                                "OCR parser correctly");
+                        "I regret that I couldn't find an OCR engine to handle " +
+                                imageMediaType + ". Name one that covers it in " +
+                                "\"content-enrichers\" (a configured list is authoritative), " +
+                                "add one to the classpath when no list is configured, " +
+                                "or set the OCR strategy to NO_OCR.");
             } else if (ocrStrategy == AUTO) {
-                //silently skip if there's no parser to run ocr
+                //silently skip if there's no engine to run ocr
                 return;
             }
         }
@@ -589,17 +590,18 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             try (RenderResult renderResult = renderCurrentPage(pdPage, tmp)) {
                 Metadata renderMetadata = renderResult.getMetadata();
                 try (TikaInputStream tis = renderResult.getInputStream()) {
-                    renderMetadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
-                            ocrImageMediaType.toString());
-                    ocrParser.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                    renderMetadata.set(HttpHeaders.CONTENT_TYPE, imageMediaType.toString());
+                    enricher.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                             renderMetadata, context);
                 }
                 // Propagate enrichment metadata added by the OCR parser (e.g. tk:chunks
                 // from image embedding parsers) back to the parent document so it isn't
                 // silently discarded when the renderMetadata goes out of scope.
                 String renderChunks = renderMetadata.get(TikaCoreProperties.TIKA_CHUNKS);
-                if (renderChunks != null && metadata.get(TikaCoreProperties.TIKA_CHUNKS) == null) {
-                    metadata.set(TikaCoreProperties.TIKA_CHUNKS, renderChunks);
+                if (renderChunks != null) {
+                    metadata.set(TikaCoreProperties.TIKA_CHUNKS,
+                            mergeChunkArrays(metadata.get(TikaCoreProperties.TIKA_CHUNKS),
+                                    renderChunks));
                 }
             }
         } catch (IOException e) {
@@ -609,6 +611,31 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } catch (SAXException e) {
             throw new IOException("error writing OCR content from PDF", e);
         }
+    }
+
+    /**
+     * Appends two serialized tk:chunks JSON arrays without a JSON dependency, so each
+     * OCR'd page's chunks accumulate on the parent instead of first-page-wins.
+     * Falls back to the new value if either side is not an array.
+     */
+    static String mergeChunkArrays(String existing, String added) {
+        if (existing == null || existing.isBlank()) {
+            return added;
+        }
+        String e = existing.trim();
+        String a = added.trim();
+        if (!e.startsWith("[") || !e.endsWith("]") || !a.startsWith("[") || !a.endsWith("]")) {
+            return a;
+        }
+        String eBody = e.substring(1, e.length() - 1).trim();
+        String aBody = a.substring(1, a.length() - 1).trim();
+        if (eBody.isEmpty()) {
+            return a;
+        }
+        if (aBody.isEmpty()) {
+            return e;
+        }
+        return "[" + eBody + "," + aBody + "]";
     }
 
     private RenderResult renderCurrentPage(PDPage pdPage, TemporaryResources tmpResources)
@@ -640,7 +667,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                     new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
             if (thisRenderer instanceof PDDocumentRenderer) {
                 //do not do autocloseable.  We need to leave the pdDocument open!
-                TikaInputStream tis = TikaInputStream.get(new byte[0]);
+                TikaInputStream tis = TikaInputStream.getPlaceholder();
                 tis.setOpenContainer(pdDocument);
                 return thisRenderer.render(tis, pageMetadata, context, pageRangeRequest)
                         .getResults().get(0);

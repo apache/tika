@@ -38,6 +38,7 @@ optional; anything you omit uses its defaults.
   "encoding-detectors": [ /* encoding detector declarations */ ],
   "metadata-filters": [ /* metadata filter declarations */ ],
   "renderers": [ /* page renderer declarations */ ],
+  "content-enrichers": [ /* OCR engines etc., selected by name; see below */ ],
   "translator": { /* translator declaration */ },
   "content-handler-factory": { /* handler type for emitted content */ },
   "auto-detect-parser": { /* AutoDetectParser options */ },
@@ -124,6 +125,36 @@ Configuring a parser automatically excludes its default copy, so there is no dup
 `detectors` works the same way, with a `default-detector` entry. `encoding-detectors` has a
 `default-encoding-detector`, but it must not be mixed with explicit detector entries — see
 xref:configuration/encoding-detectors.adoc[Encoding Detectors].
+
+== The `content-enrichers` list (4.1.0+)
+
+Content enrichers are ordinary parsers that a container parser *invokes* on bytes it has already
+parsed — an OCR engine run on an embedded image or a rendered PDF page. Naming one here selects
+the engine explicitly instead of relying on which OCR module happens to be on the classpath:
+
+[source,json]
+----
+{
+  "content-enrichers": [
+    { "tesseract-ocr-parser": { "language": "eng" } }
+  ]
+}
+----
+
+An enricher advertises its *real* media types (`image/png`, ...) and does not compete with the
+parser registered for those types: `image-parser` still parses the image and calls the enricher.
+(The bundled OCR engines still advertise legacy `image/ocr-*` types; those are mapped to the
+real type, so naming them here just works.) *Every* enricher matching a media type runs, in the
+order listed — so an OCR engine followed by a VLM that tags images is two entries, both invoked
+per image. The list is authoritative: a media type no configured enricher matches gets no
+enrichment — never a classpath engine you did not name — and a named engine that reports no
+media types at startup (missing native binary, unreachable inference server) fails config load
+rather than going silently inert. Failures are best-effort: one enricher failing does not stop
+the others, and every failure is still reported through the parser's normal exception handling
+(timeouts abort the chain immediately). With no `content-enrichers` configured, behavior is
+unchanged — whichever OCR engine is on the classpath is used, exactly as before, and a WARN is
+logged at startup when several engines collide. Engine names: `tesseract-ocr-parser`, `tess4j-parser`, `openai-vlm-parser`,
+`claude-vlm-parser`, `gemini-vlm-parser`.
 
 == Windows file paths
 
