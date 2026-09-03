@@ -49,6 +49,8 @@ class CachingSource extends InputStream implements TikaInputSource {
     // temp-file suffix for threshold spills, which precede any getPath(suffix) call
     private final String suffix;
     private long length;
+    // getLength() is a declared hint until a drain/spill measures it
+    private boolean lengthMeasured;
 
     // Passthrough mode: just a BufferedInputStream
     private BufferedInputStream passthroughStream;
@@ -224,6 +226,7 @@ class CachingSource extends InputStream implements TikaInputSource {
         // Record the drained length like getPath() does (feeds SecureContentHandler's
         // zip-bomb ratio)
         length = channel.size();
+        lengthMeasured = true;
         if (metadata != null &&
                 StringUtils.isBlank(metadata.get(HttpHeaders.CONTENT_LENGTH))) {
             metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
@@ -309,6 +312,7 @@ class CachingSource extends InputStream implements TikaInputSource {
             // The spooled size is ground truth, even when it is 0 and a
             // Content-Length claimed otherwise
             length = Files.size(spilledPath);
+            lengthMeasured = true;
 
             // Update metadata if not already set
             if (metadata != null &&
@@ -324,6 +328,11 @@ class CachingSource extends InputStream implements TikaInputSource {
     @Override
     public long getLength() {
         return length;
+    }
+
+    @Override
+    public boolean hasReliableLength() {
+        return lengthMeasured;
     }
 
     // seekTo() reopens fileStream, so the registered resource must close whichever

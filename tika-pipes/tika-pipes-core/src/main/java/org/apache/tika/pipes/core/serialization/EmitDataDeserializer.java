@@ -46,7 +46,12 @@ public class EmitDataDeserializer extends JsonDeserializer<EmitDataImpl> {
         String containerStackTrace = readString(CONTAINER_STACK_TRACE, root, StringUtils.EMPTY, false);
 
         // ParseContext is NOT deserialized - it's restored by PipesClient from the original FetchEmitTuple
-        return new EmitDataImpl(emitKey, metadataList, containerStackTrace);
+        EmitDataImpl emitData = new EmitDataImpl(emitKey, metadataList, containerStackTrace);
+        JsonNode contentBytesNode = root.get(EmitDataSerializer.CONTENT_BYTES);
+        if (contentBytesNode != null && !contentBytesNode.isNull()) {
+            emitData.setContentBytes(contentBytesNode.binaryValue());
+        }
+        return emitData;
     }
 
     private static List<Metadata> readMetadataList(JsonNode root, ObjectMapper mapper) throws IOException {

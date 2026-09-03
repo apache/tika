@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -30,6 +31,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.config.TransientParseState;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
@@ -245,8 +247,36 @@ public class CompositeParser implements Parser {
         return getParser(metadata, new ParseContext());
     }
 
+    /**
+     * Cache of built parser maps, stored in the ParseContext so every embedded
+     * document in a parse reuses the container's map. Keyed by parser instance
+     * because nested composites share one context. Lives as long as the context:
+     * a change to a parser's supported types is not picked up mid-parse, nor on
+     * later parses that reuse the same ParseContext instance.
+     */
+    private static final class ParserMapCache implements TransientParseState {
+        // synchronized: contexts are occasionally shared across threads, and a
+        // concurrent put into a bare IdentityHashMap can corrupt it
+        private final Map<CompositeParser, Map<MediaType, Parser>> maps =
+                Collections.synchronizedMap(new IdentityHashMap<>());
+    }
+
+    private Map<MediaType, Parser> getParsersCached(ParseContext context) {
+        ParserMapCache cache = context.get(ParserMapCache.class);
+        if (cache == null) {
+            cache = new ParserMapCache();
+            context.set(ParserMapCache.class, cache);
+        }
+        Map<MediaType, Parser> map = cache.maps.get(this);
+        if (map == null) {
+            map = getParsers(context);
+            cache.maps.put(this, map);
+        }
+        return map;
+    }
+
     protected Parser getParser(Metadata metadata, ParseContext context) {
-        Map<MediaType, Parser> map = getParsers(context);
+        Map<MediaType, Parser> map = getParsersCached(context);
         //check for parser override first
         String contentTypeString = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
         if (contentTypeString == null) {

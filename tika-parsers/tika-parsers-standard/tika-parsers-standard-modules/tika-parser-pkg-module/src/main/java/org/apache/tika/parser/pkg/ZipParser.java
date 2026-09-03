@@ -497,9 +497,17 @@ public class ZipParser extends AbstractArchiveParser {
         if (extractor.shouldParseEmbedded(entryMetadata, context)) {
             TemporaryResources tmp = new TemporaryResources();
             // Re-openable source: rewind (e.g. for digesting) re-opens the entry instead of
-            // buffering/spilling it
-            try (TikaInputStream tis = TikaInputStream.get(
-                    () -> zipFile.getInputStream(entry), tmp, entryMetadata)) {
+            // buffering/spilling it. That trade only holds when re-opening is cheap --
+            // STORED and DEFLATED. The legacy methods (implode, shrink, bzip2, ...) decode
+            // per-bit, so a re-open re-decompresses the whole entry for every rewind;
+            // those route through the budgeted cache instead (memory up to the
+            // CacheMemoryBudget, temp spill beyond it).
+            int method = entry.getMethod();
+            boolean cheapReopen = method == java.util.zip.ZipEntry.STORED
+                    || method == java.util.zip.ZipEntry.DEFLATED;
+            try (TikaInputStream tis = cheapReopen
+                    ? TikaInputStream.get(() -> zipFile.getInputStream(entry), tmp, entryMetadata)
+                    : TikaInputStream.get(zipFile.getInputStream(entry), tmp, entryMetadata)) {
                 extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);
             } catch (UnsupportedZipFeatureException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
