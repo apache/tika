@@ -17,9 +17,7 @@
 package org.apache.tika.pipes.grpc;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -43,6 +41,7 @@ import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
 import org.awaitility.Awaitility;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -78,23 +77,18 @@ class PipesBiDirectionalStreamingIntegrationTest {
     String httpFetcherId = "httpFetcherIdHere";
     List<String> files = Arrays.asList("014760.docx", "017091.docx", "017097.docx", "018367.docx");
 
-    static int findAvailablePort() throws IOException {
-        try (ServerSocket serverSocket = new ServerSocket(0)) {
-            return serverSocket.getLocalPort();
-        }
-    }
-
     @BeforeAll
     static void setUpHttpServer() throws Exception {
-        // Specify the folder from which files will be served
-        httpServerPort = findAvailablePort();
-        httpServer = new Server(httpServerPort);
+        // bind port 0 and read back what the OS gave us: a port picked and released
+        // before binding is a port another process can take in between
+        httpServer = new Server(0);
 
         ResourceHandler resourceHandler = new ResourceHandler();
         resourceHandler.setDirAllowed(true);
         resourceHandler.setBaseResourceAsString("src/test/resources/test-files");
         httpServer.setHandler(resourceHandler);
         httpServer.start();
+        httpServerPort = ((ServerConnector) httpServer.getConnectors()[0]).getLocalPort();
 
         httpServerUrl = "http://" + InetAddress
                 .getByName("localhost")
@@ -103,8 +97,6 @@ class PipesBiDirectionalStreamingIntegrationTest {
 
     @BeforeAll
     static void setUpGrpcServer() throws Exception {
-        grpcPort = findAvailablePort();
-
         // Read the template config
         String configContent = FileUtils.readFileToString(tikaConfigTemplate, StandardCharsets.UTF_8);
 
@@ -131,13 +123,14 @@ class PipesBiDirectionalStreamingIntegrationTest {
 
         grpcServer = new TikaGrpcServer();
         grpcServer.setTikaConfig(tikaConfig);
-        grpcServer.setPort(grpcPort);
+        grpcServer.setPort(0);
         grpcServer.setSecure(true);
         grpcServer.setCertChain(Paths.get("src", "test", "resources", "certs", "server1.pem").toFile());
         grpcServer.setPrivateKey(Paths.get("src", "test", "resources", "certs", "server1.key").toFile());
         grpcServer.setTrustCertCollection(Paths.get("src", "test", "resources", "certs", "ca.pem").toFile());
         grpcServer.setClientAuthRequired(true);
         grpcServer.start();
+        grpcPort = grpcServer.getPort();
 
         String target = InetAddress
                 .getByName("localhost")
