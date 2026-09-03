@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -41,6 +42,7 @@ import org.apache.tika.parser.ParseContext;
  * Tests for {@link RTFHtmlDecapsulator}, mirroring the original
  * RTFEncapsulatedHTMLExtractorTest to verify parity.
  */
+@Isolated // testTruncatedPictLeavesNoTempFile snapshots java.io.tmpdir
 public class RTFHtmlDecapsulatorTest {
 
     private static String extract(byte[] rtfBytes)
@@ -278,7 +280,7 @@ public class RTFHtmlDecapsulatorTest {
     private static Set<String> tikaTempEntries() throws IOException {
         Set<String> names = new HashSet<>();
         Path tmpDir = Paths.get(System.getProperty("java.io.tmpdir"));
-        try (DirectoryStream<Path> entries = Files.newDirectoryStream(tmpDir, "{apache-tika-,tika-}*")) {
+        try (DirectoryStream<Path> entries = Files.newDirectoryStream(tmpDir, "apache-tika-*.bin")) {
             for (Path p : entries) {
                 names.add(p.getFileName().toString());
             }

@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -40,6 +41,7 @@ import org.apache.tika.renderer.PageBasedRenderResults;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
 
+@Isolated // testFailedRenderLeavesNoTempFiles snapshots java.io.tmpdir
 public class PDFBoxRendererTest {
 
     private long renderedPngBytes(ParseContext context) throws Exception {
@@ -99,7 +101,7 @@ public class PDFBoxRendererTest {
     private static Set<String> tikaTempEntries() throws IOException {
         Set<String> names = new HashSet<>();
         Path tmpDir = Paths.get(System.getProperty("java.io.tmpdir"));
-        try (DirectoryStream<Path> entries = Files.newDirectoryStream(tmpDir, "{apache-tika-,tika-}*")) {
+        try (DirectoryStream<Path> entries = Files.newDirectoryStream(tmpDir, "tika-pdfbox-rendering-*")) {
             for (Path p : entries) {
                 names.add(p.getFileName().toString());
             }

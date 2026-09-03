@@ -11,6 +11,11 @@ Release 4.1.0 - unreleased
      file leaks fixed in PDFBoxRenderer, PopplerRenderer, truncated RTF,
      and MarianTranslator (TIKA-4877).
 
+   * Placeholder streams -- the empty stand-ins parsers hand parseEmbedded
+     for content that is never extracted -- report an unknown length rather
+     than their own zero, and the macro-failure entry is registered without
+     parsing its sentinel (TIKA-4874).
+
    * TikaInputStream.hasReliableLength() distinguishes measured lengths
      from declared Content-Length hints, and one-shot streams now carry a
      declared length without spooling; detection sizes its magic read only
