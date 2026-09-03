@@ -148,7 +148,8 @@ public class CharSoupFeatureExtractorTest {
         cases.add("http://aéaaaaaaaaaa");
         cases.add("see http://example.com/a/b?q=1#f and mail bob.smith@sub-domain_x.example.org.");
 
-        long seed = new Random().nextLong();
+        // random by default so the corpus keeps moving; rerun a failure with -Dtika.test.seed=<seed>
+        long seed = Long.getLong("tika.test.seed", new Random().nextLong());
         Random random = new Random(seed);
         String[] atoms = {"a", "B", "9", ".", "-", "_", "@", ":", "/", "#", "?", "=", " ",
                 "http://", "https://", "http", "://", "@a.", "é", "aaaaaaaaaa"};
@@ -175,7 +176,7 @@ public class CharSoupFeatureExtractorTest {
                     .matcher(greedyUrl.matcher(text).replaceAll(" "))
                     .replaceAll(" ");
             String actual = CharSoupFeatureExtractor.preprocessNoTruncate(text);
-            assertEquals(expected, actual, "seed=" + seed + " input=" + text);
+            assertEquals(expected, actual, "-Dtika.test.seed=" + seed + " input=" + text);
         }
     }
 
