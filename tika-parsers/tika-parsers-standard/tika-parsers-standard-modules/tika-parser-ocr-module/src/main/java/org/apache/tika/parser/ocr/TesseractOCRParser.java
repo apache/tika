@@ -96,7 +96,8 @@ import org.apache.tika.utils.XMLReaderUtils;
  * parseContext.set(TesseractOCRConfig.class, config);<br>
  * </p>
  */
-@TikaComponent
+// name pinned: the documented "content-enrichers" selector for this engine
+@TikaComponent(name = "tesseract-ocr-parser")
 public class TesseractOCRParser extends AbstractExternalProcessParser implements Initializable {
 
     public static final String TESS_META = "tess:";

@@ -10,6 +10,47 @@ Release 4.1.0 - unreleased
      surfaces a fork's hs_err log before every delete. Failure-path temp
      file leaks fixed in PDFBoxRenderer, PopplerRenderer, truncated RTF,
      and MarianTranslator (TIKA-4877).
+     
+   * tika-eval Profile/Compare speedups: single-pass URL/mail stripping
+     replaces the bounded regexes in langdetect preprocessing (same output,
+     17-290x faster on web text), the default H2 db URL drops MVStore chunk
+     retention and sizes the page cache at a quarter of the heap clamped to
+     [64MB, 1GB] (override with -Dtika.eval.h2.cacheSizeKb=<kb>), and the
+     status log adds a last-interval docs-per-sec rate next to the cumulative
+     average (TIKA-4875).
+     
+   * New "content-enrichers" config list (TIKA-4872): select the OCR engine
+     ("tesseract-ocr-parser", "tess4j-parser", "openai-vlm-parser", ...) by
+     name instead of by classpath registration of the image/ocr-* pseudo
+     media types. Enrichers advertise real media types (legacy engines that
+     still advertise image/ocr-* are mapped to the real type, so all are
+     nameable) and are invoked by the image and PDF parsers rather than
+     dispatched to by the composite, so an enricher no longer displaces the
+     parser registered for the same type. Enricher selection uses the
+     detected media type, captured before a parser can refine Content-Type.
+     Every enricher matching a media type runs, in config order (e.g. an
+     OCR engine then a VLM tagger for the same image), best-effort: one
+     enricher's failure does not stop the others and is still reported;
+     timeouts abort the chain. The list is authoritative: a media type no
+     configured enricher matches gets no enrichment -- never a classpath
+     engine that was not named -- and a named engine that reports no media
+     types at load (missing binary, unreachable inference server) fails
+     config load instead of going silently inert. With no
+     "content-enrichers" configured, the legacy ocr-* dispatch applies
+     unchanged; a WARN at config load now names colliding OCR engines and
+     the winner. TesseractOCRParser's
+     component name is pinned as "tesseract-ocr-parser".
+
+   * Inference/OCR hardening (TIKA-4871): OpenAIVLMParser no longer
+     auto-registers via SPI, matching its Claude/Gemini siblings; select
+     it by name ("openai-vlm-parser") in config. Per-request parse-context
+     config for the embedding filters now works and is validated:
+     {"openai-embedding-filter": {"skipEmbedding": true}} (likewise
+     "jina-embedding-filter") merges over the server config, and
+     baseUrl/apiKey/model may not be changed at runtime. The embedding
+     filters release their HTTP client resources on close(). Inline PDF
+     page OCR now accumulates tk:chunks from every OCR'd page onto the
+     parent document instead of keeping only the first page's.
 
    * Placeholder streams -- the empty stand-ins parsers hand parseEmbedded
      for content that is never extracted -- report an unknown length rather

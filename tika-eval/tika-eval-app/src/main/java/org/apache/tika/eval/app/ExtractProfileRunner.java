@@ -98,7 +98,7 @@ public class ExtractProfileRunner {
         Path extractsDir = commandLine.hasOption('e') ? Paths.get(commandLine.getOptionValue('e')) : Paths.get(USAGE_FAIL("Must specify extracts dir: -i"));
         Path inputDir = commandLine.hasOption('i') ? Paths.get(commandLine.getOptionValue('i')) : extractsDir;
         String dbPath = commandLine.hasOption('d') ? commandLine.getOptionValue('d') : USAGE_FAIL("Must specify the db name: -d");
-        String jdbcString = getJdbcConnectionString(dbPath);
+        String jdbcString = JDBCUtil.getJdbcConnectionString(dbPath);
         if (commandLine.hasOption('n')) {
             evalConfig.setNumWorkers(Integer.parseInt(commandLine.getOptionValue('n')));
         }
@@ -116,16 +116,6 @@ public class ExtractProfileRunner {
 
     private static Path optPath(CommandLine commandLine, String opt) {
         return commandLine.hasOption(opt) ? Paths.get(commandLine.getOptionValue(opt)) : null;
-    }
-
-    private static String getJdbcConnectionString(String dbPath) {
-        if (dbPath.startsWith("jdbc:")) {
-            return dbPath;
-        }
-        //default to h2
-        Path p = Paths.get(dbPath);
-        return "jdbc:h2:file:" + p.toAbsolutePath();
-
     }
 
     private static void execute(Path inputDir, Path extractsDir, String dbPath, EvalConfig evalConfig, PipesReport pipesReport,

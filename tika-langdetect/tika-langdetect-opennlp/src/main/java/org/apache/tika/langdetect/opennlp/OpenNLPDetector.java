@@ -220,11 +220,11 @@ public class OpenNLPDetector extends LanguageDetector {
 
     private static class TikaUrlCharSequenceNormalizer implements CharSequenceNormalizer {
         //use this custom copy/paste of opennlp to avoid long, long hang with mail_regex
-        //TIKA-2777
+        //TIKA-2777. TIKA-4875: possessive where match-equivalent; the middle repeat must stay greedy ("a@bb")
         private static final Pattern URL_REGEX =
-                Pattern.compile("https?://[-_.?&~;+=/#0-9A-Za-z]{10,10000}");
+                Pattern.compile("https?://[-_.?&~;+=/#0-9A-Za-z]{10,10000}+");
         private static final Pattern MAIL_REGEX =
-                Pattern.compile("[-_.0-9A-Za-z]{1,100}@[-_0-9A-Za-z]{1,100}[-_.0-9A-Za-z]{1,100}");
+                Pattern.compile("[-_.0-9A-Za-z]{1,100}+@[-_0-9A-Za-z]{1,100}[-_.0-9A-Za-z]{1,100}+");
         private static final TikaUrlCharSequenceNormalizer INSTANCE =
                 new TikaUrlCharSequenceNormalizer();
 
