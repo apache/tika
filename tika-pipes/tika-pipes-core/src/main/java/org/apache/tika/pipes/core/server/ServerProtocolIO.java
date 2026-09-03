@@ -121,9 +121,12 @@ public class ServerProtocolIO {
      */
     public void writeFinished(PipesResult pipesResult) throws IOException {
         BoundedOutputStream bos = new BoundedOutputStream(maxIpcPayloadBytes);
+        long serStart = System.nanoTime();
         try {
             JsonPipesIpc.toStream(pipesResult, bos);
+            lastRespSerNanos = System.nanoTime() - serStart;
         } catch (IOException e) {
+            lastRespSerNanos = System.nanoTime() - serStart;
             if (!bos.overflowed()) {
                 throw e;
             }
@@ -153,8 +156,52 @@ public class ServerProtocolIO {
             doWritePayloadLimitExceeded();
             return;
         }
-        PipesMessage.finished(bos.toByteArray()).write(output);
+        byte[] payload = bos.toByteArray();
+        lastRespBytes = payload.length;
+        long writeStart = System.nanoTime();
+        PipesMessage.finished(payload).write(output);
+        long ackStart = System.nanoTime();
+        lastRespWriteNanos = ackStart - writeStart;
         awaitAck();
+        lastRespAckNanos = System.nanoTime() - ackStart;
+    }
+
+    // Last FINISHED-frame costs, read by ConnectionHandler for its per-parse timing line.
+    // One request at a time per connection, so plain fields suffice.
+    private long lastRespSerNanos = -1;
+    private long lastRespWriteNanos = -1;
+    private long lastRespAckNanos = -1;
+    private int lastRespBytes = -1;
+
+    long getLastRespSerNanos() {
+        return lastRespSerNanos;
+    }
+
+    long getLastRespWriteNanos() {
+        return lastRespWriteNanos;
+    }
+
+    long getLastRespAckNanos() {
+        return lastRespAckNanos;
+    }
+
+    int getLastRespBytes() {
+        return lastRespBytes;
+    }
+
+    /** Write+ACK cost of the INTERMEDIATE_RESULT frame; -1 when none was sent. */
+    private long lastIntermediateNanos = -1;
+
+    long getLastIntermediateNanos() {
+        return lastIntermediateNanos;
+    }
+
+    void resetLastTimings() {
+        lastRespSerNanos = -1;
+        lastRespWriteNanos = -1;
+        lastRespAckNanos = -1;
+        lastRespBytes = -1;
+        lastIntermediateNanos = -1;
     }
 
     /**
@@ -184,6 +231,18 @@ public class ServerProtocolIO {
      * @throws IOException on serialization or I/O errors
      */
     public void writeIntermediate(Metadata metadata) throws IOException {
+        writeIntermediate(metadata, null);
+    }
+
+    /**
+     * Like {@link #writeIntermediate(Metadata)}, but runs {@code afterFrameWritten} once the
+     * frame is flushed to the socket, before waiting for the client's ACK. Lets the caller
+     * unblock the parse worker while the ACK is still in flight -- the ACK round trip would
+     * otherwise sit between pre-parse and parse on every request. Not invoked when the
+     * oversized intermediate is skipped or the write fails; callers must handle those paths
+     * themselves.
+     */
+    public void writeIntermediate(Metadata metadata, Runnable afterFrameWritten) throws IOException {
         BoundedOutputStream bos = new BoundedOutputStream(maxIpcPayloadBytes);
         try {
             JsonPipesIpc.toStream(metadata, bos);
@@ -195,7 +254,12 @@ public class ServerProtocolIO {
             }
             throw e;
         }
+        long interStart = System.nanoTime();
         PipesMessage.intermediateResult(bos.toByteArray()).write(output);
+        if (afterFrameWritten != null) {
+            afterFrameWritten.run();
+        }
+        lastIntermediateNanos = System.nanoTime() - interStart;
         awaitAck();
     }
 

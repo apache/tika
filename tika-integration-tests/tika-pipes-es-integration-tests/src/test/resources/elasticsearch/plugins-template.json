@@ -55,7 +55,7 @@
     "onParseException": "EMIT",
     "emitStrategy": {
       "type": "DYNAMIC",
-      "thresholdBytes": 10000
+      "thresholdBytes": 12000
     },
     "emitMaxEstimatedBytes": 100000,
     "emitWithinMillis": 60000,

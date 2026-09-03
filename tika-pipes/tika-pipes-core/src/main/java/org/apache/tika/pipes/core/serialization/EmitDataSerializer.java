@@ -30,6 +30,7 @@ public class EmitDataSerializer extends JsonSerializer<EmitData> {
     public static final String EMIT_KEY = "emitKey";
     public static final String METADATA_LIST = "metadataList";
     public static final String CONTAINER_STACK_TRACE = "containerStackTrace";
+    public static final String CONTENT_BYTES = "contentBytes";
 
     @Override
     public void serialize(EmitData emitData, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
@@ -38,6 +39,11 @@ public class EmitDataSerializer extends JsonSerializer<EmitData> {
         jsonGenerator.writeObjectField(METADATA_LIST, emitData.getMetadataList());
         if (!StringUtils.isBlank(emitData.getContainerStackTrace())) {
             jsonGenerator.writeStringField(CONTAINER_STACK_TRACE, emitData.getContainerStackTrace());
+        }
+        if (emitData.getContentBytes() != null) {
+            // Smile writes this as raw binary (7-bit encoding is disabled), so multi-MB
+            // content costs a copy, not a string transcode
+            jsonGenerator.writeBinaryField(CONTENT_BYTES, emitData.getContentBytes());
         }
         // ParseContext is NOT serialized - it's restored by PipesClient from the original FetchEmitTuple
         jsonGenerator.writeEndObject();
