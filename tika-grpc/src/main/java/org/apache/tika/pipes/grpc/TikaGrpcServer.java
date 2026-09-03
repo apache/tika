@@ -110,9 +110,12 @@ public class TikaGrpcServer {
         File tikaConfigFile = new File(tikaConfig.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
         serviceImpl = new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath(), pluginRoots);
+        // v1 (tika.Tika) stays the stable fields-map contract; v2 (TikaV2) is the
+        // experimental typed Document surface. Both share the same pipes runtime.
         server = Grpc
                 .newServerBuilderForPort(port, creds)
                 .addService(serviceImpl)
+                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
                 .addService(healthStatusManager.getHealthService())
                 .addService(ProtoReflectionServiceV1.newInstance())
                 .build()
