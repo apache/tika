@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * tika-eval Profile/Compare speedups: single-pass URL/mail stripping
+     replaces the bounded regexes in langdetect preprocessing (same output,
+     17-290x faster on web text), the default H2 db URL drops MVStore chunk
+     retention and sizes the page cache at a quarter of the heap clamped to
+     [64MB, 1GB] (override with -Dtika.eval.h2.cacheSizeKb=<kb>), and the
+     status log adds a last-interval docs-per-sec rate next to the cumulative
+     average (TIKA-4875).
+     
    * New "content-enrichers" config list (TIKA-4872): select the OCR engine
      ("tesseract-ocr-parser", "tess4j-parser", "openai-vlm-parser", ...) by
      name instead of by classpath registration of the image/ocr-* pseudo
