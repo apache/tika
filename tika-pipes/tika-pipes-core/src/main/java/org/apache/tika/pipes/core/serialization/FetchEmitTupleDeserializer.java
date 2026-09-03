@@ -26,6 +26,7 @@ import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ID;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.METADATA_KEY;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ON_PARSE_EXCEPTION;
+import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.PRESET;
 import static org.apache.tika.serialization.serdes.ParseContextSerializer.PARSE_CONTEXT;
 
 import java.io.IOException;
@@ -40,6 +41,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ComponentIds;
@@ -55,7 +57,7 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
 
     private static final Set<String> KNOWN_KEYS = Set.of(
             ID, FETCHER, FETCH_KEY, EMITTER, EMIT_KEY, FETCH_RANGE_START, FETCH_RANGE_END,
-            METADATA_KEY, PARSE_CONTEXT, ON_PARSE_EXCEPTION);
+            METADATA_KEY, PARSE_CONTEXT, ON_PARSE_EXCEPTION, PRESET);
 
     private final boolean restricted;
 
@@ -114,10 +116,11 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         ParseContext parseContext = parseContextNode == null ? new ParseContext()
                 : ParseContextDeserializer.readParseContext(parseContextNode, true);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
+        String presetName = readPresetName(root);
 
         return new FetchEmitTuple(id, new FetchKey(fetcherId, fetchKey, fetchRangeStart, fetchRangeEnd),
                 new EmitKey(emitterName, emitKey), metadata, parseContext,
-                onParseException);
+                onParseException, presetName);
     }
 
     /**
@@ -145,6 +148,16 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
                         + "'. Check for a typo; known fields are " + new TreeSet<>(KNOWN_KEYS) + ".");
             }
         }
+    }
+
+    // A preset name is only a selector; the shared syntax rule also bounds its length.
+    private static String readPresetName(JsonNode root) throws IOException {
+        String presetName = readVal(PRESET, root, null, false);
+        if (presetName != null && !PresetRegistry.isValidName(presetName)) {
+            throw new IOException("invalid preset name (letters, digits, '.', '_', '-'; " +
+                    "max 100 chars; may not start with 'config')");
+        }
+        return presetName;
     }
 
     private static FetchEmitTuple.ON_PARSE_EXCEPTION readOnParseException(JsonNode root) throws IOException {

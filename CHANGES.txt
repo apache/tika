@@ -1,5 +1,7 @@
 Release 4.1.0 - unreleased
 
+   * tika-server: named configuration presets (TIKA-4856).
+
    * Temp files follow -Djava.io.tmpdir on the parent JVM (Tika, its
      libraries, and forks all honor it); TikaLoader fails at config load
      if it is unusable. pipes.tempDirectory is deprecated for removal in

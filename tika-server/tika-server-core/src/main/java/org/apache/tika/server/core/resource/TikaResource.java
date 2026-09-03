@@ -31,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -52,6 +53,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.OutputLimits;
+import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
@@ -94,6 +96,9 @@ public class TikaResource {
     private final ExceptionReporting configExceptionReporting;
     private final boolean configSuppliesContentHandlerFactory;
 
+    // Named, vetted parse-context fragments; requests select one whole by name
+    private final PresetRegistry presetRegistry;
+
     /**
      * @param tikaLoader the Tika loader
      * @param serverStatus server status tracker
@@ -113,6 +118,31 @@ public class TikaResource {
         this.configExceptionReporting = ExceptionReporting.get(configDefaults);
         this.configSuppliesContentHandlerFactory =
                 configDefaults.get(ContentHandlerFactory.class) != null;
+        try {
+            this.presetRegistry = PresetRegistry.load(tikaLoader.getConfig(),
+                    tikaLoader.getClassLoader());
+        } catch (TikaConfigException e) {
+            // config error (including a preset that cannot resolve): fail startup,
+            // not the first preset request
+            throw new IllegalStateException("Invalid 'presets' configuration", e);
+        }
+    }
+
+    /**
+     * A request context carrying only the preset selection: the forked worker resolves
+     * the content from its own copy of this config at config-tier trust, so a preset is
+     * never treated as caller-supplied wire data (which would screen out wire-blocked
+     * components and clamp its timeouts).
+     *
+     * @throws NotFoundException if no preset has this name
+     */
+    public ParseContext createPresetContext(String presetName) {
+        if (!presetRegistry.hasPreset(presetName)) {
+            throw new NotFoundException("No such preset: " + presetName);
+        }
+        ParseContext context = createRequestContext();
+        context.set(PresetSelection.class, new PresetSelection(presetName));
+        return context;
     }
 
     /**
@@ -477,11 +507,19 @@ public class TikaResource {
      * @param handlerTypeName the handler type name
      */
     public void setupContentHandlerFactoryIfNeeded(ParseContext context, String handlerTypeName) {
+        if (context.get(ContentHandlerFactory.class) != null) {
+            return;
+        }
+        // A selected preset that binds its own factory decides the format on routes with no
+        // explicit format segment; the worker resolves it from the preset at config tier.
+        PresetSelection preset = context.get(PresetSelection.class);
+        if (preset != null && presetRegistry.suppliesContentHandlerFactory(preset.name())) {
+            return;
+        }
         // A config-declared factory still takes precedence; it is no longer visible in the
         // request context, so leaving the context untouched lets the worker resolve it from
         // the same config.
-        if (context.get(ContentHandlerFactory.class) == null
-                && !configSuppliesContentHandlerFactory) {
+        if (!configSuppliesContentHandlerFactory) {
             setupContentHandlerFactory(context, handlerTypeName);
         }
     }
@@ -590,6 +628,123 @@ public class TikaResource {
                             @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws IOException {
         return putJson(is, httpHeaders, handlerTypeName);
+    }
+
+    // ==================== PUT preset endpoints ====================
+
+    // Mirrors of the PUT endpoints above: /tika/preset/{name}[/text|/html|/xml|/md|
+    // /json[/{handlerType}]]. The preset segment sits directly after the resource root
+    // so network-layer rules can address /tika/preset/* independently of /tika/config*.
+    // These routes take no config part; a preset never combines with request config.
+    // explicitHandlerType: non-null (an explicit format segment) wins over everything,
+    // including the preset's own factory; null defers preset -> config -> default.
+
+    private Response putRawPreset(InputStream is, HttpHeaders httpHeaders, String presetName,
+                                  String explicitHandlerType) throws IOException {
+        ParseContext context = createPresetContext(presetName);
+        Metadata metadata = newRequestMetadata();
+        fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
+        if (explicitHandlerType != null) {
+            setupContentHandlerFactory(context, explicitHandlerType);
+        }
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            return produceRawOutputWithContext(tis, metadata, context, explicitHandlerType);
+        }
+    }
+
+    private Metadata putJsonPreset(InputStream is, HttpHeaders httpHeaders, String presetName,
+                                   String explicitHandlerType) throws IOException {
+        ParseContext context = createPresetContext(presetName);
+        Metadata metadata = newRequestMetadata();
+        fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
+        if (explicitHandlerType != null) {
+            setupContentHandlerFactory(context, explicitHandlerType);
+        }
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            return produceJsonWithContext(tis, metadata, context, explicitHandlerType);
+        }
+    }
+
+    /**
+     * As the bare /tika endpoint, with the named preset applied. A factory the preset
+     * binds decides the output format here; without one the Markdown default applies.
+     */
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/plain;charset=UTF-8")
+    @Path("preset/{presetName}")
+    public Response getDefaultWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                         @PathParam("presetName") String presetName)
+            throws IOException {
+        return putRawPreset(is, httpHeaders, presetName, null);
+    }
+
+    /** As /tika/text, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/plain;charset=UTF-8")
+    @Path("preset/{presetName}/text")
+    public Response getTextWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                      @PathParam("presetName") String presetName)
+            throws IOException {
+        return putRawPreset(is, httpHeaders, presetName, "body");
+    }
+
+    /** As /tika/html, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/html;charset=UTF-8")
+    @Path("preset/{presetName}/html")
+    public Response getHtmlWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                      @PathParam("presetName") String presetName)
+            throws IOException {
+        return putRawPreset(is, httpHeaders, presetName, "html");
+    }
+
+    /** As /tika/xml, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/xml;charset=UTF-8")
+    @Path("preset/{presetName}/xml")
+    public Response getXmlWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                     @PathParam("presetName") String presetName)
+            throws IOException {
+        return putRawPreset(is, httpHeaders, presetName, "xml");
+    }
+
+    /** As /tika/md, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/plain;charset=UTF-8")
+    @Path("preset/{presetName}/md")
+    public Response getMarkdownWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                          @PathParam("presetName") String presetName)
+            throws IOException {
+        return putRawPreset(is, httpHeaders, presetName, "md");
+    }
+
+    /** As /tika/json, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("application/json")
+    @Path("preset/{presetName}/json")
+    public Metadata getJsonDefaultWithPreset(final InputStream is,
+                                             @Context HttpHeaders httpHeaders,
+                                             @PathParam("presetName") String presetName)
+            throws IOException {
+        return putJsonPreset(is, httpHeaders, presetName, null);
+    }
+
+    /** As /tika/json/{handlerType}, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("application/json")
+    @Path("preset/{presetName}/json/{" + HANDLER_TYPE_PARAM + "}")
+    public Metadata getJsonWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                      @PathParam("presetName") String presetName,
+                                      @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
+            throws IOException {
+        return putJsonPreset(is, httpHeaders, presetName, handlerTypeName);
     }
 
     // ==================== POST endpoints (multipart with optional config) ====================
