@@ -18,6 +18,7 @@ package org.apache.tika.parser.image;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
@@ -67,6 +68,9 @@ public class RawTiffParserTest extends TikaTest {
         assertEquals(type.toString(), preview.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals(Integer.toString(width), preview.get(TIFF.IMAGE_WIDTH));
         assertEquals(Integer.toString(height), preview.get(TIFF.IMAGE_LENGTH));
+        //the IFD knows how long the preview is, so the metadata says so
+        assertTrue(Long.parseLong(preview.get(HttpHeaders.CONTENT_LENGTH)) > 0,
+                preview.get(HttpHeaders.CONTENT_LENGTH));
     }
 
     @Test
