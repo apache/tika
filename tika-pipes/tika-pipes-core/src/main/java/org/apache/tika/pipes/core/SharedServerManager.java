@@ -295,6 +295,7 @@ public class SharedServerManager implements ServerManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void startServer() throws IOException, InterruptedException, TimeoutException, ServerInitializationException {
         // Clean up any previous server
         if (process != null || tmpDir != null) {
@@ -333,7 +334,7 @@ public class SharedServerManager implements ServerManager {
                 "  in-flight parses as collateral damage.\n");
         LOG.info("Starting shared server with {} connections", numConnections);
 
-        tmpDir = pipesConfig.createTempDirectory("pipes-shared-server-");
+        tmpDir = pipesConfig.createTempDirectory(PipesServer.SHARED_TEMP_DIR_PREFIX);
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
         // Pass port and auth token via environment variables so they are not
         // visible in /proc/<pid>/cmdline. The token is only readable via
@@ -397,7 +398,6 @@ public class SharedServerManager implements ServerManager {
                 if (!process.isAlive()) {
                     int exitValue = process.exitValue();
                     LOG.error("Shared server process exited with code {} before becoming ready", exitValue);
-                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "shared-server", tmpDir);
                     throw new ServerInitializationException(
                             "Shared server failed to start (exit code " + exitValue + "). Check JVM arguments and classpath.");
                 }
@@ -406,7 +406,6 @@ public class SharedServerManager implements ServerManager {
                 long elapsed = System.currentTimeMillis() - startTime;
                 if (elapsed > STARTUP_TIMEOUT_MILLIS) {
                     LOG.error("Timed out waiting for shared server to start after {}ms", elapsed);
-                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "shared-server", tmpDir);
                     destroyProcessUnsafe();
                     throw new ServerInitializationException(
                             "Shared server did not start within " + STARTUP_TIMEOUT_MILLIS + "ms");
@@ -452,6 +451,8 @@ public class SharedServerManager implements ServerManager {
         destroyProcessUnsafe();
 
         if (tmpDir != null) {
+            // never delete a crash log unread
+            ServerProcessIO.surfaceCrashDiagnostics(LOG, "shared-server", tmpDir);
             deleteDir(tmpDir);
             tmpDir = null;
         }

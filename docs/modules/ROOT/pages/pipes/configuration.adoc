@@ -57,14 +57,37 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 
 |`tempDirectory`
 |_system default_
-|Directory for temporary files. Each fork gets a subdirectory here, and the fork's whole `java.io.tmpdir` points at it, so anything the fork spools while parsing, unpacked embedded files and JVM crash logs all land inside. It does *not* cover the host side: tika-server spools over-threshold request bodies into its own input temp directory, and `PipesForkParser` into the calling JVM's `java.io.tmpdir`. Consider a RAM-backed filesystem (e.g., `/dev/shm`) for better performance -- but see the caveat below.
+|*Deprecated since 4.1, removal planned for 5.0.* Set `-Djava.io.tmpdir` on the parent JVM instead; see below. Still honored: each fork gets a subdirectory here, and the fork's whole `java.io.tmpdir` points at it. It never covered the host side -- tika-server's request-body spool and `PipesForkParser` use the parent's `java.io.tmpdir` -- nor any library that calls `File.createTempFile` itself.
 |===
 
-The parent deletes a fork's subdirectory when that fork is torn down or fails to start, so a
-crashing fork does not accumulate them. A parent killed abruptly (`SIGKILL`, container stop)
-cannot, and its subdirectories survive. On a RAM-backed filesystem those leaks consume memory
-rather than disk, and `/dev/shm` is commonly sized at half of RAM -- so if you point
-`tempDirectory` at one, sweep it on service start.
+=== Where temporary files go
+
+Set `-Djava.io.tmpdir` on the parent JVM. It has to be a launch flag because of Tika's
+dependencies: POI, PDFBox and the rest create temp files through the JDK, which reads
+`java.io.tmpdir` once at JVM start, so nothing Tika sets at runtime reaches them.
+Tika, every library it calls, and its forked pipes servers all honor the flag: each fork gets a private subdirectory under it (its whole
+`java.io.tmpdir` points there, so spooled input, unpacked embedded files and JVM crash logs
+all land inside), and the parent deletes that subdirectory when the fork is torn down.
+Tika checks the directory exists and is writable at config load and refuses to start
+otherwise, rather than failing on the first document that spools.
+
+If the parent dies, a surviving fork deletes its own subdirectory as it exits. Only when the
+whole process family is killed at once (`SIGKILL` of the group, container stop) do
+subdirectories survive, with whatever the forks were spooling inside; Tika never deletes
+directories another process created. Point `java.io.tmpdir` at a disk-backed directory on a
+volume where filling it does not take out the OS, and apply your own retention to
+`pipes-server-*` there.
+
+[WARNING]
+====
+*DO NOT USE tmpfs* (`/dev/shm`, any RAM-backed filesystem) for `java.io.tmpdir`.
+
+Spool size is bounded by the input, not by any Tika setting: one large archive expanding
+into tmpfs can exhaust memory for every process on the host or get a container evicted,
+and a fork directory orphaned by a killed parent pins that RAM until someone deletes it.
+A slow run is recoverable; a lost host is not. If you must, give tmpfs a dedicated mount
+with `size=` so the failure is a refused write rather than a lost host.
+====
 
 === Embedded-object cache memory budget
 

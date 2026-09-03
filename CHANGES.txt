@@ -1,5 +1,16 @@
 Release 4.1.0 - unreleased
 
+   * Temp files follow -Djava.io.tmpdir on the parent JVM (Tika, its
+     libraries, and forks all honor it); TikaLoader fails at config load
+     if it is unusable. pipes.tempDirectory is deprecated for removal in
+     5.0: it only covered the forks. Do not use tmpfs: spool size is
+     bounded by input, and an orphaned fork dir pins RAM (TIKA-4877).
+
+   * A fork whose parent dies deletes its own temp dir; the parent
+     surfaces a fork's hs_err log before every delete. Failure-path temp
+     file leaks fixed in PDFBoxRenderer, PopplerRenderer, truncated RTF,
+     and MarianTranslator (TIKA-4877).
+
    * TikaInputStream.hasReliableLength() distinguishes measured lengths
      from declared Content-Length hints, and one-shot streams now carry a
      declared length without spooling; detection sizes its magic read only

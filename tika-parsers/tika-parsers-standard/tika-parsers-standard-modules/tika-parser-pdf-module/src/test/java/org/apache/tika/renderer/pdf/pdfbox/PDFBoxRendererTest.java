@@ -18,9 +18,17 @@ package org.apache.tika.renderer.pdf.pdfbox;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -71,5 +79,31 @@ public class PDFBoxRendererTest {
         long compressed = renderedPngBytes(new ParseContext());
         assertTrue(uncompressed > compressed * 4,
                 "quality 1.0 should be far larger: " + uncompressed + " vs " + compressed);
+    }
+
+    /** An out-of-range page throws past the per-page IOException catch after RENDER_ALL wrote pages. */
+    @Test
+    public void testFailedRenderLeavesNoTempFiles() throws Exception {
+        PDFBoxRenderer renderer = new PDFBoxRenderer();
+        Set<String> before = tikaTempEntries();
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/testPDF.pdf");
+             TikaInputStream tis = TikaInputStream.get(is)) {
+            assertThrows(RuntimeException.class, () -> renderer.render(tis, new Metadata(),
+                    new ParseContext(), PageRangeRequest.RENDER_ALL, new PageRangeRequest(9999, 9999)));
+        }
+        Set<String> leaked = tikaTempEntries();
+        leaked.removeAll(before);
+        assertTrue(leaked.isEmpty(), "temp files left behind: " + leaked);
+    }
+
+    private static Set<String> tikaTempEntries() throws IOException {
+        Set<String> names = new HashSet<>();
+        Path tmpDir = Paths.get(System.getProperty("java.io.tmpdir"));
+        try (DirectoryStream<Path> entries = Files.newDirectoryStream(tmpDir, "{apache-tika-,tika-}*")) {
+            for (Path p : entries) {
+                names.add(p.getFileName().toString());
+            }
+        }
+        return names;
     }
 }

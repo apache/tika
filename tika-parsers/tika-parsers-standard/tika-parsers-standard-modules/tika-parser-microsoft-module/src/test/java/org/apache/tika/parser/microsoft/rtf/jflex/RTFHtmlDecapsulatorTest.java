@@ -23,6 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
@@ -256,5 +262,27 @@ public class RTFHtmlDecapsulatorTest {
         String html = extract(rtf.getBytes(US_ASCII));
         assertNotNull(html);
         assertEquals("A\u2014B", html);
+    }
+
+    /** EOF inside {\pict: the temp file already exists and no group close will hand it off. */
+    @Test
+    public void testTruncatedPictLeavesNoTempFile() throws Exception {
+        String rtf = "{\\rtf1\\ansi\\ansicpg1252\\fromhtml1 \\deff0{\\pict\\wmetafile8 0102";
+        Set<String> before = tikaTempEntries();
+        extract(rtf.getBytes(US_ASCII));
+        Set<String> leaked = tikaTempEntries();
+        leaked.removeAll(before);
+        assertTrue(leaked.isEmpty(), "temp files left behind: " + leaked);
+    }
+
+    private static Set<String> tikaTempEntries() throws IOException {
+        Set<String> names = new HashSet<>();
+        Path tmpDir = Paths.get(System.getProperty("java.io.tmpdir"));
+        try (DirectoryStream<Path> entries = Files.newDirectoryStream(tmpDir, "{apache-tika-,tika-}*")) {
+            for (Path p : entries) {
+                names.add(p.getFileName().toString());
+            }
+        }
+        return names;
     }
 }

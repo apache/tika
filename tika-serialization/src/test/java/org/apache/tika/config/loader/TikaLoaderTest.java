@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.EmbeddedLimits;
@@ -54,6 +55,27 @@ public class TikaLoaderTest {
 
         Parser parser = loader.get(Parser.class);
         assertNotNull(parser, "Parser should not be null");
+    }
+
+    @Test
+    public void testUnusableTempDirectoryFailsAtLoad(@TempDir Path tmp) throws Exception {
+        Path configPath = Path.of(getClass().getResource("/configs/test-loader-config.json").toURI());
+        Path missing = tmp.resolve("missing");
+        Path file = Files.writeString(tmp.resolve("file"), "");
+        String original = System.getProperty("java.io.tmpdir");
+        try {
+            for (Path bad : new Path[]{missing, file}) {
+                System.setProperty("java.io.tmpdir", bad.toString());
+                TikaConfigException e = assertThrows(TikaConfigException.class,
+                        () -> TikaLoader.load(configPath), bad.toString());
+                assertTrue(e.getMessage().contains("java.io.tmpdir"), e.getMessage());
+                assertTrue(e.getMessage().contains(bad.toString()), e.getMessage());
+            }
+            System.setProperty("java.io.tmpdir", tmp.toString());
+            assertNotNull(TikaLoader.load(configPath));
+        } finally {
+            System.setProperty("java.io.tmpdir", original);
+        }
     }
 
     @Test
