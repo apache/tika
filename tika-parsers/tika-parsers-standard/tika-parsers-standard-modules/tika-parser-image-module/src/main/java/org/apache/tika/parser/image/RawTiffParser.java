@@ -193,6 +193,10 @@ public class RawTiffParser extends TiffParser {
             for (Preview preview : previews) {
                 Metadata previewMetadata = Metadata.newInstance(context);
                 previewMetadata.set(HttpHeaders.CONTENT_TYPE, JPEG_MIME);
+                //the IFD gives the length, so nothing has to read the preview
+                //to find out how long it is (TIKA-4873)
+                previewMetadata.set(HttpHeaders.CONTENT_LENGTH,
+                        Long.toString(preview.length()));
                 if (count == 0) {
                     previewMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                             TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());

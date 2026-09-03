@@ -117,6 +117,8 @@ public class TikaGrpcServer {
                 .addService(ProtoReflectionServiceV1.newInstance())
                 .build()
                 .start();
+        // port 0 asks the OS to pick one; adopt what it actually bound
+        port = server.getPort();
         LOGGER.info("Server started, listening on " + port);
         Runtime
                 .getRuntime()
@@ -206,6 +208,11 @@ public class TikaGrpcServer {
     public TikaGrpcServer setPort(Integer port) {
         this.port = port;
         return this;
+    }
+
+    /** The bound port once {@link #start()} has run; the requested port before that. */
+    public Integer getPort() {
+        return port;
     }
 
     public TikaGrpcServer setSecure(boolean secure) {
