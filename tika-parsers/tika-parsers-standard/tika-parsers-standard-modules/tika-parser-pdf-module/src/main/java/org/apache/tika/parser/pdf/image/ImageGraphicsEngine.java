@@ -451,7 +451,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         metadata.set(TIFF.IMAGE_LENGTH, pdImage.getHeight());
         //TODO: what else can we extract from the PDImage without rendering?
         //Register the image's metadata entry without decoding it (marker skips the parse).
-        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+        try (TikaInputStream tis = TikaInputStream.getPlaceholder()) {
             parseContext.set(MetadataOnlyParse.class, MetadataOnlyParse.INSTANCE);
             embeddedDocumentExtractor.parseEmbedded(tis,
                     new EmbeddedContentHandler(xhtml), metadata, parseContext, false);

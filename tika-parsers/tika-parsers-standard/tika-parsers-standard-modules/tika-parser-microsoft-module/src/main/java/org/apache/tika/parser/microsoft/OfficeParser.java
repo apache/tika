@@ -55,6 +55,7 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.MetadataOnlyParse;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
@@ -130,9 +131,13 @@ public class OfficeParser extends AbstractOfficeParser {
             m.set(HttpHeaders.CONTENT_TYPE, "text/x-vbasic");
             EmbeddedDocumentUtil.recordException(e, m, context);
             if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
-                embeddedDocumentExtractor.parseEmbedded(
-                        //pass in space character so that we don't trigger a zero-byte exception
-                        TikaInputStream.get(new byte[]{'\u0020'}), xhtml, m, context, true);
+                // the entry carries the exception, not content: register it without a parse
+                try (TikaInputStream tis = TikaInputStream.getPlaceholder()) {
+                    context.set(MetadataOnlyParse.class, MetadataOnlyParse.INSTANCE);
+                    embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
+                } finally {
+                    context.set(MetadataOnlyParse.class, null);
+                }
             }
             return;
         }

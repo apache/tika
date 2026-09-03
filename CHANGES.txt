@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * Placeholder streams -- the empty stand-ins parsers hand parseEmbedded
+     for content that is never extracted -- report an unknown length rather
+     than their own zero, and the macro-failure entry is registered without
+     parsing its sentinel (TIKA-4874).
+
    * Raster previews for the vector thumbnails of Office documents: the new
      poi-metafile-renderer draws EMF and WMF images through POI (a PNG of
      a configurable width; Word's bitmap-in-WMF thumbnails from the bitmap
