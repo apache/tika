@@ -33,7 +33,7 @@ class MagicMatch implements Clause {
 
     private final String mask;
 
-    private MagicDetector detector = null;
+    private volatile MagicDetector detector = null;
 
     MagicMatch(MediaType mediaType, String type, String offset, String value, String mask) {
         this.mediaType = mediaType;
@@ -43,11 +43,20 @@ class MagicMatch implements Clause {
         this.mask = mask;
     }
 
-    private synchronized MagicDetector getDetector() {
-        if (detector == null) {
-            detector = MagicDetector.parse(mediaType, type, offset, value, mask);
+    private MagicDetector getDetector() {
+        // Double-checked: eval() runs per magic per detect call, so a synchronized
+        // method here means thousands of monitor acquisitions per detection.
+        MagicDetector d = detector;
+        if (d == null) {
+            synchronized (this) {
+                d = detector;
+                if (d == null) {
+                    d = MagicDetector.parse(mediaType, type, offset, value, mask);
+                    detector = d;
+                }
+            }
         }
-        return detector;
+        return d;
     }
 
     public boolean eval(byte[] data) {

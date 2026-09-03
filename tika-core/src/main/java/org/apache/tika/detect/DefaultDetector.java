@@ -135,6 +135,12 @@ public class DefaultDetector extends CompositeDetector {
     @Override
     public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
+        // An override short-circuits detection entirely, as in CompositeDetector.
+        MediaType override = detectOverrides(metadata);
+        if (override != null) {
+            return override;
+        }
+
         // 1. Magic detection via MimeTypes
         MediaType magicType = mimeTypes.detect(tis, metadata, parseContext);
         metadata.set(TikaCoreProperties.CONTENT_TYPE_MAGIC_DETECTED, magicType.toString());

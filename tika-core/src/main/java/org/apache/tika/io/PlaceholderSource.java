@@ -88,6 +88,11 @@ class PlaceholderSource extends InputStream implements TikaInputSource {
     }
 
     @Override
+    public boolean hasReliableLength() {
+        return false;
+    }
+
+    @Override
     public boolean isPlaceholder() {
         return true;
     }
