@@ -82,6 +82,17 @@ public class ConnectionHandler implements Runnable, Closeable {
     private final long heartbeatIntervalMillis;
 
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    /** Per-parse worker-side latency breakdown; joins the client line on {@code id}. */
+    private static final Logger TIMING_LOG =
+            LoggerFactory.getLogger("org.apache.tika.pipes.timing.worker");
+
+    // Per-request timing scratch. One request at a time per connection.
+    private long tReqDeserNanos = -1;
+    private long tCtxMergeNanos = -1;
+    private long tSubmitAtNanos = -1;
+    private long tHandoffNanos = -1;
+    private PipesWorker tLastWorker;
+
     private final ExecutorCompletionService<PipesResult> executorCompletionService =
             new ExecutorCompletionService<>(executorService);
 
@@ -129,6 +140,42 @@ public class ConnectionHandler implements Runnable, Closeable {
         }
     }
 
+    private void resetTimings() {
+        tReqDeserNanos = -1;
+        tCtxMergeNanos = -1;
+        tSubmitAtNanos = -1;
+        tHandoffNanos = -1;
+        tLastWorker = null;
+        protocolIO.resetLastTimings();
+    }
+
+    /**
+     * One line per parse on {@code org.apache.tika.pipes.timing.worker}, microseconds.
+     * {@code handoff_us} is the executor scheduling plus completion-poll latency around the
+     * worker; {@code resp_*} is the FINISHED frame's serialize, socket write, and the
+     * client-ACK wait that follows it.
+     */
+    private void logTiming(String id) {
+        if (!TIMING_LOG.isInfoEnabled()) {
+            return;
+        }
+        PipesWorker w = tLastWorker;
+        TIMING_LOG.info("WORKER_TIMING handler={} id={} req_deser_us={} ctx_merge_us={}"
+                        + " handoff_us={} fetch_us={} parse_us={} emit_us={} worker_wall_us={}"
+                        + " intermediate_us={} resp_ser_us={} resp_write_us={} resp_ack_us={}"
+                        + " resp_bytes={}",
+                handlerId, id, us(tReqDeserNanos), us(tCtxMergeNanos), us(tHandoffNanos),
+                us(w == null ? -1 : w.getFetchNanos()), us(w == null ? -1 : w.getParseNanos()),
+                us(w == null ? -1 : w.getEmitNanos()), us(w == null ? -1 : w.getWallNanos()),
+                us(protocolIO.getLastIntermediateNanos()), us(protocolIO.getLastRespSerNanos()),
+                us(protocolIO.getLastRespWriteNanos()), us(protocolIO.getLastRespAckNanos()),
+                protocolIO.getLastRespBytes());
+    }
+
+    private static long us(long nanos) {
+        return nanos < 0 ? nanos : nanos / 1000L;
+    }
+
     private void mainLoop() {
         ArrayBlockingQueue<Metadata> intermediateResult = new ArrayBlockingQueue<>(1);
 
@@ -155,9 +202,12 @@ public class ConnectionHandler implements Runnable, Closeable {
 
                         PipesRequest pipesRequest;
                         FetchEmitTuple fetchEmitTuple;
+                        resetTimings();
+                        long reqDeserStart = System.nanoTime();
                         try {
                             pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class);
                             fetchEmitTuple = pipesRequest.getTuple();
+                            tReqDeserNanos = System.nanoTime() - reqDeserStart;
                         } catch (IOException e) {
                             LOG.error("handlerId={}: problem deserializing PipesRequest", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
@@ -165,6 +215,7 @@ public class ConnectionHandler implements Runnable, Closeable {
                         }
                         ParseContext mergedContext = null;
                         try {
+                            long ctxStart = System.nanoTime();
                             mergedContext = resources.createMergedParseContext(fetchEmitTuple.getParseContext());
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
                             ServerProtocolIO.validateParseContext(mergedContext);
@@ -178,12 +229,16 @@ public class ConnectionHandler implements Runnable, Closeable {
                             // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
                             // sees this instance rather than racing to install its own.
                             ParseTimeout parseTimeout = ParseTimeout.getOrCreate(mergedContext);
+                            tCtxMergeNanos = System.nanoTime() - ctxStart;
 
                             PipesWorker pipesWorker = createPipesWorker(intermediateResult, fetchEmitTuple,
                                     mergedContext, countDownLatch);
+                            tLastWorker = pipesWorker;
+                            tSubmitAtNanos = System.nanoTime();
                             executorCompletionService.submit(pipesWorker);
 
                             loopUntilDone(fetchEmitTuple, mergedContext, intermediateResult, countDownLatch, parseTimeout);
+                            logTiming(fetchEmitTuple.getId());
                         } catch (TikaConfigException e) {
                             LOG.error("handlerId={}: config error processing request", handlerId, e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
@@ -285,7 +340,9 @@ public class ConnectionHandler implements Runnable, Closeable {
                 if (intermediate != null) {
                     if (!clientGone) {
                         try {
-                            protocolIO.writeIntermediate(intermediate);
+                            // Frame-flush releases the latch so the worker parses during the
+                            // ACK round trip; the countDown below is the failure-path net.
+                            protocolIO.writeIntermediate(intermediate, countDownLatch::countDown);
                         } catch (IOException e) {
                             clientGone = true;
                             LOG.debug("handlerId={}: client gone (writing intermediate); keeping the "
@@ -300,6 +357,8 @@ public class ConnectionHandler implements Runnable, Closeable {
             // Check for task completion
             Future<PipesResult> future = executorCompletionService.poll(100, TimeUnit.MILLISECONDS);
             if (future != null) {
+                tHandoffNanos = System.nanoTime() - tSubmitAtNanos
+                        - (tLastWorker == null ? 0 : Math.max(0, tLastWorker.getWallNanos()));
                 PipesResult pipesResult = null;
                 try {
                     pipesResult = future.get();

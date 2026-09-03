@@ -310,6 +310,13 @@
     <puppycrawl.version>12.3.1</puppycrawl.version>
     <rat.version>0.18</rat.version>
     <scm.version>2.2.1</scm.version>
+    <!-- Per-module temp dir for the surefire JVM. Keeps one module's temp files out of
+         every other module's view: under -T1C the modules share one java.io.tmpdir, and
+         a test that counts apache-tika-* there races whatever else is building
+         (TestContainerAwareDetector.testRemovalTempfiles flaked exactly this way).
+         Created by the create-test-tmpdir antrun execution below, because the JVM will
+         not create a missing java.io.tmpdir; it throws NoSuchFileException. -->
+    <tika.test.tmpdir>${project.build.directory}/test-tmp</tika.test.tmpdir>
     <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
     <spotless.goal>apply</spotless.goal>
     <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
@@ -1451,7 +1458,7 @@
             <bundledSignature>jdk-non-portable</bundledSignature>
             <bundledSignature>jdk-internal</bundledSignature>
             <!-- replace with ${commons.io.version} when available -->
-            <bundledSignature>commons-io-unsafe-2.11.0</bundledSignature>
+            <bundledSignature>commons-io-unsafe-2.15.1</bundledSignature>
           </bundledSignatures>
         </configuration>
         <executions>
@@ -1506,8 +1513,33 @@
         <configuration>
           <!-- for manual testing of i18n, try for example: -Duser.language=zh -Duser.region=CN or
           -Duser.language=de -Duser.country=DE -->
-          <argLine>-Xmx4g -Djava.awt.headless=true @{surefireArgLine}</argLine>
+          <!-- java.io.tmpdir MUST be quoted: argLine is split on whitespace, and the Windows
+               job deliberately checks out into a path containing a space. It must also be a
+               real -D on the command line, not <systemPropertyVariables>: Files.createTempFile
+               reads the startup value, so a System.setProperty after JVM start is a no-op. -->
+          <argLine>-Xmx4g -Djava.awt.headless=true "-Djava.io.tmpdir=${tika.test.tmpdir}" @{surefireArgLine}</argLine>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>${maven.antrun.version}</version>
+        <executions>
+          <execution>
+            <id>create-test-tmpdir</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <!-- delete first so an incremental (unclean) build still starts empty -->
+                <delete dir="${tika.test.tmpdir}" />
+                <mkdir dir="${tika.test.tmpdir}" />
+              </target>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

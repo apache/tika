@@ -191,6 +191,18 @@ public class PipesServer implements AutoCloseable {
     private final EmitStrategy emitStrategy;
     private final ServerProtocolIO protocolIO;
 
+    /** Per-parse worker-side latency breakdown; joins the client line on {@code id}. */
+    private static final Logger TIMING_LOG =
+            LoggerFactory.getLogger("org.apache.tika.pipes.timing.worker");
+
+    // Per-request timing scratch. A per-client fork handles one request at a time.
+    private long tReqDeserNanos = -1;
+    private long tCtxMergeNanos = -1;
+    private long tSubmitAtNanos = -1;
+    private long tHandoffNanos = -1;
+    private long tIntermediateWaitNanos = -1;
+    private PipesWorker tLastWorker;
+
     public static PipesServer load(int port, Path tikaConfigPath) throws Exception {
             String pipesClientId = System.getProperty("pipesClientId", "unknown");
             LOG.debug("connecting to client on port={}", port);
@@ -430,9 +442,12 @@ public class PipesServer implements AutoCloseable {
 
                         PipesRequest pipesRequest;
                         FetchEmitTuple fetchEmitTuple;
+                        resetTimings();
+                        long reqDeserStart = System.nanoTime();
                         try {
                             pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class);
                             fetchEmitTuple = pipesRequest.getTuple();
+                            tReqDeserNanos = System.nanoTime() - reqDeserStart;
                         } catch (IOException e) {
                             LOG.error("problem deserializing PipesRequest", e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
@@ -440,6 +455,7 @@ public class PipesServer implements AutoCloseable {
                         }
                         ParseContext mergedContext;
                         ParseTimeout parseTimeout;
+                        long ctxStart = System.nanoTime();
                         try {
                             mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
@@ -454,6 +470,7 @@ public class PipesServer implements AutoCloseable {
                             // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
                             // sees this instance rather than racing to install its own.
                             parseTimeout = ParseTimeout.getOrCreate(mergedContext);
+                            tCtxMergeNanos = System.nanoTime() - ctxStart;
                         } catch (Exception e) {
                             // write the reason to the client instead of a bare exit code
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
@@ -461,9 +478,12 @@ public class PipesServer implements AutoCloseable {
                         }
 
                         PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
+                        tLastWorker = pipesWorker;
+                        tSubmitAtNanos = System.nanoTime();
                         executorCompletionService.submit(pipesWorker);
                         try {
                             loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch, parseTimeout);
+                            logTiming(fetchEmitTuple.getId());
                         } catch (Throwable t) {
                             if (t instanceof Error) {
                                 // OOM or other JVM-level error: exit rather than continue in a
@@ -522,6 +542,42 @@ public class PipesServer implements AutoCloseable {
     /** Steady-state slice once the intermediate result is out of the way. */
     private static final long COMPLETION_POLL_MS = 100;
 
+    private void resetTimings() {
+        tReqDeserNanos = -1;
+        tCtxMergeNanos = -1;
+        tSubmitAtNanos = -1;
+        tHandoffNanos = -1;
+        tIntermediateWaitNanos = -1;
+        tLastWorker = null;
+        protocolIO.resetLastTimings();
+    }
+
+    /**
+     * One line per parse on {@code org.apache.tika.pipes.timing.worker}, microseconds.
+     * {@code handoff_us} is executor scheduling plus completion-poll latency around the worker;
+     * {@code resp_*} is the FINISHED frame's serialize, socket write, and the client-ACK wait.
+     */
+    private void logTiming(String id) {
+        if (!TIMING_LOG.isInfoEnabled()) {
+            return;
+        }
+        PipesWorker w = tLastWorker;
+        TIMING_LOG.info("WORKER_TIMING id={} req_deser_us={} ctx_merge_us={} intermediate_wait_us={}"
+                        + " handoff_us={} fetch_us={} parse_us={} emit_us={} worker_wall_us={}"
+                        + " intermediate_us={} resp_ser_us={} resp_write_us={} resp_ack_us={}"
+                        + " resp_bytes={}",
+                id, us(tReqDeserNanos), us(tCtxMergeNanos), us(tIntermediateWaitNanos),
+                us(tHandoffNanos), us(w == null ? -1 : w.getFetchNanos()),
+                us(w == null ? -1 : w.getParseNanos()), us(w == null ? -1 : w.getEmitNanos()),
+                us(w == null ? -1 : w.getWallNanos()), us(protocolIO.getLastIntermediateNanos()),
+                us(protocolIO.getLastRespSerNanos()), us(protocolIO.getLastRespWriteNanos()),
+                us(protocolIO.getLastRespAckNanos()), protocolIO.getLastRespBytes());
+    }
+
+    private static long us(long nanos) {
+        return nanos < 0 ? nanos : nanos / 1000L;
+    }
+
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
                                ExecutorCompletionService<PipesResult> executorCompletionService,
                                ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch,
@@ -539,7 +595,11 @@ public class PipesServer implements AutoCloseable {
             if (!wroteIntermediateResult) {
                 Metadata intermediate = intermediateResult.poll(PRE_INTERMEDIATE_POLL_MS, TimeUnit.MILLISECONDS);
                 if (intermediate != null) {
-                    writeIntermediate(intermediate);
+                    tIntermediateWaitNanos = System.nanoTime() - startNanos;
+                    // The latch is released as soon as the frame is flushed, so the worker
+                    // parses while the ACK is in flight; the extra countDown below is a
+                    // no-op then, and the safety net when the write was skipped or failed.
+                    writeIntermediate(intermediate, countDownLatch);
                     countDownLatch.countDown();
                     wroteIntermediateResult = true;
                 }
@@ -551,6 +611,8 @@ public class PipesServer implements AutoCloseable {
             Future<PipesResult> future = executorCompletionService.poll(
                     wroteIntermediateResult ? COMPLETION_POLL_MS : 0, TimeUnit.MILLISECONDS);
             if (future != null) {
+                tHandoffNanos = System.nanoTime() - tSubmitAtNanos
+                        - (tLastWorker == null ? 0 : Math.max(0, tLastWorker.getWallNanos()));
                 PipesResult pipesResult = null;
                 try {
                     pipesResult = future.get();
@@ -775,9 +837,9 @@ public class PipesServer implements AutoCloseable {
         }
     }
 
-    private void writeIntermediate(Metadata metadata) {
+    private void writeIntermediate(Metadata metadata, CountDownLatch latch) {
         try {
-            protocolIO.writeIntermediate(metadata);
+            protocolIO.writeIntermediate(metadata, latch::countDown);
         } catch (ShutDownReceivedException e) {
             handleShutDown();
         } catch (IOException e) {

@@ -146,7 +146,9 @@ public final class CoverArt {
                         ID3Tags.PICTURE_TYPES[picture.type()]);
             }
             if (extractor.shouldParseEmbedded(pictureMetadata, context)) {
-                try (TikaInputStream pictureStream = TikaInputStream.get(picture.data())) {
+                //the metadata takes the length of the picture from the stream
+                try (TikaInputStream pictureStream =
+                        TikaInputStream.get(picture.data(), pictureMetadata)) {
                     extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context, true);
                 }
             }

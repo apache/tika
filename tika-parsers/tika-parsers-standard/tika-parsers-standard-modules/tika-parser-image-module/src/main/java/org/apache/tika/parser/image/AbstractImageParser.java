@@ -70,6 +70,7 @@ public abstract class AbstractImageParser implements Parser, EnrichingParser {
             extractMetadata(tis, handler, metadata, context);
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
+            MotionPhoto.extract(tis, metadata, xhtml, context);
             xhtml.endDocument();
             return;
         }
@@ -90,7 +91,6 @@ public abstract class AbstractImageParser implements Parser, EnrichingParser {
             } catch (Exception e) {
                 metadataException = e;
             }
-
             try (TikaInputStream pathStream = TikaInputStream.get(path)) {
                 //need to use bodycontenthandler to filter out re-dumping of metadata
                 //in xhtmlhandler
@@ -98,6 +98,7 @@ public abstract class AbstractImageParser implements Parser, EnrichingParser {
                         new EmbeddedContentHandler(new BodyContentHandler(xhtml)), metadata,
                         context);
             }
+            MotionPhoto.extract(tis, metadata, xhtml, context);
             xhtml.endDocument();
         } finally {
             tmpResources.close();

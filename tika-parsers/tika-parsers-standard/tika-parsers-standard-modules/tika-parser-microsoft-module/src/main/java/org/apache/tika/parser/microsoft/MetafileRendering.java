@@ -119,7 +119,7 @@ final class MetafileRendering {
         if (source != null && source.hasFile()) {
             return TikaInputStream.get(source.getPath());
         }
-        return TikaInputStream.get(new byte[0]);
+        return TikaInputStream.getPlaceholder();
     }
 
     /**

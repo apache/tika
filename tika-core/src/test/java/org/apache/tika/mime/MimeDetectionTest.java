@@ -306,4 +306,18 @@ public class MimeDetectionTest {
     public void testPNGWithSomeEmlHeaders() throws IOException {
         testFile("image/png", "test-pngNotEml.bin");
     }
+
+    @Test
+    public void testLyingDeclaredLengthDoesNotTruncateMagic() throws Exception {
+        byte[] pdf = "%PDF-1.4\nsome pdf content".getBytes(UTF_8);
+        Metadata metadata = new Metadata();
+        // an under-declared Content-Length must not shrink the magic read
+        metadata.set(HttpHeaders.CONTENT_LENGTH, "2");
+        try (TikaInputStream tis = TikaInputStream.get(
+                new java.io.ByteArrayInputStream(pdf),
+                new org.apache.tika.io.TemporaryResources(), metadata)) {
+            assertEquals(MediaType.application("pdf"),
+                    MIME_TYPES.detect(tis, metadata, new ParseContext()));
+        }
+    }
 }

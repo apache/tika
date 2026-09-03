@@ -111,7 +111,8 @@ May the gods of dependency management fix this in the future.
       <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
           <configuration>
-              <argLine>-Dcom.google.protobuf.use_unsafe_pre22_gencode</argLine>
+              <!-- this argLine replaces tika-parent's, so it has to repeat the tmpdir isolation -->
+              <argLine>-Dcom.google.protobuf.use_unsafe_pre22_gencode "-Djava.io.tmpdir=${tika.test.tmpdir}"</argLine>
           </configuration>
       </plugin>
       <plugin>
