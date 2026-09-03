@@ -64,6 +64,12 @@ interface TikaInputSource extends Closeable {
     long getLength();
 
     /**
+     * True when {@link #getLength()} is ground truth (file size, byte array,
+     * fully-drained cache) rather than a caller-declared hint, which may lie.
+     */
+    boolean hasReliableLength();
+
+    /**
      * Enables full rewind capability.
      * <p>
      * For ByteArraySource and FileSource, this is a no-op (always rewindable).
