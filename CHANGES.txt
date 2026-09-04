@@ -1,5 +1,17 @@
 Release 4.1.0 - unreleased
 
+   * tika-server: /rmeta gains config/{handlerType}, so a multipart request
+     can carry both a config part and a handler; previously /rmeta/config
+     always answered with the default (Markdown) handler and there was no
+     format segment for it. Naming the handler in both the path and the
+     config part is now a 400 on /tika/config/<format>, /tika/config/json/
+     {handlerType} and /rmeta/config/{handlerType} -- previously the config
+     part silently won, which on /tika meant a text/xml response carrying a
+     Markdown body. Back-compat: /rmeta/form{handlerType} was one path
+     segment, so /rmeta/formxml resolved; it is now /rmeta/form/{handlerType}
+     only and the undelimited form 405s. /rmeta/form/xml is unchanged
+     (TIKA-4881).
+
    * tika-server: named configuration presets (TIKA-4856).
 
    * Temp files follow -Djava.io.tmpdir on the parent JVM (Tika, its

@@ -83,7 +83,8 @@ xref:using-tika/grpc/index.adoc[Tika gRPC] for the gRPC specifics.
 
 === `allowPerRequestConfig` — the `/config` endpoints
 
-`/tika/config`, `/tika/config/{text,html,xml,md,json}`, `/rmeta/config` and `/meta/config` accept
+`/tika/config`, `/tika/config/{text,html,xml,md,json}`, `/rmeta/config`,
+`/rmeta/config/{handlerType}` and `/meta/config` accept
 a caller-supplied parser configuration as a multipart `config` part. They do not reveal the
 server's own config, but a caller-supplied one can enable dangerous operations such as pointing
 parsers at attacker-chosen resources (see
@@ -156,6 +157,12 @@ fails the server, not its first request.
 Output format on the preset routes: an explicit format segment (`/tika/preset/{name}/text`)
 always wins; without one, a `ContentHandlerFactory` the preset binds decides, then the
 config's, then the endpoint default (Markdown).
+
+Output format on the `/config` routes: name the handler once. A format segment
+(`/tika/config/xml`, `/rmeta/config/xml`) sets it; with no segment, a
+`content-handler-factory` in the `config` part does. Doing both is a `400`, whether or not the
+two agree -- on `/tika` the segment also fixes the route's `Content-Type`, so silently
+preferring one would let the response lie about its own body.
 
 On the batch surfaces, a `FetchEmitTuple` submitted to `/pipes` or `/async` may carry a
 top-level `"preset": "name"` field, resolved the same way beneath the tuple's own
@@ -323,6 +330,16 @@ curl -T document.pdf http://localhost:9998/rmeta/html
 curl -T document.pdf http://localhost:9998/rmeta/xml
 curl -T document.docx http://localhost:9998/rmeta/markdown  # or /md
 curl -T document.pdf http://localhost:9998/rmeta/ignore     # metadata only
+----
+
+POST with multipart for per-request configuration; the handler goes in the path, not the
+`config` part:
+
+[source,bash]
+----
+curl -X POST http://localhost:9998/rmeta/config/xml \
+  -F "file=@document.pdf" \
+  -F "config={\"pdf-parser\":{\"ocr\":{\"strategy\":\"NO_OCR\"}}};type=application/json"
 ----
 
 === Metadata only (`/meta`)
