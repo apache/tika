@@ -1,5 +1,14 @@
 Release 4.1.0 - unreleased
 
+   * RawTiffDetector rejects a BigTIFF directory offset near Long.MAX_VALUE
+     instead of letting the bounds check overflow. Adding the entry-count
+     size to such an offset wrapped negative and read as "already in the
+     prefix", so a 16-byte file threw ArrayIndexOutOfBoundsException out of
+     Detector.detect, which CompositeDetector does not catch: detection
+     failed for the document and the remaining detectors never ran. Raw
+     detection runs on every stream, so this was reachable from every entry
+     point (TIKA-4861).
+     
    * Entries of ODF, EPUB, GeoGebra, WACZ, XLZ and iWork containers, mbox
      messages and the AppleSingle data fork are re-opened from their
      container on rewind instead of cached: digesting rewinds every
