@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * A declared Content-Length is no longer treated as a measurement: the
+     zip-bomb ratio counts only measured input bytes (a container-declared
+     size on an embedded document could inflate its denominator), and a
+     re-openable source no longer reserves cache budget or sizes its buffer
+     from the declared length (a lying one could push a small payload to
+     disk or churn the shared budget). Neither is in a release: the
+     exposure arrived with TIKA-4868 and TIKA-4873 (TIKA-4878).
+
    * tika-server: named configuration presets (TIKA-4856).
 
    * Temp files follow -Djava.io.tmpdir on the parent JVM (Tika, its
