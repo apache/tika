@@ -1,5 +1,12 @@
 Release 4.1.0 - unreleased
 
+   * PDF attachments, PDF XMP packets, 3D on-instantiate scripts and PST
+     attachments are re-opened from their document instead of cached when
+     the embedded-document extractor rewinds them (digesting does, for every
+     embedded document). The cached copy cost heap for the whole attachment
+     and, past the cache budget or the 1 MB floor, a temp file; PDFBox and
+     java-libpst hand the bytes back on demand (TIKA-4878).
+
    * tika-server: named configuration presets (TIKA-4856).
 
    * Temp files follow -Djava.io.tmpdir on the parent JVM (Tika, its
