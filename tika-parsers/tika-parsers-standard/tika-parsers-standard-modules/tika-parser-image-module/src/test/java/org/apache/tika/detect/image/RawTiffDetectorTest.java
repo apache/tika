@@ -245,7 +245,8 @@ public class RawTiffDetectorTest {
 
     /**
      * The same offset as the follower of an otherwise good directory: the
-     * vendor the directory names still decides the type.
+     * follower is skipped and the vendor named in the directory already read
+     * still decides the type.
      */
     @Test
     public void testFollowerBeyondTheFileIsSkipped() {

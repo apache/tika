@@ -23,6 +23,10 @@ import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
+
 /**
  * Randomized boundary test for {@link RawTiffDetector}'s directory walk.
  * <p>
@@ -36,10 +40,15 @@ import org.junit.jupiter.api.Test;
  * maxima, the prefix limit, and their neighbours -- since that is where the
  * offset handling goes wrong rather than in random bytes. The seed is random per
  * run and reported on failure.
+ * <p>
+ * Each input goes through both entry points: the in-memory one, and the stream
+ * one, which is the only way to reach the chunked reads in {@code Prefix.ensure}
+ * -- the arithmetic this guards. Trials are cheap but they saturate: measured
+ * against this generator, 2000 reaches the same branches 20000 does.
  */
 public class RawTiffDetectorFuzzTest {
 
-    private static final int TRIALS = 20000;
+    private static final int TRIALS = 2000;
 
     /**
      * Offsets and values worth trying: adding an entry size to one of the large
@@ -64,6 +73,9 @@ public class RawTiffDetectorFuzzTest {
             byte[] tiff = randomTiff(rng);
             try {
                 RawTiffDetector.detect(tiff, tiff.length);
+                try (TikaInputStream tis = TikaInputStream.get(tiff)) {
+                    new RawTiffDetector().detect(tis, new Metadata(), new ParseContext());
+                }
             } catch (Throwable t) {
                 fail("detect threw " + t + " -- seed=" + seed + " trial=" + trial
                         + " bytes=" + hex(tiff), t);
