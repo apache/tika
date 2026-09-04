@@ -1,5 +1,14 @@
 Release 4.1.0 - unreleased
 
+   * Embedded objects in Office documents are re-opened from their container
+     instead of cached: every OOXML part (pictures, media, attachments), the
+     OLE 2.0 package inside an OOXML part, the CONTENTS entry of an OLE 2.0
+     object in a binary Office file, embedded objects in .ppt, XPS page
+     images and Word EMF icons. Digesting an embedded document rewinds it;
+     the cached copy that made possible cost heap for the whole object and,
+     past the cache budget or the 1 MB floor, a temp file. The container
+     hands the bytes back on demand, so neither is needed (TIKA-4878).
+     
    * PDF attachments, PDF XMP packets, 3D on-instantiate scripts and PST
      attachments are re-opened from their document instead of cached when
      the embedded-document extractor rewinds them (digesting does, for every
