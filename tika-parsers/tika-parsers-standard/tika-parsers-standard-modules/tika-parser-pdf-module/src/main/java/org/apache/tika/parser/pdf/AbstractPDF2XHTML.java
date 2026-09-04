@@ -282,7 +282,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             //try the main metadata
             if (pdDocument.getDocumentCatalog().getMetadata() != null) {
                 try (TikaInputStream tis = TikaInputStream.get(
-                        pdDocument.getDocumentCatalog().getMetadata().exportXMPMetadata())) {
+                        () -> pdDocument.getDocumentCatalog().getMetadata().exportXMPMetadata(),
+                        new TemporaryResources(), null)) {
                     extractXMPAsEmbeddedFile(tis, XMP_DOCUMENT_CATALOG_LOCATION);
                 } catch (IOException e) {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
@@ -292,7 +293,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             int pageNumber = 1;
             for (PDPage page : pdDocument.getPages()) {
                 if (page.getMetadata() != null) {
-                    try (TikaInputStream tis = TikaInputStream.get(page.getMetadata().exportXMPMetadata())) {
+                    try (TikaInputStream tis = TikaInputStream.get(
+                            () -> page.getMetadata().exportXMPMetadata(),
+                            new TemporaryResources(), null)) {
                         extractXMPAsEmbeddedFile(tis, XMP_PAGE_LOCATION_PREFIX + pageNumber);
                     } catch (IOException e) {
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
@@ -500,14 +503,17 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             return;
         }
-        TikaInputStream tis = null;
+        //open once now so a broken stream is recorded here, not mid-parse
         try {
-            tis = TikaInputStream.get(pdEmbeddedFile.createInputStream());
+            pdEmbeddedFile.createInputStream().close();
         } catch (IOException e) {
-            //store this exception in the parent's metadata
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
             return;
         }
+        //the file is in the document already: re-open (re-decode) it on rewind
+        //rather than cache a copy that a digest of a large attachment would spill
+        TikaInputStream tis = TikaInputStream.get(pdEmbeddedFile::createInputStream,
+                new TemporaryResources(), null);
 
         setOrReplaceAttribute("class", "embedded", attributes);
         setOrReplaceAttribute("id", fileName, attributes);
@@ -945,7 +951,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         Metadata m = getJavascriptMetadata("3DD_ON_INSTANTIATE", null, null);
         if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
-            try (TikaInputStream tis = TikaInputStream.get(stream.createInputStream())) {
+            try (TikaInputStream tis = TikaInputStream.get(stream::createInputStream,
+                    new TemporaryResources(), null)) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
             }
         }

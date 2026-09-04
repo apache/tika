@@ -39,6 +39,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -83,7 +84,9 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
         if (zipEntry == null) {
             throw new TikaException("Couldn't find required zip entry: " + zipPath);
         }
-        return TikaInputStream.get(zipEntrySource.getInputStream(zipEntry));
+        ZipArchiveEntry entry = zipEntry;
+        return TikaInputStream.get(() -> zipEntrySource.getInputStream(entry),
+                new TemporaryResources(), null);
     }
 
     @Override

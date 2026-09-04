@@ -40,6 +40,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
@@ -401,7 +402,8 @@ public class SXWPFWordExtractorDecorator extends AbstractOOXMLExtractor {
                     continue;
                 }
                 if ("image/x-emf".equals(emfPart.getContentType())) {
-                    try (TikaInputStream tis = TikaInputStream.get(emfPart.getInputStream())) {
+                    try (TikaInputStream tis = TikaInputStream.get(emfPart::getInputStream,
+                            new TemporaryResources(), null)) {
                         EMFParser p = new EMFParser();
                         Metadata m = Metadata.newInstance(context);
                         p.parse(tis, new org.apache.tika.sax.ToTextContentHandler(), m, context);

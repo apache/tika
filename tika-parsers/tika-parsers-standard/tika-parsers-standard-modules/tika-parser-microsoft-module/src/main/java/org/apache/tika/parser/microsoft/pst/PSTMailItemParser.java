@@ -35,6 +35,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.MAPI;
@@ -264,18 +265,23 @@ public class PSTMailItemParser implements Parser {
         attributes.addAttribute("", "id", "id", "CDATA", filename);
         xhtml.startElement("div", attributes);
         if (embeddedExtractor.shouldParseEmbedded(attachMeta, context)) {
-            TikaInputStream tis = null;
+            //open once now so a broken attachment is recorded here, not mid-parse
             try {
-                tis = TikaInputStream.get(attachment.getFileInputStream());
+                attachment.getFileInputStream().close();
             } catch (NullPointerException e) { //TIKA-2488
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                 return;
             }
-
-            try {
+            //the attachment is in the pst already: re-open it on rewind rather than
+            //cache a copy that a digest of a large attachment would spill to disk
+            try (TikaInputStream tis = TikaInputStream.get(() -> {
+                try {
+                    return attachment.getFileInputStream();
+                } catch (PSTException e) {
+                    throw new IOException(e);
+                }
+            }, new TemporaryResources(), null)) {
                 embeddedExtractor.parseEmbedded(tis, xhtml, attachMeta, context, false);
-            } finally {
-                tis.close();
             }
         }
         xhtml.endElement("div");
