@@ -44,6 +44,8 @@ import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.BoundedInputStream;
+import org.apache.tika.io.CacheMemoryBudget;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -429,13 +431,15 @@ public class GeoGebraParser implements Parser {
         if (page != null) {
             PageAnchoring.applyPageMetadata(embeddedMetadata, Collections.singleton(page));
         }
-        try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
+        //re-opened from the zip on rewind rather than cached or spooled: the entry
+        //is in the container already, so detection and a digest re-read it in place
+        try (TikaInputStream tisZip = TikaInputStream.get(() -> zipFile.getInputStream(entry),
+                new TemporaryResources(), null)) {
             if (type == null) {
-                //spool so the stream can be rewound after detection
-                tisZip.getFile();
+                tisZip.enableRewind(context.get(CacheMemoryBudget.class));
                 MediaType mediaType = EmbeddedDocumentUtil.getDetector(context)
                         .detect(tisZip, embeddedMetadata, context);
-                tisZip.reset();
+                tisZip.rewind();
                 if (mediaType != null) {
                     embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, mediaType.toString());
                 }
