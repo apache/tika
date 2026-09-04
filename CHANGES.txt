@@ -1,5 +1,12 @@
 Release 4.1.0 - unreleased
 
+   * A missing OOXML relationship target no longer aborts the whole file:
+     the threaded-comment and person lookups in xlsx and the page lookups in
+     vsdx went straight to POI's getRelatedPart, whose unchecked
+     IllegalArgumentException surfaced as "Error creating OOXML extractor" and
+     dropped the text already extracted. They route through
+     safeGetRelatedPart, as branch_3x already did (TIKA-4879).
+     
    * RawTiffDetector rejects a BigTIFF directory offset near Long.MAX_VALUE
      instead of letting the bounds check overflow. Adding the entry-count
      size to such an offset wrapped negative and read as "already in the

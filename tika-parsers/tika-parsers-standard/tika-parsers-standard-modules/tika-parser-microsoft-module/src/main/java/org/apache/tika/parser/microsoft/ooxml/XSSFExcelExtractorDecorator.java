@@ -663,7 +663,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             return;
         }
         for (PackageRelationship rel : coll) {
-            PackagePart threadedCommentPart = sheetPart.getRelatedPart(rel);
+            PackagePart threadedCommentPart = safeGetRelatedPart(sheetPart, rel);
             if (threadedCommentPart == null) {
                 continue;
             }
@@ -690,7 +690,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             return;
         }
         for (PackageRelationship rel : coll) {
-            PackagePart personsPart = workbookPart.getRelatedPart(rel);
+            PackagePart personsPart = safeGetRelatedPart(workbookPart, rel);
             if (personsPart == null) {
                 continue;
             }
