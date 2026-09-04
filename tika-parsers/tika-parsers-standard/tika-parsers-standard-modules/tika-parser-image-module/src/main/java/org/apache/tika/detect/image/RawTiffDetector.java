@@ -161,10 +161,15 @@ public class RawTiffDetector implements Detector {
          * @return whether {@code buf[0..end)} is valid now
          */
         boolean ensure(long end) throws IOException {
+            //callers add to a 64-bit offset taken from the file, so end can wrap
+            //negative; reject that before the length comparison lets it through
+            if (end < 0 || end > limit) {
+                return false;
+            }
             if (end <= length) {
                 return true;
             }
-            if (in == null || end > limit) {
+            if (in == null) {
                 return false;
             }
             int wanted = (int) Math.min(limit, ((end + CHUNK_LENGTH - 1) / CHUNK_LENGTH) * CHUNK_LENGTH);

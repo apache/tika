@@ -1,5 +1,14 @@
 Release 4.1.0 - unreleased
 
+   * RawTiffDetector rejects a BigTIFF directory offset near Long.MAX_VALUE
+     instead of letting the bounds check overflow. Adding the entry-count
+     size to such an offset wrapped negative and read as "already in the
+     prefix", so a 16-byte file threw ArrayIndexOutOfBoundsException out of
+     Detector.detect, which CompositeDetector does not catch: detection
+     failed for the document and the remaining detectors never ran. Raw
+     detection runs on every stream, so this was reachable from every entry
+     point (TIKA-4861).
+
    * tika-server: named configuration presets (TIKA-4856).
 
    * Temp files follow -Djava.io.tmpdir on the parent JVM (Tika, its
