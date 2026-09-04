@@ -9,6 +9,30 @@ Release 4.1.0 - unreleased
      GeoGebra no longer spools every embedded picture to detect it
      (TIKA-4878).
 
+   * A declared Content-Length is no longer treated as a measurement: the
+     zip-bomb ratio counts only measured input bytes (a container-declared
+     size on an embedded document could inflate its denominator), and a
+     re-openable source no longer reserves cache budget or sizes its buffer
+     from the declared length (a lying one could push a small payload to
+     disk or churn the shared budget). Neither is in a release: the
+     exposure arrived with TIKA-4868 and TIKA-4873 (TIKA-4878).
+
+   * Embedded objects in Office documents are re-opened from their container
+     instead of cached: every OOXML part (pictures, media, attachments), the
+     OLE 2.0 package inside an OOXML part, the CONTENTS entry of an OLE 2.0
+     object in a binary Office file, embedded objects in .ppt, XPS page
+     images and Word EMF icons. Digesting an embedded document rewinds it;
+     the cached copy that made possible cost heap for the whole object and,
+     past the cache budget or the 1 MB floor, a temp file. The container
+     hands the bytes back on demand, so neither is needed (TIKA-4878).
+
+   * PDF attachments, PDF XMP packets, 3D on-instantiate scripts and PST
+     attachments are re-opened from their document instead of cached when
+     the embedded-document extractor rewinds them (digesting does, for every
+     embedded document). The cached copy cost heap for the whole attachment
+     and, past the cache budget or the 1 MB floor, a temp file; PDFBox and
+     java-libpst hand the bytes back on demand (TIKA-4878).
+
    * tika-server: named configuration presets (TIKA-4856).
 
    * Temp files follow -Djava.io.tmpdir on the parent JVM (Tika, its
