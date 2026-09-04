@@ -30,6 +30,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -137,7 +138,8 @@ public class XLZParser implements Parser {
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
             if (entry.getName().contains(XLF)) {
-                try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
+                try (TikaInputStream tisZip = TikaInputStream.get(
+                        () -> zipFile.getInputStream(entry), new TemporaryResources(), null)) {
                     xliffParser.parse(tisZip, handler, metadata, context);
                 }
             }
