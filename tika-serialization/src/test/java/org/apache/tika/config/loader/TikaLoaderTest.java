@@ -29,6 +29,7 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.EmbeddedLimits;
@@ -43,6 +44,7 @@ import org.apache.tika.parser.Parser;
 /**
  * Unit tests for TikaLoader JSON configuration loading.
  */
+@Isolated // testUnusableTempDirectoryFailsAtLoad mutates java.io.tmpdir
 public class TikaLoaderTest {
 
     @Test
