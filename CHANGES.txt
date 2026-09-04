@@ -6,6 +6,24 @@ Release 4.1.0 - unreleased
      IllegalArgumentException surfaced as "Error creating OOXML extractor" and
      dropped the text already extracted. They route through
      safeGetRelatedPart, as branch_3x already did (TIKA-4879).
+     
+   * RawTiffDetector rejects a BigTIFF directory offset near Long.MAX_VALUE
+     instead of letting the bounds check overflow. Adding the entry-count
+     size to such an offset wrapped negative and read as "already in the
+     prefix", so a 16-byte file threw ArrayIndexOutOfBoundsException out of
+     Detector.detect, which CompositeDetector does not catch: detection
+     failed for the document and the remaining detectors never ran. Raw
+     detection runs on every stream, so this was reachable from every entry
+     point (TIKA-4861).
+     
+   * Entries of ODF, EPUB, GeoGebra, WACZ, XLZ and iWork containers, mbox
+     messages and the AppleSingle data fork are re-opened from their
+     container on rewind instead of cached: digesting rewinds every
+     embedded document, and the cached copy cost heap for the whole entry
+     and, past the cache budget or the 1 MB floor, a temp file. AppleSingle
+     no longer spools its data fork to a temp file on every parse, and
+     GeoGebra no longer spools every embedded picture to detect it
+     (TIKA-4878).
 
    * A declared Content-Length is no longer treated as a measurement: the
      zip-bomb ratio counts only measured input bytes (a container-declared
@@ -14,6 +32,7 @@ Release 4.1.0 - unreleased
      from the declared length (a lying one could push a small payload to
      disk or churn the shared budget). Neither is in a release: the
      exposure arrived with TIKA-4868 and TIKA-4873 (TIKA-4878).
+
    * Embedded objects in Office documents are re-opened from their container
      instead of cached: every OOXML part (pictures, media, attachments), the
      OLE 2.0 package inside an OOXML part, the CONTENTS entry of an OLE 2.0
@@ -22,7 +41,7 @@ Release 4.1.0 - unreleased
      the cached copy that made possible cost heap for the whole object and,
      past the cache budget or the 1 MB floor, a temp file. The container
      hands the bytes back on demand, so neither is needed (TIKA-4878).
-     
+
    * PDF attachments, PDF XMP packets, 3D on-instantiate scripts and PST
      attachments are re-opened from their document instead of cached when
      the embedded-document extractor rewinds them (digesting does, for every
