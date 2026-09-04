@@ -1,5 +1,14 @@
 Release 4.1.0 - unreleased
 
+   * Entries of ODF, EPUB, GeoGebra, WACZ, XLZ and iWork containers, mbox
+     messages and the AppleSingle data fork are re-opened from their
+     container on rewind instead of cached: digesting rewinds every
+     embedded document, and the cached copy cost heap for the whole entry
+     and, past the cache budget or the 1 MB floor, a temp file. AppleSingle
+     no longer spools its data fork to a temp file on every parse, and
+     GeoGebra no longer spools every embedded picture to detect it
+     (TIKA-4878).
+
    * tika-server: named configuration presets (TIKA-4856).
 
    * Temp files follow -Djava.io.tmpdir on the parent JVM (Tika, its
