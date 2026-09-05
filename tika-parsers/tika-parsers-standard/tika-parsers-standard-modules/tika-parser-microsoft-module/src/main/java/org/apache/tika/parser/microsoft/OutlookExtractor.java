@@ -575,13 +575,11 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                 }
             }
         }
-        //try to overwrite the modified property if the actual LAST_MODIFICATION_TIME property exists.
-        List<PropertyValue> timeProp = msg.getMainChunks().getProperties().get(MAPIProperty.LAST_MODIFICATION_TIME);
-        if (timeProp != null && ! timeProp.isEmpty()) {
-            Calendar cal = ((PropertyValue.TimePropertyValue)timeProp.get(0)).getValue();
-            metadata.set(TikaCoreProperties.MODIFIED, cal);
-        }
-
+        //Note: PR_LAST_MODIFICATION_TIME is intentionally not used to overwrite dcterms:modified here.
+        //For a .msg file, that MAPI property reflects when the message's underlying storage was
+        //last written (e.g. when the item was saved/exported to disk), not when its content was
+        //actually edited, and can be long after the message was sent/received. It remains available,
+        //unmodified, as mapi:last-modification-time (see handleMessageInfo/LITERAL_TIME_PROPERTIES).
     }
 
     private void handleBodyChunks(Chunk htmlChunk, Chunk rtfChunk, Chunk textChunk,
