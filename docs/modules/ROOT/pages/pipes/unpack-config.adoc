@@ -254,6 +254,20 @@ output.zip
     └── ...
 ----
 
+The `tk:content` field inside `metadata.json` (and inside the per-file `.metadata.json`
+entries written by `includeMetadataInZip`) is Markdown by default. `/unpack` has no format
+segment in its path, so on tika-server the only way to change it is a
+`content-handler-factory` in the same `config` part. Each entry records the handler it was
+written with in `tk:content-handler-type`:
+
+[source,json]
+----
+{
+  "unpack-config": { "outputFormat": "FRICTIONLESS", "includeFullMetadata": true },
+  "basic-content-handler-factory": { "type": "XML" }
+}
+----
+
 The `datapackage.json` file contains:
 
 * List of all extracted files as "resources"
