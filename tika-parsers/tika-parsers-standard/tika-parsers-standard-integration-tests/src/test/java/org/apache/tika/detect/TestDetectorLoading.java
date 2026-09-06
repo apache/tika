@@ -6,7 +6,7 @@
  * (the "License"); you may not use this file except in compliance with
  * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -41,8 +41,8 @@ public class TestDetectorLoading {
                 detectors.get(2).getClass().getName());
         assertEquals("org.apache.tika.detect.microsoft.POIFSContainerDetector",
                 detectors.get(3).getClass().getName());
-        assertEquals("org.apache.tika.detect.mp4.MP4TrackDetector", detectors.get(4).getClass().getName());
-        assertEquals("org.apache.tika.detect.mkv.MatroskaDetector", detectors.get(5).getClass().getName());
+        assertEquals("org.apache.tika.detect.mkv.MatroskaDetector", detectors.get(4).getClass().getName());
+        assertEquals("org.apache.tika.detect.mp4.MP4TrackDetector", detectors.get(5).getClass().getName());
         assertEquals("org.apache.tika.detect.ogg.OggDetector", detectors.get(6).getClass().getName());
         assertEquals("org.apache.tika.detect.ole.MiscOLEDetector", detectors.get(7).getClass().getName());
         assertEquals("org.apache.tika.detect.zip.DefaultZipContainerDetector",
