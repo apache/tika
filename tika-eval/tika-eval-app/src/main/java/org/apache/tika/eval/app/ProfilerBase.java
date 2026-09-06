@@ -151,7 +151,7 @@ public abstract class ProfilerBase {
     /**
      * @param p               path to the common_tokens directory.  If this is null, try to load from classPath
      * @param defaultLangCode this is the language code to use if a common_words list doesn't exist for the
-     *                        detected langauge; can be <code>null</code>
+     *                        detected language; can be <code>null</code>
      * @throws IOException
      */
     public static void loadCommonTokens(Path p, String defaultLangCode) throws IOException {
