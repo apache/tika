@@ -32,8 +32,6 @@ public class TestDetectorLoading {
         //integration test - detectors should be sorted alphabetically by class name
         Detector detector = TikaLoader.loadDefault().loadDetectors();
         List<Detector> detectors = ((CompositeDetector) detector).getDetectors();
-        Detector detector = TikaLoader.loadDefault().loadDetectors();
-        List<Detector> detectors = ((CompositeDetector) detector).getDetectors();
         assertEquals(9, detectors.size());
         // Sorted alphabetically by full class name (all are org.apache.tika.*)
         assertEquals("org.apache.tika.detect.apple.BPListDetector", detectors.get(0).getClass().getName());
