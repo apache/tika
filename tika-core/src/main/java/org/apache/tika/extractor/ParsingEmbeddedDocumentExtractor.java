@@ -32,6 +32,7 @@ import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.DelegatingParser;
@@ -42,6 +43,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.SAXOutputConfig;
 import org.apache.tika.sax.XHTMLBalancingHandler;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Helper class for parsers of package archives or other compound document
@@ -180,6 +182,13 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         // Increment embedded count for tracking
         if (parseRecord != null) {
             parseRecord.incrementEmbeddedCount();
+        }
+
+        // A parser builds the metadata beside the stream, so a length the stream
+        // knows is often missing from it. hasLength() answers from the source,
+        // without spooling a stream to measure it (TIKA-4873).
+        if (StringUtils.isBlank(metadata.get(HttpHeaders.CONTENT_LENGTH)) && tis.hasLength()) {
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(tis.getLength()));
         }
 
         if (outputHtml) {

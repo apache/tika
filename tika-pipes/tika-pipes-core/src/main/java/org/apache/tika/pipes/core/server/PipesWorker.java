@@ -89,8 +89,40 @@ class PipesWorker implements Callable<PipesResult> {
         this.defaultParseMode = defaultParseMode;
     }
 
+    // Per-parse stage nanos, read by ConnectionHandler for the timing line after the
+    // worker completes. -1 means the stage never ran.
+    private volatile long fetchNanos = -1;
+    private volatile long parseNanos = -1;
+    private volatile long emitNanos = -1;
+    private volatile long wallNanos = -1;
+
+    long getFetchNanos() {
+        return fetchNanos;
+    }
+
+    long getParseNanos() {
+        return parseNanos;
+    }
+
+    long getEmitNanos() {
+        return emitNanos;
+    }
+
+    long getWallNanos() {
+        return wallNanos;
+    }
+
     @Override
     public PipesResult call() throws Exception {
+        long wallStart = System.nanoTime();
+        try {
+            return doCall();
+        } finally {
+            wallNanos = System.nanoTime() - wallStart;
+        }
+    }
+
+    private PipesResult doCall() throws Exception {
         MetadataListAndEmbeddedBytes parseData = null;
         TempFileUnpackHandler tempHandler = null;
         FrictionlessUnpackHandler frictionlessHandler = null;
@@ -126,7 +158,12 @@ class PipesWorker implements Callable<PipesResult> {
                 }
             }
 
-            return emitHandler.emitParseData(fetchEmitTuple, parseData, parseContext);
+            long emitStart = System.nanoTime();
+            try {
+                return emitHandler.emitParseData(fetchEmitTuple, parseData, parseContext);
+            } finally {
+                emitNanos = System.nanoTime() - emitStart;
+            }
         } finally {
             // Clean up handlers if used
             if (frictionlessHandler != null) {
@@ -490,13 +527,20 @@ class PipesWorker implements Callable<PipesResult> {
         Metadata metadata = localContext.newMetadata();
         // Carry the caller's resource name and Content-Type detection hints (see javadoc).
         carryCallerHints(fetchEmitTuple.getMetadata(), metadata);
+        long fetchStart = System.nanoTime();
         FetchHandler.TisOrResult tisOrResult = fetchHandler.fetch(fetchEmitTuple, metadata, localContext);
+        fetchNanos = System.nanoTime() - fetchStart;
         if (tisOrResult.pipesResult() != null) {
             return new ParseDataOrPipesResult(null, tisOrResult.pipesResult());
         }
 
         try (TikaInputStream tis = tisOrResult.tis()) {
-            return parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, localContext);
+            long parseStart = System.nanoTime();
+            try {
+                return parseHandler.parseWithStream(fetchEmitTuple, tis, metadata, localContext);
+            } finally {
+                parseNanos = System.nanoTime() - parseStart;
+            }
         } catch (SecurityException e) {
             LOG.error("security exception id={}", fetchEmitTuple.getId(), e);
             throw e;

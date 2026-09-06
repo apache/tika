@@ -18,7 +18,23 @@
 = TesseractOCRParser Configuration
 
 Configuration options for `TesseractOCRParser`, which runs the `tesseract` command-line program in
-a separate process.
+a separate process. Component name: `tesseract-ocr-parser`.
+
+== Selecting the OCR engine (4.1.0+)
+
+With no configuration, Tesseract is the OCR engine whenever the `tesseract` binary is found.
+When more than one OCR engine is on the classpath (e.g. Tess4J or a VLM parser), a WARN at
+startup names the collision and the winner. To pin the engine explicitly, name it in the
+top-level `content-enrichers` list:
+
+[source,json]
+----
+{
+  "content-enrichers": [ { "tesseract-ocr-parser": { "language": "eng" } } ]
+}
+----
+
+See xref:configuration/index.adoc[Configuration] for how `content-enrichers` works.
 
 == Basic Configuration
 

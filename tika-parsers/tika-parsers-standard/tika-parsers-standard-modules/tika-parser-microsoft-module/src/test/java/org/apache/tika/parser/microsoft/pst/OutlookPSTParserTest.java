@@ -68,7 +68,8 @@ public class OutlookPSTParserTest extends TikaTest {
 
         Metadata m1 = metadataList.get(1);
         assertEquals("application/x-tika-pst-mail-item", m1.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE));
-        assertEquals("application/vnd.ms-outlook", m1.get(TikaCoreProperties.CONTENT_TYPE_MAGIC_DETECTED));
+        // the parser override short-circuits detection, so no magic result is recorded
+        assertNull(m1.get(TikaCoreProperties.CONTENT_TYPE_MAGIC_DETECTED));
         assertEquals("application/x-tika-pst-mail-item", m1.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Jörn Kottmann", m1.get(Message.MESSAGE_FROM_NAME));
         assertEquals("Jörn Kottmann", m1.get(TikaCoreProperties.CREATOR));

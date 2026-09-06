@@ -79,6 +79,18 @@ public class OpenAIEmbeddingFilter extends AbstractEmbeddingFilter {
     }
 
     @Override
+    protected String getComponentName() {
+        return "openai-embedding-filter";
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (httpClient != null) {
+            httpClient.close();
+        }
+    }
+
+    @Override
     protected void embed(List<Chunk> chunks, InferenceConfig config, ParseContext parseContext)
             throws IOException, TikaException {
 

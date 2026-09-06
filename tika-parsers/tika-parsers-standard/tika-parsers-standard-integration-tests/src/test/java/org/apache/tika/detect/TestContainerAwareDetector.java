@@ -30,8 +30,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
@@ -39,6 +39,7 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.Tika;
@@ -49,6 +50,7 @@ import org.apache.tika.detect.zip.OpenDocumentDetector;
 import org.apache.tika.detect.zip.StreamingZipContainerDetector;
 import org.apache.tika.detect.zip.ZipContainerDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -71,6 +73,8 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
     private final StreamingZipContainerDetector streamingZipDetector =
             new StreamingZipContainerDetector();
 
+    @TempDir
+    private Path tempDir;
 
     @AfterEach
     public void tearDown() throws TikaException {
@@ -416,23 +420,33 @@ public class TestContainerAwareDetector extends MultiThreadedTikaTest {
         assertRemovalTempfiles("test-documents.zip");
     }
 
-    private int countTemporaryFiles() {
-        //TODO: fix this.  This can prevent multiple parallel builds
-        //from running at the same time because there can be more than one
-        //process writing to apache-tika-*
-        return Objects.requireNonNull(new File(System.getProperty("java.io.tmpdir"))
-                .listFiles((dir, name) -> name.startsWith("apache-tika-"))).length;
+    /**
+     * Counts spool files in {@link #tempDir}. The shared java.io.tmpdir cannot be counted
+     * reliably: parallel module builds (-T1C) have other JVMs writing apache-tika-* there.
+     */
+    private int countTemporaryFiles() throws IOException {
+        try (Stream<Path> files = Files.list(tempDir)) {
+            return (int) files.count();
+        }
     }
 
     private void assertRemovalTempfiles(String fileName) throws Exception {
-        int numberOfTempFiles = countTemporaryFiles();
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
+        TemporaryResources tmp = new TemporaryResources();
+        tmp.setTemporaryFileDirectory(tempDir);
 
-        try (TikaInputStream tis = TikaInputStream
-                .get(getResourceAsUrl("/test-documents/" + fileName))) {
-            detector.detect(tis, new Metadata(), new ParseContext());
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/" + fileName)) {
+            assertNotNull(is);
+            try (TikaInputStream tis = TikaInputStream.get(is, tmp, metadata)) {
+                detector.detect(tis, metadata, new ParseContext());
+                //force the spool so this test can't pass vacuously
+                tis.getPath();
+                assertEquals(1, countTemporaryFiles());
+            }
         }
 
-        assertEquals(numberOfTempFiles, countTemporaryFiles());
+        assertEquals(0, countTemporaryFiles());
     }
 
     @Test

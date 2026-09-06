@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.TransientParseState;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -34,7 +35,7 @@ import org.apache.tika.metadata.Metadata;
  * which can be configured via {@link #setMaxEmbeddedDepth(int)} and
  * {@link #setMaxEmbeddedCount(int)}.
  */
-public class ParseRecord {
+public class ParseRecord implements TransientParseState {
 
     //hard limits so that specially crafted files
     //don't cause an OOM

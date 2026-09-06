@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
@@ -225,6 +226,50 @@ public class RawTiffDetectorTest {
     }
 
     /**
+     * A BigTIFF directory offset near {@code Long.MAX_VALUE}: adding the entry
+     * count to it wraps negative, and a negative end must not read as "already
+     * in the prefix". The three pointer sources (this header field, a SubIFDs
+     * array, the follower below) all reach the same bounds check.
+     */
+    @ParameterizedTest
+    @ValueSource(longs = {Long.MAX_VALUE, Long.MAX_VALUE - 7, Long.MAX_VALUE - 8,
+            0x100000000L, 1024L * 1024L + 1})
+    public void testDirectoryOffsetBeyondTheFileIsRejected(long firstIfd) throws Exception {
+        byte[] tiff = bigTiffHeader(firstIfd);
+        assertEquals(MediaType.OCTET_STREAM, RawTiffDetector.detect(tiff, tiff.length));
+        try (TikaInputStream tis = TikaInputStream.get(tiff)) {
+            assertEquals(MediaType.OCTET_STREAM,
+                    new RawTiffDetector().detect(tis, new Metadata(), new ParseContext()));
+        }
+    }
+
+    /**
+     * The same offset as the follower of an otherwise good directory: the
+     * follower is skipped and the vendor named in the directory already read
+     * still decides the type.
+     */
+    @Test
+    public void testFollowerBeyondTheFileIsSkipped() {
+        byte[] tiff = new TiffBuilder(true)
+                .ifd(entry(0x0103, 3, 32767))
+                .nextOffset(Long.MAX_VALUE)
+                .build();
+        assertEquals(RawTiffDetector.SONY, RawTiffDetector.detect(tiff, tiff.length));
+    }
+
+    /**
+     * A 16 byte little-endian BigTIFF header, directories nowhere near it.
+     */
+    private static byte[] bigTiffHeader(long firstIfd) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.writeBytes(new byte[]{'I', 'I', 43, 0});
+        le16(out, 8);
+        le16(out, 0);
+        le64(out, firstIfd);
+        return out.toByteArray();
+    }
+
+    /**
      * A minimal little-endian TIFF: one IFD with Make, Compression,
      * PhotometricInterpretation and, optionally, DNGVersion.
      */
@@ -288,6 +333,7 @@ public class RawTiffDetectorTest {
         private final boolean bigTiff;
         private final java.util.List<Entry[]> ifds = new java.util.ArrayList<>();
         private boolean nextPointsToSelf;
+        private Long nextOffset;
         private final java.util.Map<Integer, Integer> gaps = new java.util.HashMap<>();
 
         /**
@@ -309,6 +355,12 @@ public class RawTiffDetectorTest {
 
         TiffBuilder nextPointsToSelf() {
             nextPointsToSelf = true;
+            return this;
+        }
+
+        /** The follower of every IFD, in place of the default 0. */
+        TiffBuilder nextOffset(long offset) {
+            nextOffset = offset;
             return this;
         }
 
@@ -389,7 +441,7 @@ public class RawTiffDetectorTest {
                         }
                     }
                 }
-                long next = nextPointsToSelf ? starts[i] : 0;
+                long next = nextOffset != null ? nextOffset : nextPointsToSelf ? starts[i] : 0;
                 offset(out, next, offsetSize);
                 out.writeBytes(data.toByteArray());
             }

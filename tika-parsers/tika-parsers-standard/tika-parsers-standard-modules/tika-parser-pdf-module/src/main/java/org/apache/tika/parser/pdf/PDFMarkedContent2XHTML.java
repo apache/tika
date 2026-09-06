@@ -47,6 +47,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.renderer.Renderer;
 
 /**
@@ -91,9 +92,10 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
     private PDFMarkedContent2XHTML(PDDocument document, ContentHandler handler,
                                    ParseContext context, Metadata metadata, PDFParserConfig config,
-                                   Renderer renderer)
+                                   Renderer renderer,
+                                   CompositeContentEnricher contentEnrichers)
             throws IOException {
-        super(document, handler, context, metadata, config, renderer);
+        super(document, handler, context, metadata, config, renderer, contentEnrichers);
     }
 
     /**
@@ -111,14 +113,15 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
      */
     public static void process(PDDocument pdDocument, ContentHandler handler,
                                ParseContext context,
-                               Metadata metadata, PDFParserConfig config, Renderer renderer)
+                               Metadata metadata, PDFParserConfig config, Renderer renderer,
+                               CompositeContentEnricher contentEnrichers)
             throws SAXException, TikaException {
 
         PDFMarkedContent2XHTML pdfMarkedContent2XHTML = null;
         try {
             pdfMarkedContent2XHTML =
                     new PDFMarkedContent2XHTML(pdDocument, handler, context, metadata, config,
-                            renderer);
+                            renderer, contentEnrichers);
         } catch (IOException e) {
             throw new TikaException("couldn't initialize PDFMarkedContent2XHTML", e);
         }

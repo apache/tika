@@ -116,6 +116,11 @@ class FileSource extends InputStream implements TikaInputSource {
     }
 
     @Override
+    public boolean hasReliableLength() {
+        return true;
+    }
+
+    @Override
     public long getLength() {
         return length;
     }

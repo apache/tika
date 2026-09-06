@@ -41,6 +41,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -48,6 +49,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
@@ -158,6 +160,10 @@ public class PipesServer implements AutoCloseable {
      *  process handle and exit promptly if the parent dies. */
     public static final String PARENT_PID_ENV = "TIKA_PIPES_PARENT_PID";
 
+    /** Prefixes of the temp dirs the parent creates for forks; a fork deletes only a dir so named. */
+    public static final String TEMP_DIR_PREFIX = "pipes-server-";
+    public static final String SHARED_TEMP_DIR_PREFIX = "pipes-shared-server-";
+
     /** Exit code used when the child self-terminates because its parent JVM
      *  disappeared. Distinct from UNSPECIFIED_CRASH (19) so log readers can
      *  tell the difference between "I crashed" and "my parent went away". */
@@ -185,11 +191,24 @@ public class PipesServer implements AutoCloseable {
     private RecursiveParserWrapper rMetaParser;
     private FetcherManager fetcherManager;
     private EmitterManager emitterManager;
+    private PresetRegistry presetRegistry;
     private ConfigStore configStore;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final ExecutorCompletionService<PipesResult> executorCompletionService = new ExecutorCompletionService<>(executorService);
     private final EmitStrategy emitStrategy;
     private final ServerProtocolIO protocolIO;
+
+    /** Per-parse worker-side latency breakdown; joins the client line on {@code id}. */
+    private static final Logger TIMING_LOG =
+            LoggerFactory.getLogger("org.apache.tika.pipes.timing.worker");
+
+    // Per-request timing scratch. A per-client fork handles one request at a time.
+    private long tReqDeserNanos = -1;
+    private long tCtxMergeNanos = -1;
+    private long tSubmitAtNanos = -1;
+    private long tHandoffNanos = -1;
+    private long tIntermediateWaitNanos = -1;
+    private PipesWorker tLastWorker;
 
     public static PipesServer load(int port, Path tikaConfigPath) throws Exception {
             String pipesClientId = System.getProperty("pipesClientId", "unknown");
@@ -430,9 +449,12 @@ public class PipesServer implements AutoCloseable {
 
                         PipesRequest pipesRequest;
                         FetchEmitTuple fetchEmitTuple;
+                        resetTimings();
+                        long reqDeserStart = System.nanoTime();
                         try {
                             pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class);
                             fetchEmitTuple = pipesRequest.getTuple();
+                            tReqDeserNanos = System.nanoTime() - reqDeserStart;
                         } catch (IOException e) {
                             LOG.error("problem deserializing PipesRequest", e);
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, "unknown", e);
@@ -440,8 +462,10 @@ public class PipesServer implements AutoCloseable {
                         }
                         ParseContext mergedContext;
                         ParseTimeout parseTimeout;
+                        long ctxStart = System.nanoTime();
                         try {
-                            mergedContext = createMergedParseContext(fetchEmitTuple.getParseContext());
+                            mergedContext = createMergedParseContext(
+                                    fetchEmitTuple.getParseContext(), fetchEmitTuple.getPresetName());
                             ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
                             ServerProtocolIO.validateParseContext(mergedContext);
                             ServerProtocolIO.clampRequestTimeoutLimits(
@@ -454,6 +478,13 @@ public class PipesServer implements AutoCloseable {
                             // ParseTimeout.getOrCreate(mergedContext) call (inside CompositeParser)
                             // sees this instance rather than racing to install its own.
                             parseTimeout = ParseTimeout.getOrCreate(mergedContext);
+                            tCtxMergeNanos = System.nanoTime() - ctxStart;
+                        } catch (PresetNotFoundException e) {
+                            // caller error, not a server fault: answer it and keep serving
+                            LOG.warn("id={}: {}", fetchEmitTuple.getId(), e.getMessage());
+                            writeFinished(new PipesResult(
+                                    PipesResult.RESULT_STATUS.PRESET_NOT_FOUND, e.getMessage()));
+                            break;
                         } catch (Exception e) {
                             // write the reason to the client instead of a bare exit code
                             handleCrash(PipesMessageType.UNSPECIFIED_CRASH, fetchEmitTuple.getId(), e);
@@ -461,9 +492,12 @@ public class PipesServer implements AutoCloseable {
                         }
 
                         PipesWorker pipesWorker = getPipesWorker(intermediateResult, fetchEmitTuple, mergedContext, countDownLatch);
+                        tLastWorker = pipesWorker;
+                        tSubmitAtNanos = System.nanoTime();
                         executorCompletionService.submit(pipesWorker);
                         try {
                             loopUntilDone(fetchEmitTuple, mergedContext, executorCompletionService, intermediateResult, countDownLatch, parseTimeout);
+                            logTiming(fetchEmitTuple.getId());
                         } catch (Throwable t) {
                             if (t instanceof Error) {
                                 // OOM or other JVM-level error: exit rather than continue in a
@@ -522,6 +556,42 @@ public class PipesServer implements AutoCloseable {
     /** Steady-state slice once the intermediate result is out of the way. */
     private static final long COMPLETION_POLL_MS = 100;
 
+    private void resetTimings() {
+        tReqDeserNanos = -1;
+        tCtxMergeNanos = -1;
+        tSubmitAtNanos = -1;
+        tHandoffNanos = -1;
+        tIntermediateWaitNanos = -1;
+        tLastWorker = null;
+        protocolIO.resetLastTimings();
+    }
+
+    /**
+     * One line per parse on {@code org.apache.tika.pipes.timing.worker}, microseconds.
+     * {@code handoff_us} is executor scheduling plus completion-poll latency around the worker;
+     * {@code resp_*} is the FINISHED frame's serialize, socket write, and the client-ACK wait.
+     */
+    private void logTiming(String id) {
+        if (!TIMING_LOG.isInfoEnabled()) {
+            return;
+        }
+        PipesWorker w = tLastWorker;
+        TIMING_LOG.info("WORKER_TIMING id={} req_deser_us={} ctx_merge_us={} intermediate_wait_us={}"
+                        + " handoff_us={} fetch_us={} parse_us={} emit_us={} worker_wall_us={}"
+                        + " intermediate_us={} resp_ser_us={} resp_write_us={} resp_ack_us={}"
+                        + " resp_bytes={}",
+                id, us(tReqDeserNanos), us(tCtxMergeNanos), us(tIntermediateWaitNanos),
+                us(tHandoffNanos), us(w == null ? -1 : w.getFetchNanos()),
+                us(w == null ? -1 : w.getParseNanos()), us(w == null ? -1 : w.getEmitNanos()),
+                us(w == null ? -1 : w.getWallNanos()), us(protocolIO.getLastIntermediateNanos()),
+                us(protocolIO.getLastRespSerNanos()), us(protocolIO.getLastRespWriteNanos()),
+                us(protocolIO.getLastRespAckNanos()), protocolIO.getLastRespBytes());
+    }
+
+    private static long us(long nanos) {
+        return nanos < 0 ? nanos : nanos / 1000L;
+    }
+
     private void loopUntilDone(FetchEmitTuple fetchEmitTuple, ParseContext mergedContext,
                                ExecutorCompletionService<PipesResult> executorCompletionService,
                                ArrayBlockingQueue<Metadata> intermediateResult, CountDownLatch countDownLatch,
@@ -539,7 +609,11 @@ public class PipesServer implements AutoCloseable {
             if (!wroteIntermediateResult) {
                 Metadata intermediate = intermediateResult.poll(PRE_INTERMEDIATE_POLL_MS, TimeUnit.MILLISECONDS);
                 if (intermediate != null) {
-                    writeIntermediate(intermediate);
+                    tIntermediateWaitNanos = System.nanoTime() - startNanos;
+                    // The latch is released as soon as the frame is flushed, so the worker
+                    // parses while the ACK is in flight; the extra countDown below is a
+                    // no-op then, and the safety net when the write was skipped or failed.
+                    writeIntermediate(intermediate, countDownLatch);
                     countDownLatch.countDown();
                     wroteIntermediateResult = true;
                 }
@@ -551,6 +625,8 @@ public class PipesServer implements AutoCloseable {
             Future<PipesResult> future = executorCompletionService.poll(
                     wroteIntermediateResult ? COMPLETION_POLL_MS : 0, TimeUnit.MILLISECONDS);
             if (future != null) {
+                tHandoffNanos = System.nanoTime() - tSubmitAtNanos
+                        - (tLastWorker == null ? 0 : Math.max(0, tLastWorker.getWallNanos()));
                 PipesResult pipesResult = null;
                 try {
                     pipesResult = future.get();
@@ -675,15 +751,41 @@ public class PipesServer implements AutoCloseable {
         if (parent.isEmpty()) {
             LOG.error("parent pid {} not found at startup; exiting to avoid orphan",
                     parentPid);
-            System.exit(PARENT_GONE_EXIT_CODE);
+            exitParentGone();
             return;
         }
         parent.get().onExit().thenRun(() -> {
             LOG.error("parent pid {} exited; shutting down to avoid orphan",
                     parentPid);
-            System.exit(PARENT_GONE_EXIT_CODE);
+            exitParentGone();
         });
         LOG.info("watching parent pid {} for exit", parentPid);
+    }
+
+    /** Only when the parent is gone: on the fork's own crash the dir must survive for the parent to read. */
+    private static void exitParentGone() {
+        try {
+            deleteOwnTempDir(Paths.get(System.getProperty("java.io.tmpdir")));
+        } finally {
+            System.exit(PARENT_GONE_EXIT_CODE);
+        }
+    }
+
+    /** @return true if {@code dir} is parent-created (by name) and is now deleted */
+    static boolean deleteOwnTempDir(Path dir) {
+        String name = dir.getFileName() == null ? "" : dir.getFileName().toString();
+        if (!name.startsWith(TEMP_DIR_PREFIX) && !name.startsWith(SHARED_TEMP_DIR_PREFIX)) {
+            LOG.warn("java.io.tmpdir={} was not created by a parent manager; leaving it", dir);
+            return false;
+        }
+        try {
+            FileUtils.deleteDirectory(dir.toFile());
+            LOG.info("deleted own temp dir {}", dir);
+            return true;
+        } catch (IOException e) {
+            LOG.warn("couldn't delete own temp dir {}: {}", dir, e.toString());
+            return false;
+        }
     }
 
     /** Below this, ordinary documents -- not just pathological ones -- start OOMing. */
@@ -719,7 +821,8 @@ public class PipesServer implements AutoCloseable {
         this.autoDetectParser = (AutoDetectParser) tikaLoader.loadAutoDetectParser();
         this.detector = this.autoDetectParser.getDetector();
         this.rMetaParser = new RecursiveParserWrapper(autoDetectParser);
-
+        // fails startup on an unresolvable preset, mirroring the front-end's own load
+        this.presetRegistry = PresetRegistry.load(tikaJsonConfig, tikaLoader.getClassLoader());
     }
 
     /**
@@ -729,9 +832,11 @@ public class PipesServer implements AutoCloseable {
      * Creates a fresh context each time to avoid shared state between requests.
      *
      * @param requestContext the ParseContext from FetchEmitTuple
-     * @return a new ParseContext with defaults + request overrides
+     * @param presetName name of the preset to overlay at config-tier trust, or null
+     * @return a new ParseContext with defaults + preset + request overrides
      */
-    private ParseContext createMergedParseContext(ParseContext requestContext) throws TikaConfigException {
+    private ParseContext createMergedParseContext(ParseContext requestContext, String presetName)
+            throws TikaConfigException {
         // Create fresh context with defaults from tika-config (e.g., DigesterFactory)
         ParseContext mergedContext = tikaLoader.loadParseContext();
         // EmbeddedDocumentExtractor is deliberately left unset here: setting a default (even
@@ -740,10 +845,29 @@ public class PipesServer implements AutoCloseable {
         // no-ops whenever one is already bound), silently disabling embedded content
         // extraction for every non-UNPACK parse mode. UNPACK mode sets its own
         // EmbeddedDocumentExtractor + UnpackedByteCount in PipesWorker's UNPACK-mode setup.
-        // Request-level values override config defaults
+        mergePreset(presetRegistry, presetName, mergedContext);
+        // Request-level values override config defaults and the preset
         mergedContext.copyFrom(requestContext);
         seedCacheMemoryBudget(mergedContext);
         return mergedContext;
+    }
+
+    /**
+     * Overlays the named preset, resolved from this server's own config at config-tier
+     * trust; only the name arrived on the wire. The caller's untrusted delta is copied
+     * on top afterwards and stays subject to wire screening and timeout clamping.
+     */
+    static void mergePreset(PresetRegistry registry, String presetName, ParseContext merged)
+            throws TikaConfigException {
+        if (presetName == null) {
+            return;
+        }
+        ParseContext presetContext = registry.newParseContext(presetName);
+        if (presetContext == null) {
+            throw new PresetNotFoundException(
+                    "No preset named '" + presetName + "' is active in this server's config");
+        }
+        merged.copyFrom(presetContext);
     }
 
     private ConfigStore createConfigStore(PipesConfig pipesConfig, TikaPluginManager tikaPluginManager) throws TikaException {
@@ -775,9 +899,9 @@ public class PipesServer implements AutoCloseable {
         }
     }
 
-    private void writeIntermediate(Metadata metadata) {
+    private void writeIntermediate(Metadata metadata, CountDownLatch latch) {
         try {
-            protocolIO.writeIntermediate(metadata);
+            protocolIO.writeIntermediate(metadata, latch::countDown);
         } catch (ShutDownReceivedException e) {
             handleShutDown();
         } catch (IOException e) {

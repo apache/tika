@@ -591,4 +591,19 @@ public class TestParseContextSerialization {
                 "the message must name the offending key: " + e.getMessage());
     }
 
+
+    @Test
+    public void testTransientParseStateSkipped() throws Exception {
+        // A context that has been through a parse carries per-parse runtime state
+        // (ParseRecord, ParseTimeout); serialization must skip it, not throw.
+        ParseContext pc = new ParseContext();
+        pc.set(org.apache.tika.parser.ParseRecord.class,
+                org.apache.tika.parser.ParseRecord.newInstance(pc));
+        org.apache.tika.config.ParseTimeout.getOrCreate(pc);
+
+        String json = serializeParseContext(pc);
+        ObjectMapper mapper = createMapper();
+        JsonNode root = mapper.readTree(json);
+        assertEquals(0, root.size(), "transient parse state must not serialize: " + json);
+    }
 }

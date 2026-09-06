@@ -25,6 +25,8 @@
     </Console>
   </Appenders>
   <Loggers>
+    <!-- opt-in per-request timing lines (TIKA-4868): raise to info to enable -->
+    <Logger name="org.apache.tika.pipes.timing" level="warn"/>
     <Root level="info">
       <AppenderRef ref="Console"/>
     </Root>

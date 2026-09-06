@@ -142,7 +142,7 @@ public class ExtractComparerRunner {
         }
 
         try {
-            String jdbcString = getJdbcConnectionString(dbPath);
+            String jdbcString = JDBCUtil.getJdbcConnectionString(dbPath);
             Map<String, String> runInfo = RunInfo.evalInfo(args, evalConfig, inputDir);
             execute(inputDir, extractsADir, extractsBDir, jdbcString, evalConfig, sideA.pipesReport(), sideB.pipesReport(), runInfo, runInfoA, runInfoB);
 
@@ -175,16 +175,6 @@ public class ExtractComparerRunner {
 
     private static Path optPath(CommandLine commandLine, String opt) {
         return commandLine.hasOption(opt) ? Paths.get(commandLine.getOptionValue(opt)) : null;
-    }
-
-    private static String getJdbcConnectionString(String dbPath) {
-        if (dbPath.startsWith("jdbc:")) {
-            return dbPath;
-        }
-        //default to h2
-        Path p = Paths.get(dbPath);
-        return "jdbc:h2:file:" + p.toAbsolutePath();
-
     }
 
     private static void execute(Path inputDir, Path extractsA, Path extractsB, String dbPath, EvalConfig evalConfig, PipesReport pipesReportA,

@@ -576,7 +576,7 @@ xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing].
 === Performance Optimizations
 
 * TCP_NODELAY enabled for reduced latency on small requests
-* Configurable temp directory for RAM disk optimization (`pipes.tempDirectory`)
+* Temporary files go to `-Djava.io.tmpdir`; forks get private subdirectories under it (see xref:pipes/configuration.adoc#_where_temporary_files_go[Where temporary files go]; `pipes.tempDirectory` is deprecated, and do not use a RAM disk)
 
 == Advanced: Shared Server Mode
 

@@ -35,6 +35,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 
 public class OpenAIEmbeddingFilterTest {
 
@@ -228,6 +229,62 @@ public class OpenAIEmbeddingFilterTest {
         assertNull(merged.get(0).getText());
         assertNotNull(merged.get(1).getText());
         assertNotNull(merged.get(1).getVector());
+    }
+
+    @Test
+    void testPerRequestSkipEmbedding() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "# Section A\n\nSome text.");
+        List<Metadata> list = new ArrayList<>();
+        list.add(metadata);
+
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("openai-embedding-filter", "{\"skipEmbedding\": true}");
+        filter.filter(list, context);
+
+        assertNull(metadata.get(TikaCoreProperties.TIKA_CHUNKS));
+        assertEquals(0, server.getRequestCount());
+    }
+
+    @Test
+    void testPerRequestBaseUrlRejected() {
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "# Section A\n\nSome text.");
+        List<Metadata> list = new ArrayList<>();
+        list.add(metadata);
+
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("openai-embedding-filter",
+                "{\"baseUrl\": \"http://attacker.example.com\"}");
+        assertThrows(TikaException.class, () -> filter.filter(list, context));
+        assertEquals(0, server.getRequestCount());
+    }
+
+    @Test
+    void testPerRequestConfigMergesOverDefaults() throws Exception {
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                buildEmbeddingResponse(1, 3)));
+
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.TIKA_CONTENT, "# Section A\n\nSome text.");
+        List<Metadata> list = new ArrayList<>();
+        list.add(metadata);
+
+        // an allowed runtime override; baseUrl/model must survive from the init-time config
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("openai-embedding-filter", "{\"maxChunkChars\": 5000}");
+        filter.filter(list, context);
+
+        assertNotNull(metadata.get(TikaCoreProperties.TIKA_CHUNKS));
+        assertEquals(1, server.getRequestCount());
+        TikaTestHttpServer.RecordedRequest request = server.takeRequest();
+        assertEquals("/v1/embeddings", request.path());
+    }
+
+    @Test
+    void testCloseReleasesClient() throws Exception {
+        filter.close();
+        filter.close();
     }
 
     /**

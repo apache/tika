@@ -35,6 +35,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -92,8 +93,7 @@ public class IWork18PackageParser implements Parser {
                     type = IWork18DocumentType.detectIfPossible(entry);
                 }
                 if (isPreview(entry) && zipFile.canReadEntryData(entry)) {
-                    try (TikaInputStream previewStream =
-                                 TikaInputStream.get(zipFile.getInputStream(entry))) {
+                    try (TikaInputStream previewStream = entryStream(zipFile, entry)) {
                         handleThumbnail(entry, previewStream, xhtml, context);
                     }
                 }
@@ -127,6 +127,11 @@ public class IWork18PackageParser implements Parser {
         String name = entry.getName();
         return name.equals("preview.jpg") || name.endsWith("/preview.jpg");
     }
+    /** Re-opened from the zip on rewind rather than cached: the entry is in the container already. */
+    private static TikaInputStream entryStream(ZipFile zipFile, ZipArchiveEntry entry) {
+        return TikaInputStream.get(() -> zipFile.getInputStream(entry), new TemporaryResources(), null);
+    }
+
 
     private static void handleThumbnail(ZipEntry entry, TikaInputStream previewStream,
                                         XHTMLContentHandler xhtml, ParseContext context)

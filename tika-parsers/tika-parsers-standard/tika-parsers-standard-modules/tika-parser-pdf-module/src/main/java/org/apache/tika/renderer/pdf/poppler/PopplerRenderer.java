@@ -114,8 +114,18 @@ public class PopplerRenderer implements Renderer {
         TemporaryResources tmp = new TemporaryResources();
         PageBasedRenderResults results = new PageBasedRenderResults(tmp);
         Path path = tis.getPath();
-        for (RenderRequest request : requests) {
-            renderRequest(path, metadata, parseContext, request, results, tmp);
+        try {
+            for (RenderRequest request : requests) {
+                renderRequest(path, metadata, parseContext, request, results, tmp);
+            }
+        } catch (Throwable t) {
+            // results never reach the caller; nothing else would delete the pages
+            try {
+                results.close();
+            } catch (IOException e) {
+                t.addSuppressed(e);
+            }
+            throw t;
         }
         return results;
     }

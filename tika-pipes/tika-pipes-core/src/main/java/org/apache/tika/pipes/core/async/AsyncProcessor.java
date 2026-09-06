@@ -54,6 +54,7 @@ import org.apache.tika.pipes.core.PipesResults;
 import org.apache.tika.pipes.core.RestartReason;
 import org.apache.tika.pipes.core.ServerManager;
 import org.apache.tika.pipes.core.SharedServerManager;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.reporter.ReporterManager;
 import org.apache.tika.plugins.TikaPluginManager;
@@ -484,6 +485,11 @@ public class AsyncProcessor implements Closeable {
                         long offerStart = System.currentTimeMillis();
 
                         if (shouldEmit(result)) {
+                            if (result.emitData() instanceof EmitDataImpl emitDataImpl) {
+                                // a client-side Emitter reads only the metadata list;
+                                // undo any content-bytes move so content is not lost
+                                emitDataImpl.restoreContentFromBytes();
+                            }
                             LOG.trace("adding result to emitter queue: " + result.emitData());
                             boolean offered = emitDataTupleQueue.offer(
                                     new EmitDataPair(t.getEmitKey().getEmitterId(), result.emitData()), MAX_OFFER_WAIT_MS,

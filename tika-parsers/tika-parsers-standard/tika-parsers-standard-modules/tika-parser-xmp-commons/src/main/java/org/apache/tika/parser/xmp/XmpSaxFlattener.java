@@ -23,6 +23,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.Attributes;
@@ -30,6 +31,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.Google;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -75,6 +77,26 @@ public final class XmpSaxFlattener {
 
         static boolean isContainer(String u, String l) {
             return RDF.equals(u) && (l.equals("Bag") || l.equals("Seq") || l.equals("Alt"));
+        }
+
+        /**
+         * The prefix a namespace is normally written with, for the few whose
+         * raw keys are read elsewhere in Tika. An XMP prefix is the writer's
+         * own choice (ISO 16684-1) and rewriting a packet is enough to change
+         * it, so a key built from the document's prefix moves with it: a
+         * motion photo that has been through exiftool lists its parts under
+         * GContainer:Directory rather than Container:Directory.
+         */
+        static final Map<String, String> CANONICAL_PREFIX =
+                Map.of(Google.CONTAINER_NS, "Container", Google.ITEM_NS, "Item");
+
+        /**
+         * The name a path segment is keyed under: the document's own qName,
+         * except for the namespaces above.
+         */
+        static String canonical(String uri, String qName, String localName) {
+            String prefix = CANONICAL_PREFIX.get(uri);
+            return prefix == null ? qName : prefix + ":" + localName;
         }
 
         void add(XmpProperty p) {
@@ -142,7 +164,7 @@ public final class XmpSaxFlattener {
                 }
                 return;
             } else if (!rdf) {
-                pushFrame(qn, u);
+                pushFrame(canonical(u, qn, l), u);
             } else {
                 return;
             }
@@ -185,7 +207,8 @@ public final class XmpSaxFlattener {
                 if (au == null || au.isEmpty()) {
                     continue;
                 }
-                add(new XmpProperty(au, base.isEmpty() ? aq : base + "/" + aq, v));
+                String an = canonical(au, aq, al);
+                add(new XmpProperty(au, base.isEmpty() ? an : base + "/" + an, v));
             }
         }
 

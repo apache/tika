@@ -19,7 +19,9 @@ package org.apache.tika.config.loader;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +32,8 @@ import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.CompositeEncodingDetector;
@@ -48,6 +52,7 @@ import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -59,6 +64,7 @@ import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.serialization.config.GlobalSettings;
 import org.apache.tika.serialization.serdes.ParseContextDeserializer;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Main entry point for loading Tika components from JSON configuration.
@@ -92,6 +98,10 @@ import org.apache.tika.serialization.serdes.ParseContextDeserializer;
  */
 public class TikaLoader {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TikaLoader.class);
+
+    private static volatile boolean tempDirectoryLogged = false;
+
     // Static registration of component configurations
     static {
         registerComponentConfigs();
@@ -123,6 +133,10 @@ public class TikaLoader {
         ComponentConfig.builder("renderers", Renderer.class)
                 .loadAsList()
                 .wrapWith(list -> new CompositeRenderer((List<Renderer>) list))
+                .register();
+
+        ComponentConfig.builder("content-enrichers", CompositeContentEnricher.class)
+                .customLoader(new ContentEnricherLoader())
                 .register();
 
         ComponentConfig.builder("translator", Translator.class)
@@ -165,7 +179,28 @@ public class TikaLoader {
      * @throws TikaConfigException if loading global settings fails
      */
     private void init() throws TikaConfigException, IOException {
+        checkTempDirectory();
         loadGlobalSettings();
+    }
+
+    /** Fail here, naming the dir, rather than on the first spool with a bare NoSuchFileException. */
+    private static void checkTempDirectory() throws TikaConfigException {
+        String prop = System.getProperty("java.io.tmpdir");
+        if (StringUtils.isBlank(prop)) {
+            throw new TikaConfigException("java.io.tmpdir is not set");
+        }
+        Path dir = Paths.get(prop);
+        if (!Files.isDirectory(dir)) {
+            throw new TikaConfigException(
+                    "java.io.tmpdir does not exist or is not a directory: " + dir);
+        }
+        if (!Files.isWritable(dir)) {
+            throw new TikaConfigException("java.io.tmpdir is not writable: " + dir);
+        }
+        if (!tempDirectoryLogged) {
+            LOG.info("temporary files go to java.io.tmpdir={}", dir.toAbsolutePath());
+            tempDirectoryLogged = true;
+        }
     }
 
     /**
@@ -787,6 +822,10 @@ public class TikaLoader {
             output.set("renderers", serializeComponent(componentCache.get(Renderer.class), "renderers"));
         } else if (config.hasArrayComponents("renderers")) {
             output.set("renderers", config.getRootNode().get("renderers"));
+        }
+
+        if (config.hasArrayComponents("content-enrichers")) {
+            output.set("content-enrichers", config.getRootNode().get("content-enrichers"));
         }
 
         // Preserve auto-detect-parser config if present

@@ -18,6 +18,8 @@ package org.apache.tika.pipes.core.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -156,5 +158,30 @@ public class JsonFetchEmitTupleTest {
                 "emitter should be preserved");
         assertEquals(unpackConfig.getSuffixStrategy(), deserializedConfig.getSuffixStrategy(),
                 "suffixStrategy should be preserved");
+    }
+
+    @Test
+    public void testPresetNameRoundTrips() throws Exception {
+        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "k"),
+                new EmitKey("my_emitter", "e"), new Metadata(), new ParseContext(),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, "ocr-heavy");
+        FetchEmitTuple deserialized =
+                JsonFetchEmitTuple.fromJson(new StringReader(JsonFetchEmitTuple.toJson(t)));
+        assertEquals("ocr-heavy", deserialized.getPresetName());
+
+        FetchEmitTuple noPreset = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "k"),
+                new EmitKey("my_emitter", "e"));
+        assertNull(JsonFetchEmitTuple
+                .fromJson(new StringReader(JsonFetchEmitTuple.toJson(noPreset)))
+                .getPresetName());
+    }
+
+    @Test
+    public void testInvalidPresetNameRefused() {
+        // the name is only a selector, but it must obey the shared syntax bound
+        assertThrows(Exception.class, () -> JsonFetchEmitTuple.fromJson(new StringReader(
+                "{\"id\":\"i\",\"fetcher\":\"f\",\"fetchKey\":\"k\",\"preset\":\"../etc\"}")));
+        assertThrows(Exception.class, () -> JsonFetchEmitTuple.fromJson(new StringReader(
+                "{\"id\":\"i\",\"fetcher\":\"f\",\"fetchKey\":\"k\",\"preset\":\"config-x\"}")));
     }
 }

@@ -1520,4 +1520,22 @@ public class ToMarkdownContentHandlerTest {
         handler.writePartialContentIfUnfinished();
         assertEquals(afterEnd, writer.toString(), "writePartial after endDocument must be a no-op");
     }
+
+    @Test
+    public void testRenderBufferBoundaries() throws Exception {
+        // Spans sized around the internal 8 KB render buffer: exact fit, one-over,
+        // buffer-sized single write (direct path), and a multi-drain run.
+        for (int size : new int[]{8191, 8192, 8193, 16384, 40000}) {
+            StringWriter writer = new StringWriter();
+            ToMarkdownContentHandler handler = new ToMarkdownContentHandler(writer);
+            String run = "a".repeat(size);
+            handler.startDocument();
+            startElement(handler, "p");
+            chars(handler, run);
+            endElement(handler, "p");
+            handler.endDocument();
+            assertTrue(writer.toString().contains(run),
+                    "clean " + size + "-char run must survive buffering intact");
+        }
+    }
 }

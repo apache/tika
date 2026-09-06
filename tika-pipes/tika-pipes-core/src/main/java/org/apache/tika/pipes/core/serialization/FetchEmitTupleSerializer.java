@@ -40,6 +40,7 @@ public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
     public static final String EMIT_KEY = "emitKey";
     public static final String METADATA_KEY = "metadata";
     public static final String ON_PARSE_EXCEPTION = "onParseException";
+    public static final String PRESET = "preset";
 
     public void serialize(FetchEmitTuple t, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
 
@@ -59,6 +60,9 @@ public class FetchEmitTupleSerializer extends JsonSerializer<FetchEmitTuple> {
             jsonGenerator.writeObjectField(METADATA_KEY, t.getMetadata());
         }
         jsonGenerator.writeStringField(ON_PARSE_EXCEPTION, t.getOnParseException().name().toLowerCase(Locale.US));
+        if (t.getPresetName() != null) {
+            jsonGenerator.writeStringField(PRESET, t.getPresetName());
+        }
         ParseContext parseContext = t.getParseContext();
         // Tailored: ParseContextSerializer's generic refusal suggests registering the
         // component -- for InlineBytes, exactly the forbidden fix.

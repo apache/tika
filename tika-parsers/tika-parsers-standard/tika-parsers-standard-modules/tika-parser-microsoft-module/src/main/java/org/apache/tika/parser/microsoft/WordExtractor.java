@@ -106,10 +106,41 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         return count;
     }
 
-    /**
-     * Given a style name, return what tag should be used, and
-     * what style should be applied to it.
-     */
+    // blank == matches [\r\n\s]+ ( \s == [ \t\n\x0B\f\r] )
+    private static boolean isBlankParagraph(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c != '\r' && c != '\n' && c != ' ' && c != '\t' && c != 0x0B && c != '\f') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static String cleanControlCharacters(String text) {
+        char[] chars = null;
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            char r;
+            if (c == 30) {
+                r = UNICODECHAR_NONBREAKING_HYPHEN;
+            } else if (c == 31) {
+                r = UNICODECHAR_ZERO_WIDTH_SPACE;
+            } else if (c < 0x20) {
+                r = '\n';
+            } else {
+                r = c;
+            }
+            if (r != c) {
+                if (chars == null) {
+                    chars = text.toCharArray();
+                }
+                chars[i] = r;
+            }
+        }
+        return chars == null ? text : new String(chars);
+    }
+
     public static TagAndStyle buildParagraphTagAndStyle(String styleName, boolean isTable) {
 
         if (styleName == null || styleName.length() < 2) {
@@ -354,7 +385,7 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         }
 
         String text = p.text();
-        if (text.replaceAll("[\\r\\n\\s]+", "").isEmpty()) {
+        if (isBlankParagraph(text)) {
             // Skip empty paragraphs
             return 0;
         }
@@ -456,22 +487,11 @@ public class WordExtractor extends AbstractPOIFSExtractor {
 
         // Clean up the text
         String text = cr.text();
-        text = text.replace('\r', '\n');
         if (text.endsWith("\u0007")) {
             // Strip the table cell end marker
             text = text.substring(0, text.length() - 1);
         }
-
-        // Copied from POI's org/apache/poi/hwpf/converter/AbstractWordConverter.processCharacters:
-
-        // Non-breaking hyphens are returned as char 30
-        text = text.replace((char) 30, UNICODECHAR_NONBREAKING_HYPHEN);
-
-        // Non-required hyphens to zero-width space
-        text = text.replace((char) 31, UNICODECHAR_ZERO_WIDTH_SPACE);
-
-        // Control characters as line break
-        text = text.replaceAll("[\u0000-\u001f]", "\n");
+        text = cleanControlCharacters(text);
         xhtml.characters(text);
     }
 

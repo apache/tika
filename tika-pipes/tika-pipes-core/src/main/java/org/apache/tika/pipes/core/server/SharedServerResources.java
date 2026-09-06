@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.config.ExceptionReporting;
+import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
@@ -66,6 +67,7 @@ public class SharedServerResources {
     private final EmitStrategy emitStrategy;
     private final ConfigStore configStore;
     private final ExceptionReporting exceptionReporting;
+    private final PresetRegistry presetRegistry;
 
     private SharedServerResources(TikaLoader tikaLoader, PipesConfig pipesConfig,
                                   AutoDetectParser autoDetectParser, Detector detector,
@@ -74,7 +76,8 @@ public class SharedServerResources {
                                   ContentHandlerFactory defaultContentHandlerFactory,
                                   MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory,
                                   EmitStrategy emitStrategy, ConfigStore configStore,
-                                  ExceptionReporting exceptionReporting) {
+                                  ExceptionReporting exceptionReporting,
+                                  PresetRegistry presetRegistry) {
         this.tikaLoader = tikaLoader;
         this.pipesConfig = pipesConfig;
         this.autoDetectParser = autoDetectParser;
@@ -88,6 +91,7 @@ public class SharedServerResources {
         this.emitStrategy = emitStrategy;
         this.configStore = configStore;
         this.exceptionReporting = exceptionReporting;
+        this.presetRegistry = presetRegistry;
     }
 
     /**
@@ -127,10 +131,14 @@ public class SharedServerResources {
 
         EmitStrategy emitStrategy = pipesConfig.getEmitStrategy().getType();
 
+        // fails startup on an unresolvable preset, mirroring the front-end's own load
+        PresetRegistry presetRegistry =
+                PresetRegistry.load(tikaJsonConfig, tikaLoader.getClassLoader());
+
         return new SharedServerResources(tikaLoader, pipesConfig, autoDetectParser, detector,
                 rMetaParser, fetcherManager, emitterManager, metadataFilter, contentHandlerFactory,
                 metadataWriteLimiterFactory, emitStrategy, configStore,
-                ExceptionReporting.get(configContext));
+                ExceptionReporting.get(configContext), presetRegistry);
     }
 
     private static ConfigStore createConfigStore(PipesConfig pipesConfig, TikaPluginManager tikaPluginManager)
@@ -155,14 +163,17 @@ public class SharedServerResources {
      * Creates a merged ParseContext with defaults from tika-config overlaid with request values.
      *
      * @param requestContext the ParseContext from FetchEmitTuple
-     * @return a new ParseContext with defaults + request overrides
+     * @param presetName name of the preset to overlay at config-tier trust, or null
+     * @return a new ParseContext with defaults + preset + request overrides
      */
-    public ParseContext createMergedParseContext(ParseContext requestContext) throws TikaConfigException {
+    public ParseContext createMergedParseContext(ParseContext requestContext, String presetName)
+            throws TikaConfigException {
         ParseContext mergedContext = tikaLoader.loadParseContext();
         // EmbeddedDocumentExtractor is deliberately left unset here -- see PipesServer's
         // createMergedParseContext for why defaulting it would silently disable embedded
         // content extraction for every non-UNPACK parse mode.
-        // Request-level values override config defaults
+        PipesServer.mergePreset(presetRegistry, presetName, mergedContext);
+        // Request-level values override config defaults and the preset
         mergedContext.copyFrom(requestContext);
         PipesServer.seedCacheMemoryBudget(mergedContext);
         return mergedContext;

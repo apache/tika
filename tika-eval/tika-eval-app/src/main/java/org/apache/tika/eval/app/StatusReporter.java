@@ -38,6 +38,8 @@ public class StatusReporter implements Callable<Long> {
     private final AtomicBoolean crawlerIsActive;
     private final long start;
     private final NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.ROOT);
+    private int lastCnt = 0;
+    private long lastReportMillis;
 
 
     public StatusReporter(CallablePipesIterator pipesIterator, AtomicInteger filesProcessed, AtomicInteger activeWorkers, AtomicBoolean crawlerIsActive) {
@@ -46,6 +48,7 @@ public class StatusReporter implements Callable<Long> {
         this.activeWorkers = activeWorkers;
         this.crawlerIsActive = crawlerIsActive;
         this.start = System.currentTimeMillis();
+        this.lastReportMillis = this.start;
     }
 
     @Override
@@ -68,13 +71,22 @@ public class StatusReporter implements Callable<Long> {
     }
 
     private void report() {
+        long now = System.currentTimeMillis();
         int cnt = filesProcessed.get();
-        long elapsed = System.currentTimeMillis() - start;
+        long elapsed = now - start;
         double elapsedSecs = (double) elapsed / (double) 1000;
         int avg = (elapsedSecs > 5 || cnt > 100) ? (int) ((double) cnt / elapsedSecs) : -1;
 
-        String elapsedString = DurationFormatUtils.formatMillis(System.currentTimeMillis() - start);
-        String docsPerSec = avg > -1 ? String.format(Locale.ROOT, " (%s docs per sec)", numberFormat.format(avg)) : "";
+        // the cumulative average declines by construction and masks cliffs
+        double windowSecs = (double) (now - lastReportMillis) / (double) 1000;
+        int windowRate = windowSecs > 0 ? (int) ((double) (cnt - lastCnt) / windowSecs) : avg;
+        lastCnt = cnt;
+        lastReportMillis = now;
+
+        String elapsedString = DurationFormatUtils.formatMillis(elapsed);
+        String docsPerSec = avg > -1 ?
+                String.format(Locale.ROOT, " (%s docs per sec overall; %s in the last interval)",
+                        numberFormat.format(avg), numberFormat.format(windowRate)) : "";
         String msg = String.format(Locale.ROOT, "Processed %s documents in %s%s.", numberFormat.format(cnt), elapsedString, docsPerSec);
         LOGGER.info(msg);
 

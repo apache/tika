@@ -100,7 +100,8 @@ public class TikaInputStream extends TaggedInputStream {
             return (TikaInputStream) stream;
         }
         String ext = getExtension(metadata);
-        TikaInputSource inputSource = new CachingSource(stream, tmp, -1, metadata, ext);
+        TikaInputSource inputSource =
+                new CachingSource(stream, tmp, declaredLength(metadata), metadata, ext);
         return new TikaInputStream(inputSource, tmp, ext);
     }
 
@@ -123,18 +124,8 @@ public class TikaInputStream extends TaggedInputStream {
             throw new NullPointerException("The opener must not be null");
         }
         String ext = getExtension(metadata);
-        long length = -1;
-        if (metadata != null) {
-            String cl = metadata.get(HttpHeaders.CONTENT_LENGTH);
-            if (cl != null) {
-                try {
-                    length = Long.parseLong(cl);
-                } catch (NumberFormatException e) {
-                    length = -1;
-                }
-            }
-        }
-        TikaInputSource inputSource = new ReopenableSource(opener, tmp, length, ext);
+        TikaInputSource inputSource =
+                new ReopenableSource(opener, tmp, declaredLength(metadata), ext);
         return new TikaInputStream(inputSource, tmp, ext);
     }
 
@@ -156,6 +147,18 @@ public class TikaInputStream extends TaggedInputStream {
         TemporaryResources tmp = new TemporaryResources();
         TikaInputSource inputSource = new ByteArraySource(data, tmp);
         return new TikaInputStream(inputSource, tmp, ext);
+    }
+
+    /**
+     * An empty stream standing in for content that is never extracted -- a metadata-only
+     * entry, a rendering carried as an open container. It reports an <em>unknown</em>
+     * length, so nothing mistakes the placeholder's size for the document's. Pair it with
+     * {@link org.apache.tika.parser.MetadataOnlyParse} to register an entry without
+     * parsing it, unless an open container supplies the content.
+     */
+    public static TikaInputStream getPlaceholder() {
+        TemporaryResources tmp = new TemporaryResources();
+        return new TikaInputStream(new PlaceholderSource(tmp), tmp, "");
     }
 
     public static TikaInputStream get(Path path) throws IOException {
@@ -282,6 +285,21 @@ public class TikaInputStream extends TaggedInputStream {
         tis.setLength(length);
         metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
         return tis;
+    }
+
+    private static long declaredLength(Metadata metadata) {
+        if (metadata == null) {
+            return -1;
+        }
+        String cl = metadata.get(HttpHeaders.CONTENT_LENGTH);
+        if (cl == null) {
+            return -1;
+        }
+        try {
+            return Long.parseLong(cl);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     private static String getExtension(Metadata metadata) {
@@ -441,6 +459,20 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     /**
+     * True when {@link #getLength()} would return a measured, ground-truth length
+     * (file, byte array, fully-drained cache, explicit override) without forcing a
+     * spool. False when the only length available is a caller-declared hint
+     * (Content-Length metadata, HTTP header, archive central directory), which may lie.
+     */
+    public boolean hasReliableLength() {
+        if (overrideLength >= 0) {
+            return true;
+        }
+        TikaInputSource source = inputSource();
+        return source != null && source.hasReliableLength() && source.getLength() != -1;
+    }
+
+    /**
      * The stream length. For a stream-backed instance with no declared length this
      * spools the entire remaining stream to a temporary file to measure it.
      */
@@ -453,7 +485,7 @@ public class TikaInputStream extends TaggedInputStream {
             return -1;
         }
         long len = source.getLength();
-        if (len == -1) {
+        if (len == -1 && !source.isPlaceholder()) {
             // Force spill to get length
             getPath();
             len = source.getLength();

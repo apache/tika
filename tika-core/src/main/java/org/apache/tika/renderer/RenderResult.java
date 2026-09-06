@@ -65,7 +65,8 @@ public class RenderResult implements Closeable {
         if (result instanceof Path) {
             return TikaInputStream.get((Path)result, metadata);
         } else {
-            TikaInputStream tis = TikaInputStream.get(new byte[0]);
+            // the rendering rides in the open container, not the stream
+            TikaInputStream tis = TikaInputStream.getPlaceholder();
             tis.setOpenContainer(result);
             return tis;
         }

@@ -312,7 +312,11 @@
     <!-- we can do more specific versions by focusing on the integer in the regex below -->
     <tika:link>http://justsolve.archiveteam.org/wiki/Adobe_Illustrator_Artwork</tika:link>
     <magic priority="60">
-      <match value="[\r\n]%AI5_FileFormat [1-4][\r\n]" type="regex" offset="0:8192"/>
+      <!-- literal gate first: the ranged regex only runs when the marker exists,
+           so non-AI files pay a cheap string scan instead of 8K regex attempts -->
+      <match value="%AI5_FileFormat " type="string" offset="0:8192">
+        <match value="[\r\n]%AI5_FileFormat [1-4][\r\n]" type="regex" offset="0:8192"/>
+      </match>
     </magic>
     <sub-class-of type="application/postscript"/>
   </mime-type>
@@ -7443,6 +7447,10 @@
       </match>
     </magic>
     <magic priority="45">
+      <!-- gate: the first branch below requires a known header at offset 0 (or after a
+           BOM), and every such header puts a ':' within the first 30 bytes, so files
+           without an early colon skip the ~40-clause evaluation entirely -->
+      <match value=":" type="string" offset="0:29">
       <!-- be a bit more flexible, but require one from each of these -->
       <match minShouldMatch="2">
 
@@ -7510,6 +7518,7 @@
           <match value="\nDKIM-" type="string" offset="0:1024"/>
           <match value="\nARC-" type="string" offset="0:1024"/>
         </match>
+      </match>
       </match>
     </magic>
     <magic priority="40">

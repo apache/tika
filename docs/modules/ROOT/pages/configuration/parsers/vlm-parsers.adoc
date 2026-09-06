@@ -22,27 +22,27 @@ to remote Vision-Language Model (VLM) endpoints. These parsers send images
 (or PDFs) to an external API and convert the model's markdown response into
 structured XHTML.
 
-Three implementations are provided out of the box. Only `openai-vlm-parser` is auto-loaded via SPI;
-the other two must be named explicitly in your configuration.
+Three implementations are provided out of the box. None is auto-loaded: each must be
+named explicitly in your configuration. (Changed in 4.1.0: `openai-vlm-parser` previously
+auto-registered via SPI.) To use a VLM as the OCR engine for embedded images and rendered
+PDF pages, name it in the `content-enrichers` list — see
+xref:configuration/index.adoc[Configuration].
 
-[cols="1,2,1,1"]
+[cols="1,2,1"]
 |===
-|Parser |Endpoint |Config key |Auto-loaded
+|Parser |Endpoint |Config key
 
 |`OpenAIVLMParser`
 |Any OpenAI-compatible chat completions endpoint (vLLM, Ollama, local FastAPI, OpenAI)
 |`openai-vlm-parser`
-|Yes
 
 |`ClaudeVLMParser`
 |Anthropic Messages API
 |`claude-vlm-parser`
-|No
 
 |`GeminiVLMParser`
 |Google Gemini `generateContent` API
 |`gemini-vlm-parser`
-|No
 |===
 
 All three handle the standard OCR image types (`image/ocr-png`, `image/ocr-jpeg`, ...).

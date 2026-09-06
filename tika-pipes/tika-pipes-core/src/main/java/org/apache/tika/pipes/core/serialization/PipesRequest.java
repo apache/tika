@@ -60,7 +60,7 @@ public final class PipesRequest {
         copy.copyFrom(ctx);
         copy.set(InlineBytes.class, null);
         FetchEmitTuple stripped = new FetchEmitTuple(t.getId(), t.getFetchKey(), t.getEmitKey(),
-                t.getMetadata(), copy, t.getOnParseException());
+                t.getMetadata(), copy, t.getOnParseException(), t.getPresetName());
         return new PipesRequest(stripped, inline.getBytes());
     }
 

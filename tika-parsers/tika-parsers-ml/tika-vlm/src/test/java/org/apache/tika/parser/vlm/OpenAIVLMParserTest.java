@@ -285,6 +285,23 @@ public class OpenAIVLMParserTest {
         assertEquals(0, parser.getSupportedTypes(new ParseContext()).size());
     }
 
+    /**
+     * No VLM parser may auto-register via SPI; VLM parsers must be selected by name
+     * in config (TIKA-4871).
+     */
+    @Test
+    void testNoVlmParserAutoRegisters() throws Exception {
+        java.util.Enumeration<java.net.URL> resources = getClass().getClassLoader()
+                .getResources("META-INF/services/org.apache.tika.parser.Parser");
+        while (resources.hasMoreElements()) {
+            java.net.URL url = resources.nextElement();
+            String content = new String(url.openStream().readAllBytes(),
+                    java.nio.charset.StandardCharsets.UTF_8);
+            assertTrue(!content.contains("org.apache.tika.parser.vlm."),
+                    "VLM parser auto-registered via SPI in " + url + ":\n" + content);
+        }
+    }
+
     private String buildChatResponse(String content, int prompt, int completion) {
         return String.format(java.util.Locale.ROOT,
                 "{\"choices\":[{\"message\":{\"content\":\"%s\"}}],"

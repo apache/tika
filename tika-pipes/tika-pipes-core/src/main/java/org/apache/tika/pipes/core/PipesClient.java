@@ -67,6 +67,10 @@ import org.apache.tika.utils.StringUtils;
 public class PipesClient implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesClient.class);
+    /** Per-parse latency breakdown; one key=value line per parse. Route or silence
+     *  independently of {@link #LOG}. Diagnostic only -- off unless INFO is enabled. */
+    private static final Logger TIMING_LOG =
+            LoggerFactory.getLogger("org.apache.tika.pipes.timing.client");
     private static final AtomicInteger CLIENT_COUNTER = new AtomicInteger(0);
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
     public static final int SOCKET_TIMEOUT_MILLIS = 60000;
@@ -90,6 +94,17 @@ public class PipesClient implements Closeable {
      */
     private volatile long connectionGeneration = Long.MAX_VALUE;
     private int filesProcessed = 0;
+
+    // Per-parse timing scratch. A PipesClient serves one parse at a time (the pool hands
+    // out an exclusive client), so plain fields are safe and avoid per-parse allocation.
+    private long tInitNanos;
+    private long tReqSerNanos;
+    private long tReqWriteNanos;
+    private long tFirstFrameNanos;
+    private long tFinishedNanos;
+    private long tRespDeserNanos;
+    private long tAckNanos;
+    private int tFrames;
 
     /**
      * Creates a PipesClient with the given server manager.
@@ -214,8 +229,12 @@ public class PipesClient implements Closeable {
         // Container object to hold latest intermediate result if the parser is doing that
         IntermediateResult intermediateResult = new IntermediateResult();
         PipesResult result = null;
+        long callStart = System.nanoTime();
+        resetTimings();
+        long initStart = System.nanoTime();
         try {
             maybeInit();
+            tInitNanos = System.nanoTime() - initStart;
         } catch (InterruptedException e) {
             // Same invariant as the in-flight path below: an abandoned connection,
             // here possibly half-established, must not be re-queued, and an
@@ -277,7 +296,41 @@ public class PipesClient implements Closeable {
             closeConnection();
             return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH, intermediateResult.get());
         }
+        logTiming(t.getId(), result, System.nanoTime() - callStart);
         return result;
+    }
+
+    private void resetTimings() {
+        tInitNanos = 0;
+        tReqSerNanos = 0;
+        tReqWriteNanos = 0;
+        tFirstFrameNanos = 0;
+        tFinishedNanos = 0;
+        tRespDeserNanos = 0;
+        tAckNanos = 0;
+        tFrames = 0;
+    }
+
+    /**
+     * One line per parse on {@code org.apache.tika.pipes.timing.client}, microseconds.
+     * {@code finished_us} is measured from the end of the request write to the moment the
+     * FINISHED frame is fully read, so it contains the worker's own work plus everything
+     * the response leg costs; the worker logs its side under the same {@code id}.
+     */
+    private void logTiming(String id, PipesResult result, long totalNanos) {
+        if (!TIMING_LOG.isInfoEnabled()) {
+            return;
+        }
+        TIMING_LOG.info("CLIENT_TIMING client={} id={} status={} init_us={} req_ser_us={}"
+                        + " req_write_us={} first_frame_us={} finished_us={} resp_deser_us={}"
+                        + " ack_us={} frames={} total_us={}",
+                pipesClientId, id, result == null ? "NULL" : result.status().name(),
+                us(tInitNanos), us(tReqSerNanos), us(tReqWriteNanos), us(tFirstFrameNanos),
+                us(tFinishedNanos), us(tRespDeserNanos), us(tAckNanos), tFrames, us(totalNanos));
+    }
+
+    private static long us(long nanos) {
+        return nanos < 0 ? nanos : nanos / 1000L;
     }
 
     private void maybeInit() throws InterruptedException, ServerInitializationException {
@@ -375,7 +428,9 @@ public class PipesClient implements Closeable {
             throw new IOException("connection closed");
         }
         LOG.debug("pipesClientId={}: sending NEW_REQUEST for id={}", pipesClientId, t.getId());
+        long serStart = System.nanoTime();
         byte[] bytes = JsonPipesIpc.toBytes(PipesRequest.of(t));
+        tReqSerNanos = System.nanoTime() - serStart;
         // Fail fast before sending: the server would refuse the frame anyway, but only by
         // dying or dropping the connection, misreported as a crash.
         if (bytes.length > maxIpcPayloadBytes) {
@@ -383,7 +438,9 @@ public class PipesClient implements Closeable {
                     + " is " + bytes.length + " bytes, over maxIpcPayloadBytes="
                     + maxIpcPayloadBytes + "; raise maxIpcPayloadBytes or shrink the request");
         }
+        long writeStart = System.nanoTime();
         PipesMessage.newRequest(bytes).write(tuple.output);
+        tReqWriteNanos = System.nanoTime() - writeStart;
     }
 
     /**
@@ -420,6 +477,9 @@ public class PipesClient implements Closeable {
         long clientBackstopMillis = clientBackstopMillis(limits);
         // nanoTime: the backstop must be immune to wall-clock steps
         long startNanos = System.nanoTime();
+        // Separate anchor for the timing log: the backstop's is conceptually the deadline
+        // clock, and conflating them would silently break if either moves.
+        final long respAnchor = startNanos;
 
         while (true) {
             if (Thread.currentThread().isInterrupted()) {
@@ -436,11 +496,17 @@ public class PipesClient implements Closeable {
             }
             try {
                 PipesMessage msg = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
+                long frameReadAt = System.nanoTime() - respAnchor;
+                if (++tFrames == 1) {
+                    tFirstFrameNanos = frameReadAt;
+                }
                 LOG.trace("clientId={}: received message type={} id={}", pipesClientId, msg.type(), t.getId());
 
                 // Send ACK only for messages that require it
                 if (msg.type().requiresAck()) {
+                    long ackStart = System.nanoTime();
                     PipesMessage.ack().write(tuple.output);
+                    tAckNanos += System.nanoTime() - ackStart;
                 }
 
                 switch (msg.type()) {
@@ -470,7 +536,10 @@ public class PipesClient implements Closeable {
                         // is what keeps the blocking read below from hitting SO_TIMEOUT.
                         break;
                     case FINISHED:
+                        tFinishedNanos = frameReadAt;
+                        long deserStart = System.nanoTime();
                         PipesResult result = JsonPipesIpc.fromBytes(msg.payload(), PipesResult.class);
+                        tRespDeserNanos = System.nanoTime() - deserStart;
                         // Restore ParseContext from original FetchEmitTuple (not serialized back from server)
                         if (result.emitData() instanceof EmitDataImpl emitDataImpl) {
                             emitDataImpl.setParseContext(t.getParseContext());

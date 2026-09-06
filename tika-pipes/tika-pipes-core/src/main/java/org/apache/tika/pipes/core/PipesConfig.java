@@ -28,6 +28,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.util.StdConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.TimeoutLimits;
@@ -43,6 +45,8 @@ import org.apache.tika.utils.StringUtils;
 // Cross-field limits are checked after binding, so JSON key order cannot change the outcome.
 @JsonDeserialize(converter = PipesConfig.PostDeserializationCheck.class)
 public class PipesConfig {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PipesConfig.class);
 
     /** Runs {@link #checkPayloadLimits()} on every Jackson deserialization path. */
     public static class PostDeserializationCheck extends StdConverter<PipesConfig, PipesConfig> {
@@ -166,11 +170,8 @@ public class PipesConfig {
     private ArrayList<String> forkedJvmArgs = new ArrayList<>();
     private String javaPath = "java";
 
-    /**
-     * Optional directory for temporary files during pipes-based parsing.
-     * If not set, the system default temp directory will be used.
-     * Consider using a RAM-backed filesystem (e.g., /dev/shm) for better performance.
-     */
+    /** @deprecated since 4.1, removal planned for 5.0; see {@link #setTempDirectory(String)} */
+    @Deprecated
     private String tempDirectory = null;
 
     /**
@@ -528,11 +529,8 @@ public class PipesConfig {
         this.configStoreParams = configStoreParams;
     }
 
-    /**
-     * Gets the directory for temporary files during pipes-based parsing.
-     *
-     * @return the temp directory path, or null to use system default
-     */
+    /** @deprecated since 4.1, removal planned for 5.0; see {@link #setTempDirectory(String)} */
+    @Deprecated
     public String getTempDirectory() {
         return tempDirectory;
     }
@@ -541,7 +539,10 @@ public class PipesConfig {
      * Creates a temp directory under {@link #getTempDirectory()}, or under the system default
      * when unset. Callers must not use {@code Files.createTempDirectory} directly or the
      * configured directory is silently ignored.
+     *
+     * @deprecated since 4.1, removal planned for 5.0; use {@code Files.createTempDirectory(prefix)}
      */
+    @Deprecated
     public Path createTempDirectory(String prefix) throws IOException {
         if (StringUtils.isBlank(tempDirectory)) {
             return Files.createTempDirectory(prefix);
@@ -552,13 +553,25 @@ public class PipesConfig {
     }
 
     /**
-     * Sets the directory for temporary files during pipes-based parsing.
-     * If not set, the system default temp directory will be used.
-     * Consider using a RAM-backed filesystem (e.g., /dev/shm or /tmpfs) for better performance.
+     * Directory the forks create their private temp dirs under. It only ever covered the
+     * forks: this JVM's own spooling and every library calling {@code File.createTempFile}
+     * use {@code java.io.tmpdir}, fixed at JVM start. Set {@code -Djava.io.tmpdir} on the
+     * parent JVM instead; forks inherit subdirectories under it.
+     * <p>
+     * <b>DO NOT USE tmpfs</b> ({@code /dev/shm}) here or for {@code java.io.tmpdir}: spool
+     * size is bounded by input, not config, and a fork dir orphaned by a killed parent pins
+     * RAM until deleted.
      *
-     * @param tempDirectory the temp directory path, or null to use system default
+     * @deprecated since 4.1, removal planned for 5.0; set {@code -Djava.io.tmpdir} instead
      */
+    @Deprecated
     public void setTempDirectory(String tempDirectory) {
+        if (!StringUtils.isBlank(tempDirectory)) {
+            LOG.warn("pipes.tempDirectory={} is deprecated (removal in 5.0) and only redirects " +
+                    "the forks; this JVM's dependencies (POI, PDFBox, ...) write to " +
+                    "java.io.tmpdir={}, fixed at JVM start. Set -Djava.io.tmpdir on the parent JVM.",
+                    tempDirectory, System.getProperty("java.io.tmpdir"));
+        }
         this.tempDirectory = tempDirectory;
     }
 

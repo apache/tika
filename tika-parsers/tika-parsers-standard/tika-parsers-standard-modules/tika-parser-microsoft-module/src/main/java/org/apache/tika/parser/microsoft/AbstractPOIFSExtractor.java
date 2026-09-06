@@ -42,6 +42,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.BoundedInputStream;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -300,16 +301,19 @@ abstract class AbstractPOIFSExtractor {
         }
 
         int length = contentsEntry.getSize();
-        DocumentInputStream inp = null;
+        //open once now so a broken entry is recorded here, not mid-parse
         try {
-            inp = new DocumentInputStream(contentsEntry);
+            new DocumentInputStream(contentsEntry).close();
         } catch (SecurityException e) {
             throw e;
         } catch (Exception e) {
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
             return;
         }
-        try (TikaInputStream tis = TikaInputStream.get(inp)) {
+        //the entry is in the container already: re-open it on rewind instead of
+        //caching a copy that a digest of a large object would spill to disk
+        try (TikaInputStream tis = TikaInputStream.get(
+                () -> new DocumentInputStream(contentsEntry), new TemporaryResources(), null)) {
             // Try to work out what it is
             MediaType mediaType = getDetector().detect(tis, metadata, context);
             String extension = type.getExtension();
@@ -327,8 +331,6 @@ abstract class AbstractPOIFSExtractor {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
             metadata.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(length));
             parseEmbedded(parentDir, tis, xhtml, metadata, outputHtml);
-        } finally {
-            inp.close();
         }
     }
 

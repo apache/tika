@@ -111,4 +111,18 @@ public class UnicodeBlockRangesTest {
             assertTrue(seen[b], "Bucket id " + b + " is never produced by any codepoint");
         }
     }
+
+    @org.junit.jupiter.api.Test
+    public void testBmpTableMatchesSearchEverywhere() throws Exception {
+        // the BMP fast table must agree with the binary search for every codepoint,
+        // including plane boundaries and a sweep of the supplementary planes
+        java.lang.reflect.Method search =
+                UnicodeBlockRanges.class.getDeclaredMethod("searchBucketOf", int.class);
+        search.setAccessible(true);
+        for (int cp = 0; cp <= 0x10FFFF; cp += (cp < 0x10000 ? 1 : 17)) {
+            org.junit.jupiter.api.Assertions.assertEquals(
+                    (int) (Integer) search.invoke(null, cp),
+                    UnicodeBlockRanges.bucketOf(cp), "cp=" + Integer.toHexString(cp));
+        }
+    }
 }

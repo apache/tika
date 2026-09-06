@@ -23,6 +23,8 @@ import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ParseContextConfig;
+import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -54,7 +56,7 @@ import org.apache.tika.parser.ParseContext;
  * fully constructed. Setters must not be called concurrently with
  * {@link #filter}.
  */
-public abstract class AbstractEmbeddingFilter extends MetadataFilter {
+public abstract class AbstractEmbeddingFilter extends MetadataFilter implements SelfConfiguring {
 
     private static final long serialVersionUID = 1L;
 
@@ -88,24 +90,60 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
     protected abstract void embed(List<Chunk> chunks, InferenceConfig config, ParseContext parseContext)
             throws IOException, TikaException;
 
+    /**
+     * The {@code @TikaComponent} name this filter's per-request JSON config is keyed by
+     * in parse-context (e.g. {@code {"openai-embedding-filter": {...}}}).
+     */
+    protected abstract String getComponentName();
+
     @Override
     protected void doFilter(List<Metadata> metadataList, ParseContext parseContext) throws TikaException {
-        InferenceConfig requestConfig = parseContext.get(InferenceConfig.class);
-        if (requestConfig != null && requestConfig.isSkipEmbedding()) {
+        InferenceConfig config = resolveConfig(parseContext);
+        if (config.isSkipEmbedding()) {
             return;
         }
         for (Metadata metadata : metadataList) {
-            processOne(metadata, parseContext);
+            processOne(metadata, config, parseContext);
         }
     }
 
-    private void processOne(Metadata metadata, ParseContext parseContext) throws TikaException {
-        String content = metadata.get(defaultConfig.getContentField());
+    /**
+     * Per-request JSON config, validated through {@link InferenceConfig.RuntimeConfig}
+     * (which rejects baseUrl/apiKey/model changes) and merged over the init-time defaults.
+     * With no JSON, a class-keyed programmatic {@link InferenceConfig} is honored for
+     * skipEmbedding only, preserving the pre-4.1 contract.
+     */
+    private InferenceConfig resolveConfig(ParseContext parseContext) throws TikaException {
+        try {
+            if (ParseContextConfig.hasConfig(parseContext, getComponentName())) {
+                InferenceConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
+                        parseContext, getComponentName(),
+                        InferenceConfig.RuntimeConfig.class, new InferenceConfig.RuntimeConfig());
+                if (runtimeConfig.isSkipEmbedding()) {
+                    return runtimeConfig;
+                }
+                return ParseContextConfig.getConfig(parseContext, getComponentName(),
+                        InferenceConfig.class, defaultConfig);
+            }
+        } catch (TikaConfigException | IOException e) {
+            throw new TikaException("Failed to resolve per-request config for '"
+                    + getComponentName() + "'", e);
+        }
+        InferenceConfig programmatic = parseContext.get(InferenceConfig.class);
+        if (programmatic != null && programmatic.isSkipEmbedding()) {
+            return programmatic;
+        }
+        return defaultConfig;
+    }
+
+    private void processOne(Metadata metadata, InferenceConfig config, ParseContext parseContext)
+            throws TikaException {
+        String content = metadata.get(config.getContentField());
         if (content == null) {
             LOG.debug("No content found at field '{}'; skipping embedding. "
                     + "If using this filter standalone, populate metadata using "
                     + "TikaCoreProperties.TIKA_CONTENT as the key.",
-                    defaultConfig.getContentField());
+                    config.getContentField());
             return;
         }
         if (content.isBlank()) {
@@ -124,15 +162,15 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
         }
 
         MarkdownChunker chunker = new MarkdownChunker(
-                defaultConfig.getMaxChunkChars(),
-                defaultConfig.getOverlapChars());
+                config.getMaxChunkChars(),
+                config.getOverlapChars());
 
         List<Chunk> chunks = chunker.chunk(content);
         if (chunks.isEmpty()) {
             return;
         }
 
-        int maxChunks = defaultConfig.getMaxChunks();
+        int maxChunks = config.getMaxChunks();
         if (maxChunks > 0 && chunks.size() > maxChunks) {
             LOG.warn("Document produced {} chunks, truncating to maxChunks={}",
                     chunks.size(), maxChunks);
@@ -140,20 +178,20 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter {
         }
 
         try {
-            int batchSize = defaultConfig.getMaxBatchSize();
+            int batchSize = config.getMaxBatchSize();
             for (int i = 0; i < chunks.size(); i += batchSize) {
                 List<Chunk> batch = chunks.subList(
                         i, Math.min(i + batchSize, chunks.size()));
-                embed(batch, defaultConfig, parseContext);
+                embed(batch, config, parseContext);
             }
-            ChunkSerializer.mergeInto(metadata, chunks, defaultConfig.getOutputField());
+            ChunkSerializer.mergeInto(metadata, chunks, config.getOutputField());
         } catch (IOException e) {
             throw new TikaException(
                     "Embedding inference failed: " + e.getMessage(), e);
         }
 
-        if (defaultConfig.isClearContentAfterChunking()) {
-            metadata.remove(defaultConfig.getContentField());
+        if (config.isClearContentAfterChunking()) {
+            metadata.remove(config.getContentField());
         }
     }
 

@@ -49,7 +49,7 @@ import org.apache.tika.parser.ParseContext;
  *
  * @since Apache Tika 4.0
  */
-public class ParseTimeout {
+public class ParseTimeout implements TransientParseState {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseTimeout.class);
 

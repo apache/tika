@@ -39,6 +39,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.asarkar.grpc.test.GrpcCleanupExtension;
 import com.asarkar.grpc.test.Resources;
@@ -55,6 +57,7 @@ import io.grpc.stub.StreamObserver;
 import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -141,6 +144,47 @@ public class TikaGrpcServerTest {
         }
     }
 
+    private final List<TikaGrpcServerImpl> services = new ArrayList<>();
+
+    /**
+     * Every service built here is closed by {@link #closeServices()}. Only the manager that
+     * started a pipes-server child can delete that child's temp dir, so a service the test
+     * drops on the floor -- including on an assertion failure -- orphans it.
+     */
+    private TikaGrpcServerImpl newService(Path config) throws Exception {
+        TikaGrpcServerImpl service = new TikaGrpcServerImpl(config.toAbsolutePath().toString());
+        services.add(service);
+        return service;
+    }
+
+    @AfterEach
+    void closeServices() throws Exception {
+        for (TikaGrpcServerImpl service : services) {
+            //both are idempotent, so a test that already shut down in-line is fine
+            service.shutdown();
+            service.postShutdown();
+        }
+        services.clear();
+        assertNoOrphanedServerTempDirs();
+    }
+
+    /**
+     * Fails the test that leaked rather than leaving it for whoever notices the temp dir later.
+     * Reliable because surefire gives each module its own java.io.tmpdir and runs these
+     * classes one at a time.
+     */
+    private static void assertNoOrphanedServerTempDirs() throws Exception {
+        Path tmp = Paths.get(System.getProperty("java.io.tmpdir"));
+        try (Stream<Path> paths = Files.list(tmp)) {
+            List<String> orphans = paths
+                    .map(p -> p.getFileName().toString())
+                    .filter(n -> n.startsWith("pipes-server-"))
+                    .sorted()
+                    .collect(Collectors.toList());
+            assertTrue(orphans.isEmpty(), "orphaned pipes-server temp dirs: " + orphans);
+        }
+    }
+
     static final int NUM_FETCHERS_TO_CREATE = 10;
 
     @Test
@@ -150,7 +194,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfigUnlocked.toAbsolutePath().toString()))
+                .addService(newService(tikaConfigUnlocked))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -451,13 +495,14 @@ public class TikaGrpcServerTest {
         assertNotNull(reply.getMessage());
     }
 
-    private static TikaGrpc.TikaBlockingStub startServer(Resources resources, Path config)
+    //non-static: newService tracks the service on the per-test instance so it gets closed
+    private TikaGrpc.TikaBlockingStub startServer(Resources resources, Path config)
             throws Exception {
         String serverName = InProcessServerBuilder.generateName();
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(config.toAbsolutePath().toString()))
+                .addService(newService(config))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -481,7 +526,7 @@ public class TikaGrpcServerTest {
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(new TikaGrpcServerImpl(tikaConfigUnlocked.toAbsolutePath().toString()))
+                .addService(newService(tikaConfigUnlocked))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -544,7 +589,7 @@ public class TikaGrpcServerTest {
     public void testBiStream(Resources resources) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
 
-        TikaGrpcServerImpl tikaGrpcServerImpl = new TikaGrpcServerImpl(tikaConfigUnlocked.toAbsolutePath().toString());
+        TikaGrpcServerImpl tikaGrpcServerImpl = newService(tikaConfigUnlocked);
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()

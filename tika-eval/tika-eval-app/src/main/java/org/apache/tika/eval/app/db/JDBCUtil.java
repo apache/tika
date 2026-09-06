@@ -19,6 +19,8 @@ package org.apache.tika.eval.app.db;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -40,6 +42,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class JDBCUtil {
+
+    /**
+     * Override for the h2 page cache in KB; unclamped, so a big box can go well
+     * beyond the heap-relative default.
+     */
+    public static final String H2_CACHE_SIZE_KB_PROPERTY = "tika.eval.h2.cacheSizeKb";
+
+    //h2's own default: 64MB
+    private static final long MIN_H2_CACHE_SIZE_KB = 65_536L;
+    private static final long MAX_H2_CACHE_SIZE_KB = 1_048_576L;
+
     private static final Logger LOG = LoggerFactory.getLogger(JDBCUtil.class);
     private final String connectionString;
     private String driverClass;
@@ -71,6 +84,34 @@ public class JDBCUtil {
                 }
             }
         }
+    }
+
+    /**
+     * If dbPath is already a jdbc string, it is used as is; otherwise this builds the
+     * tika-eval h2 default: RETENTION_TIME=0 drops the 45s MVStore chunk retention
+     * (bloat + growing compaction cost) and CACHE_SIZE (KB) is sized by
+     * {@link #getH2CacheSizeKb()}.
+     */
+    public static String getJdbcConnectionString(String dbPath) {
+        if (dbPath.startsWith("jdbc:")) {
+            return dbPath;
+        }
+        Path p = Paths.get(dbPath);
+        return "jdbc:h2:file:" + p.toAbsolutePath() + ";RETENTION_TIME=0;CACHE_SIZE=" + getH2CacheSizeKb();
+    }
+
+    /**
+     * H2's page cache is on heap, so the default is a quarter of the heap clamped to
+     * [64MB, 1GB] rather than a fixed size that a small JVM cannot afford. Set
+     * {@value #H2_CACHE_SIZE_KB_PROPERTY} to override.
+     */
+    public static long getH2CacheSizeKb() {
+        String override = System.getProperty(H2_CACHE_SIZE_KB_PROPERTY);
+        if (override != null) {
+            return Long.parseLong(override.trim());
+        }
+        long quarterHeapKb = Runtime.getRuntime().maxMemory() / 4 / 1024;
+        return Math.min(MAX_H2_CACHE_SIZE_KB, Math.max(MIN_H2_CACHE_SIZE_KB, quarterHeapKb));
     }
 
     public static void batchInsert(PreparedStatement insertStatement, TableInfo table, Map<Cols, String> data) throws SQLException {

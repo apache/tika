@@ -22,8 +22,6 @@ import static org.apache.tika.server.core.resource.RecursiveMetadataResource.HAN
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +31,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.BadRequestException;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
@@ -54,6 +53,7 @@ import org.apache.tika.Tika;
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.OutputLimits;
+import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
@@ -96,6 +96,9 @@ public class TikaResource {
     private final ExceptionReporting configExceptionReporting;
     private final boolean configSuppliesContentHandlerFactory;
 
+    // Named, vetted parse-context fragments; requests select one whole by name
+    private final PresetRegistry presetRegistry;
+
     /**
      * @param tikaLoader the Tika loader
      * @param serverStatus server status tracker
@@ -115,6 +118,31 @@ public class TikaResource {
         this.configExceptionReporting = ExceptionReporting.get(configDefaults);
         this.configSuppliesContentHandlerFactory =
                 configDefaults.get(ContentHandlerFactory.class) != null;
+        try {
+            this.presetRegistry = PresetRegistry.load(tikaLoader.getConfig(),
+                    tikaLoader.getClassLoader());
+        } catch (TikaConfigException e) {
+            // config error (including a preset that cannot resolve): fail startup,
+            // not the first preset request
+            throw new IllegalStateException("Invalid 'presets' configuration", e);
+        }
+    }
+
+    /**
+     * A request context carrying only the preset selection: the forked worker resolves
+     * the content from its own copy of this config at config-tier trust, so a preset is
+     * never treated as caller-supplied wire data (which would screen out wire-blocked
+     * components and clamp its timeouts).
+     *
+     * @throws NotFoundException if no preset has this name
+     */
+    public ParseContext createPresetContext(String presetName) {
+        if (!presetRegistry.hasPreset(presetName)) {
+            throw new NotFoundException("No such preset: " + presetName);
+        }
+        ParseContext context = createRequestContext();
+        context.set(PresetSelection.class, new PresetSelection(presetName));
+        return context;
     }
 
     /**
@@ -404,6 +432,20 @@ public class TikaResource {
      * @return list of metadata objects from parsing
      * @throws IOException if parsing fails
      */
+    private PipesParsingHelper.ParseOutput parseWithPipesRaw(TikaInputStream tis,
+            Metadata metadata, ParseContext parseContext) throws IOException {
+        if (pipesParsingHelper == null) {
+            throw new IllegalStateException("Pipes-based parsing is not enabled");
+        }
+        String fileName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        long taskId = serverStatus.start(ServerStatus.TASK.PARSE, fileName);
+        try {
+            return pipesParsingHelper.parseContentOnlyToBytes(tis, metadata, parseContext);
+        } finally {
+            serverStatus.complete(taskId);
+        }
+    }
+
     public List<Metadata> parseWithPipes(TikaInputStream tis, Metadata metadata,
                                                  ParseContext parseContext, ParseMode parseMode)
             throws IOException {
@@ -465,11 +507,19 @@ public class TikaResource {
      * @param handlerTypeName the handler type name
      */
     public void setupContentHandlerFactoryIfNeeded(ParseContext context, String handlerTypeName) {
+        if (context.get(ContentHandlerFactory.class) != null) {
+            return;
+        }
+        // A selected preset that binds its own factory decides the format on routes with no
+        // explicit format segment; the worker resolves it from the preset at config tier.
+        PresetSelection preset = context.get(PresetSelection.class);
+        if (preset != null && presetRegistry.suppliesContentHandlerFactory(preset.name())) {
+            return;
+        }
         // A config-declared factory still takes precedence; it is no longer visible in the
         // request context, so leaving the context untouched lets the worker resolve it from
         // the same config.
-        if (context.get(ContentHandlerFactory.class) == null
-                && !configSuppliesContentHandlerFactory) {
+        if (!configSuppliesContentHandlerFactory) {
             setupContentHandlerFactory(context, handlerTypeName);
         }
     }
@@ -580,6 +630,123 @@ public class TikaResource {
         return putJson(is, httpHeaders, handlerTypeName);
     }
 
+    // ==================== PUT preset endpoints ====================
+
+    // Mirrors of the PUT endpoints above: /tika/preset/{name}[/text|/html|/xml|/md|
+    // /json[/{handlerType}]]. The preset segment sits directly after the resource root
+    // so network-layer rules can address /tika/preset/* independently of /tika/config*.
+    // These routes take no config part; a preset never combines with request config.
+    // explicitHandlerType: non-null (an explicit format segment) wins over everything,
+    // including the preset's own factory; null defers preset -> config -> default.
+
+    private Response putRawPreset(InputStream is, HttpHeaders httpHeaders, String presetName,
+                                  String explicitHandlerType) throws IOException {
+        ParseContext context = createPresetContext(presetName);
+        Metadata metadata = newRequestMetadata();
+        fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
+        if (explicitHandlerType != null) {
+            setupContentHandlerFactory(context, explicitHandlerType);
+        }
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            return produceRawOutputWithContext(tis, metadata, context, explicitHandlerType);
+        }
+    }
+
+    private Metadata putJsonPreset(InputStream is, HttpHeaders httpHeaders, String presetName,
+                                   String explicitHandlerType) throws IOException {
+        ParseContext context = createPresetContext(presetName);
+        Metadata metadata = newRequestMetadata();
+        fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
+        if (explicitHandlerType != null) {
+            setupContentHandlerFactory(context, explicitHandlerType);
+        }
+        try (TikaInputStream tis = TikaInputStream.get(is)) {
+            return produceJsonWithContext(tis, metadata, context, explicitHandlerType);
+        }
+    }
+
+    /**
+     * As the bare /tika endpoint, with the named preset applied. A factory the preset
+     * binds decides the output format here; without one the Markdown default applies.
+     */
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/plain;charset=UTF-8")
+    @Path("preset/{presetName}")
+    public Response getDefaultWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                         @PathParam("presetName") String presetName)
+            throws IOException {
+        return putRawPreset(is, httpHeaders, presetName, null);
+    }
+
+    /** As /tika/text, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/plain;charset=UTF-8")
+    @Path("preset/{presetName}/text")
+    public Response getTextWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                      @PathParam("presetName") String presetName)
+            throws IOException {
+        return putRawPreset(is, httpHeaders, presetName, "body");
+    }
+
+    /** As /tika/html, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/html;charset=UTF-8")
+    @Path("preset/{presetName}/html")
+    public Response getHtmlWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                      @PathParam("presetName") String presetName)
+            throws IOException {
+        return putRawPreset(is, httpHeaders, presetName, "html");
+    }
+
+    /** As /tika/xml, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/xml;charset=UTF-8")
+    @Path("preset/{presetName}/xml")
+    public Response getXmlWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                     @PathParam("presetName") String presetName)
+            throws IOException {
+        return putRawPreset(is, httpHeaders, presetName, "xml");
+    }
+
+    /** As /tika/md, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("text/plain;charset=UTF-8")
+    @Path("preset/{presetName}/md")
+    public Response getMarkdownWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                          @PathParam("presetName") String presetName)
+            throws IOException {
+        return putRawPreset(is, httpHeaders, presetName, "md");
+    }
+
+    /** As /tika/json, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("application/json")
+    @Path("preset/{presetName}/json")
+    public Metadata getJsonDefaultWithPreset(final InputStream is,
+                                             @Context HttpHeaders httpHeaders,
+                                             @PathParam("presetName") String presetName)
+            throws IOException {
+        return putJsonPreset(is, httpHeaders, presetName, null);
+    }
+
+    /** As /tika/json/{handlerType}, with the named preset applied. */
+    @PUT
+    @Consumes("*/*")
+    @Produces("application/json")
+    @Path("preset/{presetName}/json/{" + HANDLER_TYPE_PARAM + "}")
+    public Metadata getJsonWithPreset(final InputStream is, @Context HttpHeaders httpHeaders,
+                                      @PathParam("presetName") String presetName,
+                                      @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
+            throws IOException {
+        return putJsonPreset(is, httpHeaders, presetName, handlerTypeName);
+    }
+
     // ==================== POST endpoints (multipart with optional config) ====================
 
     // All /tika/config* endpoints take a required "file" part and an optional "config"
@@ -685,16 +852,21 @@ public class TikaResource {
 
     // ==================== Internal methods ====================
 
+    /** Per-request resource-layer latency; joins the pipes lines by adjacency at c=1. */
+    private static final org.slf4j.Logger TIMING_LOG =
+            org.slf4j.LoggerFactory.getLogger("org.apache.tika.pipes.timing.resource");
+
     /**
      * Produces raw streaming output (text, html, xml, md) using pipes-based parsing.
      */
     private Response produceRawOutput(TikaInputStream tis, Metadata metadata,
                                               MultivaluedMap<String, String> httpHeaders,
                                               String handlerTypeName) throws IOException {
+        long entryNanos = System.nanoTime();
         fillMetadata(null, metadata, httpHeaders);
         ParseContext context = createRequestContext();
         setupContentHandlerFactory(context, handlerTypeName);
-        return produceRawOutputWithContext(tis, metadata, context, handlerTypeName);
+        return produceRawOutputWithContext(tis, metadata, context, handlerTypeName, entryNanos);
     }
 
     /**
@@ -706,6 +878,14 @@ public class TikaResource {
     private Response produceRawOutputWithContext(TikaInputStream tis, Metadata metadata,
                                               ParseContext context,
                                               String handlerTypeName) throws IOException {
+        return produceRawOutputWithContext(tis, metadata, context, handlerTypeName,
+                System.nanoTime());
+    }
+
+    private Response produceRawOutputWithContext(TikaInputStream tis, Metadata metadata,
+                                              ParseContext context,
+                                              String handlerTypeName, long entryNanos)
+            throws IOException {
         logRequest(LOG, "/tika", metadata);
 
         // Ensure content handler factory is set (config may have set it)
@@ -715,22 +895,28 @@ public class TikaResource {
                 handlerTypeName, context.get(ContentHandlerFactory.class));
 
         // Parse with pipes using CONTENT_ONLY mode - the metadata filter in
-        // EmitHandler will strip everything except tk:content
-        List<Metadata> metadataList =
-                parseWithPipes(tis, metadata, context, ParseMode.CONTENT_ONLY);
+        // EmitHandler will strip everything except tk:content, and the content comes
+        // back as raw UTF-8 bytes rather than a Smile-encoded string
+        long parseStartNanos = System.nanoTime();
+        PipesParsingHelper.ParseOutput parsed =
+                parseWithPipesRaw(tis, metadata, context);
+        long parseEndNanos = System.nanoTime();
+        List<Metadata> metadataList = parsed.metadataList();
 
         LOG.debug("produceRawOutput: parseWithPipes returned {} metadata objects", metadataList.size());
 
         // Extract content before checking for an exception -- content must not be
         // discarded just because a container-level exception also occurred.
-        String content = "";
+        byte[] content = parsed.contentBytes();
         boolean hasException = false;
         String exceptionMessage = null;
         if (!metadataList.isEmpty()) {
-            String extracted = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
-            LOG.debug("produceRawOutput: TIKA_CONTENT length={}", extracted != null ? extracted.length() : 0);
-            if (extracted != null) {
-                content = extracted;
+            if (content == null) {
+                // fallback: results built without the byte path (crash/error metadata)
+                String extracted = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
+                if (extracted != null) {
+                    content = extracted.getBytes(UTF_8);
+                }
             }
             exceptionMessage = metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION);
             hasException = exceptionMessage != null && !exceptionMessage.isEmpty();
@@ -742,12 +928,24 @@ public class TikaResource {
         // 422 status signals the partial parse and the body carries the extracted content
         // only -- never the server-side exception/stack trace. Clients that need the
         // container exception should use /rmeta.
-        final String finalContent = content;
+        final byte[] finalContent = content == null ? new byte[0] : content;
 
+        final long buildEndNanos = System.nanoTime();
         StreamingOutput streamingOutput = outputStream -> {
-            try (Writer writer = new OutputStreamWriter(outputStream, UTF_8)) {
-                writer.write(finalContent);
-                writer.flush();
+            long writeStart = System.nanoTime();
+            outputStream.write(finalContent);
+            outputStream.flush();
+            if (TIMING_LOG.isInfoEnabled()) {
+                // pre = header/context setup before the pipes call; build = result
+                // unpacking after it; write = streaming the body (invoked later by the
+                // JAX-RS runtime, so anything left over vs the client-observed total is
+                // the HTTP stack itself)
+                TIMING_LOG.info("RESOURCE_TIMING pre_us={} pipes_us={} build_us={} write_us={} bytes={}",
+                        (parseStartNanos - entryNanos) / 1000,
+                        (parseEndNanos - parseStartNanos) / 1000,
+                        (buildEndNanos - parseEndNanos) / 1000,
+                        (System.nanoTime() - writeStart) / 1000,
+                        finalContent.length);
             }
         };
         return Response.status(hasException ? 422 : Response.Status.OK.getStatusCode())

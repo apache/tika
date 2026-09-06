@@ -97,4 +97,20 @@ public class PatternsTest {
         assertTrue(extensions.contains(".jpeg"));
     }
 
+
+    @Test
+    public void testSerializationRoundTrip() throws Exception {
+        patterns.add("*ile*.txt", text);
+        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+        try (java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(bos)) {
+            oos.writeObject(patterns);
+        }
+        Patterns copy;
+        try (java.io.ObjectInputStream ois = new java.io.ObjectInputStream(
+                new java.io.ByteArrayInputStream(bos.toByteArray()))) {
+            copy = (Patterns) ois.readObject();
+        }
+        // compiledGlobs is transient; the glob path must rebuild it lazily
+        assertEquals(text, copy.matches("file7.txt"));
+    }
 }
