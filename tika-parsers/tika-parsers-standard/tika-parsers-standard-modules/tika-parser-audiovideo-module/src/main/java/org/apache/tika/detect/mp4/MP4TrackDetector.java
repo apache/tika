@@ -149,7 +149,7 @@ public class MP4TrackDetector implements Detector {
         //a movie box behind the media data, where recorders that do not write
         //for streaming put it, is only reachable by seeking; the spooled file
         //is the one the parse reads afterwards, so it is not read twice
-        try (SeekableByteChannel channel = Files.newByteChannel(tis.getPath())) {
+        try (SeekableByteChannel channel = tis.getSeekableByteChannel()) {
             return movieBox(new ChannelBoxes(channel));
         }
     }
