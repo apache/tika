@@ -37,11 +37,6 @@
     <description>End-to-end integration tests for Apache Tika components</description>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <maven.compiler.release>17</maven.compiler.release>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-
         <!-- Tika version -->
         <tika.version>${revision}</tika.version>
     </properties>
@@ -112,15 +107,15 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.16.0</version>
+                    <version>${maven.compiler.plugin.version}</version>
                     <configuration>
-                        <release>17</release>
+                        <release>${maven.compiler.release}</release>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.6.0</version>
+                    <version>${maven.surefire.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
