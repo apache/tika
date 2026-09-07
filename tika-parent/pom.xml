@@ -396,7 +396,7 @@
     <junrar.version>8.1.1</junrar.version>
     <jwarc.version>0.37.0</jwarc.version>
     <kafka.version>4.3.1</kafka.version>
-    <kotlin-stdlib.version>2.4.10</kotlin-stdlib.version>
+    <kotlin-stdlib.version>2.4.20</kotlin-stdlib.version>
     <libpst.version>0.9.3</libpst.version>
     <!-- 3.x requires jdk17 -->
     <log4j2.version>2.26.1</log4j2.version>
@@ -442,7 +442,7 @@
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.12</tukaani.version>
-    <twelvemonkeys.version>3.14.0</twelvemonkeys.version>
+    <twelvemonkeys.version>3.15.0</twelvemonkeys.version>
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
     <uimafit.version>3.4.0</uimafit.version>
     <uimaj.core.version>3.4.1</uimaj.core.version>
