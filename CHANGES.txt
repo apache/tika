@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * tika-app's -m and --json wrote metadata at the SAX endDocument event
+     thereby dropping keys added by a parser after the endDocument (TIKA-4885).
+     
    * "content-enrichers": _mime-exclude now matches the real media type, so
      excluding image/tiff also drops a legacy image/ocr-tiff engine (it was
      a no-op). The zero-media-types check at config load asks the engine

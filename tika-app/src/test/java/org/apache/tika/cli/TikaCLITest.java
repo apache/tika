@@ -280,6 +280,22 @@ public class TikaCLITest {
     }
 
     /**
+     * Keys a parser sets after its SAX document ends (the PDF parser's document totals in
+     * its finally block, tk:parsed-by-full-set from the composite) must still reach -m and
+     * --json, which used to write at endDocument.
+     */
+    @Test
+    public void testMetadataSetAfterEndDocumentIsOutput() throws Exception {
+        String content = getParamOutContent("-m", resourcePrefix + "testPDF_childAttachments.pdf");
+        assertTrue(content.contains("pdf:ocr-page-count: 0"), content);
+        assertTrue(content.contains("tk:parsed-by-full-set:"), content);
+
+        String json = getParamOutContent("--json", resourcePrefix + "testPDF_childAttachments.pdf");
+        assertTrue(json.contains("\"pdf:ocr-page-count\":"), json);
+        assertTrue(json.contains("\"tk:parsed-by-full-set\":"), json);
+    }
+
+    /**
      * Test for -json with prettyprint option
      *
      * @throws Exception
