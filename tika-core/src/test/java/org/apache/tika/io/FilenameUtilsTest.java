@@ -245,10 +245,11 @@ public class FilenameUtilsTest {
 
     }
 
-    @Test
-    public void testCalculateExtensionUnknownValue() {
-        assertEquals(".pdf", FilenameUtils.calculateExtension(getMetadata("the quick brown fox", "unknown"), ".pdf"));
-    }
+@Test
+public void testCalculateExtensionUnknownValue() {
+    assertEquals(".pdf", FilenameUtils.calculateExtension(
+            getMetadata("the quick brown fox", "application/x-tika-unknown"), ".pdf"));
+}
 
     private String sanitizePath(String name) {
         return FilenameUtils.getSanitizedEmbeddedFilePath(getMetadata(name), ".bin", 50);
