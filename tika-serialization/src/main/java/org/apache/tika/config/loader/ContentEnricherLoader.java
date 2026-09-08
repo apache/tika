@@ -55,9 +55,8 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
                 throw new TikaConfigException(
                         "Failed to load content enricher: " + entry.getKey(), e);
             }
-            // this type snapshot lasts the life of the process, so an engine reporting
-            // nothing (missing binary, dead server) must fail load, not go silently inert.
-            // Ask the engine itself: a _mime-include list answers for the decorator.
+            // lifetime snapshot: an empty engine must fail load, not go inert; ask the
+            // engine itself, since a _mime-include answers for the decorator
             if (unwrap(enricher).getSupportedTypes(empty).isEmpty()) {
                 throw new TikaConfigException("Content enricher \"" + entry.getKey()
                         + "\" advertises no media types (a _mime-include list does not "

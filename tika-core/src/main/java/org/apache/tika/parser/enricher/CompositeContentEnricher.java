@@ -38,8 +38,8 @@ import org.apache.tika.parser.ParserDecorator;
  * <p>
  * Members advertise their <em>real</em> media types ({@code image/png}); legacy engines
  * still advertising the {@code image/ocr-*} pseudo-types are keyed under the real type, so
- * they are nameable here unmodified, and a {@code _mime-exclude} on such an engine is applied
- * to the real type as well. An enricher does not compete with the parser
+ * they are nameable here unmodified and a {@code _mime-exclude} on one matches the real type
+ * too. An enricher does not compete with the parser
  * registered for the same type: that parser still runs and calls the enricher.
  *
  * @since Apache Tika 4.1
@@ -71,7 +71,7 @@ public class CompositeContentEnricher implements Serializable {
         this.enricherMap = Collections.unmodifiableMap(tmp);
     }
 
-    // the decorator subtracts literal types, so "image/tiff" misses a legacy "image/ocr-tiff"
+    // decorator excludes are literal; "image/tiff" must also drop a legacy "image/ocr-tiff"
     private static Set<MediaType> excludedRealTypes(Parser enricher) {
         if (!(enricher instanceof ParserDecorator.MimeFilteringDecorator decorator)) {
             return Collections.emptySet();

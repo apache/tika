@@ -27,7 +27,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
-/** Fixture: a bundled OCR engine still advertising the {@code image/ocr-*} pseudo-types. */
+/** Fixture: an OCR engine still advertising {@code image/ocr-*} pseudo-types. */
 @TikaComponent(name = "test-legacy-ocr-enricher", spi = false)
 public class TestLegacyOcrEnricher implements Parser {
 

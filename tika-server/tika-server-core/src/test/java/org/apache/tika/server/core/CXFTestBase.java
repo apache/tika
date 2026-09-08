@@ -306,9 +306,8 @@ public abstract class CXFTestBase {
     }
 
     /**
-     * Creates a default test config with pipes configuration.
-     * If the tika config contains parse-context, metadata-filters, presets or
-     * content-enrichers, they are merged into the pipes config.
+     * Creates a default test config with pipes configuration, carrying parse-context,
+     * metadata-filters, presets and content-enrichers over from the tika config.
      *
      * @param tikaConfigPath path to the tika config (may contain metadata-filters)
      * 
@@ -358,7 +357,7 @@ public abstract class CXFTestBase {
             if (metadataFilters != null && !metadataFilters.isEmpty()) {
                 root.set("metadata-filters", metadataFilters);
             }
-            // enrichers run in the worker, which must load them from its own config
+            // the worker loads enrichers from its own config
             JsonNode contentEnrichers = tikaConfig.get("content-enrichers");
             if (contentEnrichers != null && !contentEnrichers.isEmpty()) {
                 root.set("content-enrichers", contentEnrichers);

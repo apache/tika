@@ -42,11 +42,7 @@ import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 
-/**
- * Wire test for the content-enrichers slot (TIKA-4872): a config-named enricher is loaded by
- * the server, reaches the forked worker through its config, and its output survives the
- * trip back.
- */
+/** A config-named enricher reaches the forked worker and its output comes back (TIKA-4872). */
 public class ContentEnricherWireTest extends CXFTestBase {
 
     private static final String META_PATH = "/rmeta";

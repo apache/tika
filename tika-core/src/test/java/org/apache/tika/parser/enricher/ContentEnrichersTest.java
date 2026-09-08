@@ -97,7 +97,7 @@ public class ContentEnrichersTest {
 
     @Test
     public void testExcludeAppliesToLegacyPseudoType() {
-        // the engine says image/ocr-tiff; the user excludes image/tiff (either spelling)
+        // either spelling of the excluded type must work
         Set<MediaType> legacy = Set.of(OCR_PNG, MediaType.image("ocr-tiff"));
         for (String spelling : new String[]{"image/tiff", "image/ocr-tiff"}) {
             Parser excluded = ParserDecorator.withoutTypes(new RecordingParser(legacy),

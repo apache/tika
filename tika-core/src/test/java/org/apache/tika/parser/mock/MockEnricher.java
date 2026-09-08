@@ -30,10 +30,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-/**
- * Fixture for the {@code "content-enrichers"} list: proves the invocation and config path
- * with no OCR binary installed. Nameable as {@code mock-enricher}; not on the SPI path.
- */
+/** Fixture for {@code "content-enrichers"}: nameable as {@code mock-enricher}, no OCR binary. */
 @TikaComponent(name = "mock-enricher", spi = false)
 public class MockEnricher implements Parser {
 
