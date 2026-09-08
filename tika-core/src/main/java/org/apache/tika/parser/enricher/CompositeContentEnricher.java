@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -27,6 +28,7 @@ import java.util.Set;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 
 /**
  * Media-type-keyed registry of content enrichers: ordinary {@link Parser}s that a container
@@ -36,7 +38,8 @@ import org.apache.tika.parser.Parser;
  * <p>
  * Members advertise their <em>real</em> media types ({@code image/png}); legacy engines
  * still advertising the {@code image/ocr-*} pseudo-types are keyed under the real type, so
- * they are nameable here unmodified. An enricher does not compete with the parser
+ * they are nameable here unmodified and a {@code _mime-exclude} on one matches the real type
+ * too. An enricher does not compete with the parser
  * registered for the same type: that parser still runs and calls the enricher.
  *
  * @since Apache Tika 4.1
@@ -51,9 +54,13 @@ public class CompositeContentEnricher implements Serializable {
         Map<MediaType, List<Parser>> tmp = new HashMap<>();
         ParseContext empty = new ParseContext();
         for (Parser enricher : enrichers) {
+            Set<MediaType> excluded = excludedRealTypes(enricher);
             for (MediaType mediaType : enricher.getSupportedTypes(empty)) {
                 // legacy engines advertise image/ocr-*; key under the real type
                 MediaType keyType = stripLegacyOcrPrefix(mediaType.getBaseType());
+                if (excluded.contains(keyType)) {
+                    continue;
+                }
                 List<Parser> forType = tmp.computeIfAbsent(keyType, k -> new ArrayList<>());
                 if (!forType.contains(enricher)) {
                     forType.add(enricher);
@@ -62,6 +69,18 @@ public class CompositeContentEnricher implements Serializable {
         }
         tmp.replaceAll((k, v) -> Collections.unmodifiableList(v));
         this.enricherMap = Collections.unmodifiableMap(tmp);
+    }
+
+    // decorator excludes are literal; "image/tiff" must also drop a legacy "image/ocr-tiff"
+    private static Set<MediaType> excludedRealTypes(Parser enricher) {
+        if (!(enricher instanceof ParserDecorator.MimeFilteringDecorator decorator)) {
+            return Collections.emptySet();
+        }
+        Set<MediaType> excluded = new HashSet<>();
+        for (MediaType excludeType : decorator.getExcludeTypes()) {
+            excluded.add(stripLegacyOcrPrefix(excludeType.getBaseType()));
+        }
+        return excluded;
     }
 
     private static MediaType stripLegacyOcrPrefix(MediaType mediaType) {

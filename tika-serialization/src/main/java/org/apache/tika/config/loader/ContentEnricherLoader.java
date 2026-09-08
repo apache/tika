@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 
 /**
@@ -54,16 +55,23 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
                 throw new TikaConfigException(
                         "Failed to load content enricher: " + entry.getKey(), e);
             }
-            // this type snapshot lasts the life of the process, so an engine reporting
-            // nothing (missing binary, dead server) must fail load, not go silently inert
-            if (enricher.getSupportedTypes(empty).isEmpty()) {
+            // lifetime snapshot: an empty engine must fail load, not go inert; ask the
+            // engine itself, since a _mime-include answers for the decorator
+            if (unwrap(enricher).getSupportedTypes(empty).isEmpty()) {
                 throw new TikaConfigException("Content enricher \"" + entry.getKey()
-                        + "\" advertises no media types. Is the engine unavailable "
-                        + "(missing native binary, unreachable inference server) or "
-                        + "configured to skip enrichment?");
+                        + "\" advertises no media types (a _mime-include list does not "
+                        + "count). Is the engine unavailable (missing native binary, "
+                        + "unreachable inference server) or configured to skip enrichment?");
             }
             enrichers.add(enricher);
         }
         return new CompositeContentEnricher(enrichers);
+    }
+
+    private static Parser unwrap(Parser parser) {
+        while (parser instanceof ParserDecorator decorator) {
+            parser = decorator.getWrappedParser();
+        }
+        return parser;
     }
 }

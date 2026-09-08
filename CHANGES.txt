@@ -1,5 +1,16 @@
 Release 4.1.0 - unreleased
 
+   * "content-enrichers": _mime-exclude now matches the real media type, so
+     excluding image/tiff also drops a legacy image/ocr-tiff engine (it was
+     a no-op). The zero-media-types check at config load asks the engine
+     itself, so a _mime-include list no longer masks an unreachable one.
+     VLM parsers implement Closeable and release their HTTP client
+     (TIKA-4884).
+
+   * tika-inference and tika-vlm are experimental: classes, config keys and
+     metadata output may change in minor releases without deprecation or
+     compatibility shims (TIKA-4884).
+
    * A missing OOXML relationship target no longer aborts the whole file:
      the threaded-comment and person lookups in xlsx and the page lookups in
      vsdx went straight to POI's getRelatedPart, whose unchecked

@@ -23,6 +23,10 @@ metadata field, splits it with the `MarkdownChunker`, and sends the resulting ch
 embeddings endpoint. The chunker splits on markdown structure, so the content handler that
 produced `tk:content` has to be `MARKDOWN` for it to do its job.
 
+NOTE: `tika-inference` is experimental. Its classes, configuration keys and the `tk:chunks`
+layout may change in minor releases without a deprecation cycle, and no compatibility shims
+are kept for earlier shapes.
+
 Since 4.x that is the default, so the common case needs no configuration. This page records
 why, and what happens if you override it.
 
