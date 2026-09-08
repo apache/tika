@@ -62,7 +62,7 @@
           // Options: PNG, TIFF, JPEG
           "imageFormat": "PNG",
           // Image quality (0.0-1.0) for lossy formats.
-          "imageQuality": 1.0,
+          "imageQuality": 0.5,
           // Rendered-image color model.
           // Options: RGB, GRAY
           "imageType": "GRAY",

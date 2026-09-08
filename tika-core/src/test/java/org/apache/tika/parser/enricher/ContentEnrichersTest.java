@@ -40,6 +40,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 
 public class ContentEnrichersTest {
 
@@ -164,6 +165,20 @@ public class ContentEnrichersTest {
         assertEquals(0, composite.calls);
         // the explicit path never mints the pseudo-mime
         assertNull(explicit.overrideSeenDuringParse);
+    }
+
+    @Test
+    public void testExcludeAppliesToLegacyPseudoType() {
+        // either spelling of the excluded type must work
+        Set<MediaType> legacy = Set.of(OCR_PNG, MediaType.image("ocr-tiff"));
+        for (String spelling : new String[]{"image/tiff", "image/ocr-tiff"}) {
+            Parser excluded = ParserDecorator.withoutTypes(new RecordingParser(legacy),
+                    Collections.singleton(MediaType.parse(spelling)));
+            CompositeContentEnricher enrichers =
+                    new CompositeContentEnricher(List.of(excluded));
+            assertEquals(Set.of(PNG), enrichers.getSupportedTypes(), spelling);
+            assertTrue(enrichers.getEnrichers(MediaType.image("tiff")).isEmpty(), spelling);
+        }
     }
 
     @Test
