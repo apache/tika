@@ -1384,41 +1384,28 @@ public class TikaCLI {
         }
     }
 
+    /** Swallows the document; {@link #output()} writes the metadata after the parse. */
     private static class NoDocumentMetHandler extends DefaultHandler {
 
         protected final Metadata metadata;
 
         protected PrintWriter writer;
 
-        private boolean metOutput;
-
         public NoDocumentMetHandler(Metadata metadata, PrintWriter writer) {
             this.metadata = metadata;
             this.writer = writer;
-            this.metOutput = false;
         }
 
-        @Override
-        public void endDocument() {
+        public void output() throws IOException {
             String[] names = metadata.names();
             Arrays.sort(names);
-            outputMetadata(names);
-            writer.flush();
-            this.metOutput = true;
-        }
-
-        public void outputMetadata(String[] names) {
             for (String name : names) {
                 for (String value : metadata.getValues(name)) {
                     writer.println(name + ": " + value);
                 }
             }
+            writer.flush();
         }
-
-        public boolean metOutput() {
-            return this.metOutput;
-        }
-
     }
 
     /**
@@ -1463,16 +1450,16 @@ public class TikaCLI {
 
     private class OutputType {
         public void process(TikaInputStream tis, OutputStream output, Metadata metadata) throws Exception {
-            Parser p = parser;
             ContentHandler handler = getContentHandler(output, metadata);
-            p.parse(tis, handler, metadata, context);
-            // fix for TIKA-596: if a parser doesn't generate
-            // XHTML output, the lack of an output document prevents
-            // metadata from being output: this fixes that
-            if (handler instanceof NoDocumentMetHandler) {
-                NoDocumentMetHandler metHandler = (NoDocumentMetHandler) handler;
-                if (!metHandler.metOutput()) {
-                    metHandler.endDocument();
+            try {
+                parser.parse(tis, handler, metadata, context);
+            } finally {
+                // Metadata is written once parse() returns, never at endDocument: parsers
+                // set keys after their SAX document ends (the PDF totals in a finally block,
+                // tk:parsed-by-full-set), some never start a document (TIKA-596), and a
+                // failed parse still has metadata worth showing before the error.
+                if (handler instanceof NoDocumentMetHandler metHandler) {
+                    metHandler.output();
                 }
             }
         }
@@ -1484,26 +1471,17 @@ public class TikaCLI {
     }
 
 
-    private class NoDocumentJSONMetHandler extends DefaultHandler {
-
-        protected final Metadata metadata;
-
-        protected PrintWriter writer;
+    private class NoDocumentJSONMetHandler extends NoDocumentMetHandler {
 
         public NoDocumentJSONMetHandler(Metadata metadata, PrintWriter writer) {
-            this.metadata = metadata;
-            this.writer = writer;
+            super(metadata, writer);
         }
 
         @Override
-        public void endDocument() throws SAXException {
-            try {
-                JsonMetadata.setPrettyPrinting(prettyPrint);
-                JsonMetadata.toJson(metadata, writer);
-                writer.flush();
-            } catch (IOException e) {
-                throw new SAXException(e);
-            }
+        public void output() throws IOException {
+            JsonMetadata.setPrettyPrinting(prettyPrint);
+            JsonMetadata.toJson(metadata, writer);
+            writer.flush();
         }
     }
 }

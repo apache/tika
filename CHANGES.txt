@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * tika-app's -m and --json wrote metadata at the SAX endDocument event, so
+     keys a parser sets after its document ends never appeared: for PDFs that
+     was pdf:ocr-page-count, the document-wide unmapped-unicode totals, the
+     damaged-font and non-embedded-font flags and the 3D-annotation count, and
+     tk:parsed-by-full-set for every format. Metadata is now written after
+     parse() returns, and a failed parse still writes what it collected before
+     the error is reported (TIKA-4885).
+
    * A missing OOXML relationship target no longer aborts the whole file:
      the threaded-comment and person lookups in xlsx and the page lookups in
      vsdx went straight to POI's getRelatedPart, whose unchecked
