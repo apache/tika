@@ -34,7 +34,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Serializes and deserializes a list of {@link Chunk} objects to/from JSON.
- * Vectors are stored as base64-encoded little-endian float32 via
+ * Vectors are stored as base64-encoded big-endian float32 via
  * {@link VectorSerializer}. Locators are nested under a {@code "locators"}
  * object with optional {@code text}, {@code paginated}, {@code spatial},
  * and {@code temporal} arrays.

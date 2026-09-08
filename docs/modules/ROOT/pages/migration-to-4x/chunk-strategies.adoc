@@ -22,6 +22,10 @@ Tika 4.x introduces a unified chunking and embedding pipeline (`tika-inference`)
 `tk:chunks` array on each document's metadata. This page describes how those chunks reach
 Elasticsearch and OpenSearch, and why the shipped strategy is the one it is.
 
+NOTE: `tika-inference` is experimental. Its classes, configuration keys and the `tk:chunks`
+layout may change in minor releases without a deprecation cycle, and no compatibility shims
+are kept for earlier shapes.
+
 == The `tk:chunks` Field
 
 All chunk data lands in one metadata field, `tk:chunks`, as a JSON array. There is no
@@ -52,7 +56,7 @@ A single chunk looks like:
 ----
 {
   "text": "Revenue grew 15% year-over-year...",
-  "vector": "base64-encoded-float32-le",
+  "vector": "base64-encoded-float32-be",
   "locators": {
     "text": [{"start_offset": 0, "end_offset": 120}],
     "paginated": [{"page": 1}]

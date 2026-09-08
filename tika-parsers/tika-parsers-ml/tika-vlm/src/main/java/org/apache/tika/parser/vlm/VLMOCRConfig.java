@@ -22,7 +22,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.StringUtils;
 
 /**
- * Configuration for {@link VLMOCRParser}.
+ * Configuration for {@link AbstractVLMParser} and its subclasses.
  * <p>
  * The parser expects an OpenAI-compatible chat completions endpoint
  * (e.g. from vLLM, Ollama, or a local FastAPI server). The image is

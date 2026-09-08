@@ -18,6 +18,7 @@ package org.apache.tika.parser.vlm;
 
 import static org.apache.tika.sax.XHTMLContentHandler.XHTML;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
@@ -62,7 +63,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  *
  * @since Apache Tika 4.0
  */
-public abstract class AbstractVLMParser implements Parser, Initializable {
+public abstract class AbstractVLMParser implements Parser, Initializable, Closeable {
 
     private static final long serialVersionUID = 1L;
 
@@ -227,7 +228,9 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
 
     @Override
     public void initialize() throws TikaConfigException {
-        this.httpClient = buildHttpClient();
+        if (httpClient == null) {
+            httpClient = buildHttpClient();
+        }
         String healthUrl = getHealthCheckUrl(defaultConfig);
         if (healthUrl == null) {
             // No health check configured (e.g. Claude) — assume available
@@ -249,6 +252,13 @@ public abstract class AbstractVLMParser implements Parser, Initializable {
             LOG.warn("VLM server is not available at {}: {}",
                     defaultConfig.getBaseUrl(), e.getMessage());
             serverAvailable = false;
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (httpClient != null) {
+            httpClient.close();
         }
     }
 

@@ -144,12 +144,14 @@ the engine explicitly instead of relying on which OCR module happens to be on th
 An enricher advertises its *real* media types (`image/png`, ...) and does not compete with the
 parser registered for those types: `image-parser` still parses the image and calls the enricher.
 (The bundled OCR engines still advertise legacy `image/ocr-*` types; those are mapped to the
-real type, so naming them here just works.) *Every* enricher matching a media type runs, in the
+real type, so naming them here just works, and an entry's `_mime-include`/`_mime-exclude` name
+real types too: `image/tiff`, not `image/ocr-tiff`.) *Every* enricher matching a media type runs, in the
 order listed — so an OCR engine followed by a VLM that tags images is two entries, both invoked
 per image. The list is authoritative: a media type no configured enricher matches gets no
 enrichment — never a classpath engine you did not name — and a named engine that reports no
 media types at startup (missing native binary, unreachable inference server) fails config load
-rather than going silently inert. Failures are best-effort: one enricher failing does not stop
+rather than going silently inert; that check is made against the engine itself, so a
+`_mime-include` list cannot stand in for an unreachable engine. Failures are best-effort: one enricher failing does not stop
 the others, and every failure is still reported through the parser's normal exception handling
 (timeouts abort the chain immediately). With no `content-enrichers` configured, behavior is
 unchanged — whichever OCR engine is on the classpath is used, exactly as before, and a WARN is

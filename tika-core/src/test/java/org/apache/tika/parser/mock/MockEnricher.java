@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core;
+package org.apache.tika.parser.mock;
 
 import java.util.Collections;
 import java.util.Set;
@@ -30,7 +30,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-/** Fixture: proves the invocation and config path with no OCR binary installed. */
+/** Fixture for {@code "content-enrichers"}: nameable as {@code mock-enricher}, no OCR binary. */
 @TikaComponent(name = "mock-enricher", spi = false)
 public class MockEnricher implements Parser {
 
