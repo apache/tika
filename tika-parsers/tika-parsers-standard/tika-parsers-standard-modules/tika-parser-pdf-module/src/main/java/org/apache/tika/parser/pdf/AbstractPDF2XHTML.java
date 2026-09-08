@@ -136,6 +136,7 @@ import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
 import org.apache.tika.renderer.pdf.pdfbox.TextOnlyPDFRenderer;
 import org.apache.tika.renderer.pdf.pdfbox.VectorGraphicsOnlyPDFRenderer;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
@@ -165,9 +166,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final List<Exception> exceptions = new ArrayList<>();
     final PDDocument pdDocument;
     final XHTMLContentHandler xhtml;
-    // Non-null only for AUTO with an engine: records each page's text for the OCR verdict.
+    // Non-null only for AUTO with a text recognizer: records each page's text for the verdict.
     private final PageTextBuffer pageBuffer;
-    // Resolved once per document; null under AUTO means the document runs as NO_OCR.
+    // Every enricher for the render type, resolved once per document; null skips the render.
     final Parser ocrEngine;
     final MediaType ocrImageMediaType;
     private PageText pageDecision = PageText.UNDECIDED;
@@ -221,7 +222,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         this.ocrImageMediaType =
                 MediaType.image(config.getOcr().getImageFormat().getFormatName());
         this.ocrEngine = ContentEnrichers.get(contentEnrichers, ocrImageMediaType, context);
-        if (config.getOcr().getStrategy() == AUTO && ocrEngine != null) {
+        if (config.getOcr().getStrategy() == AUTO && ContentEnrichers.hasTextRecognizer(
+                contentEnrichers, ocrImageMediaType, context)) {
             this.pageBuffer = new PageTextBuffer(handler);
             this.xhtml = new XHTMLContentHandler(pageBuffer, metadata, context);
         } else {
@@ -630,8 +632,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     }
 
     /**
-     * @return true if the engine ran to completion on this page; false when there is no
-     * engine (AUTO), maxPagesToOcr is exhausted, or a failure was recorded and swallowed
+     * @return true if the engine wrote text for this page; false when there is no engine
+     * (AUTO), maxPagesToOcr is exhausted, a failure was recorded and swallowed, or the
+     * engine produced no text (an annotating enricher, or one told to skip OCR)
      */
     boolean doOCROnCurrentPage(PDPage pdPage, OcrConfig.Strategy ocrStrategy)
             throws IOException, TikaException, SAXException {
@@ -664,9 +667,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         try (TemporaryResources tmp = new TemporaryResources()) {
             try (RenderResult renderResult = renderCurrentPage(pdPage, tmp)) {
                 Metadata renderMetadata = renderResult.getMetadata();
+                TextCounter counter = new TextCounter(xhtml);
                 try (TikaInputStream tis = renderResult.getInputStream()) {
                     renderMetadata.set(HttpHeaders.CONTENT_TYPE, ocrImageMediaType.toString());
-                    ocrEngine.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                    ocrEngine.parse(tis,
+                            new EmbeddedContentHandler(new BodyContentHandler(counter)),
                             renderMetadata, context);
                 }
                 // Propagate enrichment metadata added by the OCR parser (e.g. tk:chunks
@@ -678,7 +683,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                             mergeChunkArrays(metadata.get(TikaCoreProperties.TIKA_CHUNKS),
                                     renderChunks));
                 }
-                return true;
+                return counter.sawText();
             }
         } catch (IOException e) {
             handleCatchableIOE(e);
@@ -1679,6 +1684,27 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     private enum PageText {
         UNDECIDED, KEEP, OCR_WANTED
+    }
+
+    /** Notes whether any non-whitespace text passed through. */
+    private static class TextCounter extends ContentHandlerDecorator {
+        private boolean sawText;
+
+        TextCounter(ContentHandler handler) {
+            super(handler);
+        }
+
+        boolean sawText() {
+            return sawText;
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) throws SAXException {
+            for (int i = start; !sawText && i < start + length; i++) {
+                sawText = !Character.isWhitespace(ch[i]);
+            }
+            super.characters(ch, start, length);
+        }
     }
 
     /**

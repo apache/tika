@@ -46,6 +46,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.TextRecognizer;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
@@ -62,7 +63,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  *
  * @since Apache Tika 4.0
  */
-public abstract class AbstractVLMParser implements Parser, Initializable {
+public abstract class AbstractVLMParser implements Parser, Initializable, TextRecognizer {
 
     private static final long serialVersionUID = 1L;
 

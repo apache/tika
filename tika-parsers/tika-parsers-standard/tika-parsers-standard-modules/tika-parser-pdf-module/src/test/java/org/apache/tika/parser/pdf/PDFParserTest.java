@@ -77,6 +77,8 @@ import org.apache.tika.parser.MetadataOnlyParse;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.TextRecognizer;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.ToXMLContentHandler;
@@ -1636,6 +1638,95 @@ public class PDFParserTest extends TikaTest {
         assertWellFormed(xml);
     }
 
+    /** TIKA-4883: an engine that returns without writing text leaves the page's text alone. */
+    @Test
+    public void testAutoOcrEngineWithoutTextKeepsText() throws Exception {
+        PDFParserConfig config = autoOcrTriggeringPage16();
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, mockOcrParser(config, null));
+        Metadata metadata = new Metadata();
+
+        String xml = parsePdfToXml("testPDF_bad_page_303226.pdf", metadata, context);
+
+        assertContains("42936", xml);
+        assertEquals(1, metadata.getInt(PDF.OCR_PAGE_COUNT));
+    }
+
+    /**
+     * TIKA-4883: a configured enricher that is not a TextRecognizer still runs on the
+     * rendered page (embeddings, tags) but never displaces the extracted text.
+     */
+    @Test
+    public void testAutoOcrAnnotatingEnricherKeepsText() throws Exception {
+        PageEnricher annotator = new PageEnricher(null, false);
+        PDFParser parser = new PDFParser();
+        parser.setContentEnrichers(new CompositeContentEnricher(List.of(annotator)));
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, autoOcrTriggeringPage16());
+        Metadata metadata = new Metadata();
+
+        String xml = parsePdfToXml(parser, "testPDF_bad_page_303226.pdf", metadata, context);
+
+        assertContains("42936", xml);
+        assertEquals(1, annotator.calls, "the render is still enriched");
+        assertEquals(1, metadata.getInt(PDF.OCR_PAGE_COUNT));
+    }
+
+    /** TIKA-4883: a configured TextRecognizer supersedes the triggering page's text. */
+    @Test
+    public void testAutoOcrConfiguredRecognizerReplacesText() throws Exception {
+        PageEnricher recognizer = new PageEnricher("MOCK_OCR_CONTENT", true);
+        PDFParser parser = new PDFParser();
+        parser.setContentEnrichers(new CompositeContentEnricher(List.of(recognizer)));
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, autoOcrTriggeringPage16());
+        Metadata metadata = new Metadata();
+
+        String xml = parsePdfToXml(parser, "testPDF_bad_page_303226.pdf", metadata, context);
+
+        assertContainsCount("MOCK_OCR_CONTENT", xml, 1);
+        assertNotContained("42936", xml);
+        assertContains("ANABOLIC", xml);
+        assertEquals(1, recognizer.calls);
+        assertWellFormed(xml);
+    }
+
+    /** Enricher for image/png that writes the given text (none if null). */
+    private static class PageEnricher implements Parser, TextRecognizer {
+        private static final long serialVersionUID = 1L;
+        private final String text;
+        private final boolean recognizes;
+        int calls = 0;
+
+        PageEnricher(String text, boolean recognizes) {
+            this.text = text;
+            this.recognizes = recognizes;
+        }
+
+        @Override
+        public boolean recognizesText(ParseContext context) {
+            return recognizes;
+        }
+
+        @Override
+        public Set<MediaType> getSupportedTypes(ParseContext context) {
+            return Collections.singleton(MediaType.image("png"));
+        }
+
+        @Override
+        public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                          ParseContext context) throws IOException, SAXException, TikaException {
+            calls++;
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+            if (text != null) {
+                xhtml.characters(text);
+            }
+            xhtml.endDocument();
+        }
+    }
+
     private static PDFParserConfig autoOcrTriggeringPage16() {
         PDFParserConfig config = new PDFParserConfig();
         config.getOcr().setStrategyAuto(new OcrConfig.StrategyAuto(0.02f, 10));
@@ -1648,9 +1739,14 @@ public class PDFParserTest extends TikaTest {
      */
     private String parsePdfToXml(String name, Metadata metadata, ParseContext context)
             throws Exception {
+        return parsePdfToXml(new PDFParser(), name, metadata, context);
+    }
+
+    private String parsePdfToXml(PDFParser parser, String name, Metadata metadata,
+                                 ParseContext context) throws Exception {
         ToXMLContentHandler handler = new ToXMLContentHandler();
         try (TikaInputStream tis = getResourceAsStream("/test-documents/" + name)) {
-            new PDFParser().parse(tis, handler, metadata, context);
+            parser.parse(tis, handler, metadata, context);
         }
         return handler.toString();
     }
@@ -1675,7 +1771,9 @@ public class PDFParserTest extends TikaTest {
                               ParseContext context) throws IOException, SAXException, TikaException {
                 XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
                 xhtml.startDocument();
-                xhtml.characters(text);
+                if (text != null) {
+                    xhtml.characters(text);
+                }
                 xhtml.endDocument();
             }
         };

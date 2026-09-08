@@ -17,8 +17,10 @@
 package org.apache.tika.parser.enricher;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -66,6 +68,77 @@ public class ContentEnrichersTest {
             overrideSeenDuringParse =
                     metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
         }
+    }
+
+    private static class RecognizingParser extends RecordingParser implements TextRecognizer {
+        private static final long serialVersionUID = 1L;
+        private final boolean recognizes;
+
+        RecognizingParser(Set<MediaType> types, boolean recognizes) {
+            super(types);
+            this.recognizes = recognizes;
+        }
+
+        @Override
+        public boolean recognizesText(ParseContext context) {
+            return recognizes;
+        }
+    }
+
+    private static CompositeContentEnricher listOf(Parser... enrichers) {
+        return new CompositeContentEnricher(List.of(enrichers));
+    }
+
+    @Test
+    public void testHasTextRecognizer() {
+        ParseContext context = new ParseContext();
+        RecordingParser annotator = new RecordingParser(Collections.singleton(PNG));
+        assertFalse(ContentEnrichers.hasTextRecognizer(listOf(annotator), PNG, context),
+                "an enricher that does not declare the capability is not a recognizer");
+        assertTrue(ContentEnrichers.hasTextRecognizer(
+                listOf(annotator, new RecognizingParser(Collections.singleton(PNG), true)),
+                PNG, context));
+        assertFalse(ContentEnrichers.hasTextRecognizer(
+                listOf(new RecognizingParser(Collections.singleton(PNG), false)), PNG, context),
+                "a recognizer that declines for this parse does not count");
+        assertFalse(ContentEnrichers.hasTextRecognizer(
+                listOf(new RecognizingParser(Collections.singleton(PNG), true)),
+                MediaType.image("tiff"), context));
+        assertFalse(ContentEnrichers.hasTextRecognizer(null, PNG, context));
+        assertFalse(ContentEnrichers.hasTextRecognizer(null, null, context));
+        // no list: legacy image/ocr-* dispatch is the OCR contract
+        context.set(Parser.class, new RecordingParser(Collections.singleton(OCR_PNG)));
+        assertTrue(ContentEnrichers.hasTextRecognizer(null, PNG, context));
+        assertFalse(ContentEnrichers.hasTextRecognizer(null, MediaType.image("tiff"), context));
+        // a configured list is authoritative over the legacy claim
+        assertFalse(ContentEnrichers.hasTextRecognizer(listOf(annotator), PNG, context));
+    }
+
+    @Test
+    public void testHasTextRecognizerRefusedDuringEnrichment() throws Exception {
+        ParseContext context = new ParseContext();
+        Parser reentrant = new Parser() {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext ctx) {
+                return Collections.singleton(PNG);
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext ctx) {
+                metadata.set("nested-recognizer", ContentEnrichers.hasTextRecognizer(
+                        ctx.get(CompositeContentEnricher.class), PNG, ctx) ? "yes" : "no");
+            }
+        };
+        CompositeContentEnricher enrichers = listOf(
+                reentrant, new RecognizingParser(Collections.singleton(PNG), true));
+        context.set(CompositeContentEnricher.class, enrichers);
+        assertTrue(ContentEnrichers.hasTextRecognizer(enrichers, PNG, context));
+        Metadata metadata = new Metadata();
+        invoke(ContentEnrichers.get(enrichers, PNG, context), metadata, context);
+        assertEquals("no", metadata.get("nested-recognizer"));
     }
 
     private static void invoke(Parser enricher, Metadata metadata, ParseContext context)
