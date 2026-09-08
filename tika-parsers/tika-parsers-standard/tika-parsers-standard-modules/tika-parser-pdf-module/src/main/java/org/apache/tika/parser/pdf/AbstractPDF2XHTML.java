@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashSet;
@@ -96,7 +97,9 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.apache.pdfbox.util.Matrix;
 import org.apache.pdfbox.util.Vector;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -162,6 +165,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final List<Exception> exceptions = new ArrayList<>();
     final PDDocument pdDocument;
     final XHTMLContentHandler xhtml;
+    // Non-null only for AUTO with an engine: records each page's text for the OCR verdict.
+    private final PageTextBuffer pageBuffer;
+    // Resolved once per document; null under AUTO means the document runs as NO_OCR.
+    final Parser ocrEngine;
+    final MediaType ocrImageMediaType;
+    private PageText pageDecision = PageText.UNDECIDED;
+    // Text held back from an OCR_WANTED page; replayed if OCR does not run.
+    private List<PageTextBuffer.SaxEvent> pendingText = Collections.emptyList();
     final ParseContext context;
     final Metadata metadata;
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
@@ -207,7 +218,16 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                       Metadata metadata, PDFParserConfig config, Renderer renderer,
                       CompositeContentEnricher contentEnrichers) throws IOException {
         this.pdDocument = pdDocument;
-        this.xhtml = new XHTMLContentHandler(handler, metadata, context);
+        this.ocrImageMediaType =
+                MediaType.image(config.getOcr().getImageFormat().getFormatName());
+        this.ocrEngine = ContentEnrichers.get(contentEnrichers, ocrImageMediaType, context);
+        if (config.getOcr().getStrategy() == AUTO && ocrEngine != null) {
+            this.pageBuffer = new PageTextBuffer(handler);
+            this.xhtml = new XHTMLContentHandler(pageBuffer, metadata, context);
+        } else {
+            this.pageBuffer = null;
+            this.xhtml = new XHTMLContentHandler(handler, metadata, context);
+        }
         this.context = context;
         this.metadata = metadata;
         this.config = config;
@@ -259,12 +279,63 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     @Override
     protected void startPage(PDPage page) throws IOException {
+        pageDecision = PageText.UNDECIDED;
+        pendingText = Collections.emptyList();
         try {
             xhtml.startElement("div", "class", "page");
         } catch (SAXException e) {
             throw new IOException("Unable to start a page", e);
         }
+        if (pageBuffer != null) {
+            pageBuffer.start();
+        }
         writeParagraphStart();
+    }
+
+    /**
+     * Ends the page's text phase: takes the AUTO verdict and either releases the recorded
+     * text in place or holds it until endPage knows whether OCR ran. Idempotent, so
+     * subclasses call it as soon as their text is written and endPage covers the rest.
+     */
+    void endPageText() throws IOException {
+        if (pageDecision != PageText.UNDECIDED) {
+            return;
+        }
+        List<PageTextBuffer.SaxEvent> captured =
+                pageBuffer == null ? Collections.emptyList() : pageBuffer.stop();
+        boolean wanted = config.getOcr().getStrategy() == AUTO &&
+                ocrWanted(pageBuffer == null ? null : pageBuffer.text());
+        pageDecision = wanted ? PageText.OCR_WANTED : PageText.KEEP;
+        if (wanted) {
+            pendingText = captured;
+        } else {
+            replay(captured);
+        }
+    }
+
+    private void replay(List<PageTextBuffer.SaxEvent> events) throws IOException {
+        if (events.isEmpty()) {
+            return;
+        }
+        try {
+            pageBuffer.replay(events);
+        } catch (SAXException e) {
+            throw new IOException("Unable to write page text", e);
+        }
+    }
+
+    /**
+     * AUTO verdict for the page whose text was just extracted. Counters only for now;
+     * pageText (null when nothing was recorded) is the seam for a junk detector (TIKA-4883).
+     */
+    boolean ocrWanted(String pageText) {
+        OcrConfig.StrategyAuto strategyAuto = config.getOcr().getStrategyAuto();
+        if (totalCharsPerPage <= strategyAuto.getTotalCharsPerPage()) {
+            return true;
+        }
+        float percentUnmapped = (float) unmappedUnicodeCharsPerPage / totalCharsPerPage;
+        float limit = strategyAuto.getUnmappedUnicodeCharsPerPage();
+        return (limit < 1) ? percentUnmapped > limit : unmappedUnicodeCharsPerPage > limit;
     }
 
     private void extractXMPXFA() throws IOException, SAXException {
@@ -558,11 +629,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    void doOCROnCurrentPage(PDPage pdPage, OcrConfig.Strategy ocrStrategy)
+    /**
+     * @return true if the engine ran to completion on this page; false when there is no
+     * engine (AUTO), maxPagesToOcr is exhausted, or a failure was recorded and swallowed
+     */
+    boolean doOCROnCurrentPage(PDPage pdPage, OcrConfig.Strategy ocrStrategy)
             throws IOException, TikaException, SAXException {
         if (ocrStrategy.equals(NO_OCR)) {
-            //I don't think this is reachable?
-            return;
+            return false;
         }
         //count the number of times that OCR would have been called
         OCRPageCounter c = context.get(OCRPageCounter.class);
@@ -573,31 +647,26 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         // Enforce maxPagesToOcr limit
         int maxPagesToOcr = config.getOcr().getMaxPagesToOcr();
         if (maxPagesToOcr > 0 && c != null && c.getCount() > maxPagesToOcr) {
-            return;
+            return false;
         }
-        MediaType imageMediaType =
-                MediaType.image(config.getOcr().getImageFormat().getFormatName());
-        Parser enricher = ContentEnrichers.get(contentEnrichers, imageMediaType, context);
-        if (enricher == null) {
+        if (ocrEngine == null) {
             if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
                 throw new TikaException(
                         "I regret that I couldn't find an OCR engine to handle " +
-                                imageMediaType + ". Name one that covers it in " +
+                                ocrImageMediaType + ". Name one that covers it in " +
                                 "\"content-enrichers\" (a configured list is authoritative), " +
                                 "add one to the classpath when no list is configured, " +
                                 "or set the OCR strategy to NO_OCR.");
-            } else if (ocrStrategy == AUTO) {
-                //silently skip if there's no engine to run ocr
-                return;
             }
+            return false;
         }
 
         try (TemporaryResources tmp = new TemporaryResources()) {
             try (RenderResult renderResult = renderCurrentPage(pdPage, tmp)) {
                 Metadata renderMetadata = renderResult.getMetadata();
                 try (TikaInputStream tis = renderResult.getInputStream()) {
-                    renderMetadata.set(HttpHeaders.CONTENT_TYPE, imageMediaType.toString());
-                    enricher.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
+                    renderMetadata.set(HttpHeaders.CONTENT_TYPE, ocrImageMediaType.toString());
+                    ocrEngine.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
                             renderMetadata, context);
                 }
                 // Propagate enrichment metadata added by the OCR parser (e.g. tk:chunks
@@ -609,6 +678,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                             mergeChunkArrays(metadata.get(TikaCoreProperties.TIKA_CHUNKS),
                                     renderChunks));
                 }
+                return true;
             }
         } catch (IOException e) {
             handleCatchableIOE(e);
@@ -617,6 +687,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } catch (SAXException e) {
             throw new IOException("error writing OCR content from PDF", e);
         }
+        return false;
     }
 
     /**
@@ -791,29 +862,16 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         metadata.add(PDF.CHARACTERS_PER_PAGE, totalCharsPerPage);
         metadata.add(PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE, unmappedUnicodeCharsPerPage);
 
-
         try {
+            endPageText();
             for (PDAnnotation annotation : page.getAnnotations()) {
                 processPageAnnotation(annotation);
             }
             if (config.getOcr().getStrategy() == OCR_AND_TEXT_EXTRACTION) {
                 doOCROnCurrentPage(page, OCR_AND_TEXT_EXTRACTION);
-            } else if (config.getOcr().getStrategy() == AUTO) {
-                boolean unmappedExceedsLimit = false;
-                if (totalCharsPerPage > config.getOcr().getStrategyAuto().getTotalCharsPerPage()) {
-                    // There are enough characters to not have to do OCR.  Check number of unmapped characters
-                    final float percentUnmapped =
-                            (float) unmappedUnicodeCharsPerPage / totalCharsPerPage;
-                    final float unmappedCharacterLimit =
-                            config.getOcr().getStrategyAuto().getUnmappedUnicodeCharsPerPage();
-                    unmappedExceedsLimit = (unmappedCharacterLimit < 1) ?
-                            percentUnmapped > unmappedCharacterLimit :
-                            unmappedUnicodeCharsPerPage > unmappedCharacterLimit;
-                }
-                if (totalCharsPerPage <= config.getOcr().getStrategyAuto().getTotalCharsPerPage() ||
-                        unmappedExceedsLimit) {
-                    doOCROnCurrentPage(page, AUTO);
-                }
+            } else if (pageDecision == PageText.OCR_WANTED &&
+                    !doOCROnCurrentPage(page, AUTO)) {
+                replay(pendingText);
             }
 
             PDPageAdditionalActions pageActions = page.getActions();
@@ -829,6 +887,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } finally {
             totalCharsPerPage = 0;
             unmappedUnicodeCharsPerPage = 0;
+            pendingText = Collections.emptyList();
         }
 
         if (config.isExtractFontNames() && page.getResources() != null) {
@@ -1615,6 +1674,143 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
         public PDComplexFileSpecification getSpec() {
             return spec;
+        }
+    }
+
+    private enum PageText {
+        UNDECIDED, KEEP, OCR_WANTED
+    }
+
+    /**
+     * Sits under xhtml for AUTO with an engine. Records the SAX events between start() and
+     * stop() so the OCR verdict can replay or drop them; passes everything else through live.
+     */
+    private static class PageTextBuffer implements ContentHandler {
+        private final ContentHandler delegate;
+        private List<SaxEvent> buffer;
+        private StringBuilder text;
+
+        PageTextBuffer(ContentHandler delegate) {
+            this.delegate = delegate;
+        }
+
+        void start() {
+            buffer = new ArrayList<>();
+            text = new StringBuilder();
+        }
+
+        /** Stops recording and returns what was recorded (empty if not recording). */
+        List<SaxEvent> stop() {
+            List<SaxEvent> recorded = buffer == null ? Collections.emptyList() : buffer;
+            buffer = null;
+            return recorded;
+        }
+
+        /** Plain text of the last recording. */
+        String text() {
+            return text == null ? "" : text.toString();
+        }
+
+        void replay(List<SaxEvent> events) throws SAXException {
+            for (SaxEvent e : events) {
+                e.replay(delegate);
+            }
+        }
+
+        interface SaxEvent {
+            void replay(ContentHandler h) throws SAXException;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts)
+                throws SAXException {
+            if (buffer != null) {
+                AttributesImpl copy = new AttributesImpl(atts);
+                buffer.add(h -> h.startElement(uri, localName, qName, copy));
+            } else {
+                delegate.startElement(uri, localName, qName, atts);
+            }
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+            if (buffer != null) {
+                buffer.add(h -> h.endElement(uri, localName, qName));
+            } else {
+                delegate.endElement(uri, localName, qName);
+            }
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) throws SAXException {
+            if (buffer != null) {
+                char[] copy = Arrays.copyOfRange(ch, start, start + length);
+                text.append(copy);
+                buffer.add(h -> h.characters(copy, 0, copy.length));
+            } else {
+                delegate.characters(ch, start, length);
+            }
+        }
+
+        @Override
+        public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
+            if (buffer != null) {
+                char[] copy = Arrays.copyOfRange(ch, start, start + length);
+                buffer.add(h -> h.ignorableWhitespace(copy, 0, copy.length));
+            } else {
+                delegate.ignorableWhitespace(ch, start, length);
+            }
+        }
+
+        @Override
+        public void startPrefixMapping(String prefix, String uri) throws SAXException {
+            if (buffer != null) {
+                buffer.add(h -> h.startPrefixMapping(prefix, uri));
+            } else {
+                delegate.startPrefixMapping(prefix, uri);
+            }
+        }
+
+        @Override
+        public void endPrefixMapping(String prefix) throws SAXException {
+            if (buffer != null) {
+                buffer.add(h -> h.endPrefixMapping(prefix));
+            } else {
+                delegate.endPrefixMapping(prefix);
+            }
+        }
+
+        @Override
+        public void processingInstruction(String target, String data) throws SAXException {
+            if (buffer != null) {
+                buffer.add(h -> h.processingInstruction(target, data));
+            } else {
+                delegate.processingInstruction(target, data);
+            }
+        }
+
+        @Override
+        public void skippedEntity(String name) throws SAXException {
+            if (buffer != null) {
+                buffer.add(h -> h.skippedEntity(name));
+            } else {
+                delegate.skippedEntity(name);
+            }
+        }
+
+        @Override
+        public void setDocumentLocator(Locator locator) {
+            delegate.setDocumentLocator(locator);
+        }
+
+        @Override
+        public void startDocument() throws SAXException {
+            delegate.startDocument();
+        }
+
+        @Override
+        public void endDocument() throws SAXException {
+            delegate.endDocument();
         }
     }
 
