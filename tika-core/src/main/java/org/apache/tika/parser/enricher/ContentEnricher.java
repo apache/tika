@@ -1,0 +1,33 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.parser.enricher;
+
+/**
+ * A {@link org.apache.tika.parser.Parser} that a container parser <em>invokes</em> on bytes
+ * it has already parsed -- OCR on an image, an embedding of a rendered page -- rather than
+ * one the composite dispatches a document to. Its supported types are the types it can
+ * enrich.
+ * <p>
+ * A composite never lets an enricher displace the parser registered for a type: an
+ * enricher's claim stands only where no other parser claims the type. With no
+ * {@code "content-enrichers"} list configured, the enrichers found in the composite are the
+ * candidates for enrichment; see {@link ContentEnrichers#get}.
+ *
+ * @since Apache Tika 4.1
+ */
+public interface ContentEnricher {
+}

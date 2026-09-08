@@ -142,9 +142,9 @@ public class Tess4JParserTest {
         ParseContext context = new ParseContext();
         assertFalse(parser.getSupportedTypes(context).isEmpty());
         assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("ocr-png")));
+                .contains(MediaType.image("png")));
         assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("ocr-jpeg")));
+                .contains(MediaType.image("jpeg")));
     }
 
     @Test

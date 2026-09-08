@@ -28,11 +28,13 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.ContentEnricher;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /** Fixture for {@code "content-enrichers"}: nameable as {@code mock-enricher}, no OCR binary. */
 @TikaComponent(name = "mock-enricher", spi = false)
-public class MockEnricher implements Parser {
+public class MockEnricher implements Parser, ContentEnricher {
+
 
     private static final long serialVersionUID = 1L;
 

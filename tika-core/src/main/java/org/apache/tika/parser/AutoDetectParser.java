@@ -26,7 +26,6 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.digest.DigestHelper;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -154,10 +153,8 @@ public class AutoDetectParser extends CompositeParser {
 
         // Automatically detect the MIME type of the document
         MediaType type = detector.detect(tis, metadata, context);
-        // Normalize OCR routing types (e.g., image/ocr-png -> image/png) so they
-        // don't leak into CONTENT_TYPE
-        metadata.set(HttpHeaders.CONTENT_TYPE,
-                EmbeddedDocumentUtil.normalizeMediaType(type.toString()));
+        metadata.set(HttpHeaders.CONTENT_TYPE, type.toString());
+
         // Metadata-only pseudo-parse: register the entry, skip the content parse.
         if (context.get(MetadataOnlyParse.class) != null) {
             return;

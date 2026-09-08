@@ -30,7 +30,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.enricher.LegacyDispatchEnricher;
 
 public class ImageParserTest extends TikaTest {
 
@@ -220,11 +219,6 @@ public class ImageParserTest extends TikaTest {
         assertEquals(1, metadata.getInt(TikaCoreProperties.NUM_IMAGES));
     }
 
-    @Test
-    public void testMimeTypeToOCRMimeTypeConversion() throws Exception {
-        assertEquals(new MediaType("image", "OCR-png"),
-                LegacyDispatchEnricher.toOcrMediaType(MediaType.image("png")));
-    }
 
     /**
      * A named enricher is invoked by the image parser, which keeps extracting its own

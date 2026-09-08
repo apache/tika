@@ -681,14 +681,7 @@ public class PDFParserTest extends TikaTest {
         }
     }
 
-    /**
-     * Asserts that the actual content type matches the expected type,
-     * allowing for the "ocr-" prefix that appears when tesseract is available.
-     * e.g., "image/jpeg" matches both "image/jpeg" and "image/ocr-jpeg".
-     */
     private void assertImageContentType(String expected, String actual) {
-        String ocrVariant = expected.replace("image/", "image/ocr-");
-        assertTrue(expected.equals(actual) || ocrVariant.equals(actual),
-                "Expected " + expected + " or " + ocrVariant + " but got: " + actual);
+        assertEquals(expected, actual);
     }
 }

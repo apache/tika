@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.UnpackSelector;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -78,17 +77,13 @@ public class StandardUnpackSelector implements UnpackSelector {
             }
         }
 
-        // Also compute normalized mime for OCR types (image/ocr-jpeg -> image/jpeg)
-        String normalizedMime = EmbeddedDocumentUtil.normalizeMediaType(mime);
+        if (excludeMimeTypes.contains(mime)) {
+            return false;
+        }
+        if (!includeMimeTypes.isEmpty() && !includeMimeTypes.contains(mime)) {
+            return false;
+        }
 
-        if (excludeMimeTypes.contains(mime) || excludeMimeTypes.contains(normalizedMime)) {
-            return false;
-        }
-        if (!includeMimeTypes.isEmpty()
-                && !includeMimeTypes.contains(mime)
-                && !includeMimeTypes.contains(normalizedMime)) {
-            return false;
-        }
 
         String embeddedResourceType = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
         // If a parser doesn't specify the type, treat it as ATTACHMENT

@@ -38,7 +38,9 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.enricher.ContentEnricher;
 import org.apache.tika.sax.BodyContentHandler;
+
 
 public class CompositeParserTest {
 
@@ -73,9 +75,44 @@ public class CompositeParserTest {
         assertEquals(b, parsers.get(1));
     }
 
+    /**
+     * A content enricher never displaces the parser for a type, whichever is registered
+     * later; it takes a type only where no parser claims it.
+     */
+    @Test
+    @SuppressWarnings("serial")
+    public void testEnricherFillsGapsOnly() {
+        MediaType png = MediaType.image("png");
+        MediaType jp2 = MediaType.image("jp2");
+        Parser imageParser = new EmptyParser() {
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(png);
+            }
+        };
+        class Engine extends EmptyParser implements ContentEnricher {
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Set.of(png, jp2);
+            }
+        }
+        Parser engine = new Engine();
+        MediaTypeRegistry registry = MediaTypeRegistry.getDefaultRegistry();
+        for (CompositeParser composite : new CompositeParser[]{
+                new CompositeParser(registry, imageParser, engine),
+                new CompositeParser(registry, engine, imageParser)}) {
+            Map<MediaType, Parser> map = composite.getParsers(new ParseContext());
+            assertSame(imageParser, map.get(png));
+            assertSame(engine, map.get(jp2));
+        }
+        // decorated enrichers are recognized through the decorator
+        CompositeParser composite = new CompositeParser(registry, imageParser,
+                ParserDecorator.withTypes(engine, Set.of(png, jp2)));
+        assertSame(imageParser, composite.getParsers(new ParseContext()).get(png));
+    }
+
     @Test
     public void testDefaultParser() throws Exception {
         DefaultParser parser = new DefaultParser();
+
 
         // Check it has the full registry
         assertEquals(MediaTypeRegistry.getDefaultRegistry(), parser.getMediaTypeRegistry());

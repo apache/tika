@@ -158,22 +158,17 @@ public class DefaultParser extends CompositeParser {
 
     @Override
     public Map<MediaType, Parser> getParsers(ParseContext context) {
-        Map<MediaType, Parser> map = super.getParsers(context);
-
-        if (loader != null) {
-            // Add dynamic parser service (they always override static ones)
-            MediaTypeRegistry registry = getMediaTypeRegistry();
-            List<Parser> parsers = loader.loadDynamicServiceProviders(Parser.class);
-            Collections.reverse(parsers); // best parser last
-            for (Parser parser : parsers) {
-                for (MediaType type : parser.getSupportedTypes(context)) {
-                    map.put(registry.normalize(type), parser);
-                }
-            }
+        if (loader == null) {
+            return super.getParsers(context);
         }
-
-        return map;
+        // dynamic parser services come last: they override static ones
+        List<Parser> dynamic = loader.loadDynamicServiceProviders(Parser.class);
+        Collections.reverse(dynamic); // best parser last
+        List<Parser> all = new ArrayList<>(getAllComponentParsers());
+        all.addAll(dynamic);
+        return buildParserMap(all, context);
     }
+
 
     @Override
     public List<Parser> getAllComponentParsers() {

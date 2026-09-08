@@ -85,21 +85,41 @@ public class ContentEnricherLoaderTest {
                 "unexpected message: " + e.getMessage());
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"image/tiff", "image/ocr-tiff"})
-    public void testMimeExcludeReachesLegacyPseudoType(String excluded) throws Exception {
+    @Test
+    public void testMimeExcludeReachesLegacyPseudoType() throws Exception {
         TikaLoader loader = load("""
                 {
                   "content-enrichers": [
-                    {"test-legacy-ocr-enricher": {"_mime-exclude": ["EXCLUDED"]}}
+                    {"test-legacy-ocr-enricher": {"_mime-exclude": ["image/tiff"]}}
                   ]
                 }
-                """.replace("EXCLUDED", excluded));
+                """);
         CompositeContentEnricher enrichers = loader.get(CompositeContentEnricher.class);
         assertEquals(java.util.Set.of(MediaType.image("png")), enrichers.getSupportedTypes());
         assertTrue(enrichers.getEnrichers(MediaType.image("tiff")).isEmpty());
         assertEquals(1, enrichers.getEnrichers(MediaType.image("png")).size());
     }
+
+    /** The pseudo-type spelling of a filter fails load with the real type in the message. */
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "{\"content-enrichers\": [{\"test-legacy-ocr-enricher\": {\"_mime-exclude\": [\"image/ocr-tiff\"]}}]}",
+        "{\"content-enrichers\": [{\"test-png-enricher\": {\"_mime-include\": [\"image/ocr-tiff\"]}}]}",
+        "{\"parsers\": [{\"enriching-test-parser\": {\"_mime-exclude\": [\"image/ocr-tiff\"]}}]}",
+        "{\"parsers\": [{\"default-parser\": {\"_mime-exclude\": [\"image/ocr-tiff\"]}}]}"})
+    public void testLegacyPseudoTypeInFilterFailsLoad(String json) throws Exception {
+        TikaLoader loader = load(json);
+        org.apache.tika.exception.TikaConfigException e =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        org.apache.tika.exception.TikaConfigException.class, () -> {
+                            loader.get(CompositeContentEnricher.class);
+                            loader.get(Parser.class);
+                        });
+        String message = e.getMessage() + (e.getCause() == null ? "" : e.getCause().getMessage());
+        assertTrue(message.contains("image/ocr-tiff") && message.contains("\"image/tiff\""),
+                "unexpected message: " + message);
+    }
+
 
     @Test
     public void testMimeIncludeDoesNotMaskUnavailableEngine() throws Exception {

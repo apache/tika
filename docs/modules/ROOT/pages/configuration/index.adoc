@@ -143,9 +143,8 @@ the engine explicitly instead of relying on which OCR module happens to be on th
 
 An enricher advertises its *real* media types (`image/png`, ...) and does not compete with the
 parser registered for those types: `image-parser` still parses the image and calls the enricher.
-(The bundled OCR engines still advertise legacy `image/ocr-*` types; those are mapped to the
-real type, so naming them here just works, and an entry's `_mime-include`/`_mime-exclude` name
-real types too: `image/tiff`, not `image/ocr-tiff`.) *Every* enricher matching a media type runs, in the
+An entry's `_mime-include`/`_mime-exclude` name real types too (`image/tiff`); the pre-4.1
+`image/ocr-*` spellings are refused at load. *Every* enricher matching a media type runs, in the
 order listed — so an OCR engine followed by a VLM that tags images is two entries, both invoked
 per image. The list is authoritative: a media type no configured enricher matches gets no
 enrichment — never a classpath engine you did not name — and a named engine that reports no
@@ -153,9 +152,11 @@ media types at startup (missing native binary, unreachable inference server) fai
 rather than going silently inert; that check is made against the engine itself, so a
 `_mime-include` list cannot stand in for an unreachable engine. Failures are best-effort: one enricher failing does not stop
 the others, and every failure is still reported through the parser's normal exception handling
-(timeouts abort the chain immediately). With no `content-enrichers` configured, behavior is
-unchanged — whichever OCR engine is on the classpath is used, exactly as before, and a WARN is
-logged at startup when several engines collide. Engine names: `tesseract-ocr-parser`, `tess4j-parser`, `openai-vlm-parser`,
+(timeouts abort the chain immediately). With no `content-enrichers` configured, the enrichers
+found among the loaded parsers are the candidates and exactly one runs per media type: an engine
+configured under `parsers` beats one `default-parser` discovered on the classpath, and among
+those the last registered wins (user-supplied classes register after Tika's). A WARN names the
+collision and the winner. Engine names: `tesseract-ocr-parser`, `tess4j-parser`, `openai-vlm-parser`,
 `claude-vlm-parser`, `gemini-vlm-parser`.
 
 An enricher that produces the document's *text*, such as an OCR engine or a VLM prompted to
@@ -165,6 +166,14 @@ count when a caller asks whether an engine can stand in for text it already has:
 and actually wrote some, and keeps the extracted text otherwise. Annotating enrichers such as an
 image-embedding parser still run on the rendered page; they never displace text. The bundled OCR
 engines and VLM parsers all declare the capability.
+
+Enrichers are found by interface, not by media type: an enricher implements
+`org.apache.tika.parser.enricher.ContentEnricher` (or `TextRecognizer`, which extends it) and
+advertises the real types it enriches. A composite never lets an enricher displace the parser for a
+type, so `tesseract-ocr-parser` advertising `image/png` does not take PNGs away from
+`image-parser`. The `image/ocr-*` pseudo-types that routed OCR before 4.1 are retired: a
+third-party engine still advertising them is treated as a text recognizer for the real types,
+with a WARN, until 5.0, and nothing else in Tika produces or accepts them any more.
 
 == Windows file paths
 

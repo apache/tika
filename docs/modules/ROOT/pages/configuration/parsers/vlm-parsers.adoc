@@ -49,7 +49,7 @@ xref:configuration/index.adoc[Configuration].
 |`gemini-vlm-parser`
 |===
 
-All three handle the standard OCR image types (`image/ocr-png`, `image/ocr-jpeg`, ...).
+All three enrich the standard image types (`image/png`, `image/jpeg`, ...).
 `ClaudeVLMParser` and `GeminiVLMParser` additionally declare `application/pdf`, so they can process
 PDFs natively with the model's vision capabilities.
 

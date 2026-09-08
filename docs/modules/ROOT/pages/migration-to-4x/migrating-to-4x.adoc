@@ -229,6 +229,23 @@ See the xref:configuration/index.adoc[Configuration] section for full details, i
 * xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers (Claude, Gemini, OpenAI)]
 * xref:configuration/parsers/external-parser.adoc[External Parser (ffmpeg, exiftool, etc.)]
 
+=== OCR engines and the `image/ocr-*` pseudo-types (4.1.0+)
+
+Through 4.0.x an OCR engine was found because it advertised `image/ocr-png`, `image/ocr-jpeg`,
+... in the parser registry. Since 4.1.0 an engine is found because it implements
+`org.apache.tika.parser.enricher.TextRecognizer` and advertises the real types (`image/png`).
+What changes for you:
+
+* A `_mime-include`/`_mime-exclude` naming `image/ocr-*` fails config load; the message names the
+  real type to use instead.
+* Setting `tk:content-type-parser-override` to `image/ocr-*` no longer forces OCR; the image parser
+  always invokes the OCR engine, and the PDF parser's `ocr.strategy` controls pages.
+* `Content-Type` never carries an `ocr-` prefix any more, so extracted image files get their real
+  extension instead of `.bin`.
+* A custom engine that still advertises the pseudo-types keeps working as a text recognizer for the
+  real types, with a WARN at load, until 5.0. Advertise the real types and implement
+  `TextRecognizer` to silence it.
+
 For the general serialization model and how JSON configuration works, see
 xref:developers/serialization.adoc[Serialization and Configuration].
 

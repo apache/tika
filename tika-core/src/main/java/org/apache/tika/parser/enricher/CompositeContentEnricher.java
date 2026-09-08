@@ -36,11 +36,11 @@ import org.apache.tika.parser.ParserDecorator;
  * rendered PDF page), rather than being dispatched to by the composite parser. Configured
  * as the top-level {@code "content-enrichers"} list, mirroring {@code "renderers"}.
  * <p>
- * Members advertise their <em>real</em> media types ({@code image/png}); legacy engines
- * still advertising the {@code image/ocr-*} pseudo-types are keyed under the real type, so
- * they are nameable here unmodified and a {@code _mime-exclude} on one matches the real type
- * too. An enricher does not compete with the parser
- * registered for the same type: that parser still runs and calls the enricher.
+ * Members advertise their <em>real</em> media types ({@code image/png}). A legacy engine
+ * still advertising the retired {@code image/ocr-*} pseudo-types is keyed under the real
+ * type, with a warning, until 5.0. An enricher does not compete with the parser registered
+ * for the same type: that parser still runs and calls the enricher.
+
  *
  * @since Apache Tika 4.1
  */
@@ -56,8 +56,11 @@ public class CompositeContentEnricher implements Serializable {
         for (Parser enricher : enrichers) {
             Set<MediaType> excluded = excludedRealTypes(enricher);
             for (MediaType mediaType : enricher.getSupportedTypes(empty)) {
-                // legacy engines advertise image/ocr-*; key under the real type
-                MediaType keyType = stripLegacyOcrPrefix(mediaType.getBaseType());
+                if (ContentEnrichers.isLegacyOcrType(mediaType)) {
+                    ContentEnrichers.warnLegacyAdvertisement(unwrap(enricher));
+                }
+                MediaType keyType = ContentEnrichers.stripLegacyOcrPrefix(mediaType.getBaseType());
+
                 if (excluded.contains(keyType)) {
                     continue;
                 }
@@ -78,19 +81,18 @@ public class CompositeContentEnricher implements Serializable {
         }
         Set<MediaType> excluded = new HashSet<>();
         for (MediaType excludeType : decorator.getExcludeTypes()) {
-            excluded.add(stripLegacyOcrPrefix(excludeType.getBaseType()));
+            excluded.add(excludeType.getBaseType());
         }
         return excluded;
     }
 
-    private static MediaType stripLegacyOcrPrefix(MediaType mediaType) {
-        String subtype = mediaType.getSubtype();
-        if (subtype.startsWith(LegacyDispatchEnricher.OCR_MEDIATYPE_PREFIX)) {
-            return new MediaType(mediaType.getType(),
-                    subtype.substring(LegacyDispatchEnricher.OCR_MEDIATYPE_PREFIX.length()));
+    private static Parser unwrap(Parser parser) {
+        while (parser instanceof ParserDecorator decorator) {
+            parser = decorator.getWrappedParser();
         }
-        return mediaType;
+        return parser;
     }
+
 
     /**
      * @return the enrichers for this media type in config order, empty when none;

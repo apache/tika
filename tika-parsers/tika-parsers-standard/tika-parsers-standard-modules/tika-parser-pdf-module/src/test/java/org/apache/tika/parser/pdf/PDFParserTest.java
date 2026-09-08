@@ -1756,11 +1756,16 @@ public class PDFParserTest extends TikaTest {
     }
 
     private static MediaType ocrMediaType(PDFParserConfig config) {
-        return MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName());
+        return MediaType.image(config.getOcr().getImageFormat().getFormatName());
+    }
+
+    /** Stands in for a classpath OCR engine: found through the interface, not a pseudo-type. */
+    private abstract static class MockEngine implements Parser, TextRecognizer {
+        private static final long serialVersionUID = 1L;
     }
 
     private static Parser mockOcrParser(PDFParserConfig config, String text) {
-        return new Parser() {
+        return new MockEngine() {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {
                 return Collections.singleton(ocrMediaType(config));
@@ -1780,7 +1785,7 @@ public class PDFParserTest extends TikaTest {
     }
 
     private static Parser timingOutOcrParser(PDFParserConfig config) {
-        return new Parser() {
+        return new MockEngine() {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {
                 return Collections.singleton(ocrMediaType(config));
@@ -1807,11 +1812,10 @@ public class PDFParserTest extends TikaTest {
 
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
-        context.set(Parser.class, new Parser() {
+        context.set(Parser.class, new MockEngine() {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {
-                return Collections.singleton(
-                        MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName()));
+                return Collections.singleton(ocrMediaType(config));
             }
 
             @Override
@@ -1892,11 +1896,10 @@ public class PDFParserTest extends TikaTest {
 
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
-        context.set(Parser.class, new Parser() {
+        context.set(Parser.class, new MockEngine() {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {
-                return Collections.singleton(
-                        MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName()));
+                return Collections.singleton(ocrMediaType(config));
             }
 
             @Override

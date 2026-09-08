@@ -295,8 +295,8 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
     String detectMimeType(Metadata metadata) {
         String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
-            contentType = contentType.replace("ocr-", "");
             if (contentType.startsWith("image/") || contentType.equals("application/pdf")) {
+
                 return contentType;
             }
         }

@@ -36,7 +36,6 @@ import org.apache.tika.digest.SkipContainerDocumentDigest;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.WriteLimitReachedException;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -153,9 +152,9 @@ class ParseHandler {
         parseContext.set(ParsingIntent.class, ParsingIntent.WILL_PARSE);
         try {
             MediaType mt = detector.detect(tis, metadata, parseContext);
-            metadata.set(HttpHeaders.CONTENT_TYPE,
-                    EmbeddedDocumentUtil.normalizeMediaType(mt.toString()));
+            metadata.set(HttpHeaders.CONTENT_TYPE, mt.toString());
             metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, mt.toString());
+
         } catch (IOException e) {
             LOG.warn("problem detecting: " + t.getId(), e);
         }

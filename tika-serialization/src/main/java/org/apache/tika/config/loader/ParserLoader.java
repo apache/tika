@@ -19,12 +19,9 @@ package org.apache.tika.config.loader;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.EncodingDetector;
@@ -33,7 +30,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.RenderingParser;
@@ -50,8 +46,6 @@ import org.apache.tika.renderer.Renderer;
  * </ul>
  */
 public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ParserLoader.class);
 
     public ParserLoader() {
         super("parsers", "default-parser", Parser.class);
@@ -137,9 +131,6 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
         Renderer renderer = context.getRenderer();
         CompositeContentEnricher contentEnrichers = context.getContentEnrichers();
         injectDependenciesRecursively(parser, encodingDetector, renderer, contentEnrichers);
-        if (contentEnrichers == null) {
-            warnOnAmbiguousOcrRegistrations(parser);
-        }
         return parser;
     }
 
@@ -169,57 +160,22 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
     }
 
     /**
-     * Several OCR engines can claim the same image/ocr-* pseudo-type -- availability is
-     * environmental -- and the composite resolves the collision silently by last
-     * registration; name the collision and the winner once at load. The caller skips this
-     * when content-enrichers is configured: that list is authoritative, so legacy dispatch
-     * never runs and the advice is already taken.
-     */
-    private void warnOnAmbiguousOcrRegistrations(Parser parser) {
-        if (!(parser instanceof CompositeParser cp)) {
-            return;
-        }
-        ParseContext empty = new ParseContext();
-        Map<MediaType, List<Parser>> duplicates = cp.findDuplicateParsers(empty);
-        if (duplicates.isEmpty()) {
-            return;
-        }
-        Map<MediaType, Parser> winners = cp.getParsers(empty);
-        for (Map.Entry<MediaType, List<Parser>> e : duplicates.entrySet()) {
-            if (!e.getKey().getSubtype().startsWith("ocr-")) {
-                continue;
-            }
-            StringBuilder claimants = new StringBuilder();
-            for (Parser p : e.getValue()) {
-                if (claimants.length() > 0) {
-                    claimants.append(", ");
-                }
-                claimants.append(p.getClass().getName());
-            }
-            Parser winner = winners.get(e.getKey());
-            LOG.warn("Multiple OCR engines claim {}: [{}]; {} wins by registration order. "
-                            + "Select one explicitly with \"content-enrichers\".",
-                    e.getKey(), claimants,
-                    winner == null ? "unknown" : winner.getClass().getName());
-        }
-    }
-
-    /**
      * Apply mime type filtering to a parser.
      * Uses ParserDecorator.withMimeFilters() which creates a MimeFilteringDecorator
      * that the serializer knows how to handle for round-trip support.
      */
     private Parser applyMimeFiltering(Parser parser,
-                                       FrameworkConfig.ParserDecoration decoration) {
+                                       FrameworkConfig.ParserDecoration decoration)
+            throws TikaConfigException {
         Set<MediaType> includeTypes = new HashSet<>();
         Set<MediaType> excludeTypes = new HashSet<>();
 
         for (String mimeStr : decoration.getMimeInclude()) {
-            includeTypes.add(MediaType.parse(mimeStr));
+            includeTypes.add(ComponentInstantiator.parseFilterType(mimeStr));
         }
 
         for (String mimeStr : decoration.getMimeExclude()) {
-            excludeTypes.add(MediaType.parse(mimeStr));
+            excludeTypes.add(ComponentInstantiator.parseFilterType(mimeStr));
         }
 
         return ParserDecorator.withMimeFilters(parser, includeTypes, excludeTypes);

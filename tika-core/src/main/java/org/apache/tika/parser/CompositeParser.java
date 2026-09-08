@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,8 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.enricher.ContentEnricher;
+import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ParserUtils;
@@ -105,14 +108,35 @@ public class CompositeParser implements Parser {
     }
 
     public Map<MediaType, Parser> getParsers(ParseContext context) {
+        return buildParserMap(parsers, context);
+    }
+
+    /**
+     * Keys the candidates by media type, later candidates overriding earlier ones, except
+     * that a {@link ContentEnricher}'s claim never displaces a parser's: an enricher is
+     * invoked by the parser for a type, not dispatched to, and fills a gap only where no
+     * parser claims the type.
+     */
+    protected Map<MediaType, Parser> buildParserMap(List<Parser> candidates,
+                                                    ParseContext context) {
         Map<MediaType, Parser> map = new HashMap<>();
-        for (Parser parser : parsers) {
+        Set<MediaType> parserClaimed = new HashSet<>();
+        for (Parser parser : candidates) {
+            boolean enricher = ContentEnrichers.isEnricher(parser);
             for (MediaType type : parser.getSupportedTypes(context)) {
-                map.put(registry.normalize(type), parser);
+                MediaType canonical = registry.normalize(type);
+                if (enricher && parserClaimed.contains(canonical)) {
+                    continue;
+                }
+                if (!enricher) {
+                    parserClaimed.add(canonical);
+                }
+                map.put(canonical, parser);
             }
         }
         return map;
     }
+
 
     private boolean isExcluded(Collection<Class<? extends Parser>> excludeParsers,
                                Class<? extends Parser> p) {
