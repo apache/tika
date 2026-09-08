@@ -153,6 +153,13 @@ not (detectors, embedded-document extraction, exception reporting, ...) and rais
 limits above the per-request clamp. Every active preset resolves at startup, so a bad preset
 fails the server, not its first request.
 
+Tika ships one catalog preset, `thumbnails` (in `tika-pipes-core`), for
+`/unpack/preset/thumbnails`: the zip holds exactly one raster image per document — the stored
+thumbnail (Office docProps, audio cover art, raw camera previews, epub, iWork), the rasterized
+EMF/WMF thumbnail of an Office document, or the first page of a PDF — and no OCR runs. Activate
+it with `"presets": {"thumbnails": true}`; it names the standard parsers, so it needs
+`tika-parsers-standard-package` on the classpath.
+
 Output format on the preset routes: an explicit format segment (`/tika/preset/{name}/text`)
 always wins; without one, a `ContentHandlerFactory` the preset binds decides, then the
 config's, then the endpoint default (Markdown).

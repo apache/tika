@@ -1,0 +1,5 @@
+{
+  "presets": {"thumbnails": true},
+  "auto-detect-parser": {"throwOnZeroBytes": false},
+  "parse-context": {"timeout-limits": {"progressTimeoutMillis": 60000}}
+}
