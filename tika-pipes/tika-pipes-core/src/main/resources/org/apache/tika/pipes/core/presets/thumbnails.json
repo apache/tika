@@ -1,0 +1,14 @@
+{
+  // one raster thumbnail per document, nothing else; the rule is in ThumbnailUnpackSelector
+  "thumbnail-unpack-selector": {},
+  // first page only, in colour, no OCR over the render
+  "pdf-parser": {
+    "imageStrategy": "RENDER_PAGES_AT_PAGE_END",
+    "maxPages": 1,
+    "ocr": {"strategy": "NO_OCR", "dpi": 96, "imageType": "RGB"}
+  },
+  // rasterize the EMF/WMF thumbnail of an Office document, not its embedded pictures
+  "emf-parser": {"renderImage": true, "renderOnlyEmbeddedResourceTypes": ["THUMBNAIL"]},
+  "wmf-parser": {"renderImage": true, "renderOnlyEmbeddedResourceTypes": ["THUMBNAIL"]},
+  "tesseract-ocr-parser": {"skipOcr": true}
+}

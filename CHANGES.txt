@@ -1,5 +1,12 @@
 Release 4.1.0 - unreleased
 
+   * New catalog preset "thumbnails": /unpack/preset/thumbnails unpacks exactly one raster
+     thumbnail per document (the stored thumbnail, the rasterized EMF/WMF thumbnail of an
+     Office document, or the first page of a PDF) and nothing else. The selection is
+     ThumbnailUnpackSelector (tika-pipes-core); UnpackSelector gains a per-parse
+     select(Metadata, ParseContext) overload with a default that ignores the context
+     (TIKA-4856).
+
    * tika-app's -m and --json wrote metadata at the SAX endDocument event
      thereby dropping keys added by a parser after the endDocument (TIKA-4885).
      
