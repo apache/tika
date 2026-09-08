@@ -26,6 +26,8 @@ import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
@@ -81,6 +83,52 @@ public class ContentEnricherLoaderTest {
                         () -> loader.get(CompositeContentEnricher.class));
         assertTrue(e.getMessage().contains("advertises no media types"),
                 "unexpected message: " + e.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"image/tiff", "image/ocr-tiff"})
+    public void testMimeExcludeReachesLegacyPseudoType(String excluded) throws Exception {
+        TikaLoader loader = load("""
+                {
+                  "content-enrichers": [
+                    {"test-legacy-ocr-enricher": {"_mime-exclude": ["EXCLUDED"]}}
+                  ]
+                }
+                """.replace("EXCLUDED", excluded));
+        CompositeContentEnricher enrichers = loader.get(CompositeContentEnricher.class);
+        assertEquals(java.util.Set.of(MediaType.image("png")), enrichers.getSupportedTypes());
+        assertTrue(enrichers.getEnrichers(MediaType.image("tiff")).isEmpty());
+        assertEquals(1, enrichers.getEnrichers(MediaType.image("png")).size());
+    }
+
+    @Test
+    public void testMimeIncludeDoesNotMaskUnavailableEngine() throws Exception {
+        TikaLoader loader = load("""
+                {
+                  "content-enrichers": [
+                    {"test-unavailable-enricher": {"_mime-include": ["image/png"]}}
+                  ]
+                }
+                """);
+        org.apache.tika.exception.TikaConfigException e =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        org.apache.tika.exception.TikaConfigException.class,
+                        () -> loader.get(CompositeContentEnricher.class));
+        assertTrue(e.getMessage().contains("advertises no media types"),
+                "unexpected message: " + e.getMessage());
+    }
+
+    @Test
+    public void testMimeIncludeNarrowsLegacyEngine() throws Exception {
+        TikaLoader loader = load("""
+                {
+                  "content-enrichers": [
+                    {"test-legacy-ocr-enricher": {"_mime-include": ["image/png"]}}
+                  ]
+                }
+                """);
+        CompositeContentEnricher enrichers = loader.get(CompositeContentEnricher.class);
+        assertEquals(java.util.Set.of(MediaType.image("png")), enrichers.getSupportedTypes());
     }
 
     @Test

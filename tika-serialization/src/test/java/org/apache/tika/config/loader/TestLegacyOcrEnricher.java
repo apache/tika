@@ -14,13 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core;
+package org.apache.tika.config.loader;
 
-import java.util.Collections;
 import java.util.Set;
 
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.io.TikaInputStream;
@@ -28,29 +26,20 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.XHTMLContentHandler;
 
-/** Fixture: proves the invocation and config path with no OCR binary installed. */
-@TikaComponent(name = "mock-enricher", spi = false)
-public class MockEnricher implements Parser {
+/** Fixture: a bundled OCR engine still advertising the {@code image/ocr-*} pseudo-types. */
+@TikaComponent(name = "test-legacy-ocr-enricher", spi = false)
+public class TestLegacyOcrEnricher implements Parser {
 
     private static final long serialVersionUID = 1L;
 
-    public static final String MARKER_KEY = "mock-enricher";
-    public static final String MARKER_TEXT = "MOCK-ENRICHED-TEXT";
-
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        return Collections.singleton(MediaType.image("png"));
+        return Set.of(MediaType.image("ocr-png"), MediaType.image("ocr-tiff"));
     }
 
     @Override
-    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws SAXException {
-        metadata.set(MARKER_KEY, "ENRICHED");
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        xhtml.characters(MARKER_TEXT);
-        xhtml.endDocument();
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) {
     }
 }

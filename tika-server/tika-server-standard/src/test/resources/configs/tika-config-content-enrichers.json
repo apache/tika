@@ -1,0 +1,11 @@
+{
+  "content-enrichers": [ { "mock-enricher": {} } ],
+  "auto-detect-parser": {
+    "throwOnZeroBytes": false
+  },
+  "parse-context": {
+    "timeout-limits": {
+      "progressTimeoutMillis": 30000
+    }
+  }
+}

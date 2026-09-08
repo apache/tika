@@ -22,6 +22,10 @@ to remote Vision-Language Model (VLM) endpoints. These parsers send images
 (or PDFs) to an external API and convert the model's markdown response into
 structured XHTML.
 
+NOTE: `tika-vlm` is experimental. Its classes, configuration keys and metadata output may
+change in minor releases without a deprecation cycle, and no compatibility shims are kept
+for earlier shapes.
+
 Three implementations are provided out of the box. None is auto-loaded: each must be
 named explicitly in your configuration. (Changed in 4.1.0: `openai-vlm-parser` previously
 auto-registered via SPI.) To use a VLM as the OCR engine for embedded images and rendered
