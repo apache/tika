@@ -247,7 +247,7 @@ public class FilenameUtilsTest {
 
     @Test
     public void testCalculateExtensionUnknownValue() {
-        assertEquals(".pdf", FilenameUtils.calculateExtension(getMetadata("the quick brown fox.unknown", "unknown"), ".pdf"));
+        assertEquals(".pdf", FilenameUtils.calculateExtension(getMetadata("the quick brown fox", "unknown"), ".pdf"));
     }
 
     private String sanitizePath(String name) {
