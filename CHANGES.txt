@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * "pdf-parser": {"maxRenderedPages": N} bounds how many pages the
+     RENDER_PAGES_BEFORE_PARSE and RENDER_PAGES_AT_PAGE_END image strategies
+     render, counted from the first page and independent of maxPages: text
+     extraction can cover the whole document while only the first page is
+     rendered, as for a thumbnail (TIKA-4856).
+
    * tika-app's -m and --json wrote metadata at the SAX endDocument event
      thereby dropping keys added by a parser after the endDocument (TIKA-4885).
      
