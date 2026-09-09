@@ -147,7 +147,7 @@ public class ProcessUtils {
                 ? requestedTimeoutMillis
                 : ParseTimeout.getOrCreate(context).budgetFor(requestedTimeoutMillis);
 
-        FileProcessResult result = checkIfExhausted(requestedTimeoutMillis, grantedTimeoutMillis);
+        FileProcessResult result = failFastIfNoGrantedTimeout(requestedTimeoutMillis, grantedTimeoutMillis);
         if (result != null) {
             return result;
         }
@@ -448,7 +448,7 @@ public class ProcessUtils {
         }
     }
 
-    private static FileProcessResult checkIfExhausted(long requestedTimeoutMillis, long grantedTimeoutMillis) {
+    private static FileProcessResult failFastIfNoGrantedTimeout(long requestedTimeoutMillis, long grantedTimeoutMillis) {
         if (grantedTimeoutMillis <= 0) {
             FileProcessResult result = new FileProcessResult();
             result.isTimeout = true;
