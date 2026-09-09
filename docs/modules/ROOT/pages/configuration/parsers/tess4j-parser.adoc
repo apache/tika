@@ -86,7 +86,9 @@ option must point to the directory containing them (e.g.,
 JNA must be able to find `libtesseract` and `libleptonica` at runtime.
 The tess4j jar does *not* bundle these libraries for macOS or Linux.
 If JNA cannot find them on the default library search path, the parser
-will silently disable itself.
+advertises no media types: named under `content-enrichers` that fails
+config load with a message naming it; under `parsers` it is logged at
+startup and the parser does nothing.
 
 You have several options:
 

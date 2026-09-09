@@ -126,6 +126,7 @@ Configuring a parser automatically excludes its default copy, so there is no dup
 `default-encoding-detector`, but it must not be mixed with explicit detector entries — see
 xref:configuration/encoding-detectors.adoc[Encoding Detectors].
 
+[#content-enrichers]
 == The `content-enrichers` list (4.1.0+)
 
 Content enrichers are parsers that a container parser *invokes* on bytes it has already parsed:
@@ -210,7 +211,8 @@ engines declare the capability; a VLM parser declares it through its `textRecogn
 
 Enrichers are found by interface, not by media type: implement
 `org.apache.tika.parser.enricher.ContentEnricher` (or `TextRecognizer`, which extends it) and
-advertise the real types you enrich. An engine the classpath supplied is never dispatched to:
+advertise the real types you enrich; xref:developers/custom-ocr-engine.adoc[Wiring in Your Own
+OCR Engine] walks through a complete engine. An engine the classpath supplied is never dispatched to:
 `tesseract-ocr-parser` advertising `image/png` does not take PNGs away from `image-parser`, it is
 called by it. The `image/ocr-*` pseudo-types that routed OCR before 4.1 are retired: a third-party
 engine still advertising them is treated as a text recognizer for the real types, with a WARN at
@@ -223,6 +225,7 @@ JSON treats the backslash as an escape character, so path options (`tesseractPat
 `imageMagickPath`, ...) need forward slashes (`C:/Tools/...`) or escaped backslashes
 (`C:\\Tools\\...`). A single backslash is a JSON parse error.
 
+[#tika-extras-dir]
 == Adding extra jars (`tika.extras.dir`)
 
 To add components — extra `EncodingDetector` or `Parser` implementations, or their dependencies —

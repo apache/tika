@@ -39,7 +39,8 @@ another classpath engine such as Tess4J claims the same types, one is used and a
 names the collision and the winner; an engine named under `parsers` (a VLM parser, for instance)
 takes precedence over Tesseract without a warning. To turn OCR off everywhere, set
 `"content-enrichers": []`. See xref:configuration/index.adoc[Configuration] for how the list
-behaves.
+behaves, and xref:developers/custom-ocr-engine.adoc[Wiring in Your Own OCR Engine] to plug in
+an engine Tika does not ship.
 
 == Basic Configuration
 
