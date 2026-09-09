@@ -20,6 +20,7 @@ package org.apache.tika.utils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -146,6 +147,12 @@ public class ProcessUtils {
         long grantedTimeoutMillis = context == null
                 ? requestedTimeoutMillis
                 : ParseTimeout.getOrCreate(context).budgetFor(requestedTimeoutMillis);
+
+        Optional<FileProcessResult> potentiallyFailedResult = failFastIfNoGrantedTimeout(requestedTimeoutMillis, grantedTimeoutMillis);
+        if (potentiallyFailedResult.isPresent()) {
+            return potentiallyFailedResult.get();
+        }
+
         Process p = null;
         String id = null;
         try {
@@ -261,7 +268,14 @@ public class ProcessUtils {
         long grantedTimeoutMillis = context == null
                 ? requestedTimeoutMillis
                 : ParseTimeout.getOrCreate(context).budgetFor(requestedTimeoutMillis);
+
+        Optional<FileProcessResult> potentiallyFailedResult = failFastIfNoGrantedTimeout(requestedTimeoutMillis, grantedTimeoutMillis);
+        if (potentiallyFailedResult.isPresent()) {
+            return potentiallyFailedResult.get();
+        }
+
         pb.redirectOutput(stdoutRedirect.toFile());
+
         Process p = null;
         String id = null;
         try {
@@ -442,4 +456,26 @@ public class ProcessUtils {
         }
     }
 
+    /**
+     * Guards against both 0 and negative grants.
+     *
+     * @param requestedTimeoutMillis
+     * @param grantedTimeoutMillis
+     * @return result, if the process shouldn't be started, otherwise empty optional
+     */
+    private static Optional<FileProcessResult> failFastIfNoGrantedTimeout(long requestedTimeoutMillis, long grantedTimeoutMillis) {
+        if (grantedTimeoutMillis <= 0) {
+            FileProcessResult result = new FileProcessResult();
+            result.isTimeout = true;
+            result.requestedTimeoutMillis = requestedTimeoutMillis;
+            result.grantedTimeoutMillis = grantedTimeoutMillis;
+            result.processTimeMillis = 0;
+            result.stdoutLength = 0;
+            result.stderrLength = 0;
+
+            return Optional.of(result);
+        }
+
+        return Optional.empty();
+    }
 }
