@@ -255,6 +255,37 @@ public class ContentEnricherLoaderTest {
                 "alone it is the parser for its type");
     }
 
+    /** Two text recognizers on one type both run; the loader names them at startup. */
+    @Test
+    public void testOverlappingTextRecognizersAreReported() throws Exception {
+        TikaLoader loader = load("""
+                {
+                  "content-enrichers": [
+                    {"test-png-recognizer": {}}, {"test-legacy-ocr-enricher": {}}
+                  ]
+                }
+                """);
+        java.util.Map<java.util.List<Parser>, java.util.Set<MediaType>> overlaps =
+                ParserLoader.overlappingTextRecognizers(loader.get(CompositeContentEnricher.class));
+        assertEquals(1, overlaps.size());
+        java.util.Map.Entry<java.util.List<Parser>, java.util.Set<MediaType>> overlap =
+                overlaps.entrySet().iterator().next();
+        assertEquals(2, overlap.getKey().size(), "the legacy claimant counts as a recognizer");
+        assertEquals(java.util.Set.of(MediaType.image("png")), overlap.getValue(),
+                "only the shared type; the legacy engine's tiff is not an overlap");
+
+        loader = load("""
+                {
+                  "content-enrichers": [
+                    {"test-png-recognizer": {}}, {"test-png-enricher": {}}
+                  ]
+                }
+                """);
+        assertTrue(ParserLoader.overlappingTextRecognizers(
+                loader.get(CompositeContentEnricher.class)).isEmpty(),
+                "a recognizer beside an annotator is the intended shape");
+    }
+
     private EnrichingTestParser findEnrichingParser(Parser parser) {
         if (parser instanceof EnrichingTestParser dtp) {
             return dtp;

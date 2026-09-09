@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -159,10 +160,49 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
                 configured != null ? configured : ContentEnrichers.resolve(root);
         logEnrichers(enrichers, configured != null);
         for (Parser inert : undispatchedEnrichers(root)) {
-            warnUndispatched(inert, enrichers, configured != null);
+            logUndispatched(inert, enrichers, configured != null);
+        }
+        if (configured != null) {
+            for (Map.Entry<List<Parser>, Set<MediaType>> e
+                    : overlappingTextRecognizers(configured).entrySet()) {
+                LOG.warn("Several text recognizers claim {}: {}; all of them run and their "
+                        + "text is concatenated. Keep one per type with _mime-include or "
+                        + "_mime-exclude on the entries.", e.getValue(), names(e.getKey()));
+            }
         }
         injectContentEnrichers(root, enrichers);
         return root;
+    }
+
+    /**
+     * Configured text recognizers that share a media type, keyed by the recognizers and
+     * mapped to the types they share. Two transcriptions of one image is almost never
+     * intended; a recognizer beside an annotator is.
+     */
+    static Map<List<Parser>, Set<MediaType>> overlappingTextRecognizers(
+            CompositeContentEnricher enrichers) {
+        Map<List<Parser>, Set<MediaType>> overlaps = new LinkedHashMap<>();
+        for (MediaType type : new TreeSet<>(enrichers.getSupportedTypes())) {
+            List<Parser> recognizers = new ArrayList<>();
+            for (Parser member : enrichers.getEnrichers(type)) {
+                if (ContentEnrichers.asTextRecognizer(member) != null
+                        || enrichers.isLegacyClaimant(member)) {
+                    recognizers.add(member);
+                }
+            }
+            if (recognizers.size() > 1) {
+                overlaps.computeIfAbsent(recognizers, k -> new TreeSet<>()).add(type);
+            }
+        }
+        return overlaps;
+    }
+
+    private static String names(List<Parser> parsers) {
+        List<String> names = new ArrayList<>();
+        for (Parser p : parsers) {
+            names.add(ParserUtils.getParserClassname(p));
+        }
+        return names.toString();
     }
 
     /**
@@ -197,12 +237,13 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
         return inert;
     }
 
-    private static void warnUndispatched(Parser inert, CompositeContentEnricher enrichers,
-                                         boolean listConfigured) {
+    // the 4.0 shape still works, so it is INFO; an entry that never runs at all is a WARN
+    private static void logUndispatched(Parser inert, CompositeContentEnricher enrichers,
+                                        boolean listConfigured) {
         String name = ParserUtils.getParserClassname(inert);
         Set<MediaType> advertised = inert.getSupportedTypes(new ParseContext());
         if (advertised.isEmpty()) {
-            LOG.warn("{} under \"parsers\" advertises no media types (engine unavailable, or "
+            LOG.info("{} under \"parsers\" advertises no media types (engine unavailable, or "
                     + "configured to skip) and never runs. To turn enrichment off, set "
                     + "\"content-enrichers\": [] instead.", name);
             return;
@@ -221,7 +262,7 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
                     ? "\"content-enrichers\" does not name it"
                     : "another enricher is preferred for those types");
         } else {
-            LOG.warn("{} under \"parsers\" is never dispatched to (every type it advertises is "
+            LOG.info("{} under \"parsers\" is never dispatched to (every type it advertises is "
                     + "claimed by another parser); it acts only as the content enricher for "
                     + "{}. Name it under \"content-enrichers\" to say so.", name, enriching);
         }

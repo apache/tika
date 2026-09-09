@@ -6,9 +6,11 @@ Release 4.1.0 - unreleased
      per media type from the loaded parsers at startup (an engine configured under
      "parsers" beats one default-parser found; last registered wins; an entry's
      _mime-include/_mime-exclude applies) and logs one line per effective engine;
-     a collision is a WARN at startup. An engine under "parsers" is a parser only for
-     the types no other parser there claims; when every type is claimed, a WARN says
-     whether it acts only as the enricher or never runs. The image/ocr-* pseudo-types
+     a collision is a WARN at startup, as are two text recognizers sharing a type
+     (both run, their text is concatenated). An engine under "parsers" is a parser
+     only for the types no other parser there claims; when every type is claimed,
+     startup logs that it acts only as the enricher, or warns that it never runs.
+     The image/ocr-* pseudo-types
      are retired: Content-Type never carries the prefix (extracted images get their
      real extension instead of .bin) and a _mime-include/_mime-exclude naming one
      fails config load with the real type in the message. image-parser now owns

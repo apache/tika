@@ -162,7 +162,8 @@ parser registered for those types: `image-parser` still parses the image and cal
 An entry's `_mime-include`/`_mime-exclude` name real types too (`image/tiff`); the pre-4.1
 `image/ocr-*` spellings are refused at load. *Every* enricher matching a media type runs, in the
 order listed, so an OCR engine followed by a VLM that tags images is two entries, both invoked
-per image. The list is authoritative: a media type no configured enricher matches gets no
+per image. Two text recognizers on one type both run and their text is concatenated; a WARN at
+startup names them, since that is almost never intended. The list is authoritative: a media type no configured enricher matches gets no
 enrichment, never a classpath engine you did not name. A named engine that reports no media
 types at startup (missing native binary, unreachable inference server) fails config load rather
 than going silently inert; that check is made against the engine itself, so a `_mime-include`
@@ -190,8 +191,8 @@ it means two things at once: the entry configures the engine, and the engine is 
 for the types no other parser there claims (`"parsers": [{"tesseract-ocr-parser": {}}]` alone
 sends every image straight to OCR; `claude-vlm-parser` next to a `default-parser` that excludes
 `pdf-parser` makes Claude the PDF parser). When every type the engine advertises is claimed by
-another parser it is never dispatched to, and a WARN at startup says whether it then acts as the
-content enricher or never runs at all. Prefer `content-enrichers` for the engine and keep
+another parser it is never dispatched to: startup logs that it then acts only as the content
+enricher, and warns if it never runs at all. Prefer `content-enrichers` for the engine and keep
 `parsers` for parsers.
 
 === Text recognizers
