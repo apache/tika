@@ -386,7 +386,7 @@ public class FilenameUtils {
      * On parse exception, unknown value or null value, return the default value.
      *
      * @param metadata
-     * @param defaultValue
+     * @param defaultValue, which should include a leading "."
      * @return the extension based on the mime type, including the initial "."
      */
     public static String calculateExtension(Metadata metadata, String defaultValue) {
