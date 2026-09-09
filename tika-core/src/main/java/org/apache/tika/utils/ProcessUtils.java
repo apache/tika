@@ -20,6 +20,7 @@ package org.apache.tika.utils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -147,9 +148,9 @@ public class ProcessUtils {
                 ? requestedTimeoutMillis
                 : ParseTimeout.getOrCreate(context).budgetFor(requestedTimeoutMillis);
 
-        FileProcessResult result = failFastIfNoGrantedTimeout(requestedTimeoutMillis, grantedTimeoutMillis);
-        if (result != null) {
-            return result;
+        Optional<FileProcessResult> potentiallyFailedResult = failFastIfNoGrantedTimeout(requestedTimeoutMillis, grantedTimeoutMillis);
+        if (potentiallyFailedResult.isPresent()) {
+            return potentiallyFailedResult.get();
         }
 
         Process p = null;
@@ -197,7 +198,7 @@ public class ProcessUtils {
                 outThread.interrupt();
                 errThread.interrupt();
             }
-            result = new FileProcessResult();
+            FileProcessResult result = new FileProcessResult();
             result.processTimeMillis = elapsed;
             result.stderrLength = errGobbler.getStreamLength();
             result.stdoutLength = outGobbler.getStreamLength();
@@ -448,16 +449,16 @@ public class ProcessUtils {
         }
     }
 
-    private static FileProcessResult failFastIfNoGrantedTimeout(long requestedTimeoutMillis, long grantedTimeoutMillis) {
+    private static Optional<FileProcessResult> failFastIfNoGrantedTimeout(long requestedTimeoutMillis, long grantedTimeoutMillis) {
         if (grantedTimeoutMillis <= 0) {
             FileProcessResult result = new FileProcessResult();
             result.isTimeout = true;
             result.requestedTimeoutMillis = requestedTimeoutMillis;
             result.grantedTimeoutMillis = grantedTimeoutMillis;
 
-            return result;
+            return Optional.of(result);
         }
 
-        return null;
+        return Optional.empty();
     }
 }
