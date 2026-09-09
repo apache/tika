@@ -18,6 +18,7 @@ package org.apache.tika.utils;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 import org.junit.jupiter.api.Test;
@@ -132,5 +133,22 @@ public class ProcessUtilsTest {
         assertFalse(result, "a command that outlives its timeout must report failure");
         assertTrue(elapsed < 4_000,
                 "checkCommandWithTimeout must honor its own timeout, not the default; took " + elapsed + "ms");
+    }
+
+    @Test
+    public void testExecuteFailsFastIfTimeoutIsZero() throws Exception {
+        assumeFalse(SystemUtils.IS_OS_WINDOWS);
+
+        ProcessBuilder pb = new ProcessBuilder("sleep", "5");
+        ParseContext context = new ParseContext();
+        context.set(TimeoutLimits.class, new TimeoutLimits(0, 0));
+
+        long start = System.currentTimeMillis();
+        FileProcessResult result = ProcessUtils.execute(pb, context, 5_000L, 1000, 1000);
+        long elapsed = System.currentTimeMillis() - start;
+
+        assertTrue(result.isTimeout(), "a process with a 0 timeout should timeout immediately without starting");
+        assertEquals(0, result.getGrantedTimeoutMillis(), "the process should not have been granted any timeout; got " + result.getGrantedTimeoutMillis() + "ms");
+        assertTrue(elapsed < 1000, "fast path should return without spawning; took " +  elapsed + "ms");
     }
 }

@@ -146,6 +146,12 @@ public class ProcessUtils {
         long grantedTimeoutMillis = context == null
                 ? requestedTimeoutMillis
                 : ParseTimeout.getOrCreate(context).budgetFor(requestedTimeoutMillis);
+
+        FileProcessResult result = checkIfExhausted(requestedTimeoutMillis, grantedTimeoutMillis);
+        if (result != null) {
+            return result;
+        }
+
         Process p = null;
         String id = null;
         try {
@@ -191,7 +197,7 @@ public class ProcessUtils {
                 outThread.interrupt();
                 errThread.interrupt();
             }
-            FileProcessResult result = new FileProcessResult();
+            result = new FileProcessResult();
             result.processTimeMillis = elapsed;
             result.stderrLength = errGobbler.getStreamLength();
             result.stdoutLength = outGobbler.getStreamLength();
@@ -442,4 +448,16 @@ public class ProcessUtils {
         }
     }
 
+    private static FileProcessResult checkIfExhausted(long requestedTimeoutMillis, long grantedTimeoutMillis) {
+        if (grantedTimeoutMillis <= 0) {
+            FileProcessResult result = new FileProcessResult();
+            result.isTimeout = true;
+            result.requestedTimeoutMillis = requestedTimeoutMillis;
+            result.grantedTimeoutMillis = grantedTimeoutMillis;
+
+            return result;
+        }
+
+        return null;
+    }
 }
