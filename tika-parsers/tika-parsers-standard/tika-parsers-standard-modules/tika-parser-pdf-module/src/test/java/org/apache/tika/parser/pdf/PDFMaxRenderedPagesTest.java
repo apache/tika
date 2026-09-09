@@ -17,6 +17,7 @@
 package org.apache.tika.parser.pdf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
@@ -53,6 +54,23 @@ public class PDFMaxRenderedPagesTest extends TikaTest {
         List<Metadata> metadataList = getRecursiveMetadata(TWO_PAGES, context);
         assertEquals(2, (int) metadataList.get(0).getInt(PagedText.N_PAGES));
         assertEquals(1, renderings(metadataList), "one rendering, the first page");
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = PDFParserConfig.IMAGE_STRATEGY.class,
+            names = {"RENDER_PAGES_BEFORE_PARSE", "RENDER_PAGES_AT_PAGE_END"})
+    public void testLimitAbovePageCountRendersEveryPage(PDFParserConfig.IMAGE_STRATEGY strategy)
+            throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.setImageStrategy(strategy);
+        config.setMaxRenderedPages(5);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+
+        List<Metadata> metadataList = getRecursiveMetadata(TWO_PAGES, context);
+        assertNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING),
+                "a limit above the page count is not an error");
+        assertEquals(2, renderings(metadataList), "both pages, the limit is not reached");
     }
 
     @Test

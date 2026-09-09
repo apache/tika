@@ -54,6 +54,9 @@
         "maxMainMemoryBytes": 536870912,
         // Max pages to process; -1 = no limit.
         "maxPages": -1,
+        // Max pages to render with RENDER_PAGES_BEFORE_PARSE / RENDER_PAGES_AT_PAGE_END,
+        // counted from the first page and independent of maxPages; -1 = no limit.
+        "maxRenderedPages": -1,
         // OCR settings. Requires an OCR engine (e.g. Tesseract) installed.
         "ocr": {
           // Render resolution (dpi) for OCR.

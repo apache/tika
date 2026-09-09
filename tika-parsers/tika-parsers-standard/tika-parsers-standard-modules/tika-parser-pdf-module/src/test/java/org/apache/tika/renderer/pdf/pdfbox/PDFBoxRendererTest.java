@@ -83,6 +83,19 @@ public class PDFBoxRendererTest {
                 "quality 1.0 should be far larger: " + uncompressed + " vs " + compressed);
     }
 
+    /** A range that runs past the last page ends there; it is "the first N pages", not an error. */
+    @Test
+    public void testRangePastTheLastPageIsClamped() throws Exception {
+        PDFBoxRenderer renderer = new PDFBoxRenderer();
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/testPDF.pdf");
+             TikaInputStream tis = TikaInputStream.get(is);
+             PageBasedRenderResults results = (PageBasedRenderResults) renderer.render(
+                     tis, new Metadata(), new ParseContext(), new PageRangeRequest(1, 9999))) {
+            assertEquals(1, results.getResults().size());
+            assertEquals(RenderResult.STATUS.SUCCESS, results.getResults().get(0).getStatus());
+        }
+    }
+
     /** An out-of-range page throws past the per-page IOException catch after RENDER_ALL wrote pages. */
     @Test
     public void testFailedRenderLeavesNoTempFiles() throws Exception {
