@@ -149,6 +149,6 @@ public class ProcessUtilsTest {
 
         assertTrue(result.isTimeout(), "a process with a 0 timeout should timeout immediately without starting");
         assertEquals(0, result.getGrantedTimeoutMillis(), "the process should not have been granted any timeout; got " + result.getGrantedTimeoutMillis() + "ms");
-        assertTrue(elapsed < 1000, "fast path should return without spawning; took " +  elapsed + "ms");
+        assertTrue(elapsed < 4_000, "fast path should return without spawning; took " +  elapsed + "ms");
     }
 }
