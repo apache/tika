@@ -27,6 +27,8 @@ import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.parser.ParseContext;
 
+import java.io.IOException;
+
 /**
  * These tests spawn the OS {@code sleep} command directly (unavailable on Windows) rather
  * than mocking {@link Process}, because the property under test -- that a checkpoint fires
@@ -139,16 +141,16 @@ public class ProcessUtilsTest {
     public void testExecuteFailsFastIfTimeoutIsZero() throws Exception {
         assumeFalse(SystemUtils.IS_OS_WINDOWS);
 
-        ProcessBuilder pb = new ProcessBuilder("sleep", "5");
+        ProcessBuilder pb = new ProcessBuilder("non-existing-command-throwing-exception-if-executed");
         ParseContext context = new ParseContext();
         context.set(TimeoutLimits.class, new TimeoutLimits(0, 0));
 
-        long start = System.currentTimeMillis();
+        long start = System.nanoTime();
         FileProcessResult result = ProcessUtils.execute(pb, context, 5_000L, 1000, 1000);
-        long elapsed = System.currentTimeMillis() - start;
+        long elapsed = System.nanoTime() - start;
 
         assertTrue(result.isTimeout(), "a process with a 0 timeout should timeout immediately without starting");
         assertEquals(0, result.getGrantedTimeoutMillis(), "the process should not have been granted any timeout; got " + result.getGrantedTimeoutMillis() + "ms");
-        assertTrue(elapsed < 4_000, "fast path should return without spawning; took " +  elapsed + "ms");
+        assertTrue(elapsed < 4_000_000_000L, "fast path should return without spawning; took " +  elapsed + "ms");
     }
 }
