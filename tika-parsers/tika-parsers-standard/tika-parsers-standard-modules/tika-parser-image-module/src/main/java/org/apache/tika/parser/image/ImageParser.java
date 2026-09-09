@@ -67,8 +67,7 @@ public class ImageParser extends AbstractImageParser {
                         MediaType.image("png"), MediaType.image("vnd.wap.wbmp"),
                         MediaType.image("x-icon"), MediaType.image("x-xcf"),
                         MediaType.image("x-jbig2"),
-                        // no bundled ImageIO reader for JPEG 2000 (license): metadata is
-                        // skipped, but owning the type keeps OCR enrichment reachable
+                        // no JPEG 2000 reader (license): owned so OCR still reaches them
                         MediaType.image("jp2"), MediaType.image("jpx"),
                         MediaType.image("x-portable-pixmap")));
     }

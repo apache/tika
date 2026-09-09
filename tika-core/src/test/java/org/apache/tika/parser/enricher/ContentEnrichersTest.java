@@ -123,7 +123,7 @@ public class ContentEnrichersTest {
                 MediaType.image("tiff"), context));
         assertFalse(ContentEnrichers.hasTextRecognizer(null, PNG, context));
         assertFalse(ContentEnrichers.hasTextRecognizer(null, null, context));
-        // no list: a recognizer in the composite is found by its interface
+        // no list: found by interface
         context.set(Parser.class, compositeOf(new RecognizingParser(Set.of(PNG), true)));
         assertTrue(ContentEnrichers.hasTextRecognizer(null, PNG, context));
         assertFalse(ContentEnrichers.hasTextRecognizer(null, MediaType.image("tiff"), context));
@@ -133,10 +133,10 @@ public class ContentEnrichersTest {
         context.set(Parser.class, compositeOf(new AnnotatingParser(Set.of(PNG))));
         assertFalse(ContentEnrichers.hasTextRecognizer(null, PNG, context),
                 "a discovered annotator is not a recognizer");
-        // a legacy image/ocr-* claimant predates the capability: the pseudo-type was the contract
+        // a legacy image/ocr-* claimant counts as a recognizer
         context.set(Parser.class, compositeOf(new RecordingParser(Set.of(OCR_PNG))));
         assertTrue(ContentEnrichers.hasTextRecognizer(null, PNG, context));
-        // a configured list is authoritative over anything in the composite
+        // a list is authoritative
         assertFalse(ContentEnrichers.hasTextRecognizer(listOf(annotator), PNG, context));
     }
 
@@ -191,7 +191,7 @@ public class ContentEnrichersTest {
         assertNull(explicit.overrideSeenDuringParse);
     }
 
-    /** No list: the recognizer is invoked directly on the real type, nothing is minted. */
+    /** No list: invoked directly on the real type. */
     @Test
     public void testDiscoveredRecognizerInvokedDirectly() throws Exception {
         RecognizingParser engine = new RecognizingParser(Collections.singleton(PNG), true);
@@ -209,15 +209,14 @@ public class ContentEnrichersTest {
         assertEquals(PNG.toString(), metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(RecognizingParser.class.getName(),
                 metadata.get(TikaCoreProperties.TIKA_PARSED_BY));
-        // a plain parser claiming the type is dispatch, not enrichment
+        // a plain parser is dispatch, not enrichment
         context.set(Parser.class, compositeOf(new RecordingParser(Set.of(PNG))));
         assertNull(ContentEnrichers.get(null, PNG, context));
     }
 
     /**
-     * Precedence with no list: an engine named under "parsers" (outside the default
-     * parser) beats a discovered one; within a tier the last claimant wins, and a
-     * _mime-exclude on the entry is honored.
+     * No list: an engine under "parsers" beats a discovered one, the last claimant wins
+     * within a tier, and a _mime-exclude on the entry applies.
      */
     @Test
     public void testDiscoveryPrecedence() throws Exception {
@@ -251,7 +250,6 @@ public class ContentEnrichersTest {
         assertEquals(2, spiLast.calls);
     }
 
-    /** A default parser whose SPI found exactly these parsers. */
     private static DefaultParser spiDefaults(Parser... found) {
         return new DefaultParser(MediaTypeRegistry.getDefaultRegistry(),
                 new ServiceLoader(new ClassLoader(null) { })) {
@@ -280,7 +278,7 @@ public class ContentEnrichersTest {
         assertNotNull(ContentEnrichers.get(null, tiff, context));
     }
 
-    /** The capability is asked of the engine, not of a _mime-exclude decorator around it. */
+    /** The capability is asked of the engine, not the decorator around it. */
     @Test
     public void testTextRecognizerSeenThroughDecorator() {
         MediaType tiff = MediaType.image("tiff");
@@ -294,7 +292,7 @@ public class ContentEnrichersTest {
         assertFalse(ContentEnrichers.hasTextRecognizer(null, tiff, context));
     }
 
-    /** A real-type filter on a legacy image/ocr-* engine's entry reaches it in discovery. */
+    /** A real-type filter on a legacy engine's entry applies in discovery. */
     @Test
     public void testLegacyClaimantHonorsRealTypeFilter() {
         MediaType tiff = MediaType.image("tiff");
@@ -325,7 +323,7 @@ public class ContentEnrichersTest {
         }
     }
 
-    /** A pre-4.1 engine advertising image/ocr-* is discovered for the real type until 5.0. */
+    /** A legacy image/ocr-* engine is discovered for the real type. */
     @Test
     public void testLegacyClaimantDiscovered() throws Exception {
         RecordingParser legacy = new RecordingParser(Collections.singleton(OCR_PNG));
@@ -357,7 +355,6 @@ public class ContentEnrichersTest {
 
     @Test
     public void testConfiguredListIsAuthoritative() throws Exception {
-        // the composite holds a tiff recognizer, but a list that doesn't cover tiff wins anyway
         RecordingParser explicit = new RecordingParser(Collections.singleton(PNG));
         RecognizingParser discovered =
                 new RecognizingParser(Collections.singleton(MediaType.image("tiff")), true);
@@ -366,7 +363,6 @@ public class ContentEnrichersTest {
         context.set(Parser.class, compositeOf(discovered));
 
         assertNull(ContentEnrichers.get(enrichers, MediaType.image("tiff"), context));
-        // with no list configured, the same recognizer is discovered
         assertNotNull(ContentEnrichers.get(null, MediaType.image("tiff"), context));
     }
 
@@ -459,7 +455,7 @@ public class ContentEnrichersTest {
         Metadata metadata = new Metadata();
         invoke(enricher, metadata, context);
         assertEquals(List.of("first", "second"), order);
-        // both members share one anonymous class, which parsed-by records once
+        // both members share one class: recorded once
         assertEquals(List.of(first.getClass().getName()),
                 List.of(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)),
                 "an invoked enricher is recorded as the composite would record it");

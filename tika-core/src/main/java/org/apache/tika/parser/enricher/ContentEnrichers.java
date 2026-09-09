@@ -58,29 +58,24 @@ public final class ContentEnrichers {
 
     private static final Logger LOG = LoggerFactory.getLogger(ContentEnrichers.class);
 
-    /** Retired {@code image/ocr-*} pseudo-type marker; honored as an alias until 5.0. */
     private static final String LEGACY_OCR_PREFIX = "ocr-";
 
-    // bounded by engine class names and the base types they claim; each WARN fires once
+    // one WARN per key; keys are class names and base types, so bounded
     private static final Set<String> WARNED = ConcurrentHashMap.newKeySet();
 
     private ContentEnrichers() {
     }
 
     /**
-     * Returns the enricher to invoke for one media type, or null when none applies.
-     * A configured list is authoritative: every matching enricher runs, in config order,
-     * behind the Parser returned here, and an uncovered type gets no enrichment -- never a
-     * classpath engine nobody named. With no list, the {@link ContentEnricher}s in the
-     * composite bound to the context are the candidates and exactly one runs: an engine
-     * named under {@code "parsers"} beats one the default parser discovered, and within a
-     * tier the last claimant wins, matching composite dispatch (user-supplied classes
-     * register after Tika's). An entry's {@code _mime-include}/{@code _mime-exclude}
-     * applies, on the {@code default-parser} entry to every engine inside it. Null while
-     * an enrichment is already in progress in this context, so an enricher that is (or
-     * invokes) a container parser cannot recurse.
+     * The enricher to invoke for a media type, or null. A configured list is authoritative:
+     * every matching member runs in order and an uncovered type gets nothing. With no list,
+     * the {@link ContentEnricher}s in the composite bound to the context are candidates and
+     * one runs: an engine named under {@code "parsers"} beats one the default parser found,
+     * and within a tier the last wins; an entry's {@code _mime-include}/{@code _mime-exclude}
+     * applies, on {@code default-parser} to everything inside it. Null while an enrichment
+     * is in progress in this context, so an enricher cannot recurse.
      *
-     * @param enrichers the injected composite; may be null when none is configured
+     * @param enrichers the injected composite; null when none is configured
      * @param mediaType the real, normalized media type of the bytes; may be null
      */
     public static Parser get(CompositeContentEnricher enrichers, MediaType mediaType,
@@ -101,11 +96,9 @@ public final class ContentEnrichers {
     }
 
     /**
-     * Whether the enricher {@link #get} would return for this media type produces the
-     * document's text: a {@link TextRecognizer} that recognizes text for this context.
-     * Under a configured list any matching member counts; with no list, the discovered
-     * engine must be one, or a legacy {@code image/ocr-*} claimant (that pseudo-type was
-     * the OCR contract). False while an enrichment is in progress, matching {@link #get}.
+     * Whether the enricher {@link #get} would return produces the document's text: a
+     * {@link TextRecognizer} that recognizes for this context, or a legacy
+     * {@code image/ocr-*} claimant. False while an enrichment is in progress.
      */
     public static boolean hasTextRecognizer(CompositeContentEnricher enrichers,
                                             MediaType mediaType, ParseContext context) {
@@ -165,7 +158,7 @@ public final class ContentEnrichers {
         }
     }
 
-    /** An enricher is invoked, not dispatched to: record it as the composite would. */
+    // invoked, not dispatched to: record it as the composite would
     private static void record(Parser enricher, Metadata metadata, ParseContext context) {
         String className = ParserUtils.getParserClassname(enricher);
         ParserUtils.recordParserDetails(className, metadata);
@@ -242,10 +235,9 @@ public final class ContentEnrichers {
     }
 
     /**
-     * Whether the entry's decorators drop this type. A {@code _mime-include}/{@code
-     * _mime-exclude} is asked directly, so it also reaches a legacy engine, whose
-     * pseudo-type no real-type filter can name; any other decorator counts by what it
-     * removes from the engine's own view.
+     * Whether the entry's decorators drop this type. A mime filter is asked directly (a
+     * real-type filter cannot name a legacy engine's pseudo-type); any other decorator
+     * counts by what it removes from the engine's own view.
      */
     private static boolean filteredOut(Parser decorated, Parser engine, MediaType type,
                                        ParseContext context) {

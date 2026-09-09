@@ -158,10 +158,8 @@ public class DefaultParser extends CompositeParser {
     }
 
     /**
-     * The SPI parsers plus dynamic providers (last, so they override), minus the
-     * {@link org.apache.tika.parser.enricher.ContentEnricher}s: an engine the classpath
-     * supplied enriches and is never dispatched to. Naming it under {@code "parsers"} makes
-     * it a parser for the types no other parser there claims.
+     * SPI parsers then dynamic providers, minus the enrichers: an enricher the classpath
+     * supplied is never dispatched to. Naming it under {@code "parsers"} makes it a parser.
      */
     @Override
     public Map<MediaType, Parser> getParsers(ParseContext context) {

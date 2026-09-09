@@ -1601,10 +1601,8 @@ public class PDFParserTest extends TikaTest {
     }
 
     /**
-     * TIKA-4884: a discovered engine failing with an IOException on the triggering page is
-     * recorded, that page keeps its text and later pages are still parsed; the failure
-     * surfaces once every page is done. Through 4.0 the composite wrapped that failure and
-     * the document aborted on the page.
+     * A discovered engine's IOException is recorded, the page keeps its text, later pages
+     * still parse, and the failure surfaces at the end (TIKA-4884).
      */
     @Test
     public void testAutoOcrEngineFailureFallsBackToText() throws Exception {
@@ -1790,7 +1788,7 @@ public class PDFParserTest extends TikaTest {
         return MediaType.image(config.getOcr().getImageFormat().getFormatName());
     }
 
-    /** Stands in for a classpath OCR engine: found through the interface, not a pseudo-type. */
+    /** A classpath OCR engine, found by interface. */
     private abstract static class MockEngine implements Parser, TextRecognizer {
         private static final long serialVersionUID = 1L;
     }

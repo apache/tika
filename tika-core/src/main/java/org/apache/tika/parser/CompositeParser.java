@@ -112,11 +112,9 @@ public class CompositeParser implements Parser {
     }
 
     /**
-     * Keys the candidates by media type, later candidates overriding earlier ones, except
-     * that a {@link ContentEnricher}'s claim never displaces a parser's: an enricher is
-     * invoked by the parser for a type, not dispatched to, and fills a gap only where no
-     * parser claims the type. Direct members only: a nested composite is a parser for
-     * whatever it advertises, and {@link DefaultParser} advertises no enricher's types.
+     * Later candidates override earlier ones, except that a {@link ContentEnricher} only
+     * fills types no parser here claims. Direct members only: a nested composite is a
+     * parser for whatever it advertises.
      */
     protected Map<MediaType, Parser> buildParserMap(List<Parser> candidates,
                                                     ParseContext context) {

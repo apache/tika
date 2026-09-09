@@ -241,9 +241,8 @@ public class ComponentInstantiator {
     }
 
     /**
-     * Parses a {@code _mime-include}/{@code _mime-exclude} entry. The pre-4.1
-     * {@code image/ocr-*} pseudo-types are refused: engines advertise real types now, so a
-     * filter naming the pseudo-type would silently match nothing.
+     * Parses a {@code _mime-include}/{@code _mime-exclude} entry; a retired
+     * {@code image/ocr-*} pseudo-type fails load rather than silently matching nothing.
      */
     static MediaType parseFilterType(String mimeStr) throws TikaConfigException {
         MediaType type = MediaType.parse(mimeStr);

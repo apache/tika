@@ -121,7 +121,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
     private static final Object[] LOCK = new Object[0];
     private static final long serialVersionUID = -8167538283213097265L;
-    // the image types this engine enriches; the image parser owns dispatch for them
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
             Arrays.asList(MediaType.image("png"), MediaType.image("jpeg"),
                     MediaType.image("tiff"), MediaType.image("bmp"), MediaType.image("gif"),

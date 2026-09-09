@@ -69,7 +69,7 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
 
-    // detection routes the image to the image parser, which finds Tesseract as its enricher
+    // no override: detection reaches Tesseract through the image parser
     private Metadata getMetadata(MediaType mediaType) {
         return new Metadata();
     }

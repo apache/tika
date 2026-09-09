@@ -25,14 +25,9 @@ import org.apache.tika.parser.ParseContext;
  * for text it already has. Only text recognizers count when a caller such as the PDF
  * parser's AUTO OCR strategy asks whether an engine can stand in for extracted text.
  * <p>
- * This is also how an OCR engine is found when no {@code "content-enrichers"} list is
- * configured: a recognizer on the classpath advertises the real image types it reads and is
- * picked up from the composite. The {@code image/ocr-*} pseudo-types that served that
- * purpose before 4.1 are retired; a parser still advertising them is treated as a legacy
- * recognizer for the real type, with a warning, until 5.0.
- * <p>
- * Decorators hide this interface: ask through {@link ContentEnrichers#asTextRecognizer},
- * not {@code instanceof}.
+ * With no {@code "content-enrichers"} list, a recognizer on the classpath is found by this
+ * interface (see {@link ContentEnrichers#get}). Decorators hide it: ask through
+ * {@link ContentEnrichers#asTextRecognizer}, not {@code instanceof}.
  *
  * @since Apache Tika 4.1
  */

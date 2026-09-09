@@ -254,11 +254,7 @@ public class ImageParserTest extends TikaTest {
         assertEquals("100", metadata.get(TIFF.IMAGE_WIDTH));
     }
 
-    /**
-     * image/jp2, image/jpx and image/x-portable-pixmap belong to the image parser since 4.1
-     * so the enricher stays reachable; with no JPEG 2000 reader it extracts nothing and
-     * must not fail (TIKA-4884).
-     */
+    /** The image parser owns jp2/jpx/ppm for enrichment; with no reader it must not fail. */
     @Test
     public void testJp2ReachesEnricherWithoutReader() throws Exception {
         assertTrue(parser.getSupportedTypes(new ParseContext()).contains(MediaType.image("jp2")));

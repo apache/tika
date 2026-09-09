@@ -82,10 +82,7 @@ public class CompositeParserTest {
         assertEquals(b, parsers.get(1));
     }
 
-    /**
-     * A content enricher never displaces the parser for a type, whichever is registered
-     * later; it takes a type only where no parser claims it.
-     */
+    /** An enricher fills only the types no parser claims, whichever is registered later. */
     @Test
     @SuppressWarnings("serial")
     public void testEnricherFillsGapsOnly() {
@@ -110,13 +107,12 @@ public class CompositeParserTest {
             assertSame(imageParser, map.get(png));
             assertSame(engine, map.get(jp2));
         }
-        // decorated enrichers are recognized through the decorator
         CompositeParser composite = new CompositeParser(registry, imageParser,
                 ParserDecorator.withTypes(engine, Set.of(png, jp2)));
         assertSame(imageParser, composite.getParsers(new ParseContext()).get(png));
     }
 
-    /** Registered by {@link #servicesFor}: what a classpath OCR engine looks like to the SPI. */
+    /** An SPI-registered enricher; see {@link #servicesFor}. */
     public static class SpiEngine extends EmptyParser implements ContentEnricher {
         private static final long serialVersionUID = 1L;
 
@@ -126,7 +122,6 @@ public class CompositeParserTest {
         }
     }
 
-    /** A class loader whose only extra service registration is {@code engine}. */
     private static ClassLoader servicesFor(Path dir, Class<? extends Parser> engine)
             throws IOException {
         Path services = dir.resolve("META-INF/services/" + Parser.class.getName());
@@ -137,9 +132,8 @@ public class CompositeParserTest {
     }
 
     /**
-     * An enricher the SPI supplied never dispatches: the default parser leaves it out of
-     * its map even where nothing else claims the type, so its types cannot leak out of a
-     * nested default-parser as a parser claim and displace a parser configured beside it.
+     * An SPI enricher never dispatches, so its types cannot leak out of default-parser and
+     * displace a parser configured beside it.
      */
     @Test
     @SuppressWarnings("serial")
@@ -155,7 +149,7 @@ public class CompositeParserTest {
         assertNull(defaults.getParsers(context).get(png));
         assertNull(defaults.getParsers(context).get(MediaType.image("jp2")));
 
-        // the "customize one parser" shape: a configured parser followed by default-parser
+        // the documented "customize one parser" shape
         Parser imageParser = new EmptyParser() {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {

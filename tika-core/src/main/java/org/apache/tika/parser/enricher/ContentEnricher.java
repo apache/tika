@@ -17,17 +17,11 @@
 package org.apache.tika.parser.enricher;
 
 /**
- * A {@link org.apache.tika.parser.Parser} that a container parser <em>invokes</em> on bytes
- * it has already parsed -- OCR on an image, an embedding of a rendered page -- rather than
- * one the composite dispatches a document to. Its supported types are the types it can
- * enrich.
- * <p>
- * An enricher the classpath supplied is never dispatched to:
- * {@link org.apache.tika.parser.DefaultParser} leaves it out of its dispatch map. Named
- * under {@code "parsers"} it is a parser as well, but only for the types no other parser
- * there claims; it never displaces one. With no {@code "content-enrichers"} list
- * configured, the enrichers found in the composite are the candidates for enrichment; see
- * {@link ContentEnrichers#get}.
+ * A {@link org.apache.tika.parser.Parser} a container parser <em>invokes</em> on bytes it
+ * has already parsed (OCR on an image, an embedding of a rendered page) rather than one the
+ * composite dispatches to; its supported types are the types it can enrich. An enricher the
+ * classpath supplied is never dispatched to; named under {@code "parsers"} it also parses
+ * the types no other parser there claims. See {@link ContentEnrichers#get}.
  *
  * @since Apache Tika 4.1
  */

@@ -127,9 +127,8 @@ public class ContentEnricherLoaderTest {
     }
 
     /**
-     * The "customize one parser" shape: a parser configured before default-parser keeps
-     * its type although an SPI enricher inside default-parser claims it too, and that
-     * enricher is still discovered for the type (TIKA-4884).
+     * A parser configured before default-parser keeps its type over an SPI enricher inside
+     * default-parser, which is still discovered (TIKA-4884).
      */
     @Test
     public void testConfiguredParserKeepsTypeOverSpiEnricher() throws Exception {

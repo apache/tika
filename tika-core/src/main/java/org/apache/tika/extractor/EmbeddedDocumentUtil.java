@@ -135,10 +135,9 @@ public class EmbeddedDocumentUtil {
     }
 
     /**
-     * Maps a retired {@code image/ocr-*} pseudo-type to its real type
-     * ({@code image/ocr-png} to {@code image/png}); any other value is returned unchanged.
+     * {@code image/ocr-png} to {@code image/png}; anything else unchanged.
      *
-     * @deprecated since 4.1: no Tika code produces these types any more. Removed in 5.0.
+     * @deprecated since 4.1, removal in 5.0: nothing produces the pseudo-types any more.
      */
     @Deprecated
     public static String normalizeMediaType(String mediaType) {
