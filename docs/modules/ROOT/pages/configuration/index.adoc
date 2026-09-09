@@ -158,6 +158,14 @@ unchanged — whichever OCR engine is on the classpath is used, exactly as befor
 logged at startup when several engines collide. Engine names: `tesseract-ocr-parser`, `tess4j-parser`, `openai-vlm-parser`,
 `claude-vlm-parser`, `gemini-vlm-parser`.
 
+An enricher that produces the document's *text*, such as an OCR engine or a VLM prompted to
+transcribe, implements `org.apache.tika.parser.enricher.TextRecognizer`. Only text recognizers
+count when a caller asks whether an engine can stand in for text it already has: the PDF parser's
+`AUTO` OCR strategy replaces a page's extracted text only if a configured enricher recognizes text
+and actually wrote some, and keeps the extracted text otherwise. Annotating enrichers such as an
+image-embedding parser still run on the rendered page; they never displace text. The bundled OCR
+engines and VLM parsers all declare the capability.
+
 == Windows file paths
 
 JSON treats the backslash as an escape character, so path options (`tesseractPath`,

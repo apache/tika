@@ -148,6 +148,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     protected void endPage(PDPage page) throws IOException {
         try {
             writeParagraphEnd();
+            endPageText();
             try {
                 extractImages(page);
                 renderPage(page);
