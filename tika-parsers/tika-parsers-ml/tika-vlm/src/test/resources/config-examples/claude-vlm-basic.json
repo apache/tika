@@ -1,5 +1,5 @@
 {
-  "parsers": [
+  "content-enrichers": [
     {
       "claude-vlm-parser": {
         "apiKey": "YOUR_ANTHROPIC_API_KEY",

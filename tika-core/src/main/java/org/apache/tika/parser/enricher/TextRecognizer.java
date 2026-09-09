@@ -26,7 +26,7 @@ import org.apache.tika.parser.ParseContext;
  * parser's AUTO OCR strategy asks whether an engine can stand in for extracted text.
  * <p>
  * With no {@code "content-enrichers"} list, a recognizer on the classpath is found by this
- * interface (see {@link ContentEnrichers#get}). Decorators hide it: ask through
+ * interface (see {@link ContentEnrichers#resolve}). Decorators hide it: ask through
  * {@link ContentEnrichers#asTextRecognizer}, not {@code instanceof}.
  *
  * @since Apache Tika 4.1
@@ -34,9 +34,9 @@ import org.apache.tika.parser.ParseContext;
 public interface TextRecognizer extends ContentEnricher {
 
     /**
-     * Whether this configured instance recognizes text for this parse. A VLM is an OCR
-     * engine or a captioner depending on its prompt, and an OCR engine told to skip OCR
-     * recognizes nothing.
+     * Whether this configured instance recognizes text for this parse. An OCR engine told
+     * to skip OCR recognizes nothing; a VLM answers from its configuration, since only the
+     * operator knows whether its prompt transcribes or captions.
      */
     default boolean recognizesText(ParseContext context) {
         return true;

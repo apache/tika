@@ -32,6 +32,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
 
 /**
  * Tests for TikaLoader round-trip serialization (load -> toJson -> reload).
@@ -288,6 +289,29 @@ public class TikaLoaderRoundTripTest {
             } finally {
                 Files.deleteIfExists(tempFile);
             }
+        }
+    }
+
+    /** "content-enrichers": [] turns enrichment off and must survive a dump and reload. */
+    @Test
+    void testEmptyContentEnrichersSurviveRoundTrip() throws Exception {
+        Path configPath = Files.createTempFile("tika-enrichers-", ".json");
+        Path tempFile = Files.createTempFile("tika-roundtrip-", ".json");
+        try {
+            Files.writeString(configPath, "{ \"content-enrichers\": [] }");
+            TikaLoader loader = TikaLoader.load(configPath);
+            assertNotNull(loader.get(Parser.class));
+            String json = loader.toJson();
+            assertTrue(json.contains("content-enrichers"), json);
+
+            Files.writeString(tempFile, json);
+            TikaLoader reloaded = TikaLoader.load(tempFile);
+            CompositeContentEnricher enrichers = reloaded.get(CompositeContentEnricher.class);
+            assertNotNull(enrichers, "[] was dropped on the way out");
+            assertTrue(enrichers.isEmpty());
+        } finally {
+            Files.deleteIfExists(configPath);
+            Files.deleteIfExists(tempFile);
         }
     }
 }

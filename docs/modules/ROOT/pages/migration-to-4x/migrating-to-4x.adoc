@@ -247,8 +247,14 @@ What changes for you:
 * `Content-Type` never carries an `ocr-` prefix any more, so extracted image files get their real
   extension instead of `.bin`.
 * A custom engine that still advertises the pseudo-types keeps working as a text recognizer for the
-  real types, with a WARN when it is first found, until 5.0. Advertise the real types and implement
+  real types, with a WARN at startup, until 5.0. Advertise the real types and implement
   `TextRecognizer` to silence it.
+* Put the engine in the top-level `content-enrichers` list rather than under `parsers`; every
+  default parser stays loaded. `"content-enrichers": []` turns enrichment off everywhere. An engine
+  left under `parsers` keeps working, and a WARN at startup tells you when it is never dispatched
+  to. Startup also logs one line per effective engine.
+* VLM parsers gain `textRecognizer` (default `true`); set it to `false` for a captioning or tagging
+  prompt so the PDF parser's `AUTO` OCR never replaces extracted text with the VLM's output.
 
 For the general serialization model and how JSON configuration works, see
 xref:developers/serialization.adoc[Serialization and Configuration].

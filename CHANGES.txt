@@ -1,19 +1,29 @@
 Release 4.1.0 - unreleased
 
-   * OCR engines are found by interface, not by pseudo-type: an enricher implements
-     ContentEnricher (TextRecognizer for OCR) and advertises the real image types it
-     reads. The image/ocr-* pseudo-types are retired: nothing in Tika produces them,
-     Content-Type never carries the prefix (extracted images get their real extension
-     instead of .bin), a _mime-include/_mime-exclude naming one fails config load with
-     the real type in the message, and a third-party engine still advertising them is
-     treated as a legacy text recognizer with a WARN until 5.0. An engine the classpath
-     supplied is never dispatched to, and one named under "parsers" only fills the types
-     no other parser there claims; image-parser now owns image/jp2, image/jpx and
-     image/x-portable-pixmap and calls the OCR engine on them. With no content-enrichers
-     list, an engine configured under "parsers" beats one discovered by default-parser,
-     among those the last registered wins, and an entry's _mime-include/_mime-exclude
-     applies to discovery too. An invoked enricher is recorded in tk:parsed-by (images)
+   * OCR engines and other content enrichers: name the engine in "content-enrichers"
+     and every default parser stays loaded; "content-enrichers": [] turns enrichment
+     off everywhere. With no list, the loader resolves one engine
+     per media type from the loaded parsers at startup (an engine configured under
+     "parsers" beats one default-parser found; last registered wins; an entry's
+     _mime-include/_mime-exclude applies) and logs one line per effective engine;
+     a collision is a WARN at startup. An engine under "parsers" is a parser only for
+     the types no other parser there claims; when every type is claimed, a WARN says
+     whether it acts only as the enricher or never runs. The image/ocr-* pseudo-types
+     are retired: Content-Type never carries the prefix (extracted images get their
+     real extension instead of .bin) and a _mime-include/_mime-exclude naming one
+     fails config load with the real type in the message. image-parser now owns
+     image/jp2, image/jpx and image/x-portable-pixmap and calls the OCR engine on
+     them. VLM parsers gain "textRecognizer" (default true); set it false for a
+     captioning prompt so AUTO OCR never replaces extracted text with the VLM's
+     output (TIKA-4884).
+
+   * For enricher authors: implement ContentEnricher (TextRecognizer for OCR) and
+     advertise the real image types; an enricher the classpath supplied is never
+     dispatched to, and one named under "parsers" only fills gaps. A third-party
+     engine still advertising image/ocr-* is treated as a legacy text recognizer
+     with a WARN until 5.0. An invoked enricher is recorded in tk:parsed-by (images)
      and tk:parsed-by-full-set (PDF page renders) as a dispatched parser would be.
+     ContentEnrichers.resolve(Parser) is the load-time resolution.
      EmbeddedDocumentUtil.normalizeMediaType is deprecated (TIKA-4884).
 
    * The PDF parser's AUTO OCR strategy no longer emits a page's extracted text

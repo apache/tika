@@ -19,9 +19,17 @@ package org.apache.tika.parser.enricher;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +68,7 @@ public final class ContentEnrichers {
 
     private static final String LEGACY_OCR_PREFIX = "ocr-";
 
-    // one WARN per key; keys are class names and base types, so bounded
+    // one WARN per key; keys are class names and engine sets, so bounded
     private static final Set<String> WARNED = ConcurrentHashMap.newKeySet();
 
     private ContentEnrichers() {
@@ -70,10 +78,8 @@ public final class ContentEnrichers {
      * The enricher to invoke for a media type, or null. A configured list is authoritative:
      * every matching member runs in order and an uncovered type gets nothing. With no list,
      * the {@link ContentEnricher}s in the composite bound to the context are candidates and
-     * one runs: an engine named under {@code "parsers"} beats one the default parser found,
-     * and within a tier the last wins; an entry's {@code _mime-include}/{@code _mime-exclude}
-     * applies, on {@code default-parser} to everything inside it. Null while an enrichment
-     * is in progress in this context, so an enricher cannot recurse.
+     * one runs, chosen as {@link #resolve} chooses. Null while an enrichment is in progress
+     * in this context, so an enricher cannot recurse.
      *
      * @param enrichers the injected composite; null when none is configured
      * @param mediaType the real, normalized media type of the bytes; may be null
@@ -108,7 +114,8 @@ public final class ContentEnrichers {
         if (enrichers != null) {
             for (Parser p : enrichers.getEnrichers(mediaType)) {
                 TextRecognizer recognizer = asTextRecognizer(p);
-                if (recognizer != null && recognizer.recognizesText(context)) {
+                if (recognizer != null ? recognizer.recognizesText(context)
+                        : enrichers.isLegacyClaimant(p)) {
                     return true;
                 }
             }
@@ -123,6 +130,41 @@ public final class ContentEnrichers {
         }
         TextRecognizer recognizer = asTextRecognizer(discovered.parser);
         return recognizer != null && recognizer.recognizesText(context);
+    }
+
+    /**
+     * One enricher per type from the enrichers found in a parser tree: an engine outside
+     * {@link DefaultParser} beats one inside it, the last wins within a tier, and an entry's
+     * {@code _mime-include}/{@code _mime-exclude} applies at every node. A collision within
+     * the winning tier is logged once. Empty when the tree holds no enricher. This is what
+     * the loader injects when no {@code "content-enrichers"} list is configured; the
+     * runtime fallback for an unloaded {@code AutoDetectParser} applies the same rules.
+     */
+    public static CompositeContentEnricher resolve(Parser root) {
+        List<Found> found = walk(root, new ParseContext());
+        Map<MediaType, Parser> winners = new HashMap<>();
+        Set<Parser> legacy = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<MediaType> types = new HashSet<>();
+        for (Found f : found) {
+            types.addAll(f.types);
+        }
+        Map<String, Collision> collisions = new LinkedHashMap<>();
+        for (MediaType type : types) {
+            List<Found> tier = tier(type, found);
+            Found winner = tier.get(tier.size() - 1);
+            winners.put(type, winner.member);
+            if (winner.legacy) {
+                legacy.add(winner.member);
+            }
+            if (tier.size() > 1) {
+                collisions.computeIfAbsent(names(tier), k -> new Collision(tier, winner))
+                        .types.add(type);
+            }
+        }
+        for (Collision c : collisions.values()) {
+            warnCollision(c.types, c.tier, c.winner);
+        }
+        return CompositeContentEnricher.resolved(winners, legacy);
     }
 
     /** True if the parser, under any decorators, is a {@link ContentEnricher}. */
@@ -183,55 +225,89 @@ public final class ContentEnrichers {
     private record Candidate(Parser parser, boolean legacy) {
     }
 
+    /** An enricher in the tree, with the real types it may enrich after every filter. */
+    private record Found(Parser member, boolean inDefault, boolean legacy, Set<MediaType> types) {
+    }
+
+    private static final class Collision {
+        final List<Found> tier;
+        final Found winner;
+        final Set<MediaType> types = new TreeSet<>();
+
+        Collision(List<Found> tier, Found winner) {
+            this.tier = tier;
+            this.winner = winner;
+        }
+    }
+
     private static Candidate discover(MediaType mediaType, ParseContext context) {
         Parser root = EmbeddedDocumentUtil.getStatelessParser(context);
         if (root == null) {
             return null;
         }
-        List<Candidate> configured = new ArrayList<>();
-        List<Candidate> discovered = new ArrayList<>();
         MediaType baseType = mediaType.getBaseType();
-        collect(root, baseType, context, false, configured, discovered);
-        List<Candidate> tier = configured.isEmpty() ? discovered : configured;
+        List<Found> found = walk(root, context);
+        List<Found> tier = tier(baseType, found);
         if (tier.isEmpty()) {
             return null;
         }
-        Candidate winner = tier.get(tier.size() - 1);
+        Found winner = tier.get(tier.size() - 1);
         if (tier.size() > 1) {
-            warnCollision(baseType, tier, winner);
+            warnCollision(Set.of(baseType), tier, winner);
         }
-        return winner;
+        return new Candidate(winner.member, winner.legacy);
     }
 
-    private static void collect(Parser parser, MediaType type, ParseContext context,
-                                boolean inDefault, List<Candidate> configured,
-                                List<Candidate> discovered) {
-        Parser engine = unwrap(parser);
-        if (filteredOut(parser, engine, type, context)) {
-            return;
+    // the winning tier for a type: configured members if any claim it, else discovered
+    private static List<Found> tier(MediaType type, List<Found> found) {
+        List<Found> configured = new ArrayList<>();
+        List<Found> discovered = new ArrayList<>();
+        for (Found f : found) {
+            if (f.types.contains(type)) {
+                (f.inDefault ? discovered : configured).add(f);
+            }
         }
+        return configured.isEmpty() ? discovered : configured;
+    }
+
+    private static List<Found> walk(Parser root, ParseContext context) {
+        List<Found> found = new ArrayList<>();
+        walk(root, context, false, t -> true, found);
+        return found;
+    }
+
+    private static void walk(Parser parser, ParseContext context, boolean inDefault,
+                             Predicate<MediaType> passes, List<Found> found) {
+        Parser engine = unwrap(parser);
+        Predicate<MediaType> here = parser == engine ? passes
+                : passes.and(t -> !filteredOut(parser, engine, t, context));
         if (engine instanceof CompositeParser composite) {
             boolean def = inDefault || engine instanceof DefaultParser;
             for (Parser child : composite.getAllComponentParsers()) {
-                collect(child, type, context, def, configured, discovered);
+                walk(child, context, def, here, found);
             }
             return;
         }
-        Set<MediaType> types = engine.getSupportedTypes(context);
-        boolean legacy;
-        if (engine instanceof ContentEnricher) {
-            if (!types.contains(type)) {
-                return;
+        boolean enricher = engine instanceof ContentEnricher;
+        Set<MediaType> types = new HashSet<>();
+        boolean legacyAdvertised = false;
+        for (MediaType advertised : engine.getSupportedTypes(context)) {
+            if (isLegacyOcrType(advertised)) {
+                legacyAdvertised = true;
+            } else if (!enricher) {
+                continue;
             }
-            legacy = false;
-        } else if (types.contains(new MediaType(type.getType(),
-                LEGACY_OCR_PREFIX + type.getSubtype()))) {
+            MediaType type = stripLegacyOcrPrefix(advertised.getBaseType());
+            if (here.test(type)) {
+                types.add(type);
+            }
+        }
+        if (legacyAdvertised) {
             warnLegacyAdvertisement(engine);
-            legacy = true;
-        } else {
-            return;
         }
-        (inDefault ? discovered : configured).add(new Candidate(parser, legacy));
+        if (!types.isEmpty()) {
+            found.add(new Found(parser, inDefault, !enricher, types));
+        }
     }
 
     /**
@@ -241,9 +317,6 @@ public final class ContentEnrichers {
      */
     private static boolean filteredOut(Parser decorated, Parser engine, MediaType type,
                                        ParseContext context) {
-        if (decorated == engine) {
-            return false;
-        }
         boolean exact = false;
         for (Parser p = decorated; p instanceof ParserDecorator d; p = d.getWrappedParser()) {
             if (d instanceof ParserDecorator.MimeFilteringDecorator f) {
@@ -258,19 +331,23 @@ public final class ContentEnrichers {
                 && !decorated.getSupportedTypes(context).contains(type);
     }
 
-    private static void warnCollision(MediaType mediaType, List<Candidate> tier,
-                                      Candidate winner) {
+    private static String names(List<Found> tier) {
         StringBuilder names = new StringBuilder();
-        for (Candidate c : tier) {
+        for (Found f : tier) {
             if (names.length() > 0) {
                 names.append(", ");
             }
-            names.append(unwrap(c.parser).getClass().getName());
+            names.append(unwrap(f.member).getClass().getName());
         }
-        String winnerName = unwrap(winner.parser).getClass().getName();
-        if (WARNED.add(mediaType + ":" + names)) {
+        return names.toString();
+    }
+
+    private static void warnCollision(Set<MediaType> types, List<Found> tier, Found winner) {
+        String names = names(tier);
+        if (WARNED.add("collision:" + names)) {
             LOG.warn("Several content enrichers claim {}: [{}]; {} is used. Name one in "
-                    + "\"content-enrichers\" to choose.", mediaType, names, winnerName);
+                    + "\"content-enrichers\" to choose.", types, names,
+                    unwrap(winner.member).getClass().getName());
         }
     }
 

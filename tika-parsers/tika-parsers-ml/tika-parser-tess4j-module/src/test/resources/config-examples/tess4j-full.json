@@ -1,5 +1,5 @@
 {
-  "parsers": [
+  "content-enrichers": [
     {
       "tess4j-parser": {
         "dataPath": "/usr/share/tesseract-ocr/5/tessdata",

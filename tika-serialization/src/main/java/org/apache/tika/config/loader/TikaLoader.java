@@ -824,7 +824,8 @@ public class TikaLoader {
             output.set("renderers", config.getRootNode().get("renderers"));
         }
 
-        if (config.hasArrayComponents("content-enrichers")) {
+        // [] is meaningful (enrichment off), so the section is kept even when empty
+        if (config.hasComponentSection("content-enrichers")) {
             output.set("content-enrichers", config.getRootNode().get("content-enrichers"));
         }
 

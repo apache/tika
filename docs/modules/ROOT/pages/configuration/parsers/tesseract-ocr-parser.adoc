@@ -22,13 +22,8 @@ a separate process. Component name: `tesseract-ocr-parser`.
 
 == Selecting the OCR engine (4.1.0+)
 
-With no configuration, Tesseract is the OCR engine whenever the `tesseract` binary is found:
-`image-parser` and `pdf-parser` find it among the loaded parsers because it implements
-`TextRecognizer` and advertises the image types it reads. When another classpath engine such as
-Tess4J claims the same types, one is used and a WARN at first use names the collision and the
-winner; an engine named under `parsers` (a VLM parser, for instance) takes precedence over
-Tesseract without a warning. To pin the engine explicitly, name it in the top-level
-`content-enrichers` list:
+Name the engine in the top-level `content-enrichers` list; every default parser stays loaded, and
+`image-parser` and `pdf-parser` call it on embedded images and rendered pages:
 
 [source,json]
 ----
@@ -37,7 +32,14 @@ Tesseract without a warning. To pin the engine explicitly, name it in the top-le
 }
 ----
 
-See xref:configuration/index.adoc[Configuration] for how `content-enrichers` works.
+With no `content-enrichers` at all, Tesseract is still the OCR engine whenever the `tesseract`
+binary is found: the loader finds it among the loaded parsers because it implements
+`TextRecognizer` and advertises the image types it reads, and logs the choice at startup. When
+another classpath engine such as Tess4J claims the same types, one is used and a WARN at startup
+names the collision and the winner; an engine named under `parsers` (a VLM parser, for instance)
+takes precedence over Tesseract without a warning. To turn OCR off everywhere, set
+`"content-enrichers": []`. See xref:configuration/index.adoc[Configuration] for how the list
+behaves.
 
 == Basic Configuration
 
@@ -49,10 +51,10 @@ icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers
 
 == Full Configuration
 
-Every option with its default value and an inline comment describing it. The `default-parser` entry
-keeps the rest of Tika's parsers loaded — see xref:configuration/index.adoc[Configuration] for why
-that matters. ImageMagick is optional; it is used only when `enableImagePreprocessing` or
-`applyRotation` is true.
+Every option with its default value and an inline comment describing it. Named under
+`content-enrichers`, the engine leaves every default parser loaded; the same options apply to an
+entry under `parsers`, the 4.0 shape. ImageMagick is optional; it is used only when
+`enableImagePreprocessing` or `applyRotation` is true.
 
 [source,json]
 ----

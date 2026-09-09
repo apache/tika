@@ -602,4 +602,53 @@ public class ContentEnrichersTest {
         // and enrichment is available again once the first one completes
         assertNotNull(ContentEnrichers.get(enrichers, PNG, context));
     }
+
+    /** Load-time resolution applies the discovery rules once, for every type. */
+    @Test
+    public void testResolveOneEnginePerType() throws Exception {
+        MediaType tiff = MediaType.image("tiff");
+        RecognizingParser spiFirst = new RecognizingParser(Set.of(PNG, tiff), true);
+        RecognizingParser spiLast = new RecognizingParser(Set.of(tiff), true);
+        RecognizingParser configured = new RecognizingParser(Set.of(PNG), true);
+        CompositeContentEnricher resolved = ContentEnrichers.resolve(
+                compositeOf(configured, spiDefaults(spiFirst, spiLast)));
+        assertEquals(Set.of(PNG, tiff), resolved.getSupportedTypes());
+        assertEquals(List.of(configured), resolved.getEnrichers(PNG),
+                "an engine configured under parsers wins its types");
+        assertEquals(List.of(spiLast), resolved.getEnrichers(tiff),
+                "within the default tier the last claimant wins");
+        assertFalse(resolved.isLegacyClaimant(configured));
+
+        ParseContext context = new ParseContext();
+        assertTrue(ContentEnrichers.hasTextRecognizer(resolved, PNG, context));
+        invoke(ContentEnrichers.get(resolved, tiff, context), new Metadata(), context);
+        assertEquals(1, spiLast.calls);
+        assertEquals(0, spiFirst.calls);
+
+        // a filter on the default-parser entry applies to the engines inside it
+        resolved = ContentEnrichers.resolve(compositeOf(ParserDecorator.withMimeFilters(
+                spiDefaults(spiFirst, spiLast), null, Set.of(tiff))));
+        assertEquals(Set.of(PNG), resolved.getSupportedTypes());
+        assertEquals(List.of(spiFirst), resolved.getEnrichers(PNG));
+
+        assertTrue(ContentEnrichers.resolve(compositeOf(new RecordingParser(Set.of(PNG))))
+                .isEmpty(), "a tree without enrichers resolves to nothing");
+    }
+
+    /** A legacy image/ocr-* claimant counts as a text recognizer on both paths until 5.0. */
+    @Test
+    public void testLegacyClaimantIsRecognizerOnBothPaths() {
+        RecordingParser legacy = new RecordingParser(Set.of(OCR_PNG));
+        ParseContext context = new ParseContext();
+        assertTrue(ContentEnrichers.hasTextRecognizer(listOf(legacy), PNG, context),
+                "named in the list");
+        CompositeContentEnricher resolved =
+                ContentEnrichers.resolve(compositeOf(spiDefaults(legacy)));
+        assertEquals(List.of(legacy), resolved.getEnrichers(PNG));
+        assertTrue(resolved.isLegacyClaimant(legacy));
+        assertTrue(ContentEnrichers.hasTextRecognizer(resolved, PNG, context), "resolved");
+        assertFalse(ContentEnrichers.hasTextRecognizer(
+                listOf(new AnnotatingParser(Set.of(PNG))), PNG, context),
+                "an enricher advertising real types without the capability is not one");
+    }
 }

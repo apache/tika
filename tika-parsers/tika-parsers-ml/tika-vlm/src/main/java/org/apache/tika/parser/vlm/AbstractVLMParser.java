@@ -159,6 +159,20 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
     }
 
     @Override
+    public boolean recognizesText(ParseContext context) {
+        if (!serverAvailable) {
+            return false;
+        }
+        try {
+            VLMOCRConfig config = getConfig(context);
+            return !config.isSkipOcr() && config.isTextRecognizer();
+        } catch (TikaConfigException | IOException e) {
+            // parse() surfaces the broken config; for the question asked, nothing is recognized
+            return false;
+        }
+    }
+
+    @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
 

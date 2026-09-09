@@ -1,5 +1,5 @@
 {
-  "parsers": [
+  "content-enrichers": [
     {
       "openai-vlm-parser": {
         "baseUrl": "http://127.0.0.1:8000",
@@ -11,6 +11,7 @@
         "apiKey": "",
         "inlineContent": true,
         "skipOcr": false,
+        "textRecognizer": true,
         "minFileSizeToOcr": 0,
         "maxFileSizeToOcr": 52428800,
         "maxImagePixels": 100000000,

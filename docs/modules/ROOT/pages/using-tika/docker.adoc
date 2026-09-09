@@ -98,12 +98,7 @@ For example, to keep the full image's parsers but turn OCR off:
 
 [source,json]
 ----
-{
-  "parsers": [
-    { "default-parser": {} },
-    { "tesseract-ocr-parser": { "skipOcr": true } }
-  ]
-}
+{ "content-enrichers": [] }
 ----
 
 See xref:configuration/index.adoc[Configuration] for the file format.

@@ -33,6 +33,8 @@ import org.apache.tika.parser.enricher.CompositeContentEnricher;
  * Loads the top-level {@code "content-enrichers"} list: parsers selected by component name
  * that container parsers invoke for derived content (OCR, ...). Members come from the same
  * registry as {@code "parsers"} entries but never join the composite's media-type dispatch.
+ * Null when the key is absent: {@link ParserLoader} then resolves the enrichers from the
+ * loaded parsers.
  */
 class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher> {
 
@@ -41,7 +43,9 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
             throws TikaConfigException {
         List<Map.Entry<String, JsonNode>> entries = config.getArrayComponents("content-enrichers");
         if (entries.isEmpty()) {
-            return null;
+            // [] is an explicit "nothing", authoritative; an absent key means "find them"
+            return config.hasComponentSection("content-enrichers")
+                    ? new CompositeContentEnricher(List.of()) : null;
         }
         List<Parser> enrichers = new ArrayList<>();
         ParseContext empty = new ParseContext();

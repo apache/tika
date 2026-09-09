@@ -357,9 +357,9 @@ public abstract class CXFTestBase {
             if (metadataFilters != null && !metadataFilters.isEmpty()) {
                 root.set("metadata-filters", metadataFilters);
             }
-            // the worker loads enrichers from its own config
+            // the worker loads enrichers from its own config; [] is meaningful
             JsonNode contentEnrichers = tikaConfig.get("content-enrichers");
-            if (contentEnrichers != null && !contentEnrichers.isEmpty()) {
+            if (contentEnrichers != null) {
                 root.set("content-enrichers", contentEnrichers);
             }
             // The worker resolves preset names from its own config, so presets must be

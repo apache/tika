@@ -182,17 +182,77 @@ public class ContentEnricherLoaderTest {
         assertEquals(java.util.Set.of(MediaType.image("png")), enrichers.getSupportedTypes());
     }
 
+    /** With no list, the loader resolves one engine per type from the loaded parsers. */
     @Test
-    public void testNoContentEnrichersConfigured() throws Exception {
+    public void testAbsentListResolvesFromLoadedParsers() throws Exception {
         TikaLoader loader = load("""
+                {
+                  "parsers": [ {"enriching-test-parser": {}}, {"default-parser": {}} ]
+                }
+                """);
+        assertNull(loader.get(CompositeContentEnricher.class), "nothing was configured");
+        EnrichingTestParser enrichingParser = findEnrichingParser(loader.get(Parser.class));
+        assertNotNull(enrichingParser);
+        CompositeContentEnricher resolved = enrichingParser.getContentEnrichers();
+        assertNotNull(resolved, "the resolved composite is injected");
+        MediaType type = MediaType.parse("application/test+minimal");
+        assertEquals(1, resolved.getEnrichers(type).size());
+        assertTrue(resolved.getEnrichers(type).get(0) instanceof TestSpiEnricher);
+
+        loader = load("""
                 {
                   "parsers": [ {"enriching-test-parser": {}} ]
                 }
                 """);
-        assertNull(loader.get(CompositeContentEnricher.class));
+        enrichingParser = findEnrichingParser(loader.get(Parser.class));
+        assertNotNull(enrichingParser.getContentEnrichers());
+        assertTrue(enrichingParser.getContentEnrichers().isEmpty(),
+                "no enricher among the loaded parsers: empty, not null");
+    }
+
+    /** An empty list is an explicit off switch, unlike an absent key. */
+    @Test
+    public void testEmptyListDisablesEnrichment() throws Exception {
+        TikaLoader loader = load("""
+                {
+                  "parsers": [ {"enriching-test-parser": {}}, {"default-parser": {}} ],
+                  "content-enrichers": []
+                }
+                """);
+        CompositeContentEnricher enrichers = loader.get(CompositeContentEnricher.class);
+        assertNotNull(enrichers);
+        assertTrue(enrichers.isEmpty());
         EnrichingTestParser enrichingParser = findEnrichingParser(loader.get(Parser.class));
-        assertNotNull(enrichingParser);
-        assertNull(enrichingParser.getContentEnrichers());
+        assertEquals(enrichers, enrichingParser.getContentEnrichers());
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, loader.get(Parser.class));
+        assertNull(ContentEnrichers.get(enrichers, MediaType.parse("application/test+minimal"),
+                context), "the SPI enricher in default-parser is not consulted");
+    }
+
+    /**
+     * An enricher under "parsers" whose every type another parser claims is never dispatched
+     * to; the loader names it so a config that looks like a parser choice is not a silent
+     * enricher choice.
+     */
+    @Test
+    public void testUndispatchedEnricherUnderParsersIsReported() throws Exception {
+        TikaLoader loader = load("""
+                {
+                  "parsers": [ {"minimal-test-parser": {}}, {"test-spi-enricher": {}} ]
+                }
+                """);
+        java.util.List<Parser> inert = ParserLoader.undispatchedEnrichers(loader.loadParsers());
+        assertEquals(1, inert.size());
+        assertTrue(inert.get(0) instanceof TestSpiEnricher);
+
+        loader = load("""
+                {
+                  "parsers": [ {"test-spi-enricher": {}} ]
+                }
+                """);
+        assertTrue(ParserLoader.undispatchedEnrichers(loader.loadParsers()).isEmpty(),
+                "alone it is the parser for its type");
     }
 
     private EnrichingTestParser findEnrichingParser(Parser parser) {
