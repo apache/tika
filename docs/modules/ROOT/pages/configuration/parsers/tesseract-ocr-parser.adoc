@@ -24,9 +24,11 @@ a separate process. Component name: `tesseract-ocr-parser`.
 
 With no configuration, Tesseract is the OCR engine whenever the `tesseract` binary is found:
 `image-parser` and `pdf-parser` find it among the loaded parsers because it implements
-`TextRecognizer` and advertises the image types it reads. When more than one engine claims a
-type (e.g. Tess4J or a VLM parser is also loaded), one is used and a WARN names the collision and
-the winner. To pin the engine explicitly, name it in the top-level `content-enrichers` list:
+`TextRecognizer` and advertises the image types it reads. When another classpath engine such as
+Tess4J claims the same types, one is used and a WARN at first use names the collision and the
+winner; an engine named under `parsers` (a VLM parser, for instance) takes precedence over
+Tesseract without a warning. To pin the engine explicitly, name it in the top-level
+`content-enrichers` list:
 
 [source,json]
 ----

@@ -35,7 +35,7 @@ safely.
 Component name: `tess4j-parser`. Adding `tika-parser-tess4j-module` to the classpath is a
 deliberate opt-in and is intended to make Tess4J the OCR engine — but when both engines are
 live, the winner is decided by registration order, which is not guaranteed. Since 4.1.0 a WARN
-at startup names any engine collision and the winner; to pin the engine deterministically, name
+when the first image is enriched names the collision and the winner; to pin the engine deterministically, name
 it in the top-level `content-enrichers` list (`tess4j-parser` or `tesseract-ocr-parser`; see
 xref:configuration/index.adoc[Configuration]).
 

@@ -46,7 +46,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 
-
 public class ContentEnrichersTest {
 
     private static final MediaType PNG = MediaType.image("png");
@@ -107,7 +106,6 @@ public class ContentEnrichersTest {
         return new CompositeParser(MediaTypeRegistry.getDefaultRegistry(), parsers);
     }
 
-
     @Test
     public void testHasTextRecognizer() {
         ParseContext context = new ParseContext();
@@ -141,7 +139,6 @@ public class ContentEnrichersTest {
         // a configured list is authoritative over anything in the composite
         assertFalse(ContentEnrichers.hasTextRecognizer(listOf(annotator), PNG, context));
     }
-
 
     @Test
     public void testHasTextRecognizerRefusedDuringEnrichment() throws Exception {
@@ -254,7 +251,65 @@ public class ContentEnrichersTest {
         assertEquals(2, spiLast.calls);
     }
 
+    /** A default parser whose SPI found exactly these parsers. */
+    private static DefaultParser spiDefaults(Parser... found) {
+        return new DefaultParser(MediaTypeRegistry.getDefaultRegistry(),
+                new ServiceLoader(new ClassLoader(null) { })) {
+            private static final long serialVersionUID = 1L;
 
+            @Override
+            public List<Parser> getAllComponentParsers() {
+                return List.of(found);
+            }
+        };
+    }
+
+    /** A filter on the default-parser entry applies to the engines discovered inside it. */
+    @Test
+    public void testDefaultParserFilterAppliesToDiscovery() {
+        MediaType tiff = MediaType.image("tiff");
+        DefaultParser defaults = spiDefaults(new RecognizingParser(Set.of(PNG, tiff), true));
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, compositeOf(
+                ParserDecorator.withMimeFilters(defaults, null, Set.of(PNG))));
+        assertNull(ContentEnrichers.get(null, PNG, context), "excluded on default-parser");
+        assertNotNull(ContentEnrichers.get(null, tiff, context));
+        context.set(Parser.class, compositeOf(
+                ParserDecorator.withMimeFilters(defaults, Set.of(tiff), null)));
+        assertNull(ContentEnrichers.get(null, PNG, context), "not included on default-parser");
+        assertNotNull(ContentEnrichers.get(null, tiff, context));
+    }
+
+    /** The capability is asked of the engine, not of a _mime-exclude decorator around it. */
+    @Test
+    public void testTextRecognizerSeenThroughDecorator() {
+        MediaType tiff = MediaType.image("tiff");
+        Parser decorated = ParserDecorator.withMimeFilters(
+                new RecognizingParser(Set.of(PNG, tiff), true), null, Set.of(tiff));
+        ParseContext context = new ParseContext();
+        assertTrue(ContentEnrichers.hasTextRecognizer(listOf(decorated), PNG, context));
+        assertFalse(ContentEnrichers.hasTextRecognizer(listOf(decorated), tiff, context));
+        context.set(Parser.class, compositeOf(decorated));
+        assertTrue(ContentEnrichers.hasTextRecognizer(null, PNG, context));
+        assertFalse(ContentEnrichers.hasTextRecognizer(null, tiff, context));
+    }
+
+    /** A real-type filter on a legacy image/ocr-* engine's entry reaches it in discovery. */
+    @Test
+    public void testLegacyClaimantHonorsRealTypeFilter() {
+        MediaType tiff = MediaType.image("tiff");
+        RecordingParser legacy =
+                new RecordingParser(Set.of(OCR_PNG, MediaType.image("ocr-tiff")));
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, compositeOf(
+                ParserDecorator.withMimeFilters(legacy, null, Set.of(tiff))));
+        assertNull(ContentEnrichers.get(null, tiff, context));
+        assertNotNull(ContentEnrichers.get(null, PNG, context));
+        context.set(Parser.class, compositeOf(
+                ParserDecorator.withMimeFilters(legacy, Set.of(tiff), null)));
+        assertNotNull(ContentEnrichers.get(null, tiff, context));
+        assertNull(ContentEnrichers.get(null, PNG, context));
+    }
 
     @Test
     public void testExcludeAppliesToLegacyPseudoType() {
@@ -290,7 +345,6 @@ public class ContentEnrichersTest {
         assertNull(ContentEnrichers.get(null, MediaType.image("tiff"), context));
     }
 
-
     @Test
     public void testNoneAvailable() {
         ParseContext context = new ParseContext();
@@ -315,7 +369,6 @@ public class ContentEnrichersTest {
         // with no list configured, the same recognizer is discovered
         assertNotNull(ContentEnrichers.get(null, MediaType.image("tiff"), context));
     }
-
 
     @Test
     public void testParametersIgnoredInMatching() throws Exception {

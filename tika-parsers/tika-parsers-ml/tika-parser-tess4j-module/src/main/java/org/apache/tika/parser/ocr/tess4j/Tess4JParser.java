@@ -106,7 +106,6 @@ public class Tess4JParser implements Parser, Initializable, TextRecognizer {
                     MediaType.image("x-portable-pixmap")
             )));
 
-
     private static volatile boolean HAS_WARNED = false;
     private static final Object[] LOCK = new Object[0];
 

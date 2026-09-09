@@ -296,7 +296,6 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
         String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
             if (contentType.startsWith("image/") || contentType.equals("application/pdf")) {
-
                 return contentType;
             }
         }

@@ -155,8 +155,11 @@ the others, and every failure is still reported through the parser's normal exce
 (timeouts abort the chain immediately). With no `content-enrichers` configured, the enrichers
 found among the loaded parsers are the candidates and exactly one runs per media type: an engine
 configured under `parsers` beats one `default-parser` discovered on the classpath, and among
-those the last registered wins (user-supplied classes register after Tika's). A WARN names the
-collision and the winner. Engine names: `tesseract-ocr-parser`, `tess4j-parser`, `openai-vlm-parser`,
+those the last registered wins (user-supplied classes register after Tika's). When several
+engines in the winning tier claim a type, a WARN at first use names them and the winner; an
+engine under `parsers` shadows a classpath engine silently, by design. An entry's
+`_mime-include`/`_mime-exclude` applies here too, and on the `default-parser` entry it applies to
+every engine inside it. Engine names: `tesseract-ocr-parser`, `tess4j-parser`, `openai-vlm-parser`,
 `claude-vlm-parser`, `gemini-vlm-parser`.
 
 An enricher that produces the document's *text*, such as an OCR engine or a VLM prompted to
@@ -169,11 +172,14 @@ engines and VLM parsers all declare the capability.
 
 Enrichers are found by interface, not by media type: an enricher implements
 `org.apache.tika.parser.enricher.ContentEnricher` (or `TextRecognizer`, which extends it) and
-advertises the real types it enriches. A composite never lets an enricher displace the parser for a
-type, so `tesseract-ocr-parser` advertising `image/png` does not take PNGs away from
-`image-parser`. The `image/ocr-*` pseudo-types that routed OCR before 4.1 are retired: a
-third-party engine still advertising them is treated as a text recognizer for the real types,
-with a WARN, until 5.0, and nothing else in Tika produces or accepts them any more.
+advertises the real types it enriches. An engine the classpath supplied is never dispatched to:
+`tesseract-ocr-parser` advertising `image/png` does not take PNGs away from `image-parser`, it is
+called by it. Named under `parsers`, an engine is also a parser, but only for the types no other
+parser there claims (`"parsers": [{"tesseract-ocr-parser": {}}]` alone sends every image straight
+to OCR). The `image/ocr-*` pseudo-types that routed OCR before 4.1 are retired: a third-party
+engine still advertising them is treated as a text recognizer for the real types, with a WARN
+when it is first found, until 5.0. Nothing else in Tika produces them; a
+`tk:content-type-parser-override` naming one matches no parser and falls to the empty fallback.
 
 == Windows file paths
 

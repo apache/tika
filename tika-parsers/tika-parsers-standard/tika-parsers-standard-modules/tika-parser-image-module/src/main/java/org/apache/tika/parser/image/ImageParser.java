@@ -71,7 +71,6 @@ public class ImageParser extends AbstractImageParser {
                         // skipped, but owning the type keeps OCR enrichment reachable
                         MediaType.image("jp2"), MediaType.image("jpx"),
                         MediaType.image("x-portable-pixmap")));
-
     }
 
     private static final Set<MediaType> SUPPORTED_TYPES =

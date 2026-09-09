@@ -142,7 +142,6 @@ public class EmbeddedDocumentUtil {
      */
     @Deprecated
     public static String normalizeMediaType(String mediaType) {
-
         if (mediaType != null && mediaType.startsWith("image/ocr-")) {
             return "image/" + mediaType.substring("image/ocr-".length());
         }
@@ -161,7 +160,6 @@ public class EmbeddedDocumentUtil {
         }
         MimeType mimeType = getRegisteredMimeType(MimeTypes.getDefaultMimeTypes(), mediaType);
         return mimeType == null ? "" : mimeType.getExtension();
-
     }
 
     /**

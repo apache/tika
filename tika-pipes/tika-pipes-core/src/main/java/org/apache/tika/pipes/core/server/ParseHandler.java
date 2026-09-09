@@ -154,7 +154,6 @@ class ParseHandler {
             MediaType mt = detector.detect(tis, metadata, parseContext);
             metadata.set(HttpHeaders.CONTENT_TYPE, mt.toString());
             metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, mt.toString());
-
         } catch (IOException e) {
             LOG.warn("problem detecting: " + t.getId(), e);
         }

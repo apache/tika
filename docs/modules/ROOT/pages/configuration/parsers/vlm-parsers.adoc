@@ -51,7 +51,8 @@ xref:configuration/index.adoc[Configuration].
 
 All three enrich the standard image types (`image/png`, `image/jpeg`, ...).
 `ClaudeVLMParser` and `GeminiVLMParser` additionally declare `application/pdf`, so they can process
-PDFs natively with the model's vision capabilities.
+PDFs natively with the model's vision capabilities once the default `pdf-parser` is excluded (see
+below); an enricher never displaces the parser for a type.
 
 == Module dependency
 

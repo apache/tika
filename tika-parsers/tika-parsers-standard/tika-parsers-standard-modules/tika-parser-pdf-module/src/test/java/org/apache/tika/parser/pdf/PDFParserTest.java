@@ -1600,6 +1600,37 @@ public class PDFParserTest extends TikaTest {
         assertWellFormed(xml);
     }
 
+    /**
+     * TIKA-4884: a discovered engine failing with an IOException on the triggering page is
+     * recorded, that page keeps its text and later pages are still parsed; the failure
+     * surfaces once every page is done. Through 4.0 the composite wrapped that failure and
+     * the document aborted on the page.
+     */
+    @Test
+    public void testAutoOcrEngineFailureFallsBackToText() throws Exception {
+        PDFParserConfig config = autoOcrTriggeringPage16();
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, failingOcrParser(config));
+        Metadata metadata = new Metadata();
+        ToXMLContentHandler handler = new ToXMLContentHandler();
+        TikaException thrown = null;
+        try (TikaInputStream tis =
+                     getResourceAsStream("/test-documents/testPDF_bad_page_303226.pdf")) {
+            new PDFParser().parse(tis, handler, metadata, context);
+        } catch (TikaException e) {
+            thrown = e;
+        }
+        String xml = handler.toString();
+
+        assertContains("42936", xml);
+        assertContains("1308.44", xml);
+        assertContains("simulated engine failure", String.join("\n",
+                metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)));
+        assertNotNull(thrown, "the recorded failure still surfaces once every page is done");
+        assertWellFormed(xml);
+    }
+
     /** TIKA-4883: once maxPagesToOcr is exhausted, later triggering pages keep their text. */
     @Test
     public void testAutoOcrMaxPagesFallsBackToText() throws Exception {
@@ -1780,6 +1811,21 @@ public class PDFParserTest extends TikaTest {
                     xhtml.characters(text);
                 }
                 xhtml.endDocument();
+            }
+        };
+    }
+
+    private static Parser failingOcrParser(PDFParserConfig config) {
+        return new MockEngine() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(ocrMediaType(config));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws IOException {
+                throw new IOException("simulated engine failure");
             }
         };
     }

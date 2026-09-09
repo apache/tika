@@ -6,12 +6,14 @@ Release 4.1.0 - unreleased
      Content-Type never carries the prefix (extracted images get their real extension
      instead of .bin), a _mime-include/_mime-exclude naming one fails config load with
      the real type in the message, and a third-party engine still advertising them is
-     treated as a legacy text recognizer with a WARN until 5.0. A composite never lets
-     an enricher displace the parser for a type; image-parser now owns image/jp2,
-     image/jpx and image/x-portable-pixmap and calls the OCR engine on them. With no
-     content-enrichers list, an engine configured under "parsers" beats one discovered
-     by default-parser, and among those the last registered wins. An invoked
-     enricher is recorded in tk:parsed-by as a dispatched parser would be.
+     treated as a legacy text recognizer with a WARN until 5.0. An engine the classpath
+     supplied is never dispatched to, and one named under "parsers" only fills the types
+     no other parser there claims; image-parser now owns image/jp2, image/jpx and
+     image/x-portable-pixmap and calls the OCR engine on them. With no content-enrichers
+     list, an engine configured under "parsers" beats one discovered by default-parser,
+     among those the last registered wins, and an entry's _mime-include/_mime-exclude
+     applies to discovery too. An invoked enricher is recorded in tk:parsed-by (images)
+     and tk:parsed-by-full-set (PDF page renders) as a dispatched parser would be.
      EmbeddedDocumentUtil.normalizeMediaType is deprecated (TIKA-4884).
 
    * The PDF parser's AUTO OCR strategy no longer emits a page's extracted text

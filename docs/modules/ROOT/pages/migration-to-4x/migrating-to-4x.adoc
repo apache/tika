@@ -236,14 +236,18 @@ Through 4.0.x an OCR engine was found because it advertised `image/ocr-png`, `im
 `org.apache.tika.parser.enricher.TextRecognizer` and advertises the real types (`image/png`).
 What changes for you:
 
-* A `_mime-include`/`_mime-exclude` naming `image/ocr-*` fails config load; the message names the
-  real type to use instead.
-* Setting `tk:content-type-parser-override` to `image/ocr-*` no longer forces OCR; the image parser
-  always invokes the OCR engine, and the PDF parser's `ocr.strategy` controls pages.
+* A `_mime-include`/`_mime-exclude` naming `image/ocr-*` fails config load. To keep an engine off
+  a type, filter the real type on the engine's own entry
+  (`{"tesseract-ocr-parser": {"_mime-exclude": ["image/tiff"]}}`); on the `default-parser` entry a
+  real-type filter also removes the parser for that type.
+* An engine the classpath supplied is never dispatched to; `image-parser` always invokes it, and
+  the PDF parser's `ocr.strategy` controls pages. A `tk:content-type-parser-override` of
+  `image/ocr-*` matches no parser any more and the document falls to the empty fallback parser:
+  drop the override.
 * `Content-Type` never carries an `ocr-` prefix any more, so extracted image files get their real
   extension instead of `.bin`.
 * A custom engine that still advertises the pseudo-types keeps working as a text recognizer for the
-  real types, with a WARN at load, until 5.0. Advertise the real types and implement
+  real types, with a WARN when it is first found, until 5.0. Advertise the real types and implement
   `TextRecognizer` to silence it.
 
 For the general serialization model and how JSON configuration works, see

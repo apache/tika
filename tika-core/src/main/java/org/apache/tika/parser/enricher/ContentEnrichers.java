@@ -61,7 +61,7 @@ public final class ContentEnrichers {
     /** Retired {@code image/ocr-*} pseudo-type marker; honored as an alias until 5.0. */
     private static final String LEGACY_OCR_PREFIX = "ocr-";
 
-    // bounded by distinct engine class names; keeps the legacy and collision WARNs to once
+    // bounded by engine class names and the base types they claim; each WARN fires once
     private static final Set<String> WARNED = ConcurrentHashMap.newKeySet();
 
     private ContentEnrichers() {
@@ -75,8 +75,10 @@ public final class ContentEnrichers {
      * composite bound to the context are the candidates and exactly one runs: an engine
      * named under {@code "parsers"} beats one the default parser discovered, and within a
      * tier the last claimant wins, matching composite dispatch (user-supplied classes
-     * register after Tika's). Null while an enrichment is already in progress in this
-     * context, so an enricher that is (or invokes) a container parser cannot recurse.
+     * register after Tika's). An entry's {@code _mime-include}/{@code _mime-exclude}
+     * applies, on the {@code default-parser} entry to every engine inside it. Null while
+     * an enrichment is already in progress in this context, so an enricher that is (or
+     * invokes) a container parser cannot recurse.
      *
      * @param enrichers the injected composite; may be null when none is configured
      * @param mediaType the real, normalized media type of the bytes; may be null
@@ -112,7 +114,8 @@ public final class ContentEnrichers {
         }
         if (enrichers != null) {
             for (Parser p : enrichers.getEnrichers(mediaType)) {
-                if (p instanceof TextRecognizer recognizer && recognizer.recognizesText(context)) {
+                TextRecognizer recognizer = asTextRecognizer(p);
+                if (recognizer != null && recognizer.recognizesText(context)) {
                     return true;
                 }
             }
@@ -125,13 +128,18 @@ public final class ContentEnrichers {
         if (discovered.legacy) {
             return true;
         }
-        return unwrap(discovered.parser) instanceof TextRecognizer recognizer
-                && recognizer.recognizesText(context);
+        TextRecognizer recognizer = asTextRecognizer(discovered.parser);
+        return recognizer != null && recognizer.recognizesText(context);
     }
 
     /** True if the parser, under any decorators, is a {@link ContentEnricher}. */
     public static boolean isEnricher(Parser parser) {
         return unwrap(parser) instanceof ContentEnricher;
+    }
+
+    /** The {@link TextRecognizer} under any decorators; null if the parser is not one. */
+    public static TextRecognizer asTextRecognizer(Parser parser) {
+        return unwrap(parser) instanceof TextRecognizer recognizer ? recognizer : null;
     }
 
     /** True for a retired {@code image/ocr-*} pseudo-type. */
@@ -189,14 +197,15 @@ public final class ContentEnrichers {
         }
         List<Candidate> configured = new ArrayList<>();
         List<Candidate> discovered = new ArrayList<>();
-        collect(root, mediaType.getBaseType(), context, false, configured, discovered);
+        MediaType baseType = mediaType.getBaseType();
+        collect(root, baseType, context, false, configured, discovered);
         List<Candidate> tier = configured.isEmpty() ? discovered : configured;
         if (tier.isEmpty()) {
             return null;
         }
         Candidate winner = tier.get(tier.size() - 1);
         if (tier.size() > 1) {
-            warnCollision(mediaType, tier, winner);
+            warnCollision(baseType, tier, winner);
         }
         return winner;
     }
@@ -205,6 +214,9 @@ public final class ContentEnrichers {
                                 boolean inDefault, List<Candidate> configured,
                                 List<Candidate> discovered) {
         Parser engine = unwrap(parser);
+        if (filteredOut(parser, engine, type, context)) {
+            return;
+        }
         if (engine instanceof CompositeParser composite) {
             boolean def = inDefault || engine instanceof DefaultParser;
             for (Parser child : composite.getAllComponentParsers()) {
@@ -212,8 +224,7 @@ public final class ContentEnrichers {
             }
             return;
         }
-        // the decorated view: a _mime-exclude on the entry applies
-        Set<MediaType> types = parser.getSupportedTypes(context);
+        Set<MediaType> types = engine.getSupportedTypes(context);
         boolean legacy;
         if (engine instanceof ContentEnricher) {
             if (!types.contains(type)) {
@@ -228,6 +239,31 @@ public final class ContentEnrichers {
             return;
         }
         (inDefault ? discovered : configured).add(new Candidate(parser, legacy));
+    }
+
+    /**
+     * Whether the entry's decorators drop this type. A {@code _mime-include}/{@code
+     * _mime-exclude} is asked directly, so it also reaches a legacy engine, whose
+     * pseudo-type no real-type filter can name; any other decorator counts by what it
+     * removes from the engine's own view.
+     */
+    private static boolean filteredOut(Parser decorated, Parser engine, MediaType type,
+                                       ParseContext context) {
+        if (decorated == engine) {
+            return false;
+        }
+        boolean exact = false;
+        for (Parser p = decorated; p instanceof ParserDecorator d; p = d.getWrappedParser()) {
+            if (d instanceof ParserDecorator.MimeFilteringDecorator f) {
+                exact = true;
+                if (f.getExcludeTypes().contains(type) || (!f.getIncludeTypes().isEmpty()
+                        && !f.getIncludeTypes().contains(type))) {
+                    return true;
+                }
+            }
+        }
+        return !exact && engine.getSupportedTypes(context).contains(type)
+                && !decorated.getSupportedTypes(context).contains(type);
     }
 
     private static void warnCollision(MediaType mediaType, List<Candidate> tier,

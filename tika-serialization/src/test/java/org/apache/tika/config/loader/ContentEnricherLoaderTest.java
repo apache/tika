@@ -28,11 +28,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.ContentEnrichers;
+import org.apache.tika.utils.ParserUtils;
 
 public class ContentEnricherLoaderTest {
 
@@ -120,6 +126,32 @@ public class ContentEnricherLoaderTest {
                 "unexpected message: " + message);
     }
 
+    /**
+     * The "customize one parser" shape: a parser configured before default-parser keeps
+     * its type although an SPI enricher inside default-parser claims it too, and that
+     * enricher is still discovered for the type (TIKA-4884).
+     */
+    @Test
+    public void testConfiguredParserKeepsTypeOverSpiEnricher() throws Exception {
+        TikaLoader loader = load("""
+                {
+                  "parsers": [ {"minimal-test-parser": {}}, {"default-parser": {}} ]
+                }
+                """);
+        MediaType type = MediaType.parse("application/test+minimal");
+        CompositeParser parsers = (CompositeParser) loader.loadParsers();
+        ParseContext context = new ParseContext();
+        assertEquals(MinimalTestParser.class.getName(),
+                ParserUtils.getParserClassname(parsers.getParsers(context).get(type)));
+        context.set(Parser.class, parsers);
+        Parser enricher = ContentEnrichers.get(null, type, context);
+        assertNotNull(enricher, "the SPI enricher is still discovered for the type");
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            enricher.parse(tis, new DefaultHandler(), metadata, context);
+        }
+        assertEquals("test-spi-enricher", metadata.get("derived-by"));
+    }
 
     @Test
     public void testMimeIncludeDoesNotMaskUnavailableEngine() throws Exception {

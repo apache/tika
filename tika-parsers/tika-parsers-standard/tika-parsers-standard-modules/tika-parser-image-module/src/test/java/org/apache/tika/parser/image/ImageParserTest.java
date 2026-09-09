@@ -17,6 +17,7 @@
 package org.apache.tika.parser.image;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
@@ -251,6 +252,39 @@ public class ImageParserTest extends TikaTest {
         assertEquals("test-enricher", metadata.get("derived-by"));
         // the image parser still ran and extracted its own metadata
         assertEquals("100", metadata.get(TIFF.IMAGE_WIDTH));
+    }
+
+    /**
+     * image/jp2, image/jpx and image/x-portable-pixmap belong to the image parser since 4.1
+     * so the enricher stays reachable; with no JPEG 2000 reader it extracts nothing and
+     * must not fail (TIKA-4884).
+     */
+    @Test
+    public void testJp2ReachesEnricherWithoutReader() throws Exception {
+        assertTrue(parser.getSupportedTypes(new ParseContext()).contains(MediaType.image("jp2")));
+        Parser enricher = new Parser() {
+            @Override
+            public java.util.Set<MediaType> getSupportedTypes(ParseContext context) {
+                return java.util.Collections.singleton(MediaType.image("jp2"));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, org.xml.sax.ContentHandler handler,
+                              Metadata metadata, ParseContext context) {
+                metadata.set("derived-by", "test-enricher");
+            }
+        };
+        ImageParser imageParser = new ImageParser();
+        imageParser.setContentEnrichers(
+                new org.apache.tika.parser.enricher.CompositeContentEnricher(
+                        java.util.List.of(enricher)));
+
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jp2");
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testJPEG.jp2")) {
+            imageParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        }
+        assertEquals("test-enricher", metadata.get("derived-by"));
     }
 
     /**

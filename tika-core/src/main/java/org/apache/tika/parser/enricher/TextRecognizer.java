@@ -30,11 +30,13 @@ import org.apache.tika.parser.ParseContext;
  * picked up from the composite. The {@code image/ocr-*} pseudo-types that served that
  * purpose before 4.1 are retired; a parser still advertising them is treated as a legacy
  * recognizer for the real type, with a warning, until 5.0.
+ * <p>
+ * Decorators hide this interface: ask through {@link ContentEnrichers#asTextRecognizer},
+ * not {@code instanceof}.
  *
  * @since Apache Tika 4.1
  */
 public interface TextRecognizer extends ContentEnricher {
-
 
     /**
      * Whether this configured instance recognizes text for this parse. A VLM is an OCR

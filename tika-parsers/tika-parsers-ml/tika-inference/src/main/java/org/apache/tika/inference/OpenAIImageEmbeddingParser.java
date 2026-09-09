@@ -102,7 +102,6 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
                     MediaType.image("webp")
             )));
 
-
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private ImageEmbeddingConfig defaultConfig;
@@ -270,7 +269,6 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
         String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
             if (contentType.startsWith("image/")) {
-
                 return contentType;
             }
         }

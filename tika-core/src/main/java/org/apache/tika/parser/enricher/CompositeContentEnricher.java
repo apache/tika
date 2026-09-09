@@ -40,7 +40,6 @@ import org.apache.tika.parser.ParserDecorator;
  * still advertising the retired {@code image/ocr-*} pseudo-types is keyed under the real
  * type, with a warning, until 5.0. An enricher does not compete with the parser registered
  * for the same type: that parser still runs and calls the enricher.
-
  *
  * @since Apache Tika 4.1
  */
@@ -92,7 +91,6 @@ public class CompositeContentEnricher implements Serializable {
         }
         return parser;
     }
-
 
     /**
      * @return the enrichers for this media type in config order, empty when none;

@@ -76,7 +76,6 @@ public class OpenAIVLMParser extends AbstractVLMParser {
                     MediaType.image("webp")
             )));
 
-
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     /**

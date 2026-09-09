@@ -22,10 +22,12 @@ package org.apache.tika.parser.enricher;
  * one the composite dispatches a document to. Its supported types are the types it can
  * enrich.
  * <p>
- * A composite never lets an enricher displace the parser registered for a type: an
- * enricher's claim stands only where no other parser claims the type. With no
- * {@code "content-enrichers"} list configured, the enrichers found in the composite are the
- * candidates for enrichment; see {@link ContentEnrichers#get}.
+ * An enricher the classpath supplied is never dispatched to:
+ * {@link org.apache.tika.parser.DefaultParser} leaves it out of its dispatch map. Named
+ * under {@code "parsers"} it is a parser as well, but only for the types no other parser
+ * there claims; it never displaces one. With no {@code "content-enrichers"} list
+ * configured, the enrichers found in the composite are the candidates for enrichment; see
+ * {@link ContentEnrichers#get}.
  *
  * @since Apache Tika 4.1
  */

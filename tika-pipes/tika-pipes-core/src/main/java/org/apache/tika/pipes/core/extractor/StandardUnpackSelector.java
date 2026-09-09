@@ -84,7 +84,6 @@ public class StandardUnpackSelector implements UnpackSelector {
             return false;
         }
 
-
         String embeddedResourceType = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
         // If a parser doesn't specify the type, treat it as ATTACHMENT
         embeddedResourceType = StringUtils.isBlank(embeddedResourceType) ? "ATTACHMENT" :

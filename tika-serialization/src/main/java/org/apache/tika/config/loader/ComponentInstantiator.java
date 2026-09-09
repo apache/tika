@@ -36,7 +36,6 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.serialization.ComponentNameResolver;
 
-
 /**
  * Utility class for instantiating Tika components from JSON configuration.
  * Provides common logic for all component loaders to avoid code duplication.
@@ -250,12 +249,13 @@ public class ComponentInstantiator {
         MediaType type = MediaType.parse(mimeStr);
         if (ContentEnrichers.isLegacyOcrType(type)) {
             throw new TikaConfigException("\"" + mimeStr + "\" is a retired image/ocr-* "
-                    + "pseudo-type; OCR engines advertise real types since 4.1, so use \""
-                    + ContentEnrichers.stripLegacyOcrPrefix(type) + "\" here instead.");
+                    + "pseudo-type; OCR engines advertise real types since 4.1. To keep an "
+                    + "engine off \"" + ContentEnrichers.stripLegacyOcrPrefix(type)
+                    + "\", filter that real type on the engine's own entry (on default-parser "
+                    + "it also removes the parser for the type).");
         }
         return type;
     }
-
 
     /** True if {@code clazz} binds its config through a public {@code (JsonConfig)} constructor. */
     public static boolean hasJsonConfigConstructor(Class<?> clazz) {
