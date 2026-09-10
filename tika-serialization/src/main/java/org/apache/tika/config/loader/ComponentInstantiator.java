@@ -33,6 +33,7 @@ import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
+import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.serialization.ComponentNameResolver;
 
 /**
@@ -224,7 +225,8 @@ public class ComponentInstantiator {
         }
     }
 
-    private static Set<MediaType> extractMimeTypes(JsonNode configNode, String fieldName) {
+    private static Set<MediaType> extractMimeTypes(JsonNode configNode, String fieldName)
+            throws TikaConfigException {
         Set<MediaType> types = new HashSet<>();
         if (configNode == null || !configNode.has(fieldName)) {
             return types;
@@ -232,10 +234,26 @@ public class ComponentInstantiator {
         JsonNode arrayNode = configNode.get(fieldName);
         if (arrayNode.isArray()) {
             for (JsonNode typeNode : arrayNode) {
-                types.add(MediaType.parse(typeNode.asText()));
+                types.add(parseFilterType(typeNode.asText()));
             }
         }
         return types;
+    }
+
+    /**
+     * Parses a {@code _mime-include}/{@code _mime-exclude} entry; a retired
+     * {@code image/ocr-*} pseudo-type fails load rather than silently matching nothing.
+     */
+    static MediaType parseFilterType(String mimeStr) throws TikaConfigException {
+        MediaType type = MediaType.parse(mimeStr);
+        if (ContentEnrichers.isLegacyOcrType(type)) {
+            throw new TikaConfigException("\"" + mimeStr + "\" is a retired image/ocr-* "
+                    + "pseudo-type; OCR engines advertise real types since 4.1. To keep an "
+                    + "engine off \"" + ContentEnrichers.stripLegacyOcrPrefix(type)
+                    + "\", filter that real type on the engine's own entry (on default-parser "
+                    + "it also removes the parser for the type).");
+        }
+        return type;
     }
 
     /** True if {@code clazz} binds its config through a public {@code (JsonConfig)} constructor. */

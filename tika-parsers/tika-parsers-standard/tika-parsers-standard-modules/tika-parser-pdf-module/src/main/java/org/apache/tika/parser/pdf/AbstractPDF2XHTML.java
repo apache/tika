@@ -221,9 +221,15 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         this.pdDocument = pdDocument;
         this.ocrImageMediaType =
                 MediaType.image(config.getOcr().getImageFormat().getFormatName());
-        this.ocrEngine = ContentEnrichers.get(contentEnrichers, ocrImageMediaType, context);
+        // resolved before any page is rendered, so a probe stands in for the render
+        Metadata renderTarget = new Metadata();
+        renderTarget.set(HttpHeaders.CONTENT_TYPE, ocrImageMediaType.toString());
+        renderTarget.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
+        this.ocrEngine =
+                ContentEnrichers.get(contentEnrichers, ocrImageMediaType, renderTarget, context);
         if (config.getOcr().getStrategy() == AUTO && ContentEnrichers.hasTextRecognizer(
-                contentEnrichers, ocrImageMediaType, context)) {
+                contentEnrichers, ocrImageMediaType, renderTarget, context)) {
             this.pageBuffer = new PageTextBuffer(handler);
             this.xhtml = new XHTMLContentHandler(pageBuffer, metadata, context);
         } else {
@@ -657,7 +663,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 throw new TikaException(
                         "I regret that I couldn't find an OCR engine to handle " +
                                 ocrImageMediaType + ". Name one that covers it in " +
-                                "\"content-enrichers\" (a configured list is authoritative), " +
+                                "\"text-recognizers\" (a configured list is authoritative), " +
                                 "add one to the classpath when no list is configured, " +
                                 "or set the OCR strategy to NO_OCR.");
             }

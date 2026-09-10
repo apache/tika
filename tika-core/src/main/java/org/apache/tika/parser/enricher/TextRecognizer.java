@@ -24,15 +24,19 @@ import org.apache.tika.parser.ParseContext;
  * enrichers annotate (captions, embeddings, tags); a caller never substitutes their output
  * for text it already has. Only text recognizers count when a caller such as the PDF
  * parser's AUTO OCR strategy asks whether an engine can stand in for extracted text.
+ * <p>
+ * With no {@code "text-recognizers"} list, a recognizer on the classpath is found by this
+ * interface (see {@link ContentEnrichers#resolve}). Decorators hide it: ask through
+ * {@link ContentEnrichers#asTextRecognizer}, not {@code instanceof}.
  *
  * @since Apache Tika 4.1
  */
-public interface TextRecognizer {
+public interface TextRecognizer extends ContentEnricher {
 
     /**
-     * Whether this configured instance recognizes text for this parse. A VLM is an OCR
-     * engine or a captioner depending on its prompt, and an OCR engine told to skip OCR
-     * recognizes nothing.
+     * Whether this configured instance recognizes text for this parse. An OCR engine told
+     * to skip OCR recognizes nothing; a VLM answers from its configuration, since only the
+     * operator knows whether its prompt transcribes or captions.
      */
     default boolean recognizesText(ParseContext context) {
         return true;

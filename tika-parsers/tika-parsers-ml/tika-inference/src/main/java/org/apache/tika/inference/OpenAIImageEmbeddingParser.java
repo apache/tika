@@ -54,6 +54,7 @@ import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.ContentEnricher;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 
@@ -62,9 +63,9 @@ import org.apache.tika.utils.StringUtils;
  * (OpenAI-compatible {@code /v1/embeddings} with image input) and
  * stores the resulting vector in metadata.
  * <p>
- * This parser registers for the same {@code image/ocr-*} media types
- * used by the PDF renderer's OCR pipeline, so it slots into the
- * existing {@code ocr.strategy} mechanism. When configured, each
+ * An annotating content enricher for image types (experimental; 4.2 gives annotators a list of
+ * their own): named in {@code "text-recognizers"}, it runs on
+ * embedded images and on the pages the PDF parser's {@code ocr.strategy} renders. Each
  * rendered page image is sent to the embedding endpoint and the
  * vector is stored as a serialized {@link Chunk} with a
  * {@link PaginatedLocator} (when page number metadata is available).
@@ -81,30 +82,25 @@ import org.apache.tika.utils.StringUtils;
  * @since Apache Tika 4.0
  */
 @TikaComponent(name = "openai-image-embedding-parser", spi = false)
-public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closeable {
+public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closeable,
+        ContentEnricher {
 
     private static final long serialVersionUID = 1L;
 
     private static final Logger LOG = LoggerFactory.getLogger(
             OpenAIImageEmbeddingParser.class);
 
-    private static final String OCR = "ocr-";
-
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MediaType.image(OCR + "png"),
-                    MediaType.image(OCR + "jpeg"),
-                    MediaType.image(OCR + "tiff"),
-                    MediaType.image(OCR + "bmp"),
-                    MediaType.image(OCR + "gif"),
+                    MediaType.image("png"),
+                    MediaType.image("jpeg"),
+                    MediaType.image("tiff"),
+                    MediaType.image("bmp"),
+                    MediaType.image("gif"),
                     MediaType.image("jp2"),
                     MediaType.image("jpx"),
                     MediaType.image("x-portable-pixmap"),
-                    MediaType.image(OCR + "jp2"),
-                    MediaType.image(OCR + "jpx"),
-                    MediaType.image(OCR + "x-portable-pixmap"),
-                    MediaType.image("webp"),
-                    MediaType.image(OCR + "webp")
+                    MediaType.image("webp")
             )));
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -138,7 +134,9 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        if (defaultConfig.isSkipEmbedding()) {
+        ImageEmbeddingConfig userConfig = context.get(ImageEmbeddingConfig.class);
+        if (defaultConfig.isSkipEmbedding()
+                || (userConfig != null && userConfig.isSkipEmbedding())) {
             return Collections.emptySet();
         }
         return SUPPORTED_TYPES;
@@ -273,7 +271,6 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
     private String detectMimeType(Metadata metadata) {
         String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
         if (contentType != null) {
-            contentType = contentType.replace("ocr-", "");
             if (contentType.startsWith("image/")) {
                 return contentType;
             }
@@ -298,6 +295,10 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
             return ParseContextConfig.getConfig(
                     parseContext, key, ImageEmbeddingConfig.class,
                     defaultConfig);
+        }
+        ImageEmbeddingConfig userConfig = parseContext.get(ImageEmbeddingConfig.class);
+        if (userConfig != null) {
+            return userConfig;
         }
         return defaultConfig;
     }

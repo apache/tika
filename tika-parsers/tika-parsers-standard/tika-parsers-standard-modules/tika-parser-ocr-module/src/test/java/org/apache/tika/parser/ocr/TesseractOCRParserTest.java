@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -35,18 +34,9 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.image.BPGParser;
-import org.apache.tika.parser.image.HeifParser;
-import org.apache.tika.parser.image.ICNSParser;
-import org.apache.tika.parser.image.ImageParser;
-import org.apache.tika.parser.image.JpegParser;
-import org.apache.tika.parser.image.PSDParser;
-import org.apache.tika.parser.image.TiffParser;
-import org.apache.tika.parser.image.WebPParser;
 
 public class TesseractOCRParserTest extends TikaTest {
 
@@ -79,20 +69,9 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
 
+    // no override: detection reaches Tesseract through the image parser
     private Metadata getMetadata(MediaType mediaType) {
-        Metadata metadata = new Metadata();
-        MediaType ocrMediaType =
-                new MediaType(mediaType.getType(), "OCR-" + mediaType.getSubtype());
-        metadata.set(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE, ocrMediaType.toString());
-        return metadata;
-    }
-
-    private MediaType deOCR(MediaType mediaType) {
-        String subtype = mediaType.getSubtype();
-        if (subtype.startsWith("ocr-")) {
-            subtype = subtype.substring(4);
-        }
-        return new MediaType(mediaType.getType(), subtype);
+        return new Metadata();
     }
 
     @Test
@@ -258,45 +237,6 @@ public class TesseractOCRParserTest extends TikaTest {
                 tesseractOCRConfig.getOtherTesseractConfig().get("textord_noise_hfract"));
     }
 
-
-    //to be used to figure out a) what image media types don't have ocr coverage and
-    // b) what ocr media types don't have dedicated image parsers
-    //this obv requires that tesseract be installed
-    //TODO: convert to actual unit test
-    //@Test
-    public void showCoverage() throws Exception {
-        Set<MediaType> imageParserMimes = new HashSet<>();
-        for (Parser p : new Parser[]{new BPGParser(), new HeifParser(), new ICNSParser(),
-                new ImageParser(), new JpegParser(), new PSDParser(), new TiffParser(),
-                new WebPParser(),}) {
-            imageParserMimes.addAll(p.getSupportedTypes(new ParseContext()));
-        }
-        //mime types that Tesseract will cover if there is no existing parser
-        //that in turn will call tesseract .. e.g. the mime subtype doesn't start
-        //with ocr-
-        Set<MediaType> literalTesseractMimes = new HashSet<>();
-
-        //mimes whose subtimes start with ocr-
-        Set<MediaType> ocrTesseractMimes = new HashSet<>();
-        for (MediaType mt : new TesseractOCRParser().getSupportedTypes(new ParseContext())) {
-            if (mt.getSubtype().startsWith("ocr-")) {
-                ocrTesseractMimes.add(deOCR(mt));
-            } else {
-                literalTesseractMimes.add(mt);
-            }
-        }
-
-        for (MediaType mt : imageParserMimes) {
-            if (!ocrTesseractMimes.contains(mt)) {
-                System.out.println("tesseract isn't currently configured to handle: " + mt);
-            }
-        }
-
-        for (MediaType mt : literalTesseractMimes) {
-            System.out.println("We don't have dedicated image parsers " +
-                    "for these formats, which are handled by tesseract: " + mt);
-        }
-    }
 
     @Test
     public void testThreadJoinInLoadingLangs() throws Exception {

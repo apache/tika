@@ -113,7 +113,7 @@ public class TikaJsonConfig {
             "metadata-filters",
             "content-handler-factory",
             "renderers",
-            "content-enrichers",
+            "text-recognizers",
             "translator",
             "auto-detect-parser",
             "parse-context",

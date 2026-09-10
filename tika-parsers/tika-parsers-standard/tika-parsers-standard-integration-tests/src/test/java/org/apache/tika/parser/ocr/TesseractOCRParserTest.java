@@ -217,11 +217,7 @@ public class TesseractOCRParserTest extends TikaTest {
         assertContainsCount("</body", xml, 1);
         assertContainsCount("</html", xml, 1);
 
-        //content type should be either image/jpeg or image/ocr-jpeg depending on
-        //how the parser was routed
-        assertTrue(xml.contains("content=\"image/jpeg\"") ||
-                        xml.contains("content=\"image/ocr-jpeg\""),
-                "Expected content type image/jpeg or image/ocr-jpeg in xml");
+        assertContains("content=\"image/jpeg\"", xml);
     }
 
 

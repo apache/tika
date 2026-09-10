@@ -94,6 +94,7 @@
 * xref:developers/index.adoc[Developers]
 ** xref:developers/serialization.adoc[Serialization and Configuration]
 ** xref:developers/metadata-keys.adoc[Adding a Metadata Key]
+** xref:developers/custom-ocr-engine.adoc[Wiring in Your Own OCR Engine]
 * xref:faq.adoc[FAQ]
 * xref:roadmap.adoc[Roadmap]
 * xref:maintainers/index.adoc[Maintainers]

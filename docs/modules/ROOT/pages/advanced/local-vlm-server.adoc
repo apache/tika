@@ -338,12 +338,13 @@ curl http://localhost:8000/v1/models
 
 == Configure Tika to use it
 
-Point the `OpenAIVLMParser` at your local server:
+Point the `OpenAIVLMParser` at your local server and name it as the text recognizer, so it
+transcribes embedded images and rendered PDF pages while every default parser stays loaded:
 
 [source,json]
 ----
 {
-  "parsers": [
+  "text-recognizers": [
     {
       "openai-vlm-parser": {
         "baseUrl": "http://127.0.0.1:8000",
@@ -354,6 +355,8 @@ Point the `OpenAIVLMParser` at your local server:
   ]
 }
 ----
+
+Config load fails if the server is not reachable at startup, so start the server first.
 
 A generous `timeoutMillis` is recommended — local inference on Apple
 Silicon takes 10-60 seconds per page depending on model size and image

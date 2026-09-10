@@ -1,0 +1,266 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+= Wiring in Your Own OCR Engine
+
+An OCR engine in Tika is a text recognizer: a `Parser` that `image-parser` and `pdf-parser`
+*invoke* on an image they have already parsed, never one the composite dispatches to. Writing one
+takes a class, a jar, and three lines of JSON. This page walks through all three with a
+hypothetical `jina-ocr-parser`; the same steps apply to any transcription service, and, with one
+interface dropped, to an annotator such as a captioner or tagger.
+
+Before writing code, check whether you need to. An engine reachable through an
+OpenAI-compatible chat completions endpoint is already covered by `openai-vlm-parser`; see
+xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers].
+
+== The class
+
+[source,java]
+----
+package com.example.tika;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Set;
+
+import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
+
+import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.ParseContextConfig;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.TextRecognizer;
+import org.apache.tika.sax.XHTMLContentHandler;
+
+@TikaComponent(name = "jina-ocr-parser", spi = false)
+public class JinaOcrParser implements Parser, TextRecognizer, Initializable {
+
+    private static final Set<MediaType> TYPES = Set.of(
+            MediaType.image("png"), MediaType.image("jpeg"), MediaType.image("tiff"));
+
+    private final JinaOcrConfig defaultConfig;
+    private volatile boolean available;
+
+    public JinaOcrParser() {
+        this(new JinaOcrConfig());
+    }
+
+    public JinaOcrParser(JinaOcrConfig config) {
+        this.defaultConfig = config;
+    }
+
+    // how the loader binds the JSON body of {"jina-ocr-parser": {...}}
+    public JinaOcrParser(JsonConfig json) throws TikaConfigException {
+        this(ConfigDeserializer.buildConfig(json, JinaOcrConfig.class));
+    }
+
+    @Override
+    public void initialize() throws TikaConfigException {
+        available = JinaClient.ping(defaultConfig.getEndpoint(), defaultConfig.getTimeoutMillis());
+    }
+
+    // empty when the engine cannot run: under "text-recognizers" that fails config load
+    @Override
+    public Set<MediaType> getSupportedTypes(ParseContext context) {
+        return available ? TYPES : Collections.emptySet();
+    }
+
+    // false when this parse should keep its extracted text
+    @Override
+    public boolean recognizesText(ParseContext context) {
+        return available && !config(context).isSkipOcr();
+    }
+
+    @Override
+    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                      ParseContext context) throws IOException, SAXException, TikaException {
+        JinaOcrConfig config = config(context);
+        if (!available || config.isSkipOcr()) {
+            return;
+        }
+        String text = JinaClient.transcribe(tis.getPath(), config);
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+        xhtml.startDocument();
+        xhtml.characters(text);
+        xhtml.endDocument();
+    }
+
+    private JinaOcrConfig config(ParseContext context) {
+        try {
+            return ParseContextConfig.getConfig(context, "jina-ocr-parser",
+                    JinaOcrConfig.class, defaultConfig);
+        } catch (TikaConfigException | IOException e) {
+            return defaultConfig;
+        }
+    }
+}
+----
+
+`JinaOcrConfig` is a plain serializable bean with getters and setters (`endpoint`, `apiKey`,
+`timeoutMillis`, `skipOcr`, ...). Its field names are the JSON keys.
+
+What each piece is for:
+
+`TextRecognizer`::
+Says the engine's output is the document's *text*. That is what lets the PDF parser's `AUTO`
+strategy replace a page's extracted text with yours. A captioner, tagger or embedder implements
+`org.apache.tika.parser.enricher.ContentEnricher` instead, and its output never displaces text.
+
+Real media types::
+Advertise the image types you read: `image/png`, not a routing alias. The pre-4.1
+`image/ocr-*` pseudo-types are retired; an engine still advertising them is tolerated with a WARN
+until 5.0 and gets no other benefit.
+
+`getSupportedTypes` empty when unavailable::
+Named under `text-recognizers`, an engine that advertises nothing at startup fails config load
+with a message naming it, instead of silently doing nothing. Make availability a startup fact
+(`initialize()`), not a per-image discovery.
+
+`recognizesText`::
+Per parse. Return false when this request told you to skip, or when the prompt or mode you were
+configured with does not transcribe. An engine that returns true and then writes nothing never
+displaces text either; the callers check both.
+
+The handler::
+Write text through an `XHTMLContentHandler` as shown. The caller wraps your handler so that your
+`startDocument`/`endDocument` are swallowed and only body content lands, inline with the image's
+own output. Do not write headings, tables or other structure the caller did not ask for, and do
+not set `Content-Type`: the caller restores it after you return.
+
+Bound every call::
+An external process should go through `org.apache.tika.parser.AbstractExternalProcessParser`
+so the pipes deadline reaches it; an HTTP call should honor `timeoutMillis`. Input files are
+hostile: cap the bytes you send and release every resource on failure.
+
+Metadata::
+Your own keys need a registered prefix; see xref:developers/metadata-keys.adoc[Adding a Metadata
+Key]. Never write `tk:` keys.
+
+`spi = false`::
+Keeps the engine out of classpath discovery so it runs only when named. With `spi = true` a jar
+on the classpath is found and resolved automatically, which is convenient for a drop-in engine,
+but when Tesseract is also present the winner is decided by registration order and reported as a
+WARN at startup. Naming it is the unambiguous choice either way.
+
+== Build and package
+
+`@TikaComponent` and its annotation processor ship together in `tika-annotation-processor`, a
+compile-time dependency. The processor writes the component index (`META-INF/tika/*.idx`) that
+lets the config loader instantiate your class by name, which is also what stops a config file from
+loading arbitrary classes.
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+  <groupId>org.apache.tika</groupId>
+  <artifactId>tika-core</artifactId>
+  <version>{tika-version}</version>
+</dependency>
+<dependency>
+  <groupId>org.apache.tika</groupId>
+  <artifactId>tika-annotation-processor</artifactId>
+  <version>{tika-version}</version>
+  <scope>provided</scope>
+</dependency>
+----
+
+javac picks the processor up from the classpath; list it under the compiler plugin's
+`annotationProcessorPaths` if your build isolates processors. Check that the built jar contains
+`META-INF/tika/parsers.idx` with your class in it: an "Unknown component name" error at load means
+it does not.
+
+Put the jar where Tika runs: on the application classpath for an embedded Tika, in the directory
+named by the `tika.extras.dir` system property for tika-app and tika-server, or mounted at
+`/tika-extras` in the Docker images. Extras are forwarded to the forked JVMs that pipes and
+tika-server parse in, so the engine is present where parsing happens. See
+xref:configuration/index.adoc#tika-extras-dir[Adding extra jars].
+
+== Configure
+
+[source,json]
+----
+{
+  "text-recognizers": [
+    { "jina-ocr-parser": { "endpoint": "http://jina:9000", "apiKey": "..." } }
+  ]
+}
+----
+
+Every default parser stays loaded, and Tesseract on the classpath is ignored: the list is
+authoritative. To keep Tesseract for the formats your engine does not read, or to run an annotator
+next to it, add entries with filters:
+
+[source,json]
+----
+{
+  "text-recognizers": [
+    { "jina-ocr-parser": { "endpoint": "http://jina:9000" } },
+    { "tesseract-ocr-parser": { "_mime-exclude": ["image/png", "image/jpeg", "image/tiff"] } }
+  ]
+}
+----
+
+Every entry whose types include the image's type runs, in order. Two text recognizers sharing a
+type both run and their text is concatenated, and startup warns about it; the filters above keep
+one recognizer per type. Full semantics, including what happens with no list at all, are in
+xref:configuration/index.adoc#text-recognizers[Configuration].
+
+Per-request overrides arrive through `parse-context` under the component name, which is what the
+`ParseContextConfig.getConfig` call in the class reads. Anything a caller must not change per
+request (endpoint, API key, spend ceilings) needs a restricted runtime config class; the VLM
+parsers show the pattern and xref:developers/serialization.adoc#security-model[Security Model]
+explains the trust boundary.
+
+== Verify
+
+Start Tika. The loader logs one line per effective engine:
+
+----
+text recognizer com.example.tika.JinaOcrParser for [image/jpeg, image/png, image/tiff]
+----
+
+No line, or a `TikaConfigException` saying the engine advertises no media types, means
+`initialize()` did not find your service. Then parse an image and a scanned PDF with tika-app:
+
+[source,bash]
+----
+java -jar tika-app.jar -m scan.png      # tk:parsed-by lists JinaOcrParser
+java -jar tika-app.jar -J scan.pdf      # pdf:ocr-page-count > 0; page text is your output
+----
+
+An invoked enricher is recorded in `tk:parsed-by` for images and `tk:parsed-by-full-set` for PDF
+page renders, exactly as a dispatched parser would be, so the metadata tells you which engine ran.
+
+== Common mistakes
+
+* Naming the engine under `parsers`. It still works, but the entry then means two things at once
+  (configure the engine, and parse the types nobody else claims), and startup has to tell you
+  which happened. `text-recognizers` says what you mean.
+* Creating a fresh `ParseContext` inside `parse`. The caller's context carries the recursion guard
+  that stops an enricher from enriching its own output; pass the one you were given.
+* Claiming types you do not enrich. Every advertised type routes images to you, and a type you
+  return nothing for is a type Tesseract no longer OCRs.
+* Reading the image from the stream twice. Use `tis.getPath()`; the bytes are already on disk and
+  the path is spooled at most once.

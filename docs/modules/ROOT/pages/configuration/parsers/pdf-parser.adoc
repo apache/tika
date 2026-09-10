@@ -38,3 +38,33 @@ that matters.
 include::example$pdf-parser-full.json[]
 ----
 icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/config-examples/pdf-parser-full.json[View source on GitHub]
+
+== OCR of pages (`ocr`)
+
+The PDF parser does not OCR anything itself. It renders pages and hands each rendered image to the
+text recognizer resolved for the render type (`image/png` by default): the engine named in the
+top-level `text-recognizers` list, or, with no list, the one found among the loaded parsers and
+logged at startup. See xref:configuration/index.adoc#text-recognizers[Configuration]
+for choosing the engine and xref:configuration/parsers/tesseract-ocr-parser.adoc[Tesseract OCR]
+for its options. The `ocr` block controls only rendering and when OCR runs:
+
+`strategy`::
+`NO_OCR` never renders. `OCR_ONLY` emits the engine's output instead of extracted text.
+`OCR_AND_TEXT_EXTRACTION` emits both. `AUTO`, the default, renders a page only when its extracted
+text is poor by the `strategyAuto` thresholds; the page's extracted text is then *replaced* by the
+engine's output when the engine is a text recognizer (Tesseract, Tess4J, a VLM with
+`textRecognizer` true) that actually wrote text, and kept unchanged otherwise, including when no
+engine is available, `maxPagesToOcr` is spent, or the engine times out. `AUTO` with no engine
+behaves as `NO_OCR`.
+`dpi`, `imageType`, `imageFormat`, `imageQuality`, `renderingStrategy`::
+How pages are rendered before they reach the engine.
+`maxPagesToOcr`, `maxImagePixels`::
+Budgets per document and per rendered page.
+
+Inline images embedded in a PDF are a separate path: with `extractInlineImages` on they are
+parsed as embedded documents, so `image-parser` enriches each one with the same engine. A scanned
+page that is one full-page image is therefore OCR'd twice when both are on.
+
+`pdf:ocr-page-count` records how many pages tripped the verdict, whether or not an engine ran.
+Every `ocr` option can be overridden per request through `parse-context` under `pdf-parser`; the
+xref:using-tika/server/index.adoc[server documentation] shows the `NO_OCR` override as a preset.
