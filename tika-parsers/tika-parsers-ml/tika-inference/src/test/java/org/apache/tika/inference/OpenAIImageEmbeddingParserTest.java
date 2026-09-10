@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.ParentMetadata;
 import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -240,6 +241,41 @@ public class OpenAIImageEmbeddingParserTest {
         assertNull(merged.get(1).getText());
         assertNotNull(merged.get(1).getVector());
         assertEquals(4, merged.get(1).getVector().length);
+    }
+
+    /** A picture in a docx body: its vector lands on the docx, naming the picture. */
+    @Test
+    void testInlineChildVectorLandsOnParent() throws Exception {
+        Metadata parent = new Metadata();
+        Metadata picture = new Metadata();
+        picture.set(HttpHeaders.CONTENT_TYPE, "image/png");
+        picture.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, "INLINE");
+        picture.set(TikaCoreProperties.EMBEDDED_ID_PATH, "/1");
+        picture.set(TikaCoreProperties.RESOURCE_NAME_KEY, "image1.png");
+        ParseContext context = new ParseContext();
+        context.set(ParentMetadata.class, new ParentMetadata(parent));
+
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, buildEmbeddingResponse(3)));
+        try (TikaInputStream tis = TikaInputStream.get(new byte[]{(byte) 0x89, 'P', 'N', 'G'})) {
+            parser.parse(tis, new DefaultHandler(), picture, context);
+        }
+        assertNull(picture.get(TikaCoreProperties.TIKA_CHUNKS), "the picture keeps nothing");
+        List<Chunk> chunks = ChunkSerializer.fromJson(parent.get(TikaCoreProperties.TIKA_CHUNKS));
+        assertEquals(1, chunks.size());
+        assertEquals("/1", chunks.get(0).getLocators().getEmbedded().get(0).getIdPath());
+        assertEquals("image1.png", chunks.get(0).getLocators().getEmbedded().get(0).getName());
+
+        ImageEmbeddingConfig own = new ImageEmbeddingConfig();
+        own.setBaseUrl(server.url());
+        own.setModel("clip");
+        own.setLiftToParent(false);
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, buildEmbeddingResponse(3)));
+        try (OpenAIImageEmbeddingParser keeping = new OpenAIImageEmbeddingParser(own);
+                TikaInputStream tis = TikaInputStream.get(new byte[]{(byte) 0x89, 'P', 'N', 'G'})) {
+            keeping.parse(tis, new DefaultHandler(), picture, context);
+        }
+        assertNotNull(picture.get(TikaCoreProperties.TIKA_CHUNKS), "liftToParent: false");
+        assertEquals(1, ChunkSerializer.fromJson(parent.get(TikaCoreProperties.TIKA_CHUNKS)).size());
     }
 
     @Test

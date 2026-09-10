@@ -31,6 +31,7 @@ import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.ParentContentHandler;
+import org.apache.tika.extractor.ParentMetadata;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -140,7 +141,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                     "ContentHandler must implement RecursiveParserWrapperHandler");
         }
         EmbeddedParserDecorator decorator =
-                new EmbeddedParserDecorator(getWrappedParser(), "/", "/", parserState);
+                new EmbeddedParserDecorator(getWrappedParser(), "/", "/", parserState, metadata);
         context.set(Parser.class, decorator);
         ContentHandler localHandler =
                 parserState.recursiveParserWrapperHandler.createHandler();
@@ -214,10 +215,12 @@ public class RecursiveParserWrapper extends ParserDecorator {
         private String location = null;
 
         private String embeddedIdPath = null;
-
+        // the document whose embedded documents this decorator parses
+        private final Metadata parentMetadata;
 
         private EmbeddedParserDecorator(Parser parser, String location,
-                                        String embeddedIdPath, ParserState parseState) {
+                                        String embeddedIdPath, ParserState parseState,
+                                        Metadata parentMetadata) {
             super(parser);
             this.location = location;
             if (!this.location.endsWith("/")) {
@@ -225,6 +228,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             }
             this.embeddedIdPath = embeddedIdPath;
             this.parserState = parseState;
+            this.parentMetadata = parentMetadata;
         }
 
         @Override
@@ -251,7 +255,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             Parser preContextParser = context.get(Parser.class);
             context.set(Parser.class,
                     new EmbeddedParserDecorator(getWrappedParser(), objectLocation,
-                            idPath, parserState));
+                            idPath, parserState, metadata));
             long started = System.currentTimeMillis();
             //store the handler that was used before this parse
             //so that you can return it back to its state at the end of this parse
@@ -259,6 +263,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
 
             ParentContentHandler preParseParentHandler = context.get(ParentContentHandler.class);
             context.set(ParentContentHandler.class, new ParentContentHandler(preParseHandler));
+            ParentMetadata preParseParentMetadata = context.get(ParentMetadata.class);
+            context.set(ParentMetadata.class, new ParentMetadata(parentMetadata));
             ContentHandler secureContentHandler =
                     new RecursivelySecureContentHandler(localHandler, tis, preParseHandler.handlerCounter,
                     preParseHandler.throwOnWriteLimitReached, context);
@@ -296,6 +302,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 context.set(Parser.class, preContextParser);
                 context.set(RecursivelySecureContentHandler.class, preParseHandler);
                 context.set(ParentContentHandler.class, preParseParentHandler);
+                context.set(ParentMetadata.class, preParseParentMetadata);
                 long elapsedMillis = System.currentTimeMillis() - started;
                 metadata.set(TikaCoreProperties.PARSE_TIME_MILLIS, Long.toString(elapsedMillis));
                 parserState.recursiveParserWrapperHandler

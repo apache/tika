@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * The image embedder writes a picture's vector onto the document the
+     picture appears in (INLINE and RENDERING children) with an "embedded"
+     locator naming the picture; attachments keep their own, and
+     liftToParent: false keeps every picture's vector on the picture.
+     RecursiveParserWrapper exposes the parent's Metadata to a child's parse
+     as ParentMetadata, and ChunkTarget (tika-inference) resolves where a
+     child's chunks land (TIKA-4888).
+
    * OCR engines and other content enrichers: name the engine in "text-recognizers"
      and every default parser stays loaded; "text-recognizers": [] turns enrichment
      off everywhere. With no list, the loader resolves one engine

@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.inference.locator.EmbeddedLocator;
 import org.apache.tika.inference.locator.Locators;
 import org.apache.tika.inference.locator.PaginatedLocator;
 import org.apache.tika.inference.locator.SpatialLocator;
@@ -179,5 +180,23 @@ public class ChunkSerializerTest {
 
         assertEquals("He said \"hello\" & <goodbye>",
                 restored.get(0).getText());
+    }
+
+    @Test
+    void testRoundTripEmbeddedLocator() throws Exception {
+        Chunk c = new Chunk(null, new Locators()
+                .addPaginated(new PaginatedLocator(3))
+                .addEmbedded(new EmbeddedLocator("/1/2", "page-3.png")));
+        c.setVector(new float[]{0.5f});
+        Chunk unnamed = new Chunk(null, new Locators().addEmbedded(new EmbeddedLocator("/4", null)));
+
+        List<Chunk> restored = ChunkSerializer.fromJson(ChunkSerializer.toJson(List.of(c, unnamed)));
+
+        EmbeddedLocator e = restored.get(0).getLocators().getEmbedded().get(0);
+        assertEquals("/1/2", e.getIdPath());
+        assertEquals("page-3.png", e.getName());
+        assertEquals(3, restored.get(0).getLocators().getPaginated().get(0).getPage());
+        assertEquals("/4", restored.get(1).getLocators().getEmbedded().get(0).getIdPath());
+        assertNull(restored.get(1).getLocators().getEmbedded().get(0).getName());
     }
 }

@@ -171,7 +171,9 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
         Chunk chunk = new Chunk(null, locators);
         chunk.setVector(vector);
 
-        ChunkSerializer.mergeInto(metadata, List.of(chunk), config.getOutputField());
+        ChunkTarget target = config.isLiftToParent()
+                ? ChunkTarget.resolve(metadata, parseContext) : ChunkTarget.self(metadata);
+        target.write(List.of(chunk), config.getOutputField());
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(
                 handler, metadata, parseContext);
@@ -374,6 +376,14 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
 
     public void setOutputField(String outputField) {
         defaultConfig.setOutputField(outputField);
+    }
+
+    public boolean isLiftToParent() {
+        return defaultConfig.isLiftToParent();
+    }
+
+    public void setLiftToParent(boolean liftToParent) {
+        defaultConfig.setLiftToParent(liftToParent);
     }
 
     // ---- Azure / endpoint config getters/setters ----------------------------
