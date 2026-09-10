@@ -170,6 +170,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     private final PageTextBuffer pageBuffer;
     // Every enricher for the render type, resolved once per document; null skips the render.
     final Parser ocrEngine;
+
+    // Non-null only when the image strategy renders every page: the enrichers that do not
+    // recognize text run on each page the OCR step leaves alone, so a page is enriched once
+    // whether or not it tripped the OCR verdict.
+    private final Parser pageAnnotators;
     final MediaType ocrImageMediaType;
     private PageText pageDecision = PageText.UNDECIDED;
     // Text held back from an OCR_WANTED page; replayed if OCR does not run.
@@ -228,6 +233,17 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
         this.ocrEngine =
                 ContentEnrichers.get(contentEnrichers, ocrImageMediaType, renderTarget, context);
+        PDFParserConfig.IMAGE_STRATEGY imageStrategy = config.getImageStrategy();
+        Parser annotators = null;
+        if (imageStrategy == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE
+                || imageStrategy == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
+            try (ContentEnrichers.Suspension recognizersOff =
+                         ContentEnrichers.suspendRecognizers(context)) {
+                annotators = ContentEnrichers.get(contentEnrichers, ocrImageMediaType,
+                        renderTarget, context);
+            }
+        }
+        this.pageAnnotators = annotators;
         if (config.getOcr().getStrategy() == AUTO && ContentEnrichers.hasTextRecognizer(
                 contentEnrichers, ocrImageMediaType, renderTarget, context)) {
             this.pageBuffer = new PageTextBuffer(handler);
@@ -637,15 +653,19 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    /**
-     * @return true if the engine wrote text for this page; false when there is no engine
-     * (AUTO), maxPagesToOcr is exhausted, a failure was recorded and swallowed, or the
-     * engine produced no text (an annotating enricher, or one told to skip OCR)
-     */
-    boolean doOCROnCurrentPage(PDPage pdPage, OcrConfig.Strategy ocrStrategy)
+    /** What the OCR step did with a page. */
+    enum PageOcr {
+        /** No engine was dispatched: NO_OCR, no engine, or maxPagesToOcr spent. */
+        SKIPPED,
+        /** The engine ran but wrote no text: an annotating enricher, a skip, a failure. */
+        NO_TEXT,
+        TEXT
+    }
+
+    PageOcr doOCROnCurrentPage(PDPage pdPage, OcrConfig.Strategy ocrStrategy)
             throws IOException, TikaException, SAXException {
         if (ocrStrategy.equals(NO_OCR)) {
-            return false;
+            return PageOcr.SKIPPED;
         }
         //count the number of times that OCR would have been called
         OCRPageCounter c = context.get(OCRPageCounter.class);
@@ -656,7 +676,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         // Enforce maxPagesToOcr limit
         int maxPagesToOcr = config.getOcr().getMaxPagesToOcr();
         if (maxPagesToOcr > 0 && c != null && c.getCount() > maxPagesToOcr) {
-            return false;
+            return PageOcr.SKIPPED;
         }
         if (ocrEngine == null) {
             if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
@@ -667,16 +687,31 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                                 "add one to the classpath when no list is configured, " +
                                 "or set the OCR strategy to NO_OCR.");
             }
-            return false;
+            return PageOcr.SKIPPED;
         }
+        return enrichCurrentPage(pdPage, ocrEngine) ? PageOcr.TEXT : PageOcr.NO_TEXT;
+    }
 
+    /**
+     * Runs the annotating enrichers on a page the OCR step skipped, when every page is
+     * rendered. The rendering emitted as an embedded document is not enriched again.
+     */
+    void annotateCurrentPage(PDPage pdPage) throws IOException, TikaException, SAXException {
+        if (pageAnnotators != null) {
+            enrichCurrentPage(pdPage, pageAnnotators);
+        }
+    }
+
+    /** Renders the page and runs the engine on it; true if the engine wrote text. */
+    private boolean enrichCurrentPage(PDPage pdPage, Parser engine)
+            throws IOException, TikaException, SAXException {
         try (TemporaryResources tmp = new TemporaryResources()) {
             try (RenderResult renderResult = renderCurrentPage(pdPage, tmp)) {
                 Metadata renderMetadata = renderResult.getMetadata();
                 TextCounter counter = new TextCounter(xhtml);
                 try (TikaInputStream tis = renderResult.getInputStream()) {
                     renderMetadata.set(HttpHeaders.CONTENT_TYPE, ocrImageMediaType.toString());
-                    ocrEngine.parse(tis,
+                    engine.parse(tis,
                             new EmbeddedContentHandler(new BodyContentHandler(counter)),
                             renderMetadata, context);
                 }
@@ -878,11 +913,17 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             for (PDAnnotation annotation : page.getAnnotations()) {
                 processPageAnnotation(annotation);
             }
+            PageOcr ocr = PageOcr.SKIPPED;
             if (config.getOcr().getStrategy() == OCR_AND_TEXT_EXTRACTION) {
-                doOCROnCurrentPage(page, OCR_AND_TEXT_EXTRACTION);
-            } else if (pageDecision == PageText.OCR_WANTED &&
-                    !doOCROnCurrentPage(page, AUTO)) {
-                replay(pendingText);
+                ocr = doOCROnCurrentPage(page, OCR_AND_TEXT_EXTRACTION);
+            } else if (pageDecision == PageText.OCR_WANTED) {
+                ocr = doOCROnCurrentPage(page, AUTO);
+                if (ocr != PageOcr.TEXT) {
+                    replay(pendingText);
+                }
+            }
+            if (ocr == PageOcr.SKIPPED) {
+                annotateCurrentPage(page);
             }
 
             PDPageAdditionalActions pageActions = page.getActions();
