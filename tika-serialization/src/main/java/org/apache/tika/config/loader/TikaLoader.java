@@ -53,6 +53,7 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.inference.EngineRegistry;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -137,6 +138,9 @@ public class TikaLoader {
 
         ComponentConfig.builder("text-recognizers", CompositeContentEnricher.class)
                 .customLoader(new ContentEnricherLoader())
+                .register();
+        ComponentConfig.builder(EngineLoader.KEY, EngineRegistry.class)
+                .customLoader(new EngineLoader())
                 .register();
 
         ComponentConfig.builder("translator", Translator.class)
