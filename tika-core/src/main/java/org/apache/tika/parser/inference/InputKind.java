@@ -16,7 +16,25 @@
  */
 package org.apache.tika.parser.inference;
 
+import org.apache.tika.mime.MediaType;
+
 /** What a binding is fed: a document's text, its rendered pages, an image, or media bytes. */
 public enum InputKind {
-    TEXT, PAGES, IMAGES, MEDIA
+    TEXT, PAGES, IMAGES, MEDIA;
+
+    /** The kind a document's bytes are, by media type family; null for the rest. */
+    public static InputKind of(MediaType type) {
+        if (type == null) {
+            return null;
+        }
+        switch (type.getType()) {
+            case "image":
+                return IMAGES;
+            case "audio":
+            case "video":
+                return MEDIA;
+            default:
+                return null;
+        }
+    }
 }

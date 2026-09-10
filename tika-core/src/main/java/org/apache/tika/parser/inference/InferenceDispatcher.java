@@ -40,11 +40,12 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.hook.ParseHook;
 
 /**
  * Matches offered units against the inference bindings and runs the tasks. Built once at
- * config load, seeded into the {@link ParseContext} by the composite parser at parse time.
- * Units are buffered per binding for the whole top-level parse and flushed at its end, so a
+ * config load and run as a {@link ParseHook}: every document, top-level or embedded, is
+ * offered once by the auto-detect parser. Units are buffered per binding for the whole top-level parse and flushed at its end, so a
  * document is one request per binding, not one per unit; the buffer is bounded by each
  * binding's {@code maxChunks} and {@code maxBytes}, and its bytes live in files the
  * dispatcher owns until the flush. At the flush every unit is re-aimed at the metadata the
@@ -54,7 +55,7 @@ import org.apache.tika.parser.ParseContext;
  *
  * @since Apache Tika 4.1
  */
-public final class InferenceDispatcher implements TransientParseState {
+public final class InferenceDispatcher implements ParseHook, TransientParseState {
 
     private static final Logger LOG = LoggerFactory.getLogger(InferenceDispatcher.class);
     private static final InferenceSelection ALL = new InferenceSelection();
@@ -77,8 +78,32 @@ public final class InferenceDispatcher implements TransientParseState {
      * Resolves the request's selection once, at the top of the parse, so a misnamed binding
      * fails the request rather than one embedded document.
      */
-    public void prepare(ParseContext context) throws TikaException {
+    @Override
+    public void start(Metadata root, ParseContext context) throws TikaException {
         state(context).selected(context, bound);
+    }
+
+    @Override
+    public boolean wants(MediaType type, Metadata metadata, ParseContext context)
+            throws TikaException {
+        InputKind kind = InputKind.of(type);
+        return kind != null && wants(kind, type, context);
+    }
+
+    @Override
+    public void offer(MediaType type, Metadata metadata, Metadata parent, Path bytes,
+                      ParseContext context) throws IOException, TikaException {
+        offer(InputKind.of(type), type, metadata, parent, bytes, context);
+    }
+
+    /** Runs the buffered units, or drops them when the parse failed: no engine call for a document nobody gets. */
+    @Override
+    public void end(Metadata root, boolean failed, ParseContext context) {
+        if (failed) {
+            discard(context);
+        } else {
+            flush(root, context);
+        }
     }
 
     /** Whether any binding that runs for this request takes this kind and type. */
@@ -160,6 +185,20 @@ public final class InferenceDispatcher implements TransientParseState {
             } catch (IOException e) {
                 LOG.warn("could not delete inference temp files", e);
             }
+        }
+    }
+
+    /** Clears the buffer and its files without running anything. */
+    public void discard(ParseContext context) {
+        State state = context.get(State.class);
+        if (state == null) {
+            return;
+        }
+        context.set(State.class, null);
+        try {
+            state.tmp.close();
+        } catch (IOException e) {
+            LOG.warn("could not delete inference temp files", e);
         }
     }
 

@@ -53,6 +53,7 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.hook.ParseHooks;
 import org.apache.tika.parser.inference.EngineRegistry;
 import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.renderer.CompositeRenderer;
@@ -415,8 +416,11 @@ public class TikaLoader {
                 adpConfig = new AutoDetectParserConfig();
             }
             autoDetectParser = AutoDetectParser.build((CompositeParser)loadParsers(), loadDetectors(), adpConfig);
-            // the outermost composite seeds the dispatcher into every parse's context
-            ((CompositeParser) autoDetectParser).setInferenceDispatcher(get(InferenceDispatcher.class));
+            InferenceDispatcher dispatcher = get(InferenceDispatcher.class);
+            if (dispatcher != null) {
+                ((AutoDetectParser) autoDetectParser)
+                        .setParseHooks(new ParseHooks(List.of(dispatcher)));
+            }
         }
         return autoDetectParser;
     }

@@ -17,7 +17,6 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,7 +36,6 @@ import org.apache.tika.config.TransientParseState;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
-import org.apache.tika.extractor.ParentMetadata;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -46,8 +44,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.enricher.ContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnrichers;
-import org.apache.tika.parser.inference.InferenceDispatcher;
-import org.apache.tika.parser.inference.InputKind;
 import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.ParserUtils;
@@ -79,9 +75,6 @@ public class CompositeParser implements Parser {
      * The fallback parser, used when no better parser is available.
      */
     private Parser fallback = new EmptyParser();
-
-    // set at config load on the root composite; seeded into the context at parse time
-    private InferenceDispatcher inferenceDispatcher;
 
     public CompositeParser(MediaTypeRegistry registry, List<Parser> parsers,
                            Collection<Class<? extends Parser>> excludeParsers) {
@@ -341,23 +334,9 @@ public class CompositeParser implements Parser {
      * handler are automatically wrapped into {@link TikaException}s to better
      * honor the {@link Parser} contract.
      */
-    public void setInferenceDispatcher(InferenceDispatcher inferenceDispatcher) {
-        this.inferenceDispatcher = inferenceDispatcher;
-    }
-
-    public InferenceDispatcher getInferenceDispatcher() {
-        return inferenceDispatcher;
-    }
-
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         Parser parser = getParser(metadata, context);
-        boolean seeded = false;
-        if (inferenceDispatcher != null && context.get(InferenceDispatcher.class) == null) {
-            context.set(InferenceDispatcher.class, inferenceDispatcher);
-            seeded = true;
-        }
-        InferenceDispatcher dispatcher = context.get(InferenceDispatcher.class);
         ParseRecord parserRecord = context.get(ParseRecord.class);
         // Never replace pre-installed state: the pipes watchdog holds a reference to the
         // ParseTimeout; a replacement would orphan it and checkpoints would never reach it.
@@ -369,29 +348,6 @@ public class CompositeParser implements Parser {
         // The one boundary every parse (any mode/extractor) crosses; without this, many
         // fast in-JVM embedded children read as a stall to the pipes watchdog.
         ParseTimeout.checkpoint(context);
-        if (dispatcher != null && parserRecord.getDepth() == 0) {
-            dispatcher.prepare(context);
-        }
-        // nested composites see one document several times; only the level that hands it to
-        // its type parser offers it and names it as the parent of what that parser embeds
-        boolean leaf = !(undecorated(parser) instanceof CompositeParser);
-        MediaType unitType = unitType(metadata);
-        InputKind unitKind = kindOf(unitType);
-        // the type parser may consume the stream, so the bytes are pinned to a file first
-        Path unitPath = null;
-        if (dispatcher != null && leaf && unitKind != null
-                && dispatcher.wants(unitKind, unitType, context)) {
-            try {
-                unitPath = tis.getPath();
-            } catch (IOException e) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        "inference: could not pin bytes: " + e.getMessage());
-            }
-        }
-        ParentMetadata preParseParent = context.get(ParentMetadata.class);
-        if (leaf) {
-            context.set(ParentMetadata.class, new ParentMetadata(metadata));
-        }
         try {
             TaggedContentHandler taggedHandler =
                     handler != null ? new TaggedContentHandler(handler) : null;
@@ -401,16 +357,6 @@ public class CompositeParser implements Parser {
             parserRecord.beforeParse();
             try {
                 parser.parse(tis, taggedHandler, metadata, context);
-                if (unitPath != null) {
-                    try {
-                        dispatcher.offer(unitKind, unitType, metadata,
-                                preParseParent == null ? null : preParseParent.getMetadata(),
-                                unitPath, context);
-                    } catch (IOException | TikaException | RuntimeException e) {
-                        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                                "inference: could not buffer bytes: " + e.getMessage());
-                    }
-                }
             } catch (SecurityException e) {
                 //rethrow security exceptions
                 throw e;
@@ -432,53 +378,12 @@ public class CompositeParser implements Parser {
                 throw new TikaException("Unexpected RuntimeException from " + parser, e);
             }
         } finally {
-            if (leaf) {
-                context.set(ParentMetadata.class, preParseParent);
-            }
             parserRecord.afterParse();
             if (parserRecord.getDepth() == 0) {
-                if (dispatcher != null) {
-                    dispatcher.flush(metadata, context);
-                }
-                if (seeded) {
-                    context.set(InferenceDispatcher.class, null);
-                }
                 metadata.set(TikaCoreProperties.TIKA_PARSED_BY_FULL_SET, parserRecord.getParsers());
                 recordEmbeddedMetadata(metadata, context);
             }
         }
-    }
-
-    private static Parser undecorated(Parser parser) {
-        while (parser instanceof ParserDecorator decorator) {
-            parser = decorator.getWrappedParser();
-        }
-        return parser;
-    }
-
-    /** The input kind a document's bytes are, by media type family; null for the rest. */
-    static InputKind kindOf(MediaType type) {
-        if (type == null) {
-            return null;
-        }
-        switch (type.getType()) {
-            case "image":
-                return InputKind.IMAGES;
-            case "audio":
-            case "video":
-                return InputKind.MEDIA;
-            default:
-                return null;
-        }
-    }
-
-    private MediaType unitType(Metadata metadata) {
-        String contentType = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
-        if (contentType == null) {
-            contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
-        }
-        MediaType type = MediaType.parse(contentType);
-        return type == null ? null : registry.normalize(type);
     }
 
     private void recordEmbeddedMetadata(Metadata metadata, ParseContext context) {

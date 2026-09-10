@@ -26,13 +26,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.inference.EngineRegistry;
 import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.parser.inference.InferenceSelection;
@@ -81,8 +82,9 @@ public class InferenceLoaderTest {
         assertFalse(second.binding().accepts(InputKind.IMAGES, MediaType.image("svg+xml")),
                 "without an include list, non-raster image types are excluded by default");
 
-        CompositeParser parser = (CompositeParser) loader.loadAutoDetectParser();
-        assertSame(dispatcher, parser.getInferenceDispatcher());
+        AutoDetectParser parser = (AutoDetectParser) loader.loadAutoDetectParser();
+        assertEquals(List.of(dispatcher), parser.getParseHooks().getHooks(),
+                "the dispatcher rides every parse as a hook");
     }
 
     @Test
@@ -94,7 +96,7 @@ public class InferenceLoaderTest {
                 + "   \"enabled\": true } } }");
         InferenceSelection selection = loader.loadParseContext().get(InferenceSelection.class);
         assertNotNull(selection, "the parse-context block resolves to the class-keyed DTO");
-        assertEquals(java.util.List.of("pngs"), selection.getBindings());
+        assertEquals(List.of("pngs"), selection.getBindings());
         assertTrue(selection.isEnabled());
     }
 
@@ -103,7 +105,7 @@ public class InferenceLoaderTest {
         TikaLoader loader = load("{ \"parsers\": [ { \"default-parser\": {} } ] }");
         assertNull(loader.get(EngineRegistry.class));
         assertNull(loader.get(InferenceDispatcher.class));
-        assertNull(((CompositeParser) loader.loadAutoDetectParser()).getInferenceDispatcher());
+        assertNull(((AutoDetectParser) loader.loadAutoDetectParser()).getParseHooks());
     }
 
     @Test

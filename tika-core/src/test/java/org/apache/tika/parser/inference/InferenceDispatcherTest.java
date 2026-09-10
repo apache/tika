@@ -39,6 +39,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.EmbeddedMetadataLookup;
@@ -47,10 +48,11 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.hook.ParseHooks;
 import org.apache.tika.sax.AbstractRecursiveParserWrapperHandler;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.RecursiveParserWrapperHandler;
@@ -258,14 +260,25 @@ public class InferenceDispatcherTest {
         assertEquals("/1/2", unit.getTargetIdPath());
     }
 
+    /** Detection by the declared type: these tests are about the hook, not the detector. */
+    private static final Detector DECLARED = (tis, metadata, ctx) ->
+            MediaType.parse(metadata.get(HttpHeaders.CONTENT_TYPE));
+
+    private static AutoDetectParser hooked(InferenceDispatcher dispatcher, Parser... parsers) {
+        AutoDetectParser adp = new AutoDetectParser(DECLARED, parsers);
+        adp.setParseHooks(new ParseHooks(List.of(dispatcher)));
+        return adp;
+    }
+
+    private static InferenceDispatcher pngDispatcher(RecordingTask task) {
+        return new InferenceDispatcher(List.of(
+                new InferenceDispatcher.Bound(binding("png", InputKind.IMAGES, null, -1),
+                        new RecordingEngine(), List.of(task))));
+    }
+
     @Test
     public void testUnknownSelectionFailsTheTopLevelParse() throws Exception {
-        CompositeParser composite = new CompositeParser(
-                org.apache.tika.mime.MediaTypeRegistry.getDefaultRegistry(),
-                new TypedParser(PNG));
-        composite.setInferenceDispatcher(new InferenceDispatcher(List.of(
-                new InferenceDispatcher.Bound(binding("png", InputKind.IMAGES, null, -1),
-                        new RecordingEngine(), List.of(new RecordingTask())))));
+        AutoDetectParser parser = hooked(pngDispatcher(new RecordingTask()), new TypedParser(PNG));
         ParseContext context = new ParseContext();
         InferenceSelection selection = new InferenceSelection();
         selection.setBindings(List.of("typo"));
@@ -274,7 +287,7 @@ public class InferenceDispatcherTest {
         metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
         try (TikaInputStream tis = TikaInputStream.get("not an image".getBytes(UTF_8))) {
             assertThrows(TikaException.class,
-                    () -> composite.parse(tis, new DefaultHandler(), metadata, context),
+                    () -> parser.parse(tis, new DefaultHandler(), metadata, context),
                     "fails at the top of the parse, before any document is offered");
         }
     }
@@ -282,39 +295,29 @@ public class InferenceDispatcherTest {
     @Test
     public void testNestedChildOutsideTheWrapperGetsItsParent() throws Exception {
         RecordingTask task = new RecordingTask();
-        CompositeParser composite = new CompositeParser(
-                org.apache.tika.mime.MediaTypeRegistry.getDefaultRegistry(),
-                new ContainerParser(), new TypedParser(PNG));
-        composite.setInferenceDispatcher(new InferenceDispatcher(List.of(
-                new InferenceDispatcher.Bound(binding("png", InputKind.IMAGES, null, -1),
-                        new RecordingEngine(), List.of(task)))));
+        AutoDetectParser parser = hooked(pngDispatcher(task), new ContainerParser(),
+                new TypedParser(PNG));
         Metadata root = new Metadata();
         root.set(HttpHeaders.CONTENT_TYPE, CONTAINER.toString());
         ParseContext context = new ParseContext();
-        context.set(Parser.class, composite);
         try (TikaInputStream tis = TikaInputStream.get("CONTAINER".getBytes(UTF_8))) {
-            composite.parse(tis, new DefaultHandler(), root, context);
+            parser.parse(tis, new DefaultHandler(), root, context);
         }
         assertEquals(1, task.runs.size());
         assertSame(root, task.runs.get(0).get(0).getParent(),
-                "the composite names the parent in every mode, not only under the wrapper");
-        assertNull(context.get(InferenceDispatcher.class), "seeding is undone at the top level");
+                "the parent is named in every mode, not only under the wrapper");
+        assertNull(context.get(ParseHooks.class), "seeding is undone at the top level");
     }
 
     @Test
-    public void testCompositeOffersAndFlushesAtTopLevel() throws Exception {
+    public void testOffersAndFlushesAtTopLevel() throws Exception {
         RecordingTask task = new RecordingTask();
-        CompositeParser composite = new CompositeParser(
-                org.apache.tika.mime.MediaTypeRegistry.getDefaultRegistry(),
-                new TypedParser(PNG));
-        composite.setInferenceDispatcher(new InferenceDispatcher(List.of(
-                new InferenceDispatcher.Bound(binding("png", InputKind.IMAGES, null, -1),
-                        new RecordingEngine(), List.of(task)))));
+        AutoDetectParser parser = hooked(pngDispatcher(task), new TypedParser(PNG));
         Metadata metadata = new Metadata();
         metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
         ParseContext context = new ParseContext();
         try (TikaInputStream tis = TikaInputStream.get("PNG-BYTES".getBytes(UTF_8))) {
-            composite.parse(tis, new DefaultHandler(), metadata, context);
+            parser.parse(tis, new DefaultHandler(), metadata, context);
         }
         assertEquals(1, task.runs.size());
         InferenceUnit unit = task.runs.get(0).get(0);
@@ -326,13 +329,9 @@ public class InferenceDispatcherTest {
     @Test
     public void testNestedChildCarriesItsParent() throws Exception {
         RecordingTask task = new RecordingTask();
-        CompositeParser composite = new CompositeParser(
-                org.apache.tika.mime.MediaTypeRegistry.getDefaultRegistry(),
-                new ContainerParser(), new TypedParser(PNG));
-        composite.setInferenceDispatcher(new InferenceDispatcher(List.of(
-                new InferenceDispatcher.Bound(binding("png", InputKind.IMAGES, null, -1),
-                        new RecordingEngine(), List.of(task)))));
-        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(composite);
+        AutoDetectParser parser = hooked(pngDispatcher(task), new ContainerParser(),
+                new TypedParser(PNG));
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
         Metadata root = new Metadata();
         root.set(HttpHeaders.CONTENT_TYPE, CONTAINER.toString());
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
@@ -346,5 +345,18 @@ public class InferenceDispatcherTest {
         assertEquals("image1.png", unit.getTarget().get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertSame(root, unit.getParent());
         assertEquals(2, handler.getMetadataList().size());
+    }
+
+    @Test
+    public void testFailedParseRunsNothingAndCleansUp() throws Exception {
+        RecordingTask task = new RecordingTask();
+        InferenceDispatcher dispatcher = pngDispatcher(task);
+        ParseContext context = new ParseContext();
+        offer(dispatcher, PNG, "a", context);
+        Path held = context.get(InferenceDispatcher.State.class).byBinding.get("png").get(0).getPath();
+        dispatcher.end(new Metadata(), true, context);
+        assertTrue(task.runs.isEmpty(), "a failed document costs no engine call");
+        assertFalse(Files.exists(held));
+        assertNull(context.get(InferenceDispatcher.State.class));
     }
 }
