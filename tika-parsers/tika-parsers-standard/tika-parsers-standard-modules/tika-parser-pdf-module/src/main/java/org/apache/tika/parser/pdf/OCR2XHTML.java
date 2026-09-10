@@ -97,7 +97,9 @@ class OCR2XHTML extends AbstractPDF2XHTML {
     public void processPage(PDPage pdPage) throws IOException {
         try {
             startPage(pdPage);
-            doOCROnCurrentPage(pdPage, OcrConfig.Strategy.OCR_ONLY);
+            if (doOCROnCurrentPage(pdPage, OcrConfig.Strategy.OCR_ONLY) == PageOcr.SKIPPED) {
+                annotateCurrentPage(pdPage);
+            }
             endPage(pdPage);
         } catch (TikaException | SAXException e) {
             throw new IOException(e);

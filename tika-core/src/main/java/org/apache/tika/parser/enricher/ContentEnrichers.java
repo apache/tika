@@ -92,11 +92,45 @@ public final class ContentEnrichers {
     public static Parser get(CompositeContentEnricher enrichers, MediaType mediaType,
                              Metadata target, ParseContext context) {
         Objects.requireNonNull(target, "target");
-        if (mediaType == null || isActive(context)) {
+        return select(enrichers, mediaType, context);
+    }
+
+    /**
+     * Suspends dispatch in this context until the returned scope closes. A container that
+     * enriches a rendering itself wraps the embedded parse of that rendering, so the embedded
+     * copy is not enriched a second time. Scopes nest; each restores the state it found.
+     */
+    public static Suspension suspend(ParseContext context) {
+        return new Suspension(context, false);
+    }
+
+    /**
+     * Suspends text recognizers only, until the returned scope closes: {@link #get} returns
+     * the annotators (embedders, taggers, captioners) and {@link #hasTextRecognizer} is
+     * false. A recognizer that declines this parse is still a recognizer, not an annotator.
+     * Scopes nest as for {@link #suspend}.
+     */
+    public static Suspension suspendRecognizers(ParseContext context) {
+        return new Suspension(context, true);
+    }
+
+    private static Parser select(CompositeContentEnricher enrichers, MediaType mediaType,
+                                 ParseContext context) {
+        if (mediaType == null || isActive(context) || isSuspended(context)) {
             return null;
         }
+        boolean annotatorsOnly = isRecognizersSuspended(context);
         if (enrichers != null) {
             List<Parser> matched = enrichers.getEnrichers(mediaType);
+            if (annotatorsOnly) {
+                List<Parser> annotators = new ArrayList<>();
+                for (Parser p : matched) {
+                    if (isAnnotator(p, enrichers.isLegacyClaimant(p))) {
+                        annotators.add(p);
+                    }
+                }
+                matched = annotators;
+            }
             if (matched.isEmpty()) {
                 return null;
             }
@@ -104,7 +138,15 @@ public final class ContentEnrichers {
                     ? matched.get(0) : new SequentialEnricher(matched));
         }
         Candidate discovered = discover(mediaType, context);
-        return discovered == null ? null : new GuardedEnricher(discovered.parser);
+        if (discovered == null
+                || (annotatorsOnly && !isAnnotator(discovered.parser, discovered.legacy))) {
+            return null;
+        }
+        return new GuardedEnricher(discovered.parser);
+    }
+
+    private static boolean isAnnotator(Parser member, boolean legacy) {
+        return !legacy && asTextRecognizer(member) == null;
     }
 
     /**
@@ -117,7 +159,8 @@ public final class ContentEnrichers {
                                             MediaType mediaType, Metadata target,
                                             ParseContext context) {
         Objects.requireNonNull(target, "target");
-        if (mediaType == null || isActive(context)) {
+        if (mediaType == null || isActive(context) || isSuspended(context)
+                || isRecognizersSuspended(context)) {
             return false;
         }
         if (enrichers != null) {
@@ -222,6 +265,46 @@ public final class ContentEnrichers {
     private static boolean isActive(ParseContext context) {
         ActiveEnrichment active = context.get(ActiveEnrichment.class);
         return active != null && active.active;
+    }
+
+    private static boolean isSuspended(ParseContext context) {
+        ActiveEnrichment state = context.get(ActiveEnrichment.class);
+        return state != null && state.suspended;
+    }
+
+    private static boolean isRecognizersSuspended(ParseContext context) {
+        ActiveEnrichment state = context.get(ActiveEnrichment.class);
+        return state != null && state.recognizersSuspended;
+    }
+
+    /** Scope of a {@link #suspend} or {@link #suspendRecognizers}; closing restores the prior state. */
+    public static final class Suspension implements AutoCloseable {
+
+        private final ActiveEnrichment state;
+        private final boolean wasSuspended;
+        private final boolean wereRecognizersSuspended;
+
+        private Suspension(ParseContext context, boolean recognizersOnly) {
+            ActiveEnrichment found = context.get(ActiveEnrichment.class);
+            if (found == null) {
+                found = new ActiveEnrichment();
+                context.set(ActiveEnrichment.class, found);
+            }
+            this.state = found;
+            this.wasSuspended = found.suspended;
+            this.wereRecognizersSuspended = found.recognizersSuspended;
+            if (recognizersOnly) {
+                found.recognizersSuspended = true;
+            } else {
+                found.suspended = true;
+            }
+        }
+
+        @Override
+        public void close() {
+            state.suspended = wasSuspended;
+            state.recognizersSuspended = wereRecognizersSuspended;
+        }
     }
 
     private static Parser unwrap(Parser parser) {
@@ -418,9 +501,11 @@ public final class ContentEnrichers {
         }
     }
 
-    /** Mutable per-parse marker; single-threaded within one parse. */
+    /** Mutable per-parse dispatch state; single-threaded within one parse. */
     static final class ActiveEnrichment {
         boolean active;
+        boolean suspended;
+        boolean recognizersSuspended;
     }
 
     /**

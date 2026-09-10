@@ -206,6 +206,8 @@ declares it through its `textRecognizer` option (default `true`). An entry that 
 text (the experimental image-embedding parser, a VLM with `textRecognizer: false`) still runs on
 the images and pages it is offered and never displaces text; startup warns about it, and 4.2
 gives such annotators a list of their own.
+When the PDF parser also emits its page renders as embedded documents, it enriches each render itself and
+the embedded copy is not enriched again (see xref:configuration/parsers/pdf-parser.adoc[PDF Parser]).
 
 === For engine authors
 
