@@ -76,6 +76,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractExternalProcessParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.enricher.TextRecognizer;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
@@ -98,7 +99,8 @@ import org.apache.tika.utils.XMLReaderUtils;
  */
 // name pinned: the documented "content-enrichers" selector for this engine
 @TikaComponent(name = "tesseract-ocr-parser")
-public class TesseractOCRParser extends AbstractExternalProcessParser implements Initializable {
+public class TesseractOCRParser extends AbstractExternalProcessParser
+        implements Initializable, TextRecognizer {
 
     public static final String TESS_META = "tess:";
     public static final Property IMAGE_ROTATION = Property.externalRealSeq(TESS_META + "rotation");
@@ -297,6 +299,19 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             xhtml.startDocument();
             parse(tikaStream, tmpOCROutputFile, xhtml, metadata, parseContext, config);
             xhtml.endDocument();
+        }
+    }
+
+    @Override
+    public boolean recognizesText(ParseContext context) {
+        if (!hasTesseract) {
+            return false;
+        }
+        try {
+            return !getConfig(context).isSkipOcr();
+        } catch (TikaConfigException | IOException e) {
+            // parse() surfaces the broken config; for the question asked, nothing is recognized
+            return false;
         }
     }
 

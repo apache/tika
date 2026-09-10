@@ -87,6 +87,35 @@ public final class ContentEnrichers {
     }
 
     /**
+     * Whether an enricher for this media type produces the document's text. Under a
+     * configured list, only members that are {@link TextRecognizer}s and recognize text
+     * for this context count. With no list, legacy {@code image/ocr-*} dispatch counts:
+     * that pseudo-type was the OCR contract. False while an enrichment is in progress,
+     * matching {@link #get}.
+     */
+    public static boolean hasTextRecognizer(CompositeContentEnricher enrichers,
+                                            MediaType mediaType, ParseContext context) {
+        if (mediaType == null) {
+            return false;
+        }
+        ActiveEnrichment active = context.get(ActiveEnrichment.class);
+        if (active != null && active.active) {
+            return false;
+        }
+        if (enrichers != null) {
+            for (Parser p : enrichers.getEnrichers(mediaType)) {
+                if (p instanceof TextRecognizer recognizer && recognizer.recognizesText(context)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        Parser composite = EmbeddedDocumentUtil.getStatelessParser(context);
+        return composite != null && composite.getSupportedTypes(context)
+                .contains(LegacyDispatchEnricher.toOcrMediaType(mediaType));
+    }
+
+    /**
      * Runs each enricher in config order, best-effort: the first failure is rethrown once
      * the chain completes, later ones suppressed onto it. Timeouts, SecurityException,
      * SAXException (incl. write-limit aborts) and runtime exceptions abort immediately,

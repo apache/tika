@@ -55,6 +55,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.TextRecognizer;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.ProcessUtils;
 import org.apache.tika.utils.StringUtils;
@@ -87,7 +88,7 @@ import org.apache.tika.utils.StringUtils;
  * @since Apache Tika 4.0
  */
 @TikaComponent(name = "tess4j-parser")
-public class Tess4JParser implements Parser, Initializable {
+public class Tess4JParser implements Parser, Initializable, TextRecognizer {
 
     private static final long serialVersionUID = 1L;
 

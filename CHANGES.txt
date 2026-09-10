@@ -6,6 +6,21 @@ Release 4.1.0 - unreleased
      extraction can cover the whole document while only the first page is
      rendered, as for a thumbnail (TIKA-4856).
 
+   * The PDF parser's AUTO OCR strategy no longer emits a page's extracted text
+     next to the OCR output that superseded it. Text that trips the AUTO verdict
+     is held back and replaced by OCR, and released unchanged when OCR cannot run
+     on that page: no engine on the classpath or in content-enrichers,
+     maxPagesToOcr exhausted, or a timeout or error. AUTO without an engine now
+     behaves as NO_OCR (TIKA-4883).
+
+   * New TextRecognizer capability for content enrichers (tika-core): a parser
+     implements it to say its output is the document's text rather than an
+     annotation. The PDF parser's AUTO strategy supersedes extracted text only
+     when a text recognizer is configured (Tesseract, Tess4J and the VLM parsers
+     declare it; an image-embedding enricher does not) and only when the engine
+     actually wrote text. Other enrichers still run on the rendered page
+     (TIKA-4883).
+
    * tika-app's -m and --json wrote metadata at the SAX endDocument event
      thereby dropping keys added by a parser after the endDocument (TIKA-4885).
      
