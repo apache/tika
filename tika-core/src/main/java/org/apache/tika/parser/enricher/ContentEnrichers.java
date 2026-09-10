@@ -26,6 +26,7 @@ import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
@@ -57,8 +58,10 @@ import org.apache.tika.utils.ParserUtils;
  * Call sites: wrap the handler (an {@code EmbeddedContentHandler} over a
  * {@code BodyContentHandler}) so the enricher cannot dump structure or metadata into the
  * caller's XHTML; resolve on the <em>detected</em> type, captured before a parser can
- * refine Content-Type mid-parse; and pass the caller's own {@link ParseContext} through --
- * the recursion guard rides it, so a fresh context defeats it.
+ * refine Content-Type mid-parse; pass the target's metadata, or a probe carrying its
+ * {@code Content-Type} and {@code EMBEDDED_RESOURCE_TYPE} when resolving ahead of a render;
+ * and pass the caller's own {@link ParseContext} through -- the recursion guard rides it, so
+ * a fresh context defeats it.
  *
  * @since Apache Tika 4.1
  */
@@ -83,9 +86,12 @@ public final class ContentEnrichers {
      *
      * @param enrichers the injected composite; null when none is configured
      * @param mediaType the real, normalized media type of the bytes; may be null
+     * @param target    the metadata of the image the engine will be handed, or a probe for
+     *                  a render not yet made; dispatch reads only facts from it
      */
     public static Parser get(CompositeContentEnricher enrichers, MediaType mediaType,
-                             ParseContext context) {
+                             Metadata target, ParseContext context) {
+        Objects.requireNonNull(target, "target");
         if (mediaType == null || isActive(context)) {
             return null;
         }
@@ -105,9 +111,12 @@ public final class ContentEnrichers {
      * Whether the enricher {@link #get} would return produces the document's text: a
      * {@link TextRecognizer} that recognizes for this context, or a legacy
      * {@code image/ocr-*} claimant. False while an enrichment is in progress.
+     * {@code target} is as for {@link #get}.
      */
     public static boolean hasTextRecognizer(CompositeContentEnricher enrichers,
-                                            MediaType mediaType, ParseContext context) {
+                                            MediaType mediaType, Metadata target,
+                                            ParseContext context) {
+        Objects.requireNonNull(target, "target");
         if (mediaType == null || isActive(context)) {
             return false;
         }

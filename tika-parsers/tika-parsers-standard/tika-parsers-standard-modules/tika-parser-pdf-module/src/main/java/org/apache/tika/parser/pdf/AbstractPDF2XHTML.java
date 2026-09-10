@@ -221,9 +221,15 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         this.pdDocument = pdDocument;
         this.ocrImageMediaType =
                 MediaType.image(config.getOcr().getImageFormat().getFormatName());
-        this.ocrEngine = ContentEnrichers.get(contentEnrichers, ocrImageMediaType, context);
+        // resolved before any page is rendered, so a probe stands in for the render
+        Metadata renderTarget = new Metadata();
+        renderTarget.set(HttpHeaders.CONTENT_TYPE, ocrImageMediaType.toString());
+        renderTarget.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
+        this.ocrEngine =
+                ContentEnrichers.get(contentEnrichers, ocrImageMediaType, renderTarget, context);
         if (config.getOcr().getStrategy() == AUTO && ContentEnrichers.hasTextRecognizer(
-                contentEnrichers, ocrImageMediaType, context)) {
+                contentEnrichers, ocrImageMediaType, renderTarget, context)) {
             this.pageBuffer = new PageTextBuffer(handler);
             this.xhtml = new XHTMLContentHandler(pageBuffer, metadata, context);
         } else {

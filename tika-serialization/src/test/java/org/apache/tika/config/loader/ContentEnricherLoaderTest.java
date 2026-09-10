@@ -31,6 +31,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
@@ -49,6 +50,12 @@ public class ContentEnricherLoaderTest {
         Path config = tmp.resolve("tika-config.json");
         Files.writeString(config, json);
         return TikaLoader.load(config);
+    }
+
+    private static Metadata target(MediaType type) {
+        Metadata target = new Metadata();
+        target.set(HttpHeaders.CONTENT_TYPE, type.toString());
+        return target;
     }
 
     @Test
@@ -143,7 +150,7 @@ public class ContentEnricherLoaderTest {
         assertEquals(MinimalTestParser.class.getName(),
                 ParserUtils.getParserClassname(parsers.getParsers(context).get(type)));
         context.set(Parser.class, parsers);
-        Parser enricher = ContentEnrichers.get(null, type, context);
+        Parser enricher = ContentEnrichers.get(null, type, target(type), context);
         assertNotNull(enricher, "the SPI enricher is still discovered for the type");
         Metadata metadata = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
@@ -227,6 +234,7 @@ public class ContentEnricherLoaderTest {
         ParseContext context = new ParseContext();
         context.set(Parser.class, loader.get(Parser.class));
         assertNull(ContentEnrichers.get(enrichers, MediaType.parse("application/test+minimal"),
+                target(MediaType.parse("application/test+minimal")),
                 context), "the SPI enricher in default-parser is not consulted");
     }
 
