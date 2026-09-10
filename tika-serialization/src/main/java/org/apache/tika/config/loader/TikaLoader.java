@@ -54,6 +54,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.inference.EngineRegistry;
+import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -141,6 +142,9 @@ public class TikaLoader {
                 .register();
         ComponentConfig.builder(EngineLoader.KEY, EngineRegistry.class)
                 .customLoader(new EngineLoader())
+                .register();
+        ComponentConfig.builder(InferenceLoader.KEY, InferenceDispatcher.class)
+                .customLoader(new InferenceLoader())
                 .register();
 
         ComponentConfig.builder("translator", Translator.class)
@@ -411,6 +415,8 @@ public class TikaLoader {
                 adpConfig = new AutoDetectParserConfig();
             }
             autoDetectParser = AutoDetectParser.build((CompositeParser)loadParsers(), loadDetectors(), adpConfig);
+            // the outermost composite seeds the dispatcher into every parse's context
+            ((CompositeParser) autoDetectParser).setInferenceDispatcher(get(InferenceDispatcher.class));
         }
         return autoDetectParser;
     }

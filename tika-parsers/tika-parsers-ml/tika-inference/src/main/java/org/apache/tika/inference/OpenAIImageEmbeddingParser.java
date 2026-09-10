@@ -185,6 +185,9 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
 
     @Override
     public void initialize() throws TikaConfigException {
+        LOG.info("openai-image-embedding-parser runs one request per image; the \"engines\" + "
+                + "\"inference\" shape (openai-embedding-engine, input IMAGES, task embed) batches "
+                + "a document's images into one request");
         this.httpClient = TikaHttpClient.build(30);
     }
 

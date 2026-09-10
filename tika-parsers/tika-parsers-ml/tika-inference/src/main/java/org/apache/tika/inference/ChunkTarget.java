@@ -48,12 +48,17 @@ public final class ChunkTarget {
 
     public static ChunkTarget resolve(Metadata target, ParseContext context) {
         ParentMetadata parent = context.get(ParentMetadata.class);
+        return resolve(target, parent == null ? null : parent.getMetadata());
+    }
+
+    /** As above, with the parent captured earlier (the dispatcher runs after the walk). */
+    public static ChunkTarget resolve(Metadata target, Metadata parent) {
         String idPath = target.get(TikaCoreProperties.EMBEDDED_ID_PATH);
         String type = target.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
         if (parent == null || idPath == null || type == null || !LIFTED.contains(type)) {
             return new ChunkTarget(target, null);
         }
-        return new ChunkTarget(parent.getMetadata(),
+        return new ChunkTarget(parent,
                 new EmbeddedLocator(idPath, target.get(TikaCoreProperties.RESOURCE_NAME_KEY)));
     }
 
