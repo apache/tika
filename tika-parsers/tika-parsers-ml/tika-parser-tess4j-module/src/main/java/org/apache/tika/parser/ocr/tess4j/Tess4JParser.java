@@ -489,6 +489,19 @@ public class Tess4JParser implements Parser, Initializable, TextRecognizer {
     /**
      * Resolves the effective config: JSON config > ParseContext config > default.
      */
+    @Override
+    public boolean recognizesText(ParseContext context) {
+        if (!initialized) {
+            return false;
+        }
+        try {
+            return !getConfig(context).isSkipOcr();
+        } catch (TikaConfigException | IOException e) {
+            // parse() surfaces the broken config; for the question asked, nothing is recognized
+            return false;
+        }
+    }
+
     private Tess4JConfig getConfig(ParseContext parseContext)
             throws TikaConfigException, IOException {
 
