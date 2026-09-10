@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * The image embedder writes a picture's vector onto the document the
+     picture appears in (INLINE and RENDERING children) with an "embedded"
+     locator naming the picture; attachments keep their own, and
+     liftToParent: false keeps every picture's vector on the picture.
+     RecursiveParserWrapper exposes the parent's Metadata to a child's parse
+     as ParentMetadata, and ChunkTarget (tika-inference) resolves where a
+     child's chunks land (TIKA-4888).
+     
    * A PDF page rendered as an embedded document (imageStrategy RENDER_PAGES_*)
      is enriched once, by the PDF parser: the text recognizer where the OCR
      strategy says so, every other text-recognizers entry on every page, results on
