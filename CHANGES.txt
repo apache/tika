@@ -1,5 +1,15 @@
 Release 4.1.0 - unreleased
 
+   * A PDF page rendered as an embedded document (imageStrategy RENDER_PAGES_*)
+     is enriched once, by the PDF parser: the text recognizer where the OCR
+     strategy says so, every other text-recognizers entry on every page, results on
+     the PDF itself. The embedded copy is no longer enriched again by
+     image-parser, so an image embedder no longer yields two vectors for a
+     text-poor page and Tesseract no longer OCRs a page twice; NO_OCR now means
+     no page OCR at all. ContentEnrichers gains scoped suspend and
+     suspendRecognizers for containers that enrich their own renderings
+     (TIKA-4887).
+
    * OCR engines and other content enrichers: name the engine in "text-recognizers"
      and every default parser stays loaded; "text-recognizers": [] turns enrichment
      off everywhere. With no list, the loader resolves one engine

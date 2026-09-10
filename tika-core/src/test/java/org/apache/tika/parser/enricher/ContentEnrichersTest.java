@@ -150,6 +150,66 @@ public class ContentEnrichersTest {
     }
 
     @Test
+    public void testSuspendedRecognizers() throws Exception {
+        ParseContext context = new ParseContext();
+        RecordingParser annotator = new RecordingParser(Set.of(PNG));
+        RecognizingParser recognizer = new RecognizingParser(Set.of(PNG), true);
+        RecognizingParser declining = new RecognizingParser(Set.of(PNG), false);
+        RecordingParser legacy = new RecordingParser(Set.of(OCR_PNG));
+        CompositeContentEnricher list = listOf(recognizer, annotator, declining, legacy);
+
+        Parser annotators;
+        try (ContentEnrichers.Suspension scope = ContentEnrichers.suspendRecognizers(context)) {
+            annotators = ContentEnrichers.get(list, PNG, target(PNG), context);
+            assertNotNull(annotators);
+            assertFalse(ContentEnrichers.hasTextRecognizer(list, PNG, target(PNG), context));
+            assertNull(ContentEnrichers.get(listOf(recognizer), PNG, target(PNG), context));
+        }
+        invoke(annotators, new Metadata(), context);
+        assertEquals(1, annotator.calls);
+        assertEquals(0, recognizer.calls);
+        assertEquals(0, declining.calls, "a recognizer that declines is not an annotator");
+        assertEquals(0, legacy.calls, "a legacy claimant is a recognizer");
+        assertNotNull(ContentEnrichers.get(listOf(recognizer), PNG, target(PNG), context));
+        assertTrue(ContentEnrichers.hasTextRecognizer(list, PNG, target(PNG), context));
+
+        // no list: the discovered engine is filtered the same way
+        context.set(Parser.class, compositeOf(new AnnotatingParser(Set.of(PNG))));
+        try (ContentEnrichers.Suspension scope = ContentEnrichers.suspendRecognizers(context)) {
+            assertNotNull(ContentEnrichers.get(null, PNG, target(PNG), context));
+        }
+        context.set(Parser.class, compositeOf(new RecognizingParser(Set.of(PNG), true)));
+        try (ContentEnrichers.Suspension scope = ContentEnrichers.suspendRecognizers(context)) {
+            assertNull(ContentEnrichers.get(null, PNG, target(PNG), context));
+        }
+        assertNotNull(ContentEnrichers.get(null, PNG, target(PNG), context));
+    }
+
+    @Test
+    public void testSuspendedDispatch() throws Exception {
+        ParseContext context = new ParseContext();
+        CompositeContentEnricher list = listOf(new RecognizingParser(Set.of(PNG), true),
+                new RecordingParser(Set.of(PNG)));
+        try (ContentEnrichers.Suspension outer = ContentEnrichers.suspend(context)) {
+            assertNull(ContentEnrichers.get(list, PNG, target(PNG), context));
+            assertFalse(ContentEnrichers.hasTextRecognizer(list, PNG, target(PNG), context));
+            try (ContentEnrichers.Suspension inner = ContentEnrichers.suspend(context)) {
+                assertNull(ContentEnrichers.get(list, PNG, target(PNG), context));
+            }
+            assertNull(ContentEnrichers.get(list, PNG, target(PNG), context),
+                    "an inner scope restores the outer suspension, it does not lift it");
+            try (ContentEnrichers.Suspension inner =
+                         ContentEnrichers.suspendRecognizers(context)) {
+                assertNull(ContentEnrichers.get(list, PNG, target(PNG), context));
+            }
+            assertNull(ContentEnrichers.get(list, PNG, target(PNG), context),
+                    "a recognizer scope inside a full suspension changes nothing on close");
+        }
+        assertNotNull(ContentEnrichers.get(list, PNG, target(PNG), context));
+        assertTrue(ContentEnrichers.hasTextRecognizer(list, PNG, target(PNG), context));
+    }
+
+    @Test
     public void testHasTextRecognizerRefusedDuringEnrichment() throws Exception {
         ParseContext context = new ParseContext();
         Parser reentrant = new Parser() {
