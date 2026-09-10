@@ -252,6 +252,26 @@ public class OpenAIImageEmbeddingParserTest {
                 .contains(org.apache.tika.mime.MediaType.image("webp")));
     }
 
+    /** A class-keyed skip is honored the way the OCR engines honor theirs. */
+    @Test
+    void testSkippedPerContext() throws Exception {
+        ImageEmbeddingConfig skipped = new ImageEmbeddingConfig();
+        skipped.setSkipEmbedding(true);
+        ParseContext context = new ParseContext();
+        context.set(ImageEmbeddingConfig.class, skipped);
+        assertTrue(parser.getSupportedTypes(context).isEmpty());
+        assertTrue(parser.getSupportedTypes(new ParseContext())
+                .contains(org.apache.tika.mime.MediaType.image("png")));
+
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
+        try (TikaInputStream tis = TikaInputStream.get(new byte[]{(byte) 0x89, 'P', 'N', 'G'})) {
+            parser.parse(tis, new DefaultHandler(), metadata, context);
+        }
+        assertNull(metadata.get(TikaCoreProperties.TIKA_CHUNKS));
+        assertEquals(0, server.getRequestCount());
+    }
+
     @Test
     void testSupportedTypesWhenSkipped() throws Exception {
         config.setSkipEmbedding(true);

@@ -133,7 +133,9 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
-        if (defaultConfig.isSkipEmbedding()) {
+        ImageEmbeddingConfig userConfig = context.get(ImageEmbeddingConfig.class);
+        if (defaultConfig.isSkipEmbedding()
+                || (userConfig != null && userConfig.isSkipEmbedding())) {
             return Collections.emptySet();
         }
         return SUPPORTED_TYPES;
@@ -292,6 +294,10 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
             return ParseContextConfig.getConfig(
                     parseContext, key, ImageEmbeddingConfig.class,
                     defaultConfig);
+        }
+        ImageEmbeddingConfig userConfig = parseContext.get(ImageEmbeddingConfig.class);
+        if (userConfig != null) {
+            return userConfig;
         }
         return defaultConfig;
     }
