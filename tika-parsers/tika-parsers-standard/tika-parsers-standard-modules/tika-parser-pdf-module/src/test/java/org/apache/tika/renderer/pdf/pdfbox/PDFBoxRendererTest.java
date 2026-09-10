@@ -35,6 +35,7 @@ import org.junit.jupiter.api.parallel.Isolated;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.renderer.PageBasedRenderResults;
@@ -87,12 +88,17 @@ public class PDFBoxRendererTest {
     @Test
     public void testRangePastTheLastPageIsClamped() throws Exception {
         PDFBoxRenderer renderer = new PDFBoxRenderer();
-        try (InputStream is = getClass().getResourceAsStream("/test-documents/testPDF.pdf");
+        // testPDF_bookmarks.pdf has two pages
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/testPDF_bookmarks.pdf");
              TikaInputStream tis = TikaInputStream.get(is);
              PageBasedRenderResults results = (PageBasedRenderResults) renderer.render(
                      tis, new Metadata(), new ParseContext(), new PageRangeRequest(1, 9999))) {
-            assertEquals(1, results.getResults().size());
-            assertEquals(RenderResult.STATUS.SUCCESS, results.getResults().get(0).getStatus());
+            assertEquals(2, results.getResults().size());
+            for (int i = 0; i < 2; i++) {
+                RenderResult r = results.getResults().get(i);
+                assertEquals(RenderResult.STATUS.SUCCESS, r.getStatus());
+                assertEquals(i + 1, (int) r.getMetadata().getInt(TikaPagedText.PAGE_NUMBER));
+            }
         }
     }
 

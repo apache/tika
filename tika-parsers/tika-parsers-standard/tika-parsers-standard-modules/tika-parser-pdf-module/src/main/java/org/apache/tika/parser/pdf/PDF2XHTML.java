@@ -167,6 +167,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         if (config.getImageStrategy() != PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
             return;
         }
+        // getCurrentPageNo() is 1-based, like PageRangeRequest: the first N pages are 1..N
         int maxRenderedPages = config.getMaxRenderedPages();
         if (maxRenderedPages > 0 && getCurrentPageNo() > maxRenderedPages) {
             return;
