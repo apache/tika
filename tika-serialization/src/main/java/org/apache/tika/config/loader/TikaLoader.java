@@ -135,7 +135,7 @@ public class TikaLoader {
                 .wrapWith(list -> new CompositeRenderer((List<Renderer>) list))
                 .register();
 
-        ComponentConfig.builder("content-enrichers", CompositeContentEnricher.class)
+        ComponentConfig.builder("text-recognizers", CompositeContentEnricher.class)
                 .customLoader(new ContentEnricherLoader())
                 .register();
 
@@ -825,8 +825,8 @@ public class TikaLoader {
         }
 
         // [] is meaningful (enrichment off), so the section is kept even when empty
-        if (config.hasComponentSection("content-enrichers")) {
-            output.set("content-enrichers", config.getRootNode().get("content-enrichers"));
+        if (config.hasComponentSection("text-recognizers")) {
+            output.set("text-recognizers", config.getRootNode().get("text-recognizers"));
         }
 
         // Preserve auto-detect-parser config if present

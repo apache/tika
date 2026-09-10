@@ -245,7 +245,7 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
         if (advertised.isEmpty()) {
             LOG.info("{} under \"parsers\" advertises no media types (engine unavailable, or "
                     + "configured to skip) and never runs. To turn enrichment off, set "
-                    + "\"content-enrichers\": [] instead.", name);
+                    + "\"text-recognizers\": [] instead.", name);
             return;
         }
         Set<MediaType> enriching = new TreeSet<>();
@@ -257,21 +257,21 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
         if (enriching.isEmpty()) {
             LOG.warn("{} under \"parsers\" is never dispatched to (every type it advertises is "
                     + "claimed by another parser) and {}, so it never runs. Name it under "
-                    + "\"content-enrichers\" to invoke it, or exclude the parser that "
+                    + "\"text-recognizers\" to invoke it, or exclude the parser that "
                     + "claims its types to dispatch to it.", name, listConfigured
-                    ? "\"content-enrichers\" does not name it"
+                    ? "\"text-recognizers\" does not name it"
                     : "another enricher is preferred for those types");
         } else {
             LOG.info("{} under \"parsers\" is never dispatched to (every type it advertises is "
-                    + "claimed by another parser); it acts only as the content enricher for "
-                    + "{}. Name it under \"content-enrichers\" to say so.", name, enriching);
+                    + "claimed by another parser); it acts only as the text recognizer for "
+                    + "{}. Name it under \"text-recognizers\" to say so.", name, enriching);
         }
     }
 
     private static void logEnrichers(CompositeContentEnricher enrichers, boolean configured) {
         if (enrichers.isEmpty()) {
-            LOG.info("content enrichers: none{}; images and rendered pages are not enriched",
-                    configured ? " (\"content-enrichers\": [])"
+            LOG.info("text recognizers: none{}; images and rendered pages are not enriched",
+                    configured ? " (\"text-recognizers\": [])"
                             : " found among the loaded parsers");
             return;
         }
@@ -282,10 +282,10 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
             }
         }
         for (Map.Entry<Parser, Set<MediaType>> e : byEngine.entrySet()) {
-            LOG.info("content enricher {} for {}{}", ParserUtils.getParserClassname(e.getKey()),
+            LOG.info("text recognizer {} for {}{}", ParserUtils.getParserClassname(e.getKey()),
                     e.getValue(), configured ? ""
                             : " (found among the loaded parsers; name it under "
-                            + "\"content-enrichers\" to pin it)");
+                            + "\"text-recognizers\" to pin it)");
         }
     }
 

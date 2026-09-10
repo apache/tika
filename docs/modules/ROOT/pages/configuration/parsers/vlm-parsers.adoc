@@ -29,7 +29,7 @@ for earlier shapes.
 Three implementations are provided out of the box. None is auto-loaded: each must be
 named explicitly in your configuration. (Changed in 4.1.0: `openai-vlm-parser` previously
 auto-registered via SPI.) To use a VLM as the OCR engine for embedded images and rendered
-PDF pages, name it in the `content-enrichers` list — see
+PDF pages, name it in the `text-recognizers` list — see
 xref:configuration/index.adoc[Configuration].
 
 [cols="1,2,1"]
@@ -155,9 +155,9 @@ include::example$vlm-pdf-parsing.json[]
 
 You can substitute `gemini-vlm-parser` for `claude-vlm-parser` above.
 
-Named under `parsers`, the VLM is also the content enricher for the image types it advertises, so
-embedded images in every other document type are sent to it too. Add a `content-enrichers` list to
-choose a different engine for those, or `"content-enrichers": []` for none; see
+Named under `parsers`, the VLM is also the text recognizer for the image types it advertises, so
+embedded images in every other document type are sent to it too. Add a `text-recognizers` list to
+choose a different engine for those, or `"text-recognizers": []` for none; see
 xref:configuration/index.adoc[Configuration].
 
 == Configuration options reference

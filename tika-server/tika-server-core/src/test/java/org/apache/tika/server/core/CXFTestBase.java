@@ -307,7 +307,7 @@ public abstract class CXFTestBase {
 
     /**
      * Creates a default test config with pipes configuration, carrying parse-context,
-     * metadata-filters, presets and content-enrichers over from the tika config.
+     * metadata-filters, presets and text-recognizers over from the tika config.
      *
      * @param tikaConfigPath path to the tika config (may contain metadata-filters)
      * 
@@ -358,9 +358,9 @@ public abstract class CXFTestBase {
                 root.set("metadata-filters", metadataFilters);
             }
             // the worker loads enrichers from its own config; [] is meaningful
-            JsonNode contentEnrichers = tikaConfig.get("content-enrichers");
+            JsonNode contentEnrichers = tikaConfig.get("text-recognizers");
             if (contentEnrichers != null) {
-                root.set("content-enrichers", contentEnrichers);
+                root.set("text-recognizers", contentEnrichers);
             }
             // The worker resolves preset names from its own config, so presets must be
             // visible there just like the parse-context defaults above.

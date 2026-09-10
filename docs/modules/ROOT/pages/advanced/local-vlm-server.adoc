@@ -338,13 +338,13 @@ curl http://localhost:8000/v1/models
 
 == Configure Tika to use it
 
-Point the `OpenAIVLMParser` at your local server and name it as the content enricher, so it
+Point the `OpenAIVLMParser` at your local server and name it as the text recognizer, so it
 transcribes embedded images and rendered PDF pages while every default parser stays loaded:
 
 [source,json]
 ----
 {
-  "content-enrichers": [
+  "text-recognizers": [
     {
       "openai-vlm-parser": {
         "baseUrl": "http://127.0.0.1:8000",

@@ -1,5 +1,5 @@
 {
-  "content-enrichers": [
+  "text-recognizers": [
     {
       "claude-vlm-parser": {
         "baseUrl": "https://api.anthropic.com",

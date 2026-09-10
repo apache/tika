@@ -42,9 +42,9 @@ icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers
 == OCR of pages (`ocr`)
 
 The PDF parser does not OCR anything itself. It renders pages and hands each rendered image to the
-content enricher resolved for the render type (`image/png` by default): the engine named in the
-top-level `content-enrichers` list, or, with no list, the one found among the loaded parsers and
-logged at startup. See xref:configuration/index.adoc#content-enrichers[Configuration]
+text recognizer resolved for the render type (`image/png` by default): the engine named in the
+top-level `text-recognizers` list, or, with no list, the one found among the loaded parsers and
+logged at startup. See xref:configuration/index.adoc#text-recognizers[Configuration]
 for choosing the engine and xref:configuration/parsers/tesseract-ocr-parser.adoc[Tesseract OCR]
 for its options. The `ocr` block controls only rendering and when OCR runs:
 

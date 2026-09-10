@@ -22,15 +22,18 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.ContentEnrichers;
 
 /**
- * Loads the top-level {@code "content-enrichers"} list: parsers selected by component name
+ * Loads the top-level {@code "text-recognizers"} list: parsers selected by component name
  * that container parsers invoke for derived content (OCR, ...). Members come from the same
  * registry as {@code "parsers"} entries but never join the composite's media-type dispatch.
  * Null when the key is absent: {@link ParserLoader} then resolves the enrichers from the
@@ -38,13 +41,15 @@ import org.apache.tika.parser.enricher.CompositeContentEnricher;
  */
 class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ContentEnricherLoader.class);
+
     @Override
     public CompositeContentEnricher load(TikaJsonConfig config, LoaderContext context)
             throws TikaConfigException {
-        List<Map.Entry<String, JsonNode>> entries = config.getArrayComponents("content-enrichers");
+        List<Map.Entry<String, JsonNode>> entries = config.getArrayComponents("text-recognizers");
         if (entries.isEmpty()) {
             // [] is an explicit "nothing", authoritative; an absent key means "find them"
-            return config.hasComponentSection("content-enrichers")
+            return config.hasComponentSection("text-recognizers")
                     ? new CompositeContentEnricher(List.of()) : null;
         }
         List<Parser> enrichers = new ArrayList<>();
@@ -57,15 +62,20 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
                 enricher = context.getObjectMapper().treeToValue(wrapper, Parser.class);
             } catch (Exception e) {
                 throw new TikaConfigException(
-                        "Failed to load content enricher: " + entry.getKey(), e);
+                        "Failed to load text recognizer: " + entry.getKey(), e);
             }
             // lifetime snapshot: an empty engine must fail load, not go inert; ask the
             // engine itself, since a _mime-include answers for the decorator
             if (unwrap(enricher).getSupportedTypes(empty).isEmpty()) {
-                throw new TikaConfigException("Content enricher \"" + entry.getKey()
+                throw new TikaConfigException("Text recognizer \"" + entry.getKey()
                         + "\" advertises no media types (a _mime-include list does not "
                         + "count). Is the engine unavailable (missing native binary, "
                         + "unreachable inference server) or configured to skip enrichment?");
+            }
+            if (ContentEnrichers.asTextRecognizer(enricher) == null && !advertisesLegacyOcr(enricher)) {
+                LOG.warn("\"text-recognizers\" entry \"{}\" recognizes no text; it runs as an "
+                        + "annotator on the images and pages it is offered (4.2 gives annotators "
+                        + "a list of their own)", entry.getKey());
             }
             enrichers.add(enricher);
         }
@@ -77,5 +87,16 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
             parser = decorator.getWrappedParser();
         }
         return parser;
+    }
+
+    // a pre-4.1 engine advertising image/ocr-* counts as a recognizer until 5.0
+    private static boolean advertisesLegacyOcr(Parser enricher) {
+        for (org.apache.tika.mime.MediaType type
+                : unwrap(enricher).getSupportedTypes(new ParseContext())) {
+            if (ContentEnrichers.isLegacyOcrType(type)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

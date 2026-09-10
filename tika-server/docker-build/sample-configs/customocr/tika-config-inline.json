@@ -1,6 +1,6 @@
 {
   // Extract inline images from PDFs and OCR them with Tesseract.
-  "content-enrichers": [
+  "text-recognizers": [
     { "tesseract-ocr-parser": {} }
   ],
   "parsers": [

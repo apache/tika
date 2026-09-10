@@ -25,7 +25,7 @@ import org.apache.tika.parser.ParseContext;
  * for text it already has. Only text recognizers count when a caller such as the PDF
  * parser's AUTO OCR strategy asks whether an engine can stand in for extracted text.
  * <p>
- * With no {@code "content-enrichers"} list, a recognizer on the classpath is found by this
+ * With no {@code "text-recognizers"} list, a recognizer on the classpath is found by this
  * interface (see {@link ContentEnrichers#resolve}). Decorators hide it: ask through
  * {@link ContentEnrichers#asTextRecognizer}, not {@code instanceof}.
  *

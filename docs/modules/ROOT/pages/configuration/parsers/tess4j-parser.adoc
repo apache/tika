@@ -36,7 +36,7 @@ Component name: `tess4j-parser`. Adding `tika-parser-tess4j-module` to the class
 deliberate opt-in and is intended to make Tess4J the OCR engine — but when both engines are
 live, the winner is decided by registration order, which is not guaranteed. Since 4.1.0 a WARN
 at startup names the collision and the winner; to pin the engine deterministically, name it in
-the top-level `content-enrichers` list (`tess4j-parser` or `tesseract-ocr-parser`; see
+the top-level `text-recognizers` list (`tess4j-parser` or `tesseract-ocr-parser`; see
 xref:configuration/index.adoc[Configuration]).
 
 `Tess4JParser` calls the Tesseract native library in-process via
@@ -86,7 +86,7 @@ option must point to the directory containing them (e.g.,
 JNA must be able to find `libtesseract` and `libleptonica` at runtime.
 The tess4j jar does *not* bundle these libraries for macOS or Linux.
 If JNA cannot find them on the default library search path, the parser
-advertises no media types: named under `content-enrichers` that fails
+advertises no media types: named under `text-recognizers` that fails
 config load with a message naming it; under `parsers` it is logged at
 startup and the parser does nothing.
 

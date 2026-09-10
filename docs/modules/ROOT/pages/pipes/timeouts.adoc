@@ -56,7 +56,7 @@ configuration, alongside any per-parser timeouts:
 [source,json]
 ----
 {
-  "content-enrichers": [
+  "text-recognizers": [
     { "tesseract-ocr-parser": { "timeoutMillis": 120000 } }
   ],
   "parse-context": {

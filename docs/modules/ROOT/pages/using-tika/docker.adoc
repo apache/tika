@@ -98,7 +98,7 @@ For example, to keep the full image's parsers but turn OCR off:
 
 [source,json]
 ----
-{ "content-enrichers": [] }
+{ "text-recognizers": [] }
 ----
 
 See xref:configuration/index.adoc[Configuration] for the file format.

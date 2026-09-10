@@ -1,8 +1,8 @@
 {
-  // Named under "content-enrichers", Tesseract is invoked on every image Tika's parsers
+  // Named under "text-recognizers", Tesseract is invoked on every image Tika's parsers
   // meet; the default parsers stay loaded. Windows paths in JSON need forward slashes or
   // escaped backslashes.
-  "content-enrichers": [
+  "text-recognizers": [
     {
       "tesseract-ocr-parser": {
         // Calculate skew and rotate (via ImageMagick) before OCR. Needs ImageMagick.

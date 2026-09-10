@@ -16,7 +16,7 @@
 //
 = Wiring in Your Own OCR Engine
 
-An OCR engine in Tika is a content enricher: a `Parser` that `image-parser` and `pdf-parser`
+An OCR engine in Tika is a text recognizer: a `Parser` that `image-parser` and `pdf-parser`
 *invoke* on an image they have already parsed, never one the composite dispatches to. Writing one
 takes a class, a jar, and three lines of JSON. This page walks through all three with a
 hypothetical `jina-ocr-parser`; the same steps apply to any transcription service, and, with one
@@ -81,7 +81,7 @@ public class JinaOcrParser implements Parser, TextRecognizer, Initializable {
         available = JinaClient.ping(defaultConfig.getEndpoint(), defaultConfig.getTimeoutMillis());
     }
 
-    // empty when the engine cannot run: under "content-enrichers" that fails config load
+    // empty when the engine cannot run: under "text-recognizers" that fails config load
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return available ? TYPES : Collections.emptySet();
@@ -134,7 +134,7 @@ Advertise the image types you read: `image/png`, not a routing alias. The pre-4.
 until 5.0 and gets no other benefit.
 
 `getSupportedTypes` empty when unavailable::
-Named under `content-enrichers`, an engine that advertises nothing at startup fails config load
+Named under `text-recognizers`, an engine that advertises nothing at startup fails config load
 with a message naming it, instead of silently doing nothing. Make availability a startup fact
 (`initialize()`), not a per-image discovery.
 
@@ -202,7 +202,7 @@ xref:configuration/index.adoc#tika-extras-dir[Adding extra jars].
 [source,json]
 ----
 {
-  "content-enrichers": [
+  "text-recognizers": [
     { "jina-ocr-parser": { "endpoint": "http://jina:9000", "apiKey": "..." } }
   ]
 }
@@ -215,7 +215,7 @@ next to it, add entries with filters:
 [source,json]
 ----
 {
-  "content-enrichers": [
+  "text-recognizers": [
     { "jina-ocr-parser": { "endpoint": "http://jina:9000" } },
     { "tesseract-ocr-parser": { "_mime-exclude": ["image/png", "image/jpeg", "image/tiff"] } }
   ]
@@ -225,7 +225,7 @@ next to it, add entries with filters:
 Every entry whose types include the image's type runs, in order. Two text recognizers sharing a
 type both run and their text is concatenated, and startup warns about it; the filters above keep
 one recognizer per type. Full semantics, including what happens with no list at all, are in
-xref:configuration/index.adoc#content-enrichers[Configuration].
+xref:configuration/index.adoc#text-recognizers[Configuration].
 
 Per-request overrides arrive through `parse-context` under the component name, which is what the
 `ParseContextConfig.getConfig` call in the class reads. Anything a caller must not change per
@@ -238,7 +238,7 @@ explains the trust boundary.
 Start Tika. The loader logs one line per effective engine:
 
 ----
-content enricher com.example.tika.JinaOcrParser for [image/jpeg, image/png, image/tiff]
+text recognizer com.example.tika.JinaOcrParser for [image/jpeg, image/png, image/tiff]
 ----
 
 No line, or a `TikaConfigException` saying the engine advertises no media types, means
@@ -257,7 +257,7 @@ page renders, exactly as a dispatched parser would be, so the metadata tells you
 
 * Naming the engine under `parsers`. It still works, but the entry then means two things at once
   (configure the engine, and parse the types nobody else claims), and startup has to tell you
-  which happened. `content-enrichers` says what you mean.
+  which happened. `text-recognizers` says what you mean.
 * Creating a fresh `ParseContext` inside `parse`. The caller's context carries the recursion guard
   that stops an enricher from enriching its own output; pass the one you were given.
 * Claiming types you do not enrich. Every advertised type routes images to you, and a type you

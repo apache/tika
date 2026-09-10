@@ -1,7 +1,7 @@
 Release 4.1.0 - unreleased
 
-   * OCR engines and other content enrichers: name the engine in "content-enrichers"
-     and every default parser stays loaded; "content-enrichers": [] turns enrichment
+   * OCR engines and other content enrichers: name the engine in "text-recognizers"
+     and every default parser stays loaded; "text-recognizers": [] turns enrichment
      off everywhere. With no list, the loader resolves one engine
      per media type from the loaded parsers at startup (an engine configured under
      "parsers" beats one default-parser found; last registered wins; an entry's
@@ -31,7 +31,7 @@ Release 4.1.0 - unreleased
    * The PDF parser's AUTO OCR strategy no longer emits a page's extracted text
      next to the OCR output that superseded it. Text that trips the AUTO verdict
      is held back and replaced by OCR, and released unchanged when OCR cannot run
-     on that page: no engine on the classpath or in content-enrichers,
+     on that page: no engine on the classpath or in text-recognizers,
      maxPagesToOcr exhausted, or a timeout or error. AUTO without an engine now
      behaves as NO_OCR (TIKA-4883).
 
@@ -46,7 +46,7 @@ Release 4.1.0 - unreleased
    * tika-app's -m and --json wrote metadata at the SAX endDocument event
      thereby dropping keys added by a parser after the endDocument (TIKA-4885).
      
-   * "content-enrichers": _mime-exclude now matches the real media type, so
+   * "text-recognizers": _mime-exclude now matches the real media type, so
      excluding image/tiff also drops a legacy image/ocr-tiff engine (it was
      a no-op). The zero-media-types check at config load asks the engine
      itself, so a _mime-include list no longer masks an unreachable one.
@@ -127,7 +127,7 @@ Release 4.1.0 - unreleased
      status log adds a last-interval docs-per-sec rate next to the cumulative
      average (TIKA-4875).
      
-   * New "content-enrichers" config list (TIKA-4872): select the OCR engine
+   * New "text-recognizers" config list (TIKA-4872): select the OCR engine
      ("tesseract-ocr-parser", "tess4j-parser", "openai-vlm-parser", ...) by
      name instead of by classpath registration of the image/ocr-* pseudo
      media types. Enrichers advertise real media types (legacy engines that
@@ -144,7 +144,7 @@ Release 4.1.0 - unreleased
      engine that was not named -- and a named engine that reports no media
      types at load (missing binary, unreachable inference server) fails
      config load instead of going silently inert. With no
-     "content-enrichers" configured, the legacy ocr-* dispatch applies
+     "text-recognizers" configured, the legacy ocr-* dispatch applies
      unchanged; a WARN at config load now names colliding OCR engines and
      the winner. TesseractOCRParser's
      component name is pinned as "tesseract-ocr-parser".

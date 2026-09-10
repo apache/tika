@@ -63,7 +63,8 @@ import org.apache.tika.utils.StringUtils;
  * (OpenAI-compatible {@code /v1/embeddings} with image input) and
  * stores the resulting vector in metadata.
  * <p>
- * A content enricher for image types: named in {@code "content-enrichers"}, it runs on
+ * An annotating content enricher for image types (experimental; 4.2 gives annotators a list of
+ * their own): named in {@code "text-recognizers"}, it runs on
  * embedded images and on the pages the PDF parser's {@code ocr.strategy} renders. Each
  * rendered page image is sent to the embedding endpoint and the
  * vector is stored as a serialized {@link Chunk} with a

@@ -35,7 +35,7 @@ import org.apache.tika.parser.ParserDecorator;
  * Media-type-keyed registry of content enrichers: ordinary {@link Parser}s that a container
  * parser <em>invokes</em> on bytes it has already parsed (OCR text for an image or a
  * rendered PDF page), rather than being dispatched to by the composite parser. Configured
- * as the top-level {@code "content-enrichers"} list, mirroring {@code "renderers"}; with no
+ * as the top-level {@code "text-recognizers"} list, mirroring {@code "renderers"}; with no
  * list, the loader builds one from the enrichers among the loaded parsers
  * ({@link ContentEnrichers#resolve}).
  * <p>

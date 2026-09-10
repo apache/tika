@@ -292,17 +292,17 @@ public class TikaLoaderRoundTripTest {
         }
     }
 
-    /** "content-enrichers": [] turns enrichment off and must survive a dump and reload. */
+    /** "text-recognizers": [] turns enrichment off and must survive a dump and reload. */
     @Test
     void testEmptyContentEnrichersSurviveRoundTrip() throws Exception {
         Path configPath = Files.createTempFile("tika-enrichers-", ".json");
         Path tempFile = Files.createTempFile("tika-roundtrip-", ".json");
         try {
-            Files.writeString(configPath, "{ \"content-enrichers\": [] }");
+            Files.writeString(configPath, "{ \"text-recognizers\": [] }");
             TikaLoader loader = TikaLoader.load(configPath);
             assertNotNull(loader.get(Parser.class));
             String json = loader.toJson();
-            assertTrue(json.contains("content-enrichers"), json);
+            assertTrue(json.contains("text-recognizers"), json);
 
             Files.writeString(tempFile, json);
             TikaLoader reloaded = TikaLoader.load(tempFile);

@@ -31,7 +31,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.ContentEnricher;
 import org.apache.tika.sax.XHTMLContentHandler;
 
-/** Fixture for {@code "content-enrichers"}: nameable as {@code mock-enricher}, no OCR binary. */
+/** Fixture for {@code "text-recognizers"}: nameable as {@code mock-enricher}, no OCR binary. */
 @TikaComponent(name = "mock-enricher", spi = false)
 public class MockEnricher implements Parser, ContentEnricher {
 

@@ -63,7 +63,7 @@ public class ContentEnricherLoaderTest {
         TikaLoader loader = load("""
                 {
                   "parsers": [ {"enriching-test-parser": {}} ],
-                  "content-enrichers": [ {"test-png-enricher": {}} ]
+                  "text-recognizers": [ {"test-png-enricher": {}} ]
                 }
                 """);
 
@@ -87,7 +87,7 @@ public class ContentEnricherLoaderTest {
         // a named engine that cannot run must fail load, not become a silent no-op
         TikaLoader loader = load("""
                 {
-                  "content-enrichers": [ {"test-unavailable-enricher": {}} ]
+                  "text-recognizers": [ {"test-unavailable-enricher": {}} ]
                 }
                 """);
         org.apache.tika.exception.TikaConfigException e =
@@ -102,7 +102,7 @@ public class ContentEnricherLoaderTest {
     public void testMimeExcludeReachesLegacyPseudoType() throws Exception {
         TikaLoader loader = load("""
                 {
-                  "content-enrichers": [
+                  "text-recognizers": [
                     {"test-legacy-ocr-enricher": {"_mime-exclude": ["image/tiff"]}}
                   ]
                 }
@@ -116,8 +116,8 @@ public class ContentEnricherLoaderTest {
     /** The pseudo-type spelling of a filter fails load with the real type in the message. */
     @ParameterizedTest
     @ValueSource(strings = {
-        "{\"content-enrichers\": [{\"test-legacy-ocr-enricher\": {\"_mime-exclude\": [\"image/ocr-tiff\"]}}]}",
-        "{\"content-enrichers\": [{\"test-png-enricher\": {\"_mime-include\": [\"image/ocr-tiff\"]}}]}",
+        "{\"text-recognizers\": [{\"test-legacy-ocr-enricher\": {\"_mime-exclude\": [\"image/ocr-tiff\"]}}]}",
+        "{\"text-recognizers\": [{\"test-png-enricher\": {\"_mime-include\": [\"image/ocr-tiff\"]}}]}",
         "{\"parsers\": [{\"enriching-test-parser\": {\"_mime-exclude\": [\"image/ocr-tiff\"]}}]}",
         "{\"parsers\": [{\"default-parser\": {\"_mime-exclude\": [\"image/ocr-tiff\"]}}]}"})
     public void testLegacyPseudoTypeInFilterFailsLoad(String json) throws Exception {
@@ -163,7 +163,7 @@ public class ContentEnricherLoaderTest {
     public void testMimeIncludeDoesNotMaskUnavailableEngine() throws Exception {
         TikaLoader loader = load("""
                 {
-                  "content-enrichers": [
+                  "text-recognizers": [
                     {"test-unavailable-enricher": {"_mime-include": ["image/png"]}}
                   ]
                 }
@@ -180,7 +180,7 @@ public class ContentEnricherLoaderTest {
     public void testMimeIncludeNarrowsLegacyEngine() throws Exception {
         TikaLoader loader = load("""
                 {
-                  "content-enrichers": [
+                  "text-recognizers": [
                     {"test-legacy-ocr-enricher": {"_mime-include": ["image/png"]}}
                   ]
                 }
@@ -223,7 +223,7 @@ public class ContentEnricherLoaderTest {
         TikaLoader loader = load("""
                 {
                   "parsers": [ {"enriching-test-parser": {}}, {"default-parser": {}} ],
-                  "content-enrichers": []
+                  "text-recognizers": []
                 }
                 """);
         CompositeContentEnricher enrichers = loader.get(CompositeContentEnricher.class);
@@ -268,7 +268,7 @@ public class ContentEnricherLoaderTest {
     public void testOverlappingTextRecognizersAreReported() throws Exception {
         TikaLoader loader = load("""
                 {
-                  "content-enrichers": [
+                  "text-recognizers": [
                     {"test-png-recognizer": {}}, {"test-legacy-ocr-enricher": {}}
                   ]
                 }
@@ -284,7 +284,7 @@ public class ContentEnricherLoaderTest {
 
         loader = load("""
                 {
-                  "content-enrichers": [
+                  "text-recognizers": [
                     {"test-png-recognizer": {}}, {"test-png-enricher": {}}
                   ]
                 }

@@ -663,7 +663,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 throw new TikaException(
                         "I regret that I couldn't find an OCR engine to handle " +
                                 ocrImageMediaType + ". Name one that covers it in " +
-                                "\"content-enrichers\" (a configured list is authoritative), " +
+                                "\"text-recognizers\" (a configured list is authoritative), " +
                                 "add one to the classpath when no list is configured, " +
                                 "or set the OCR strategy to NO_OCR.");
             }

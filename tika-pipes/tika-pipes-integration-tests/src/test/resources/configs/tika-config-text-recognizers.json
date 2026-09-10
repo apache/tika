@@ -1,5 +1,5 @@
 {
-  "content-enrichers": [ { "mock-enricher": {} } ],
+  "text-recognizers": [ { "mock-enricher": {} } ],
   "content-handler-factory": {
     "basic-content-handler-factory": {
       "type": "TEXT",

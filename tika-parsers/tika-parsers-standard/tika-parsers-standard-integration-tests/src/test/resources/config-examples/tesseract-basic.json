@@ -1,7 +1,7 @@
 {
   // Tesseract enriches every image Tika's parsers meet (embedded images, rendered PDF
   // pages) with OCR text. Every default parser stays loaded: "parsers" is not needed.
-  "content-enrichers": [
+  "text-recognizers": [
     {
       "tesseract-ocr-parser": {
         "language": "eng",

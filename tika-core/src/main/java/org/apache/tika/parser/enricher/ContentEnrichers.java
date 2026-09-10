@@ -146,7 +146,7 @@ public final class ContentEnrichers {
      * {@link DefaultParser} beats one inside it, the last wins within a tier, and an entry's
      * {@code _mime-include}/{@code _mime-exclude} applies at every node. A collision within
      * the winning tier is logged once. Empty when the tree holds no enricher. This is what
-     * the loader injects when no {@code "content-enrichers"} list is configured; the
+     * the loader injects when no {@code "text-recognizers"} list is configured; the
      * runtime fallback for an unloaded {@code AutoDetectParser} applies the same rules.
      */
     public static CompositeContentEnricher resolve(Parser root) {
@@ -354,8 +354,8 @@ public final class ContentEnrichers {
     private static void warnCollision(Set<MediaType> types, List<Found> tier, Found winner) {
         String names = names(tier);
         if (WARNED.add("collision:" + names)) {
-            LOG.warn("Several content enrichers claim {}: [{}]; {} is used. Name one in "
-                    + "\"content-enrichers\" to choose.", types, names,
+            LOG.warn("Several text recognizers claim {}: [{}]; {} is used. Name one in "
+                    + "\"text-recognizers\" to choose.", types, names,
                     unwrap(winner.member).getClass().getName());
         }
     }

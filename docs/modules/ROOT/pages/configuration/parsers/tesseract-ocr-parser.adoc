@@ -22,23 +22,23 @@ a separate process. Component name: `tesseract-ocr-parser`.
 
 == Selecting the OCR engine (4.1.0+)
 
-Name the engine in the top-level `content-enrichers` list; every default parser stays loaded, and
+Name the engine in the top-level `text-recognizers` list; every default parser stays loaded, and
 `image-parser` and `pdf-parser` call it on embedded images and rendered pages:
 
 [source,json]
 ----
 {
-  "content-enrichers": [ { "tesseract-ocr-parser": { "language": "eng" } } ]
+  "text-recognizers": [ { "tesseract-ocr-parser": { "language": "eng" } } ]
 }
 ----
 
-With no `content-enrichers` at all, Tesseract is still the OCR engine whenever the `tesseract`
+With no `text-recognizers` at all, Tesseract is still the OCR engine whenever the `tesseract`
 binary is found: the loader finds it among the loaded parsers because it implements
 `TextRecognizer` and advertises the image types it reads, and logs the choice at startup. When
 another classpath engine such as Tess4J claims the same types, one is used and a WARN at startup
 names the collision and the winner; an engine named under `parsers` (a VLM parser, for instance)
 takes precedence over Tesseract without a warning. To turn OCR off everywhere, set
-`"content-enrichers": []`. See xref:configuration/index.adoc[Configuration] for how the list
+`"text-recognizers": []`. See xref:configuration/index.adoc[Configuration] for how the list
 behaves, and xref:developers/custom-ocr-engine.adoc[Wiring in Your Own OCR Engine] to plug in
 an engine Tika does not ship.
 
@@ -53,7 +53,7 @@ icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers
 == Full Configuration
 
 Every option with its default value and an inline comment describing it. Named under
-`content-enrichers`, the engine leaves every default parser loaded; the same options apply to an
+`text-recognizers`, the engine leaves every default parser loaded; the same options apply to an
 entry under `parsers`, the 4.0 shape. ImageMagick is optional; it is used only when
 `enableImagePreprocessing` or `applyRotation` is true.
 

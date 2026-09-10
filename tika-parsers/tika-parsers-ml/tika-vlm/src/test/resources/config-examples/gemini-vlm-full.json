@@ -1,5 +1,5 @@
 {
-  "content-enrichers": [
+  "text-recognizers": [
     {
       "gemini-vlm-parser": {
         "baseUrl": "https://generativelanguage.googleapis.com",

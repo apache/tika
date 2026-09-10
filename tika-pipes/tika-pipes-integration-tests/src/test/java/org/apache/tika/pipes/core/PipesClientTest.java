@@ -85,13 +85,13 @@ public class PipesClientTest {
     }
 
     /**
-     * Wire test for the content-enrichers slot (TIKA-4872): a config-named enricher is
+     * Wire test for the text-recognizers slot (TIKA-4872): a config-named enricher is
      * injected into the fork's parsers and its output survives the fork boundary.
      */
     @Test
     public void testContentEnricherInFork(@TempDir Path tmp) throws Exception {
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
-                "tika-config-content-enrichers.json", tmp, tmp.resolve("input"),
+                "tika-config-text-recognizers.json", tmp, tmp.resolve("input"),
                 tmp.resolve("output"), false);
         Path inputDir = tmp.resolve("input");
         Files.createDirectories(inputDir);

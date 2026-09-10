@@ -1,5 +1,5 @@
 {
-  "content-enrichers": [
+  "text-recognizers": [
     {
       "openai-vlm-parser": {
         "baseUrl": "http://127.0.0.1:8000",
