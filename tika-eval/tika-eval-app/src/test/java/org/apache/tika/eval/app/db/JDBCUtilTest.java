@@ -17,6 +17,7 @@
 package org.apache.tika.eval.app.db;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.AfterEach;
@@ -54,7 +55,8 @@ public class JDBCUtilTest {
         assertTrue(cacheSizeKb >= 65_536L && cacheSizeKb <= 1_048_576L, "clamped to [64MB, 1GB]: " + cacheSizeKb);
         String connectionString = JDBCUtil.getJdbcConnectionString("mydb");
         assertTrue(connectionString.startsWith("jdbc:h2:file:"), connectionString);
-        assertTrue(connectionString.endsWith(";RETENTION_TIME=0;CACHE_SIZE=" + cacheSizeKb), connectionString);
+        assertTrue(connectionString.endsWith(";CACHE_SIZE=" + cacheSizeKb), connectionString);
+        assertFalse(connectionString.contains("RETENTION_TIME"), connectionString);
     }
 
     @Test
