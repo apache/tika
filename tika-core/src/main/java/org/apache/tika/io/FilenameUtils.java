@@ -383,10 +383,10 @@ public class FilenameUtils {
 
     /**
      * Calculate the extension based on the {@link HttpHeaders#CONTENT_TYPE} value.
-     * On parse exception or null value, return the default value.
+     * On parse exception, unknown value or null value, return the default value.
      *
      * @param metadata
-     * @param defaultValue
+     * @param defaultValue, which should include a leading "."
      * @return the extension based on the mime type, including the initial "."
      */
     public static String calculateExtension(Metadata metadata, String defaultValue) {
@@ -400,7 +400,7 @@ public class FilenameUtils {
         if (ext != null) {
             return ext;
         }
-        return ".bin";
+        return defaultValue;
     }
 
     private static String lookupExtension(String mime) {
