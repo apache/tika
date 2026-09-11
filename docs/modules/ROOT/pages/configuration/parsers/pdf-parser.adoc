@@ -73,5 +73,14 @@ render is parsed for its metadata but not enriched again, so no page reaches the
 twice, and `NO_OCR` means no page OCR anywhere while the other enrichers still see every page.
 
 `pdf:ocr-page-count` records how many pages tripped the verdict, whether or not an engine ran.
+
+== Pages for inference (`inference`)
+
+`input`::
+What the parser releases to the xref:configuration/inference.adoc#pages[inference bindings]:
+`["TEXT"]` by default. Add `PAGES` to render every page for a `PAGES` binding; the render is
+the `ocr` render, made once per page for OCR and inference alike, and nothing is rendered
+unless a `PAGES` binding runs for the request. Per request under `pdf-parser` in
+`parse-context`, like the `ocr` block.
 Every `ocr` option can be overridden per request through `parse-context` under `pdf-parser`; the
 xref:using-tika/server/index.adoc[server documentation] shows the `NO_OCR` override as a preset.

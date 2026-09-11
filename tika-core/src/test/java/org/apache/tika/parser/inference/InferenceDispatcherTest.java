@@ -348,6 +348,51 @@ public class InferenceDispatcherTest {
     }
 
     @Test
+    public void testPagesComeFromTheRendererOnly() throws Exception {
+        RecordingTask pageTask = new RecordingTask();
+        RecordingTask imageTask = new RecordingTask();
+        RecordingEngine engine = new RecordingEngine();
+        InferenceDispatcher dispatcher = new InferenceDispatcher(List.of(
+                new InferenceDispatcher.Bound(binding("pages", InputKind.PAGES, null, 1),
+                        engine, List.of(pageTask)),
+                new InferenceDispatcher.Bound(binding("images", InputKind.IMAGES, null, -1),
+                        engine, List.of(imageTask))));
+        ParseContext context = new ParseContext();
+        Metadata pdf = new Metadata();
+        assertTrue(dispatcher.wantsPages(PNG, pdf, context));
+        Metadata rendering = new Metadata();
+        rendering.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, "RENDERING");
+        assertFalse(dispatcher.wants(PNG, rendering, context),
+                "a render emitted as an embedded document is a page, not an image");
+        Metadata inline = new Metadata();
+        inline.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, "INLINE");
+        assertTrue(dispatcher.wants(PNG, inline, context));
+
+        dispatcher.offerPage(PNG, pdf, null, 1, file("p1"), context);
+        dispatcher.offerPage(PNG, pdf, null, 2, file("p2"), context);
+        dispatcher.offer(PNG, rendering, pdf, file("r"), context);
+        Metadata root = new Metadata();
+        dispatcher.flush(root, context);
+
+        assertEquals(1, pageTask.runs.size());
+        List<InferenceUnit> units = pageTask.runs.get(0);
+        assertEquals(1, units.size(), "maxChunks 1 is one page");
+        assertEquals(InputKind.PAGES, units.get(0).getKind());
+        assertEquals(1, units.get(0).getPage());
+        assertSame(pdf, units.get(0).getTarget());
+        assertEquals("p1", new String(pageTask.bytes.get(0).get(0), UTF_8));
+        assertTrue(imageTask.runs.isEmpty(), "the rendering child reached no IMAGES binding");
+        assertTrue(root.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)
+                .contains("pages over maxChunks: skipped 1 units"));
+    }
+
+    @Test
+    public void testNoPagesBindingWantsNoPages() throws Exception {
+        InferenceDispatcher dispatcher = pngDispatcher(new RecordingTask());
+        assertFalse(dispatcher.wantsPages(PNG, new Metadata(), new ParseContext()));
+    }
+
+    @Test
     public void testFailedParseRunsNothingAndCleansUp() throws Exception {
         RecordingTask task = new RecordingTask();
         InferenceDispatcher dispatcher = pngDispatcher(task);

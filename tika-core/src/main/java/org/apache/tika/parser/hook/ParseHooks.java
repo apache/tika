@@ -18,6 +18,9 @@ package org.apache.tika.parser.hook;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -41,19 +44,34 @@ public final class ParseHooks implements TransientParseState {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseHooks.class);
 
-    /** Marks a top-level parse in progress; tracks the document being parsed. */
+    /** Marks a top-level parse in progress; tracks the documents being parsed, outermost last. */
     public static final class Run implements TransientParseState {
-        private Metadata current;
+        private final Deque<Metadata> open = new ArrayDeque<>();
 
         /** Enters a document; returns the one whose parser embedded it, null at the top. */
         public Metadata enter(Metadata metadata) {
-            Metadata parent = current;
-            current = metadata;
+            Metadata parent = open.peek();
+            open.push(metadata);
             return parent;
         }
 
-        public void exit(Metadata parent) {
-            current = parent;
+        public void exit() {
+            open.pop();
+        }
+
+        /** The document whose parser is running; null between documents. */
+        public Metadata current() {
+            return open.peek();
+        }
+
+        /** The document the current one is embedded in; null at the top. */
+        public Metadata parent() {
+            Iterator<Metadata> it = open.iterator();
+            if (!it.hasNext()) {
+                return null;
+            }
+            it.next();
+            return it.hasNext() ? it.next() : null;
         }
     }
 
@@ -105,6 +123,41 @@ public final class ParseHooks implements TransientParseState {
                 LOG.warn("parse hook {} failed on {}", hook.getClass().getName(), type, e);
                 metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
                         "parse hook " + hook.getClass().getSimpleName() + ": " + e.getMessage());
+            }
+        }
+    }
+
+    /** Whether any hook wants the current document's pages rendered as images of this type. */
+    public boolean wantsPages(MediaType renderType, ParseContext context) throws TikaException {
+        Run run = context.get(Run.class);
+        Metadata document = run == null ? null : run.current();
+        if (document == null) {
+            return false;
+        }
+        for (ParseHook hook : hooks) {
+            if (hook.wantsPages(renderType, document, context)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** A rendered page of the current document, from its own parser; never fails it. */
+    public void offerPage(MediaType type, int page, Path bytes, ParseContext context) {
+        Run run = context.get(Run.class);
+        Metadata document = run == null ? null : run.current();
+        if (document == null) {
+            return;
+        }
+        Metadata parent = run.parent();
+        for (ParseHook hook : hooks) {
+            try {
+                hook.offerPage(type, document, parent, page, bytes, context);
+            } catch (IOException | TikaException | RuntimeException e) {
+                LOG.warn("parse hook {} failed on page {}", hook.getClass().getName(), page, e);
+                document.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                        "parse hook " + hook.getClass().getSimpleName() + " on page " + page
+                                + ": " + e.getMessage());
             }
         }
     }

@@ -54,6 +54,23 @@ public interface ParseHook {
                        ParseContext context) throws IOException, TikaException {
     }
 
+    /**
+     * Whether this hook wants the pages of the document being parsed rendered as images of
+     * this type. Its parser asks once, before rendering anything for the hooks.
+     */
+    default boolean wantsPages(MediaType renderType, Metadata document, ParseContext context)
+            throws TikaException {
+        return false;
+    }
+
+    /**
+     * A page of {@code document} rendered by its own parser; {@code page} is 1-based,
+     * {@code bytes} and {@code parent} as in {@link #offer}.
+     */
+    default void offerPage(MediaType type, Metadata document, Metadata parent, int page,
+                           Path bytes, ParseContext context) throws IOException, TikaException {
+    }
+
     /** End of the top-level parse; {@code failed} when the parse threw. */
     default void end(Metadata root, boolean failed, ParseContext context) {
     }
