@@ -1,5 +1,6 @@
 {
-  "text-recognizers": [ { "mock-enricher": {} } ],
+  "engines": { "mock": { "mock-enricher": {} } },
+  "text-recognizers": [ { "engine": "mock" } ],
   "auto-detect-parser": {
     "throwOnZeroBytes": false
   },

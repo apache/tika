@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * A text recognizer is an engine: configure Tesseract, Tess4J or a VLM once
+     under "engines" and name it from "text-recognizers" with
+     {"engine": "<name>"} (plus _mime-include/_mime-exclude). The 4.0 form with
+     the engine inline still works. An inference binding cannot use a
+     recognizer for a task it does not fit (TIKA-4889).
+
    * New "inference" config section: bind a named engine to an input (IMAGES)
      and tasks (embed), and every image document Tika parses is embedded in
      one request per document tree; vectors land on the document the image

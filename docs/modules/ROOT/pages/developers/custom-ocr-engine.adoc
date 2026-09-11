@@ -202,22 +202,31 @@ xref:configuration/index.adoc#tika-extras-dir[Adding extra jars].
 [source,json]
 ----
 {
+  "engines": {
+    "jina": { "jina-ocr-parser": { "endpoint": "http://jina:9000", "apiKey": "..." } }
+  },
   "text-recognizers": [
-    { "jina-ocr-parser": { "endpoint": "http://jina:9000", "apiKey": "..." } }
+    { "engine": "jina" }
   ]
 }
 ----
 
-Every default parser stays loaded, and Tesseract on the classpath is ignored: the list is
-authoritative. To keep Tesseract for the formats your engine does not read, or to run an annotator
-next to it, add entries with filters:
+A `ContentEnricher` is an engine, so it is configured under `engines` like any other and named
+from `text-recognizers` (the 4.0 form, the engine inline in the list, still works). Every default
+parser stays loaded, and Tesseract on the classpath is ignored: the list is authoritative. To
+keep Tesseract for the formats your engine does not read, or to run an annotator next to it, add
+entries with filters:
 
 [source,json]
 ----
 {
+  "engines": {
+    "jina": { "jina-ocr-parser": { "endpoint": "http://jina:9000" } },
+    "tesseract": { "tesseract-ocr-parser": {} }
+  },
   "text-recognizers": [
-    { "jina-ocr-parser": { "endpoint": "http://jina:9000" } },
-    { "tesseract-ocr-parser": { "_mime-exclude": ["image/png", "image/jpeg", "image/tiff"] } }
+    { "engine": "jina" },
+    { "engine": "tesseract", "_mime-exclude": ["image/png", "image/jpeg", "image/tiff"] }
   ]
 }
 ----
