@@ -1,0 +1,6 @@
+{
+  "engines": { "mock": { "mock-engine": {} } },
+  "inference": [ { "id": "mock-images", "engine": "mock", "input": "IMAGES", "tasks": ["mock-task"] } ],
+  "auto-detect-parser": { "throwOnZeroBytes": false },
+  "parse-context": { "timeout-limits": { "progressTimeoutMillis": 30000 } }
+}

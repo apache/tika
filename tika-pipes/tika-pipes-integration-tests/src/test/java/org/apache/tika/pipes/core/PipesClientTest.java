@@ -46,6 +46,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.mock.MockEnricher;
+import org.apache.tika.parser.mock.MockTask;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
@@ -81,6 +82,31 @@ public class PipesClientTest {
             assertEquals(1, pipesResult.emitData().getMetadataList().size());
             Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
             assertEquals("testOverlappingText.pdf", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        }
+    }
+
+    /** Wire test for the inference bindings: the dispatcher rides the fork's own config. */
+    @Test
+    public void testInferenceBindingInFork(@TempDir Path tmp) throws Exception {
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                "tika-config-inference-bindings.json", tmp, tmp.resolve("input"),
+                tmp.resolve("output"), false);
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+        java.awt.image.BufferedImage image =
+                new java.awt.image.BufferedImage(10, 10, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        javax.imageio.ImageIO.write(image, "png", inputDir.resolve("test.png").toFile());
+
+        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
+        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple("test.png", new FetchKey(fetcherName, "test.png"),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+            assertEquals("mock-images", metadata.get(MockTask.MARKER_KEY));
+            assertEquals("1", metadata.get(MockTask.UNITS_KEY));
         }
     }
 

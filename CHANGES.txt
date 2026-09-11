@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * New "inference" config section: bind a named engine to an input (IMAGES)
+     and tasks (embed), and every image document Tika parses is embedded in
+     one request per document tree; vectors land on the document the image
+     belongs to, as it appears in the output. Per request, "inference" in
+     parse-context selects bindings or switches inference off.
+     openai-image-embedding-parser keeps working, one request per image
+     (TIKA-4889).
+
    * New "engines" config section: a map of names to inference engines, each
      an endpoint or local binary with its settings (openai-embedding-engine
      posts up to maxBatchSize images per request to an OpenAI-compatible

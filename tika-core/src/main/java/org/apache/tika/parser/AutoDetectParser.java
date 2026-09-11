@@ -17,6 +17,7 @@
 package org.apache.tika.parser;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
@@ -31,6 +32,7 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.hook.ParseHooks;
 import org.apache.tika.sax.SecureContentHandler;
 
 public class AutoDetectParser extends CompositeParser {
@@ -141,6 +143,8 @@ public class AutoDetectParser extends CompositeParser {
         return this.autoDetectParserConfig;
     }
 
+    private ParseHooks parseHooks;
+
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // Compute digests before type detection if configured
@@ -170,19 +174,63 @@ public class AutoDetectParser extends CompositeParser {
             }
         }
         handler = decorateHandler(handler, metadata, context, autoDetectParserConfig);
-        // TIKA-216: Zip bomb prevention
+
         SecureContentHandler sch = handler != null ?
                 createSecureContentHandler(handler, tis, context) : null;
 
         initializeEmbeddedParserAndDetector(context);
-        try {
-            // Parse the document
-            super.parse(tis, sch, metadata, context);
-        } catch (SAXException e) {
-            // Convert zip bomb exceptions to TikaExceptions
-            sch.throwIfCauseOf(e);
-            throw e;
+        // every document, top-level or embedded, enters here once: the hooks' seam
+        boolean seeded = parseHooks != null && context.get(ParseHooks.class) == null;
+        if (seeded) {
+            context.set(ParseHooks.class, parseHooks);
         }
+        ParseHooks hooks = context.get(ParseHooks.class);
+        boolean topLevel = hooks != null && context.get(ParseHooks.Run.class) == null;
+        if (topLevel) {
+            context.set(ParseHooks.Run.class, new ParseHooks.Run());
+        }
+        ParseHooks.Run run = hooks == null ? null : context.get(ParseHooks.Run.class);
+        Metadata parent = run == null ? null : run.enter(metadata);
+        boolean failed = true;
+        try {
+            if (topLevel) {
+                hooks.start(metadata, context);
+            }
+            Path pinned = hooks == null ? null : hooks.pin(type, metadata, tis, context);
+            try {
+                super.parse(tis, sch, metadata, context);
+            } catch (SAXException e) {
+                sch.throwIfCauseOf(e);
+                throw e;
+            }
+            failed = false;
+            if (pinned != null) {
+                hooks.offer(type, metadata, parent, pinned, context);
+            }
+        } finally {
+            if (run != null) {
+                run.exit(parent);
+            }
+            if (topLevel) {
+                try {
+                    hooks.end(metadata, failed, context);
+                } finally {
+                    context.set(ParseHooks.Run.class, null);
+                    if (seeded) {
+                        context.set(ParseHooks.class, null);
+                    }
+                }
+            }
+        }
+    }
+
+    /** Hooks set at config load; seeded into each parse's context. */
+    public void setParseHooks(ParseHooks parseHooks) {
+        this.parseHooks = parseHooks;
+    }
+
+    public ParseHooks getParseHooks() {
+        return parseHooks;
     }
 
     private ContentHandler decorateHandler(ContentHandler handler, Metadata metadata,

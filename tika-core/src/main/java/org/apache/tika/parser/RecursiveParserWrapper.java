@@ -30,6 +30,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.extractor.EmbeddedMetadataLookup;
 import org.apache.tika.extractor.ParentContentHandler;
 import org.apache.tika.extractor.ParentMetadata;
 import org.apache.tika.io.FilenameUtils;
@@ -143,6 +144,9 @@ public class RecursiveParserWrapper extends ParserDecorator {
         EmbeddedParserDecorator decorator =
                 new EmbeddedParserDecorator(getWrappedParser(), "/", "/", parserState, metadata);
         context.set(Parser.class, decorator);
+        EmbeddedMetadataLookup preParseLookup = context.get(EmbeddedMetadataLookup.class);
+        context.set(EmbeddedMetadataLookup.class,
+                new EmbeddedMetadataLookup(parserState.recursiveParserWrapperHandler));
         ContentHandler localHandler =
                 parserState.recursiveParserWrapperHandler.createHandler();
         long started = System.currentTimeMillis();
@@ -181,6 +185,7 @@ public class RecursiveParserWrapper extends ParserDecorator {
             parserState.recursiveParserWrapperHandler.endDocument(localHandler, metadata);
             parserState.recursiveParserWrapperHandler.endDocument();
             context.set(RecursivelySecureContentHandler.class, null);
+            context.set(EmbeddedMetadataLookup.class, preParseLookup);
         }
     }
 

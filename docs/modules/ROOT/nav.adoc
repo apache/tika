@@ -60,6 +60,7 @@
 ** xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers (Claude, Gemini, OpenAI)]
 ** xref:configuration/parsers/external-parser.adoc[External Parser (ffmpeg, exiftool, etc.)]
 ** xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR (In-Process, advanced)]
+** xref:configuration/inference.adoc[Inference: Engines and Bindings]
 ** xref:configuration/metadata-filters.adoc[Metadata Filters]
 ** xref:configuration/detectors.adoc[Detectors]
 ** xref:configuration/digesters.adoc[Digesters]

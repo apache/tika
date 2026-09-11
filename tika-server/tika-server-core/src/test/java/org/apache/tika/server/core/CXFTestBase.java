@@ -362,6 +362,13 @@ public abstract class CXFTestBase {
             if (contentEnrichers != null) {
                 root.set("text-recognizers", contentEnrichers);
             }
+            // the worker builds its own engines and bindings from its own config
+            for (String section : new String[]{"engines", "inference"}) {
+                JsonNode node = tikaConfig.get(section);
+                if (node != null) {
+                    root.set(section, node);
+                }
+            }
             // The worker resolves preset names from its own config, so presets must be
             // visible there just like the parse-context defaults above.
             JsonNode presets = tikaConfig.get("presets");
