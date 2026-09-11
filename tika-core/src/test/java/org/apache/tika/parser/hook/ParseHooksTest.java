@@ -58,6 +58,7 @@ public class ParseHooksTest {
 
     private static final MediaType PNG = MediaType.image("png");
     private static final MediaType CONTAINER = MediaType.application("x-test-container");
+    private static final MediaType PAGED = MediaType.application("x-test-paged");
 
     /** Detection by the declared type: these tests are about the seam, not the detector. */
     private static final Detector DECLARED = (tis, metadata, ctx) ->
@@ -67,7 +68,11 @@ public class ParseHooksTest {
         final List<String> events = new ArrayList<>();
         final List<Metadata> offeredParents = new ArrayList<>();
         final List<byte[]> offeredBytes = new ArrayList<>();
+        final List<Metadata> pageDocuments = new ArrayList<>();
+        final List<Metadata> pageParents = new ArrayList<>();
+        final List<String> pageBytes = new ArrayList<>();
         Set<MediaType> wanted = Set.of(PNG);
+        boolean wantsPages;
         boolean failOffer;
         boolean failStart;
 
@@ -96,8 +101,54 @@ public class ParseHooksTest {
         }
 
         @Override
+        public boolean wantsPages(MediaType renderType, Metadata document, ParseContext context) {
+            events.add("wantsPages " + renderType);
+            return wantsPages;
+        }
+
+        @Override
+        public void offerPage(MediaType type, Metadata document, Metadata parent, int page,
+                              Path bytes, ParseContext context) throws IOException {
+            if (failOffer) {
+                throw new IOException("no page");
+            }
+            events.add("page " + page);
+            pageDocuments.add(document);
+            pageParents.add(parent);
+            pageBytes.add(Files.readString(bytes));
+        }
+
+        @Override
         public void end(Metadata root, boolean failed, ParseContext context) {
             events.add(failed ? "end failed" : "end");
+        }
+    }
+
+    /** A parser that renders two pages for the hooks, the way the PDF parser does. */
+    static final class PagedParser implements Parser {
+        @Override
+        public Set<MediaType> getSupportedTypes(ParseContext context) {
+            return Collections.singleton(PAGED);
+        }
+
+        @Override
+        public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                          ParseContext context) throws IOException, SAXException, TikaException {
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
+            xhtml.startDocument();
+            ParseHooks hooks = context.get(ParseHooks.class);
+            if (hooks != null && hooks.wantsPages(PNG, context)) {
+                for (int page = 1; page <= 2; page++) {
+                    Path render = Files.createTempFile("page", ".png");
+                    try {
+                        Files.writeString(render, "PAGE-" + page);
+                        hooks.offerPage(PNG, page, render, context);
+                    } finally {
+                        Files.delete(render);
+                    }
+                }
+            }
+            xhtml.endDocument();
         }
     }
 
@@ -129,6 +180,16 @@ public class ParseHooksTest {
 
     /** A container whose one child is a PNG, parsed through the embedded extractor. */
     static final class ContainerParser implements Parser {
+        private final MediaType childType;
+
+        ContainerParser() {
+            this(PNG);
+        }
+
+        ContainerParser(MediaType childType) {
+            this.childType = childType;
+        }
+
         @Override
         public Set<MediaType> getSupportedTypes(ParseContext context) {
             return Collections.singleton(CONTAINER);
@@ -140,7 +201,7 @@ public class ParseHooksTest {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
             Metadata child = new Metadata();
-            child.set(HttpHeaders.CONTENT_TYPE, PNG.toString());
+            child.set(HttpHeaders.CONTENT_TYPE, childType.toString());
             child.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, "INLINE");
             try (TikaInputStream childStream = TikaInputStream.get("PNG-BYTES".getBytes(UTF_8))) {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)
@@ -248,6 +309,52 @@ public class ParseHooksTest {
         assertEquals(List.of("end failed"), hook.events);
         assertNull(context.get(ParseHooks.class));
         assertNull(context.get(ParseHooks.Run.class));
+    }
+
+    @Test
+    public void testPagesAreOfferedWithTheirDocumentAndItsParent() throws Exception {
+        RecordingHook hook = new RecordingHook();
+        hook.wantsPages = true;
+        hook.wanted = Set.of();
+        Metadata root = typed(CONTAINER);
+        ParseContext context = new ParseContext();
+        try (TikaInputStream tis = TikaInputStream.get("CONTAINER".getBytes(UTF_8))) {
+            parser(hook, new ContainerParser(PAGED), new PagedParser())
+                    .parse(tis, new DefaultHandler(), root, context);
+        }
+        assertEquals(List.of("start", "wantsPages image/png", "page 1", "page 2", "end"),
+                hook.events);
+        assertEquals(List.of("PAGE-1", "PAGE-2"), hook.pageBytes);
+        assertEquals(PAGED.toString(), hook.pageDocuments.get(0).get(HttpHeaders.CONTENT_TYPE),
+                "the page belongs to the paged child");
+        assertSame(hook.pageDocuments.get(0), hook.pageDocuments.get(1));
+        assertSame(root, hook.pageParents.get(0), "and the child's parent rides along");
+    }
+
+    @Test
+    public void testNoPagesWhenNoHookWantsThem() throws Exception {
+        RecordingHook hook = new RecordingHook();
+        try (TikaInputStream tis = TikaInputStream.get("PAGED".getBytes(UTF_8))) {
+            parser(hook, new PagedParser()).parse(tis, new DefaultHandler(), typed(PAGED),
+                    new ParseContext());
+        }
+        assertEquals(List.of("start", "wantsPages image/png", "end"), hook.events);
+    }
+
+    @Test
+    public void testPageOfferFailureIsAWarningOnTheDocument() throws Exception {
+        RecordingHook hook = new RecordingHook();
+        hook.wantsPages = true;
+        hook.failOffer = true;
+        Metadata metadata = typed(PAGED);
+        try (TikaInputStream tis = TikaInputStream.get("PAGED".getBytes(UTF_8))) {
+            parser(hook, new PagedParser()).parse(tis, new DefaultHandler(), metadata,
+                    new ParseContext());
+        }
+        assertEquals(List.of("start", "wantsPages image/png", "end"), hook.events);
+        String[] warnings = metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertEquals(2, warnings.length);
+        assertTrue(warnings[0].contains("on page 1: no page"), warnings[0]);
     }
 
     @Test

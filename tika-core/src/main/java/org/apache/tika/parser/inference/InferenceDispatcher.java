@@ -86,14 +86,38 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
     @Override
     public boolean wants(MediaType type, Metadata metadata, ParseContext context)
             throws TikaException {
-        InputKind kind = InputKind.of(type);
+        InputKind kind = kindOf(type, metadata);
         return kind != null && wants(kind, type, context);
     }
 
     @Override
     public void offer(MediaType type, Metadata metadata, Metadata parent, Path bytes,
                       ParseContext context) throws IOException, TikaException {
-        offer(InputKind.of(type), type, metadata, parent, bytes, context);
+        InputKind kind = kindOf(type, metadata);
+        if (kind != null) {
+            offer(kind, type, metadata, parent, bytes, context);
+        }
+    }
+
+    @Override
+    public boolean wantsPages(MediaType renderType, Metadata document, ParseContext context)
+            throws TikaException {
+        return wants(InputKind.PAGES, renderType, context);
+    }
+
+    @Override
+    public void offerPage(MediaType type, Metadata document, Metadata parent, int page,
+                          Path bytes, ParseContext context) throws IOException, TikaException {
+        offer(InputKind.PAGES, type, document, parent, bytes, page, context);
+    }
+
+    /** A page render emitted as an embedded document is a page, not an image: PAGES only. */
+    private static InputKind kindOf(MediaType type, Metadata metadata) {
+        if (TikaCoreProperties.EmbeddedResourceType.RENDERING.name()
+                .equals(metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE))) {
+            return null;
+        }
+        return InputKind.of(type);
     }
 
     /** Runs the buffered units, or drops them when the parse failed: no engine call for a document nobody gets. */
@@ -123,6 +147,12 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
      */
     public void offer(InputKind kind, MediaType type, Metadata target, Metadata parent,
                       Path source, ParseContext context) throws IOException, TikaException {
+        offer(kind, type, target, parent, source, -1, context);
+    }
+
+    private void offer(InputKind kind, MediaType type, Metadata target, Metadata parent,
+                       Path source, int page, ParseContext context)
+            throws IOException, TikaException {
         State state = state(context);
         long size = Files.size(source);
         InferenceUnit unit = null;
@@ -144,7 +174,7 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
             if (unit == null) {
                 Path copy = state.tmp.createTempFile();
                 Files.copy(source, copy, StandardCopyOption.REPLACE_EXISTING);
-                unit = new InferenceUnit(kind, type, target, parent, copy);
+                unit = new InferenceUnit(kind, type, target, parent, copy, page);
             }
             units.add(unit);
         }

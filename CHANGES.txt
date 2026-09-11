@@ -5,6 +5,14 @@ Release 4.1.0 - unreleased
      {"engine": "<name>"} (plus _mime-include/_mime-exclude). The 4.0 form with
      the engine inline still works. An inference binding cannot use a
      recognizer for a task it does not fit (TIKA-4889).
+     
+   * PAGES input for inference bindings: pdf-parser.inference.input lists what
+     the PDF releases (TEXT by default; PAGES renders every page for a PAGES
+     binding). One render per page feeds OCR and the bindings, and each page's
+     vector lands on the PDF with a page locator. A page render emitted as an
+     embedded document is no longer an IMAGES unit. OCR_ONLY annotated an OCR'd
+     page twice when pages were rendered as embedded documents; once now
+     (TIKA-4889).
 
    * New "inference" config section: bind a named engine to an input (IMAGES)
      and tasks (embed), and every image document Tika parses is embedded in

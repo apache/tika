@@ -209,7 +209,7 @@ public class AutoDetectParser extends CompositeParser {
             }
         } finally {
             if (run != null) {
-                run.exit(parent);
+                run.exit();
             }
             if (topLevel) {
                 try {

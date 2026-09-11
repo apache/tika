@@ -41,16 +41,24 @@ public final class InferenceUnit {
     private final String parentIdPath;
     private final Path path;
     private final long size;
+    private final int page;
 
     public InferenceUnit(InputKind kind, MediaType type, Metadata target, Metadata parent,
                          Path path) throws IOException {
+        this(kind, type, target, parent, path, -1);
+    }
+
+    /** A unit that is one page of its target: {@code page} is 1-based. */
+    public InferenceUnit(InputKind kind, MediaType type, Metadata target, Metadata parent,
+                         Path path, int page) throws IOException {
         this(kind, type, target, parent, target.get(TikaCoreProperties.EMBEDDED_ID_PATH),
                 parent == null ? null : parent.get(TikaCoreProperties.EMBEDDED_ID_PATH), path,
-                Files.size(path));
+                Files.size(path), page);
     }
 
     private InferenceUnit(InputKind kind, MediaType type, Metadata target, Metadata parent,
-                          String targetIdPath, String parentIdPath, Path path, long size) {
+                          String targetIdPath, String parentIdPath, Path path, long size,
+                          int page) {
         this.kind = kind;
         this.type = type;
         this.target = target;
@@ -59,12 +67,18 @@ public final class InferenceUnit {
         this.parentIdPath = parentIdPath;
         this.path = path;
         this.size = size;
+        this.page = page;
     }
 
     /** The same unit aimed at the metadata objects that are still read. */
     InferenceUnit retargeted(Metadata target, Metadata parent) {
         return new InferenceUnit(kind, type, target, parent, targetIdPath, parentIdPath, path,
-                size);
+                size, page);
+    }
+
+    /** The 1-based page this unit renders, for {@link InputKind#PAGES}; -1 otherwise. */
+    public int getPage() {
+        return page;
     }
 
     public InputKind getKind() {

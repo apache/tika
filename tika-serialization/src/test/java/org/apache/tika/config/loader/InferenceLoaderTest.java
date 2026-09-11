@@ -32,9 +32,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.inference.EngineRegistry;
+import org.apache.tika.parser.inference.InferenceBinding;
 import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.parser.inference.InferenceSelection;
 import org.apache.tika.parser.inference.InputKind;
@@ -95,6 +98,21 @@ public class InferenceLoaderTest {
                 + " \"inference\": [ { \"engine\": \"ocr\", \"input\": \"IMAGES\","
                 + "   \"tasks\": [\"test-task\"] } ] }").get(InferenceDispatcher.class));
         assertTrue(e.getMessage().contains("test-task needs a test-engine"), e.getMessage());
+    }
+
+    @Test
+    public void testPagesBindingLoads() throws Exception {
+        TikaLoader loader = load("{" + ENGINES + ", \"inference\": ["
+                + " { \"id\": \"page-vectors\", \"engine\": \"one\", \"input\": \"PAGES\","
+                + "   \"tasks\": [\"test-task\"], \"maxChunks\": 50 } ] }");
+        InferenceDispatcher dispatcher = loader.get(InferenceDispatcher.class);
+        InferenceBinding pages = dispatcher.getBound().get(0).binding();
+        assertEquals(InputKind.PAGES, pages.getInput());
+        assertTrue(pages.accepts(InputKind.PAGES, MediaType.image("png")));
+        assertFalse(pages.accepts(InputKind.IMAGES, MediaType.image("png")),
+                "a PAGES binding never takes an image document");
+        assertTrue(dispatcher.wantsPages(MediaType.image("png"), new Metadata(),
+                new ParseContext()));
     }
 
     @Test
