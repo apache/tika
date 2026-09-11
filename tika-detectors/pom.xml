@@ -36,5 +36,6 @@
   <modules>
     <module>tika-detector-siegfried</module>
     <module>tika-detector-magika</module>
+    <module>tika-detector-ntfs</module>
   </modules>
 </project>
