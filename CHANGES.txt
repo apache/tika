@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * New "engines" config section: a map of names to inference engines, each
+     an endpoint or local binary with its settings (openai-embedding-engine
+     posts up to maxBatchSize images per request to an OpenAI-compatible
+     /v1/embeddings). Engines are called by the inference bindings that
+     follow; nothing calls them yet (TIKA-4889).
+
    * The image embedder writes a picture's vector onto the document the
      picture appears in (INLINE and RENDERING children) with an "embedded"
      locator naming the picture; attachments keep their own, and

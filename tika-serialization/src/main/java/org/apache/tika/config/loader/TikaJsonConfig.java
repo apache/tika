@@ -114,6 +114,7 @@ public class TikaJsonConfig {
             "content-handler-factory",
             "renderers",
             "text-recognizers",
+            "engines",
             "translator",
             "auto-detect-parser",
             "parse-context",
