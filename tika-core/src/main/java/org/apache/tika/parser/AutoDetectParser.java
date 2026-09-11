@@ -27,7 +27,6 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.digest.DigestHelper;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
-import org.apache.tika.extractor.ParentMetadata;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -190,15 +189,14 @@ public class AutoDetectParser extends CompositeParser {
         if (topLevel) {
             context.set(ParseHooks.Run.class, new ParseHooks.Run());
         }
-        // this document is the parent of whatever its parser embeds
-        ParentMetadata preParseParent = context.get(ParentMetadata.class);
+        ParseHooks.Run run = hooks == null ? null : context.get(ParseHooks.Run.class);
+        Metadata parent = run == null ? null : run.enter(metadata);
         boolean failed = true;
         try {
             if (topLevel) {
                 hooks.start(metadata, context);
             }
             Path pinned = hooks == null ? null : hooks.pin(type, metadata, tis, context);
-            context.set(ParentMetadata.class, new ParentMetadata(metadata));
             try {
                 super.parse(tis, sch, metadata, context);
             } catch (SAXException e) {
@@ -207,12 +205,12 @@ public class AutoDetectParser extends CompositeParser {
             }
             failed = false;
             if (pinned != null) {
-                hooks.offer(type, metadata,
-                        preParseParent == null ? null : preParseParent.getMetadata(), pinned,
-                        context);
+                hooks.offer(type, metadata, parent, pinned, context);
             }
         } finally {
-            context.set(ParentMetadata.class, preParseParent);
+            if (run != null) {
+                run.exit(parent);
+            }
             if (topLevel) {
                 try {
                     hooks.end(metadata, failed, context);

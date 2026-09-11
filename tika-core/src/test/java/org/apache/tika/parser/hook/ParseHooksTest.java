@@ -19,7 +19,6 @@ package org.apache.tika.parser.hook;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -41,6 +40,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.extractor.ParentMetadata;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -258,7 +258,36 @@ public class ParseHooksTest {
             adp.parse(tis, new DefaultHandler(), typed(PNG), context);
         }
         assertNull(context.get(ParseHooks.class));
-        assertFalse(context.get(org.apache.tika.extractor.ParentMetadata.class) != null,
-                "the parent marker is restored");
+    }
+
+    /** The chunk lift reads ParentMetadata during a child's parse: the seam must not shadow it. */
+    @Test
+    public void testParentMetadataIsLeftToTheWrapper() throws Exception {
+        RecordingHook hook = new RecordingHook();
+        List<Metadata> seenByImageParser = new ArrayList<>();
+        Parser png = new Parser() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(PNG);
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws IOException, SAXException {
+                ParentMetadata parent = context.get(ParentMetadata.class);
+                seenByImageParser.add(parent == null ? null : parent.getMetadata());
+                new XHTMLContentHandler(handler, metadata, context).startDocument();
+            }
+        };
+        AutoDetectParser adp = parser(hook, new ContainerParser(), png);
+        Metadata root = typed(CONTAINER);
+        try (TikaInputStream tis = TikaInputStream.get("CONTAINER".getBytes(UTF_8))) {
+            new RecursiveParserWrapper(adp).parse(tis, new RecursiveParserWrapperHandler(
+                    new BasicContentHandlerFactory(
+                            BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1)), root,
+                    new ParseContext());
+        }
+        assertEquals(1, seenByImageParser.size());
+        assertSame(root, seenByImageParser.get(0), "the picture's parent, not the picture");
     }
 }

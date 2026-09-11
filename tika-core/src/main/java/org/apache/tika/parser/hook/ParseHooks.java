@@ -41,8 +41,20 @@ public final class ParseHooks implements TransientParseState {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseHooks.class);
 
-    /** Marks a top-level parse in progress in a context. */
+    /** Marks a top-level parse in progress; tracks the document being parsed. */
     public static final class Run implements TransientParseState {
+        private Metadata current;
+
+        /** Enters a document; returns the one whose parser embedded it, null at the top. */
+        public Metadata enter(Metadata metadata) {
+            Metadata parent = current;
+            current = metadata;
+            return parent;
+        }
+
+        public void exit(Metadata parent) {
+            current = parent;
+        }
     }
 
     private final List<ParseHook> hooks;
