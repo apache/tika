@@ -72,6 +72,7 @@ class TikaGrpcV2ServerImpl extends TikaV2Grpc.TikaV2ImplBase {
             return;
         }
         fetchAndParseImpl(request, parseContext, responseObserver);
+        responseObserver.onCompleted();
     }
 
     @Override

@@ -241,8 +241,10 @@ class DocumentBuilderTest extends ParseFixtureSupport {
      * {@code pipesStatus} is populated from {@code PipesResult.RESULT_STATUS.name()} (see
      * org.apache.tika.pipes.api.PipesResult), never from a plain "OK" -- there is no such
      * enum constant. A real successful parse reports as e.g. "PARSE_SUCCESS" or
-     * "EMIT_SUCCESS", and a real timeout reports as "TIMEOUT" (categorized as a process
-     * crash, not a partial success). The status mapping must recognize the real names.
+     * "EMIT_SUCCESS"; a parse cut short by the deadline but still emitted reports as
+     * "PARTIAL_TIMEOUT" (success category); a real timeout reports as "TIMEOUT"
+     * (categorized as a process crash, not a partial success). The status mapping must
+     * recognize the real names.
      */
     @Test
     void mapsRealPipesResultStatusNames() {
@@ -261,6 +263,10 @@ class DocumentBuilderTest extends ParseFixtureSupport {
                 DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS_WITH_EXCEPTION", 1L)
                         .getStatus().getStatus(),
                 "succeeded, but with a caveat along the way, is a partial success not a clean one");
+        assertEquals(ParseStatus.Status.PARTIAL,
+                DocumentBuilder.build(metadata, "d", "PARTIAL_TIMEOUT", 1L).getStatus().getStatus(),
+                "PARTIAL_TIMEOUT is a success-category status: the deadline hit, and what was"
+                        + " parsed before it is emitted, so it is partial, not failed");
 
         assertEquals(ParseStatus.Status.FAILED,
                 DocumentBuilder.build(metadata, "d", "TIMEOUT", 1L).getStatus().getStatus(),
