@@ -135,6 +135,32 @@ public class EmbedTaskTest {
                 unit.getTarget().get(TikaCoreProperties.TIKA_CHUNKS)).size());
     }
 
+    /** A page unit lands on its own document with the page as its locator. */
+    @Test
+    public void testPageUnitsCarryThePage() throws Exception {
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, response(0, 1)));
+        Metadata pdf = new Metadata();
+        pdf.set(TikaCoreProperties.EMBEDDED_ID_PATH, "/1");
+        pdf.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, "ATTACHMENT");
+        Path p1 = Files.createTempFile(tmp, "p1", ".png");
+        Path p2 = Files.createTempFile(tmp, "p2", ".png");
+        Files.write(p1, "one".getBytes(StandardCharsets.UTF_8));
+        Files.write(p2, "two".getBytes(StandardCharsets.UTF_8));
+        InferenceBinding pages = new InferenceBinding("pages", "clip", InputKind.PAGES,
+                List.of("embed"), null, null, -1, -1, true);
+        EmbedTask task = new EmbedTask();
+        task.validate(pages, engine);
+        task.run(pages, List.of(
+                new InferenceUnit(InputKind.PAGES, MediaType.image("png"), pdf, new Metadata(), p1, 3),
+                new InferenceUnit(InputKind.PAGES, MediaType.image("png"), pdf, new Metadata(), p2, 4)),
+                engine, new ParseContext());
+        List<Chunk> chunks = ChunkSerializer.fromJson(pdf.get(TikaCoreProperties.TIKA_CHUNKS));
+        assertEquals(2, chunks.size());
+        assertEquals(3, chunks.get(0).getLocators().getPaginated().get(0).getPage());
+        assertEquals(4, chunks.get(1).getLocators().getPaginated().get(0).getPage());
+        assertNull(chunks.get(0).getLocators().getEmbedded(), "the pdf keeps its own pages");
+    }
+
     @Test
     public void testValidateRejectsANonEmbeddingEngine() {
         assertThrows(TikaConfigException.class,

@@ -37,7 +37,7 @@ import org.apache.tika.parser.inference.InputKind;
 /**
  * The {@code embed} task: one vector chunk per unit, written where the unit's chunks belong
  * (its parent for an inline picture or a page render, itself otherwise), with the page
- * locator when the unit has a page. Units go to the engine in batches of its size.
+ * locator when the unit is a page or has one. Units go to the engine in batches of its size.
  */
 @TikaComponent(name = "embed", spi = false)
 public class EmbedTask implements InferenceTask {
@@ -48,8 +48,8 @@ public class EmbedTask implements InferenceTask {
             throw new TikaConfigException("task \"embed\" needs an embedding engine; \""
                     + binding.getEngine() + "\" is not one");
         }
-        if (binding.getInput() != InputKind.IMAGES) {
-            throw new TikaConfigException("task \"embed\" takes IMAGES; binding \""
+        if (binding.getInput() != InputKind.IMAGES && binding.getInput() != InputKind.PAGES) {
+            throw new TikaConfigException("task \"embed\" takes IMAGES or PAGES; binding \""
                     + binding.getId() + "\" is on " + binding.getInput());
         }
     }
@@ -97,7 +97,9 @@ public class EmbedTask implements InferenceTask {
             InferenceUnit unit = batch.get(i);
             Locators locators = new Locators();
             String page = unit.getTarget().get(TikaPagedText.PAGE_NUMBER);
-            if (page != null) {
+            if (unit.getPage() > 0) {
+                locators.addPaginated(new PaginatedLocator(unit.getPage()));
+            } else if (page != null) {
                 locators.addPaginated(new PaginatedLocator(Integer.parseInt(page)));
             }
             Chunk chunk = new Chunk(null, locators);

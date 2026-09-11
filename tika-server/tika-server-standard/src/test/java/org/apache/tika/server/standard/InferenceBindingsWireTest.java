@@ -20,18 +20,30 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.imageio.ImageIO;
 
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
+import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
@@ -65,6 +77,11 @@ public class InferenceBindingsWireTest extends CXFTestBase {
         return getClass().getResourceAsStream("/configs/tika-config-inference-bindings.json");
     }
 
+    @Override
+    protected boolean isAllowPerRequestConfig() {
+        return true;
+    }
+
     @Test
     public void testBindingOutputSurvivesFork() throws Exception {
         ByteArrayOutputStream png = new ByteArrayOutputStream();
@@ -81,5 +98,54 @@ public class InferenceBindingsWireTest extends CXFTestBase {
         Metadata metadata = metadataList.get(0);
         assertEquals("mock-images", metadata.get(MockTask.MARKER_KEY));
         assertEquals("1", metadata.get(MockTask.UNITS_KEY));
+    }
+
+    /** A request asks for a PDF's pages; the PAGES binding's output lands on the PDF. */
+    @Test
+    public void testPagesPerRequest() throws Exception {
+        String config = """
+                { "parse-context": {
+                    "pdf-parser": { "ocr": { "strategy": "NO_OCR", "dpi": 20 },
+                                    "inference": { "input": ["PAGES"] } },
+                    "inference": { "bindings": ["mock-pages"] } } }
+                """;
+        ContentDisposition fileCd = new ContentDisposition(
+                "form-data; name=\"file\"; filename=\"two-pages.pdf\"");
+        Attachment fileAtt = new Attachment("file", new ByteArrayInputStream(twoPagePdf()), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(config.getBytes(UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + META_PATH + "/config")
+                .type("multipart/form-data")
+                .accept("application/json")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+
+        assertEquals(200, response.getStatus());
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(1, metadataList.size());
+        Metadata metadata = metadataList.get(0);
+        assertEquals("mock-pages", metadata.get(MockTask.MARKER_KEY));
+        assertEquals("2", metadata.get(MockTask.UNITS_KEY));
+    }
+
+    private static byte[] twoPagePdf() throws IOException {
+        try (PDDocument document = new PDDocument()) {
+            for (int i = 1; i <= 2; i++) {
+                PDPage page = new PDPage(PDRectangle.LETTER);
+                document.addPage(page);
+                try (PDPageContentStream content = new PDPageContentStream(document, page)) {
+                    content.beginText();
+                    content.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+                    content.newLineAtOffset(72, 700);
+                    content.showText("This is page " + i + " of the test document.");
+                    content.endText();
+                }
+            }
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            document.save(out);
+            return out.toByteArray();
+        }
     }
 }

@@ -59,10 +59,14 @@ A list of bindings. Each names an engine, says what it is fed, and what to ask:
 
 `id`:: Names the binding; defaults to `<engine>-<input>`. Unique within the list.
 `input`:: What the binding is fed. `IMAGES` is every image document Tika parses: an inline
-  picture, an image attachment, a top-level image file. (`PAGES`, `TEXT` and `MEDIA` follow.)
+  picture, an image attachment, a top-level image file; a page render emitted as an embedded
+  document is not one. `PAGES` is one image per rendered page of a document whose parser
+  renders pages for inference: the PDF parser, when its `inference.input` says so (see
+  <<pages>>). (`TEXT` and `MEDIA` follow.)
 `tasks`:: One call per task on the same engine and input. `embed` writes one vector chunk per
   unit into `tk:chunks`, with the page locator when the unit has a page.
-`maxChunks`:: How many units one document tree may send; -1 for no limit.
+`maxChunks`:: How many units one document tree may send; for `PAGES`, how many pages of one
+  document; -1 for no limit.
 `maxBytes`:: Largest unit the binding accepts (20 MB unless set; -1 for no limit); larger
   ones are skipped and counted.
 `enabled`:: `false` keeps the binding configured but idle until a request selects it.
@@ -90,6 +94,56 @@ The units are held as files the dispatcher owns, bounded by each binding's `maxC
 `maxBytes`, and deleted when the flush ends. Vectors are visible in the recursive outputs
 (`/rmeta`, `-J`, pipes); a streaming `/tika` parse keeps only what lands on the top-level
 document.
+
+[#pages]
+== Pages
+
+A `PAGES` binding is fed by the parsers that render pages. Today that is the PDF parser, and
+only when its own config releases pages:
+
+[source,json]
+----
+{
+  "engines": {
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip:8000/v1", "model": "clip" } }
+  },
+  "inference": [
+    { "id": "page-vectors", "engine": "clip", "input": "PAGES", "tasks": ["embed"], "maxChunks": 50 }
+  ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "inference": { "input": ["PAGES"] },
+                      "ocr": { "strategy": "NO_OCR", "dpi": 100, "imageType": "RGB" } } }
+  ]
+}
+----
+
+`pdf-parser.inference.input` lists what the PDF releases to inference: `TEXT`, the default
+(text bindings follow), and `PAGES`. With `PAGES`, and a `PAGES` binding that runs for the
+request, the PDF renders every page once and hands the same image to the OCR engine, when
+`ocr.strategy` asks for it, and to the bindings: a scanned page costs one render whether one
+consumer or two see it. Each page is one unit. Its vector lands on the PDF's own `tk:chunks`
+with a `paginated` locator naming the page, and `maxChunks` is the number of pages one document
+sends. Nothing is rendered for inference unless a `PAGES` binding runs, so the block can stay on
+a config whose bindings are on standby.
+
+The render is the OCR render: `ocr.dpi`, `imageType`, `imageFormat` and `imageQuality` shape
+it, and the defaults (300 dpi grayscale PNG) suit Tesseract, not an embedding endpoint. Set
+`dpi` and `imageType` to what the engine wants; when OCR and page vectors run together the one
+setting serves both. `renderingStrategy` and `maxImagePixels` apply as for OCR; a page skipped
+for its size is not offered.
+
+Page renders emitted as embedded documents (`imageStrategy` set to `RENDER_PAGES_AT_PAGE_END`
+or `RENDER_PAGES_BEFORE_PARSE`) are not images to an `IMAGES` binding: pages reach inference
+through `PAGES` only, so no page is embedded twice.
+
+Per request, like every PDF setting:
+
+[source,json]
+----
+{ "parse-context": { "pdf-parser": { "inference": { "input": ["PAGES"] } },
+                     "inference": { "bindings": ["page-vectors"] } } }
+----
 
 == Per request
 
