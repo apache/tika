@@ -679,6 +679,78 @@ public class TikaGrpcServerTest {
         }
     }
 
+    /**
+     * The v2 server-streaming variant must close the call like the v1 one above: one typed
+     * reply, no error, exactly one completion. Same in-process transport and direct
+     * executor, so the counts are final when the stub call returns.
+     */
+    @Test
+    public void testV2ServerSideStreamingSendsTerminalSignal(Resources resources) throws Exception {
+        String serverName = InProcessServerBuilder.generateName();
+        TikaGrpcServerImpl serviceImpl = newService(tikaConfigUnlocked);
+        Server server = InProcessServerBuilder
+                .forName(serverName)
+                .directExecutor()
+                .addService(serviceImpl)
+                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
+                .build()
+                .start();
+        resources.register(server, Duration.ofSeconds(10));
+
+        ManagedChannel channel = InProcessChannelBuilder
+                .forName(serverName)
+                .directExecutor()
+                .build();
+        resources.register(channel, Duration.ofSeconds(10));
+        TikaV2Grpc.TikaV2Stub v2 = TikaV2Grpc.newStub(channel);
+
+        String fetcherId = createFetcherId(1);
+        String fetchKey = "tika4766-stream-" + UUID.randomUUID() + ".html";
+        File testFile = new File("target", fetchKey);
+        FileUtils.writeStringToFile(testFile,
+                "<html><body>terminal signal</body></html>", StandardCharsets.UTF_8);
+
+        List<org.apache.tika.grpc.v2.FetchAndParseReply> replies =
+                Collections.synchronizedList(new ArrayList<>());
+        AtomicInteger errors = new AtomicInteger();
+        AtomicInteger completions = new AtomicInteger();
+        StreamObserver<org.apache.tika.grpc.v2.FetchAndParseReply> observer =
+                new StreamObserver<>() {
+                    @Override
+                    public void onNext(org.apache.tika.grpc.v2.FetchAndParseReply reply) {
+                        replies.add(reply);
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        errors.incrementAndGet();
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        completions.incrementAndGet();
+                    }
+                };
+
+        try {
+            v2.fetchAndParseServerSideStreaming(org.apache.tika.grpc.v2.FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey(fetchKey)
+                    .build(), observer);
+
+            assertEquals(1, replies.size(), "one reply for one fetch key");
+            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(),
+                    replies.get(0).getDocument().getStatus().getPipesStatus(),
+                    "the fixture must actually parse, or this test proves nothing");
+            assertEquals(0, errors.get(), "no error on the happy path");
+            assertEquals(1, completions.get(),
+                    "server streaming must send a terminal signal");
+        } finally {
+            FileUtils.deleteQuietly(testFile);
+        }
+    }
+
     @Test
     public void testBiStream(Resources resources) throws Exception {
         String serverName = InProcessServerBuilder.generateName();

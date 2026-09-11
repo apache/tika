@@ -149,9 +149,10 @@ public final class DocumentBuilder {
      * guessed) since this module intentionally has no compile dependency on tika-pipes-api:
      * a clean success (e.g. {@code PARSE_SUCCESS}, {@code EMIT_SUCCESS}) is {@code SUCCESS};
      * a success that happened alongside a caught exception (e.g.
-     * {@code PARSE_SUCCESS_WITH_EXCEPTION}) is {@code PARTIAL}; everything else -- including
-     * process crashes like {@code TIMEOUT} and {@code OOM}, which are not partial successes --
-     * is {@code FAILED}.
+     * {@code PARSE_SUCCESS_WITH_EXCEPTION}) or that the deadline cut short but still emitted
+     * ({@code PARTIAL_TIMEOUT}) is {@code PARTIAL}; everything else -- including process
+     * crashes like {@code TIMEOUT} and {@code OOM}, which are not partial successes -- is
+     * {@code FAILED}.
      */
     private static ParseStatus.Status mapPipesStatus(String pipesStatus) {
         if (pipesStatus == null || pipesStatus.isEmpty()) {
@@ -160,7 +161,8 @@ public final class DocumentBuilder {
         return switch (pipesStatus) {
             case "EMPTY_OUTPUT", "PARSE_SUCCESS", "EMIT_SUCCESS", "EMIT_SUCCESS_PASSBACK" ->
                     ParseStatus.Status.SUCCESS;
-            case "PARSE_SUCCESS_WITH_EXCEPTION", "PARSE_EXCEPTION_NO_EMIT", "EMIT_SUCCESS_PARSE_EXCEPTION" ->
+            case "PARSE_SUCCESS_WITH_EXCEPTION", "PARSE_EXCEPTION_NO_EMIT", "EMIT_SUCCESS_PARSE_EXCEPTION",
+                 "PARTIAL_TIMEOUT" ->
                     ParseStatus.Status.PARTIAL;
             default -> ParseStatus.Status.FAILED;
         };
