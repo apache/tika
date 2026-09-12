@@ -53,6 +53,9 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.hook.ParseHooks;
+import org.apache.tika.parser.inference.EngineRegistry;
+import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -135,8 +138,14 @@ public class TikaLoader {
                 .wrapWith(list -> new CompositeRenderer((List<Renderer>) list))
                 .register();
 
-        ComponentConfig.builder("content-enrichers", CompositeContentEnricher.class)
+        ComponentConfig.builder("text-recognizers", CompositeContentEnricher.class)
                 .customLoader(new ContentEnricherLoader())
+                .register();
+        ComponentConfig.builder(EngineLoader.KEY, EngineRegistry.class)
+                .customLoader(new EngineLoader())
+                .register();
+        ComponentConfig.builder(InferenceLoader.KEY, InferenceDispatcher.class)
+                .customLoader(new InferenceLoader())
                 .register();
 
         ComponentConfig.builder("translator", Translator.class)
@@ -407,6 +416,11 @@ public class TikaLoader {
                 adpConfig = new AutoDetectParserConfig();
             }
             autoDetectParser = AutoDetectParser.build((CompositeParser)loadParsers(), loadDetectors(), adpConfig);
+            InferenceDispatcher dispatcher = get(InferenceDispatcher.class);
+            if (dispatcher != null) {
+                ((AutoDetectParser) autoDetectParser)
+                        .setParseHooks(new ParseHooks(List.of(dispatcher)));
+            }
         }
         return autoDetectParser;
     }
@@ -824,8 +838,9 @@ public class TikaLoader {
             output.set("renderers", config.getRootNode().get("renderers"));
         }
 
-        if (config.hasArrayComponents("content-enrichers")) {
-            output.set("content-enrichers", config.getRootNode().get("content-enrichers"));
+        // [] is meaningful (enrichment off), so the section is kept even when empty
+        if (config.hasComponentSection("text-recognizers")) {
+            output.set("text-recognizers", config.getRootNode().get("text-recognizers"));
         }
 
         // Preserve auto-detect-parser config if present

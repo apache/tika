@@ -38,7 +38,7 @@ optional; anything you omit uses its defaults.
   "encoding-detectors": [ /* encoding detector declarations */ ],
   "metadata-filters": [ /* metadata filter declarations */ ],
   "renderers": [ /* page renderer declarations */ ],
-  "content-enrichers": [ /* OCR engines etc., selected by name; see below */ ],
+  "text-recognizers": [ /* OCR engines etc., selected by name; see below */ ],
   "translator": { /* translator declaration */ },
   "content-handler-factory": { /* handler type for emitted content */ },
   "auto-detect-parser": { /* AutoDetectParser options */ },
@@ -126,45 +126,100 @@ Configuring a parser automatically excludes its default copy, so there is no dup
 `default-encoding-detector`, but it must not be mixed with explicit detector entries — see
 xref:configuration/encoding-detectors.adoc[Encoding Detectors].
 
-== The `content-enrichers` list (4.1.0+)
+[#text-recognizers]
+== The `text-recognizers` list (4.1.0+)
 
-Content enrichers are ordinary parsers that a container parser *invokes* on bytes it has already
-parsed — an OCR engine run on an embedded image or a rendered PDF page. Naming one here selects
-the engine explicitly instead of relying on which OCR module happens to be on the classpath:
+Text recognizers are engines that produce a document's text from its pixels: an OCR engine run
+on an embedded image or a rendered PDF page, a VLM prompted to transcribe. A container parser
+*invokes* them on bytes it has already parsed. Two recipes cover almost every deployment.
+
+*Choose the engine.* Name it here; every default parser stays loaded, and `image-parser` and
+`pdf-parser` call it:
 
 [source,json]
 ----
 {
-  "content-enrichers": [
+  "text-recognizers": [
     { "tesseract-ocr-parser": { "language": "eng" } }
   ]
 }
 ----
 
-An enricher advertises its *real* media types (`image/png`, ...) and does not compete with the
-parser registered for those types: `image-parser` still parses the image and calls the enricher.
-(The bundled OCR engines still advertise legacy `image/ocr-*` types; those are mapped to the
-real type, so naming them here just works, and an entry's `_mime-include`/`_mime-exclude` name
-real types too: `image/tiff`, not `image/ocr-tiff`.) *Every* enricher matching a media type runs, in the
-order listed — so an OCR engine followed by a VLM that tags images is two entries, both invoked
-per image. The list is authoritative: a media type no configured enricher matches gets no
-enrichment — never a classpath engine you did not name — and a named engine that reports no
-media types at startup (missing native binary, unreachable inference server) fails config load
-rather than going silently inert; that check is made against the engine itself, so a
-`_mime-include` list cannot stand in for an unreachable engine. Failures are best-effort: one enricher failing does not stop
-the others, and every failure is still reported through the parser's normal exception handling
-(timeouts abort the chain immediately). With no `content-enrichers` configured, behavior is
-unchanged — whichever OCR engine is on the classpath is used, exactly as before, and a WARN is
-logged at startup when several engines collide. Engine names: `tesseract-ocr-parser`, `tess4j-parser`, `openai-vlm-parser`,
-`claude-vlm-parser`, `gemini-vlm-parser`.
+*Turn OCR off.* An empty list is authoritative:
 
-An enricher that produces the document's *text*, such as an OCR engine or a VLM prompted to
-transcribe, implements `org.apache.tika.parser.enricher.TextRecognizer`. Only text recognizers
-count when a caller asks whether an engine can stand in for text it already has: the PDF parser's
-`AUTO` OCR strategy replaces a page's extracted text only if a configured enricher recognizes text
-and actually wrote some, and keeps the extracted text otherwise. Annotating enrichers such as an
-image-embedding parser still run on the rendered page; they never displace text. The bundled OCR
-engines and VLM parsers all declare the capability.
+[source,json]
+----
+{ "text-recognizers": [] }
+----
+
+Engine names: `tesseract-ocr-parser`, `tess4j-parser`, `openai-vlm-parser`, `claude-vlm-parser`,
+`gemini-vlm-parser`. At startup Tika logs one line per engine with the media types it enriches, so
+the effective engine is never a guess.
+
+=== How the list behaves
+
+A recognizer advertises its *real* media types (`image/png`, ...) and does not compete with the
+parser registered for those types: `image-parser` still parses the image and calls the recognizer.
+An entry's `_mime-include`/`_mime-exclude` name real types too (`image/tiff`); the pre-4.1
+`image/ocr-*` spellings are refused at load. *Every* entry matching a media type runs, in the
+order listed. Two recognizers on one type both run and their text is concatenated; a WARN at
+startup names them, since that is almost never intended. The list is authoritative: a media
+type no configured recognizer matches gets no OCR, never a classpath engine you did not name. A named engine that reports no media
+types at startup (missing native binary, unreachable inference server) fails config load rather
+than going silently inert; that check is made against the engine itself, so a `_mime-include`
+list cannot stand in for an unreachable engine. Failures are best-effort: one recognizer failing
+does not stop the others, and every failure is still reported through the parser's normal
+exception handling (timeouts abort the chain immediately).
+
+=== With no list
+
+When the key is absent, the loader resolves one engine per media type from the recognizers among
+the loaded parsers and injects that, so Tesseract on the classpath OCRs images with no
+configuration at all. The rules: an engine configured under `parsers` beats one `default-parser`
+found on the classpath; among those the last registered wins (user-supplied classes register
+after Tika's); an entry's `_mime-include`/`_mime-exclude` applies, and on the `default-parser`
+entry it applies to every engine inside it. When several engines in the winning tier claim a
+type, a WARN at startup names them and the winner; an engine under `parsers` shadows a classpath
+engine silently, by design. Name the engine in `text-recognizers` to stop depending on any of
+this. An `AutoDetectParser` built in code without the loader applies the same rules at parse
+time.
+
+=== An engine under `parsers`
+
+Naming an engine under `parsers` still works, and is how 4.0 configured Tesseract's options, but
+it means two things at once: the entry configures the engine, and the engine is also a parser
+for the types no other parser there claims (`"parsers": [{"tesseract-ocr-parser": {}}]` alone
+sends every image straight to OCR; `claude-vlm-parser` next to a `default-parser` that excludes
+`pdf-parser` makes Claude the PDF parser). When every type the engine advertises is claimed by
+another parser it is never dispatched to: startup logs that it then acts only as the text
+recognizer, and warns if it never runs at all. Prefer `text-recognizers` for the engine and keep
+`parsers` for parsers.
+
+=== Replacing extracted text
+
+An engine that produces the document's *text* implements
+`org.apache.tika.parser.enricher.TextRecognizer`. Only such engines count when a caller asks
+whether an engine can stand in for text it already has: the PDF parser's `AUTO` OCR strategy
+replaces a page's extracted text only if the engine recognizes text and actually wrote some, and
+keeps the extracted text otherwise. The bundled OCR engines declare the capability; a VLM parser
+declares it through its `textRecognizer` option (default `true`). An entry that recognizes no
+text (the experimental image-embedding parser, a VLM with `textRecognizer: false`) still runs on
+the images and pages it is offered and never displaces text; startup warns about it, and 4.2
+gives such annotators a list of their own.
+When the PDF parser also emits its page renders as embedded documents, it enriches each render itself and
+the embedded copy is not enriched again (see xref:configuration/parsers/pdf-parser.adoc[PDF Parser]).
+
+=== For engine authors
+
+Recognizers are found by interface, not by media type: implement
+`org.apache.tika.parser.enricher.ContentEnricher` (or `TextRecognizer`, which extends it) and
+advertise the real types you enrich; xref:developers/custom-ocr-engine.adoc[Wiring in Your Own
+OCR Engine] walks through a complete engine. An engine the classpath supplied is never dispatched to:
+`tesseract-ocr-parser` advertising `image/png` does not take PNGs away from `image-parser`, it is
+called by it. The `image/ocr-*` pseudo-types that routed OCR before 4.1 are retired: a third-party
+engine still advertising them is treated as a text recognizer for the real types, with a WARN at
+startup, until 5.0. Nothing else in Tika produces them; a `tk:content-type-parser-override`
+naming one matches no parser and falls to the empty fallback.
 
 == Windows file paths
 
@@ -172,6 +227,7 @@ JSON treats the backslash as an escape character, so path options (`tesseractPat
 `imageMagickPath`, ...) need forward slashes (`C:/Tools/...`) or escaped backslashes
 (`C:\\Tools\\...`). A single backslash is a JSON parse error.
 
+[#tika-extras-dir]
 == Adding extra jars (`tika.extras.dir`)
 
 To add components — extra `EncodingDetector` or `Parser` implementations, or their dependencies —

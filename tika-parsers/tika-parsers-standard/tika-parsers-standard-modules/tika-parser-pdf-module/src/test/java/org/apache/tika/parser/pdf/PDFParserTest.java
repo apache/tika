@@ -21,13 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,7 +81,12 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.ContentEnricher;
+import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.parser.enricher.TextRecognizer;
+import org.apache.tika.parser.hook.ParseHook;
+import org.apache.tika.parser.hook.ParseHooks;
+import org.apache.tika.renderer.RenderingTracker;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.ToXMLContentHandler;
@@ -1236,6 +1244,8 @@ public class PDFParserTest extends TikaTest {
         assertEquals(true, pdfParserConfig.isExtractInlineImages());
         assertEquals(false, pdfParserConfig.isExtractUniqueInlineImagesOnly());
         assertEquals(314, pdfParserConfig.getOcr().getDpi());
+        assertEquals(List.of(InferenceConfig.Input.PAGES),
+                pdfParserConfig.getInference().getInput());
         assertEquals(2.1f, pdfParserConfig.getOcr().getImageQuality(), .01f);
         assertEquals(OcrConfig.ImageFormat.JPEG, pdfParserConfig.getOcr().getImageFormat());
         assertEquals(524288000, pdfParserConfig.getMaxMainMemoryBytes());
@@ -1600,6 +1610,35 @@ public class PDFParserTest extends TikaTest {
         assertWellFormed(xml);
     }
 
+    /**
+     * A discovered engine's IOException is recorded, the page keeps its text, later pages
+     * still parse, and the failure surfaces at the end (TIKA-4884).
+     */
+    @Test
+    public void testAutoOcrEngineFailureFallsBackToText() throws Exception {
+        PDFParserConfig config = autoOcrTriggeringPage16();
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, failingOcrParser(config));
+        Metadata metadata = new Metadata();
+        ToXMLContentHandler handler = new ToXMLContentHandler();
+        TikaException thrown = null;
+        try (TikaInputStream tis =
+                     getResourceAsStream("/test-documents/testPDF_bad_page_303226.pdf")) {
+            new PDFParser().parse(tis, handler, metadata, context);
+        } catch (TikaException e) {
+            thrown = e;
+        }
+        String xml = handler.toString();
+
+        assertContains("42936", xml);
+        assertContains("1308.44", xml);
+        assertContains("simulated engine failure", String.join("\n",
+                metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)));
+        assertNotNull(thrown, "the recorded failure still surfaces once every page is done");
+        assertWellFormed(xml);
+    }
+
     /** TIKA-4883: once maxPagesToOcr is exhausted, later triggering pages keep their text. */
     @Test
     public void testAutoOcrMaxPagesFallsBackToText() throws Exception {
@@ -1692,6 +1731,274 @@ public class PDFParserTest extends TikaTest {
         assertWellFormed(xml);
     }
 
+    /**
+     * Pages rendered as embedded documents are enriched once, by the PDF parser: the text
+     * recognizer where the OCR strategy says so, every other enricher on every page. The
+     * embedded copy of a render is parsed but not enriched again.
+     */
+    @Test
+    public void testRenderedPagesEnrichedOnceByPdfParser() throws Exception {
+        for (PDFParserConfig.IMAGE_STRATEGY imageStrategy : List.of(
+                PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END,
+                PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE)) {
+            PageEnricher recognizer = new PageEnricher("MOCK_OCR_CONTENT", true);
+            PageAnnotator annotator = new PageAnnotator();
+            CompositeContentEnricher enrichers =
+                    new CompositeContentEnricher(List.of(recognizer, annotator));
+            PDFParser parser = new PDFParser();
+            parser.setContentEnrichers(enrichers);
+            EnrichingImageParser imageParser = new EnrichingImageParser(enrichers);
+            PDFParserConfig config = autoOcrTriggeringPage16();
+            config.setImageStrategy(imageStrategy);
+            config.getOcr().setDpi(20);
+            ParseContext context = new ParseContext();
+            context.set(PDFParserConfig.class, config);
+            context.set(Parser.class, new AutoDetectParser(imageParser));
+            Metadata metadata = new Metadata();
+
+            String xml = parsePdfToXml(parser, "testPDF_bad_page_303226.pdf", metadata, context);
+
+            String label = imageStrategy.name();
+            assertEquals(19, imageParser.parsed, label + ": every render is an embedded document");
+            assertEquals(1, recognizer.calls, label + ": the recognizer sees the verdict page only");
+            assertEquals(19, annotator.calls, label + ": the annotator sees each page once");
+            assertContainsCount("MOCK_OCR_CONTENT", xml, 1);
+            assertNotContained("42936", xml);
+            assertContains("ANABOLIC", xml);
+            assertEquals(1, metadata.getInt(PDF.OCR_PAGE_COUNT));
+            assertEquals(19, metadata.get(TikaCoreProperties.TIKA_CHUNKS).split("\"page\":").length - 1,
+                    label + ": one chunk per page on the PDF itself");
+        }
+    }
+
+    /** NO_OCR governs recognizers only: rendered pages are still annotated, once. */
+    @Test
+    public void testNoOcrStillAnnotatesRenderedPages() throws Exception {
+        PageEnricher recognizer = new PageEnricher("MOCK_OCR_CONTENT", true);
+        PageAnnotator annotator = new PageAnnotator();
+        CompositeContentEnricher enrichers =
+                new CompositeContentEnricher(List.of(recognizer, annotator));
+        PDFParser parser = new PDFParser();
+        parser.setContentEnrichers(enrichers);
+        EnrichingImageParser imageParser = new EnrichingImageParser(enrichers);
+        PDFParserConfig config = new PDFParserConfig();
+        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        config.setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END);
+        config.getOcr().setDpi(20);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser(imageParser));
+        Metadata metadata = new Metadata();
+
+        String xml = parsePdfToXml(parser, "testPDF_bookmarks.pdf", metadata, context);
+
+        assertEquals(2, imageParser.parsed);
+        assertEquals(0, recognizer.calls);
+        assertEquals(2, annotator.calls);
+        assertNotContained("MOCK_OCR_CONTENT", xml);
+        assertEquals(0, metadata.getInt(PDF.OCR_PAGE_COUNT));
+    }
+
+    /** maxPagesToOcr budgets the recognizer; the annotator still sees every rendered page. */
+    @Test
+    public void testOcrBudgetDoesNotBudgetAnnotators() throws Exception {
+        PageEnricher recognizer = new PageEnricher("MOCK_OCR_CONTENT", true);
+        PageAnnotator annotator = new PageAnnotator();
+        CompositeContentEnricher enrichers =
+                new CompositeContentEnricher(List.of(recognizer, annotator));
+        PDFParser parser = new PDFParser();
+        parser.setContentEnrichers(enrichers);
+        PDFParserConfig config = new PDFParserConfig();
+        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_AND_TEXT_EXTRACTION);
+        config.getOcr().setMaxPagesToOcr(1);
+        config.setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END);
+        config.getOcr().setDpi(20);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser(new EnrichingImageParser(enrichers)));
+        Metadata metadata = new Metadata();
+
+        String xml = parsePdfToXml(parser, "testPDF_bookmarks.pdf", metadata, context);
+
+        assertEquals(1, recognizer.calls);
+        assertEquals(2, annotator.calls);
+        assertContainsCount("MOCK_OCR_CONTENT", xml, 1);
+    }
+
+    /** OCR_ONLY with the budget spent still annotates a rendered page once. */
+    @Test
+    public void testOcrOnlyBudgetAnnotatesOnce() throws Exception {
+        PageEnricher recognizer = new PageEnricher("MOCK_OCR_CONTENT", true);
+        PageAnnotator annotator = new PageAnnotator();
+        CompositeContentEnricher enrichers =
+                new CompositeContentEnricher(List.of(recognizer, annotator));
+        PDFParser parser = new PDFParser();
+        parser.setContentEnrichers(enrichers);
+        PDFParserConfig config = new PDFParserConfig();
+        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        config.getOcr().setMaxPagesToOcr(1);
+        config.setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END);
+        config.getOcr().setDpi(20);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        Metadata metadata = new Metadata();
+
+        String xml = parsePdfToXml(parser, "testPDF_bookmarks.pdf", metadata, context);
+
+        assertEquals(1, recognizer.calls);
+        assertEquals(2, annotator.calls);
+        assertContainsCount("MOCK_OCR_CONTENT", xml, 1);
+    }
+
+    /** Records what the parse hooks are offered; wants pages when told to. */
+    private static class PageHook implements ParseHook {
+        final List<Integer> pages = new ArrayList<>();
+        final List<Long> sizes = new ArrayList<>();
+        Metadata document;
+        boolean wantsPages;
+        int wantsPagesCalls = 0;
+
+        @Override
+        public boolean wantsPages(MediaType renderType, Metadata document, ParseContext context) {
+            wantsPagesCalls++;
+            return wantsPages;
+        }
+
+        @Override
+        public void offerPage(MediaType type, Metadata document, Metadata parent, int page,
+                              Path bytes, ParseContext context) throws IOException {
+            assertEquals("image/png", type.toString());
+            pages.add(page);
+            sizes.add(Files.size(bytes));
+            this.document = document;
+        }
+    }
+
+    /** The PDF parser under the auto-detect parser, which seeds the hooks. */
+    private static AutoDetectParser hooked(PDFParser parser, PageHook hook) {
+        AutoDetectParser adp = new AutoDetectParser(parser);
+        adp.setParseHooks(new ParseHooks(List.of(hook)));
+        return adp;
+    }
+
+    private static PDFParserConfig pagesForInference(OcrConfig.Strategy strategy) {
+        PDFParserConfig config = new PDFParserConfig();
+        config.getOcr().setStrategy(strategy);
+        config.getOcr().setDpi(20);
+        config.getInference().setInput(List.of(InferenceConfig.Input.PAGES));
+        return config;
+    }
+
+    /** One render per page feeds OCR and inference alike; every page is offered once. */
+    @Test
+    public void testPagesOfferedOncePerPageFromOneRender() throws Exception {
+        for (OcrConfig.Strategy strategy : List.of(OcrConfig.Strategy.OCR_AND_TEXT_EXTRACTION,
+                OcrConfig.Strategy.OCR_ONLY, OcrConfig.Strategy.NO_OCR)) {
+            PageEnricher recognizer = new PageEnricher("MOCK_OCR_CONTENT", true);
+            PDFParser parser = new PDFParser();
+            parser.setContentEnrichers(new CompositeContentEnricher(List.of(recognizer)));
+            PageHook hook = new PageHook();
+            hook.wantsPages = true;
+            ParseContext context = new ParseContext();
+            context.set(PDFParserConfig.class, pagesForInference(strategy));
+            RenderingTracker tracker = new RenderingTracker();
+            context.set(RenderingTracker.class, tracker);
+            Metadata metadata = new Metadata();
+            try (TikaInputStream tis = getResourceAsStream("/test-documents/testPDF_bookmarks.pdf")) {
+                hooked(parser, hook).parse(tis, new ToXMLContentHandler(), metadata, context);
+            }
+            String label = strategy.name();
+            assertEquals(List.of(1, 2), hook.pages, label);
+            assertSame(metadata, hook.document, label + ": the pages belong to the PDF");
+            assertTrue(hook.sizes.get(0) > 0, label + ": the render has bytes");
+            assertEquals(2, tracker.getNextId() - 1, label + ": one render per page");
+            assertEquals(strategy == OcrConfig.Strategy.NO_OCR ? 0 : 2, recognizer.calls, label);
+        }
+    }
+
+    /** Nothing renders for inference unless the config says PAGES and a hook wants them. */
+    @Test
+    public void testPagesNotRenderedUnlessWanted() throws Exception {
+        PageHook unasked = new PageHook();
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        context.set(PDFParserConfig.class, config);
+        RenderingTracker tracker = new RenderingTracker();
+        context.set(RenderingTracker.class, tracker);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPDF_bookmarks.pdf")) {
+            hooked(new PDFParser(), unasked).parse(tis, new ToXMLContentHandler(),
+                    new Metadata(), context);
+        }
+        assertEquals(0, unasked.wantsPagesCalls, "the default input is TEXT: hooks are not asked");
+        assertTrue(unasked.pages.isEmpty());
+
+        PageHook unwilling = new PageHook();
+        context = new ParseContext();
+        context.set(PDFParserConfig.class, pagesForInference(OcrConfig.Strategy.NO_OCR));
+        context.set(RenderingTracker.class, tracker);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPDF_bookmarks.pdf")) {
+            hooked(new PDFParser(), unwilling).parse(tis, new ToXMLContentHandler(),
+                    new Metadata(), context);
+        }
+        assertEquals(1, unwilling.wantsPagesCalls, "asked once per document");
+        assertTrue(unwilling.pages.isEmpty());
+        assertEquals(0, tracker.getNextId() - 1, "no binding wants pages: nothing is rendered");
+    }
+
+    /** Annotating enricher for image/png: writes one chunk per render, never text. */
+    private static class PageAnnotator implements Parser, ContentEnricher {
+        private static final long serialVersionUID = 1L;
+        int calls = 0;
+
+        @Override
+        public Set<MediaType> getSupportedTypes(ParseContext context) {
+            return Collections.singleton(MediaType.image("png"));
+        }
+
+        @Override
+        public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                          ParseContext context) throws IOException, SAXException, TikaException {
+            calls++;
+            metadata.setTrusted(TikaCoreProperties.TIKA_CHUNKS.getName(),
+                    "[{\"page\":" + metadata.get(TikaPagedText.PAGE_NUMBER) + "}]");
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+            xhtml.endDocument();
+        }
+    }
+
+    /** Stands in for image-parser: dispatches image/png to the content enrichers. */
+    private static class EnrichingImageParser implements Parser {
+        private static final long serialVersionUID = 1L;
+        private final CompositeContentEnricher enrichers;
+        int parsed = 0;
+
+        EnrichingImageParser(CompositeContentEnricher enrichers) {
+            this.enrichers = enrichers;
+        }
+
+        @Override
+        public Set<MediaType> getSupportedTypes(ParseContext context) {
+            return Collections.singleton(MediaType.image("png"));
+        }
+
+        @Override
+        public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                          ParseContext context) throws IOException, SAXException, TikaException {
+            parsed++;
+            Parser enricher =
+                    ContentEnrichers.get(enrichers, MediaType.image("png"), metadata, context);
+            if (enricher != null) {
+                enricher.parse(tis, handler, metadata, context);
+                return;
+            }
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+            xhtml.startDocument();
+            xhtml.endDocument();
+        }
+    }
+
     /** Enricher for image/png that writes the given text (none if null). */
     private static class PageEnricher implements Parser, TextRecognizer {
         private static final long serialVersionUID = 1L;
@@ -1756,11 +2063,16 @@ public class PDFParserTest extends TikaTest {
     }
 
     private static MediaType ocrMediaType(PDFParserConfig config) {
-        return MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName());
+        return MediaType.image(config.getOcr().getImageFormat().getFormatName());
+    }
+
+    /** A classpath OCR engine, found by interface. */
+    private abstract static class MockEngine implements Parser, TextRecognizer {
+        private static final long serialVersionUID = 1L;
     }
 
     private static Parser mockOcrParser(PDFParserConfig config, String text) {
-        return new Parser() {
+        return new MockEngine() {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {
                 return Collections.singleton(ocrMediaType(config));
@@ -1779,8 +2091,23 @@ public class PDFParserTest extends TikaTest {
         };
     }
 
+    private static Parser failingOcrParser(PDFParserConfig config) {
+        return new MockEngine() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(ocrMediaType(config));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws IOException {
+                throw new IOException("simulated engine failure");
+            }
+        };
+    }
+
     private static Parser timingOutOcrParser(PDFParserConfig config) {
-        return new Parser() {
+        return new MockEngine() {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {
                 return Collections.singleton(ocrMediaType(config));
@@ -1807,11 +2134,10 @@ public class PDFParserTest extends TikaTest {
 
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
-        context.set(Parser.class, new Parser() {
+        context.set(Parser.class, new MockEngine() {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {
-                return Collections.singleton(
-                        MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName()));
+                return Collections.singleton(ocrMediaType(config));
             }
 
             @Override
@@ -1892,11 +2218,10 @@ public class PDFParserTest extends TikaTest {
 
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
-        context.set(Parser.class, new Parser() {
+        context.set(Parser.class, new MockEngine() {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {
-                return Collections.singleton(
-                        MediaType.image("ocr-" + config.getOcr().getImageFormat().getFormatName()));
+                return Collections.singleton(ocrMediaType(config));
             }
 
             @Override

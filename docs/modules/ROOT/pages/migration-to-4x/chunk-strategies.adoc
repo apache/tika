@@ -48,7 +48,9 @@ CLIP-like image embeddings endpoint, e.g. Jina CLIP v2. Carries a `vector` and a
 |===
 
 `SpatialLocator` (bounding box) and `TemporalLocator` (millisecond range) are already defined
-and round-tripped by `ChunkSerializer`; no component produces them yet.
+and round-tripped by `ChunkSerializer`; no component produces them yet. `EmbeddedLocator`
+(`id_path`, `name`) marks a chunk that was lifted from an embedded document into its parent;
+see <<lifting>>.
 
 A single chunk looks like:
 
@@ -108,6 +110,49 @@ Why this shape:
 
 The trade-offs are the `nested` kNN caveats below, and large documents for files with many
 pages.
+
+[#lifting]
+== Where a Chunk Lands: the Parent
+
+An embedded document that is *part of* its parent, a picture in the body of a docx or an
+email, should not be a search hit of its own: its vector belongs to the document it appears in.
+The image embedder therefore writes a picture's chunk onto the parent, not onto the picture,
+so a docx carries one vector per picture in its body and an email the vectors of its inline
+pictures. Nothing to configure:
+
+[source,json]
+----
+{
+  "text-recognizers": [
+    { "openai-image-embedding-parser": { "baseUrl": "http://clip-server:8000",
+                                         "model": "jinaai/jina-clip-v2" } }
+  ],
+  "metadata-filters": [
+    { "openai-embedding-filter": { "baseUrl": "http://embed-server:8000",
+                                   "model": "text-embedding-3-small" } }
+  ]
+}
+----
+
+The rules:
+
+* `INLINE` and `RENDERING` children hand their chunks to the parent. Attachments keep their
+  own: a PDF inside an email is still its own document with its own vectors, as above.
+* The parent is the immediate container, so a picture inside an attached docx reaches the
+  docx, not the email.
+* Every chunk written to a parent carries an `embedded` locator,
+  `{"id_path": "/1", "name": "image1.png"}`, naming the child it came from, beside any
+  locator it already had.
+* `"liftToParent": false` on the embedder keeps every picture's vector on the picture, for an
+  index where each picture is a hit of its own.
+* The parent is known only in the recursive (`/rmeta`, `-J`, pipes) parse, where the
+  recursive wrapper exposes it to each child's parse as `ParentMetadata`; a component that
+  writes chunks for a child resolves the target through `ChunkTarget` (`tika-inference`).
+
+PDF page renders follow the same rule by a different route: the PDF parser enriches its own
+renders and their vectors land on the PDF directly, one per page with a `paginated` locator,
+whether the pages were rendered for OCR or emitted as embedded documents (see
+xref:configuration/parsers/pdf-parser.adoc[PDF Parser]).
 
 == Elasticsearch/OpenSearch Mapping
 

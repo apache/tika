@@ -98,6 +98,7 @@ class OCR2XHTML extends AbstractPDF2XHTML {
         try {
             startPage(pdPage);
             doOCROnCurrentPage(pdPage, OcrConfig.Strategy.OCR_ONLY);
+            // endPage annotates the page when no engine ran, and offers it to inference
             endPage(pdPage);
         } catch (TikaException | SAXException e) {
             throw new IOException(e);

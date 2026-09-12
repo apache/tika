@@ -100,6 +100,17 @@ public abstract class AbstractRecursiveParserWrapperHandler extends DefaultHandl
         metadata.set(TikaCoreProperties.EMBEDDED_DEPTH, 0);
     }
 
+    /**
+     * The metadata this handler kept for an embedded document, by its
+     * {@code tk:embedded-id-path}, or null when it keeps none: a component that writes
+     * results after the document has ended writes there, not onto the parser's copy.
+     *
+     * @since Apache Tika 4.1
+     */
+    public Metadata getEmbeddedMetadata(String idPath) {
+        return null;
+    }
+
     public ContentHandlerFactory getContentHandlerFactory() {
         return contentHandlerFactory;
     }

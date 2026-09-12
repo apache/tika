@@ -1,5 +1,5 @@
 {
-  "parsers": [
+  "text-recognizers": [
     {
       "claude-vlm-parser": {
         "baseUrl": "https://api.anthropic.com",
@@ -10,6 +10,7 @@
         "apiKey": "YOUR_ANTHROPIC_API_KEY",
         "inlineContent": true,
         "skipOcr": false,
+        "textRecognizer": true,
         "minFileSizeToOcr": 0,
         "maxFileSizeToOcr": 52428800,
         "maxImagePixels": 100000000,

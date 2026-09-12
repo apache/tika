@@ -48,6 +48,9 @@
         // How to render page images; NONE renders nothing.
         // Options: NONE, RAW_IMAGES, RENDER_PAGES_BEFORE_PARSE, RENDER_PAGES_AT_PAGE_END
         "imageStrategy": "NONE",
+        // What the parser releases to the inference bindings (see the inference page):
+        // TEXT is the extracted text; PAGES renders every page for a PAGES binding.
+        "inference": { "input": ["TEXT"] },
         // Max incremental updates to parse when parseIncrementalUpdates is true.
         "maxIncrementalUpdates": 10,
         // Max memory to load a PDF before buffering to a temp file (default 512MB).
@@ -76,7 +79,8 @@
           // Which page content to render for OCR.
           // Options: NO_TEXT, TEXT_ONLY, VECTOR_GRAPHICS_ONLY, ALL
           "renderingStrategy": "ALL",
-          // When to run OCR; AUTO runs it only on text-poor pages.
+          // When to run OCR; AUTO runs it only on text-poor pages and replaces their text
+          // with the engine's output. The engine comes from "text-recognizers".
           // Options: AUTO, NO_OCR, OCR_ONLY, OCR_AND_TEXT_EXTRACTION
           "strategy": "AUTO",
           // Per-page character thresholds that trigger AUTO OCR.

@@ -119,6 +119,8 @@ public class PDFParserConfig implements Serializable {
 
     private OcrConfig ocr = new OcrConfig();
 
+    private InferenceConfig inference = new InferenceConfig();
+
     /**
      * Should the entire document be rendered?
      */
@@ -522,6 +524,15 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcr(OcrConfig ocr) {
         this.ocr = ocr;
+    }
+
+    /** What this parser releases to the inference bindings. */
+    public InferenceConfig getInference() {
+        return inference;
+    }
+
+    public void setInference(InferenceConfig inference) {
+        this.inference = inference == null ? new InferenceConfig() : inference;
     }
 
     // OCR settings are configured through the nested OcrConfig (getOcr()/setOcr()).

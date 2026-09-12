@@ -1,5 +1,5 @@
 {
-  "content-enrichers": [ { "mock-enricher": {} } ],
+  "text-recognizers": [ { "mock-enricher": {} } ],
   "auto-detect-parser": {
     "throwOnZeroBytes": false
   },

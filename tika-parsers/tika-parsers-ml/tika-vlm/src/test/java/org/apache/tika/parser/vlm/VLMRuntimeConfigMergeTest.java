@@ -17,6 +17,7 @@
 package org.apache.tika.parser.vlm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -103,5 +104,15 @@ public class VLMRuntimeConfigMergeTest {
             t = t.getCause();
         }
         return String.valueOf(t.getMessage());
+    }
+
+    @Test
+    public void testTextRecognizerLockedWithPrompt() throws Exception {
+        Exception e = assertThrows(Exception.class,
+                () -> runtime("{\"textRecognizer\": false}"));
+        assertTrue(rootMessage(e).contains("Cannot modify textRecognizer"), rootMessage(e));
+        VLMOCRConfig init = new VLMOCRConfig();
+        init.setAllowRuntimePrompt(true);
+        assertFalse(runtime("{\"textRecognizer\": false}", init).isTextRecognizer());
     }
 }

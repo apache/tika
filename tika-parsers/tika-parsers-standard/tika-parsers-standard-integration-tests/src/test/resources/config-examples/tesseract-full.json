@@ -1,8 +1,8 @@
 {
-  // A "parsers" list loads ONLY the parsers it names; the "default-parser" entry at
-  // the bottom keeps all the others (needed so PDFs/Office docs still reach OCR).
-  // Windows paths in JSON need forward slashes or escaped backslashes.
-  "parsers": [
+  // Named under "text-recognizers", Tesseract is invoked on every image Tika's parsers
+  // meet; the default parsers stay loaded. Windows paths in JSON need forward slashes or
+  // escaped backslashes.
+  "text-recognizers": [
     {
       "tesseract-ocr-parser": {
         // Calculate skew and rotate (via ImageMagick) before OCR. Needs ImageMagick.
@@ -56,10 +56,6 @@
         // Max seconds to wait for the OCR process.
         "timeoutMillis": 120000
       }
-    },
-    {
-      // Keep Tika's other default parsers. Without this, only image files are OCR'd.
-      "default-parser": {}
     }
   ]
 }

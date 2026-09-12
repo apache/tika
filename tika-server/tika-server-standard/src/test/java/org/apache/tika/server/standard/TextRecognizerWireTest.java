@@ -43,7 +43,7 @@ import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 
 /** A config-named enricher reaches the forked worker and its output comes back (TIKA-4872). */
-public class ContentEnricherWireTest extends CXFTestBase {
+public class TextRecognizerWireTest extends CXFTestBase {
 
     private static final String META_PATH = "/rmeta";
 
@@ -63,7 +63,7 @@ public class ContentEnricherWireTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() {
-        return getClass().getResourceAsStream("/configs/tika-config-content-enrichers.json");
+        return getClass().getResourceAsStream("/configs/tika-config-text-recognizers.json");
     }
 
     @Test

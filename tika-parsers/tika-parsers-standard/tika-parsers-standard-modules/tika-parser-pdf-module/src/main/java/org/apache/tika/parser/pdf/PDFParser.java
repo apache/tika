@@ -80,6 +80,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.parser.enricher.EnrichingParser;
 import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
 import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
@@ -467,15 +468,18 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
-        for (RenderResult result : renderResults.getResults()) {
-            if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
-                if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
-                    try (TikaInputStream tis = result.getInputStream()) {
-                        embeddedDocumentExtractor.parseEmbedded(tis, xhtml, result.getMetadata(), context, false);
-                    } catch (SecurityException e) {
-                        throw e;
-                    } catch (Exception e) {
-                        EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
+        // the page step enriches each render itself; the embedded copies are bytes and metadata
+        try (ContentEnrichers.Suspension suspension = ContentEnrichers.suspend(context)) {
+            for (RenderResult result : renderResults.getResults()) {
+                if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
+                    if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
+                        try (TikaInputStream tis = result.getInputStream()) {
+                            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, result.getMetadata(), context, false);
+                        } catch (SecurityException e) {
+                            throw e;
+                        } catch (Exception e) {
+                            EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
+                        }
                     }
                 }
             }

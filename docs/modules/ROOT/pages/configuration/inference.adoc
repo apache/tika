@@ -1,0 +1,165 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Inference: engines and bindings
+:toc:
+
+Inference is model interpretation of a document's bytes that does not produce its text:
+embeddings, captions, tags, classifications. (Engines that produce text, OCR and transcription,
+are xref:configuration/index.adoc#text-recognizers[text recognizers].) Three sections
+configure it, each answering one question.
+
+== `engines`: what can be called
+
+A map of names you choose to one engine each: an endpoint or a local binary with its settings.
+An engine knows nothing about documents. Two names may point at the same endpoint with
+different models. Secrets and paths live here and only here.
+
+[source,json]
+----
+{
+  "engines": {
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip:8000", "model": "siglip2",
+                                           "maxBatchSize": 32 } }
+  }
+}
+----
+
+`openai-embedding-engine` posts to `/v1/embeddings` in the OpenAI shape and sends up to
+`maxBatchSize` images per request. Options: `baseUrl`, `model`, `apiKey`, `timeoutMillis`
+(120000), `maxBatchSize` (32), `embeddingsPath`, `apiKeyHeaderName`, `apiKeyPrefix`.
+
+== `inference`: what runs on what
+
+A list of bindings. Each names an engine, says what it is fed, and what to ask:
+
+[source,json]
+----
+{
+  "inference": [
+    { "id": "picture-vectors", "engine": "clip", "input": "IMAGES", "tasks": ["embed"],
+      "_mime-include": ["image/png", "image/jpeg"], "maxChunks": 100 }
+  ]
+}
+----
+
+`id`:: Names the binding; defaults to `<engine>-<input>`. Unique within the list.
+`input`:: What the binding is fed. `IMAGES` is every image document Tika parses: an inline
+  picture, an image attachment, a top-level image file; a page render emitted as an embedded
+  document is not one. `PAGES` is one image per rendered page of a document whose parser
+  renders pages for inference: the PDF parser, when its `inference.input` says so (see
+  <<pages>>). (`TEXT` and `MEDIA` follow.)
+`tasks`:: One call per task on the same engine and input. `embed` writes one vector chunk per
+  unit into `tk:chunks`, with the page locator when the unit has a page.
+`maxChunks`:: How many units one document tree may send; for `PAGES`, how many pages of one
+  document; -1 for no limit.
+`maxBytes`:: Largest unit the binding accepts (20 MB unless set; -1 for no limit); larger
+  ones are skipped and counted.
+`enabled`:: `false` keeps the binding configured but idle until a request selects it.
+`_mime-include`, `_mime-exclude`:: Narrow by media type within the input kind. With neither,
+  an `IMAGES` binding skips vector and CAD image types (SVG, EMF, DWG, ...) that no embedding
+  endpoint takes.
+
+A binding that names an engine not in `engines`, a task that cannot use its engine (`embed`
+on a chat engine), or an unknown key fails config load.
+
+== How it runs
+
+Parsers do not call engines. Every image document Tika parses is offered to one dispatcher
+after its own parser has run, whatever container it came from and however deep. The
+dispatcher keeps the units of the whole document tree until the top-level parse ends, then
+sends each binding's units to its engine in `maxBatchSize` requests: a docx with twelve
+pictures is one embeddings request, not twelve; if one image in a batch is rejected, the rest
+are retried one by one. Results land on the document a unit belongs to, as it appears in the
+output: a picture in the body of a docx or an email puts its vector on the docx or the email,
+with an `embedded` locator naming the picture, whether the docx is the file itself or inside
+a zip; an attachment keeps its own. A failed request marks
+the top-level document with a warning and never fails the parse.
+
+The units are held as files the dispatcher owns, bounded by each binding's `maxChunks` and
+`maxBytes`, and deleted when the flush ends. Vectors are visible in the recursive outputs
+(`/rmeta`, `-J`, pipes); a streaming `/tika` parse keeps only what lands on the top-level
+document.
+
+[#pages]
+== Pages
+
+A `PAGES` binding is fed by the parsers that render pages. Today that is the PDF parser, and
+only when its own config releases pages:
+
+[source,json]
+----
+{
+  "engines": {
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip:8000/v1", "model": "clip" } }
+  },
+  "inference": [
+    { "id": "page-vectors", "engine": "clip", "input": "PAGES", "tasks": ["embed"], "maxChunks": 50 }
+  ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "inference": { "input": ["PAGES"] },
+                      "ocr": { "strategy": "NO_OCR", "dpi": 100, "imageType": "RGB" } } }
+  ]
+}
+----
+
+`pdf-parser.inference.input` lists what the PDF releases to inference: `TEXT`, the default
+(text bindings follow), and `PAGES`. With `PAGES`, and a `PAGES` binding that runs for the
+request, the PDF renders every page once and hands the same image to the OCR engine, when
+`ocr.strategy` asks for it, and to the bindings: a scanned page costs one render whether one
+consumer or two see it. Each page is one unit. Its vector lands on the PDF's own `tk:chunks`
+with a `paginated` locator naming the page, and `maxChunks` is the number of pages one document
+sends. Nothing is rendered for inference unless a `PAGES` binding runs, so the block can stay on
+a config whose bindings are on standby.
+
+The render is the OCR render: `ocr.dpi`, `imageType`, `imageFormat` and `imageQuality` shape
+it, and the defaults (300 dpi grayscale PNG) suit Tesseract, not an embedding endpoint. Set
+`dpi` and `imageType` to what the engine wants; when OCR and page vectors run together the one
+setting serves both. `renderingStrategy` and `maxImagePixels` apply as for OCR; a page skipped
+for its size is not offered.
+
+Page renders emitted as embedded documents (`imageStrategy` set to `RENDER_PAGES_AT_PAGE_END`
+or `RENDER_PAGES_BEFORE_PARSE`) are not images to an `IMAGES` binding: pages reach inference
+through `PAGES` only, so no page is embedded twice.
+
+Per request, like every PDF setting:
+
+[source,json]
+----
+{ "parse-context": { "pdf-parser": { "inference": { "input": ["PAGES"] } },
+                     "inference": { "bindings": ["page-vectors"] } } }
+----
+
+== Per request
+
+[source,json]
+----
+{ "parse-context": { "inference": { "bindings": ["picture-vectors"], "enabled": true } } }
+----
+
+`enabled: false` runs nothing for this request; `bindings` names the ones that run, every
+enabled binding when absent. Names only, so it is wire-safe and works as a
+xref:using-tika/server/index.adoc[preset]. A name not in the configured list fails the request.
+Engines cannot be defined or changed per request.
+
+== From `openai-image-embedding-parser`
+
+The 4.0 `openai-image-embedding-parser` still works as a text-recognizers entry and embeds one
+image per request. The same endpoint as an engine plus a binding on `IMAGES` embeds a
+document's images in one request and puts the vectors where they belong; move the `baseUrl`,
+`model` and `apiKey` to the engine and drop the parser entry.

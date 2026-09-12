@@ -32,12 +32,16 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -86,33 +90,123 @@ public class ContentEnrichersTest {
         }
     }
 
+    private static class AnnotatingParser extends RecordingParser implements ContentEnricher {
+        private static final long serialVersionUID = 1L;
+
+        AnnotatingParser(Set<MediaType> types) {
+            super(types);
+        }
+    }
+
     private static CompositeContentEnricher listOf(Parser... enrichers) {
         return new CompositeContentEnricher(List.of(enrichers));
+    }
+
+    private static Metadata target(MediaType type) {
+        Metadata target = new Metadata();
+        if (type != null) {
+            target.set(HttpHeaders.CONTENT_TYPE, type.toString());
+        }
+        return target;
+    }
+
+    private static CompositeParser compositeOf(Parser... parsers) {
+        return new CompositeParser(MediaTypeRegistry.getDefaultRegistry(), parsers);
     }
 
     @Test
     public void testHasTextRecognizer() {
         ParseContext context = new ParseContext();
         RecordingParser annotator = new RecordingParser(Collections.singleton(PNG));
-        assertFalse(ContentEnrichers.hasTextRecognizer(listOf(annotator), PNG, context),
+        assertFalse(ContentEnrichers.hasTextRecognizer(listOf(annotator), PNG, target(PNG), context),
                 "an enricher that does not declare the capability is not a recognizer");
         assertTrue(ContentEnrichers.hasTextRecognizer(
                 listOf(annotator, new RecognizingParser(Collections.singleton(PNG), true)),
-                PNG, context));
+                PNG, target(PNG), context));
         assertFalse(ContentEnrichers.hasTextRecognizer(
-                listOf(new RecognizingParser(Collections.singleton(PNG), false)), PNG, context),
+                listOf(new RecognizingParser(Collections.singleton(PNG), false)), PNG, target(PNG), context),
                 "a recognizer that declines for this parse does not count");
         assertFalse(ContentEnrichers.hasTextRecognizer(
                 listOf(new RecognizingParser(Collections.singleton(PNG), true)),
-                MediaType.image("tiff"), context));
-        assertFalse(ContentEnrichers.hasTextRecognizer(null, PNG, context));
-        assertFalse(ContentEnrichers.hasTextRecognizer(null, null, context));
-        // no list: legacy image/ocr-* dispatch is the OCR contract
-        context.set(Parser.class, new RecordingParser(Collections.singleton(OCR_PNG)));
-        assertTrue(ContentEnrichers.hasTextRecognizer(null, PNG, context));
-        assertFalse(ContentEnrichers.hasTextRecognizer(null, MediaType.image("tiff"), context));
-        // a configured list is authoritative over the legacy claim
-        assertFalse(ContentEnrichers.hasTextRecognizer(listOf(annotator), PNG, context));
+                MediaType.image("tiff"), target(MediaType.image("tiff")), context));
+        assertFalse(ContentEnrichers.hasTextRecognizer(null, PNG, target(PNG), context));
+        assertFalse(ContentEnrichers.hasTextRecognizer(null, null, target(null), context));
+        // no list: found by interface
+        context.set(Parser.class, compositeOf(new RecognizingParser(Set.of(PNG), true)));
+        assertTrue(ContentEnrichers.hasTextRecognizer(null, PNG, target(PNG), context));
+        assertFalse(ContentEnrichers.hasTextRecognizer(null, MediaType.image("tiff"),
+                target(MediaType.image("tiff")), context));
+        context.set(Parser.class, compositeOf(new RecognizingParser(Set.of(PNG), false)));
+        assertFalse(ContentEnrichers.hasTextRecognizer(null, PNG, target(PNG), context),
+                "a discovered recognizer that declines for this parse does not count");
+        context.set(Parser.class, compositeOf(new AnnotatingParser(Set.of(PNG))));
+        assertFalse(ContentEnrichers.hasTextRecognizer(null, PNG, target(PNG), context),
+                "a discovered annotator is not a recognizer");
+        // a legacy image/ocr-* claimant counts as a recognizer
+        context.set(Parser.class, compositeOf(new RecordingParser(Set.of(OCR_PNG))));
+        assertTrue(ContentEnrichers.hasTextRecognizer(null, PNG, target(PNG), context));
+        // a list is authoritative
+        assertFalse(ContentEnrichers.hasTextRecognizer(listOf(annotator), PNG, target(PNG), context));
+    }
+
+    @Test
+    public void testSuspendedRecognizers() throws Exception {
+        ParseContext context = new ParseContext();
+        RecordingParser annotator = new RecordingParser(Set.of(PNG));
+        RecognizingParser recognizer = new RecognizingParser(Set.of(PNG), true);
+        RecognizingParser declining = new RecognizingParser(Set.of(PNG), false);
+        RecordingParser legacy = new RecordingParser(Set.of(OCR_PNG));
+        CompositeContentEnricher list = listOf(recognizer, annotator, declining, legacy);
+
+        Parser annotators;
+        try (ContentEnrichers.Suspension scope = ContentEnrichers.suspendRecognizers(context)) {
+            annotators = ContentEnrichers.get(list, PNG, target(PNG), context);
+            assertNotNull(annotators);
+            assertFalse(ContentEnrichers.hasTextRecognizer(list, PNG, target(PNG), context));
+            assertNull(ContentEnrichers.get(listOf(recognizer), PNG, target(PNG), context));
+        }
+        invoke(annotators, new Metadata(), context);
+        assertEquals(1, annotator.calls);
+        assertEquals(0, recognizer.calls);
+        assertEquals(0, declining.calls, "a recognizer that declines is not an annotator");
+        assertEquals(0, legacy.calls, "a legacy claimant is a recognizer");
+        assertNotNull(ContentEnrichers.get(listOf(recognizer), PNG, target(PNG), context));
+        assertTrue(ContentEnrichers.hasTextRecognizer(list, PNG, target(PNG), context));
+
+        // no list: the discovered engine is filtered the same way
+        context.set(Parser.class, compositeOf(new AnnotatingParser(Set.of(PNG))));
+        try (ContentEnrichers.Suspension scope = ContentEnrichers.suspendRecognizers(context)) {
+            assertNotNull(ContentEnrichers.get(null, PNG, target(PNG), context));
+        }
+        context.set(Parser.class, compositeOf(new RecognizingParser(Set.of(PNG), true)));
+        try (ContentEnrichers.Suspension scope = ContentEnrichers.suspendRecognizers(context)) {
+            assertNull(ContentEnrichers.get(null, PNG, target(PNG), context));
+        }
+        assertNotNull(ContentEnrichers.get(null, PNG, target(PNG), context));
+    }
+
+    @Test
+    public void testSuspendedDispatch() throws Exception {
+        ParseContext context = new ParseContext();
+        CompositeContentEnricher list = listOf(new RecognizingParser(Set.of(PNG), true),
+                new RecordingParser(Set.of(PNG)));
+        try (ContentEnrichers.Suspension outer = ContentEnrichers.suspend(context)) {
+            assertNull(ContentEnrichers.get(list, PNG, target(PNG), context));
+            assertFalse(ContentEnrichers.hasTextRecognizer(list, PNG, target(PNG), context));
+            try (ContentEnrichers.Suspension inner = ContentEnrichers.suspend(context)) {
+                assertNull(ContentEnrichers.get(list, PNG, target(PNG), context));
+            }
+            assertNull(ContentEnrichers.get(list, PNG, target(PNG), context),
+                    "an inner scope restores the outer suspension, it does not lift it");
+            try (ContentEnrichers.Suspension inner =
+                         ContentEnrichers.suspendRecognizers(context)) {
+                assertNull(ContentEnrichers.get(list, PNG, target(PNG), context));
+            }
+            assertNull(ContentEnrichers.get(list, PNG, target(PNG), context),
+                    "a recognizer scope inside a full suspension changes nothing on close");
+        }
+        assertNotNull(ContentEnrichers.get(list, PNG, target(PNG), context));
+        assertTrue(ContentEnrichers.hasTextRecognizer(list, PNG, target(PNG), context));
     }
 
     @Test
@@ -130,15 +224,15 @@ public class ContentEnrichersTest {
             public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                               ParseContext ctx) {
                 metadata.set("nested-recognizer", ContentEnrichers.hasTextRecognizer(
-                        ctx.get(CompositeContentEnricher.class), PNG, ctx) ? "yes" : "no");
+                        ctx.get(CompositeContentEnricher.class), PNG, target(PNG), ctx) ? "yes" : "no");
             }
         };
         CompositeContentEnricher enrichers = listOf(
                 reentrant, new RecognizingParser(Collections.singleton(PNG), true));
         context.set(CompositeContentEnricher.class, enrichers);
-        assertTrue(ContentEnrichers.hasTextRecognizer(enrichers, PNG, context));
+        assertTrue(ContentEnrichers.hasTextRecognizer(enrichers, PNG, target(PNG), context));
         Metadata metadata = new Metadata();
-        invoke(ContentEnrichers.get(enrichers, PNG, context), metadata, context);
+        invoke(ContentEnrichers.get(enrichers, PNG, target(PNG), context), metadata, context);
         assertEquals("no", metadata.get("nested-recognizer"));
     }
 
@@ -150,21 +244,138 @@ public class ContentEnrichersTest {
     }
 
     @Test
-    public void testExplicitEnricherWinsOverLegacy() throws Exception {
+    public void testExplicitListWinsOverDiscovered() throws Exception {
         RecordingParser explicit = new RecordingParser(Collections.singleton(PNG));
-        RecordingParser composite = new RecordingParser(Collections.singleton(OCR_PNG));
+        RecognizingParser discovered = new RecognizingParser(Collections.singleton(PNG), true);
         CompositeContentEnricher enrichers =
                 new CompositeContentEnricher(List.of(explicit));
         ParseContext context = new ParseContext();
-        context.set(Parser.class, composite);
+        context.set(Parser.class, compositeOf(discovered));
 
-        Parser enricher = ContentEnrichers.get(enrichers, PNG, context);
+        Parser enricher = ContentEnrichers.get(enrichers, PNG, target(PNG), context);
         assertNotNull(enricher);
         invoke(enricher, new Metadata(), context);
         assertEquals(1, explicit.calls);
-        assertEquals(0, composite.calls);
-        // the explicit path never mints the pseudo-mime
+        assertEquals(0, discovered.calls);
         assertNull(explicit.overrideSeenDuringParse);
+    }
+
+    /** No list: invoked directly on the real type. */
+    @Test
+    public void testDiscoveredRecognizerInvokedDirectly() throws Exception {
+        RecognizingParser engine = new RecognizingParser(Collections.singleton(PNG), true);
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, compositeOf(new RecordingParser(Set.of(PNG)), engine));
+
+        Parser enricher = ContentEnrichers.get(null, PNG, target(PNG), context);
+        assertNotNull(enricher);
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, PNG.toString());
+        invoke(enricher, metadata, context);
+        assertEquals(1, engine.calls);
+        assertNull(engine.overrideSeenDuringParse);
+        assertNull(metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE));
+        assertEquals(PNG.toString(), metadata.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(RecognizingParser.class.getName(),
+                metadata.get(TikaCoreProperties.TIKA_PARSED_BY));
+        // a plain parser is dispatch, not enrichment
+        context.set(Parser.class, compositeOf(new RecordingParser(Set.of(PNG))));
+        assertNull(ContentEnrichers.get(null, PNG, target(PNG), context));
+    }
+
+    /**
+     * No list: an engine under "parsers" beats a discovered one, the last claimant wins
+     * within a tier, and a _mime-exclude on the entry applies.
+     */
+    @Test
+    public void testDiscoveryPrecedence() throws Exception {
+        RecognizingParser spiFirst = new RecognizingParser(Set.of(PNG), true);
+        RecognizingParser spiLast = new RecognizingParser(Set.of(PNG), true);
+        DefaultParser defaults = new DefaultParser(MediaTypeRegistry.getDefaultRegistry(),
+                new ServiceLoader(new ClassLoader(null) { })) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public List<Parser> getAllComponentParsers() {
+                return List.of(spiFirst, spiLast);
+            }
+        };
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, compositeOf(defaults));
+        invoke(ContentEnrichers.get(null, PNG, target(PNG), context), new Metadata(), context);
+        assertEquals(1, spiLast.calls, "within a tier the last claimant wins");
+        assertEquals(0, spiFirst.calls);
+
+        RecognizingParser configured = new RecognizingParser(Set.of(PNG), true);
+        context.set(Parser.class, compositeOf(configured, defaults));
+        invoke(ContentEnrichers.get(null, PNG, target(PNG), context), new Metadata(), context);
+        assertEquals(1, configured.calls, "an engine configured under parsers wins");
+        assertEquals(1, spiLast.calls);
+
+        Parser excluded = ParserDecorator.withoutTypes(configured, Set.of(PNG));
+        context.set(Parser.class, compositeOf(excluded, defaults));
+        invoke(ContentEnrichers.get(null, PNG, target(PNG), context), new Metadata(), context);
+        assertEquals(1, configured.calls, "an excluded type falls through to the next tier");
+        assertEquals(2, spiLast.calls);
+    }
+
+    private static DefaultParser spiDefaults(Parser... found) {
+        return new DefaultParser(MediaTypeRegistry.getDefaultRegistry(),
+                new ServiceLoader(new ClassLoader(null) { })) {
+            private static final long serialVersionUID = 1L;
+
+            @Override
+            public List<Parser> getAllComponentParsers() {
+                return List.of(found);
+            }
+        };
+    }
+
+    /** A filter on the default-parser entry applies to the engines discovered inside it. */
+    @Test
+    public void testDefaultParserFilterAppliesToDiscovery() {
+        MediaType tiff = MediaType.image("tiff");
+        DefaultParser defaults = spiDefaults(new RecognizingParser(Set.of(PNG, tiff), true));
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, compositeOf(
+                ParserDecorator.withMimeFilters(defaults, null, Set.of(PNG))));
+        assertNull(ContentEnrichers.get(null, PNG, target(PNG), context), "excluded on default-parser");
+        assertNotNull(ContentEnrichers.get(null, tiff, target(tiff), context));
+        context.set(Parser.class, compositeOf(
+                ParserDecorator.withMimeFilters(defaults, Set.of(tiff), null)));
+        assertNull(ContentEnrichers.get(null, PNG, target(PNG), context), "not included on default-parser");
+        assertNotNull(ContentEnrichers.get(null, tiff, target(tiff), context));
+    }
+
+    /** The capability is asked of the engine, not the decorator around it. */
+    @Test
+    public void testTextRecognizerSeenThroughDecorator() {
+        MediaType tiff = MediaType.image("tiff");
+        Parser decorated = ParserDecorator.withMimeFilters(
+                new RecognizingParser(Set.of(PNG, tiff), true), null, Set.of(tiff));
+        ParseContext context = new ParseContext();
+        assertTrue(ContentEnrichers.hasTextRecognizer(listOf(decorated), PNG, target(PNG), context));
+        assertFalse(ContentEnrichers.hasTextRecognizer(listOf(decorated), tiff, target(tiff), context));
+        context.set(Parser.class, compositeOf(decorated));
+        assertTrue(ContentEnrichers.hasTextRecognizer(null, PNG, target(PNG), context));
+        assertFalse(ContentEnrichers.hasTextRecognizer(null, tiff, target(tiff), context));
+    }
+
+    /** A real-type filter on a legacy engine's entry applies in discovery. */
+    @Test
+    public void testLegacyClaimantHonorsRealTypeFilter() {
+        MediaType tiff = MediaType.image("tiff");
+        RecordingParser legacy =
+                new RecordingParser(Set.of(OCR_PNG, MediaType.image("ocr-tiff")));
+        ParseContext context = new ParseContext();
+        context.set(Parser.class, compositeOf(
+                ParserDecorator.withMimeFilters(legacy, null, Set.of(tiff))));
+        assertNull(ContentEnrichers.get(null, tiff, target(tiff), context));
+        assertNotNull(ContentEnrichers.get(null, PNG, target(PNG), context));
+        context.set(Parser.class, compositeOf(
+                ParserDecorator.withMimeFilters(legacy, Set.of(tiff), null)));
+        assertNotNull(ContentEnrichers.get(null, tiff, target(tiff), context));
+        assertNull(ContentEnrichers.get(null, PNG, target(PNG), context));
     }
 
     @Test
@@ -181,48 +392,49 @@ public class ContentEnrichersTest {
         }
     }
 
+    /** A legacy image/ocr-* engine is discovered for the real type. */
     @Test
-    public void testLegacyFallbackMintsAndRestores() throws Exception {
-        RecordingParser composite = new RecordingParser(Collections.singleton(OCR_PNG));
+    public void testLegacyClaimantDiscovered() throws Exception {
+        RecordingParser legacy = new RecordingParser(Collections.singleton(OCR_PNG));
         ParseContext context = new ParseContext();
-        context.set(Parser.class, composite);
+        context.set(Parser.class, compositeOf(legacy));
 
-        Parser enricher = ContentEnrichers.get(null, PNG, context);
+        Parser enricher = ContentEnrichers.get(null, PNG, target(PNG), context);
         assertNotNull(enricher);
 
         Metadata metadata = new Metadata();
         metadata.set(HttpHeaders.CONTENT_TYPE, PNG.toString());
         invoke(enricher, metadata, context);
 
-        assertEquals(1, composite.calls);
-        assertEquals(OCR_PNG.toString(), composite.overrideSeenDuringParse);
-        assertNull(metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE));
+        assertEquals(1, legacy.calls);
+        assertNull(legacy.overrideSeenDuringParse, "nothing is minted any more");
         assertEquals(PNG.toString(), metadata.get(HttpHeaders.CONTENT_TYPE));
+        assertNull(ContentEnrichers.get(null, MediaType.image("tiff"), target(MediaType.image("tiff")), context));
     }
 
     @Test
     public void testNoneAvailable() {
         ParseContext context = new ParseContext();
-        assertNull(ContentEnrichers.get(null, PNG, context));
+        assertNull(ContentEnrichers.get(null, PNG, target(PNG), context));
         // composite that claims nothing
-        context.set(Parser.class, new RecordingParser(Collections.emptySet()));
-        assertNull(ContentEnrichers.get(null, PNG, context));
-        assertNull(ContentEnrichers.get(null, null, context));
+        context.set(Parser.class, compositeOf(new RecognizingParser(Collections.emptySet(), true)));
+        assertNull(ContentEnrichers.get(null, PNG, target(PNG), context));
+        assertNull(ContentEnrichers.get(null, null, target(null), context));
     }
 
     @Test
     public void testConfiguredListIsAuthoritative() throws Exception {
-        // the composite claims ocr-tiff, but a list that doesn't cover tiff wins anyway
         RecordingParser explicit = new RecordingParser(Collections.singleton(PNG));
-        RecordingParser composite =
-                new RecordingParser(Collections.singleton(MediaType.image("ocr-tiff")));
+        RecognizingParser discovered =
+                new RecognizingParser(Collections.singleton(MediaType.image("tiff")), true);
         CompositeContentEnricher enrichers = new CompositeContentEnricher(List.of(explicit));
         ParseContext context = new ParseContext();
-        context.set(Parser.class, composite);
+        context.set(Parser.class, compositeOf(discovered));
 
-        assertNull(ContentEnrichers.get(enrichers, MediaType.image("tiff"), context));
-        // with no list configured, the same composite is reachable via legacy dispatch
-        assertNotNull(ContentEnrichers.get(null, MediaType.image("tiff"), context));
+        assertNull(ContentEnrichers.get(enrichers, MediaType.image("tiff"),
+                target(MediaType.image("tiff")), context));
+        assertNotNull(ContentEnrichers.get(null, MediaType.image("tiff"),
+                target(MediaType.image("tiff")), context));
     }
 
     @Test
@@ -232,7 +444,8 @@ public class ContentEnrichersTest {
         ParseContext context = new ParseContext();
 
         Parser enricher = ContentEnrichers.get(enrichers,
-                MediaType.parse("image/png; charset=binary"), context);
+                MediaType.parse("image/png; charset=binary"),
+                        target(MediaType.parse("image/png; charset=binary")), context);
         assertNotNull(enricher, "parameterized type must match the base-type registration");
         invoke(enricher, new Metadata(), context);
         assertEquals(1, explicit.calls);
@@ -259,11 +472,11 @@ public class ContentEnrichersTest {
 
         Metadata metadata = new Metadata();
         metadata.set(HttpHeaders.CONTENT_TYPE, PNG.toString());
-        invoke(ContentEnrichers.get(enrichers, PNG, context), metadata, context);
+        invoke(ContentEnrichers.get(enrichers, PNG, target(PNG), context), metadata, context);
         assertEquals(PNG.toString(), metadata.get(HttpHeaders.CONTENT_TYPE));
 
         Metadata unset = new Metadata();
-        invoke(ContentEnrichers.get(enrichers, PNG, context), unset, context);
+        invoke(ContentEnrichers.get(enrichers, PNG, target(PNG), context), unset, context);
         assertNull(unset.get(HttpHeaders.CONTENT_TYPE));
     }
 
@@ -291,7 +504,7 @@ public class ContentEnrichersTest {
                 new CompositeContentEnricher(List.of(failing, blowingUp, third));
         ParseContext context = new ParseContext();
 
-        Parser enricher = ContentEnrichers.get(enrichers, PNG, context);
+        Parser enricher = ContentEnrichers.get(enrichers, PNG, target(PNG), context);
         assertNotNull(enricher);
         NullPointerException thrown = org.junit.jupiter.api.Assertions.assertThrows(
                 NullPointerException.class, () -> invoke(enricher, new Metadata(), context));
@@ -309,10 +522,15 @@ public class ContentEnrichersTest {
         CompositeContentEnricher enrichers = new CompositeContentEnricher(List.of(first, second));
         ParseContext context = new ParseContext();
 
-        Parser enricher = ContentEnrichers.get(enrichers, PNG, context);
+        Parser enricher = ContentEnrichers.get(enrichers, PNG, target(PNG), context);
         assertNotNull(enricher);
-        invoke(enricher, new Metadata(), context);
+        Metadata metadata = new Metadata();
+        invoke(enricher, metadata, context);
         assertEquals(List.of("first", "second"), order);
+        // both members share one class: recorded once
+        assertEquals(List.of(first.getClass().getName()),
+                List.of(metadata.getValues(TikaCoreProperties.TIKA_PARSED_BY)),
+                "an invoked enricher is recorded as the composite would record it");
     }
 
     @Test
@@ -323,7 +541,7 @@ public class ContentEnrichersTest {
         CompositeContentEnricher enrichers = new CompositeContentEnricher(List.of(failing, second));
         ParseContext context = new ParseContext();
 
-        Parser enricher = ContentEnrichers.get(enrichers, PNG, context);
+        Parser enricher = ContentEnrichers.get(enrichers, PNG, target(PNG), context);
         assertNotNull(enricher);
         TikaException thrown = org.junit.jupiter.api.Assertions.assertThrows(TikaException.class,
                 () -> invoke(enricher, new Metadata(), context));
@@ -331,7 +549,7 @@ public class ContentEnrichersTest {
         assertEquals(List.of("failing", "second"), order);
         assertEquals("failing failed", thrown.getMessage());
         // the guard is released even when the chain throws
-        assertNotNull(ContentEnrichers.get(enrichers, PNG, context));
+        assertNotNull(ContentEnrichers.get(enrichers, PNG, target(PNG), context));
     }
 
     @Test
@@ -357,7 +575,7 @@ public class ContentEnrichersTest {
                 new CompositeContentEnricher(List.of(timingOut, second));
         ParseContext context = new ParseContext();
 
-        Parser enricher = ContentEnrichers.get(enrichers, PNG, context);
+        Parser enricher = ContentEnrichers.get(enrichers, PNG, target(PNG), context);
         assertNotNull(enricher);
         org.junit.jupiter.api.Assertions.assertThrows(
                 org.apache.tika.exception.TikaTimeoutException.class,
@@ -410,13 +628,14 @@ public class ContentEnrichersTest {
                 new CompositeContentEnricher(List.of(legacyEngine));
         ParseContext context = new ParseContext();
 
-        Parser forPng = ContentEnrichers.get(enrichers, PNG, context);
+        Parser forPng = ContentEnrichers.get(enrichers, PNG, target(PNG), context);
         assertNotNull(forPng, "ocr-png advertisement must be nameable for image/png");
         invoke(forPng, new Metadata(), context);
         assertEquals(List.of("legacyEngine"), order);
 
         order.clear();
-        Parser forJp2 = ContentEnrichers.get(enrichers, MediaType.image("jp2"), context);
+        Parser forJp2 = ContentEnrichers.get(enrichers, MediaType.image("jp2"),
+                target(MediaType.image("jp2")), context);
         assertNotNull(forJp2);
         invoke(forJp2, new Metadata(), context);
         assertEquals(List.of("legacyEngine"), order,
@@ -440,20 +659,69 @@ public class ContentEnrichersTest {
                               ParseContext ctx) {
                 metadata.set("nested-enricher",
                         ContentEnrichers.get(
-                                ctx.get(CompositeContentEnricher.class), PNG, ctx) == null
+                                ctx.get(CompositeContentEnricher.class), PNG, target(PNG), ctx) == null
                                 ? "refused" : "allowed");
             }
         };
         CompositeContentEnricher enrichers = new CompositeContentEnricher(List.of(reentrant));
         context.set(CompositeContentEnricher.class, enrichers);
 
-        Parser enricher = ContentEnrichers.get(enrichers, PNG, context);
+        Parser enricher = ContentEnrichers.get(enrichers, PNG, target(PNG), context);
         assertNotNull(enricher);
         Metadata metadata = new Metadata();
         invoke(enricher, metadata, context);
         assertEquals("refused", metadata.get("nested-enricher"));
 
         // and enrichment is available again once the first one completes
-        assertNotNull(ContentEnrichers.get(enrichers, PNG, context));
+        assertNotNull(ContentEnrichers.get(enrichers, PNG, target(PNG), context));
+    }
+
+    /** Load-time resolution applies the discovery rules once, for every type. */
+    @Test
+    public void testResolveOneEnginePerType() throws Exception {
+        MediaType tiff = MediaType.image("tiff");
+        RecognizingParser spiFirst = new RecognizingParser(Set.of(PNG, tiff), true);
+        RecognizingParser spiLast = new RecognizingParser(Set.of(tiff), true);
+        RecognizingParser configured = new RecognizingParser(Set.of(PNG), true);
+        CompositeContentEnricher resolved = ContentEnrichers.resolve(
+                compositeOf(configured, spiDefaults(spiFirst, spiLast)));
+        assertEquals(Set.of(PNG, tiff), resolved.getSupportedTypes());
+        assertEquals(List.of(configured), resolved.getEnrichers(PNG),
+                "an engine configured under parsers wins its types");
+        assertEquals(List.of(spiLast), resolved.getEnrichers(tiff),
+                "within the default tier the last claimant wins");
+        assertFalse(resolved.isLegacyClaimant(configured));
+
+        ParseContext context = new ParseContext();
+        assertTrue(ContentEnrichers.hasTextRecognizer(resolved, PNG, target(PNG), context));
+        invoke(ContentEnrichers.get(resolved, tiff, target(tiff), context), new Metadata(), context);
+        assertEquals(1, spiLast.calls);
+        assertEquals(0, spiFirst.calls);
+
+        // a filter on the default-parser entry applies to the engines inside it
+        resolved = ContentEnrichers.resolve(compositeOf(ParserDecorator.withMimeFilters(
+                spiDefaults(spiFirst, spiLast), null, Set.of(tiff))));
+        assertEquals(Set.of(PNG), resolved.getSupportedTypes());
+        assertEquals(List.of(spiFirst), resolved.getEnrichers(PNG));
+
+        assertTrue(ContentEnrichers.resolve(compositeOf(new RecordingParser(Set.of(PNG))))
+                .isEmpty(), "a tree without enrichers resolves to nothing");
+    }
+
+    /** A legacy image/ocr-* claimant counts as a text recognizer on both paths until 5.0. */
+    @Test
+    public void testLegacyClaimantIsRecognizerOnBothPaths() {
+        RecordingParser legacy = new RecordingParser(Set.of(OCR_PNG));
+        ParseContext context = new ParseContext();
+        assertTrue(ContentEnrichers.hasTextRecognizer(listOf(legacy), PNG, target(PNG), context),
+                "named in the list");
+        CompositeContentEnricher resolved =
+                ContentEnrichers.resolve(compositeOf(spiDefaults(legacy)));
+        assertEquals(List.of(legacy), resolved.getEnrichers(PNG));
+        assertTrue(resolved.isLegacyClaimant(legacy));
+        assertTrue(ContentEnrichers.hasTextRecognizer(resolved, PNG, target(PNG), context), "resolved");
+        assertFalse(ContentEnrichers.hasTextRecognizer(
+                listOf(new AnnotatingParser(Set.of(PNG))), PNG, target(PNG), context),
+                "an enricher advertising real types without the capability is not one");
     }
 }

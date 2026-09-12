@@ -94,21 +94,16 @@ public class Tess4JParser implements Parser, Initializable, TextRecognizer {
 
     private static final Logger LOG = LoggerFactory.getLogger(Tess4JParser.class);
 
-    private static final String OCR = "ocr-";
-
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MediaType.image(OCR + "png"),
-                    MediaType.image(OCR + "jpeg"),
-                    MediaType.image(OCR + "tiff"),
-                    MediaType.image(OCR + "bmp"),
-                    MediaType.image(OCR + "gif"),
+                    MediaType.image("png"),
+                    MediaType.image("jpeg"),
+                    MediaType.image("tiff"),
+                    MediaType.image("bmp"),
+                    MediaType.image("gif"),
                     MediaType.image("jp2"),
                     MediaType.image("jpx"),
-                    MediaType.image("x-portable-pixmap"),
-                    MediaType.image(OCR + "jp2"),
-                    MediaType.image(OCR + "jpx"),
-                    MediaType.image(OCR + "x-portable-pixmap")
+                    MediaType.image("x-portable-pixmap")
             )));
 
     private static volatile boolean HAS_WARNED = false;
@@ -494,6 +489,19 @@ public class Tess4JParser implements Parser, Initializable, TextRecognizer {
     /**
      * Resolves the effective config: JSON config > ParseContext config > default.
      */
+    @Override
+    public boolean recognizesText(ParseContext context) {
+        if (!initialized) {
+            return false;
+        }
+        try {
+            return !getConfig(context).isSkipOcr();
+        } catch (TikaConfigException | IOException e) {
+            // parse() surfaces the broken config; for the question asked, nothing is recognized
+            return false;
+        }
+    }
+
     private Tess4JConfig getConfig(ParseContext parseContext)
             throws TikaConfigException, IOException {
 
