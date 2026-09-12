@@ -56,6 +56,7 @@ import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.hook.ParseHooks;
 import org.apache.tika.parser.inference.EngineRegistry;
 import org.apache.tika.parser.inference.InferenceDispatcher;
+import org.apache.tika.parser.inference.TextInferenceFilter;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -125,12 +126,8 @@ public class TikaLoader {
                 .register();
 
         // Simple components with default list-based loading
-        ComponentConfig.builder("metadata-filters", MetadataFilter.class)
-                .loadAsList()
-                .wrapWith(list -> list.isEmpty()
-                        ? NoOpFilter.NOOP_FILTER
-                        : new CompositeMetadataFilter((List<MetadataFilter>) list))
-                .defaultProvider(() -> NoOpFilter.NOOP_FILTER)
+        ComponentConfig.builder(MetadataFilterLoader.KEY, MetadataFilter.class)
+                .customLoader(new MetadataFilterLoader())
                 .register();
 
         ComponentConfig.builder("renderers", Renderer.class)
@@ -875,7 +872,14 @@ public class TikaLoader {
         } else if (component instanceof CompositeDetector cd) {
             return cd.getDetectors();
         } else if (component instanceof CompositeMetadataFilter cmf) {
-            return cmf.getFilters();
+            // the TEXT inference stage is derived from "inference", which is dumped on its own
+            List<MetadataFilter> configured = new ArrayList<>();
+            for (MetadataFilter filter : cmf.getFilters()) {
+                if (!(filter instanceof TextInferenceFilter)) {
+                    configured.add(filter);
+                }
+            }
+            return configured;
         } else if (component instanceof CompositeEncodingDetector ced) {
             return ced.getDetectors();
         }

@@ -28,11 +28,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.filter.CompositeMetadataFilter;
+import org.apache.tika.metadata.filter.MetadataFilter;
+import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
@@ -41,6 +46,7 @@ import org.apache.tika.parser.inference.InferenceBinding;
 import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.parser.inference.InferenceSelection;
 import org.apache.tika.parser.inference.InputKind;
+import org.apache.tika.parser.inference.TextInferenceFilter;
 
 public class InferenceLoaderTest {
 
@@ -113,6 +119,56 @@ public class InferenceLoaderTest {
                 "a PAGES binding never takes an image document");
         assertTrue(dispatcher.wantsPages(MediaType.image("png"), new Metadata(),
                 new ParseContext()));
+    }
+
+    /** A TEXT binding carries its chunker and puts the TEXT stage at the end of the filters. */
+    @Test
+    public void testTextBindingLoadsWithChunkerAndFilter() throws Exception {
+        TikaLoader loader = load("{" + ENGINES + ", \"inference\": ["
+                + " { \"id\": \"text-vectors\", \"engine\": \"one\", \"input\": \"TEXT\","
+                + "   \"tasks\": [\"test-task\"], \"chunker\": { \"test-chunker\": { \"size\": 3 } } } ],"
+                + " \"metadata-filters\": [ { \"no-op-filter\": {} } ] }");
+        InferenceBinding text = loader.get(InferenceDispatcher.class).getBound().get(0).binding();
+        assertEquals(InputKind.TEXT, text.getInput());
+        assertTrue(text.getChunker() instanceof TestChunker);
+        assertEquals(3, ((TestChunker) text.getChunker()).getSize());
+        assertEquals(2, text.getChunker().spans("abcde").size());
+
+        MetadataFilter filters = loader.get(MetadataFilter.class);
+        assertTrue(filters instanceof CompositeMetadataFilter);
+        List<MetadataFilter> chain = ((CompositeMetadataFilter) filters).getFilters();
+        assertEquals(2, chain.size(), "the configured filter, then the TEXT stage");
+        assertTrue(chain.get(1) instanceof TextInferenceFilter);
+
+        Path dump = Files.createTempFile(tmp, "dump", ".json");
+        loader.save(dump.toFile());
+        JsonNode dumped = new ObjectMapper().readTree(Files.readString(dump));
+        assertEquals(1, dumped.get("metadata-filters").size(),
+                "the dump keeps the configured filter; the TEXT stage is derived from inference");
+        assertEquals("TEXT", dumped.get("inference").get(0).get("input").asText());
+
+        TikaLoader noText = load("{" + ENGINES + ", \"inference\": ["
+                + " { \"engine\": \"one\", \"input\": \"IMAGES\", \"tasks\": [\"test-task\"] } ] }");
+        assertSame(NoOpFilter.NOOP_FILTER, noText.get(MetadataFilter.class),
+                "no TEXT binding, no filters: the chain is untouched");
+    }
+
+    @Test
+    public void testChunkerMisconfigurationsFailLoad() {
+        String[] bad = {
+            "{" + ENGINES + ", \"inference\": [ { \"engine\": \"one\", \"input\": \"IMAGES\","
+                    + " \"tasks\": [\"test-task\"], \"chunker\": { \"test-chunker\": {} } } ] }",
+            "{" + ENGINES + ", \"inference\": [ { \"engine\": \"one\", \"input\": \"TEXT\","
+                    + " \"tasks\": [\"test-task\"], \"chunker\": { \"no-such-chunker\": {} } } ] }",
+            "{" + ENGINES + ", \"inference\": [ { \"engine\": \"one\", \"input\": \"TEXT\","
+                    + " \"tasks\": [\"test-task\"], \"chunker\": \"test-chunker\" } ] }",
+            "{" + ENGINES + ", \"inference\": [ { \"engine\": \"one\", \"input\": \"TEXT\","
+                    + " \"tasks\": [\"test-task\"], \"chunker\": { \"test-engine\": {} } } ] }",
+        };
+        for (String json : bad) {
+            assertThrows(TikaConfigException.class,
+                    () -> load(json).get(InferenceDispatcher.class), json);
+        }
     }
 
     @Test

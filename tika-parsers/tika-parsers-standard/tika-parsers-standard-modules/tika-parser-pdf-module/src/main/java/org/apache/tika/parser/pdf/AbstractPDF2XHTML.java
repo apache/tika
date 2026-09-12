@@ -277,6 +277,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         }
         this.pagesForInference = wantsPages;
+        if (wantsPages) {
+            // the TEXT stage skips a document released as pages unless TEXT is listed too
+            for (InferenceConfig.Input input : config.getInference().getInput()) {
+                metadata.add(TikaCoreProperties.INFERENCE_RELEASED, input.name());
+            }
+        }
     }
 
     private static void addNonNullAttribute(String name, String value, AttributesImpl attributes) {

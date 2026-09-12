@@ -68,11 +68,14 @@ A list of bindings. Each names an engine, says what it is fed, and what to ask:
   picture, an image attachment, a top-level image file; a page render emitted as an embedded
   document is not one. `PAGES` is one image per rendered page of a document whose parser
   renders pages for inference: the PDF parser, when its `inference.input` says so (see
-  <<pages>>). (`TEXT` and `MEDIA` follow.)
+  <<pages>>). `TEXT` is the extracted text of every document in the tree (see <<text>>).
+  (`MEDIA` follows.)
 `tasks`:: One call per task on the same engine and input. `embed` writes one vector chunk per
   unit into `tk:chunks`, with the page locator when the unit has a page.
 `maxChunks`:: How many units one document tree may send; for `PAGES`, how many pages of one
-  document; -1 for no limit.
+  document; for `TEXT`, how many chunks across the tree; -1 for no limit.
+`chunker`:: `TEXT` only: how a document's text is cut, `{ "markdown-chunker": { "maxChunkChars":
+  1500, "overlapChars": 200 } }`. Without one the whole text is one chunk.
 `maxBytes`:: Largest unit the binding accepts (20 MB unless set; -1 for no limit); larger
   ones are skipped and counted.
 `enabled`:: `false` keeps the binding configured but idle until a request selects it.
@@ -150,6 +153,46 @@ Per request, like every PDF setting:
 { "parse-context": { "pdf-parser": { "inference": { "input": ["PAGES"] } },
                      "inference": { "bindings": ["page-vectors"] } } }
 ----
+
+[#text]
+== Text
+
+A `TEXT` binding embeds the extracted text of every document in the tree, the container and
+its attachments alike:
+
+[source,json]
+----
+{
+  "engines": {
+    "embedder": { "openai-embedding-engine": { "baseUrl": "http://embed:8000", "model": "bge-m3" } }
+  },
+  "inference": [
+    { "id": "text-vectors", "engine": "embedder", "input": "TEXT", "tasks": ["embed"],
+      "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } },
+      "maxChunks": 500 }
+  ]
+}
+----
+
+It runs after the parse, as the last of the metadata filters, over the finished metadata
+list: every document's `tk:content` is chunked, the chunks of the whole tree are sent in
+`maxBatchSize` requests in document order (a request may hold a container's last chunks and
+an attachment's first; the endpoint treats inputs independently and answers by index), and
+each chunk lands on the document its text came from, with a `text` locator and the binding
+as its `producer`. A rejected request is retried one document at a time. `maxChunks` caps the
+chunks of the tree, `maxBytes` the text of one document, and `_mime-include`/`_mime-exclude`
+narrow by document type. Use a `MARKDOWN` content handler for the chunker to see headings.
+
+A document that released other inputs to inference is not embedded twice: a PDF parsed with
+`inference.input: ["PAGES"]` records `tk:inference-released: PAGES` and the TEXT stage skips
+it; list `["TEXT", "PAGES"]` to get both. Because this stage runs over the metadata list, it
+covers `-J`, `/rmeta` and pipes; the streaming `/tika` endpoint has no list and no text
+vectors. A per-request `metadata-filters` list replaces the configured chain, this stage
+included.
+
+The 4.0 `openai-embedding-filter` and `jina-embedding-filter` keep working and embed one
+document per request; the binding batches the tree and shares the engine with the other
+bindings.
 
 == Per request
 

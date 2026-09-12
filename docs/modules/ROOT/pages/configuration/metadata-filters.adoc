@@ -115,8 +115,10 @@ Adding the module to the classpath is enough to make the name resolvable.
 
 |`openai-embedding-filter`, `jina-embedding-filter`
 |`tika-inference`
-|Chunks `tk:content` and calls an embeddings endpoint, putting the vectors on `tk:chunks`. See
-xref:migration-to-4x/chunk-strategies.adoc[Chunk Strategies].
+|Chunks `tk:content` and calls an embeddings endpoint, putting the vectors on `tk:chunks`, one
+document per request. Since 4.1.0 a `TEXT` xref:configuration/inference.adoc#text[inference
+binding] does the same for the whole tree in batched requests and is appended to this chain
+automatically. See xref:migration-to-4x/chunk-strategies.adoc[Chunk Strategies].
 
 |`charsoup-metadata-filter`, `optimaize-metadata-filter`, `open-nlp-metadata-filter`
 |`tika-langdetect-charsoup`, `-optimaize`, `-opennlp`
