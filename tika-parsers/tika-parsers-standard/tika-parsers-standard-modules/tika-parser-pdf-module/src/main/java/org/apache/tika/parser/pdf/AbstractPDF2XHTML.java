@@ -711,7 +711,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return PageOcr.SKIPPED;
         }
         if (ocrEngine == null) {
-            if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
+            if ((ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION)
+                    && !ContentEnrichers.isDisabled(context)) {
                 throw new TikaException(
                         "I regret that I couldn't find an OCR engine to handle " +
                                 ocrImageMediaType + ". Name one that covers it in " +
