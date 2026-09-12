@@ -153,6 +153,16 @@ public class ChunkSerializerTest {
     }
 
     @Test
+    void testProducerRoundTrips() throws Exception {
+        Chunk chunk = new Chunk("t", 0, 1);
+        chunk.setProducer("text-vectors");
+        List<Chunk> back = ChunkSerializer.fromJson(ChunkSerializer.toJson(List.of(chunk)));
+        assertEquals("text-vectors", back.get(0).getProducer());
+        assertNull(ChunkSerializer.fromJson(ChunkSerializer.toJson(
+                List.of(new Chunk("t", 0, 1)))).get(0).getProducer());
+    }
+
+    @Test
     void testWithoutVector() throws Exception {
         Chunk c = new Chunk("No vector", 0, 9);
         String json = ChunkSerializer.toJson(List.of(c));

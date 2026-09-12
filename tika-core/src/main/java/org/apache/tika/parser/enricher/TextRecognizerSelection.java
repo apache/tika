@@ -14,25 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.inference;
+package org.apache.tika.parser.enricher;
 
-import java.io.IOException;
-import java.util.List;
+import java.io.Serializable;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.inference.Engine;
+import org.apache.tika.annotation.TikaComponent;
 
-/** An engine that turns images into vectors, many per request. */
-public interface EmbeddingEngine extends Engine {
+/**
+ * The per-request switch for the {@code "text-recognizers"} list:
+ * {@code {"parse-context": {"text-recognizers": {"enabled": false}}}} runs no recognizer or
+ * annotator from the list for this parse, in every container. Wire-safe: it names nothing.
+ *
+ * @since Apache Tika 4.1
+ */
+@TikaComponent(name = "text-recognizers", spi = false)
+public class TextRecognizerSelection implements Serializable {
 
-    /** One request; the vectors come back in the order of the images. */
-    List<float[]> embedImages(List<byte[]> images, List<String> mimeTypes, ParseContext context)
-            throws IOException, TikaException;
+    private static final long serialVersionUID = 1L;
 
-    /** One request; the vectors come back in the order of the texts. */
-    List<float[]> embedTexts(List<String> texts, ParseContext context)
-            throws IOException, TikaException;
+    private boolean enabled = true;
 
-    int getMaxBatchSize();
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 }

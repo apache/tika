@@ -107,6 +107,16 @@ public class PipesClientTest {
             Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
             assertEquals("mock-images", metadata.get(MockTask.MARKER_KEY));
             assertEquals("1", metadata.get(MockTask.UNITS_KEY));
+
+            // the TEXT stage runs at the emit edge of the fork
+            Files.writeString(inputDir.resolve("note.txt"), "a note with text");
+            pipesResult = pipesClient.process(
+                    new FetchEmitTuple("note.txt", new FetchKey(fetcherName, "note.txt"),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            metadata = pipesResult.emitData().getMetadataList().get(0);
+            assertEquals("mock-text", metadata.get(MockTask.MARKER_KEY));
+            assertEquals("1", metadata.get(MockTask.UNITS_KEY));
         }
     }
 

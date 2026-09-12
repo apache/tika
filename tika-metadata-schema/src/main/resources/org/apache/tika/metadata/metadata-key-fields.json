@@ -529,6 +529,7 @@
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"FORMAT","key":"dc:format"},
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"HAS_SIGNATURE","key":"tk:has-signature"},
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"IDENTIFIER","key":"dc:identifier"},
+  {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"INFERENCE_RELEASED","key":"tk:inference-released"},
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"INTERNAL_PATH","key":"tk:internal-path"},
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"IS_ENCRYPTED","key":"tk:encrypted"},
   {"class":"org.apache.tika.metadata.TikaCoreProperties","field":"LANGUAGE","key":"dc:language"},

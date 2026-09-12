@@ -277,6 +277,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         }
         this.pagesForInference = wantsPages;
+        if (wantsPages) {
+            // the TEXT stage skips a document released as pages unless TEXT is listed too
+            for (InferenceConfig.Input input : config.getInference().getInput()) {
+                metadata.add(TikaCoreProperties.INFERENCE_RELEASED, input.name());
+            }
+        }
     }
 
     private static void addNonNullAttribute(String name, String value, AttributesImpl attributes) {
@@ -705,7 +711,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return PageOcr.SKIPPED;
         }
         if (ocrEngine == null) {
-            if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
+            if ((ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION)
+                    && !ContentEnrichers.isDisabled(context)) {
                 throw new TikaException(
                         "I regret that I couldn't find an OCR engine to handle " +
                                 ocrImageMediaType + ". Name one that covers it in " +

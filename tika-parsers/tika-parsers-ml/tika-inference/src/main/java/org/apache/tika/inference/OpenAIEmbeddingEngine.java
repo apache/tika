@@ -73,17 +73,38 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable, Cl
     @Override
     public List<float[]> embedImages(List<byte[]> images, List<String> mimeTypes,
                                      ParseContext context) throws IOException, TikaException {
-        if (httpClient == null) {
-            httpClient = TikaHttpClient.build(30);
-        }
-        ObjectNode root = MAPPER.createObjectNode();
-        if (!StringUtils.isBlank(model)) {
-            root.put("model", model);
-        }
+        ObjectNode root = request();
         ArrayNode input = root.putArray("input");
         for (int i = 0; i < images.size(); i++) {
             input.addObject().put("image", "data:" + mimeTypes.get(i) + ";base64,"
                     + Base64.getEncoder().encodeToString(images.get(i)));
+        }
+        return post(root, images.size(), context);
+    }
+
+    @Override
+    public List<float[]> embedTexts(List<String> texts, ParseContext context)
+            throws IOException, TikaException {
+        ObjectNode root = request();
+        ArrayNode input = root.putArray("input");
+        for (String text : texts) {
+            input.add(text);
+        }
+        return post(root, texts.size(), context);
+    }
+
+    private ObjectNode request() {
+        ObjectNode root = MAPPER.createObjectNode();
+        if (!StringUtils.isBlank(model)) {
+            root.put("model", model);
+        }
+        return root;
+    }
+
+    private List<float[]> post(ObjectNode root, int expected, ParseContext context)
+            throws IOException, TikaException {
+        if (httpClient == null) {
+            httpClient = TikaHttpClient.build(30);
         }
         Map<String, String> headers = new HashMap<>();
         if (!StringUtils.isBlank(apiKey)) {
@@ -92,7 +113,7 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable, Cl
         String url = baseUrl.replaceAll("/+$", "") + embeddingsPath;
         String body = httpClient.postJson(url, root.toString(), headers, timeoutMillis, context);
         ParseTimeout.checkpoint(context);
-        return parseResponse(body, images.size());
+        return parseResponse(body, expected);
     }
 
     static List<float[]> parseResponse(String body, int expected) throws TikaException {

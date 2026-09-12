@@ -84,6 +84,7 @@ import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.parser.enricher.TextRecognizer;
+import org.apache.tika.parser.enricher.TextRecognizerSelection;
 import org.apache.tika.parser.hook.ParseHook;
 import org.apache.tika.parser.hook.ParseHooks;
 import org.apache.tika.renderer.RenderingTracker;
@@ -1913,6 +1914,9 @@ public class PDFParserTest extends TikaTest {
             assertTrue(hook.sizes.get(0) > 0, label + ": the render has bytes");
             assertEquals(2, tracker.getNextId() - 1, label + ": one render per page");
             assertEquals(strategy == OcrConfig.Strategy.NO_OCR ? 0 : 2, recognizer.calls, label);
+            assertArrayEquals(new String[]{"PAGES"},
+                    metadata.getValues(TikaCoreProperties.INFERENCE_RELEASED),
+                    label + ": the PDF says it released its pages, not its text");
         }
     }
 
@@ -1944,6 +1948,34 @@ public class PDFParserTest extends TikaTest {
         assertEquals(1, unwilling.wantsPagesCalls, "asked once per document");
         assertTrue(unwilling.pages.isEmpty());
         assertEquals(0, tracker.getNextId() - 1, "no binding wants pages: nothing is rendered");
+    }
+
+    /** The request's switch: no OCR, text kept, and OCR_ONLY does not complain about an engine. */
+    @Test
+    public void testRecognizersOffPerRequest() throws Exception {
+        TextRecognizerSelection off = new TextRecognizerSelection();
+        off.setEnabled(false);
+
+        PageEnricher recognizer = new PageEnricher("MOCK_OCR_CONTENT", true);
+        PDFParser parser = new PDFParser();
+        parser.setContentEnrichers(new CompositeContentEnricher(List.of(recognizer)));
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, autoOcrTriggeringPage16());
+        context.set(TextRecognizerSelection.class, off);
+        String xml = parsePdfToXml(parser, "testPDF_bad_page_303226.pdf", new Metadata(), context);
+        assertEquals(0, recognizer.calls);
+        assertNotContained("MOCK_OCR_CONTENT", xml);
+        // the verdict page keeps its extracted text
+        assertContains("42936", xml);
+
+        PDFParserConfig ocrOnly = new PDFParserConfig();
+        ocrOnly.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        context = new ParseContext();
+        context.set(PDFParserConfig.class, ocrOnly);
+        context.set(TextRecognizerSelection.class, off);
+        xml = parsePdfToXml(parser, "testPDF_bookmarks.pdf", new Metadata(), context);
+        assertEquals(0, recognizer.calls);
+        assertNotContained("MOCK_OCR_CONTENT", xml);
     }
 
     /** Annotating enricher for image/png: writes one chunk per render, never text. */

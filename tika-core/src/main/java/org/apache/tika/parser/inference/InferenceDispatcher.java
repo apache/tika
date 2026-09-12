@@ -248,6 +248,26 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
         return kept;
     }
 
+    /** The bindings of this kind that run for the request: enabled and selected. */
+    public List<Bound> running(InputKind kind, ParseContext context) throws TikaException {
+        List<Bound> result = new ArrayList<>();
+        for (Bound b : bound) {
+            if (b.binding().getInput() == kind && runs(b.binding(), context)) {
+                result.add(b);
+            }
+        }
+        return result;
+    }
+
+    public boolean hasInput(InputKind kind) {
+        for (Bound b : bound) {
+            if (b.binding().getInput() == kind) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean runs(InferenceBinding binding, ParseContext context) throws TikaException {
         if (!binding.isEnabled()) {
             return false;

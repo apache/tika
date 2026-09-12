@@ -80,6 +80,19 @@ public class OpenAIEmbeddingEngineTest {
     }
 
     @Test
+    public void testTextsGoAsPlainStrings() throws Exception {
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                "{\"data\":[{\"index\":1,\"embedding\":[1.0]},{\"index\":0,\"embedding\":[0.0]}]}"));
+        List<float[]> vectors = engine.embedTexts(List.of("alpha", "beta"), new ParseContext());
+        JsonNode request = new ObjectMapper().readTree(server.takeRequest().body());
+        assertEquals("clip", request.get("model").asText());
+        assertEquals("alpha", request.get("input").get(0).asText());
+        assertEquals("beta", request.get("input").get(1).asText());
+        assertEquals(0.0f, vectors.get(0)[0]);
+        assertEquals(1.0f, vectors.get(1)[0]);
+    }
+
+    @Test
     public void testMalformedResponsesAreRefused() throws Exception {
         String[] bad = {
             "{\"data\":[{\"index\":0,\"embedding\":[1.0]}]}",

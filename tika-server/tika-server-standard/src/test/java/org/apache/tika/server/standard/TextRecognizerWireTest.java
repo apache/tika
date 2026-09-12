@@ -18,19 +18,26 @@ package org.apache.tika.server.standard;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import javax.imageio.ImageIO;
 
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.apache.cxf.jaxrs.ext.multipart.Attachment;
+import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
+import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
@@ -82,5 +89,39 @@ public class TextRecognizerWireTest extends CXFTestBase {
         Metadata metadata = metadataList.get(0);
         assertEquals("ENRICHED", metadata.get(MockEnricher.MARKER_KEY));
         assertContains(MockEnricher.MARKER_TEXT, metadata.get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    /** The request's switch crosses the fork: nothing from the list runs. */
+    @Test
+    public void testRecognizersOffPerRequest() throws Exception {
+        ByteArrayOutputStream png = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB), "png", png);
+        String config = """
+                { "parse-context": { "text-recognizers": { "enabled": false } } }
+                """;
+        ContentDisposition fileCd = new ContentDisposition(
+                "form-data; name=\"file\"; filename=\"image.png\"");
+        Attachment fileAtt = new Attachment("file", new ByteArrayInputStream(png.toByteArray()),
+                fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(config.getBytes(UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + META_PATH + "/config")
+                .type("multipart/form-data")
+                .accept("application/json")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+
+        assertEquals(200, response.getStatus());
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        Metadata metadata = JsonMetadataList.fromJson(reader).get(0);
+        assertNull(metadata.get(MockEnricher.MARKER_KEY));
+        assertFalse(String.valueOf(metadata.get(TikaCoreProperties.TIKA_CONTENT))
+                .contains(MockEnricher.MARKER_TEXT));
+    }
+
+    @Override
+    protected boolean isAllowPerRequestConfig() {
+        return true;
     }
 }
