@@ -134,6 +134,16 @@
       <version>${j2objc-annotations.version}</version> <!-- prevent downgrade of version in guava -->
     </dependency>
     <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-grpc-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-grpc-mapper</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-async-cli</artifactId>
       <version>${project.version}</version>
