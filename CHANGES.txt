@@ -1,5 +1,16 @@
 Release 4.1.0 - unreleased
 
+   * Tagged PDFs: pdf-parser.markedContent replaces extractMarkedContent
+     (still accepted) with a strategy, NONE by default. TAGS and AUTO write
+     text through the structure tree, page by page, on top of the text
+     stripper: the same words and spacing as before, placed in the tree's
+     paragraphs, headings, lists, tables and links, artifacts and untagged
+     text kept in their own divs. AUTO falls back to the stripper on pages
+     whose tree claims too little of the page or points at content the page
+     lacks (minCoverage, maxDanglingRatio); maxPages, AUTO OCR, inline
+     images and per-page metadata now apply to tagged output as well.
+     Metadata reports pages tagged, pages fallen back and why (TIKA-4891).
+
    * PAGES input for inference bindings: pdf-parser.inference.input lists what
      the PDF releases (TEXT by default; PAGES renders every page for a PAGES
      binding). One render per page feeds OCR and the bindings, and each page's
