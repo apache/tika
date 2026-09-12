@@ -132,7 +132,8 @@ the catalog fails startup:
 {
   "presets": {
     "some-catalog-preset": true,
-    "no-ocr": { "pdf-parser": { "ocr": { "strategy": "NO_OCR" } } }
+    "no-ocr": { "pdf-parser": { "ocr": { "strategy": "NO_OCR" } } },
+    "no-enrichment": { "text-recognizers": { "enabled": false }, "inference": { "enabled": false } }
   }
 }
 ----

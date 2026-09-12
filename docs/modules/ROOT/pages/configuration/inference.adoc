@@ -202,7 +202,9 @@ bindings.
 ----
 
 `enabled: false` runs nothing for this request; `bindings` names the ones that run, every
-enabled binding when absent. Names only, so it is wire-safe and works as a
+enabled binding when absent. The recognizers have the same switch,
+`{"text-recognizers": {"enabled": false}}`; together they are "everything off for one
+request" (see xref:configuration/inference-recipes.adoc[Recipes]). Names only, so it is wire-safe and works as a
 xref:using-tika/server/index.adoc[preset]. A name not in the configured list fails the request.
 Engines cannot be defined or changed per request.
 
