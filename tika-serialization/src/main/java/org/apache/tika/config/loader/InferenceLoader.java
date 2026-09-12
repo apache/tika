@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -35,6 +36,7 @@ import org.apache.tika.parser.inference.InferenceBinding;
 import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.parser.inference.InferenceTask;
 import org.apache.tika.parser.inference.InputKind;
+import org.apache.tika.parser.inference.TextChunker;
 
 /**
  * Loads {@code "inference"}: bindings of a named engine to an input kind and tasks. Every
@@ -45,7 +47,7 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
 
     static final String KEY = "inference";
     private static final Set<String> KNOWN = Set.of("id", "engine", "input", "tasks",
-            "maxChunks", "maxBytes", "enabled", "_mime-include", "_mime-exclude");
+            "maxChunks", "maxBytes", "enabled", "_mime-include", "_mime-exclude", "chunker");
     private static final Pattern LEGAL_ID = Pattern.compile("[A-Za-z0-9._-]+");
     /** Largest unit a binding takes unless it says otherwise. */
     static final long DEFAULT_MAX_BYTES = 20L * 1024 * 1024;
@@ -128,9 +130,10 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
                     exclude.add(MediaType.parse(t));
                 }
             }
+            TextChunker chunker = chunker(entry, id, input, context);
             InferenceBinding binding = new InferenceBinding(id, engineName, input, taskNames,
                     include, exclude, maxChunks, maxBytes,
-                    entry.path("enabled").asBoolean(true));
+                    entry.path("enabled").asBoolean(true), chunker);
             List<InferenceTask> tasks = new ArrayList<>();
             for (String taskName : taskNames) {
                 InferenceTask task;
@@ -149,6 +152,32 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
             bound.add(new InferenceDispatcher.Bound(binding, engine, tasks));
         }
         return new InferenceDispatcher(bound);
+    }
+
+    /** {@code "chunker": {"<name>": {...}}} on a TEXT binding; absent means one chunk per document. */
+    private static TextChunker chunker(JsonNode entry, String id, InputKind input,
+                                       LoaderContext context) throws TikaConfigException {
+        if (!entry.has("chunker")) {
+            return null;
+        }
+        if (input != InputKind.TEXT) {
+            throw new TikaConfigException("binding \"" + id + "\": \"chunker\" applies to TEXT "
+                    + "bindings; " + input + " units are not chunked");
+        }
+        JsonNode node = entry.get("chunker");
+        if (!node.isObject() || node.size() != 1) {
+            throw new TikaConfigException("binding \"" + id + "\": \"chunker\" must be one "
+                    + "{\"<chunker>\": {...}} object, e.g. {\"markdown-chunker\": "
+                    + "{\"maxChunkChars\": 1500}}");
+        }
+        Map.Entry<String, JsonNode> type = node.fields().next();
+        try {
+            return ComponentInstantiator.instantiateComponent(type.getKey(), type.getValue(),
+                    context.getObjectMapper(), context.getClassLoader(), TextChunker.class);
+        } catch (TikaConfigException e) {
+            throw new TikaConfigException("binding \"" + id + "\" chunker \"" + type.getKey()
+                    + "\": " + e.getMessage(), e);
+        }
     }
 
     private static String required(JsonNode entry, String field) throws TikaConfigException {

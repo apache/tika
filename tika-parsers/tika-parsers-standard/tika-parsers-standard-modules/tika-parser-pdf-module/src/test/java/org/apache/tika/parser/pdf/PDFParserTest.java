@@ -1913,6 +1913,9 @@ public class PDFParserTest extends TikaTest {
             assertTrue(hook.sizes.get(0) > 0, label + ": the render has bytes");
             assertEquals(2, tracker.getNextId() - 1, label + ": one render per page");
             assertEquals(strategy == OcrConfig.Strategy.NO_OCR ? 0 : 2, recognizer.calls, label);
+            assertArrayEquals(new String[]{"PAGES"},
+                    metadata.getValues(TikaCoreProperties.INFERENCE_RELEASED),
+                    label + ": the PDF says it released its pages, not its text");
         }
     }
 

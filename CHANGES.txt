@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * TEXT input for inference bindings: a binding on TEXT with a chunker
+     (markdown-chunker) embeds the text of every document in a tree in
+     batched requests, after the parse, as the last metadata filter; each
+     chunk lands on its document with a text locator. Chunks now name the
+     binding that wrote them as "producer". A PDF released as PAGES records
+     tk:inference-released and is not embedded twice. The embedding filters
+     keep working (TIKA-4889).
+
    * A text recognizer is an engine: configure Tesseract, Tess4J or a VLM once
      under "engines" and name it from "text-recognizers" with
      {"engine": "<name>"} (plus _mime-include/_mime-exclude). The 4.0 form with

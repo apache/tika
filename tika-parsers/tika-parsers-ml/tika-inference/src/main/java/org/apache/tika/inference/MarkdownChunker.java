@@ -21,6 +21,11 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.Initializable;
+import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.parser.inference.TextChunker;
+
 /**
  * Splits markdown text into chunks that respect structural boundaries.
  * <p>
@@ -32,7 +37,8 @@ import java.util.regex.Pattern;
  * Consecutive chunks can overlap by a configurable number of characters
  * to avoid losing context at boundaries.
  */
-public class MarkdownChunker {
+@TikaComponent(name = "markdown-chunker", spi = false)
+public class MarkdownChunker implements TextChunker, Initializable {
 
     /**
      * Matches a markdown heading at the start of a line (e.g. {@code ## Foo}).
@@ -40,10 +46,29 @@ public class MarkdownChunker {
      */
     private static final Pattern HEADING_PATTERN = Pattern.compile("(?m)^#{1,6} ");
 
-    private final int maxChunkChars;
-    private final int overlapChars;
+    private int maxChunkChars = 1500;
+    private int overlapChars = 200;
+
+    /** The binding form: {@code {"markdown-chunker": {"maxChunkChars": .., "overlapChars": ..}}}. */
+    public MarkdownChunker() {
+    }
 
     public MarkdownChunker(int maxChunkChars, int overlapChars) {
+        this.maxChunkChars = maxChunkChars;
+        this.overlapChars = overlapChars;
+        validate();
+    }
+
+    @Override
+    public void initialize() throws TikaConfigException {
+        try {
+            validate();
+        } catch (IllegalArgumentException e) {
+            throw new TikaConfigException("markdown-chunker: " + e.getMessage(), e);
+        }
+    }
+
+    private void validate() {
         if (maxChunkChars <= 0) {
             throw new IllegalArgumentException("maxChunkChars must be > 0");
         }
@@ -54,8 +79,31 @@ public class MarkdownChunker {
             throw new IllegalArgumentException(
                     "overlapChars must be < maxChunkChars");
         }
+    }
+
+    public int getMaxChunkChars() {
+        return maxChunkChars;
+    }
+
+    public void setMaxChunkChars(int maxChunkChars) {
         this.maxChunkChars = maxChunkChars;
+    }
+
+    public int getOverlapChars() {
+        return overlapChars;
+    }
+
+    public void setOverlapChars(int overlapChars) {
         this.overlapChars = overlapChars;
+    }
+
+    @Override
+    public List<int[]> spans(String text) {
+        List<int[]> spans = new ArrayList<>();
+        for (Chunk chunk : chunk(text)) {
+            spans.add(new int[]{chunk.getStartOffset(), chunk.getEndOffset()});
+        }
+        return spans;
     }
 
     /**
