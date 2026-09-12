@@ -35,6 +35,7 @@ import org.junit.jupiter.api.parallel.Isolated;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.renderer.PageBasedRenderResults;
@@ -81,6 +82,24 @@ public class PDFBoxRendererTest {
         long compressed = renderedPngBytes(new ParseContext());
         assertTrue(uncompressed > compressed * 4,
                 "quality 1.0 should be far larger: " + uncompressed + " vs " + compressed);
+    }
+
+    /** A range that runs past the last page ends there; it is "the first N pages", not an error. */
+    @Test
+    public void testRangePastTheLastPageIsClamped() throws Exception {
+        PDFBoxRenderer renderer = new PDFBoxRenderer();
+        // testPDF_bookmarks.pdf has two pages
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/testPDF_bookmarks.pdf");
+             TikaInputStream tis = TikaInputStream.get(is);
+             PageBasedRenderResults results = (PageBasedRenderResults) renderer.render(
+                     tis, new Metadata(), new ParseContext(), new PageRangeRequest(1, 9999))) {
+            assertEquals(2, results.getResults().size());
+            for (int i = 0; i < 2; i++) {
+                RenderResult r = results.getResults().get(i);
+                assertEquals(RenderResult.STATUS.SUCCESS, r.getStatus());
+                assertEquals(i + 1, (int) r.getMetadata().getInt(TikaPagedText.PAGE_NUMBER));
+            }
+        }
     }
 
     /** An out-of-range page throws past the per-page IOException catch after RENDER_ALL wrote pages. */
