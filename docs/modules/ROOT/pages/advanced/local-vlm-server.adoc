@@ -344,15 +344,16 @@ transcribes embedded images and rendered PDF pages while every default parser st
 [source,json]
 ----
 {
-  "text-recognizers": [
-    {
+  "engines": {
+    "local-vlm": {
       "openai-vlm-parser": {
         "baseUrl": "http://127.0.0.1:8000",
         "model": "jinaai/jina-vlm",
         "timeoutMillis": 600000
       }
     }
-  ]
+  },
+  "text-recognizers": [ { "engine": "local-vlm" } ]
 }
 ----
 
