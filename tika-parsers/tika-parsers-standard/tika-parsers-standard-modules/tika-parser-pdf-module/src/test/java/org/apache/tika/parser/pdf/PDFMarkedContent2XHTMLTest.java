@@ -17,6 +17,8 @@
 package org.apache.tika.parser.pdf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 
@@ -25,10 +27,11 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 
-
+/** The tagged writer on the real tagged test PDFs (Word, Acrobat output). */
 public class PDFMarkedContent2XHTMLTest extends TikaTest {
 
     static ParseContext MARKUP_CONTEXT = new ParseContext();
@@ -36,6 +39,7 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
     @BeforeAll
     public static void setUp() {
         PDFParserConfig config = new PDFParserConfig();
+        // the deprecated flag still selects TAGS
         config.setExtractMarkedContent(true);
 
         MARKUP_CONTEXT.set(PDFParserConfig.class, config);
@@ -43,24 +47,39 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
 
     @Test
     public void testJournal() throws Exception {
-        String xml = getXML("testJournalParser.pdf", MARKUP_CONTEXT).xml;
-        assertContains("<h1>I. INTRODUCTION</h1>", xml);
+        XMLResult r = getXML("testJournalParser.pdf", MARKUP_CONTEXT);
+        String xml = r.xml;
+        assertContains("<h1>I. INTRODUCTION", xml);
+        assertContains("<h1>V. CONCLUSION", xml);
+        // one cell per TD, even though the row is drawn as one run of text
         assertContains("<table><tr>\t<td><p />", xml);
-        assertContains("</td>\t<td><p>NHG</p>", xml);
-        assertContains("</td>\t<td><p>STRING</p>", xml);
+        assertContains("<td><p>NHG </p>", xml);
+        assertContains("<td><p>STRING </p>", xml);
+        assertContainsCount("<div class=\"page\">", xml, 10);
+        assertEquals(10, r.metadata.getInt(PDF.MARKED_CONTENT_PAGES_TAGGED));
+        assertEquals(0, r.metadata.getInt(PDF.MARKED_CONTENT_PAGES_FALLBACK));
+        assertNull(r.metadata.get(PDF.MARKED_CONTENT_REJECTIONS));
+        // the stripper's per-page counters still run under the tagged writer
+        assertEquals(10, r.metadata.getValues(PDF.CHARACTERS_PER_PAGE).length);
     }
 
     @Test
     public void testVarious() throws Exception {
         String xml = getXML("testPDFVarious.pdf", MARKUP_CONTEXT).xml;
-        assertContains("<div class=\"textbox\"><p>Here is a text box</p>", xml);
-        assertContains("<div class=\"footnote\"><p>1 This is a footnote.</p>", xml);
-        assertContains("<ul>\t<li>Bullet 1</li>", xml);
-        assertContains("<table><tr>\t<td><p>Row 1 Col 1</p>", xml);
-        assertContains("<p>Here is a citation:</p>", xml);
-        assertContains("a href=\"http://tika.apache.org/\">This is a hyperlink</a>", xml);
-        assertContains("This is the header text.", xml);
-        assertContains("This is the footer text.", xml);
+        assertContains("<div class=\"textbox\"><p>Here is a text box", xml);
+        assertContains("<div class=\"footnote\"><p>1\n This is a footnote.", xml);
+        assertContains("<p>Bold italic underline superscript subscript", xml);
+        assertContains("<ul>\t<li> Bullet 1", xml);
+        assertContains("<table><tr>\t<td><p>Row 1 Col 1 </p>", xml);
+        assertContains("</td>\t<td><p>Row 1 Col 2 </p>", xml);
+        assertContains("<p>Here is a citation:", xml);
+        assertContains("<p><a href=\"http://tika.apache.org/\">This is a hyperlink</a></p>", xml);
+        // running header and footer are /Artifact content: kept, but set apart
+        assertContains("<div class=\"artifact\"><p>This is the header text.", xml);
+        assertContains("<p>This is the footer text.", xml);
+        // the annotation extraction is untouched
+        assertContains("<div class=\"annotation\"><a href=\"http://tika.apache.org/\">", xml);
+        assertFalse(xml.contains("<body>") && xml.indexOf("<body>") != xml.lastIndexOf("<body>"));
     }
 
     @Test
@@ -72,12 +91,9 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
         assertEquals(3, metadataList.size());
 
         String xml = metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT);
-        //the point here is that in the annotations (that we
-        // were grabbing by the classic PDF2XHTML),
-        //the <a> content is identical to the href.  Here, they are not, which we only get from
-        //marked up content...victory!!!
+        // the structure tree's Link gives the anchor text; the annotation only has the href
         assertContains("<a href=\"http://www.irs.gov\">IRS.gov</a>", xml);
         assertContains("<a href=\"http://www.irs.gov/pub15\">www.irs.gov/pub15</a>", xml);
+        assertEquals(67, metadataList.get(0).getInt(PDF.MARKED_CONTENT_PAGES_TAGGED));
     }
-
 }

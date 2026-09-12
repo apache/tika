@@ -74,6 +74,37 @@ twice, and `NO_OCR` means no page OCR anywhere while the other enrichers still s
 
 `pdf:ocr-page-count` records how many pages tripped the verdict, whether or not an engine ran.
 
+== Tagged PDFs (`markedContent`)
+
+A tagged PDF carries a structure tree: paragraphs, headings, lists, tables, links, and which
+content is an artifact (running headers, footers, page numbers). The `markedContent` block says
+whether the parser follows that tree. Every page's words and spacing still come from the same
+text stripper and the same `sortByPosition`, `enableAutoSpace` and tolerance settings; the tree
+only decides which XHTML elements the words land in and, across blocks, their order.
+
+`strategy`::
+`NONE`, the default, ignores the tree and writes what the stripper writes. `TAGS` follows the tree
+on every page that has tagged text. `AUTO` follows it only on pages that pass the gate below and
+writes the other pages exactly as `NONE` would. A PDF with no structure tree is written as with
+`NONE` whatever the strategy, and `detectAngles` always wins.
+`minCoverage`, `maxDanglingRatio`::
+The `AUTO` gate, per page. A page uses its tags only when the tree claims at least `minCoverage`
+of the page's text (artifact content counts, since a producer that marks the body as artifact
+has not described the page) and at most `maxDanglingRatio` of the tree's leaves for the page
+point at content the page never draws. Both start loose (0.5 and 0.2) until a corpus says
+otherwise; `minCoverage` above 1 turns every page back to the stripper.
+
+With tags, a structure element becomes the XHTML element of the same meaning (`P` to `<p>`, `H1`
+to `<h1>`, `L` to `<ul>` or `<ol>` by its `ListNumbering`, `Table`/`TR`/`TH`/`TD` to a table,
+`Link` to `<a href>` when its annotation has a URI) and any other type becomes a `<div>` or
+`<span>` with the type as its class. Text the tree does not reference follows the tagged content
+of its page in `<div class="untagged">`, and artifact content in `<div class="artifact">`, so
+nothing is lost and a consumer can drop headers and footers. The metadata says what happened:
+`pdf:marked-content-pages-tagged`, `pdf:marked-content-pages-fallback`, and
+`pdf:marked-content-rejections` with the reason per page that fell back.
+
+The old boolean `extractMarkedContent` still loads: `true` is `TAGS`, `false` is `NONE`.
+
 == Pages for inference (`inference`)
 
 `input`::

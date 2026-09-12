@@ -170,6 +170,25 @@ public interface PDF {
     Property HAS_MARKED_CONTENT = Property.internalBoolean(PDF_PREFIX + "has-marked-content");
 
     /**
+     * Pages whose text was written through the structure tree (tagged PDF extraction).
+     */
+    Property MARKED_CONTENT_PAGES_TAGGED =
+            Property.internalInteger(PDF_PREFIX + "marked-content-pages-tagged");
+
+    /**
+     * Pages of a tagged PDF that used the plain text stripper instead of the structure tree.
+     */
+    Property MARKED_CONTENT_PAGES_FALLBACK =
+            Property.internalInteger(PDF_PREFIX + "marked-content-pages-fallback");
+
+    /**
+     * Why a page ("&lt;page&gt;:&lt;reason&gt;") or the whole document
+     * ("document:&lt;reason&gt;") did not use the structure tree.
+     */
+    Property MARKED_CONTENT_REJECTIONS =
+            Property.internalTextBag(PDF_PREFIX + "marked-content-rejections");
+
+    /**
      * Has a collection element in the root.  If true, this is likely a PDF Portfolio.
      */
     Property HAS_COLLECTION = Property.internalBoolean(PDF_PREFIX + "has-collection");

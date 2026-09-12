@@ -97,9 +97,7 @@ public class PDFParserConfig implements Serializable {
     //a pdf file) should only be extracted once.
     private boolean extractUniqueInlineImagesOnly = true;
 
-    //Should the PDFParser _try_ to extract marked content/structure tags (backoff to regular
-    //text extraction if the given PDF doesn't have marked content)
-    private boolean extractMarkedContent = false;
+    private MarkedContentConfig markedContent = new MarkedContentConfig();
 
     //The character width-based tolerance value used to estimate where spaces in text should be
     // added. Default taken from PDFBox.
@@ -175,20 +173,27 @@ public class PDFParserConfig implements Serializable {
         this.extractInlineImageMetadataOnly = extractInlineImageMetadataOnly;
     }
 
-    public boolean isExtractMarkedContent() {
-        return extractMarkedContent;
+    public MarkedContentConfig getMarkedContent() {
+        return markedContent;
     }
 
     /**
-     * If the PDF contains marked content, try to extract text and its marked structure.
-     * If the PDF does not contain marked content, backoff to the regular PDF2XHTML for
-     * text extraction.  As of 1.24, this is an "alpha" version.
-     *
-     * @param extractMarkedContent
-     * @since 1.24
+     * How to use a PDF's structure tree (tagged PDF); see {@link MarkedContentConfig}.
+     * A PDF without a structure tree always uses the text stripper.
      */
+    public void setMarkedContent(MarkedContentConfig markedContent) {
+        this.markedContent = markedContent == null ? new MarkedContentConfig() : markedContent;
+    }
+
+    /**
+     * @deprecated since 4.1.0; use {@link #setMarkedContent(MarkedContentConfig)}.
+     * {@code true} is {@link MarkedContentConfig.Strategy#TAGS}, {@code false} is
+     * {@link MarkedContentConfig.Strategy#NONE}.
+     */
+    @Deprecated
     public void setExtractMarkedContent(boolean extractMarkedContent) {
-        this.extractMarkedContent = extractMarkedContent;
+        markedContent.setStrategy(extractMarkedContent ? MarkedContentConfig.Strategy.TAGS :
+                MarkedContentConfig.Strategy.NONE);
     }
 
     /**
