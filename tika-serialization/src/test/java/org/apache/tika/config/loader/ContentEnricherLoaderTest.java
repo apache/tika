@@ -19,17 +19,22 @@ package org.apache.tika.config.loader;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.xml.sax.helpers.DefaultHandler;
 
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -37,8 +42,10 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnrichers;
+import org.apache.tika.parser.inference.EngineRegistry;
 import org.apache.tika.utils.ParserUtils;
 
 public class ContentEnricherLoaderTest {
@@ -80,6 +87,46 @@ public class ContentEnricherLoaderTest {
         assertNotNull(enrichingParser.getContentEnrichers(),
                 "content enrichers were not injected into the EnrichingParser");
         assertEquals(enrichers, enrichingParser.getContentEnrichers());
+    }
+
+    /** An entry names an engine configured once under "engines"; one instance serves both. */
+    @Test
+    public void testEntryNamesAnEngine() throws Exception {
+        TikaLoader loader = load("""
+                {
+                  "engines": { "png": { "mock-enricher": {} } },
+                  "text-recognizers": [ { "engine": "png", "_mime-include": ["image/png"] } ]
+                }
+                """);
+        CompositeContentEnricher enrichers = loader.get(CompositeContentEnricher.class);
+        List<Parser> matched = enrichers.getEnrichers(MediaType.image("png"));
+        assertEquals(1, matched.size());
+        Parser entry = matched.get(0);
+        assertTrue(entry instanceof ParserDecorator, "the entry's mime filter wraps the engine");
+        assertSame(loader.get(EngineRegistry.class).get("png"), unwrap(entry));
+        assertTrue(ContentEnrichers.isEnricher(entry));
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "{ \"engines\": { \"png\": { \"mock-enricher\": {} } }, \"text-recognizers\": [ { \"engine\": \"nope\" } ] }| is not in \"engines\"",
+            "{ \"text-recognizers\": [ { \"engine\": \"png\" } ] }| is not in \"engines\"",
+            "{ \"engines\": { \"plain\": { \"test-engine\": {} } }, \"text-recognizers\": [ { \"engine\": \"plain\" } ] }| is not a text recognizer",
+            "{ \"engines\": { \"png\": { \"mock-enricher\": {} } }, \"text-recognizers\": [ { \"engine\": \"png\", \"language\": \"eng\" } ] }| unknown key \"language\"",
+            "{ \"engines\": { \"png\": { \"mock-enricher\": {} } }, \"text-recognizers\": [ { \"engine\": 3 } ] }| must be a name",
+            "{ \"text-recognizers\": [ 3 ] }| entries are"
+    })
+    public void testEngineReferenceMisconfigurationsFailLoad(String json, String message) {
+        TikaConfigException e = assertThrows(TikaConfigException.class,
+                () -> load(json).get(CompositeContentEnricher.class));
+        assertTrue(e.getMessage().contains(message), e.getMessage());
+    }
+
+    private static Parser unwrap(Parser parser) {
+        while (parser instanceof ParserDecorator decorator) {
+            parser = decorator.getWrappedParser();
+        }
+        return parser;
     }
 
     @Test

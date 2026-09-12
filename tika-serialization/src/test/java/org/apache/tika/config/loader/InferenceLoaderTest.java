@@ -90,6 +90,16 @@ public class InferenceLoaderTest {
                 "the dispatcher rides every parse as a hook");
     }
 
+    /** A recognizer is an engine a binding may name; the task decides whether it fits. */
+    @Test
+    public void testRecognizerEngineIsValidatedByTheTask() {
+        TikaConfigException e = assertThrows(TikaConfigException.class, () -> load("{"
+                + " \"engines\": { \"ocr\": { \"mock-enricher\": {} } },"
+                + " \"inference\": [ { \"engine\": \"ocr\", \"input\": \"IMAGES\","
+                + "   \"tasks\": [\"test-task\"] } ] }").get(InferenceDispatcher.class));
+        assertTrue(e.getMessage().contains("test-task needs a test-engine"), e.getMessage());
+    }
+
     @Test
     public void testPagesBindingLoads() throws Exception {
         TikaLoader loader = load("{" + ENGINES + ", \"inference\": ["

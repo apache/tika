@@ -28,7 +28,8 @@ Name the engine in the top-level `text-recognizers` list; every default parser s
 [source,json]
 ----
 {
-  "text-recognizers": [ { "tesseract-ocr-parser": { "language": "eng" } } ]
+  "engines": { "tesseract": { "tesseract-ocr-parser": { "language": "eng" } } },
+  "text-recognizers": [ { "engine": "tesseract" } ]
 }
 ----
 
