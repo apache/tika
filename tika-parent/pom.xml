@@ -334,7 +334,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.73.0</google.cloud.version>
-    <aws2.version>2.54.13</aws2.version>
+    <aws2.version>2.54.17</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -344,7 +344,7 @@
     <biz.aqute.version>7.4.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
-    <bouncycastle.version>1.85.2</bouncycastle.version>
+    <bouncycastle.version>1.86</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <commonmark.version>0.30.0</commonmark.version>
@@ -416,21 +416,21 @@
     <log4j2.version>2.26.1</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
-    <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
+    <maven.plugin.annotations.version>3.16.0</maven.plugin.annotations.version>
     <metadata.extractor.version>2.21.0</metadata.extractor.version>
     <micrometer.version>1.17.1</micrometer.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- can't update to 4 because Apache Ignite needs io.micronaut.core.convert.DefaultConversionService
          which no longer exists in 4.0: https://stackoverflow.com/questions/79937141/    -->
-    <micronaut.version>3.10.10</micronaut.version>
+    <micronaut.version>3.10.12</micronaut.version>
     <mime4j.version>0.8.14</mime4j.version>
     <mockito.version>5.23.0</mockito.version>
     <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.17.Final</netty.version>
+    <netty.version>4.2.18.Final</netty.version>
     <oak.jackrabbit.version>2.6.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
-    <opennlp.version>2.5.11</opennlp.version>
+    <opennlp.version>2.5.12</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
     <optimaize.version>0.6</optimaize.version>
     <osgi.compendium.version>5.0.0</osgi.compendium.version>
