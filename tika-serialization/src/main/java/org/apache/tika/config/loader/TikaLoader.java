@@ -842,6 +842,12 @@ public class TikaLoader {
         if (config.hasComponentSection("text-recognizers")) {
             output.set("text-recognizers", config.getRootNode().get("text-recognizers"));
         }
+        // a text-recognizers entry may name an engine, so both travel with it
+        for (String section : new String[]{EngineLoader.KEY, InferenceLoader.KEY}) {
+            if (config.hasComponentSection(section)) {
+                output.set(section, config.getRootNode().get(section));
+            }
+        }
 
         // Preserve auto-detect-parser config if present
         JsonNode adpNode = config.getRootNode().get("auto-detect-parser");

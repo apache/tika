@@ -6,6 +6,12 @@ Release 4.1.0 - unreleased
      extraction can cover the whole document while only the first page is
      rendered, as for a thumbnail (TIKA-4856).
 
+   * A text recognizer is an engine: configure Tesseract, Tess4J or a VLM once
+     under "engines" and name it from "text-recognizers" with
+     {"engine": "<name>"} (plus _mime-include/_mime-exclude). The 4.0 form with
+     the engine inline still works. An inference binding cannot use a
+     recognizer for a task it does not fit (TIKA-4889).
+     
    * PAGES input for inference bindings: pdf-parser.inference.input lists what
      the PDF releases (TEXT by default; PAGES renders every page for a PAGES
      binding). One render per page feeds OCR and the bindings, and each page's

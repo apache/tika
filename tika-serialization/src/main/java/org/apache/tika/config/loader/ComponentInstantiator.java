@@ -225,6 +225,16 @@ public class ComponentInstantiator {
         }
     }
 
+    /** The parser behind the entry's {@code _mime-include}/{@code _mime-exclude}, if any. */
+    static Parser withMimeFilters(Parser parser, JsonNode entry) throws TikaConfigException {
+        Set<MediaType> includeTypes = extractMimeTypes(entry, "_mime-include");
+        Set<MediaType> excludeTypes = extractMimeTypes(entry, "_mime-exclude");
+        if (includeTypes.isEmpty() && excludeTypes.isEmpty()) {
+            return parser;
+        }
+        return ParserDecorator.withMimeFilters(parser, includeTypes, excludeTypes);
+    }
+
     private static Set<MediaType> extractMimeTypes(JsonNode configNode, String fieldName)
             throws TikaConfigException {
         Set<MediaType> types = new HashSet<>();

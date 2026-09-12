@@ -43,6 +43,12 @@ different models. Secrets and paths live here and only here.
 `maxBatchSize` images per request. Options: `baseUrl`, `model`, `apiKey`, `timeoutMillis`
 (120000), `maxBatchSize` (32), `embeddingsPath`, `apiKeyHeaderName`, `apiKeyPrefix`.
 
+A text recognizer is an engine too: `"tesseract": { "tesseract-ocr-parser": { "language": "eng" } }`
+here, and `{ "engine": "tesseract" }` in
+xref:configuration/index.adoc#text-recognizers[`text-recognizers`], so an OCR engine or a VLM is
+configured in one place. A binding cannot use a recognizer for a task it does not fit; `embed`
+on Tesseract fails config load.
+
 == `inference`: what runs on what
 
 A list of bindings. Each names an engine, says what it is fed, and what to ask:
