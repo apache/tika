@@ -315,7 +315,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.73.0</google.cloud.version>
-    <aws2.version>2.54.13</aws2.version>
+    <aws2.version>2.54.17</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -326,7 +326,7 @@
     <biz.aqute.version>6.4.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
-    <bouncycastle.version>1.85.2</bouncycastle.version>
+    <bouncycastle.version>1.86</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <commons.cli.version>1.11.0</commons.cli.version>
@@ -402,7 +402,7 @@
     <log4j2.version>2.26.1</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
-    <maven.plugin.annotations.version>3.15.2</maven.plugin.annotations.version>
+    <maven.plugin.annotations.version>3.16.0</maven.plugin.annotations.version>
     <mchange.version>0.5.0</mchange.version>
     <metadata.extractor.version>2.21.0</metadata.extractor.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
@@ -410,7 +410,7 @@
     <mockito.version>5.23.0</mockito.version>
     <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.17.Final</netty.version>
+    <netty.version>4.2.18.Final</netty.version>
     <oak.jackrabbit.version>2.6.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <!-- 2.3.0 requires jdk17 -->
