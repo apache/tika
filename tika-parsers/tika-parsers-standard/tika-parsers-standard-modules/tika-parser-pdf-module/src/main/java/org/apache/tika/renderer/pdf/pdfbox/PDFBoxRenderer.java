@@ -155,6 +155,13 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
         } else if (renderRequest instanceof PageRangeRequest) {
             int start = ((PageRangeRequest)renderRequest).getFrom();
             int toInclusive = ((PageRangeRequest)renderRequest).getTo();
+            int numberOfPages = pdDocument.getNumberOfPages();
+            // a range that runs past the last page ends there: "the first N pages" of a
+            // shorter document are all of its pages. A range that starts past the last
+            // page still asks for a page that does not exist, and getPage throws on it.
+            if (start <= numberOfPages) {
+                toInclusive = Math.min(toInclusive, numberOfPages);
+            }
             renderRange(pdDocument, start, toInclusive, metadata, parseContext, results);
         }
     }

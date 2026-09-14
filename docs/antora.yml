@@ -25,6 +25,8 @@ start_page: index.adoc
 asciidoc:
   attributes:
     tika-version: '4.1.0-SNAPSHOT'
+    # Latest published aggregate javadoc; per-release, so bump on docs/X.Y.x branches.
+    tika-javadoc-url: 'https://tika.apache.org/4.0.0/api'
 
 nav:
   - modules/ROOT/nav.adoc

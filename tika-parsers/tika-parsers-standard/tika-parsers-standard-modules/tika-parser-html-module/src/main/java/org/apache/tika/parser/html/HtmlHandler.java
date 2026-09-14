@@ -150,11 +150,11 @@ class HtmlHandler extends TextContentHandler {
                     metadata.add(HTML.PREFIX_HTML_META + atts.getValue("property"), atts.getValue("content"));
                 }
             } else if ("BASE".equals(name) && atts.getValue("href") != null) {
-                startElementWithSafeAttributes("base", atts);
+                startElementWithMappedAttributes("base", atts);
                 xhtml.endElement("base");
                 metadata.set(HttpHeaders.CONTENT_LOCATION, resolve(atts.getValue("href")));
             } else if ("LINK".equals(name)) {
-                startElementWithSafeAttributes("link", atts);
+                startElementWithMappedAttributes("link", atts);
                 xhtml.endElement("link");
             } else if ("SCRIPT".equals(name)) {
                 scriptAtts = atts;
@@ -164,7 +164,7 @@ class HtmlHandler extends TextContentHandler {
         if (bodyLevel > 0 && discardLevel == 0) {
             String safe = mapper.mapSafeElement(name);
             if (safe != null) {
-                startElementWithSafeAttributes(safe, atts);
+                startElementWithMappedAttributes(safe, atts);
             }
         }
 
@@ -237,7 +237,7 @@ class HtmlHandler extends TextContentHandler {
         }
     }
 
-    private void startElementWithSafeAttributes(String name, Attributes atts) throws SAXException {
+    private void startElementWithMappedAttributes(String name, Attributes atts) throws SAXException {
         if (atts.getLength() == 0) {
             xhtml.startElement(name);
             return;
@@ -300,7 +300,7 @@ class HtmlHandler extends TextContentHandler {
             scriptLevel--;
             if (scriptLevel == 0) {
                 if (scriptAtts.getLength() > 0) {
-                    startElementWithSafeAttributes("script", scriptAtts);
+                    startElementWithMappedAttributes("script", scriptAtts);
                     xhtml.endElement("script");
                 }
                 scriptAtts = EMPTY_ATTS;
