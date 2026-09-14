@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * Engines are closed with the config that loaded them: Engine is
+     Closeable (no-op by default), EngineRegistry closes every engine once,
+     and the pipes server closes the registry at shutdown, so an
+     openai-embedding-engine or a VLM used as a text recognizer releases its
+     HTTP client (TIKA-4889).
+
    * New tika-eval-structure: a standalone tool that compares two sets of
      XHTML extracts block by block (paragraph order as Kendall tau, splits and
      merges, words one side glues that the other splits, artifact and untagged

@@ -49,6 +49,11 @@ xref:configuration/index.adoc#text-recognizers[`text-recognizers`], so an OCR en
 configured in one place. A binding cannot use a recognizer for a task it does not fit; `embed`
 on Tesseract fails config load.
 
+An engine lives as long as the config that loaded it. `Engine` is `Closeable`; an engine that
+holds a client or a native handle releases it in `close()`, and the registry closes every
+engine once when the pipes server shuts down. Library users holding a `TikaLoader` close
+`loader.get(EngineRegistry.class)` themselves.
+
 == `inference`: what runs on what
 
 A list of bindings. Each names an engine, says what it is fed, and what to ask:

@@ -16,12 +16,21 @@
  */
 package org.apache.tika.parser.inference;
 
+import java.io.Closeable;
+import java.io.IOException;
+
 /**
  * A model or service an inference binding calls: one endpoint or one local binary with its
  * settings, named in the {@code "engines"} map. An engine knows nothing about documents; a
- * binding says what it is fed and what to ask.
+ * binding says what it is fed and what to ask. An engine lives as long as the config that
+ * loaded it: {@link EngineRegistry#close()} closes every engine once at shutdown.
  *
  * @since Apache Tika 4.1
  */
-public interface Engine {
+public interface Engine extends Closeable {
+
+    /** Releases what the engine holds (a client, a native handle); nothing by default. */
+    @Override
+    default void close() throws IOException {
+    }
 }
