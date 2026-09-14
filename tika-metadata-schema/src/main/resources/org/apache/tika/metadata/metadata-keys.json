@@ -603,6 +603,7 @@
   {"key":"tk:exception:write-limit-reached","namespace":"tk","valueType":"BOOLEAN","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:final-embedded-resource-path","namespace":"tk","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:has-signature","namespace":"tk","valueType":"BOOLEAN","cardinality":"SIMPLE","module":"tika-core"},
+  {"key":"tk:inference-released","namespace":"tk","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
   {"key":"tk:internal-path","namespace":"tk","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:num-images","namespace":"tk","valueType":"INTEGER","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:orig-resource-name","namespace":"tk","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},

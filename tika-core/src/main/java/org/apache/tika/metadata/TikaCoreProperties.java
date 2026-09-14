@@ -152,6 +152,14 @@ public interface TikaCoreProperties {
      * of document content for downstream indexing and semantic search.
      */
     Property TIKA_CHUNKS = Property.reservedInternalText("tk:chunks");
+
+    /**
+     * The inference inputs a parser released for this document (TEXT, PAGES, ...), written
+     * only when they differ from the default of its text. The TEXT stage skips a document
+     * whose list lacks TEXT, so a PDF released as pages is not embedded twice.
+     */
+    Property INFERENCE_RELEASED =
+            Property.reservedInternalTextBag(TIKA_META_PREFIX + "inference-released");
     /**
      * Use this to store parse exception information in the Metadata object.
      */

@@ -161,6 +161,62 @@ public class EmbedTaskTest {
         assertNull(chunks.get(0).getLocators().getEmbedded(), "the pdf keeps its own pages");
     }
 
+    /** Text units are chunked, batched across documents, and land on their own document. */
+    @Test
+    public void testTextChunksBatchAcrossDocuments() throws Exception {
+        engine.setMaxBatchSize(3);
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, response(0, 1, 2)));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, response(0)));
+        Metadata parent = new Metadata();
+        Metadata attachment = new Metadata();
+        attachment.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, "ATTACHMENT");
+        attachment.set(TikaCoreProperties.EMBEDDED_ID_PATH, "/1");
+        InferenceBinding text = new InferenceBinding("text-vectors", "clip", InputKind.TEXT,
+                List.of("embed"), null, null, -1, -1, true, new MarkdownChunker(10, 0));
+        EmbedTask task = new EmbedTask();
+        task.validate(text, engine);
+        // "one two" and "three" from the parent, "four five" and "six" from the attachment
+        task.run(text, List.of(
+                new InferenceUnit(MediaType.TEXT_PLAIN, parent, null, "one two\n\nthree"),
+                new InferenceUnit(MediaType.TEXT_PLAIN, attachment, parent, "four five\n\nsix")),
+                engine, new ParseContext());
+
+        assertEquals(2, server.getRequestCount(), "four chunks in batches of three");
+        JsonNode first = MAPPER.readTree(server.takeRequest().body()).get("input");
+        assertEquals(List.of("one two", "three", "four five"),
+                List.of(first.get(0).asText(), first.get(1).asText(), first.get(2).asText()),
+                "a request holds the parent's last chunk and the attachment's first");
+        List<Chunk> parentChunks = ChunkSerializer.fromJson(
+                parent.get(TikaCoreProperties.TIKA_CHUNKS));
+        List<Chunk> attachmentChunks = ChunkSerializer.fromJson(
+                attachment.get(TikaCoreProperties.TIKA_CHUNKS));
+        assertEquals(2, parentChunks.size());
+        assertEquals(2, attachmentChunks.size(), "an attachment keeps its own text vectors");
+        assertEquals("three", parentChunks.get(1).getText());
+        assertEquals(9, parentChunks.get(1).getLocators().getText().get(0).getStartOffset());
+        assertEquals("text-vectors", parentChunks.get(0).getProducer());
+        assertEquals(2.0f, attachmentChunks.get(0).getVector()[0], "placed by index");
+        assertEquals(0.0f, attachmentChunks.get(1).getVector()[0], "second request, index 0");
+    }
+
+    /** Without a chunker the whole text is one chunk; maxChunks caps the list. */
+    @Test
+    public void testTextWithoutChunkerAndBudget() throws Exception {
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, response(0)));
+        Metadata a = new Metadata();
+        Metadata b = new Metadata();
+        InferenceBinding text = new InferenceBinding("t", "clip", InputKind.TEXT,
+                List.of("embed"), null, null, 1, -1, true);
+        new EmbedTask().run(text, List.of(
+                new InferenceUnit(MediaType.TEXT_PLAIN, a, null, "whole document"),
+                new InferenceUnit(MediaType.TEXT_PLAIN, b, null, "dropped")),
+                engine, new ParseContext());
+        assertEquals(1, server.getRequestCount());
+        assertEquals("whole document", ChunkSerializer.fromJson(
+                a.get(TikaCoreProperties.TIKA_CHUNKS)).get(0).getText());
+        assertNull(b.get(TikaCoreProperties.TIKA_CHUNKS), "over maxChunks");
+    }
+
     @Test
     public void testValidateRejectsANonEmbeddingEngine() {
         assertThrows(TikaConfigException.class,

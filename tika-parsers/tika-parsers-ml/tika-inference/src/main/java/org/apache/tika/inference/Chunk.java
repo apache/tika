@@ -34,6 +34,7 @@ public class Chunk {
     private final String text;
     private final Locators locators;
     private float[] vector;
+    private String producer;
 
     public Chunk(String text, Locators locators) {
         this.text = text;
@@ -76,6 +77,15 @@ public class Chunk {
             return locators.getText().get(0).getEndOffset();
         }
         return -1;
+    }
+
+    /** The inference binding that wrote this chunk; null for chunks from other sources. */
+    public String getProducer() {
+        return producer;
+    }
+
+    public void setProducer(String producer) {
+        this.producer = producer;
     }
 
     public float[] getVector() {

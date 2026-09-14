@@ -1,6 +1,9 @@
 {
   "engines": { "mock": { "mock-engine": {} } },
-  "inference": [ { "id": "mock-images", "engine": "mock", "input": "IMAGES", "tasks": ["mock-task"] } ],
+  "inference": [
+    { "id": "mock-images", "engine": "mock", "input": "IMAGES", "tasks": ["mock-task"] },
+    { "id": "mock-text", "engine": "mock", "input": "TEXT", "tasks": ["mock-task"] }
+  ],
   "content-handler-factory": {
     "basic-content-handler-factory": {
       "type": "TEXT",

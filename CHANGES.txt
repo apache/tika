@@ -1,10 +1,19 @@
 Release 4.1.0 - unreleased
 
+   * TEXT input for inference bindings: a binding on TEXT with a chunker
+     (markdown-chunker) embeds the text of every document in a tree in
+     batched requests, after the parse and before the metadata filters; each
+     chunk lands on its document with a text locator. Chunks now name the
+     binding that wrote them as "producer". A PDF released as PAGES records
+     tk:inference-released and is not embedded twice. The embedding filters
+     keep working (TIKA-4889).
+     
    * "pdf-parser": {"maxRenderedPages": N} bounds how many pages the
      RENDER_PAGES_BEFORE_PARSE and RENDER_PAGES_AT_PAGE_END image strategies
      render, counted from the first page and independent of maxPages: text
      extraction can cover the whole document while only the first page is
      rendered, as for a thumbnail (TIKA-4856).
+   
    * PDF: a bookmark outline is now walked without recursion, and lists nest at
      most 50 deep with deeper items joining the deepest list (TIKA-4894).
 

@@ -96,6 +96,7 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.digestutils.CommonsDigesterFactory;
+import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.fork.PipesForkParser;
 import org.apache.tika.pipes.fork.PipesForkParserConfig;
@@ -740,6 +741,10 @@ public class TikaCLI {
         JsonMetadataList.setPrettyPrinting(prettyPrint);
         try (Writer writer = getOutputWriter(output, encoding)) {
             List<Metadata> metadataList = handler.getMetadataList();
+            InferenceDispatcher inference = tikaLoader.get(InferenceDispatcher.class);
+            if (inference != null) {
+                inference.text(metadataList, context);
+            }
             tikaLoader.loadMetadataFilters().filter(metadataList);
             JsonMetadataList.toJson(metadataList, writer);
         }
