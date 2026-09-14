@@ -1,5 +1,8 @@
 Release 3.3.3 - ???
 
+  * PDF: a bookmark outline is now walked without recursion, and lists nest at
+    most 50 deep with deeper items joining the deepest list (TIKA-4894).
+
   * MagicDetector now compiles its regular expression once, in the
     constructor, instead of recompiling it on every match (TIKA-4796).
 
