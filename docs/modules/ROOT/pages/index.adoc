@@ -29,6 +29,8 @@ missing or misleading extension does not change the result.
 
 == Where to start
 
+* xref:formats.adoc[Supported Formats] -- what Tika parses, family by family, plus the
+  generated parser-to-media-type list.
 * xref:using-tika/index.adoc[Using Tika] -- choose an integration method: Java API,
   command line, REST server, or gRPC.
 * xref:pipes/index.adoc[Pipes] -- process-isolated, fault-tolerant extraction at scale.

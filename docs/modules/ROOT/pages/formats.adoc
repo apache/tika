@@ -1,0 +1,402 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Supported Document Formats
+:api: {tika-javadoc-url}
+
+This page lists the document formats from which the parsers shipped in Apache
+Tika {tika-version} extract text and/or metadata. Follow the links to the parser
+javadocs for detail on how each format is handled.
+
+Tika *detects* far more formats than it parses. A type missing here is still
+identified by content detection; it just has no parser, and `tika-app` or
+`tika-server` returns metadata only.
+
+The families below are the parsers in the *standard* parser set: what
+`tika-app`, `tika-server` and the `tika-parsers-standard-package` artifact
+ship. Parsers that live in the `tika-parsers-ml` or `tika-parsers-extended`
+trees are marked as such. The <<full-list,full list>> at the bottom of the page
+is generated from the standard set on every build.
+
+== HyperText Markup Language
+
+The HyperText Markup Language (HTML) is the lingua franca of the web. Tika uses
+the https://jsoup.org/[jsoup] library to support virtually any kind of HTML
+found on the web. The output from
+link:{api}/org/apache/tika/parser/html/JSoupParser.html[JSoupParser] is
+guaranteed to be well-formed XHTML, and various heuristics keep things like
+inline scripts out of the extracted text.
+
+== XML and derived formats
+
+The Extensible Markup Language (XML) is a generic container for all kinds of
+content. Tika has custom parsers for some widely used XML vocabularies like
+XHTML, OOXML and ODF, but the default
+link:{api}/org/apache/tika/parser/xml/DcXMLParser.html[DcXMLParser] simply
+extracts the text content and ignores the XML structure. The one exception is
+Dublin Core metadata elements, which become document metadata.
+
+== Microsoft Office document formats
+
+Microsoft Office and some related applications produce documents in the generic
+OLE 2 Compound Document and Office Open XML (OOXML) formats. OLE 2 was the
+default from Office 97 until Office 2007 introduced OOXML.
+link:{api}/org/apache/tika/parser/microsoft/OfficeParser.html[OfficeParser] and
+link:{api}/org/apache/tika/parser/microsoft/ooxml/OOXMLParser.html[OOXMLParser]
+use the https://poi.apache.org/[Apache POI] libraries to extract text and
+metadata from both.
+
+Old, pre-OLE2 Excel files (Excel 2, 3 and 4) are handled by
+link:{api}/org/apache/tika/parser/microsoft/OldExcelParser.html[OldExcelParser].
+
+The older pure-XML office formats are handled by
+link:{api}/org/apache/tika/parser/microsoft/xml/SpreadsheetMLParser.html[SpreadsheetMLParser],
+link:{api}/org/apache/tika/parser/microsoft/xml/WordMLParser.html[WordMLParser]
+and
+link:{api}/org/apache/tika/parser/microsoft/ooxml/xwpf/ml2006/Word2006MLParser.html[Word2006MLParser].
+
+link:{api}/org/apache/tika/parser/microsoft/onenote/OneNoteParser.html[OneNoteParser]
+extracts text from OneNote notebooks, and
+link:{api}/org/apache/tika/parser/microsoft/MSOwnerFileParser.html[MSOwnerFileParser]
+pulls basic metadata from the temporary lock ("owner") files Office leaves
+beside open documents.
+
+== OpenDocument Format
+
+The OpenDocument format (ODF) is the native format of LibreOffice and
+OpenOffice.
+link:{api}/org/apache/tika/parser/odf/OpenDocumentParser.html[OpenDocumentParser]
+supports the packaged format and the earlier OpenOffice 1.0 format on which
+ODF is based;
+link:{api}/org/apache/tika/parser/odf/FlatOpenDocumentParser.html[FlatOpenDocumentParser]
+handles the single-file flat XML variants (`.fodt`, `.fods`, `.fodp`).
+
+== iWork document formats
+
+The Apple iWork formats (Pages, Numbers, Keynote) are supported by
+link:{api}/org/apache/tika/parser/iwork/IWorkPackageParser.html[IWorkPackageParser]
+for the original package format.
+link:{api}/org/apache/tika/parser/iwork/iwana/IWork13PackageParser.html[IWork13PackageParser]
+and
+link:{api}/org/apache/tika/parser/iwork/iwana/IWork18PackageParser.html[IWork18PackageParser]
+identify the 2013 and 2018 generations and extract metadata, embedded
+resources and the preview image; the body text of these newer formats is not
+yet extracted.
+
+== WordPerfect document formats
+
+The Corel WordPerfect Office formats are supported by
+link:{api}/org/apache/tika/parser/wordperfect/WordPerfectParser.html[WordPerfectParser]
+(WordPerfect WP6 and later) and
+link:{api}/org/apache/tika/parser/wordperfect/QuattroProParser.html[QuattroProParser]
+(QuattroPro QPW v9 and later).
+
+== Portable Document Format
+
+link:{api}/org/apache/tika/parser/pdf/PDFParser.html[PDFParser] parses PDF
+documents using the https://pdfbox.apache.org/[Apache PDFBox] library. It can
+extract inline images, annotations, forms and incremental-update history, and
+can hand pages or images to OCR or a vision model. See
+xref:configuration/parsers/pdf-parser.adoc[PDF Parser] for the options.
+
+== Electronic Publication Format
+
+link:{api}/org/apache/tika/parser/epub/EpubParser.html[EpubParser] supports the
+EPUB format used for many digital books.
+link:{api}/org/apache/tika/parser/xml/FictionBookParser.html[FictionBookParser]
+supports the XML-based FictionBook (`.fb2`) publishing format.
+
+== Rich Text Format
+
+link:{api}/org/apache/tika/parser/microsoft/rtf/RTFParser.html[RTFParser]
+extracts text, metadata and embedded objects from Rich Text Format documents.
+
+== Compression and packaging formats
+
+Tika uses the https://commons.apache.org/compress/[Commons Compress] library to
+support most compression and packaging formats.
+link:{api}/org/apache/tika/parser/pkg/CompressorParser.html[CompressorParser]
+handles the top-level compression formats (Gzip, BZip2, XZ, LZMA, Z, Brotli, LZ4,
+Snappy, ...), then
+link:{api}/org/apache/tika/parser/pkg/PackageParser.html[PackageParser] and its
+subclasses
+link:{api}/org/apache/tika/parser/pkg/ZipParser.html[ZipParser] and
+link:{api}/org/apache/tika/parser/pkg/SevenZParser.html[SevenZParser] unpack
+the archive formats (Zip, 7Zip, Tar, AR, ARJ, CPIO, Dump, jar, ...) and pass
+each entry to a second parsing stage. See
+xref:advanced/zip-detection.adoc[ZIP Detection and Salvaging] for how damaged
+zips are handled.
+
+link:{api}/org/apache/tika/parser/pkg/RarParser.html[RarParser] supports the
+RAR archive format, which Commons Compress does not.
+
+link:{api}/org/apache/tika/parser/apple/AppleSingleFileParser.html[AppleSingleFileParser]
+supports resources packaged in AppleSingle and AppleDouble files, and
+link:{api}/org/apache/tika/parser/apple/PListParser.html[PListParser] reads
+Apple property lists in both XML and binary form.
+
+== Text formats
+
+Extracting text from plain-text files looks simple until character encodings
+enter the picture.
+link:{api}/org/apache/tika/parser/csv/TextAndCSVParser.html[TextAndCSVParser]
+runs Tika's encoding detectors (see
+xref:configuration/encoding-detectors.adoc[Encoding Detectors]) and recognizes
+CSV and TSV, emitting tables for those.
+
+link:{api}/org/apache/tika/parser/markdown/MarkdownParser.html[MarkdownParser]
+parses Markdown into structured XHTML rather than treating it as plain text.
+
+== Feed and syndication formats
+
+link:{api}/org/apache/tika/parser/feed/FeedParser.html[FeedParser] supports the
+RSS and Atom feed formats.
+link:{api}/org/apache/tika/parser/iptc/IptcAnpaParser.html[IptcAnpaParser]
+supports the IPTC ANPA news wire format.
+
+== Web archive formats
+
+link:{api}/org/apache/tika/parser/warc/WARCParser.html[WARCParser] and
+link:{api}/org/apache/tika/parser/wacz/WACZParser.html[WACZParser] unpack WARC
+and WACZ web archives and parse each captured response;
+link:{api}/org/apache/tika/parser/http/HttpParser.html[HttpParser] handles a
+single raw HTTP response.
+
+== Help formats
+
+link:{api}/org/apache/tika/parser/microsoft/chm/ChmParser.html[ChmParser]
+supports the CHM (compiled HTML help) format.
+
+== Audio formats
+
+Tika extracts metadata from common audio formats, and text from those that
+carry lyrics or other textual content. Extracted metadata includes sampling
+rates, channels, format information, artists, titles and so on.
+link:{api}/org/apache/tika/parser/audio/AudioParser.html[AudioParser] and
+link:{api}/org/apache/tika/parser/audio/MidiParser.html[MidiParser] use the
+standard `javax.sound` features for simple formats.
+link:{api}/org/apache/tika/parser/mp3/Mp3Parser.html[Mp3Parser] adds MP3, and
+link:{api}/org/apache/tika/parser/mp4/MP4Parser.html[MP4Parser] covers MP4
+audio. The Ogg family (Vorbis, Speex, Opus, FLAC) is supported by
+link:{api}/org/apache/tika/parser/ogg/VorbisParser.html[VorbisParser],
+link:{api}/org/apache/tika/parser/ogg/OpusParser.html[OpusParser],
+link:{api}/org/apache/tika/parser/ogg/SpeexParser.html[SpeexParser] and
+link:{api}/org/apache/tika/parser/ogg/FlacParser.html[FlacParser].
+
+Speech-to-text is available through
+link:{api}/org/apache/tika/parser/transcribe/aws/AmazonTranscribe.html[AmazonTranscribe]
+in the `tika-transcribe-aws` module of `tika-parsers-ml`; it is not part of the
+standard set.
+
+== Image formats
+
+link:{api}/org/apache/tika/parser/image/ImageParser.html[ImageParser] uses the
+standard `javax.imageio` feature to extract simple metadata from the image
+formats the Java platform supports, such as PNG, GIF and BMP. Richer metadata
+comes from
+link:{api}/org/apache/tika/parser/image/JpegParser.html[JpegParser] and
+link:{api}/org/apache/tika/parser/image/TiffParser.html[TiffParser], which use
+the metadata-extractor library for Exif, IPTC and XMP; and from
+link:{api}/org/apache/tika/parser/image/RawTiffParser.html[RawTiffParser] for
+camera RAW files built on TIFF.
+link:{api}/org/apache/tika/parser/image/HeifParser.html[HeifParser] (HEIF/HEIC,
+AVIF),
+link:{api}/org/apache/tika/parser/image/JXLParser.html[JXLParser] (JPEG XL),
+link:{api}/org/apache/tika/parser/image/WebPParser.html[WebPParser],
+link:{api}/org/apache/tika/parser/image/PSDParser.html[PSDParser],
+link:{api}/org/apache/tika/parser/image/BPGParser.html[BPGParser] and
+link:{api}/org/apache/tika/parser/image/ICNSParser.html[ICNSParser] extract
+metadata from their respective formats.
+
+link:{api}/org/apache/tika/parser/microsoft/WMFParser.html[WMFParser] and
+link:{api}/org/apache/tika/parser/microsoft/EMFParser.html[EMFParser] extract
+text from Microsoft WMF and EMF drawings; EMFParser also exposes embedded
+resources.
+
+Text inside images is not extracted by these parsers. See
+<<ocr-and-vision,OCR and vision-language models>>.
+
+== Video formats
+
+link:{api}/org/apache/tika/parser/video/FLVParser.html[FLVParser] supports the
+Flash video format with a simple parsing algorithm.
+link:{api}/org/apache/tika/parser/mp4/MP4Parser.html[MP4Parser] covers the MP4
+family (MP4, QuickTime, 3GPP, ...), extracting video metadata and any audio
+stream metadata. For the Ogg family,
+link:{api}/org/apache/tika/parser/ogg/OggParser.html[OggParser] and
+link:{api}/org/apache/tika/parser/ogg/TheoraParser.html[TheoraParser] extract a
+limited amount of metadata.
+
+Frame extraction, transcoding and probing through `ffmpeg` are available via
+the xref:configuration/parsers/external-parser.adoc[External Parser] when the
+tool is installed.
+
+== Java class files and archives
+
+link:{api}/org/apache/tika/parser/asm/ClassParser.html[ClassParser] extracts
+class names and method signatures from Java class files, and
+link:{api}/org/apache/tika/parser/pkg/PackageParser.html[PackageParser]
+supports jar archives.
+
+== Source code
+
+link:{api}/org/apache/tika/parser/code/SourceCodeParser.html[SourceCodeParser]
+handles a number of source code formats, including Java, C, C++ and Groovy,
+providing a formatted form of the code along with simple metadata.
+
+== Mail formats
+
+link:{api}/org/apache/tika/parser/mbox/MboxParser.html[MboxParser] extracts
+messages from the mbox format used by many mail archives and Unix mailboxes.
+link:{api}/org/apache/tika/parser/mail/RFC822Parser.html[RFC822Parser]
+processes single RFC 822 messages (`.eml`).
+link:{api}/org/apache/tika/parser/microsoft/pst/OutlookPSTParser.html[OutlookPSTParser]
+extracts messages from Microsoft Outlook PST stores, and
+link:{api}/org/apache/tika/parser/microsoft/OfficeParser.html[OfficeParser]
+handles single Outlook MSG files.
+link:{api}/org/apache/tika/parser/microsoft/TNEFParser.html[TNEFParser]
+extracts attachments from Microsoft TNEF (`winmail.dat`) wrappers.
+
+== CAD formats
+
+link:{api}/org/apache/tika/parser/dwg/DWGParser.html[DWGParser] extracts
+metadata from AutoCAD DWG files,
+link:{api}/org/apache/tika/parser/dgn/DGN8Parser.html[DGN8Parser] from
+MicroStation DGN v8 files, and
+link:{api}/org/apache/tika/parser/prt/PRTParser.html[PRTParser] from Cadkey
+PRT files.
+
+== Font formats
+
+link:{api}/org/apache/tika/parser/font/TrueTypeParser.html[TrueTypeParser]
+extracts simple metadata from TrueType fonts, and
+link:{api}/org/apache/tika/parser/font/AdobeFontMetricParser.html[AdobeFontMetricParser]
+does the same for Adobe Font Metrics files.
+
+== Publishing and localization formats
+
+link:{api}/org/apache/tika/parser/indesign/IDMLParser.html[IDMLParser] reads
+Adobe InDesign Markup (IDML) packages, and
+link:{api}/org/apache/tika/parser/mif/MIFParser.html[MIFParser] reads Adobe
+FrameMaker Interchange Format.
+link:{api}/org/apache/tika/parser/hwp/HwpV5Parser.html[HwpV5Parser] supports
+the Hangul Word Processor (HWP) v5 format.
+
+For translation memory and localization interchange,
+link:{api}/org/apache/tika/parser/xliff/XLIFF12Parser.html[XLIFF12Parser] and
+link:{api}/org/apache/tika/parser/xliff/XLZParser.html[XLZParser] handle XLIFF
+1.2 and its zipped form, and
+link:{api}/org/apache/tika/parser/tmx/TMXParser.html[TMXParser] handles
+Translation Memory eXchange.
+
+== Scientific formats
+
+In the standard set,
+link:{api}/org/apache/tika/parser/dif/DIFParser.html[DIFParser] extracts
+attribute metadata from the GCMD Directory Interchange Format,
+link:{api}/org/apache/tika/parser/mat/MatParser.html[MatParser] from MATLAB
+`.mat` files, and
+link:{api}/org/apache/tika/parser/geogebra/GeoGebraParser.html[GeoGebraParser]
+from GeoGebra worksheets.
+
+The `tika-parser-scientific-package` artifact in `tika-parsers-extended` adds
+link:{api}/org/apache/tika/parser/gdal/GDALParser.html[GDALParser],
+link:{api}/org/apache/tika/parser/geoinfo/GeographicInformationParser.html[GeographicInformationParser]
+(ISO 19139),
+link:{api}/org/apache/tika/parser/grib/GribParser.html[GribParser],
+link:{api}/org/apache/tika/parser/hdf/HDFParser.html[HDFParser],
+link:{api}/org/apache/tika/parser/isatab/ISArchiveParser.html[ISArchiveParser]
+(ISA-Tab) and
+link:{api}/org/apache/tika/parser/netcdf/NetCDFParser.html[NetCDFParser]. These
+pull in large native and scientific dependencies and are not in `tika-app`.
+
+== Executable programs and libraries
+
+link:{api}/org/apache/tika/parser/executable/ExecutableParser.html[ExecutableParser]
+extracts platform, architecture and type metadata from a range of executable
+and library formats, such as Windows PE and Linux/BSD ELF binaries;
+link:{api}/org/apache/tika/parser/executable/UniversalExecutableParser.html[UniversalExecutableParser]
+unpacks macOS universal (fat) binaries.
+
+== Crypto formats
+
+link:{api}/org/apache/tika/parser/crypto/Pkcs7Parser.html[Pkcs7Parser] parses
+the content of PKCS7 signed messages, without information from the outer PKCS7
+wrapper. See xref:configuration/detectors.adoc[Detectors] for enabling finer
+CMS detection.
+link:{api}/org/apache/tika/parser/crypto/TSDParser.html[TSDParser] extracts
+metadata from Time Stamped Data envelopes and exposes the wrapped content.
+
+== Database formats
+
+link:{api}/org/apache/tika/parser/microsoft/JackcessParser.html[JackcessParser]
+extracts metadata and tabular content from Microsoft Access databases.
+link:{api}/org/apache/tika/parser/dbf/DBFParser.html[DBFParser] supports dBase
+(`.dbf`) files before version 7, as used by dBase, FoxBASE, FoxPro and ESRI
+Shapefiles.
+link:{api}/org/apache/tika/parser/sas/SAS7BDATParser.html[SAS7BDATParser]
+reads SAS `.sas7bdat` datasets.
+
+link:{api}/org/apache/tika/parser/sqlite3/SQLite3Parser.html[SQLite3Parser]
+extracts SQLite3 content in tabular form. It ships in the
+`tika-parser-sqlite3-package` artifact in `tika-parsers-extended` because of
+the native `sqlite-jdbc` dependency; it is not in `tika-app`.
+
+[#ocr-and-vision]
+== OCR and vision-language models
+
+None of the image parsers above read text out of pixels. Tika offers three
+ways to do that, all off by default and all documented under Configuration:
+
+* xref:configuration/parsers/tesseract-ocr-parser.adoc[Tesseract OCR] via
+  link:{api}/org/apache/tika/parser/ocr/TesseractOCRParser.html[TesseractOCRParser],
+  which runs the `tesseract` binary when it is installed;
+* xref:configuration/parsers/tess4j-parser.adoc[Tess4J] for in-process
+  Tesseract (`tika-parsers-ml`);
+* xref:configuration/parsers/vlm-parsers.adoc[VLM parsers] --
+  link:{api}/org/apache/tika/parser/vlm/ClaudeVLMParser.html[Claude],
+  link:{api}/org/apache/tika/parser/vlm/GeminiVLMParser.html[Gemini] and
+  link:{api}/org/apache/tika/parser/vlm/OpenAIVLMParser.html[OpenAI] -- for
+  documents OCR cannot read well.
+
+xref:configuration/inference.adoc[Inference: Engines and Bindings] describes how
+these engines are attached to the PDF and image parsers, and how to plug in a
+xref:developers/custom-ocr-engine.adoc[custom OCR engine].
+
+== Natural language processing
+
+The `tika-parser-nlp-package` artifact in `tika-parsers-ml` wraps external NLP
+tools as parsers that enrich the output of other parsers:
+link:{api}/org/apache/tika/parser/ner/NamedEntityParser.html[NamedEntityParser]
+(named entity recognition via OpenNLP, Stanford CoreNLP, MITIE, NLTK or regex),
+link:{api}/org/apache/tika/parser/journal/JournalParser.html[JournalParser]
+(journal article metadata via a Grobid server),
+link:{api}/org/apache/tika/parser/ctakes/CTAKESParser.html[CTAKESParser]
+(clinical text via Apache cTAKES) and
+link:{api}/org/apache/tika/parser/geo/topic/GeoParser.html[GeoParser]
+(geographic entity resolution against a gazetteer). Each needs models,
+training data or a running service; see the parser javadocs.
+
+[#full-list]
+== Full list of supported formats in the standard parsers
+
+Generated from the parsers on the `tika-app` classpath with
+`tika-app --list-parser-details-adoc`. Parsers that only advertise types once
+an external tool or service is configured (Tesseract, the VLM parsers, the
+External Parser) are not listed.
+
+include::partial$supported-formats.adoc[]
