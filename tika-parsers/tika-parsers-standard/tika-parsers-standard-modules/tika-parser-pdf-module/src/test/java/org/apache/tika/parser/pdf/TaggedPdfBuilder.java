@@ -18,9 +18,11 @@ package org.apache.tika.parser.pdf;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
+import org.apache.pdfbox.pdfwriter.compress.CompressParameters;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDFormContentStream;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -142,6 +144,19 @@ final class TaggedPdfBuilder implements AutoCloseable {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         doc.save(bos);
         return bos.toByteArray();
+    }
+
+    /**
+     * The document with the marker string {@code SPLICE-HERE}, set as a string value anywhere
+     * in it, replaced by raw PDF syntax: the way to write what PDFBox's writer will not, such
+     * as directly nested dictionaries. Saved uncompressed; the offsets after the splice are
+     * wrong, so PDFBox rebuilds the cross-reference table when it loads the result.
+     */
+    byte[] bytesSplicing(String rawSyntax) throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        doc.save(bos, CompressParameters.NO_COMPRESSION);
+        String pdf = bos.toString(StandardCharsets.ISO_8859_1);
+        return pdf.replace("(SPLICE-HERE)", rawSyntax).getBytes(StandardCharsets.ISO_8859_1);
     }
 
     @Override

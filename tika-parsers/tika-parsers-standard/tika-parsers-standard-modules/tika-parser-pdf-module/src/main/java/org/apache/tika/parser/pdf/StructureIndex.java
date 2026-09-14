@@ -50,7 +50,7 @@ final class StructureIndex {
 
     static final int MAX_NODES = 500_000;
     static final int MAX_LEAVES = 1_000_000;
-    static final int MAX_DEPTH = 512;
+    static final int MAX_DEPTH = 4096;
     private static final int MAX_ROLE_HOPS = 16;
     private static final COSName STM = COSName.getPDFName("Stm");
     private static final Set<String> STANDARD_TYPES = standardTypes();
@@ -87,7 +87,10 @@ final class StructureIndex {
         }
     }
 
-    /** One MCID reference in the tree; {@code order} is its position in document order. */
+    /**
+     * One content reference in the tree, an MCID or an object (a figure's image); {@code order}
+     * is its position in document order.
+     */
     static final class Leaf {
         final Node node;
         final int order;
@@ -98,14 +101,18 @@ final class StructureIndex {
         }
     }
 
+    /** A kid to visit, or a cursor over a kids array so a huge array costs one frame. */
     private static final class Frame {
         final COSBase kid;
+        final COSArray array;
+        int next;
         final Node parent;
         final int depth;
         final COSDictionary page;
 
-        Frame(COSBase kid, Node parent, int depth, COSDictionary page) {
+        Frame(COSBase kid, COSArray array, Node parent, int depth, COSDictionary page) {
             this.kid = kid;
+            this.array = array;
             this.parent = parent;
             this.depth = depth;
             this.page = page;
@@ -113,6 +120,8 @@ final class StructureIndex {
     }
 
     private final Map<COSBase, Map<Integer, Leaf>> leavesByScope = new IdentityHashMap<>();
+    /** Figures and formulas that reference an object rather than text, by page. */
+    private final Map<COSBase, List<Leaf>> objectLeavesByPage = new IdentityHashMap<>();
     private final Map<String, Object> roleMap;
     private final Map<String, String> resolvedTypes = new HashMap<>();
     private int nodeCount;
@@ -173,12 +182,26 @@ final class StructureIndex {
         return m == null ? null : m.get(mcid);
     }
 
+    /** Figure and formula elements on the page whose content is an object, in document order. */
+    List<Leaf> objectLeaves(COSBase page) {
+        List<Leaf> l = objectLeavesByPage.get(page);
+        return l == null ? Collections.emptyList() : l;
+    }
+
     private void walk(COSBase rootKids) {
         Set<COSDictionary> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         Deque<Frame> stack = new ArrayDeque<>();
         pushKids(rootKids, null, 0, null, stack);
         while (!stack.isEmpty()) {
             Frame f = stack.pop();
+            if (f.array != null) {
+                if (f.next < f.array.size()) {
+                    COSBase next = f.array.get(f.next++);
+                    stack.push(f);
+                    stack.push(new Frame(next, null, f.parent, f.depth, f.page));
+                }
+                continue;
+            }
             COSBase kid = f.kid;
             if (kid instanceof COSObject) {
                 kid = ((COSObject) kid).getObject();
@@ -224,8 +247,16 @@ final class StructureIndex {
                         addLeaf(f.parent, scope, mcid);
                     }
                 } else if (COSName.OBJR.getName().equals(type)) {
-                    if (f.parent != null && f.parent.objr == null) {
+                    if (f.parent == null) {
+                        continue;
+                    }
+                    if (f.parent.objr == null) {
                         f.parent.objr = dict.getCOSDictionary(COSName.OBJ);
+                    }
+                    COSDictionary pg = dict.getCOSDictionary(COSName.PG);
+                    COSDictionary page = pg != null ? pg : f.page;
+                    if (page != null && isObjectContent(f.parent.type)) {
+                        addObjectLeaf(f.parent, page);
                     }
                 }
             }
@@ -238,12 +269,9 @@ final class StructureIndex {
     private void pushKids(COSBase kids, Node parent, int depth, COSDictionary page,
                           Deque<Frame> stack) {
         if (kids instanceof COSArray) {
-            COSArray array = (COSArray) kids;
-            for (int i = array.size() - 1; i >= 0; i--) {
-                stack.push(new Frame(array.get(i), parent, depth, page));
-            }
+            stack.push(new Frame(null, (COSArray) kids, parent, depth, page));
         } else {
-            stack.push(new Frame(kids, parent, depth, page));
+            stack.push(new Frame(kids, null, parent, depth, page));
         }
     }
 
@@ -258,9 +286,24 @@ final class StructureIndex {
         }
     }
 
+    private void addObjectLeaf(Node node, COSDictionary page) {
+        if (leafCount >= MAX_LEAVES) {
+            fail("structure-tree-leaves");
+            return;
+        }
+        objectLeavesByPage.computeIfAbsent(page, p -> new ArrayList<>())
+                .add(new Leaf(node, ++leafCount));
+    }
+
     private void fail(String why) {
         reason = why;
         leavesByScope.clear();
+        objectLeavesByPage.clear();
+    }
+
+    /** Types whose content is an image or drawing, described by /Alt rather than by text. */
+    static boolean isObjectContent(String type) {
+        return "Figure".equals(type) || "Formula".equals(type);
     }
 
     /** Follows the role map to a standard type; a custom type with no mapping keeps its name. */

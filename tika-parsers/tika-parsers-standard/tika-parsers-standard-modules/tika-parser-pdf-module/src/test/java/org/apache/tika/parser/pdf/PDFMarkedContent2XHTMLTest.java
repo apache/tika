@@ -53,8 +53,8 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
         assertContains("<h1>V. CONCLUSION", xml);
         // one cell per TD, even though the row is drawn as one run of text
         assertContains("<table><tr>\t<td><p />", xml);
-        assertContains("<td><p>NHG </p>", xml);
-        assertContains("<td><p>STRING </p>", xml);
+        assertContains("<td><p>NHG</p>", xml);
+        assertContains("<td><p>STRING</p>", xml);
         assertContainsCount("<div class=\"page\">", xml, 10);
         assertEquals(10, r.metadata.getInt(PDF.MARKED_CONTENT_PAGES_TAGGED));
         assertEquals(0, r.metadata.getInt(PDF.MARKED_CONTENT_PAGES_FALLBACK));
@@ -69,9 +69,9 @@ public class PDFMarkedContent2XHTMLTest extends TikaTest {
         assertContains("<div class=\"textbox\"><p>Here is a text box", xml);
         assertContains("<div class=\"footnote\"><p>1\n This is a footnote.", xml);
         assertContains("<p>Bold italic underline superscript subscript", xml);
-        assertContains("<ul>\t<li> Bullet 1", xml);
-        assertContains("<table><tr>\t<td><p>Row 1 Col 1 </p>", xml);
-        assertContains("</td>\t<td><p>Row 1 Col 2 </p>", xml);
+        assertContains("<ul>\t<li>Bullet 1", xml);
+        assertContains("<table><tr>\t<td><p>Row 1 Col 1</p>", xml);
+        assertContains("</td>\t<td><p>Row 1 Col 2</p>", xml);
         assertContains("<p>Here is a citation:", xml);
         assertContains("<p><a href=\"http://tika.apache.org/\">This is a hyperlink</a></p>", xml);
         // running header and footer are /Artifact content: kept, but set apart

@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -40,11 +41,15 @@ import org.apache.pdfbox.pdmodel.PDResources;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDObjectReference;
 import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructureElement;
+import org.apache.pdfbox.pdmodel.documentinterchange.logicalstructure.PDStructureNode;
 import org.apache.pdfbox.pdmodel.documentinterchange.taggedpdf.PDListAttributeObject;
 import org.apache.pdfbox.pdmodel.graphics.form.PDFormXObject;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.pdmodel.interactive.action.PDActionURI;
 import org.apache.pdfbox.pdmodel.interactive.annotation.PDAnnotationLink;
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Node;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -53,6 +58,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -279,7 +285,7 @@ public class PDFMarkedContentGateTest extends TikaTest {
             finish(cs);
 
             Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
-            assertContains("<table><tr>\t<td><p>NHG </p>", tags.xml);
+            assertContains("<table><tr>\t<td><p>NHG</p>", tags.xml);
             assertContains("\t<td><p>STRING", tags.xml);
             assertWellFormed(tags.xml);
         }
@@ -358,6 +364,530 @@ public class PDFMarkedContentGateTest extends TikaTest {
         }
     }
 
+    /** A space drawn under its own MCID between two untagged words still separates them. */
+    @Test
+    public void testUntaggedWordsAroundATaggedSpaceStayApart() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            b.leaf("P", b.document, page, 0);
+            b.leaf("P", b.document, page, 1);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.P, 0, "Tagged line to keep the page tagged");
+            cs.showText("foo");
+            cs.beginMarkedContent(COSName.P, mcid(1));
+            cs.showText(" ");
+            cs.endMarkedContent();
+            cs.showText("bar");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertContains("<div class=\"untagged\"><p>foo bar", tags.xml);
+            assertFalse(tags.xml.contains("foobar"));
+        }
+    }
+
+    /** A tree 300 levels deep must not trip the XML nesting guard: containers collapse. */
+    @Test
+    public void testDeepTreeStaysUnderTheNestingBudget() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement parent = b.document;
+            for (int i = 0; i < 300; i++) {
+                parent = b.element(i % 2 == 0 ? "Sect" : "Div", parent, page);
+            }
+            PDStructureElement list = b.element("L", parent, page);
+            b.leaf("P", b.element("LBody", b.element("LI", list, page), page), page, 0);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.P, 0, "Deep down");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertContains("<ul>\t<li><p>Deep down", tags.xml);
+            assertEquals(1, tags.metadata.getInt(PDF.MARKED_CONTENT_PAGES_TAGGED));
+            assertNull(tags.metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+            int max = depth(XMLReaderUtils.buildDOM(new ByteArrayInputStream(
+                    tags.xml.getBytes(StandardCharsets.UTF_8))).getDocumentElement());
+            assertTrue(max <= PDFMarkedContent2XHTML.MAX_OPEN_ELEMENTS + 4, "nesting " + max);
+        }
+    }
+
+    private static int depth(Node node) {
+        int max = 0;
+        for (Node child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
+            if (child.getNodeType() == Node.ELEMENT_NODE) {
+                max = Math.max(max, depth(child));
+            }
+        }
+        return max + 1;
+    }
+
+    /** Element mappings ask their ancestors; a long chain of custom types must not recurse. */
+    @Test
+    public void testDeepCustomTypeChainDoesNotOverflow() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement parent = b.document;
+            for (int i = 0; i < 3000; i++) {
+                parent = b.element("Widget" + (i % 7), parent, page);
+            }
+            b.leaf("P", parent, page, 0);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.P, 0, "At the bottom");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertContains("<p>At the bottom", tags.xml);
+            assertEquals(1, tags.metadata.getInt(PDF.MARKED_CONTENT_PAGES_TAGGED));
+            assertNull(tags.metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        }
+    }
+
+    /**
+     * A tree written as directly nested dictionaries, deeper than PDFBox's parser will
+     * recurse (500 levels): PDFBox drops the object and every strategy writes the page as the
+     * stripper does. The same file with the nesting under a kid, so the root survives, is
+     * walked past the unreadable kid.
+     */
+    @Test
+    public void testDirectlyNestedTreePastPdfboxRecursionCapFallsBack() throws Exception {
+        for (boolean underKid : new boolean[] {false, true}) {
+            try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+                PDPage page = b.page();
+                PDStructureElement holder = underKid ? b.element("Div", b.document, page)
+                        : b.document;
+                holder.getCOSObject().setString(COSName.K, "SPLICE-HERE");
+                PDPageContentStream cs = b.text(page);
+                taggedLine(cs, COSName.P, 0, "Text on the page");
+                finish(cs);
+                StringBuilder chain = new StringBuilder();
+                for (int i = 0; i < 3000; i++) {
+                    chain.append("<< /Type /StructElem /S /Div /K ");
+                }
+                chain.append("<< /Type /StructElem /S /P /K 0 >>");
+                for (int i = 0; i < 3000; i++) {
+                    chain.append(" >>");
+                }
+                byte[] pdf = b.bytesSplicing(chain.toString());
+
+                for (MarkedContentConfig.Strategy strategy : MarkedContentConfig.Strategy.values()) {
+                    Result r = parse(pdf, config(strategy));
+                    assertContains("Text on the page", r.xml);
+                    assertNull(r.metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+                    // the root's own kid unreadable: no tree at all; a kid below it: an
+                    // empty tree, and the page falls back
+                    Integer tagged = r.metadata.getInt(PDF.MARKED_CONTENT_PAGES_TAGGED);
+                    assertTrue(tagged == null || tagged == 0, String.valueOf(tagged));
+                }
+            }
+        }
+    }
+
+    /** A tree of bare spans gives the page no paragraphs; AUTO keeps the stripper's. */
+    @Test
+    public void testPageWithoutBlockElementsFallsBack() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            b.leaf("Span", b.document, page, 0);
+            b.leaf("Span", b.document, page, 1);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.getPDFName("Span"), 0, "First line of text");
+            taggedLine(cs, COSName.getPDFName("Span"), 1, "Second line of text");
+            finish(cs);
+            byte[] pdf = b.bytes();
+
+            Result auto = parse(pdf, config(MarkedContentConfig.Strategy.AUTO));
+            assertEquals("1:no-block-structure", auto.metadata.get(PDF.MARKED_CONTENT_REJECTIONS));
+            assertContains("<p>First line of text", auto.xml);
+            Result tags = parse(pdf, config(MarkedContentConfig.Strategy.TAGS));
+            assertEquals(1, tags.metadata.getInt(PDF.MARKED_CONTENT_PAGES_TAGGED));
+        }
+        // a tree of bare containers is no better than one of bare spans
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement div = b.element("Div", b.document, page);
+            b.leaf("NonStruct", div, page, 0);
+            b.leaf("NonStruct", div, page, 1);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 0, "First line of text");
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 1, "Second line of text");
+            finish(cs);
+            byte[] pdf = b.bytes();
+
+            Result auto = parse(pdf, config(MarkedContentConfig.Strategy.AUTO));
+            assertEquals("1:no-block-structure", auto.metadata.get(PDF.MARKED_CONTENT_REJECTIONS));
+            Result tags = parse(pdf, config(MarkedContentConfig.Strategy.TAGS));
+            assertContains("<div class=\"div\"><p>First line of text\nSecond line of text</p>",
+                    tags.xml);
+        }
+    }
+
+    /**
+     * Text the tree leaves straight in a container gets the stripper's paragraphs, as the flat
+     * page would; text inside a real block does not.
+     */
+    @Test
+    public void testLooseTextTakesTheStrippersParagraphs() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement div = b.element("Div", b.document, page);
+            b.leaf("H1", div, page, 0);
+            b.leaf("NonStruct", div, page, 1);
+            b.leaf("NonStruct", div, page, 2);
+            b.leaf("NonStruct", div, page, 3);
+            PDStructureElement p = b.element("P", div, page);
+            b.leaf("Span", p, page, 4);
+            b.leaf("Span", p, page, 5);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.getPDFName("H1"), 0, "Heading");
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 1, "First line");
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 2, "Second line");
+            // a gap the stripper reads as a paragraph break
+            cs.newLine();
+            cs.newLine();
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 3, "Third line");
+            taggedLine(cs, COSName.getPDFName("Span"), 4, "Inside a paragraph");
+            cs.newLine();
+            cs.newLine();
+            taggedLine(cs, COSName.getPDFName("Span"), 5, "still one paragraph");
+            finish(cs);
+
+            Result auto = parse(b.bytes(), config(MarkedContentConfig.Strategy.AUTO));
+            assertWellFormed(auto.xml);
+            assertEquals(1, auto.metadata.getInt(PDF.MARKED_CONTENT_PAGES_TAGGED));
+            assertContains("<h1>Heading</h1>\n<p>First line\nSecond line</p>\n<p>Third line</p>",
+                    auto.xml);
+            assertContains("<p>Inside a paragraph\nstill one paragraph</p>", auto.xml);
+        }
+    }
+
+    /** Text straight in a table, a row or a list sits in the child that holds text there. */
+    @Test
+    public void testTextStraightInATableOrListGetsItsChild() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement table = b.element("Table", b.document, page);
+            b.leaf("NonStruct", table, page, 0);
+            PDStructureElement tr = b.element("TR", table, page);
+            b.leaf("TD", tr, page, 1);
+            b.leaf("NonStruct", tr, page, 2);
+            PDStructureElement list = b.element("L", b.document, page);
+            b.leaf("NonStruct", list, page, 3);
+            PDStructureElement li = b.element("LI", list, page);
+            b.leaf("LBody", li, page, 4);
+            PDStructureElement nested = b.element("L", list, page);
+            PDStructureElement nestedItem = b.element("LI", nested, page);
+            b.leaf("LBody", nestedItem, page, 5);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 0, "Table title");
+            taggedLine(cs, COSName.getPDFName("TD"), 1, "Cell");
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 2, "Stray");
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 3, "Loose entry");
+            taggedLine(cs, COSName.getPDFName("LBody"), 4, "Item");
+            taggedLine(cs, COSName.getPDFName("LBody"), 5, "Nested item");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertWellFormed(tags.xml);
+            assertContains("<table><caption>Table title</caption>\n<tr>\t<td>Cell</td>\t<td>Stray</td>",
+                    tags.xml);
+            assertContains("<ul>\t<li>Loose entry</li>\n\t<li>Item</li>\n\t<li><ul>\t<li>Nested item",
+                    tags.xml);
+        }
+    }
+
+    /**
+     * A block inside a paragraph or heading closes it, as an HTML parser would; a paragraph
+     * inside a link or span is inline there, its edges still separating words.
+     */
+    @Test
+    public void testBlockInsideAParagraphClosesIt() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement p = b.element("P", b.document, page);
+            b.leaf("Span", p, page, 0);
+            PDStructureElement inner = b.element("P", p, page);
+            b.leaf("Span", inner, page, 1);
+            PDStructureElement figure = b.element("Figure", p, page);
+            figure.setAlternateDescription("A chart");
+            b.leaf("Span", figure, page, 2);
+            PDStructureElement table = b.element("Table", p, page);
+            PDStructureElement tr = b.element("TR", table, page);
+            PDStructureElement td = b.element("TD", tr, page);
+            b.leaf("P", td, page, 3);
+            PDStructureElement h = b.element("H1", b.document, page);
+            b.leaf("Span", h, page, 4);
+            PDStructureElement inHeading = b.element("P", h, page);
+            b.leaf("Span", inHeading, page, 5);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.getPDFName("Span"), 0, "Outer");
+            taggedLine(cs, COSName.getPDFName("Span"), 1, "inner");
+            taggedLine(cs, COSName.getPDFName("Span"), 2, "caption");
+            taggedLine(cs, COSName.getPDFName("P"), 3, "Cell");
+            taggedLine(cs, COSName.getPDFName("Span"), 4, "Heading");
+            taggedLine(cs, COSName.getPDFName("Span"), 5, "Not the heading");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertWellFormed(tags.xml);
+            assertContains("<p>Outer</p>\n<p>inner</p>\n<div alt=\"A chart\" class=\"figure\">"
+                    + "A chart\n<p>caption</p>\n</div>\n<table><tr>\t<td><p>Cell</p>", tags.xml);
+            assertContains("<h1>Heading</h1>\n<p>Not the heading</p>", tags.xml);
+        }
+        // a paragraph's own text after a block nested in it gets a paragraph of its own
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement p = b.element("P", b.document, page);
+            PDStructureElement inner = b.element("P", p, page);
+            b.leaf("Span", inner, page, 0);
+            b.leaf("Span", p, page, 1);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.getPDFName("Span"), 0, "Nested first");
+            taggedLine(cs, COSName.getPDFName("Span"), 1, "then the outer text");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertWellFormed(tags.xml);
+            assertContains("<p>Nested first</p>\n<p>then the outer text</p>", tags.xml);
+        }
+        // a chain of paragraphs nested in each other is a sequence of paragraphs, however deep
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureNode parent = b.document;
+            PDPageContentStream cs = b.text(page);
+            for (int i = 0; i < 80; i++) {
+                PDStructureElement p = b.element("P", parent, page);
+                b.leaf("Span", p, page, i);
+                taggedLine(cs, COSName.getPDFName("Span"), i, "Paragraph " + i);
+                parent = p;
+            }
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertWellFormed(tags.xml);
+            assertContains("<p>Paragraph 0</p>\n<p>Paragraph 1</p>", tags.xml);
+            assertContains("<p>Paragraph 78</p>\n<p>Paragraph 79</p>", tags.xml);
+            assertNotContained("<span", tags.xml);
+            assertNotContained("<p />", tags.xml);
+        }
+        // inside a link the paragraph is inline, and its edge separates words even when no
+        // separator was drawn
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement p = b.element("P", b.document, page);
+            b.leaf("Span", p, page, 0);
+            PDStructureElement span = b.element("Span", p, page);
+            span.setLanguage("de-DE");
+            PDStructureElement inner = b.element("P", span, page);
+            b.leaf("Span", inner, page, 1);
+            PDPageContentStream cs = b.text(page);
+            cs.beginMarkedContent(COSName.getPDFName("Span"), TaggedPdfBuilder.mcid(0));
+            cs.showText("Known Data Problems:");
+            cs.endMarkedContent();
+            cs.beginMarkedContent(COSName.getPDFName("Span"), TaggedPdfBuilder.mcid(1));
+            cs.showText("https://example.com");
+            cs.endMarkedContent();
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertContains("<p>Known Data Problems:<span lang=\"de-DE\">\n<span class=\"p\">"
+                    + "https://example.com</span></span></p>", tags.xml);
+        }
+    }
+
+    /**
+     * Inside a table or a row, a block that is not a row or cell is inline, and its text takes
+     * the caption or cell the table gives text there; a Caption element under a table is the
+     * table's caption. Loose text around a heading stays on its side of the heading.
+     */
+    @Test
+    public void testBlockInsideATableIsInline() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement table = b.element("Table", b.document, page);
+            b.leaf("Caption", table, page, 0);
+            PDStructureElement sect = b.element("Sect", table, page);
+            b.leaf("P", sect, page, 1);
+            PDStructureElement tr = b.element("TR", table, page);
+            b.leaf("TD", tr, page, 2);
+            PDStructureElement strayRow = b.element("TR", table, page);
+            PDStructureElement div = b.element("Div", strayRow, page);
+            b.leaf("P", div, page, 3);
+            b.leaf("Caption", b.document, page, 4);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.getPDFName("Caption"), 0, "Table 1");
+            taggedLine(cs, COSName.getPDFName("P"), 1, "Chart label");
+            taggedLine(cs, COSName.getPDFName("TD"), 2, "Cell");
+            taggedLine(cs, COSName.getPDFName("P"), 3, "Stray");
+            taggedLine(cs, COSName.getPDFName("Caption"), 4, "Standalone");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertWellFormed(tags.xml);
+            // nested demoted blocks collapse to the innermost
+            assertContains("<table><caption>Table 1</caption>\n<caption><span class=\"p\">"
+                    + "Chart label</span></caption>\n<tr>\t<td>Cell</td>", tags.xml);
+            assertContains("<tr>\t<td><span class=\"p\">Stray</span></td>", tags.xml);
+            assertContains("<div class=\"caption\"><p>Standalone</p>", tags.xml);
+        }
+    }
+
+    /** An item outside a list and a row outside a table get the container the tree left out. */
+    @Test
+    public void testItemOutsideAListAndRowOutsideATableGetTheirContainer() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement sect = b.element("Sect", b.document, page);
+            PDStructureElement li = b.element("LI", sect, page);
+            b.leaf("LBody", li, page, 0);
+            PDStructureElement tr = b.element("TR", sect, page);
+            b.leaf("TD", tr, page, 1);
+            PDStructureElement list = b.element("L", sect, page);
+            PDStructureElement item = b.element("LI", list, page);
+            b.leaf("LBody", item, page, 2);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.getPDFName("LBody"), 0, "Lone item");
+            taggedLine(cs, COSName.getPDFName("TD"), 1, "Lone cell");
+            taggedLine(cs, COSName.getPDFName("LBody"), 2, "Listed item");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertWellFormed(tags.xml);
+            assertContains("<div class=\"sect\"><ul>\t<li>Lone item</li>\n</ul>\n<table><tr>\t<td>"
+                    + "Lone cell</td></tr>\n</table>\n<ul>\t<li>Listed item</li>", tags.xml);
+        }
+    }
+
+    /** A link around loose text sits inside the paragraph the text gets, not around it. */
+    @Test
+    public void testLinkAroundLooseTextSitsInItsParagraph() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement outer = b.element("NonStruct", b.document, page);
+            b.leaf("NonStruct", outer, page, 0);
+            PDStructureElement link = b.element("Link", outer, page);
+            link.setLanguage("en-US");
+            b.leaf("NonStruct", link, page, 1);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 0, "RSVP for the lecture");
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 1, "here.");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertWellFormed(tags.xml);
+            assertContains("<p>RSVP for the lecture\n<span lang=\"en-US\" class=\"link\">here.</span>"
+                    + "</p>", tags.xml);
+        }
+        // loose text on both sides of a heading stays on its side
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            b.leaf("Span", b.document, page, 0);
+            b.leaf("H1", b.document, page, 1);
+            b.leaf("Span", b.document, page, 2);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.getPDFName("Span"), 0, "Before");
+            taggedLine(cs, COSName.getPDFName("H1"), 1, "Heading");
+            taggedLine(cs, COSName.getPDFName("Span"), 2, "After");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertContains("<p>Before</p>\n<h1>Heading</h1>\n<p>After</p>", tags.xml);
+        }
+    }
+
+    /** Paragraphs nested in each other under a table are a sequence of spans in its caption. */
+    @Test
+    public void testNestedParagraphsUnderATableStayFlat() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement table = b.element("Table", b.document, page);
+            PDStructureNode parent = table;
+            PDPageContentStream cs = b.text(page);
+            for (int i = 0; i < 80; i++) {
+                PDStructureElement p = b.element("P", parent, page);
+                b.leaf("Span", p, page, i);
+                taggedLine(cs, COSName.getPDFName("Span"), i, "Line " + i);
+                parent = p;
+            }
+            PDStructureElement tr = b.element("TR", table, page);
+            b.leaf("TD", tr, page, 80);
+            taggedLine(cs, COSName.getPDFName("TD"), 80, "Cell");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertWellFormed(tags.xml);
+            assertContains("<table><caption><span class=\"p\">Line 0</span>\n<span class=\"p\">Line 1"
+                    + "</span>", tags.xml);
+            assertContains("<span class=\"p\">Line 79</span></caption>\n<tr>\t<td>Cell</td>",
+                    tags.xml);
+        }
+    }
+
+    /** A custom container type is a division, and text straight in it gets paragraphs too. */
+    @Test
+    public void testCustomContainerTextTakesParagraphs() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement article = b.element("Article", b.document, page);
+            b.leaf("NonStruct", article, page, 0);
+            b.leaf("NonStruct", article, page, 1);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 0, "First line");
+            taggedLine(cs, COSName.getPDFName("NonStruct"), 1, "Second line");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertContains("<div class=\"article\"><p>First line\nSecond line</p>", tags.xml);
+        }
+    }
+
+    /** Whitespace at the edges of a block is layout; separators still sit outside links. */
+    @Test
+    public void testBlockEdgesAreTrimmed() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement p = b.leaf("P", b.document, page, 0);
+            b.leaf("Span", p, page, 1).setLanguage("de-DE");
+            b.leaf("P", b.document, page, 2);
+            PDPageContentStream cs = b.text(page);
+            cs.beginMarkedContent(COSName.P, mcid(0));
+            cs.showText(" Lead ");
+            cs.beginMarkedContent(COSName.getPDFName("Span"), mcid(1));
+            cs.showText("mitte ");
+            cs.endMarkedContent();
+            cs.showText("tail ");
+            cs.endMarkedContent();
+            cs.newLine();
+            taggedLine(cs, COSName.P, 2, " Next ");
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertContains("<p>Lead <span lang=\"de-DE\">mitte</span> tail</p>", tags.xml);
+            assertContains("<p>Next</p>", tags.xml);
+        }
+    }
+
+    /** Text in a list item before its nested paragraph keeps the space between them. */
+    @Test
+    public void testSpaceBeforeNestedBlockIsKept() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement li = b.element("LI", b.element("L", b.document, page), page);
+            li.appendKid(0);
+            b.leaf("P", li, page, 1);
+            PDPageContentStream cs = b.text(page);
+            cs.beginMarkedContent(COSName.getPDFName("LI"), mcid(0));
+            cs.showText("Item ");
+            cs.endMarkedContent();
+            cs.beginMarkedContent(COSName.P, mcid(1));
+            cs.showText("nested");
+            cs.endMarkedContent();
+            finish(cs);
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            assertContains("<li>Item <p>nested</p>", tags.xml);
+        }
+    }
+
     @Test
     public void testDanglingGate() throws Exception {
         try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
@@ -406,6 +936,56 @@ public class PDFMarkedContentGateTest extends TikaTest {
             Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
             assertContains("<p>Visit <a href=\"http://example.com/\">example</a> today",
                     tags.xml);
+        }
+    }
+
+    @Test
+    public void testFigureWithoutTextIsPlacedWithItsAlt() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            b.leaf("P", b.document, page, 0);
+            PDStructureElement figure = b.element("Figure", b.document, page);
+            figure.setAlternateDescription("A bar chart of sales by region");
+            PDImageXObject image = LosslessFactory.createFromImage(b.doc,
+                    new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB));
+            PDObjectReference objr = new PDObjectReference();
+            objr.setReferencedObject(image);
+            figure.appendKid(objr);
+            b.leaf("P", b.document, page, 1);
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.P, 0, "Before the figure");
+            taggedLine(cs, COSName.P, 1, "After the figure");
+            cs.endText();
+            cs.drawImage(image, 72, 400, 100, 100);
+            cs.close();
+
+            Result tags = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS));
+            String body = tags.body();
+            String div = "alt=\"A bar chart of sales by region\" class=\"figure\">"
+                    + "A bar chart of sales by region";
+            assertContains(div, body);
+            assertTrue(body.indexOf("Before the figure") < body.indexOf(div));
+            assertTrue(body.indexOf(div) < body.indexOf("After the figure"));
+            assertWellFormed(tags.xml);
+        }
+    }
+
+    @Test
+    public void testFigureAltPrecedesItsTextOnce() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement figure = b.leaf("Figure", b.document, page, 0);
+            figure.setAlternateDescription("Diagram of the pump");
+            PDPageContentStream cs = b.text(page);
+            taggedLine(cs, COSName.P, 0, "inlet");
+            cs.beginMarkedContent(COSName.P, mcid(0));
+            cs.showText("outlet");
+            cs.endMarkedContent();
+            finish(cs);
+
+            String body = parse(b.bytes(), config(MarkedContentConfig.Strategy.TAGS)).body();
+            assertContains("class=\"figure\">Diagram of the pump\n<p>inlet\noutlet</p>", body);
+            assertContainsCount("Diagram of the pump", body, 2);
         }
     }
 

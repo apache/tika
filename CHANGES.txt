@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * New tika-eval-structure: a standalone tool that compares two sets of
+     XHTML extracts block by block (paragraph order as Kendall tau, splits and
+     merges, words one side glues that the other splits, artifact and untagged
+     shares), per file and per producer, where token dice cannot see order
+     (TIKA-4891).
+
    * Tagged PDFs: pdf-parser.markedContent replaces extractMarkedContent
      (still accepted) with a strategy, NONE by default. TAGS and AUTO write
      text through the structure tree, page by page, on top of the text
@@ -8,7 +14,12 @@ Release 4.1.0 - unreleased
      text kept in their own divs. AUTO falls back to the stripper on pages
      whose tree claims too little of the page or points at content the page
      lacks (minCoverage, maxDanglingRatio); maxPages, AUTO OCR, inline
-     images and per-page metadata now apply to tagged output as well.
+     images and per-page metadata now apply to tagged output as well; figures
+     keep their place with their Alt text. Where the tree nests what HTML
+     cannot, the output is repaired as an HTML parser would: a block inside
+     a paragraph or heading closes it, text straight in a division gets the
+     stripper's paragraphs, in a table a caption, in a row a cell, in a list
+     an item, and a block inside a link or table becomes a span.
      Metadata reports pages tagged, pages fallen back and why (TIKA-4891).
 
    * A text recognizer is an engine: configure Tesseract, Tess4J or a VLM once

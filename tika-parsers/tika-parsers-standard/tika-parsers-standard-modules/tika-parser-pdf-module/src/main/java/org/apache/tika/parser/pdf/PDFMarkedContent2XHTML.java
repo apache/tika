@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -75,8 +76,20 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
     private static final Pattern CLASS_NAME_CHARS = Pattern.compile("[^a-z0-9_-]");
     private static final int MAX_CLASS_NAME = 64;
+    /**
+     * Most elements open at once. Tika's SecureContentHandler treats 100 levels of XML
+     * nesting as a zip bomb, and real trees go deeper (an Antenna House manual: 601); grouping
+     * containers beyond the budget are written transparently, innermost elements kept.
+     */
+    static final int MAX_OPEN_ELEMENTS = 60;
+    private static final Set<String> GROUPING_TYPES = Set.of("Part", "Art", "Sect", "Div",
+            "Aside", "DocumentFragment", "Private", "NonStruct", "Index");
     private static final Object NEWLINE = new Object();
     private static final Object PARAGRAPH_BREAK = new Object();
+    /** Elements whose nesting is structure, kept wherever the tree puts them. */
+    private static final Set<String> STRUCTURAL_TAGS = Set.of("table", "thead", "tbody", "tfoot",
+            "tr", "td", "th", "caption", "ul", "ol", "li");
+    private static final Set<String> TABLE_TAGS = Set.of("table", "thead", "tbody", "tfoot", "tr");
     private static final Set<String> ORDERED_LIST_NUMBERING = Set.of(
             PDListAttributeObject.LIST_NUMBERING_DECIMAL,
             PDListAttributeObject.LIST_NUMBERING_LOWER_ALPHA,
@@ -175,31 +188,98 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     /** Consecutive words under one label, with the separators the stripper put between them. */
     private static final class Run {
         final Label label;
+        /** Position among the page's runs: two runs written together but not adjacent here
+         *  had other content between them. */
+        final int ordinal;
         final List<Object> pieces = new ArrayList<>();
         boolean hasText;
 
-        Run(Label label) {
+        Run(Label label, int ordinal) {
             this.label = label;
+            this.ordinal = ordinal;
+        }
+
+        boolean endsWithSeparator() {
+            if (pieces.isEmpty()) {
+                return false;
+            }
+            Object last = pieces.get(pieces.size() - 1);
+            return last == NEWLINE || last == PARAGRAPH_BREAK || ((String) last).isBlank();
         }
     }
 
     /** How a structure element is written: its element name (null for transparent) and attributes. */
     static final class ElementSpec {
-        static final ElementSpec TRANSPARENT = new ElementSpec(null, null, false);
+        static final ElementSpec TRANSPARENT = new ElementSpec(null, null, false, null, null, false);
 
         final String tag;
         final AttributesImpl attributes;
         final boolean inline;
+        /** A figure's alternate description, written as its text. */
+        final String alt;
+        /** An element written around this one: the item a list's stray child sits in. */
+        final String outer;
+        /** A block written as a span; its edges still separate words. */
+        final boolean demoted;
 
         ElementSpec(String tag, AttributesImpl attributes, boolean inline) {
+            this(tag, attributes, inline, null, null, false);
+        }
+
+        ElementSpec(String tag, AttributesImpl attributes, boolean inline, String alt,
+                    String outer, boolean demoted) {
             this.tag = tag;
             this.attributes = attributes;
             this.inline = inline;
+            this.alt = alt;
+            this.outer = outer;
+            this.demoted = demoted;
+        }
+
+        /** The same element as a span, classed by what it was. */
+        ElementSpec asSpan() {
+            AttributesImpl attrs = attributes == null ? new AttributesImpl() : attributes;
+            if (attrs.getIndex("class") < 0) {
+                addAttribute(attrs, "class", tag);
+            }
+            return new ElementSpec("span", attrs, true, alt, outer, true);
+        }
+
+        ElementSpec within(String outerTag) {
+            return new ElementSpec(tag, attributes, inline, alt, outerTag, demoted);
+        }
+
+        int elements() {
+            return tag == null ? 0 : outer == null ? 1 : 2;
+        }
+    }
+
+    /**
+     * The element loose text is wrapped in when the tree leaves it straight in a container that
+     * holds no text of its own in XHTML: a paragraph in a division, a caption in a table, a cell
+     * in a row, an item in a list. The stripper's paragraph breaks split it as they do a flat page.
+     */
+    private static final class Wrapper {
+        final String tag;
+        /** Whether it sits inside the group's block, or in its place when that is not a block. */
+        final boolean inside;
+        /** Path index of the first node inside the wrapper, set per run. */
+        int at;
+        boolean open;
+        /** A paragraph break arrived while an inline element was open; applied once it closes. */
+        boolean breakPending;
+
+        Wrapper(String tag, boolean inside) {
+            this.tag = tag;
+            this.inside = inside;
         }
     }
 
     private static final class PageStats {
         int tagged;
+        /** Tagged text inside a block that holds text (a paragraph, cell, heading), not a bare
+         *  container. */
+        int inBlock;
         int untagged;
         int artifact;
         int leaves;
@@ -218,6 +298,20 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     /** Every (scope, MCID) the page's content streams opened, with or without text. */
     private final Set<Label> openedMcids = new HashSet<>();
     private final List<Event> events = new ArrayList<>();
+    private final Set<StructureIndex.Node> altWritten =
+            Collections.newSetFromMap(new IdentityHashMap<>());
+    /** Whitespace after the last word, written only if more text follows in the same block. */
+    private final List<Object> held = new ArrayList<>();
+    /** The tree path currently open, root first, with each node's element state. */
+    private final List<StructureIndex.Node> open = new ArrayList<>();
+    private final List<Integer> openState = new ArrayList<>();
+    private static final int NOT_WRITTEN = 0;
+    private static final int OPEN = 1;
+    /** A paragraph or heading closed early because a block opened inside it, as HTML does. */
+    private static final int SUSPENDED = 2;
+    /** Not written because the nesting budget was spent. */
+    private static final int DROPPED = 3;
+    private boolean atBlockStart;
     private Label currentLabel;
     private State state = State.IDLE;
     /** startPage's paragraph start, held until the page knows whether it is tagged. */
@@ -635,11 +729,15 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 continue;
             }
             for (Segment segment : event.segments) {
+                StructureIndex.Leaf leaf = segment.label.tagged() ?
+                        index.leaf(segment.label.scope, segment.label.mcid) : null;
                 if (segment.label == Label.ARTIFACT) {
                     stats.artifact += segment.positions;
-                } else if (segment.label.tagged()
-                        && index.leaf(segment.label.scope, segment.label.mcid) != null) {
+                } else if (leaf != null) {
                     stats.tagged += segment.positions;
+                    if (wrapperTag(blockOf(leaf.node)) == null) {
+                        stats.inBlock += segment.positions;
+                    }
                 } else {
                     stats.untagged += segment.positions;
                 }
@@ -663,6 +761,11 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         }
         if (markedContentConfig.getStrategy() == MarkedContentConfig.Strategy.TAGS) {
             return null;
+        }
+        // a tree of bare spans or containers gives the page no paragraphs; the stripper's are
+        // better
+        if (stats.inBlock == 0) {
+            return "no-block-structure";
         }
         // artifacts count: a producer that marks the body /Artifact and tags fragments has
         // not described the page, and the stripper does better with it
@@ -703,25 +806,39 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 untagged.add(run);
                 continue;
             }
-            StructureIndex.Node block = blockOf(leaf.node);
-            BlockGroup group = groups.get(block);
-            if (group == null) {
-                group = new BlockGroup(block);
-                groups.put(block, group);
-                ordered.add(group);
+            group(groups, ordered, leaf).add(run, leaf);
+        }
+        // a figure's image has no words; its element still takes its place, with its /Alt
+        for (COSBase scope : pageScopes) {
+            for (StructureIndex.Leaf leaf : index.objectLeaves(scope)) {
+                group(groups, ordered, leaf).add(null, leaf);
             }
-            group.add(run, leaf);
         }
         ordered.sort((a, b) -> Integer.compare(a.firstLeafOrder, b.firstLeafOrder));
-
-        List<StructureIndex.Node> open = new ArrayList<>();
-        List<StructureIndex.Node> path = new ArrayList<>();
-        // the separators after a run's last word belong between elements, not inside a link
-        List<Object> carried = new ArrayList<>();
+        // loose text (no block above it) that nothing else interrupts is one stretch of text
+        List<BlockGroup> merged = new ArrayList<>(ordered.size());
         for (BlockGroup group : ordered) {
-            if (!group.hasText && !inTableCell(group.block)) {
+            BlockGroup last = merged.isEmpty() ? null : merged.get(merged.size() - 1);
+            if (last != null && last.loose && group.loose && last.root() == group.root()) {
+                last.absorb(group);
+            } else {
+                merged.add(group);
+            }
+        }
+        ordered = merged;
+
+        List<StructureIndex.Node> path = new ArrayList<>();
+        open.clear();
+        openState.clear();
+        altWritten.clear();
+        held.clear();
+        atBlockStart = false;
+        for (BlockGroup group : ordered) {
+            if (!group.hasText && !group.hasObject && !inTableCell(group.block)) {
                 continue;
             }
+            Wrapper wrapper = group.hasText ? wrapperFor(group.block) : null;
+            Run previous = null;
             for (int r = 0; r < group.runs.size(); r++) {
                 path.clear();
                 for (StructureIndex.Node n = group.leaves.get(r).node; n != null; n = n.parent) {
@@ -733,53 +850,424 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                         && open.get(common) == path.get(common)) {
                     common++;
                 }
-                for (int i = open.size() - 1; i >= common; i--) {
-                    close(open.remove(i));
+                boolean[] writable = writable(path);
+                // a paragraph passed over on the way to a block inside it, now reached for its
+                // own text: reopened, as HTML reopens it after the block
+                for (int i = 0; i < common; i++) {
+                    if (openState.get(i) == NOT_WRITTEN && writable[i]) {
+                        common = i;
+                        break;
+                    }
                 }
-                writePieces(carried);
-                carried.clear();
+                closeOpenFrom(common, wrapper);
+                if (wrapper != null) {
+                    wrapper.at = wrapperStart(path, group.block, wrapper.inside);
+                }
+                boolean[] write = withinBudget(path, common, writable);
                 for (int i = common; i < path.size(); i++) {
-                    openElement(path.get(i));
+                    if (wrapper != null && !wrapper.open && i >= wrapper.at && write[i - common]) {
+                        openWrapper(wrapper);
+                    }
+                    boolean wrote = write[i - common] && openElement(path.get(i));
                     open.add(path.get(i));
+                    openState.add(wrote ? OPEN : writable[i] ? DROPPED : NOT_WRITTEN);
                 }
-                List<Object> pieces = group.runs.get(r).pieces;
-                int end = pieces.size();
-                while (end > 0 && isSeparator(pieces.get(end - 1))) {
-                    end--;
+                Run run = group.runs.get(r);
+                if (run == null) {
+                    continue;
                 }
-                writePieces(pieces.subList(0, end));
-                carried.addAll(pieces.subList(end, pieces.size()));
+                // other content sat between these two runs; the separator went with it
+                if (previous != null && run.ordinal != previous.ordinal + 1
+                        && !previous.endsWithSeparator() && (wrapper == null || wrapper.open)) {
+                    sinkText(" ");
+                }
+                previous = run;
+                writePieces(run.pieces, wrapper);
+            }
+            if (wrapper != null) {
+                // the block's other children are not the wrapper's
+                closeOpenFrom(wrapper.at, wrapper);
+                if (wrapper.open) {
+                    closeWrapper(wrapper);
+                }
             }
         }
-        for (int i = open.size() - 1; i >= 0; i--) {
-            close(open.get(i));
-        }
-        writePieces(carried);
+        closeOpenFrom(0, null);
+        held.clear();
         emitBlocks("untagged", untagged);
         emitBlocks("artifact", artifacts);
     }
 
-    private static boolean isSeparator(Object piece) {
-        return piece == NEWLINE || piece == PARAGRAPH_BREAK || ((String) piece).isBlank();
+    /** Closes the open path from the innermost node down to index {@code from}. */
+    private void closeOpenFrom(int from, Wrapper wrapper) throws SAXException {
+        for (int i = open.size() - 1; i >= from; i--) {
+            // leaving the block ends its paragraph; loose text's paragraph ends on its own
+            if (wrapper != null && wrapper.open && wrapper.inside && i == wrapper.at - 1) {
+                closeWrapper(wrapper);
+            }
+            int state = openState.remove(i);
+            if (state == OPEN) {
+                close(open.get(i));
+            } else if (state == SUSPENDED) {
+                closeOuter(open.get(i));
+            }
+            open.remove(i);
+        }
+        if (wrapper != null && wrapper.open && wrapper.breakPending
+                && !writtenInside(wrapper.at)) {
+            closeWrapper(wrapper);
+        }
     }
 
-    /** The runs under one block-level element, in content order. */
+    /** Whether an element is open below path index {@code at}. */
+    private boolean writtenInside(int at) {
+        for (int i = at; i < openState.size(); i++) {
+            if (openState.get(i) == OPEN) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * A block cannot sit in a paragraph or heading: as an HTML parser would, the open one ends
+     * before the block starts. Its text was all written already, since a block's runs are
+     * written together, so it is never reopened.
+     */
+    private void suspendTextBlock() throws SAXException {
+        for (int i = open.size() - 1; i >= 0; i--) {
+            if (openState.get(i) != OPEN) {
+                continue;
+            }
+            ElementSpec spec = spec(open.get(i));
+            if (spec.inline) {
+                continue;
+            }
+            if (isTextBlock(spec.tag)) {
+                sinkClose(spec.tag, false);
+                openState.set(i, SUSPENDED);
+            }
+            return;
+        }
+    }
+
+    /** A demoted block ends when a block or another demoted block opens inside it. */
+    private void suspendDemoted() throws SAXException {
+        for (int i = open.size() - 1; i >= 0; i--) {
+            if (openState.get(i) != OPEN) {
+                continue;
+            }
+            ElementSpec spec = spec(open.get(i));
+            if (spec.demoted) {
+                sinkClose(spec.tag, true);
+                sinkBoundary();
+                openState.set(i, SUSPENDED);
+                return;
+            }
+            if (!spec.inline) {
+                return;
+            }
+        }
+    }
+
+    private static boolean isTextBlock(String tag) {
+        return "p".equals(tag) || tag.length() == 2 && tag.charAt(0) == 'h';
+    }
+
+    private void openWrapper(Wrapper wrapper) throws SAXException {
+        sinkOpen(wrapper.tag, null, false);
+        wrapper.open = true;
+        wrapper.breakPending = false;
+    }
+
+    private void closeWrapper(Wrapper wrapper) throws SAXException {
+        sinkClose(wrapper.tag, false);
+        wrapper.open = false;
+        wrapper.breakPending = false;
+    }
+
+    /**
+     * Where on the path the wrapper's content begins: right inside the block, or, when nothing
+     * on the path is a block, at the first element on it, so a link or span around loose text
+     * sits inside the paragraph rather than around it.
+     */
+    private int wrapperStart(List<StructureIndex.Node> path, StructureIndex.Node block,
+                             boolean inside) {
+        if (inside) {
+            return path.indexOf(block) + 1;
+        }
+        for (int i = 0; i < path.size(); i++) {
+            if (spec(path.get(i)).tag != null) {
+                return i;
+            }
+        }
+        return path.size() - 1;
+    }
+
+    private Wrapper wrapperFor(StructureIndex.Node block) {
+        String tag = wrapperTag(block);
+        if (tag == null) {
+            return null;
+        }
+        ElementSpec spec = spec(block);
+        return new Wrapper(tag, spec.tag != null && !spec.inline);
+    }
+
+    /** The wrapper text straight under this block needs, or null when the block holds text. */
+    private String wrapperTag(StructureIndex.Node block) {
+        ElementSpec spec = spec(block);
+        if (spec.tag == null || spec.inline) {
+            // nothing above the leaf's own element is a block: the page division holds it
+            return "p";
+        }
+        switch (spec.tag) {
+            case "div":
+                return "p";
+            case "table":
+            case "thead":
+            case "tbody":
+            case "tfoot":
+                return "caption";
+            case "tr":
+                return "td";
+            case "ul":
+            case "ol":
+                return "li";
+            default:
+                return null;
+        }
+    }
+
+    // ---- the text sink: block edges trimmed, separators kept outside inline elements ----
+
+    private void sinkText(String text) throws SAXException {
+        String s = text;
+        if (atBlockStart) {
+            int start = 0;
+            while (start < s.length() && Character.isWhitespace(s.charAt(start))) {
+                start++;
+            }
+            if (start == s.length()) {
+                return;
+            }
+            s = s.substring(start);
+            atBlockStart = false;
+        }
+        int end = s.length();
+        while (end > 0 && Character.isWhitespace(s.charAt(end - 1))) {
+            end--;
+        }
+        if (end == 0) {
+            held.add(s);
+            return;
+        }
+        flushHeld();
+        xhtml.characters(s.substring(0, end));
+        if (end < s.length()) {
+            held.add(s.substring(end));
+        }
+    }
+
+    private void sinkNewline() {
+        if (!atBlockStart) {
+            held.add(NEWLINE);
+        }
+    }
+
+    /** The edge of a block written inline: a newline, unless one is already waiting. */
+    private void sinkBoundary() {
+        if (held.isEmpty() || held.get(held.size() - 1) != NEWLINE) {
+            sinkNewline();
+        }
+    }
+
+    private void flushHeld() throws SAXException {
+        for (Object piece : held) {
+            if (piece == NEWLINE) {
+                xhtml.newline();
+            } else {
+                xhtml.characters((String) piece);
+            }
+        }
+        held.clear();
+    }
+
+    private void sinkOpen(String tag, AttributesImpl attributes, boolean inline)
+            throws SAXException {
+        // whitespace before a child element separates it from the text before it
+        flushHeld();
+        if (attributes == null) {
+            xhtml.startElement(tag);
+        } else {
+            xhtml.startElement(tag, attributes);
+        }
+        if (!inline) {
+            atBlockStart = true;
+        }
+    }
+
+    private void sinkClose(String tag, boolean inline) throws SAXException {
+        if (!inline) {
+            held.clear();
+            atBlockStart = false;
+        }
+        xhtml.endElement(tag);
+        if ("caption".equals(tag)) {
+            // XHTMLContentHandler ends lines after p, li, tr... but not after a caption
+            xhtml.newline();
+        }
+    }
+
+    /**
+     * Which nodes on the path write an element, before the nesting budget: those with an
+     * element, except a paragraph or heading that a block further down the path would close
+     * at once (nothing to say, so not written rather than written empty) and a demoted block
+     * with a block or another demoted block below it.
+     */
+    private boolean[] writable(List<StructureIndex.Node> path) {
+        boolean[] writable = new boolean[path.size()];
+        boolean blockBelow = false;
+        boolean demotedBelow = false;
+        for (int i = path.size() - 1; i >= 0; i--) {
+            ElementSpec spec = spec(path.get(i));
+            writable[i] = spec.tag != null;
+            if (spec.tag == null) {
+                continue;
+            }
+            if (spec.demoted) {
+                if (blockBelow || demotedBelow) {
+                    writable[i] = false;
+                }
+                demotedBelow = true;
+            } else if (!spec.inline) {
+                if (blockBelow && isTextBlock(spec.tag)) {
+                    writable[i] = false;
+                }
+                blockBelow = true;
+            }
+        }
+        return writable;
+    }
+
+    /**
+     * Which of the nodes about to open (path from {@code from}) may write an element without
+     * exceeding {@link #MAX_OPEN_ELEMENTS} together with the elements already open. Grouping
+     * containers give way first, outermost first; then anything else, outermost first.
+     */
+    private boolean[] withinBudget(List<StructureIndex.Node> path, int from, boolean[] writable) {
+        boolean[] write = Arrays.copyOfRange(writable, from, path.size());
+        int count = 0;
+        boolean textBlockOpen = false;
+        boolean demotedOpen = false;
+        for (int i = 0; i < from; i++) {
+            if (openState.get(i) == OPEN) {
+                ElementSpec spec = spec(open.get(i));
+                count += spec.elements();
+                if (spec.demoted) {
+                    demotedOpen = true;
+                } else if (!spec.inline) {
+                    textBlockOpen = isTextBlock(spec.tag);
+                }
+            }
+        }
+        for (int i = from; i < path.size(); i++) {
+            if (!write[i - from]) {
+                continue;
+            }
+            ElementSpec spec = spec(path.get(i));
+            count += spec.elements();
+            if (spec.demoted || !spec.inline) {
+                if (demotedOpen) {
+                    count--;
+                    demotedOpen = false;
+                }
+            }
+            if (!spec.inline) {
+                if (textBlockOpen) {
+                    count--;
+                }
+                textBlockOpen = isTextBlock(spec.tag);
+            }
+        }
+        for (int pass = 0; pass < 2 && count > MAX_OPEN_ELEMENTS; pass++) {
+            for (int i = from; i < path.size() && count > MAX_OPEN_ELEMENTS; i++) {
+                if (write[i - from] && (pass == 1 || GROUPING_TYPES.contains(path.get(i).type)
+                        || !StructureIndex.isStandardType(path.get(i).type))) {
+                    write[i - from] = false;
+                    count -= spec(path.get(i)).elements();
+                }
+            }
+        }
+        return write;
+    }
+
+    private BlockGroup group(Map<StructureIndex.Node, BlockGroup> groups, List<BlockGroup> ordered,
+                             StructureIndex.Leaf leaf) {
+        StructureIndex.Node block = blockOf(leaf.node);
+        BlockGroup group = groups.get(block);
+        if (group == null) {
+            ElementSpec spec = spec(block);
+            group = new BlockGroup(block, spec.tag == null || spec.inline);
+            groups.put(block, group);
+            ordered.add(group);
+        }
+        return group;
+    }
+
+    /** The runs under one block-level element, in content order; a null run is an object. */
     private static final class BlockGroup {
         final StructureIndex.Node block;
+        /** No element above the text is a block: the block is the leaf's own node. */
+        final boolean loose;
         final List<Run> runs = new ArrayList<>();
         final List<StructureIndex.Leaf> leaves = new ArrayList<>();
         int firstLeafOrder = Integer.MAX_VALUE;
         boolean hasText;
+        boolean hasObject;
 
-        BlockGroup(StructureIndex.Node block) {
+        BlockGroup(StructureIndex.Node block, boolean loose) {
             this.block = block;
+            this.loose = loose;
+        }
+
+        StructureIndex.Node root() {
+            StructureIndex.Node n = block;
+            while (n.parent != null) {
+                n = n.parent;
+            }
+            return n;
+        }
+
+        /** Takes another group's runs, keeping content order. */
+        void absorb(BlockGroup other) {
+            int i = 0;
+            for (int j = 0; j < other.runs.size(); j++) {
+                Run run = other.runs.get(j);
+                if (run == null) {
+                    i = runs.size();
+                } else {
+                    while (i < runs.size() && runs.get(i) != null
+                            && runs.get(i).ordinal < run.ordinal) {
+                        i++;
+                    }
+                }
+                runs.add(i, run);
+                leaves.add(i, other.leaves.get(j));
+                i++;
+            }
+            hasText |= other.hasText;
+            hasObject |= other.hasObject;
         }
 
         void add(Run run, StructureIndex.Leaf leaf) {
             runs.add(run);
             leaves.add(leaf);
             firstLeafOrder = Math.min(firstLeafOrder, leaf.order);
-            hasText |= run.hasText;
+            if (run == null) {
+                hasObject = true;
+            } else {
+                hasText |= run.hasText;
+            }
         }
     }
 
@@ -811,7 +1299,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 case WORD:
                     for (Segment segment : event.segments) {
                         if (current == null || !current.label.equals(segment.label)) {
-                            current = new Run(segment.label);
+                            current = new Run(segment.label, runs.size());
                             runs.add(current);
                         }
                         current.pieces.add(segment.text);
@@ -843,12 +1331,32 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         return runs;
     }
 
-    private void writePieces(List<Object> pieces) throws SAXException {
+    private void writePieces(List<Object> pieces, Wrapper wrapper) throws SAXException {
         for (Object piece : pieces) {
-            if (piece == NEWLINE) {
-                xhtml.newline();
-            } else if (piece != PARAGRAPH_BREAK) {
-                xhtml.characters((String) piece);
+            if (piece == PARAGRAPH_BREAK) {
+                if (wrapper != null && wrapper.open) {
+                    if (!"p".equals(wrapper.tag)) {
+                        // one caption, cell or item holds all the text, whatever the breaks
+                        sinkNewline();
+                    } else if (writtenInside(wrapper.at)) {
+                        wrapper.breakPending = true;
+                    } else {
+                        closeWrapper(wrapper);
+                    }
+                }
+            } else if (piece == NEWLINE) {
+                if (wrapper == null || wrapper.open) {
+                    sinkNewline();
+                }
+            } else {
+                String text = (String) piece;
+                if (wrapper != null && !wrapper.open) {
+                    if (text.isBlank()) {
+                        continue;
+                    }
+                    openWrapper(wrapper);
+                }
+                sinkText(text);
             }
         }
     }
@@ -862,61 +1370,104 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         if (!any) {
             return;
         }
-        xhtml.startElement("div", "class", cls);
+        AttributesImpl divAttrs = new AttributesImpl();
+        addAttribute(divAttrs, "class", cls);
+        sinkOpen("div", divAttrs, false);
         boolean inParagraph = false;
+        Run previous = null;
         for (Run run : runs) {
-            if (!run.hasText) {
+            // a run of only a space glyph still separates its neighbours, inside a paragraph
+            if (!run.hasText && !inParagraph) {
                 continue;
             }
+            if (inParagraph && previous != null && run.ordinal != previous.ordinal + 1
+                    && !previous.endsWithSeparator()) {
+                sinkText(" ");
+            }
+            previous = run;
             for (Object piece : run.pieces) {
                 if (piece == PARAGRAPH_BREAK) {
                     if (inParagraph) {
-                        xhtml.endElement("p");
+                        sinkClose("p", false);
                         inParagraph = false;
                     }
                     continue;
                 }
                 if (!inParagraph) {
-                    xhtml.startElement("p");
+                    sinkOpen("p", null, false);
                     inParagraph = true;
                 }
                 if (piece == NEWLINE) {
-                    xhtml.newline();
+                    sinkNewline();
                 } else {
-                    xhtml.characters((String) piece);
+                    sinkText((String) piece);
                 }
             }
         }
         if (inParagraph) {
-            xhtml.endElement("p");
+            sinkClose("p", false);
         }
-        xhtml.endElement("div");
+        sinkClose("div", false);
     }
 
-    private void openElement(StructureIndex.Node node) throws SAXException {
+    /** Writes the node's element and returns whether one was written. */
+    private boolean openElement(StructureIndex.Node node) throws SAXException {
         ElementSpec spec = spec(node);
         if (spec.tag == null) {
-            return;
+            return false;
         }
-        if (spec.attributes == null) {
-            xhtml.startElement(spec.tag);
-        } else {
-            xhtml.startElement(spec.tag, spec.attributes);
+        if (spec.demoted || !spec.inline) {
+            suspendDemoted();
         }
+        if (!spec.inline) {
+            suspendTextBlock();
+        }
+        if (spec.outer != null) {
+            sinkOpen(spec.outer, null, false);
+        }
+        if (spec.demoted) {
+            sinkBoundary();
+        }
+        sinkOpen(spec.tag, spec.attributes, spec.inline);
+        // the accessibility text of an image is its text, once per page
+        if (spec.alt != null && altWritten.add(node)) {
+            sinkText(spec.alt);
+            sinkNewline();
+        }
+        return true;
     }
 
     private void close(StructureIndex.Node node) throws SAXException {
         ElementSpec spec = spec(node);
         if (spec.tag != null) {
-            xhtml.endElement(spec.tag);
+            sinkClose(spec.tag, spec.inline);
+            if (spec.demoted) {
+                sinkBoundary();
+            }
+            closeOuter(node);
+        }
+    }
+
+    private void closeOuter(StructureIndex.Node node) throws SAXException {
+        ElementSpec spec = spec(node);
+        if (spec.outer != null) {
+            sinkClose(spec.outer, false);
         }
     }
 
     // ---- structure type -> XHTML ----
 
+    /** Builds missing specs from the topmost ancestor down, so a deep chain never recurses. */
     private ElementSpec spec(StructureIndex.Node node) {
-        if (node.spec == null) {
-            node.spec = buildSpec(node);
+        if (node.spec != null) {
+            return node.spec;
+        }
+        List<StructureIndex.Node> chain = new ArrayList<>();
+        for (StructureIndex.Node n = node; n != null && n.spec == null; n = n.parent) {
+            chain.add(n);
+        }
+        for (int i = chain.size() - 1; i >= 0; i--) {
+            chain.get(i).spec = buildSpec(chain.get(i));
         }
         return node.spec;
     }
@@ -931,6 +1482,46 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     }
 
     private ElementSpec buildSpec(StructureIndex.Node node, AttributesImpl attrs) {
+        ElementSpec spec = mapType(node, attrs);
+        if (spec.tag == null) {
+            return spec;
+        }
+        // a block inside a link or span is inline, so the link stays one; inside a table or
+        // row it is inline too, and its text takes the caption or cell the wrapper gives it;
+        // tables and lists keep their structure, and a block inside a paragraph or heading
+        // closes it instead (see suspendTextBlock)
+        if (!spec.inline && !STRUCTURAL_TAGS.contains(spec.tag)
+                && (inlineContext(node) || tableContext(node))) {
+            spec = spec.asSpan();
+        }
+        // everything straight under a list sits in an item; an item outside a list and a row
+        // outside a table get the container the tree left out
+        StructureIndex.Node container = writtenAncestor(node);
+        String containerTag = container == null ? null : container.spec.tag;
+        boolean inList = "ul".equals(containerTag) || "ol".equals(containerTag);
+        boolean inTable = containerTag != null && TABLE_TAGS.contains(containerTag)
+                && !"tr".equals(containerTag);
+        if (inList && !"li".equals(spec.tag)) {
+            spec = spec.within("li");
+        } else if ("li".equals(spec.tag) && !inList) {
+            spec = spec.within("ul");
+        } else if ("tr".equals(spec.tag) && !inTable) {
+            spec = spec.within("table");
+        }
+        return spec;
+    }
+
+    /** The nearest ancestor written as an element; ancestors' specs exist, built top-down. */
+    private static StructureIndex.Node writtenAncestor(StructureIndex.Node node) {
+        for (StructureIndex.Node p = node.parent; p != null; p = p.parent) {
+            if (p.spec != null && p.spec.tag != null) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    private ElementSpec mapType(StructureIndex.Node node, AttributesImpl attrs) {
         String type = node.type;
         PDStructureElement element = new PDStructureElement(node.dict);
         boolean readAttributes = attrs != null;
@@ -940,7 +1531,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         addAttribute(attrs, "lang", element.getLanguage());
         String title = element.getTitle();
         addAttribute(attrs, "title", title == null ? element.getExpandedForm() : title);
-        addAttribute(attrs, "actualtext", element.getActualText());
+        // element-level /ActualText is not written: some producers put it on every Span, where
+        // it repeats the text; the marked-content form is applied by the stripper already
         switch (type) {
             case "Document":
             case "NonStruct":
@@ -948,6 +1540,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             case "Sub":
                 return ElementSpec.TRANSPARENT;
             case "Span":
+                // a Span with nothing to say is transparent; one with a language or title is not
                 return attrs.getLength() == 0 ? ElementSpec.TRANSPARENT :
                         new ElementSpec("span", attrs, true);
             case "P":
@@ -966,6 +1559,13 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 return block("h1", attrs);
             case "BlockQuote":
                 return block("blockquote", attrs);
+            case "Caption": {
+                StructureIndex.Node a = writtenAncestor(node);
+                if (a != null && "table".equals(a.spec.tag)) {
+                    return block("caption", attrs);
+                }
+                break;
+            }
             case "TOC":
                 addAttribute(attrs, "class", "toc");
                 return block("ul", attrs);
@@ -1019,10 +1619,13 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 addAttribute(attrs, "class", type.toLowerCase(Locale.ROOT));
                 return new ElementSpec("span", attrs, true);
             case "Figure":
-            case "Formula":
-                addAttribute(attrs, "alt", element.getAlternateDescription());
+            case "Formula": {
+                String alt = element.getAlternateDescription();
+                addAttribute(attrs, "alt", alt);
                 addAttribute(attrs, "class", type.toLowerCase(Locale.ROOT));
-                return block("div", attrs);
+                return new ElementSpec("div", attrs, false,
+                        alt == null || alt.isBlank() ? null : alt.trim(), null, false);
+            }
             default:
                 break;
         }
@@ -1039,17 +1642,16 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         return new ElementSpec(tag, attrs.getLength() == 0 ? null : attrs, false);
     }
 
-    /** True under a paragraph, heading or inline element, where a block would not belong. */
-    private boolean inlineContext(StructureIndex.Node node) {
-        for (StructureIndex.Node p = node.parent; p != null; p = p.parent) {
-            if ("P".equals(p.type) || p.type.startsWith("H") && p.type.length() <= 2) {
-                return true;
-            }
-            if (spec(p).inline) {
-                return true;
-            }
-        }
-        return false;
+    /** True when the nearest written ancestor is an inline element. */
+    private static boolean inlineContext(StructureIndex.Node node) {
+        StructureIndex.Node a = writtenAncestor(node);
+        return a != null && a.spec.inline;
+    }
+
+    /** True when the nearest written ancestor is a table, a table section or a row. */
+    private static boolean tableContext(StructureIndex.Node node) {
+        StructureIndex.Node a = writtenAncestor(node);
+        return a != null && TABLE_TAGS.contains(a.spec.tag);
     }
 
     private static boolean orderedList(StructureIndex.Node node) {

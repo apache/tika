@@ -125,6 +125,21 @@ public class StructureIndexTest {
         }
     }
 
+    /** A kids array past the leaf cap costs one frame and marks the tree unusable. */
+    @Test
+    public void testHugeKidArrayHitsTheLeafCap() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement p = b.element("P", b.document, page);
+            COSArray kids = new COSArray();
+            for (int i = 0; i <= StructureIndex.MAX_LEAVES; i++) {
+                kids.add(COSInteger.get(i));
+            }
+            p.getCOSObject().setItem(COSName.K, kids);
+            assertEquals("structure-tree-leaves", StructureIndex.load(b.doc).reason());
+        }
+    }
+
     @Test
     public void testRoleMapChainCycleAndCustomType() throws Exception {
         try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
