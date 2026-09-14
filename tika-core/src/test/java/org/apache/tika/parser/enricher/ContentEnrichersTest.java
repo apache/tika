@@ -185,6 +185,28 @@ public class ContentEnrichersTest {
         assertNotNull(ContentEnrichers.get(null, PNG, target(PNG), context));
     }
 
+    /** The request's switch turns the whole list off; the list itself is untouched. */
+    @Test
+    public void testDisabledPerRequest() throws Exception {
+        RecognizingParser recognizer = new RecognizingParser(Set.of(PNG), true);
+        RecordingParser annotator = new RecordingParser(Set.of(PNG));
+        CompositeContentEnricher list = listOf(recognizer, annotator);
+        ParseContext off = new ParseContext();
+        TextRecognizerSelection selection = new TextRecognizerSelection();
+        selection.setEnabled(false);
+        off.set(TextRecognizerSelection.class, selection);
+        assertTrue(ContentEnrichers.isDisabled(off));
+        assertNull(ContentEnrichers.get(list, PNG, target(PNG), off));
+        assertFalse(ContentEnrichers.hasTextRecognizer(list, PNG, target(PNG), off));
+        off.set(Parser.class, compositeOf(new RecognizingParser(Set.of(PNG), true)));
+        assertNull(ContentEnrichers.get(null, PNG, target(PNG), off), "discovery is off too");
+
+        ParseContext on = new ParseContext();
+        assertFalse(ContentEnrichers.isDisabled(on));
+        assertNotNull(ContentEnrichers.get(list, PNG, target(PNG), on));
+        assertTrue(ContentEnrichers.hasTextRecognizer(list, PNG, target(PNG), on));
+    }
+
     @Test
     public void testSuspendedDispatch() throws Exception {
         ParseContext context = new ParseContext();

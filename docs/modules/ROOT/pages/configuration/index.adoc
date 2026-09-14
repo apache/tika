@@ -160,6 +160,14 @@ the engine inline, still works: `{ "tesseract-ocr-parser": { "language": "eng" }
 { "text-recognizers": [] }
 ----
 
+*Turn it off for one request.* The list stays configured; the request switches it off, in
+every container, and no engine is missed as an error:
+
+[source,json]
+----
+{ "parse-context": { "text-recognizers": { "enabled": false } } }
+----
+
 Engine types: `tesseract-ocr-parser`, `tess4j-parser`, `openai-vlm-parser`, `claude-vlm-parser`,
 `gemini-vlm-parser`. At startup Tika logs one line per engine with the media types it enriches, so
 the effective engine is never a guess.

@@ -5,6 +5,13 @@ Release 4.1.0 - unreleased
      and the pipes server closes the registry at shutdown, so an
      openai-embedding-engine or a VLM used as a text recognizer releases its
      HTTP client (TIKA-4889).
+     
+   * Per-request switch for text recognizers: {"parse-context":
+     {"text-recognizers": {"enabled": false}}} runs no recognizer or annotator
+     from the list for that parse, in every container, and OCR_ONLY no longer
+     reports a missing engine for it. With the inference switch this is
+     "everything off for one request". New docs page with the OCR and
+     inference recipes (TIKA-4889).
 
    * New tika-eval-structure: a standalone tool that compares two sets of
      XHTML extracts block by block (paragraph order as Kendall tau, splits and
