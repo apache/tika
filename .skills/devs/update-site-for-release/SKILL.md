@@ -114,6 +114,7 @@ Current 4.x + current 3.x expanded; older = `collapse="true"`.
   ```xml
   <item name="Apache Tika 4.0.0" href="docs/4.0.x/index.html">
     <item name="Documentation Home" href="docs/4.0.x/index.html"/>
+    <item name="Supported Formats" href="docs/4.0.x/formats.html"/>
     <item name="Using Tika" href="docs/4.0.x/using-tika/index.html"/>
     <item name="Getting Started (Java API)" href="docs/4.0.x/using-tika/java-api/getting-started.html"/>
     <item name="Pipes" href="docs/4.0.x/pipes/index.html"/>
