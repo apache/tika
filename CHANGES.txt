@@ -6,25 +6,24 @@ Release 4.1.0 - unreleased
      shares), per file and per producer, where token dice cannot see order
      (TIKA-4891).
 
-   * Tagged PDFs: pdf-parser.markedContent replaces extractMarkedContent
-     (still accepted) with a strategy, AUTO by default. TAGS and AUTO write
-     text through the structure tree, page by page, on top of the text
-     stripper: the same words and spacing as before, placed in the tree's
-     paragraphs, headings, lists, tables and links, artifacts and untagged
-     text kept in their own divs. AUTO falls back to the stripper on pages
-     whose tree claims too little of the page or points at content the page
-     lacks (minCoverage, maxDanglingRatio); maxPages, AUTO OCR, inline
-     images and per-page metadata now apply to tagged output as well; figures
-     keep their place with their Alt text. Where the tree nests what HTML
-     cannot, the output is repaired as an HTML parser would: a block inside
-     a paragraph or heading closes it, text straight in a division gets the
-     stripper's paragraphs, in a table a caption, in a row a cell, in a list
-     an item, and a block inside a link or table becomes a span.
-     Metadata reports pages tagged, pages fallen back and why. On 6180
-     tagged PDFs the text is the same as the stripper's (dice 0.999, no
-     exceptions) and against 2000 documents printed from their DOCX sources
-     the tree's paragraph order beats the stripper's (Kendall tau 0.98 vs
-     0.93); set strategy NONE for the old output (TIKA-4891).
+   * Improve extraction of tagged PDFs(TIKA-4891).
+
+   * TEXT input for inference bindings: a binding on TEXT with a chunker
+     (markdown-chunker) embeds the text of every document in a tree in
+     batched requests, after the parse and before the metadata filters; each
+     chunk lands on its document with a text locator. Chunks now name the
+     binding that wrote them as "producer". A PDF released as PAGES records
+     tk:inference-released and is not embedded twice. The embedding filters
+     keep working (TIKA-4889).
+     
+   * "pdf-parser": {"maxRenderedPages": N} bounds how many pages the
+     RENDER_PAGES_BEFORE_PARSE and RENDER_PAGES_AT_PAGE_END image strategies
+     render, counted from the first page and independent of maxPages: text
+     extraction can cover the whole document while only the first page is
+     rendered, as for a thumbnail (TIKA-4856).
+   
+   * PDF: a bookmark outline is now walked without recursion, and lists nest at
+     most 50 deep with deeper items joining the deepest list (TIKA-4894).
 
    * A text recognizer is an engine: configure Tesseract, Tess4J or a VLM once
      under "engines" and name it from "text-recognizers" with

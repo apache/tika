@@ -32,6 +32,7 @@ import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
@@ -62,6 +63,7 @@ public class SharedServerResources {
     private final FetcherManager fetcherManager;
     private final EmitterManager emitterManager;
     private final MetadataFilter defaultMetadataFilter;
+    private final InferenceDispatcher inferenceDispatcher;
     private final ContentHandlerFactory defaultContentHandlerFactory;
     private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
     private final EmitStrategy emitStrategy;
@@ -73,6 +75,7 @@ public class SharedServerResources {
                                   AutoDetectParser autoDetectParser, Detector detector,
                                   RecursiveParserWrapper rMetaParser, FetcherManager fetcherManager,
                                   EmitterManager emitterManager, MetadataFilter defaultMetadataFilter,
+                                  InferenceDispatcher inferenceDispatcher,
                                   ContentHandlerFactory defaultContentHandlerFactory,
                                   MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory,
                                   EmitStrategy emitStrategy, ConfigStore configStore,
@@ -86,6 +89,7 @@ public class SharedServerResources {
         this.fetcherManager = fetcherManager;
         this.emitterManager = emitterManager;
         this.defaultMetadataFilter = defaultMetadataFilter;
+        this.inferenceDispatcher = inferenceDispatcher;
         this.defaultContentHandlerFactory = defaultContentHandlerFactory;
         this.defaultMetadataWriteLimiterFactory = defaultMetadataWriteLimiterFactory;
         this.emitStrategy = emitStrategy;
@@ -124,6 +128,7 @@ public class SharedServerResources {
 
         // Load filters and factories
         MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
+        InferenceDispatcher inferenceDispatcher = tikaLoader.get(InferenceDispatcher.class);
         ContentHandlerFactory contentHandlerFactory = tikaLoader.loadContentHandlerFactory();
         ParseContext configContext = tikaLoader.loadParseContext();
         MetadataWriteLimiterFactory metadataWriteLimiterFactory =
@@ -136,7 +141,8 @@ public class SharedServerResources {
                 PresetRegistry.load(tikaJsonConfig, tikaLoader.getClassLoader());
 
         return new SharedServerResources(tikaLoader, pipesConfig, autoDetectParser, detector,
-                rMetaParser, fetcherManager, emitterManager, metadataFilter, contentHandlerFactory,
+                rMetaParser, fetcherManager, emitterManager, metadataFilter, inferenceDispatcher,
+                contentHandlerFactory,
                 metadataWriteLimiterFactory, emitStrategy, configStore,
                 ExceptionReporting.get(configContext), presetRegistry);
     }
@@ -209,6 +215,11 @@ public class SharedServerResources {
 
     public MetadataFilter getDefaultMetadataFilter() {
         return defaultMetadataFilter;
+    }
+
+    /** Null when no {@code "inference"} bindings are configured. */
+    public InferenceDispatcher getInferenceDispatcher() {
+        return inferenceDispatcher;
     }
 
     public ContentHandlerFactory getDefaultContentHandlerFactory() {

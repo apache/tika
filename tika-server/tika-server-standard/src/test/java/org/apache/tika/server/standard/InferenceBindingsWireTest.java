@@ -29,6 +29,8 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import javax.imageio.ImageIO;
 
 import jakarta.ws.rs.core.Response;
@@ -47,6 +49,7 @@ import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.mock.MockTask;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
@@ -128,6 +131,33 @@ public class InferenceBindingsWireTest extends CXFTestBase {
         Metadata metadata = metadataList.get(0);
         assertEquals("mock-pages", metadata.get(MockTask.MARKER_KEY));
         assertEquals("2", metadata.get(MockTask.UNITS_KEY));
+    }
+
+    /** The TEXT stage runs in the worker over the whole list: every document with text is a unit. */
+    @Test
+    public void testTextBindingSeesTheWholeTree() throws Exception {
+        ByteArrayOutputStream zip = new ByteArrayOutputStream();
+        try (ZipOutputStream out = new ZipOutputStream(zip)) {
+            out.putNextEntry(new ZipEntry("a.txt"));
+            out.write("alpha note".getBytes(UTF_8));
+            out.closeEntry();
+            out.putNextEntry(new ZipEntry("b.txt"));
+            out.write("beta note".getBytes(UTF_8));
+            out.closeEntry();
+        }
+        Response response = WebClient
+                .create(endPoint + META_PATH)
+                .accept("application/json")
+                .put(zip.toByteArray());
+
+        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+        assertEquals(3, metadataList.size());
+        for (Metadata metadata : metadataList) {
+            assertEquals("mock-text", metadata.get(MockTask.MARKER_KEY),
+                    metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+            assertEquals("3", metadata.get(MockTask.UNITS_KEY), "one run over the three documents");
+        }
     }
 
     private static byte[] twoPagePdf() throws IOException {

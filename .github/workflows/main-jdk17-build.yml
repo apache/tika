@@ -62,7 +62,15 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
-          cache: 'maven'
+      - name: Cache Maven repository
+        # Explicit, not setup-java's cache: 'maven', so our own snapshots stay out of the tarball.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/apache/tika
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
       - name: Install external tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg libimage-exiftool-perl
       # Everything except $IT_MODULES, which the integration-tests job owns.
@@ -105,7 +113,15 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
-          cache: 'maven'
+      - name: Cache Maven repository
+        # Explicit, not setup-java's cache: 'maven', so our own snapshots stay out of the tarball.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/apache/tika
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
       - name: Install external tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg libimage-exiftool-perl
       # Full reactor for the same reason as the e2e job: these modules depend on
@@ -140,7 +156,15 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
-          cache: 'maven'
+      - name: Cache Maven repository
+        # Explicit, not setup-java's cache: 'maven', so our own snapshots stay out of the tarball.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/apache/tika
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
       # Full reactor, not -pl ... -am: the e2e modules need tika-pipes-plugins zips, and a
       # zip-type dependency never matches a jar-packaging reactor module, so -am treats every
       # plugin zip as external and skips building those modules entirely. install (not verify)

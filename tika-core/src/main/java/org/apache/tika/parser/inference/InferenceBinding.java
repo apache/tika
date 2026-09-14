@@ -34,10 +34,18 @@ public final class InferenceBinding {
     private final int maxChunks;
     private final long maxBytes;
     private final boolean enabled;
+    private final TextChunker chunker;
 
     public InferenceBinding(String id, String engine, InputKind input, List<String> tasks,
                             Set<MediaType> include, Set<MediaType> exclude, int maxChunks,
                             long maxBytes, boolean enabled) {
+        this(id, engine, input, tasks, include, exclude, maxChunks, maxBytes, enabled, null);
+    }
+
+    public InferenceBinding(String id, String engine, InputKind input, List<String> tasks,
+                            Set<MediaType> include, Set<MediaType> exclude, int maxChunks,
+                            long maxBytes, boolean enabled, TextChunker chunker) {
+        this.chunker = chunker;
         this.id = id;
         this.engine = engine;
         this.input = input;
@@ -77,6 +85,11 @@ public final class InferenceBinding {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    /** How a TEXT binding cuts a document's text; null means the whole text is one chunk. */
+    public TextChunker getChunker() {
+        return chunker;
     }
 
     public boolean accepts(InputKind kind, MediaType type) {

@@ -14,25 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.inference;
+package org.apache.tika.config.loader;
 
-import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.inference.Engine;
+import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.parser.inference.TextChunker;
 
-/** An engine that turns images into vectors, many per request. */
-public interface EmbeddingEngine extends Engine {
+/** Cuts text into fixed-size pieces; a stand-in for a real chunker in loader tests. */
+@TikaComponent(name = "test-chunker", spi = false)
+public class TestChunker implements TextChunker {
 
-    /** One request; the vectors come back in the order of the images. */
-    List<float[]> embedImages(List<byte[]> images, List<String> mimeTypes, ParseContext context)
-            throws IOException, TikaException;
+    private int size = 4;
 
-    /** One request; the vectors come back in the order of the texts. */
-    List<float[]> embedTexts(List<String> texts, ParseContext context)
-            throws IOException, TikaException;
+    public int getSize() {
+        return size;
+    }
 
-    int getMaxBatchSize();
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    @Override
+    public List<int[]> spans(String text) {
+        List<int[]> spans = new ArrayList<>();
+        for (int start = 0; start < text.length(); start += size) {
+            spans.add(new int[]{start, Math.min(start + size, text.length())});
+        }
+        return spans;
+    }
 }

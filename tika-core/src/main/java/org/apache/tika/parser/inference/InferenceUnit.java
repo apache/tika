@@ -17,6 +17,7 @@
 package org.apache.tika.parser.inference;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -40,6 +41,7 @@ public final class InferenceUnit {
     private final String targetIdPath;
     private final String parentIdPath;
     private final Path path;
+    private final String text;
     private final long size;
     private final int page;
 
@@ -53,12 +55,20 @@ public final class InferenceUnit {
                          Path path, int page) throws IOException {
         this(kind, type, target, parent, target.get(TikaCoreProperties.EMBEDDED_ID_PATH),
                 parent == null ? null : parent.get(TikaCoreProperties.EMBEDDED_ID_PATH), path,
-                Files.size(path), page);
+                null, Files.size(path), page);
+    }
+
+    /** A {@link InputKind#TEXT} unit: the target's extracted text, held in memory. */
+    public InferenceUnit(MediaType type, Metadata target, Metadata parent, String text) {
+        this(InputKind.TEXT, type, target, parent,
+                target.get(TikaCoreProperties.EMBEDDED_ID_PATH),
+                parent == null ? null : parent.get(TikaCoreProperties.EMBEDDED_ID_PATH), null,
+                text, text.getBytes(StandardCharsets.UTF_8).length, -1);
     }
 
     private InferenceUnit(InputKind kind, MediaType type, Metadata target, Metadata parent,
-                          String targetIdPath, String parentIdPath, Path path, long size,
-                          int page) {
+                          String targetIdPath, String parentIdPath, Path path, String text,
+                          long size, int page) {
         this.kind = kind;
         this.type = type;
         this.target = target;
@@ -66,6 +76,7 @@ public final class InferenceUnit {
         this.targetIdPath = targetIdPath;
         this.parentIdPath = parentIdPath;
         this.path = path;
+        this.text = text;
         this.size = size;
         this.page = page;
     }
@@ -73,7 +84,12 @@ public final class InferenceUnit {
     /** The same unit aimed at the metadata objects that are still read. */
     InferenceUnit retargeted(Metadata target, Metadata parent) {
         return new InferenceUnit(kind, type, target, parent, targetIdPath, parentIdPath, path,
-                size, page);
+                text, size, page);
+    }
+
+    /** The text of a {@link InputKind#TEXT} unit; null for the rest. */
+    public String getText() {
+        return text;
     }
 
     /** The 1-based page this unit renders, for {@link InputKind#PAGES}; -1 otherwise. */
@@ -117,6 +133,6 @@ public final class InferenceUnit {
 
     /** Readable during a task run only; the file is deleted when the flush ends. */
     public byte[] getBytes() throws IOException {
-        return Files.readAllBytes(path);
+        return text != null ? text.getBytes(StandardCharsets.UTF_8) : Files.readAllBytes(path);
     }
 }

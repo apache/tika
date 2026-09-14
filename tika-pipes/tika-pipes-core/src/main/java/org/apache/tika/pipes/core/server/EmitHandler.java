@@ -37,6 +37,7 @@ import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NoOpFilter;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ParseRecord;
+import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
@@ -57,13 +58,16 @@ class EmitHandler {
     private static final Logger LOG = LoggerFactory.getLogger(EmitHandler.class);
 
     private final MetadataFilter defaultMetadataFilter;
+    private final InferenceDispatcher inferenceDispatcher;
     private final EmitStrategy emitStrategy;
     private final EmitterManager emitterManager;
     private final long directEmitThresholdBytes;
 
 
-    public EmitHandler(MetadataFilter defaultMetadataFilter, EmitStrategy emitStrategy, EmitterManager emitterManager, long directEmitThresholdBytes) {
+    public EmitHandler(MetadataFilter defaultMetadataFilter, InferenceDispatcher inferenceDispatcher,
+                       EmitStrategy emitStrategy, EmitterManager emitterManager, long directEmitThresholdBytes) {
         this.defaultMetadataFilter = defaultMetadataFilter;
+        this.inferenceDispatcher = inferenceDispatcher;
         this.emitStrategy = emitStrategy;
         this.emitterManager = emitterManager;
         this.directEmitThresholdBytes = directEmitThresholdBytes;
@@ -111,11 +115,15 @@ class EmitHandler {
     private PipesResult emitParseDataInternal(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
         long start = System.currentTimeMillis();
         String stack = getContainerStacktrace(t, parseData.getMetadataList());
+        FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = t.getOnParseException();
+        boolean emit = StringUtils.isBlank(stack) ||
+                onParseException == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
+        if (emit) {
+            runTextInference(parseData, parseContext);
+        }
         //we need to apply the metadata filter after we pull out the stacktrace
         filterMetadata(parseData, parseContext);
-        FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = t.getOnParseException();
-        if (StringUtils.isBlank(stack) ||
-                onParseException == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT) {
+        if (emit) {
             injectUserMetadata(t.getMetadata(), parseData.getMetadataList());
             EmitKey emitKey = t.getEmitKey();
             if (StringUtils.isBlank(emitKey.getEmitKey())) {
@@ -316,6 +324,19 @@ class EmitHandler {
             for (String val : userMetadata.getValues(n)) {
                 target.addTrusted(n, val);
             }
+        }
+    }
+
+    /** The TEXT inference stage: before the filters so they shape its output; not for CONTENT_ONLY, whose filter would drop it. */
+    private void runTextInference(MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
+        if (inferenceDispatcher == null
+                || parseContext.get(ParseMode.class) == ParseMode.CONTENT_ONLY) {
+            return;
+        }
+        try {
+            inferenceDispatcher.text(parseData.getMetadataList(), parseContext);
+        } catch (TikaException e) {
+            LOG.warn("text inference failed", e);
         }
     }
 

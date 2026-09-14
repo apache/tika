@@ -14,25 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.inference;
+package org.apache.tika.parser.inference;
 
-import java.io.IOException;
 import java.util.List;
 
-import org.apache.tika.exception.TikaException;
-import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.inference.Engine;
+/**
+ * Cuts a document's text into the pieces a {@link InputKind#TEXT} binding sends to its engine.
+ * Configured per binding under {@code "chunker"}.
+ *
+ * @since Apache Tika 4.1
+ */
+public interface TextChunker {
 
-/** An engine that turns images into vectors, many per request. */
-public interface EmbeddingEngine extends Engine {
-
-    /** One request; the vectors come back in the order of the images. */
-    List<float[]> embedImages(List<byte[]> images, List<String> mimeTypes, ParseContext context)
-            throws IOException, TikaException;
-
-    /** One request; the vectors come back in the order of the texts. */
-    List<float[]> embedTexts(List<String> texts, ParseContext context)
-            throws IOException, TikaException;
-
-    int getMaxBatchSize();
+    /** Half-open {@code [start, end)} character ranges of the chunks, in document order. */
+    List<int[]> spans(String text);
 }

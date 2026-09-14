@@ -60,6 +60,9 @@ public final class ChunkSerializer {
             if (chunk.getVector() != null) {
                 node.put("vector", VectorSerializer.encode(chunk.getVector()));
             }
+            if (chunk.getProducer() != null) {
+                node.put("producer", chunk.getProducer());
+            }
             serializeLocators(node, chunk.getLocators());
         }
         return MAPPER.writeValueAsString(array);
@@ -107,6 +110,9 @@ public final class ChunkSerializer {
             Locators locators = deserializeLocators(node.get("locators"));
 
             Chunk chunk = new Chunk(text, locators);
+            if (node.hasNonNull("producer")) {
+                chunk.setProducer(node.get("producer").asText());
+            }
 
             JsonNode vectorNode = node.get("vector");
             if (vectorNode != null && !vectorNode.isNull()) {

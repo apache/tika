@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -44,6 +45,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDDocumentOutline;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineItem;
+import org.apache.pdfbox.pdmodel.interactive.documentnavigation.outline.PDOutlineNode;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -599,6 +606,64 @@ public class PDFParserTest extends TikaTest {
         assertTrue(i != -1);
         assertTrue(j != -1);
         assertTrue(i < j);
+    }
+
+    /**
+     * An outline as deep as the item budget allows, each item the only child of the last,
+     * on a thread with a stack a quarter of the default: every title is written, lists nest
+     * within the XML limit, and a cycle ends the walk.
+     */
+    @Test
+    public void testDeepAndCyclicBookmarks() throws Exception {
+        try (PDDocument doc = new PDDocument()) {
+            doc.addPage(new PDPage(PDRectangle.LETTER));
+            PDDocumentOutline outline = new PDDocumentOutline();
+            doc.getDocumentCatalog().setDocumentOutline(outline);
+            PDOutlineNode parent = outline;
+            PDOutlineItem first = null;
+            for (int i = 0; i < 9000; i++) {
+                PDOutlineItem item = new PDOutlineItem();
+                item.setTitle("Level " + i);
+                parent.addLast(item);
+                if (first == null) {
+                    first = item;
+                }
+                parent = item;
+            }
+            // the deepest item's child is the first: a cycle
+            parent.addLast(first);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            doc.save(bos);
+
+            String[] xml = new String[1];
+            Throwable[] failure = new Throwable[1];
+            Thread thread = new Thread(null, () -> {
+                try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
+                    ToXMLContentHandler handler = new ToXMLContentHandler();
+                    new PDFParser().parse(tis, handler, new Metadata(), new ParseContext());
+                    xml[0] = handler.toString();
+                } catch (Throwable t) {
+                    failure[0] = t;
+                }
+            }, "bookmarks", 256 * 1024);
+            thread.start();
+            thread.join();
+            assertNull(failure[0], String.valueOf(failure[0]));
+            assertContains("<li>Level 0</li>", xml[0]);
+            assertContains("<li>Level 8999</li>", xml[0]);
+            assertEquals(9000, xml[0].split("<li>Level ").length - 1);
+            int depth = 0;
+            int deepest = 0;
+            for (int i = xml[0].indexOf("<body>"); i >= 0 && i < xml[0].length(); i++) {
+                if (xml[0].startsWith("<ul>", i)) {
+                    deepest = Math.max(deepest, ++depth);
+                } else if (xml[0].startsWith("</ul>", i)) {
+                    depth--;
+                }
+            }
+            assertEquals(0, depth);
+            assertEquals(50, deepest);
+        }
     }
 
     // TIKA-2303
@@ -1931,6 +1996,9 @@ public class PDFParserTest extends TikaTest {
             assertTrue(hook.sizes.get(0) > 0, label + ": the render has bytes");
             assertEquals(2, tracker.getNextId() - 1, label + ": one render per page");
             assertEquals(strategy == OcrConfig.Strategy.NO_OCR ? 0 : 2, recognizer.calls, label);
+            assertArrayEquals(new String[]{"PAGES"},
+                    metadata.getValues(TikaCoreProperties.INFERENCE_RELEASED),
+                    label + ": the PDF says it released its pages, not its text");
         }
     }
 

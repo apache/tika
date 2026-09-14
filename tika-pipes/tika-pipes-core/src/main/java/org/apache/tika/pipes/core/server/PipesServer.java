@@ -62,6 +62,7 @@ import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.EmitStrategy;
@@ -185,6 +186,7 @@ public class PipesServer implements AutoCloseable {
     private final PipesConfig pipesConfig;
     private final Socket socket;
     private final MetadataFilter defaultMetadataFilter;
+    private final InferenceDispatcher inferenceDispatcher;
     private final ContentHandlerFactory defaultContentHandlerFactory;
     private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
     private AutoDetectParser autoDetectParser;
@@ -257,6 +259,7 @@ public class PipesServer implements AutoCloseable {
         this.socket = socket;
         socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
         this.defaultMetadataFilter = tikaLoader.loadMetadataFilters();
+        this.inferenceDispatcher = tikaLoader.get(InferenceDispatcher.class);
         this.defaultContentHandlerFactory = tikaLoader.loadContentHandlerFactory();
         this.defaultMetadataWriteLimiterFactory = configContext.get(MetadataWriteLimiterFactory.class);
         this.input = in;
@@ -538,7 +541,8 @@ public class PipesServer implements AutoCloseable {
                 rMetaParser, defaultContentHandlerFactory, pipesConfig.getParseMode());
         Long thresholdBytes = pipesConfig.getEmitStrategy().getThresholdBytes();
         long threshold = (thresholdBytes != null) ? thresholdBytes : EmitStrategyConfig.DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES;
-        EmitHandler emitHandler = new EmitHandler(defaultMetadataFilter, emitStrategy, emitterManager, threshold);
+        EmitHandler emitHandler = new EmitHandler(defaultMetadataFilter, inferenceDispatcher,
+                emitStrategy, emitterManager, threshold);
         return new PipesWorker(fetchEmitTuple, mergedContext, autoDetectParser, emitterManager,
                 fetchHandler, parseHandler, emitHandler, defaultMetadataWriteLimiterFactory,
                 pipesConfig.getParseMode());
