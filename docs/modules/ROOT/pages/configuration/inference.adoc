@@ -174,8 +174,8 @@ its attachments alike:
 }
 ----
 
-It runs after the parse, as the last of the metadata filters, over the finished metadata
-list: every document's `tk:content` is chunked, the chunks of the whole tree are sent in
+It runs after the parse, over the finished metadata list and before the metadata filters
+(so a filter shapes what it wrote and cannot starve it): every document's `tk:content` is chunked, the chunks of the whole tree are sent in
 `maxBatchSize` requests in document order (a request may hold a container's last chunks and
 an attachment's first; the endpoint treats inputs independently and answers by index), and
 each chunk lands on the document its text came from, with a `text` locator and the binding
@@ -187,8 +187,8 @@ A document that released other inputs to inference is not embedded twice: a PDF 
 `inference.input: ["PAGES"]` records `tk:inference-released: PAGES` and the TEXT stage skips
 it; list `["TEXT", "PAGES"]` to get both. Because this stage runs over the metadata list, it
 covers `-J`, `/rmeta` and pipes; the streaming `/tika` endpoint has no list and no text
-vectors. A per-request `metadata-filters` list replaces the configured chain, this stage
-included.
+vectors. It is not a metadata filter: a per-request `metadata-filters` list does not touch it,
+and the per-request `inference` block below is the way to switch it off.
 
 The 4.0 `openai-embedding-filter` and `jina-embedding-filter` keep working and embed one
 document per request; the binding batches the tree and shares the engine with the other

@@ -32,7 +32,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 
-public class TextInferenceFilterTest {
+public class InferenceTextStageTest {
 
     static final class RecordingTask implements InferenceTask {
         final List<List<InferenceUnit>> runs = new ArrayList<>();
@@ -71,7 +71,7 @@ public class TextInferenceFilterTest {
         pages.add(TikaCoreProperties.INFERENCE_RELEASED, "PAGES");
         List<Metadata> list = List.of(root, child, blank, pages);
 
-        new TextInferenceFilter(dispatcher).filter(list, new ParseContext());
+        dispatcher.text(list, new ParseContext());
 
         assertEquals(1, task.runs.size(), "the whole list in one run");
         List<InferenceUnit> units = task.runs.get(0);
@@ -96,7 +96,7 @@ public class TextInferenceFilterTest {
         Metadata child = doc("text/plain", "abc");
         List<Metadata> list = List.of(root, child);
 
-        new TextInferenceFilter(dispatcher).filter(list, new ParseContext());
+        dispatcher.text(list, new ParseContext());
         assertEquals(1, plain.runs.get(0).size(), "_mime-include narrows by document type");
         assertSame(child, plain.runs.get(0).get(0).getTarget());
         assertEquals(1, small.runs.get(0).size(), "maxBytes drops the 9-byte root");
@@ -107,7 +107,7 @@ public class TextInferenceFilterTest {
         InferenceSelection selection = new InferenceSelection();
         selection.setEnabled(false);
         off.set(InferenceSelection.class, selection);
-        new TextInferenceFilter(dispatcher).filter(List.of(doc("text/plain", "x")), off);
+        dispatcher.text(List.of(doc("text/plain", "x")), off);
         assertEquals(1, plain.runs.size(), "switched off for the request: no run");
     }
 
@@ -120,7 +120,7 @@ public class TextInferenceFilterTest {
                 new InferenceDispatcher.Bound(text("t", null, -1), new Engine() { },
                         List.of(broken))));
         Metadata root = doc("text/plain", "hello");
-        new TextInferenceFilter(dispatcher).filter(List.of(root), new ParseContext());
+        dispatcher.text(List.of(root), new ParseContext());
         assertTrue(root.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)
                 .contains("inference binding t: boom"));
     }

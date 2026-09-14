@@ -315,7 +315,8 @@ public class ConnectionHandler implements Runnable, Closeable {
         Long thresholdBytes = pipesConfig.getEmitStrategy().getThresholdBytes();
         long threshold = (thresholdBytes != null) ? thresholdBytes : EmitStrategyConfig.DEFAULT_DIRECT_EMIT_THRESHOLD_BYTES;
         EmitHandler emitHandler = new EmitHandler(resources.getDefaultMetadataFilter(),
-                resources.getEmitStrategy(), resources.getEmitterManager(), threshold);
+                resources.getInferenceDispatcher(), resources.getEmitStrategy(),
+                resources.getEmitterManager(), threshold);
         return new PipesWorker(fetchEmitTuple, mergedContext, resources.getAutoDetectParser(),
                 resources.getEmitterManager(), fetchHandler, parseHandler, emitHandler,
                 resources.getDefaultMetadataWriteLimiterFactory(), pipesConfig.getParseMode());

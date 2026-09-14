@@ -46,7 +46,6 @@ import org.apache.tika.parser.inference.InferenceBinding;
 import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.parser.inference.InferenceSelection;
 import org.apache.tika.parser.inference.InputKind;
-import org.apache.tika.parser.inference.TextInferenceFilter;
 
 public class InferenceLoaderTest {
 
@@ -121,9 +120,9 @@ public class InferenceLoaderTest {
                 new ParseContext()));
     }
 
-    /** A TEXT binding carries its chunker and puts the TEXT stage at the end of the filters. */
+    /** A TEXT binding carries its chunker; the metadata-filter chain is not its vehicle. */
     @Test
-    public void testTextBindingLoadsWithChunkerAndFilter() throws Exception {
+    public void testTextBindingLoadsWithChunker() throws Exception {
         TikaLoader loader = load("{" + ENGINES + ", \"inference\": ["
                 + " { \"id\": \"text-vectors\", \"engine\": \"one\", \"input\": \"TEXT\","
                 + "   \"tasks\": [\"test-task\"], \"chunker\": { \"test-chunker\": { \"size\": 3 } } } ],"
@@ -136,21 +135,19 @@ public class InferenceLoaderTest {
 
         MetadataFilter filters = loader.get(MetadataFilter.class);
         assertTrue(filters instanceof CompositeMetadataFilter);
-        List<MetadataFilter> chain = ((CompositeMetadataFilter) filters).getFilters();
-        assertEquals(2, chain.size(), "the configured filter, then the TEXT stage");
-        assertTrue(chain.get(1) instanceof TextInferenceFilter);
+        assertEquals(1, ((CompositeMetadataFilter) filters).getFilters().size(),
+                "only the configured filter: the TEXT stage is not a filter");
 
         Path dump = Files.createTempFile(tmp, "dump", ".json");
         loader.save(dump.toFile());
         JsonNode dumped = new ObjectMapper().readTree(Files.readString(dump));
-        assertEquals(1, dumped.get("metadata-filters").size(),
-                "the dump keeps the configured filter; the TEXT stage is derived from inference");
+        assertEquals(1, dumped.get("metadata-filters").size());
         assertEquals("TEXT", dumped.get("inference").get(0).get("input").asText());
 
-        TikaLoader noText = load("{" + ENGINES + ", \"inference\": ["
-                + " { \"engine\": \"one\", \"input\": \"IMAGES\", \"tasks\": [\"test-task\"] } ] }");
-        assertSame(NoOpFilter.NOOP_FILTER, noText.get(MetadataFilter.class),
-                "no TEXT binding, no filters: the chain is untouched");
+        TikaLoader noFilters = load("{" + ENGINES + ", \"inference\": ["
+                + " { \"engine\": \"one\", \"input\": \"TEXT\", \"tasks\": [\"test-task\"] } ] }");
+        assertSame(NoOpFilter.NOOP_FILTER, noFilters.get(MetadataFilter.class),
+                "a TEXT binding adds nothing to the chain");
     }
 
     @Test

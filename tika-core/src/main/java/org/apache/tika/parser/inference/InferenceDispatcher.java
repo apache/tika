@@ -17,6 +17,7 @@
 package org.apache.tika.parser.inference;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -36,6 +37,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedMetadataLookup;
 import org.apache.tika.io.TemporaryResources;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
@@ -51,7 +53,8 @@ import org.apache.tika.parser.hook.ParseHook;
  * dispatcher owns until the flush. At the flush every unit is re-aimed at the metadata the
  * recursive wrapper kept for its document, since the parser's own copy is no longer read. A
  * request narrows the bindings through {@link InferenceSelection}. Failures mark the document
- * and never fail the parse.
+ * and never fail the parse. TEXT is not offered during the parse: whoever holds the finished
+ * metadata list runs {@link #text} over it.
  *
  * @since Apache Tika 4.1
  */
@@ -248,8 +251,75 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
         return kept;
     }
 
+    /**
+     * The {@link InputKind#TEXT} stage. Runs the TEXT bindings over the finished metadata list of
+     * a document tree, so every document's text goes to the engine in one pass and a batch may
+     * hold chunks of the container and of its attachments alike. Call it after the parse and
+     * before any metadata filters. A document that released other inputs to inference
+     * ({@link TikaCoreProperties#INFERENCE_RELEASED} without TEXT) is skipped. Failures mark
+     * the first document of the list.
+     */
+    public void text(List<Metadata> metadataList, ParseContext context) throws TikaException {
+        if (metadataList.isEmpty()) {
+            return;
+        }
+        Metadata root = metadataList.get(0);
+        for (Bound b : running(InputKind.TEXT, context)) {
+            InferenceBinding binding = b.binding();
+            List<InferenceUnit> units = new ArrayList<>();
+            int skipped = 0;
+            for (Metadata metadata : metadataList) {
+                String text = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+                if (text == null || text.isBlank() || !releasedText(metadata)) {
+                    continue;
+                }
+                MediaType type = MediaType.parse(metadata.get(HttpHeaders.CONTENT_TYPE));
+                if (!binding.accepts(InputKind.TEXT,
+                        type == null ? MediaType.OCTET_STREAM : type)) {
+                    continue;
+                }
+                if (binding.getMaxBytes() >= 0
+                        && text.getBytes(StandardCharsets.UTF_8).length > binding.getMaxBytes()) {
+                    skipped++;
+                    continue;
+                }
+                units.add(new InferenceUnit(type, metadata, null, text));
+            }
+            if (skipped > 0) {
+                root.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, "inference binding "
+                        + binding.getId() + " over maxBytes: skipped " + skipped + " units");
+            }
+            if (units.isEmpty()) {
+                continue;
+            }
+            for (InferenceTask task : b.tasks()) {
+                try {
+                    task.run(binding, units, b.engine(), context);
+                } catch (Exception e) {
+                    LOG.warn("inference binding {} failed", binding.getId(), e);
+                    root.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                            "inference binding " + binding.getId() + ": " + e.getMessage());
+                }
+            }
+        }
+    }
+
+    /** Absent means the parser released its text; a list without TEXT means it did not. */
+    private static boolean releasedText(Metadata metadata) {
+        String[] released = metadata.getValues(TikaCoreProperties.INFERENCE_RELEASED);
+        if (released.length == 0) {
+            return true;
+        }
+        for (String r : released) {
+            if (InputKind.TEXT.name().equals(r)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /** The bindings of this kind that run for the request: enabled and selected. */
-    public List<Bound> running(InputKind kind, ParseContext context) throws TikaException {
+    private List<Bound> running(InputKind kind, ParseContext context) throws TikaException {
         List<Bound> result = new ArrayList<>();
         for (Bound b : bound) {
             if (b.binding().getInput() == kind && runs(b.binding(), context)) {
@@ -257,15 +327,6 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
             }
         }
         return result;
-    }
-
-    public boolean hasInput(InputKind kind) {
-        for (Bound b : bound) {
-            if (b.binding().getInput() == kind) {
-                return true;
-            }
-        }
-        return false;
     }
 
     private boolean runs(InferenceBinding binding, ParseContext context) throws TikaException {

@@ -117,6 +117,16 @@ public class PipesClientTest {
             metadata = pipesResult.emitData().getMetadataList().get(0);
             assertEquals("mock-text", metadata.get(MockTask.MARKER_KEY));
             assertEquals("1", metadata.get(MockTask.UNITS_KEY));
+
+            // a per-request filter list neither drops the TEXT stage nor runs ahead of it
+            ParseContext filtered = new ParseContext();
+            filtered.setJsonConfig("metadata-filters", "[\"mock-upper-case-filter\"]");
+            pipesResult = pipesClient.process(
+                    new FetchEmitTuple("note.txt", new FetchKey(fetcherName, "note.txt"),
+                            new EmitKey(), new Metadata(), filtered,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            metadata = pipesResult.emitData().getMetadataList().get(0);
+            assertEquals("MOCK-TEXT", metadata.get(MockTask.MARKER_KEY));
         }
     }
 
