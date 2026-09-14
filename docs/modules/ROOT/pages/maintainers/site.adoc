@@ -151,11 +151,12 @@ When releasing a new minor line (e.g., 4.0.0 creates `docs/4.0.x`):
 #    post-tag docs improvements should ship too)
 git checkout -b docs/4.0.x 4.0.0
 
-# 2. Set the version (and the tika-version attribute) in docs/antora.yml
+# 2. Set the version (and the tika-version / tika-javadoc-url attributes) in docs/antora.yml
 #    version: '4.0.x'
 #    asciidoc:
 #      attributes:
 #        tika-version: '4.0.0'
+#        tika-javadoc-url: 'https://tika.apache.org/4.0.0/api'
 git commit -am "Set docs version to 4.0.x"
 git push origin docs/4.0.x
 
@@ -175,8 +176,8 @@ svn commit -m "Publish 4.0.x docs"
 ----
 
 For a patch release (e.g. 4.0.1), there is no new branch: merge or cherry-pick
-the doc changes to `docs/4.0.x`, bump its `tika-version` attribute, rebuild and
-republish in place.
+the doc changes to `docs/4.0.x`, bump its `tika-version` and `tika-javadoc-url`
+attributes, rebuild and republish in place.
 
 === Updating Released Documentation
 

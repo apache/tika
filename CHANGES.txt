@@ -5,6 +5,8 @@ Release 4.1.0 - unreleased
      render, counted from the first page and independent of maxPages: text
      extraction can cover the whole document while only the first page is
      rendered, as for a thumbnail (TIKA-4856).
+   * PDF: a bookmark outline is now walked without recursion, and lists nest at
+     most 50 deep with deeper items joining the deepest list (TIKA-4894).
 
    * A text recognizer is an engine: configure Tesseract, Tess4J or a VLM once
      under "engines" and name it from "text-recognizers" with

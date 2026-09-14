@@ -40,7 +40,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'maven'
       - id: check
         name: Publish only for -SNAPSHOT versions
         run: |
@@ -67,7 +66,15 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'maven'
+      - name: Cache Maven repository
+        # Explicit, not setup-java's cache: 'maven', so our own snapshots stay out of the tarball.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/apache/tika
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
 
       - name: Extract version from pom
         id: version

@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -806,6 +807,32 @@ public class TikaCLITest {
 
         content = getParamOutContent("--list-parser-details-apt");
         assertTrue(content.contains("application/vnd.oasis.opendocument.text-web"));
+    }
+
+    @Test
+    public void testListParserDetailAdoc() throws Exception {
+        String content = getParamOutContent("--list-parser-details-adoc");
+        assertTrue(content.startsWith(SupportedFormatsAdoc.HEADER));
+        assertTrue(content.contains(
+                "link:{tika-javadoc-url}/org/apache/tika/parser/pdf/PDFParser.html[PDFParser]"));
+        assertTrue(content.contains("** `application/vnd.oasis.opendocument.text-web`"));
+        // Tesseract is hidden so the listing is the same with or without the binary.
+        assertFalse(content.contains("TesseractOCRParser"));
+    }
+
+    /**
+     * The docs' Supported Formats page includes a checked-in copy of the adoc
+     * listing. Fail when it drifts from the parsers actually on the classpath.
+     */
+    @Test
+    public void testSupportedFormatsPartialIsCurrent() throws Exception {
+        Path partial = Paths.get("..", "docs", "modules", "ROOT", "partials", "supported-formats.adoc");
+        assumeTrue(Files.isRegularFile(partial), "docs partial not present in this checkout");
+        String expected = getParamOutContent("--list-parser-details-adoc").replace("\r\n", "\n");
+        String actual = Files.readString(partial, UTF_8).replace("\r\n", "\n");
+        assertEquals(expected, actual, "docs/modules/ROOT/partials/supported-formats.adoc is stale; regenerate with:\n" +
+                "  java -jar tika-app/target/tika-app-<version>.jar --list-parser-details-adoc " +
+                "> docs/modules/ROOT/partials/supported-formats.adoc");
     }
 
     /**

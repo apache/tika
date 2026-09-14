@@ -525,6 +525,10 @@ public class TikaCLI {
         } else if (arg.equals("--list-parser-detail-apt") || arg.equals("--list-parser-details-apt")) {
             pipeMode = false;
             displayParsers(true, true);
+        } else if (arg.equals("--list-parser-detail-adoc") || arg.equals("--list-parser-details-adoc")) {
+            pipeMode = false;
+            configure();
+            System.out.print(SupportedFormatsAdoc.render(parser));
         } else if (arg.equals("--list-met-models")) {
             pipeMode = false;
             displayMetModels();
@@ -932,6 +936,8 @@ public class TikaCLI {
         out.println("         List the available document parsers and their supported mime types");
         out.println("    --list-parser-details-apt");
         out.println("         List the available document parsers and their supported mime types in apt format.");
+        out.println("    --list-parser-details-adoc");
+        out.println("         Same, in AsciiDoc; regenerates docs/modules/ROOT/partials/supported-formats.adoc");
         out.println("    --list-detectors");
         out.println("         List the available document detectors");
         out.println("    --list-detector-names");

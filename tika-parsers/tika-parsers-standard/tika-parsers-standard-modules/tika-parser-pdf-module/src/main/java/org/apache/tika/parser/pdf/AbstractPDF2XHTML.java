@@ -34,10 +34,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -154,6 +156,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      */
     private final static int MAX_RECURSION_DEPTH = 100;
     private final static int MAX_BOOKMARK_ITEMS = 10000;
+    /** Deeper bookmarks are written as items of the deepest list, within the XML nesting limit. */
+    private final static int MAX_BOOKMARK_DEPTH = 50;
 
     //This is used for both types and subtypes.
     //These can be unbounded.  We need to limit the number we store.
@@ -1476,41 +1480,62 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     void extractBookmarkText() throws SAXException, IOException, TikaException {
         PDDocumentOutline outline = document.getDocumentCatalog().getDocumentOutline();
         if (outline != null) {
-            Set<COSObjectable> seen = new HashSet<>();
-            extractBookmarkText(outline, seen, 0);
+            extractBookmarkText(outline);
         }
     }
 
-    void extractBookmarkText(PDOutlineNode bookmark, Set<COSObjectable> seen, int itemCount)
+    /**
+     * Walks the outline without recursion: a chain of items each the only child of the last
+     * can be as long as the item budget, and a hostile file makes it so. A list opens for the
+     * children of an item up to {@link #MAX_BOOKMARK_DEPTH}; deeper items join the deepest
+     * list. Cycles end where an item is met a second time.
+     */
+    private void extractBookmarkText(PDOutlineNode outline)
             throws SAXException, IOException, TikaException {
-        PDOutlineItem current = bookmark.getFirstChild();
-        if (itemCount > MAX_BOOKMARK_ITEMS) {
+        PDOutlineItem current = outline.getFirstChild();
+        if (current == null) {
             return;
         }
-        if (current != null) {
-            if (seen.contains(current)) {
-                return;
+        Set<COSObjectable> seen = new HashSet<>();
+        // the item whose children are being walked, per level; whether its level opened a list
+        Deque<PDOutlineItem> parents = new ArrayDeque<>();
+        Deque<Boolean> opened = new ArrayDeque<>();
+        xhtml.startElement("ul");
+        int lists = 1;
+        int items = 0;
+        while (true) {
+            if (current == null || seen.contains(current) || items > MAX_BOOKMARK_ITEMS) {
+                if (parents.isEmpty()) {
+                    break;
+                }
+                if (opened.pop()) {
+                    xhtml.endElement("ul");
+                    lists--;
+                }
+                current = parents.pop().getNextSibling();
+                continue;
             }
-            xhtml.startElement("ul");
-            while (current != null) {
-                if (seen.contains(current)) {
-                    break;
+            seen.add(current);
+            items++;
+            xhtml.startElement("li");
+            xhtml.characters(current.getTitle());
+            xhtml.endElement("li");
+            handleDestinationOrAction(current.getAction(), ActionTrigger.BOOKMARK);
+            PDOutlineItem child = current.getFirstChild();
+            if (child != null && !seen.contains(child)) {
+                boolean open = lists < MAX_BOOKMARK_DEPTH;
+                if (open) {
+                    xhtml.startElement("ul");
+                    lists++;
                 }
-                if (itemCount > MAX_BOOKMARK_ITEMS) {
-                    break;
-                }
-                seen.add(current);
-                xhtml.startElement("li");
-                xhtml.characters(current.getTitle());
-                xhtml.endElement("li");
-                handleDestinationOrAction(current.getAction(), ActionTrigger.BOOKMARK);
-                // Recurse:
-                extractBookmarkText(current, seen, itemCount + 1);
+                parents.push(current);
+                opened.push(open);
+                current = child;
+            } else {
                 current = current.getNextSibling();
-                itemCount++;
             }
-            xhtml.endElement("ul");
         }
+        xhtml.endElement("ul");
     }
 
     void extractAcroForm(PDDocument pdf) throws IOException, SAXException, TikaException {

@@ -28,16 +28,17 @@ package org.apache.tika.parser.html;
 public interface HtmlMapper {
 
     /**
-     * Maps "safe" HTML element names to semantic XHTML equivalents. If the
-     * given element is unknown or deemed unsafe for inclusion in the parse
-     * output, then this method returns <code>null</code> and the element
-     * will be ignored but the content inside it is still processed. See
+     * Maps HTML element names to Tika's XHTML dialect. If the given element
+     * is not part of that dialect, this method returns <code>null</code> and
+     * the element is dropped but the content inside it is still processed.
+     * "Safe" here means valid in the output dialect; this is not a browser
+     * sanitizer, and attribute values are passed through unchanged. See
      * the {@link #isDiscardElement(String)} method for a way to discard
      * the entire contents of an element.
      *
      * @param name HTML element name (upper case)
      * @return XHTML element name (lower case), or
-     * <code>null</code> if the element is unsafe
+     * <code>null</code> if the element is not in the output dialect
      */
     String mapSafeElement(String name);
 
@@ -53,16 +54,16 @@ public interface HtmlMapper {
 
 
     /**
-     * Maps "safe" HTML attribute names to semantic XHTML equivalents. If the
-     * given attribute is unknown or deemed unsafe for inclusion in the parse
-     * output, then this method returns <code>null</code> and the attribute
-     * will be ignored. This method assumes that the element name
+     * Maps HTML attribute names to Tika's XHTML dialect. If the given
+     * attribute is not part of that dialect for this element, this method
+     * returns <code>null</code>, and the attribute is dropped. Attribute
+     * values are not inspected. This method assumes that the element name
      * is valid and normalised.
      *
      * @param elementName   HTML element name (lower case)
      * @param attributeName HTML attribute name (lower case)
      * @return XHTML attribute name (lower case), or
-     * <code>null</code> if the element is unsafe
+     * <code>null</code> if the attribute is not in the output dialect
      */
     String mapSafeAttribute(String elementName, String attributeName);
 
