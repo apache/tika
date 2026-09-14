@@ -384,7 +384,8 @@ public class TikaResourceTest extends CXFTestBase {
     //TIKA-2669
     @Test
     public void testPDFConfig() throws Exception {
-        // Test default behavior (sortByPosition=true from server config)
+        // Test default behavior (sortByPosition=true from server config, which also keeps the
+        // structure tree out of it: sorting reorders the stripper's lines)
         Response response = WebClient
                 .create(endPoint + TIKA_PATH + "/text")
                 .type("application/pdf")

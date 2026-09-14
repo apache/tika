@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * New tika-eval-structure: a standalone tool that compares two sets of
+     XHTML extracts block by block (paragraph order as Kendall tau, splits and
+     merges, words one side glues that the other splits, artifact and untagged
+     shares), per file and per producer, where token dice cannot see order
+     (TIKA-4891).
+
+   * Improve extraction of tagged PDFs(TIKA-4891).
+
    * TEXT input for inference bindings: a binding on TEXT with a chunker
      (markdown-chunker) embeds the text of every document in a tree in
      batched requests, after the parse and before the metadata filters; each

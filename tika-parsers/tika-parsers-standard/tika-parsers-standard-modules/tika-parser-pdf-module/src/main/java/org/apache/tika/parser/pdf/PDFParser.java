@@ -122,7 +122,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * tries to maintain the structure of tables represented in PDFs.
  *
  * If your PDFs contain marked content or tags, consider
- * {@link PDFParserConfig#setExtractMarkedContent(boolean)}
+ * {@link PDFParserConfig#setMarkedContent(MarkedContentConfig)}
  */
 @TikaComponent
 public class PDFParser implements Parser, RenderingParser, EnrichingParser {
@@ -225,7 +225,9 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
                         .equals(OcrConfig.Strategy.OCR_ONLY)) {
                     OCR2XHTML.process(pdfDocument, handler, context, metadata,
                             localConfig, renderer, contentEnrichers);
-                } else if (hasMarkedContent && localConfig.isExtractMarkedContent()) {
+                } else if (hasMarkedContent && localConfig.getMarkedContent().getStrategy()
+                        != MarkedContentConfig.Strategy.NONE && !localConfig.isDetectAngles()) {
+                    // detectAngles re-runs the page per angle; the tagged writer needs one pass
                     PDFMarkedContent2XHTML
                             .process(pdfDocument, handler, context, metadata,
                                     localConfig, renderer, contentEnrichers);

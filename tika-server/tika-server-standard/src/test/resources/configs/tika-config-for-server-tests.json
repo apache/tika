@@ -5,7 +5,8 @@
     },
     {
       "pdf-parser": {
-        "sortByPosition": true
+        "sortByPosition": true,
+        "markedContent": { "strategy": "NONE" }
       }
     }
   ],

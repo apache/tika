@@ -272,6 +272,11 @@ public class PDFParserTest extends TikaTest {
         assertEquals(0, handler.toString().length());
     }
 
+    /**
+     * Two floating text boxes side by side. Word's structure tree lists them in the order
+     * they are anchored, right box first, so with tags each box comes out whole in that
+     * order; the stripper alone happens to draw the left box first.
+     */
     @Test
     public void testTwoTextBoxes() throws Exception {
         String content;
@@ -279,6 +284,15 @@ public class PDFParserTest extends TikaTest {
                 "/test-documents/testPDFTwoTextBoxes.pdf")) {
             content = getText(tis, AUTO_DETECT_PARSER);
         }
+        content = content.replaceAll("\\s+", " ");
+        assertContains("Left column line 1 Left column line 2", content);
+        assertContains("Right column line 1 Right column line 2", content);
+
+        ParseContext context = new ParseContext();
+        PDFParserConfig config = new PDFParserConfig();
+        config.getMarkedContent().setStrategy(MarkedContentConfig.Strategy.NONE);
+        context.set(PDFParserConfig.class, config);
+        content = getText("testPDFTwoTextBoxes.pdf", new Metadata(), context);
         content = content.replaceAll("\\s+", " ");
         assertContains(
                 "Left column line 1 Left column line 2 Right column line 1 Right column line 2",
@@ -540,6 +554,9 @@ public class PDFParserTest extends TikaTest {
     public void testSortByPosition() throws Exception {
         PDFParser parser = new PDFParser();
         parser.getPDFParserConfig().setEnableAutoSpace(false);
+        // sorting reorders the stripper's lines; the tree would keep the boxes apart
+        parser.getPDFParserConfig().getMarkedContent()
+                .setStrategy(MarkedContentConfig.Strategy.NONE);
         TikaInputStream tis = getResourceAsStream("/test-documents/testPDFTwoTextBoxes.pdf");
         // Default is false (do not sort):
         String content = getText(tis, parser);
@@ -560,6 +577,7 @@ public class PDFParserTest extends TikaTest {
         //now try setting autodetect via parsecontext
         ParseContext context = new ParseContext();
         PDFParserConfig config = new PDFParserConfig();
+        config.getMarkedContent().setStrategy(MarkedContentConfig.Strategy.NONE);
         context.set(PDFParserConfig.class, config);
         // Default is false (do not sort):
         content = getText("testPDFTwoTextBoxes.pdf", new Metadata(), context);
