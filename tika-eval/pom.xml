@@ -36,6 +36,7 @@
   <modules>
     <module>tika-eval-core</module>
     <module>tika-eval-app</module>
+    <module>tika-eval-structure</module>
   </modules>
 
   <build>

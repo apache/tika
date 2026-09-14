@@ -456,3 +456,27 @@ SELECT m.mime_string, COUNT(*) n
 FROM profiles_b p JOIN mimes m ON p.mime_id = m.mime_id
 GROUP BY m.mime_string ORDER BY n DESC;
 ----
+
+== Structure: order, segmentation and word boundaries
+
+Token dice cannot see order. `tika-eval-structure` is a standalone tool for the questions a
+structure-changing parser raises: did the paragraphs come out in the same order, did the
+candidate split or merge blocks, and which words did one side glue that the other split.
+It reads two directories of tika-app JSON extracts whose content is XHTML (batch runs with
+`--handler x`) and writes `per-file.tsv` and `summary.md`:
+
+[source,bash]
+----
+java -jar tika-eval-structure-*.jar -a extracts-a -b extracts-b -o structure-report
+----
+
+Per file it splits each extract into blocks (`p`, headings, `li`, cells, loose text),
+matches blocks one to one by token overlap, and reports Kendall tau and adjacent-pair
+agreement over the matched blocks of three or more tokens, A blocks that B spread over
+several blocks and B blocks that cover several A blocks, tokens each side wrote as one word
+that the other wrote as several, and the share of B's text in `artifact` and `untagged`
+divs. The summary groups by a metadata key of A (`-g`, default `pdf:producer`, version
+stripped) and lists the files with the worst order. A file whose matched token share is
+below 0.5 is left out of the order numbers: the score says nothing when the text differs.
+Against a label set (an extraction whose order is known by construction) the same numbers
+measure correctness rather than difference.
