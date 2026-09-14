@@ -43,6 +43,7 @@ asciidoc:
     # '@' = soft: each branch's antora.yml tika-version wins over this default
     tika-version: '4.1.0-SNAPSHOT@'
     tika-stable-version: '3.3.2'
+    tika-javadoc-url: 'https://tika.apache.org/4.0.0/api@'
     # Enable source highlighting
     source-highlighter: highlight.js
     # Table of contents

@@ -57,5 +57,5 @@ xref:using-tika/docker.adoc[Running Tika in Docker].
 * https://tika.apache.org/download.html[Downloads] — jars, the `tika-app` and `tika-server` zips
 * https://hub.docker.com/r/apache/tika[Docker images] — `apache/tika` on Docker Hub
 * https://tika.apache.org/[Apache Tika website]
-* https://tika.apache.org/{tika-stable-version}/formats.html[Supported formats] — what Tika can parse
-* https://tika.apache.org/{tika-stable-version}/api/[Javadoc]
+* xref:formats.adoc[Supported formats] — what Tika can parse
+* {tika-javadoc-url}/[Javadoc]

@@ -78,7 +78,7 @@ line, `tika.maintenance.version` = 3.x line).
 | `pom.xml` `tika.maintenance.version` | leave | → `<NEW>` |
 | `src/site/apt/<NEW>/` | **only `index.apt`** (Changes) | full 8-file set (scaffold from prev 3.x) |
 | `site.xml` entry | sub-menu linking `docs/<X.Y>.x/` pages + Changes + api | full legacy sub-menu, expanded |
-| formats.apt | n/a (Antora docs) | regenerate from `tika-app` jar |
+| formats.apt | n/a — `docs/.../formats.adoc`; its generated partial is test-enforced | regenerate from `tika-app` jar |
 | javadoc | `clean install -Pfast` + `javadoc:aggregate` → `publish/<NEW>/api` (step 7) | same |
 | Antora docs | new minor → new `docs/<X.Y>.x` branch; patch → republish same branch (step 7) | n/a |
 | Download page | automatic | automatic |
@@ -250,10 +250,10 @@ miredot docs discontinued — skip.)
 **4.x — Antora docs [AGENT].** Built from the tika git repo (main checkout),
 not the src zip — the playbook pulls every `docs/{0..9}*` branch as a content
 source. New minor: create `docs/<X.Y>.x` from the tag (or main), set
-`version: '<X.Y>.x'` + `tika-version` attribute in that branch's
-`docs/antora.yml`, and make sure main's antora.yml has `prerelease: true`
+`version: '<X.Y>.x'` + `tika-version` and `tika-javadoc-url` attributes in that
+branch's `docs/antora.yml`, and make sure main's antora.yml has `prerelease: true`
 [HUMAN commits]. Patch: commit doc changes + `tika-version` bump to the
-existing branch. Then:
+existing branch (bump `tika-javadoc-url` too). Then:
 ```bash
 cd tika-main
 ./mvnw package -Papache-release -pl :tika-docs -DskipTests
@@ -352,7 +352,7 @@ commit outside `publish/` won't trigger. Still stuck ~30 min → ping `#asfinfra
 - [ ] `pom.xml` versions (stable for 4.x; maintenance+parent for 3.x)
 - [ ] `site.xml`: new entry added, previous same-track entry collapsed
 - [ ] per-version apt docs (`index.apt` only for 4.x / full set for 3.x)
-- [ ] `formats.apt` regenerated (3.x only)
+- [ ] `formats.apt` regenerated (3.x only; 4.x formats page is in Antora, partial test-enforced)
 - [ ] `index.apt`: notable changes + curated contributors + shortlink
 - [ ] `doap.rdf` entry
 - [ ] `index.apt.vm`: news block + superseded CHANGES link → archive
