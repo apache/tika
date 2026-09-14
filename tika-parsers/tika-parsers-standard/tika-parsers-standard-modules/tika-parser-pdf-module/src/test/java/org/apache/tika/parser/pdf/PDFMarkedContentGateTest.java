@@ -1105,7 +1105,7 @@ public class PDFMarkedContentGateTest extends TikaTest {
     @Test
     public void testDeprecatedFlagMapsToStrategy() {
         PDFParserConfig config = new PDFParserConfig();
-        assertEquals(MarkedContentConfig.Strategy.NONE, config.getMarkedContent().getStrategy());
+        assertEquals(MarkedContentConfig.Strategy.AUTO, config.getMarkedContent().getStrategy());
         config.setExtractMarkedContent(true);
         assertEquals(MarkedContentConfig.Strategy.TAGS, config.getMarkedContent().getStrategy());
         config.setExtractMarkedContent(false);

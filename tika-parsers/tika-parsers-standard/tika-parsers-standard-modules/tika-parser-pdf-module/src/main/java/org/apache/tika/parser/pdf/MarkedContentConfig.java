@@ -35,7 +35,7 @@ public class MarkedContentConfig implements Serializable {
         NONE
     }
 
-    private Strategy strategy = Strategy.NONE;
+    private Strategy strategy = Strategy.AUTO;
 
     private float minCoverage = 0.5f;
 
@@ -46,7 +46,7 @@ public class MarkedContentConfig implements Serializable {
     }
 
     public void setStrategy(Strategy strategy) {
-        this.strategy = strategy == null ? Strategy.NONE : strategy;
+        this.strategy = strategy == null ? Strategy.AUTO : strategy;
     }
 
     public float getMinCoverage() {

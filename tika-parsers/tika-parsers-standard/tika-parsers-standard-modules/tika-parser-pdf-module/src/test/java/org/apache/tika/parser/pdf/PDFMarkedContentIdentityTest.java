@@ -67,6 +67,7 @@ public class PDFMarkedContentIdentityTest extends TikaTest {
         for (File pdf : pdfs) {
             PDFParserConfig none = new PDFParserConfig();
             tweak.accept(none);
+            none.getMarkedContent().setStrategy(MarkedContentConfig.Strategy.NONE);
             PDFParserConfig forcedFallback = new PDFParserConfig();
             tweak.accept(forcedFallback);
             forcedFallback.getMarkedContent().setStrategy(MarkedContentConfig.Strategy.AUTO);

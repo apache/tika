@@ -83,10 +83,11 @@ text stripper and the same `sortByPosition`, `enableAutoSpace` and tolerance set
 only decides which XHTML elements the words land in and, across blocks, their order.
 
 `strategy`::
-`NONE`, the default, ignores the tree and writes what the stripper writes. `TAGS` follows the tree
-on every page that has tagged text. `AUTO` follows it only on pages that pass the gate below and
-writes the other pages exactly as `NONE` would. A PDF with no structure tree is written as with
-`NONE` whatever the strategy, and `detectAngles` always wins.
+`AUTO`, the default, follows the tree on pages that pass the gate below and writes the other
+pages exactly as the stripper would. `TAGS` follows the tree on every page that has tagged
+text. `NONE` ignores the tree and writes what the stripper writes, the output of Tika before
+4.1.0. A PDF with no structure tree is written as with `NONE` whatever the strategy, and
+`detectAngles` always wins.
 `minCoverage`, `maxDanglingRatio`::
 The `AUTO` gate, per page. A page uses its tags only when the tree claims at least `minCoverage`
 of the page's text (artifact content counts, since a producer that marks the body as artifact

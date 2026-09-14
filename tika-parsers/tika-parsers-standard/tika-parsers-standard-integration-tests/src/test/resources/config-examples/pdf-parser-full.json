@@ -54,7 +54,7 @@
         // NONE never. A PDF without a structure tree always uses the stripper.
         // Options: AUTO, TAGS, NONE
         "markedContent": {
-          "strategy": "NONE",
+          "strategy": "AUTO",
           // AUTO only: least fraction of a page's text the tree must claim.
           "minCoverage": 0.5,
           // AUTO only: most tree leaves for a page that may point at content the page lacks.

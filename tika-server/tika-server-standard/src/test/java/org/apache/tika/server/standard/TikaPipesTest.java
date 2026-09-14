@@ -244,7 +244,9 @@ public class TikaPipesTest extends CXFTestBase {
     public void testPDFConfig() throws Exception {
         ParseContext parseContext = new ParseContext();
         // Configure PDFParser via JSON config (pdf-parser is self-configuring)
-        parseContext.setJsonConfig("pdf-parser", "{\"sortByPosition\": true}");
+        // sortByPosition reorders the stripper's lines; keep the structure tree out of it
+        parseContext.setJsonConfig("pdf-parser",
+                "{\"sortByPosition\": true, \"markedContent\": {\"strategy\": \"NONE\"}}");
 
         FetchEmitTuple t = new FetchEmitTuple("myId", new FetchKey(FETCHER_ID, TEST_TWO_BOXES_PDF),
                 new EmitKey(EMITTER_JSON_ID, ""), new Metadata(), parseContext);
