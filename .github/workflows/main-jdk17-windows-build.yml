@@ -55,7 +55,15 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
-          cache: 'maven'
+      - name: Cache Maven repository
+        # Explicit, not setup-java's cache: 'maven', so our own snapshots stay out of the tarball.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/apache/tika
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
       - name: Build with Maven (de_DE locale)
         working-directory: 'tika build dir'
         # The -Duser.* args MUST stay quoted: PowerShell splits an unquoted dotted
