@@ -1,0 +1,162 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= OCR and Inference Recipes
+
+Each recipe is a complete config. They combine three sections and one PDF knob:
+xref:configuration/index.adoc#text-recognizers[`text-recognizers`] (what produces text from
+pixels), xref:configuration/inference.adoc[`engines` and `inference`] (what is called, on what),
+and `pdf-parser.inference.input` (what a PDF releases). Every default parser stays loaded in
+all of them.
+
+== Scanned pages only
+
+OCR a PDF page only when its extracted text is poor, and every embedded image. Tesseract is
+configured once and named as the recognizer; the PDF's `AUTO` strategy is the default.
+
+[source,json]
+----
+{
+  "engines": { "tesseract": { "tesseract-ocr-parser": { "language": "eng" } } },
+  "text-recognizers": [ { "engine": "tesseract" } ]
+}
+----
+
+== Text vectors for every document
+
+One embedding request per document tree, chunks of the container and its attachments mixed,
+each chunk on its own document with a `text` locator.
+
+[source,json]
+----
+{
+  "engines": {
+    "embedder": { "openai-embedding-engine": { "baseUrl": "http://embed:8000", "model": "bge-m3" } }
+  },
+  "inference": [
+    { "id": "text-vectors", "engine": "embedder", "input": "TEXT", "tasks": ["embed"],
+      "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } } }
+  ]
+}
+----
+
+== Page vectors, no OCR
+
+Every PDF page rendered once for the embedding engine, no text recognizer anywhere. The render
+settings live under `ocr` and are sized here for an image model rather than Tesseract.
+
+[source,json]
+----
+{
+  "engines": {
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip:8000", "model": "siglip2" } }
+  },
+  "inference": [
+    { "id": "page-vectors", "engine": "clip", "input": "PAGES", "tasks": ["embed"], "maxChunks": 50 }
+  ],
+  "text-recognizers": [],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "inference": { "input": ["PAGES"] },
+                      "ocr": { "strategy": "NO_OCR", "dpi": 100, "imageType": "RGB" } } }
+  ]
+}
+----
+
+== OCR when needed and a vector on every page
+
+One render per page feeds both: Tesseract on the pages the `AUTO` verdict picks, the embedding
+engine on all of them. The settings serve both consumers, so keep the dpi Tesseract needs.
+
+[source,json]
+----
+{
+  "engines": {
+    "tesseract": { "tesseract-ocr-parser": { "language": "eng" } },
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip:8000", "model": "siglip2" } }
+  },
+  "text-recognizers": [ { "engine": "tesseract" } ],
+  "inference": [
+    { "id": "page-vectors", "engine": "clip", "input": "PAGES", "tasks": ["embed"] }
+  ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "inference": { "input": ["PAGES"] }, "ocr": { "imageType": "RGB" } } }
+  ]
+}
+----
+
+== PDFs by page vectors, everything else by text vectors
+
+Two bindings. The PDF releases its pages, records that it did, and the text stage skips it;
+every other document is embedded by its text. List `["TEXT", "PAGES"]` on the PDF to get both.
+
+[source,json]
+----
+{
+  "engines": {
+    "embedder": { "openai-embedding-engine": { "baseUrl": "http://embed:8000", "model": "bge-m3" } },
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip:8000", "model": "siglip2" } }
+  },
+  "inference": [
+    { "id": "text-vectors", "engine": "embedder", "input": "TEXT", "tasks": ["embed"],
+      "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } } },
+    { "id": "page-vectors", "engine": "clip", "input": "PAGES", "tasks": ["embed"], "maxChunks": 50 }
+  ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "inference": { "input": ["PAGES"] },
+                      "ocr": { "strategy": "NO_OCR", "dpi": 100, "imageType": "RGB" } } }
+  ]
+}
+----
+
+== OCR off for PDFs only
+
+The recognizer stays on for embedded and standalone images; the PDF parser never renders.
+
+[source,json]
+----
+{
+  "engines": { "tesseract": { "tesseract-ocr-parser": {} } },
+  "text-recognizers": [ { "engine": "tesseract" } ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "ocr": { "strategy": "NO_OCR" } } }
+  ]
+}
+----
+
+== Everything off for one request
+
+Both lists stay configured; the request switches them off. Wire-safe, so it works as a
+xref:using-tika/server/index.adoc[preset], on `/rmeta/config`, and on a pipes tuple.
+
+[source,json]
+----
+{ "parse-context": { "text-recognizers": { "enabled": false },
+                     "inference": { "enabled": false } } }
+----
+
+`inference.bindings` selects a subset instead of all-or-nothing; a PDF can be switched to pages
+for one request with `"pdf-parser": { "inference": { "input": ["PAGES"] } }` in the same block.
+
+== Not yet
+
+A caption or tag per picture (a chat task on a chat engine), OCR configured but promoted per
+request, and separate render settings for OCR and for an image model are 4.2 work; the
+xref:configuration/inference.adoc[Inference] page says what each binding can do today.

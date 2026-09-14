@@ -37,6 +37,8 @@ import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ParseContextConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
@@ -116,7 +118,8 @@ public final class ContentEnrichers {
 
     private static Parser select(CompositeContentEnricher enrichers, MediaType mediaType,
                                  ParseContext context) {
-        if (mediaType == null || isActive(context) || isSuspended(context)) {
+        if (mediaType == null || isActive(context) || isSuspended(context)
+                || isDisabled(context)) {
             return null;
         }
         boolean annotatorsOnly = isRecognizersSuspended(context);
@@ -160,7 +163,7 @@ public final class ContentEnrichers {
                                             ParseContext context) {
         Objects.requireNonNull(target, "target");
         if (mediaType == null || isActive(context) || isSuspended(context)
-                || isRecognizersSuspended(context)) {
+                || isRecognizersSuspended(context) || isDisabled(context)) {
             return false;
         }
         if (enrichers != null) {
@@ -260,6 +263,24 @@ public final class ContentEnrichers {
         if (parseRecord != null) {
             parseRecord.addParserClass(className);
         }
+    }
+
+    private static final TextRecognizerSelection ENABLED = new TextRecognizerSelection();
+
+    /** Whether the request switched the list off: {@code {"text-recognizers": {"enabled": false}}}. */
+    public static boolean isDisabled(ParseContext context) {
+        TextRecognizerSelection selection = context.get(TextRecognizerSelection.class);
+        if (selection == null) {
+            try {
+                selection = ParseContextConfig.getConfig(context, "text-recognizers",
+                        TextRecognizerSelection.class, ENABLED);
+            } catch (TikaConfigException | IOException e) {
+                // the request's parse-context was validated before the parse; keep enriching
+                LOG.warn("invalid \"text-recognizers\" in parse-context; recognizers stay on", e);
+                return false;
+            }
+        }
+        return !selection.isEnabled();
     }
 
     private static boolean isActive(ParseContext context) {
