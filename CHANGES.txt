@@ -2,24 +2,31 @@ Release 4.1.0 - unreleased
 
    * unpack-config gains includeMetadata (TIKA-4881).
 
-   * tika-server: /rmeta gains config/{handlerType}, so a multipart request
-     can carry both a config part and a handler; previously /rmeta/config
-     always answered with the default (Markdown) handler and there was no
-     format segment for it. Naming the handler in both the path and the
-     config part is now a 400 on /tika/config/<format>, /tika/config/json/
-     {handlerType} and /rmeta/config/{handlerType} -- previously the config
-     part silently won, which on /tika meant a text/xml response carrying a
-     Markdown body. Back-compat: /rmeta/form{handlerType} was one path
-     segment, so /rmeta/formxml resolved; it is now /rmeta/form/{handlerType}
-     only and the undelimited form 405s. /rmeta/form/xml is unchanged.
-     /unpack/all takes the handler as a path segment too --
-     /unpack/all/ignore returns the files and their .metadata.json sidecars
-     with no extracted text. Previously /unpack/all/<anything> answered 200
-     and silently ignored the segment (the unread {id} wildcard); an
-     unrecognized handler there is now a 400. The 4.0 config-variant
-     spelling POST /unpack/all/config still works, and takes the handler
-     after it (/unpack/all/config/ignore) (TIKA-4881).
+   * tika-server: /rmeta gains config/{handlerType} (TIKA-4881).
      
+   * An inference engine named under "parsers" (an OCR engine, a VLM parser,
+     openai-image-embedding-parser) is deprecated: since 4.1.0 startup logs
+     one WARN per such entry saying what it does today, and in 4.2.0 the
+     entry fails config load. Configure engines under "engines" and name them
+     in "text-recognizers" or bind them with "inference". The whole-PDF VLM
+     shape (claude-vlm-parser with pdf-parser excluded) goes with it; the
+     replacement is pdf-parser "text": "OCR" with the VLM as the recognizer
+     (TIKA-4889).
+
+   * openai-image-embedding-parser is deprecated, removal in 4.2.0: the same
+     endpoint as an openai-embedding-engine with an IMAGES inference binding
+     embeds a document's images in requests of the engine's batch size
+     (TIKA-4889).
+     
+   * PDF: "pdf-parser": {"rendering": {"dpi", "imageType", "imageFormat",
+     "imageQuality", "maxImagePixels"}} sets the page images emitted under
+     RENDER_PAGES_BEFORE_PARSE and RENDER_PAGES_AT_PAGE_END; a field left out
+     takes the "ocr" value. OCR, annotators and PAGES inference input keep
+     rendering with "ocr", and share the emitted render only when it is the
+     same image. maxImagePixels now also bounds pages rendered through
+     pdfbox-renderer; a page it skips leaves a warning on the PDF instead of
+     vanishing (TIKA-4889).
+
    * Tagged PDFs: text drawn twice for a bold effect with one copy tagged
      came out as letters with spaces between them; each copy now reads as
      its words. A tree that puts every glyph in its own paragraph (some form
@@ -102,8 +109,9 @@ Release 4.1.0 - unreleased
 
    * New "inference" config section: bind a named engine to an input (IMAGES)
      and tasks (embed), and every image document Tika parses is embedded in
-     one request per document tree; vectors land on the document the image
-     belongs to, as it appears in the output. Per request, "inference" in
+     requests of the engine's batch size, per document tree, not one per
+     image; vectors land on the document the image belongs to, as it appears
+     in the output. Per request, "inference" in
      parse-context selects bindings or switches inference off.
      openai-image-embedding-parser keeps working, one request per image
      (TIKA-4889).

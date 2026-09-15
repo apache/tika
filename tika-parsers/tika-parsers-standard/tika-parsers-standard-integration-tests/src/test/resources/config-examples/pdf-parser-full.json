@@ -103,6 +103,18 @@
         },
         // Parse prior incremental-update versions as embedded documents.
         "parseIncrementalUpdates": false,
+        // The page images emitted under RENDER_PAGES_BEFORE_PARSE / RENDER_PAGES_AT_PAGE_END.
+        // A field left out takes the "ocr" value; OCR itself always renders with "ocr".
+        "rendering": {
+          "dpi": 96,
+          // Options: RGB, GRAY
+          "imageType": "RGB",
+          // Options: PNG, TIFF, JPEG
+          "imageFormat": "PNG",
+          "imageQuality": 0.5,
+          // Skip pages that would render larger than this area (w x h); -1 = no limit.
+          "maxImagePixels": 100000000
+        },
         // EXPERT: set the Sun KCMS color-management system property. Default false.
         "setKCMS": false,
         // Sort text by x/y position; helps some PDFs, can interleave columns in others.

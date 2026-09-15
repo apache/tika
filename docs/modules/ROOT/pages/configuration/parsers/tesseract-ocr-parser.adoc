@@ -38,7 +38,7 @@ binary is found: the loader finds it among the loaded parsers because it impleme
 `TextRecognizer` and advertises the image types it reads, and logs the choice at startup. When
 another classpath engine such as Tess4J claims the same types, one is used and a WARN at startup
 names the collision and the winner; an engine named under `parsers` (a VLM parser, for instance)
-takes precedence over Tesseract without a warning. To turn OCR off everywhere, set
+takes precedence over Tesseract, with the deprecation WARN that shape draws since 4.1.0. To turn OCR off everywhere, set
 `"text-recognizers": []`. See xref:configuration/index.adoc[Configuration] for how the list
 behaves, and xref:developers/custom-ocr-engine.adoc[Wiring in Your Own OCR Engine] to plug in
 an engine Tika does not ship.
@@ -55,7 +55,7 @@ icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers
 
 Every option with its default value and an inline comment describing it. Named under
 `text-recognizers`, the engine leaves every default parser loaded; the same options apply to an
-entry under `parsers`, the 4.0 shape. ImageMagick is optional; it is used only when
+entry under `parsers`, the 4.0 shape, which is deprecated since 4.1.0 and unsupported in 4.2.0. ImageMagick is optional; it is used only when
 `enableImagePreprocessing` or `applyRotation` is true.
 
 [source,json]
