@@ -99,15 +99,18 @@ dispatcher keeps the units of the whole document tree until the top-level parse 
 sends each binding's units to its engine in `maxBatchSize` requests: a docx with twelve
 pictures is one embeddings request, not twelve; if one image in a batch is rejected, the rest
 are retried one by one. Results land on the document a unit belongs to, as it appears in the
-output: a picture in the body of a docx or an email puts its vector on the docx or the email,
-with an `embedded` locator naming the picture, whether the docx is the file itself or inside
-a zip; an attachment keeps its own. A failed request marks
-the top-level document with a warning and never fails the parse.
+output. In the recursive outputs (`/rmeta`, `-J`, pipes `RMETA`), where every document has
+its own metadata object, a picture in the body of a docx or an email puts its vector on the
+docx or the email, with an `embedded` locator naming the picture, whether the docx is the
+file itself or inside a zip; an attachment keeps its own. In the single-object outputs
+(`/tika` as JSON, `-j`, pipes `CONCATENATE`) there is one object, so everything lands on it:
+an attachment's pages and pictures put their vectors on the top-level document too, each
+with an `embedded` locator whose id path and name say which part they came from. The chunks
+are the same either way; only the object they sit on differs. A failed request marks the
+top-level document with a warning and never fails the parse.
 
 The units are held as files the dispatcher owns, bounded by each binding's `maxChunks` and
-`maxBytes`, and deleted when the flush ends. Vectors are visible in the recursive outputs
-(`/rmeta`, `-J`, pipes); a streaming `/tika` parse keeps only what lands on the top-level
-document.
+`maxBytes`, and deleted when the flush ends.
 
 [#pages]
 == Pages
@@ -190,10 +193,11 @@ narrow by document type. Use a `MARKDOWN` content handler for the chunker to see
 
 A document that released other inputs to inference is not embedded twice: a PDF parsed with
 `inference.input: ["PAGES"]` records `tk:inference-released: PAGES` and the TEXT stage skips
-it; list `["TEXT", "PAGES"]` to get both. Because this stage runs over the metadata list, it
-covers `-J`, `/rmeta` and pipes; the streaming `/tika` endpoint has no list and no text
-vectors. It is not a metadata filter: a per-request `metadata-filters` list does not touch it,
-and the per-request `inference` block below is the way to switch it off.
+it; list `["TEXT", "PAGES"]` to get both. This stage runs over the metadata list, so it
+covers `-J`, `/rmeta` and pipes, and `/tika` as JSON, whose list is the one object with the
+concatenated text; the plain-text `/tika` output carries no metadata and so no vectors. It is
+not a metadata filter: a per-request `metadata-filters` list does not touch it, and the
+per-request `inference` block below is the way to switch it off.
 
 The 4.0 `openai-embedding-filter` and `jina-embedding-filter` keep working and embed one
 document per request; the binding batches the tree and shares the engine with the other

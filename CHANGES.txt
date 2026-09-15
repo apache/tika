@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * Inference results in the single-object outputs: with /tika as JSON,
+     tika-app -j, or pipes CONCATENATE, the vectors of an attachment's pages
+     and pictures now land on the one metadata object handed back, each
+     with an embedded locator naming the part, instead of being discarded
+     with the attachment's own metadata. InferenceUnit gains
+     getDestination(), where a task writes; ChunkTarget.of(unit) replaces
+     resolve(target, parent) (TIKA-4895).
+
    * A request can no longer supply openai-embedding-filter or
      jina-embedding-filter in a per-request metadata-filters list: 4.0.x
      built the filter from the request, endpoint and key included, and

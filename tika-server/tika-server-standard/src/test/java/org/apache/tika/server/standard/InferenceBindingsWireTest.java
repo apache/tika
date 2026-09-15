@@ -48,12 +48,16 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.mock.MockTask;
+import org.apache.tika.serialization.JsonMetadata;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.resource.RecursiveMetadataResource;
+import org.apache.tika.server.core.resource.TikaResource;
+import org.apache.tika.server.core.writer.JSONMessageBodyWriter;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 
 /** A config-named enricher reaches the forked worker and its output comes back (TIKA-4872). */
@@ -63,15 +67,17 @@ public class InferenceBindingsWireTest extends CXFTestBase {
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
-        sf.setResourceClasses(RecursiveMetadataResource.class);
+        sf.setResourceClasses(RecursiveMetadataResource.class, TikaResource.class);
         sf.setResourceProvider(RecursiveMetadataResource.class,
                 new SingletonResourceProvider(new RecursiveMetadataResource(tikaResource)));
+        sf.setResourceProvider(TikaResource.class, new SingletonResourceProvider(tikaResource));
     }
 
     @Override
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         providers.add(new MetadataListMessageBodyWriter());
+        providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }
 
@@ -158,6 +164,47 @@ public class InferenceBindingsWireTest extends CXFTestBase {
                     metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
             assertEquals("3", metadata.get(MockTask.UNITS_KEY), "one run over the three documents");
         }
+    }
+
+    /** /tika as JSON is one object: a picture two containers down puts its result on it. */
+    @Test
+    public void testSingleObjectOutputCarriesEmbeddedResults() throws Exception {
+        ByteArrayOutputStream png = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(10, 10, BufferedImage.TYPE_INT_RGB), "png", png);
+        ByteArrayOutputStream inner = new ByteArrayOutputStream();
+        try (ZipOutputStream out = new ZipOutputStream(inner)) {
+            out.putNextEntry(new ZipEntry("picture.png"));
+            out.write(png.toByteArray());
+            out.closeEntry();
+        }
+        ByteArrayOutputStream outer = new ByteArrayOutputStream();
+        try (ZipOutputStream out = new ZipOutputStream(outer)) {
+            out.putNextEntry(new ZipEntry("inner.zip"));
+            out.write(inner.toByteArray());
+            out.closeEntry();
+        }
+        // the entry names are text: select the images binding so TEXT does not overwrite the marker
+        String config = """
+                { "parse-context": { "inference": { "bindings": ["mock-images"] } } }
+                """;
+        ContentDisposition fileCd = new ContentDisposition(
+                "form-data; name=\"file\"; filename=\"outer.zip\"");
+        Attachment fileAtt = new Attachment("file", new ByteArrayInputStream(outer.toByteArray()), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(config.getBytes(UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + "/tika/config/json")
+                .type("multipart/form-data")
+                .accept("application/json")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+
+        assertEquals(200, response.getStatus());
+        Metadata metadata = JsonMetadata.fromJson(
+                new InputStreamReader((InputStream) response.getEntity(), UTF_8));
+        assertEquals("application/zip", metadata.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("mock-images", metadata.get(MockTask.MARKER_KEY));
+        assertEquals("1", metadata.get(MockTask.UNITS_KEY));
     }
 
     private static byte[] twoPagePdf() throws IOException {
