@@ -106,9 +106,9 @@ on a chat engine), or an unknown key fails config load.
 Parsers do not call engines. Every image document Tika parses is offered to one dispatcher
 after its own parser has run, whatever container it came from and however deep. The
 dispatcher keeps the units of the whole document tree until the top-level parse ends, then
-sends each binding's units to its engine in `maxBatchSize` requests: a docx with twelve
-pictures is one embeddings request, not twelve; if one image in a batch is rejected, the rest
-are retried one by one. Results land on the document a unit belongs to, as it appears in the
+sends each binding's units to its engine in requests of up to `maxBatchSize` units: a docx
+with twelve pictures is one embeddings request, not twelve, when the engine takes twelve at
+once; if one image in a batch is rejected, the rest are retried one by one. Results land on the document a unit belongs to, as it appears in the
 output. In the recursive outputs (`/rmeta`, `-J`, pipes `RMETA`), where every document has
 its own metadata object, a picture in the body of a docx or an email puts its vector on the
 docx or the email, with an `embedded` locator naming the picture, whether the docx is the
