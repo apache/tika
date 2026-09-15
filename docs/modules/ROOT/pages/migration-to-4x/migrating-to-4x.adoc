@@ -256,6 +256,16 @@ What changes for you:
 * VLM parsers gain `textRecognizer` (default `true`); set it to `false` for a captioning or tagging
   prompt so the PDF parser's `AUTO` OCR never replaces extracted text with the VLM's output.
 
+=== Embedding filters deprecated (4.1.0+)
+
+`openai-embedding-filter` and `jina-embedding-filter` are deprecated and will be removed in
+4.2.0. Configure the endpoint once under `engines` and bind it with a `TEXT`
+xref:configuration/inference.adoc#text[inference binding]; it embeds the whole document tree in
+batched requests. Until then they keep working from the server-side config. A request can no
+longer name them in a per-request `metadata-filters` list (4.0.x accepted a caller-supplied
+`baseUrl` there); the flat per-request `{"openai-embedding-filter": {"skipEmbedding": true}}`
+form is unchanged.
+
 === PDF text policy: `ocr.strategy` becomes `text` (4.1.0+)
 
 The PDF parser's `"ocr": {"strategy": ...}` is now the parser's own `"text"`, since it decides

@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * A request can no longer supply openai-embedding-filter or
+     jina-embedding-filter in a per-request metadata-filters list: 4.0.x
+     built the filter from the request, endpoint and key included, and
+     posted the document's text there. The flat per-request skipEmbedding
+     override is unchanged. The two filters are deprecated; configure the
+     endpoint under "engines" and bind it with a TEXT inference binding.
+     Removal in 4.2.0 (TIKA-4889).
+
    * PDF: "pdf-parser": {"text": ...} says where a page's text comes from:
      EXTRACT, AUTO (default), EXTRACT_AND_OCR, OCR, or the new NONE, which
      writes no text from any source while pages are still rendered for

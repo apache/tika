@@ -45,7 +45,9 @@ import org.apache.tika.utils.StringUtils;
  * Configuration key: {@code "openai-embedding-filter"}
  *
  * @since Apache Tika 4.0
+ * @deprecated since 4.1.0, removed in 4.2.0; see {@link AbstractEmbeddingFilter}.
  */
+@Deprecated
 @TikaComponent(name = "openai-embedding-filter", spi = false)
 public class OpenAIEmbeddingFilter extends AbstractEmbeddingFilter {
 

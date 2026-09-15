@@ -221,7 +221,8 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             return;
         }
         Class<?> contextKey = ComponentNameResolver.determineContextKey(infoOpt.get());
-        if (ComponentNameResolver.isWireBlocked(contextKey)) {
+        if (ComponentNameResolver.isWireBlocked(contextKey)
+                || ComponentNameResolver.isWireBlockedName(name)) {
             throw new IOException(wireBlockedMessage(name, contextKey));
         }
     }
