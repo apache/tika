@@ -26,7 +26,9 @@ import org.apache.tika.parser.ParseContext;
 /**
  * What a binding asks of its engine, named in the binding's {@code "tasks"}: one call per
  * unit for {@code embed}, all units in one call for a document-level task. The task owns
- * its output shape and writes it onto each unit's target (or parent).
+ * its output shape and writes it on each unit's {@link InferenceUnit#getDestination()
+ * destination}, never on the target directly: outside the recursive wrapper the target's
+ * metadata is discarded with the embedded document.
  */
 public interface InferenceTask {
 
