@@ -95,6 +95,29 @@ twice, and `EXTRACT` means no page OCR anywhere while the other enrichers still 
 
 `pdf:ocr-page-count` records how many pages tripped the verdict, whether or not an engine ran.
 
+=== Page images (`rendering`)
+
+The page images the parser emits as embedded documents under `RENDER_PAGES_BEFORE_PARSE` or
+`RENDER_PAGES_AT_PAGE_END` have their own `rendering` block: `dpi`, `imageType`, `imageFormat`,
+`imageQuality` and `maxImagePixels`. A field left out takes the `ocr` value, so with no block
+the emitted pages match the OCR renders as in 4.0. OCR, page annotators and PAGES inference
+input always render with the `ocr` settings; when the two blocks would produce the same image,
+one render per page serves both, otherwise OCR renders again.
+
+[source,json]
+----
+{
+  "pdf-parser": {
+    "imageStrategy": "RENDER_PAGES_AT_PAGE_END",
+    "maxRenderedPages": 1,
+    "rendering": { "dpi": 96, "imageType": "RGB" }
+  }
+}
+----
+
+renders a colour first-page preview at 96 dpi while OCR keeps its 300 dpi grayscale pages. A
+page that would exceed `maxImagePixels` is not rendered and leaves a warning on the PDF.
+
 == Tagged PDFs (`markedContent`)
 
 A tagged PDF carries a structure tree: paragraphs, headings, lists, tables, links, and which
