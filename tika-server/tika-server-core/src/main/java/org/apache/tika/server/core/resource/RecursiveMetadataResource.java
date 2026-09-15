@@ -103,7 +103,16 @@ public class RecursiveMetadataResource {
     @POST
     @Consumes("multipart/form-data")
     @Produces({"application/json"})
-    @Path("form{" + HANDLER_TYPE_PARAM + " : (\\w+)?}")
+    @Path("form")
+    public Response getMetadataFromMultipart(Attachment att) throws Exception {
+        return getMetadataFromMultipart(att, null);
+    }
+
+    /** As {@code /rmeta/form}, with the handler type in the path. */
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces({"application/json"})
+    @Path("form/{" + HANDLER_TYPE_PARAM + "}")
     public Response getMetadataFromMultipart(Attachment att, @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
         try (TikaInputStream tis = TikaInputStream.get(att.getObject(InputStream.class))) {
             List<Metadata> metadataList = parseMetadata(tis, tikaResource.newRequestMetadata(), att.getHeaders(),
@@ -124,6 +133,27 @@ public class RecursiveMetadataResource {
     public Response getMetadataWithConfig(
             List<Attachment> attachments,
             @Context HttpHeaders httpHeaders) throws Exception {
+        return getMetadataWithConfig(attachments, httpHeaders, null);
+    }
+
+    /**
+     * As {@code /rmeta/config}, with the handler type in the path. One templated route covers
+     * every format because /rmeta always produces JSON; /tika needs a route per format only
+     * because its response media type changes with the handler.
+     * <p>
+     * As on {@code /tika/config/<format>}, naming a handler here and in the config part too is
+     * a 400 rather than a silent pick.
+     *
+     * @param handlerTypeName content handler type: text, html, xml, body, markdown, ignore
+     */
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces({"application/json"})
+    @Path("config/{" + HANDLER_TYPE_PARAM + "}")
+    public Response getMetadataWithConfig(
+            List<Attachment> attachments,
+            @Context HttpHeaders httpHeaders,
+            @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName) throws Exception {
 
         ParseContext context = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
@@ -131,8 +161,10 @@ public class RecursiveMetadataResource {
 
             TikaResource.logRequest(LOG, "/rmeta/config", metadata);
 
+            tikaResource.applyExplicitFormat(context, handlerTypeName,
+                    handlerTypeName != null && !handlerTypeName.isBlank());
             return Response
-                    .ok(parseMetadataWithContext(tis, metadata, null, context))
+                    .ok(parseMetadataWithContext(tis, metadata, handlerTypeName, context))
                     .build();
         }
     }

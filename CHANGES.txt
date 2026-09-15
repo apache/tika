@@ -8,6 +8,24 @@ Release 4.1.0 - unreleased
      the server docs spell out for /rmeta clients; UnpackSelector gains a per-parse
      select(Metadata, ParseContext) overload with a default that ignores the context. Startup
      logs one line per active preset naming the components it configures (TIKA-4856).
+
+   * unpack-config gains includeMetadata (TIKA-4881).
+
+   * tika-server: /rmeta gains config/{handlerType} (TIKA-4881).
+     
+   * An inference engine named under "parsers" (an OCR engine, a VLM parser,
+     openai-image-embedding-parser) is deprecated: since 4.1.0 startup logs
+     one WARN per such entry saying what it does today, and in 4.2.0 the
+     entry fails config load. Configure engines under "engines" and name them
+     in "text-recognizers" or bind them with "inference". The whole-PDF VLM
+     shape (claude-vlm-parser with pdf-parser excluded) goes with it; the
+     replacement is pdf-parser "text": "OCR" with the VLM as the recognizer
+     (TIKA-4889).
+
+   * openai-image-embedding-parser is deprecated, removal in 4.2.0: the same
+     endpoint as an openai-embedding-engine with an IMAGES inference binding
+     embeds a document's images in requests of the engine's batch size
+     (TIKA-4889).
      
    * PDF: "pdf-parser": {"rendering": {"dpi", "imageType", "imageFormat",
      "imageQuality", "maxImagePixels"}} sets the page images emitted under
@@ -100,8 +118,9 @@ Release 4.1.0 - unreleased
 
    * New "inference" config section: bind a named engine to an input (IMAGES)
      and tasks (embed), and every image document Tika parses is embedded in
-     one request per document tree; vectors land on the document the image
-     belongs to, as it appears in the output. Per request, "inference" in
+     requests of the engine's batch size, per document tree, not one per
+     image; vectors land on the document the image belongs to, as it appears
+     in the output. Per request, "inference" in
      parse-context selects bindings or switches inference off.
      openai-image-embedding-parser keeps working, one request per image
      (TIKA-4889).

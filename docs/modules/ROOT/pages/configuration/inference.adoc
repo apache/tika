@@ -106,9 +106,9 @@ on a chat engine), or an unknown key fails config load.
 Parsers do not call engines. Every image document Tika parses is offered to one dispatcher
 after its own parser has run, whatever container it came from and however deep. The
 dispatcher keeps the units of the whole document tree until the top-level parse ends, then
-sends each binding's units to its engine in `maxBatchSize` requests: a docx with twelve
-pictures is one embeddings request, not twelve; if one image in a batch is rejected, the rest
-are retried one by one. Results land on the document a unit belongs to, as it appears in the
+sends each binding's units to its engine in requests of up to `maxBatchSize` units: a docx
+with twelve pictures is one embeddings request, not twelve, when the engine takes twelve at
+once; if one image in a batch is rejected, the rest are retried one by one. Results land on the document a unit belongs to, as it appears in the
 output. In the recursive outputs (`/rmeta`, `-J`, pipes `RMETA`), where every document has
 its own metadata object, a picture in the body of a docx or an email puts its vector on the
 docx or the email, with an `embedded` locator naming the picture, whether the docx is the
@@ -231,9 +231,10 @@ request" (see xref:configuration/inference-recipes.adoc[Recipes]). Names only, s
 xref:using-tika/server/index.adoc[preset]. A name not in the configured list fails the request.
 Engines cannot be defined or changed per request.
 
-== From `openai-image-embedding-parser`
+== From `openai-image-embedding-parser` (deprecated)
 
-The 4.0 `openai-image-embedding-parser` still works as a text-recognizers entry and embeds one
-image per request. The same endpoint as an engine plus a binding on `IMAGES` embeds a
-document's images in one request and puts the vectors where they belong; move the `baseUrl`,
-`model` and `apiKey` to the engine and drop the parser entry.
+The 4.0 `openai-image-embedding-parser` is deprecated since 4.1.0 and removed in 4.2.0. It
+still works as a text-recognizers entry, with a WARN at startup, and embeds one image per
+request. The same endpoint as an engine plus a binding on `IMAGES` embeds a document's images
+in requests of the engine's batch size and puts the vectors where they belong; move the
+`baseUrl`, `model` and `apiKey` to the engine and drop the parser entry.
