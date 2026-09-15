@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.pdfbox.cos.COSArray;
 import org.apache.pdfbox.cos.COSBase;
 import org.apache.pdfbox.cos.COSDictionary;
 import org.apache.pdfbox.cos.COSName;
@@ -1467,18 +1468,9 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             chain.add(n);
         }
         for (int i = chain.size() - 1; i >= 0; i--) {
-            chain.get(i).spec = buildSpec(chain.get(i));
+            chain.get(i).spec = buildSpec(chain.get(i), new AttributesImpl());
         }
         return node.spec;
-    }
-
-    private ElementSpec buildSpec(StructureIndex.Node node) {
-        try {
-            return buildSpec(node, new AttributesImpl());
-        } catch (RuntimeException e) {
-            // PDFBox's attribute model casts what it finds (PDFBOX: /Headers holding strings)
-            return buildSpec(node, null);
-        }
     }
 
     private ElementSpec buildSpec(StructureIndex.Node node, AttributesImpl attrs) {
@@ -1687,7 +1679,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             if (table.getColSpan() > 1) {
                 addAttribute(attrs, "colspan", Integer.toString(table.getColSpan()));
             }
-            String[] headers = table.getHeaders();
+            String[] headers = getTableHeaders(table); //TODO table.getHeaders() with 3.0.9 release
             if (headers != null && headers.length > 0) {
                 addAttribute(attrs, "headers", String.join(" ", headers));
             }
@@ -1695,6 +1687,20 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 addAttribute(attrs, "scope", table.getScope());
             }
         }
+    }
+
+    //TODO remove this with 3.0.9 release (PDFBOX-6261)
+    private static String[] getTableHeaders(PDTableAttributeObject table) {
+        COSBase v = table.getCOSObject().getDictionaryObject("Headers");
+        if (v instanceof COSArray) {
+            COSArray array = (COSArray) v;
+            String[] strings = new String[array.size()];
+            for (int i = 0; i < array.size(); i++) {
+                strings[i] = array.getString(i);
+            }
+            return strings;
+        }
+        return null;
     }
 
     private static void addAttribute(AttributesImpl attrs, String name, String value) {
