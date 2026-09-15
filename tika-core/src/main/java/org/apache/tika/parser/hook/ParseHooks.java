@@ -46,13 +46,25 @@ public final class ParseHooks implements TransientParseState {
 
     /** Marks a top-level parse in progress; tracks the documents being parsed, outermost last. */
     public static final class Run implements TransientParseState {
-        private final Deque<Metadata> open = new ArrayDeque<>();
+        private record Frame(Metadata metadata, String idPath) {
+        }
 
-        /** Enters a document; returns the one whose parser embedded it, null at the top. */
+        private final Deque<Frame> open = new ArrayDeque<>();
+        private int embedded;
+
+        /**
+         * Enters a document; returns the one whose parser embedded it, null at the top. A
+         * document the recursive wrapper did not number gets an id path in the wrapper's
+         * scheme, so a result written outside the wrapper still names where it came from.
+         */
         public Metadata enter(Metadata metadata) {
-            Metadata parent = open.peek();
-            open.push(metadata);
-            return parent;
+            Frame parent = open.peek();
+            String idPath = metadata.get(TikaCoreProperties.EMBEDDED_ID_PATH);
+            if (idPath == null && parent != null) {
+                idPath = (parent.idPath == null ? "" : parent.idPath) + "/" + ++embedded;
+            }
+            open.push(new Frame(metadata, idPath));
+            return parent == null ? null : parent.metadata;
         }
 
         public void exit() {
@@ -61,17 +73,28 @@ public final class ParseHooks implements TransientParseState {
 
         /** The document whose parser is running; null between documents. */
         public Metadata current() {
-            return open.peek();
+            Frame top = open.peek();
+            return top == null ? null : top.metadata;
         }
 
         /** The document the current one is embedded in; null at the top. */
         public Metadata parent() {
-            Iterator<Metadata> it = open.iterator();
+            Iterator<Frame> it = open.iterator();
             if (!it.hasNext()) {
                 return null;
             }
             it.next();
-            return it.hasNext() ? it.next() : null;
+            return it.hasNext() ? it.next().metadata : null;
+        }
+
+        /** The id path of an open document; null for the top-level one or a closed one. */
+        public String idPath(Metadata metadata) {
+            for (Frame frame : open) {
+                if (frame.metadata == metadata) {
+                    return frame.idPath;
+                }
+            }
+            return null;
         }
     }
 

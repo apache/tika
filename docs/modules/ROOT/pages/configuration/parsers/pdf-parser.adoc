@@ -158,6 +158,9 @@ The old boolean `extractMarkedContent` still loads: `true` is `TAGS`, `false` is
 
 == Pages for inference (`inference`)
 
+NOTE: Experimental in 4.1.0, with the xref:configuration/inference.adoc[inference bindings]
+it feeds: may change in a minor release without a deprecation cycle. `text` above is stable.
+
 `input`::
 What the parser releases to the xref:configuration/inference.adoc#pages[inference bindings]:
 `["TEXT"]` by default. Add `PAGES` to render every page for a `PAGES` binding; the render is

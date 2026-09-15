@@ -18,25 +18,21 @@ package org.apache.tika.inference;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 
 import org.apache.tika.extractor.ParentMetadata;
 import org.apache.tika.inference.locator.EmbeddedLocator;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.inference.InferenceUnit;
 
 /**
- * Where the chunks produced for a document land. A picture in the body of a docx or an
- * email, or a rendering of a page, is part of its parent, so its chunks go onto the parent
- * with an {@link EmbeddedLocator} naming the child. An attachment, a top-level file, or a
- * child parsed outside the recursive wrapper keeps its own.
+ * Where the chunks produced for a unit land and how they name where they came from. The
+ * dispatcher decides the destination ({@link InferenceUnit#getDestination()}); when that is
+ * not the unit's own document, an {@link EmbeddedLocator} names the child the chunks came
+ * from. The in-parse form is for a parser that writes during its own document's parse.
  */
 public final class ChunkTarget {
-
-    private static final Set<String> LIFTED = Set.of(
-            TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
-            TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
 
     private final Metadata metadata;
     private final EmbeddedLocator locator;
@@ -46,19 +42,27 @@ public final class ChunkTarget {
         this.locator = locator;
     }
 
-    public static ChunkTarget resolve(Metadata target, ParseContext context) {
-        ParentMetadata parent = context.get(ParentMetadata.class);
-        return resolve(target, parent == null ? null : parent.getMetadata());
+    /** The unit's destination, with a locator naming the unit's document when lifted off it. */
+    public static ChunkTarget of(InferenceUnit unit) {
+        if (!unit.isLifted()) {
+            return new ChunkTarget(unit.getDestination(), null);
+        }
+        return new ChunkTarget(unit.getDestination(), new EmbeddedLocator(unit.getTargetIdPath(),
+                unit.getTarget().get(TikaCoreProperties.RESOURCE_NAME_KEY)));
     }
 
-    /** As above, with the parent captured earlier (the dispatcher runs after the walk). */
-    public static ChunkTarget resolve(Metadata target, Metadata parent) {
+    /**
+     * During a parse: the parent for an inline part or a page render the wrapper numbered,
+     * the document itself otherwise.
+     */
+    public static ChunkTarget resolve(Metadata target, ParseContext context) {
+        ParentMetadata parent = context.get(ParentMetadata.class);
         String idPath = target.get(TikaCoreProperties.EMBEDDED_ID_PATH);
-        String type = target.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
-        if (parent == null || idPath == null || type == null || !LIFTED.contains(type)) {
+        if (parent == null || parent.getMetadata() == null || idPath == null
+                || !InferenceUnit.lifts(target)) {
             return new ChunkTarget(target, null);
         }
-        return new ChunkTarget(parent,
+        return new ChunkTarget(parent.getMetadata(),
                 new EmbeddedLocator(idPath, target.get(TikaCoreProperties.RESOURCE_NAME_KEY)));
     }
 

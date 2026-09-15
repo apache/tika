@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -34,6 +35,8 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -127,6 +130,33 @@ public class PipesClientTest {
                             FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             metadata = pipesResult.emitData().getMetadataList().get(0);
             assertEquals("MOCK-TEXT", metadata.get(MockTask.MARKER_KEY));
+
+            // CONCATENATE hands back one object: a result two levels down lands on it
+            ByteArrayOutputStream inner = new ByteArrayOutputStream();
+            try (ZipOutputStream out = new ZipOutputStream(inner)) {
+                out.putNextEntry(new ZipEntry("test.png"));
+                Files.copy(inputDir.resolve("test.png"), out);
+                out.closeEntry();
+            }
+            Path zip = inputDir.resolve("pictures.zip");
+            try (ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(zip))) {
+                out.putNextEntry(new ZipEntry("inner.zip"));
+                out.write(inner.toByteArray());
+                out.closeEntry();
+            }
+            ParseContext concatenate = new ParseContext();
+            concatenate.set(ParseMode.class, ParseMode.CONCATENATE);
+            // the zip's entry names are text: keep the TEXT stage from overwriting the marker
+            concatenate.setJsonConfig("inference", "{\"bindings\": [\"mock-images\"]}");
+            pipesResult = pipesClient.process(
+                    new FetchEmitTuple("pictures.zip", new FetchKey(fetcherName, "pictures.zip"),
+                            new EmitKey(), new Metadata(), concatenate,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            assertEquals(1, pipesResult.emitData().getMetadataList().size());
+            metadata = pipesResult.emitData().getMetadataList().get(0);
+            assertEquals("application/zip", metadata.get(HttpHeaders.CONTENT_TYPE));
+            assertEquals("mock-images", metadata.get(MockTask.MARKER_KEY));
+            assertEquals("1", metadata.get(MockTask.UNITS_KEY));
         }
     }
 
