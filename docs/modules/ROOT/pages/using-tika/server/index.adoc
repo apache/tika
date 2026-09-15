@@ -173,10 +173,11 @@ Tika ships one catalog preset, `thumbnails` (in `tika-pipes-core`), for
 
 The zip then holds exactly one raster image per document and nothing else — the stored
 thumbnail (Office docProps, audio cover art, raw camera previews, epub, iWork), the rasterized
-EMF/WMF thumbnail of an Office document, or the first page of a PDF at 96 dpi — and answers
-`204` when the document has none. Text is read from the first PDF page only and no OCR or
-inference runs, so the parse is cheap. It names the standard parsers, so it needs
-`tika-parsers-standard-package` on the classpath.
+EMF/WMF thumbnail of an Office document, or the first page of a PDF at 96 dpi (`rendering`,
+bounded by its `maxImagePixels`) — and answers `204` when the document has none. An image
+file is its own thumbnail: it has no embedded documents, so it answers `204` too. Text is read
+from the first PDF page only and no OCR or inference runs, so the parse is cheap. It names the
+standard parsers, so it needs `tika-parsers-standard-package` on the classpath.
 
 The selection rule, for a client that reads `/rmeta` and wants the same answer: take the first
 embedded document with an `image/*` `Content-Type` other than EMF, WMF or SVG that is a

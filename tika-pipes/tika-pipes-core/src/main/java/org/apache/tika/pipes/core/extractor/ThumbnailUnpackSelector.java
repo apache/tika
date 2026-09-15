@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.TransientParseState;
 import org.apache.tika.extractor.UnpackSelector;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -47,7 +48,7 @@ public class ThumbnailUnpackSelector implements UnpackSelector {
             "image/wmf", "image/x-wmf", "image/svg+xml");
 
     /** Marks a parse whose thumbnail is taken; the selector itself may be shared. */
-    private static final class Taken {
+    private static final class Taken implements TransientParseState {
     }
 
     @Override
