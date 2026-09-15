@@ -474,18 +474,26 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
         // the page step enriches each render itself; the embedded copies are bytes and metadata
         try (ContentEnrichers.Suspension suspension = ContentEnrichers.suspend(context)) {
             for (RenderResult result : renderResults.getResults()) {
-                if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
-                    if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
-                        try (TikaInputStream tis = result.getInputStream()) {
-                            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, result.getMetadata(), context, false);
-                        } catch (SecurityException e) {
-                            throw e;
-                        } catch (Exception e) {
-                            EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
-                        }
+                if (result.getStatus() != RenderResult.STATUS.SUCCESS) {
+                    carryRenderWarnings(result, parentMetadata);
+                } else if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
+                    try (TikaInputStream tis = result.getInputStream()) {
+                        embeddedDocumentExtractor.parseEmbedded(tis, xhtml, result.getMetadata(), context, false);
+                    } catch (SecurityException e) {
+                        throw e;
+                    } catch (Exception e) {
+                        EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
                     }
                 }
             }
+        }
+    }
+
+    /** A page the renderer could not make is a warning on the PDF, not a silent gap. */
+    static void carryRenderWarnings(RenderResult result, Metadata parentMetadata) {
+        for (String warning : result.getMetadata()
+                .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         }
     }
 
@@ -497,7 +505,13 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
         int maxRenderedPages = localConfig.getMaxRenderedPages();
         PageRangeRequest pages = maxRenderedPages > 0
                 ? new PageRangeRequest(1, maxRenderedPages) : PageRangeRequest.RENDER_ALL;
-        return renderer.render(tstream, metadata, parseContext, pages);
+        RenderingConfig outer = parseContext.get(RenderingConfig.class);
+        parseContext.set(RenderingConfig.class, localConfig.getRendering().resolve(localConfig.getOcr()));
+        try {
+            return renderer.render(tstream, metadata, parseContext, pages);
+        } finally {
+            parseContext.set(RenderingConfig.class, outer);
+        }
     }
 
     protected PDDocument getPDDocument(TikaInputStream tis, String password,

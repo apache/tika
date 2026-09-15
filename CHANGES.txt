@@ -13,6 +13,15 @@ Release 4.1.0 - unreleased
      endpoint as an openai-embedding-engine with an IMAGES inference binding
      embeds a document's images in requests of the engine's batch size
      (TIKA-4889).
+     
+   * PDF: "pdf-parser": {"rendering": {"dpi", "imageType", "imageFormat",
+     "imageQuality", "maxImagePixels"}} sets the page images emitted under
+     RENDER_PAGES_BEFORE_PARSE and RENDER_PAGES_AT_PAGE_END; a field left out
+     takes the "ocr" value. OCR, annotators and PAGES inference input keep
+     rendering with "ocr", and share the emitted render only when it is the
+     same image. maxImagePixels now also bounds pages rendered through
+     pdfbox-renderer; a page it skips leaves a warning on the PDF instead of
+     vanishing (TIKA-4889).
 
    * Tagged PDFs: text drawn twice for a bold effect with one copy tagged
      came out as letters with spaces between them; each copy now reads as
