@@ -18,6 +18,19 @@ Release 4.1.0 - unreleased
      and silently ignored the segment (the unread {id} wildcard); an
      unrecognized handler there is now a 400 (TIKA-4881).
      
+   * Tagged PDFs: text drawn twice for a bold effect with one copy tagged
+     came out as letters with spaces between them; each copy now reads as
+     its words. A tree that puts every glyph in its own paragraph (some form
+     generators) is left to the text stripper under AUTO (TIKA-4891).
+     
+   * Inference results in the single-object outputs: with /tika as JSON,
+     tika-app -j, or pipes CONCATENATE, the vectors of an attachment's pages
+     and pictures now land on the one metadata object handed back, each
+     with an embedded locator naming the part, instead of being discarded
+     with the attachment's own metadata. InferenceUnit gains
+     getDestination(), where a task writes; ChunkTarget.of(unit) replaces
+     resolve(target, parent) (TIKA-4895).
+
    * A request can no longer supply openai-embedding-filter or
      jina-embedding-filter in a per-request metadata-filters list: 4.0.x
      built the filter from the request, endpoint and key included, and
@@ -38,7 +51,7 @@ Release 4.1.0 - unreleased
      and the pipes server closes the registry at shutdown, so an
      openai-embedding-engine or a VLM used as a text recognizer releases its
      HTTP client (TIKA-4889).
-     
+
    * Per-request switch for text recognizers: {"parse-context":
      {"text-recognizers": {"enabled": false}}} runs no recognizer or annotator
      from the list for that parse, in every container, and OCR_ONLY no longer
@@ -172,7 +185,15 @@ Release 4.1.0 - unreleased
 
    * tika-inference and tika-vlm are experimental: classes, config keys and
      metadata output may change in minor releases without deprecation or
-     compatibility shims (TIKA-4884).
+     compatibility shims (TIKA-4884). So are the "inference" config section,
+     pdf-parser "inference", the org.apache.tika.parser.enricher, .inference
+     and .hook packages, and the tk:chunks and tk:inference-released output:
+     4.2 batches recognition per document, meant as an opt-in addition (an
+     engine that takes one image at a time keeps working unchanged), and adds
+     media inputs and document-level tasks.
+     Stable: the "engines" map, the "text-recognizers" list, and pdf-parser
+     "text"; a 4.1 spelling of those loads as an alias for at least one minor
+     release if it changes (TIKA-4895).
 
    * A missing OOXML relationship target no longer aborts the whole file:
      the threaded-comment and person lookups in xlsx and the page lookups in

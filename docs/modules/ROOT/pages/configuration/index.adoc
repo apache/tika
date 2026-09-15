@@ -133,6 +133,15 @@ Text recognizers are engines that produce a document's text from its pixels: an 
 on an embedded image or a rendered PDF page, a VLM prompted to transcribe. A container parser
 *invokes* them on bytes it has already parsed. Two recipes cover almost every deployment.
 
+NOTE: This list and the `engines` map it names are stable: an entry keeps loading and meaning
+"this engine recognizes text for these types", and if 4.2 changes the spelling the 4.1 form
+loads as an alias for at least one minor release. What may change is when the engine is called
+and where its text lands: 4.2 batches recognition per document, so text may be placed after
+the walk rather than as each image is met. The Java contract behind an engine
+(`TextRecognizer`) is experimental, with batching meant as an opt-in addition an engine that
+takes one image at a time never sees; see
+xref:developers/custom-ocr-engine.adoc[Wiring in Your Own OCR Engine].
+
 *Choose the engine.* Configure it once under `engines` and name it here; every default parser
 stays loaded, and `image-parser` and `pdf-parser` call it:
 

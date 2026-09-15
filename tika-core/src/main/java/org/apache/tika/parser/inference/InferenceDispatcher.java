@@ -43,6 +43,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.hook.ParseHook;
+import org.apache.tika.parser.hook.ParseHooks;
 
 /**
  * Matches offered units against the inference bindings and runs the tasks. Built once at
@@ -50,11 +51,13 @@ import org.apache.tika.parser.hook.ParseHook;
  * offered once by the auto-detect parser. Units are buffered per binding for the whole top-level parse and flushed at its end, so a
  * document is one request per binding, not one per unit; the buffer is bounded by each
  * binding's {@code maxChunks} and {@code maxBytes}, and its bytes live in files the
- * dispatcher owns until the flush. At the flush every unit is re-aimed at the metadata the
- * recursive wrapper kept for its document, since the parser's own copy is no longer read. A
- * request narrows the bindings through {@link InferenceSelection}. Failures mark the document
- * and never fail the parse. TEXT is not offered during the parse: whoever holds the finished
- * metadata list runs {@link #text} over it.
+ * dispatcher owns until the flush. At the flush every unit is aimed at the metadata that is
+ * still read: under the recursive wrapper, the copy it kept for the unit's document (an
+ * inline part or a page render lands on its parent); outside it, where the parse hands back
+ * one metadata object and the embedded documents' own are discarded, the top-level document.
+ * A request narrows the bindings through {@link InferenceSelection}. Failures mark the
+ * document and never fail the parse. TEXT is not offered during the parse: whoever holds the
+ * finished metadata list runs {@link #text} over it.
  *
  * @since Apache Tika 4.1
  */
@@ -177,7 +180,9 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
             if (unit == null) {
                 Path copy = state.tmp.createTempFile();
                 Files.copy(source, copy, StandardCopyOption.REPLACE_EXISTING);
-                unit = new InferenceUnit(kind, type, target, parent, copy, page);
+                ParseHooks.Run run = context.get(ParseHooks.Run.class);
+                unit = new InferenceUnit(kind, type, target, parent, idPath(target, run),
+                        parent == null ? null : idPath(parent, run), copy, page);
             }
             units.add(unit);
         }
@@ -197,7 +202,7 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
                 if (units == null || units.isEmpty()) {
                     continue;
                 }
-                List<InferenceUnit> kept = retarget(units, lookup);
+                List<InferenceUnit> kept = aim(units, root, lookup);
                 for (InferenceTask task : b.tasks()) {
                     try {
                         task.run(b.binding(), kept, b.engine(), context);
@@ -235,20 +240,33 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
         }
     }
 
-    /** Re-aims units at the metadata the wrapper kept; the live object where nothing is kept. */
-    private static List<InferenceUnit> retarget(List<InferenceUnit> units,
-                                                EmbeddedMetadataLookup lookup) {
-        if (lookup == null) {
-            return units;
-        }
-        List<InferenceUnit> kept = new ArrayList<>(units.size());
+    /** The wrapper's id path, or the run's for a document it did not number; null at the top. */
+    private static String idPath(Metadata metadata, ParseHooks.Run run) {
+        String idPath = metadata.get(TikaCoreProperties.EMBEDDED_ID_PATH);
+        return idPath != null || run == null ? idPath : run.idPath(metadata);
+    }
+
+    /**
+     * Aims units at the metadata still read. Under the wrapper that is the copy it kept for
+     * the unit's document and parent, the live object where nothing is kept; without one the
+     * parse hands back {@code root} alone, so everything lands there.
+     */
+    private static List<InferenceUnit> aim(List<InferenceUnit> units, Metadata root,
+                                           EmbeddedMetadataLookup lookup) {
+        List<InferenceUnit> aimed = new ArrayList<>(units.size());
         for (InferenceUnit unit : units) {
+            if (lookup == null) {
+                aimed.add(unit.aimed(unit.getTarget(), unit.getParent(), root));
+                continue;
+            }
             Metadata target = lookup.kept(unit.getTargetIdPath());
             Metadata parent = lookup.kept(unit.getParentIdPath());
-            kept.add(unit.retargeted(target != null ? target : unit.getTarget(),
-                    parent != null ? parent : unit.getParent()));
+            target = target != null ? target : unit.getTarget();
+            parent = parent != null ? parent : unit.getParent();
+            aimed.add(unit.aimed(target, parent,
+                    InferenceUnit.placed(target, parent, unit.getTargetIdPath())));
         }
-        return kept;
+        return aimed;
     }
 
     /**
