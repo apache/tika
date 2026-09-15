@@ -8,8 +8,8 @@
     { "default-parser": {} },
     {
       "pdf-parser": {
+        "text": "OCR",
         "ocr": {
-          "strategy": "ocr_only",
           "imageType": "rgb",
           "dpi": 100
         }

@@ -97,7 +97,10 @@ class OCR2XHTML extends AbstractPDF2XHTML {
     public void processPage(PDPage pdPage) throws IOException {
         try {
             startPage(pdPage);
-            doOCROnCurrentPage(pdPage, OcrConfig.Strategy.OCR_ONLY);
+            // NONE walks the pages for their renders and writes no text
+            if (config.getText() != PDFParserConfig.TextPolicy.NONE) {
+                doOCROnCurrentPage(pdPage, PDFParserConfig.TextPolicy.OCR);
+            }
             // endPage annotates the page when no engine ran, and offers it to inference
             endPage(pdPage);
         } catch (TikaException | SAXException e) {

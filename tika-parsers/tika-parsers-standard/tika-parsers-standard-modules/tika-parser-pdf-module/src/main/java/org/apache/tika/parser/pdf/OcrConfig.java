@@ -27,11 +27,28 @@ public class OcrConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * The 4.0 spelling of {@link PDFParserConfig.TextPolicy}, kept so {@code ocr.strategy}
+     * still loads.
+     *
+     * @deprecated since 4.1.0; set {@code "text"} on the parser instead.
+     */
+    @Deprecated
     public enum Strategy {
-        AUTO,
-        NO_OCR,
-        OCR_ONLY,
-        OCR_AND_TEXT_EXTRACTION
+        AUTO(PDFParserConfig.TextPolicy.AUTO),
+        NO_OCR(PDFParserConfig.TextPolicy.EXTRACT),
+        OCR_ONLY(PDFParserConfig.TextPolicy.OCR),
+        OCR_AND_TEXT_EXTRACTION(PDFParserConfig.TextPolicy.EXTRACT_AND_OCR);
+
+        private final PDFParserConfig.TextPolicy text;
+
+        Strategy(PDFParserConfig.TextPolicy text) {
+            this.text = text;
+        }
+
+        public PDFParserConfig.TextPolicy toText() {
+            return text;
+        }
     }
 
     public enum RenderingStrategy {
@@ -115,7 +132,8 @@ public class OcrConfig implements Serializable {
         }
     }
 
-    private Strategy strategy = Strategy.AUTO;
+    /** The alias, null unless a 4.0 config set it; no getter so a dump writes "text" only. */
+    private Strategy strategy;
     private StrategyAuto strategyAuto = StrategyAuto.BETTER;
     private RenderingStrategy renderingStrategy = RenderingStrategy.ALL;
     private int dpi = 300;
@@ -153,12 +171,17 @@ public class OcrConfig implements Serializable {
      */
     private int maxPagesToOcr = -1;
 
-    public Strategy getStrategy() {
-        return strategy;
-    }
-
+    /**
+     * @deprecated since 4.1.0; use {@link PDFParserConfig#setText}. Ignored when
+     * {@code "text"} is set.
+     */
+    @Deprecated
     public void setStrategy(Strategy strategy) {
         this.strategy = strategy;
+    }
+
+    PDFParserConfig.TextPolicy legacyText() {
+        return strategy == null ? null : strategy.toText();
     }
 
     public StrategyAuto getStrategyAuto() {

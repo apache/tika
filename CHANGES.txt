@@ -8,6 +8,13 @@ Release 4.1.0 - unreleased
      endpoint under "engines" and bind it with a TEXT inference binding.
      Removal in 4.2.0 (TIKA-4889).
 
+   * PDF: "pdf-parser": {"text": ...} says where a page's text comes from:
+     EXTRACT, AUTO (default), EXTRACT_AND_OCR, OCR, or the new NONE, which
+     writes no text from any source while pages are still rendered for
+     annotators and PAGES inference bindings. The 4.0 "ocr": {"strategy"}
+     spellings load as aliases and dump as "text"; OcrConfig.getStrategy()
+     is removed, read PDFParserConfig.getText() (TIKA-4889).
+
    * Engines are closed with the config that loaded them: Engine is
      Closeable (no-op by default), EngineRegistry closes every engine once,
      and the pipes server closes the registry at shutdown, so an

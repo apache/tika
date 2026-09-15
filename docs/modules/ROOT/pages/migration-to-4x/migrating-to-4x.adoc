@@ -241,7 +241,7 @@ What changes for you:
   (`{"tesseract-ocr-parser": {"_mime-exclude": ["image/tiff"]}}`); on the `default-parser` entry a
   real-type filter also removes the parser for that type.
 * An engine the classpath supplied is never dispatched to; `image-parser` always invokes it, and
-  the PDF parser's `ocr.strategy` controls pages. A `tk:content-type-parser-override` of
+  the PDF parser's `text` policy controls pages. A `tk:content-type-parser-override` of
   `image/ocr-*` matches no parser any more and the document falls to the empty fallback parser:
   drop the override.
 * `Content-Type` never carries an `ocr-` prefix any more, so extracted image files get their real
@@ -265,6 +265,17 @@ batched requests. Until then they keep working from the server-side config. A re
 longer name them in a per-request `metadata-filters` list (4.0.x accepted a caller-supplied
 `baseUrl` there); the flat per-request `{"openai-embedding-filter": {"skipEmbedding": true}}`
 form is unchanged.
+
+=== PDF text policy: `ocr.strategy` becomes `text` (4.1.0+)
+
+The PDF parser's `"ocr": {"strategy": ...}` is now the parser's own `"text"`, since it decides
+where every page's text comes from, not only whether OCR runs: `NO_OCR` is `EXTRACT`, `OCR_ONLY`
+is `OCR`, `OCR_AND_TEXT_EXTRACTION` is `EXTRACT_AND_OCR`, `AUTO` is unchanged, and `NONE` is new
+(no text from any source; pages are still rendered for annotators and inference). The old
+spelling loads as an alias, `text` wins when both are set, and a config dump writes `text`.
+The XML converter writes `text`. In Java, `OcrConfig.getStrategy()` is gone: read
+`PDFParserConfig.getText()`; `OcrConfig.setStrategy` is deprecated. See
+xref:configuration/parsers/pdf-parser.adoc[PDF parser].
 
 For the general serialization model and how JSON configuration works, see
 xref:developers/serialization.adoc[Serialization and Configuration].
