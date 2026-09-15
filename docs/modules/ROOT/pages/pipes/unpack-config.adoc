@@ -300,7 +300,9 @@ Naming the handler in both the path and a `config` part is a `400`, as on `/tika
 
 == What each surface produces
 
-The five knobs interact differently per surface. The defaults are unchanged from 4.0.0.
+The five knobs interact differently per surface. One default changes from 4.0.0: a
+Frictionless package carries `metadata.json` unless `includeMetadata` is `false` (4.0.0 left
+it out unless `includeFullMetadata` was `true`). REGULAR output is as it was.
 
 [cols="1,2,2,2"]
 |===

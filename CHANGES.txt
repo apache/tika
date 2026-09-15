@@ -16,7 +16,9 @@ Release 4.1.0 - unreleased
      /unpack/all/ignore returns the files and their .metadata.json sidecars
      with no extracted text. Previously /unpack/all/<anything> answered 200
      and silently ignored the segment (the unread {id} wildcard); an
-     unrecognized handler there is now a 400 (TIKA-4881).
+     unrecognized handler there is now a 400. The 4.0 config-variant
+     spelling POST /unpack/all/config still works, and takes the handler
+     after it (/unpack/all/config/ignore) (TIKA-4881).
      
    * Tagged PDFs: text drawn twice for a bold effect with one copy tagged
      came out as letters with spaces between them; each copy now reads as

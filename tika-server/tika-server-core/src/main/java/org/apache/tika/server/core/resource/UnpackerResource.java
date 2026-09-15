@@ -109,7 +109,7 @@ import org.apache.tika.pipes.core.extractor.UnpackConfig;
  * <pre>
  * output.zip
  * ├── datapackage.json      # Manifest with file list, SHA256 hashes, mimetypes
- * ├── metadata.json         # Full RMETA metadata (if includeFullMetadata=true)
+ * ├── metadata.json         # Full RMETA metadata (unless includeMetadata=false)
  * └── unpacked/
  *     ├── 00000001.pdf
  *     ├── 00000002.png
@@ -240,6 +240,31 @@ public class UnpackerResource {
     public Response unpackAllWithConfig(List<Attachment> attachments,
                                         @Context HttpHeaders httpHeaders) throws Exception {
         return unpackAllWithConfig(attachments, httpHeaders, null);
+    }
+
+    /**
+     * The config-variant spelling, {@code POST /unpack/all/config}: the same as
+     * {@code POST /unpack/all}. 4.0 accepted it by accident (the wildcard route swallowed the
+     * segment) and documented it; kept so it does not turn into a handler named "config".
+     */
+    @jakarta.ws.rs.Path("/all/config")
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("application/zip")
+    public Response unpackAllConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
+            throws Exception {
+        return unpackAllWithConfig(attachments, httpHeaders, null);
+    }
+
+    /** As {@code POST /unpack/all/config}, with the sidecar handler named in the path, like {@code /rmeta/config/{handlerType}}. */
+    @jakarta.ws.rs.Path("/all/config/{" + HANDLER_TYPE_PARAM + "}")
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("application/zip")
+    public Response unpackAllConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders,
+                                    @jakarta.ws.rs.PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
+            throws Exception {
+        return unpackAllWithConfig(attachments, httpHeaders, handlerTypeName);
     }
 
     /** As {@code POST /unpack/all}, with the sidecar handler named in the path. */

@@ -160,9 +160,11 @@ always wins; without one, a `ContentHandlerFactory` the preset binds decides, th
 config's, then the endpoint default (Markdown).
 
 Output format: name the handler once. A format segment sets it -- `/tika/config/xml`,
-`/rmeta/config/xml`, and `/unpack/all/{handlerType}`, which selects how `tk:content` is
-rendered in the metadata `/all` adds (`/unpack/all/ignore` for none; plain `/unpack` carries
-no metadata, so it takes no segment). With no segment, a `content-handler-factory` in the
+`/rmeta/config/xml`, and `/unpack/all/{handlerType}` (or `/unpack/all/config/{handlerType}`
+with a config part), which selects how `tk:content` is rendered in the metadata `/all` adds
+(`/unpack/all/ignore` for none). Plain `/unpack` takes no segment: the `metadata.json` a
+Frictionless package carries there uses the config's handler, or the default. With no
+segment, a `content-handler-factory` in the
 `config` part does. Doing both is a `400`, whether or not the
 two agree -- on `/tika` the segment also fixes the route's `Content-Type`, so silently
 preferring one would let the response lie about its own body.

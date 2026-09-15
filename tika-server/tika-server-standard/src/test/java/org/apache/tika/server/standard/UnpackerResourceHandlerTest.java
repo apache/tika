@@ -141,6 +141,19 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
                 .put(ClassLoader.getSystemResourceAsStream(TEST_DOC)).getStatus());
     }
 
+    /** The 4.0 config-variant spelling still works, and takes the handler after it. */
+    @Test
+    public void testAllConfigSpellingIsNotAHandlerNamedConfig() throws Exception {
+        Response response = post("/unpack/all/config", "{" + FRICTIONLESS + "}");
+        assertEquals(200, response.getStatus());
+        assertNotNull(readZipArchiveBytes((InputStream) response.getEntity()).get("metadata.json"));
+        response = post("/unpack/all/config/ignore", "{" + FRICTIONLESS + "}");
+        assertEquals(200, response.getStatus());
+        String json = new String(readZipArchiveBytes((InputStream) response.getEntity())
+                .get("metadata.json"), StandardCharsets.UTF_8);
+        assertFalse(json.contains("\"tk:content\""), "ignore after /config must suppress tk:content");
+    }
+
     @Test
     public void testUnrecognizedHandlerSegmentIsBadRequest() throws Exception {
         assertEquals(400, WebClient.create(endPoint + "/unpack/all/somethingOrOther")
