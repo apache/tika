@@ -82,8 +82,9 @@ import org.apache.tika.utils.StringUtils;
  * @since Apache Tika 4.0
  * @deprecated since 4.1.0, removed in 4.2.0. Configure the endpoint as an
  * {@code openai-embedding-engine} under {@code "engines"} and bind it with an {@code IMAGES}
- * {@code "inference"} binding and the {@code embed} task: one request per document tree
- * instead of one per image, and the vectors land where {@link ChunkTarget} puts them.
+ * {@code "inference"} binding and the {@code embed} task: a document tree's images go in
+ * requests of the engine's batch size instead of one per image, and the vectors land where
+ * {@link ChunkTarget} puts them.
  */
 @Deprecated
 @TikaComponent(name = "openai-image-embedding-parser", spi = false)
@@ -192,8 +193,8 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
     public void initialize() throws TikaConfigException {
         LOG.warn("openai-image-embedding-parser is deprecated since 4.1.0 and will be removed in "
                 + "4.2.0: configure the endpoint as an openai-embedding-engine under \"engines\" "
-                + "and bind it with an IMAGES \"inference\" binding (task embed), which batches a "
-                + "document's images into one request");
+                + "and bind it with an IMAGES \"inference\" binding (task embed), which sends a "
+                + "document's images in requests of the engine's batch size");
         this.httpClient = TikaHttpClient.build(30);
     }
 
