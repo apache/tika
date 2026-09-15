@@ -151,9 +151,12 @@ The rules:
 * `"liftToParent": false` on the deprecated `openai-image-embedding-parser` keeps every
   picture's vector on the picture, for an index where each picture is a hit of its own; the
   `IMAGES` binding has no such switch.
-* The parent is known only in the recursive (`/rmeta`, `-J`, pipes) parse, where the
-  recursive wrapper exposes it to each child's parse as `ParentMetadata`; a component that
-  writes chunks for a child resolves the target through `ChunkTarget` (`tika-inference`).
+* In the recursive (`/rmeta`, `-J`, pipes `RMETA`) parse the wrapper keeps every document's
+  metadata, so a chunk lands on its parent's. In the single-object parse (`/tika` as JSON,
+  `-j`, pipes `CONCATENATE`) only the top-level document's metadata is handed back, so every
+  chunk lands there, with the same `embedded` locator naming the part it came from. A task
+  writes where the dispatcher aims it (`InferenceUnit.getDestination()`), through
+  `ChunkTarget` (`tika-inference`).
 
 PDF page renders follow the same rule by a different route: the PDF parser enriches its own
 renders and their vectors land on the PDF directly, one per page with a `paginated` locator,

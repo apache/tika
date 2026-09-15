@@ -91,6 +91,10 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     private static final Set<String> STRUCTURAL_TAGS = Set.of("table", "thead", "tbody", "tfoot",
             "tr", "td", "th", "caption", "ul", "ol", "li");
     private static final Set<String> TABLE_TAGS = Set.of("table", "thead", "tbody", "tfoot", "tr");
+    /** The AUTO gate's shredding check needs this many words of three or more glyphs. */
+    private static final int MIN_WORDS_FOR_SHREDDING = 10;
+    /** ...and rejects the page when more than this share of them span three or more leaves. */
+    private static final float MAX_SHREDDED_RATIO = 0.3f;
     private static final Set<String> ORDERED_LIST_NUMBERING = Set.of(
             PDListAttributeObject.LIST_NUMBERING_DECIMAL,
             PDListAttributeObject.LIST_NUMBERING_LOWER_ALPHA,
@@ -178,6 +182,10 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         /** The word as the stripper wrote it; what a flat replay writes. */
         final String text;
         final List<Segment> segments;
+        /** Whitespace-delimited words of three or more glyphs, and those drawn across three
+         *  or more blocks. */
+        int words;
+        int shredded;
 
         Event(EventKind kind, String text, List<Segment> segments) {
             this.kind = kind;
@@ -206,6 +214,21 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             }
             Object last = pieces.get(pieces.size() - 1);
             return last == NEWLINE || last == PARAGRAPH_BREAK || ((String) last).isBlank();
+        }
+
+        boolean hasWhitespace() {
+            for (Object piece : pieces) {
+                if (piece == NEWLINE || piece == PARAGRAPH_BREAK) {
+                    return true;
+                }
+                String s = (String) piece;
+                for (int i = 0; i < s.length(); i++) {
+                    if (Character.isWhitespace(s.charAt(i))) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
     }
 
@@ -285,6 +308,9 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         int artifact;
         int leaves;
         int dangling;
+        /** Words of three or more glyphs, and those of them drawn across three or more blocks. */
+        int words;
+        int shredded;
     }
 
     private final MarkedContentConfig markedContentConfig;
@@ -299,6 +325,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
     /** Every (scope, MCID) the page's content streams opened, with or without text. */
     private final Set<Label> openedMcids = new HashSet<>();
     private final List<Event> events = new ArrayList<>();
+    /** The page's runs in content order, while a tagged page is written. */
+    private List<Run> pageRuns = Collections.emptyList();
     private final Set<StructureIndex.Node> altWritten =
             Collections.newSetFromMap(new IdentityHashMap<>());
     /** Whitespace after the last word, written only if more text follows in the same block. */
@@ -643,7 +671,44 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             }
             segments.add(new Segment(label, part.toString(), count));
         }
-        events.add(new Event(EventKind.WORD, text, segments));
+        Event event = new Event(EventKind.WORD, text, segments);
+        countShredding(event, textPositions);
+        events.add(event);
+    }
+
+    /**
+     * Counts the event's words and those whose glyphs the tree spreads over three blocks or
+     * more. Glyphs under many leaves of one block are still one word; a block per glyph (some
+     * form generators) makes each word a column of letters.
+     */
+    private void countShredding(Event event, List<TextPosition> textPositions) {
+        if (textPositions == null) {
+            return;
+        }
+        int glyphs = 0;
+        Set<StructureIndex.Node> nodes = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (int i = 0; i <= textPositions.size(); i++) {
+            TextPosition position = i < textPositions.size() ? textPositions.get(i) : null;
+            String u = position == null ? null : position.getUnicode();
+            boolean boundary = position == null || u == null || u.isBlank();
+            if (boundary) {
+                if (glyphs >= 3) {
+                    event.words++;
+                    if (nodes.size() >= 3) {
+                        event.shredded++;
+                    }
+                }
+                glyphs = 0;
+                nodes.clear();
+                continue;
+            }
+            glyphs++;
+            Label l = labels.getOrDefault(position, Label.UNTAGGED);
+            StructureIndex.Leaf leaf = l.tagged() ? index.leaf(l.scope, l.mcid) : null;
+            if (leaf != null) {
+                nodes.add(blockOf(leaf.node));
+            }
+        }
     }
 
     private static String rawText(List<TextPosition> textPositions) {
@@ -729,6 +794,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             if (event.kind != EventKind.WORD) {
                 continue;
             }
+            stats.words += event.words;
+            stats.shredded += event.shredded;
             for (Segment segment : event.segments) {
                 StructureIndex.Leaf leaf = segment.label.tagged() ?
                         index.leaf(segment.label.scope, segment.label.mcid) : null;
@@ -768,6 +835,12 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         if (stats.inBlock == 0) {
             return "no-block-structure";
         }
+        // a tree with an element per glyph (some form generators) would write each word as
+        // letters, one block each; the stripper's words are better
+        if (stats.words >= MIN_WORDS_FOR_SHREDDING && stats.shredded > stats.words * MAX_SHREDDED_RATIO) {
+            return "shredded=" + String.format(Locale.ROOT, "%.2f",
+                    (float) stats.shredded / stats.words);
+        }
         // artifacts count: a producer that marks the body /Artifact and tags fragments has
         // not described the page, and the stripper does better with it
         float coverage = (float) stats.tagged / (stats.tagged + stats.untagged + stats.artifact);
@@ -792,6 +865,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
      */
     private void emitTagged() throws SAXException {
         List<Run> runs = runs();
+        pageRuns = runs;
         Map<StructureIndex.Node, BlockGroup> groups = new IdentityHashMap<>();
         List<BlockGroup> ordered = new ArrayList<>();
         List<Run> untagged = new ArrayList<>();
@@ -877,9 +951,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 if (run == null) {
                     continue;
                 }
-                // other content sat between these two runs; the separator went with it
-                if (previous != null && run.ordinal != previous.ordinal + 1
-                        && !previous.endsWithSeparator() && (wrapper == null || wrapper.open)) {
+                if (previous != null && separatedByOthers(previous, run)
+                        && (wrapper == null || wrapper.open)) {
                     sinkText(" ");
                 }
                 previous = run;
@@ -897,6 +970,24 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         held.clear();
         emitBlocks("untagged", untagged);
         emitBlocks("artifact", artifacts);
+    }
+
+    /**
+     * Whether other content sat between two runs of one block and took the separator with
+     * it: a space glyph under another label. Glyphs of another label with no whitespace,
+     * as when a second copy of the text is drawn glyph by glyph over the first, separate
+     * nothing.
+     */
+    private boolean separatedByOthers(Run previous, Run run) {
+        if (run.ordinal == previous.ordinal + 1 || previous.endsWithSeparator()) {
+            return false;
+        }
+        for (int i = previous.ordinal + 1; i < run.ordinal && i < pageRuns.size(); i++) {
+            if (pageRuns.get(i).hasWhitespace()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Closes the open path from the innermost node down to index {@code from}. */
@@ -1381,8 +1472,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             if (!run.hasText && !inParagraph) {
                 continue;
             }
-            if (inParagraph && previous != null && run.ordinal != previous.ordinal + 1
-                    && !previous.endsWithSeparator()) {
+            if (inParagraph && previous != null && separatedByOthers(previous, run)) {
                 sinkText(" ");
             }
             previous = run;
