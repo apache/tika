@@ -155,6 +155,39 @@ not (detectors, embedded-document extraction, exception reporting, ...) and rais
 limits above the per-request clamp. Every active preset resolves at startup, so a bad preset
 fails the server, not its first request.
 
+WARNING: An active preset is a public route: anyone who can reach the server can call it, and
+it runs at config trust — it can bind components `/config` cannot and raise timeout limits
+above the per-request clamp. Vet a preset as you would `allowPerRequestConfig`, scoped to what
+the preset turns on. Tika's catalog presets are kept bounded (page and render caps, no OCR
+unless the preset is about OCR, no timeout raises); hold your own to the same bar. Startup
+logs one line per active preset naming the components it configures.
+
+==== The `thumbnails` catalog preset
+
+Tika ships one catalog preset, `thumbnails` (in `tika-pipes-core`), for
+`/unpack/preset/thumbnails`. Nothing is active until the operator names it:
+
+[source,json]
+----
+{ "presets": { "thumbnails": true } }
+----
+
+The zip then holds exactly one raster image per document and nothing else — the stored
+thumbnail (Office docProps, audio cover art, raw camera previews, epub, iWork), the rasterized
+EMF/WMF thumbnail of an Office document, or the first page of a PDF at 96 dpi (`rendering`,
+bounded by its `maxImagePixels`) — and answers `204` when the document has none. An image
+file is its own thumbnail: it has no embedded documents, so it answers `204` too. Text is read
+from the first PDF page only and no OCR or inference runs, so the parse is cheap. It names the
+standard parsers, so it needs `tika-parsers-standard-package` on the classpath.
+
+The selection rule, for a client that reads `/rmeta` and wants the same answer: take the first
+embedded document with an `image/*` `Content-Type` other than EMF, WMF or SVG that is a
+`tk:embedded-resource-type` of `THUMBNAIL` at `tk:embedded-depth` 1, a `THUMBNAIL` at depth 2
+carrying `tk:rendering:rendered-by` (the rendering of a vector thumbnail), or a `RENDERING` at
+depth 1 (a PDF page). The thumbnail of a document inside an archive is that document's, not
+the archive's. Plain `/rmeta` lists stored thumbnails already; the PDF page and the EMF/WMF
+rendering exist only when a request turns rendering on.
+
 Output format on the preset routes: an explicit format segment (`/tika/preset/{name}/text`)
 always wins; without one, a `ContentHandlerFactory` the preset binds decides, then the
 config's, then the endpoint default (Markdown).
