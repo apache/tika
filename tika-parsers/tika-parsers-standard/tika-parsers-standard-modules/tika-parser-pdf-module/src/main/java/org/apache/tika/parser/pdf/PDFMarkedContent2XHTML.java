@@ -1687,7 +1687,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             if (table.getColSpan() > 1) {
                 addAttribute(attrs, "colspan", Integer.toString(table.getColSpan()));
             }
-            String[] headers = table.getHeaders();
+            String[] headers = getTableHeaders(table); //TODO table.getHeaders() with 3.0.9 release
             if (headers != null && headers.length > 0) {
                 addAttribute(attrs, "headers", String.join(" ", headers));
             }
@@ -1695,6 +1695,20 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
                 addAttribute(attrs, "scope", table.getScope());
             }
         }
+    }
+
+    //TODO remove this with 3.0.9 release (PDFBOX-6261)
+    private static String[] getTableHeaders(PDTableAttributeObject table) {
+        COSBase v = table.getCOSObject().getDictionaryObject("Headers");
+        if (v instanceof COSArray) {
+            COSArray array = (COSArray) v;
+            String[] strings = new String[array.size()];
+            for (int i = 0; i < array.size(); i++) {
+                strings[i] = array.getString(i);
+            }
+            return strings;
+        }
+        return null;
     }
 
     private static void addAttribute(AttributesImpl attrs, String name, String value) {
