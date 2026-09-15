@@ -1,5 +1,12 @@
 Release 4.1.0 - unreleased
 
+   * The inference dispatcher no longer copies the top-level document's own
+     bytes into a buffer file of its own: the stream that owns them is open
+     until after the flush, so the file is referenced. Embedded documents'
+     spools and page renders are still copied, since their parsers delete
+     them first. Groundwork for MEDIA inputs, where the copy was a second
+     full read of an audio or video file (TIKA-4889).
+
    * unpack-config gains includeMetadata (TIKA-4881).
 
    * tika-server: /rmeta gains config/{handlerType} (TIKA-4881).
