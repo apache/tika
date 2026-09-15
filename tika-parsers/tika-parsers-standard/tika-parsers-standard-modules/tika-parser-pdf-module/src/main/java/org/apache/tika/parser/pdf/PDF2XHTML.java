@@ -164,6 +164,18 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         }
     }
 
+    /** The page image for the consumer: rendered with the "rendering" settings, not OCR's. */
+    private RenderResults renderPageImage(TikaInputStream tis, Metadata renderedMetadata,
+                                          RenderRequest request) throws IOException, TikaException {
+        RenderingConfig outer = context.get(RenderingConfig.class);
+        context.set(RenderingConfig.class, config.getRendering().resolve(config.getOcr()));
+        try {
+            return renderer.render(tis, renderedMetadata, context, request);
+        } finally {
+            context.set(RenderingConfig.class, outer);
+        }
+    }
+
     private void renderPage(PDPage page) throws IOException {
         if (config.getImageStrategy() != PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
             return;
@@ -181,17 +193,16 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         Metadata renderedMetadata = Metadata.newInstance(context);
         renderedMetadata.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
         // the page step enriches the render itself; the embedded copy is bytes and metadata
-        try (RenderResults results = renderer.render(tis, renderedMetadata, context, request);
+        try (RenderResults results = renderPageImage(tis, renderedMetadata, request);
                 ContentEnrichers.Suspension suspension = ContentEnrichers.suspend(context)) {
             for (RenderResult result : results.getResults()) {
-                if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
-                    if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
-
-                        try (TikaInputStream resultInputStream = result.getInputStream()) {
-                            //TODO: add markup here?
-                            embeddedDocumentExtractor.parseEmbedded(resultInputStream, xhtml,
-                                    result.getMetadata(), context, true);
-                        }
+                if (result.getStatus() != RenderResult.STATUS.SUCCESS) {
+                    PDFParser.carryRenderWarnings(result, metadata);
+                } else if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
+                    try (TikaInputStream resultInputStream = result.getInputStream()) {
+                        //TODO: add markup here?
+                        embeddedDocumentExtractor.parseEmbedded(resultInputStream, xhtml,
+                                result.getMetadata(), context, true);
                     }
                 }
             }

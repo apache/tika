@@ -135,6 +135,7 @@ public class PDFParserConfig implements Serializable {
     private boolean ifXFAExtractOnlyXFA = false;
 
     private OcrConfig ocr = new OcrConfig();
+    private RenderingConfig rendering = new RenderingConfig();
     /** Null until set; {@link #getText()} then falls back to the {@code ocr.strategy} alias. */
     private TextPolicy text;
 
@@ -550,6 +551,15 @@ public class PDFParserConfig implements Serializable {
      */
     public void setOcr(OcrConfig ocr) {
         this.ocr = ocr;
+    }
+
+    /** Settings for the page images emitted under RENDER_PAGES_*; unset fields follow {@code ocr}. */
+    public RenderingConfig getRendering() {
+        return rendering;
+    }
+
+    public void setRendering(RenderingConfig rendering) {
+        this.rendering = rendering == null ? new RenderingConfig() : rendering;
     }
 
     /** The text policy: {@code "text"} if set, else the {@code ocr.strategy} alias, else AUTO. */
