@@ -18,9 +18,15 @@ package org.apache.tika.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,15 +35,18 @@ import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.enricher.ContentEnricher;
 import org.apache.tika.sax.BodyContentHandler;
 
 public class CompositeParserTest {
@@ -71,6 +80,84 @@ public class CompositeParserTest {
         assertEquals(2, parsers.size());
         assertEquals(a, parsers.get(0));
         assertEquals(b, parsers.get(1));
+    }
+
+    /** An enricher fills only the types no parser claims, whichever is registered later. */
+    @Test
+    @SuppressWarnings("serial")
+    public void testEnricherFillsGapsOnly() {
+        MediaType png = MediaType.image("png");
+        MediaType jp2 = MediaType.image("jp2");
+        Parser imageParser = new EmptyParser() {
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(png);
+            }
+        };
+        class Engine extends EmptyParser implements ContentEnricher {
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Set.of(png, jp2);
+            }
+        }
+        Parser engine = new Engine();
+        MediaTypeRegistry registry = MediaTypeRegistry.getDefaultRegistry();
+        for (CompositeParser composite : new CompositeParser[]{
+                new CompositeParser(registry, imageParser, engine),
+                new CompositeParser(registry, engine, imageParser)}) {
+            Map<MediaType, Parser> map = composite.getParsers(new ParseContext());
+            assertSame(imageParser, map.get(png));
+            assertSame(engine, map.get(jp2));
+        }
+        CompositeParser composite = new CompositeParser(registry, imageParser,
+                ParserDecorator.withTypes(engine, Set.of(png, jp2)));
+        assertSame(imageParser, composite.getParsers(new ParseContext()).get(png));
+    }
+
+    /** An SPI-registered enricher; see {@link #servicesFor}. */
+    public static class SpiEngine extends EmptyParser implements ContentEnricher {
+        private static final long serialVersionUID = 1L;
+
+        @Override
+        public Set<MediaType> getSupportedTypes(ParseContext context) {
+            return Set.of(MediaType.image("png"), MediaType.image("jp2"));
+        }
+    }
+
+    private static ClassLoader servicesFor(Path dir, Class<? extends Parser> engine)
+            throws IOException {
+        Path services = dir.resolve("META-INF/services/" + Parser.class.getName());
+        Files.createDirectories(services.getParent());
+        Files.writeString(services, engine.getName() + "\n");
+        return new URLClassLoader(new URL[]{dir.toUri().toURL()},
+                CompositeParserTest.class.getClassLoader());
+    }
+
+    /**
+     * An SPI enricher never dispatches, so its types cannot leak out of default-parser and
+     * displace a parser configured beside it.
+     */
+    @Test
+    @SuppressWarnings("serial")
+    public void testDefaultParserNeverDispatchesToSpiEnricher(@TempDir Path tmp)
+            throws Exception {
+        MediaType png = MediaType.image("png");
+        MediaTypeRegistry registry = MediaTypeRegistry.getDefaultRegistry();
+        DefaultParser defaults = new DefaultParser(registry,
+                new ServiceLoader(servicesFor(tmp, SpiEngine.class), false));
+        ParseContext context = new ParseContext();
+        assertTrue(defaults.getAllComponentParsers().stream()
+                .anyMatch(p -> p instanceof SpiEngine), "the SPI loaded the engine");
+        assertNull(defaults.getParsers(context).get(png));
+        assertNull(defaults.getParsers(context).get(MediaType.image("jp2")));
+
+        // the documented "customize one parser" shape
+        Parser imageParser = new EmptyParser() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(png);
+            }
+        };
+        CompositeParser composite = new CompositeParser(registry, imageParser, defaults);
+        assertSame(imageParser, composite.getParsers(context).get(png));
     }
 
     @Test

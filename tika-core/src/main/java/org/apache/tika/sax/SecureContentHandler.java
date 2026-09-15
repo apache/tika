@@ -212,7 +212,9 @@ public class SecureContentHandler extends ContentHandlerDecorator {
 
     private long getByteCount() throws SAXException {
         try {
-            if (stream.hasLength()) {
+            //a declared Content-Length is the file's claim; only a measured length
+            //or the bytes actually read can serve as the ratio's denominator
+            if (stream.hasReliableLength()) {
                 return stream.getLength();
             } else {
                 return stream.getPosition();

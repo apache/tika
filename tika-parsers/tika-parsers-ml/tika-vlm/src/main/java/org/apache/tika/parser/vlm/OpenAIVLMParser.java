@@ -63,23 +63,17 @@ public class OpenAIVLMParser extends AbstractVLMParser {
 
     private static final long serialVersionUID = 1L;
 
-    private static final String OCR = "ocr-";
-
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MediaType.image(OCR + "png"),
-                    MediaType.image(OCR + "jpeg"),
-                    MediaType.image(OCR + "tiff"),
-                    MediaType.image(OCR + "bmp"),
-                    MediaType.image(OCR + "gif"),
+                    MediaType.image("png"),
+                    MediaType.image("jpeg"),
+                    MediaType.image("tiff"),
+                    MediaType.image("bmp"),
+                    MediaType.image("gif"),
                     MediaType.image("jp2"),
                     MediaType.image("jpx"),
                     MediaType.image("x-portable-pixmap"),
-                    MediaType.image(OCR + "jp2"),
-                    MediaType.image(OCR + "jpx"),
-                    MediaType.image(OCR + "x-portable-pixmap"),
-                    MediaType.image("webp"),
-                    MediaType.image(OCR + "webp")
+                    MediaType.image("webp")
             )));
 
     private static final ObjectMapper MAPPER = new ObjectMapper();

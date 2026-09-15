@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.apache.tika.inference.locator.EmbeddedLocator;
 import org.apache.tika.inference.locator.Locators;
 import org.apache.tika.inference.locator.PaginatedLocator;
 import org.apache.tika.inference.locator.SpatialLocator;
@@ -34,10 +35,10 @@ import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Serializes and deserializes a list of {@link Chunk} objects to/from JSON.
- * Vectors are stored as base64-encoded little-endian float32 via
+ * Vectors are stored as base64-encoded big-endian float32 via
  * {@link VectorSerializer}. Locators are nested under a {@code "locators"}
  * object with optional {@code text}, {@code paginated}, {@code spatial},
- * and {@code temporal} arrays.
+ * {@code temporal} and {@code embedded} arrays.
  */
 public final class ChunkSerializer {
 
@@ -58,6 +59,9 @@ public final class ChunkSerializer {
             }
             if (chunk.getVector() != null) {
                 node.put("vector", VectorSerializer.encode(chunk.getVector()));
+            }
+            if (chunk.getProducer() != null) {
+                node.put("producer", chunk.getProducer());
             }
             serializeLocators(node, chunk.getLocators());
         }
@@ -106,6 +110,9 @@ public final class ChunkSerializer {
             Locators locators = deserializeLocators(node.get("locators"));
 
             Chunk chunk = new Chunk(text, locators);
+            if (node.hasNonNull("producer")) {
+                chunk.setProducer(node.get("producer").asText());
+            }
 
             JsonNode vectorNode = node.get("vector");
             if (vectorNode != null && !vectorNode.isNull()) {
@@ -172,6 +179,17 @@ public final class ChunkSerializer {
                 o.put("end_ms", t.getEndMs());
             }
         }
+
+        if (loc.getEmbedded() != null && !loc.getEmbedded().isEmpty()) {
+            ArrayNode arr = locNode.putArray("embedded");
+            for (EmbeddedLocator e : loc.getEmbedded()) {
+                ObjectNode o = arr.addObject();
+                o.put("id_path", e.getIdPath());
+                if (e.getName() != null) {
+                    o.put("name", e.getName());
+                }
+            }
+        }
     }
 
     private static Locators deserializeLocators(JsonNode locNode) {
@@ -213,6 +231,14 @@ public final class ChunkSerializer {
                 locators.addTemporal(new TemporalLocator(
                         n.get("start_ms").asLong(),
                         n.get("end_ms").asLong()));
+            }
+        }
+
+        JsonNode embArr = locNode.get("embedded");
+        if (embArr != null && embArr.isArray()) {
+            for (JsonNode n : embArr) {
+                String name = n.has("name") ? n.get("name").asText() : null;
+                locators.addEmbedded(new EmbeddedLocator(n.get("id_path").asText(), name));
             }
         }
 

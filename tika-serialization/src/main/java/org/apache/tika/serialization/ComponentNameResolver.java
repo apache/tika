@@ -96,6 +96,14 @@ public final class ComponentNameResolver {
      * either: operator policy a caller must not be able to relax.
      */
     private static final Set<Class<?>> WIRE_BLOCKED_CONFIG_KEYS = new HashSet<>();
+    /**
+     * Implementations of a wire-allowed type that break its promise: a wire request may name
+     * them nowhere it could instantiate one. The embedding filters POST document text to a
+     * configured endpoint, so a request must not supply the endpoint. Their flat per-request
+     * config ({@code skipEmbedding}) is unaffected: it tunes the loaded instance and is
+     * guarded by the filter's RuntimeConfig.
+     */
+    private static final Set<String> WIRE_BLOCKED_COMPONENT_NAMES = new HashSet<>();
 
     static {
         // Allowed: bounded to this request's metadata/output; no exec or IO.
@@ -115,6 +123,9 @@ public final class ComponentNameResolver {
         WIRE_BLOCKED_CONTEXT_KEYS.add(EmbeddedDocumentExtractor.class);
 
         WIRE_BLOCKED_CONFIG_KEYS.add(ExceptionReporting.class);
+
+        WIRE_BLOCKED_COMPONENT_NAMES.add("openai-embedding-filter");
+        WIRE_BLOCKED_COMPONENT_NAMES.add("jina-embedding-filter");
     }
 
     private static final Map<String, ComponentRegistry> REGISTRIES = new ConcurrentHashMap<>();
@@ -309,6 +320,16 @@ public final class ComponentNameResolver {
     /** Wire-instantiable context-key interfaces; see {@link #WIRE_INSTANTIABLE_CONTEXT_KEYS}. */
     public static Set<Class<?>> getWireInstantiableContextKeys() {
         return Collections.unmodifiableSet(WIRE_INSTANTIABLE_CONTEXT_KEYS);
+    }
+
+    /** Component names a wire ParseContext may not instantiate although their type is allowed. */
+    public static Set<String> getWireBlockedComponentNames() {
+        return Collections.unmodifiableSet(WIRE_BLOCKED_COMPONENT_NAMES);
+    }
+
+    /** True if a wire ParseContext must not instantiate this component by name. */
+    public static boolean isWireBlockedName(String friendlyName) {
+        return WIRE_BLOCKED_COMPONENT_NAMES.contains(friendlyName);
     }
 
     /** True if a wire ParseContext may bind this context-key type (default-deny). */

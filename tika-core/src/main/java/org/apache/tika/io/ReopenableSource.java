@@ -221,8 +221,11 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     /**
      * Drains a fresh stream into memory if it fits within the per-object floor plus what
      * can be reserved from the shared budget, retaining the buffer (and its reservation)
-     * until {@link #close()}. The declared length is a sizing hint only -- it can lie, so
-     * the cap is enforced during the read. Does not disturb this source's read position.
+     * until {@link #close()}. The declared length is the file's claim: it may skip an
+     * attempt that cannot succeed (a lie there costs a spill, nothing more), but it never
+     * sizes a reservation or an allocation -- the buffer starts at the floor at most and
+     * grows, reserving, on what is actually read. Does not disturb this source's read
+     * position.
      */
     private boolean tryBufferInMemory() throws IOException {
         if (length > MAX_ARRAY_SIZE || (length > IN_MEMORY_FLOOR && budget == null)) {
@@ -230,14 +233,7 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         }
         long reservedHere = 0;
         // Reservation invariant: reservedHere == max(0, data.length - IN_MEMORY_FLOOR)
-        if (length > IN_MEMORY_FLOOR) {
-            long extra = length - IN_MEMORY_FLOOR;
-            if (budget.tryReserve(extra) != extra) {
-                return false;
-            }
-            reservedHere = extra;
-        }
-        byte[] data = new byte[length > 0 ? (int) length : 8192];
+        byte[] data = new byte[(int) Math.max(8192, Math.min(length, IN_MEMORY_FLOOR))];
         int total = 0;
         boolean fits = false;
         try (InputStream in = opener.get()) {

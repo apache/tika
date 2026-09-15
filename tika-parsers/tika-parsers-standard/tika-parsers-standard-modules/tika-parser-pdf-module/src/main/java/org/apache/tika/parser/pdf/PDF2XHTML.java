@@ -43,6 +43,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngine;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderRequest;
@@ -148,6 +149,7 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     protected void endPage(PDPage page) throws IOException {
         try {
             writeParagraphEnd();
+            endPageText();
             try {
                 extractImages(page);
                 renderPage(page);
@@ -166,6 +168,11 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         if (config.getImageStrategy() != PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
             return;
         }
+        // getCurrentPageNo() is 1-based, like PageRangeRequest: the first N pages are 1..N
+        int maxRenderedPages = config.getMaxRenderedPages();
+        if (maxRenderedPages > 0 && getCurrentPageNo() > maxRenderedPages) {
+            return;
+        }
         PDFRenderingState state = context.get(PDFRenderingState.class);
         //this is the document's inputstream/PDDocument
         //TODO: figure out if we can send in the PDPage in the TikaInputStream
@@ -173,7 +180,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
         RenderRequest request = new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
         Metadata renderedMetadata = Metadata.newInstance(context);
         renderedMetadata.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
-        try (RenderResults results = renderer.render(tis, renderedMetadata, context, request)) {
+        // the page step enriches the render itself; the embedded copy is bytes and metadata
+        try (RenderResults results = renderer.render(tis, renderedMetadata, context, request);
+                ContentEnrichers.Suspension suspension = ContentEnrichers.suspend(context)) {
             for (RenderResult result : results.getResults()) {
                 if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
                     if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {

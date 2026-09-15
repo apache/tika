@@ -106,7 +106,8 @@ public class ParseRecord implements TransientParseState {
         return parsers.toArray(new String[0]);
     }
 
-    void addParserClass(String parserClass) {
+    /** Records a parser that ran, dispatched or invoked as an enricher. */
+    public void addParserClass(String parserClass) {
         if (parsers.size() < MAX_PARSERS) {
             parsers.add(parserClass);
         }

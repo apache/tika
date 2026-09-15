@@ -38,3 +38,126 @@ that matters.
 include::example$pdf-parser-full.json[]
 ----
 icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/config-examples/pdf-parser-full.json[View source on GitHub]
+
+== Where text comes from (`text`)
+
+`text` says where a page's text comes from; it is the parser's own setting, beside the `ocr`
+block, and can be set per request:
+
+`EXTRACT`::
+The content stream only; pages are never rendered for OCR.
+`AUTO` (default)::
+The content stream, and OCR of a page whose extracted text is poor by the `ocr.strategyAuto`
+thresholds; the page's extracted text is then *replaced* by the engine's output when the engine is
+a text recognizer (Tesseract, Tess4J, a VLM with `textRecognizer` true) that actually wrote text,
+and kept unchanged otherwise, including when no engine is available, `maxPagesToOcr` is spent, or
+the engine times out. `AUTO` with no engine behaves as `EXTRACT`.
+`EXTRACT_AND_OCR`::
+Both, on every page.
+`OCR`::
+The engine's output only; the content stream is not read. Fails the parse when no engine covers
+the render type, unless the request switched the recognizers off.
+`NONE`::
+No text from any source: no content stream, no OCR, no bookmark, form or annotation text.
+Metadata, attachments and page renders still happen, so a `PAGES` inference binding or a page
+annotator runs at no text cost.
+
+The 4.0 spelling `"ocr": {"strategy": ...}` still loads as an alias: `NO_OCR` is `EXTRACT`,
+`OCR_ONLY` is `OCR`, `OCR_AND_TEXT_EXTRACTION` is `EXTRACT_AND_OCR`. When both are set, `text`
+wins. A config dump writes `text`.
+
+== OCR of pages (`ocr`)
+
+The PDF parser does not OCR anything itself. It renders pages and hands each rendered image to the
+text recognizer resolved for the render type (`image/png` by default): the engine named in the
+top-level `text-recognizers` list, or, with no list, the one found among the loaded parsers and
+logged at startup. See xref:configuration/index.adoc#text-recognizers[Configuration]
+for choosing the engine and xref:configuration/parsers/tesseract-ocr-parser.adoc[Tesseract OCR]
+for its options. The `ocr` block controls only rendering and the `AUTO` verdict:
+
+`strategyAuto`::
+Per-page character thresholds below which `text: AUTO` sends the page to OCR.
+`dpi`, `imageType`, `imageFormat`, `imageQuality`, `renderingStrategy`::
+How pages are rendered before they reach the engine.
+`maxPagesToOcr`, `maxImagePixels`::
+Budgets per document and per rendered page.
+
+Inline images embedded in a PDF are a separate path: with `extractInlineImages` on they are
+parsed as embedded documents, so `image-parser` enriches each one with the same engine. A scanned
+page that is one full-page image is therefore OCR'd twice when both are on.
+
+Page renders emitted as embedded documents (`imageStrategy` set to `RENDER_PAGES_AT_PAGE_END` or
+`RENDER_PAGES_BEFORE_PARSE`) are enriched by the PDF parser itself, once per page: the text
+recognizer where `text` says so, and every other enricher (an image embedder, a tagging VLM)
+on every page, with its results such as `tk:chunks` landing on the PDF. The embedded copy of a
+render is parsed for its metadata but not enriched again, so no page reaches the same engine
+twice, and `EXTRACT` means no page OCR anywhere while the other enrichers still see every page.
+
+`pdf:ocr-page-count` records how many pages tripped the verdict, whether or not an engine ran.
+
+== Tagged PDFs (`markedContent`)
+
+A tagged PDF carries a structure tree: paragraphs, headings, lists, tables, links, and which
+content is an artifact (running headers, footers, page numbers). The `markedContent` block says
+whether the parser follows that tree. Every page's words and spacing still come from the same
+text stripper and the same `sortByPosition`, `enableAutoSpace` and tolerance settings; the tree
+only decides which XHTML elements the words land in and, across blocks, their order.
+
+`strategy`::
+`AUTO`, the default, follows the tree on pages that pass the gate below and writes the other
+pages exactly as the stripper would. `TAGS` follows the tree on every page that has tagged
+text. `NONE` ignores the tree and writes what the stripper writes, the output of Tika before
+4.1.0. A PDF with no structure tree is written as with `NONE` whatever the strategy, and
+`detectAngles` always wins.
+`minCoverage`, `maxDanglingRatio`::
+The `AUTO` gate, per page. A page uses its tags only when the tree claims at least `minCoverage`
+of the page's text (artifact content counts, since a producer that marks the body as artifact
+has not described the page), at most `maxDanglingRatio` of the tree's leaves for the page
+point at content the page never draws, and the tree puts at least some of the page's text in
+an element that holds text (a paragraph, heading, cell or item: a tree of bare spans or
+divisions has no paragraphs to offer). Both start loose (0.5 and 0.2) until a corpus says
+otherwise; `minCoverage` above 1 turns every page back to the stripper.
+
+With tags, a structure element becomes the XHTML element of the same meaning (`P` to `<p>`, `H1`
+to `<h1>`, `L` to `<ul>` or `<ol>` by its `ListNumbering`, `Table`/`TR`/`TH`/`TD` to a table,
+`Link` to `<a href>` when its annotation has a URI) and any other type becomes a `<div>` or
+`<span>` with the type as its class. A `Figure` or `Formula` takes its place in the page even
+when its content is an image, and its `Alt` text is written as its text, so the output reads
+as a screen reader would read it. Text the tree does not reference follows the tagged content
+of its page in `<div class="untagged">`, and artifact content in `<div class="artifact">`, so
+nothing is lost and a consumer can drop headers and footers. Whitespace at the edges of a
+block element is dropped; the separators between words stay outside links and spans.
+
+The output is well-formed XHTML whose nesting is the tree's, repaired where a tree leaves text
+or elements somewhere HTML gives them no place, the way an HTML parser would repair the same
+markup. A block (a paragraph, table, list, figure) that the tree nests inside a paragraph or
+heading closes it first, and text of the paragraph after the block gets a paragraph of its own,
+so a chain of paragraphs nested in each other comes out as a sequence of paragraphs and a
+paragraph inside a heading is not heading text. Text straight inside a
+division (a `Div`, `Sect`, `Part`, `Figure`, a custom type) is written as paragraphs, split
+where the stripper would split the flat page, so a tree of containers reads like the stripper's
+output inside them. Text straight inside a table becomes its `<caption>` (as does a `Caption`
+element there), inside a row a `<td>`, inside a list an `<li>`, and anything else straight inside
+a list is wrapped in an `<li>` too. A block inside a link or span, or straight inside a table or
+row, becomes a `<span>` with the type as its class, with a line break at each edge, so the link
+stays one and a chart's labels inside a table land in its caption rather than in an invented
+row; such spans do not nest, the innermost wins. An item outside a list gets its `<ul>`, a row
+outside a table its `<table>`. Tables and lists inside a link or span stay where the tree put
+them.
+The metadata says what happened:
+`pdf:marked-content-pages-tagged`, `pdf:marked-content-pages-fallback`, and
+`pdf:marked-content-rejections` with the reason per page that fell back.
+
+The old boolean `extractMarkedContent` still loads: `true` is `TAGS`, `false` is `NONE`.
+
+== Pages for inference (`inference`)
+
+`input`::
+What the parser releases to the xref:configuration/inference.adoc#pages[inference bindings]:
+`["TEXT"]` by default. Add `PAGES` to render every page for a `PAGES` binding; the render is
+the `ocr` render, made once per page for OCR and inference alike, and nothing is rendered
+unless a `PAGES` binding runs for the request. Per request under `pdf-parser` in
+`parse-context`, like the `ocr` block.
+`text` and every `ocr` option can be overridden per request through `parse-context` under
+`pdf-parser`; the xref:using-tika/server/index.adoc[server documentation] shows the `EXTRACT`
+override as a preset.

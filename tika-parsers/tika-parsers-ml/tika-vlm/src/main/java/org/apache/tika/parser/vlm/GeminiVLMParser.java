@@ -58,27 +58,22 @@ public class GeminiVLMParser extends AbstractVLMParser {
 
     private static final long serialVersionUID = 1L;
 
-    private static final String OCR = "ocr-";
-
     private static final Set<MediaType> SUPPORTED_TYPES;
 
     static {
         Set<MediaType> types = new HashSet<>(Arrays.asList(
                 // images
-                MediaType.image(OCR + "png"),
-                MediaType.image(OCR + "jpeg"),
-                MediaType.image(OCR + "tiff"),
-                MediaType.image(OCR + "bmp"),
-                MediaType.image(OCR + "gif"),
+                MediaType.image("png"),
+                MediaType.image("jpeg"),
+                MediaType.image("tiff"),
+                MediaType.image("bmp"),
+                MediaType.image("gif"),
                 MediaType.image("jp2"),
                 MediaType.image("jpx"),
                 MediaType.image("x-portable-pixmap"),
-                MediaType.image(OCR + "jp2"),
-                MediaType.image(OCR + "jpx"),
-                MediaType.image(OCR + "x-portable-pixmap"),
                 MediaType.image("webp"),
-                MediaType.image(OCR + "webp"),
                 MediaType.image("heic"),
+
                 MediaType.image("heif"),
                 // PDFs — Gemini handles these natively with vision
                 MediaType.application("pdf")

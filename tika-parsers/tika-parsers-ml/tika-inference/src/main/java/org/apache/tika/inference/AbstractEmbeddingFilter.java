@@ -55,8 +55,14 @@ import org.apache.tika.parser.ParseContext;
  * Thread safety: instances are safe for concurrent {@link #filter} calls once
  * fully constructed. Setters must not be called concurrently with
  * {@link #filter}.
+ *
+ * @deprecated since 4.1.0, removed in 4.2.0: configure the endpoint once under
+ * {@code "engines"} and bind it with a {@code TEXT} {@code "inference"} binding, which embeds
+ * the whole document tree in batched requests.
  */
+@Deprecated
 public abstract class AbstractEmbeddingFilter extends MetadataFilter implements SelfConfiguring {
+
 
     private static final long serialVersionUID = 1L;
 
@@ -68,10 +74,18 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter implements 
     private InferenceConfig defaultConfig = new InferenceConfig();
 
     protected AbstractEmbeddingFilter() {
+        warnDeprecated();
     }
 
     protected AbstractEmbeddingFilter(InferenceConfig config) {
         this.defaultConfig = config;
+        warnDeprecated();
+    }
+
+    private void warnDeprecated() {
+        LOG.warn("{} is deprecated since 4.1.0 and will be removed in 4.2.0: configure the "
+                + "endpoint under \"engines\" and bind it with a TEXT \"inference\" binding",
+                getClass().getSimpleName());
     }
 
     /**

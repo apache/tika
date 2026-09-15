@@ -22,7 +22,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.StringUtils;
 
 /**
- * Configuration for {@link VLMOCRParser}.
+ * Configuration for {@link AbstractVLMParser} and its subclasses.
  * <p>
  * The parser expects an OpenAI-compatible chat completions endpoint
  * (e.g. from vLLM, Ollama, or a local FastAPI server). The image is
@@ -80,6 +80,13 @@ public class VLMOCRConfig implements Serializable {
 
     /** Whether to skip VLM OCR entirely (runtime kill-switch). */
     private boolean skipOcr = false;
+    /**
+     * Whether the prompt transcribes the image, so the output is the document's text.
+     * Set false for a captioning or tagging prompt: the parser still runs, but a caller
+     * such as the PDF parser's AUTO OCR never substitutes its output for text it already
+     * has. Per request it changes only when {@code allowRuntimePrompt} lets the prompt change.
+     */
+    private boolean textRecognizer = true;
 
     /** Minimum file size (bytes) to submit to VLM OCR. */
     private long minFileSizeToOcr = 0;
@@ -178,6 +185,14 @@ public class VLMOCRConfig implements Serializable {
 
     public void setSkipOcr(boolean skipOcr) {
         this.skipOcr = skipOcr;
+    }
+
+    public boolean isTextRecognizer() {
+        return textRecognizer;
+    }
+
+    public void setTextRecognizer(boolean textRecognizer) {
+        this.textRecognizer = textRecognizer;
     }
 
     public long getMinFileSizeToOcr() {
@@ -293,6 +308,18 @@ public class VLMOCRConfig implements Serializable {
                                 + "to permit per-request prompt overrides.");
             }
             super.setPrompt(prompt);
+        }
+
+        // describes the prompt, so it is locked with it
+        @Override
+        public void setTextRecognizer(boolean textRecognizer) {
+            if (!isAllowRuntimePrompt()) {
+                throw new IllegalStateException(
+                        "Cannot modify textRecognizer at runtime. "
+                                + "Set allowRuntimePrompt=true at initialization time "
+                                + "to permit per-request prompt overrides.");
+            }
+            super.setTextRecognizer(textRecognizer);
         }
 
         @Override

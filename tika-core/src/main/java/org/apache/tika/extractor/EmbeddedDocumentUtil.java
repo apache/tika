@@ -135,13 +135,11 @@ public class EmbeddedDocumentUtil {
     }
 
     /**
-     * Normalizes internal OCR routing media types (e.g., {@code image/ocr-png})
-     * back to standard media types (e.g., {@code image/png}).
-     * Returns the input unchanged if it is not an OCR routing type.
+     * {@code image/ocr-png} to {@code image/png}; anything else unchanged.
      *
-     * @param mediaType the media type string
-     * @return the normalized media type string, or the original if no normalization needed
+     * @deprecated since 4.1, removal in 5.0: nothing produces the pseudo-types any more.
      */
+    @Deprecated
     public static String normalizeMediaType(String mediaType) {
         if (mediaType != null && mediaType.startsWith("image/ocr-")) {
             return "image/" + mediaType.substring("image/ocr-".length());
@@ -159,9 +157,7 @@ public class EmbeddedDocumentUtil {
         if (mediaType == null) {
             return "";
         }
-        MimeType mimeType =
-                getRegisteredMimeType(MimeTypes.getDefaultMimeTypes(),
-                        normalizeMediaType(mediaType));
+        MimeType mimeType = getRegisteredMimeType(MimeTypes.getDefaultMimeTypes(), mediaType);
         return mimeType == null ? "" : mimeType.getExtension();
     }
 

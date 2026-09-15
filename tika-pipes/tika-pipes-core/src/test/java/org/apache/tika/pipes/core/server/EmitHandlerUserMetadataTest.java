@@ -36,7 +36,7 @@ public class EmitHandlerUserMetadataTest {
 
     private static EmitHandler emitHandler() {
         // injectUserMetadata touches no instance state; the collaborators are irrelevant
-        return new EmitHandler(null, null, null, 0);
+        return new EmitHandler(null, null, null, null, 0);
     }
 
     @Test

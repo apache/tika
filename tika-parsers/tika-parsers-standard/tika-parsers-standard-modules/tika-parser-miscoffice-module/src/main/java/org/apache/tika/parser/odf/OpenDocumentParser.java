@@ -46,6 +46,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.CacheMemoryBudget;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -208,6 +209,11 @@ public class OpenDocumentParser implements Parser {
         return extractMacros;
     }
 
+    /** Re-opened from the zip on rewind rather than cached: the entry is in the container already. */
+    private static TikaInputStream entryStream(ZipFile zipFile, ZipArchiveEntry entry) {
+        return TikaInputStream.get(() -> zipFile.getInputStream(entry), new TemporaryResources(), null);
+    }
+
     private void handleZipFile(ZipFile zipFile, Metadata metadata, ParseContext context,
                                EndDocumentShieldingContentHandler handler,
                                EmbeddedDocumentExtractor embeddedDocumentExtractor)
@@ -226,7 +232,7 @@ public class OpenDocumentParser implements Parser {
 
         ZipArchiveEntry entry = zipFile.getEntry(MANIFEST_NAME);
         if (entry != null) {
-            try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
+            try (TikaInputStream tisZip = entryStream(zipFile, entry)) {
                 handleZipArchiveEntry(entry, tisZip, metadata, context, handler,
                         embeddedDocumentExtractor, picturePages);
             }
@@ -234,7 +240,7 @@ public class OpenDocumentParser implements Parser {
 
         entry = zipFile.getEntry(META_NAME);
         if (entry != null) {
-            try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
+            try (TikaInputStream tisZip = entryStream(zipFile, entry)) {
                 handleZipArchiveEntry(entry, tisZip, metadata, context, handler,
                         embeddedDocumentExtractor, picturePages);
             }
@@ -244,7 +250,7 @@ public class OpenDocumentParser implements Parser {
         while (entries.hasMoreElements()) {
             entry = entries.nextElement();
             if (!META_NAME.equals(entry.getName())) {
-                try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(entry))) {
+                try (TikaInputStream tis = entryStream(zipFile, entry)) {
                     handleZipArchiveEntry(entry, tis, metadata, context, handler,
                             embeddedDocumentExtractor, picturePages);
                 }

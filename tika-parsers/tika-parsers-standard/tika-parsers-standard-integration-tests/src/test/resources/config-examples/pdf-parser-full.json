@@ -34,8 +34,6 @@
         "extractInlineImageMetadataOnly": false,
         // Render and extract inline images from content streams.
         "extractInlineImages": false,
-        // Extract marked-content / structure tags, falling back to plain text.
-        "extractMarkedContent": false,
         // Emit each unique inline image (by object id) only once.
         "extractUniqueInlineImagesOnly": true,
         // If the PDF has an XFA form, process only it.
@@ -48,12 +46,36 @@
         // How to render page images; NONE renders nothing.
         // Options: NONE, RAW_IMAGES, RENDER_PAGES_BEFORE_PARSE, RENDER_PAGES_AT_PAGE_END
         "imageStrategy": "NONE",
+        // What the parser releases to the inference bindings (see the inference page):
+        // TEXT is the extracted text; PAGES renders every page for a PAGES binding.
+        "inference": { "input": ["TEXT"] },
+        // Where a page's text comes from. EXTRACT: the content stream, never OCR. AUTO: the
+        // content stream, OCR on pages the "strategyAuto" thresholds flag. EXTRACT_AND_OCR:
+        // both, every page. OCR: the engine only. NONE: no text at all; pages are still
+        // rendered for annotators and inference. The engine comes from "text-recognizers".
+        // The 4.0 "ocr": {"strategy": ...} values still load as aliases.
+        // Options: EXTRACT, AUTO, EXTRACT_AND_OCR, OCR, NONE
+        "text": "AUTO",
+        // Tagged PDFs: follow the structure tree (headings, lists, tables) or use the plain
+        // text stripper. AUTO uses the tree on pages that pass a quality gate; TAGS always;
+        // NONE never. A PDF without a structure tree always uses the stripper.
+        // Options: AUTO, TAGS, NONE
+        "markedContent": {
+          "strategy": "AUTO",
+          // AUTO only: least fraction of a page's text the tree must claim.
+          "minCoverage": 0.5,
+          // AUTO only: most tree leaves for a page that may point at content the page lacks.
+          "maxDanglingRatio": 0.2
+        },
         // Max incremental updates to parse when parseIncrementalUpdates is true.
         "maxIncrementalUpdates": 10,
         // Max memory to load a PDF before buffering to a temp file (default 512MB).
         "maxMainMemoryBytes": 536870912,
         // Max pages to process; -1 = no limit.
         "maxPages": -1,
+        // Max pages to render with RENDER_PAGES_BEFORE_PARSE / RENDER_PAGES_AT_PAGE_END,
+        // counted from the first page and independent of maxPages; -1 = no limit.
+        "maxRenderedPages": -1,
         // OCR settings. Requires an OCR engine (e.g. Tesseract) installed.
         "ocr": {
           // Render resolution (dpi) for OCR.
@@ -62,7 +84,7 @@
           // Options: PNG, TIFF, JPEG
           "imageFormat": "PNG",
           // Image quality (0.0-1.0) for lossy formats.
-          "imageQuality": 1.0,
+          "imageQuality": 0.5,
           // Rendered-image color model.
           // Options: RGB, GRAY
           "imageType": "GRAY",
@@ -73,10 +95,7 @@
           // Which page content to render for OCR.
           // Options: NO_TEXT, TEXT_ONLY, VECTOR_GRAPHICS_ONLY, ALL
           "renderingStrategy": "ALL",
-          // When to run OCR; AUTO runs it only on text-poor pages.
-          // Options: AUTO, NO_OCR, OCR_ONLY, OCR_AND_TEXT_EXTRACTION
-          "strategy": "AUTO",
-          // Per-page character thresholds that trigger AUTO OCR.
+          // Per-page character thresholds that trigger OCR under "text": "AUTO".
           "strategyAuto": {
             "totalCharsPerPage": 10,
             "unmappedUnicodeCharsPerPage": 10

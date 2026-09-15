@@ -16,10 +16,10 @@
  */
 package org.apache.tika.parser.pdf;
 
-import static org.apache.tika.parser.pdf.OcrConfig.Strategy.AUTO;
-import static org.apache.tika.parser.pdf.OcrConfig.Strategy.NO_OCR;
-import static org.apache.tika.parser.pdf.OcrConfig.Strategy.OCR_AND_TEXT_EXTRACTION;
-import static org.apache.tika.parser.pdf.OcrConfig.Strategy.OCR_ONLY;
+import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.AUTO;
+import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.EXTRACT_AND_OCR;
+import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.NONE;
+import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.OCR;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
@@ -34,9 +34,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -96,7 +99,9 @@ import org.apache.pdfbox.text.PDFTextStripper;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
 import org.apache.pdfbox.util.Matrix;
 import org.apache.pdfbox.util.Vector;
+import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -118,6 +123,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnrichers;
+import org.apache.tika.parser.hook.ParseHooks;
 import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
 import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
 import org.apache.tika.parser.pdf.updates.StartXRefOffset;
@@ -133,6 +139,7 @@ import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
 import org.apache.tika.renderer.pdf.pdfbox.TextOnlyPDFRenderer;
 import org.apache.tika.renderer.pdf.pdfbox.VectorGraphicsOnlyPDFRenderer;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
@@ -149,6 +156,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      */
     private final static int MAX_RECURSION_DEPTH = 100;
     private final static int MAX_BOOKMARK_ITEMS = 10000;
+    /** Deeper bookmarks are written as items of the deepest list, within the XML nesting limit. */
+    private final static int MAX_BOOKMARK_DEPTH = 50;
 
     //This is used for both types and subtypes.
     //These can be unbounded.  We need to limit the number we store.
@@ -162,12 +171,33 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final List<Exception> exceptions = new ArrayList<>();
     final PDDocument pdDocument;
     final XHTMLContentHandler xhtml;
+    // Non-null only for AUTO with a text recognizer: records each page's text for the verdict.
+    private final PageTextBuffer pageBuffer;
+    // Every enricher for the render type, resolved once per document; null skips the render.
+    final Parser ocrEngine;
+
+    // Non-null only when the image strategy renders every page: the enrichers that do not
+    // recognize text run on each page the OCR step leaves alone, so a page is enriched once
+    // whether or not it tripped the OCR verdict.
+    private final Parser pageAnnotators;
+    final MediaType ocrImageMediaType;
+    private PageText pageDecision = PageText.UNDECIDED;
+    /** What the OCR step did with the current page; SKIPPED until it runs. */
+    private PageOcr currentPageOcr = PageOcr.SKIPPED;
+    // Text held back from an OCR_WANTED page; replayed if OCR does not run.
+    private List<PageTextBuffer.SaxEvent> pendingText = Collections.emptyList();
     final ParseContext context;
     final Metadata metadata;
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
     final Renderer renderer;
     final CompositeContentEnricher contentEnrichers;
+    private final ParseHooks hooks;
+    /** Pages are rendered for inference: the config says PAGES and a hook wants them. */
+    private final boolean pagesForInference;
+    /** The current page's render, made once for OCR, annotators and inference alike. */
+    private RenderResult pageRender;
+    private TemporaryResources pageRenderResources;
     /**
      * Format used for signature dates
      * TODO Make this thread-safe
@@ -207,13 +237,56 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                       Metadata metadata, PDFParserConfig config, Renderer renderer,
                       CompositeContentEnricher contentEnrichers) throws IOException {
         this.pdDocument = pdDocument;
-        this.xhtml = new XHTMLContentHandler(handler, metadata, context);
+        this.ocrImageMediaType =
+                MediaType.image(config.getOcr().getImageFormat().getFormatName());
+        // resolved before any page is rendered, so a probe stands in for the render
+        Metadata renderTarget = new Metadata();
+        renderTarget.set(HttpHeaders.CONTENT_TYPE, ocrImageMediaType.toString());
+        renderTarget.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
+        this.ocrEngine =
+                ContentEnrichers.get(contentEnrichers, ocrImageMediaType, renderTarget, context);
+        PDFParserConfig.IMAGE_STRATEGY imageStrategy = config.getImageStrategy();
+        Parser annotators = null;
+        if (imageStrategy == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE
+                || imageStrategy == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
+            try (ContentEnrichers.Suspension recognizersOff =
+                         ContentEnrichers.suspendRecognizers(context)) {
+                annotators = ContentEnrichers.get(contentEnrichers, ocrImageMediaType,
+                        renderTarget, context);
+            }
+        }
+        this.pageAnnotators = annotators;
+        if (config.getText() == AUTO && ContentEnrichers.hasTextRecognizer(
+                contentEnrichers, ocrImageMediaType, renderTarget, context)) {
+            this.pageBuffer = new PageTextBuffer(handler);
+            this.xhtml = new XHTMLContentHandler(pageBuffer, metadata, context);
+        } else {
+            this.pageBuffer = null;
+            this.xhtml = new XHTMLContentHandler(handler, metadata, context);
+        }
         this.context = context;
         this.metadata = metadata;
         this.config = config;
         this.renderer = renderer;
         this.contentEnrichers = contentEnrichers;
         embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+        this.hooks = context.get(ParseHooks.class);
+        boolean wantsPages = false;
+        if (hooks != null && config.getInference().getInput().contains(InferenceConfig.Input.PAGES)) {
+            try {
+                wantsPages = hooks.wantsPages(ocrImageMediaType, context);
+            } catch (TikaException e) {
+                throw new IOException(e);
+            }
+        }
+        this.pagesForInference = wantsPages;
+        if (wantsPages) {
+            // the TEXT stage skips a document released as pages unless TEXT is listed too
+            for (InferenceConfig.Input input : config.getInference().getInput()) {
+                metadata.add(TikaCoreProperties.INFERENCE_RELEASED, input.name());
+            }
+        }
     }
 
     private static void addNonNullAttribute(String name, String value, AttributesImpl attributes) {
@@ -259,12 +332,63 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     @Override
     protected void startPage(PDPage page) throws IOException {
+        pageDecision = PageText.UNDECIDED;
+        pendingText = Collections.emptyList();
         try {
             xhtml.startElement("div", "class", "page");
         } catch (SAXException e) {
             throw new IOException("Unable to start a page", e);
         }
+        if (pageBuffer != null) {
+            pageBuffer.start();
+        }
         writeParagraphStart();
+    }
+
+    /**
+     * Ends the page's text phase: takes the AUTO verdict and either releases the recorded
+     * text in place or holds it until endPage knows whether OCR ran. Idempotent, so
+     * subclasses call it as soon as their text is written and endPage covers the rest.
+     */
+    void endPageText() throws IOException {
+        if (pageDecision != PageText.UNDECIDED) {
+            return;
+        }
+        List<PageTextBuffer.SaxEvent> captured =
+                pageBuffer == null ? Collections.emptyList() : pageBuffer.stop();
+        boolean wanted = config.getText() == AUTO &&
+                ocrWanted(pageBuffer == null ? null : pageBuffer.text());
+        pageDecision = wanted ? PageText.OCR_WANTED : PageText.KEEP;
+        if (wanted) {
+            pendingText = captured;
+        } else {
+            replay(captured);
+        }
+    }
+
+    private void replay(List<PageTextBuffer.SaxEvent> events) throws IOException {
+        if (events.isEmpty()) {
+            return;
+        }
+        try {
+            pageBuffer.replay(events);
+        } catch (SAXException e) {
+            throw new IOException("Unable to write page text", e);
+        }
+    }
+
+    /**
+     * AUTO verdict for the page whose text was just extracted. Counters only for now;
+     * pageText (null when nothing was recorded) is the seam for a junk detector (TIKA-4883).
+     */
+    boolean ocrWanted(String pageText) {
+        OcrConfig.StrategyAuto strategyAuto = config.getOcr().getStrategyAuto();
+        if (totalCharsPerPage <= strategyAuto.getTotalCharsPerPage()) {
+            return true;
+        }
+        float percentUnmapped = (float) unmappedUnicodeCharsPerPage / totalCharsPerPage;
+        float limit = strategyAuto.getUnmappedUnicodeCharsPerPage();
+        return (limit < 1) ? percentUnmapped > limit : unmappedUnicodeCharsPerPage > limit;
     }
 
     private void extractXMPXFA() throws IOException, SAXException {
@@ -282,7 +406,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             //try the main metadata
             if (pdDocument.getDocumentCatalog().getMetadata() != null) {
                 try (TikaInputStream tis = TikaInputStream.get(
-                        pdDocument.getDocumentCatalog().getMetadata().exportXMPMetadata())) {
+                        () -> pdDocument.getDocumentCatalog().getMetadata().exportXMPMetadata(),
+                        new TemporaryResources(), null)) {
                     extractXMPAsEmbeddedFile(tis, XMP_DOCUMENT_CATALOG_LOCATION);
                 } catch (IOException e) {
                     EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
@@ -292,7 +417,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             int pageNumber = 1;
             for (PDPage page : pdDocument.getPages()) {
                 if (page.getMetadata() != null) {
-                    try (TikaInputStream tis = TikaInputStream.get(page.getMetadata().exportXMPMetadata())) {
+                    try (TikaInputStream tis = TikaInputStream.get(
+                            () -> page.getMetadata().exportXMPMetadata(),
+                            new TemporaryResources(), null)) {
                         extractXMPAsEmbeddedFile(tis, XMP_PAGE_LOCATION_PREFIX + pageNumber);
                     } catch (IOException e) {
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
@@ -500,14 +627,17 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             return;
         }
-        TikaInputStream tis = null;
+        //open once now so a broken stream is recorded here, not mid-parse
         try {
-            tis = TikaInputStream.get(pdEmbeddedFile.createInputStream());
+            pdEmbeddedFile.createInputStream().close();
         } catch (IOException e) {
-            //store this exception in the parent's metadata
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
             return;
         }
+        //the file is in the document already: re-open (re-decode) it on rewind
+        //rather than cache a copy that a digest of a large attachment would spill
+        TikaInputStream tis = TikaInputStream.get(pdEmbeddedFile::createInputStream,
+                new TemporaryResources(), null);
 
         setOrReplaceAttribute("class", "embedded", attributes);
         setOrReplaceAttribute("id", fileName, attributes);
@@ -552,11 +682,26 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
-    void doOCROnCurrentPage(PDPage pdPage, OcrConfig.Strategy ocrStrategy)
+    /** What the OCR step did with a page. */
+    enum PageOcr {
+        /** No engine was dispatched: NO_OCR, no engine, or maxPagesToOcr spent. */
+        SKIPPED,
+        /** The engine ran but wrote no text: an annotating enricher, a skip, a failure. */
+        NO_TEXT,
+        TEXT
+    }
+
+    PageOcr doOCROnCurrentPage(PDPage pdPage, PDFParserConfig.TextPolicy text)
             throws IOException, TikaException, SAXException {
-        if (ocrStrategy.equals(NO_OCR)) {
-            //I don't think this is reachable?
-            return;
+        PageOcr result = dispatchOcr(pdPage, text);
+        currentPageOcr = result;
+        return result;
+    }
+
+    private PageOcr dispatchOcr(PDPage pdPage, PDFParserConfig.TextPolicy text)
+            throws IOException, TikaException, SAXException {
+        if (text != AUTO && text != OCR && text != EXTRACT_AND_OCR) {
+            return PageOcr.SKIPPED;
         }
         //count the number of times that OCR would have been called
         OCRPageCounter c = context.get(OCRPageCounter.class);
@@ -567,49 +712,98 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         // Enforce maxPagesToOcr limit
         int maxPagesToOcr = config.getOcr().getMaxPagesToOcr();
         if (maxPagesToOcr > 0 && c != null && c.getCount() > maxPagesToOcr) {
-            return;
+            return PageOcr.SKIPPED;
         }
-        MediaType imageMediaType =
-                MediaType.image(config.getOcr().getImageFormat().getFormatName());
-        Parser enricher = ContentEnrichers.get(contentEnrichers, imageMediaType, context);
-        if (enricher == null) {
-            if (ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION) {
+        if (ocrEngine == null) {
+            if ((text == OCR || text == EXTRACT_AND_OCR)
+                    && !ContentEnrichers.isDisabled(context)) {
                 throw new TikaException(
                         "I regret that I couldn't find an OCR engine to handle " +
-                                imageMediaType + ". Name one that covers it in " +
-                                "\"content-enrichers\" (a configured list is authoritative), " +
+                                ocrImageMediaType + ". Name one that covers it in " +
+                                "\"text-recognizers\" (a configured list is authoritative), " +
                                 "add one to the classpath when no list is configured, " +
-                                "or set the OCR strategy to NO_OCR.");
-            } else if (ocrStrategy == AUTO) {
-                //silently skip if there's no engine to run ocr
-                return;
+                                "or set \"pdf-parser\": {\"text\": \"EXTRACT\"}.");
             }
+            return PageOcr.SKIPPED;
         }
+        return enrichCurrentPage(pdPage, ocrEngine) ? PageOcr.TEXT : PageOcr.NO_TEXT;
+    }
 
-        try (TemporaryResources tmp = new TemporaryResources()) {
-            try (RenderResult renderResult = renderCurrentPage(pdPage, tmp)) {
-                Metadata renderMetadata = renderResult.getMetadata();
-                try (TikaInputStream tis = renderResult.getInputStream()) {
-                    renderMetadata.set(HttpHeaders.CONTENT_TYPE, imageMediaType.toString());
-                    enricher.parse(tis, new EmbeddedContentHandler(new BodyContentHandler(xhtml)),
-                            renderMetadata, context);
-                }
-                // Propagate enrichment metadata added by the OCR parser (e.g. tk:chunks
-                // from image embedding parsers) back to the parent document so it isn't
-                // silently discarded when the renderMetadata goes out of scope.
-                String renderChunks = renderMetadata.get(TikaCoreProperties.TIKA_CHUNKS);
-                if (renderChunks != null) {
-                    metadata.set(TikaCoreProperties.TIKA_CHUNKS,
-                            mergeChunkArrays(metadata.get(TikaCoreProperties.TIKA_CHUNKS),
-                                    renderChunks));
-                }
+    /**
+     * Runs the annotating enrichers on a page the OCR step skipped, when every page is
+     * rendered. The rendering emitted as an embedded document is not enriched again.
+     */
+    void annotateCurrentPage(PDPage pdPage) throws IOException, TikaException, SAXException {
+        if (pageAnnotators != null) {
+            enrichCurrentPage(pdPage, pageAnnotators);
+        }
+    }
+
+    /** Runs the engine on the page's render; true if the engine wrote text. */
+    private boolean enrichCurrentPage(PDPage pdPage, Parser engine)
+            throws IOException, TikaException, SAXException {
+        try {
+            RenderResult renderResult = currentPageRender(pdPage);
+            Metadata renderMetadata = renderResult.getMetadata();
+            TextCounter counter = new TextCounter(xhtml);
+            try (TikaInputStream tis = renderResult.getInputStream()) {
+                renderMetadata.set(HttpHeaders.CONTENT_TYPE, ocrImageMediaType.toString());
+                engine.parse(tis,
+                        new EmbeddedContentHandler(new BodyContentHandler(counter)),
+                        renderMetadata, context);
             }
+            // Propagate enrichment metadata added by the OCR parser (e.g. tk:chunks
+            // from image embedding parsers) back to the parent document so it isn't
+            // silently discarded when the renderMetadata goes out of scope.
+            String renderChunks = renderMetadata.get(TikaCoreProperties.TIKA_CHUNKS);
+            if (renderChunks != null) {
+                metadata.set(TikaCoreProperties.TIKA_CHUNKS,
+                        mergeChunkArrays(metadata.get(TikaCoreProperties.TIKA_CHUNKS),
+                                renderChunks));
+            }
+            return counter.sawText();
         } catch (IOException e) {
             handleCatchableIOE(e);
         } catch (TikaTimeoutException e) {
             handleCatchableTimeout(e);
         } catch (SAXException e) {
             throw new IOException("error writing OCR content from PDF", e);
+        }
+        return false;
+    }
+
+    /** The page's render, made on first use and closed at page end. */
+    private RenderResult currentPageRender(PDPage pdPage) throws IOException, TikaException {
+        if (pageRender == null) {
+            pageRenderResources = new TemporaryResources();
+            pageRender = renderCurrentPage(pdPage, pageRenderResources);
+        }
+        return pageRender;
+    }
+
+    private void closePageRender() {
+        RenderResult render = pageRender;
+        TemporaryResources resources = pageRenderResources;
+        pageRender = null;
+        pageRenderResources = null;
+        try (resources; render) {
+            // closing deletes the render file
+        } catch (IOException e) {
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
+        }
+    }
+
+    /** Hands the page's render to the hooks when a PAGES binding wants it. */
+    private void offerCurrentPageToInference(PDPage pdPage) throws IOException, TikaException {
+        if (!pagesForInference) {
+            return;
+        }
+        RenderResult render = currentPageRender(pdPage);
+        if (render.getStatus() != RenderResult.STATUS.SUCCESS) {
+            return;
+        }
+        try (TikaInputStream tis = render.getInputStream()) {
+            hooks.offerPage(ocrImageMediaType, getCurrentPageNo(), tis.getPath(), context);
         }
     }
 
@@ -785,30 +979,23 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         metadata.add(PDF.CHARACTERS_PER_PAGE, totalCharsPerPage);
         metadata.add(PDF.UNMAPPED_UNICODE_CHARS_PER_PAGE, unmappedUnicodeCharsPerPage);
 
-
         try {
+            endPageText();
             for (PDAnnotation annotation : page.getAnnotations()) {
                 processPageAnnotation(annotation);
             }
-            if (config.getOcr().getStrategy() == OCR_AND_TEXT_EXTRACTION) {
-                doOCROnCurrentPage(page, OCR_AND_TEXT_EXTRACTION);
-            } else if (config.getOcr().getStrategy() == AUTO) {
-                boolean unmappedExceedsLimit = false;
-                if (totalCharsPerPage > config.getOcr().getStrategyAuto().getTotalCharsPerPage()) {
-                    // There are enough characters to not have to do OCR.  Check number of unmapped characters
-                    final float percentUnmapped =
-                            (float) unmappedUnicodeCharsPerPage / totalCharsPerPage;
-                    final float unmappedCharacterLimit =
-                            config.getOcr().getStrategyAuto().getUnmappedUnicodeCharsPerPage();
-                    unmappedExceedsLimit = (unmappedCharacterLimit < 1) ?
-                            percentUnmapped > unmappedCharacterLimit :
-                            unmappedUnicodeCharsPerPage > unmappedCharacterLimit;
-                }
-                if (totalCharsPerPage <= config.getOcr().getStrategyAuto().getTotalCharsPerPage() ||
-                        unmappedExceedsLimit) {
-                    doOCROnCurrentPage(page, AUTO);
+            if (config.getText() == EXTRACT_AND_OCR) {
+                doOCROnCurrentPage(page, EXTRACT_AND_OCR);
+            } else if (pageDecision == PageText.OCR_WANTED) {
+                if (doOCROnCurrentPage(page, AUTO) != PageOcr.TEXT) {
+                    replay(pendingText);
                 }
             }
+            // the engine composite already ran the annotators on a page it OCR'd
+            if (currentPageOcr == PageOcr.SKIPPED) {
+                annotateCurrentPage(page);
+            }
+            offerCurrentPageToInference(page);
 
             PDPageAdditionalActions pageActions = page.getActions();
             if (pageActions != null) {
@@ -821,8 +1008,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } catch (IOException e) {
             handleCatchableIOE(e);
         } finally {
+            closePageRender();
+            currentPageOcr = PageOcr.SKIPPED;
             totalCharsPerPage = 0;
             unmappedUnicodeCharsPerPage = 0;
+            pendingText = Collections.emptyList();
         }
 
         if (config.isExtractFontNames() && page.getResources() != null) {
@@ -886,7 +1076,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                         attributes);
             }
         }
-        if (! config.isExtractAnnotationText()) {
+        if (!config.isExtractAnnotationText() || config.getText() == NONE) {
             return;
         }
         // TODO: remove once PDFBOX-1143 is fixed:
@@ -945,7 +1135,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         Metadata m = getJavascriptMetadata("3DD_ON_INSTANTIATE", null, null);
         if (embeddedDocumentExtractor.shouldParseEmbedded(m, context)) {
-            try (TikaInputStream tis = TikaInputStream.get(stream.createInputStream())) {
+            try (TikaInputStream tis = TikaInputStream.get(stream::createInputStream,
+                    new TemporaryResources(), null)) {
                 embeddedDocumentExtractor.parseEmbedded(tis, xhtml, m, context, true);
             }
         }
@@ -1167,8 +1358,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     @Override
     protected void endDocument(PDDocument pdf) throws IOException {
         try {
-            // Extract text for any bookmarks:
-            if (config.isExtractBookmarksText()) {
+            // NONE writes no text from any source: bookmarks, forms and annotations included
+            if (config.isExtractBookmarksText() && config.getText() != NONE) {
                 extractBookmarkText();
             }
 
@@ -1187,7 +1378,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             extractXMPXFA();
 
             //extract acroform data at end of doc
-            if (config.isExtractAcroFormContent() == true) {
+            if (config.isExtractAcroFormContent() && config.getText() != NONE) {
                 try {
                     extractAcroForm(pdf);
                 } catch (IOException e) {
@@ -1296,41 +1487,62 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     void extractBookmarkText() throws SAXException, IOException, TikaException {
         PDDocumentOutline outline = document.getDocumentCatalog().getDocumentOutline();
         if (outline != null) {
-            Set<COSObjectable> seen = new HashSet<>();
-            extractBookmarkText(outline, seen, 0);
+            extractBookmarkText(outline);
         }
     }
 
-    void extractBookmarkText(PDOutlineNode bookmark, Set<COSObjectable> seen, int itemCount)
+    /**
+     * Walks the outline without recursion: a chain of items each the only child of the last
+     * can be as long as the item budget, and a hostile file makes it so. A list opens for the
+     * children of an item up to {@link #MAX_BOOKMARK_DEPTH}; deeper items join the deepest
+     * list. Cycles end where an item is met a second time.
+     */
+    private void extractBookmarkText(PDOutlineNode outline)
             throws SAXException, IOException, TikaException {
-        PDOutlineItem current = bookmark.getFirstChild();
-        if (itemCount > MAX_BOOKMARK_ITEMS) {
+        PDOutlineItem current = outline.getFirstChild();
+        if (current == null) {
             return;
         }
-        if (current != null) {
-            if (seen.contains(current)) {
-                return;
+        Set<COSObjectable> seen = new HashSet<>();
+        // the item whose children are being walked, per level; whether its level opened a list
+        Deque<PDOutlineItem> parents = new ArrayDeque<>();
+        Deque<Boolean> opened = new ArrayDeque<>();
+        xhtml.startElement("ul");
+        int lists = 1;
+        int items = 0;
+        while (true) {
+            if (current == null || seen.contains(current) || items > MAX_BOOKMARK_ITEMS) {
+                if (parents.isEmpty()) {
+                    break;
+                }
+                if (opened.pop()) {
+                    xhtml.endElement("ul");
+                    lists--;
+                }
+                current = parents.pop().getNextSibling();
+                continue;
             }
-            xhtml.startElement("ul");
-            while (current != null) {
-                if (seen.contains(current)) {
-                    break;
+            seen.add(current);
+            items++;
+            xhtml.startElement("li");
+            xhtml.characters(current.getTitle());
+            xhtml.endElement("li");
+            handleDestinationOrAction(current.getAction(), ActionTrigger.BOOKMARK);
+            PDOutlineItem child = current.getFirstChild();
+            if (child != null && !seen.contains(child)) {
+                boolean open = lists < MAX_BOOKMARK_DEPTH;
+                if (open) {
+                    xhtml.startElement("ul");
+                    lists++;
                 }
-                if (itemCount > MAX_BOOKMARK_ITEMS) {
-                    break;
-                }
-                seen.add(current);
-                xhtml.startElement("li");
-                xhtml.characters(current.getTitle());
-                xhtml.endElement("li");
-                handleDestinationOrAction(current.getAction(), ActionTrigger.BOOKMARK);
-                // Recurse:
-                extractBookmarkText(current, seen, itemCount + 1);
+                parents.push(current);
+                opened.push(open);
+                current = child;
+            } else {
                 current = current.getNextSibling();
-                itemCount++;
             }
-            xhtml.endElement("ul");
         }
+        xhtml.endElement("ul");
     }
 
     void extractAcroForm(PDDocument pdf) throws IOException, SAXException, TikaException {
@@ -1608,6 +1820,164 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
         public PDComplexFileSpecification getSpec() {
             return spec;
+        }
+    }
+
+    private enum PageText {
+        UNDECIDED, KEEP, OCR_WANTED
+    }
+
+    /** Notes whether any non-whitespace text passed through. */
+    private static class TextCounter extends ContentHandlerDecorator {
+        private boolean sawText;
+
+        TextCounter(ContentHandler handler) {
+            super(handler);
+        }
+
+        boolean sawText() {
+            return sawText;
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) throws SAXException {
+            for (int i = start; !sawText && i < start + length; i++) {
+                sawText = !Character.isWhitespace(ch[i]);
+            }
+            super.characters(ch, start, length);
+        }
+    }
+
+    /**
+     * Sits under xhtml for AUTO with an engine. Records the SAX events between start() and
+     * stop() so the OCR verdict can replay or drop them; passes everything else through live.
+     */
+    private static class PageTextBuffer implements ContentHandler {
+        private final ContentHandler delegate;
+        private List<SaxEvent> buffer;
+        private StringBuilder text;
+
+        PageTextBuffer(ContentHandler delegate) {
+            this.delegate = delegate;
+        }
+
+        void start() {
+            buffer = new ArrayList<>();
+            text = new StringBuilder();
+        }
+
+        /** Stops recording and returns what was recorded (empty if not recording). */
+        List<SaxEvent> stop() {
+            List<SaxEvent> recorded = buffer == null ? Collections.emptyList() : buffer;
+            buffer = null;
+            return recorded;
+        }
+
+        /** Plain text of the last recording. */
+        String text() {
+            return text == null ? "" : text.toString();
+        }
+
+        void replay(List<SaxEvent> events) throws SAXException {
+            for (SaxEvent e : events) {
+                e.replay(delegate);
+            }
+        }
+
+        interface SaxEvent {
+            void replay(ContentHandler h) throws SAXException;
+        }
+
+        @Override
+        public void startElement(String uri, String localName, String qName, Attributes atts)
+                throws SAXException {
+            if (buffer != null) {
+                AttributesImpl copy = new AttributesImpl(atts);
+                buffer.add(h -> h.startElement(uri, localName, qName, copy));
+            } else {
+                delegate.startElement(uri, localName, qName, atts);
+            }
+        }
+
+        @Override
+        public void endElement(String uri, String localName, String qName) throws SAXException {
+            if (buffer != null) {
+                buffer.add(h -> h.endElement(uri, localName, qName));
+            } else {
+                delegate.endElement(uri, localName, qName);
+            }
+        }
+
+        @Override
+        public void characters(char[] ch, int start, int length) throws SAXException {
+            if (buffer != null) {
+                char[] copy = Arrays.copyOfRange(ch, start, start + length);
+                text.append(copy);
+                buffer.add(h -> h.characters(copy, 0, copy.length));
+            } else {
+                delegate.characters(ch, start, length);
+            }
+        }
+
+        @Override
+        public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
+            if (buffer != null) {
+                char[] copy = Arrays.copyOfRange(ch, start, start + length);
+                buffer.add(h -> h.ignorableWhitespace(copy, 0, copy.length));
+            } else {
+                delegate.ignorableWhitespace(ch, start, length);
+            }
+        }
+
+        @Override
+        public void startPrefixMapping(String prefix, String uri) throws SAXException {
+            if (buffer != null) {
+                buffer.add(h -> h.startPrefixMapping(prefix, uri));
+            } else {
+                delegate.startPrefixMapping(prefix, uri);
+            }
+        }
+
+        @Override
+        public void endPrefixMapping(String prefix) throws SAXException {
+            if (buffer != null) {
+                buffer.add(h -> h.endPrefixMapping(prefix));
+            } else {
+                delegate.endPrefixMapping(prefix);
+            }
+        }
+
+        @Override
+        public void processingInstruction(String target, String data) throws SAXException {
+            if (buffer != null) {
+                buffer.add(h -> h.processingInstruction(target, data));
+            } else {
+                delegate.processingInstruction(target, data);
+            }
+        }
+
+        @Override
+        public void skippedEntity(String name) throws SAXException {
+            if (buffer != null) {
+                buffer.add(h -> h.skippedEntity(name));
+            } else {
+                delegate.skippedEntity(name);
+            }
+        }
+
+        @Override
+        public void setDocumentLocator(Locator locator) {
+            delegate.setDocumentLocator(locator);
+        }
+
+        @Override
+        public void startDocument() throws SAXException {
+            delegate.startDocument();
+        }
+
+        @Override
+        public void endDocument() throws SAXException {
+            delegate.endDocument();
         }
     }
 

@@ -80,6 +80,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.parser.enricher.EnrichingParser;
 import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
 import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
@@ -121,7 +122,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * tries to maintain the structure of tables represented in PDFs.
  *
  * If your PDFs contain marked content or tags, consider
- * {@link PDFParserConfig#setExtractMarkedContent(boolean)}
+ * {@link PDFParserConfig#setMarkedContent(MarkedContentConfig)}
  */
 @TikaComponent
 public class PDFParser implements Parser, RenderingParser, EnrichingParser {
@@ -220,11 +221,13 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
             if (handler != null) {
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
-                } else if (localConfig.getOcr().getStrategy()
-                        .equals(OcrConfig.Strategy.OCR_ONLY)) {
+                } else if (localConfig.getText() == PDFParserConfig.TextPolicy.OCR
+                        || localConfig.getText() == PDFParserConfig.TextPolicy.NONE) {
                     OCR2XHTML.process(pdfDocument, handler, context, metadata,
                             localConfig, renderer, contentEnrichers);
-                } else if (hasMarkedContent && localConfig.isExtractMarkedContent()) {
+                } else if (hasMarkedContent && localConfig.getMarkedContent().getStrategy()
+                        != MarkedContentConfig.Strategy.NONE && !localConfig.isDetectAngles()) {
+                    // detectAngles re-runs the page per angle; the tagged writer needs one pass
                     PDFMarkedContent2XHTML
                             .process(pdfDocument, handler, context, metadata,
                                     localConfig, renderer, contentEnrichers);
@@ -440,7 +443,8 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
             return true;
         }
 
-        if (localConfig.getOcr().getStrategy() == OcrConfig.Strategy.NO_OCR) {
+        if (localConfig.getText() == PDFParserConfig.TextPolicy.EXTRACT
+                || localConfig.getText() == PDFParserConfig.TextPolicy.NONE) {
             return false;
         }
         //TODO: test that this is not AUTO with no OCR parser installed
@@ -467,15 +471,18 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
         EmbeddedDocumentExtractor embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
-        for (RenderResult result : renderResults.getResults()) {
-            if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
-                if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
-                    try (TikaInputStream tis = result.getInputStream()) {
-                        embeddedDocumentExtractor.parseEmbedded(tis, xhtml, result.getMetadata(), context, false);
-                    } catch (SecurityException e) {
-                        throw e;
-                    } catch (Exception e) {
-                        EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
+        // the page step enriches each render itself; the embedded copies are bytes and metadata
+        try (ContentEnrichers.Suspension suspension = ContentEnrichers.suspend(context)) {
+            for (RenderResult result : renderResults.getResults()) {
+                if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
+                    if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
+                        try (TikaInputStream tis = result.getInputStream()) {
+                            embeddedDocumentExtractor.parseEmbedded(tis, xhtml, result.getMetadata(), context, false);
+                        } catch (SecurityException e) {
+                            throw e;
+                        } catch (Exception e) {
+                            EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
+                        }
                     }
                 }
             }
@@ -487,8 +494,10 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
             throws IOException, TikaException {
         Metadata metadata = Metadata.newInstance(parseContext);
         metadata.set(TikaCoreProperties.TYPE, MEDIA_TYPE.toString());
-        return renderer.render(
-                tstream, metadata, parseContext, PageRangeRequest.RENDER_ALL);
+        int maxRenderedPages = localConfig.getMaxRenderedPages();
+        PageRangeRequest pages = maxRenderedPages > 0
+                ? new PageRangeRequest(1, maxRenderedPages) : PageRangeRequest.RENDER_ALL;
+        return renderer.render(tstream, metadata, parseContext, pages);
     }
 
     protected PDDocument getPDDocument(TikaInputStream tis, String password,

@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 
@@ -45,12 +45,7 @@ public class EncodeOCRParserTest extends TikaTest {
 
     private Metadata getMetadata(MediaType mediaType) {
         Metadata metadata = new Metadata();
-        MediaType ocrMediaType =
-                new MediaType(mediaType.getType(),
-                        "ocr-" + mediaType.getSubtype());
-        metadata.set(
-                TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE,
-                ocrMediaType.toString());
+        metadata.set(HttpHeaders.CONTENT_TYPE, mediaType.toString());
         return metadata;
     }
 
@@ -281,31 +276,11 @@ public class EncodeOCRParserTest extends TikaTest {
         EncodeOCRParser parser = new EncodeOCRParser();
         ParseContext context = new ParseContext();
 
-        assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("ocr-png")));
-        assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("ocr-jpeg")));
-        assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("ocr-tiff")));
-        assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("ocr-bmp")));
-        assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("ocr-gif")));
-
-        assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("jp2")));
-        assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("jpx")));
-        assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("x-portable-pixmap")));
-
-        assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("ocr-jp2")));
-        assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image("ocr-jpx")));
-        assertTrue(parser.getSupportedTypes(context)
-                .contains(MediaType.image(
-                        "ocr-x-portable-pixmap")));
+        for (String subtype : new String[]{"png", "jpeg", "tiff", "bmp", "gif", "jp2", "jpx",
+                "x-portable-pixmap"}) {
+            assertTrue(parser.getSupportedTypes(context).contains(MediaType.image(subtype)),
+                    subtype);
+        }
     }
 
     @Test
@@ -335,8 +310,7 @@ public class EncodeOCRParserTest extends TikaTest {
     public void testSupportedTypesCount() {
         EncodeOCRParser parser = new EncodeOCRParser();
         ParseContext context = new ParseContext();
-        // 5 ocr- types + 3 non-ocr + 3 ocr- versions of non-ocr = 11
-        assertEquals(11, parser.getSupportedTypes(context).size());
+        assertEquals(8, parser.getSupportedTypes(context).size());
     }
 
     @Test

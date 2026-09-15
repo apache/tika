@@ -1,5 +1,5 @@
 {
-  "parsers": [
+  "text-recognizers": [
     {
       "gemini-vlm-parser": {
         "baseUrl": "https://generativelanguage.googleapis.com",
@@ -10,6 +10,7 @@
         "apiKey": "your-gemini-api-key",
         "inlineContent": true,
         "skipOcr": false,
+        "textRecognizer": true,
         "minFileSizeToOcr": 0,
         "maxFileSizeToOcr": 52428800,
         "maxImagePixels": 100000000,

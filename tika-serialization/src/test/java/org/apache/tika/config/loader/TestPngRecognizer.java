@@ -14,13 +14,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.pipes.core;
+package org.apache.tika.config.loader;
 
 import java.util.Collections;
 import java.util.Set;
 
 import org.xml.sax.ContentHandler;
-import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.io.TikaInputStream;
@@ -28,16 +27,13 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.parser.enricher.TextRecognizer;
 
-/** Fixture: proves the invocation and config path with no OCR binary installed. */
-@TikaComponent(name = "mock-enricher", spi = false)
-public class MockEnricher implements Parser {
+/** Fixture: a nameable text recognizer for image/png. */
+@TikaComponent(name = "test-png-recognizer", spi = false)
+public class TestPngRecognizer implements Parser, TextRecognizer {
 
     private static final long serialVersionUID = 1L;
-
-    public static final String MARKER_KEY = "mock-enricher";
-    public static final String MARKER_TEXT = "MOCK-ENRICHED-TEXT";
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -45,12 +41,8 @@ public class MockEnricher implements Parser {
     }
 
     @Override
-    public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
-                      ParseContext context) throws SAXException {
-        metadata.set(MARKER_KEY, "ENRICHED");
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
-        xhtml.startDocument();
-        xhtml.characters(MARKER_TEXT);
-        xhtml.endDocument();
+    public void parse(TikaInputStream stream, ContentHandler handler, Metadata metadata,
+                      ParseContext context) {
+        metadata.set("derived-by", "test-png-recognizer");
     }
 }

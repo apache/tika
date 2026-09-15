@@ -133,7 +133,8 @@ the catalog fails startup:
 {
   "presets": {
     "some-catalog-preset": true,
-    "no-ocr": { "pdf-parser": { "ocr": { "strategy": "NO_OCR" } } }
+    "no-ocr": { "pdf-parser": { "text": "EXTRACT" } },
+    "no-enrichment": { "text-recognizers": { "enabled": false }, "inference": { "enabled": false } }
   }
 }
 ----
@@ -311,7 +312,7 @@ POST with multipart for custom per-request configuration:
 ----
 curl -X POST http://localhost:9998/tika/config/json \
   -F "file=@document.pdf" \
-  -F "config={\"pdf-parser\":{\"ocr\":{\"strategy\":\"NO_OCR\"}}};type=application/json"
+  -F "config={\"pdf-parser\":{\"text\":\"EXTRACT\"}};type=application/json"
 ----
 
 Valid handler paths under `/tika/`: `text`, `html`, `xml`, `md`, `json` (bare `/tika` returns

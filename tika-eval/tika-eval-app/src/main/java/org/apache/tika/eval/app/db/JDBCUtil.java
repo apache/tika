@@ -88,16 +88,16 @@ public class JDBCUtil {
 
     /**
      * If dbPath is already a jdbc string, it is used as is; otherwise this builds the
-     * tika-eval h2 default: RETENTION_TIME=0 drops the 45s MVStore chunk retention
-     * (bloat + growing compaction cost) and CACHE_SIZE (KB) is sized by
-     * {@link #getH2CacheSizeKb()}.
+     * tika-eval h2 default: CACHE_SIZE (KB) sized by {@link #getH2CacheSizeKb()}.
+     * Chunk retention stays at H2's 45s default: RETENTION_TIME=0 let dead chunks be
+     * dropped under the background writer (assert in FileStore.serializeAndStore).
      */
     public static String getJdbcConnectionString(String dbPath) {
         if (dbPath.startsWith("jdbc:")) {
             return dbPath;
         }
         Path p = Paths.get(dbPath);
-        return "jdbc:h2:file:" + p.toAbsolutePath() + ";RETENTION_TIME=0;CACHE_SIZE=" + getH2CacheSizeKb();
+        return "jdbc:h2:file:" + p.toAbsolutePath() + ";CACHE_SIZE=" + getH2CacheSizeKb();
     }
 
     /**

@@ -18,6 +18,7 @@ package org.apache.tika.parser.pdf;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -37,6 +38,8 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -46,6 +49,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.extractor.ContainerExtractor;
@@ -115,7 +119,7 @@ public class PDFParserTest extends TikaTest {
 
     private static ParseContext NO_OCR() {
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        config.setText(PDFParserConfig.TextPolicy.EXTRACT);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
         return context;
@@ -232,7 +236,7 @@ public class PDFParserTest extends TikaTest {
         PDFParserConfig config = new PDFParserConfig();
         config.setExtractInlineImages(true);
         config.setExtractUniqueInlineImagesOnly(false);
-        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        config.setText(PDFParserConfig.TextPolicy.EXTRACT);
         context.set(org.apache.tika.parser.pdf.PDFParserConfig.class, config);
         context.set(org.apache.tika.parser.Parser.class, p);
 
@@ -262,20 +266,22 @@ public class PDFParserTest extends TikaTest {
     public void testEmbeddedDocsWithOCROnly() throws Exception {
         assumeTrue(canRunOCR(), "can't run OCR");
         //test default is "auto"
-        assertEquals(OcrConfig.Strategy.AUTO, new PDFParserConfig().getOcr().getStrategy());
+        assertEquals(PDFParserConfig.TextPolicy.AUTO, new PDFParserConfig().getText());
         testStrategy(null);
         //now test other options
-        for (OcrConfig.Strategy strategy : OcrConfig.Strategy.values()) {
-            testStrategy(strategy);
+        for (PDFParserConfig.TextPolicy strategy : PDFParserConfig.TextPolicy.values()) {
+            if (strategy != PDFParserConfig.TextPolicy.NONE) {
+                testStrategy(strategy);
+            }
         }
     }
 
-    private void testStrategy(OcrConfig.Strategy strategy) throws Exception {
+    private void testStrategy(PDFParserConfig.TextPolicy strategy) throws Exception {
         //make sure everything works with regular xml _and_ with recursive
         ParseContext context = new ParseContext();
         if (strategy != null) {
             PDFParserConfig config = new PDFParserConfig();
-            config.getOcr().setStrategy(strategy);
+            config.setText(strategy);
             context.set(PDFParserConfig.class, config);
         };
         PDFParserConfig config = context.get(PDFParserConfig.class, new PDFParserConfig());
@@ -291,7 +297,7 @@ public class PDFParserTest extends TikaTest {
         }
         assertContains("Haystack", xmlResult.xml);
         assertContains("Needle", xmlResult.xml);
-        if (strategy == null || strategy != OcrConfig.Strategy.NO_OCR) {
+        if (strategy == null || strategy != PDFParserConfig.TextPolicy.EXTRACT) {
             // Tesseract may see the t in haystack as a ! some times...
             //or it might see dehayslack...
             //TODO: figure out how to make this test less hacky
@@ -330,7 +336,7 @@ public class PDFParserTest extends TikaTest {
         //TIKA-1990, test that an embedded jpeg is correctly decoded
         PDFParserConfig config = new PDFParserConfig();
         config.setExtractInlineImages(true);
-        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        config.setText(PDFParserConfig.TextPolicy.EXTRACT);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
 
@@ -351,7 +357,7 @@ public class PDFParserTest extends TikaTest {
         PDFParserConfig config = new PDFParserConfig();
         config.setExtractInlineImages(true);
         config.setExtractUniqueInlineImagesOnly(false);
-        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        config.setText(PDFParserConfig.TextPolicy.EXTRACT);
         context.set(PDFParserConfig.class, config);
 
 
@@ -378,7 +384,7 @@ public class PDFParserTest extends TikaTest {
     public void testJBIG2OCROnly() throws Exception {
         assumeTrue(canRunOCR(), "can't run OCR");
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        config.setText(PDFParserConfig.TextPolicy.OCR);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
         //make sure everything works with regular xml _and_ with recursive
@@ -390,7 +396,7 @@ public class PDFParserTest extends TikaTest {
     public void testJPEG2000() throws Exception {
         assumeTrue(canRunOCR(), "can't run OCR");
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        config.setText(PDFParserConfig.TextPolicy.OCR);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
         //make sure everything works with regular xml _and_ with recursive
@@ -406,13 +412,13 @@ public class PDFParserTest extends TikaTest {
         assertContains("Happy New Year", getXML("testOCR.pdf").xml);
 
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.AUTO);
+        config.setText(PDFParserConfig.TextPolicy.AUTO);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
         XMLResult xmlResult = getXML("testOCR.pdf", context);
         assertContains("Happy New Year", xmlResult.xml);
 
-        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        config.setText(PDFParserConfig.TextPolicy.EXTRACT);
         String txt = getText("testOCR.pdf", new Metadata(), context);
         assertEquals("", txt.trim());
     }
@@ -422,7 +428,7 @@ public class PDFParserTest extends TikaTest {
         assumeTrue(canRunOCR(), "can't run OCR");
         PDFParserConfig config = new PDFParserConfig();
         config.getOcr().setRenderingStrategy(OcrConfig.RenderingStrategy.ALL);
-        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        config.setText(PDFParserConfig.TextPolicy.OCR);
         ParseContext parseContext = new ParseContext();
         parseContext.set(PDFParserConfig.class, config);
         XMLResult xmlResult = getXML("testPDF_XFA_govdocs1_258578.pdf", parseContext);
@@ -430,7 +436,7 @@ public class PDFParserTest extends TikaTest {
         assertContains("Applications", xmlResult.xml);
 
         config.getOcr().setRenderingStrategy(OcrConfig.RenderingStrategy.NO_TEXT);
-        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        config.setText(PDFParserConfig.TextPolicy.OCR);
         parseContext.set(PDFParserConfig.class, config);
         xmlResult = getXML("testPDF_XFA_govdocs1_258578.pdf", parseContext);
         assertContains("NATIONAL", xmlResult.xml);
@@ -582,7 +588,7 @@ public class PDFParserTest extends TikaTest {
         String json = "{\"pdf-parser\": {\"sortByPosition\": true, " +
                 "\"extractInlineImages\": true, \"ocr\": {\"strategy\": \"AUTO\"}}}";
 
-        com.fasterxml.jackson.databind.ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
         ParseContext deserialized = mapper.readValue(json, ParseContext.class);
 
         // Verify config was stored as a JSON config entry
@@ -598,7 +604,7 @@ public class PDFParserTest extends TikaTest {
                 "sortByPosition should be preserved");
         assertTrue(deserializedConfig.isExtractInlineImages(),
                 "extractInlineImages should be preserved");
-        assertEquals(OcrConfig.Strategy.AUTO, deserializedConfig.getOcr().getStrategy(),
+        assertEquals(PDFParserConfig.TextPolicy.AUTO, deserializedConfig.getText(),
                 "ocr.strategy should be preserved");
     }
 
@@ -652,10 +658,29 @@ public class PDFParserTest extends TikaTest {
                         .get(MediaType.application("pdf"));
         assertEquals("org.apache.tika.parser.pdf.PDFParser",
                 pdfParser.getClass().getName());
-        assertEquals(OcrConfig.Strategy.OCR_ONLY,
-                ((PDFParser) pdfParser).getPDFParserConfig().getOcr().getStrategy());
+        assertEquals(PDFParserConfig.TextPolicy.OCR,
+                ((PDFParser) pdfParser).getPDFParserConfig().getText());
         assertEquals(OcrConfig.ImageType.RGB,
                 ((PDFParser) pdfParser).getPDFParserConfig().getOcr().getImageType());
+    }
+
+    /** A config written with the 4.0 ocr.strategy alias is dumped as the 4.1 "text" key. */
+    @Test
+    public void testOcrStrategyAliasDumpsAsText() throws Exception {
+        TikaLoader loader = TikaLoaderHelper.getLoader("tika-config-non-primitives.json");
+        loader.loadAutoDetectParser();
+        JsonNode pdf = null;
+        for (JsonNode entry
+                : new ObjectMapper().readTree(loader.toJson())
+                .get("parsers")) {
+            if (entry.has("pdf-parser")) {
+                pdf = entry.get("pdf-parser");
+            }
+        }
+        assertNotNull(pdf);
+        JsonNode config = pdf.has("defaultConfig") ? pdf.get("defaultConfig") : pdf;
+        assertEquals("OCR", config.get("text").asText());
+        assertFalse(config.get("ocr").has("strategy"), "the alias is not written back");
     }
 
     private ParseContext configureRenderingParseContext() {
@@ -681,14 +706,7 @@ public class PDFParserTest extends TikaTest {
         }
     }
 
-    /**
-     * Asserts that the actual content type matches the expected type,
-     * allowing for the "ocr-" prefix that appears when tesseract is available.
-     * e.g., "image/jpeg" matches both "image/jpeg" and "image/ocr-jpeg".
-     */
     private void assertImageContentType(String expected, String actual) {
-        String ocrVariant = expected.replace("image/", "image/ocr-");
-        assertTrue(expected.equals(actual) || ocrVariant.equals(actual),
-                "Expected " + expected + " or " + ocrVariant + " but got: " + actual);
+        assertEquals(expected, actual);
     }
 }

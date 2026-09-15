@@ -43,12 +43,12 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ParentContentHandler;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractExternalProcessParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.enricher.ContentEnricher;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
@@ -66,29 +66,24 @@ import org.apache.tika.sax.XHTMLContentHandler;
 @TikaComponent(spi = false)
 public class EncodeOCRParser
         extends AbstractExternalProcessParser
-        implements Initializable {
+        implements Initializable, ContentEnricher {
 
-    private static final String OCR = "ocr-";
     private static final Logger LOG = LoggerFactory.getLogger(
             EncodeOCRParser.class);
     private static final Object[] LOCK = new Object[0];
     private static final long serialVersionUID = -8167538283213097266L;
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MediaType.image(OCR + "png"),
-                    MediaType.image(OCR + "jpeg"),
-                    MediaType.image(OCR + "tiff"),
-                    MediaType.image(OCR + "bmp"),
-                    MediaType.image(OCR + "gif"),
-                    // these are not currently covered by other parsers
+                    MediaType.image("png"),
+                    MediaType.image("jpeg"),
+                    MediaType.image("tiff"),
+                    MediaType.image("bmp"),
+                    MediaType.image("gif"),
                     MediaType.image("jp2"),
                     MediaType.image("jpx"),
-                    MediaType.image("x-portable-pixmap"),
-                    // add the ocr- versions as well
-                    MediaType.image(OCR + "jp2"),
-                    MediaType.image(OCR + "jpx"),
-                    MediaType.image(OCR + "x-portable-pixmap")
+                    MediaType.image("x-portable-pixmap")
             )));
+
     private static volatile boolean hasWarned = false;
 
     private EncodeOCRConfig defaultConfig = new EncodeOCRConfig();
@@ -136,8 +131,6 @@ public class EncodeOCRParser
             Metadata metadata,
             ParseContext parseContext
     ) throws IOException, SAXException, TikaException {
-        normalizeOCRMimeMetadata(metadata);
-
         ParseContext workingContext =
                 parseContext != null ? parseContext : new ParseContext();
 
@@ -187,30 +180,6 @@ public class EncodeOCRParser
                         new BodyContentHandler(
                                 parentContentHandler.getContentHandler())),
                 handler);
-    }
-
-    private void normalizeOCRMimeMetadata(Metadata metadata) {
-        String parserOverride = metadata.get(
-                TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
-        if (parserOverride != null) {
-            MediaType overrideType = MediaType.parse(parserOverride);
-            if (overrideType != null
-                    && overrideType.getSubtype().startsWith(OCR)) {
-                metadata.remove(TikaCoreProperties
-                        .CONTENT_TYPE_PARSER_OVERRIDE.getName());
-            }
-        }
-        String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
-        if (contentType != null) {
-            MediaType parsedType = MediaType.parse(contentType);
-            if (parsedType != null
-                    && parsedType.getSubtype().startsWith(OCR)) {
-                metadata.set(HttpHeaders.CONTENT_TYPE,
-                        new MediaType(parsedType.getType(),
-                                parsedType.getSubtype().substring(
-                                        OCR.length())).toString());
-            }
-        }
     }
 
     private void doEncode(

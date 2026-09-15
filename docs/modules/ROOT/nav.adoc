@@ -14,6 +14,7 @@
 // limitations under the License.
 
 * xref:index.adoc[Home]
+* xref:formats.adoc[Supported Formats]
 * xref:using-tika/index.adoc[Using Tika]
 ** xref:using-tika/java-api/index.adoc[Java API]
 *** xref:using-tika/java-api/getting-started.adoc[Getting Started with the Java API]
@@ -60,6 +61,8 @@
 ** xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers (Claude, Gemini, OpenAI)]
 ** xref:configuration/parsers/external-parser.adoc[External Parser (ffmpeg, exiftool, etc.)]
 ** xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR (In-Process, advanced)]
+** xref:configuration/inference.adoc[Inference: Engines and Bindings]
+** xref:configuration/inference-recipes.adoc[OCR and Inference Recipes]
 ** xref:configuration/metadata-filters.adoc[Metadata Filters]
 ** xref:configuration/detectors.adoc[Detectors]
 ** xref:configuration/digesters.adoc[Digesters]
@@ -94,6 +97,7 @@
 * xref:developers/index.adoc[Developers]
 ** xref:developers/serialization.adoc[Serialization and Configuration]
 ** xref:developers/metadata-keys.adoc[Adding a Metadata Key]
+** xref:developers/custom-ocr-engine.adoc[Wiring in Your Own OCR Engine]
 * xref:faq.adoc[FAQ]
 * xref:roadmap.adoc[Roadmap]
 * xref:maintainers/index.adoc[Maintainers]

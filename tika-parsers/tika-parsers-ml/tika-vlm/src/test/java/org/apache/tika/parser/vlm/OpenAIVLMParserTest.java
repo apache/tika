@@ -17,6 +17,7 @@
 package org.apache.tika.parser.vlm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -309,5 +310,22 @@ public class OpenAIVLMParserTest {
                 content.replace("\\", "\\\\").replace("\"", "\\\"")
                         .replace("\n", "\\n"),
                 prompt, completion);
+    }
+
+    /** The capability follows the configuration: a captioning prompt is not a recognizer. */
+    @Test
+    void testRecognizesTextFollowsConfig() {
+        assertTrue(parser.recognizesText(new ParseContext()));
+
+        VLMOCRConfig captioner = new VLMOCRConfig();
+        captioner.setTextRecognizer(false);
+        ParseContext context = new ParseContext();
+        context.set(VLMOCRConfig.class, captioner);
+        assertFalse(parser.recognizesText(context));
+
+        VLMOCRConfig skipped = new VLMOCRConfig();
+        skipped.setSkipOcr(true);
+        context.set(VLMOCRConfig.class, skipped);
+        assertFalse(parser.recognizesText(context));
     }
 }

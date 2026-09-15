@@ -245,6 +245,29 @@ public class ReopenableSourceTest {
         }
     }
 
+    /**
+     * A declared length far above the content, against a budget that could never
+     * grant it: the claim must not be what gets reserved, or a 500-byte payload is
+     * pushed to disk by a number the file made up.
+     */
+    @Test
+    public void testLyingDeclaredLengthDoesNotReserveOrSpill() throws Exception {
+        byte[] data = data(500);
+        AtomicInteger opens = new AtomicInteger();
+        CacheMemoryBudget budget = new CacheMemoryBudget(1024);
+        try (ReopenableSource source = new ReopenableSource(countingOpener(data, opens), tmp,
+                50L * 1024 * 1024, null)) {
+            source.enableRewind(budget);
+            try (SeekableByteChannel channel = source.getSeekableByteChannel()) {
+                assertInstanceOf(MemorySeekableByteChannel.class, channel);
+                assertArrayEquals(data, readFully(channel));
+            }
+            assertFalse(source.hasPath());
+            assertEquals(0, budget.getReservedBytes(), "nothing reserved for a 500 byte payload");
+            assertEquals(500, source.getLength());
+        }
+    }
+
     @Test
     public void testLyingDeclaredLengthCorrected() throws Exception {
         byte[] data = data(500);

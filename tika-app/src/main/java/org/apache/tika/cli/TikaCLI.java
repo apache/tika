@@ -96,6 +96,7 @@ import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RecursiveParserWrapper;
 import org.apache.tika.parser.digestutils.CommonsDigesterFactory;
+import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.fork.PipesForkParser;
 import org.apache.tika.pipes.fork.PipesForkParserConfig;
@@ -525,6 +526,10 @@ public class TikaCLI {
         } else if (arg.equals("--list-parser-detail-apt") || arg.equals("--list-parser-details-apt")) {
             pipeMode = false;
             displayParsers(true, true);
+        } else if (arg.equals("--list-parser-detail-adoc") || arg.equals("--list-parser-details-adoc")) {
+            pipeMode = false;
+            configure();
+            System.out.print(SupportedFormatsAdoc.render(parser));
         } else if (arg.equals("--list-met-models")) {
             pipeMode = false;
             displayMetModels();
@@ -736,6 +741,10 @@ public class TikaCLI {
         JsonMetadataList.setPrettyPrinting(prettyPrint);
         try (Writer writer = getOutputWriter(output, encoding)) {
             List<Metadata> metadataList = handler.getMetadataList();
+            InferenceDispatcher inference = tikaLoader.get(InferenceDispatcher.class);
+            if (inference != null) {
+                inference.text(metadataList, context);
+            }
             tikaLoader.loadMetadataFilters().filter(metadataList);
             JsonMetadataList.toJson(metadataList, writer);
         }
@@ -932,6 +941,8 @@ public class TikaCLI {
         out.println("         List the available document parsers and their supported mime types");
         out.println("    --list-parser-details-apt");
         out.println("         List the available document parsers and their supported mime types in apt format.");
+        out.println("    --list-parser-details-adoc");
+        out.println("         Same, in AsciiDoc; regenerates docs/modules/ROOT/partials/supported-formats.adoc");
         out.println("    --list-detectors");
         out.println("         List the available document detectors");
         out.println("    --list-detector-names");
@@ -1387,41 +1398,28 @@ public class TikaCLI {
         }
     }
 
+    /** Swallows the document; {@link #output()} writes the metadata after the parse. */
     private static class NoDocumentMetHandler extends DefaultHandler {
 
         protected final Metadata metadata;
 
         protected PrintWriter writer;
 
-        private boolean metOutput;
-
         public NoDocumentMetHandler(Metadata metadata, PrintWriter writer) {
             this.metadata = metadata;
             this.writer = writer;
-            this.metOutput = false;
         }
 
-        @Override
-        public void endDocument() {
+        public void output() throws IOException {
             String[] names = metadata.names();
             Arrays.sort(names);
-            outputMetadata(names);
-            writer.flush();
-            this.metOutput = true;
-        }
-
-        public void outputMetadata(String[] names) {
             for (String name : names) {
                 for (String value : metadata.getValues(name)) {
                     writer.println(name + ": " + value);
                 }
             }
+            writer.flush();
         }
-
-        public boolean metOutput() {
-            return this.metOutput;
-        }
-
     }
 
     /**
@@ -1466,16 +1464,16 @@ public class TikaCLI {
 
     private class OutputType {
         public void process(TikaInputStream tis, OutputStream output, Metadata metadata) throws Exception {
-            Parser p = parser;
             ContentHandler handler = getContentHandler(output, metadata);
-            p.parse(tis, handler, metadata, context);
-            // fix for TIKA-596: if a parser doesn't generate
-            // XHTML output, the lack of an output document prevents
-            // metadata from being output: this fixes that
-            if (handler instanceof NoDocumentMetHandler) {
-                NoDocumentMetHandler metHandler = (NoDocumentMetHandler) handler;
-                if (!metHandler.metOutput()) {
-                    metHandler.endDocument();
+            try {
+                parser.parse(tis, handler, metadata, context);
+            } finally {
+                // Metadata is written once parse() returns, never at endDocument: parsers
+                // set keys after their SAX document ends (the PDF totals in a finally block,
+                // tk:parsed-by-full-set), some never start a document (TIKA-596), and a
+                // failed parse still has metadata worth showing before the error.
+                if (handler instanceof NoDocumentMetHandler metHandler) {
+                    metHandler.output();
                 }
             }
         }
@@ -1487,26 +1485,17 @@ public class TikaCLI {
     }
 
 
-    private class NoDocumentJSONMetHandler extends DefaultHandler {
-
-        protected final Metadata metadata;
-
-        protected PrintWriter writer;
+    private class NoDocumentJSONMetHandler extends NoDocumentMetHandler {
 
         public NoDocumentJSONMetHandler(Metadata metadata, PrintWriter writer) {
-            this.metadata = metadata;
-            this.writer = writer;
+            super(metadata, writer);
         }
 
         @Override
-        public void endDocument() throws SAXException {
-            try {
-                JsonMetadata.setPrettyPrinting(prettyPrint);
-                JsonMetadata.toJson(metadata, writer);
-                writer.flush();
-            } catch (IOException e) {
-                throw new SAXException(e);
-            }
+        public void output() throws IOException {
+            JsonMetadata.setPrettyPrinting(prettyPrint);
+            JsonMetadata.toJson(metadata, writer);
+            writer.flush();
         }
     }
 }

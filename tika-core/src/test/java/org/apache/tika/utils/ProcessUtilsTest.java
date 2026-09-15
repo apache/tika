@@ -16,10 +16,16 @@
  */
 package org.apache.tika.utils;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.ParseTimeout;
@@ -132,5 +138,51 @@ public class ProcessUtilsTest {
         assertFalse(result, "a command that outlives its timeout must report failure");
         assertTrue(elapsed < 4_000,
                 "checkCommandWithTimeout must honor its own timeout, not the default; took " + elapsed + "ms");
+    }
+
+    @Test
+    public void testExecuteFailsFastIfTimeoutIsZero() throws Exception {
+        assumeFalse(SystemUtils.IS_OS_WINDOWS);
+
+        ProcessBuilder pb = new ProcessBuilder("non-existing-command-throwing-exception-if-executed");
+        ParseContext context = new ParseContext();
+        context.set(TimeoutLimits.class, new TimeoutLimits(0, 0));
+
+        long start = System.nanoTime();
+        FileProcessResult result = ProcessUtils.execute(pb, context, 5_000L, 1000, 1000);
+        long elapsed = System.nanoTime() - start;
+
+        assertSubprocessDidNotStart(result, elapsed);
+    }
+
+    @Test
+    public void testExecuteWithRedirectFailsFastIfTimeoutIsZero() throws Exception {
+        ParseContext context = new ParseContext();
+        context.set(TimeoutLimits.class, new TimeoutLimits(0, 0));
+        ProcessBuilder pb = new ProcessBuilder("non-existing-command-throwing-exception-if-executed");
+        Path stdoutRedirect = createTmpRedirect();
+
+        long start = System.nanoTime();
+        FileProcessResult result = ProcessUtils.execute(pb, context, 5_000L, stdoutRedirect, 1000);
+        long elapsed = System.nanoTime() - start;
+
+        assertSubprocessDidNotStart(result, elapsed);
+    }
+
+    private static @NonNull Path createTmpRedirect() throws IOException {
+        Path tmpDir = Path.of(System.getProperty("java.io.tmpdir"));
+        Files.createDirectories(tmpDir);
+        Path stdoutRedirect = Files.createTempFile(tmpDir, "tika-test-", ".out");
+        stdoutRedirect.toFile().deleteOnExit();
+        return stdoutRedirect;
+    }
+
+    private static void assertSubprocessDidNotStart(FileProcessResult result, long elapsed) {
+        assertTrue(result.isTimeout(), "a process with a 0 timeout should timeout immediately without starting");
+        assertEquals(0, result.getGrantedTimeoutMillis(), "the process should not have been granted any timeout; got " + result.getGrantedTimeoutMillis() + "ms");
+        assertEquals(0, result.getProcessTimeMillis(), "processTimeMillis should be 0 on fast path");
+        assertEquals(0, result.getStdoutLength(), "stdoutLength should be 0 on fast path");
+        assertEquals(0, result.getStderrLength(), "stderrLength should be 0 on fast path");
+        assertTrue(elapsed < 4_000_000_000L, "fast path should return without spawning; took " + elapsed + "ms");
     }
 }

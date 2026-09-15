@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -282,6 +283,22 @@ public class TikaCLITest {
     }
 
     /**
+     * Keys a parser sets after its SAX document ends (the PDF parser's document totals in
+     * its finally block, tk:parsed-by-full-set from the composite) must still reach -m and
+     * --json, which used to write at endDocument.
+     */
+    @Test
+    public void testMetadataSetAfterEndDocumentIsOutput() throws Exception {
+        String content = getParamOutContent("-m", resourcePrefix + "testPDF_childAttachments.pdf");
+        assertTrue(content.contains("pdf:ocr-page-count: 0"), content);
+        assertTrue(content.contains("tk:parsed-by-full-set:"), content);
+
+        String json = getParamOutContent("--json", resourcePrefix + "testPDF_childAttachments.pdf");
+        assertTrue(json.contains("\"pdf:ocr-page-count\":"), json);
+        assertTrue(json.contains("\"tk:parsed-by-full-set\":"), json);
+    }
+
+    /**
      * Test for -json with prettyprint option
      *
      * @throws Exception
@@ -518,29 +535,7 @@ public class TikaCLITest {
         return names;
     }
 
-    /**
-     * When tesseract is available, image types get an "ocr-" prefix (e.g., image/ocr-jpeg)
-     * which has no registered extension, so extracted files fall back to ".bin".
-     * This helper accepts either the expected name or its ".bin" variant for image extensions.
-     */
-    private static final Set<String> IMAGE_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png",
-            ".gif", ".bmp", ".tiff", ".tif", ".jp2");
-
     private void assertContainsFile(Set<String> fileNames, String expected) {
-        if (fileNames.contains(expected)) {
-            return;
-        }
-        // Check if this is an image file that might have .bin extension due to OCR
-        int dotIndex = expected.lastIndexOf('.');
-        if (dotIndex > 0) {
-            String ext = expected.substring(dotIndex);
-            if (IMAGE_EXTENSIONS.contains(ext.toLowerCase(java.util.Locale.ROOT))) {
-                String binVariant = expected.substring(0, dotIndex) + ".bin";
-                assertTrue(fileNames.contains(expected) || fileNames.contains(binVariant),
-                        "Expected " + expected + " or " + binVariant + " in " + fileNames);
-                return;
-            }
-        }
         assertTrue(fileNames.contains(expected), "Expected " + expected + " in " + fileNames);
     }
 
@@ -858,6 +853,32 @@ public class TikaCLITest {
 
         content = getParamOutContent("--list-parser-details-apt");
         assertTrue(content.contains("application/vnd.oasis.opendocument.text-web"));
+    }
+
+    @Test
+    public void testListParserDetailAdoc() throws Exception {
+        String content = getParamOutContent("--list-parser-details-adoc");
+        assertTrue(content.startsWith(SupportedFormatsAdoc.HEADER));
+        assertTrue(content.contains(
+                "link:{tika-javadoc-url}/org/apache/tika/parser/pdf/PDFParser.html[PDFParser]"));
+        assertTrue(content.contains("** `application/vnd.oasis.opendocument.text-web`"));
+        // Tesseract is hidden so the listing is the same with or without the binary.
+        assertFalse(content.contains("TesseractOCRParser"));
+    }
+
+    /**
+     * The docs' Supported Formats page includes a checked-in copy of the adoc
+     * listing. Fail when it drifts from the parsers actually on the classpath.
+     */
+    @Test
+    public void testSupportedFormatsPartialIsCurrent() throws Exception {
+        Path partial = Paths.get("..", "docs", "modules", "ROOT", "partials", "supported-formats.adoc");
+        assumeTrue(Files.isRegularFile(partial), "docs partial not present in this checkout");
+        String expected = getParamOutContent("--list-parser-details-adoc").replace("\r\n", "\n");
+        String actual = Files.readString(partial, UTF_8).replace("\r\n", "\n");
+        assertEquals(expected, actual, "docs/modules/ROOT/partials/supported-formats.adoc is stale; regenerate with:\n" +
+                "  java -jar tika-app/target/tika-app-<version>.jar --list-parser-details-adoc " +
+                "> docs/modules/ROOT/partials/supported-formats.adoc");
     }
 
     /**

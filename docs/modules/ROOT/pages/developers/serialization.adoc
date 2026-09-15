@@ -56,7 +56,7 @@ Inside an array-valued section (`parsers`, `detectors`, `encoding-detectors`,
 `metadata-filters`) an element can be specified as:
 
 * **String**: `"pdf-parser"` - creates instance with defaults
-* **Object**: `{"pdf-parser": {"ocr": {"strategy": "AUTO"}}}` - creates configured instance
+* **Object**: `{"pdf-parser": {"text": "AUTO"}}` - creates configured instance
 
 Object-valued sections such as `parse-context` key each entry by name instead, with
 the config object as the value.
@@ -220,9 +220,7 @@ Benefits:
 {
   "parse-context": {
     "pdf-parser": {
-      "ocr": {
-        "strategy": "AUTO"
-      },
+      "text": "AUTO",
       "extractInlineImages": true
     },
     "commons-digester-factory": {
@@ -236,6 +234,7 @@ All entries use this flat, friendly-named form and are resolved lazily: a config
 is parsed into its component only when first needed (see `resolveAll`). There is
 no separate "immediate" or "typed" form.
 
+[#security-model]
 == Security Model
 
 The serialization system implements a security allowlist:
@@ -257,7 +256,7 @@ extends `SelfConfiguring` — are skipped by the wire-block scan
 (`ParseContextDeserializer.assertNoBlockedComponents`): their config subtree is
 passed through to the component unexamined. So while a request cannot bind a new
 `Parser` from the wire, a request carrying
-`{"parse-context": {"pdf-parser": {"ocr": {"strategy": "OCR_AND_TEXT_EXTRACTION"}}}}`
+`{"parse-context": {"pdf-parser": {"text": "EXTRACT_AND_OCR"}}}`
 will reach `PDFParser` and take effect.
 
 That is why per-request configuration is gated separately by

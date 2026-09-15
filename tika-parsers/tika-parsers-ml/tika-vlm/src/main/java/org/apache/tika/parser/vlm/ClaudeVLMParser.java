@@ -59,18 +59,16 @@ public class ClaudeVLMParser extends AbstractVLMParser {
 
     private static final String ANTHROPIC_VERSION = "2023-06-01";
 
-    private static final String OCR = "ocr-";
-
     private static final Set<MediaType> SUPPORTED_TYPES;
 
     static {
         Set<MediaType> types = new HashSet<>(Arrays.asList(
                 // images — Claude supports JPEG, PNG, GIF, WebP
-                MediaType.image(OCR + "png"),
-                MediaType.image(OCR + "jpeg"),
-                MediaType.image(OCR + "gif"),
+                MediaType.image("png"),
+                MediaType.image("jpeg"),
+                MediaType.image("gif"),
                 MediaType.image("webp"),
-                MediaType.image(OCR + "webp"),
+
                 // PDFs — Claude handles these natively with vision
                 MediaType.application("pdf")
         ));

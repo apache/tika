@@ -102,7 +102,7 @@ public class LoaderContext {
     /**
      * Get the configured content enrichers for injection into enriching parsers.
      *
-     * @return the composite, or null when no "content-enrichers" are configured
+     * @return the composite, or null when no "text-recognizers" are configured
      * @throws TikaConfigException if loading fails
      */
     public CompositeContentEnricher getContentEnrichers() throws TikaConfigException {

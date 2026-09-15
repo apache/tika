@@ -28,6 +28,7 @@ import org.apache.tika.detect.DefaultEncodingDetector;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.utils.ServiceLoaderUtils;
@@ -156,23 +157,20 @@ public class DefaultParser extends CompositeParser {
         }
     }
 
+    /**
+     * SPI parsers then dynamic providers, minus the enrichers: an enricher the classpath
+     * supplied is never dispatched to. Naming it under {@code "parsers"} makes it a parser.
+     */
     @Override
     public Map<MediaType, Parser> getParsers(ParseContext context) {
-        Map<MediaType, Parser> map = super.getParsers(context);
-
+        List<Parser> all = new ArrayList<>(super.getAllComponentParsers());
         if (loader != null) {
-            // Add dynamic parser service (they always override static ones)
-            MediaTypeRegistry registry = getMediaTypeRegistry();
-            List<Parser> parsers = loader.loadDynamicServiceProviders(Parser.class);
-            Collections.reverse(parsers); // best parser last
-            for (Parser parser : parsers) {
-                for (MediaType type : parser.getSupportedTypes(context)) {
-                    map.put(registry.normalize(type), parser);
-                }
-            }
+            List<Parser> dynamic = loader.loadDynamicServiceProviders(Parser.class);
+            Collections.reverse(dynamic); // best parser last
+            all.addAll(dynamic);
         }
-
-        return map;
+        all.removeIf(ContentEnrichers::isEnricher);
+        return buildParserMap(all, context);
     }
 
     @Override

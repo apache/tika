@@ -39,6 +39,25 @@ public class PDFParserConfig implements Serializable {
     /**
      * Mode for checking document access permissions.
      */
+    /**
+     * Where a page's text comes from: the content stream, OCR of the rendered page, both,
+     * the per-page verdict, or nowhere. Set with {@code "text"}; the 4.0 {@code ocr.strategy}
+     * spellings are aliases ({@code NO_OCR} = {@link #EXTRACT}, {@code OCR_ONLY} =
+     * {@link #OCR}, {@code OCR_AND_TEXT_EXTRACTION} = {@link #EXTRACT_AND_OCR}).
+     */
+    public enum TextPolicy {
+        /** The content stream only; never OCR. */
+        EXTRACT,
+        /** The content stream, OCR where the verdict says the page needs it. */
+        AUTO,
+        /** Both, every page. */
+        EXTRACT_AND_OCR,
+        /** OCR only; the content stream is not read. */
+        OCR,
+        /** No text from any source; pages are still rendered for annotators and inference. */
+        NONE
+    }
+
     public enum AccessCheckMode {
         /**
          * Don't check extraction permissions. Content will always be extracted
@@ -97,9 +116,7 @@ public class PDFParserConfig implements Serializable {
     //a pdf file) should only be extracted once.
     private boolean extractUniqueInlineImagesOnly = true;
 
-    //Should the PDFParser _try_ to extract marked content/structure tags (backoff to regular
-    //text extraction if the given PDF doesn't have marked content)
-    private boolean extractMarkedContent = false;
+    private MarkedContentConfig markedContent = new MarkedContentConfig();
 
     //The character width-based tolerance value used to estimate where spaces in text should be
     // added. Default taken from PDFBox.
@@ -118,6 +135,10 @@ public class PDFParserConfig implements Serializable {
     private boolean ifXFAExtractOnlyXFA = false;
 
     private OcrConfig ocr = new OcrConfig();
+    /** Null until set; {@link #getText()} then falls back to the {@code ocr.strategy} alias. */
+    private TextPolicy text;
+
+    private InferenceConfig inference = new InferenceConfig();
 
     /**
      * Should the entire document be rendered?
@@ -149,6 +170,8 @@ public class PDFParserConfig implements Serializable {
 
     private int maxPages = -1;
 
+    private int maxRenderedPages = -1;
+
     private boolean throwOnEncryptedPayload = false;
 
     /**
@@ -173,20 +196,27 @@ public class PDFParserConfig implements Serializable {
         this.extractInlineImageMetadataOnly = extractInlineImageMetadataOnly;
     }
 
-    public boolean isExtractMarkedContent() {
-        return extractMarkedContent;
+    public MarkedContentConfig getMarkedContent() {
+        return markedContent;
     }
 
     /**
-     * If the PDF contains marked content, try to extract text and its marked structure.
-     * If the PDF does not contain marked content, backoff to the regular PDF2XHTML for
-     * text extraction.  As of 1.24, this is an "alpha" version.
-     *
-     * @param extractMarkedContent
-     * @since 1.24
+     * How to use a PDF's structure tree (tagged PDF); see {@link MarkedContentConfig}.
+     * A PDF without a structure tree always uses the text stripper.
      */
+    public void setMarkedContent(MarkedContentConfig markedContent) {
+        this.markedContent = markedContent == null ? new MarkedContentConfig() : markedContent;
+    }
+
+    /**
+     * @deprecated since 4.1.0; use {@link #setMarkedContent(MarkedContentConfig)}.
+     * {@code true} is {@link MarkedContentConfig.Strategy#TAGS}, {@code false} is
+     * {@link MarkedContentConfig.Strategy#NONE}.
+     */
+    @Deprecated
     public void setExtractMarkedContent(boolean extractMarkedContent) {
-        this.extractMarkedContent = extractMarkedContent;
+        markedContent.setStrategy(extractMarkedContent ? MarkedContentConfig.Strategy.TAGS :
+                MarkedContentConfig.Strategy.NONE);
     }
 
     /**
@@ -522,9 +552,31 @@ public class PDFParserConfig implements Serializable {
         this.ocr = ocr;
     }
 
+    /** The text policy: {@code "text"} if set, else the {@code ocr.strategy} alias, else AUTO. */
+    public TextPolicy getText() {
+        if (text != null) {
+            return text;
+        }
+        TextPolicy legacy = ocr == null ? null : ocr.legacyText();
+        return legacy != null ? legacy : TextPolicy.AUTO;
+    }
+
+    public void setText(TextPolicy text) {
+        this.text = text;
+    }
+
+    /** What this parser releases to the inference bindings. */
+    public InferenceConfig getInference() {
+        return inference;
+    }
+
+    public void setInference(InferenceConfig inference) {
+        this.inference = inference == null ? new InferenceConfig() : inference;
+    }
+
     // OCR settings are configured through the nested OcrConfig (getOcr()/setOcr()).
     // The flat ocr* convenience accessors (getOcrStrategy/setOcrDPI/...) were removed in
-    // 4.x so that "ocr" is the single JSON spelling; use getOcr().setStrategy(...) etc.
+    // 4.x so that "ocr" is the single JSON spelling; use getOcr().setDpi(...) etc.
 
     /**
      * @return whether or not to extract PDActions
@@ -679,6 +731,32 @@ public class PDFParserConfig implements Serializable {
                     "maxPages must be -1 (no limit) or >= 1, got: " + maxPages);
         }
         this.maxPages = maxPages;
+    }
+
+    /**
+     * @return maximum number of pages to render with the
+     * {@code RENDER_PAGES_BEFORE_PARSE} and {@code RENDER_PAGES_AT_PAGE_END}
+     * image strategies, or -1 for no limit
+     */
+    public int getMaxRenderedPages() {
+        return maxRenderedPages;
+    }
+
+    /**
+     * Set the maximum number of pages to render, counted from the first
+     * page, independent of {@link #setMaxPages(int)}: text extraction can
+     * cover the whole document while only its first page is rendered, as
+     * for a thumbnail. Use -1 (the default) for no limit.
+     *
+     * @param maxRenderedPages must be -1 or &gt;= 1
+     * @throws IllegalArgumentException if the value is 0 or less than -1
+     */
+    public void setMaxRenderedPages(int maxRenderedPages) {
+        if (maxRenderedPages != -1 && maxRenderedPages < 1) {
+            throw new IllegalArgumentException(
+                    "maxRenderedPages must be -1 (no limit) or >= 1, got: " + maxRenderedPages);
+        }
+        this.maxRenderedPages = maxRenderedPages;
     }
 
     public void setThrowOnEncryptedPayload(boolean throwOnEncryptedPayload) {

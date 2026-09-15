@@ -105,6 +105,13 @@
       <groupId>org.slf4j</groupId>
       <artifactId>jcl-over-slf4j</artifactId>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-http-jdk</artifactId>
+      <version>${project.version}</version>
+      <classifier>tests</classifier>
+      <scope>test</scope>
+    </dependency>
     <!-- The zip deps are what force reactor ordering; the zips are consumed by dependency-plugin below. -->
     <dependency>
       <groupId>org.apache.tika</groupId>

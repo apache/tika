@@ -32,6 +32,7 @@ import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.ParentMetadata;
 import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -73,7 +74,7 @@ public class OpenAIImageEmbeddingParserTest {
         byte[] fakeImage = new byte[]{(byte) 0x89, 'P', 'N', 'G'};
 
         Metadata metadata = new Metadata();
-        metadata.set(HttpHeaders.CONTENT_TYPE, "image/ocr-png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -104,7 +105,7 @@ public class OpenAIImageEmbeddingParserTest {
         byte[] fakeImage = new byte[]{1, 2, 3};
 
         Metadata metadata = new Metadata();
-        metadata.set(HttpHeaders.CONTENT_TYPE, "image/ocr-png");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
         metadata.set(TikaPagedText.PAGE_NUMBER, 7);
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
@@ -128,7 +129,7 @@ public class OpenAIImageEmbeddingParserTest {
         byte[] fakeImage = new byte[]{1, 2, 3};
 
         Metadata metadata = new Metadata();
-        metadata.set(HttpHeaders.CONTENT_TYPE, "image/ocr-jpeg");
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
 
         try (TikaInputStream tis = TikaInputStream.get(fakeImage)) {
             parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
@@ -136,7 +137,6 @@ public class OpenAIImageEmbeddingParserTest {
 
         TikaTestHttpServer.RecordedRequest request = server.takeRequest();
         JsonNode body = MAPPER.readTree(request.body());
-        // Should strip "ocr-" prefix: image/ocr-jpeg -> image/jpeg
         assertTrue(body.get("input").get(0).get("image").asText()
                 .startsWith("data:image/jpeg;base64,"));
     }
@@ -243,14 +243,69 @@ public class OpenAIImageEmbeddingParserTest {
         assertEquals(4, merged.get(1).getVector().length);
     }
 
+    /** A picture in a docx body: its vector lands on the docx, naming the picture. */
+    @Test
+    void testInlineChildVectorLandsOnParent() throws Exception {
+        Metadata parent = new Metadata();
+        Metadata picture = new Metadata();
+        picture.set(HttpHeaders.CONTENT_TYPE, "image/png");
+        picture.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, "INLINE");
+        picture.set(TikaCoreProperties.EMBEDDED_ID_PATH, "/1");
+        picture.set(TikaCoreProperties.RESOURCE_NAME_KEY, "image1.png");
+        ParseContext context = new ParseContext();
+        context.set(ParentMetadata.class, new ParentMetadata(parent));
+
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, buildEmbeddingResponse(3)));
+        try (TikaInputStream tis = TikaInputStream.get(new byte[]{(byte) 0x89, 'P', 'N', 'G'})) {
+            parser.parse(tis, new DefaultHandler(), picture, context);
+        }
+        assertNull(picture.get(TikaCoreProperties.TIKA_CHUNKS), "the picture keeps nothing");
+        List<Chunk> chunks = ChunkSerializer.fromJson(parent.get(TikaCoreProperties.TIKA_CHUNKS));
+        assertEquals(1, chunks.size());
+        assertEquals("/1", chunks.get(0).getLocators().getEmbedded().get(0).getIdPath());
+        assertEquals("image1.png", chunks.get(0).getLocators().getEmbedded().get(0).getName());
+
+        ImageEmbeddingConfig own = new ImageEmbeddingConfig();
+        own.setBaseUrl(server.url());
+        own.setModel("clip");
+        own.setLiftToParent(false);
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, buildEmbeddingResponse(3)));
+        try (OpenAIImageEmbeddingParser keeping = new OpenAIImageEmbeddingParser(own);
+                TikaInputStream tis = TikaInputStream.get(new byte[]{(byte) 0x89, 'P', 'N', 'G'})) {
+            keeping.parse(tis, new DefaultHandler(), picture, context);
+        }
+        assertNotNull(picture.get(TikaCoreProperties.TIKA_CHUNKS), "liftToParent: false");
+        assertEquals(1, ChunkSerializer.fromJson(parent.get(TikaCoreProperties.TIKA_CHUNKS)).size());
+    }
+
     @Test
     void testSupportedTypes() {
         assertTrue(parser.getSupportedTypes(new ParseContext())
-                .contains(org.apache.tika.mime.MediaType.image("ocr-png")));
+                .contains(org.apache.tika.mime.MediaType.image("png")));
         assertTrue(parser.getSupportedTypes(new ParseContext())
-                .contains(org.apache.tika.mime.MediaType.image("ocr-jpeg")));
+                .contains(org.apache.tika.mime.MediaType.image("jpeg")));
         assertTrue(parser.getSupportedTypes(new ParseContext())
                 .contains(org.apache.tika.mime.MediaType.image("webp")));
+    }
+
+    /** A class-keyed skip is honored the way the OCR engines honor theirs. */
+    @Test
+    void testSkippedPerContext() throws Exception {
+        ImageEmbeddingConfig skipped = new ImageEmbeddingConfig();
+        skipped.setSkipEmbedding(true);
+        ParseContext context = new ParseContext();
+        context.set(ImageEmbeddingConfig.class, skipped);
+        assertTrue(parser.getSupportedTypes(context).isEmpty());
+        assertTrue(parser.getSupportedTypes(new ParseContext())
+                .contains(org.apache.tika.mime.MediaType.image("png")));
+
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
+        try (TikaInputStream tis = TikaInputStream.get(new byte[]{(byte) 0x89, 'P', 'N', 'G'})) {
+            parser.parse(tis, new DefaultHandler(), metadata, context);
+        }
+        assertNull(metadata.get(TikaCoreProperties.TIKA_CHUNKS));
+        assertEquals(0, server.getRequestCount());
     }
 
     @Test

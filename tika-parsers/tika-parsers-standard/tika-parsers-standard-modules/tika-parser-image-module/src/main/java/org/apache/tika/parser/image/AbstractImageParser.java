@@ -65,7 +65,7 @@ public abstract class AbstractImageParser implements Parser, EnrichingParser {
         //note: mediaType can be null if mediaTypeString is null or
         //not parseable.
         MediaType mediaType = normalizeMediaType(MediaType.parse(mediaTypeString));
-        Parser enricher = ContentEnrichers.get(contentEnrichers, mediaType, context);
+        Parser enricher = ContentEnrichers.get(contentEnrichers, mediaType, metadata, context);
         if (enricher == null) {
             extractMetadata(tis, handler, metadata, context);
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);

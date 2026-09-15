@@ -51,6 +51,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -184,7 +185,7 @@ public class EpubParser implements Parser {
             return fallbackParseAllHtmlEntries(zipFile, bodyHandler, normalizer, metadata, context,
                     "OPF entry missing or unreadable in (possibly truncated) container");
         }
-        try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(zae))) {
+        try (TikaInputStream tis = entryStream(zipFile, zae)) {
             opf.parse(tis, new DefaultHandler(), metadata, context);
         }
 
@@ -234,7 +235,7 @@ public class EpubParser implements Parser {
                     }
                     zae = zipFile.getEntry(relativePath + hRefMediaPair.href);
                     if (zae != null) {
-                        try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(zae))) {
+                        try (TikaInputStream tis = entryStream(zipFile, zae)) {
                             content.parse(tis, bodyHandler, metadata, context);
                             spineParsed++;
                         } catch (SAXException e) {
@@ -345,7 +346,7 @@ public class EpubParser implements Parser {
             if (!zipFile.canReadEntryData(entry)) {
                 continue;
             }
-            try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(entry))) {
+            try (TikaInputStream tis = entryStream(zipFile, entry)) {
                 content.parse(tis, bodyHandler, metadata, context);
                 parsed++;
             } catch (SAXException e) {
@@ -428,6 +429,11 @@ public class EpubParser implements Parser {
      * @param cover whether this is the publication's cover image, emitted as
      *              the {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}
      */
+    /** Re-opened from the zip on rewind rather than cached: the entry is in the container already. */
+    private static TikaInputStream entryStream(ZipFile zipFile, ZipArchiveEntry entry) {
+        return TikaInputStream.get(() -> zipFile.getInputStream(entry), new TemporaryResources(), null);
+    }
+
     private void handleEmbedded(ZipFile zipFile, String relativePath, HRefMediaPair hRefMediaPair,
                                 boolean cover,
                                 EmbeddedDocumentExtractor embeddedDocumentExtractor,
@@ -456,14 +462,14 @@ public class EpubParser implements Parser {
             return;
         }
 
-        TikaInputStream tis = null;
+        //open once now so a broken entry is recorded here, not mid-parse
         try {
-            tis = TikaInputStream.get(zipFile.getInputStream(ze));
+            zipFile.getInputStream(ze).close();
         } catch (IOException e) {
-            //store this exception in the parent's metadata
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
             return;
         }
+        TikaInputStream tis = entryStream(zipFile, ze);
 
         xhtml.startElement("div", "class", "embedded");
         try {
@@ -491,7 +497,7 @@ public class EpubParser implements Parser {
         }
         zae = zipFile.getEntry("metadata.xml");
         if (zae != null && zipFile.canReadEntryData(zae)) {
-            try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(zae))) {
+            try (TikaInputStream tis = entryStream(zipFile, zae)) {
                 meta.parse(tis, new DefaultHandler(), metadata, context);
             }
         }

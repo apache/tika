@@ -40,6 +40,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
@@ -144,11 +145,13 @@ public class MboxParser implements Parser {
                         saveHeaderInMetadata(mailMetadata, item);
                     }
 
-                    TikaInputStream msgStream = TikaInputStream.get(message.toInputStream());
-                    message = null;
-
-                    if (extractor.shouldParseEmbedded(mailMetadata, context)) {
-                        extractor.parseEmbedded(msgStream, xhtml, mailMetadata, context, true);
+                    //re-opened over the buffer on rewind rather than cached: the
+                    //message is in memory already, a digest must not copy it again
+                    try (TikaInputStream msgStream = TikaInputStream.get(message::toInputStream,
+                            new TemporaryResources(), null)) {
+                        if (extractor.shouldParseEmbedded(mailMetadata, context)) {
+                            extractor.parseEmbedded(msgStream, xhtml, mailMetadata, context, true);
+                        }
                     }
 
                     if (tracking) {

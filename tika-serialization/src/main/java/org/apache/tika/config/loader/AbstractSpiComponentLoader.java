@@ -74,14 +74,14 @@ public abstract class AbstractSpiComponentLoader<T> implements ComponentLoader<T
         if (!config.hasComponentSection(sectionName)) {
             // No config section - use full SPI default
             T defaultComposite = createDefaultComposite(Collections.emptySet(), context);
-            return postProcess(defaultComposite, context);
+            return finish(postProcess(defaultComposite, context), context);
         }
 
         List<Map.Entry<String, JsonNode>> entries = config.getArrayComponents(sectionName);
 
         if (entries.isEmpty()) {
             T defaultComposite = createDefaultComposite(Collections.emptySet(), context);
-            return postProcess(defaultComposite, context);
+            return finish(postProcess(defaultComposite, context), context);
         }
 
         // First pass: find default marker and its exclusions
@@ -123,7 +123,7 @@ public abstract class AbstractSpiComponentLoader<T> implements ComponentLoader<T
                     markerConfig.configNode(), context);
 
             if (components.isEmpty()) {
-                return postProcess(defaultComposite, context);
+                return finish(postProcess(defaultComposite, context), context);
             }
 
             // Insert at marker position to preserve ordering
@@ -137,7 +137,7 @@ public abstract class AbstractSpiComponentLoader<T> implements ComponentLoader<T
         // Post-process all components (e.g., inject dependencies)
         components = postProcessList(components, context);
 
-        return wrapInComposite(components, context);
+        return finish(wrapInComposite(components, context), context);
     }
 
     // ==================== Abstract methods for subclasses ====================
@@ -191,6 +191,19 @@ public abstract class AbstractSpiComponentLoader<T> implements ComponentLoader<T
      */
     protected T postProcess(T component, LoaderContext context) throws TikaConfigException {
         return component;
+    }
+
+    /**
+     * Last hook, on the assembled root (a composite, or the default composite alone).
+     * Default: returns it unchanged.
+     *
+     * @param root the fully assembled component
+     * @param context the loader context
+     * @return the component to hand out
+     * @throws TikaConfigException if finishing fails
+     */
+    protected T finish(T root, LoaderContext context) throws TikaConfigException {
+        return root;
     }
 
     /**

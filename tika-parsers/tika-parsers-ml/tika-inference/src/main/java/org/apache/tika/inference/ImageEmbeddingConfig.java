@@ -45,6 +45,13 @@ public class ImageEmbeddingConfig implements Serializable {
      */
     private String outputField = TikaCoreProperties.TIKA_CHUNKS.getName();
 
+    /**
+     * Put a picture's vector on the document the picture appears in (a docx, an email, a
+     * rendered page's PDF) rather than on the picture's own embedded document; attachments
+     * always keep their own. See {@link ChunkTarget}.
+     */
+    private boolean liftToParent = true;
+
     public String getBaseUrl() {
         return baseUrl;
     }
@@ -107,6 +114,14 @@ public class ImageEmbeddingConfig implements Serializable {
 
     public void setOutputField(String outputField) {
         this.outputField = outputField;
+    }
+
+    public boolean isLiftToParent() {
+        return liftToParent;
+    }
+
+    public void setLiftToParent(boolean liftToParent) {
+        this.liftToParent = liftToParent;
     }
 
     /**

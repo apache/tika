@@ -582,7 +582,7 @@ public interface IPTC {
      * Any algorithm to create this identifier has to comply with the technical
      * requirements to create a globally unique id. Any device creating digital
      * images - e.g. still image cameras, video cameras, scanners - should
-     * create such an identifer right at the time of the creation of the digital
+     * create such an identifier right at the time of the creation of the digital
      * data and add the id to the set of metadata without compromising
      * performance. It is recommended that this image identifier allows
      * identifying the device by which the image data and the GUID were created.
@@ -945,7 +945,7 @@ public interface IPTC {
      * <p>
      * This age should not be displayed to the public on open web portals and
      * the like. But it may be used by image repositories in a
-     * B2B enviroment.
+     * B2B environment.
      * <p>
      * This is a PLUS version 1.2 property included in the IPTC Extension
      * schema.
