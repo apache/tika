@@ -1467,18 +1467,9 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
             chain.add(n);
         }
         for (int i = chain.size() - 1; i >= 0; i--) {
-            chain.get(i).spec = buildSpec(chain.get(i));
+            chain.get(i).spec = buildSpec(chain.get(i), new AttributesImpl());
         }
         return node.spec;
-    }
-
-    private ElementSpec buildSpec(StructureIndex.Node node) {
-        try {
-            return buildSpec(node, new AttributesImpl());
-        } catch (RuntimeException e) {
-            // PDFBox's attribute model casts what it finds (PDFBOX: /Headers holding strings)
-            return buildSpec(node, null);
-        }
     }
 
     private ElementSpec buildSpec(StructureIndex.Node node, AttributesImpl attrs) {
