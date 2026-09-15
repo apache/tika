@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import javax.imageio.ImageIO;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -40,6 +42,8 @@ import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -112,6 +116,19 @@ public class ThumbnailPresetTest extends CXFTestBase {
         Map.Entry<String, byte[]> entry = entries.entrySet().iterator().next();
         assertTrue(entry.getKey().endsWith("." + format), entry.getKey());
         assertEquals(format, imageFormat(entry.getValue()), entry.getKey());
+    }
+
+    @Test
+    public void testPdfPageIsRenderedAt96DpiInColour() throws Exception {
+        byte[] png = unpack(PRESET_PATH, "testPDFTwoTextBoxes.pdf").values().iterator().next();
+        BufferedImage image = ImageIO.read(new ByteArrayInputStream(png));
+        float pageWidthPt;
+        try (PDDocument document = Loader.loadPDF(fixture("testPDFTwoTextBoxes.pdf").readAllBytes())) {
+            pageWidthPt = document.getPage(0).getMediaBox().getWidth();
+        }
+        // the preset's "rendering" block, not ocr's 300 dpi grayscale; PDFBox floors the width
+        assertEquals((int) Math.floor(pageWidthPt * 96 / 72f), image.getWidth());
+        assertEquals(3, image.getColorModel().getNumColorComponents());
     }
 
     @Test

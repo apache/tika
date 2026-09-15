@@ -842,11 +842,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         //if the full document has already been rendered, then reuse that file
         //TODO: we need to prevent this if only a portion of the page or portions
         //of the page have been rendered.
-        //TODO: we should also figure out how to not reuse the rendering if
-        //the user wants to render twice (say, full color to display to users, but
-        //grayscale for (notionally?) better OCR).
         PageBasedRenderResults results = (PageBasedRenderResults) renderingState.getRenderResults();
-        if (results != null) {
+        if (results != null && pageImageIsOcrImage()) {
             List<RenderResult> pageResults = results.getPage(getCurrentPageNo());
             if (pageResults.size() == 1) {
                 return pageResults.get(0);
@@ -877,6 +874,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         } else {
             return noContextRenderCurrentPage(pageMetadata, tmpResources);
         }
+    }
+
+    /** A page image rendered before the parse serves OCR only if OCR would render it the same. */
+    private boolean pageImageIsOcrImage() {
+        return config.getRendering().resolve(config.getOcr())
+                .rendersSameImageAs(RenderingConfig.from(config.getOcr()));
     }
 
     private Renderer getPDFRenderer() {
