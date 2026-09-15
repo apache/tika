@@ -1,10 +1,15 @@
 {
-  "text-recognizers": [
-    {
+  "engines": {
+    "claude": {
       "claude-vlm-parser": {
         "apiKey": "YOUR_ANTHROPIC_API_KEY",
         "model": "claude-sonnet-4-20250514"
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "claude"
     }
   ]
 }
