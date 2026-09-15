@@ -97,10 +97,15 @@ immediately capped.
 |`false`
 |Collect all embedded files into a single ZIP archive, emitted at the container's emit key plus `-embedded.zip`.
 
+|`includeMetadata`
+|boolean
+|unset: on for `FRICTIONLESS`, off for `REGULAR`
+|Metadata for every extracted file, in either format: one `metadata.json` under Frictionless (a data package without the parse is half a package, so it is on unless you set `false`), a `.metadata.json` sidecar per file under REGULAR zip output (opt-in; tika-server's `/unpack/all` sets it). REGULAR loose output (no zip) writes none.
+
 |`includeMetadataInZip`
 |boolean
-|`false`
-|Include `.metadata.json` files for each embedded document in the ZIP.
+|--
+|Deprecated alias for `includeMetadata` (removal in 5.0). Still accepted so 4.0.0 configs load.
 
 |`zeroPadName`
 |int
@@ -139,8 +144,8 @@ immediately capped.
 
 |`includeFullMetadata`
 |boolean
-|`false`
-|Include a `metadata.json` file with full RMETA-style metadata for all extracted files. Frictionless output only.
+|--
+|Deprecated alias for `includeMetadata` (removal in 5.0). Still accepted so 4.0.0 configs load.
 |===
 
 == Examples
@@ -158,7 +163,7 @@ Collect all embedded files into a ZIP with metadata:
   "parse-context": {
     "unpack-config": {
       "zipEmbeddedFiles": true,
-      "includeMetadataInZip": true,
+      "includeMetadata": true,
       "includeOriginal": true
     }
   }
@@ -233,7 +238,7 @@ Set `outputFormat` to `FRICTIONLESS` in your `unpack-config`:
   "parse-context": {
     "unpack-config": {
       "outputFormat": "FRICTIONLESS",
-      "includeFullMetadata": true
+      "includeMetadata": true
     }
   }
 }
@@ -247,7 +252,7 @@ When using Frictionless output format, the ZIP archive contains:
 ----
 output.zip
 ├── datapackage.json      # Manifest with file list, SHA256 hashes, mimetypes
-├── metadata.json         # Full RMETA metadata (if includeFullMetadata=true)
+├── metadata.json         # Full RMETA metadata (unless includeMetadata=false)
 └── unpacked/
     ├── 00000001.pdf
     ├── 00000002.png
@@ -255,18 +260,111 @@ output.zip
 ----
 
 The `tk:content` field inside `metadata.json` (and inside the per-file `.metadata.json`
-entries written by `includeMetadataInZip`) is Markdown by default. `/unpack` has no format
-segment in its path, so on tika-server the only way to change it is a
-`content-handler-factory` in the same `config` part. Each entry records the handler it was
-written with in `tk:content-handler-type`:
+sidecars `includeMetadata` adds to REGULAR zip output) is Markdown by default. On tika-server
+change it with `/unpack/all/{handlerType}` or a `content-handler-factory` in the `config`
+part; in a config, the factory alone. Each entry records the handler it was written with in
+`tk:content-handler-type`:
 
 [source,json]
 ----
 {
-  "unpack-config": { "outputFormat": "FRICTIONLESS", "includeFullMetadata": true },
+  "unpack-config": { "outputFormat": "FRICTIONLESS" },
   "basic-content-handler-factory": { "type": "XML" }
 }
 ----
+
+To get metadata with no extracted text at all -- one sidecar per file, but no `tk:content` --
+select the `IGNORE` handler. On the test corpus below this drops the sidecars from 20,257 to
+11,132 bytes and is the way to avoid shipping every embedded document's text alongside its
+bytes:
+
+[source,json]
+----
+{
+  "unpack-config": { "includeMetadata": true },
+  "basic-content-handler-factory": { "type": "IGNORE" }
+}
+----
+
+On tika-server the handler is also a path segment on `/unpack/all/{handlerType}`, which
+needs no `config` part and so no `allowPerRequestConfig`. Plain `/unpack` carries no
+metadata for a handler to render, so it takes no segment.
+
+[source,bash]
+----
+curl -T container.docx http://localhost:9998/unpack/all/ignore   # files + metadata, no text
+----
+
+Naming the handler in both the path and a `config` part is a `400`, as on `/tika` and
+`/rmeta`.
+
+== What each surface produces
+
+The five knobs interact differently per surface. The defaults are unchanged from 4.0.0.
+
+[cols="1,2,2,2"]
+|===
+| |tika-server `/unpack` |tika-app `-z` / `-Z` |pipes JSON config
+
+|format
+|REGULAR; set `outputFormat` in the server config for Frictionless
+|REGULAR; `--unpack-format=FRICTIONLESS`
+|`outputFormat`
+
+|packaging
+|always one zip (`ZIPPED` is pinned; an HTTP response is one body)
+|loose files; `DIRECTORY` when Frictionless is asked for without `--unpack-mode`
+|`outputMode` governs Frictionless, `zipEmbeddedFiles` governs REGULAR
+
+|depth
+|`embedded-limits` in config
+|`-z` = direct attachments, `-Z` = recursive
+|`embedded-limits`
+
+|metadata
+|Frictionless: by default; REGULAR: `/unpack/all`
+|Frictionless: by default; REGULAR zip: `--unpack-include-metadata`
+|`includeMetadata` (unset: on for Frictionless, off for REGULAR)
+
+|source document's bytes
+|`/unpack/all`
+|only via `-c` (`unpack-config.includeOriginal`)
+|`includeOriginal`
+
+|handler for `tk:content`
+|`/unpack/all/{handlerType}` or the config part
+|`--handler`
+|`content-handler-factory`
+|===
+
+`/unpack/all` means the source document's bytes plus metadata in both formats. Under REGULAR
+that is where the per-file sidecars come from; under Frictionless `metadata.json` is already
+there, so `/all` adds only the source document. `outputMode: DIRECTORY` is refused on
+`/unpack`: an HTTP response is one zip, so a request asking for it gets a `400`, and a server
+whose own `unpack-config` says so fails at startup if the `unpack` endpoint is enabled -- use
+`/pipes` or `/async` for per-file emission.
+
+Output trees for `doc.docx` with three attachments:
+
+[source]
+----
+REGULAR, tika-server (one zip)        REGULAR, tika-app -Z (loose)
+  1.emf                                 out/doc.docx.json
+  2.zip                                 out/doc.docx-embed/1.emf
+  3.bin                                 out/doc.docx-embed/2.zip
+  + with /all: 0.docx and one           out/doc.docx-embed/3.bin
+    <name>.metadata.json per file
+
+FRICTIONLESS, tika-server (one zip)   FRICTIONLESS, tika-app -Z --unpack-format=FRICTIONLESS
+  datapackage.json                      out/doc.docx.json
+  metadata.json                         out/doc.docx/datapackage.json
+  unpacked/1.emf ...                    out/doc.docx/metadata.json
+  + with /all: unpacked/0.docx          out/doc.docx/unpacked/1.emf ...
+----
+
+The top-level `doc.docx.json` on the command line is the normal pipes output for the parse;
+the package's `metadata.json` carries the same rows again so it is self-contained. Set
+`includeMetadata: false` in a `-c` file to drop it.
 
 The `datapackage.json` file contains:
 

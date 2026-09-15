@@ -1,5 +1,18 @@
 Release 4.1.0 - unreleased
 
+   * unpack-config gains includeMetadata, honoured by both output formats;
+     includeMetadataInZip and includeFullMetadata are deprecated aliases (still
+     loaded, since unknown properties are refused). Unset means the format
+     decides: a Frictionless package carries metadata.json, REGULAR sidecars
+     are opt-in. tika-server's /unpack/all set only the REGULAR flag, so on a
+     Frictionless server it returned no metadata; it now means original plus
+     metadata in either format. outputMode DIRECTORY is refused on /unpack
+     (400 from a request, startup failure from the server config) rather
+     than silently zipped. tika-app honours a -c file's unpack-config, and
+     --unpack-format=FRICTIONLESS with no --unpack-mode writes a directory,
+     like -z otherwise does. /unpack/{handlerType} is not a route; plain
+     /unpack carries no metadata to render (TIKA-4881).
+
    * tika-server: /rmeta gains config/{handlerType}, so a multipart request
      can carry both a config part and a handler; previously /rmeta/config
      always answered with the default (Markdown) handler and there was no
@@ -9,8 +22,12 @@ Release 4.1.0 - unreleased
      part silently won, which on /tika meant a text/xml response carrying a
      Markdown body. Back-compat: /rmeta/form{handlerType} was one path
      segment, so /rmeta/formxml resolved; it is now /rmeta/form/{handlerType}
-     only and the undelimited form 405s. /rmeta/form/xml is unchanged
-     (TIKA-4881).
+     only and the undelimited form 405s. /rmeta/form/xml is unchanged.
+     /unpack/all takes the handler as a path segment too --
+     /unpack/all/ignore returns the files and their .metadata.json sidecars
+     with no extracted text. Previously /unpack/all/<anything> answered 200
+     and silently ignored the segment (the unread {id} wildcard); an
+     unrecognized handler there is now a 400 (TIKA-4881).
 
    * tika-server: named configuration presets (TIKA-4856).
 

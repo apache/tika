@@ -32,7 +32,6 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
-import jakarta.ws.rs.core.UriInfo;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -100,7 +99,7 @@ import org.apache.tika.pipes.core.extractor.UnpackConfig;
  *     "unpack-config": {
  *       "outputFormat": "FRICTIONLESS",
  *       "outputMode": "ZIPPED",
- *       "includeFullMetadata": true
+ *       "includeMetadata": true
  *     }
  *   }
  * }
@@ -130,10 +129,20 @@ public class UnpackerResource {
 
     private static final Logger LOG = LoggerFactory.getLogger(UnpackerResource.class);
 
+    private static final String HANDLER_TYPE_PARAM = "handler";
+
     private final TikaResource tikaResource;
 
     public UnpackerResource(TikaResource tikaResource) {
         this.tikaResource = tikaResource;
+        // DIRECTORY can never serve /unpack, which returns one zip: fail at startup
+        UnpackConfig configured = tikaResource.newConfigUnpackConfig();
+        if (configured != null && configured.getOutputMode() == UnpackConfig.OUTPUT_MODE.DIRECTORY) {
+            throw new IllegalStateException(
+                    "unpack-config.outputMode DIRECTORY cannot serve /unpack, which returns one "
+                            + "zip. Set ZIPPED, or disable the unpack endpoint and use /pipes or "
+                            + "/async for per-file emission.");
+        }
     }
 
     /**
@@ -145,21 +154,10 @@ public class UnpackerResource {
      * @param info URI info
      * @return streaming zip response
      */
-    // The wildcard id would otherwise absorb a transposed preset URL (/unpack/all/preset/x)
-    // and silently run with no preset applied.
-    private static void rejectPresetInWildcard(UriInfo info) {
-        String id = info.getPathParameters().getFirst("id");
-        if (id != null && (id.equals("/preset") || id.startsWith("/preset/"))) {
-            throw new jakarta.ws.rs.NotFoundException(
-                    "preset routes are PUT /unpack/preset/{name}[/all]");
-        }
-    }
-
-    @jakarta.ws.rs.Path("/{id:(/.*)?}")
+    @jakarta.ws.rs.Path("")
     @PUT
     @Produces("application/zip")
-    public Response unpack(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        rejectPresetInWildcard(info);
+    public Response unpack(InputStream is, @Context HttpHeaders httpHeaders) throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
@@ -178,15 +176,16 @@ public class UnpackerResource {
      * @param info URI info
      * @return streaming zip response
      */
-    @jakarta.ws.rs.Path("/{id:(/.*)?}")
+    @jakarta.ws.rs.Path("")
     @POST
     @Consumes("multipart/form-data")
     @Produces("application/zip")
-    public Response unpackWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        rejectPresetInWildcard(info);
+    public Response unpackWithConfig(List<Attachment> attachments,
+                                     @Context HttpHeaders httpHeaders) throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
+            rejectDirectoryMode(pc);
             TikaResource.logRequest(LOG, "/unpack", metadata);
             return doUnpack(tis, metadata, pc, false);
         }
@@ -201,12 +200,22 @@ public class UnpackerResource {
      * @param info URI info
      * @return streaming zip response
      */
-    @jakarta.ws.rs.Path("/all{id:(/.*)?}")
+    @jakarta.ws.rs.Path("/all")
     @PUT
     @Produces("application/zip")
-    public Response unpackAll(InputStream is, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        rejectPresetInWildcard(info);
+    public Response unpackAll(InputStream is, @Context HttpHeaders httpHeaders) throws Exception {
+        return unpackAll(is, httpHeaders, null);
+    }
+
+    /** As {@code /unpack/all}, with the handler for the metadata's {@code tk:content} in the path. */
+    @jakarta.ws.rs.Path("/all/{" + HANDLER_TYPE_PARAM + "}")
+    @PUT
+    @Produces("application/zip")
+    public Response unpackAll(InputStream is, @Context HttpHeaders httpHeaders,
+                              @jakarta.ws.rs.PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
+            throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
+        applyHandler(pc, handlerTypeName);
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
@@ -224,15 +233,28 @@ public class UnpackerResource {
      * @param info URI info
      * @return streaming zip response
      */
-    @jakarta.ws.rs.Path("/all{id:(/.*)?}")
+    @jakarta.ws.rs.Path("/all")
     @POST
     @Consumes("multipart/form-data")
     @Produces("application/zip")
-    public Response unpackAllWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders, @Context UriInfo info) throws Exception {
-        rejectPresetInWildcard(info);
+    public Response unpackAllWithConfig(List<Attachment> attachments,
+                                        @Context HttpHeaders httpHeaders) throws Exception {
+        return unpackAllWithConfig(attachments, httpHeaders, null);
+    }
+
+    /** As {@code POST /unpack/all}, with the sidecar handler named in the path. */
+    @jakarta.ws.rs.Path("/all/{" + HANDLER_TYPE_PARAM + "}")
+    @POST
+    @Consumes("multipart/form-data")
+    @Produces("application/zip")
+    public Response unpackAllWithConfig(List<Attachment> attachments, @Context HttpHeaders httpHeaders,
+                                        @jakarta.ws.rs.PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
+            throws Exception {
         ParseContext pc = tikaResource.createRequestContext();
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = tikaResource.setupMultipartConfig(attachments, metadata, pc)) {
+            rejectDirectoryMode(pc);
+            applyHandler(pc, handlerTypeName);
             TikaResource.logRequest(LOG, "/unpack/all", metadata);
             return doUnpack(tis, metadata, pc, true);
         }
@@ -249,6 +271,7 @@ public class UnpackerResource {
                                      @jakarta.ws.rs.PathParam("presetName") String presetName)
             throws Exception {
         ParseContext pc = tikaResource.createPresetContext(presetName);
+        rejectDirectoryMode(pc);
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
@@ -267,12 +290,34 @@ public class UnpackerResource {
                                         @jakarta.ws.rs.PathParam("presetName") String presetName)
             throws Exception {
         ParseContext pc = tikaResource.createPresetContext(presetName);
+        rejectDirectoryMode(pc);
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
             TikaResource.logRequest(LOG, "/unpack/all", metadata);
             return doUnpack(tis, metadata, pc, true);
         }
+    }
+
+    /** A request asking for DIRECTORY contradicts the one-zip transport: 400, not a silent pin. */
+    static void rejectDirectoryMode(ParseContext pc) {
+        UnpackConfig requested = pc.get(UnpackConfig.class);
+        if (requested != null && requested.getOutputMode() == UnpackConfig.OUTPUT_MODE.DIRECTORY) {
+            throw new jakarta.ws.rs.BadRequestException(
+                    "unpack-config.outputMode DIRECTORY emits each file as its own item; /unpack "
+                            + "returns one zip. Omit outputMode here, or use /pipes or /async.");
+        }
+    }
+
+    /** Same rule as /tika and /rmeta: a handler named in the path and the config part is a 400. */
+    private void applyHandler(ParseContext pc, String handlerTypeName) {
+        // a truncated preset URL parses as a handler; point at the real route instead
+        if ("preset".equals(handlerTypeName)) {
+            throw new jakarta.ws.rs.NotFoundException(
+                    "preset routes are PUT /unpack/preset/{name}[/all]");
+        }
+        tikaResource.applyExplicitFormat(pc, handlerTypeName,
+                handlerTypeName != null && !handlerTypeName.isBlank());
     }
 
     /**

@@ -125,10 +125,35 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
                 "config part should select the handler for metadata.json");
     }
 
-    /** No format segment on /unpack; a stray one is a 404, not a silently ignored path. */
+    /** /unpack/all/<handler> used to 200 and silently ignore the segment. */
     @Test
-    public void testNoFormatSegment() throws Exception {
-        assertEquals(404, post("/unpack/xml", "{" + FRICTIONLESS + "}").getStatus());
+    public void testHandlerSegmentIsHonoredNotSwallowed() throws Exception {
+        assertEquals(0, sidecarsWithContent(putAll("/unpack/all/ignore")),
+                "ignore in the path must suppress tk:content");
+        assertTrue(sidecarsWithContent(putAll("/unpack/all")) > 0, "baseline carries tk:content");
+    }
+
+    /** Plain /unpack carries no metadata for a handler to render, so it takes no segment. */
+    @Test
+    public void testNoHandlerSegmentOnPlainUnpack() throws Exception {
+        assertEquals(404, WebClient.create(endPoint + "/unpack/xml")
+                .accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC)).getStatus());
+    }
+
+    @Test
+    public void testUnrecognizedHandlerSegmentIsBadRequest() throws Exception {
+        assertEquals(400, WebClient.create(endPoint + "/unpack/all/somethingOrOther")
+                .accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC)).getStatus());
+    }
+
+    private List<byte[]> putAll(String path) throws Exception {
+        Response response = WebClient.create(endPoint + path)
+                .accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_DOC));
+        assertEquals(200, response.getStatus());
+        return sidecarsOf(response);
     }
 
     /** includeMetadataInZip writes a sidecar per extracted file; it carries tk:content too. */
@@ -141,6 +166,53 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
                 + "\"basic-content-handler-factory\": {\"type\": \"XML\"}}");
         assertTrue(xml.contains("\"tk:content-handler-type\":\"XML\""), xml);
         assertTrue(xml.contains("<html xmlns="), xml);
+    }
+
+    /** IGNORE is the opt-out: sidecars keep their metadata but carry no extracted text. */
+    @Test
+    public void testIgnoreHandlerLeavesSidecarsWithoutContent() throws Exception {
+        String withText = "{\"unpack-config\": {\"includeMetadataInZip\": true}}";
+        String ignore = "{\"unpack-config\": {\"includeMetadataInZip\": true}, "
+                + "\"basic-content-handler-factory\": {\"type\": \"IGNORE\"}}";
+
+        assertTrue(sidecarsWithContent(withText) > 0, "baseline should carry tk:content");
+        assertEquals(0, sidecarsWithContent(ignore), "IGNORE should suppress tk:content");
+        assertTrue(sidecarCount(ignore) > 0, "IGNORE must not drop the sidecars themselves");
+    }
+
+    private int sidecarsWithContent(String configJson) throws Exception {
+        return sidecarsWithContent(sidecars(configJson));
+    }
+
+    private int sidecarsWithContent(List<byte[]> sidecars) throws Exception {
+        int count = 0;
+        for (byte[] sidecar : sidecars) {
+            if (new String(sidecar, StandardCharsets.UTF_8).contains("\"tk:content\"")) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private int sidecarCount(String configJson) throws Exception {
+        return sidecars(configJson).size();
+    }
+
+    private List<byte[]> sidecars(String configJson) throws Exception {
+        Response response = post("/unpack", configJson);
+        assertEquals(200, response.getStatus());
+        return sidecarsOf(response);
+    }
+
+    private List<byte[]> sidecarsOf(Response response) throws Exception {
+        Map<String, byte[]> entries = readZipArchiveBytes((InputStream) response.getEntity());
+        List<byte[]> out = new ArrayList<>();
+        for (Map.Entry<String, byte[]> e : entries.entrySet()) {
+            if (e.getKey().endsWith(".metadata.json")) {
+                out.add(e.getValue());
+            }
+        }
+        return out;
     }
 
     private String perFileSidecar(String configJson) throws Exception {

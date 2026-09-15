@@ -35,6 +35,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -692,6 +694,50 @@ public class TikaCLITest {
                 "Should have a .json metadata file in extractDir, got: " + fileNames);
         assertTrue(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
                 "Should have extracted embedded files in extractDir, got: " + fileNames);
+    }
+
+    @Test
+    public void testFrictionlessWithoutModeIsADirectory() throws Exception {
+        Set<String> fileNames = unpack("-Z", "--unpack-format=FRICTIONLESS");
+        assertTrue(fileNames.stream().anyMatch(f -> f.endsWith("/datapackage.json")),
+                "package should be laid out as a directory, got: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.contains("/unpacked/")), fileNames.toString());
+        assertFalse(fileNames.stream().anyMatch(f -> f.endsWith(".zip") && !f.contains("/unpacked/")),
+                "no zip when no mode was asked for: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.endsWith("/metadata.json")),
+                "a Frictionless package carries metadata.json by default: " + fileNames);
+    }
+
+    @Test
+    public void testFrictionlessIncludeMetadata() throws Exception {
+        Set<String> fileNames = unpack("-Z", "--unpack-format=FRICTIONLESS", "--unpack-include-metadata");
+        String metadataJson = fileNames.stream().filter(f -> f.endsWith("/metadata.json")).findFirst()
+                .orElseThrow(() -> new AssertionError("no metadata.json in " + fileNames));
+        String content = Files.readString(extractDir.resolve(metadataJson));
+        assertTrue(content.contains("\"tk:embedded-depth\" : \"0\""),
+                "metadata.json should carry the container row: " + content);
+        assertTrue(content.contains("\"tk:content\""), content);
+    }
+
+    /** A -c file's unpack-config is honoured; it is the only way to get the original back. */
+    @Test
+    public void testConfigFileUnpackConfigIsHonoured() throws Exception {
+        Set<String> fileNames = unpack("-Z", "--config=" + CONFIGS_DIR + "/tika-config-unpack-original.json");
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*-embed/0+\\.[^/]+")),
+                "includeOriginal from -c should add the container as 00000000.<ext>: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*-embed/0+1\\.[^/]+")),
+                "-c must not change the CLI's file naming: " + fileNames);
+    }
+
+    private Set<String> unpack(String... flags) throws Exception {
+        Path input = Paths.get(new URI(resourcePrefix + "/test_recursive_embedded.docx"));
+        List<String> params = new ArrayList<>(Arrays.asList(flags));
+        params.add("-p");
+        params.add(Paths.get("target/plugins").toAbsolutePath().toString());
+        params.add(input.toAbsolutePath().toString());
+        params.add(extractDir.toAbsolutePath().toString());
+        TikaCLI.main(params.toArray(new String[0]));
+        return getFileNames(extractDir);
     }
 
     @Test
