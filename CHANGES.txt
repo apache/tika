@@ -1,5 +1,13 @@
 Release 4.1.0 - unreleased
 
+   * A request can no longer supply openai-embedding-filter or
+     jina-embedding-filter in a per-request metadata-filters list: 4.0.x
+     built the filter from the request, endpoint and key included, and
+     posted the document's text there. The flat per-request skipEmbedding
+     override is unchanged. The two filters are deprecated; configure the
+     endpoint under "engines" and bind it with a TEXT inference binding.
+     Removal in 4.2.0 (TIKA-4889).
+
    * Engines are closed with the config that loaded them: Engine is
      Closeable (no-op by default), EngineRegistry closes every engine once,
      and the pipes server closes the registry at shutdown, so an

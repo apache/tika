@@ -71,6 +71,16 @@ public class WireRestrictedParseContextTest {
         }
     }
 
+    /** Names blocked although their type is allowed: the embedding filters, which do network IO. */
+    @Test
+    public void embeddingFiltersAreBlockedByName() {
+        Set<String> names = ComponentNameResolver.getWireBlockedComponentNames();
+        assertTrue(names.contains("openai-embedding-filter"));
+        assertTrue(names.contains("jina-embedding-filter"));
+        assertTrue(ComponentNameResolver.isWireBlockedName("openai-embedding-filter"));
+        assertFalse(ComponentNameResolver.isWireBlockedName("include-field-metadata-filter"));
+    }
+
     @Test
     public void restrictedRejectsTypedParserInjection() {
         // A blocked component nested under a wrapper key must be refused regardless of the wrapper.
