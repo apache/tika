@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * Tagged PDFs: text drawn twice for a bold effect with one copy tagged
+     came out as letters with spaces between them; each copy now reads as
+     its words. A tree that puts every glyph in its own paragraph (some form
+     generators) is left to the text stripper under AUTO (TIKA-4891).
+     
    * Inference results in the single-object outputs: with /tika as JSON,
      tika-app -j, or pipes CONCATENATE, the vectors of an attachment's pages
      and pictures now land on the one metadata object handed back, each
@@ -28,7 +33,7 @@ Release 4.1.0 - unreleased
      and the pipes server closes the registry at shutdown, so an
      openai-embedding-engine or a VLM used as a text recognizer releases its
      HTTP client (TIKA-4889).
-     
+
    * Per-request switch for text recognizers: {"parse-context":
      {"text-recognizers": {"enabled": false}}} runs no recognizer or annotator
      from the list for that parse, in every container, and OCR_ONLY no longer
