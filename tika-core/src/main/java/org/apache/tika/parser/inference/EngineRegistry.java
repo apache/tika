@@ -16,12 +16,22 @@
  */
 package org.apache.tika.parser.inference;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** The {@code "engines"} map: user-chosen name to engine, built once at config load. */
-public final class EngineRegistry {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * The {@code "engines"} map: user-chosen name to engine, built once at config load and
+ * closed once with it.
+ */
+public final class EngineRegistry implements Closeable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(EngineRegistry.class);
 
     private final Map<String, Engine> engines;
 
@@ -35,5 +45,24 @@ public final class EngineRegistry {
 
     public Map<String, Engine> getEngines() {
         return engines;
+    }
+
+    /** Closes every engine; one failure does not skip the rest, the first is rethrown. */
+    @Override
+    public void close() throws IOException {
+        IOException first = null;
+        for (Map.Entry<String, Engine> e : engines.entrySet()) {
+            try {
+                e.getValue().close();
+            } catch (IOException | RuntimeException ex) {
+                LOG.warn("engine {} failed to close", e.getKey(), ex);
+                if (first == null) {
+                    first = ex instanceof IOException io ? io : new IOException(ex);
+                }
+            }
+        }
+        if (first != null) {
+            throw first;
+        }
     }
 }
