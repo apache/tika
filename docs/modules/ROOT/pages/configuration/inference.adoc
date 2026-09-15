@@ -213,9 +213,10 @@ request" (see xref:configuration/inference-recipes.adoc[Recipes]). Names only, s
 xref:using-tika/server/index.adoc[preset]. A name not in the configured list fails the request.
 Engines cannot be defined or changed per request.
 
-== From `openai-image-embedding-parser`
+== From `openai-image-embedding-parser` (deprecated)
 
-The 4.0 `openai-image-embedding-parser` still works as a text-recognizers entry and embeds one
-image per request. The same endpoint as an engine plus a binding on `IMAGES` embeds a
-document's images in one request and puts the vectors where they belong; move the `baseUrl`,
-`model` and `apiKey` to the engine and drop the parser entry.
+The 4.0 `openai-image-embedding-parser` is deprecated since 4.1.0 and removed in 4.2.0. It
+still works as a text-recognizers entry, with a WARN at startup, and embeds one image per
+request. The same endpoint as an engine plus a binding on `IMAGES` embeds a document's images
+in one request and puts the vectors where they belong; move the `baseUrl`, `model` and
+`apiKey` to the engine and drop the parser entry.

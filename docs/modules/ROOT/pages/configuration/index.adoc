@@ -196,20 +196,22 @@ found on the classpath; among those the last registered wins (user-supplied clas
 after Tika's); an entry's `_mime-include`/`_mime-exclude` applies, and on the `default-parser`
 entry it applies to every engine inside it. When several engines in the winning tier claim a
 type, a WARN at startup names them and the winner; an engine under `parsers` shadows a classpath
-engine silently, by design. Name the engine in `text-recognizers` to stop depending on any of
-this. An `AutoDetectParser` built in code without the loader applies the same rules at parse
+engine (and draws the deprecation WARN below). Name the engine in `text-recognizers` to stop
+depending on any of this. An `AutoDetectParser` built in code without the loader applies the same rules at parse
 time.
 
-=== An engine under `parsers`
+=== An engine under `parsers` (deprecated)
 
-Naming an engine under `parsers` still works, and is how 4.0 configured Tesseract's options, but
-it means two things at once: the entry configures the engine, and the engine is also a parser
-for the types no other parser there claims (`"parsers": [{"tesseract-ocr-parser": {}}]` alone
-sends every image straight to OCR; `claude-vlm-parser` next to a `default-parser` that excludes
-`pdf-parser` makes Claude the PDF parser). When every type the engine advertises is claimed by
-another parser it is never dispatched to: startup logs that it then acts only as the text
-recognizer, and warns if it never runs at all. Prefer `text-recognizers` for the engine and keep
-`parsers` for parsers.
+Naming an engine under `parsers` is how 4.0 configured Tesseract's options. It is deprecated
+since 4.1.0 and unsupported in 4.2.0, when `parsers` holds parsers only and an engine there
+fails config load. Until then it keeps working, with a WARN at startup that says what the entry
+does today, because it means two things at once: the entry configures the engine, and the engine
+is also a parser for the types no other parser there claims (`"parsers":
+[{"tesseract-ocr-parser": {}}]` alone sends every image straight to OCR; `claude-vlm-parser`
+next to a `default-parser` that excludes `pdf-parser` makes Claude the PDF parser). When every
+type the engine advertises is claimed by another parser it is never dispatched to and acts only
+as the text recognizer, or never runs at all. Configure the engine under `engines`, name it in
+`text-recognizers`, and keep `parsers` for parsers.
 
 === Replacing extracted text
 

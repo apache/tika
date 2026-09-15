@@ -87,8 +87,8 @@ JNA must be able to find `libtesseract` and `libleptonica` at runtime.
 The tess4j jar does *not* bundle these libraries for macOS or Linux.
 If JNA cannot find them on the default library search path, the parser
 advertises no media types: named under `text-recognizers` that fails
-config load with a message naming it; under `parsers` it is logged at
-startup and the parser does nothing.
+config load with a message naming it; under `parsers` (the deprecated
+4.0 shape) it is logged at startup and the parser does nothing.
 
 You have several options:
 

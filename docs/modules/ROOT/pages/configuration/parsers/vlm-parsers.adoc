@@ -29,8 +29,9 @@ for earlier shapes.
 Three implementations are provided out of the box. None is auto-loaded: each must be
 named explicitly in your configuration. (Changed in 4.1.0: `openai-vlm-parser` previously
 auto-registered via SPI.) To use a VLM as the OCR engine for embedded images and rendered
-PDF pages, name it in the `text-recognizers` list — see
-xref:configuration/index.adoc[Configuration].
+PDF pages, configure it under `engines` and name it in the `text-recognizers` list — see
+xref:configuration/index.adoc[Configuration]. Naming it under `parsers` is deprecated since
+4.1.0 and unsupported in 4.2.0.
 
 [cols="1,2,1"]
 |===
@@ -50,9 +51,9 @@ xref:configuration/index.adoc[Configuration].
 |===
 
 All three enrich the standard image types (`image/png`, `image/jpeg`, ...).
-`ClaudeVLMParser` and `GeminiVLMParser` additionally declare `application/pdf`, so they can process
-PDFs natively with the model's vision capabilities once the default `pdf-parser` is excluded (see
-below); an enricher never displaces the parser for a type.
+`ClaudeVLMParser` and `GeminiVLMParser` additionally declare `application/pdf`, so under `parsers`
+they can process PDFs natively with the model's vision capabilities once the default `pdf-parser`
+is excluded (see below, deprecated); an enricher never displaces the parser for a type.
 
 == Module dependency
 
@@ -142,11 +143,17 @@ endpoint. The API key is passed as a `key` query parameter.
 
 Change `baseUrl` if you are using Vertex AI or a proxy.
 
-== Using a VLM parser for PDF parsing
+== Using a VLM parser for PDF parsing (deprecated)
 
 Claude and Gemini can process entire PDFs with their vision capabilities.
 To route PDFs to a VLM parser instead of the default `PDFParser`, exclude
 the default and add the VLM parser:
+
+NOTE: This shape is deprecated since 4.1.0 and unsupported in 4.2.0, when an engine under
+`parsers` fails config load. The 4.2 way to put a PDF in front of a VLM is the PDF parser's
+`"text": "OCR"` with the VLM named in `text-recognizers`: every page is rendered and transcribed,
+and the PDF's own structure (attachments, bookmarks, forms) is still parsed. That sends page
+images, not the PDF file; there is no 4.2 shape yet for sending the file itself.
 
 [source,json]
 ----
@@ -156,9 +163,9 @@ include::example$vlm-pdf-parsing.json[]
 You can substitute `gemini-vlm-parser` for `claude-vlm-parser` above.
 
 Named under `parsers`, the VLM is also the text recognizer for the image types it advertises, so
-embedded images in every other document type are sent to it too. Add a `text-recognizers` list to
-choose a different engine for those, or `"text-recognizers": []` for none; see
-xref:configuration/index.adoc[Configuration].
+embedded images in every other document type are sent to it too, and startup logs the deprecation
+WARN. Add a `text-recognizers` list to choose a different engine for those, or
+`"text-recognizers": []` for none; see xref:configuration/index.adoc[Configuration].
 
 == Configuration options reference
 

@@ -290,24 +290,39 @@ public class ContentEnricherLoaderTest {
      * to; the loader names it so a config that looks like a parser choice is not a silent
      * enricher choice.
      */
+    /** An engine under "parsers" is the deprecated shape; the loader finds it whether or not it is dispatched to. */
     @Test
-    public void testUndispatchedEnricherUnderParsersIsReported() throws Exception {
+    public void testEngineUnderParsersIsFound() throws Exception {
         TikaLoader loader = load("""
                 {
                   "parsers": [ {"minimal-test-parser": {}}, {"test-spi-enricher": {}} ]
                 }
                 """);
-        java.util.List<Parser> inert = ParserLoader.undispatchedEnrichers(loader.loadParsers());
-        assertEquals(1, inert.size());
-        assertTrue(inert.get(0) instanceof TestSpiEnricher);
+        Parser root = loader.loadParsers();
+        java.util.List<Parser> engines = ParserLoader.enginesUnderParsers(root);
+        assertEquals(1, engines.size());
+        assertTrue(engines.get(0) instanceof TestSpiEnricher);
+        assertTrue(ParserLoader.parsedTypes(root, engines.get(0)).isEmpty(),
+                "the parser claims its type: never dispatched to");
 
         loader = load("""
                 {
                   "parsers": [ {"test-spi-enricher": {}} ]
                 }
                 """);
-        assertTrue(ParserLoader.undispatchedEnrichers(loader.loadParsers()).isEmpty(),
-                "alone it is the parser for its type");
+        root = loader.loadParsers();
+        engines = ParserLoader.enginesUnderParsers(root);
+        assertEquals(1, engines.size());
+        assertEquals(java.util.Set.of(MediaType.parse("application/test+minimal")),
+                ParserLoader.parsedTypes(root, engines.get(0)), "alone it is the parser for its type");
+
+        loader = load("""
+                {
+                  "parsers": [ {"default-parser": {}} ]
+                }
+                """);
+        assertTrue(ParserLoader.enginesUnderParsers(loader.loadParsers()).isEmpty(),
+                "an engine the classpath supplies is not the deprecated shape");
     }
 
     /** Two text recognizers on one type both run; the loader names them at startup. */

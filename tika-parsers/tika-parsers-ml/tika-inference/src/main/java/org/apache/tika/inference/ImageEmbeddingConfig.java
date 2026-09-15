@@ -25,7 +25,10 @@ import org.apache.tika.utils.StringUtils;
 /**
  * Configuration for image embedding parsers that call a CLIP-like
  * vector endpoint.
+ *
+ * @deprecated since 4.1.0, removed in 4.2.0 with {@link OpenAIImageEmbeddingParser}.
  */
+@Deprecated
 public class ImageEmbeddingConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;

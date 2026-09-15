@@ -1,5 +1,18 @@
 Release 4.1.0 - unreleased
 
+   * An inference engine named under "parsers" (an OCR engine, a VLM parser,
+     openai-image-embedding-parser) is deprecated: since 4.1.0 startup logs
+     one WARN per such entry saying what it does today, and in 4.2.0 the
+     entry fails config load. Configure engines under "engines" and name them
+     in "text-recognizers" or bind them with "inference". The whole-PDF VLM
+     shape (claude-vlm-parser with pdf-parser excluded) goes with it; the
+     replacement is pdf-parser "text": "OCR" with the VLM as the recognizer
+     (TIKA-4889).
+
+   * openai-image-embedding-parser is deprecated, removal in 4.2.0: the same
+     endpoint as an openai-embedding-engine with an IMAGES inference binding
+     embeds a document's images in one request (TIKA-4889).
+
    * A request can no longer supply openai-embedding-filter or
      jina-embedding-filter in a per-request metadata-filters list: 4.0.x
      built the filter from the request, endpoint and key included, and
