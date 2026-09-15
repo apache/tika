@@ -221,8 +221,8 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
             if (handler != null) {
                 if (shouldHandleXFAOnly(hasXFA, localConfig)) {
                     handleXFAOnly(pdfDocument, handler, metadata, context);
-                } else if (localConfig.getOcr().getStrategy()
-                        .equals(OcrConfig.Strategy.OCR_ONLY)) {
+                } else if (localConfig.getText() == PDFParserConfig.TextPolicy.OCR
+                        || localConfig.getText() == PDFParserConfig.TextPolicy.NONE) {
                     OCR2XHTML.process(pdfDocument, handler, context, metadata,
                             localConfig, renderer, contentEnrichers);
                 } else if (hasMarkedContent && localConfig.getMarkedContent().getStrategy()
@@ -443,7 +443,8 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
             return true;
         }
 
-        if (localConfig.getOcr().getStrategy() == OcrConfig.Strategy.NO_OCR) {
+        if (localConfig.getText() == PDFParserConfig.TextPolicy.EXTRACT
+                || localConfig.getText() == PDFParserConfig.TextPolicy.NONE) {
             return false;
         }
         //TODO: test that this is not AUTO with no OCR parser installed

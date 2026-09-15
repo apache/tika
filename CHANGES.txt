@@ -1,5 +1,12 @@
 Release 4.1.0 - unreleased
 
+   * PDF: "pdf-parser": {"text": ...} says where a page's text comes from:
+     EXTRACT, AUTO (default), EXTRACT_AND_OCR, OCR, or the new NONE, which
+     writes no text from any source while pages are still rendered for
+     annotators and PAGES inference bindings. The 4.0 "ocr": {"strategy"}
+     spellings load as aliases and dump as "text"; OcrConfig.getStrategy()
+     is removed, read PDFParserConfig.getText() (TIKA-4889).
+
    * Per-request switch for text recognizers: {"parse-context":
      {"text-recognizers": {"enabled": false}}} runs no recognizer or annotator
      from the list for that parse, in every container, and OCR_ONLY no longer

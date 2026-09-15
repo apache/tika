@@ -1281,7 +1281,7 @@ public class PDFParserTest extends TikaTest {
         //behavior
         config = new PDFParserConfig();
         config.getOcr().setDpi(10000);
-        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        config.setText(PDFParserConfig.TextPolicy.EXTRACT);
         pc.set(PDFParserConfig.class, config);
         text = getText("testPDFTwoTextBoxes.pdf", p, new Metadata(), pc);
         text = text.replaceAll("\\s+", " ");
@@ -1866,7 +1866,7 @@ public class PDFParserTest extends TikaTest {
         parser.setContentEnrichers(enrichers);
         EnrichingImageParser imageParser = new EnrichingImageParser(enrichers);
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        config.setText(PDFParserConfig.TextPolicy.EXTRACT);
         config.setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END);
         config.getOcr().setDpi(20);
         ParseContext context = new ParseContext();
@@ -1893,7 +1893,7 @@ public class PDFParserTest extends TikaTest {
         PDFParser parser = new PDFParser();
         parser.setContentEnrichers(enrichers);
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_AND_TEXT_EXTRACTION);
+        config.setText(PDFParserConfig.TextPolicy.EXTRACT_AND_OCR);
         config.getOcr().setMaxPagesToOcr(1);
         config.setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END);
         config.getOcr().setDpi(20);
@@ -1919,7 +1919,7 @@ public class PDFParserTest extends TikaTest {
         PDFParser parser = new PDFParser();
         parser.setContentEnrichers(enrichers);
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        config.setText(PDFParserConfig.TextPolicy.OCR);
         config.getOcr().setMaxPagesToOcr(1);
         config.setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END);
         config.getOcr().setDpi(20);
@@ -1965,9 +1965,9 @@ public class PDFParserTest extends TikaTest {
         return adp;
     }
 
-    private static PDFParserConfig pagesForInference(OcrConfig.Strategy strategy) {
+    private static PDFParserConfig pagesForInference(PDFParserConfig.TextPolicy strategy) {
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(strategy);
+        config.setText(strategy);
         config.getOcr().setDpi(20);
         config.getInference().setInput(List.of(InferenceConfig.Input.PAGES));
         return config;
@@ -1976,8 +1976,8 @@ public class PDFParserTest extends TikaTest {
     /** One render per page feeds OCR and inference alike; every page is offered once. */
     @Test
     public void testPagesOfferedOncePerPageFromOneRender() throws Exception {
-        for (OcrConfig.Strategy strategy : List.of(OcrConfig.Strategy.OCR_AND_TEXT_EXTRACTION,
-                OcrConfig.Strategy.OCR_ONLY, OcrConfig.Strategy.NO_OCR)) {
+        for (PDFParserConfig.TextPolicy strategy : List.of(PDFParserConfig.TextPolicy.EXTRACT_AND_OCR,
+                PDFParserConfig.TextPolicy.OCR, PDFParserConfig.TextPolicy.EXTRACT)) {
             PageEnricher recognizer = new PageEnricher("MOCK_OCR_CONTENT", true);
             PDFParser parser = new PDFParser();
             parser.setContentEnrichers(new CompositeContentEnricher(List.of(recognizer)));
@@ -1996,7 +1996,7 @@ public class PDFParserTest extends TikaTest {
             assertSame(metadata, hook.document, label + ": the pages belong to the PDF");
             assertTrue(hook.sizes.get(0) > 0, label + ": the render has bytes");
             assertEquals(2, tracker.getNextId() - 1, label + ": one render per page");
-            assertEquals(strategy == OcrConfig.Strategy.NO_OCR ? 0 : 2, recognizer.calls, label);
+            assertEquals(strategy == PDFParserConfig.TextPolicy.EXTRACT ? 0 : 2, recognizer.calls, label);
             assertArrayEquals(new String[]{"PAGES"},
                     metadata.getValues(TikaCoreProperties.INFERENCE_RELEASED),
                     label + ": the PDF says it released its pages, not its text");
@@ -2009,7 +2009,7 @@ public class PDFParserTest extends TikaTest {
         PageHook unasked = new PageHook();
         ParseContext context = new ParseContext();
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        config.setText(PDFParserConfig.TextPolicy.EXTRACT);
         context.set(PDFParserConfig.class, config);
         RenderingTracker tracker = new RenderingTracker();
         context.set(RenderingTracker.class, tracker);
@@ -2022,7 +2022,7 @@ public class PDFParserTest extends TikaTest {
 
         PageHook unwilling = new PageHook();
         context = new ParseContext();
-        context.set(PDFParserConfig.class, pagesForInference(OcrConfig.Strategy.NO_OCR));
+        context.set(PDFParserConfig.class, pagesForInference(PDFParserConfig.TextPolicy.EXTRACT));
         context.set(RenderingTracker.class, tracker);
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testPDF_bookmarks.pdf")) {
             hooked(new PDFParser(), unwilling).parse(tis, new ToXMLContentHandler(),
@@ -2031,6 +2031,50 @@ public class PDFParserTest extends TikaTest {
         assertEquals(1, unwilling.wantsPagesCalls, "asked once per document");
         assertTrue(unwilling.pages.isEmpty());
         assertEquals(0, tracker.getNextId() - 1, "no binding wants pages: nothing is rendered");
+    }
+
+    /** NONE: no text from the stream or an engine, no engine complaint, pages still offered. */
+    @Test
+    public void testTextNoneRendersForInferenceAndWritesNoText() throws Exception {
+        PageEnricher recognizer = new PageEnricher("MOCK_OCR_CONTENT", true);
+        PDFParser parser = new PDFParser();
+        parser.setContentEnrichers(new CompositeContentEnricher(List.of(recognizer)));
+        PageHook hook = new PageHook();
+        hook.wantsPages = true;
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, pagesForInference(PDFParserConfig.TextPolicy.NONE));
+        Metadata metadata = new Metadata();
+        ToXMLContentHandler handler = new ToXMLContentHandler();
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPDF_bookmarks.pdf")) {
+            hooked(parser, hook).parse(tis, handler, metadata, context);
+        }
+        assertEquals(List.of(1, 2), hook.pages, "pages are rendered and offered");
+        assertEquals(0, recognizer.calls, "no OCR");
+        String xml = handler.toString();
+        assertNotContained("MOCK_OCR_CONTENT", xml);
+        assertNotContained("Denmark", xml);
+        assertEquals("2", metadata.get(PagedText.N_PAGES), "metadata is still extracted");
+
+        // no engine at all: NONE never asks for one
+        context = new ParseContext();
+        context.set(PDFParserConfig.class, pagesForInference(PDFParserConfig.TextPolicy.NONE));
+        xml = parsePdfToXml(new PDFParser(), "testPDF_bookmarks.pdf", new Metadata(), context);
+        assertNotContained("Denmark", xml);
+    }
+
+    /** The 4.0 ocr.strategy spellings map onto "text"; an explicit "text" wins. */
+    @Test
+    public void testOcrStrategyAlias() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        assertEquals(PDFParserConfig.TextPolicy.AUTO, config.getText(), "default");
+        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        assertEquals(PDFParserConfig.TextPolicy.EXTRACT, config.getText());
+        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        assertEquals(PDFParserConfig.TextPolicy.OCR, config.getText());
+        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_AND_TEXT_EXTRACTION);
+        assertEquals(PDFParserConfig.TextPolicy.EXTRACT_AND_OCR, config.getText());
+        config.setText(PDFParserConfig.TextPolicy.NONE);
+        assertEquals(PDFParserConfig.TextPolicy.NONE, config.getText(), "text wins over the alias");
     }
 
     /** The request's switch: no OCR, text kept, and OCR_ONLY does not complain about an engine. */
@@ -2052,7 +2096,7 @@ public class PDFParserTest extends TikaTest {
         assertContains("42936", xml);
 
         PDFParserConfig ocrOnly = new PDFParserConfig();
-        ocrOnly.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        ocrOnly.setText(PDFParserConfig.TextPolicy.OCR);
         context = new ParseContext();
         context.set(PDFParserConfig.class, ocrOnly);
         context.set(TextRecognizerSelection.class, off);
@@ -2245,7 +2289,7 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testOCRPageTimeoutDoesNotAbortWholeDocument() throws Exception {
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        config.setText(PDFParserConfig.TextPolicy.OCR);
 
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
@@ -2329,7 +2373,7 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testChunksFromAllOcrPagesReachParent() throws Exception {
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        config.setText(PDFParserConfig.TextPolicy.OCR);
 
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
@@ -2369,7 +2413,7 @@ public class PDFParserTest extends TikaTest {
     @Test
     public void testExplicitContentEnricherReceivesRenderedPages() throws Exception {
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.OCR_ONLY);
+        config.setText(PDFParserConfig.TextPolicy.OCR);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
 

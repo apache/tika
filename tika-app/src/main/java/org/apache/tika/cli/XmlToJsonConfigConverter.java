@@ -424,10 +424,20 @@ public class XmlToJsonConfigConverter {
                 it.remove();
             }
         }
+        // 4.1 spells the strategy as the parser's "text"; the ocr.strategy alias still loads
+        Object strategy = ocr.remove("strategy");
+        if (strategy != null && !config.containsKey("text")) {
+            config.put("text", OCR_STRATEGY_TO_TEXT.getOrDefault(String.valueOf(strategy),
+                    String.valueOf(strategy)));
+        }
         if (!ocr.isEmpty()) {
             config.put("ocr", ocr);
         }
     }
+
+    private static final Map<String, String> OCR_STRATEGY_TO_TEXT = Map.of(
+            "NO_OCR", "EXTRACT", "AUTO", "AUTO", "OCR_ONLY", "OCR",
+            "OCR_AND_TEXT_EXTRACTION", "EXTRACT_AND_OCR");
 
     /**
      * Converts a &lt;params&gt; element to a map of parameter names to values.

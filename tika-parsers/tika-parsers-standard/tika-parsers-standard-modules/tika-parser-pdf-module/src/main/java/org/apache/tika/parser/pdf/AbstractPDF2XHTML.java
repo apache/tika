@@ -16,10 +16,10 @@
  */
 package org.apache.tika.parser.pdf;
 
-import static org.apache.tika.parser.pdf.OcrConfig.Strategy.AUTO;
-import static org.apache.tika.parser.pdf.OcrConfig.Strategy.NO_OCR;
-import static org.apache.tika.parser.pdf.OcrConfig.Strategy.OCR_AND_TEXT_EXTRACTION;
-import static org.apache.tika.parser.pdf.OcrConfig.Strategy.OCR_ONLY;
+import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.AUTO;
+import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.EXTRACT_AND_OCR;
+import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.NONE;
+import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.OCR;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
@@ -257,7 +257,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         }
         this.pageAnnotators = annotators;
-        if (config.getOcr().getStrategy() == AUTO && ContentEnrichers.hasTextRecognizer(
+        if (config.getText() == AUTO && ContentEnrichers.hasTextRecognizer(
                 contentEnrichers, ocrImageMediaType, renderTarget, context)) {
             this.pageBuffer = new PageTextBuffer(handler);
             this.xhtml = new XHTMLContentHandler(pageBuffer, metadata, context);
@@ -356,7 +356,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         List<PageTextBuffer.SaxEvent> captured =
                 pageBuffer == null ? Collections.emptyList() : pageBuffer.stop();
-        boolean wanted = config.getOcr().getStrategy() == AUTO &&
+        boolean wanted = config.getText() == AUTO &&
                 ocrWanted(pageBuffer == null ? null : pageBuffer.text());
         pageDecision = wanted ? PageText.OCR_WANTED : PageText.KEEP;
         if (wanted) {
@@ -691,16 +691,16 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         TEXT
     }
 
-    PageOcr doOCROnCurrentPage(PDPage pdPage, OcrConfig.Strategy ocrStrategy)
+    PageOcr doOCROnCurrentPage(PDPage pdPage, PDFParserConfig.TextPolicy text)
             throws IOException, TikaException, SAXException {
-        PageOcr result = dispatchOcr(pdPage, ocrStrategy);
+        PageOcr result = dispatchOcr(pdPage, text);
         currentPageOcr = result;
         return result;
     }
 
-    private PageOcr dispatchOcr(PDPage pdPage, OcrConfig.Strategy ocrStrategy)
+    private PageOcr dispatchOcr(PDPage pdPage, PDFParserConfig.TextPolicy text)
             throws IOException, TikaException, SAXException {
-        if (ocrStrategy.equals(NO_OCR)) {
+        if (text != AUTO && text != OCR && text != EXTRACT_AND_OCR) {
             return PageOcr.SKIPPED;
         }
         //count the number of times that OCR would have been called
@@ -715,14 +715,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             return PageOcr.SKIPPED;
         }
         if (ocrEngine == null) {
-            if ((ocrStrategy == OCR_ONLY || ocrStrategy == OCR_AND_TEXT_EXTRACTION)
+            if ((text == OCR || text == EXTRACT_AND_OCR)
                     && !ContentEnrichers.isDisabled(context)) {
                 throw new TikaException(
                         "I regret that I couldn't find an OCR engine to handle " +
                                 ocrImageMediaType + ". Name one that covers it in " +
                                 "\"text-recognizers\" (a configured list is authoritative), " +
                                 "add one to the classpath when no list is configured, " +
-                                "or set the OCR strategy to NO_OCR.");
+                                "or set \"pdf-parser\": {\"text\": \"EXTRACT\"}.");
             }
             return PageOcr.SKIPPED;
         }
@@ -984,8 +984,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             for (PDAnnotation annotation : page.getAnnotations()) {
                 processPageAnnotation(annotation);
             }
-            if (config.getOcr().getStrategy() == OCR_AND_TEXT_EXTRACTION) {
-                doOCROnCurrentPage(page, OCR_AND_TEXT_EXTRACTION);
+            if (config.getText() == EXTRACT_AND_OCR) {
+                doOCROnCurrentPage(page, EXTRACT_AND_OCR);
             } else if (pageDecision == PageText.OCR_WANTED) {
                 if (doOCROnCurrentPage(page, AUTO) != PageOcr.TEXT) {
                     replay(pendingText);
@@ -1076,7 +1076,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                         attributes);
             }
         }
-        if (! config.isExtractAnnotationText()) {
+        if (!config.isExtractAnnotationText() || config.getText() == NONE) {
             return;
         }
         // TODO: remove once PDFBOX-1143 is fixed:
@@ -1358,8 +1358,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     @Override
     protected void endDocument(PDDocument pdf) throws IOException {
         try {
-            // Extract text for any bookmarks:
-            if (config.isExtractBookmarksText()) {
+            // NONE writes no text from any source: bookmarks, forms and annotations included
+            if (config.isExtractBookmarksText() && config.getText() != NONE) {
                 extractBookmarkText();
             }
 
@@ -1378,7 +1378,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             extractXMPXFA();
 
             //extract acroform data at end of doc
-            if (config.isExtractAcroFormContent() == true) {
+            if (config.isExtractAcroFormContent() && config.getText() != NONE) {
                 try {
                     extractAcroForm(pdf);
                 } catch (IOException e) {
