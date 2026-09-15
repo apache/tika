@@ -113,9 +113,12 @@ text. `NONE` ignores the tree and writes what the stripper writes, the output of
 The `AUTO` gate, per page. A page uses its tags only when the tree claims at least `minCoverage`
 of the page's text (artifact content counts, since a producer that marks the body as artifact
 has not described the page), at most `maxDanglingRatio` of the tree's leaves for the page
-point at content the page never draws, and the tree puts at least some of the page's text in
+point at content the page never draws, the tree puts at least some of the page's text in
 an element that holds text (a paragraph, heading, cell or item: a tree of bare spans or
-divisions has no paragraphs to offer). Both start loose (0.5 and 0.2) until a corpus says
+divisions has no paragraphs to offer), and the tree does not cut the page's words into
+pieces (some form generators put every glyph in its own paragraph, which would write each
+word as a column of letters; a page where more than a third of its words span three blocks
+or more goes to the stripper). Both thresholds start loose (0.5 and 0.2) until a corpus says
 otherwise; `minCoverage` above 1 turns every page back to the stripper.
 
 With tags, a structure element becomes the XHTML element of the same meaning (`P` to `<p>`, `H1`
@@ -126,7 +129,10 @@ when its content is an image, and its `Alt` text is written as its text, so the 
 as a screen reader would read it. Text the tree does not reference follows the tagged content
 of its page in `<div class="untagged">`, and artifact content in `<div class="artifact">`, so
 nothing is lost and a consumer can drop headers and footers. Whitespace at the edges of a
-block element is dropped; the separators between words stay outside links and spans.
+block element is dropped; the separators between words stay outside links and spans. Text a
+producer draws twice for a bold effect, tagging one copy, reads once per copy: the tagged
+copy in its element, the other in the untagged division, where the stripper alone reads the
+interleaved glyphs as doubled letters.
 
 The output is well-formed XHTML whose nesting is the tree's, repaired where a tree leaves text
 or elements somewhere HTML gives them no place, the way an HTML parser would repair the same

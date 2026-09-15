@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * Tagged PDFs: text drawn twice for a bold effect with one copy tagged
+     came out as letters with spaces between them; each copy now reads as
+     its words. A tree that puts every glyph in its own paragraph (some form
+     generators) is left to the text stripper under AUTO (TIKA-4891).
+
    * A request can no longer supply openai-embedding-filter or
      jina-embedding-filter in a per-request metadata-filters list: 4.0.x
      built the filter from the request, endpoint and key included, and
@@ -20,7 +25,7 @@ Release 4.1.0 - unreleased
      and the pipes server closes the registry at shutdown, so an
      openai-embedding-engine or a VLM used as a text recognizer releases its
      HTTP client (TIKA-4889).
-     
+
    * Per-request switch for text recognizers: {"parse-context":
      {"text-recognizers": {"enabled": false}}} runs no recognizer or annotator
      from the list for that parse, in every container, and OCR_ONLY no longer

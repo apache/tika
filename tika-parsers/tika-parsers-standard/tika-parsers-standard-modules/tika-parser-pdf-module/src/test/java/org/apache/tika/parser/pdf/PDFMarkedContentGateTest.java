@@ -822,6 +822,100 @@ public class PDFMarkedContentGateTest extends TikaTest {
         }
     }
 
+    /**
+     * Text drawn twice for a bold effect, one copy tagged and one not, glyph by glyph: the
+     * stripper reads the interleaved glyphs as one doubled word; with tags each copy is the
+     * word it is, in its own place.
+     */
+    @Test
+    public void testTextDrawnTwiceReadsOncePerCopy() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            b.leaf("P", b.document, page, 0);
+            PDPageContentStream cs = b.text(page);
+            String word = "Hello";
+            for (int i = 0; i < word.length(); i++) {
+                String c = word.substring(i, i + 1);
+                cs.beginMarkedContent(COSName.P, TaggedPdfBuilder.mcid(0));
+                cs.showText(c);
+                cs.endMarkedContent();
+                // back to the line start, the untagged copy over the tagged one
+                cs.newLineAtOffset(0, 0);
+                cs.showText(c);
+                cs.newLineAtOffset(b.font.getStringWidth(c) / 1000 * 12, 0);
+            }
+            finish(cs);
+            byte[] pdf = b.bytes();
+
+            Result none = parse(pdf, config(MarkedContentConfig.Strategy.NONE));
+            assertContains("HHeelllloo", none.xml);
+            Result tags = parse(pdf, config(MarkedContentConfig.Strategy.TAGS));
+            assertContains("<p>Hello</p>", tags.xml);
+            assertContains("<div class=\"untagged\"><p>Hello</p>", tags.xml);
+            assertNotContained("H e l l o", tags.xml);
+            assertNotContained("HHeelllloo", tags.xml);
+        }
+    }
+
+    /**
+     * A tree with an element per glyph, as some form generators write, would turn every word
+     * into a column of letters: AUTO leaves such a page to the stripper, TAGS follows the tree.
+     */
+    @Test
+    public void testElementPerGlyphFallsBack() throws Exception {
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement sect = b.element("Sect", b.document, page);
+            PDPageContentStream cs = b.text(page);
+            String[] words = {"Twelve", "words", "drawn", "letter", "by", "letter", "under",
+                    "their", "own", "elements", "each", "time"};
+            int mcid = 0;
+            for (String word : words) {
+                for (int i = 0; i < word.length(); i++) {
+                    PDStructureElement p = b.element("P", sect, page);
+                    b.leaf("Span", p, page, mcid);
+                    cs.beginMarkedContent(COSName.getPDFName("Span"), TaggedPdfBuilder.mcid(mcid++));
+                    cs.showText(word.substring(i, i + 1));
+                    cs.endMarkedContent();
+                }
+                cs.showText(" ");
+            }
+            finish(cs);
+            byte[] pdf = b.bytes();
+
+            Result auto = parse(pdf, config(MarkedContentConfig.Strategy.AUTO));
+            assertEquals("1:shredded=1.00", auto.metadata.get(PDF.MARKED_CONTENT_REJECTIONS));
+            assertContains("Twelve words drawn letter by letter", auto.xml);
+            Result tags = parse(pdf, config(MarkedContentConfig.Strategy.TAGS));
+            assertEquals(1, tags.metadata.getInt(PDF.MARKED_CONTENT_PAGES_TAGGED));
+            assertContains("<p>T</p>", tags.xml);
+        }
+        // a leaf per glyph under one paragraph is a paragraph, not shredding
+        try (TaggedPdfBuilder b = new TaggedPdfBuilder()) {
+            PDPage page = b.page();
+            PDStructureElement p = b.element("P", b.document, page);
+            PDPageContentStream cs = b.text(page);
+            String[] words = {"Twelve", "words", "drawn", "letter", "by", "letter", "under",
+                    "their", "own", "leaves", "each", "time"};
+            int mcid = 0;
+            for (String word : words) {
+                for (int i = 0; i < word.length(); i++) {
+                    b.leaf("Span", p, page, mcid);
+                    cs.beginMarkedContent(COSName.getPDFName("Span"), TaggedPdfBuilder.mcid(mcid++));
+                    cs.showText(word.substring(i, i + 1));
+                    cs.endMarkedContent();
+                }
+                cs.showText(" ");
+            }
+            finish(cs);
+
+            Result auto = parse(b.bytes(), config(MarkedContentConfig.Strategy.AUTO));
+            assertEquals(1, auto.metadata.getInt(PDF.MARKED_CONTENT_PAGES_TAGGED));
+            assertContains("<p>Twelve words drawn letter by letter under their own leaves each time",
+                    auto.xml);
+        }
+    }
+
     /** A custom container type is a division, and text straight in it gets paragraphs too. */
     @Test
     public void testCustomContainerTextTakesParagraphs() throws Exception {
