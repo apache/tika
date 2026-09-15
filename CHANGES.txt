@@ -5,7 +5,7 @@ Release 4.1.0 - unreleased
      until after the flush, so the file is referenced. Embedded documents'
      spools and page renders are still copied, since their parsers delete
      them first. Groundwork for MEDIA inputs, where the copy was a second
-     full read of an audio or video file (TIKA-XXXX).
+     full read of an audio or video file (TIKA-4889).
 
    * A request can no longer supply openai-embedding-filter or
      jina-embedding-filter in a per-request metadata-filters list: 4.0.x
