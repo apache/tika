@@ -117,7 +117,7 @@ point at content the page never draws, the tree puts at least some of the page's
 an element that holds text (a paragraph, heading, cell or item: a tree of bare spans or
 divisions has no paragraphs to offer), and the tree does not cut the page's words into
 pieces (some form generators put every glyph in its own paragraph, which would write each
-word as a column of letters; a page where more than a third of its words span three blocks
+word as a column of letters; a page where more than 30% of its words span three blocks
 or more goes to the stripper). Both thresholds start loose (0.5 and 0.2) until a corpus says
 otherwise; `minCoverage` above 1 turns every page back to the stripper.
 
