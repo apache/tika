@@ -412,8 +412,8 @@ The `X-Tika-OCR*` and `X-Tika-PDF*` header families were removed earlier in the
 
 **Migration:** move these settings into your tika-config. For per-request values,
 POST to a `/config` endpoint (`/tika/config`, `/tika/config/json`, `/rmeta/config`,
-`/meta/config`) with the JSON above as the multipart `config` part; this requires
-`allowPerRequestConfig=true`.
+`/rmeta/config/{handlerType}`, `/meta/config`) with the JSON above as the multipart `config`
+part; this requires `allowPerRequestConfig=true`.
 
 [IMPORTANT]
 ====

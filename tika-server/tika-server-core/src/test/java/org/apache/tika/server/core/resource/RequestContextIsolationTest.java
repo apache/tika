@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -115,6 +116,20 @@ public class RequestContextIsolationTest {
                 (BasicContentHandlerFactory) request.get(ContentHandlerFactory.class);
         assertEquals(12345, chf.getWriteLimit(), "configured writeLimit must survive");
         assertEquals(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, chf.getType());
+    }
+
+    /** The server's own DIRECTORY unpack-config can never serve /unpack: refuse at startup. */
+    @Test
+    public void directoryUnpackConfigFailsAtStartup() throws Exception {
+        TikaResource directory = newTikaResource("""
+                { "parse-context": { "unpack-config": { "outputMode": "DIRECTORY" } } }
+                """);
+        assertThrows(IllegalStateException.class, () -> new UnpackerResource(directory));
+
+        new UnpackerResource(newTikaResource("""
+                { "parse-context": { "unpack-config": { "outputMode": "ZIPPED" } } }
+                """));
+        new UnpackerResource(newTikaResource("{}"));
     }
 
     /** The write limiter no longer rides in the context, so it must be applied to the metadata. */

@@ -1,5 +1,9 @@
 Release 4.1.0 - unreleased
 
+   * unpack-config gains includeMetadata (TIKA-4881).
+
+   * tika-server: /rmeta gains config/{handlerType} (TIKA-4881).
+     
    * An inference engine named under "parsers" (an OCR engine, a VLM parser,
      openai-image-embedding-parser) is deprecated: since 4.1.0 startup logs
      one WARN per such entry saying what it does today, and in 4.2.0 the

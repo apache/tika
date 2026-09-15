@@ -657,7 +657,7 @@ public class PipesParsingHelper {
                 unpackConfig = new UnpackConfig();
             }
 
-            // Enable zip creation in the child process
+            // Enable zip creation in the child process (DIRECTORY was refused before this)
             unpackConfig.setZipEmbeddedFiles(true);
 
             // Set suffix strategy to DETECTED so files get their proper extensions (e.g., .wav, .jpg)
@@ -666,10 +666,10 @@ public class PipesParsingHelper {
             // Set emitter to our file-system emitter
             unpackConfig.setEmitter(UNPACK_EMITTER_ID);
 
-            // Include original document if saveAll is requested
+            // /all = the original document plus metadata, in either output format.
             if (saveAll) {
                 unpackConfig.setIncludeOriginal(true);
-                unpackConfig.setIncludeMetadataInZip(true);
+                unpackConfig.setIncludeMetadata(true);
             }
 
             parseContext.set(UnpackConfig.class, unpackConfig);

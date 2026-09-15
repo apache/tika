@@ -399,11 +399,21 @@ through every level. Both accept a single file or a directory as input.
 |Output format: `REGULAR` (default) or `FRICTIONLESS`.
 
 |`--unpack-mode=<mode>`
-|Output mode: `ZIPPED` (default) or `DIRECTORY`.
+|Output mode: `ZIPPED` (default) or `DIRECTORY`. With `--unpack-format=FRICTIONLESS` and no
+mode, `DIRECTORY`: the package is laid out under `<out>/<input>/` (`datapackage.json`,
+`unpacked/...`) rather than zipped.
 
 |`--unpack-include-metadata`
-|Include `metadata.json` in Frictionless output.
+|Metadata for every extracted file. A Frictionless package carries `metadata.json` by default;
+this adds a `.metadata.json` sidecar per file to REGULAR zip output.
 |===
+
+A `-c`/`--config` file's `unpack-config` is honoured and the flags above are applied on top
+of it. That is the only way to get the source document itself into the output
+(`"unpack-config": {"includeOriginal": true}`); no flag does it. File naming stays the
+CLI's own (`<input>-embed/00000001.<ext>`, detected suffixes) regardless of the file's
+`suffixStrategy`, `zeroPadName`, `embeddedIdPrefix` or `keyBaseStrategy`. See
+xref:pipes/unpack-config.adoc#_what_each_surface_produces[what each surface produces].
 
 === Examples
 
