@@ -72,7 +72,7 @@ settings live under `ocr` and are sized here for an image model rather than Tess
   "parsers": [
     { "default-parser": {} },
     { "pdf-parser": { "inference": { "input": ["PAGES"] },
-                      "ocr": { "strategy": "NO_OCR", "dpi": 100, "imageType": "RGB" } } }
+                      "text": "EXTRACT", "ocr": { "dpi": 100, "imageType": "RGB" } } }
   ]
 }
 ----
@@ -120,7 +120,7 @@ every other document is embedded by its text. List `["TEXT", "PAGES"]` on the PD
   "parsers": [
     { "default-parser": {} },
     { "pdf-parser": { "inference": { "input": ["PAGES"] },
-                      "ocr": { "strategy": "NO_OCR", "dpi": 100, "imageType": "RGB" } } }
+                      "text": "EXTRACT", "ocr": { "dpi": 100, "imageType": "RGB" } } }
   ]
 }
 ----
@@ -136,7 +136,7 @@ The recognizer stays on for embedded and standalone images; the PDF parser never
   "text-recognizers": [ { "engine": "tesseract" } ],
   "parsers": [
     { "default-parser": {} },
-    { "pdf-parser": { "ocr": { "strategy": "NO_OCR" } } }
+    { "pdf-parser": { "text": "EXTRACT" } }
   ]
 }
 ----

@@ -392,10 +392,11 @@ public class XmlToJsonConfigConverterTest {
         assertFalse(pdf.has("ocrStrategy"), "flat ocrStrategy should be nested, not left at top level");
         assertFalse(pdf.has("ocrDPI"), "flat ocrDPI should be nested, not left at top level");
 
-        // ...and merged into the single nested "ocr" object.
+        // ...and merged into the single nested "ocr" object, the strategy as "text".
         JsonNode ocr = pdf.get("ocr");
         assertNotNull(ocr, "merged nested ocr object should be present");
-        assertEquals("NO_OCR", ocr.get("strategy").asText(),
+        assertFalse(ocr.has("strategy"), "the strategy is written as the 4.1 \"text\" key");
+        assertEquals("EXTRACT", pdf.get("text").asText(),
                 "explicit nested strategy must win over the legacy flat ocrStrategy");
         assertEquals(200, ocr.get("dpi").asInt(),
                 "legacy flat ocrDPI must be migrated into ocr.dpi");

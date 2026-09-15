@@ -127,7 +127,7 @@ only when its own config releases pages:
   "parsers": [
     { "default-parser": {} },
     { "pdf-parser": { "inference": { "input": ["PAGES"] },
-                      "ocr": { "strategy": "NO_OCR", "dpi": 100, "imageType": "RGB" } } }
+                      "text": "EXTRACT", "ocr": { "dpi": 100, "imageType": "RGB" } } }
   ]
 }
 ----
@@ -135,7 +135,7 @@ only when its own config releases pages:
 `pdf-parser.inference.input` lists what the PDF releases to inference: `TEXT`, the default
 (text bindings follow), and `PAGES`. With `PAGES`, and a `PAGES` binding that runs for the
 request, the PDF renders every page once and hands the same image to the OCR engine, when
-`ocr.strategy` asks for it, and to the bindings: a scanned page costs one render whether one
+`text` asks for it, and to the bindings: a scanned page costs one render whether one
 consumer or two see it. Each page is one unit. Its vector lands on the PDF's own `tk:chunks`
 with a `paginated` locator naming the page, and `maxChunks` is the number of pages one document
 sends. Nothing is rendered for inference unless a `PAGES` binding runs, so the block can stay on

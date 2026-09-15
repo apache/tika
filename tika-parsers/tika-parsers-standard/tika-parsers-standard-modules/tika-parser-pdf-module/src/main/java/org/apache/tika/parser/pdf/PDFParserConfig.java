@@ -39,6 +39,25 @@ public class PDFParserConfig implements Serializable {
     /**
      * Mode for checking document access permissions.
      */
+    /**
+     * Where a page's text comes from: the content stream, OCR of the rendered page, both,
+     * the per-page verdict, or nowhere. Set with {@code "text"}; the 4.0 {@code ocr.strategy}
+     * spellings are aliases ({@code NO_OCR} = {@link #EXTRACT}, {@code OCR_ONLY} =
+     * {@link #OCR}, {@code OCR_AND_TEXT_EXTRACTION} = {@link #EXTRACT_AND_OCR}).
+     */
+    public enum TextPolicy {
+        /** The content stream only; never OCR. */
+        EXTRACT,
+        /** The content stream, OCR where the verdict says the page needs it. */
+        AUTO,
+        /** Both, every page. */
+        EXTRACT_AND_OCR,
+        /** OCR only; the content stream is not read. */
+        OCR,
+        /** No text from any source; pages are still rendered for annotators and inference. */
+        NONE
+    }
+
     public enum AccessCheckMode {
         /**
          * Don't check extraction permissions. Content will always be extracted
@@ -116,6 +135,8 @@ public class PDFParserConfig implements Serializable {
     private boolean ifXFAExtractOnlyXFA = false;
 
     private OcrConfig ocr = new OcrConfig();
+    /** Null until set; {@link #getText()} then falls back to the {@code ocr.strategy} alias. */
+    private TextPolicy text;
 
     private InferenceConfig inference = new InferenceConfig();
 
@@ -531,6 +552,19 @@ public class PDFParserConfig implements Serializable {
         this.ocr = ocr;
     }
 
+    /** The text policy: {@code "text"} if set, else the {@code ocr.strategy} alias, else AUTO. */
+    public TextPolicy getText() {
+        if (text != null) {
+            return text;
+        }
+        TextPolicy legacy = ocr == null ? null : ocr.legacyText();
+        return legacy != null ? legacy : TextPolicy.AUTO;
+    }
+
+    public void setText(TextPolicy text) {
+        this.text = text;
+    }
+
     /** What this parser releases to the inference bindings. */
     public InferenceConfig getInference() {
         return inference;
@@ -542,7 +576,7 @@ public class PDFParserConfig implements Serializable {
 
     // OCR settings are configured through the nested OcrConfig (getOcr()/setOcr()).
     // The flat ocr* convenience accessors (getOcrStrategy/setOcrDPI/...) were removed in
-    // 4.x so that "ocr" is the single JSON spelling; use getOcr().setStrategy(...) etc.
+    // 4.x so that "ocr" is the single JSON spelling; use getOcr().setDpi(...) etc.
 
     /**
      * @return whether or not to extract PDActions

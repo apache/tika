@@ -1089,7 +1089,7 @@ public class PDFMarkedContentGateTest extends TikaTest {
             finish(cs);
 
             PDFParserConfig config = config(MarkedContentConfig.Strategy.TAGS);
-            config.getOcr().setStrategy(OcrConfig.Strategy.AUTO);
+            config.setText(PDFParserConfig.TextPolicy.AUTO);
             config.getOcr().setStrategyAuto(new OcrConfig.StrategyAuto(0.02f, 10));
             Result result = parse(b.bytes(), config, mockOcrParser(config, "MOCK_OCR_CONTENT"));
             assertContains("<p>Enough tagged text", result.page(1));
