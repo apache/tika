@@ -7,6 +7,12 @@ Release 4.1.0 - unreleased
      spellings load as aliases and dump as "text"; OcrConfig.getStrategy()
      is removed, read PDFParserConfig.getText() (TIKA-4889).
 
+   * Engines are closed with the config that loaded them: Engine is
+     Closeable (no-op by default), EngineRegistry closes every engine once,
+     and the pipes server closes the registry at shutdown, so an
+     openai-embedding-engine or a VLM used as a text recognizer releases its
+     HTTP client (TIKA-4889).
+     
    * Per-request switch for text recognizers: {"parse-context":
      {"text-recognizers": {"enabled": false}}} runs no recognizer or annotator
      from the list for that parse, in every container, and OCR_ONLY no longer

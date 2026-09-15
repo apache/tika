@@ -62,6 +62,7 @@ import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.inference.EngineRegistry;
 import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -186,6 +187,7 @@ public class PipesServer implements AutoCloseable {
     private final PipesConfig pipesConfig;
     private final Socket socket;
     private final MetadataFilter defaultMetadataFilter;
+    private final EngineRegistry engineRegistry;
     private final InferenceDispatcher inferenceDispatcher;
     private final ContentHandlerFactory defaultContentHandlerFactory;
     private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
@@ -259,6 +261,7 @@ public class PipesServer implements AutoCloseable {
         this.socket = socket;
         socket.setSoTimeout((int) pipesConfig.getSocketTimeoutMillis());
         this.defaultMetadataFilter = tikaLoader.loadMetadataFilters();
+        this.engineRegistry = tikaLoader.get(EngineRegistry.class);
         this.inferenceDispatcher = tikaLoader.get(InferenceDispatcher.class);
         this.defaultContentHandlerFactory = tikaLoader.loadContentHandlerFactory();
         this.defaultMetadataWriteLimiterFactory = configContext.get(MetadataWriteLimiterFactory.class);
@@ -407,6 +410,7 @@ public class PipesServer implements AutoCloseable {
         } finally {
             connectionPool.shutdownNow();
             connectionPool.awaitTermination(10, TimeUnit.SECONDS);
+            resources.close();
             LOG.debug("Shared server shutdown complete");
         }
     }
@@ -715,6 +719,9 @@ public class PipesServer implements AutoCloseable {
         executorService.shutdownNow();
         socket.close();
         defaultMetadataFilter.close();
+        if (engineRegistry != null) {
+            engineRegistry.close();
+        }
     }
 
     private void exit(int exitCode) {

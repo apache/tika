@@ -24,6 +24,16 @@ import org.apache.tika.parser.inference.Engine;
 public class TestEngine implements Engine {
 
     private String label = "";
+    private boolean closed;
+
+    @Override
+    public void close() {
+        closed = true;
+    }
+
+    public boolean isClosed() {
+        return closed;
+    }
 
     public String getLabel() {
         return label;

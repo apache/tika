@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -51,6 +52,10 @@ public class EngineLoaderTest {
         assertEquals("second", ((TestEngine) engines.get("two")).getLabel());
         assertNull(engines.get("three"));
         assertEquals(2, engines.getEngines().size());
+
+        engines.close();
+        assertTrue(((TestEngine) engines.get("one")).isClosed());
+        assertTrue(((TestEngine) engines.get("two")).isClosed());
     }
 
     @Test

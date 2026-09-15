@@ -16,7 +16,6 @@
  */
 package org.apache.tika.inference;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -44,7 +43,7 @@ import org.apache.tika.utils.StringUtils;
  * {@code {"image": "data:<mime>;base64,..."}} inputs and reads the vectors back by index.
  */
 @TikaComponent(name = "openai-embedding-engine", spi = false)
-public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable, Closeable {
+public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 

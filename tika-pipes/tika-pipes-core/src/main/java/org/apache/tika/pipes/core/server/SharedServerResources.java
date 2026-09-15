@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.core.server;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 import org.xml.sax.SAXException;
@@ -32,6 +33,7 @@ import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.inference.EngineRegistry;
 import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.PipesConfig;
@@ -53,7 +55,7 @@ import org.apache.tika.sax.ContentHandlerFactory;
  *   <li>MetadataFilter, ContentHandlerFactory - stateless</li>
  * </ul>
  */
-public class SharedServerResources {
+public class SharedServerResources implements Closeable {
 
     private final TikaLoader tikaLoader;
     private final PipesConfig pipesConfig;
@@ -64,6 +66,7 @@ public class SharedServerResources {
     private final EmitterManager emitterManager;
     private final MetadataFilter defaultMetadataFilter;
     private final InferenceDispatcher inferenceDispatcher;
+    private final EngineRegistry engineRegistry;
     private final ContentHandlerFactory defaultContentHandlerFactory;
     private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
     private final EmitStrategy emitStrategy;
@@ -75,7 +78,7 @@ public class SharedServerResources {
                                   AutoDetectParser autoDetectParser, Detector detector,
                                   RecursiveParserWrapper rMetaParser, FetcherManager fetcherManager,
                                   EmitterManager emitterManager, MetadataFilter defaultMetadataFilter,
-                                  InferenceDispatcher inferenceDispatcher,
+                                  InferenceDispatcher inferenceDispatcher, EngineRegistry engineRegistry,
                                   ContentHandlerFactory defaultContentHandlerFactory,
                                   MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory,
                                   EmitStrategy emitStrategy, ConfigStore configStore,
@@ -90,6 +93,7 @@ public class SharedServerResources {
         this.emitterManager = emitterManager;
         this.defaultMetadataFilter = defaultMetadataFilter;
         this.inferenceDispatcher = inferenceDispatcher;
+        this.engineRegistry = engineRegistry;
         this.defaultContentHandlerFactory = defaultContentHandlerFactory;
         this.defaultMetadataWriteLimiterFactory = defaultMetadataWriteLimiterFactory;
         this.emitStrategy = emitStrategy;
@@ -128,6 +132,7 @@ public class SharedServerResources {
 
         // Load filters and factories
         MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
+        EngineRegistry engineRegistry = tikaLoader.get(EngineRegistry.class);
         InferenceDispatcher inferenceDispatcher = tikaLoader.get(InferenceDispatcher.class);
         ContentHandlerFactory contentHandlerFactory = tikaLoader.loadContentHandlerFactory();
         ParseContext configContext = tikaLoader.loadParseContext();
@@ -142,7 +147,7 @@ public class SharedServerResources {
 
         return new SharedServerResources(tikaLoader, pipesConfig, autoDetectParser, detector,
                 rMetaParser, fetcherManager, emitterManager, metadataFilter, inferenceDispatcher,
-                contentHandlerFactory,
+                engineRegistry, contentHandlerFactory,
                 metadataWriteLimiterFactory, emitStrategy, configStore,
                 ExceptionReporting.get(configContext), presetRegistry);
     }
@@ -215,6 +220,18 @@ public class SharedServerResources {
 
     public MetadataFilter getDefaultMetadataFilter() {
         return defaultMetadataFilter;
+    }
+
+    /** Closes what the config loaded and holds open: the filter chain and the engines. */
+    @Override
+    public void close() throws IOException {
+        try {
+            defaultMetadataFilter.close();
+        } finally {
+            if (engineRegistry != null) {
+                engineRegistry.close();
+            }
+        }
     }
 
     /** Null when no {@code "inference"} bindings are configured. */
