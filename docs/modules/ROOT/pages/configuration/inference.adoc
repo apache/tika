@@ -236,5 +236,5 @@ Engines cannot be defined or changed per request.
 The 4.0 `openai-image-embedding-parser` is deprecated since 4.1.0 and removed in 4.2.0. It
 still works as a text-recognizers entry, with a WARN at startup, and embeds one image per
 request. The same endpoint as an engine plus a binding on `IMAGES` embeds a document's images
-in one request and puts the vectors where they belong; move the `baseUrl`, `model` and
-`apiKey` to the engine and drop the parser entry.
+in requests of the engine's batch size and puts the vectors where they belong; move the
+`baseUrl`, `model` and `apiKey` to the engine and drop the parser entry.

@@ -286,11 +286,9 @@ public class ContentEnricherLoaderTest {
     }
 
     /**
-     * An enricher under "parsers" whose every type another parser claims is never dispatched
-     * to; the loader names it so a config that looks like a parser choice is not a silent
-     * enricher choice.
+     * An engine under "parsers" is the deprecated shape; the loader finds it whether it is
+     * dispatched to as a parser or only ever runs as an enricher, and tells them apart.
      */
-    /** An engine under "parsers" is the deprecated shape; the loader finds it whether or not it is dispatched to. */
     @Test
     public void testEngineUnderParsersIsFound() throws Exception {
         TikaLoader loader = load("""
