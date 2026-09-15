@@ -7,6 +7,46 @@ Release 4.1.0 - unreleased
      them first. Groundwork for MEDIA inputs, where the copy was a second
      full read of an audio or video file (TIKA-4889).
 
+   * unpack-config gains includeMetadata (TIKA-4881).
+
+   * tika-server: /rmeta gains config/{handlerType} (TIKA-4881).
+     
+   * An inference engine named under "parsers" (an OCR engine, a VLM parser,
+     openai-image-embedding-parser) is deprecated: since 4.1.0 startup logs
+     one WARN per such entry saying what it does today, and in 4.2.0 the
+     entry fails config load. Configure engines under "engines" and name them
+     in "text-recognizers" or bind them with "inference". The whole-PDF VLM
+     shape (claude-vlm-parser with pdf-parser excluded) goes with it; the
+     replacement is pdf-parser "text": "OCR" with the VLM as the recognizer
+     (TIKA-4889).
+
+   * openai-image-embedding-parser is deprecated, removal in 4.2.0: the same
+     endpoint as an openai-embedding-engine with an IMAGES inference binding
+     embeds a document's images in requests of the engine's batch size
+     (TIKA-4889).
+     
+   * PDF: "pdf-parser": {"rendering": {"dpi", "imageType", "imageFormat",
+     "imageQuality", "maxImagePixels"}} sets the page images emitted under
+     RENDER_PAGES_BEFORE_PARSE and RENDER_PAGES_AT_PAGE_END; a field left out
+     takes the "ocr" value. OCR, annotators and PAGES inference input keep
+     rendering with "ocr", and share the emitted render only when it is the
+     same image. maxImagePixels now also bounds pages rendered through
+     pdfbox-renderer; a page it skips leaves a warning on the PDF instead of
+     vanishing (TIKA-4889).
+
+   * Tagged PDFs: text drawn twice for a bold effect with one copy tagged
+     came out as letters with spaces between them; each copy now reads as
+     its words. A tree that puts every glyph in its own paragraph (some form
+     generators) is left to the text stripper under AUTO (TIKA-4891).
+     
+   * Inference results in the single-object outputs: with /tika as JSON,
+     tika-app -j, or pipes CONCATENATE, the vectors of an attachment's pages
+     and pictures now land on the one metadata object handed back, each
+     with an embedded locator naming the part, instead of being discarded
+     with the attachment's own metadata. InferenceUnit gains
+     getDestination(), where a task writes; ChunkTarget.of(unit) replaces
+     resolve(target, parent) (TIKA-4895).
+
    * A request can no longer supply openai-embedding-filter or
      jina-embedding-filter in a per-request metadata-filters list: 4.0.x
      built the filter from the request, endpoint and key included, and
@@ -27,7 +67,7 @@ Release 4.1.0 - unreleased
      and the pipes server closes the registry at shutdown, so an
      openai-embedding-engine or a VLM used as a text recognizer releases its
      HTTP client (TIKA-4889).
-     
+
    * Per-request switch for text recognizers: {"parse-context":
      {"text-recognizers": {"enabled": false}}} runs no recognizer or annotator
      from the list for that parse, in every container, and OCR_ONLY no longer
@@ -76,8 +116,9 @@ Release 4.1.0 - unreleased
 
    * New "inference" config section: bind a named engine to an input (IMAGES)
      and tasks (embed), and every image document Tika parses is embedded in
-     one request per document tree; vectors land on the document the image
-     belongs to, as it appears in the output. Per request, "inference" in
+     requests of the engine's batch size, per document tree, not one per
+     image; vectors land on the document the image belongs to, as it appears
+     in the output. Per request, "inference" in
      parse-context selects bindings or switches inference off.
      openai-image-embedding-parser keeps working, one request per image
      (TIKA-4889).
@@ -161,7 +202,15 @@ Release 4.1.0 - unreleased
 
    * tika-inference and tika-vlm are experimental: classes, config keys and
      metadata output may change in minor releases without deprecation or
-     compatibility shims (TIKA-4884).
+     compatibility shims (TIKA-4884). So are the "inference" config section,
+     pdf-parser "inference", the org.apache.tika.parser.enricher, .inference
+     and .hook packages, and the tk:chunks and tk:inference-released output:
+     4.2 batches recognition per document, meant as an opt-in addition (an
+     engine that takes one image at a time keeps working unchanged), and adds
+     media inputs and document-level tasks.
+     Stable: the "engines" map, the "text-recognizers" list, and pdf-parser
+     "text"; a 4.1 spelling of those loads as an alias for at least one minor
+     release if it changes (TIKA-4895).
 
    * A missing OOXML relationship target no longer aborts the whole file:
      the threaded-comment and person lookups in xlsx and the page lookups in

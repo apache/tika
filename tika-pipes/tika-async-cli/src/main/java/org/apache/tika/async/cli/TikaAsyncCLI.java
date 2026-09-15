@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
@@ -86,9 +87,11 @@ public class TikaAsyncCLI {
         options.addOption(null, "unpack-format", true,
                 "output format for unpacking: REGULAR (default) or FRICTIONLESS");
         options.addOption(null, "unpack-mode", true,
-                "output mode for unpacking: ZIPPED (default) or DIRECTORY");
+                "output mode for unpacking: ZIPPED (default) or DIRECTORY; DIRECTORY when "
+                        + "--unpack-format FRICTIONLESS is given with no mode");
         options.addOption(null, "unpack-include-metadata", false,
-                "include metadata.json in Frictionless output");
+                "metadata for every extracted file: a Frictionless package carries metadata.json "
+                        + "by default; this adds per-file sidecars to REGULAR zip output");
         options.addOption(null, "on-exists", true,
                 "behavior when an output file already exists: exception (default), replace or skip");
 
@@ -324,10 +327,11 @@ public class TikaAsyncCLI {
 
     private static void processWithTikaConfig(PipesIterator pipesIterator, Path tikaConfigPath, SimpleAsyncConfig asyncConfig) throws Exception {
         long start = System.currentTimeMillis();
+        UnpackConfig configuredUnpack = loadConfiguredUnpackConfig(tikaConfigPath, asyncConfig);
         try (AsyncProcessor processor = AsyncProcessor.load(tikaConfigPath, pipesIterator)) {
 
             for (FetchEmitTuple t : pipesIterator) {
-                configureExtractBytes(t, asyncConfig);
+                configureExtractBytes(t, asyncConfig, configuredUnpack);
                 configureHandler(t, asyncConfig);
                 boolean offered = processor.offer(t, TIMEOUT_MS);
                 if (!offered) {
@@ -357,7 +361,19 @@ public class TikaAsyncCLI {
         t.getParseContext().set(ContentHandlerFactory.class, factory);
     }
 
-    private static void configureExtractBytes(FetchEmitTuple t, SimpleAsyncConfig asyncConfig) {
+    /** The -c file's unpack-config; null when unpacking is off or none is configured. */
+    private static UnpackConfig loadConfiguredUnpackConfig(Path tikaConfigPath,
+                                                           SimpleAsyncConfig asyncConfig)
+            throws TikaConfigException, IOException {
+        if (asyncConfig == null
+                || asyncConfig.getExtractBytesMode() == SimpleAsyncConfig.ExtractBytesMode.NONE) {
+            return null;
+        }
+        return TikaLoader.load(tikaConfigPath).loadParseContext().get(UnpackConfig.class);
+    }
+
+    private static void configureExtractBytes(FetchEmitTuple t, SimpleAsyncConfig asyncConfig,
+                                              UnpackConfig configured) {
         if (asyncConfig == null) {
             return;
         }
@@ -382,23 +398,28 @@ public class TikaAsyncCLI {
         }
         // For RECURSIVE mode (-Z), use default unlimited depth
 
-        UnpackConfig config = new UnpackConfig();
+        // Copied per tuple: the worker mutates it. File naming stays the CLI's, config or not.
+        UnpackConfig config = configured != null ? configured.copy() : new UnpackConfig();
         config.setEmitter(TikaConfigAsyncWriter.EMITTER_NAME);
-        config.setIncludeOriginal(false);
         config.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
         config.setEmbeddedIdPrefix("-");
         config.setZeroPadName(8);
         config.setKeyBaseStrategy(UnpackConfig.KEY_BASE_STRATEGY.DEFAULT);
 
-        // Apply Frictionless Data Package options
+        // Command-line flags win over the file
         if (asyncConfig.getUnpackFormat() != null) {
             config.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.valueOf(asyncConfig.getUnpackFormat()));
+            // Loose files are what -z otherwise writes; a zip only when asked for
+            if (asyncConfig.getUnpackMode() == null
+                    && config.getOutputFormat() == UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS) {
+                config.setOutputMode(UnpackConfig.OUTPUT_MODE.DIRECTORY);
+            }
         }
         if (asyncConfig.getUnpackMode() != null) {
             config.setOutputMode(UnpackConfig.OUTPUT_MODE.valueOf(asyncConfig.getUnpackMode()));
         }
         if (asyncConfig.isUnpackIncludeMetadata()) {
-            config.setIncludeFullMetadata(true);
+            config.setIncludeMetadata(true);
         }
 
         parseContext.set(UnpackConfig.class, config);

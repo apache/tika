@@ -31,7 +31,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
@@ -63,6 +65,7 @@ public class InferenceDispatcherTest {
 
     private static final MediaType PNG = MediaType.image("png");
     private static final MediaType CONTAINER = MediaType.application("x-test-container");
+    private static final MediaType INNER = MediaType.image("x-test-inner");
 
     static final class RecordingEngine implements Engine {
     }
@@ -106,11 +109,25 @@ public class InferenceDispatcherTest {
         }
     }
 
-    /** A container whose one child is a PNG, parsed through the embedded extractor. */
+    /**
+     * A container parsed through the embedded extractor: "CONTAINER" holds one inline PNG;
+     * "NESTED" holds a "CONTAINER" of the {@link #INNER} type as an attachment, like a zip
+     * holding a docx with a picture. INNER is an image type so the attachment is offered too.
+     */
     static final class ContainerParser implements Parser {
+        private final MediaType type;
+
+        ContainerParser() {
+            this(CONTAINER);
+        }
+
+        ContainerParser(MediaType type) {
+            this.type = type;
+        }
+
         @Override
         public Set<MediaType> getSupportedTypes(ParseContext context) {
-            return Collections.singleton(CONTAINER);
+            return Collections.singleton(type);
         }
 
         @Override
@@ -118,11 +135,13 @@ public class InferenceDispatcherTest {
                           ParseContext context) throws IOException, SAXException, TikaException {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
+            boolean nested = "NESTED".equals(new String(tis.readAllBytes(), UTF_8));
             Metadata child = new Metadata();
-            child.set(HttpHeaders.CONTENT_TYPE, PNG.toString());
-            child.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, "INLINE");
-            child.set(TikaCoreProperties.RESOURCE_NAME_KEY, "image1.png");
-            try (TikaInputStream childStream = TikaInputStream.get("PNG-BYTES".getBytes(UTF_8))) {
+            child.set(HttpHeaders.CONTENT_TYPE, nested ? INNER.toString() : PNG.toString());
+            child.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, nested ? "ATTACHMENT" : "INLINE");
+            child.set(TikaCoreProperties.RESOURCE_NAME_KEY, nested ? "inner.docx" : "image1.png");
+            byte[] bytes = (nested ? "CONTAINER" : "PNG-BYTES").getBytes(UTF_8);
+            try (TikaInputStream childStream = TikaInputStream.get(bytes)) {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context)
                         .parseEmbedded(childStream, xhtml, child, context, false);
             }
@@ -289,6 +308,7 @@ public class InferenceDispatcherTest {
         InferenceUnit unit = task.runs.get(0).get(0);
         assertSame(handler.kept, unit.getParent(), "the parent the wrapper kept, not the live one");
         assertSame(liveChild, unit.getTarget(), "nothing kept for the child: the live object");
+        assertSame(liveChild, unit.getDestination(), "untyped: not lifted");
         assertEquals("/1/2", unit.getTargetIdPath());
     }
 
@@ -336,9 +356,67 @@ public class InferenceDispatcherTest {
             parser.parse(tis, new DefaultHandler(), root, context);
         }
         assertEquals(1, task.runs.size());
-        assertSame(root, task.runs.get(0).get(0).getParent(),
+        InferenceUnit unit = task.runs.get(0).get(0);
+        assertSame(root, unit.getParent(),
                 "the parent is named in every mode, not only under the wrapper");
+        assertSame(root, unit.getDestination(), "one output object: results land on it");
+        assertEquals("/1", unit.getTargetIdPath(), "numbered as the wrapper would have");
+        assertNull(unit.getParentIdPath());
         assertNull(context.get(ParseHooks.class), "seeding is undone at the top level");
+    }
+
+    /** Outside the wrapper the embedded documents' metadata is discarded: every unit lands on the root. */
+    @Test
+    public void testDeepChildOutsideTheWrapperLandsOnTheRoot() throws Exception {
+        RecordingTask task = new RecordingTask();
+        AutoDetectParser parser = hooked(pngDispatcher(task), new ContainerParser(),
+                new ContainerParser(INNER), new TypedParser(PNG));
+        Metadata root = new Metadata();
+        root.set(HttpHeaders.CONTENT_TYPE, CONTAINER.toString());
+        try (TikaInputStream tis = TikaInputStream.get("NESTED".getBytes(UTF_8))) {
+            parser.parse(tis, new DefaultHandler(), root, new ParseContext());
+        }
+        assertEquals(2, task.runs.get(0).size(), "the picture and the attachment");
+        InferenceUnit unit = task.runs.get(0).get(0);
+        assertEquals("image1.png", unit.getTarget().get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("inner.docx", unit.getParent().get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertSame(root, unit.getDestination());
+        assertTrue(unit.isLifted());
+        assertEquals("/1/2", unit.getTargetIdPath());
+        assertEquals("/1", unit.getParentIdPath());
+        InferenceUnit attachment = task.runs.get(0).get(1);
+        assertSame(root, attachment.getDestination(), "an attachment too: there is nowhere else");
+        assertTrue(attachment.isLifted());
+        assertEquals("/1", attachment.getTargetIdPath());
+    }
+
+    /** Under the wrapper an attachment keeps its own results, on the copy the wrapper kept. */
+    @Test
+    public void testAttachmentUnderTheWrapperKeepsItsOwn() throws Exception {
+        RecordingTask task = new RecordingTask();
+        AutoDetectParser parser = hooked(pngDispatcher(task), new ContainerParser(),
+                new ContainerParser(INNER), new TypedParser(PNG));
+        RecursiveParserWrapper wrapper = new RecursiveParserWrapper(parser);
+        Metadata root = new Metadata();
+        root.set(HttpHeaders.CONTENT_TYPE, CONTAINER.toString());
+        RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+        try (TikaInputStream tis = TikaInputStream.get("NESTED".getBytes(UTF_8))) {
+            wrapper.parse(tis, handler, root, new ParseContext());
+        }
+        assertEquals(3, handler.getMetadataList().size());
+        Metadata keptDocx = handler.getEmbeddedMetadata("/1");
+        Map<String, InferenceUnit> byName = new HashMap<>();
+        for (InferenceUnit unit : task.runs.get(0)) {
+            byName.put(unit.getTarget().get(TikaCoreProperties.RESOURCE_NAME_KEY), unit);
+        }
+        InferenceUnit picture = byName.get("image1.png");
+        InferenceUnit attachment = byName.get("inner.docx");
+        assertSame(keptDocx, attachment.getDestination(), "the attachment's kept copy");
+        assertFalse(attachment.isLifted());
+        assertSame(keptDocx, picture.getDestination(), "lifted onto the docx it is part of");
+        assertTrue(picture.isLifted());
+        assertEquals("/1/2", picture.getTargetIdPath());
     }
 
     @Test
@@ -376,6 +454,7 @@ public class InferenceDispatcherTest {
         assertArrayEquals("PNG-BYTES".getBytes(UTF_8), task.bytes.get(0).get(0));
         assertEquals("image1.png", unit.getTarget().get(TikaCoreProperties.RESOURCE_NAME_KEY));
         assertSame(root, unit.getParent());
+        assertSame(root, unit.getDestination(), "inline: lifted onto its parent");
         assertEquals(2, handler.getMetadataList().size());
     }
 

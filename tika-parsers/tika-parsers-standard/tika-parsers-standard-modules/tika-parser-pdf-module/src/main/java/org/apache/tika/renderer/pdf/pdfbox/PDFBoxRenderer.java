@@ -27,6 +27,8 @@ import java.util.Set;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.io.RandomAccessRead;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.rendering.ImageType;
 import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.tools.imageio.ImageIOUtil;
@@ -48,6 +50,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParser;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.parser.pdf.PDFRandomAccess;
+import org.apache.tika.parser.pdf.RenderingConfig;
 import org.apache.tika.renderer.PageBasedRenderResults;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderRequest;
@@ -182,7 +185,8 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
             try {
                 m.set(TikaPagedText.PAGE_NUMBER, i);
                 m.set(TikaPagedText.PAGE_ROTATION, (double)pdDocument.getPage(i - 1).getRotation());
-                results.add(renderPage(renderer, id, i, m, parseContext));
+                results.add(renderPage(renderer, pdDocument.getPage(i - 1), id, i, m,
+                        parseContext));
             } catch (IOException e) {
                 EmbeddedDocumentUtil.recordException(e, m, parseContext);
                 results.add(new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, m));
@@ -190,24 +194,33 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
         }
     }
 
-    protected RenderResult renderPage(PDFRenderer renderer, int id, int pageNumber,
+    protected RenderResult renderPage(PDFRenderer renderer, PDPage page, int id, int pageNumber,
                                       Metadata metadata, ParseContext parseContext)
             throws IOException {
-
+        int dpi = getDPI(parseContext);
+        long maxPixels = getMaxImagePixels(parseContext);
+        if (maxPixels > 0) {
+            PDRectangle mediaBox = page.getMediaBox();
+            long estWidth = (long) Math.ceil(mediaBox.getWidth() / 72.0 * dpi);
+            long estHeight = (long) Math.ceil(mediaBox.getHeight() / 72.0 * dpi);
+            if (estWidth * estHeight > maxPixels) {
+                throw new IOException("page " + pageNumber + " would render to " + estWidth + "x"
+                        + estHeight + " pixels at " + dpi + " dpi, above maxImagePixels "
+                        + maxPixels);
+            }
+        }
         Path tmpFile = Files.createTempFile("tika-pdfbox-rendering-",
                 "-" + id + "-" + pageNumber + "." + getImageFormatName(parseContext));
         try {
             long start = System.currentTimeMillis();
             //TODO: parameterize whether or not to un-rotate page?
             BufferedImage image = renderer.renderImageWithDPI(
-                    pageNumber - 1,
-                    getDPI(parseContext),
-                    getImageType(parseContext));
+                    pageNumber - 1, dpi, getImageType(parseContext));
             long renderingElapsed = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_RENDERING_TIME_MS, renderingElapsed);
             start = System.currentTimeMillis();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
-                ImageIOUtil.writeImage(image, getImageFormatName(parseContext), os, getDPI(parseContext),
+                ImageIOUtil.writeImage(image, getImageFormatName(parseContext), os, dpi,
                         getImageQuality(parseContext));
             }
             long elapsedWrite = System.currentTimeMillis() - start;
@@ -244,34 +257,41 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
     }
 
     protected float getImageQuality(ParseContext parseContext) {
-        PDFParserConfig pdfParserConfig = parseContext.get(PDFParserConfig.class);
-        if (pdfParserConfig == null) {
-            return defaultImageQuality;
-        }
-        return pdfParserConfig.getOcr().getImageQuality();
+        RenderingConfig settings = settings(parseContext);
+        return settings == null ? defaultImageQuality : settings.getImageQuality();
     }
 
     protected int getDPI(ParseContext parseContext) {
-        PDFParserConfig pdfParserConfig = parseContext.get(PDFParserConfig.class);
-        if (pdfParserConfig == null) {
-            return defaultDPI;
-        }
-        return pdfParserConfig.getOcr().getDpi();
+        RenderingConfig settings = settings(parseContext);
+        return settings == null ? defaultDPI : settings.getDpi();
     }
 
     protected ImageType getImageType(ParseContext parseContext) {
-        PDFParserConfig pdfParserConfig = parseContext.get(PDFParserConfig.class);
-        if (pdfParserConfig == null) {
-            return defaultImageType;
-        }
-        return pdfParserConfig.getOcr().getImageType().getPdfBoxImageType();
+        RenderingConfig settings = settings(parseContext);
+        return settings == null ? defaultImageType : settings.getImageType().getPdfBoxImageType();
     }
 
     protected String getImageFormatName(ParseContext parseContext) {
-        PDFParserConfig pdfParserConfig = parseContext.get(PDFParserConfig.class);
-        if (pdfParserConfig == null) {
-            return defaultImageFormatName;
+        RenderingConfig settings = settings(parseContext);
+        return settings == null ? defaultImageFormatName : settings.getImageFormat().getFormatName();
+    }
+
+    /** -1 for no limit. */
+    protected long getMaxImagePixels(ParseContext parseContext) {
+        RenderingConfig settings = settings(parseContext);
+        return settings == null ? -1 : settings.getMaxImagePixels();
+    }
+
+    /**
+     * The page-image settings the PDF parser scopes around an emitted render, else the OCR
+     * settings; null when no PDF parser config is in the context.
+     */
+    private static RenderingConfig settings(ParseContext parseContext) {
+        RenderingConfig emitted = parseContext.get(RenderingConfig.class);
+        if (emitted != null) {
+            return emitted;
         }
-        return pdfParserConfig.getOcr().getImageFormat().getFormatName();
+        PDFParserConfig pdfParserConfig = parseContext.get(PDFParserConfig.class);
+        return pdfParserConfig == null ? null : RenderingConfig.from(pdfParserConfig.getOcr());
     }
 }

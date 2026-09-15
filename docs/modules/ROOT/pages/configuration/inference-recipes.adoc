@@ -23,6 +23,11 @@ pixels), xref:configuration/inference.adoc[`engines` and `inference`] (what is c
 and `pdf-parser.inference.input` (what a PDF releases). Every default parser stays loaded in
 all of them.
 
+NOTE: `engines` and `text-recognizers` are stable; `inference` (and the PDF's
+`inference.input`) is experimental in 4.1.0 and may change in a minor release without a
+deprecation cycle as 4.2 adds batched recognition, media inputs and document-level tasks. The
+recipes are correct for the release they ship with; check the release notes before moving.
+
 == Scanned pages only
 
 OCR a PDF page only when its extracted text is poor, and every embedded image. Tesseract is

@@ -377,7 +377,7 @@ class PipesWorker implements Callable<PipesResult> {
             }
 
             // Emit metadata.json if requested
-            if (unpackConfig.isIncludeFullMetadata() && parseData != null &&
+            if (unpackConfig.writesMetadata() && parseData != null &&
                     parseData.getMetadataList() != null) {
                 String metadataEmitKey = baseEmitKey + "/metadata.json";
                 byte[] metadataBytes = writeMetadataListAsJson(parseData.getMetadataList());
@@ -410,7 +410,7 @@ class PipesWorker implements Callable<PipesResult> {
             zos.closeEntry();
 
             // Add metadata.json if requested
-            if (unpackConfig.isIncludeFullMetadata() && parseData != null &&
+            if (unpackConfig.writesMetadata() && parseData != null &&
                     parseData.getMetadataList() != null) {
                 ZipEntry metadataEntry = new ZipEntry("metadata.json");
                 zos.putNextEntry(metadataEntry);
@@ -479,7 +479,7 @@ class PipesWorker implements Callable<PipesResult> {
                 zos.closeEntry();
 
                 // Add metadata JSON if requested
-                if (unpackConfig.isIncludeMetadataInZip()) {
+                if (unpackConfig.writesMetadata()) {
                     String metadataFileName = fileInfo.fileName() + ".metadata.json";
                     ZipEntry metadataEntry = new ZipEntry(metadataFileName);
                     zos.putNextEntry(metadataEntry);

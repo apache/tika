@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -123,7 +124,7 @@ public class JsonFetchEmitTupleTest {
         // Create UnpackConfig with specific settings
         UnpackConfig unpackConfig = new UnpackConfig();
         unpackConfig.setZipEmbeddedFiles(true);
-        unpackConfig.setIncludeMetadataInZip(true);
+        unpackConfig.setIncludeMetadata(true);
         unpackConfig.setEmitter("test-emitter");
         unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
         parseContext.set(UnpackConfig.class, unpackConfig);
@@ -152,8 +153,10 @@ public class JsonFetchEmitTupleTest {
         UnpackConfig deserializedConfig = deserialized.getParseContext().get(UnpackConfig.class);
         assertEquals(unpackConfig.isZipEmbeddedFiles(), deserializedConfig.isZipEmbeddedFiles(),
                 "zipEmbeddedFiles should be preserved");
-        assertEquals(unpackConfig.isIncludeMetadataInZip(), deserializedConfig.isIncludeMetadataInZip(),
-                "includeMetadataInZip should be preserved");
+        assertEquals(unpackConfig.getIncludeMetadata(), deserializedConfig.getIncludeMetadata(),
+                "includeMetadata should be preserved");
+        assertTrue(deserializedConfig.isIncludeMetadataInZip(),
+                "deprecated getter should read the unified flag");
         assertEquals(unpackConfig.getEmitter(), deserializedConfig.getEmitter(),
                 "emitter should be preserved");
         assertEquals(unpackConfig.getSuffixStrategy(), deserializedConfig.getSuffixStrategy(),

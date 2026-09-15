@@ -38,11 +38,11 @@ import org.apache.tika.parser.inference.InferenceUnit;
 import org.apache.tika.parser.inference.InputKind;
 
 /**
- * The {@code embed} task. Images and pages: one vector chunk per unit, written where the
- * unit's chunks belong (its parent for an inline picture or a page render, itself otherwise),
- * with the page locator when the unit is a page or has one. Text: the unit's text is chunked
- * and every chunk gets a vector, on the unit's own document. Requests are filled to the
- * engine's batch size; every chunk names the binding as its producer.
+ * The {@code embed} task. Images and pages: one vector chunk per unit, written on the
+ * unit's destination with the page locator when the unit is a page or has one. Text: the
+ * unit's text is chunked and every chunk gets a vector, on the unit's own document.
+ * Requests are filled to the engine's batch size; every chunk names the binding as its
+ * producer.
  */
 @TikaComponent(name = "embed", spi = false)
 public class EmbedTask implements InferenceTask {
@@ -114,7 +114,7 @@ public class EmbedTask implements InferenceTask {
             for (int[] span : spans) {
                 Chunk chunk = new Chunk(text.substring(span[0], span[1]), span[0], span[1]);
                 chunk.setProducer(binding.getId());
-                owned.add(new Owned(chunk, unit.getTarget()));
+                owned.add(new Owned(chunk, unit.getDestination()));
             }
         }
         if (binding.getMaxChunks() >= 0 && owned.size() > binding.getMaxChunks()) {
@@ -206,8 +206,7 @@ public class EmbedTask implements InferenceTask {
             Chunk chunk = new Chunk(null, locators);
             chunk.setVector(vectors.get(i));
             chunk.setProducer(binding.getId());
-            ChunkTarget.resolve(unit.getTarget(), unit.getParent())
-                    .write(List.of(chunk), TikaCoreProperties.TIKA_CHUNKS.getName());
+            ChunkTarget.of(unit).write(List.of(chunk), TikaCoreProperties.TIKA_CHUNKS.getName());
         }
     }
 }

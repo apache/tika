@@ -1,6 +1,6 @@
 {
-  "text-recognizers": [
-    {
+  "engines": {
+    "claude": {
       "claude-vlm-parser": {
         "baseUrl": "https://api.anthropic.com",
         "model": "claude-sonnet-4-20250514",
@@ -16,6 +16,11 @@
         "maxImagePixels": 100000000,
         "allowRuntimePrompt": false
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "claude"
     }
   ]
 }

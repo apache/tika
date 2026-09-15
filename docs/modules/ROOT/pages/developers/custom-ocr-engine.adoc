@@ -26,6 +26,13 @@ Before writing code, check whether you need to. An engine reachable through an
 OpenAI-compatible chat completions endpoint is already covered by `openai-vlm-parser`; see
 xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers].
 
+NOTE: The Java contract on this page is experimental in 4.1.0. Today an engine is called once
+per image and writes into the caller's body as it runs; 4.2 batches recognition per document
+and places the text after the walk. The intent is additive: an engine that handles one image
+at a time keeps working unchanged, called once per image into a buffer, and an engine whose
+service takes several images opts in by declaring a batch size and implementing the list call
+that 4.2 adds. The JSON that names your engine will not change.
+
 == The class
 
 [source,java]
@@ -264,9 +271,9 @@ page renders, exactly as a dispatched parser would be, so the metadata tells you
 
 == Common mistakes
 
-* Naming the engine under `parsers`. It still works, but the entry then means two things at once
-  (configure the engine, and parse the types nobody else claims), and startup has to tell you
-  which happened. `text-recognizers` says what you mean.
+* Naming the engine under `parsers`. Deprecated since 4.1.0 and unsupported in 4.2.0: the entry
+  means two things at once (configure the engine, and parse the types nobody else claims), and
+  startup has to tell you which happened. `engines` plus `text-recognizers` says what you mean.
 * Creating a fresh `ParseContext` inside `parse`. The caller's context carries the recursion guard
   that stops an enricher from enriching its own output; pass the one you were given.
 * Claiming types you do not enrich. Every advertised type routes images to you, and a type you

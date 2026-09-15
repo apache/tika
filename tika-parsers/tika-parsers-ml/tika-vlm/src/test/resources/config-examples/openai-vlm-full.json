@@ -1,6 +1,6 @@
 {
-  "text-recognizers": [
-    {
+  "engines": {
+    "vlm": {
       "openai-vlm-parser": {
         "baseUrl": "http://127.0.0.1:8000",
         "completionsPath": "/v1/chat/completions",
@@ -17,6 +17,11 @@
         "maxImagePixels": 100000000,
         "allowRuntimePrompt": false
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "vlm"
     }
   ]
 }

@@ -23,6 +23,14 @@ embeddings, captions, tags, classifications. (Engines that produce text, OCR and
 are xref:configuration/index.adoc#text-recognizers[text recognizers].) Three sections
 configure it, each answering one question.
 
+NOTE: Inference is experimental in 4.1.0. The `inference` section, the keys of an embedding
+or VLM engine's entry, the `tika-inference` and `tika-vlm` classes, and the chunk and vector
+output (`tk:chunks`, `tk:inference-released`) may change in a minor release without a
+deprecation cycle, and no compatibility shims are kept for earlier shapes; 4.2 adds batched
+recognition, media inputs and document-level tasks. The `engines` map itself, and the
+`text-recognizers` list, are stable. Pin the Tika version you validated against and read the
+release notes before moving.
+
 == `engines`: what can be called
 
 A map of names you choose to one engine each: an endpoint or a local binary with its settings.
@@ -74,7 +82,9 @@ A list of bindings. Each names an engine, says what it is fed, and what to ask:
   document is not one. `PAGES` is one image per rendered page of a document whose parser
   renders pages for inference: the PDF parser, when its `inference.input` says so (see
   <<pages>>). `TEXT` is the extracted text of every document in the tree (see <<text>>).
-  (`MEDIA` follows.)
+  `MEDIA` (audio and video) is accepted by a binding but no task takes it in 4.1: 4.2 adds
+  media chunkers (time windows for transcription, sampled frames or clips for an image or
+  video model) that run at the flush, and a transcribing task.
 `tasks`:: One call per task on the same engine and input. `embed` writes one vector chunk per
   unit into `tk:chunks`, with the page locator when the unit has a page.
 `maxChunks`:: How many units one document tree may send; for `PAGES`, how many pages of one
@@ -96,18 +106,25 @@ on a chat engine), or an unknown key fails config load.
 Parsers do not call engines. Every image document Tika parses is offered to one dispatcher
 after its own parser has run, whatever container it came from and however deep. The
 dispatcher keeps the units of the whole document tree until the top-level parse ends, then
-sends each binding's units to its engine in `maxBatchSize` requests: a docx with twelve
-pictures is one embeddings request, not twelve; if one image in a batch is rejected, the rest
-are retried one by one. Results land on the document a unit belongs to, as it appears in the
-output: a picture in the body of a docx or an email puts its vector on the docx or the email,
-with an `embedded` locator naming the picture, whether the docx is the file itself or inside
-a zip; an attachment keeps its own. A failed request marks
-the top-level document with a warning and never fails the parse.
+sends each binding's units to its engine in requests of up to `maxBatchSize` units: a docx
+with twelve pictures is one embeddings request, not twelve, when the engine takes twelve at
+once; if one image in a batch is rejected, the rest are retried one by one. Results land on the document a unit belongs to, as it appears in the
+output. In the recursive outputs (`/rmeta`, `-J`, pipes `RMETA`), where every document has
+its own metadata object, a picture in the body of a docx or an email puts its vector on the
+docx or the email, with an `embedded` locator naming the picture, whether the docx is the
+file itself or inside a zip; an attachment keeps its own. In the single-object outputs
+(`/tika` as JSON, `-j`, pipes `CONCATENATE`) there is one object, so everything lands on it:
+an attachment's pages and pictures put their vectors on the top-level document too, each
+with an `embedded` locator whose id path and name say which part they came from. The chunks
+are the same either way; only the object they sit on differs. A failed request marks the
+top-level document with a warning and never fails the parse.
 
-The units are held as files the dispatcher owns, bounded by each binding's `maxChunks` and
-`maxBytes`, and deleted when the flush ends. Vectors are visible in the recursive outputs
-(`/rmeta`, `-J`, pipes); a streaming `/tika` parse keeps only what lands on the top-level
-document.
+The flush is the end of the top-level walk, still inside `parse()`: every byte has been read
+and the last document closed, the engines are called under the parse's timeout, and the
+units, held as files the dispatcher owns and bounded by each binding's `maxChunks` and
+`maxBytes`, are deleted when it ends. The `TEXT` stage alone runs after `parse()` returns,
+over the finished metadata list (see <<text>>). A chunker runs where its input is: a media
+chunker at the flush, on the file; the text chunker in the `TEXT` stage, on the text.
 
 [#pages]
 == Pages
@@ -190,10 +207,11 @@ narrow by document type. Use a `MARKDOWN` content handler for the chunker to see
 
 A document that released other inputs to inference is not embedded twice: a PDF parsed with
 `inference.input: ["PAGES"]` records `tk:inference-released: PAGES` and the TEXT stage skips
-it; list `["TEXT", "PAGES"]` to get both. Because this stage runs over the metadata list, it
-covers `-J`, `/rmeta` and pipes; the streaming `/tika` endpoint has no list and no text
-vectors. It is not a metadata filter: a per-request `metadata-filters` list does not touch it,
-and the per-request `inference` block below is the way to switch it off.
+it; list `["TEXT", "PAGES"]` to get both. This stage runs over the metadata list, so it
+covers `-J`, `/rmeta` and pipes, and `/tika` as JSON, whose list is the one object with the
+concatenated text; the plain-text `/tika` output carries no metadata and so no vectors. It is
+not a metadata filter: a per-request `metadata-filters` list does not touch it, and the
+per-request `inference` block below is the way to switch it off.
 
 The 4.0 `openai-embedding-filter` and `jina-embedding-filter` keep working and embed one
 document per request; the binding batches the tree and shares the engine with the other
@@ -213,9 +231,10 @@ request" (see xref:configuration/inference-recipes.adoc[Recipes]). Names only, s
 xref:using-tika/server/index.adoc[preset]. A name not in the configured list fails the request.
 Engines cannot be defined or changed per request.
 
-== From `openai-image-embedding-parser`
+== From `openai-image-embedding-parser` (deprecated)
 
-The 4.0 `openai-image-embedding-parser` still works as a text-recognizers entry and embeds one
-image per request. The same endpoint as an engine plus a binding on `IMAGES` embeds a
-document's images in one request and puts the vectors where they belong; move the `baseUrl`,
-`model` and `apiKey` to the engine and drop the parser entry.
+The 4.0 `openai-image-embedding-parser` is deprecated since 4.1.0 and removed in 4.2.0. It
+still works as a text-recognizers entry, with a WARN at startup, and embeds one image per
+request. The same endpoint as an engine plus a binding on `IMAGES` embeds a document's images
+in requests of the engine's batch size and puts the vectors where they belong; move the
+`baseUrl`, `model` and `apiKey` to the engine and drop the parser entry.
