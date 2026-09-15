@@ -81,8 +81,54 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.gui.TikaGUI;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.language.detect.LanguageHandler;
+import org.apache.tika.metadata.AccessPermissions;
+import org.apache.tika.metadata.Audio;
+import org.apache.tika.metadata.ClimateForecast;
+import org.apache.tika.metadata.DWG;
+import org.apache.tika.metadata.Database;
+import org.apache.tika.metadata.DublinCore;
+import org.apache.tika.metadata.Epub;
+import org.apache.tika.metadata.ExternalProcess;
+import org.apache.tika.metadata.FileSystem;
+import org.apache.tika.metadata.Font;
+import org.apache.tika.metadata.Geographic;
+import org.apache.tika.metadata.Google;
+import org.apache.tika.metadata.HTML;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.IDML;
+import org.apache.tika.metadata.IPTC;
+import org.apache.tika.metadata.ISO19115;
+import org.apache.tika.metadata.MAPI;
+import org.apache.tika.metadata.MIF;
+import org.apache.tika.metadata.MachineMetadata;
+import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Office;
+import org.apache.tika.metadata.OfficeOpenXMLCore;
+import org.apache.tika.metadata.OfficeOpenXMLExtended;
+import org.apache.tika.metadata.OneNote;
+import org.apache.tika.metadata.PDF;
+import org.apache.tika.metadata.PST;
+import org.apache.tika.metadata.PagedText;
+import org.apache.tika.metadata.Photoshop;
+import org.apache.tika.metadata.QuattroPro;
+import org.apache.tika.metadata.QuickTime;
+import org.apache.tika.metadata.RTFMetadata;
+import org.apache.tika.metadata.Rendering;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.Video;
+import org.apache.tika.metadata.WARC;
+import org.apache.tika.metadata.WordPerfect;
+import org.apache.tika.metadata.XMP;
+import org.apache.tika.metadata.XMPDC;
+import org.apache.tika.metadata.XMPDM;
+import org.apache.tika.metadata.XMPIdq;
+import org.apache.tika.metadata.XMPMM;
+import org.apache.tika.metadata.XMPPDF;
+import org.apache.tika.metadata.XMPRights;
+import org.apache.tika.metadata.XMPTIFF;
+import org.apache.tika.metadata.Zip;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.mime.MimeType;
@@ -120,6 +166,56 @@ import org.apache.tika.xmp.XMPMetadata;
  */
 public class TikaCLI {
     private static final Logger LOG = LoggerFactory.getLogger(TikaCLI.class);
+
+    // Tika-internal classes are intentionally excluded
+    private static final Class<?>[] METADATA_CLASSES = {
+        AccessPermissions.class,
+        Audio.class,
+        ClimateForecast.class,
+        Database.class,
+        DublinCore.class,
+        DWG.class,
+        Epub.class,
+        ExternalProcess.class,
+        FileSystem.class,
+        Font.class,
+        Geographic.class,
+        Google.class,
+        HTML.class,
+        HttpHeaders.class,
+        IDML.class,
+        IPTC.class,
+        ISO19115.class,
+        MachineMetadata.class,
+        MAPI.class,
+        Message.class,
+        MIF.class,
+        Office.class,
+        OfficeOpenXMLCore.class,
+        OfficeOpenXMLExtended.class,
+        OneNote.class,
+        PagedText.class,
+        PDF.class,
+        Photoshop.class,
+        PST.class,
+        QuattroPro.class,
+        QuickTime.class,
+        Rendering.class,
+        RTFMetadata.class,
+        TIFF.class,
+        Video.class,
+        WARC.class,
+        WordPerfect.class,
+        XMP.class,
+        XMPDC.class,
+        XMPDM.class,
+        XMPIdq.class,
+        XMPMM.class,
+        XMPPDF.class,
+        XMPRights.class,
+        XMPTIFF.class,
+        Zip.class
+    };
 
     private final int MAX_MARK = 20 * 1024 * 1024;//20MB
 
@@ -1062,21 +1158,15 @@ public class TikaCLI {
     }
 
     private void displayMetModels() {
-        Class<?>[] modelClasses = Metadata.class.getInterfaces();
-        Arrays.sort(modelClasses, Comparator.comparing(Class::getName));
+        Class<?>[] sorted = Arrays.copyOf(METADATA_CLASSES, METADATA_CLASSES.length);
+        Arrays.sort(sorted, Comparator.comparing(Class::getSimpleName));
 
-        for (Class<?> modelClass : modelClasses) {
-            // we don't care about internal Tika met classes
-            // if we do, then we can take this conditional out
-            if (!modelClass
-                    .getSimpleName()
-                    .contains("Tika")) {
-                System.out.println(modelClass.getSimpleName());
-                Field[] keyFields = modelClass.getFields();
-                Arrays.sort(keyFields, Comparator.comparing(Field::getName));
-                for (Field keyField : keyFields) {
-                    System.out.println(" " + keyField.getName());
-                }
+        for (Class<?> modelClass : sorted) {
+            System.out.println(modelClass.getSimpleName());
+            Field[] keyFields = modelClass.getFields();
+            Arrays.sort(keyFields, Comparator.comparing(Field::getName));
+            for (Field keyField : keyFields) {
+                System.out.println(" " + keyField.getName());
             }
         }
     }
