@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -144,9 +145,12 @@ public class InferenceDispatcherTest {
         return p;
     }
 
-    private void offer(InferenceDispatcher dispatcher, MediaType type, String bytes,
+    /** Offers as an embedded document: a parent, so the dispatcher copies the bytes. */
+    private Path offer(InferenceDispatcher dispatcher, MediaType type, String bytes,
                        ParseContext context) throws Exception {
-        dispatcher.offer(InputKind.IMAGES, type, new Metadata(), null, file(bytes), context);
+        Path source = file(bytes);
+        dispatcher.offer(InputKind.IMAGES, type, new Metadata(), new Metadata(), source, context);
+        return source;
     }
 
     @Test
@@ -165,13 +169,14 @@ public class InferenceDispatcherTest {
         assertTrue(!dispatcher.wants(InputKind.PAGES, PNG, context));
         assertTrue(!dispatcher.wants(InputKind.IMAGES, MediaType.image("gif"), context));
 
-        offer(dispatcher, PNG, "a", context);
+        Path source = offer(dispatcher, PNG, "a", context);
         offer(dispatcher, PNG, "b", context);
         offer(dispatcher, MediaType.image("jpeg"), "c", context);
         offer(dispatcher, MediaType.image("gif"), "d", context);
         assertTrue(pngTask.runs.isEmpty(), "nothing runs before the flush");
         Path held = context.get(InferenceDispatcher.State.class).byBinding.get("png").get(0).getPath();
         assertTrue(Files.exists(held), "the dispatcher owns a copy until the flush");
+        assertNotEquals(source, held, "an embedded document's bytes are copied");
 
         Metadata root = new Metadata();
         dispatcher.flush(root, context);
@@ -183,9 +188,36 @@ public class InferenceDispatcherTest {
                 .contains("skipped 1 units"));
         assertNull(context.get(InferenceDispatcher.State.class), "the buffer is cleared");
         assertFalse(Files.exists(held), "and its files are gone");
+        assertTrue(Files.exists(source), "the source was never the dispatcher's to delete");
 
         dispatcher.flush(root, context);
         assertEquals(1, pngTask.runs.size(), "a second flush has nothing to run");
+    }
+
+    /** The top-level document's own file outlives the flush, so it is referenced, not copied. */
+    @Test
+    public void testTopLevelBytesAreReferencedNotCopied() throws Exception {
+        RecordingTask task = new RecordingTask();
+        InferenceDispatcher dispatcher = new InferenceDispatcher(List.of(
+                new InferenceDispatcher.Bound(binding("png", InputKind.IMAGES, null, -1),
+                        new RecordingEngine(), List.of(task)),
+                new InferenceDispatcher.Bound(binding("pages", InputKind.PAGES, null, -1),
+                        new RecordingEngine(), List.of(task))));
+        ParseContext context = new ParseContext();
+        Path source = file("top");
+        dispatcher.offer(InputKind.IMAGES, PNG, new Metadata(), null, source, context);
+        InferenceUnit unit = context.get(InferenceDispatcher.State.class).byBinding.get("png").get(0);
+        assertEquals(source, unit.getPath());
+
+        Path render = file("page");
+        dispatcher.offerPage(PNG, new Metadata(), null, 1, render, context);
+        InferenceUnit page = context.get(InferenceDispatcher.State.class).byBinding.get("pages").get(0);
+        assertNotEquals(render, page.getPath(), "a page render is the renderer's file: copied");
+
+        dispatcher.flush(new Metadata(), context);
+        assertArrayEquals("top".getBytes(UTF_8), task.bytes.get(0).get(0));
+        assertTrue(Files.exists(source), "referenced, so not deleted with the buffer");
+        assertFalse(Files.exists(page.getPath()));
     }
 
     @Test
