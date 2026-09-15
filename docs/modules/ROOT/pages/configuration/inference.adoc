@@ -23,6 +23,14 @@ embeddings, captions, tags, classifications. (Engines that produce text, OCR and
 are xref:configuration/index.adoc#text-recognizers[text recognizers].) Three sections
 configure it, each answering one question.
 
+NOTE: Inference is experimental in 4.1.0. The `inference` section, the keys of an embedding
+or VLM engine's entry, the `tika-inference` and `tika-vlm` classes, and the chunk and vector
+output (`tk:chunks`, `tk:inference-released`) may change in a minor release without a
+deprecation cycle, and no compatibility shims are kept for earlier shapes; 4.2 adds batched
+recognition, media inputs and document-level tasks. The `engines` map itself, and the
+`text-recognizers` list, are stable. Pin the Tika version you validated against and read the
+release notes before moving.
+
 == `engines`: what can be called
 
 A map of names you choose to one engine each: an endpoint or a local binary with its settings.
@@ -74,7 +82,9 @@ A list of bindings. Each names an engine, says what it is fed, and what to ask:
   document is not one. `PAGES` is one image per rendered page of a document whose parser
   renders pages for inference: the PDF parser, when its `inference.input` says so (see
   <<pages>>). `TEXT` is the extracted text of every document in the tree (see <<text>>).
-  (`MEDIA` follows.)
+  `MEDIA` (audio and video) is accepted by a binding but no task takes it in 4.1: 4.2 adds
+  media chunkers (time windows for transcription, sampled frames or clips for an image or
+  video model) that run at the flush, and a transcribing task.
 `tasks`:: One call per task on the same engine and input. `embed` writes one vector chunk per
   unit into `tk:chunks`, with the page locator when the unit has a page.
 `maxChunks`:: How many units one document tree may send; for `PAGES`, how many pages of one
@@ -109,8 +119,12 @@ with an `embedded` locator whose id path and name say which part they came from.
 are the same either way; only the object they sit on differs. A failed request marks the
 top-level document with a warning and never fails the parse.
 
-The units are held as files the dispatcher owns, bounded by each binding's `maxChunks` and
-`maxBytes`, and deleted when the flush ends.
+The flush is the end of the top-level walk, still inside `parse()`: every byte has been read
+and the last document closed, the engines are called under the parse's timeout, and the
+units, held as files the dispatcher owns and bounded by each binding's `maxChunks` and
+`maxBytes`, are deleted when it ends. The `TEXT` stage alone runs after `parse()` returns,
+over the finished metadata list (see <<text>>). A chunker runs where its input is: a media
+chunker at the flush, on the file; the text chunker in the `TEXT` stage, on the text.
 
 [#pages]
 == Pages
