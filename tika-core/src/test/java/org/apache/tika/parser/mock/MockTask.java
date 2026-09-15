@@ -28,7 +28,7 @@ import org.apache.tika.parser.inference.InferenceUnit;
 
 /**
  * Fixture for {@code "inference"} tasks: nameable as {@code mock-task}, marks each unit's
- * parent (or the unit itself) with the binding id and the number of units it saw at once.
+ * destination with the binding id and the number of units it saw at once.
  */
 @TikaComponent(name = "mock-task", spi = false)
 public class MockTask implements InferenceTask {
@@ -40,7 +40,7 @@ public class MockTask implements InferenceTask {
     public void run(InferenceBinding binding, List<InferenceUnit> units, Engine engine,
                     ParseContext context) {
         for (InferenceUnit unit : units) {
-            Metadata onto = unit.getParent() != null ? unit.getParent() : unit.getTarget();
+            Metadata onto = unit.getDestination();
             onto.set(MARKER_KEY, binding.getId());
             onto.set(UNITS_KEY, Integer.toString(units.size()));
         }

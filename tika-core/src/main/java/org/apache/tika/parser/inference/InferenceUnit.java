@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Set;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -30,14 +31,22 @@ import org.apache.tika.mime.MediaType;
  * with the document they came from and, when known, its parent. Captured at the offer so
  * a task can run after the document has closed; the bytes live in a file the dispatcher
  * owns until the flush, and the id paths let the flush find the metadata the recursive
- * wrapper kept once the parser's own objects are no longer read.
+ * wrapper kept once the parser's own objects are no longer read. A task writes its result
+ * on the {@link #getDestination() destination}, which the dispatcher decides: the parent
+ * for an inline part or a page render, the document itself otherwise, and the top-level
+ * document for everything when the parse produces one metadata object.
  */
 public final class InferenceUnit {
+
+    private static final Set<String> LIFTED = Set.of(
+            TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
+            TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
 
     private final InputKind kind;
     private final MediaType type;
     private final Metadata target;
     private final Metadata parent;
+    private final Metadata destination;
     private final String targetIdPath;
     private final String parentIdPath;
     private final Path path;
@@ -55,24 +64,33 @@ public final class InferenceUnit {
                          Path path, int page) throws IOException {
         this(kind, type, target, parent, target.get(TikaCoreProperties.EMBEDDED_ID_PATH),
                 parent == null ? null : parent.get(TikaCoreProperties.EMBEDDED_ID_PATH), path,
-                null, Files.size(path), page);
+                page);
+    }
+
+    /** As above, with id paths the dispatcher resolved for documents the wrapper did not number. */
+    InferenceUnit(InputKind kind, MediaType type, Metadata target, Metadata parent,
+                  String targetIdPath, String parentIdPath, Path path, int page)
+            throws IOException {
+        this(kind, type, target, parent, placed(target, parent, targetIdPath), targetIdPath,
+                parentIdPath, path, null, Files.size(path), page);
     }
 
     /** A {@link InputKind#TEXT} unit: the target's extracted text, held in memory. */
     public InferenceUnit(MediaType type, Metadata target, Metadata parent, String text) {
-        this(InputKind.TEXT, type, target, parent,
+        this(InputKind.TEXT, type, target, parent, target,
                 target.get(TikaCoreProperties.EMBEDDED_ID_PATH),
                 parent == null ? null : parent.get(TikaCoreProperties.EMBEDDED_ID_PATH), null,
                 text, text.getBytes(StandardCharsets.UTF_8).length, -1);
     }
 
     private InferenceUnit(InputKind kind, MediaType type, Metadata target, Metadata parent,
-                          String targetIdPath, String parentIdPath, Path path, String text,
-                          long size, int page) {
+                          Metadata destination, String targetIdPath, String parentIdPath,
+                          Path path, String text, long size, int page) {
         this.kind = kind;
         this.type = type;
         this.target = target;
         this.parent = parent;
+        this.destination = destination;
         this.targetIdPath = targetIdPath;
         this.parentIdPath = parentIdPath;
         this.path = path;
@@ -81,10 +99,31 @@ public final class InferenceUnit {
         this.page = page;
     }
 
-    /** The same unit aimed at the metadata objects that are still read. */
-    InferenceUnit retargeted(Metadata target, Metadata parent) {
-        return new InferenceUnit(kind, type, target, parent, targetIdPath, parentIdPath, path,
-                text, size, page);
+    /** The same unit aimed at the metadata still read, writing on {@code destination}. */
+    InferenceUnit aimed(Metadata target, Metadata parent, Metadata destination) {
+        return new InferenceUnit(kind, type, target, parent, destination, targetIdPath,
+                parentIdPath, path, text, size, page);
+    }
+
+    /** Whether results for this document belong on the one it is part of, not on it. */
+    public static boolean lifts(Metadata target) {
+        String type = target.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
+        return type != null && LIFTED.contains(type);
+    }
+
+    /** The parent for an inline part or a page render that has one, the target otherwise. */
+    static Metadata placed(Metadata target, Metadata parent, String targetIdPath) {
+        return parent != null && targetIdPath != null && lifts(target) ? parent : target;
+    }
+
+    /** Where a task writes this unit's results. */
+    public Metadata getDestination() {
+        return destination;
+    }
+
+    /** Whether the results go on another document than the target, which a locator then names. */
+    public boolean isLifted() {
+        return destination != target;
     }
 
     /** The text of a {@link InputKind#TEXT} unit; null for the rest. */
