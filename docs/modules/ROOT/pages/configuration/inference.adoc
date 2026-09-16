@@ -65,7 +65,9 @@ changes the response from float vectors by index (`encoding_format`, `embedding_
 `output_type`, `output_dtype`, `return_multivector`), since that is what the engine reads back.
 
 Jina `jina-embeddings-v5-omni` embeds text, images and rendered pages in one space; `task`
-selects the indexing adapter and `dimensions` the vector size:
+selects the indexing adapter and `dimensions` the vector size. `PAGES` sends each page's
+rendering as a PNG, never the PDF itself, and the PDF parser renders only when its
+`inference.input` says so:
 
 [source,json]
 ----
@@ -81,6 +83,11 @@ selects the indexing adapter and `dimensions` the vector size:
     { "id": "pages",    "engine": "jina", "input": "PAGES",  "tasks": ["embed"], "maxBytes": 5000000 },
     { "id": "text",     "engine": "jina", "input": "TEXT",   "tasks": ["embed"],
       "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } } }
+  ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "inference": { "input": ["TEXT", "PAGES"] },
+                      "rendering": { "dpi": 96, "imageType": "RGB" } } }
   ]
 }
 ----
