@@ -1,14 +1,14 @@
 Release 4.1.0 - unreleased
 
-   * openai-embedding-engine gains "requestParameters", a map copied into
-     every request body for the keys a vendor adds to the OpenAI shape: Jina's
-     "task" and "dimensions", Azure's and OpenAI's "dimensions", Voyage's
-     "input_type". "model" and "input" are the engine's; keys that change the
-     response from float vectors are refused at load. "imageInput" picks how
-     an image goes into the body: the {"image": ...} object (default, Jina) or
-     a bare data URI (LiteLLM). Worked examples for Jina v5-omni, Azure
-     OpenAI, and Gemini and Nova 2 behind LiteLLM on the inference page
-     (TIKA-4896).
+   * openai-embedding-engine gains "requestParameters" to enable custom
+     parameters per vendor (TIKA-4896).
+     
+   * The inference dispatcher no longer copies the top-level document's own
+     bytes into a buffer file of its own: the stream that owns them is open
+     until after the flush, so the file is referenced. Embedded documents'
+     spools and page renders are still copied, since their parsers delete
+     them first. Groundwork for MEDIA inputs, where the copy was a second
+     full read of an audio or video file (TIKA-4889).
 
    * unpack-config gains includeMetadata (TIKA-4881).
 

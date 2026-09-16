@@ -148,8 +148,11 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
     }
 
     /**
-     * Buffers the bytes at {@code source} for every binding that takes them, copied into a
-     * file the dispatcher owns; dropped past a binding's budget.
+     * Buffers the bytes at {@code source} for every binding that takes them; dropped past a
+     * binding's budget. The top-level document's own file is referenced, since the stream
+     * that owns it is open until after the flush; anything else (an embedded document's
+     * spool, a page render) is copied into a file the dispatcher owns before its parser
+     * deletes it.
      */
     public void offer(InputKind kind, MediaType type, Metadata target, Metadata parent,
                       Path source, ParseContext context) throws IOException, TikaException {
@@ -178,14 +181,24 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
                 continue;
             }
             if (unit == null) {
-                Path copy = state.tmp.createTempFile();
-                Files.copy(source, copy, StandardCopyOption.REPLACE_EXISTING);
                 ParseHooks.Run run = context.get(ParseHooks.Run.class);
                 unit = new InferenceUnit(kind, type, target, parent, idPath(target, run),
-                        parent == null ? null : idPath(parent, run), copy, page);
+                        parent == null ? null : idPath(parent, run),
+                        held(source, parent, page, state), page);
             }
             units.add(unit);
         }
+    }
+
+    /** The source itself for the top-level document's bytes; a dispatcher-owned copy otherwise. */
+    private static Path held(Path source, Metadata parent, int page, State state)
+            throws IOException {
+        if (parent == null && page < 0) {
+            return source;
+        }
+        Path copy = state.tmp.createTempFile();
+        Files.copy(source, copy, StandardCopyOption.REPLACE_EXISTING);
+        return copy;
     }
 
     /** Runs every binding's tasks over its buffered units; clears the buffer and its files. */
