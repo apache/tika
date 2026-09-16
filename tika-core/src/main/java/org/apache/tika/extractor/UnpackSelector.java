@@ -17,6 +17,7 @@
 package org.apache.tika.extractor;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.parser.ParseContext;
 
 public interface UnpackSelector {
 
@@ -29,4 +30,12 @@ public interface UnpackSelector {
     UnpackSelector ACCEPT_ALL = new AcceptAll();
 
     boolean select(Metadata metadata);
+
+    /**
+     * Per-parse variant; the default ignores the context. Override to keep state per parse,
+     * since one selector instance may serve many parses.
+     */
+    default boolean select(Metadata metadata, ParseContext context) {
+        return select(metadata);
+    }
 }

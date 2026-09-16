@@ -155,6 +155,54 @@ not (detectors, embedded-document extraction, exception reporting, ...) and rais
 limits above the per-request clamp. Every active preset resolves at startup, so a bad preset
 fails the server, not its first request.
 
+WARNING: An active preset is a public route: anyone who can reach the server can call it, and
+it runs at config trust — it can bind components `/config` cannot and raise timeout limits
+above the per-request clamp. Vet a preset as you would `allowPerRequestConfig`, scoped to what
+the preset turns on. Tika's catalog presets are kept bounded (page and render caps, no OCR
+unless the preset is about OCR, no timeout raises); hold your own to the same bar. Startup
+logs one line per active preset naming the components it configures.
+
+==== The thumbnail catalog presets
+
+Tika ships two catalog presets in `tika-pipes-core`. They are not active out of the box: the
+operator names them in the server's `tika-config.json`, and a server without that line answers
+`404` on their routes.
+
+[source,json]
+----
+{ "presets": { "thumbnail": true, "render-thumbnail": true } }
+----
+
+Both render the same two things the same way — the first page of a PDF at 96 dpi in colour
+(`rendering`, bounded by its `maxImagePixels`) and the EMF/WMF thumbnail of an Office document
+(that metafile only, not the document's pictures) — so an image found through one is the image
+the other returns, dimensions included. Both name the standard parsers, so they need
+`tika-parsers-standard-package` on the classpath.
+
+`/unpack/preset/thumbnail` — "just give me the thumbnail". The zip holds at most one raster
+image per request and nothing else: the stored thumbnail (Office docProps, audio cover art,
+raw camera previews, epub, iWork), the rasterized EMF/WMF thumbnail, or the PDF page; `204`
+when the document has none. An image file is its own thumbnail: it has no embedded documents,
+so it answers `204` too. Text is read from the first PDF page only, no OCR or inference runs,
+and embedded documents are parsed two levels deep at most, so the parse is cheap.
+
+`/rmeta/preset/render-thumbnail` — "give me everything, thumbnail included". A full parse
+plus the two renders above, so an index gets the thumbnail's type and dimensions from the same
+request as the text. Nothing is selected for the client; it applies the rule below. The preset
+names only rendering settings, and they merge with what the config's `parsers` block sets for
+`pdf-parser`, `emf-parser` and `wmf-parser`; a same-named entry in the config's `parse-context`
+block is replaced by the preset's, as with any parse-context layer, so keep server-wide parser
+settings under `parsers`.
+
+The selection rule, for a client that reads `/rmeta` and wants the answer `thumbnail` gives:
+take the first embedded document with an `image/*` `Content-Type` other than EMF, WMF or SVG
+that is a `tk:embedded-resource-type` of `THUMBNAIL` at `tk:embedded-depth` 1, a `THUMBNAIL` at
+depth 2 carrying `tk:rendering:rendered-by` (the rendering of a vector thumbnail), or a
+`RENDERING` at depth 1 (a PDF page). The thumbnail of a document inside an archive is that
+document's, not the archive's. Plain `/rmeta` lists stored thumbnails already; the PDF page and
+the EMF/WMF rendering exist only when a request turns rendering on, which is what
+`render-thumbnail` does.
+
 Output format on the preset routes: an explicit format segment (`/tika/preset/{name}/text`)
 always wins; without one, a `ContentHandlerFactory` the preset binds decides, then the
 config's, then the endpoint default (Markdown).

@@ -1,9 +1,9 @@
 Release 4.1.0 - unreleased
 
-   * Unpaired surrogates in metadata values are serialized as U+FFFD; a
-     result the pipes worker cannot encode is a parse exception, not a
-     crash (TIKA-4897).
+   * Unpaired surrogates in metadata values are serialized as U+FFFD (TIKA-4897).
 
+   * New catalog presets, inert until the config names them. (TIKA-4856).
+   
    * The inference dispatcher no longer copies the top-level document's own
      bytes into a buffer file of its own: the stream that owns them is open
      until after the flush, so the file is referenced. Embedded documents'

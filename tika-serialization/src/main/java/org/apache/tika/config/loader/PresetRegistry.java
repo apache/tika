@@ -20,17 +20,21 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
@@ -64,6 +68,8 @@ import org.apache.tika.serialization.serdes.ParseContextDeserializer;
  * @since Apache Tika 4.1.0
  */
 public final class PresetRegistry {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PresetRegistry.class);
 
     public static final String CONFIG_KEY = "presets";
 
@@ -133,8 +139,17 @@ public final class PresetRegistry {
             if (resolved.get(ContentHandlerFactory.class) != null) {
                 withContentHandlerFactory.add(e.getKey());
             }
+            // an active preset is a public route at config trust; say what it binds
+            LOG.info("preset '{}' active, callable by any client; configures {}",
+                    e.getKey(), componentNames(e.getValue()));
         }
         return new PresetRegistry(presets, withContentHandlerFactory, loader);
+    }
+
+    private static List<String> componentNames(JsonNode content) {
+        List<String> names = new ArrayList<>();
+        content.fieldNames().forEachRemaining(names::add);
+        return names;
     }
 
     // Trusted-tier resolution: operator config, so no wire-block screening.
