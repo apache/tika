@@ -1,5 +1,7 @@
 Release 4.1.0 - unreleased
 
+   * New catalog presets, inert until the config names them. (TIKA-4856).
+   
    * The inference dispatcher no longer copies the top-level document's own
      bytes into a buffer file of its own: the stream that owns them is open
      until after the flush, so the file is referenced. Embedded documents'
