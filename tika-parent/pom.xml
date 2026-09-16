@@ -384,8 +384,8 @@
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.4</jackrabbit.version>
     <jackson.version>2.22.2</jackson.version>
-    <jackcess.version>4.0.11</jackcess.version>
-    <jackcess.encrypt.version>4.0.3</jackcess.encrypt.version>
+    <jackcess.version>5.0.0</jackcess.version>
+    <jackcess.encrypt.version>5.0.0</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
     <jakarta.activation.version>2.1.4</jakarta.activation.version>
     <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
