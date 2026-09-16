@@ -41,6 +41,7 @@ import org.apache.tika.metadata.writelimiter.MetadataWriteLimiter;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.DateUtils;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * A multi-valued metadata container.
@@ -445,7 +446,18 @@ public class Metadata implements Serializable {
      * reserved key by name rather than by its {@link Property}.
      */
     public void addTrusted(final String name, final String value) {
-        writeLimiter.add(name, value, metadata);
+        writeLimiter.add(name, wellFormed(name, value), metadata);
+    }
+
+    /**
+     * Every string value is stored well-formed: a lone surrogate becomes U+FFFD at the write,
+     * so no reader (a Smile encoder, for one) meets one. {@code tk:content} is exempt: it came
+     * through {@link org.apache.tika.sax.SafeContentHandler}, which already did this, and it
+     * is the one value large enough for the scan to cost anything.
+     */
+    private static String wellFormed(String name, String value) {
+        return TikaCoreProperties.TIKA_CONTENT.getName().equals(name) ? value
+                : StringUtils.wellFormed(value);
     }
 
     /**
@@ -680,7 +692,7 @@ public class Metadata implements Serializable {
      * ({@code tk:}) keys directly. See {@link #addTrusted}.
      */
     public void setTrusted(String name, String value) {
-        writeLimiter.set(name, value, metadata);
+        writeLimiter.set(name, wellFormed(name, value), metadata);
     }
 
     protected void set(String name, String[] values) {

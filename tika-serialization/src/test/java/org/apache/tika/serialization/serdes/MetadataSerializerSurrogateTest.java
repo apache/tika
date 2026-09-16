@@ -18,7 +18,6 @@ package org.apache.tika.serialization.serdes;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.smile.SmileFactory;
@@ -37,18 +36,6 @@ public class MetadataSerializerSurrogateTest {
     private static final String LONE_HIGH = "abc\uDB2Cdef";
     private static final String LONE_LOW = "\uDC00abc";
     private static final String PAIR = "a😀b";
-
-    @Test
-    public void testWellFormed() {
-        assertEquals("abc\uFFFDdef", MetadataSerializer.wellFormed(LONE_HIGH));
-        assertEquals("\uFFFDabc", MetadataSerializer.wellFormed(LONE_LOW));
-        assertEquals("a\uFFFD\uFFFDb", MetadataSerializer.wellFormed("a\uDB2C\uDB2Cb"));
-        assertEquals("\uFFFD", MetadataSerializer.wellFormed("\uDB2C"));
-        // a well-formed value is returned as is, not copied
-        assertSame(PAIR, MetadataSerializer.wellFormed(PAIR));
-        assertSame("plain", MetadataSerializer.wellFormed("plain"));
-        assertEquals("", MetadataSerializer.wellFormed(""));
-    }
 
     @Test
     public void testLoneSurrogatesSurviveUtf8AndSmile() throws Exception {

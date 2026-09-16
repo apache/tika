@@ -230,21 +230,28 @@ public class ServerProtocolIO {
      * with a failure status makes the client treat an emitted document as failed, so a
      * retry emits it a second time.
      */
-    /** A status and message, or the guaranteed-fit frame when even that overflows the limit. */
+    /**
+     * A status and message; the same status with a short fixed message when that overflows
+     * the limit (the status is what the parent's retry and reporting need); the guaranteed-fit
+     * frame when even that does not fit.
+     */
     private void writeStatusOnly(PipesResult.RESULT_STATUS status, String message)
             throws IOException {
-        BoundedOutputStream fallbackBos = new BoundedOutputStream(maxIpcPayloadBytes);
-        try {
-            JsonPipesIpc.toStream(new PipesResult(status, message), fallbackBos);
-        } catch (IOException e) {
-            if (!fallbackBos.overflowed()) {
-                throw e;
+        for (String m : new String[]{message, "result could not be serialized"}) {
+            BoundedOutputStream fallbackBos = new BoundedOutputStream(maxIpcPayloadBytes);
+            try {
+                JsonPipesIpc.toStream(new PipesResult(status, m), fallbackBos);
+            } catch (IOException e) {
+                if (!fallbackBos.overflowed()) {
+                    throw e;
+                }
+                continue;
             }
-            doWritePayloadLimitExceeded();
+            PipesMessage.finished(fallbackBos.toByteArray()).write(output);
+            awaitAck();
             return;
         }
-        PipesMessage.finished(fallbackBos.toByteArray()).write(output);
-        awaitAck();
+        doWritePayloadLimitExceeded();
     }
 
     private static boolean alreadyEmitted(PipesResult.RESULT_STATUS status) {

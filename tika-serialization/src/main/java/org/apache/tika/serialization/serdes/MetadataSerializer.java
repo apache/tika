@@ -26,7 +26,6 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.utils.StringUtils;
 
 public class MetadataSerializer extends JsonSerializer<Metadata> {
     private static final String TIKA_CONTENT_KEY = TikaCoreProperties.TIKA_CONTENT.getName();
@@ -66,20 +65,13 @@ public class MetadataSerializer extends JsonSerializer<Metadata> {
             if (v.length == 0) {
                 continue;
             } else if (v.length == 1) {
-                jsonGenerator.writeStringField(n, wellFormed(v[0]));
+                jsonGenerator.writeStringField(n, v[0]);
             } else {
                 jsonGenerator.writeFieldName(n);
-                jsonGenerator.writeArray(wellFormed(v), 0, v.length);
+                jsonGenerator.writeArray(v, 0, v.length);
             }
         }
         jsonGenerator.writeEndObject();
     }
 
-    private static String[] wellFormed(String[] values) {
-        return StringUtils.wellFormed(values);
-    }
-
-    static String wellFormed(String value) {
-        return StringUtils.wellFormed(value);
-    }
 }

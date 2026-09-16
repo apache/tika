@@ -492,11 +492,10 @@ class PipesWorker implements Callable<PipesResult> {
         mapper.writeValue(os, metadataMap(metadata));
     }
 
-    /** The same U+FFFD for a lone surrogate as /rmeta writes, so the two outputs agree. */
-    static java.util.Map<String, Object> metadataMap(Metadata metadata) {
+    private static java.util.Map<String, Object> metadataMap(Metadata metadata) {
         java.util.Map<String, Object> metadataMap = new java.util.LinkedHashMap<>();
         for (String name : metadata.names()) {
-            String[] values = StringUtils.wellFormed(metadata.getValues(name));
+            String[] values = metadata.getValues(name);
             metadataMap.put(name, values.length == 1 ? values[0] : values);
         }
         return metadataMap;

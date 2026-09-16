@@ -194,14 +194,15 @@ class ServerProtocolIOTest {
     }
 
     /**
-     * A lone surrogate in the extracted text (an HTML numeric character reference for one,
+     * A lone surrogate in a metadata value (an HTML numeric character reference in a title,
      * say) used to fail the Smile encoding of the whole result, which the server treated as
-     * a crash; the value now crosses the pipe with U+FFFD in its place.
+     * a crash; Metadata stores U+FFFD in its place, so the value crosses the pipe. Extracted
+     * text is SafeContentHandler's job and never carries one.
      */
     @Test
     void testLoneSurrogateInMetadataCrossesThePipe() throws Exception {
         Metadata m = new Metadata();
-        m.set(TikaCoreProperties.TIKA_CONTENT, "Korean : \uDB2C\u0620 : more");
+        m.set(TikaCoreProperties.TITLE, "Korean : \uDB2C\u0620 : more");
         PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS,
                 new EmitDataImpl("key", List.of(m)));
 
@@ -209,7 +210,7 @@ class ServerProtocolIOTest {
 
         assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS, returned.status());
         assertEquals("Korean : \uFFFD\u0620 : more",
-                returned.emitData().getMetadataList().get(0).get(TikaCoreProperties.TIKA_CONTENT));
+                returned.emitData().getMetadataList().get(0).get(TikaCoreProperties.TITLE));
     }
 
     /**
@@ -279,11 +280,12 @@ class ServerProtocolIOTest {
     }
 
     /**
-     * When the status-only fallback does not fit the limit either, the guaranteed-fit frame
-     * goes out instead of an exception the parent would count as a crash.
+     * When the status-only report does not fit the limit, the status is kept with a short
+     * fixed message (a fetch failure stays a fetch failure); only when even that does not
+     * fit does the guaranteed-fit frame go out, never an exception the parent counts as a crash.
      */
     @Test
-    void testUnserializableFallbackThatOverflowsFallsBackAgain() throws Exception {
+    void testUnserializableFallbackThatOverflowsKeepsTheStatus() throws Exception {
         String longMessage = "x".repeat(4096);
         Metadata poison = new Metadata() {
             @Override
@@ -292,12 +294,17 @@ class ServerProtocolIOTest {
             }
         };
         poison.set("k", "v");
-        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS,
-                new EmitDataImpl("key", List.of(poison)));
+        PipesResult fetchFailed = new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
+                new EmitDataImpl("key", List.of(poison)), "fetch failed");
 
-        PipesResult returned = exchange(result, ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES);
+        PipesResult returned = exchange(fetchFailed, 256);
+        assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, returned.status(),
+                "the long message is dropped, the status is not");
+        assertEquals("result could not be serialized", returned.message());
 
-        assertEquals(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, returned.status());
+        returned = exchange(fetchFailed, ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES);
+        assertEquals(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, returned.status(),
+                "nothing but the static frame fits the minimum limit");
     }
 
     /** A lone surrogate in an exception message crosses the Smile channel as U+FFFD. */
