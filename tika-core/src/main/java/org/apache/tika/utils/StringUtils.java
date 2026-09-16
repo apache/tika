@@ -259,4 +259,19 @@ public class StringUtils {
         }
         return out == null ? value : out.toString();
     }
+
+    /** {@link #wellFormed(String)} over an array: the same array when nothing needs replacing. */
+    public static String[] wellFormed(String[] values) {
+        String[] out = null;
+        for (int i = 0; i < values.length; i++) {
+            String w = wellFormed(values[i]);
+            if (w != values[i]) {
+                if (out == null) {
+                    out = values.clone();
+                }
+                out[i] = w;
+            }
+        }
+        return out == null ? values : out;
+    }
 }

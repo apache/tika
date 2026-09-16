@@ -18,6 +18,7 @@ package org.apache.tika.pipes.core.server;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 import java.util.Map;
 
@@ -41,5 +42,10 @@ public class PipesWorkerMetadataJsonTest {
         assertArrayEquals(new String[]{"one", "two \uFFFD"}, (String[]) map.get("dc:subject"));
         assertEquals("t \uD800 end", metadata.get("dc:title"), "the live values are not rewritten");
         assertEquals("two \uDC00", metadata.getValues("dc:subject")[1]);
+
+        metadata.add("dc:creator", "fine");
+        metadata.add("dc:creator", "also fine");
+        assertSame(metadata.getValues("dc:creator"), PipesWorker.metadataMap(metadata).get("dc:creator"),
+                "nothing to replace: no copy");
     }
 }

@@ -40,10 +40,10 @@ public class MetadataSerializerSurrogateTest {
 
     @Test
     public void testWellFormed() {
-        assertEquals("abc�def", MetadataSerializer.wellFormed(LONE_HIGH));
-        assertEquals("�abc", MetadataSerializer.wellFormed(LONE_LOW));
-        assertEquals("a��b", MetadataSerializer.wellFormed("a\uDB2C\uDB2Cb"));
-        assertEquals("�", MetadataSerializer.wellFormed("\uDB2C"));
+        assertEquals("abc\uFFFDdef", MetadataSerializer.wellFormed(LONE_HIGH));
+        assertEquals("\uFFFDabc", MetadataSerializer.wellFormed(LONE_LOW));
+        assertEquals("a\uFFFD\uFFFDb", MetadataSerializer.wellFormed("a\uDB2C\uDB2Cb"));
+        assertEquals("\uFFFD", MetadataSerializer.wellFormed("\uDB2C"));
         // a well-formed value is returned as is, not copied
         assertSame(PAIR, MetadataSerializer.wellFormed(PAIR));
         assertSame("plain", MetadataSerializer.wellFormed("plain"));
@@ -63,8 +63,8 @@ public class MetadataSerializerSurrogateTest {
                 TikaObjectMapperFactory.createMapper(new SmileFactory())}) {
             byte[] bytes = mapper.writeValueAsBytes(metadata);
             Metadata back = mapper.readValue(bytes, Metadata.class);
-            assertEquals("abc�def", back.get("single"));
-            assertArrayEquals(new String[] {"�abc", PAIR}, back.getValues("multi"));
+            assertEquals("abc\uFFFDdef", back.get("single"));
+            assertArrayEquals(new String[] {"\uFFFDabc", PAIR}, back.getValues("multi"));
             assertEquals(PAIR, back.get("pair"));
         }
     }

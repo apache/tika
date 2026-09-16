@@ -215,11 +215,6 @@ public class ServerProtocolIO {
     }
 
     /**
-     * True for statuses whose content the server already emitted. Replacing one of these
-     * with a failure status makes the client treat an emitted document as failed, so a
-     * retry emits it a second time.
-     */
-    /**
      * A success whose payload is lost is a parse failure for the parent; an emitted status
      * stays so the parent does not emit again, and a failure keeps its own status and category.
      */
@@ -230,6 +225,11 @@ public class ServerProtocolIO {
         return PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT;
     }
 
+    /**
+     * True for statuses whose content the server already emitted. Replacing one of these
+     * with a failure status makes the client treat an emitted document as failed, so a
+     * retry emits it a second time.
+     */
     /** A status and message, or the guaranteed-fit frame when even that overflows the limit. */
     private void writeStatusOnly(PipesResult.RESULT_STATUS status, String message)
             throws IOException {

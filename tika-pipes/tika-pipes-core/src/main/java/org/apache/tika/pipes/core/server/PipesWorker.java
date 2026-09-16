@@ -496,10 +496,7 @@ class PipesWorker implements Callable<PipesResult> {
     static java.util.Map<String, Object> metadataMap(Metadata metadata) {
         java.util.Map<String, Object> metadataMap = new java.util.LinkedHashMap<>();
         for (String name : metadata.names()) {
-            String[] values = metadata.getValues(name).clone(); // the live array: never rewrite it
-            for (int i = 0; i < values.length; i++) {
-                values[i] = StringUtils.wellFormed(values[i]);
-            }
+            String[] values = StringUtils.wellFormed(metadata.getValues(name));
             metadataMap.put(name, values.length == 1 ? values[0] : values);
         }
         return metadataMap;
