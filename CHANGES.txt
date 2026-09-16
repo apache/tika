@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * openai-embedding-engine gains "requestParameters" to enable custom
+     parameters per vendor (TIKA-4896).
+     
    * New catalog presets, inert until the config names them. (TIKA-4856).
    
    * The inference dispatcher no longer copies the top-level document's own

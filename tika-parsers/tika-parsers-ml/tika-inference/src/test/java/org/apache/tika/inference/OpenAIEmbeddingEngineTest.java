@@ -18,6 +18,7 @@ package org.apache.tika.inference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -122,5 +123,56 @@ public class OpenAIEmbeddingEngineTest {
         OpenAIEmbeddingEngine bad = new OpenAIEmbeddingEngine();
         bad.setMaxBatchSize(0);
         assertThrows(org.apache.tika.exception.TikaConfigException.class, bad::initialize);
+    }
+
+    /** Vendor keys ride every body verbatim, beside the engine's own model and input. */
+    @Test
+    public void testRequestParametersRideEveryRequest() throws Exception {
+        engine.setRequestParameters(new java.util.LinkedHashMap<>(java.util.Map.of(
+                "task", "retrieval.passage", "dimensions", 1024, "normalized", true)));
+        engine.initialize();
+        ObjectMapper mapper = new ObjectMapper();
+        for (int i = 0; i < 2; i++) {
+            server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                    "{\"data\":[{\"index\":0,\"embedding\":[0.5]}]}"));
+        }
+        engine.embedTexts(List.of("alpha"), new ParseContext());
+        engine.embedImages(List.of(bytes("png")), List.of("image/png"), new ParseContext());
+        for (int i = 0; i < 2; i++) {
+            JsonNode request = mapper.readTree(server.takeRequest().body());
+            assertEquals("retrieval.passage", request.get("task").asText());
+            assertEquals(1024, request.get("dimensions").asInt());
+            assertTrue(request.get("normalized").asBoolean());
+            assertEquals("clip", request.get("model").asText(), "the engine still writes model");
+            assertEquals(1, request.get("input").size());
+        }
+    }
+
+    /** A gateway that takes bare data URIs in input, as LiteLLM does, gets strings, not objects. */
+    @Test
+    public void testImageInputAsDataUriString() throws Exception {
+        engine.setImageInput(OpenAIEmbeddingEngine.IMAGE_INPUT_DATA_URI);
+        engine.initialize();
+        server.enqueue(new TikaTestHttpServer.MockResponse(200,
+                "{\"data\":[{\"index\":0,\"embedding\":[0.5]}]}"));
+        engine.embedImages(List.of(bytes("png")), List.of("image/png"), new ParseContext());
+        JsonNode input = new ObjectMapper().readTree(server.takeRequest().body()).get("input");
+        assertTrue(input.get(0).isTextual(), "a bare string, not an object");
+        assertTrue(input.get(0).asText().startsWith("data:image/png;base64,"));
+
+        OpenAIEmbeddingEngine bad = new OpenAIEmbeddingEngine();
+        bad.setImageInput("base64");
+        assertThrows(org.apache.tika.exception.TikaConfigException.class, bad::initialize);
+    }
+
+    /** The engine owns model and input, and reads float vectors: those keys are refused at load. */
+    @Test
+    public void testRequestParametersReservedKeysAreRefused() {
+        for (String key : List.of("model", "input", "encoding_format", "embedding_type",
+                "output_type")) {
+            OpenAIEmbeddingEngine bad = new OpenAIEmbeddingEngine();
+            bad.setRequestParameters(java.util.Map.of(key, "x"));
+            assertThrows(org.apache.tika.exception.TikaConfigException.class, bad::initialize, key);
+        }
     }
 }
