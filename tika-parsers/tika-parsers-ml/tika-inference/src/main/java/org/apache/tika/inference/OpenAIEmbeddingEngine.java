@@ -20,8 +20,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,6 +43,12 @@ import org.apache.tika.utils.StringUtils;
  * An OpenAI-compatible embeddings endpoint ({@code POST /v1/embeddings}), named in
  * {@code "engines"}. Sends up to {@code maxBatchSize} images per request as
  * {@code {"image": "data:<mime>;base64,..."}} inputs and reads the vectors back by index.
+ * {@code requestParameters} ride every request body verbatim, for the keys a vendor adds to
+ * the shape (Jina's {@code task}, a Matryoshka {@code dimensions}); the engine reads float
+ * vectors back, so a key that changes the response shape is refused at load. The OpenAI
+ * shape has no image input, so vendors differ: {@code imageInput} is {@code "object"} for
+ * the {@code {"image": ...}} form (Jina) or {@code "data-uri"} for a bare data URI in
+ * {@code input} (LiteLLM and other gateways).
  */
 @TikaComponent(name = "openai-embedding-engine", spi = false)
 public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
@@ -55,6 +63,16 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
     private String embeddingsPath = "/v1/embeddings";
     private String apiKeyHeaderName = "Authorization";
     private String apiKeyPrefix = "Bearer ";
+    private Map<String, Object> requestParameters = new LinkedHashMap<>();
+    private String imageInput = IMAGE_INPUT_OBJECT;
+
+    public static final String IMAGE_INPUT_OBJECT = "object";
+    public static final String IMAGE_INPUT_DATA_URI = "data-uri";
+
+    private static final Set<String> ENGINE_OWNED = Set.of("model", "input");
+    /** Keys that would make the response something other than float vectors by index. */
+    private static final Set<String> RESPONSE_SHAPING = Set.of("encoding_format",
+            "embedding_type", "output_type", "output_dtype", "return_multivector");
 
     private TikaHttpClient httpClient;
 
@@ -66,6 +84,21 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
         if (maxBatchSize < 1) {
             throw new TikaConfigException("maxBatchSize must be at least 1");
         }
+        if (!IMAGE_INPUT_OBJECT.equals(imageInput) && !IMAGE_INPUT_DATA_URI.equals(imageInput)) {
+            throw new TikaConfigException("imageInput must be \"" + IMAGE_INPUT_OBJECT + "\" or \""
+                    + IMAGE_INPUT_DATA_URI + "\", not \"" + imageInput + "\"");
+        }
+        for (String key : requestParameters.keySet()) {
+            if (ENGINE_OWNED.contains(key)) {
+                throw new TikaConfigException("requestParameters may not set \"" + key
+                        + "\"; the engine writes it");
+            }
+            if (RESPONSE_SHAPING.contains(key)) {
+                throw new TikaConfigException("requestParameters may not set \"" + key
+                        + "\": the engine reads float vectors back, so the response shape "
+                        + "must stay the default");
+            }
+        }
         httpClient = TikaHttpClient.build(30);
     }
 
@@ -75,8 +108,13 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
         ObjectNode root = request();
         ArrayNode input = root.putArray("input");
         for (int i = 0; i < images.size(); i++) {
-            input.addObject().put("image", "data:" + mimeTypes.get(i) + ";base64,"
-                    + Base64.getEncoder().encodeToString(images.get(i)));
+            String dataUri = "data:" + mimeTypes.get(i) + ";base64,"
+                    + Base64.getEncoder().encodeToString(images.get(i));
+            if (IMAGE_INPUT_DATA_URI.equals(imageInput)) {
+                input.add(dataUri);
+            } else {
+                input.addObject().put("image", dataUri);
+            }
         }
         return post(root, images.size(), context);
     }
@@ -94,6 +132,9 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
 
     private ObjectNode request() {
         ObjectNode root = MAPPER.createObjectNode();
+        for (Map.Entry<String, Object> e : requestParameters.entrySet()) {
+            root.set(e.getKey(), MAPPER.valueToTree(e.getValue()));
+        }
         if (!StringUtils.isBlank(model)) {
             root.put("model", model);
         }
@@ -218,6 +259,25 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
 
     public void setApiKeyHeaderName(String apiKeyHeaderName) {
         this.apiKeyHeaderName = apiKeyHeaderName;
+    }
+
+    /** How an image goes into {@code input}: {@code "object"} or {@code "data-uri"}; see the class note. */
+    public String getImageInput() {
+        return imageInput;
+    }
+
+    public void setImageInput(String imageInput) {
+        this.imageInput = imageInput;
+    }
+
+    /** Extra keys for every request body, as the vendor names them; see the class note. */
+    public Map<String, Object> getRequestParameters() {
+        return requestParameters;
+    }
+
+    public void setRequestParameters(Map<String, Object> requestParameters) {
+        this.requestParameters = requestParameters == null ? new LinkedHashMap<>()
+                : new LinkedHashMap<>(requestParameters);
     }
 
     public String getApiKeyPrefix() {

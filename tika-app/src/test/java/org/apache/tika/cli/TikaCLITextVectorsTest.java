@@ -67,7 +67,8 @@ public class TikaCLITextVectorsTest {
             Files.writeString(config, """
                     {
                       "engines": {
-                        "embedder": { "openai-embedding-engine": { "baseUrl": "BASE_URL", "model": "bge" } }
+                        "embedder": { "openai-embedding-engine": { "baseUrl": "BASE_URL", "model": "bge",
+                          "requestParameters": { "task": "retrieval.passage", "dimensions": 2, "normalized": true } } }
                       },
                       "inference": [
                         { "id": "text-vectors", "engine": "embedder", "input": "TEXT", "tasks": ["embed"],
@@ -84,6 +85,9 @@ public class TikaCLITextVectorsTest {
             JsonNode request = new ObjectMapper().readTree(server.takeRequest().body());
             // the zip's own markdown content is two headings, so two chunks; one per note
             assertEquals(4, request.get("input").size(), "chunks of all three documents in one request");
+            assertEquals("retrieval.passage", request.get("task").asText(), "requestParameters ride the body");
+            assertEquals(2, request.get("dimensions").asInt());
+            assertTrue(request.get("normalized").asBoolean());
             assertEquals("# alpha.txt", request.get("input").get(0).asText());
             assertEquals("alpha is the first note", request.get("input").get(2).asText());
 
