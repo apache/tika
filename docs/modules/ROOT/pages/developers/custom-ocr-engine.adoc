@@ -271,9 +271,9 @@ page renders, exactly as a dispatched parser would be, so the metadata tells you
 
 == Common mistakes
 
-* Naming the engine under `parsers`. It still works, but the entry then means two things at once
-  (configure the engine, and parse the types nobody else claims), and startup has to tell you
-  which happened. `text-recognizers` says what you mean.
+* Naming the engine under `parsers`. Deprecated since 4.1.0 and unsupported in 4.2.0: the entry
+  means two things at once (configure the engine, and parse the types nobody else claims), and
+  startup has to tell you which happened. `engines` plus `text-recognizers` says what you mean.
 * Creating a fresh `ParseContext` inside `parse`. The caller's context carries the recursion guard
   that stops an enricher from enriching its own output; pass the one you were given.
 * Claiming types you do not enrich. Every advertised type routes images to you, and a type you

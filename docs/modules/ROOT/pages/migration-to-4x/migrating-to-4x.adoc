@@ -249,22 +249,35 @@ What changes for you:
 * A custom engine that still advertises the pseudo-types keeps working as a text recognizer for the
   real types, with a WARN at startup, until 5.0. Advertise the real types and implement
   `TextRecognizer` to silence it.
-* Put the engine in the top-level `text-recognizers` list rather than under `parsers`; every
-  default parser stays loaded. `"text-recognizers": []` turns enrichment off everywhere. An engine
-  left under `parsers` keeps working; startup logs when it acts only as the enricher and warns
-  when it never runs at all. Startup also logs one line per effective engine.
+* Put the engine under `engines` and name it in the top-level `text-recognizers` list rather
+  than under `parsers`; every default parser stays loaded. `"text-recognizers": []` turns
+  enrichment off everywhere. An engine left under `parsers` keeps working in 4.1.x with a
+  deprecation WARN at startup that says what the entry does (see below). Startup also logs one
+  line per effective engine.
 * VLM parsers gain `textRecognizer` (default `true`); set it to `false` for a captioning or tagging
   prompt so the PDF parser's `AUTO` OCR never replaces extracted text with the VLM's output.
 
-=== Embedding filters deprecated (4.1.0+)
+=== Engines under `parsers` deprecated (4.1.0+)
 
-`openai-embedding-filter` and `jina-embedding-filter` are deprecated and will be removed in
-4.2.0. Configure the endpoint once under `engines` and bind it with a `TEXT`
-xref:configuration/inference.adoc#text[inference binding]; it embeds the whole document tree in
-batched requests. Until then they keep working from the server-side config. A request can no
-longer name them in a per-request `metadata-filters` list (4.0.x accepted a caller-supplied
-`baseUrl` there); the flat per-request `{"openai-embedding-filter": {"skipEmbedding": true}}`
-form is unchanged.
+An inference engine named as a `parsers` entry, an OCR engine, a VLM parser or the image
+embedding parser, is deprecated since 4.1.0 and fails config load in 4.2.0, when `parsers`
+holds parsers only. Startup logs one WARN per such entry saying what it does today: it parses
+the types no other parser claims, it acts only as the text recognizer, or it never runs.
+Configure the engine under `engines` and name it in `text-recognizers` (or bind it with
+`inference`); every default parser stays loaded. Sending a whole PDF to Claude or Gemini by
+excluding `pdf-parser` goes with it: the 4.2 shape is the PDF parser's `"text": "OCR"` with the
+VLM as recognizer, which sends rendered pages rather than the file.
+
+=== Embedding filters and the image embedding parser deprecated (4.1.0+)
+
+`openai-embedding-filter`, `jina-embedding-filter` and `openai-image-embedding-parser` are
+deprecated and will be removed in 4.2.0. Configure the endpoint once under `engines` and bind
+it with a `TEXT` or `IMAGES` xref:configuration/inference.adoc[inference binding]; it embeds
+the whole document tree in batched requests and puts a picture's vector on the document it is
+part of. Until then they keep working from the server-side config, with a WARN at startup. A
+request can no longer name the filters in a per-request `metadata-filters` list (4.0.x
+accepted a caller-supplied `baseUrl` there); the flat per-request
+`{"openai-embedding-filter": {"skipEmbedding": true}}` form is unchanged.
 
 === PDF text policy: `ocr.strategy` becomes `text` (4.1.0+)
 

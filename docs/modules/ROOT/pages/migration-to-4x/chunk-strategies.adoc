@@ -123,16 +123,21 @@ pictures. Nothing to configure:
 [source,json]
 ----
 {
-  "text-recognizers": [
-    { "openai-image-embedding-parser": { "baseUrl": "http://clip-server:8000",
-                                         "model": "jinaai/jina-clip-v2" } }
-  ],
-  "metadata-filters": [
-    { "openai-embedding-filter": { "baseUrl": "http://embed-server:8000",
-                                   "model": "text-embedding-3-small" } }
+  "engines": {
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip-server:8000",
+                                           "model": "jinaai/jina-clip-v2" } },
+    "text": { "openai-embedding-engine": { "baseUrl": "http://embed-server:8000",
+                                           "model": "text-embedding-3-small" } }
+  },
+  "inference": [
+    { "id": "pictures", "engine": "clip", "input": "IMAGES", "tasks": ["embed"] },
+    { "id": "text", "engine": "text", "input": "TEXT", "tasks": ["embed"] }
   ]
 }
 ----
+
+(The 4.0 `openai-image-embedding-parser` and `openai-embedding-filter`, deprecated since 4.1.0,
+place chunks by the same rule.)
 
 The rules:
 
@@ -143,8 +148,9 @@ The rules:
 * Every chunk written to a parent carries an `embedded` locator,
   `{"id_path": "/1", "name": "image1.png"}`, naming the child it came from, beside any
   locator it already had.
-* `"liftToParent": false` on the embedder keeps every picture's vector on the picture, for an
-  index where each picture is a hit of its own.
+* `"liftToParent": false` on the deprecated `openai-image-embedding-parser` keeps every
+  picture's vector on the picture, for an index where each picture is a hit of its own; the
+  `IMAGES` binding has no such switch.
 * In the recursive (`/rmeta`, `-J`, pipes `RMETA`) parse the wrapper keeps every document's
   metadata, so a chunk lands on its parent's. In the single-object parse (`/tika` as JSON,
   `-j`, pipes `CONCATENATE`) only the top-level document's metadata is handed back, so every

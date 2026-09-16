@@ -755,22 +755,48 @@ public class TikaResource {
     // dangerous operations. try-with-resources in the helpers: the spooled file part
     // must be deleted even when config processing or the parse throws.
 
-    private Response postConfigured(List<Attachment> attachments, String handlerTypeName)
+    private Response postConfigured(List<Attachment> attachments, String handlerTypeName,
+                                    boolean explicitFormat)
             throws IOException, TikaConfigException {
         ParseContext context = createRequestContext();
         Metadata metadata = newRequestMetadata();
         try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            applyExplicitFormat(context, handlerTypeName, explicitFormat);
             return produceRawOutput(tis, metadata, context, handlerTypeName);
         }
     }
 
-    private Metadata postConfiguredJson(List<Attachment> attachments, String handlerTypeName)
+    private Metadata postConfiguredJson(List<Attachment> attachments, String handlerTypeName,
+                                        boolean explicitFormat)
             throws IOException, TikaConfigException {
         ParseContext context = createRequestContext();
         Metadata metadata = newRequestMetadata();
         try (TikaInputStream tis = setupMultipartConfig(attachments, metadata, context)) {
+            applyExplicitFormat(context, handlerTypeName, explicitFormat);
             return produceJson(tis, metadata, context, handlerTypeName);
         }
+    }
+
+    /**
+     * Binds the format named by an explicit path segment, refusing the request if the config part
+     * named a handler too. Silently picking either one is worse than a 400: the route's
+     * {@code @Produces} is fixed by the segment, so letting the config part win makes
+     * /tika/config/xml answer text/xml with a markdown body. Any factory in the context at this
+     * point came from the config part -- createRequestContext carries request deltas only.
+     */
+    public void applyExplicitFormat(ParseContext context, String handlerTypeName,
+                                    boolean explicitFormat) {
+        if (!explicitFormat) {
+            return;
+        }
+        if (context.get(ContentHandlerFactory.class) != null) {
+            throw new BadRequestException(
+                    "The path names a content handler ('" + handlerTypeName + "') and so does the "
+                            + "config part. Use one or the other: drop content-handler-factory "
+                            + "from the config part, or post to the endpoint with no format "
+                            + "segment.");
+        }
+        setupContentHandlerFactory(context, handlerTypeName);
     }
 
     /** Multipart document with optional config; returns Markdown unless the config names a handler. */
@@ -780,7 +806,7 @@ public class TikaResource {
     @Path("config")
     public Response postRaw(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        return postConfigured(attachments, "md");
+        return postConfigured(attachments, "md", false);
     }
 
     /** Multipart document with optional config; returns body-only plain text. */
@@ -790,7 +816,7 @@ public class TikaResource {
     @Path("config/text")
     public Response postText(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        return postConfigured(attachments, "body");
+        return postConfigured(attachments, "body", true);
     }
 
     /** Multipart document with optional config; returns HTML. */
@@ -800,7 +826,7 @@ public class TikaResource {
     @Path("config/html")
     public Response postHtml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        return postConfigured(attachments, "html");
+        return postConfigured(attachments, "html", true);
     }
 
     /** Multipart document with optional config; returns XML. */
@@ -810,7 +836,7 @@ public class TikaResource {
     @Path("config/xml")
     public Response postXml(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        return postConfigured(attachments, "xml");
+        return postConfigured(attachments, "xml", true);
     }
 
     /** Multipart document with optional config; returns Markdown. */
@@ -820,7 +846,7 @@ public class TikaResource {
     @Path("config/md")
     public Response postMarkdown(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        return postConfigured(attachments, "md");
+        return postConfigured(attachments, "md", true);
     }
 
     /** Multipart document with optional config; returns JSON with the default (markdown) handler. */
@@ -830,7 +856,7 @@ public class TikaResource {
     @Path("config/json")
     public Metadata postJson(List<Attachment> attachments, @Context HttpHeaders httpHeaders)
             throws IOException, TikaConfigException {
-        return postConfiguredJson(attachments, null);
+        return postConfiguredJson(attachments, null, false);
     }
 
     /**
@@ -847,7 +873,7 @@ public class TikaResource {
     public Metadata postJsonWithHandler(List<Attachment> attachments, @Context HttpHeaders httpHeaders,
                                         @PathParam(HANDLER_TYPE_PARAM) String handlerTypeName)
             throws IOException, TikaConfigException {
-        return postConfiguredJson(attachments, handlerTypeName);
+        return postConfiguredJson(attachments, handlerTypeName, true);
     }
 
     // ==================== Internal methods ====================

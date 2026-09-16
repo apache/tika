@@ -661,8 +661,8 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     /**
      * Documents the shape of /unpack output in FRICTIONLESS mode (no /all,
-     * default config): a datapackage.json manifest plus the unpacked/&lt;id&gt;
-     * children, and no metadata.json envelope.
+     * default config): a datapackage.json manifest, the metadata.json envelope
+     * a Frictionless package carries by default, and the unpacked/&lt;id&gt; children.
      */
     @Test
     public void testFrictionlessUnpackShape() throws Exception {
@@ -693,8 +693,8 @@ public class UnpackerResourceTest extends CXFTestBase {
 
         assertTrue(data.containsKey("datapackage.json"),
                 "Should contain datapackage.json manifest. Entries: " + data.keySet());
-        assertFalse(data.containsKey("metadata.json"),
-                "Should not contain metadata.json without includeFullMetadata. Entries: " + data.keySet());
+        assertTrue(data.containsKey("metadata.json"),
+                "A Frictionless package carries metadata.json by default. Entries: " + data.keySet());
         boolean hasUnpacked = data.keySet().stream().anyMatch(k -> k.startsWith("unpacked/"));
         assertTrue(hasUnpacked, "Should contain unpacked/ entries. Entries: " + data.keySet());
     }

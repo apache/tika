@@ -1,6 +1,6 @@
 {
-  "text-recognizers": [
-    {
+  "engines": {
+    "gemini": {
       "gemini-vlm-parser": {
         "baseUrl": "https://generativelanguage.googleapis.com",
         "model": "gemini-2.5-flash",
@@ -16,6 +16,11 @@
         "maxImagePixels": 100000000,
         "allowRuntimePrompt": false
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "gemini"
     }
   ]
 }
