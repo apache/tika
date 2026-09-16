@@ -315,7 +315,7 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.73.0</google.cloud.version>
-    <aws2.version>2.54.17</aws2.version>
+    <aws2.version>2.54.19</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -326,7 +326,7 @@
     <biz.aqute.version>6.4.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
-    <bouncycastle.version>1.86</bouncycastle.version>
+    <bouncycastle.version>1.86.1</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <commons.cli.version>1.11.0</commons.cli.version>
@@ -442,7 +442,7 @@
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.12</tukaani.version>
-    <twelvemonkeys.version>3.15.0</twelvemonkeys.version>
+    <twelvemonkeys.version>3.15.1</twelvemonkeys.version>
     <!-- Apache UIMA v3.5.0 and later requires Java version 17 or later. -->
     <uimafit.version>3.4.0</uimafit.version>
     <uimaj.core.version>3.4.1</uimaj.core.version>
@@ -452,7 +452,7 @@
     <woodstox.core.version>7.2.2</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
-    <zookeeper.version>3.8.6</zookeeper.version>
+    <zookeeper.version>3.8.7</zookeeper.version>
     <zstd.version>1.5.7-16</zstd.version>
     <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
     <logback.version>1.6.3</logback.version>
