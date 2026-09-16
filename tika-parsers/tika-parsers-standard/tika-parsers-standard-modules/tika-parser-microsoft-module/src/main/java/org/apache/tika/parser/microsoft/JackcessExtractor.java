@@ -288,8 +288,6 @@ class JackcessExtractor extends AbstractPOIFSExtractor {
             case GUID:
                 return value.toString();
             case COMPLEX_TYPE: //skip all these
-            case UNKNOWN_0D:
-            case UNKNOWN_11:
             case UNSUPPORTED_FIXEDLEN:
             case UNSUPPORTED_VARLEN:
             default:
