@@ -1,16 +1,13 @@
 Release 4.1.0 - unreleased
 
-   * New catalog presets, inert until the config names them. "thumbnails":
-     /unpack/preset/thumbnails unpacks exactly one raster thumbnail per document (the
-     stored thumbnail, the rasterized EMF/WMF thumbnail of an Office document, or the
-     first page of a PDF at 96 dpi) and nothing else, 204 when there is none; the
-     thumbnail of a document inside an archive is not the archive's, and nothing below
-     depth 2 is parsed. "render-thumbnails": the same two renders added to a full
-     /rmeta parse, so an index gets the thumbnail's dimensions with the text. The
-     selection is ThumbnailUnpackSelector (tika-pipes-core), whose rule the server docs
-     spell out for /rmeta clients; UnpackSelector gains a per-parse select(Metadata,
-     ParseContext) overload with a default that ignores the context. Startup logs one
-     line per active preset naming the components it configures (TIKA-4856).
+   * New catalog presets, inert until the config names them.(TIKA-4856).
+   
+   * The inference dispatcher no longer copies the top-level document's own
+     bytes into a buffer file of its own: the stream that owns them is open
+     until after the flush, so the file is referenced. Embedded documents'
+     spools and page renders are still copied, since their parsers delete
+     them first. Groundwork for MEDIA inputs, where the copy was a second
+     full read of an audio or video file (TIKA-4889).
 
    * unpack-config gains includeMetadata (TIKA-4881).
 
