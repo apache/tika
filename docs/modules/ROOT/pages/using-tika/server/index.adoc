@@ -170,7 +170,7 @@ operator names them in the server's `tika-config.json`, and a server without tha
 
 [source,json]
 ----
-{ "presets": { "thumbnails": true, "render-thumbnails": true } }
+{ "presets": { "thumbnail": true, "render-thumbnail": true } }
 ----
 
 Both render the same two things the same way — the first page of a PDF at 96 dpi in colour
@@ -179,14 +179,14 @@ Both render the same two things the same way — the first page of a PDF at 96 d
 the other returns, dimensions included. Both name the standard parsers, so they need
 `tika-parsers-standard-package` on the classpath.
 
-`/unpack/preset/thumbnails` — "just give me the thumbnail". The zip holds exactly one raster
-image per document and nothing else: the stored thumbnail (Office docProps, audio cover art,
+`/unpack/preset/thumbnail` — "just give me the thumbnail". The zip holds at most one raster
+image per request and nothing else: the stored thumbnail (Office docProps, audio cover art,
 raw camera previews, epub, iWork), the rasterized EMF/WMF thumbnail, or the PDF page; `204`
 when the document has none. An image file is its own thumbnail: it has no embedded documents,
 so it answers `204` too. Text is read from the first PDF page only, no OCR or inference runs,
 and embedded documents are parsed two levels deep at most, so the parse is cheap.
 
-`/rmeta/preset/render-thumbnails` — "give me everything, thumbnail included". A full parse
+`/rmeta/preset/render-thumbnail` — "give me everything, thumbnail included". A full parse
 plus the two renders above, so an index gets the thumbnail's type and dimensions from the same
 request as the text. Nothing is selected for the client; it applies the rule below. The preset
 names only rendering settings, and they merge with what the config's `parsers` block sets for
@@ -194,14 +194,14 @@ names only rendering settings, and they merge with what the config's `parsers` b
 block is replaced by the preset's, as with any parse-context layer, so keep server-wide parser
 settings under `parsers`.
 
-The selection rule, for a client that reads `/rmeta` and wants the answer `thumbnails` gives:
+The selection rule, for a client that reads `/rmeta` and wants the answer `thumbnail` gives:
 take the first embedded document with an `image/*` `Content-Type` other than EMF, WMF or SVG
 that is a `tk:embedded-resource-type` of `THUMBNAIL` at `tk:embedded-depth` 1, a `THUMBNAIL` at
 depth 2 carrying `tk:rendering:rendered-by` (the rendering of a vector thumbnail), or a
 `RENDERING` at depth 1 (a PDF page). The thumbnail of a document inside an archive is that
 document's, not the archive's. Plain `/rmeta` lists stored thumbnails already; the PDF page and
 the EMF/WMF rendering exist only when a request turns rendering on, which is what
-`render-thumbnails` does.
+`render-thumbnail` does.
 
 Output format on the preset routes: an explicit format segment (`/tika/preset/{name}/text`)
 always wins; without one, a `ContentHandlerFactory` the preset binds decides, then the

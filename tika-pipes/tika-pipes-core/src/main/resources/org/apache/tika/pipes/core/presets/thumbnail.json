@@ -1,5 +1,5 @@
 {
-  // one raster thumbnail per document, nothing else; the rule is in ThumbnailUnpackSelector
+  // at most one raster thumbnail per parse, nothing else; the rule is in ThumbnailUnpackSelector
   "thumbnail-unpack-selector": {},
   // first page only, in colour; text comes from the content stream, never OCR
   "pdf-parser": {

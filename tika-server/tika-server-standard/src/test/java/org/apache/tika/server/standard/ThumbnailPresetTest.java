@@ -57,10 +57,10 @@ import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.UnpackerResource;
 import org.apache.tika.server.core.writer.ZipWriter;
 
-/** The catalog preset {@code thumbnails} unpacks exactly one raster thumbnail (TIKA-4856). */
+/** The catalog preset {@code thumbnail} unpacks exactly one raster thumbnail (TIKA-4856). */
 public class ThumbnailPresetTest extends CXFTestBase {
 
-    private static final String PRESET_PATH = "/unpack/preset/thumbnails";
+    private static final String PRESET_PATH = "/unpack/preset/thumbnail";
     private static final String UNPACK_CONFIG_TEMPLATE = "/configs/cxf-unpack-test-template.json";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
@@ -97,7 +97,7 @@ public class ThumbnailPresetTest extends CXFTestBase {
         ObjectNode config = (ObjectNode) JsonConfigHelper.loadFromResource(
                 UNPACK_CONFIG_TEMPLATE, CXFTestBase.class, replacements);
         // the worker resolves the preset name from its own config
-        config.putObject("presets").put("thumbnails", true);
+        config.putObject("presets").put("thumbnail", true);
         return new ByteArrayInputStream(MAPPER.writeValueAsString(config).getBytes(UTF_8));
     }
 

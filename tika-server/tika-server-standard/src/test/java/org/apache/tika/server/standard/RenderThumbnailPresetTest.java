@@ -46,12 +46,12 @@ import org.apache.tika.server.core.resource.RecursiveMetadataResource;
 import org.apache.tika.server.core.writer.MetadataListMessageBodyWriter;
 
 /**
- * The catalog preset {@code render-thumbnails} adds the thumbnail renders to a full parse, and
- * the documented client rule finds the image {@code thumbnails} would have unpacked (TIKA-4856).
+ * The catalog preset {@code render-thumbnail} adds the thumbnail renders to a full parse, and
+ * the documented client rule finds the image {@code thumbnail} would have unpacked (TIKA-4856).
  */
-public class RenderThumbnailsPresetTest extends CXFTestBase {
+public class RenderThumbnailPresetTest extends CXFTestBase {
 
-    private static final String PRESET_PATH = "/rmeta/preset/render-thumbnails";
+    private static final String PRESET_PATH = "/rmeta/preset/render-thumbnail";
 
     @Override
     protected void setUpResources(JAXRSServerFactoryBean sf) {
@@ -85,7 +85,7 @@ public class RenderThumbnailsPresetTest extends CXFTestBase {
         assertEquals(1, (int) thumbnail.getInt(TikaCoreProperties.EMBEDDED_DEPTH));
         assertEquals("image/png", thumbnail.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(pixelsAcross("testPDF_bookmarks.pdf", 96), (int) thumbnail.getInt(TIFF.IMAGE_WIDTH),
-                "the index sees the 96 dpi image /unpack/preset/thumbnails returns");
+                "the index sees the 96 dpi image /unpack/preset/thumbnail returns");
         assertEquals(1, renderings(metadataList), "only the first page is rendered");
     }
 

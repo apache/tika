@@ -36,7 +36,7 @@ import org.apache.tika.parser.ParseContext;
  * Office document; {@code tk:rendering:rendered-by} marks it), or a {@code RENDERING} at
  * depth 1 (the first page of a PDF); the first candidate of a parse wins. The thumbnail of a
  * document inside an archive is that document's, not the archive's, and is not a candidate.
- * Pair it with parser config that renders only those, as the catalog preset {@code thumbnails}
+ * Pair it with parser config that renders only those, as the catalog preset {@code thumbnail}
  * does; clients reading {@code /rmeta} apply the same rule.
  *
  * @since Apache Tika 4.1.0
