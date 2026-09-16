@@ -493,7 +493,9 @@ public class Metadata implements Serializable {
                     name.length(), MAX_PREFIX_ROUTE_NAME_LENGTH);
             return;
         }
-        String key = prefix.key(name);
+        // a source-derived name can carry a lone surrogate as easily as a value; a code
+        // constant never does, so only this route pays for the check on the name
+        String key = prefix.key(StringUtils.wellFormed(name));
         if (!metadata.containsKey(key)) {
             if (prefixRouteNames >= MAX_PREFIX_ROUTE_NAMES) {
                 if (!prefixRouteFloodWarned) {

@@ -75,6 +75,17 @@ public class MetadataWellFormedTest {
         }
     }
 
+    /** A source-derived name on the prefix route is sanitized like a value; the serializer writes it as a field name. */
+    @Test
+    public void testPrefixRouteNameIsWellFormed() {
+        Metadata metadata = new Metadata();
+        metadata.add(Office.USER_DEFINED, "prop" + LONE_HIGH, "v");
+        String[] names = metadata.names();
+        assertEquals(1, names.length);
+        assertEquals(Office.USER_DEFINED.key("propabc\uFFFDdef"), names[0]);
+        assertEquals("v", metadata.get(names[0]));
+    }
+
     /** tk:content is SafeContentHandler's job and the one value big enough for the scan to matter. */
     @Test
     public void testContentIsExempt() {

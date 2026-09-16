@@ -226,11 +226,6 @@ public class ServerProtocolIO {
     }
 
     /**
-     * True for statuses whose content the server already emitted. Replacing one of these
-     * with a failure status makes the client treat an emitted document as failed, so a
-     * retry emits it a second time.
-     */
-    /**
      * A status and message; the same status with a short fixed message when that overflows
      * the limit (the status is what the parent's retry and reporting need); the guaranteed-fit
      * frame when even that does not fit.
@@ -254,6 +249,11 @@ public class ServerProtocolIO {
         doWritePayloadLimitExceeded();
     }
 
+    /**
+     * True for statuses whose content the server already emitted. Replacing one of these
+     * with a failure status makes the client treat an emitted document as failed, so a
+     * retry emits it a second time.
+     */
     private static boolean alreadyEmitted(PipesResult.RESULT_STATUS status) {
         return status == PipesResult.RESULT_STATUS.EMIT_SUCCESS ||
                 status == PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK ||
