@@ -136,13 +136,8 @@ public class ServerProtocolIO {
                 // not the pipe): report it for this document rather than let the parent
                 // count a worker crash and lose the document
                 LOG.warn("result could not be serialized; returning a status-only result", e);
-                PipesResult.RESULT_STATUS status = alreadyEmitted(pipesResult.status()) ?
-                        pipesResult.status() : PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT;
-                BoundedOutputStream fallbackBos = new BoundedOutputStream(maxIpcPayloadBytes);
-                JsonPipesIpc.toStream(new PipesResult(status,
-                        "result could not be serialized: " + e.getMessage()), fallbackBos);
-                PipesMessage.finished(fallbackBos.toByteArray()).write(output);
-                awaitAck();
+                writeStatusOnly(unserializableStatus(pipesResult.status()),
+                        "result could not be serialized: " + e.getMessage());
                 return;
             }
             LOG.warn("Payload exceeded maxIpcPayloadBytes {}; returning PAYLOAD_LIMIT_EXCEEDED",
@@ -224,6 +219,34 @@ public class ServerProtocolIO {
      * with a failure status makes the client treat an emitted document as failed, so a
      * retry emits it a second time.
      */
+    /**
+     * A success whose payload is lost is a parse failure for the parent; an emitted status
+     * stays so the parent does not emit again, and a failure keeps its own status and category.
+     */
+    static PipesResult.RESULT_STATUS unserializableStatus(PipesResult.RESULT_STATUS status) {
+        if (alreadyEmitted(status) || status.getCategory() != PipesResult.CATEGORY.SUCCESS) {
+            return status;
+        }
+        return PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT;
+    }
+
+    /** A status and message, or the guaranteed-fit frame when even that overflows the limit. */
+    private void writeStatusOnly(PipesResult.RESULT_STATUS status, String message)
+            throws IOException {
+        BoundedOutputStream fallbackBos = new BoundedOutputStream(maxIpcPayloadBytes);
+        try {
+            JsonPipesIpc.toStream(new PipesResult(status, message), fallbackBos);
+        } catch (IOException e) {
+            if (!fallbackBos.overflowed()) {
+                throw e;
+            }
+            doWritePayloadLimitExceeded();
+            return;
+        }
+        PipesMessage.finished(fallbackBos.toByteArray()).write(output);
+        awaitAck();
+    }
+
     private static boolean alreadyEmitted(PipesResult.RESULT_STATUS status) {
         return status == PipesResult.RESULT_STATUS.EMIT_SUCCESS ||
                 status == PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK ||

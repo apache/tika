@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.utils.StringUtils;
 
 public class MetadataSerializer extends JsonSerializer<Metadata> {
     private static final String TIKA_CONTENT_KEY = TikaCoreProperties.TIKA_CONTENT.getName();
@@ -88,40 +89,7 @@ public class MetadataSerializer extends JsonSerializer<Metadata> {
         return out == null ? values : out;
     }
 
-    /**
-     * The value with every unpaired surrogate replaced by U+FFFD. A parser can hand back a lone
-     * surrogate (an HTML numeric character reference for one, say); a UTF-8 or Smile generator
-     * rejects it, and one bad value must not fail the whole document.
-     */
     static String wellFormed(String value) {
-        if (value == null) {
-            return null;
-        }
-        int n = value.length();
-        StringBuilder out = null;
-        for (int i = 0; i < n; i++) {
-            char c = value.charAt(i);
-            if (!Character.isSurrogate(c)) {
-                if (out != null) {
-                    out.append(c);
-                }
-                continue;
-            }
-            boolean paired = Character.isHighSurrogate(c) && i + 1 < n
-                    && Character.isLowSurrogate(value.charAt(i + 1));
-            if (paired) {
-                if (out != null) {
-                    out.append(c).append(value.charAt(i + 1));
-                }
-                i++;
-                continue;
-            }
-            if (out == null) {
-                out = new StringBuilder(n);
-                out.append(value, 0, i);
-            }
-            out.append('\uFFFD');
-        }
-        return out == null ? value : out.toString();
+        return StringUtils.wellFormed(value);
     }
 }

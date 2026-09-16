@@ -1,6 +1,11 @@
 Release 4.1.0 - unreleased
 
-   * Unpaired surrogates in metadata values are serialized as U+FFFD (TIKA-4897).
+   * Unpaired surrogates in metadata values are serialized as U+FFFD, on the
+     pipes channel, in /rmeta output and in the unpack metadata files alike;
+     StringUtils.wellFormed is the one rule. A result the worker cannot
+     encode is reported for its document with its own status (a fetch
+     failure stays a fetch failure) instead of counting as a worker crash,
+     and that report cannot itself overflow the payload limit (TIKA-4897).
 
    * New catalog presets, inert until the config names them. (TIKA-4856).
    

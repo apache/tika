@@ -39,7 +39,8 @@ public class PipesResultSerializer extends JsonSerializer<PipesResult> {
             jsonGenerator.writeObjectField(EMIT_DATA, pipesResult.emitData());
         }
         if (!StringUtils.isBlank(pipesResult.message())) {
-            jsonGenerator.writeStringField(MESSAGE, pipesResult.message());
+            // an exception message may quote document text; Smile rejects a lone surrogate
+            jsonGenerator.writeStringField(MESSAGE, StringUtils.wellFormed(pipesResult.message()));
         }
         jsonGenerator.writeEndObject();
     }

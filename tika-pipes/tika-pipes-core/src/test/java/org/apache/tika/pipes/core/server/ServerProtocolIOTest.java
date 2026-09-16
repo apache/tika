@@ -241,6 +241,78 @@ class ServerProtocolIOTest {
     }
 
     /**
+     * A failure whose payload cannot be encoded keeps its status and category: the parent
+     * treats a fetch failure as a fetch failure, not as a parse it can report on.
+     */
+    @Test
+    void testUnserializableFailureKeepsItsStatus() throws Exception {
+        Metadata poison = new Metadata() {
+            @Override
+            public String[] getValues(String name) {
+                throw new IllegalStateException("cannot read this value");
+            }
+        };
+        poison.set("k", "v");
+        PipesResult fetchFailed = new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
+                new EmitDataImpl("key", List.of(poison)), "fetch failed");
+
+        PipesResult returned = exchange(fetchFailed, PipesMessage.MAX_PAYLOAD_BYTES);
+
+        assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, returned.status());
+        assertTrue(returned.message().contains("could not be serialized"), returned.message());
+    }
+
+    /** The category rule behind the fallback, over every status. */
+    @Test
+    void testUnserializableStatusRule() {
+        for (PipesResult.RESULT_STATUS status : PipesResult.RESULT_STATUS.values()) {
+            PipesResult.RESULT_STATUS fallback = ServerProtocolIO.unserializableStatus(status);
+            boolean emitted = status == PipesResult.RESULT_STATUS.EMIT_SUCCESS
+                    || status == PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK
+                    || status == PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION;
+            if (emitted || status.getCategory() != PipesResult.CATEGORY.SUCCESS) {
+                assertEquals(status, fallback, status.name());
+            } else {
+                assertEquals(PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT, fallback, status.name());
+            }
+        }
+    }
+
+    /**
+     * When the status-only fallback does not fit the limit either, the guaranteed-fit frame
+     * goes out instead of an exception the parent would count as a crash.
+     */
+    @Test
+    void testUnserializableFallbackThatOverflowsFallsBackAgain() throws Exception {
+        String longMessage = "x".repeat(4096);
+        Metadata poison = new Metadata() {
+            @Override
+            public String[] getValues(String name) {
+                throw new IllegalStateException(longMessage);
+            }
+        };
+        poison.set("k", "v");
+        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS,
+                new EmitDataImpl("key", List.of(poison)));
+
+        PipesResult returned = exchange(result, ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES);
+
+        assertEquals(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, returned.status());
+    }
+
+    /** A lone surrogate in an exception message crosses the Smile channel as U+FFFD. */
+    @Test
+    void testLoneSurrogateInMessageCrossesThePipe() throws Exception {
+        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
+                "no such file: \uD800.pdf");
+
+        PipesResult returned = exchange(result, PipesMessage.MAX_PAYLOAD_BYTES);
+
+        assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, returned.status());
+        assertEquals("no such file: \uFFFD.pdf", returned.message());
+    }
+
+    /**
      * Status-only results (no emitData) always pass through unchanged.
      */
     @Test
