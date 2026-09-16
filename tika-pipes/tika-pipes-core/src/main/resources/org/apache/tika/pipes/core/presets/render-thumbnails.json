@@ -1,0 +1,11 @@
+{
+  // the same first-page and EMF/WMF renders as "thumbnails", added to a full parse:
+  // text, OCR, embedded documents and everything else stay as the server configures them
+  "pdf-parser": {
+    "imageStrategy": "RENDER_PAGES_BEFORE_PARSE",
+    "maxRenderedPages": 1,
+    "rendering": {"dpi": 96, "imageType": "RGB"}
+  },
+  "emf-parser": {"renderImage": true, "renderOnlyEmbeddedResourceTypes": ["THUMBNAIL"]},
+  "wmf-parser": {"renderImage": true, "renderOnlyEmbeddedResourceTypes": ["THUMBNAIL"]}
+}

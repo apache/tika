@@ -161,31 +161,43 @@ the preset turns on. Tika's catalog presets are kept bounded (page and render ca
 unless the preset is about OCR, no timeout raises); hold your own to the same bar. Startup
 logs one line per active preset naming the components it configures.
 
-==== The `thumbnails` catalog preset
+==== The thumbnail catalog presets
 
-Tika ships one catalog preset, `thumbnails` (in `tika-pipes-core`), for
-`/unpack/preset/thumbnails`. Nothing is active until the operator names it:
+Tika ships two catalog presets in `tika-pipes-core`. They are not active out of the box: the
+operator names them in the server's `tika-config.json`, and a server without that line answers
+`404` on their routes.
 
 [source,json]
 ----
-{ "presets": { "thumbnails": true } }
+{ "presets": { "thumbnails": true, "render-thumbnails": true } }
 ----
 
-The zip then holds exactly one raster image per document and nothing else — the stored
-thumbnail (Office docProps, audio cover art, raw camera previews, epub, iWork), the rasterized
-EMF/WMF thumbnail of an Office document, or the first page of a PDF at 96 dpi (`rendering`,
-bounded by its `maxImagePixels`) — and answers `204` when the document has none. An image
-file is its own thumbnail: it has no embedded documents, so it answers `204` too. Text is read
-from the first PDF page only and no OCR or inference runs, so the parse is cheap. It names the
-standard parsers, so it needs `tika-parsers-standard-package` on the classpath.
+Both render the same two things the same way — the first page of a PDF at 96 dpi in colour
+(`rendering`, bounded by its `maxImagePixels`) and the EMF/WMF thumbnail of an Office document
+(that metafile only, not the document's pictures) — so an image found through one is the image
+the other returns, dimensions included. Both name the standard parsers, so they need
+`tika-parsers-standard-package` on the classpath.
 
-The selection rule, for a client that reads `/rmeta` and wants the same answer: take the first
-embedded document with an `image/*` `Content-Type` other than EMF, WMF or SVG that is a
-`tk:embedded-resource-type` of `THUMBNAIL` at `tk:embedded-depth` 1, a `THUMBNAIL` at depth 2
-carrying `tk:rendering:rendered-by` (the rendering of a vector thumbnail), or a `RENDERING` at
-depth 1 (a PDF page). The thumbnail of a document inside an archive is that document's, not
-the archive's. Plain `/rmeta` lists stored thumbnails already; the PDF page and the EMF/WMF
-rendering exist only when a request turns rendering on.
+`/unpack/preset/thumbnails` — "just give me the thumbnail". The zip holds exactly one raster
+image per document and nothing else: the stored thumbnail (Office docProps, audio cover art,
+raw camera previews, epub, iWork), the rasterized EMF/WMF thumbnail, or the PDF page; `204`
+when the document has none. An image file is its own thumbnail: it has no embedded documents,
+so it answers `204` too. Text is read from the first PDF page only, no OCR or inference runs,
+and embedded documents are parsed two levels deep at most, so the parse is cheap.
+
+`/rmeta/preset/render-thumbnails` — "give me everything, thumbnail included". A full parse as
+the server configures it (text, OCR, inference, every embedded document), plus the two renders
+above, so an index gets the thumbnail's type and dimensions from the same request as the text.
+Nothing is selected for the client; it applies the rule below.
+
+The selection rule, for a client that reads `/rmeta` and wants the answer `thumbnails` gives:
+take the first embedded document with an `image/*` `Content-Type` other than EMF, WMF or SVG
+that is a `tk:embedded-resource-type` of `THUMBNAIL` at `tk:embedded-depth` 1, a `THUMBNAIL` at
+depth 2 carrying `tk:rendering:rendered-by` (the rendering of a vector thumbnail), or a
+`RENDERING` at depth 1 (a PDF page). The thumbnail of a document inside an archive is that
+document's, not the archive's. Plain `/rmeta` lists stored thumbnails already; the PDF page and
+the EMF/WMF rendering exist only when a request turns rendering on, which is what
+`render-thumbnails` does.
 
 Output format on the preset routes: an explicit format segment (`/tika/preset/{name}/text`)
 always wins; without one, a `ContentHandlerFactory` the preset binds decides, then the

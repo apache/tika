@@ -47,7 +47,10 @@ public class ThumbnailUnpackSelector implements UnpackSelector {
     private static final Set<String> VECTOR_TYPES = Set.of("image/emf", "image/x-emf",
             "image/wmf", "image/x-wmf", "image/svg+xml");
 
-    /** Marks a parse whose thumbnail is taken; the selector itself may be shared. */
+    /**
+     * Marks a parse whose thumbnail is taken; the selector itself may be shared. Lives as
+     * long as the ParseContext, like ParseRecord's embedded counts: one context per parse.
+     */
     private static final class Taken implements TransientParseState {
     }
 

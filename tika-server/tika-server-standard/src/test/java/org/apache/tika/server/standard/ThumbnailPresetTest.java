@@ -39,11 +39,13 @@ import javax.imageio.ImageIO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.core.Response;
+import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -102,6 +104,15 @@ public class ThumbnailPresetTest extends CXFTestBase {
     @Override
     protected Path getUnpackEmitterBasePath() {
         return unpackTempDir;
+    }
+
+    @Override
+    @AfterAll
+    public void tearDown() throws Exception {
+        super.tearDown();
+        if (unpackTempDir != null && Files.exists(unpackTempDir)) {
+            FileUtils.deleteDirectory(unpackTempDir.toFile());
+        }
     }
 
     @ParameterizedTest
