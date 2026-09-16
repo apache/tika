@@ -49,7 +49,94 @@ different models. Secrets and paths live here and only here.
 
 `openai-embedding-engine` posts to `/v1/embeddings` in the OpenAI shape and sends up to
 `maxBatchSize` images per request. Options: `baseUrl`, `model`, `apiKey`, `timeoutMillis`
-(120000), `maxBatchSize` (32), `embeddingsPath`, `apiKeyHeaderName`, `apiKeyPrefix`.
+(120000), `maxBatchSize` (32), `embeddingsPath`, `apiKeyHeaderName`, `apiKeyPrefix`,
+`requestParameters`, `imageInput`.
+
+=== Vendor keys: `requestParameters`
+
+Most hosted and self-hosted embedding services speak the OpenAI shape and add their own keys
+to it. `requestParameters` is a map copied verbatim into every request body, beside the
+engine's `model` and `input`; the engine neither knows nor checks the keys, so use the names
+your vendor documents. Three keys recur under different names: a Matryoshka dimension
+(`dimensions`, `output_dimension`), a query-versus-document hint (`task`, `input_type`,
+`task_type`; use the document/passage value, since Tika indexes), and normalize/truncate
+flags. Two rules: `model` and `input` belong to the engine and are refused; so is any key that
+changes the response from float vectors by index (`encoding_format`, `embedding_type`,
+`output_type`, `output_dtype`, `return_multivector`), since that is what the engine reads back.
+
+Jina `jina-embeddings-v5-omni` embeds text, images and rendered pages in one space; `task`
+selects the indexing adapter and `dimensions` the vector size. `PAGES` sends each page's
+rendering as a PNG, never the PDF itself, and the PDF parser renders only when its
+`inference.input` says so:
+
+[source,json]
+----
+{
+  "engines": {
+    "jina": { "openai-embedding-engine": {
+      "baseUrl": "https://api.jina.ai", "apiKey": "...",
+      "model": "jina-embeddings-v5-omni-small", "maxBatchSize": 16,
+      "requestParameters": { "task": "retrieval.passage", "dimensions": 1024 } } }
+  },
+  "inference": [
+    { "id": "pictures", "engine": "jina", "input": "IMAGES", "tasks": ["embed"], "maxBytes": 5000000 },
+    { "id": "pages",    "engine": "jina", "input": "PAGES",  "tasks": ["embed"], "maxBytes": 5000000 },
+    { "id": "text",     "engine": "jina", "input": "TEXT",   "tasks": ["embed"],
+      "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } } }
+  ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "inference": { "input": ["TEXT", "PAGES"] },
+                      "rendering": { "dpi": 96, "imageType": "RGB" } } }
+  ]
+}
+----
+
+Azure OpenAI puts the key in an `api-key` header with no prefix and the deployment and API
+version in the path; `dimensions` truncates `text-embedding-3-large`. Plain OpenAI is the
+same engine with the defaults and `"baseUrl": "https://api.openai.com"`:
+
+[source,json]
+----
+{
+  "engines": {
+    "azure": { "openai-embedding-engine": {
+      "baseUrl": "https://my-resource.openai.azure.com",
+      "embeddingsPath": "/openai/deployments/text-embedding-3-large/embeddings?api-version=2024-10-21",
+      "apiKeyHeaderName": "api-key", "apiKeyPrefix": "", "apiKey": "...",
+      "requestParameters": { "dimensions": 1024 } } }
+  }
+}
+----
+
+The OpenAI shape has no image input, so services differ on how an image goes into `input`:
+`imageInput` is `object` (the default: `{"image": "data:..."}`, Jina's form) or `data-uri` (a
+bare `data:...` string, the form LiteLLM takes).
+
+For a service whose request shape is not OpenAI's (Google's `embedContent`, Amazon Bedrock's
+`InvokeModel`, Cohere's `/v2/embed`), put a gateway that speaks the OpenAI shape in front of it
+and point this engine at the gateway. LiteLLM routes `gemini-embedding-2` this way, text and
+images alike, on the Gemini API path (its Vertex path fuses every input into one vector,
+which this engine refuses because it expects one per input), and Amazon Nova 2 on Bedrock
+for text and images, one input per request; the gateway holds the cloud credentials, and
+provider keys ride `requestParameters`. Audio and video on those services go through
+asynchronous, object-store-backed jobs that an embeddings call cannot use.
+
+[source,json]
+----
+{
+  "engines": {
+    "gemini": { "openai-embedding-engine": {
+      "baseUrl": "http://litellm:4000", "apiKey": "...",
+      "model": "gemini-embedding-2-preview", "imageInput": "data-uri", "maxBatchSize": 6 } },
+    "nova": { "openai-embedding-engine": {
+      "baseUrl": "http://litellm:4000", "apiKey": "...",
+      "model": "bedrock/amazon.nova-2-multimodal-embeddings-v1:0",
+      "imageInput": "data-uri", "maxBatchSize": 1,
+      "requestParameters": { "dimensions": 1024, "embedding_purpose": "GENERIC_INDEX" } } }
+  }
+}
+----
 
 A text recognizer is an engine too: `"tesseract": { "tesseract-ocr-parser": { "language": "eng" } }`
 here, and `{ "engine": "tesseract" }` in
