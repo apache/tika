@@ -469,7 +469,7 @@
     <zstd.version>1.5.7-16</zstd.version>
     <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
     <javacpp.version>1.5.13</javacpp.version>
-    <maven.exec.version>3.6.3</maven.exec.version>
+    <maven.exec.version>3.6.4</maven.exec.version>
 
     <!-- needs to exist even if empty due to problems with jacoco-maven-plugin -->
     <addmod />
