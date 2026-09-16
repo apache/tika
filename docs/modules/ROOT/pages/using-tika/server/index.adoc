@@ -186,10 +186,13 @@ when the document has none. An image file is its own thumbnail: it has no embedd
 so it answers `204` too. Text is read from the first PDF page only, no OCR or inference runs,
 and embedded documents are parsed two levels deep at most, so the parse is cheap.
 
-`/rmeta/preset/render-thumbnails` — "give me everything, thumbnail included". A full parse as
-the server configures it (text, OCR, inference, every embedded document), plus the two renders
-above, so an index gets the thumbnail's type and dimensions from the same request as the text.
-Nothing is selected for the client; it applies the rule below.
+`/rmeta/preset/render-thumbnails` — "give me everything, thumbnail included". A full parse
+plus the two renders above, so an index gets the thumbnail's type and dimensions from the same
+request as the text. Nothing is selected for the client; it applies the rule below. The preset
+names only rendering settings, and they merge with what the config's `parsers` block sets for
+`pdf-parser`, `emf-parser` and `wmf-parser`; a same-named entry in the config's `parse-context`
+block is replaced by the preset's, as with any parse-context layer, so keep server-wide parser
+settings under `parsers`.
 
 The selection rule, for a client that reads `/rmeta` and wants the answer `thumbnails` gives:
 take the first embedded document with an `image/*` `Content-Type` other than EMF, WMF or SVG

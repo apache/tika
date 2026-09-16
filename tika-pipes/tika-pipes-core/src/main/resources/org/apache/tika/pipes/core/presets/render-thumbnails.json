@@ -1,6 +1,7 @@
 {
-  // the same first-page and EMF/WMF renders as "thumbnails", added to a full parse:
-  // text, OCR, embedded documents and everything else stay as the server configures them
+  // the same first-page and EMF/WMF renders as "thumbnails", added to a full parse. Settings
+  // under the config's "parsers" block merge with these; a pdf-parser, emf-parser or wmf-parser
+  // entry in the config's "parse-context" is replaced by the preset's, like any parse-context layer
   "pdf-parser": {
     "imageStrategy": "RENDER_PAGES_BEFORE_PARSE",
     "maxRenderedPages": 1,
