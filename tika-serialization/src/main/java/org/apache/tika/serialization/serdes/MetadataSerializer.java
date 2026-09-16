@@ -65,12 +65,63 @@ public class MetadataSerializer extends JsonSerializer<Metadata> {
             if (v.length == 0) {
                 continue;
             } else if (v.length == 1) {
-                jsonGenerator.writeStringField(n, v[0]);
+                jsonGenerator.writeStringField(n, wellFormed(v[0]));
             } else {
                 jsonGenerator.writeFieldName(n);
-                jsonGenerator.writeArray(v, 0, v.length);
+                jsonGenerator.writeArray(wellFormed(v), 0, v.length);
             }
         }
         jsonGenerator.writeEndObject();
+    }
+
+    private static String[] wellFormed(String[] values) {
+        String[] out = null;
+        for (int i = 0; i < values.length; i++) {
+            String w = wellFormed(values[i]);
+            if (w != values[i]) {
+                if (out == null) {
+                    out = values.clone();
+                }
+                out[i] = w;
+            }
+        }
+        return out == null ? values : out;
+    }
+
+    /**
+     * The value with every unpaired surrogate replaced by U+FFFD. A parser can hand back a lone
+     * surrogate (an HTML numeric character reference for one, say); a UTF-8 or Smile generator
+     * rejects it, and one bad value must not fail the whole document.
+     */
+    static String wellFormed(String value) {
+        if (value == null) {
+            return null;
+        }
+        int n = value.length();
+        StringBuilder out = null;
+        for (int i = 0; i < n; i++) {
+            char c = value.charAt(i);
+            if (!Character.isSurrogate(c)) {
+                if (out != null) {
+                    out.append(c);
+                }
+                continue;
+            }
+            boolean paired = Character.isHighSurrogate(c) && i + 1 < n
+                    && Character.isLowSurrogate(value.charAt(i + 1));
+            if (paired) {
+                if (out != null) {
+                    out.append(c).append(value.charAt(i + 1));
+                }
+                i++;
+                continue;
+            }
+            if (out == null) {
+                out = new StringBuilder(n);
+                out.append(value, 0, i);
+            }
+            out.append('\uFFFD');
+        }
+        return out == null ? value : out.toString();
     }
 }

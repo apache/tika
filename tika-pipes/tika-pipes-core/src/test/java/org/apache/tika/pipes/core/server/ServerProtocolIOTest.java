@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
@@ -190,6 +191,53 @@ class ServerProtocolIOTest {
         PipesResult returned = exchange(result, limit);
 
         assertEquals(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, returned.status());
+    }
+
+    /**
+     * A lone surrogate in the extracted text (an HTML numeric character reference for one,
+     * say) used to fail the Smile encoding of the whole result, which the server treated as
+     * a crash; the value now crosses the pipe with U+FFFD in its place.
+     */
+    @Test
+    void testLoneSurrogateInMetadataCrossesThePipe() throws Exception {
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.TIKA_CONTENT, "Korean : \uDB2C\u0620 : more");
+        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS,
+                new EmitDataImpl("key", List.of(m)));
+
+        PipesResult returned = exchange(result, PipesMessage.MAX_PAYLOAD_BYTES);
+
+        assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS, returned.status());
+        assertEquals("Korean : \uFFFD\u0620 : more",
+                returned.emitData().getMetadataList().get(0).get(TikaCoreProperties.TIKA_CONTENT));
+    }
+
+    /**
+     * A result that cannot be encoded at all is reported for its document, not as a worker
+     * crash: the parent gets a status-only result naming the failure, and an already
+     * emitted status is kept so the parent does not emit the document again.
+     */
+    @Test
+    void testUnserializableResultBecomesAStatusOnlyResult() throws Exception {
+        Metadata poison = new Metadata() {
+            @Override
+            public String[] getValues(String name) {
+                throw new IllegalStateException("cannot read this value");
+            }
+        };
+        poison.set("k", "v");
+
+        PipesResult notEmitted = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS,
+                new EmitDataImpl("key", List.of(poison)));
+        PipesResult returned = exchange(notEmitted, PipesMessage.MAX_PAYLOAD_BYTES);
+        assertEquals(PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT, returned.status());
+        assertTrue(returned.message().contains("could not be serialized"), returned.message());
+        assertTrue(returned.message().contains("cannot read this value"), returned.message());
+
+        PipesResult emitted = new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS,
+                new EmitDataImpl("key", List.of(poison)));
+        returned = exchange(emitted, PipesMessage.MAX_PAYLOAD_BYTES);
+        assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS, returned.status());
     }
 
     /**

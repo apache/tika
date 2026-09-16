@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Locale;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,7 +129,21 @@ public class ServerProtocolIO {
         } catch (IOException e) {
             lastRespSerNanos = System.nanoTime() - serStart;
             if (!bos.overflowed()) {
-                throw e;
+                if (!(e instanceof JsonProcessingException)) {
+                    throw e;
+                }
+                // the result itself cannot be encoded (the buffer is in memory, so this is
+                // not the pipe): report it for this document rather than let the parent
+                // count a worker crash and lose the document
+                LOG.warn("result could not be serialized; returning a status-only result", e);
+                PipesResult.RESULT_STATUS status = alreadyEmitted(pipesResult.status()) ?
+                        pipesResult.status() : PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT;
+                BoundedOutputStream fallbackBos = new BoundedOutputStream(maxIpcPayloadBytes);
+                JsonPipesIpc.toStream(new PipesResult(status,
+                        "result could not be serialized: " + e.getMessage()), fallbackBos);
+                PipesMessage.finished(fallbackBos.toByteArray()).write(output);
+                awaitAck();
+                return;
             }
             LOG.warn("Payload exceeded maxIpcPayloadBytes {}; returning PAYLOAD_LIMIT_EXCEEDED",
                     maxIpcPayloadBytes);
