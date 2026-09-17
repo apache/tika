@@ -1,39 +1,10 @@
 Release 4.1.0 - unreleased
 
-   * Inference and page rendering (TIKA-4889). "engines": named engines
-     (openai-embedding-engine, batched OpenAI-compatible /v1/embeddings);
-     closed at shutdown. "inference": bindings of an engine to an input
-     (IMAGES, PAGES, TEXT with markdown-chunker) and tasks (embed), batched
-     per document tree; vectors land on the input's document with a locator
-     and the binding as "producer"; per request {"inference": {"bindings",
-     "enabled"}}. "text-recognizers" entries name an engine; per request
-     {"text-recognizers": {"enabled": false}}. "pages": one block for every
-     parser that renders (PDF, EMF/WMF): "text" (EXTRACT, AUTO,
-     EXTRACT_AND_OCR, OCR, NONE), "render" (dpi, maxWidth/maxHeight box,
-     minWidth/minHeight, colour, format, quality, maxImagePixels), "ocr"
-     (maxPages, auto), "inference" (TEXT, PAGES), "emit" (page renders as
-     RENDERING embedded documents, maxPages/maxDepth/resourceTypes); read from parse-context, the request,
-     the parser's entry and the parser's entry in the request, later winning
-     per field. The 4.0 pdf-parser "ocr" and "imageStrategy" load as aliases
-     and dump as "pages"; renders are emitted at page end whichever
-     RENDER_PAGES_* was given, a page not read is not rendered, a page
-     below 2 px is skipped. poppler-renderer renders each page at the dpi the
-     settings resolve to, under its maxScaleTo ceiling (4.0 rendered every page
-     with its long side at maxScaleTo, whatever dpi said); poi-metafile-renderer
-     honours maxImagePixels. A page the engine cannot render is a warning on
-     the document whichever consumer asked first, and its number is listed
-     under tk:rendering:failed-page (new key). The image settings on a
-     renderer's own entry (poppler-renderer dpi/gray, poi-metafile-renderer
-     width, the pdfbox-renderer setters) are deprecated: a parse always scopes
-     pages.render. Java: PDFParserConfig.getOcr()/getImageStrategy()
-     replaced by getPages()/pages(); core PagesConfig, TextPolicy,
-     RenderSettings, ImageType, ImageFormat. Deprecated, removal in 4.2.0:
-     engines named under "parsers", openai-image-embedding-parser,
-     openai-embedding-filter and jina-embedding-filter (no longer accepted
-     per request). An image under 2 x 2 pixels reaches no recognizer or
-     binding; "_min-width"/"_min-height" on a text-recognizers entry and
-     "minWidth"/"minHeight" on a binding raise the floor. Config load warns
-     about a recognizer that declines to recognize text.
+   * Refactor OCR and inference to use engines for inference and 
+     page rendering (TIKA-4889).
+     
+   * PDF incremental-update scanning reads the file in blocks instead of one
+     byte at a time; same output, about 4x less CPU (TIKA-4898).
 
    * Metadata never stores an unpaired UTF-16 surrogate: every write replaces
      one with U+FFFD (StringUtils.wellFormed), so no reader meets one; the
