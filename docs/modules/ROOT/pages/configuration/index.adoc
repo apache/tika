@@ -45,7 +45,8 @@ optional; anything you omit uses its defaults.
   "parse-context": {
     "timeout-limits": { /* progress + total task timeouts */ },
     "exception-reporting": { /* how much exception detail is reported */ },
-    "unpack-config": { /* embedded-byte extraction */ }
+    "unpack-config": { /* embedded-byte extraction */ },
+    "pages": { /* rendering, OCR policy and page images for every parser that renders; see below */ }
     /* other SelfConfiguring components by component name */
   },
   "server": { /* tika-server options: allowPipes, allowPerRequestConfig, cors, tlsConfig, ... */ },
@@ -157,10 +158,17 @@ stays loaded, and `image-parser` and `pdf-parser` call it:
 }
 ----
 
-An entry naming an engine takes only `engine`, `_mime-include` and `_mime-exclude`; the engine's
-own settings live under `engines`, where an
+An entry naming an engine takes only `engine`, `_mime-include`, `_mime-exclude`, `_min-width` and
+`_min-height`; the engine's own settings live under `engines`, where an
 xref:configuration/inference.adoc[inference binding] can name the same engine. The 4.0 form,
-the engine inline, still works: `{ "tesseract-ocr-parser": { "language": "eng" } }`.
+the engine inline, still works: `{ "tesseract-ocr-parser": { "language": "eng" } }`, and takes
+the same underscore keys.
+
+`_min-width`/`_min-height` keep an image whose recorded size (`tiff:ImageWidth`,
+`tiff:ImageLength`) falls short in either dimension away from the engine, in pixels; an image of
+unknown size is sent. Whatever the entry says, an image under 2 x 2 (a spacer in an email
+signature) never reaches any engine; the engines' own byte gates (`minFileSizeToOcr`) are
+unchanged.
 
 *Turn OCR off.* An empty list is authoritative:
 
@@ -284,6 +292,7 @@ separate mechanism — see xref:pipes/plugins/index.adoc[Pipes Plugins].
 
 Parser configuration:
 
+* xref:configuration/pages.adoc[Pages] — rendering, OCR policy and page images, for every parser that renders
 * xref:configuration/parsers/pdf-parser.adoc[PDFParser] — PDF parsing options
 * xref:configuration/parsers/tesseract-ocr-parser.adoc[TesseractOCRParser] — OCR for image-based
   text extraction

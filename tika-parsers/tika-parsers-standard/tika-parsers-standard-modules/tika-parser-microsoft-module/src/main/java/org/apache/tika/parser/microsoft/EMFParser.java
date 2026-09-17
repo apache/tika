@@ -47,6 +47,7 @@ import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -132,8 +133,8 @@ public class EMFParser extends AbstractMetafileParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         try {
-            MetafileParserConfig config = getConfig(context);
-            prepareForRendering(tis, config, metadata);
+            PagesConfig pages = pages(context, getConfig(context));
+            prepareForRendering(tis, pages, metadata);
             HemfPicture ex = new HemfPicture(tis);
             ParseState parseState = new ParseState();
             long fudgeFactorX = 10;//derive this from the font or frame/bounds information
@@ -171,8 +172,8 @@ public class EMFParser extends AbstractMetafileParser {
                 xhtml.characters(buffer.toString());
                 xhtml.endElement("p");
             }
-            if (config.shouldRender(metadata)) {
-                MetafileRendering.render(getRenderer(), config, MEDIA_TYPE, tis, ex, xhtml,
+            if (pages.getEmit().applies(metadata)) {
+                MetafileRendering.render(getRenderer(), pages, MEDIA_TYPE, tis, ex, xhtml,
                         metadata, context);
             }
 

@@ -254,6 +254,41 @@ public class ImageParserTest extends TikaTest {
         assertEquals("100", metadata.get(TIFF.IMAGE_WIDTH));
     }
 
+    /** A spacer is not a picture: the image parser records the size, and 1 x 1 gets no engine. */
+    @Test
+    public void testTinyImageGetsNoEnricher(@org.junit.jupiter.api.io.TempDir java.nio.file.Path tmp)
+            throws Exception {
+        Parser enricher = new Parser() {
+            @Override
+            public java.util.Set<MediaType> getSupportedTypes(ParseContext context) {
+                return java.util.Collections.singleton(MediaType.image("png"));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, org.xml.sax.ContentHandler handler,
+                              Metadata metadata, ParseContext context) {
+                metadata.set("derived-by", "test-enricher");
+            }
+        };
+        ImageParser imageParser = new ImageParser();
+        imageParser.setContentEnrichers(
+                new org.apache.tika.parser.enricher.CompositeContentEnricher(
+                        java.util.List.of(enricher)));
+        for (int side : new int[] {1, 2}) {
+            java.nio.file.Path png = tmp.resolve(side + ".png");
+            javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(side * 100, side,
+                    java.awt.image.BufferedImage.TYPE_INT_RGB), "png", png.toFile());
+            Metadata metadata = new Metadata();
+            metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
+            try (TikaInputStream tis = TikaInputStream.get(png)) {
+                imageParser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
+            }
+            assertEquals(String.valueOf(side), metadata.get(TIFF.IMAGE_LENGTH));
+            assertEquals(side == 1 ? null : "test-enricher", metadata.get("derived-by"),
+                    side + " pixels tall");
+        }
+    }
+
     /** The image parser owns jp2/jpx/ppm for enrichment; with no reader it must not fail. */
     @Test
     public void testJp2ReachesEnricherWithoutReader() throws Exception {

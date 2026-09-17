@@ -11,10 +11,10 @@
         "extractUniqueInlineImagesOnly": false,
         "ocr": {
           "dpi": 314,
-          "imageQuality": 2.1,
+          "imageQuality": 0.9,
           "imageFormat": "JPEG"
         },
-        "inference": { "input": ["PAGES"] },
+        "pages": { "inference": ["PAGES"] },
         "maxMainMemoryBytes": 524288000
       }
     }

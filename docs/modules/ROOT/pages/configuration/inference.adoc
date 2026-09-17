@@ -67,7 +67,7 @@ changes the response from float vectors by index (`encoding_format`, `embedding_
 Jina `jina-embeddings-v5-omni` embeds text, images and rendered pages in one space; `task`
 selects the indexing adapter and `dimensions` the vector size. `PAGES` sends each page's
 rendering as a PNG, never the PDF itself, and the PDF parser renders only when its
-`inference.input` says so:
+`pages.inference` says so:
 
 [source,json]
 ----
@@ -86,8 +86,8 @@ rendering as a PNG, never the PDF itself, and the PDF parser renders only when i
   ],
   "parsers": [
     { "default-parser": {} },
-    { "pdf-parser": { "inference": { "input": ["TEXT", "PAGES"] },
-                      "rendering": { "dpi": 96, "imageType": "RGB" } } }
+    { "pdf-parser": { "pages": { "inference": ["TEXT", "PAGES"],
+                                 "render": { "dpi": 96, "imageType": "RGB" } } } }
   ]
 }
 ----
@@ -167,7 +167,7 @@ A list of bindings. Each names an engine, says what it is fed, and what to ask:
 `input`:: What the binding is fed. `IMAGES` is every image document Tika parses: an inline
   picture, an image attachment, a top-level image file; a page render emitted as an embedded
   document is not one. `PAGES` is one image per rendered page of a document whose parser
-  renders pages for inference: the PDF parser, when its `inference.input` says so (see
+  renders pages for inference: the PDF parser, when `pages.inference` says so (see
   <<pages>>). `TEXT` is the extracted text of every document in the tree (see <<text>>).
   `MEDIA` (audio and video) is accepted by a binding but no task takes it in 4.1: 4.2 adds
   media chunkers (time windows for transcription, sampled frames or clips for an image or
@@ -180,6 +180,9 @@ A list of bindings. Each names an engine, says what it is fed, and what to ask:
   1500, "overlapChars": 200 } }`. Without one the whole text is one chunk.
 `maxBytes`:: Largest unit the binding accepts (20 MB unless set; -1 for no limit); larger
   ones are skipped and counted.
+`minWidth`, `minHeight`:: `IMAGES` only: an image whose recorded size (`tiff:ImageWidth`,
+  `tiff:ImageLength`) falls short in either dimension is not offered; one of unknown size is.
+  2 unless set, so a spacer is never embedded.
 `enabled`:: `false` keeps the binding configured but idle until a request selects it.
 `_mime-include`, `_mime-exclude`:: Narrow by media type within the input kind. With neither,
   an `IMAGES` binding skips vector and CAD image types (SVG, EMF, DWG, ...) that no embedding
@@ -230,13 +233,13 @@ only when its own config releases pages:
   ],
   "parsers": [
     { "default-parser": {} },
-    { "pdf-parser": { "inference": { "input": ["PAGES"] },
-                      "text": "EXTRACT", "ocr": { "dpi": 100, "imageType": "RGB" } } }
+    { "pdf-parser": { "pages": { "inference": ["PAGES"], "text": "EXTRACT",
+                                 "render": { "dpi": 100, "imageType": "RGB" } } } }
   ]
 }
 ----
 
-`pdf-parser.inference.input` lists what the PDF releases to inference: `TEXT`, the default
+`pages.inference` lists what a rendering parser releases to inference: `TEXT`, the default
 (text bindings follow), and `PAGES`. With `PAGES`, and a `PAGES` binding that runs for the
 request, the PDF renders every page once and hands the same image to the OCR engine, when
 `text` asks for it, and to the bindings: a scanned page costs one render whether one
@@ -245,21 +248,20 @@ with a `paginated` locator naming the page, and `maxChunks` is the number of pag
 sends. Nothing is rendered for inference unless a `PAGES` binding runs, so the block can stay on
 a config whose bindings are on standby.
 
-The render is the OCR render: `ocr.dpi`, `imageType`, `imageFormat` and `imageQuality` shape
-it, and the defaults (300 dpi grayscale PNG) suit Tesseract, not an embedding endpoint. Set
-`dpi` and `imageType` to what the engine wants; when OCR and page vectors run together the one
-setting serves both. `renderingStrategy` and `maxImagePixels` apply as for OCR; a page skipped
-for its size is not offered.
+The render is the `pages.render` render: `dpi`, `imageType`, `imageFormat`, `imageQuality` and
+a `maxWidth`/`maxHeight` box shape it, and the defaults (300 dpi grayscale PNG) suit Tesseract,
+not an embedding endpoint. Set them to what the engine wants; when OCR and page vectors run
+together the one setting serves both. `maxImagePixels` and the minimum apply as for OCR; a page
+skipped for its size is not offered. See xref:configuration/pages.adoc[Pages].
 
-Page renders emitted as embedded documents (`imageStrategy` set to `RENDER_PAGES_AT_PAGE_END`
-or `RENDER_PAGES_BEFORE_PARSE`) are not images to an `IMAGES` binding: pages reach inference
-through `PAGES` only, so no page is embedded twice.
+Page renders emitted as embedded documents (`pages.emit`) are not images to an `IMAGES`
+binding: pages reach inference through `PAGES` only, so no page is embedded twice.
 
-Per request, like every PDF setting:
+Per request, like every `pages` setting:
 
 [source,json]
 ----
-{ "parse-context": { "pdf-parser": { "inference": { "input": ["PAGES"] } },
+{ "parse-context": { "pages": { "inference": ["PAGES"] },
                      "inference": { "bindings": ["page-vectors"] } } }
 ----
 
@@ -293,7 +295,7 @@ chunks of the tree, `maxBytes` the text of one document, and `_mime-include`/`_m
 narrow by document type. Use a `MARKDOWN` content handler for the chunker to see headings.
 
 A document that released other inputs to inference is not embedded twice: a PDF parsed with
-`inference.input: ["PAGES"]` records `tk:inference-released: PAGES` and the TEXT stage skips
+`pages.inference: ["PAGES"]` records `tk:inference-released: PAGES` and the TEXT stage skips
 it; list `["TEXT", "PAGES"]` to get both. This stage runs over the metadata list, so it
 covers `-J`, `/rmeta` and pipes, and `/tika` as JSON, whose list is the one object with the
 concatenated text; the plain-text `/tika` output carries no metadata and so no vectors. It is

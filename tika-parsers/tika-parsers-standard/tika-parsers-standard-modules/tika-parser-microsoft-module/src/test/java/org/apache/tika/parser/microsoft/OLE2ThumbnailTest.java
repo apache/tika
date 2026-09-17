@@ -32,6 +32,7 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pages.PagesConfig;
 
 /**
  * The thumbnail that Office stores in the SummaryInformation of the OLE2
@@ -56,7 +57,7 @@ public class OLE2ThumbnailTest extends TikaTest {
     @Test
     public void testPptThumbnailRendering() throws Exception {
         ParseContext context = new ParseContext();
-        context.setJsonConfig("wmf-parser", "{\"renderImage\": true, \"renderWidth\": 400}");
+        context.setJsonConfig("wmf-parser", "{\"pages\": {\"emit\": {\"enabled\": true, \"render\": {\"maxWidth\": 400}}}}");
         List<Metadata> metadataList = getRecursiveMetadata("testPPT_various.ppt", context);
         //the rendering of the thumbnail is a THUMBNAIL as well
         Metadata rendering = byTypeAndContentType(metadataList,
@@ -75,7 +76,7 @@ public class OLE2ThumbnailTest extends TikaTest {
     @Test
     public void testDocThumbnailRendering() throws Exception {
         ParseContext context = new ParseContext();
-        context.setJsonConfig("wmf-parser", "{\"renderImage\": true}");
+        context.setJsonConfig("wmf-parser", "{\"pages\": {\"emit\": {\"enabled\": true}}}");
         List<Metadata> metadataList = getRecursiveMetadata("testControlCharacters.doc", context);
         Metadata thumbnail = byTypeAndContentType(metadataList,
                 TikaCoreProperties.EmbeddedResourceType.THUMBNAIL, "image/wmf");
@@ -115,10 +116,9 @@ public class OLE2ThumbnailTest extends TikaTest {
      */
     @Test
     public void testRenderOnlyTypesAreValidated() {
-        MetafileParserConfig config = new MetafileParserConfig();
+        PagesConfig.Emit emit = new PagesConfig.Emit();
         assertThrows(IllegalArgumentException.class,
-                () -> config.setRenderOnlyEmbeddedResourceTypes(
-                        Collections.singleton("THUMBNAILS")));
+                () -> emit.setResourceTypes(Collections.singleton("THUMBNAILS")));
     }
 
     private static Metadata byTypeAndContentType(List<Metadata> metadataList,

@@ -16,6 +16,7 @@
  */
 package org.apache.tika.config.loader;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -136,6 +137,9 @@ public class TikaObjectMapperFactory {
 
         // Need to allow creation of classes without setters/getters -- we may want to revisit this
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+
+        // An overlay config (PagesConfig, RenderSettings) is mostly null: a dump writes what is set
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
         // Load component registries for name resolution
         loadComponentRegistries();

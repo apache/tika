@@ -14,28 +14,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.pdf;
-
-import java.io.Serializable;
-import java.util.List;
-
-/** What the PDF parser releases to the inference bindings; per request like every PDF setting. */
-public class InferenceConfig implements Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    /** {@code TEXT}: the extracted text. {@code PAGES}: every page rendered, when a binding wants pages. */
-    public enum Input {
-        TEXT, PAGES
-    }
-
-    private List<Input> input = List.of(Input.TEXT);
-
-    public List<Input> getInput() {
-        return input;
-    }
-
-    public void setInput(List<Input> input) {
-        this.input = input == null ? List.of() : List.copyOf(input);
-    }
-}
+/**
+ * The {@code "pages"} block: one configuration for every parser that renders a document to
+ * pixels -- how it renders, where a page's text comes from, what is released to inference,
+ * whether renders are emitted. Read by the PDF and the EMF/WMF parsers in 4.1.
+ */
+package org.apache.tika.parser.pages;

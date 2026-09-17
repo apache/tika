@@ -16,8 +16,11 @@
  */
 package org.apache.tika.parser.microsoft;
 
+import java.awt.geom.Dimension2D;
 import java.io.IOException;
 
+import org.apache.poi.hemf.usermodel.HemfPicture;
+import org.apache.poi.hwmf.usermodel.HwmfPicture;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
@@ -30,8 +33,10 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
+import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.renderer.microsoft.POIMetafileRenderer;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -54,13 +59,19 @@ final class MetafileRendering {
      * @param injected the renderer set on the parser, or null
      * @param picture  the parsed {@code HemfPicture} or {@code HwmfPicture}
      */
-    static void render(Renderer injected, MetafileParserConfig config, MediaType type,
+    static void render(Renderer injected, PagesConfig pages, MediaType type,
                        TikaInputStream source, Object picture, XHTMLContentHandler xhtml,
                        Metadata metadata, ParseContext context) throws IOException, SAXException {
+        RenderSettings settings = pages.emittedRender();
+        // too small to hold anything (a hairline rule): a policy skip, not a failure
+        Dimension2D size = sizeInPoints(picture);
+        if (size != null && settings.belowMinimum(size.getWidth(), size.getHeight())) {
+            return;
+        }
         //like the PDF parser: the injected renderer if it handles the type,
         //the default one otherwise
         Renderer renderer = injected != null && injected.getSupportedTypes(context).contains(type)
-                ? injected : defaultRenderer(config);
+                ? injected : new POIMetafileRenderer();
         Metadata renderMetadata = Metadata.newInstance(context);
         renderMetadata.set(TikaCoreProperties.TYPE, type.toString());
         EmbeddedDocumentExtractor extractor =
@@ -75,6 +86,8 @@ final class MetafileRendering {
         if (!extractor.shouldParseEmbedded(gate, context)) {
             return;
         }
+        RenderSettings outer = context.get(RenderSettings.class);
+        context.set(RenderSettings.class, settings);
         try (TikaInputStream pictureStream = pictureStream(source);
              RenderResults results = render(renderer, pictureStream, picture, renderMetadata,
                      metadata, context)) {
@@ -107,7 +120,24 @@ final class MetafileRendering {
                     }
                 }
             }
+        } finally {
+            context.set(RenderSettings.class, outer);
         }
+    }
+
+    /** The picture's size in points, or null when POI cannot compute it (a bitmap in a WMF). */
+    static Dimension2D sizeInPoints(Object picture) {
+        try {
+            if (picture instanceof HemfPicture) {
+                return ((HemfPicture) picture).getSize();
+            }
+            if (picture instanceof HwmfPicture) {
+                return ((HwmfPicture) picture).getSize();
+            }
+        } catch (RuntimeException e) {
+            // "window records are incomplete" and the like
+        }
+        return null;
     }
 
     /**
@@ -160,12 +190,6 @@ final class MetafileRendering {
             EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
             return null;
         }
-    }
-
-    private static Renderer defaultRenderer(MetafileParserConfig config) {
-        POIMetafileRenderer renderer = new POIMetafileRenderer();
-        renderer.setWidth(config.getRenderWidth());
-        return renderer;
     }
 
     /**

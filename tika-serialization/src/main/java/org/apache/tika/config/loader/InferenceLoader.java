@@ -47,7 +47,8 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
 
     static final String KEY = "inference";
     private static final Set<String> KNOWN = Set.of("id", "engine", "input", "tasks",
-            "maxChunks", "maxBytes", "enabled", "_mime-include", "_mime-exclude", "chunker");
+            "maxChunks", "maxBytes", "enabled", "_mime-include", "_mime-exclude", "chunker",
+            "minWidth", "minHeight");
     private static final Pattern LEGAL_ID = Pattern.compile("[A-Za-z0-9._-]+");
     /** Largest unit a binding takes unless it says otherwise. */
     static final long DEFAULT_MAX_BYTES = 20L * 1024 * 1024;
@@ -131,9 +132,11 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
                 }
             }
             TextChunker chunker = chunker(entry, id, input, context);
+            int minWidth = minimum(entry, "minWidth", id);
+            int minHeight = minimum(entry, "minHeight", id);
             InferenceBinding binding = new InferenceBinding(id, engineName, input, taskNames,
                     include, exclude, maxChunks, maxBytes,
-                    entry.path("enabled").asBoolean(true), chunker);
+                    entry.path("enabled").asBoolean(true), chunker, minWidth, minHeight);
             List<InferenceTask> tasks = new ArrayList<>();
             for (String taskName : taskNames) {
                 InferenceTask task;
@@ -199,6 +202,20 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
                     + "\" must be -1 (no limit) or a non-negative integer");
         }
         return v.asLong();
+    }
+
+    /** {@code minWidth}/{@code minHeight}: a non-negative integer, 2 unless set. */
+    private static int minimum(JsonNode entry, String field, String id)
+            throws TikaConfigException {
+        if (!entry.has(field)) {
+            return InferenceBinding.DEFAULT_MIN_PIXELS;
+        }
+        JsonNode v = entry.get(field);
+        if (!v.isIntegralNumber() || v.asInt() < 0) {
+            throw new TikaConfigException("binding \"" + id + "\": \"" + field
+                    + "\" must be a non-negative integer");
+        }
+        return v.asInt();
     }
 
     private static Set<MediaType> mimeTypes(JsonNode entry, String field, String id)

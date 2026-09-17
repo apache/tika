@@ -3,8 +3,7 @@
     "default-parser",
     {
       "emf-parser": {
-        "renderImage": true,
-        "renderWidth": 400
+        "pages": { "emit": { "enabled": true, "render": { "maxWidth": 400 } } }
       }
     }
   ]

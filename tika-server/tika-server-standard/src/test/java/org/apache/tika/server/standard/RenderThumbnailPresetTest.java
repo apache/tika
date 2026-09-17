@@ -19,6 +19,7 @@ package org.apache.tika.server.standard;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -29,8 +30,6 @@ import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.pdmodel.PDDocument;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.metadata.HttpHeaders;
@@ -84,8 +83,10 @@ public class RenderThumbnailPresetTest extends CXFTestBase {
         assertEquals("RENDERING", thumbnail.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals(1, (int) thumbnail.getInt(TikaCoreProperties.EMBEDDED_DEPTH));
         assertEquals("image/png", thumbnail.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals(pixelsAcross("testPDF_bookmarks.pdf", 96), (int) thumbnail.getInt(TIFF.IMAGE_WIDTH),
-                "the index sees the 96 dpi image /unpack/preset/thumbnail returns");
+        int width = thumbnail.getInt(TIFF.IMAGE_WIDTH);
+        int height = thumbnail.getInt(TIFF.IMAGE_LENGTH);
+        assertTrue(width <= 256 && height <= 256 && height >= 255, width + "x" + height
+                + ": the index sees the boxed image /unpack/preset/thumbnail returns");
         assertEquals(1, renderings(metadataList), "only the first page is rendered");
     }
 
@@ -121,14 +122,5 @@ public class RenderThumbnailPresetTest extends CXFTestBase {
         return metadataList.stream()
                 .filter(m -> "RENDERING".equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE)))
                 .count();
-    }
-
-    private static int pixelsAcross(String pdf, int dpi) throws Exception {
-        try (PDDocument document = Loader.loadPDF(
-                ClassLoader.getSystemResourceAsStream("test-documents/" + pdf).readAllBytes())) {
-            // PDFBox floors the scaled width
-            return (int) Math.max(1,
-                    Math.floor(document.getPage(0).getMediaBox().getWidth() * dpi / 72f));
-        }
     }
 }

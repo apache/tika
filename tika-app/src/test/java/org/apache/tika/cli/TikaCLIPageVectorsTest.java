@@ -47,7 +47,7 @@ import org.apache.tika.inference.Chunk;
 import org.apache.tika.inference.ChunkSerializer;
 
 /**
- * The consumer's path for pages: a PAGES binding and pdf-parser.inference.input, and -J shows
+ * The consumer's path for pages: a PAGES binding and pages.inference, and -J shows
  * one vector per page on the PDF itself, each naming its page, from one request.
  */
 public class TikaCLIPageVectorsTest {
@@ -77,8 +77,8 @@ public class TikaCLIPageVectorsTest {
                       ],
                       "parsers": [
                         { "default-parser": {} },
-                        { "pdf-parser": { "ocr": { "strategy": "NO_OCR", "dpi": 20 },
-                                          "inference": { "input": ["PAGES"] } } }
+                        { "pdf-parser": { "pages": { "text": "EXTRACT", "render": { "dpi": 20 },
+                                                     "inference": ["PAGES"] } } }
                       ]
                     }
                     """.replace("BASE_URL", server.url()));

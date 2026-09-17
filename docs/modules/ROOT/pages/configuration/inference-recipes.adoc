@@ -17,14 +17,14 @@
 
 = OCR and Inference Recipes
 
-Each recipe is a complete config. They combine three sections and one PDF knob:
+Each recipe is a complete config. They combine four sections:
 xref:configuration/index.adoc#text-recognizers[`text-recognizers`] (what produces text from
 pixels), xref:configuration/inference.adoc[`engines` and `inference`] (what is called, on what),
-and `pdf-parser.inference.input` (what a PDF releases). Every default parser stays loaded in
-all of them.
+and xref:configuration/pages.adoc[`pages`] (where a page's text comes from, what a PDF releases,
+how pages are rendered). Every default parser stays loaded in all of them.
 
-NOTE: `engines` and `text-recognizers` are stable; `inference` (and the PDF's
-`inference.input`) is experimental in 4.1.0 and may change in a minor release without a
+NOTE: `engines`, `text-recognizers` and `pages` are stable; `inference` (and
+`pages.inference`) is experimental in 4.1.0 and may change in a minor release without a
 deprecation cycle as 4.2 adds batched recognition, media inputs and document-level tasks. The
 recipes are correct for the release they ship with; check the release notes before moving.
 
@@ -76,8 +76,8 @@ settings live under `ocr` and are sized here for an image model rather than Tess
   "text-recognizers": [],
   "parsers": [
     { "default-parser": {} },
-    { "pdf-parser": { "inference": { "input": ["PAGES"] },
-                      "text": "EXTRACT", "ocr": { "dpi": 100, "imageType": "RGB" } } }
+    { "pdf-parser": { "pages": { "inference": ["PAGES"], "text": "EXTRACT",
+                                 "render": { "dpi": 100, "imageType": "RGB" } } } }
   ]
 }
 ----
@@ -100,7 +100,7 @@ engine on all of them. The settings serve both consumers, so keep the dpi Tesser
   ],
   "parsers": [
     { "default-parser": {} },
-    { "pdf-parser": { "inference": { "input": ["PAGES"] }, "ocr": { "imageType": "RGB" } } }
+    { "pdf-parser": { "pages": { "inference": ["PAGES"], "render": { "imageType": "RGB" } } } }
   ]
 }
 ----
@@ -124,8 +124,8 @@ every other document is embedded by its text. List `["TEXT", "PAGES"]` on the PD
   ],
   "parsers": [
     { "default-parser": {} },
-    { "pdf-parser": { "inference": { "input": ["PAGES"] },
-                      "text": "EXTRACT", "ocr": { "dpi": 100, "imageType": "RGB" } } }
+    { "pdf-parser": { "pages": { "inference": ["PAGES"], "text": "EXTRACT",
+                                 "render": { "dpi": 100, "imageType": "RGB" } } } }
   ]
 }
 ----
@@ -141,7 +141,7 @@ The recognizer stays on for embedded and standalone images; the PDF parser never
   "text-recognizers": [ { "engine": "tesseract" } ],
   "parsers": [
     { "default-parser": {} },
-    { "pdf-parser": { "text": "EXTRACT" } }
+    { "pdf-parser": { "pages": { "text": "EXTRACT" } } }
   ]
 }
 ----
@@ -158,7 +158,7 @@ xref:using-tika/server/index.adoc[preset], on `/rmeta/config`, and on a pipes tu
 ----
 
 `inference.bindings` selects a subset instead of all-or-nothing; a PDF can be switched to pages
-for one request with `"pdf-parser": { "inference": { "input": ["PAGES"] } }` in the same block.
+for one request with `"pages": { "inference": ["PAGES"] }` in the same block.
 
 == Not yet
 

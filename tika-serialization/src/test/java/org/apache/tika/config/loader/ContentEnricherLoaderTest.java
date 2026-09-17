@@ -45,6 +45,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnrichers;
+import org.apache.tika.parser.enricher.SizeGatedEnricher;
 import org.apache.tika.parser.inference.EngineRegistry;
 import org.apache.tika.utils.ParserUtils;
 
@@ -107,8 +108,41 @@ public class ContentEnricherLoaderTest {
         assertTrue(ContentEnrichers.isEnricher(entry));
     }
 
+    /** The size gate on both entry forms; the engine never sees the keys. */
+    @Test
+    public void testSizeGate() throws Exception {
+        TikaLoader loader = load("""
+                {
+                  "engines": { "png": { "mock-enricher": {} } },
+                  "text-recognizers": [
+                    { "engine": "png", "_min-width": 100 },
+                    { "mock-enricher": { "_min-height": 50, "_mime-include": ["image/png"] } }
+                  ]
+                }
+                """);
+        List<Parser> matched = loader.get(CompositeContentEnricher.class)
+                .getEnrichers(MediaType.image("png"));
+        assertEquals(2, matched.size());
+        SizeGatedEnricher referenced = (SizeGatedEnricher) matched.get(0);
+        assertEquals(100, referenced.getMinWidth());
+        assertEquals(0, referenced.getMinHeight());
+        assertSame(loader.get(EngineRegistry.class).get("png"), unwrap(referenced));
+        assertEquals(50, ((SizeGatedEnricher) unwrapTo(matched.get(1), SizeGatedEnricher.class))
+                .getMinHeight());
+        assertTrue(ContentEnrichers.isEnricher(matched.get(1)));
+    }
+
+    private static Parser unwrapTo(Parser parser, Class<? extends Parser> type) {
+        while (parser instanceof ParserDecorator decorator && !type.isInstance(parser)) {
+            parser = decorator.getWrappedParser();
+        }
+        return parser;
+    }
+
     @ParameterizedTest
     @CsvSource(delimiter = '|', value = {
+            "{ \"engines\": { \"png\": { \"mock-enricher\": {} } }, \"text-recognizers\": [ { \"engine\": \"png\", \"_min-width\": -1 } ] }| must be a non-negative integer",
+            "{ \"text-recognizers\": [ { \"mock-enricher\": { \"_min-height\": \"tall\" } } ] }| must be a non-negative integer",
             "{ \"engines\": { \"png\": { \"mock-enricher\": {} } }, \"text-recognizers\": [ { \"engine\": \"nope\" } ] }| is not in \"engines\"",
             "{ \"text-recognizers\": [ { \"engine\": \"png\" } ] }| is not in \"engines\"",
             "{ \"engines\": { \"plain\": { \"test-engine\": {} } }, \"text-recognizers\": [ { \"engine\": \"plain\" } ] }| is not a text recognizer",

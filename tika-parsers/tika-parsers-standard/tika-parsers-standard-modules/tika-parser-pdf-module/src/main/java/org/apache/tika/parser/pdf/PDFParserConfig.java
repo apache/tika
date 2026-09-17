@@ -20,6 +20,7 @@ import java.io.Serializable;
 
 import org.apache.pdfbox.text.PDFTextStripper;
 
+import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
 
 /**
@@ -39,25 +40,6 @@ public class PDFParserConfig implements Serializable {
     /**
      * Mode for checking document access permissions.
      */
-    /**
-     * Where a page's text comes from: the content stream, OCR of the rendered page, both,
-     * the per-page verdict, or nowhere. Set with {@code "text"}; the 4.0 {@code ocr.strategy}
-     * spellings are aliases ({@code NO_OCR} = {@link #EXTRACT}, {@code OCR_ONLY} =
-     * {@link #OCR}, {@code OCR_AND_TEXT_EXTRACTION} = {@link #EXTRACT_AND_OCR}).
-     */
-    public enum TextPolicy {
-        /** The content stream only; never OCR. */
-        EXTRACT,
-        /** The content stream, OCR where the verdict says the page needs it. */
-        AUTO,
-        /** Both, every page. */
-        EXTRACT_AND_OCR,
-        /** OCR only; the content stream is not read. */
-        OCR,
-        /** No text from any source; pages are still rendered for annotators and inference. */
-        NONE
-    }
-
     public enum AccessCheckMode {
         /**
          * Don't check extraction permissions. Content will always be extracted
@@ -134,17 +116,13 @@ public class PDFParserConfig implements Serializable {
     //content from elsewhere in the document.
     private boolean ifXFAExtractOnlyXFA = false;
 
-    private OcrConfig ocr = new OcrConfig();
-    private RenderingConfig rendering = new RenderingConfig();
-    /** Null until set; {@link #getText()} then falls back to the {@code ocr.strategy} alias. */
-    private TextPolicy text;
+    /** This parser's overlay on the {@code "pages"} block. */
+    private PagesConfig pages = new PagesConfig();
 
-    private InferenceConfig inference = new InferenceConfig();
+    /** What the 4.0 aliases ({@code ocr}, {@code imageStrategy}) set; {@code pages} wins over it. */
+    private final PagesConfig legacy = new PagesConfig();
 
-    /**
-     * Should the entire document be rendered?
-     */
-    private IMAGE_STRATEGY imageStrategy = IMAGE_STRATEGY.NONE;
+    private OcrConfig.RenderingStrategy renderingStrategy = OcrConfig.RenderingStrategy.ALL;
     private AccessCheckMode accessCheckMode = AccessCheckMode.DONT_CHECK;
 
     //The PDFParser can throw IOExceptions if there is a problem
@@ -170,8 +148,6 @@ public class PDFParserConfig implements Serializable {
     int maxIncrementalUpdates = 10;
 
     private int maxPages = -1;
-
-    private int maxRenderedPages = -1;
 
     private boolean throwOnEncryptedPayload = false;
 
@@ -540,53 +516,51 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * @return the OCR configuration
+     * This parser's overlay on the {@code "pages"} block with whatever the 4.0 aliases set
+     * folded under it: a snapshot, which is what a config dump writes and what the parser
+     * folds onto the context's {@code "pages"} and the defaults
+     * ({@code PagesConfig.resolve(context, defaultConfig.getPages(), localConfig.getPages())}).
+     * Configure through {@link #pages()} or {@link #setPages}.
      */
-    public OcrConfig getOcr() {
-        return ocr;
+    public PagesConfig getPages() {
+        return legacy.over(pages);
+    }
+
+    /** The overlay itself, to configure in code: {@code config.pages().setText(TextPolicy.OCR)}. */
+    public PagesConfig pages() {
+        return pages;
+    }
+
+    public void setPages(PagesConfig pages) {
+        this.pages = pages == null ? new PagesConfig() : pages;
     }
 
     /**
-     * @param ocr the OCR configuration
+     * @deprecated since 4.1.0; the 4.0 {@code "ocr"} block. Every field it sets lands on
+     * {@link #getPages()}: {@code strategy} as {@code text}, {@code strategyAuto} as
+     * {@code ocr.auto}, {@code maxPagesToOcr} as {@code ocr.maxPages}, the image settings as
+     * {@code render}, {@code renderingStrategy} as {@link #setRenderingStrategy}.
      */
+    @Deprecated
     public void setOcr(OcrConfig ocr) {
-        this.ocr = ocr;
-    }
-
-    /** Settings for the page images emitted under RENDER_PAGES_*; unset fields follow {@code ocr}. */
-    public RenderingConfig getRendering() {
-        return rendering;
-    }
-
-    public void setRendering(RenderingConfig rendering) {
-        this.rendering = rendering == null ? new RenderingConfig() : rendering;
-    }
-
-    /** The text policy: {@code "text"} if set, else the {@code ocr.strategy} alias, else AUTO. */
-    public TextPolicy getText() {
-        if (text != null) {
-            return text;
+        if (ocr == null) {
+            return;
         }
-        TextPolicy legacy = ocr == null ? null : ocr.legacyText();
-        return legacy != null ? legacy : TextPolicy.AUTO;
+        ocr.applyTo(legacy);
+        if (ocr.getRenderingStrategy() != null) {
+            renderingStrategy = ocr.getRenderingStrategy();
+        }
     }
 
-    public void setText(TextPolicy text) {
-        this.text = text;
+    /** What PDFBox draws when it renders a page for OCR: everything, text only, no text, or vector graphics only. */
+    public OcrConfig.RenderingStrategy getRenderingStrategy() {
+        return renderingStrategy;
     }
 
-    /** What this parser releases to the inference bindings. */
-    public InferenceConfig getInference() {
-        return inference;
+    public void setRenderingStrategy(OcrConfig.RenderingStrategy renderingStrategy) {
+        this.renderingStrategy = renderingStrategy == null
+                ? OcrConfig.RenderingStrategy.ALL : renderingStrategy;
     }
-
-    public void setInference(InferenceConfig inference) {
-        this.inference = inference == null ? new InferenceConfig() : inference;
-    }
-
-    // OCR settings are configured through the nested OcrConfig (getOcr()/setOcr()).
-    // The flat ocr* convenience accessors (getOcrStrategy/setOcrDPI/...) were removed in
-    // 4.x so that "ocr" is the single JSON spelling; use getOcr().setDpi(...) etc.
 
     /**
      * @return whether or not to extract PDActions
@@ -655,8 +629,27 @@ public class PDFParserConfig implements Serializable {
         this.detectAngles = detectAngles;
     }
 
+    /**
+     * @deprecated since 4.1.0; {@code RAW_IMAGES} is {@link #setExtractInlineImages}, the
+     * {@code RENDER_PAGES_*} values are {@code "pages": {"emit": {"enabled": true}}}. Renders are
+     * emitted at page end whichever value is given; when the engine renders is its own business.
+     */
+    @Deprecated
     public void setImageStrategy(IMAGE_STRATEGY imageStrategy) {
-        this.imageStrategy = imageStrategy;
+        if (imageStrategy == null) {
+            return;
+        }
+        switch (imageStrategy) {
+            case RAW_IMAGES:
+                extractInlineImages = true;
+                break;
+            case RENDER_PAGES_BEFORE_PARSE:
+            case RENDER_PAGES_AT_PAGE_END:
+                legacy.emit().setEnabled(true);
+                break;
+            default:
+                break;
+        }
     }
 
     /**
@@ -685,10 +678,6 @@ public class PDFParserConfig implements Serializable {
 
     public ImageGraphicsEngineFactory getImageGraphicsEngineFactory() {
         return imageGraphicsEngineFactory;
-    }
-
-    public IMAGE_STRATEGY getImageStrategy() {
-        return imageStrategy;
     }
 
     public boolean isExtractIncrementalUpdateInfo() {
@@ -743,32 +732,6 @@ public class PDFParserConfig implements Serializable {
         this.maxPages = maxPages;
     }
 
-    /**
-     * @return maximum number of pages to render with the
-     * {@code RENDER_PAGES_BEFORE_PARSE} and {@code RENDER_PAGES_AT_PAGE_END}
-     * image strategies, or -1 for no limit
-     */
-    public int getMaxRenderedPages() {
-        return maxRenderedPages;
-    }
-
-    /**
-     * Set the maximum number of pages to render, counted from the first
-     * page, independent of {@link #setMaxPages(int)}: text extraction can
-     * cover the whole document while only its first page is rendered, as
-     * for a thumbnail. Use -1 (the default) for no limit.
-     *
-     * @param maxRenderedPages must be -1 or &gt;= 1
-     * @throws IllegalArgumentException if the value is 0 or less than -1
-     */
-    public void setMaxRenderedPages(int maxRenderedPages) {
-        if (maxRenderedPages != -1 && maxRenderedPages < 1) {
-            throw new IllegalArgumentException(
-                    "maxRenderedPages must be -1 (no limit) or >= 1, got: " + maxRenderedPages);
-        }
-        this.maxRenderedPages = maxRenderedPages;
-    }
-
     public void setThrowOnEncryptedPayload(boolean throwOnEncryptedPayload) {
         this.throwOnEncryptedPayload = throwOnEncryptedPayload;
     }
@@ -777,25 +740,12 @@ public class PDFParserConfig implements Serializable {
         return throwOnEncryptedPayload;
     }
 
+    /** @deprecated since 4.1.0; see {@link #setImageStrategy}. */
+    @Deprecated
     public enum IMAGE_STRATEGY {
         NONE,
-        /**
-         * This is the more modern version of {@link PDFParserConfig#extractInlineImages}
-         */
         RAW_IMAGES,
-        /**
-         * If you want the rendered images, and you don't care that there's
-         * markup in the xhtml handler per page then go with this option.
-         * For some rendering engines, it is faster to render the full document
-         * upfront than to parse a page, render a page, etc.
-         */
         RENDER_PAGES_BEFORE_PARSE,
-        /**
-         * This renders each page, one at a time, at the end of the page.
-         * For some rendering engines, this may be slower, but it allows the writing
-         * of image metadata into the xhtml in the proper location
-         */
         RENDER_PAGES_AT_PAGE_END
-        //TODO: add LOGICAL_IMAGES
     }
 }

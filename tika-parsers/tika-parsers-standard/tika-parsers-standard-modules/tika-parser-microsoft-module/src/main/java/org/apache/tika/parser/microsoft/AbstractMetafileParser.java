@@ -25,6 +25,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.RenderingParser;
+import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.renderer.Renderer;
 
 /**
@@ -51,14 +52,20 @@ abstract class AbstractMetafileParser implements Parser, RenderingParser {
                 defaultConfig);
     }
 
+    /** The effective {@code "pages"} block for this parse. */
+    PagesConfig pages(ParseContext context, MetafileParserConfig config)
+            throws TikaException, IOException {
+        return PagesConfig.resolve(context, defaultConfig.getPages(), config.getPages());
+    }
+
     /**
      * Spools the stream when the image is going to be rendered, so the
      * renderer can read the metafile itself rather than only the parsed
      * picture.
      */
-    static void prepareForRendering(TikaInputStream tis, MetafileParserConfig config,
+    static void prepareForRendering(TikaInputStream tis, PagesConfig pages,
                                     Metadata metadata) throws IOException {
-        if (config.shouldRender(metadata)) {
+        if (pages.getEmit().applies(metadata)) {
             tis.getFile();
         }
     }

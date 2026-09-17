@@ -61,7 +61,7 @@ import org.apache.tika.serialization.serdes.ParseContextDeserializer;
  * <pre>
  * "presets": {
  *   "some-catalog-preset": true,
- *   "ocr-heavy": { "pdf-parser": { "text": "EXTRACT_AND_OCR" } }
+ *   "ocr-heavy": { "pages": { "text": "EXTRACT_AND_OCR" } }
  * }
  * </pre>
  *

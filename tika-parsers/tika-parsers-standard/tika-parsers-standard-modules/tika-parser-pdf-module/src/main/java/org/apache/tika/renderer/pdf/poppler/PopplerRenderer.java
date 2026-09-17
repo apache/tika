@@ -43,6 +43,7 @@ import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
+import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.renderer.RenderingTracker;
 import org.apache.tika.utils.FileProcessResult;
@@ -71,7 +72,7 @@ public class PopplerRenderer implements Renderer {
      * {@code prefix-02.png}, etc.
      */
     private static final Pattern PAGE_FILE_PATTERN =
-            Pattern.compile("tika-poppler-(\\d+)\\.png");
+            Pattern.compile("tika-poppler-(\\d+)\\.(png|jpg|tif)");
 
     private String pdftoppmPath = "pdftoppm";
     private int dpi = 300;
@@ -157,7 +158,8 @@ public class PopplerRenderer implements Renderer {
             }
         });
 
-        String[] args = createCommandLine(pdf, dir, rangeRequest);
+        String[] args = createCommandLine(pdf, dir, rangeRequest,
+                parseContext.get(RenderSettings.class));
 
         ProcessBuilder builder = new ProcessBuilder();
         builder.command(args);
@@ -194,26 +196,63 @@ public class PopplerRenderer implements Renderer {
         }
     }
 
-    String[] createCommandLine(Path pdf, Path dir,
-                               PageRangeRequest request) {
+    String[] createCommandLine(Path pdf, Path dir, PageRangeRequest request) {
+        return createCommandLine(pdf, dir, request, null);
+    }
+
+    /**
+     * The command for a request, under the settings the parser scoped (null for this
+     * renderer's own). A box becomes {@code -scale-to} with its smaller side: pdftoppm fits a
+     * square, so a non-square box is honoured as a bound and not filled.
+     */
+    String[] createCommandLine(Path pdf, Path dir, PageRangeRequest request,
+                               RenderSettings settings) {
         List<String> args = new ArrayList<>();
         args.add(pdftoppmPath);
 
-        // Output format
-        args.add("-png");
+        int resolution = dpi;
+        boolean grayscale = gray;
+        int scaleTo = maxScaleTo;
+        String format = "-png";
+        if (settings != null) {
+            if (settings.getDpi() != null) {
+                resolution = settings.getDpi();
+            }
+            if (settings.getImageType() != null) {
+                grayscale = settings.getImageType() == org.apache.tika.renderer.ImageType.GRAY;
+            }
+            if (settings.getImageFormat() != null) {
+                switch (settings.getImageFormat()) {
+                    case JPEG:
+                        format = "-jpeg";
+                        break;
+                    case TIFF:
+                        format = "-tiff";
+                        break;
+                    default:
+                        break;
+                }
+            }
+            int box = box(settings.getMaxWidth(), settings.getMaxHeight());
+            if (box > 0) {
+                scaleTo = scaleTo > 0 ? Math.min(scaleTo, box) : box;
+            }
+        }
+
+        args.add(format);
 
         // Resolution
         args.add("-r");
-        args.add(String.valueOf(dpi));
+        args.add(String.valueOf(resolution));
 
-        // Scale cap — prevents OOM on huge pages
-        if (maxScaleTo > 0) {
+        // Scale cap: the box, and the renderer's own guard against huge pages
+        if (scaleTo > 0) {
             args.add("-scale-to");
-            args.add(String.valueOf(maxScaleTo));
+            args.add(String.valueOf(scaleTo));
         }
 
         // Colorspace
-        if (gray) {
+        if (grayscale) {
             args.add("-gray");
         }
 
@@ -234,6 +273,16 @@ public class PopplerRenderer implements Renderer {
                 dir.toAbsolutePath().toString() + "/tika-poppler"));
 
         return args.toArray(new String[0]);
+    }
+
+    /** The smaller side of the box, or -1 when neither side is bounded. */
+    private static int box(Integer maxWidth, Integer maxHeight) {
+        int w = maxWidth == null ? -1 : maxWidth;
+        int h = maxHeight == null ? -1 : maxHeight;
+        if (w > 0 && h > 0) {
+            return Math.min(w, h);
+        }
+        return w > 0 ? w : h;
     }
 
     // ---- config getters/setters -------------------------------------------

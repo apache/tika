@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 import javax.imageio.ImageIO;
 
@@ -38,7 +39,6 @@ import org.apache.poi.hwmf.record.HwmfRecord;
 import org.apache.poi.hwmf.usermodel.HwmfPicture;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
@@ -49,19 +49,22 @@ import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.MetafileParserConfig;
+import org.apache.tika.renderer.ImageFormat;
+import org.apache.tika.renderer.ImageType;
 import org.apache.tika.renderer.RenderRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
+import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.renderer.RenderingTracker;
 
 /**
  * Renders EMF and WMF images to a raster image through POI's HEMF and HWMF,
- * the way {@code PDFBoxRenderer} renders PDF pages. The rendering has the
- * configured width, its height follows the image's aspect ratio, and it is
- * drawn on a white canvas. Metafiles have no pages, so the render requests
- * are ignored and a single result is returned.
+ * the way {@code PDFBoxRenderer} renders PDF pages: at the {@code RenderSettings}
+ * the parse scopes into the context (dpi, box, colour, format), else this
+ * renderer's own, on a white canvas with the picture's aspect ratio. Metafiles
+ * have no pages, so the render requests are ignored and a single result is
+ * returned.
  * <p>
  * The WMF thumbnails that Word stores in the SummaryInformation of a .doc
  * consist of a window extent and a single {@code dibStretchBlt} record, for
@@ -89,8 +92,13 @@ public class POIMetafileRenderer implements Renderer {
      */
     private static final int MAX_HEIGHT = 10000;
 
-    private int width = 800;
-    private String imageFormatName = "png";
+    /** What this renderer draws when the parse scopes no settings: 800 px wide, RGB PNG. */
+    private final RenderSettings defaults = RenderSettings.defaults();
+
+    public POIMetafileRenderer() {
+        defaults.setMaxWidth(800);
+        defaults.setImageType(ImageType.RGB);
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -117,7 +125,8 @@ public class POIMetafileRenderer implements Renderer {
             parseContext.set(RenderingTracker.class, tracker);
         }
         int id = tracker.getNextId();
-        int width = width(parseContext, metadata);
+        RenderSettings settings = settings(parseContext);
+        String imageFormatName = settings.getImageFormat().getFormatName();
         Metadata renderingMetadata = Metadata.newInstance(parseContext);
         renderingMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
@@ -125,8 +134,8 @@ public class POIMetafileRenderer implements Renderer {
         try {
             long start = System.currentTimeMillis();
             BufferedImage image = picture instanceof HemfPicture
-                    ? draw((HemfPicture) picture, width) : draw((HwmfPicture) picture, width);
-            Path tmpFile = write(image, id);
+                    ? draw((HemfPicture) picture, settings) : draw((HwmfPicture) picture, settings);
+            Path tmpFile = write(image, id, imageFormatName);
             renderingMetadata.set(Rendering.RENDERED_MS, System.currentTimeMillis() - start);
             renderingMetadata.add(Rendering.RENDERED_BY, RENDERED_BY);
             renderingMetadata.set(HttpHeaders.CONTENT_TYPE, "image/" + imageFormatName);
@@ -143,9 +152,9 @@ public class POIMetafileRenderer implements Renderer {
         return results;
     }
 
-    private BufferedImage draw(HemfPicture picture, int width) throws IOException {
+    private BufferedImage draw(HemfPicture picture, RenderSettings settings) throws IOException {
         Dimension2D size = picture.getSize();
-        BufferedImage image = canvas(size, width);
+        BufferedImage image = canvas(size, settings);
         Graphics2D graphics = image.createGraphics();
         try {
             picture.draw(graphics, new Rectangle2D.Double(0, 0, image.getWidth(),
@@ -156,7 +165,7 @@ public class POIMetafileRenderer implements Renderer {
         return image;
     }
 
-    private BufferedImage draw(HwmfPicture picture, int width) throws IOException {
+    private BufferedImage draw(HwmfPicture picture, RenderSettings settings) throws IOException {
         Dimension2D size;
         try {
             size = picture.getSize();
@@ -167,9 +176,9 @@ public class POIMetafileRenderer implements Renderer {
             if (bitmap == null) {
                 throw new IOException("WMF without bounds and without a bitmap", e);
             }
-            return scale(bitmap, width);
+            return scale(bitmap, settings);
         }
-        BufferedImage image = canvas(size, width);
+        BufferedImage image = canvas(size, settings);
         Graphics2D graphics = image.createGraphics();
         try {
             picture.draw(graphics, new Rectangle2D.Double(0, 0, image.getWidth(),
@@ -192,34 +201,30 @@ public class POIMetafileRenderer implements Renderer {
         return null;
     }
 
-    /**
-     * The width of the rendering: the {@code renderWidth} of the metafile
-     * parser's configuration where the parse has one, else this renderer's
-     * own {@link #setWidth(int)}. The parser configuration wins so that a
-     * request configuring {@code "emf-parser": {"renderWidth": N}} reaches
-     * the renderer the parser was handed, which need not be this instance.
-     */
-    private int width(ParseContext parseContext, Metadata metadata)
-            throws IOException, TikaException {
-        MetafileParserConfig config = parseContext.get(MetafileParserConfig.class);
-        if (config == null) {
-            String component = WMF.toString().equals(metadata.get(TikaCoreProperties.TYPE))
-                    ? "wmf-parser" : "emf-parser";
-            if (parseContext.getJsonConfig(component) == null) {
-                return width;
-            }
-            config = ParseContextConfig.getConfig(parseContext, component,
-                    MetafileParserConfig.class, new MetafileParserConfig());
-        }
-        return config.getRenderWidth();
+    /** The settings the parser scoped around this render, else this renderer's own. */
+    private RenderSettings settings(ParseContext parseContext) {
+        RenderSettings scoped = parseContext.get(RenderSettings.class);
+        return scoped == null ? defaults : defaults.over(scoped);
     }
 
-    private BufferedImage canvas(Dimension2D size, int width) throws IOException {
+    /**
+     * A white canvas for the picture at the settings' dpi, scaled down to fit the box; the
+     * height follows the picture's aspect ratio.
+     */
+    private BufferedImage canvas(Dimension2D size, RenderSettings settings) throws IOException {
         if (size == null || size.getWidth() <= 0 || size.getHeight() <= 0) {
             throw new IOException("metafile without a usable size: " + size);
         }
+        int dpi = settings.getDpi();
+        long[] fit = settings.fit(Math.max(1, Math.round(size.getWidth() / 72.0 * dpi)),
+                Math.max(1, Math.round(size.getHeight() / 72.0 * dpi)));
+        int width = (int) fit[0];
+        if (width > MAX_WIDTH) {
+            throw new IOException("metafile asks for a " + width + " pixel wide rendering at "
+                    + dpi + " dpi, the maximum is " + MAX_WIDTH);
+        }
         BufferedImage image = new BufferedImage(width, height(size.getWidth(), size.getHeight(),
-                width), BufferedImage.TYPE_INT_RGB);
+                width), imageType(settings));
         Graphics2D graphics = image.createGraphics();
         try {
             graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
@@ -252,9 +257,12 @@ public class POIMetafileRenderer implements Renderer {
         return (int) height;
     }
 
-    private BufferedImage scale(BufferedImage bitmap, int width) throws IOException {
+    /** A bitmap has no dpi: the box is its ceiling and it is never enlarged. */
+    private BufferedImage scale(BufferedImage bitmap, RenderSettings settings) throws IOException {
+        long[] fit = settings.fit(bitmap.getWidth(), bitmap.getHeight());
+        int width = (int) fit[0];
         int height = height(bitmap.getWidth(), bitmap.getHeight(), width);
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        BufferedImage image = new BufferedImage(width, height, imageType(settings));
         Graphics2D graphics = image.createGraphics();
         try {
             graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
@@ -268,7 +276,12 @@ public class POIMetafileRenderer implements Renderer {
         return image;
     }
 
-    private Path write(BufferedImage image, int id) throws IOException {
+    private static int imageType(RenderSettings settings) {
+        return settings.getImageType() == ImageType.GRAY
+                ? BufferedImage.TYPE_BYTE_GRAY : BufferedImage.TYPE_INT_RGB;
+    }
+
+    private Path write(BufferedImage image, int id, String imageFormatName) throws IOException {
         Path tmpFile = Files.createTempFile("tika-metafile-rendering-",
                 "-" + id + "." + imageFormatName);
         try (OutputStream os = Files.newOutputStream(tmpFile)) {
@@ -282,30 +295,29 @@ public class POIMetafileRenderer implements Renderer {
         return tmpFile;
     }
 
+    /** The width the box allows when the parse scopes no settings; 800 by default. */
     public int getWidth() {
-        return width;
+        return defaults.getMaxWidth();
     }
 
     /**
-     * @param width the rendering's width in pixels, 1 to 10000; the height
-     *              follows the image's aspect ratio. Default 800.
+     * @param width the rendering's widest, in pixels, 1 to 10000, when the parse scopes no
+     *              settings; the height follows the image's aspect ratio. Default 800.
      */
     public void setWidth(int width) {
         if (width < 1 || width > MAX_WIDTH) {
             throw new IllegalArgumentException(
                     "width must be between 1 and " + MAX_WIDTH + ", got: " + width);
         }
-        this.width = width;
+        defaults.setMaxWidth(width);
     }
 
     public String getImageFormatName() {
-        return imageFormatName;
+        return defaults.getImageFormat().getFormatName();
     }
 
-    /**
-     * @param imageFormatName an ImageIO format name, "png" (default) or "jpeg"
-     */
+    /** @param imageFormatName png, jpeg or tiff; png by default. */
     public void setImageFormatName(String imageFormatName) {
-        this.imageFormatName = imageFormatName;
+        defaults.setImageFormat(ImageFormat.valueOf(imageFormatName.toUpperCase(Locale.ROOT)));
     }
 }

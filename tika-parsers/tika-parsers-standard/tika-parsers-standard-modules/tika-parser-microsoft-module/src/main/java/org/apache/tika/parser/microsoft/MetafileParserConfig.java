@@ -17,88 +17,32 @@
 package org.apache.tika.parser.microsoft;
 
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Set;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.renderer.microsoft.POIMetafileRenderer;
+import org.apache.tika.parser.pages.PagesConfig;
 
 /**
  * Configuration of the {@link EMFParser} ("emf-parser") and the
- * {@link WMFParser} ("wmf-parser").
+ * {@link WMFParser} ("wmf-parser"): the parser's overlay on the {@code "pages"}
+ * block. A metafile is one page; {@code pages.emit} rasterizes it and emits the
+ * rendering as an embedded document, {@code pages.render} (under the
+ * {@code emit.render} overlay) says how.
  */
 public class MetafileParserConfig implements Serializable {
 
     private static final long serialVersionUID = -6371049153052164071L;
 
-    private boolean renderImage = false;
-    private int renderWidth = 800;
-    private Set<String> renderOnlyEmbeddedResourceTypes = new HashSet<>();
+    private PagesConfig pages = new PagesConfig();
 
-    /**
-     * Whether to render the image and emit the rendering as a RENDERING
-     * embedded document. Off by default.
-     */
-    public boolean isRenderImage() {
-        return renderImage;
+    public PagesConfig getPages() {
+        return pages;
     }
 
-    public void setRenderImage(boolean renderImage) {
-        this.renderImage = renderImage;
+    /** The overlay itself, to configure in code: {@code config.pages().emit().setEnabled(true)}. */
+    public PagesConfig pages() {
+        return pages;
     }
 
-    /**
-     * Width of the rendering in pixels when the default
-     * {@link POIMetafileRenderer} is used; the height follows the image's
-     * aspect ratio. Default 800.
-     */
-    public int getRenderWidth() {
-        return renderWidth;
-    }
-
-    /**
-     * Restricts the rendering to images that are embedded documents of one
-     * of these {@code tk:embedded-resource-type}s, e.g. {@code ["THUMBNAIL"]}
-     * to render the thumbnail of an Office document but not the pictures of
-     * its embedded objects. Empty (the default) renders every image.
-     */
-    public Set<String> getRenderOnlyEmbeddedResourceTypes() {
-        return renderOnlyEmbeddedResourceTypes;
-    }
-
-    public void setRenderOnlyEmbeddedResourceTypes(Set<String> renderOnlyEmbeddedResourceTypes) {
-        if (renderOnlyEmbeddedResourceTypes == null) {
-            this.renderOnlyEmbeddedResourceTypes = new HashSet<>();
-            return;
-        }
-        Set<String> types = new HashSet<>();
-        for (String type : renderOnlyEmbeddedResourceTypes) {
-            //a typo would silently disable rendering
-            types.add(TikaCoreProperties.EmbeddedResourceType.valueOf(type).name());
-        }
-        this.renderOnlyEmbeddedResourceTypes = types;
-    }
-
-    /**
-     * Whether an image with this metadata is to be rendered.
-     */
-    public boolean shouldRender(Metadata metadata) {
-        if (!renderImage) {
-            return false;
-        }
-        if (renderOnlyEmbeddedResourceTypes.isEmpty()) {
-            return true;
-        }
-        String type = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
-        return type != null && renderOnlyEmbeddedResourceTypes.contains(type);
-    }
-
-    public void setRenderWidth(int renderWidth) {
-        if (renderWidth < 1 || renderWidth > 10000) {
-            throw new IllegalArgumentException(
-                    "renderWidth must be between 1 and 10000, got: " + renderWidth);
-        }
-        this.renderWidth = renderWidth;
+    public void setPages(PagesConfig pages) {
+        this.pages = pages == null ? new PagesConfig() : pages;
     }
 }

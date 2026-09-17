@@ -102,7 +102,7 @@ public class EMFParserTest extends TikaTest {
     @Test
     public void testRenderingFromParseContext() throws Exception {
         ParseContext context = new ParseContext();
-        context.setJsonConfig("emf-parser", "{\"renderImage\": true}");
+        context.setJsonConfig("emf-parser", "{\"pages\": {\"emit\": {\"enabled\": true}}}");
         List<Metadata> metadataList = getRecursiveMetadata("testEMF.emf", context);
         assertEquals(2, metadataList.size());
         assertRendering(metadataList.get(1), "testEMF.png",
@@ -117,7 +117,7 @@ public class EMFParserTest extends TikaTest {
     @Test
     public void testDocxThumbnailRendering() throws Exception {
         ParseContext context = new ParseContext();
-        context.setJsonConfig("emf-parser", "{\"renderImage\": true, \"renderWidth\": 200}");
+        context.setJsonConfig("emf-parser", "{\"pages\": {\"emit\": {\"enabled\": true, \"render\": {\"maxWidth\": 200}}}}");
         List<Metadata> metadataList = getRecursiveMetadata("testDOCX_Thumbnail.docx", context);
         //the document, its thumbnail, the WMF picture inside the thumbnail's
         //EMF and the thumbnail's rendering
@@ -143,7 +143,7 @@ public class EMFParserTest extends TikaTest {
     public void testRenderOnlyThumbnails() throws Exception {
         ParseContext context = new ParseContext();
         context.setJsonConfig("emf-parser",
-                "{\"renderImage\": true, \"renderOnlyEmbeddedResourceTypes\": [\"THUMBNAIL\"]}");
+                "{\"pages\": {\"emit\": {\"enabled\": true, \"resourceTypes\": [\"THUMBNAIL\"]}}}");
         List<Metadata> metadataList = getRecursiveMetadata("testDOCX_Thumbnail.docx", context);
         assertRendering(byName(metadataList, "thumbnail.png"), "thumbnail.png",
                 TikaCoreProperties.EmbeddedResourceType.THUMBNAIL);
@@ -163,7 +163,8 @@ public class EMFParserTest extends TikaTest {
     public void testRenderWidth(int width) throws Exception {
         ParseContext context = new ParseContext();
         context.setJsonConfig("emf-parser",
-                "{\"renderImage\": true, \"renderWidth\": " + width + "}");
+                "{\"pages\": {\"emit\": {\"enabled\": true, \"render\": {\"maxWidth\": "
+                        + width + "}}}}");
         List<byte[]> renderings = new ArrayList<>();
         context.set(EmbeddedDocumentExtractor.class, collector(renderings));
         try (InputStream is = getResourceAsStream("/test-documents/testEMF.emf")) {

@@ -16,10 +16,10 @@
  */
 package org.apache.tika.parser.pdf;
 
-import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.AUTO;
-import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.EXTRACT_AND_OCR;
-import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.NONE;
-import static org.apache.tika.parser.pdf.PDFParserConfig.TextPolicy.OCR;
+import static org.apache.tika.parser.pages.TextPolicy.AUTO;
+import static org.apache.tika.parser.pages.TextPolicy.EXTRACT_AND_OCR;
+import static org.apache.tika.parser.pages.TextPolicy.NONE;
+import static org.apache.tika.parser.pages.TextPolicy.OCR;
 
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
@@ -124,17 +124,21 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.parser.hook.ParseHooks;
+import org.apache.tika.parser.inference.InputKind;
+import org.apache.tika.parser.pages.PagesConfig;
+import org.apache.tika.parser.pages.TextPolicy;
 import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
 import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
 import org.apache.tika.parser.pdf.updates.StartXRefOffset;
 import org.apache.tika.renderer.CompositeRenderer;
-import org.apache.tika.renderer.PageBasedRenderResults;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
+import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.renderer.RenderingTracker;
 import org.apache.tika.renderer.pdf.pdfbox.NoTextPDFRenderer;
 import org.apache.tika.renderer.pdf.pdfbox.PDDocumentRenderer;
+import org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer;
 import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
 import org.apache.tika.renderer.pdf.pdfbox.TextOnlyPDFRenderer;
 import org.apache.tika.renderer.pdf.pdfbox.VectorGraphicsOnlyPDFRenderer;
@@ -190,6 +194,9 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     final Metadata metadata;
     final EmbeddedDocumentExtractor embeddedDocumentExtractor;
     final PDFParserConfig config;
+    /** The effective "pages" block for this parse. */
+    final PagesConfig pages;
+    final PageEmitter emitter;
     final Renderer renderer;
     final CompositeContentEnricher contentEnrichers;
     private final ParseHooks hooks;
@@ -234,11 +241,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     int num3DAnnotations = 0;
 
     AbstractPDF2XHTML(PDDocument pdDocument, ContentHandler handler, ParseContext context,
-                      Metadata metadata, PDFParserConfig config, Renderer renderer,
+                      Metadata metadata, PDFParserConfig config, PagesConfig pages,
+                      PageEmitter emitter, Renderer renderer,
                       CompositeContentEnricher contentEnrichers) throws IOException {
         this.pdDocument = pdDocument;
+        this.pages = pages;
+        this.emitter = emitter;
         this.ocrImageMediaType =
-                MediaType.image(config.getOcr().getImageFormat().getFormatName());
+                MediaType.image(pages.getRender().getImageFormat().getFormatName());
         // resolved before any page is rendered, so a probe stands in for the render
         Metadata renderTarget = new Metadata();
         renderTarget.set(HttpHeaders.CONTENT_TYPE, ocrImageMediaType.toString());
@@ -246,10 +256,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
         this.ocrEngine =
                 ContentEnrichers.get(contentEnrichers, ocrImageMediaType, renderTarget, context);
-        PDFParserConfig.IMAGE_STRATEGY imageStrategy = config.getImageStrategy();
         Parser annotators = null;
-        if (imageStrategy == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE
-                || imageStrategy == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
+        if (pages.getEmit().applies(metadata)) {
             try (ContentEnrichers.Suspension recognizersOff =
                          ContentEnrichers.suspendRecognizers(context)) {
                 annotators = ContentEnrichers.get(contentEnrichers, ocrImageMediaType,
@@ -257,7 +265,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         }
         this.pageAnnotators = annotators;
-        if (config.getText() == AUTO && ContentEnrichers.hasTextRecognizer(
+        if (pages.getText() == AUTO && ContentEnrichers.hasTextRecognizer(
                 contentEnrichers, ocrImageMediaType, renderTarget, context)) {
             this.pageBuffer = new PageTextBuffer(handler);
             this.xhtml = new XHTMLContentHandler(pageBuffer, metadata, context);
@@ -273,7 +281,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         this.hooks = context.get(ParseHooks.class);
         boolean wantsPages = false;
-        if (hooks != null && config.getInference().getInput().contains(InferenceConfig.Input.PAGES)) {
+        if (hooks != null && pages.getInference().contains(InputKind.PAGES)) {
             try {
                 wantsPages = hooks.wantsPages(ocrImageMediaType, context);
             } catch (TikaException e) {
@@ -283,7 +291,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         this.pagesForInference = wantsPages;
         if (wantsPages) {
             // the TEXT stage skips a document released as pages unless TEXT is listed too
-            for (InferenceConfig.Input input : config.getInference().getInput()) {
+            for (InputKind input : pages.getInference()) {
                 metadata.add(TikaCoreProperties.INFERENCE_RELEASED, input.name());
             }
         }
@@ -356,7 +364,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         List<PageTextBuffer.SaxEvent> captured =
                 pageBuffer == null ? Collections.emptyList() : pageBuffer.stop();
-        boolean wanted = config.getText() == AUTO &&
+        boolean wanted = pages.getText() == AUTO &&
                 ocrWanted(pageBuffer == null ? null : pageBuffer.text());
         pageDecision = wanted ? PageText.OCR_WANTED : PageText.KEEP;
         if (wanted) {
@@ -382,12 +390,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      * pageText (null when nothing was recorded) is the seam for a junk detector (TIKA-4883).
      */
     boolean ocrWanted(String pageText) {
-        OcrConfig.StrategyAuto strategyAuto = config.getOcr().getStrategyAuto();
-        if (totalCharsPerPage <= strategyAuto.getTotalCharsPerPage()) {
+        PagesConfig.Auto auto = pages.getOcr().getAuto();
+        if (totalCharsPerPage <= auto.getTotalCharsPerPage()) {
             return true;
         }
         float percentUnmapped = (float) unmappedUnicodeCharsPerPage / totalCharsPerPage;
-        float limit = strategyAuto.getUnmappedUnicodeCharsPerPage();
+        float limit = auto.getUnmappedUnicodeCharsPerPage();
         return (limit < 1) ? percentUnmapped > limit : unmappedUnicodeCharsPerPage > limit;
     }
 
@@ -691,14 +699,14 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         TEXT
     }
 
-    PageOcr doOCROnCurrentPage(PDPage pdPage, PDFParserConfig.TextPolicy text)
+    PageOcr doOCROnCurrentPage(PDPage pdPage, TextPolicy text)
             throws IOException, TikaException, SAXException {
         PageOcr result = dispatchOcr(pdPage, text);
         currentPageOcr = result;
         return result;
     }
 
-    private PageOcr dispatchOcr(PDPage pdPage, PDFParserConfig.TextPolicy text)
+    private PageOcr dispatchOcr(PDPage pdPage, TextPolicy text)
             throws IOException, TikaException, SAXException {
         if (text != AUTO && text != OCR && text != EXTRACT_AND_OCR) {
             return PageOcr.SKIPPED;
@@ -710,7 +718,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
 
         // Enforce maxPagesToOcr limit
-        int maxPagesToOcr = config.getOcr().getMaxPagesToOcr();
+        int maxPagesToOcr = pages.getOcr().getMaxPages();
         if (maxPagesToOcr > 0 && c != null && c.getCount() > maxPagesToOcr) {
             return PageOcr.SKIPPED;
         }
@@ -722,7 +730,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                                 ocrImageMediaType + ". Name one that covers it in " +
                                 "\"text-recognizers\" (a configured list is authoritative), " +
                                 "add one to the classpath when no list is configured, " +
-                                "or set \"pdf-parser\": {\"text\": \"EXTRACT\"}.");
+                                "or set \"pages\": {\"text\": \"EXTRACT\"}.");
             }
             return PageOcr.SKIPPED;
         }
@@ -744,6 +752,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             throws IOException, TikaException, SAXException {
         try {
             RenderResult renderResult = currentPageRender(pdPage);
+            // a page skipped for its size (too large: warned; too small: policy) has no image
+            if (renderResult.getStatus() != RenderResult.STATUS.SUCCESS) {
+                return false;
+            }
             Metadata renderMetadata = renderResult.getMetadata();
             TextCounter counter = new TextCounter(xhtml);
             try (TikaInputStream tis = renderResult.getInputStream()) {
@@ -793,6 +805,18 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
+    /**
+     * Emits the page's render as an embedded document when {@code pages.emit} says so; the OCR
+     * render is shared when it is the same image, else the page is rendered again for it.
+     */
+    private void emitCurrentPage(PDPage pdPage) throws IOException, TikaException {
+        if (emitter == null || !emitter.wants(getCurrentPageNo())) {
+            return;
+        }
+        RenderResult shared = pages.emitsSameImage() ? currentPageRender(pdPage) : null;
+        emitter.emit(getCurrentPageNo(), shared, xhtml);
+    }
+
     /** Hands the page's render to the hooks when a PAGES binding wants it. */
     private void offerCurrentPageToInference(PDPage pdPage) throws IOException, TikaException {
         if (!pagesForInference) {
@@ -834,52 +858,46 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     private RenderResult renderCurrentPage(PDPage pdPage, TemporaryResources tmpResources)
             throws IOException, TikaException {
+        Metadata pageMetadata = getCurrentPageMetadata(pdPage);
+        // too small to hold anything: a policy skip, not a failure
+        PDRectangle mediaBox = pdPage.getMediaBox();
+        if (pages.getRender().belowMinimum(mediaBox.getWidth(), mediaBox.getHeight())) {
+            return new RenderResult(RenderResult.STATUS.EXCEPTION,
+                    nextRenderId(), null, pageMetadata);
+        }
         PDFRenderingState renderingState = context.get(PDFRenderingState.class);
-        if (renderingState == null) {
-            Metadata pageMetadata = getCurrentPageMetadata(pdPage);
+        Renderer thisRenderer = renderingState == null ? null : getPDFRenderer();
+        // a configured renderer draws everything; the other strategies are PDFBox-only
+        if (thisRenderer == null
+                || config.getRenderingStrategy() != OcrConfig.RenderingStrategy.ALL) {
             return noContextRenderCurrentPage(pageMetadata, tmpResources);
         }
-        //if the full document has already been rendered, then reuse that file
-        //TODO: we need to prevent this if only a portion of the page or portions
-        //of the page have been rendered.
-        PageBasedRenderResults results = (PageBasedRenderResults) renderingState.getRenderResults();
-        if (results != null && pageImageIsOcrImage()) {
-            List<RenderResult> pageResults = results.getPage(getCurrentPageNo());
-            if (pageResults.size() == 1) {
-                return pageResults.get(0);
-            }
-        }
-        Metadata pageMetadata = getCurrentPageMetadata(pdPage);
-        Renderer thisRenderer = getPDFRenderer();
-        //if there's a configured renderer and if the rendering strategy is "all"
-        if (thisRenderer != null &&
-                config.getOcr().getRenderingStrategy() == OcrConfig.RenderingStrategy.ALL) {
-            PageRangeRequest pageRangeRequest =
-                    new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
+        PageRangeRequest pageRangeRequest =
+                new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
+        RenderSettings outer = context.get(RenderSettings.class);
+        context.set(RenderSettings.class, pages.getRender());
+        try {
             if (thisRenderer instanceof PDDocumentRenderer) {
                 //do not do autocloseable.  We need to leave the pdDocument open!
                 TikaInputStream tis = TikaInputStream.getPlaceholder();
                 tis.setOpenContainer(pdDocument);
                 return thisRenderer.render(tis, pageMetadata, context, pageRangeRequest)
                         .getResults().get(0);
-
-            } else {
-                PDFRenderingState state = context.get(PDFRenderingState.class);
-                if (state == null) {
-                    throw new IllegalArgumentException("RenderingState must not be null");
-                }
-                return thisRenderer.render(state.getTikaInputStream(), pageMetadata, context,
-                        pageRangeRequest).getResults().get(0);
             }
-        } else {
-            return noContextRenderCurrentPage(pageMetadata, tmpResources);
+            return thisRenderer.render(renderingState.getTikaInputStream(), pageMetadata,
+                    context, pageRangeRequest).getResults().get(0);
+        } finally {
+            context.set(RenderSettings.class, outer);
         }
     }
 
-    /** A page image rendered before the parse serves OCR only if OCR would render it the same. */
-    private boolean pageImageIsOcrImage() {
-        return config.getRendering().resolve(config.getOcr())
-                .rendersSameImageAs(RenderingConfig.from(config.getOcr()));
+    private int nextRenderId() {
+        RenderingTracker renderingTracker = context.get(RenderingTracker.class);
+        if (renderingTracker == null) {
+            renderingTracker = new RenderingTracker();
+            context.set(RenderingTracker.class, renderingTracker);
+        }
+        return renderingTracker.getNextId();
     }
 
     private Renderer getPDFRenderer() {
@@ -907,7 +925,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                                                     TemporaryResources tmpResources)
             throws IOException, TikaException {
         PDFRenderer renderer = null;
-        switch (config.getOcr().getRenderingStrategy()) {
+        switch (config.getRenderingStrategy()) {
             case NO_TEXT:
                 renderer = new NoTextPDFRenderer(pdDocument);
                 break;
@@ -922,46 +940,33 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 break;
         }
 
-        int dpi = config.getOcr().getDpi();
+        RenderSettings settings = pages.getRender();
         Path tmpFile = null;
 
-        RenderingTracker renderingTracker = context.get(RenderingTracker.class);
-        if (renderingTracker == null) {
-            renderingTracker = new RenderingTracker();
-            context.set(RenderingTracker.class, renderingTracker);
-        }
-        int id = renderingTracker.getNextId();
+        int id = nextRenderId();
 
         try {
-            // Check estimated pixel dimensions before rendering to
-            // prevent OOM on pathologically large pages
-            long maxPixels = config.getOcr().getMaxImagePixels();
-            if (maxPixels > 0) {
-                PDPage currentPage = pdDocument.getPage(pageIndex);
-                PDRectangle mediaBox = currentPage.getMediaBox();
-                long estWidth = (long) Math.ceil(mediaBox.getWidth() / 72.0 * dpi);
-                long estHeight = (long) Math.ceil(mediaBox.getHeight() / 72.0 * dpi);
-                long estPixels = estWidth * estHeight;
-                if (estPixels > maxPixels) {
-                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
-                            "Skipping OCR for page " + (pageIndex + 1)
-                                    + ": estimated " + estPixels
-                                    + " pixels exceeds maxImagePixels="
-                                    + maxPixels);
-                    return new RenderResult(RenderResult.STATUS.EXCEPTION,
-                            id, null, pageMetadata);
-                }
+            PDRectangle mediaBox = pdDocument.getPage(pageIndex).getMediaBox();
+            float dpi = settings.effectiveDpi(mediaBox.getWidth(), mediaBox.getHeight());
+            // estimate before rendering, so a pathologically large page cannot OOM the JVM
+            long estPixels = settings.estimatedPixels(mediaBox.getWidth(), mediaBox.getHeight());
+            if (settings.exceedsMaxPixels(estPixels)) {
+                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
+                        "Skipping OCR for page " + (pageIndex + 1)
+                                + ": estimated " + estPixels
+                                + " pixels exceeds maxImagePixels="
+                                + settings.getMaxImagePixels());
+                return new RenderResult(RenderResult.STATUS.EXCEPTION,
+                        id, null, pageMetadata);
             }
 
-            BufferedImage image =
-                    renderer.renderImageWithDPI(pageIndex, dpi, config.getOcr().getImageType().getPdfBoxImageType());
+            BufferedImage image = renderer.renderImageWithDPI(pageIndex, dpi,
+                    PDFBoxRenderer.toPdfBox(settings.getImageType()));
 
-            //TODO -- get suffix based on OcrImageType
             tmpFile = tmpResources.createTempFile();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
-                //TODO: get output format from TesseractConfig
-                ImageIOUtil.writeImage(image, config.getOcr().getImageFormat().getFormatName(), os, dpi,
-                        config.getOcr().getImageQuality());
+                ImageIOUtil.writeImage(image, settings.getImageFormat().getFormatName(), os,
+                        Math.round(dpi), settings.getImageQuality());
             }
         } catch (SecurityException e) {
             //throw SecurityExceptions immediately
@@ -987,7 +992,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             for (PDAnnotation annotation : page.getAnnotations()) {
                 processPageAnnotation(annotation);
             }
-            if (config.getText() == EXTRACT_AND_OCR) {
+            if (pages.getText() == EXTRACT_AND_OCR) {
                 doOCROnCurrentPage(page, EXTRACT_AND_OCR);
             } else if (pageDecision == PageText.OCR_WANTED) {
                 if (doOCROnCurrentPage(page, AUTO) != PageOcr.TEXT) {
@@ -999,6 +1004,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 annotateCurrentPage(page);
             }
             offerCurrentPageToInference(page);
+            emitCurrentPage(page);
 
             PDPageAdditionalActions pageActions = page.getActions();
             if (pageActions != null) {
@@ -1079,7 +1085,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                         attributes);
             }
         }
-        if (!config.isExtractAnnotationText() || config.getText() == NONE) {
+        if (!config.isExtractAnnotationText() || pages.getText() == NONE) {
             return;
         }
         // TODO: remove once PDFBOX-1143 is fixed:
@@ -1362,7 +1368,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
     protected void endDocument(PDDocument pdf) throws IOException {
         try {
             // NONE writes no text from any source: bookmarks, forms and annotations included
-            if (config.isExtractBookmarksText() && config.getText() != NONE) {
+            if (config.isExtractBookmarksText() && pages.getText() != NONE) {
                 extractBookmarkText();
             }
 
@@ -1381,7 +1387,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             extractXMPXFA();
 
             //extract acroform data at end of doc
-            if (config.isExtractAcroFormContent() && config.getText() != NONE) {
+            if (config.isExtractAcroFormContent() && pages.getText() != NONE) {
                 try {
                     extractAcroForm(pdf);
                 } catch (IOException e) {

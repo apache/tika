@@ -78,6 +78,7 @@ public class InferenceLoaderTest {
         assertEquals(2, dispatcher.getBound().size());
         InferenceDispatcher.Bound pngs = dispatcher.getBound().get(0);
         assertEquals("pngs", pngs.binding().getId());
+        assertEquals(2, pngs.binding().getMinWidth(), "the default floor");
         assertSame(engines.get("one"), pngs.engine());
         assertEquals(3, pngs.binding().getMaxChunks());
         assertEquals(InferenceLoader.DEFAULT_MAX_BYTES, pngs.binding().getMaxBytes());
@@ -190,6 +191,15 @@ public class InferenceLoaderTest {
     }
 
     @Test
+    public void testMinimumSizeLoads() throws Exception {
+        InferenceDispatcher dispatcher = load("{" + ENGINES + ", \"inference\": ["
+                + " { \"engine\": \"one\", \"input\": \"IMAGES\", \"tasks\": [\"test-task\"],"
+                + "   \"minWidth\": 32, \"minHeight\": 0 } ] }").get(InferenceDispatcher.class);
+        assertEquals(32, dispatcher.getBound().get(0).binding().getMinWidth());
+        assertEquals(0, dispatcher.getBound().get(0).binding().getMinHeight());
+    }
+
+    @Test
     public void testMisconfigurationsFailLoad() throws Exception {
         String[] bad = {
             "{" + ENGINES + ", \"inference\": [ { \"engine\": \"nope\", \"input\": \"IMAGES\" } ] }",
@@ -216,6 +226,8 @@ public class InferenceLoaderTest {
                     + " \"tasks\": [\"test-task\"], \"_mime-include\": \"image/png\" } ] }",
             "{" + ENGINES + ", \"inference\": [ { \"engine\": \"one\", \"input\": \"IMAGES\","
                     + " \"tasks\": [\"test-task\"], \"chunker\": { \"identity\": {} } } ] }",
+            "{" + ENGINES + ", \"inference\": [ { \"engine\": \"one\", \"input\": \"IMAGES\","
+                    + " \"tasks\": [\"test-task\"], \"minWidth\": -1 } ] }",
         };
         for (String json : bad) {
             TikaConfigException e = assertThrows(TikaConfigException.class, () -> {

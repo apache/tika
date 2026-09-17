@@ -167,7 +167,7 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
         InferenceUnit unit = null;
         for (Bound b : bound) {
             InferenceBinding binding = b.binding();
-            if (!runs(binding, context) || !binding.accepts(kind, type)) {
+            if (!runs(binding, context) || !binding.accepts(kind, type, target)) {
                 continue;
             }
             if (binding.getMaxBytes() >= 0 && size > binding.getMaxBytes()) {

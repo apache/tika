@@ -151,7 +151,7 @@ the default and add the VLM parser:
 
 NOTE: This shape is deprecated since 4.1.0 and unsupported in 4.2.0, when an engine under
 `parsers` fails config load. The 4.2 way to put a PDF in front of a VLM is the PDF parser's
-`"text": "OCR"` with the VLM named in `text-recognizers`: every page is rendered and transcribed,
+`"pages": {"text": "OCR"}` with the VLM named in `text-recognizers`: every page is rendered and transcribed,
 and the PDF's own structure (attachments, bookmarks, forms) is still parsed. That sends page
 images, not the PDF file; there is no 4.2 shape yet for sending the file itself.
 

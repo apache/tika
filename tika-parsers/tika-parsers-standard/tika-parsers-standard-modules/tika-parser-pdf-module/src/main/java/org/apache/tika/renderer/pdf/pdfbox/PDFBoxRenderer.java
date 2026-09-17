@@ -22,6 +22,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Locale;
 import java.util.Set;
 
 import org.apache.pdfbox.Loader;
@@ -48,14 +49,14 @@ import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.pdf.PDFParser;
-import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.parser.pdf.PDFRandomAccess;
-import org.apache.tika.parser.pdf.RenderingConfig;
+import org.apache.tika.renderer.ImageFormat;
 import org.apache.tika.renderer.PageBasedRenderResults;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
+import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.renderer.RenderingTracker;
 
 @TikaComponent(name = "pdfbox-renderer")
@@ -89,16 +90,13 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
         return SUPPORTED_TYPES;
     }
 
-    private int defaultDPI = 300;
-    private ImageType defaultImageType = ImageType.GRAY;
-    private String defaultImageFormatName = "png";
+    /** What this renderer draws when the parse scopes no settings: the entry's own. */
+    private final RenderSettings defaults = RenderSettings.defaults();
 
-    /**
-     * ImageIO's "compression quality"; for PNG it is an inverted effort knob:
-     * 1.0 writes an uncompressed file, 0.0 spends ~10x the time of the default for a
-     * few percent smaller output. 0.5 is both fast and small.
-     */
-    private float defaultImageQuality = 0.5f;
+    /** PDFBox's image type for a core one. */
+    public static ImageType toPdfBox(org.apache.tika.renderer.ImageType imageType) {
+        return imageType == org.apache.tika.renderer.ImageType.RGB ? ImageType.RGB : ImageType.GRAY;
+    }
 
 
     @Override
@@ -197,31 +195,32 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
     protected RenderResult renderPage(PDFRenderer renderer, PDPage page, int id, int pageNumber,
                                       Metadata metadata, ParseContext parseContext)
             throws IOException {
-        int dpi = getDPI(parseContext);
-        long maxPixels = getMaxImagePixels(parseContext);
-        if (maxPixels > 0) {
-            PDRectangle mediaBox = page.getMediaBox();
-            long estWidth = (long) Math.ceil(mediaBox.getWidth() / 72.0 * dpi);
-            long estHeight = (long) Math.ceil(mediaBox.getHeight() / 72.0 * dpi);
-            if (estWidth * estHeight > maxPixels) {
-                throw new IOException("page " + pageNumber + " would render to " + estWidth + "x"
-                        + estHeight + " pixels at " + dpi + " dpi, above maxImagePixels "
-                        + maxPixels);
-            }
+        // the minimum is the parser's policy, applied before it asks; the cap is a safety net
+        RenderSettings settings = settings(parseContext);
+        PDRectangle mediaBox = page.getMediaBox();
+        double width = mediaBox.getWidth();
+        double height = mediaBox.getHeight();
+        float dpi = settings.effectiveDpi(width, height);
+        long estPixels = settings.estimatedPixels(width, height);
+        if (settings.exceedsMaxPixels(estPixels)) {
+            throw new IOException("page " + pageNumber + " would render to " + estPixels
+                    + " pixels at " + dpi + " dpi, above maxImagePixels "
+                    + settings.getMaxImagePixels());
         }
+        String formatName = settings.getImageFormat().getFormatName();
         Path tmpFile = Files.createTempFile("tika-pdfbox-rendering-",
-                "-" + id + "-" + pageNumber + "." + getImageFormatName(parseContext));
+                "-" + id + "-" + pageNumber + "." + formatName);
         try {
             long start = System.currentTimeMillis();
             //TODO: parameterize whether or not to un-rotate page?
             BufferedImage image = renderer.renderImageWithDPI(
-                    pageNumber - 1, dpi, getImageType(parseContext));
+                    pageNumber - 1, dpi, toPdfBox(settings.getImageType()));
             long renderingElapsed = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_RENDERING_TIME_MS, renderingElapsed);
             start = System.currentTimeMillis();
             try (OutputStream os = Files.newOutputStream(tmpFile)) {
-                ImageIOUtil.writeImage(image, getImageFormatName(parseContext), os, dpi,
-                        getImageQuality(parseContext));
+                ImageIOUtil.writeImage(image, formatName, os, Math.round(dpi),
+                        settings.getImageQuality());
             }
             long elapsedWrite = System.currentTimeMillis() - start;
             metadata.set(PDFBOX_IMAGE_WRITING_TIME_MS, elapsedWrite);
@@ -241,57 +240,29 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
     }
 
     public void setDPI(int dpi) {
-        this.defaultDPI = dpi;
+        defaults.setDpi(dpi);
     }
 
     public void setImageType(ImageType imageType) {
-        this.defaultImageType = imageType;
+        defaults.setImageType(imageType == ImageType.RGB
+                ? org.apache.tika.renderer.ImageType.RGB : org.apache.tika.renderer.ImageType.GRAY);
     }
 
     public void setImageFormatName(String imageFormatName) {
-        this.defaultImageFormatName = imageFormatName;
+        defaults.setImageFormat(ImageFormat.valueOf(imageFormatName.toUpperCase(Locale.ROOT)));
     }
 
     public void setImageQuality(float imageQuality) {
-        this.defaultImageQuality = imageQuality;
+        defaults.setImageQuality(imageQuality);
     }
 
-    protected float getImageQuality(ParseContext parseContext) {
-        RenderingConfig settings = settings(parseContext);
-        return settings == null ? defaultImageQuality : settings.getImageQuality();
+    public void setMaxImagePixels(long maxImagePixels) {
+        defaults.setMaxImagePixels(maxImagePixels);
     }
 
-    protected int getDPI(ParseContext parseContext) {
-        RenderingConfig settings = settings(parseContext);
-        return settings == null ? defaultDPI : settings.getDpi();
-    }
-
-    protected ImageType getImageType(ParseContext parseContext) {
-        RenderingConfig settings = settings(parseContext);
-        return settings == null ? defaultImageType : settings.getImageType().getPdfBoxImageType();
-    }
-
-    protected String getImageFormatName(ParseContext parseContext) {
-        RenderingConfig settings = settings(parseContext);
-        return settings == null ? defaultImageFormatName : settings.getImageFormat().getFormatName();
-    }
-
-    /** -1 for no limit. */
-    protected long getMaxImagePixels(ParseContext parseContext) {
-        RenderingConfig settings = settings(parseContext);
-        return settings == null ? -1 : settings.getMaxImagePixels();
-    }
-
-    /**
-     * The page-image settings the PDF parser scopes around an emitted render, else the OCR
-     * settings; null when no PDF parser config is in the context.
-     */
-    private static RenderingConfig settings(ParseContext parseContext) {
-        RenderingConfig emitted = parseContext.get(RenderingConfig.class);
-        if (emitted != null) {
-            return emitted;
-        }
-        PDFParserConfig pdfParserConfig = parseContext.get(PDFParserConfig.class);
-        return pdfParserConfig == null ? null : RenderingConfig.from(pdfParserConfig.getOcr());
+    /** The settings the parser scoped around this render, else this renderer's own. */
+    private RenderSettings settings(ParseContext parseContext) {
+        RenderSettings scoped = parseContext.get(RenderSettings.class);
+        return scoped == null ? defaults : defaults.over(scoped);
     }
 }

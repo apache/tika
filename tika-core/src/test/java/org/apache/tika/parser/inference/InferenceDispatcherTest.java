@@ -49,6 +49,7 @@ import org.apache.tika.extractor.EmbeddedMetadataLookup;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
@@ -211,6 +212,32 @@ public class InferenceDispatcherTest {
 
         dispatcher.flush(root, context);
         assertEquals(1, pngTask.runs.size(), "a second flush has nothing to run");
+    }
+
+    /** A spacer is not a picture: an image recorded under the binding's minimum is not offered. */
+    @Test
+    public void testTinyImagesAreNotOffered() throws Exception {
+        RecordingTask task = new RecordingTask();
+        InferenceDispatcher dispatcher = new InferenceDispatcher(List.of(
+                new InferenceDispatcher.Bound(binding("png", InputKind.IMAGES, Set.of(PNG), -1),
+                        new RecordingEngine(), List.of(task))));
+        ParseContext context = new ParseContext();
+        Metadata spacer = new Metadata();
+        spacer.set(TIFF.IMAGE_WIDTH, 600);
+        spacer.set(TIFF.IMAGE_LENGTH, 1);
+        dispatcher.offer(InputKind.IMAGES, PNG, spacer, new Metadata(), file("a"), context);
+        Metadata picture = new Metadata();
+        picture.set(TIFF.IMAGE_WIDTH, 2);
+        picture.set(TIFF.IMAGE_LENGTH, 2);
+        dispatcher.offer(InputKind.IMAGES, PNG, picture, new Metadata(), file("b"), context);
+        dispatcher.offer(InputKind.IMAGES, PNG, new Metadata(), new Metadata(), file("c"), context);
+        dispatcher.flush(new Metadata(), context);
+        assertEquals(2, task.runs.get(0).size(), "the 2 x 2 picture and the one of unknown size");
+
+        InferenceBinding tall = new InferenceBinding("tall", "engine", InputKind.IMAGES,
+                List.of("embed"), Set.of(PNG), null, -1, -1, true, null, 0, 100);
+        assertFalse(tall.accepts(InputKind.IMAGES, PNG, picture), "shorter than 100");
+        assertTrue(tall.accepts(InputKind.IMAGES, PNG, new Metadata()), "unknown size passes");
     }
 
     /** The top-level document's own file outlives the flush, so it is referenced, not copied. */

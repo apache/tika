@@ -73,6 +73,9 @@ public final class ContentEnrichers {
 
     private static final String LEGACY_OCR_PREFIX = "ocr-";
 
+    /** Below this in either dimension an image is a spacer, not a picture: no engine sees it. */
+    public static final int MIN_PIXELS = 2;
+
     // one WARN per key; keys are class names and engine sets, so bounded
     private static final Set<String> WARNED = ConcurrentHashMap.newKeySet();
 
@@ -89,11 +92,15 @@ public final class ContentEnrichers {
      * @param enrichers the injected composite; null when none is configured
      * @param mediaType the real, normalized media type of the bytes; may be null
      * @param target    the metadata of the image the engine will be handed, or a probe for
-     *                  a render not yet made; dispatch reads only facts from it
+     *                  a render not yet made; dispatch reads only facts from it: an image
+     *                  whose recorded size is under {@link #MIN_PIXELS} gets nothing
      */
     public static Parser get(CompositeContentEnricher enrichers, MediaType mediaType,
                              Metadata target, ParseContext context) {
         Objects.requireNonNull(target, "target");
+        if (SizeGatedEnricher.tooSmall(target, MIN_PIXELS, MIN_PIXELS)) {
+            return null;
+        }
         return select(enrichers, mediaType, context);
     }
 
@@ -555,6 +562,10 @@ public final class ContentEnrichers {
             if (active == null) {
                 active = new ActiveEnrichment();
                 context.set(ActiveEnrichment.class, active);
+            }
+            // the image parser learns the size after dispatch: gate again with it known
+            if (SizeGatedEnricher.tooSmall(metadata, MIN_PIXELS, MIN_PIXELS)) {
+                return;
             }
             String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
             // the sequential chain records each member itself

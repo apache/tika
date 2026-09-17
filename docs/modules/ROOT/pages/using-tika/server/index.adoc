@@ -133,7 +133,7 @@ the catalog fails startup:
 {
   "presets": {
     "some-catalog-preset": true,
-    "no-ocr": { "pdf-parser": { "text": "EXTRACT" } },
+    "no-ocr": { "pages": { "text": "EXTRACT" } },
     "no-enrichment": { "text-recognizers": { "enabled": false }, "inference": { "enabled": false } }
   }
 }
@@ -173,11 +173,11 @@ operator names them in the server's `tika-config.json`, and a server without tha
 { "presets": { "thumbnail": true, "render-thumbnail": true } }
 ----
 
-Both render the same two things the same way — the first page of a PDF at 96 dpi in colour
-(`rendering`, bounded by its `maxImagePixels`) and the EMF/WMF thumbnail of an Office document
-(that metafile only, not the document's pictures) — so an image found through one is the image
-the other returns, dimensions included. Both name the standard parsers, so they need
-`tika-parsers-standard-package` on the classpath.
+Both render the same two things the same way — the first page of a PDF and the EMF/WMF thumbnail
+of an Office document (that metafile only, not the document's pictures), in colour, fitted into
+256 x 256 pixels (one xref:configuration/pages.adoc[`pages`] block, `emit` with a box) — so an
+image found through one is the image the other returns, dimensions included. Both name the
+standard parsers, so they need `tika-parsers-standard-package` on the classpath.
 
 `/unpack/preset/thumbnail` — "just give me the thumbnail". The zip holds at most one raster
 image per request and nothing else: the stored thumbnail (Office docProps, audio cover art,
@@ -189,10 +189,10 @@ and embedded documents are parsed two levels deep at most, so the parse is cheap
 `/rmeta/preset/render-thumbnail` — "give me everything, thumbnail included". A full parse
 plus the two renders above, so an index gets the thumbnail's type and dimensions from the same
 request as the text. Nothing is selected for the client; it applies the rule below. The preset
-names only rendering settings, and they merge with what the config's `parsers` block sets for
-`pdf-parser`, `emf-parser` and `wmf-parser`; a same-named entry in the config's `parse-context`
-block is replaced by the preset's, as with any parse-context layer, so keep server-wide parser
-settings under `parsers`.
+is a `pages` block plus the metafile parsers' overlays, and they merge field by field with what
+the config's `parsers` block sets for `pdf-parser`, `emf-parser` and `wmf-parser`; the `pages`
+entry in the config's `parse-context` block is replaced by the preset's, as with any parse-context
+layer, so keep server-wide page settings a preset must not lose under `parsers`.
 
 The selection rule, for a client that reads `/rmeta` and wants the answer `thumbnail` gives:
 take the first embedded document with an `image/*` `Content-Type` other than EMF, WMF or SVG
@@ -362,7 +362,7 @@ POST with multipart for custom per-request configuration:
 ----
 curl -X POST http://localhost:9998/tika/config/json \
   -F "file=@document.pdf" \
-  -F "config={\"pdf-parser\":{\"text\":\"EXTRACT\"}};type=application/json"
+  -F "config={\"pages\":{\"text\":\"EXTRACT\"}};type=application/json"
 ----
 
 Valid handler paths under `/tika/`: `text`, `html`, `xml`, `md`, `json` (bare `/tika` returns
@@ -392,7 +392,7 @@ POST with multipart for per-request configuration; the handler goes in the path,
 ----
 curl -X POST http://localhost:9998/rmeta/config/xml \
   -F "file=@document.pdf" \
-  -F "config={\"pdf-parser\":{\"ocr\":{\"strategy\":\"NO_OCR\"}}};type=application/json"
+  -F "config={\"pages\":{\"text\":\"EXTRACT\"}};type=application/json"
 ----
 
 === Metadata only (`/meta`)

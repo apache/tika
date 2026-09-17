@@ -28,6 +28,7 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pages.TextPolicy;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 
 public class TSDParserTest extends TikaTest {
@@ -36,7 +37,7 @@ public class TSDParserTest extends TikaTest {
     public void testBrokenPdf() throws Exception {
         ParseContext parseContext = new ParseContext();
         PDFParserConfig config = new PDFParserConfig();
-        config.setText(PDFParserConfig.TextPolicy.EXTRACT);
+        config.pages().setText(TextPolicy.EXTRACT);
         parseContext.set(PDFParserConfig.class, config);
         //make sure that embedded file appears in list
         //and make sure embedded exception is recorded

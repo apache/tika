@@ -1,12 +1,11 @@
 {
-  // the same first-page and EMF/WMF renders as "thumbnail", added to a full parse. Settings
-  // under the config's "parsers" block merge with these; a pdf-parser, emf-parser or wmf-parser
-  // entry in the config's "parse-context" is replaced by the preset's, like any parse-context layer
-  "pdf-parser": {
-    "imageStrategy": "RENDER_PAGES_BEFORE_PARSE",
-    "maxRenderedPages": 1,
-    "rendering": {"dpi": 96, "imageType": "RGB"}
+  // the same first-page and EMF/WMF renders as "thumbnail", added to a full parse. This "pages"
+  // replaces the config's "parse-context" one, like any parse-context layer; a parser's own
+  // "pages" under the config's "parsers" block still overlays it
+  "pages": {
+    "emit": {"enabled": true, "maxPages": 1,
+             "render": {"maxWidth": 256, "maxHeight": 256, "imageType": "RGB"}}
   },
-  "emf-parser": {"renderImage": true, "renderOnlyEmbeddedResourceTypes": ["THUMBNAIL"]},
-  "wmf-parser": {"renderImage": true, "renderOnlyEmbeddedResourceTypes": ["THUMBNAIL"]}
+  "emf-parser": {"pages": {"emit": {"resourceTypes": ["THUMBNAIL"]}}},
+  "wmf-parser": {"pages": {"emit": {"resourceTypes": ["THUMBNAIL"]}}}
 }

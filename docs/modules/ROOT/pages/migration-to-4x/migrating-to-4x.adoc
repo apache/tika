@@ -265,7 +265,7 @@ holds parsers only. Startup logs one WARN per such entry saying what it does tod
 the types no other parser claims, it acts only as the text recognizer, or it never runs.
 Configure the engine under `engines` and name it in `text-recognizers` (or bind it with
 `inference`); every default parser stays loaded. Sending a whole PDF to Claude or Gemini by
-excluding `pdf-parser` goes with it: the 4.2 shape is the PDF parser's `"text": "OCR"` with the
+excluding `pdf-parser` goes with it: the 4.2 shape is `"pages": {"text": "OCR"}` with the
 VLM as recognizer, which sends rendered pages rather than the file.
 
 === Embedding filters and the image embedding parser deprecated (4.1.0+)
@@ -279,16 +279,27 @@ request can no longer name the filters in a per-request `metadata-filters` list 
 accepted a caller-supplied `baseUrl` there); the flat per-request
 `{"openai-embedding-filter": {"skipEmbedding": true}}` form is unchanged.
 
-=== PDF text policy: `ocr.strategy` becomes `text` (4.1.0+)
+=== PDF page settings become the `pages` block (4.1.0+)
 
-The PDF parser's `"ocr": {"strategy": ...}` is now the parser's own `"text"`, since it decides
-where every page's text comes from, not only whether OCR runs: `NO_OCR` is `EXTRACT`, `OCR_ONLY`
-is `OCR`, `OCR_AND_TEXT_EXTRACTION` is `EXTRACT_AND_OCR`, `AUTO` is unchanged, and `NONE` is new
-(no text from any source; pages are still rendered for annotators and inference). The old
-spelling loads as an alias, `text` wins when both are set, and a config dump writes `text`.
-The XML converter writes `text`. In Java, `OcrConfig.getStrategy()` is gone: read
-`PDFParserConfig.getText()`; `OcrConfig.setStrategy` is deprecated. See
-xref:configuration/parsers/pdf-parser.adoc[PDF parser].
+What the PDF parser did with its pages was spread over `ocr`, `imageStrategy` and the parser's
+own flags. It is now one xref:configuration/pages.adoc[`pages`] block, shared with every parser
+that renders (the EMF/WMF parsers in 4.1): `text` (where a page's text comes from: `EXTRACT`,
+`AUTO`, `EXTRACT_AND_OCR`, `OCR`, and the new `NONE`), `render` (dpi, a box, a minimum, colour,
+format, quality, `maxImagePixels`), `ocr` (`maxPages`, the `AUTO` verdict under `auto`),
+`inference` and `emit`. The same block under `parse-context` is the default for every such
+parser; a parser's own `pages` overlays it.
+
+The 4.0 spellings load as aliases, and a config dump and the XML converter write `pages`:
+`ocr.strategy` is `pages.text` (`NO_OCR` is `EXTRACT`, `OCR_ONLY` is `OCR`,
+`OCR_AND_TEXT_EXTRACTION` is `EXTRACT_AND_OCR`), `ocr.strategyAuto` is `pages.ocr.auto`,
+`ocr.maxPagesToOcr` is `pages.ocr.maxPages`, the `ocr` image settings are `pages.render`,
+`ocr.renderingStrategy` is the parser's `renderingStrategy`, `imageStrategy: RAW_IMAGES` is
+`extractInlineImages` and the `RENDER_PAGES_*` values are `pages.emit.enabled`. Two behaviours
+change with the aliases: page renders are emitted at the end of each page whichever
+`RENDER_PAGES_*` value was given (they preceded the text under `RENDER_PAGES_BEFORE_PARSE`),
+and a page the parser does not read (`maxPages`) is not rendered. In Java,
+`PDFParserConfig.getOcr()` and `getImageStrategy()` are gone: read `getPages()`, configure
+through `pages()`; the deprecated setters stay.
 
 For the general serialization model and how JSON configuration works, see
 xref:developers/serialization.adoc[Serialization and Configuration].

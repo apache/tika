@@ -63,6 +63,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.TextRecognizer;
+import org.apache.tika.parser.pages.TextPolicy;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
@@ -1183,8 +1184,9 @@ public class PDFMarkedContentGateTest extends TikaTest {
             finish(cs);
 
             PDFParserConfig config = config(MarkedContentConfig.Strategy.TAGS);
-            config.setText(PDFParserConfig.TextPolicy.AUTO);
-            config.getOcr().setStrategyAuto(new OcrConfig.StrategyAuto(0.02f, 10));
+            config.pages().setText(TextPolicy.AUTO);
+            config.pages().ocr().auto().setUnmappedUnicodeCharsPerPage(0.02f);
+            config.pages().ocr().auto().setTotalCharsPerPage(10);
             Result result = parse(b.bytes(), config, mockOcrParser(config, "MOCK_OCR_CONTENT"));
             assertContains("<p>Enough tagged text", result.page(1));
             assertFalse(result.page(1).contains("MOCK_OCR_CONTENT"));
@@ -1242,7 +1244,7 @@ public class PDFMarkedContentGateTest extends TikaTest {
     }
 
     private static Parser mockOcrParser(PDFParserConfig config, String text) {
-        MediaType type = MediaType.image(config.getOcr().getImageFormat().getFormatName());
+        MediaType type = MediaType.image("png");
         return new MockEngine() {
             @Override
             public Set<MediaType> getSupportedTypes(ParseContext context) {

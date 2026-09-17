@@ -20,10 +20,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.mime.MediaType;
 
 /** One entry of the {@code "inference"} list: engine, input, tasks, filters, budget. */
 public final class InferenceBinding {
+
+    /** Below this, in either dimension, an image is a spacer, not a picture. */
+    public static final int DEFAULT_MIN_PIXELS = 2;
 
     private final String id;
     private final String engine;
@@ -35,6 +40,8 @@ public final class InferenceBinding {
     private final long maxBytes;
     private final boolean enabled;
     private final TextChunker chunker;
+    private final int minWidth;
+    private final int minHeight;
 
     public InferenceBinding(String id, String engine, InputKind input, List<String> tasks,
                             Set<MediaType> include, Set<MediaType> exclude, int maxChunks,
@@ -45,7 +52,17 @@ public final class InferenceBinding {
     public InferenceBinding(String id, String engine, InputKind input, List<String> tasks,
                             Set<MediaType> include, Set<MediaType> exclude, int maxChunks,
                             long maxBytes, boolean enabled, TextChunker chunker) {
+        this(id, engine, input, tasks, include, exclude, maxChunks, maxBytes, enabled, chunker,
+                DEFAULT_MIN_PIXELS, DEFAULT_MIN_PIXELS);
+    }
+
+    public InferenceBinding(String id, String engine, InputKind input, List<String> tasks,
+                            Set<MediaType> include, Set<MediaType> exclude, int maxChunks,
+                            long maxBytes, boolean enabled, TextChunker chunker, int minWidth,
+                            int minHeight) {
         this.chunker = chunker;
+        this.minWidth = minWidth;
+        this.minHeight = minHeight;
         this.id = id;
         this.engine = engine;
         this.input = input;
@@ -90,6 +107,31 @@ public final class InferenceBinding {
     /** How a TEXT binding cuts a document's text; null means the whole text is one chunk. */
     public TextChunker getChunker() {
         return chunker;
+    }
+
+    /** Narrowest image this binding takes, in pixels; images of unknown size are taken. */
+    public int getMinWidth() {
+        return minWidth;
+    }
+
+    public int getMinHeight() {
+        return minHeight;
+    }
+
+    /**
+     * As {@link #accepts(InputKind, MediaType)}, and for an image its recorded dimensions
+     * ({@code tiff:ImageWidth}, {@code tiff:ImageLength}) must reach the minimum when known.
+     */
+    public boolean accepts(InputKind kind, MediaType type, Metadata target) {
+        if (!accepts(kind, type)) {
+            return false;
+        }
+        if (kind != InputKind.IMAGES || target == null) {
+            return true;
+        }
+        Integer width = target.getInt(TIFF.IMAGE_WIDTH);
+        Integer height = target.getInt(TIFF.IMAGE_LENGTH);
+        return (width == null || width >= minWidth) && (height == null || height >= minHeight);
     }
 
     public boolean accepts(InputKind kind, MediaType type) {
