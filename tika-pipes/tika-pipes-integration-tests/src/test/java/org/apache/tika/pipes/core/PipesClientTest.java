@@ -88,6 +88,27 @@ public class PipesClientTest {
         }
     }
 
+    /** The request's "pages" crosses the fork: the PDF's first page comes back as a RENDERING. */
+    @Test
+    public void testPagesInFork(@TempDir Path tmp) throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.setJsonConfig("pages", """
+                {"emit": {"enabled": true, "maxPages": 1,
+                          "render": {"maxWidth": 64, "maxHeight": 64}}}
+                """);
+        try (PipesClient pipesClient = init(tmp, testDoc)) {
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
+                            new EmitKey(), new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            java.util.List<Metadata> metadataList = pipesResult.emitData().getMetadataList();
+            assertEquals(2, metadataList.size(), "the PDF and one render");
+            Metadata render = metadataList.get(1);
+            assertEquals("RENDERING", render.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+            assertTrue(render.getInt(org.apache.tika.metadata.TIFF.IMAGE_WIDTH) <= 64);
+        }
+    }
+
     /** Wire test for the inference bindings: the dispatcher rides the fork's own config. */
     @Test
     public void testInferenceBindingInFork(@TempDir Path tmp) throws Exception {

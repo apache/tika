@@ -37,6 +37,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
@@ -112,6 +113,49 @@ public class ContentEnrichersTest {
 
     private static CompositeParser compositeOf(Parser... parsers) {
         return new CompositeParser(MediaTypeRegistry.getDefaultRegistry(), parsers);
+    }
+
+    /** A spacer is not a picture: an image under 2 x 2 gets no engine, a larger one does. */
+    @Test
+    public void testTinyImagesGetNoEnricher() throws Exception {
+        ParseContext context = new ParseContext();
+        RecordingParser engine = new RecordingParser(Collections.singleton(PNG));
+        Metadata spacer = target(PNG);
+        spacer.set(TIFF.IMAGE_WIDTH, 600);
+        spacer.set(TIFF.IMAGE_LENGTH, 1);
+        assertNull(ContentEnrichers.get(listOf(engine), PNG, spacer, context));
+        Metadata picture = target(PNG);
+        picture.set(TIFF.IMAGE_WIDTH, 2);
+        picture.set(TIFF.IMAGE_LENGTH, 2);
+        assertNotNull(ContentEnrichers.get(listOf(engine), PNG, picture, context));
+        Parser dispatched = ContentEnrichers.get(listOf(engine), PNG, target(PNG), context);
+        assertNotNull(dispatched, "unknown size passes");
+        // the image parser records the size between dispatch and the call
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            dispatched.parse(tis, new DefaultHandler(), spacer, context);
+        }
+        assertEquals(0, engine.calls, "gated again once the size is known");
+        // the probe for a render has no size and is never gated
+        assertTrue(ContentEnrichers.hasTextRecognizer(
+                listOf(new RecognizingParser(Collections.singleton(PNG), true)), PNG, spacer,
+                context), "the gate is dispatch, not capability");
+
+        // an entry's own threshold, above the floor
+        SizeGatedEnricher gated = new SizeGatedEnricher(engine, 100, 50);
+        Metadata icon = target(PNG);
+        icon.set(TIFF.IMAGE_WIDTH, 64);
+        icon.set(TIFF.IMAGE_LENGTH, 64);
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            gated.parse(tis, new DefaultHandler(), icon, context);
+        }
+        assertEquals(0, engine.calls, "narrower than 100");
+        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+            gated.parse(tis, new DefaultHandler(), target(PNG), context);
+        }
+        assertEquals(1, engine.calls, "unknown size passes");
+        assertNotNull(ContentEnrichers.asTextRecognizer(
+                new SizeGatedEnricher(new RecognizingParser(Set.of(PNG), true), 1, 1)),
+                "the recognizer is seen through the decorator");
     }
 
     @Test

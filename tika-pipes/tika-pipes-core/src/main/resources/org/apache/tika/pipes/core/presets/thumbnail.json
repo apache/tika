@@ -1,17 +1,19 @@
 {
   // at most one raster thumbnail per parse, nothing else; the rule is in ThumbnailUnpackSelector
   "thumbnail-unpack-selector": {},
-  // first page only, in colour; text comes from the content stream, never OCR
-  "pdf-parser": {
-    "imageStrategy": "RENDER_PAGES_BEFORE_PARSE",
-    "maxPages": 1,
-    "maxRenderedPages": 1,
+  // every rendering parser: the top-level document's first page only, fitted into 256 x 256 in
+  // colour, and text comes from the document itself, never OCR
+  "pages": {
     "text": "EXTRACT",
-    "rendering": {"dpi": 96, "imageType": "RGB"}
+    "emit": {"enabled": true, "maxPages": 1, "maxDepth": 0,
+             "render": {"maxWidth": 256, "maxHeight": 256, "imageType": "RGB"}}
   },
-  // rasterize the EMF/WMF thumbnail of an Office document, not its embedded pictures
-  "emf-parser": {"renderImage": true, "renderOnlyEmbeddedResourceTypes": ["THUMBNAIL"]},
-  "wmf-parser": {"renderImage": true, "renderOnlyEmbeddedResourceTypes": ["THUMBNAIL"]},
+  // read the first PDF page only
+  "pdf-parser": {"maxPages": 1},
+  // rasterize the EMF/WMF thumbnail of an Office document (an embedded document, depth 1), not
+  // its embedded pictures
+  "emf-parser": {"pages": {"emit": {"resourceTypes": ["THUMBNAIL"], "maxDepth": 1}}},
+  "wmf-parser": {"pages": {"emit": {"resourceTypes": ["THUMBNAIL"], "maxDepth": 1}}},
   // no OCR or embeddings over the thumbnail itself
   "text-recognizers": {"enabled": false},
   "inference": {"enabled": false},

@@ -23,47 +23,42 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pages.PagesConfig;
 
 /**
- * {@code maxRenderedPages} bounds the rendering without bounding the text:
+ * {@code pages.emit.maxPages} bounds the emission without bounding the text:
  * a thumbnail wants the first page rendered and the whole document read.
  */
 public class PDFMaxRenderedPagesTest extends TikaTest {
 
     private static final String TWO_PAGES = "testPDF_bookmarks.pdf";
 
-    @ParameterizedTest
-    @EnumSource(value = PDFParserConfig.IMAGE_STRATEGY.class,
-            names = {"RENDER_PAGES_BEFORE_PARSE", "RENDER_PAGES_AT_PAGE_END"})
-    public void testOnlyTheFirstPageIsRendered(PDFParserConfig.IMAGE_STRATEGY strategy)
-            throws Exception {
+    @Test
+    public void testOnlyTheFirstPageIsRendered() throws Exception {
         PDFParserConfig config = new PDFParserConfig();
-        config.setImageStrategy(strategy);
-        config.setMaxRenderedPages(1);
+        config.pages().emit().setEnabled(true);
+        config.pages().emit().setMaxPages(1);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
 
         List<Metadata> metadataList = getRecursiveMetadata(TWO_PAGES, context);
         assertEquals(2, (int) metadataList.get(0).getInt(PagedText.N_PAGES));
+        // page 2 is still read
+        assertContains("Denmark", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals(1, renderings(metadataList), "one rendering, the first page");
     }
 
-    @ParameterizedTest
-    @EnumSource(value = PDFParserConfig.IMAGE_STRATEGY.class,
-            names = {"RENDER_PAGES_BEFORE_PARSE", "RENDER_PAGES_AT_PAGE_END"})
-    public void testLimitAbovePageCountRendersEveryPage(PDFParserConfig.IMAGE_STRATEGY strategy)
-            throws Exception {
+    @Test
+    public void testLimitAbovePageCountRendersEveryPage() throws Exception {
         PDFParserConfig config = new PDFParserConfig();
-        config.setImageStrategy(strategy);
-        config.setMaxRenderedPages(5);
+        config.pages().emit().setEnabled(true);
+        config.pages().emit().setMaxPages(5);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
 
@@ -77,14 +72,25 @@ public class PDFMaxRenderedPagesTest extends TikaTest {
     public void testJsonConfig() throws Exception {
         ParseContext context = new ParseContext();
         context.setJsonConfig("pdf-parser",
-                "{\"imageStrategy\": \"RENDER_PAGES_AT_PAGE_END\", \"maxRenderedPages\": 1}");
+                "{\"pages\": {\"emit\": {\"enabled\": true, \"maxPages\": 1}}}");
+        assertEquals(1, renderings(getRecursiveMetadata(TWO_PAGES, context)));
+    }
+
+    /** The parse budget bounds emission: a page that is not read is not rendered. */
+    @Test
+    public void testParseBudgetBoundsEmission() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.pages().emit().setEnabled(true);
+        config.setMaxPages(1);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
         assertEquals(1, renderings(getRecursiveMetadata(TWO_PAGES, context)));
     }
 
     @Test
     public void testZeroIsRejected() {
         assertThrows(IllegalArgumentException.class,
-                () -> new PDFParserConfig().setMaxRenderedPages(0));
+                () -> new PagesConfig.Emit().setMaxPages(0));
     }
 
     private static long renderings(List<Metadata> metadataList) {

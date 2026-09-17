@@ -1,0 +1,232 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Pages: rendering, OCR policy, emitted page images
+:toc:
+
+Some documents have to be rendered to get pixels: a PDF page, an EMF or WMF drawing, later a slide.
+The `pages` block says what is done with those pixels, once, for every parser that renders: how a
+page is rendered (`render`), where its text comes from (`text`), how many pages may be OCR'd and
+how `AUTO` decides (`ocr`), what is released to the inference bindings (`inference`), and whether
+renders are emitted as embedded documents (`emit`). In 4.1 the PDF parser and the EMF/WMF parsers
+read it.
+
+[source,json]
+----
+{
+  "parse-context": {
+    "pages": {
+      "text": "AUTO",
+      "render": { "dpi": 300, "imageType": "GRAY", "imageFormat": "PNG", "imageQuality": 0.5,
+                  "maxWidth": -1, "maxHeight": -1, "minWidth": 2, "minHeight": 2,
+                  "maxImagePixels": 100000000 },
+      "ocr": { "maxPages": -1, "auto": { "totalCharsPerPage": 10, "unmappedUnicodeCharsPerPage": 10 } },
+      "inference": ["TEXT"],
+      "emit": { "enabled": false, "maxPages": -1, "maxDepth": -1, "resourceTypes": [], "render": {} }
+    }
+  }
+}
+----
+
+Those are the defaults; a block names only what it changes. `emit.render` is empty: emitted
+images are the `render` render until it says otherwise (`{"dpi": 96, "imageType": "RGB"}` for
+colour previews).
+
+== Where it goes
+
+The block is read at four layers, later ones winning field by field:
+
+* `"parse-context": {"pages": ...}` in the config file: the default for every rendering parser.
+* `"pages"` in a request's `parse-context` or in a xref:using-tika/server/index.adoc[preset]. It
+  replaces the config's block, as every parse-context key does, so keep deployment-wide settings a
+  request must not lose under the parsers below.
+* `"pages"` inside a parser's entry under `parsers` (`pdf-parser`, `emf-parser`, `wmf-parser`): that
+  format's overlay, kept across requests.
+* `"pages"` inside that parser's entry in a request's `parse-context`: the same overlay per request.
+
+So "PDFs render at 200 dpi, previews in colour", kept across requests, is
+
+[source,json]
+----
+{
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "pages": { "render": { "dpi": 200 },
+                                 "emit": { "render": { "imageType": "RGB" } } } } }
+  ]
+}
+----
+
+and a request that sends `{"pages": {"text": "OCR"}}` OCRs every page at 200 dpi, since the PDF's
+overlay still holds. Had the 200 dpi been under `parse-context.pages` instead, that request would
+have replaced it and OCR'd at 300: a request's `pages` is the whole block. The same overlay also
+means a request cannot undo a parser's own `pages` with the general block; it sends
+`{"pdf-parser": {"pages": {...}}}`. In code, `context.set(PagesConfig.class, overlay)` is the
+request layer and `PDFParserConfig.pages()` the parser's.
+
+== `text`: where a page's text comes from
+
+`EXTRACT`::
+The document's own text only; pages are never rendered for OCR.
+`AUTO` (default)::
+The document's own text, and OCR of a page whose extracted text is poor by the `ocr.auto`
+thresholds; the page's extracted text is then *replaced* by the engine's output when the engine
+is a text recognizer (Tesseract, Tess4J, a VLM with `textRecognizer` true) that actually wrote
+text, and kept unchanged otherwise, including when no engine is available, `ocr.maxPages` is
+spent, or the engine times out. `AUTO` with no engine behaves as `EXTRACT`.
+`EXTRACT_AND_OCR`::
+Both, on every page.
+`OCR`::
+The engine's output only; the document's own text is not read. Fails the parse when no engine
+covers the render type, unless the request switched the recognizers off.
+`NONE`::
+No text from any source. Metadata, attachments, page renders, inference and emission still
+happen, so a `PAGES` binding or a page annotator runs at no text cost.
+
+The engine is the one named in xref:configuration/index.adoc#text-recognizers[`text-recognizers`]
+(or, with no list, the one found among the loaded parsers). A parser never OCRs anything itself.
+
+== `render`: how a page becomes an image
+
+`dpi`::
+The target resolution. 300 by default, which suits Tesseract.
+`maxWidth`, `maxHeight`::
+A box in pixels the image must fit: the page is rendered at `dpi`, scaled down to fit if it
+would exceed either side, aspect preserved, never enlarged. `-1` (the default) for no bound. A
+thumbnail is a box, not a resolution: `{"maxWidth": 256, "maxHeight": 256}` gives a 256-pixel
+image of an A0 poster and of a business card alike.
+`minWidth`, `minHeight`::
+A page that would be narrower or shorter than this at the target dpi is not rendered at all: no
+OCR, no inference, no emitted image, and no warning, since a hairline rule in a document is not a
+failure. 2 by default.
+`imageType`, `imageFormat`, `imageQuality`::
+`GRAY` or `RGB`; `PNG`, `JPEG` or `TIFF`; ImageIO's quality (fidelity for JPEG, an inverted
+effort knob for PNG: 1.0 is uncompressed).
+`maxImagePixels`::
+A page that would still be larger than this many pixels after the box is skipped, with a warning
+on the document and its number under `tk:rendering:failed-page`. 100 megapixels by default; `-1`
+for no limit.
+
+These settings reach the renderer the parser uses (`pdfbox-renderer`, `poppler-renderer`,
+`poi-metafile-renderer`, whatever `renderers` names for the type) through the parse; a renderer's
+own entry under `renderers` holds only what is the engine's (the `pdftoppm` path, its timeout,
+`maxScaleTo`: `pdftoppm`'s own ceiling on a page's long side, 4096 by default). The image keys
+some entries still accept (`poppler-renderer.dpi`/`gray`, `poi-metafile-renderer.width`, the
+`pdfbox-renderer` setters) are deprecated: they apply only when the renderer is called directly,
+never through a parser, since a parse always scopes this block. Put the value here.
+
+A page's size is the crop box for PDFBox and the media box for `pdftoppm` (each engine's own
+default), with a quarter-turn rotation applied, so a rotated landscape page fits a box the
+way it is displayed. A metafile has one page, its drawing's physical size; with `emit` on and
+nothing else set, an EMF thumbnail renders like a PDF page: 300 dpi grayscale PNG. The
+thumbnail presets set `imageType: RGB` and a box for that reason.
+
+== `ocr`: the recognizer's budget and verdict
+
+`maxPages`::
+Pages of one document that may be OCR'd, counted from the first; `-1` for no limit.
+`auto`::
+When `AUTO` sends a page to OCR: `totalCharsPerPage`, below which a page is OCR'd, and
+`unmappedUnicodeCharsPerPage`, glyphs without a Unicode mapping (a count when 1 or more, a fraction
+of the page's characters below 1). The unmapped count is a PDF font fact; a format without the
+signal never trips it.
+
+== `inference`: what is released to the bindings
+
+NOTE: Experimental in 4.1.0 with the xref:configuration/inference.adoc[inference bindings] it
+feeds: the values may change in a minor release without a deprecation cycle. The rest of this
+block is stable.
+
+`["TEXT"]` by default. Add `PAGES` to render every page for a `PAGES`
+xref:configuration/inference.adoc#pages[inference binding]; the render is the `render` render, made
+once per page for OCR and inference alike, and nothing is rendered unless a `PAGES` binding runs
+for the request. A document that released `PAGES` records `tk:inference-released` and the `TEXT`
+stage skips it unless `TEXT` is listed too. This list is for bindings only: which pages a text
+recognizer sees is `text`, today and when recognition runs in batches through the same
+dispatcher (4.2); `["PAGES"]` never turns OCR on.
+
+== `emit`: page images as embedded documents
+
+`enabled`::
+Emit each page's render as a `RENDERING` embedded document, at the end of the page, in every
+output that lists embedded documents. Off by default.
+`maxPages`::
+Pages emitted, counted from the first; `-1` for no limit. The parser's own page budget
+(`pdf-parser.maxPages`) bounds it too: a page that is not read is not rendered.
+`maxDepth`::
+Deepest document whose pages are emitted, as embedded documents are counted: `0` for the
+top-level document only, `1` to include its attachments, `-1` (the default) for any. "The first
+page of the PDF I sent, not of the twelve it attaches" is `maxDepth: 0`.
+`resourceTypes`::
+Emit only for documents embedded as one of these `tk:embedded-resource-type`s, e.g.
+`["THUMBNAIL"]` to rasterize the EMF thumbnail of an Office document but not the pictures of its
+embedded objects. Empty, the default, emits for every document; a top-level document has no
+resource type, so a non-empty list never matches it (that is `maxDepth`).
+`render`::
+An overlay on `render` for the emitted images only, so OCR can keep its 300 dpi grayscale pages
+while the emitted ones are small colour previews. When the two produce the same image, one
+render per page serves both.
+
+A page the engine cannot render is a warning on the document (`tk:exception:warn` says why,
+`tk:rendering:failed-page` lists the page so a client can filter for it), not a failed parse,
+whichever consumer asked for the render first. A page that breaks the text extraction is still emitted, at
+the end of the document; pages the parser never reached are not rendered, and a stop the caller
+asked for (the write limit, an embedded-document limit) renders nothing more. A document
+selector that refuses the embedded image is asked before the page is drawn. A PDF without pages to walk (XFA-only) has every
+page in budget emitted. When the engine renders is its own business; the parser emits at page
+end either way.
+
+A metafile is one page. The EMF/WMF parsers render it under `emit` with the same settings; the
+rendering of a `THUMBNAIL` is itself a `THUMBNAIL`, so a client that wants "the thumbnail" finds
+it by type. The xref:using-tika/server/index.adoc[thumbnail presets] are this block with a
+256-pixel box, `maxDepth: 0` for the PDF page and `maxDepth: 1` on the metafile overlays (the
+Office thumbnail is an embedded document of the top-level one).
+
+== The 4.0 spellings
+
+A 4.0 `pdf-parser` config still loads; every value lands in `pages` and a config dump writes
+`pages` only.
+
+[cols="1,1"]
+|===
+|4.0 |4.1
+
+|`ocr.strategy` (`NO_OCR`, `AUTO`, `OCR_ONLY`, `OCR_AND_TEXT_EXTRACTION`)
+|`pages.text` (`EXTRACT`, `AUTO`, `OCR`, `EXTRACT_AND_OCR`)
+
+|`ocr.strategyAuto`
+|`pages.ocr.auto`
+
+|`ocr.maxPagesToOcr`
+|`pages.ocr.maxPages`
+
+|`ocr.dpi`, `imageType`, `imageFormat`, `imageQuality`, `maxImagePixels`
+|`pages.render.*`
+
+|`ocr.renderingStrategy`
+|`pdf-parser.renderingStrategy` (PDFBox draws everything, text only, no text, or vector graphics only)
+
+|`imageStrategy: RAW_IMAGES`
+|`extractInlineImages: true`
+
+|`imageStrategy: RENDER_PAGES_BEFORE_PARSE` or `RENDER_PAGES_AT_PAGE_END`
+|`pages.emit.enabled: true`; renders are emitted at page end whichever was given
+|===
+
+The aliases write to the same overlay as `pages`, so a request's `"ocr": {"dpi": 96}` overrides
+the config whichever spelling it used, and `"imageStrategy": "NONE"` turns a config's emission
+off. In one JSON object that spells a setting both ways the later key wins: do not mix them.

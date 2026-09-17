@@ -54,7 +54,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
-import org.apache.tika.renderer.Renderer;
+import org.apache.tika.parser.pages.PagesConfig;
 
 /**
  * Text extraction that follows a tagged PDF's structure tree.
@@ -352,10 +352,10 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
 
     private PDFMarkedContent2XHTML(PDDocument document, ContentHandler handler,
                                    ParseContext context, Metadata metadata, PDFParserConfig config,
-                                   Renderer renderer,
+                                   PagesConfig pages, PageEmitter emitter,
                                    CompositeContentEnricher contentEnrichers)
             throws IOException {
-        super(document, handler, context, metadata, config, renderer, contentEnrichers);
+        super(document, handler, context, metadata, config, pages, emitter, contentEnrichers);
         this.markedContentConfig = config.getMarkedContent();
         StructureIndex loaded = StructureIndex.load(document);
         if (loaded.reason() != null) {
@@ -381,7 +381,8 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
      */
     public static void process(PDDocument pdDocument, ContentHandler handler,
                                ParseContext context,
-                               Metadata metadata, PDFParserConfig config, Renderer renderer,
+                               Metadata metadata, PDFParserConfig config, PagesConfig pages,
+                               PageEmitter emitter,
                                CompositeContentEnricher contentEnrichers)
             throws SAXException, TikaException {
 
@@ -389,7 +390,7 @@ public class PDFMarkedContent2XHTML extends PDF2XHTML {
         try {
             pdfMarkedContent2XHTML =
                     new PDFMarkedContent2XHTML(pdDocument, handler, context, metadata, config,
-                            renderer, contentEnrichers);
+                            pages, emitter, contentEnrichers);
             config.configure(pdfMarkedContent2XHTML);
         } catch (IOException e) {
             throw new TikaException("couldn't initialize PDFMarkedContent2XHTML", e);

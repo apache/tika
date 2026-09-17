@@ -64,7 +64,6 @@ import org.apache.tika.exception.AccessPermissionException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.AccessPermissions;
@@ -73,22 +72,24 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
-import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.parser.enricher.EnrichingParser;
+import org.apache.tika.parser.inference.InputKind;
+import org.apache.tika.parser.pages.PagesConfig;
+import org.apache.tika.parser.pages.TextPolicy;
 import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
 import org.apache.tika.parser.pdf.updates.IsIncrementalUpdate;
 import org.apache.tika.parser.pdf.updates.StartXRefOffset;
 import org.apache.tika.parser.pdf.updates.StartXRefScanner;
-import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
-import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer;
 import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
@@ -171,6 +172,10 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         PDFParserConfig localConfig = getConfig(context);
+        // the default's overlay first: a class-keyed request config replaces it rather than
+        // extending it, and the JSON path is a no-op second application
+        PagesConfig pages = PagesConfig.resolve(context, defaultConfig.getPages(),
+                localConfig.getPages());
         if (localConfig.isSetKCMS()) {
             System.setProperty("sun.java2d.cmm", "sun.java2d.cmm.kcms.KcmsServiceProvider");
         }
@@ -184,7 +189,7 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
         OCRPageCounter prevOCRCounter = context.get(OCRPageCounter.class);
         context.set(OCRPageCounter.class, new OCRPageCounter());
         try {
-            if (shouldSpool(localConfig)) {
+            if (shouldSpool(localConfig, pages)) {
                 // later stages re-open the document (xref scan, renderer, per-page renders)
                 tis.enableRewind(context.get(CacheMemoryBudget.class));
                 context.set(PDFRenderingState.class, new PDFRenderingState(tis));
@@ -217,23 +222,34 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
             extractSignatures(pdfDocument, metadata);
             checkIllustrator(pdfDocument, metadata);
             checkAccessPermissions(localConfig.getAccessCheckMode(), metadata);
-            renderPagesBeforeParse(tis, handler, metadata, context, localConfig);
             if (handler != null) {
-                if (shouldHandleXFAOnly(hasXFA, localConfig)) {
-                    handleXFAOnly(pdfDocument, handler, metadata, context);
-                } else if (localConfig.getText() == PDFParserConfig.TextPolicy.OCR
-                        || localConfig.getText() == PDFParserConfig.TextPolicy.NONE) {
-                    OCR2XHTML.process(pdfDocument, handler, context, metadata,
-                            localConfig, renderer, contentEnrichers);
-                } else if (hasMarkedContent && localConfig.getMarkedContent().getStrategy()
-                        != MarkedContentConfig.Strategy.NONE && !localConfig.isDetectAngles()) {
-                    // detectAngles re-runs the page per angle; the tagged writer needs one pass
-                    PDFMarkedContent2XHTML
-                            .process(pdfDocument, handler, context, metadata,
-                                    localConfig, renderer, contentEnrichers);
-                } else {
-                    PDF2XHTML.process(pdfDocument, handler, context, metadata,
-                            localConfig, renderer, contentEnrichers);
+                PageEmitter emitter = new PageEmitter(pdfDocument, pages, renderer, metadata,
+                        context);
+                Throwable failure = null;
+                try {
+                    if (shouldHandleXFAOnly(hasXFA, localConfig)) {
+                        handleXFAOnly(pdfDocument, handler, metadata, context, emitter,
+                                localConfig.getMaxPages());
+                    } else if (pages.getText() == TextPolicy.OCR
+                            || pages.getText() == TextPolicy.NONE) {
+                        OCR2XHTML.process(pdfDocument, handler, context, metadata,
+                                localConfig, pages, emitter, contentEnrichers);
+                    } else if (hasMarkedContent && localConfig.getMarkedContent().getStrategy()
+                            != MarkedContentConfig.Strategy.NONE && !localConfig.isDetectAngles()) {
+                        // detectAngles re-runs the page per angle; the tagged writer needs one pass
+                        PDFMarkedContent2XHTML
+                                .process(pdfDocument, handler, context, metadata,
+                                        localConfig, pages, emitter, contentEnrichers);
+                    } else {
+                        PDF2XHTML.process(pdfDocument, handler, context, metadata,
+                                localConfig, pages, emitter, contentEnrichers);
+                    }
+                } catch (Throwable t) {
+                    failure = t;
+                    throw t;
+                } finally {
+                    // a thumbnail even when page 1 broke the writer, as before the parse rendered
+                    emitter.emitUnfinished(handler, failure);
                 }
             }
         } catch (InvalidPasswordException e) {
@@ -244,11 +260,7 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
             context.set(OCRPageCounter.class, prevOCRCounter);
             //reset the incrementalUpdateRecord even if null
             context.set(IncrementalUpdateRecord.class, incomingIncrementalUpdateRecord);
-            PDFRenderingState currState = context.get(PDFRenderingState.class);
             try {
-                if (currState != null && currState.getRenderResults() != null) {
-                    currState.getRenderResults().close();
-                }
                 if (pdfDocument != null) {
                     pdfDocument.close();
                 }
@@ -433,84 +445,26 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
         }
     }
 
-    private boolean shouldSpool(PDFParserConfig localConfig) {
-        if (localConfig.getImageStrategy() == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE
-                || localConfig.getImageStrategy() == PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
-            return true;
-        }
-        if (localConfig.isExtractIncrementalUpdateInfo() ||
-                localConfig.isParseIncrementalUpdates()) {
-            return true;
-        }
-
-        if (localConfig.getText() == PDFParserConfig.TextPolicy.EXTRACT
-                || localConfig.getText() == PDFParserConfig.TextPolicy.NONE) {
-            return false;
-        }
-        //TODO: test that this is not AUTO with no OCR parser installed
-        return true;
+    /** Whether a later stage re-reads the bytes: the xref scan, or a renderer that takes a file. */
+    private boolean shouldSpool(PDFParserConfig localConfig, PagesConfig pages) {
+        return pages.getEmit().getEnabled() || pages.getText().ocrs()
+                || pages.getInference().contains(InputKind.PAGES)
+                || localConfig.isExtractIncrementalUpdateInfo()
+                || localConfig.isParseIncrementalUpdates();
     }
 
-    private void renderPagesBeforeParse(TikaInputStream tstream,
-                                        ContentHandler xhtml, Metadata parentMetadata,
-                                        ParseContext context,
-                                        PDFParserConfig config) {
-        if (config.getImageStrategy() != PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE) {
-            return;
-        }
-        RenderResults renderResults = null;
-        try {
-            renderResults = renderPDF(tstream, context, config);
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
-            return;
-        }
-        context.get(PDFRenderingState.class).setRenderResults(renderResults);
-        EmbeddedDocumentExtractor embeddedDocumentExtractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-
-        // the page step enriches each render itself; the embedded copies are bytes and metadata
-        try (ContentEnrichers.Suspension suspension = ContentEnrichers.suspend(context)) {
-            for (RenderResult result : renderResults.getResults()) {
-                if (result.getStatus() != RenderResult.STATUS.SUCCESS) {
-                    carryRenderWarnings(result, parentMetadata);
-                } else if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
-                    try (TikaInputStream tis = result.getInputStream()) {
-                        embeddedDocumentExtractor.parseEmbedded(tis, xhtml, result.getMetadata(), context, false);
-                    } catch (SecurityException e) {
-                        throw e;
-                    } catch (Exception e) {
-                        EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
-                    }
-                }
-            }
-        }
-    }
-
-    /** A page the renderer could not make is a warning on the PDF, not a silent gap. */
+    /**
+     * A page the renderer could not make is a warning on the PDF and its number under
+     * {@link Rendering#RENDER_FAILED_PAGE}, not a silent gap.
+     */
     static void carryRenderWarnings(RenderResult result, Metadata parentMetadata) {
         for (String warning : result.getMetadata()
                 .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)) {
             parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         }
-    }
-
-    private RenderResults renderPDF(TikaInputStream tstream,
-                                    ParseContext parseContext, PDFParserConfig localConfig)
-            throws IOException, TikaException {
-        Metadata metadata = Metadata.newInstance(parseContext);
-        metadata.set(TikaCoreProperties.TYPE, MEDIA_TYPE.toString());
-        int maxRenderedPages = localConfig.getMaxRenderedPages();
-        PageRangeRequest pages = maxRenderedPages > 0
-                ? new PageRangeRequest(1, maxRenderedPages) : PageRangeRequest.RENDER_ALL;
-        RenderingConfig outer = parseContext.get(RenderingConfig.class);
-        parseContext.set(RenderingConfig.class, localConfig.getRendering().resolve(localConfig.getOcr()));
-        try {
-            return renderer.render(tstream, metadata, parseContext, pages);
-        } finally {
-            parseContext.set(RenderingConfig.class, outer);
+        Integer page = result.getMetadata().getInt(TikaPagedText.PAGE_NUMBER);
+        if (page != null) {
+            parentMetadata.add(Rendering.RENDER_FAILED_PAGE, page);
         }
     }
 
@@ -779,7 +733,7 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
     }
 
     private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler, Metadata metadata,
-                               ParseContext context)
+                               ParseContext context, PageEmitter emitter, int maxPages)
             throws SAXException, IOException, TikaException {
         XFAExtractor ex = new XFAExtractor();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
@@ -790,6 +744,8 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
         } catch (XMLStreamException e) {
             throw new TikaException("XML error in XFA", e);
         }
+        // no page walk: the renders go in here, before the document ends
+        emitter.emitAll(xhtml, maxPages);
         xhtml.endDocument();
     }
 
@@ -805,12 +761,8 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
                 this.renderer.getSupportedTypes(context).contains(MEDIA_TYPE)) {
             return;
         }
-        //set a default renderer if nothing was defined
-        PDFBoxRenderer pdfBoxRenderer = new PDFBoxRenderer();
-        pdfBoxRenderer.setDPI(config.getOcr().getDpi());
-        pdfBoxRenderer.setImageType(config.getOcr().getImageType().getPdfBoxImageType());
-        pdfBoxRenderer.setImageFormatName(config.getOcr().getImageFormat().getFormatName());
-        this.renderer = pdfBoxRenderer;
+        // the render settings reach it through the context, scoped around each render
+        this.renderer = new PDFBoxRenderer();
     }
 
     @Override

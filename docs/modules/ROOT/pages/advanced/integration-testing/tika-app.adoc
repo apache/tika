@@ -259,7 +259,7 @@ Create `/tmp/tika-app-test/my-config.json`:
       "pdf-parser": {
         "extractActions": true,
         "extractInlineImages": true,
-        "text": "EXTRACT"
+        "pages": { "text": "EXTRACT" }
       }
     },
     {

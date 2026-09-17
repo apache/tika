@@ -39,84 +39,52 @@ include::example$pdf-parser-full.json[]
 ----
 icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/config-examples/pdf-parser-full.json[View source on GitHub]
 
-== Where text comes from (`text`)
+== Pages (`pages`)
 
-`text` says where a page's text comes from; it is the parser's own setting, beside the `ocr`
-block, and can be set per request:
-
-`EXTRACT`::
-The content stream only; pages are never rendered for OCR.
-`AUTO` (default)::
-The content stream, and OCR of a page whose extracted text is poor by the `ocr.strategyAuto`
-thresholds; the page's extracted text is then *replaced* by the engine's output when the engine is
-a text recognizer (Tesseract, Tess4J, a VLM with `textRecognizer` true) that actually wrote text,
-and kept unchanged otherwise, including when no engine is available, `maxPagesToOcr` is spent, or
-the engine times out. `AUTO` with no engine behaves as `EXTRACT`.
-`EXTRACT_AND_OCR`::
-Both, on every page.
-`OCR`::
-The engine's output only; the content stream is not read. Fails the parse when no engine covers
-the render type, unless the request switched the recognizers off.
-`NONE`::
-No text from any source: no content stream, no OCR, no bookmark, form or annotation text.
-Metadata, attachments and page renders still happen, so a `PAGES` inference binding or a page
-annotator runs at no text cost.
-
-The 4.0 spelling `"ocr": {"strategy": ...}` still loads as an alias: `NO_OCR` is `EXTRACT`,
-`OCR_ONLY` is `OCR`, `OCR_AND_TEXT_EXTRACTION` is `EXTRACT_AND_OCR`. When both are set, `text`
-wins. A config dump writes `text`.
-
-== OCR of pages (`ocr`)
-
-The PDF parser does not OCR anything itself. It renders pages and hands each rendered image to the
-text recognizer resolved for the render type (`image/png` by default): the engine named in the
-top-level `text-recognizers` list, or, with no list, the one found among the loaded parsers and
-logged at startup. See xref:configuration/index.adoc#text-recognizers[Configuration]
-for choosing the engine and xref:configuration/parsers/tesseract-ocr-parser.adoc[Tesseract OCR]
-for its options. The `ocr` block controls only rendering and the `AUTO` verdict:
-
-`strategyAuto`::
-Per-page character thresholds below which `text: AUTO` sends the page to OCR.
-`dpi`, `imageType`, `imageFormat`, `imageQuality`, `renderingStrategy`::
-How pages are rendered before they reach the engine.
-`maxPagesToOcr`, `maxImagePixels`::
-Budgets per document and per rendered page.
-
-Inline images embedded in a PDF are a separate path: with `extractInlineImages` on they are
-parsed as embedded documents, so `image-parser` enriches each one with the same engine. A scanned
-page that is one full-page image is therefore OCR'd twice when both are on.
-
-Page renders emitted as embedded documents (`imageStrategy` set to `RENDER_PAGES_AT_PAGE_END` or
-`RENDER_PAGES_BEFORE_PARSE`) are enriched by the PDF parser itself, once per page: the text
-recognizer where `text` says so, and every other enricher (an image embedder, a tagging VLM)
-on every page, with its results such as `tk:chunks` landing on the PDF. The embedded copy of a
-render is parsed for its metadata but not enriched again, so no page reaches the same engine
-twice, and `EXTRACT` means no page OCR anywhere while the other enrichers still see every page.
-
-`pdf:ocr-page-count` records how many pages tripped the verdict, whether or not an engine ran.
-
-=== Page images (`rendering`)
-
-The page images the parser emits as embedded documents under `RENDER_PAGES_BEFORE_PARSE` or
-`RENDER_PAGES_AT_PAGE_END` have their own `rendering` block: `dpi`, `imageType`, `imageFormat`,
-`imageQuality` and `maxImagePixels`. A field left out takes the `ocr` value, so with no block
-the emitted pages match the OCR renders as in 4.0. OCR, page annotators and PAGES inference
-input always render with the `ocr` settings; when the two blocks would produce the same image,
-one render per page serves both, otherwise OCR renders again.
+Where a page's text comes from, how pages are rendered, how many may be OCR'd, what is released to
+inference and whether page images are emitted are the xref:configuration/pages.adoc[`pages` block],
+shared with every parser that renders. The PDF parser's own `pages` entry overlays the one under
+`parse-context`, field by field, and can be set per request:
 
 [source,json]
 ----
 {
   "pdf-parser": {
-    "imageStrategy": "RENDER_PAGES_AT_PAGE_END",
-    "maxRenderedPages": 1,
-    "rendering": { "dpi": 96, "imageType": "RGB" }
+    "pages": {
+      "text": "AUTO",
+      "emit": { "enabled": true, "maxPages": 1, "render": { "maxWidth": 256, "maxHeight": 256, "imageType": "RGB" } }
+    }
   }
 }
 ----
 
-renders a colour first-page preview at 96 dpi while OCR keeps its 300 dpi grayscale pages. A
-page that would exceed `maxImagePixels` is not rendered and leaves a warning on the PDF.
+renders a colour first-page thumbnail that fits 256 x 256 pixels while OCR keeps its 300 dpi
+grayscale pages. The 4.0 `ocr` and `imageStrategy` spellings still load and land in `pages`; the
+table at the end of that page maps them.
+
+Two things are the PDF's own:
+
+`renderingStrategy`::
+What PDFBox draws when it renders a page for OCR: `ALL` (default), `TEXT_ONLY`, `NO_TEXT` or
+`VECTOR_GRAPHICS_ONLY`. A configured `renderers` engine always draws everything. The 4.0
+`ocr.renderingStrategy` still loads.
+`extractInlineImages`::
+The images embedded in a PDF are a separate path from page renders: with it on they are parsed
+as embedded documents, so `image-parser` enriches each one with the same engine. A scanned page
+that is one full-page image is therefore OCR'd twice when both page OCR and inline images are
+on. The 4.0 `imageStrategy: RAW_IMAGES` is this switch.
+
+The PDF parser does not OCR anything itself. It renders pages and hands each rendered image to
+the text recognizer resolved for the render type (`image/png` by default): the engine named in
+the top-level `text-recognizers` list, or, with no list, the one found among the loaded parsers
+and logged at startup. See xref:configuration/index.adoc#text-recognizers[Configuration] for
+choosing the engine and xref:configuration/parsers/tesseract-ocr-parser.adoc[Tesseract OCR] for
+its options. Emitted page renders are enriched by the PDF parser itself, once per page: the text
+recognizer where `text` says so, and every other enricher (an image embedder, a tagging VLM) on
+every page, with its results such as `tk:chunks` landing on the PDF. The embedded copy of a
+render is parsed for its metadata but not enriched again.
+
+`pdf:ocr-page-count` records how many pages tripped the verdict, whether or not an engine ran.
 
 == Tagged PDFs (`markedContent`)
 
@@ -178,18 +146,3 @@ The metadata says what happened:
 `pdf:marked-content-rejections` with the reason per page that fell back.
 
 The old boolean `extractMarkedContent` still loads: `true` is `TAGS`, `false` is `NONE`.
-
-== Pages for inference (`inference`)
-
-NOTE: Experimental in 4.1.0, with the xref:configuration/inference.adoc[inference bindings]
-it feeds: may change in a minor release without a deprecation cycle. `text` above is stable.
-
-`input`::
-What the parser releases to the xref:configuration/inference.adoc#pages[inference bindings]:
-`["TEXT"]` by default. Add `PAGES` to render every page for a `PAGES` binding; the render is
-the `ocr` render, made once per page for OCR and inference alike, and nothing is rendered
-unless a `PAGES` binding runs for the request. Per request under `pdf-parser` in
-`parse-context`, like the `ocr` block.
-`text` and every `ocr` option can be overridden per request through `parse-context` under
-`pdf-parser`; the xref:using-tika/server/index.adoc[server documentation] shows the `EXTRACT`
-override as a preset.

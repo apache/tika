@@ -45,7 +45,7 @@ public class WMFParserTest extends TikaTest {
     }
 
     /**
-     * Rendering is off by default; with "wmf-parser": {"renderImage": true}
+     * Rendering is off by default; with "wmf-parser": {"pages": {"emit": {"enabled": true}}}
      * the rendering follows the image as a RENDERING embedded document.
      */
     @Test
@@ -53,7 +53,7 @@ public class WMFParserTest extends TikaTest {
         assertEquals(1, getRecursiveMetadata("testWMF.wmf").size());
 
         ParseContext context = new ParseContext();
-        context.setJsonConfig("wmf-parser", "{\"renderImage\": true, \"renderWidth\": 300}");
+        context.setJsonConfig("wmf-parser", "{\"pages\": {\"emit\": {\"enabled\": true, \"render\": {\"maxWidth\": 300}}}}");
         List<Metadata> metadataList = getRecursiveMetadata("testWMF.wmf", context);
         assertEquals(2, metadataList.size());
         Metadata rendering = metadataList.get(1);
@@ -72,7 +72,7 @@ public class WMFParserTest extends TikaTest {
     @Test
     public void testXlsxThumbnailRendering() throws Exception {
         ParseContext context = new ParseContext();
-        context.setJsonConfig("wmf-parser", "{\"renderImage\": true}");
+        context.setJsonConfig("wmf-parser", "{\"pages\": {\"emit\": {\"enabled\": true}}}");
         List<Metadata> metadataList = getRecursiveMetadata("testXLSX_Thumbnail.xlsx", context);
         Metadata thumbnail = null;
         Metadata rendering = null;

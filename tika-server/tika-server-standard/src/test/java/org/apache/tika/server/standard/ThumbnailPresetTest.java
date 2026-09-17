@@ -43,8 +43,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.pdmodel.PDDocument;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -130,15 +128,14 @@ public class ThumbnailPresetTest extends CXFTestBase {
     }
 
     @Test
-    public void testPdfPageIsRenderedAt96DpiInColour() throws Exception {
+    public void testPdfPageIsFittedInColour() throws Exception {
         byte[] png = unpack(PRESET_PATH, "testPDFTwoTextBoxes.pdf").values().iterator().next();
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(png));
-        float pageWidthPt;
-        try (PDDocument document = Loader.loadPDF(fixture("testPDFTwoTextBoxes.pdf").readAllBytes())) {
-            pageWidthPt = document.getPage(0).getMediaBox().getWidth();
-        }
-        // the preset's "rendering" block, not ocr's 300 dpi grayscale; PDFBox floors the width
-        assertEquals((int) Math.floor(pageWidthPt * 96 / 72f), image.getWidth());
+        // the preset's box, not the 300 dpi grayscale page OCR would see: a portrait page
+        // is 256 tall and narrower, within a pixel of PDFBox's flooring
+        assertTrue(image.getWidth() <= 256 && image.getHeight() <= 256,
+                image.getWidth() + "x" + image.getHeight());
+        assertTrue(image.getHeight() >= 255, "fills the box: " + image.getHeight());
         assertEquals(3, image.getColorModel().getNumColorComponents());
     }
 

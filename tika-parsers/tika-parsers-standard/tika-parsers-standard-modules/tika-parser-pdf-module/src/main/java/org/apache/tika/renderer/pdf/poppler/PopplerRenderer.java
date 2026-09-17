@@ -24,13 +24,20 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -38,23 +45,29 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.renderer.ImageType;
 import org.apache.tika.renderer.PageBasedRenderResults;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderRequest;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
+import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.renderer.RenderingTracker;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
 
 /**
- * Renderer that uses Poppler's {@code pdftoppm} command to convert PDF
- * pages to PNG images.
+ * Renders PDF pages through Poppler's {@code pdftoppm}, one call per page at the dpi the
+ * {@link RenderSettings} the parse scoped (else this renderer's own) resolve to for that page:
+ * the target dpi, lowered so the page fits the box and its long side stays within
+ * {@code maxScaleTo}, never raised. A page over {@code maxImagePixels} is skipped with a
+ * warning. Page sizes come from the {@link PDDocument} the parser leaves as the stream's open
+ * container, else from a load of the file.
  * <p>
- * Poppler is pre-installed on most Linux distributions and is the
- * fastest widely-available PDF renderer. On macOS it can be installed
- * via {@code brew install poppler}; on Windows via MSYS2 or Chocolatey.
+ * Poppler is pre-installed on most Linux distributions and is the fastest widely-available
+ * PDF renderer. On macOS it can be installed via {@code brew install poppler}; on Windows via
+ * MSYS2 or Chocolatey.
  * <p>
  * Configuration key: {@code "poppler-renderer"}
  *
@@ -66,38 +79,20 @@ public class PopplerRenderer implements Renderer {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("pdf"));
 
-    /**
-     * Matches the Poppler output pattern: {@code prefix-01.png},
-     * {@code prefix-02.png}, etc.
-     */
+    /** pdftoppm names its output {@code prefix-N.png} (zero-padded) or .jpg / .tif. */
     private static final Pattern PAGE_FILE_PATTERN =
-            Pattern.compile("tika-poppler-(\\d+)\\.png");
+            Pattern.compile("tika-poppler-(\\d+)\\.(png|jpg|tif)");
 
     private String pdftoppmPath = "pdftoppm";
-    private int dpi = 300;
-    private boolean gray = true;
     private int timeoutMillis = 120000;
 
+    /** What this renderer draws when the parse scopes no settings: 300 dpi gray. */
+    private final RenderSettings defaults = RenderSettings.defaults();
+
     /**
-     * Maximum pixel dimension (in pixels) for the longest edge of a rendered
-     * page image. Maps to pdftoppm's {@code -scale-to} flag.
-     * <p>
-     * If a PDF page would render larger than this value (in pixels) at the
-     * configured DPI, pdftoppm scales the output image down so that its
-     * longest edge equals {@code maxScaleTo} pixels, preserving the aspect
-     * ratio. For example, with {@code maxScaleTo=4096}, a landscape page
-     * that would normally render to 6000&times;4000 pixels is scaled to
-     * 4096&times;2731 pixels instead.
-     * <p>
-     * If the rendered image is already smaller than {@code maxScaleTo}
-     * on both edges, no scaling is applied — the image is not enlarged.
-     * <p>
-     * This is the primary defense against pathologically large PDF pages
-     * (e.g., architectural drawings, maps, posters) that would otherwise
-     * produce multi-gigabyte images and cause OOM.
-     * <p>
-     * Default is 4096 pixels. Set to {@code -1} to disable scaling
-     * (not recommended).
+     * Longest side of a rendered page, in pixels; a page that would be longer at the dpi is
+     * rendered smaller. The guard against posters and maps that would otherwise be gigabytes
+     * of pixels. 4096 by default; -1 for none (not recommended).
      */
     private int maxScaleTo = 4096;
 
@@ -114,9 +109,22 @@ public class PopplerRenderer implements Renderer {
         TemporaryResources tmp = new TemporaryResources();
         PageBasedRenderResults results = new PageBasedRenderResults(tmp);
         Path path = tis.getPath();
-        try {
+        PDDocument open = tis.getOpenContainer() instanceof PDDocument d ? d : null;
+        try (PDDocument loaded = open == null ? Loader.loadPDF(path.toFile()) : null) {
+            PDDocument document = open == null ? loaded : open;
+            Path dir = Files.createTempDirectory("tika-render-");
+            tmp.addResource((Closeable) () -> Files.delete(dir));
             for (RenderRequest request : requests) {
-                renderRequest(path, metadata, parseContext, request, results, tmp);
+                if (!(request instanceof PageRangeRequest range)) {
+                    throw new TikaException("I regret that this renderer can only handle "
+                            + "PageRangeRequests, not " + request.getClass());
+                }
+                int last = document.getNumberOfPages();
+                int from = range == PageRangeRequest.RENDER_ALL ? 1 : range.getFrom();
+                int to = range == PageRangeRequest.RENDER_ALL ? last : Math.min(range.getTo(), last);
+                for (int page = from; page <= to; page++) {
+                    results.add(renderPage(path, dir, document, page, parseContext));
+                }
             }
         } catch (Throwable t) {
             // results never reach the caller; nothing else would delete the pages
@@ -130,110 +138,108 @@ public class PopplerRenderer implements Renderer {
         return results;
     }
 
-    private void renderRequest(Path pdf, Metadata metadata,
-                               ParseContext parseContext,
-                               RenderRequest request,
-                               PageBasedRenderResults results,
-                               TemporaryResources tmp)
-            throws TikaException, IOException {
-        if (!(request instanceof PageRangeRequest)) {
-            throw new TikaException(
-                    "I regret that this renderer can only handle "
-                            + "PageRangeRequests, not " + request.getClass());
-        }
-        PageRangeRequest rangeRequest = (PageRangeRequest) request;
-
+    private RenderResult renderPage(Path pdf, Path dir, PDDocument document, int page,
+                                    ParseContext parseContext) throws IOException, TikaException {
         RenderingTracker tracker = parseContext.get(RenderingTracker.class);
         if (tracker == null) {
             tracker = new RenderingTracker();
             parseContext.set(RenderingTracker.class, tracker);
         }
-
-        Path dir = Files.createTempDirectory("tika-render-");
-        tmp.addResource(new Closeable() {
-            @Override
-            public void close() throws IOException {
-                Files.delete(dir);
-            }
-        });
-
-        String[] args = createCommandLine(pdf, dir, rangeRequest);
+        int id = tracker.getNextId();
+        Metadata m = Metadata.newInstance(parseContext);
+        m.set(TikaPagedText.PAGE_NUMBER, page);
+        m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
+        RenderSettings settings = settings(parseContext);
+        double[] size = pageSize(document.getPage(page - 1));
+        double dpi = dpi(settings, size[0], size[1]);
+        long pixels = RenderSettings.estimatedPixels(size[0], size[1], dpi);
+        if (settings.exceedsMaxPixels(pixels)) {
+            EmbeddedDocumentUtil.recordException(new IOException("page " + page
+                    + " would render to " + pixels + " pixels at " + dpi
+                    + " dpi, above maxImagePixels " + settings.getMaxImagePixels()),
+                    m, parseContext);
+            return new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, m);
+        }
 
         ProcessBuilder builder = new ProcessBuilder();
-        builder.command(args);
+        builder.command(createCommandLine(pdf, dir, page, dpi, settings));
         FileProcessResult result = ProcessUtils.execute(
                 builder, parseContext, timeoutMillis, 10, 1000);
         if (result.isTimeout()) {
             throw new TikaTimeoutException("pdftoppm timed out",
                     result.getRequestedTimeoutMillis(), result.getGrantedTimeoutMillis());
         } else if (result.getExitValue() != 0) {
-            throw new TikaException(
-                    "pdftoppm failed (exit " + result.getExitValue()
-                            + "): " + result.getStderr());
+            throw new TikaException("pdftoppm failed (exit " + result.getExitValue()
+                    + "): " + result.getStderr());
         }
-
-        Matcher m = PAGE_FILE_PATTERN.matcher("");
+        Matcher matcher = PAGE_FILE_PATTERN.matcher("");
         File[] files = dir.toFile().listFiles();
-        if (files == null) {
-            return;
-        }
-        for (File f : files) {
-            if (m.reset(f.getName()).find()) {
-                int pageNumber = Integer.parseInt(m.group(1));
-                Metadata renderMetadata = Metadata.newInstance(parseContext);
-                renderMetadata.set(TikaPagedText.PAGE_NUMBER, pageNumber);
-                renderMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.RENDERING
-                                .name());
-                results.add(new RenderResult(
-                        RenderResult.STATUS.SUCCESS,
-                        tracker.getNextId(),
-                        f.toPath(),
-                        renderMetadata));
+        for (File f : files == null ? new File[0] : files) {
+            if (matcher.reset(f.getName()).find() && Integer.parseInt(matcher.group(1)) == page) {
+                return new RenderResult(RenderResult.STATUS.SUCCESS, id, f.toPath(), m);
             }
         }
+        throw new TikaException("pdftoppm wrote no image for page " + page + ": "
+                + result.getStderr());
     }
 
-    String[] createCommandLine(Path pdf, Path dir,
-                               PageRangeRequest request) {
+    /**
+     * The size in points of the image pdftoppm writes: the media box (its default, unlike
+     * PDFBox's crop box), width and height swapped when the page is rotated a quarter turn.
+     */
+    static double[] pageSize(PDPage pdPage) {
+        PDRectangle mediaBox = pdPage.getMediaBox();
+        int rotation = pdPage.getRotation();
+        boolean quarterTurn = rotation == 90 || rotation == 270;
+        return quarterTurn ? new double[] {mediaBox.getHeight(), mediaBox.getWidth()}
+                : new double[] {mediaBox.getWidth(), mediaBox.getHeight()};
+    }
+
+    /** The target dpi, lowered so the page fits the box and {@code maxScaleTo}, never raised. */
+    double dpi(RenderSettings settings, double widthPoints, double heightPoints) {
+        double dpi = settings.effectiveDpi(widthPoints, heightPoints);
+        double longSide = Math.max(widthPoints, heightPoints) / 72.0 * dpi;
+        if (maxScaleTo > 0 && longSide > maxScaleTo) {
+            dpi *= maxScaleTo / longSide;
+        }
+        return dpi;
+    }
+
+    String[] createCommandLine(Path pdf, Path dir, int page, double dpi, RenderSettings settings) {
         List<String> args = new ArrayList<>();
         args.add(pdftoppmPath);
-
-        // Output format
-        args.add("-png");
-
-        // Resolution
-        args.add("-r");
-        args.add(String.valueOf(dpi));
-
-        // Scale cap — prevents OOM on huge pages
-        if (maxScaleTo > 0) {
-            args.add("-scale-to");
-            args.add(String.valueOf(maxScaleTo));
+        switch (settings.getImageFormat()) {
+            case JPEG:
+                args.add("-jpeg");
+                args.add("-jpegopt");
+                args.add("quality=" + Math.round(settings.getImageQuality() * 100));
+                break;
+            case TIFF:
+                args.add("-tiff");
+                break;
+            default:
+                args.add("-png");
+                break;
         }
-
-        // Colorspace
-        if (gray) {
+        args.add("-r");
+        args.add(String.format(Locale.ROOT, "%.2f", dpi));
+        if (settings.getImageType() == ImageType.GRAY) {
             args.add("-gray");
         }
-
-        // Page range
-        if (request != PageRangeRequest.RENDER_ALL) {
-            args.add("-f");
-            args.add(String.valueOf(request.getFrom()));
-            args.add("-l");
-            args.add(String.valueOf(request.getTo()));
-        }
-
-        // Input PDF
-        args.add(ProcessUtils.escapeCommandLine(
-                pdf.toAbsolutePath().toString()));
-
-        // Output prefix (pdftoppm appends -NN.png)
-        args.add(ProcessUtils.escapeCommandLine(
-                dir.toAbsolutePath().toString() + "/tika-poppler"));
-
+        args.add("-f");
+        args.add(String.valueOf(page));
+        args.add("-l");
+        args.add(String.valueOf(page));
+        args.add(ProcessUtils.escapeCommandLine(pdf.toAbsolutePath().toString()));
+        args.add(ProcessUtils.escapeCommandLine(dir.toAbsolutePath().toString() + "/tika-poppler"));
         return args.toArray(new String[0]);
+    }
+
+    /** The settings the parser scoped around this render, else this renderer's own. */
+    private RenderSettings settings(ParseContext parseContext) {
+        RenderSettings scoped = parseContext.get(RenderSettings.class);
+        return scoped == null ? defaults : defaults.over(scoped);
     }
 
     // ---- config getters/setters -------------------------------------------
@@ -242,45 +248,40 @@ public class PopplerRenderer implements Renderer {
         return pdftoppmPath;
     }
 
-    /**
-     * Set the path to the {@code pdftoppm} executable. Defaults to
-     * {@code "pdftoppm"} (assumes it is on the system path).
-     */
+    /** The {@code pdftoppm} executable; {@code "pdftoppm"} (on the path) by default. */
     public void setPdftoppmPath(String pdftoppmPath) {
         this.pdftoppmPath = pdftoppmPath;
     }
 
     public int getDpi() {
-        return dpi;
+        return defaults.getDpi();
     }
 
     /**
-     * Set the rendering resolution in DPI. Defaults to 300.
+     * @deprecated since 4.1.0: applies only to a direct {@link #render} call with no
+     * {@link RenderSettings} in the context. A parse always scopes {@code pages.render}, which
+     * replaces this. Configure {@code "pages": {"render": {"dpi": ...}}}.
      */
+    @Deprecated
     public void setDpi(int dpi) {
-        this.dpi = dpi;
+        defaults.setDpi(dpi);
     }
 
     public boolean isGray() {
-        return gray;
+        return defaults.getImageType() == ImageType.GRAY;
     }
 
-    /**
-     * If true (the default), render in grayscale. Set to false for
-     * full-color rendering.
-     */
+    /** @deprecated since 4.1.0; see {@link #setDpi}: {@code pages.render.imageType}. */
+    @Deprecated
     public void setGray(boolean gray) {
-        this.gray = gray;
+        defaults.setImageType(gray ? ImageType.GRAY : ImageType.RGB);
     }
 
     public int getTimeoutMillis() {
         return timeoutMillis;
     }
 
-    /**
-     * Set the timeout in milliseconds for the pdftoppm process.
-     * Defaults to 120000 (2 minutes).
-     */
+    /** Timeout for one {@code pdftoppm} call (one page); 120000 by default. */
     public void setTimeoutMillis(int timeoutMillis) {
         this.timeoutMillis = timeoutMillis;
     }
@@ -289,13 +290,7 @@ public class PopplerRenderer implements Renderer {
         return maxScaleTo;
     }
 
-    /**
-     * Set the maximum pixel dimension (in pixels) for the longest edge
-     * of rendered page images. Maps to pdftoppm's {@code -scale-to} flag.
-     * Pages that would render smaller than this are not enlarged.
-     * <p>
-     * Default is 4096 pixels. Set to {@code -1} to disable (not recommended).
-     */
+    /** Longest side of a rendered page in pixels; 4096 by default, -1 for none. */
     public void setMaxScaleTo(int maxScaleTo) {
         if (maxScaleTo < 1 && maxScaleTo != -1) {
             throw new IllegalArgumentException(

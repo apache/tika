@@ -204,10 +204,11 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
         String configJson = """
                 {
                   "pdf-parser": {
-                    "imageStrategy": "RENDER_PAGES_AT_PAGE_END",
-                    "ocr": {
-                      "imageType": "GRAY",
-                      "imageFormat": "JPEG"
+                    "pages": {
+                      "emit": {
+                        "enabled": true,
+                        "render": { "imageType": "GRAY", "imageFormat": "JPEG" }
+                      }
                     }
                   }
                 }

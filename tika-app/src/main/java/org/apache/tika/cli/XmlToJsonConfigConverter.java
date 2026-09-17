@@ -374,9 +374,8 @@ public class XmlToJsonConfigConverter {
         }
 
         if ("pdf-parser".equals(componentName)) {
-            // 4.x PDFParserConfig groups OCR settings under a nested "ocr" object
-            // (OcrConfig); the legacy flat ocr* keys were removed.
-            nestOcrParams(config);
+            // 4.1 PDFParserConfig keeps its page settings in the "pages" block
+            nestPageParams(config);
         }
 
         Map<String, Object> result = new LinkedHashMap<>();
@@ -384,60 +383,103 @@ public class XmlToJsonConfigConverter {
         return result;
     }
 
-    // Maps the legacy flat PDFParser ocr* params to their nested OcrConfig keys.
-    private static final Map<String, String> OCR_PARAM_TO_NESTED_KEY = Map.ofEntries(
-            Map.entry("ocrStrategy", "strategy"),
-            Map.entry("ocrStrategyAuto", "strategyAuto"),
+    // The legacy flat PDFParser ocr* params and the 4.0 "ocr" keys, by their 4.1 home:
+    // a path under "pages", or "renderingStrategy" on the parser.
+    private static final Map<String, String> OCR_PARAM_TO_PAGES_PATH = Map.ofEntries(
+            Map.entry("ocrStrategy", "text"),
+            Map.entry("strategy", "text"),
+            Map.entry("ocrStrategyAuto", "ocr.auto"),
+            Map.entry("strategyAuto", "ocr.auto"),
+            Map.entry("ocrMaxPagesToOcr", "ocr.maxPages"),
+            Map.entry("maxPagesToOcr", "ocr.maxPages"),
+            Map.entry("ocrImageFormat", "render.imageFormat"),
+            Map.entry("imageFormat", "render.imageFormat"),
+            Map.entry("ocrImageType", "render.imageType"),
+            Map.entry("imageType", "render.imageType"),
+            Map.entry("ocrDPI", "render.dpi"),
+            Map.entry("dpi", "render.dpi"),
+            Map.entry("ocrImageQuality", "render.imageQuality"),
+            Map.entry("imageQuality", "render.imageQuality"),
+            Map.entry("ocrMaxImagePixels", "render.maxImagePixels"),
+            Map.entry("maxImagePixels", "render.maxImagePixels"),
             Map.entry("ocrRenderingStrategy", "renderingStrategy"),
-            Map.entry("ocrImageFormat", "imageFormat"),
-            Map.entry("ocrImageType", "imageType"),
-            Map.entry("ocrDPI", "dpi"),
-            Map.entry("ocrImageQuality", "imageQuality"),
-            Map.entry("ocrMaxImagePixels", "maxImagePixels"),
-            Map.entry("ocrMaxPagesToOcr", "maxPagesToOcr"));
-
-    /**
-     * Moves the legacy flat {@code ocr*} PDFParser params (e.g. {@code ocrStrategy},
-     * {@code ocrDPI}) into the nested {@code "ocr"} object used by 4.x
-     * {@code PDFParserConfig} ({@code OcrConfig}). The flat {@code ocr*} JSON keys were
-     * removed in 4.x, so a verbatim copy would no longer load.
-     */
-    private static void nestOcrParams(Map<String, Object> config) {
-        Map<String, Object> ocr = new LinkedHashMap<>();
-        // Seed from an explicitly-configured nested "ocr" map (<param name="ocr" type="map">)
-        // so those values win; legacy flat ocr* params only fill keys it doesn't supply.
-        Object existingOcr = config.get("ocr");
-        if (existingOcr instanceof Map<?, ?> existingMap) {
-            for (Map.Entry<?, ?> e : existingMap.entrySet()) {
-                if (e.getKey() instanceof String k) {
-                    ocr.put(k, e.getValue());
-                }
-            }
-        }
-
-        Iterator<Map.Entry<String, Object>> it = config.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<String, Object> entry = it.next();
-            String nestedKey = OCR_PARAM_TO_NESTED_KEY.get(entry.getKey());
-            if (nestedKey != null) {
-                ocr.putIfAbsent(nestedKey, entry.getValue());
-                it.remove();
-            }
-        }
-        // 4.1 spells the strategy as the parser's "text"; the ocr.strategy alias still loads
-        Object strategy = ocr.remove("strategy");
-        if (strategy != null && !config.containsKey("text")) {
-            config.put("text", OCR_STRATEGY_TO_TEXT.getOrDefault(String.valueOf(strategy),
-                    String.valueOf(strategy)));
-        }
-        if (!ocr.isEmpty()) {
-            config.put("ocr", ocr);
-        }
-    }
+            Map.entry("renderingStrategy", "renderingStrategy"));
 
     private static final Map<String, String> OCR_STRATEGY_TO_TEXT = Map.of(
             "NO_OCR", "EXTRACT", "AUTO", "AUTO", "OCR_ONLY", "OCR",
             "OCR_AND_TEXT_EXTRACTION", "EXTRACT_AND_OCR");
+
+    /**
+     * Moves the legacy flat {@code ocr*} PDFParser params ({@code ocrStrategy},
+     * {@code ocrDPI}, ...) and an explicitly nested 4.0 {@code "ocr"} map into the 4.1
+     * {@code "pages"} block ({@code text}, {@code ocr.auto}, {@code render.dpi}, ...) and
+     * {@code "renderingStrategy"}. Values already under {@code "pages"} win, then the
+     * nested map, then the flat params; the flat keys no longer load verbatim.
+     */
+    @SuppressWarnings("unchecked")
+    private static void nestPageParams(Map<String, Object> config) {
+        Map<String, Object> pages = new LinkedHashMap<>();
+        if (config.get("pages") instanceof Map<?, ?> existing) {
+            for (Map.Entry<?, ?> e : existing.entrySet()) {
+                if (e.getKey() instanceof String k) {
+                    pages.put(k, e.getValue());
+                }
+            }
+        }
+        // the explicitly nested 4.0 "ocr" map first, so its values win over flat params
+        Object existingOcr = config.remove("ocr");
+        if (existingOcr instanceof Map<?, ?> existingMap) {
+            for (Map.Entry<?, ?> e : existingMap.entrySet()) {
+                if (e.getKey() instanceof String k) {
+                    placePageParam(config, pages, k, e.getValue());
+                }
+            }
+        }
+        Iterator<Map.Entry<String, Object>> it = config.entrySet().iterator();
+        List<Map.Entry<String, Object>> flat = new ArrayList<>();
+        while (it.hasNext()) {
+            Map.Entry<String, Object> entry = it.next();
+            if (OCR_PARAM_TO_PAGES_PATH.containsKey(entry.getKey())
+                    && entry.getKey().startsWith("ocr")) {
+                flat.add(entry);
+                it.remove();
+            }
+        }
+        for (Map.Entry<String, Object> entry : flat) {
+            placePageParam(config, pages, entry.getKey(), entry.getValue());
+        }
+        if (!pages.isEmpty()) {
+            config.put("pages", pages);
+        }
+    }
+
+    /** Puts one legacy value at its 4.1 path unless something is already there. */
+    @SuppressWarnings("unchecked")
+    private static void placePageParam(Map<String, Object> config, Map<String, Object> pages,
+                                       String key, Object value) {
+        String path = OCR_PARAM_TO_PAGES_PATH.get(key);
+        if (path == null) {
+            return;
+        }
+        if ("renderingStrategy".equals(path)) {
+            config.putIfAbsent("renderingStrategy", value);
+            return;
+        }
+        if ("text".equals(path)) {
+            value = OCR_STRATEGY_TO_TEXT.getOrDefault(String.valueOf(value), String.valueOf(value));
+        }
+        String[] parts = path.split("\\.");
+        Map<String, Object> target = pages;
+        for (int i = 0; i < parts.length - 1; i++) {
+            Object child = target.get(parts[i]);
+            if (!(child instanceof Map)) {
+                child = new LinkedHashMap<String, Object>();
+                target.put(parts[i], child);
+            }
+            target = (Map<String, Object>) child;
+        }
+        target.putIfAbsent(parts[parts.length - 1], value);
+    }
 
     /**
      * Converts a &lt;params&gt; element to a map of parameter names to values.

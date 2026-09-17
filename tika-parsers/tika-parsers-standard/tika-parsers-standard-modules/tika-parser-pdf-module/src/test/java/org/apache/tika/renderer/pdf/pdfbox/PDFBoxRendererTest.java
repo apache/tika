@@ -37,10 +37,10 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.pdf.PDFParserConfig;
 import org.apache.tika.renderer.PageBasedRenderResults;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
+import org.apache.tika.renderer.RenderSettings;
 
 @Isolated // testFailedRenderLeavesNoTempFiles snapshots java.io.tmpdir
 public class PDFBoxRendererTest {
@@ -74,10 +74,10 @@ public class PDFBoxRendererTest {
     @Test
     public void testImageQualityConfigurable() throws Exception {
         // ImageIO's PNG "quality" 1.0 = uncompressed; proves the config reaches the writer
-        PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setImageQuality(1.0f);
+        RenderSettings settings = new RenderSettings();
+        settings.setImageQuality(1.0f);
         ParseContext context = new ParseContext();
-        context.set(PDFParserConfig.class, config);
+        context.set(RenderSettings.class, settings);
         long uncompressed = renderedPngBytes(context);
         long compressed = renderedPngBytes(new ParseContext());
         assertTrue(uncompressed > compressed * 4,
@@ -102,7 +102,7 @@ public class PDFBoxRendererTest {
         }
     }
 
-    /** An out-of-range page throws past the per-page IOException catch after RENDER_ALL wrote pages. */
+    /** A range past the last page is the caller's error: it throws, and the pages RENDER_ALL wrote are cleaned up. */
     @Test
     public void testFailedRenderLeavesNoTempFiles() throws Exception {
         PDFBoxRenderer renderer = new PDFBoxRenderer();

@@ -7,7 +7,7 @@
     {
       "pdf-parser": {
         "extractInlineImages": true,
-        "text": "AUTO"
+        "pages": { "text": "AUTO" }
       }
     },
     {

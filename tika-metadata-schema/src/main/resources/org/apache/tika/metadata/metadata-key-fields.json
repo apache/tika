@@ -476,6 +476,7 @@
   {"class":"org.apache.tika.metadata.Rendering","field":"PDFBOX_RENDERING_TIME_MS","key":"tk:rendering:pdfbox-rendering-ms"},
   {"class":"org.apache.tika.metadata.Rendering","field":"RENDERED_BY","key":"tk:rendering:rendered-by"},
   {"class":"org.apache.tika.metadata.Rendering","field":"RENDERED_MS","key":"tk:rendering:rendering-time-ms"},
+  {"class":"org.apache.tika.metadata.Rendering","field":"RENDER_FAILED_PAGE","key":"tk:rendering:failed-page"},
   {"class":"org.apache.tika.metadata.TIFF","field":"BITS_PER_SAMPLE","key":"tiff:BitsPerSample"},
   {"class":"org.apache.tika.metadata.TIFF","field":"EQUIPMENT_MAKE","key":"tiff:Make"},
   {"class":"org.apache.tika.metadata.TIFF","field":"EQUIPMENT_MODEL","key":"tiff:Model"},

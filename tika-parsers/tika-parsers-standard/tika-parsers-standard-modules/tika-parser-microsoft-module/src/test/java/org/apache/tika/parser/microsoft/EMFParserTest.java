@@ -102,7 +102,7 @@ public class EMFParserTest extends TikaTest {
     @Test
     public void testRenderingFromParseContext() throws Exception {
         ParseContext context = new ParseContext();
-        context.setJsonConfig("emf-parser", "{\"renderImage\": true}");
+        context.setJsonConfig("emf-parser", "{\"pages\": {\"emit\": {\"enabled\": true}}}");
         List<Metadata> metadataList = getRecursiveMetadata("testEMF.emf", context);
         assertEquals(2, metadataList.size());
         assertRendering(metadataList.get(1), "testEMF.png",
@@ -117,7 +117,7 @@ public class EMFParserTest extends TikaTest {
     @Test
     public void testDocxThumbnailRendering() throws Exception {
         ParseContext context = new ParseContext();
-        context.setJsonConfig("emf-parser", "{\"renderImage\": true, \"renderWidth\": 200}");
+        context.setJsonConfig("emf-parser", "{\"pages\": {\"emit\": {\"enabled\": true, \"render\": {\"maxWidth\": 200}}}}");
         List<Metadata> metadataList = getRecursiveMetadata("testDOCX_Thumbnail.docx", context);
         //the document, its thumbnail, the WMF picture inside the thumbnail's
         //EMF and the thumbnail's rendering
@@ -143,7 +143,7 @@ public class EMFParserTest extends TikaTest {
     public void testRenderOnlyThumbnails() throws Exception {
         ParseContext context = new ParseContext();
         context.setJsonConfig("emf-parser",
-                "{\"renderImage\": true, \"renderOnlyEmbeddedResourceTypes\": [\"THUMBNAIL\"]}");
+                "{\"pages\": {\"emit\": {\"enabled\": true, \"resourceTypes\": [\"THUMBNAIL\"]}}}");
         List<Metadata> metadataList = getRecursiveMetadata("testDOCX_Thumbnail.docx", context);
         assertRendering(byName(metadataList, "thumbnail.png"), "thumbnail.png",
                 TikaCoreProperties.EmbeddedResourceType.THUMBNAIL);
@@ -163,7 +163,8 @@ public class EMFParserTest extends TikaTest {
     public void testRenderWidth(int width) throws Exception {
         ParseContext context = new ParseContext();
         context.setJsonConfig("emf-parser",
-                "{\"renderImage\": true, \"renderWidth\": " + width + "}");
+                "{\"pages\": {\"emit\": {\"enabled\": true, \"render\": {\"maxWidth\": "
+                        + width + "}}}}");
         List<byte[]> renderings = new ArrayList<>();
         context.set(EmbeddedDocumentExtractor.class, collector(renderings));
         try (InputStream is = getResourceAsStream("/test-documents/testEMF.emf")) {
@@ -173,6 +174,25 @@ public class EMFParserTest extends TikaTest {
         assertEquals(1, renderings.size());
         //the PNG header carries the width at offset 16
         assertEquals(width, ByteBuffer.wrap(renderings.get(0), 16, 4).getInt());
+    }
+
+    /** A canvas over maxImagePixels is refused with a warning, whatever the box. */
+    @Test
+    public void testMaxImagePixels() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("emf-parser",
+                "{\"pages\": {\"emit\": {\"enabled\": true, \"render\": {\"maxImagePixels\": 1000}}}}");
+        List<byte[]> renderings = new ArrayList<>();
+        context.set(EmbeddedDocumentExtractor.class, collector(renderings));
+        Metadata metadata = new Metadata();
+        try (InputStream is = getResourceAsStream("/test-documents/testEMF.emf")) {
+            AUTO_DETECT_PARSER.parse(TikaInputStream.get(is), new BodyContentHandler(-1),
+                    metadata, context);
+        }
+        assertEquals(0, renderings.size());
+        String warning = metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertTrue(warning != null && warning.contains("maxImagePixels"), warning);
+        assertEquals("1", metadata.get(Rendering.RENDER_FAILED_PAGE), "a metafile is page 1");
     }
 
     private static EmbeddedDocumentExtractor collector(List<byte[]> renderings) {

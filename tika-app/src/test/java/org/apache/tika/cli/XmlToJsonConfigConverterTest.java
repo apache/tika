@@ -352,10 +352,10 @@ public class XmlToJsonConfigConverterTest {
 
     @Test
     public void testOcrNestedMapMergedWithLegacyFlatParams(@TempDir Path tempDir) throws Exception {
-        // A pdf-parser config that carries BOTH an explicit nested "ocr" map and
-        // legacy flat ocr* params. nestOcrParams must merge them into a single
-        // "ocr" object: explicitly-nested values win, and flat params only fill
-        // the keys the nested map doesn't supply (TIKA-4748 review follow-up).
+        // A pdf-parser config that carries BOTH an explicit nested 4.0 "ocr" map and
+        // legacy flat ocr* params. Both land in the 4.1 "pages" block: explicitly-nested
+        // values win, and flat params only fill the keys the nested map doesn't supply
+        // (TIKA-4748 review follow-up).
         String xmlConfig = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<properties>\n" +
                 "    <parsers>\n" +
@@ -392,14 +392,14 @@ public class XmlToJsonConfigConverterTest {
         assertFalse(pdf.has("ocrStrategy"), "flat ocrStrategy should be nested, not left at top level");
         assertFalse(pdf.has("ocrDPI"), "flat ocrDPI should be nested, not left at top level");
 
-        // ...and merged into the single nested "ocr" object, the strategy as "text".
-        JsonNode ocr = pdf.get("ocr");
-        assertNotNull(ocr, "merged nested ocr object should be present");
-        assertFalse(ocr.has("strategy"), "the strategy is written as the 4.1 \"text\" key");
-        assertEquals("EXTRACT", pdf.get("text").asText(),
+        // ...and into the "pages" block, the strategy as "text", nothing left under "ocr".
+        assertFalse(pdf.has("ocr"), "the 4.0 ocr block is written as pages");
+        JsonNode pages = pdf.get("pages");
+        assertNotNull(pages, "pages block should be present");
+        assertEquals("EXTRACT", pages.get("text").asText(),
                 "explicit nested strategy must win over the legacy flat ocrStrategy");
-        assertEquals(200, ocr.get("dpi").asInt(),
-                "legacy flat ocrDPI must be migrated into ocr.dpi");
+        assertEquals(200, pages.get("render").get("dpi").asInt(),
+                "legacy flat ocrDPI must be migrated into pages.render.dpi");
 
         // The merged config must still load.
         TikaLoader loader = TikaLoader.load(jsonPath);

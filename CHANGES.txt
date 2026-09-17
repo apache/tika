@@ -4,6 +4,9 @@ Release 4.1.0 - unreleased
      bytes twice. (TIKA-4901).
 
    * Enable audio/video chunking with ffmpeg and inference (TIKA-4900).
+
+   * Refactor OCR and inference to use engines for inference and 
+     page rendering (TIKA-4889).
      
    * PDF incremental-update scanning reads the file in blocks instead of one
      byte at a time; same output, about 4x less CPU (TIKA-4898).
@@ -15,40 +18,10 @@ Release 4.1.0 - unreleased
      
    * New catalog presets, inert until the config names them. (TIKA-4856).
    
-   * The inference dispatcher no longer copies the top-level document's own
-     bytes into a buffer file of its own: the stream that owns them is open
-     until after the flush, so the file is referenced. Embedded documents'
-     spools and page renders are still copied, since their parsers delete
-     them first. Groundwork for MEDIA inputs, where the copy was a second
-     full read of an audio or video file (TIKA-4889).
-
    * unpack-config gains includeMetadata (TIKA-4881).
 
    * tika-server: /rmeta gains config/{handlerType} (TIKA-4881).
      
-   * An inference engine named under "parsers" (an OCR engine, a VLM parser,
-     openai-image-embedding-parser) is deprecated: since 4.1.0 startup logs
-     one WARN per such entry saying what it does today, and in 4.2.0 the
-     entry fails config load. Configure engines under "engines" and name them
-     in "text-recognizers" or bind them with "inference". The whole-PDF VLM
-     shape (claude-vlm-parser with pdf-parser excluded) goes with it; the
-     replacement is pdf-parser "text": "OCR" with the VLM as the recognizer
-     (TIKA-4889).
-
-   * openai-image-embedding-parser is deprecated, removal in 4.2.0: the same
-     endpoint as an openai-embedding-engine with an IMAGES inference binding
-     embeds a document's images in requests of the engine's batch size
-     (TIKA-4889).
-     
-   * PDF: "pdf-parser": {"rendering": {"dpi", "imageType", "imageFormat",
-     "imageQuality", "maxImagePixels"}} sets the page images emitted under
-     RENDER_PAGES_BEFORE_PARSE and RENDER_PAGES_AT_PAGE_END; a field left out
-     takes the "ocr" value. OCR, annotators and PAGES inference input keep
-     rendering with "ocr", and share the emitted render only when it is the
-     same image. maxImagePixels now also bounds pages rendered through
-     pdfbox-renderer; a page it skips leaves a warning on the PDF instead of
-     vanishing (TIKA-4889).
-
    * Tagged PDFs: text drawn twice for a bold effect with one copy tagged
      came out as letters with spaces between them; each copy now reads as
      its words. A tree that puts every glyph in its own paragraph (some form
@@ -62,34 +35,6 @@ Release 4.1.0 - unreleased
      getDestination(), where a task writes; ChunkTarget.of(unit) replaces
      resolve(target, parent) (TIKA-4895).
 
-   * A request can no longer supply openai-embedding-filter or
-     jina-embedding-filter in a per-request metadata-filters list: 4.0.x
-     built the filter from the request, endpoint and key included, and
-     posted the document's text there. The flat per-request skipEmbedding
-     override is unchanged. The two filters are deprecated; configure the
-     endpoint under "engines" and bind it with a TEXT inference binding.
-     Removal in 4.2.0 (TIKA-4889).
-
-   * PDF: "pdf-parser": {"text": ...} says where a page's text comes from:
-     EXTRACT, AUTO (default), EXTRACT_AND_OCR, OCR, or the new NONE, which
-     writes no text from any source while pages are still rendered for
-     annotators and PAGES inference bindings. The 4.0 "ocr": {"strategy"}
-     spellings load as aliases and dump as "text"; OcrConfig.getStrategy()
-     is removed, read PDFParserConfig.getText() (TIKA-4889).
-
-   * Engines are closed with the config that loaded them: Engine is
-     Closeable (no-op by default), EngineRegistry closes every engine once,
-     and the pipes server closes the registry at shutdown, so an
-     openai-embedding-engine or a VLM used as a text recognizer releases its
-     HTTP client (TIKA-4889).
-
-   * Per-request switch for text recognizers: {"parse-context":
-     {"text-recognizers": {"enabled": false}}} runs no recognizer or annotator
-     from the list for that parse, in every container, and OCR_ONLY no longer
-     reports a missing engine for it. With the inference switch this is
-     "everything off for one request". New docs page with the OCR and
-     inference recipes (TIKA-4889).
-
    * New tika-eval-structure: a standalone tool that compares two sets of
      XHTML extracts block by block (paragraph order as Kendall tau, splits and
      merges, words one side glues that the other splits, artifact and untagged
@@ -98,51 +43,8 @@ Release 4.1.0 - unreleased
 
    * Improve extraction of tagged PDFs(TIKA-4891).
 
-   * TEXT input for inference bindings: a binding on TEXT with a chunker
-     (markdown-chunker) embeds the text of every document in a tree in
-     batched requests, after the parse and before the metadata filters; each
-     chunk lands on its document with a text locator. Chunks now name the
-     binding that wrote them as "producer". A PDF released as PAGES records
-     tk:inference-released and is not embedded twice. The embedding filters
-     keep working (TIKA-4889).
-     
-   * "pdf-parser": {"maxRenderedPages": N} bounds how many pages the
-     RENDER_PAGES_BEFORE_PARSE and RENDER_PAGES_AT_PAGE_END image strategies
-     render, counted from the first page and independent of maxPages: text
-     extraction can cover the whole document while only the first page is
-     rendered, as for a thumbnail (TIKA-4856).
-   
    * PDF: a bookmark outline is now walked without recursion, and lists nest at
      most 50 deep with deeper items joining the deepest list (TIKA-4894).
-
-   * A text recognizer is an engine: configure Tesseract, Tess4J or a VLM once
-     under "engines" and name it from "text-recognizers" with
-     {"engine": "<name>"} (plus _mime-include/_mime-exclude). The 4.0 form with
-     the engine inline still works. An inference binding cannot use a
-     recognizer for a task it does not fit (TIKA-4889).
-     
-   * PAGES input for inference bindings: pdf-parser.inference.input lists what
-     the PDF releases (TEXT by default; PAGES renders every page for a PAGES
-     binding). One render per page feeds OCR and the bindings, and each page's
-     vector lands on the PDF with a page locator. A page render emitted as an
-     embedded document is no longer an IMAGES unit. OCR_ONLY annotated an OCR'd
-     page twice when pages were rendered as embedded documents; once now
-     (TIKA-4889).
-
-   * New "inference" config section: bind a named engine to an input (IMAGES)
-     and tasks (embed), and every image document Tika parses is embedded in
-     requests of the engine's batch size, per document tree, not one per
-     image; vectors land on the document the image belongs to, as it appears
-     in the output. Per request, "inference" in
-     parse-context selects bindings or switches inference off.
-     openai-image-embedding-parser keeps working, one request per image
-     (TIKA-4889).
-
-   * New "engines" config section: a map of names to inference engines, each
-     an endpoint or local binary with its settings (openai-embedding-engine
-     posts up to maxBatchSize images per request to an OpenAI-compatible
-     /v1/embeddings). Engines are called by the inference bindings that
-     follow; nothing calls them yet (TIKA-4889).
 
    * The image embedder writes a picture's vector onto the document the
      picture appears in (INLINE and RENDERING children) with an "embedded"

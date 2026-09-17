@@ -1,6 +1,6 @@
 {
   // Render each PDF page as an image and run Tesseract on it.
-  // ocr.strategy options: no_ocr, ocr_only, ocr_and_text_extraction, auto.
+  // pages.text options: EXTRACT, AUTO, EXTRACT_AND_OCR, OCR, NONE.
   "text-recognizers": [
     { "tesseract-ocr-parser": {} }
   ],
@@ -8,10 +8,9 @@
     { "default-parser": {} },
     {
       "pdf-parser": {
-        "text": "OCR",
-        "ocr": {
-          "imageType": "rgb",
-          "dpi": 100
+        "pages": {
+          "text": "OCR",
+          "render": { "imageType": "RGB", "dpi": 100 }
         }
       }
     }

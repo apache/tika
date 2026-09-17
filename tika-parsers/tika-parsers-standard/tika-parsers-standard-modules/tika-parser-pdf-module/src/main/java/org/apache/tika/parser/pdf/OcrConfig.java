@@ -19,38 +19,40 @@ package org.apache.tika.parser.pdf;
 import java.io.Serializable;
 import java.util.Locale;
 
+import org.apache.tika.parser.pages.PagesConfig;
+import org.apache.tika.parser.pages.TextPolicy;
+
 /**
- * Configuration for OCR processing in PDF parsing.
- * Groups all OCR-related settings together.
+ * The 4.0 {@code "pdf-parser": {"ocr": {...}}} block, kept so those configs still load. Every
+ * field it sets is folded onto the parser's {@code "pages"} overlay by
+ * {@link PDFParserConfig#setOcr}; a dump writes {@code "pages"} only.
+ *
+ * @deprecated since 4.1.0; configure {@code "pages"} (see {@link PagesConfig}).
  */
+@Deprecated
 public class OcrConfig implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    /**
-     * The 4.0 spelling of {@link PDFParserConfig.TextPolicy}, kept so {@code ocr.strategy}
-     * still loads.
-     *
-     * @deprecated since 4.1.0; set {@code "text"} on the parser instead.
-     */
-    @Deprecated
+    /** The 4.0 spelling of {@link TextPolicy}. */
     public enum Strategy {
-        AUTO(PDFParserConfig.TextPolicy.AUTO),
-        NO_OCR(PDFParserConfig.TextPolicy.EXTRACT),
-        OCR_ONLY(PDFParserConfig.TextPolicy.OCR),
-        OCR_AND_TEXT_EXTRACTION(PDFParserConfig.TextPolicy.EXTRACT_AND_OCR);
+        AUTO(TextPolicy.AUTO),
+        NO_OCR(TextPolicy.EXTRACT),
+        OCR_ONLY(TextPolicy.OCR),
+        OCR_AND_TEXT_EXTRACTION(TextPolicy.EXTRACT_AND_OCR);
 
-        private final PDFParserConfig.TextPolicy text;
+        private final TextPolicy text;
 
-        Strategy(PDFParserConfig.TextPolicy text) {
+        Strategy(TextPolicy text) {
             this.text = text;
         }
 
-        public PDFParserConfig.TextPolicy toText() {
+        public TextPolicy toText() {
             return text;
         }
     }
 
+    /** What PDFBox draws when it renders a page; PDF-only, so it stays on the parser. */
     public enum RenderingStrategy {
         NO_TEXT,
         TEXT_ONLY,
@@ -58,33 +60,29 @@ public class OcrConfig implements Serializable {
         ALL
     }
 
+    /** The 4.0 spelling of {@link org.apache.tika.renderer.ImageFormat}. */
     public enum ImageFormat {
         PNG, TIFF, JPEG;
 
         public String getFormatName() {
             return name().toLowerCase(Locale.ROOT);
         }
+
+        public org.apache.tika.renderer.ImageFormat toCore() {
+            return org.apache.tika.renderer.ImageFormat.valueOf(name());
+        }
     }
 
+    /** The 4.0 spelling of {@link org.apache.tika.renderer.ImageType}. */
     public enum ImageType {
-        RGB(org.apache.pdfbox.rendering.ImageType.RGB),
-        GRAY(org.apache.pdfbox.rendering.ImageType.GRAY);
+        RGB, GRAY;
 
-        private final org.apache.pdfbox.rendering.ImageType pdfBoxImageType;
-
-        ImageType(org.apache.pdfbox.rendering.ImageType pdfBoxImageType) {
-            this.pdfBoxImageType = pdfBoxImageType;
-        }
-
-        public org.apache.pdfbox.rendering.ImageType getPdfBoxImageType() {
-            return pdfBoxImageType;
+        public org.apache.tika.renderer.ImageType toCore() {
+            return org.apache.tika.renderer.ImageType.valueOf(name());
         }
     }
 
-    /**
-     * Configuration for AUTO strategy behavior.
-     * Controls when OCR is triggered based on character analysis.
-     */
+    /** The 4.0 spelling of {@link PagesConfig.Auto}. */
     public static class StrategyAuto implements Serializable {
         private static final long serialVersionUID = 1L;
 
@@ -119,6 +117,13 @@ public class OcrConfig implements Serializable {
             this.totalCharsPerPage = totalCharsPerPage;
         }
 
+        public PagesConfig.Auto toAuto() {
+            PagesConfig.Auto auto = new PagesConfig.Auto();
+            auto.setUnmappedUnicodeCharsPerPage(unmappedUnicodeCharsPerPage);
+            auto.setTotalCharsPerPage(totalCharsPerPage);
+            return auto;
+        }
+
         @Override
         public String toString() {
             String unmappedString;
@@ -132,60 +137,47 @@ public class OcrConfig implements Serializable {
         }
     }
 
-    /** The alias, null unless a 4.0 config set it; no getter so a dump writes "text" only. */
+    // every field nullable: only what a config set is folded onto "pages"
     private Strategy strategy;
-    private StrategyAuto strategyAuto = StrategyAuto.BETTER;
-    private RenderingStrategy renderingStrategy = RenderingStrategy.ALL;
-    private int dpi = 300;
-    private ImageType imageType = ImageType.GRAY;
-    private ImageFormat imageFormat = ImageFormat.PNG;
-    /**
-     * Compression quality handed to ImageIO when writing rendered pages. For PNG this is
-     * an inverted effort knob, not fidelity: 1.0 writes an uncompressed file, 0.0 spends
-     * ~10x the time of 0.5 for a few percent smaller output. PNG is always lossless.
-     */
-    private float imageQuality = 0.5f;
+    private StrategyAuto strategyAuto;
+    private RenderingStrategy renderingStrategy;
+    private Integer dpi;
+    private ImageType imageType;
+    private ImageFormat imageFormat;
+    private Float imageQuality;
+    private Long maxImagePixels;
+    private Integer maxPagesToOcr;
 
-    /**
-     * Maximum total pixels (width &times; height) allowed for a rendered
-     * page image before OCR is skipped for that page. This prevents OOM
-     * from rendering pathologically large PDF pages (e.g., architectural
-     * drawings, maps) via PDFBox's in-process renderer.
-     * <p>
-     * When using the Poppler renderer, prefer {@code maxScaleTo} on
-     * {@code PopplerRenderer} instead — it prevents the large image from
-     * ever being created. This limit is the safety net for the PDFBox
-     * rendering path.
-     * <p>
-     * Default is 100,000,000 (100 megapixels, roughly 10,000 &times;
-     * 10,000). Set to {@code -1} for no limit (not recommended).
-     */
-    private long maxImagePixels = 100_000_000L;
+    /** Writes every set field onto the overlay under its {@code "pages"} name. */
+    void applyTo(PagesConfig pages) {
+        if (strategy != null) {
+            pages.setText(strategy.toText());
+        }
+        if (strategyAuto != null) {
+            pages.ocr().setAuto(strategyAuto.toAuto());
+        }
+        if (maxPagesToOcr != null) {
+            pages.ocr().setMaxPages(maxPagesToOcr);
+        }
+        if (dpi != null) {
+            pages.render().setDpi(dpi);
+        }
+        if (imageType != null) {
+            pages.render().setImageType(imageType.toCore());
+        }
+        if (imageFormat != null) {
+            pages.render().setImageFormat(imageFormat.toCore());
+        }
+        if (imageQuality != null) {
+            pages.render().setImageQuality(imageQuality);
+        }
+        if (maxImagePixels != null) {
+            pages.render().setMaxImagePixels(maxImagePixels);
+        }
+    }
 
-    /**
-     * Maximum number of pages to OCR per document. Pages beyond this
-     * limit are processed for text extraction only (if applicable)
-     * but not rendered or sent to OCR.
-     * <p>
-     * Default is {@code -1} (no limit — all pages are eligible for OCR).
-     */
-    private int maxPagesToOcr = -1;
-
-    /**
-     * @deprecated since 4.1.0; use {@link PDFParserConfig#setText}. Ignored when
-     * {@code "text"} is set.
-     */
-    @Deprecated
     public void setStrategy(Strategy strategy) {
         this.strategy = strategy;
-    }
-
-    PDFParserConfig.TextPolicy legacyText() {
-        return strategy == null ? null : strategy.toText();
-    }
-
-    public StrategyAuto getStrategyAuto() {
-        return strategyAuto;
     }
 
     public void setStrategyAuto(StrategyAuto strategyAuto) {
@@ -200,70 +192,27 @@ public class OcrConfig implements Serializable {
         this.renderingStrategy = renderingStrategy;
     }
 
-    public int getDpi() {
-        return dpi;
-    }
-
-    public void setDpi(int dpi) {
+    public void setDpi(Integer dpi) {
         this.dpi = dpi;
-    }
-
-    public ImageType getImageType() {
-        return imageType;
     }
 
     public void setImageType(ImageType imageType) {
         this.imageType = imageType;
     }
 
-    public ImageFormat getImageFormat() {
-        return imageFormat;
-    }
-
     public void setImageFormat(ImageFormat imageFormat) {
         this.imageFormat = imageFormat;
     }
 
-    public float getImageQuality() {
-        return imageQuality;
-    }
-
-    public void setImageQuality(float imageQuality) {
+    public void setImageQuality(Float imageQuality) {
         this.imageQuality = imageQuality;
     }
 
-    public long getMaxImagePixels() {
-        return maxImagePixels;
-    }
-
-    /**
-     * Set the maximum total pixels (width &times; height) for a rendered
-     * page image. Pages exceeding this limit are skipped for OCR.
-     * Default is 100,000,000. Set to {@code -1} for no limit (not recommended).
-     */
-    public void setMaxImagePixels(long maxImagePixels) {
-        if (maxImagePixels < 1 && maxImagePixels != -1) {
-            throw new IllegalArgumentException(
-                    "maxImagePixels must be -1 (no limit) or at least 1, got: "
-                            + maxImagePixels);
-        }
+    public void setMaxImagePixels(Long maxImagePixels) {
         this.maxImagePixels = maxImagePixels;
     }
 
-    public int getMaxPagesToOcr() {
-        return maxPagesToOcr;
-    }
-
-    /**
-     * Set the maximum number of pages to OCR per document.
-     * Default is {@code -1} (no limit). Must be {@code -1} or at least {@code 1}.
-     */
-    public void setMaxPagesToOcr(int maxPagesToOcr) {
-        if (maxPagesToOcr < 1 && maxPagesToOcr != -1) {
-            throw new IllegalArgumentException(
-                    "maxPagesToOcr must be -1 (no limit) or at least 1, got: "
-                            + maxPagesToOcr);
-        }
+    public void setMaxPagesToOcr(Integer maxPagesToOcr) {
         this.maxPagesToOcr = maxPagesToOcr;
     }
 }

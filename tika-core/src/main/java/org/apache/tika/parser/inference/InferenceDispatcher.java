@@ -167,7 +167,7 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
         InferenceUnit unit = null;
         for (Bound b : bound) {
             InferenceBinding binding = b.binding();
-            if (!runs(binding, context) || !binding.accepts(kind, type)) {
+            if (!runs(binding, context) || !binding.accepts(kind, type, target)) {
                 continue;
             }
             // a media unit is the whole file; its maxBytes bounds one segment, in the task

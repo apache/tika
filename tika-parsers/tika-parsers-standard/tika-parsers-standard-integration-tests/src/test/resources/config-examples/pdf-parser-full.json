@@ -43,19 +43,69 @@
         // EXPERT: replace the inline-image factory; give a class implementing
         // ImageGraphicsEngineFactory, e.g.:
         //   "imageGraphicsEngineFactoryClass": "com.example.MyImageGraphicsEngineFactory"
-        // How to render page images; NONE renders nothing.
-        // Options: NONE, RAW_IMAGES, RENDER_PAGES_BEFORE_PARSE, RENDER_PAGES_AT_PAGE_END
-        "imageStrategy": "NONE",
-        // What the parser releases to the inference bindings (see the inference page):
-        // TEXT is the extracted text; PAGES renders every page for a PAGES binding.
-        "inference": { "input": ["TEXT"] },
-        // Where a page's text comes from. EXTRACT: the content stream, never OCR. AUTO: the
-        // content stream, OCR on pages the "strategyAuto" thresholds flag. EXTRACT_AND_OCR:
-        // both, every page. OCR: the engine only. NONE: no text at all; pages are still
-        // rendered for annotators and inference. The engine comes from "text-recognizers".
-        // The 4.0 "ocr": {"strategy": ...} values still load as aliases.
-        // Options: EXTRACT, AUTO, EXTRACT_AND_OCR, OCR, NONE
-        "text": "AUTO",
+        // What is done with the document's pages: how they are rendered, where a page's
+        // text comes from, what is released to inference, whether renders are emitted. The
+        // same block, under "parse-context", is the default for every rendering parser; this
+        // one overlays it for PDFs, field by field. The 4.0 "ocr" and "imageStrategy"
+        // spellings still load and land here.
+        "pages": {
+          // Where a page's text comes from. EXTRACT: the content stream, never OCR. AUTO:
+          // the content stream, OCR on pages the "ocr.auto" thresholds flag.
+          // EXTRACT_AND_OCR: both, every page. OCR: the engine only. NONE: no text at all;
+          // pages are still rendered for annotators, inference and emission. The engine
+          // comes from "text-recognizers".
+          // Options: EXTRACT, AUTO, EXTRACT_AND_OCR, OCR, NONE
+          "text": "AUTO",
+          // How pages are rendered for OCR and PAGES inference; "emit.render" overlays it for
+          // the renders emitted as embedded documents.
+          "render": {
+            // Target resolution.
+            "dpi": 300,
+            // A box the image must fit: scaled down to fit, never enlarged; -1 = no bound.
+            "maxWidth": -1,
+            "maxHeight": -1,
+            // Smaller than this at the target dpi and the page is not rendered at all.
+            "minWidth": 2,
+            "minHeight": 2,
+            // Options: RGB, GRAY
+            "imageType": "GRAY",
+            // Options: PNG, TIFF, JPEG
+            "imageFormat": "PNG",
+            // ImageIO quality (0.0-1.0): fidelity for JPEG, an inverted effort knob for PNG.
+            "imageQuality": 0.5,
+            // Skip a page that would still be larger than this area (w x h); -1 = no limit.
+            "maxImagePixels": 100000000
+          },
+          "ocr": {
+            // Max pages to OCR per document, counted from the first; -1 = no limit.
+            "maxPages": -1,
+            // Per-page character thresholds that send a page to OCR under "text": "AUTO".
+            "auto": {
+              "totalCharsPerPage": 10,
+              "unmappedUnicodeCharsPerPage": 10
+            }
+          },
+          // What the parser releases to the inference bindings (see the inference page):
+          // TEXT is the extracted text; PAGES renders every page for a PAGES binding.
+          "inference": ["TEXT"],
+          // Emit page renders as RENDERING embedded documents, at the end of each page.
+          "emit": {
+            "enabled": false,
+            // Max pages to emit, counted from the first and bounded by maxPages; -1 = no limit.
+            "maxPages": -1,
+            // Emit only for documents embedded as one of these resource types; empty = all.
+            "resourceTypes": [],
+            // Overlay on "render" for the emitted images only.
+            "render": {
+              "dpi": 96,
+              "imageType": "RGB"
+            }
+          }
+        },
+        // What PDFBox draws when it renders a page: everything, text only, no text, or
+        // vector graphics only.
+        // Options: NO_TEXT, TEXT_ONLY, VECTOR_GRAPHICS_ONLY, ALL
+        "renderingStrategy": "ALL",
         // Tagged PDFs: follow the structure tree (headings, lists, tables) or use the plain
         // text stripper. AUTO uses the tree on pages that pass a quality gate; TAGS always;
         // NONE never. A PDF without a structure tree always uses the stripper.
@@ -73,48 +123,8 @@
         "maxMainMemoryBytes": 536870912,
         // Max pages to process; -1 = no limit.
         "maxPages": -1,
-        // Max pages to render with RENDER_PAGES_BEFORE_PARSE / RENDER_PAGES_AT_PAGE_END,
-        // counted from the first page and independent of maxPages; -1 = no limit.
-        "maxRenderedPages": -1,
-        // OCR settings. Requires an OCR engine (e.g. Tesseract) installed.
-        "ocr": {
-          // Render resolution (dpi) for OCR.
-          "dpi": 300,
-          // Image format sent to the OCR engine.
-          // Options: PNG, TIFF, JPEG
-          "imageFormat": "PNG",
-          // Image quality (0.0-1.0) for lossy formats.
-          "imageQuality": 0.5,
-          // Rendered-image color model.
-          // Options: RGB, GRAY
-          "imageType": "GRAY",
-          // Skip OCR for rendered pages larger than this area (w x h); -1 = no limit.
-          "maxImagePixels": 100000000,
-          // Max pages to OCR per document; -1 = no limit.
-          "maxPagesToOcr": -1,
-          // Which page content to render for OCR.
-          // Options: NO_TEXT, TEXT_ONLY, VECTOR_GRAPHICS_ONLY, ALL
-          "renderingStrategy": "ALL",
-          // Per-page character thresholds that trigger OCR under "text": "AUTO".
-          "strategyAuto": {
-            "totalCharsPerPage": 10,
-            "unmappedUnicodeCharsPerPage": 10
-          }
-        },
         // Parse prior incremental-update versions as embedded documents.
         "parseIncrementalUpdates": false,
-        // The page images emitted under RENDER_PAGES_BEFORE_PARSE / RENDER_PAGES_AT_PAGE_END.
-        // A field left out takes the "ocr" value; OCR itself always renders with "ocr".
-        "rendering": {
-          "dpi": 96,
-          // Options: RGB, GRAY
-          "imageType": "RGB",
-          // Options: PNG, TIFF, JPEG
-          "imageFormat": "PNG",
-          "imageQuality": 0.5,
-          // Skip pages that would render larger than this area (w x h); -1 = no limit.
-          "maxImagePixels": 100000000
-        },
         // EXPERT: set the Sun KCMS color-management system property. Default false.
         "setKCMS": false,
         // Sort text by x/y position; helps some PDFs, can interleave columns in others.

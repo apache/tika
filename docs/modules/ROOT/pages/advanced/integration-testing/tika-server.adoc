@@ -283,7 +283,7 @@ curl -s -X POST -F "file=@testPDF.pdf" -H "Accept: application/json" http://loca
 [source,bash]
 ----
 curl -s -X POST -F "file=@testPDF.pdf" \
-  -F 'config={"pdf-parser":{"text":"EXTRACT"}}' \
+  -F 'config={"pages":{"text":"EXTRACT"}}' \
   -H "Accept: application/json" \
   http://localhost:9998/meta/config
 ----
@@ -302,7 +302,7 @@ request time). Supplying the nested form currently returns HTTP 500 (the blocked
 [source,bash]
 ----
 curl -s -X POST -F "file=@test_recursive_embedded.docx" \
-  -F 'config={"pdf-parser":{"text":"EXTRACT"}}' \
+  -F 'config={"pages":{"text":"EXTRACT"}}' \
   http://localhost:9998/unpack/all/config -o /tmp/unpack-config.zip
 unzip -l /tmp/unpack-config.zip
 ----

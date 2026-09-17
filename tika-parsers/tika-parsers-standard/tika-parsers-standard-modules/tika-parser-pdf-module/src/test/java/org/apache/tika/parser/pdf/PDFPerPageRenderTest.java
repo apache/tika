@@ -50,7 +50,7 @@ public class PDFPerPageRenderTest extends TikaTest {
 
     private static ParseContext renderAtPageEnd() {
         PDFParserConfig config = new PDFParserConfig();
-        config.setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END);
+        config.pages().emit().setEnabled(true);
         ParseContext context = new ParseContext();
         context.set(PDFParserConfig.class, config);
         return context;

@@ -21,10 +21,16 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.enricher.ContentEnrichers;
 
 /** One entry of the {@code "inference"} list: engine, input, tasks, filters, budget. */
 public final class InferenceBinding {
+
+    /** Below this, in either dimension, an image is a spacer, not a picture. */
+    public static final int DEFAULT_MIN_PIXELS = ContentEnrichers.MIN_PIXELS;
 
     private final String id;
     private final String engine;
@@ -36,6 +42,8 @@ public final class InferenceBinding {
     private final long maxBytes;
     private final boolean enabled;
     private final TextChunker chunker;
+    private final int minWidth;
+    private final int minHeight;
     private final Modality modality;
 
     private InferenceBinding(Builder b) {
@@ -49,6 +57,8 @@ public final class InferenceBinding {
         this.maxBytes = b.maxBytes;
         this.enabled = b.enabled;
         this.chunker = b.chunker;
+        this.minWidth = b.minWidth;
+        this.minHeight = b.minHeight;
         this.modality = b.modality == null ? Modality.implied(b.input) : b.modality;
     }
 
@@ -68,6 +78,8 @@ public final class InferenceBinding {
         private long maxBytes = -1;
         private boolean enabled = true;
         private TextChunker chunker;
+        private int minWidth = DEFAULT_MIN_PIXELS;
+        private int minHeight = DEFAULT_MIN_PIXELS;
         private Modality modality;
 
         private Builder(String id, String engine, InputKind input) {
@@ -110,6 +122,13 @@ public final class InferenceBinding {
 
         public Builder chunker(TextChunker chunker) {
             this.chunker = chunker;
+            return this;
+        }
+
+        /** IMAGES only: the smallest image taken, in pixels; 2 x 2 by default, 0 for any. */
+        public Builder minSize(int minWidth, int minHeight) {
+            this.minWidth = minWidth;
+            this.minHeight = minHeight;
             return this;
         }
 
@@ -162,6 +181,31 @@ public final class InferenceBinding {
     /** How a TEXT binding cuts a document's text; null means the whole text is one chunk. */
     public TextChunker getChunker() {
         return chunker;
+    }
+
+    /** Narrowest image this binding takes, in pixels; images of unknown size are taken. */
+    public int getMinWidth() {
+        return minWidth;
+    }
+
+    public int getMinHeight() {
+        return minHeight;
+    }
+
+    /**
+     * As {@link #accepts(InputKind, MediaType)}, and for an image its recorded dimensions
+     * ({@code tiff:ImageWidth}, {@code tiff:ImageLength}) must reach the minimum when known.
+     */
+    public boolean accepts(InputKind kind, MediaType type, Metadata target) {
+        if (!accepts(kind, type)) {
+            return false;
+        }
+        if (kind != InputKind.IMAGES || target == null) {
+            return true;
+        }
+        Integer width = target.getInt(TIFF.IMAGE_WIDTH);
+        Integer height = target.getInt(TIFF.IMAGE_LENGTH);
+        return (width == null || width >= minWidth) && (height == null || height >= minHeight);
     }
 
     public boolean accepts(InputKind kind, MediaType type) {

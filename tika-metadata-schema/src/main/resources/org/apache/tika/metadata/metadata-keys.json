@@ -617,6 +617,7 @@
   {"key":"tk:parsed-by","namespace":"tk","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
   {"key":"tk:parsed-by-full-set","namespace":"tk","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
   {"key":"tk:pipes-result","namespace":"tk","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
+  {"key":"tk:rendering:failed-page","namespace":"tk","valueType":"INTEGER","cardinality":"SEQ","module":"tika-core"},
   {"key":"tk:rendering:pdfbox-image-writing-ms","namespace":"tk","valueType":"REAL","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:rendering:pdfbox-rendering-ms","namespace":"tk","valueType":"REAL","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:rendering:rendered-by","namespace":"tk","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},

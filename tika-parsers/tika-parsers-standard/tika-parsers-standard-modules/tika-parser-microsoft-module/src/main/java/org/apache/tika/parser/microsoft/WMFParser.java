@@ -40,6 +40,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -47,8 +48,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * This parser offers a very rough capability to extract text if there
  * is text stored in the WMF files.
  * <p/>
- * With {@link MetafileParserConfig#setRenderImage(boolean)}
- * ("wmf-parser": {"renderImage": true}) the image is also rendered through the
+ * Under {@code "pages": {"emit": {"enabled": true}}} (the parse-context block, or the
+ * parser's own overlay) the image is also rendered through the
  * configured {@link Renderer}, the
  * {@link org.apache.tika.renderer.microsoft.POIMetafileRenderer} by
  * default, and emitted as a
@@ -91,8 +92,8 @@ public class WMFParser extends AbstractMetafileParser {
         xhtml.startDocument();
         tis.setCloseShield();
         try {
-            MetafileParserConfig config = getConfig(context);
-            prepareForRendering(tis, config, metadata);
+            PagesConfig pages = pages(context, getConfig(context));
+            prepareForRendering(tis, pages, metadata, context);
             HwmfPicture picture = null;
             try {
                 picture = new HwmfPicture(tis);
@@ -125,8 +126,8 @@ public class WMFParser extends AbstractMetafileParser {
                     xhtml.endElement("p");
                 }
             }
-            if (config.shouldRender(metadata)) {
-                MetafileRendering.render(getRenderer(), config, MEDIA_TYPE, tis, picture, xhtml,
+            if (pages.getEmit().applies(metadata, context)) {
+                MetafileRendering.render(getRenderer(), pages, MEDIA_TYPE, tis, picture, xhtml,
                         metadata, context);
             }
         } catch (RecordFormatException e) { //POI's hwmfparser can \ throw these for "parse

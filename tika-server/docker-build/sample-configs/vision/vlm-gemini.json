@@ -1,7 +1,7 @@
 {
   // Vision-Language Model OCR via Google's Gemini generateContent API: every
   // default parser stays loaded, and embedded images and rendered PDF pages go
-  // to Gemini when the PDF parser's "text" policy asks for OCR (AUTO by default).
+  // to Gemini when the "pages" block's "text" policy asks for OCR (AUTO by default).
   // Set apiKey to your Google AI Studio API key — DO NOT commit a real key.
   // Prefer GEMINI_API_KEY env var + a templating entrypoint, similar to the
   // Claude config. See docs: configuration/parsers/vlm-parsers.

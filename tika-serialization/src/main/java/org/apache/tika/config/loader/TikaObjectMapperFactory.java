@@ -16,6 +16,9 @@
  */
 package org.apache.tika.config.loader;
 
+import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -26,6 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.parser.pages.PagesConfig;
+import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.serialization.ComponentNameResolver;
 import org.apache.tika.serialization.TikaModule;
 
@@ -65,6 +70,19 @@ public class TikaObjectMapperFactory {
         // Components with no bean properties (e.g., parsers with no configuration)
         // need to serialize as empty objects rather than throwing.
         PLAIN_MAPPER.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+        sparseOverlays(PLAIN_MAPPER);
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    private abstract static class Sparse {
+    }
+
+    /** An overlay config is mostly null: a dump writes what is set. Those classes only. */
+    private static void sparseOverlays(ObjectMapper mapper) {
+        for (Class<?> overlay : List.of(PagesConfig.class, PagesConfig.Ocr.class,
+                PagesConfig.Auto.class, PagesConfig.Emit.class, RenderSettings.class)) {
+            mapper.addMixIn(overlay, Sparse.class);
+        }
     }
 
     /**
@@ -136,6 +154,8 @@ public class TikaObjectMapperFactory {
 
         // Need to allow creation of classes without setters/getters -- we may want to revisit this
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+
+        sparseOverlays(mapper);
 
         // Load component registries for name resolution
         loadComponentRegistries();

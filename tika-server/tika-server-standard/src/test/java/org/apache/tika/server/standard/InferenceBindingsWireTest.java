@@ -114,8 +114,8 @@ public class InferenceBindingsWireTest extends CXFTestBase {
     public void testPagesPerRequest() throws Exception {
         String config = """
                 { "parse-context": {
-                    "pdf-parser": { "text": "EXTRACT", "ocr": { "dpi": 20 },
-                                    "inference": { "input": ["PAGES"] } },
+                    "pdf-parser": { "pages": { "text": "EXTRACT", "render": { "dpi": 20 },
+                                               "inference": ["PAGES"] } },
                     "inference": { "bindings": ["mock-pages"] } } }
                 """;
         ContentDisposition fileCd = new ContentDisposition(
