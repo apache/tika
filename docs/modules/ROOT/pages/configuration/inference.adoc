@@ -23,10 +23,10 @@ embeddings, captions, tags, classifications. (Engines that produce text, OCR and
 are xref:configuration/index.adoc#text-recognizers[text recognizers].) Three sections
 configure it, each answering one question.
 
-NOTE: Inference is experimental in 4.1.0. The `inference` section, the keys of an embedding
-or VLM engine's entry, the `tika-inference` and `tika-vlm` classes, and the chunk and vector
-output (`tk:chunks`, `tk:inference-released`) may change in a minor release without a
-deprecation cycle, and no compatibility shims are kept for earlier shapes; 4.2 adds batched
+NOTE: Inference is experimental in 4.1.0. The `inference` section, `pages.inference` (what a
+rendering parser releases), the keys of an embedding or VLM engine's entry, the `tika-inference`
+and `tika-vlm` classes, and the chunk and vector output (`tk:chunks`, `tk:inference-released`)
+may change in a minor release without a deprecation cycle, and no compatibility shims are kept for earlier shapes; 4.2 adds batched
 recognition, media inputs and document-level tasks. The `engines` map itself, and the
 `text-recognizers` list, are stable. Pin the Tika version you validated against and read the
 release notes before moving.

@@ -52,7 +52,7 @@ abstract class AbstractMetafileParser implements Parser, RenderingParser {
                 defaultConfig);
     }
 
-    /** The effective {@code "pages"} block for this parse. */
+    /** The effective {@code "pages"} block for this parse; the default's overlay first, as in PDFParser. */
     PagesConfig pages(ParseContext context, MetafileParserConfig config)
             throws TikaException, IOException {
         return PagesConfig.resolve(context, defaultConfig.getPages(), config.getPages());
@@ -64,8 +64,8 @@ abstract class AbstractMetafileParser implements Parser, RenderingParser {
      * picture.
      */
     static void prepareForRendering(TikaInputStream tis, PagesConfig pages,
-                                    Metadata metadata) throws IOException {
-        if (pages.getEmit().applies(metadata)) {
+                                    Metadata metadata, ParseContext context) throws IOException {
+        if (pages.getEmit().applies(metadata, context)) {
             tis.getFile();
         }
     }

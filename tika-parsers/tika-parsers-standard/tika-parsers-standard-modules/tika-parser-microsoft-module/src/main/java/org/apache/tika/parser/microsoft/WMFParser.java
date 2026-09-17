@@ -93,7 +93,7 @@ public class WMFParser extends AbstractMetafileParser {
         tis.setCloseShield();
         try {
             PagesConfig pages = pages(context, getConfig(context));
-            prepareForRendering(tis, pages, metadata);
+            prepareForRendering(tis, pages, metadata, context);
             HwmfPicture picture = null;
             try {
                 picture = new HwmfPicture(tis);
@@ -126,7 +126,7 @@ public class WMFParser extends AbstractMetafileParser {
                     xhtml.endElement("p");
                 }
             }
-            if (pages.getEmit().applies(metadata)) {
+            if (pages.getEmit().applies(metadata, context)) {
                 MetafileRendering.render(getRenderer(), pages, MEDIA_TYPE, tis, picture, xhtml,
                         metadata, context);
             }

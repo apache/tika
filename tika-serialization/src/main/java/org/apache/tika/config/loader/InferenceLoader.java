@@ -132,6 +132,10 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
                 }
             }
             TextChunker chunker = chunker(entry, id, input, context);
+            if (input != InputKind.IMAGES && (entry.has("minWidth") || entry.has("minHeight"))) {
+                throw new TikaConfigException("binding \"" + id + "\": \"minWidth\"/\"minHeight\""
+                        + " apply to IMAGES only; a " + input + " binding has no image size");
+            }
             int minWidth = minimum(entry, "minWidth", id);
             int minHeight = minimum(entry, "minHeight", id);
             InferenceBinding binding = new InferenceBinding(id, engineName, input, taskNames,

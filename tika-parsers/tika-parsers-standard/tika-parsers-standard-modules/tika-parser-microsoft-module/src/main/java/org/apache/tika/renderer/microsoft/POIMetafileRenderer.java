@@ -267,9 +267,12 @@ public class POIMetafileRenderer implements Renderer {
     }
 
     /**
-     * @param width the rendering's widest, in pixels, when the parse scopes no settings; the
-     *              height follows the image's aspect ratio. Default 800.
+     * @deprecated since 4.1.0: applies only to a direct {@link #render} call with no
+     * {@link RenderSettings} in the context. The EMF/WMF parsers always scope {@code pages.render}
+     * (300 dpi of the drawing's physical size, grayscale PNG, unless the block says otherwise),
+     * which replaces this. Configure {@code "pages": {"render": {"maxWidth": ...}}}.
      */
+    @Deprecated
     public void setWidth(int width) {
         defaults.setMaxWidth(width);
     }
@@ -278,7 +281,8 @@ public class POIMetafileRenderer implements Renderer {
         return defaults.getImageFormat().getFormatName();
     }
 
-    /** @param imageFormatName png, jpeg or tiff; png by default. */
+    /** @deprecated since 4.1.0; see {@link #setWidth}: {@code pages.render.imageFormat}. */
+    @Deprecated
     public void setImageFormatName(String imageFormatName) {
         defaults.setImageFormat(ImageFormat.valueOf(imageFormatName.toUpperCase(Locale.ROOT)));
     }

@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 
 import org.apache.tika.annotation.TikaComponent;
@@ -150,9 +151,9 @@ public class PopplerRenderer implements Renderer {
         m.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
         RenderSettings settings = settings(parseContext);
-        PDRectangle mediaBox = document.getPage(page - 1).getMediaBox();
-        double dpi = dpi(settings, mediaBox.getWidth(), mediaBox.getHeight());
-        long pixels = RenderSettings.estimatedPixels(mediaBox.getWidth(), mediaBox.getHeight(), dpi);
+        double[] size = pageSize(document.getPage(page - 1));
+        double dpi = dpi(settings, size[0], size[1]);
+        long pixels = RenderSettings.estimatedPixels(size[0], size[1], dpi);
         if (settings.exceedsMaxPixels(pixels)) {
             EmbeddedDocumentUtil.recordException(new IOException("page " + page
                     + " would render to " + pixels + " pixels at " + dpi
@@ -181,6 +182,18 @@ public class PopplerRenderer implements Renderer {
         }
         throw new TikaException("pdftoppm wrote no image for page " + page + ": "
                 + result.getStderr());
+    }
+
+    /**
+     * The size in points of the image pdftoppm writes: the media box (its default, unlike
+     * PDFBox's crop box), width and height swapped when the page is rotated a quarter turn.
+     */
+    static double[] pageSize(PDPage pdPage) {
+        PDRectangle mediaBox = pdPage.getMediaBox();
+        int rotation = pdPage.getRotation();
+        boolean quarterTurn = rotation == 90 || rotation == 270;
+        return quarterTurn ? new double[] {mediaBox.getHeight(), mediaBox.getWidth()}
+                : new double[] {mediaBox.getWidth(), mediaBox.getHeight()};
     }
 
     /** The target dpi, lowered so the page fits the box and {@code maxScaleTo}, never raised. */
@@ -244,7 +257,12 @@ public class PopplerRenderer implements Renderer {
         return defaults.getDpi();
     }
 
-    /** The resolution when no parse scopes one. 300 by default. */
+    /**
+     * @deprecated since 4.1.0: applies only to a direct {@link #render} call with no
+     * {@link RenderSettings} in the context. A parse always scopes {@code pages.render}, which
+     * replaces this. Configure {@code "pages": {"render": {"dpi": ...}}}.
+     */
+    @Deprecated
     public void setDpi(int dpi) {
         defaults.setDpi(dpi);
     }
@@ -253,7 +271,8 @@ public class PopplerRenderer implements Renderer {
         return defaults.getImageType() == ImageType.GRAY;
     }
 
-    /** Grayscale (the default) or colour, when no parse scopes an image type. */
+    /** @deprecated since 4.1.0; see {@link #setDpi}: {@code pages.render.imageType}. */
+    @Deprecated
     public void setGray(boolean gray) {
         defaults.setImageType(gray ? ImageType.GRAY : ImageType.RGB);
     }

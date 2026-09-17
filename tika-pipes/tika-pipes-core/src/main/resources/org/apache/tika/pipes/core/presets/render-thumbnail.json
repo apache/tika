@@ -1,11 +1,12 @@
 {
-  // the same first-page and EMF/WMF renders as "thumbnail", added to a full parse. This "pages"
-  // replaces the config's "parse-context" one, like any parse-context layer; a parser's own
-  // "pages" under the config's "parsers" block still overlays it
+  // the same first-page and EMF/WMF renders as "thumbnail", added to a full parse: the top-level
+  // document's first page, or the thumbnail of a top-level Office document; attachments are not
+  // rendered. This "pages" replaces the config's "parse-context" one, like any parse-context
+  // layer; a parser's own "pages" under the config's "parsers" block still overlays it
   "pages": {
-    "emit": {"enabled": true, "maxPages": 1,
+    "emit": {"enabled": true, "maxPages": 1, "maxDepth": 0,
              "render": {"maxWidth": 256, "maxHeight": 256, "imageType": "RGB"}}
   },
-  "emf-parser": {"pages": {"emit": {"resourceTypes": ["THUMBNAIL"]}}},
-  "wmf-parser": {"pages": {"emit": {"resourceTypes": ["THUMBNAIL"]}}}
+  "emf-parser": {"pages": {"emit": {"resourceTypes": ["THUMBNAIL"], "maxDepth": 1}}},
+  "wmf-parser": {"pages": {"emit": {"resourceTypes": ["THUMBNAIL"], "maxDepth": 1}}}
 }

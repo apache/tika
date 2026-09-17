@@ -102,7 +102,7 @@ public class PDFBoxRendererTest {
         }
     }
 
-    /** An out-of-range page throws past the per-page IOException catch after RENDER_ALL wrote pages. */
+    /** A range past the last page is the caller's error: it throws, and the pages RENDER_ALL wrote are cleaned up. */
     @Test
     public void testFailedRenderLeavesNoTempFiles() throws Exception {
         PDFBoxRenderer renderer = new PDFBoxRenderer();

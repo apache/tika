@@ -160,11 +160,13 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
             int numberOfPages = pdDocument.getNumberOfPages();
             // a range that runs past the last page ends there: "the first N pages" of a
             // shorter document are all of its pages. A range that starts past the last
-            // page still asks for a page that does not exist, and getPage throws on it.
-            if (start <= numberOfPages) {
-                toInclusive = Math.min(toInclusive, numberOfPages);
+            // page asks for a page that does not exist: the caller's error, not a page's
+            if (start > numberOfPages) {
+                throw new IllegalArgumentException("page " + start + " is past the last page, "
+                        + numberOfPages);
             }
-            renderRange(pdDocument, start, toInclusive, metadata, parseContext, results);
+            renderRange(pdDocument, start, Math.min(toInclusive, numberOfPages), metadata,
+                    parseContext, results);
         }
     }
 
@@ -186,11 +188,26 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
                 m.set(TikaPagedText.PAGE_ROTATION, (double)pdDocument.getPage(i - 1).getRotation());
                 results.add(renderPage(renderer, pdDocument.getPage(i - 1), id, i, m,
                         parseContext));
-            } catch (IOException e) {
+            } catch (SecurityException e) {
+                throw e;
+            } catch (IOException | RuntimeException e) {
+                // a broken page tree throws from getPage/getMediaBox: one page's failure, not the parse's
                 EmbeddedDocumentUtil.recordException(e, m, parseContext);
                 results.add(new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, m));
             }
         }
+    }
+
+    /**
+     * The size in points of the image PDFBox draws for the page: the crop box, with width and
+     * height swapped when the page is rotated a quarter turn. What the box and minimum apply to.
+     */
+    public static double[] pageSize(PDPage page) {
+        PDRectangle cropBox = page.getCropBox();
+        int rotation = page.getRotation();
+        boolean quarterTurn = rotation == 90 || rotation == 270;
+        return quarterTurn ? new double[] {cropBox.getHeight(), cropBox.getWidth()}
+                : new double[] {cropBox.getWidth(), cropBox.getHeight()};
     }
 
     /** What is drawn: everything, unless the parser scoped an OCR-only strategy. */
@@ -216,9 +233,9 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
             throws IOException {
         // the minimum is the parser's policy, applied before it asks; the cap is a safety net
         RenderSettings settings = settings(parseContext);
-        PDRectangle mediaBox = page.getMediaBox();
-        double width = mediaBox.getWidth();
-        double height = mediaBox.getHeight();
+        double[] size = pageSize(page);
+        double width = size[0];
+        double height = size[1];
         float dpi = settings.effectiveDpi(width, height);
         long estPixels = settings.estimatedPixels(width, height);
         if (settings.exceedsMaxPixels(estPixels)) {
@@ -258,23 +275,38 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
         return new RenderResult(RenderResult.STATUS.SUCCESS, id, tmpFile, metadata);
     }
 
+    /**
+     * @deprecated since 4.1.0: applies only to a direct {@link #render} call with no
+     * {@link RenderSettings} in the context. A parse always scopes {@code pages.render}, which
+     * replaces every value set here. Configure {@code "pages": {"render": {...}}}, or set a
+     * {@code RenderSettings} on the context when calling the renderer yourself.
+     */
+    @Deprecated
     public void setDPI(int dpi) {
         defaults.setDpi(dpi);
     }
 
+    /** @deprecated since 4.1.0; see {@link #setDPI}. */
+    @Deprecated
     public void setImageType(ImageType imageType) {
         defaults.setImageType(imageType == ImageType.RGB
                 ? org.apache.tika.renderer.ImageType.RGB : org.apache.tika.renderer.ImageType.GRAY);
     }
 
+    /** @deprecated since 4.1.0; see {@link #setDPI}. */
+    @Deprecated
     public void setImageFormatName(String imageFormatName) {
         defaults.setImageFormat(ImageFormat.valueOf(imageFormatName.toUpperCase(Locale.ROOT)));
     }
 
+    /** @deprecated since 4.1.0; see {@link #setDPI}. */
+    @Deprecated
     public void setImageQuality(float imageQuality) {
         defaults.setImageQuality(imageQuality);
     }
 
+    /** @deprecated since 4.1.0; see {@link #setDPI}. */
+    @Deprecated
     public void setMaxImagePixels(long maxImagePixels) {
         defaults.setMaxImagePixels(maxImagePixels);
     }

@@ -36,7 +36,7 @@ read it.
                   "maxImagePixels": 100000000 },
       "ocr": { "maxPages": -1, "auto": { "totalCharsPerPage": 10, "unmappedUnicodeCharsPerPage": 10 } },
       "inference": ["TEXT"],
-      "emit": { "enabled": false, "maxPages": -1, "resourceTypes": [], "render": {} }
+      "emit": { "enabled": false, "maxPages": -1, "maxDepth": -1, "resourceTypes": [], "render": {} }
     }
   }
 }
@@ -123,8 +123,16 @@ on the document. 100 megapixels by default; `-1` for no limit.
 These settings reach the renderer the parser uses (`pdfbox-renderer`, `poppler-renderer`,
 `poi-metafile-renderer`, whatever `renderers` names for the type) through the parse; a renderer's
 own entry under `renderers` holds only what is the engine's (the `pdftoppm` path, its timeout,
-`maxScaleTo`: `pdftoppm`'s own ceiling on a page's long side, 4096 by default), and its own
-image settings apply when no parse scopes any.
+`maxScaleTo`: `pdftoppm`'s own ceiling on a page's long side, 4096 by default). The image keys
+some entries still accept (`poppler-renderer.dpi`/`gray`, `poi-metafile-renderer.width`, the
+`pdfbox-renderer` setters) are deprecated: they apply only when the renderer is called directly,
+never through a parser, since a parse always scopes this block. Put the value here.
+
+A page's size is the crop box for PDFBox and the media box for `pdftoppm` (each engine's own
+default), with a quarter-turn rotation applied, so a rotated landscape page fits a box the
+way it is displayed. A metafile has one page, its drawing's physical size; with `emit` on and
+nothing else set, an EMF thumbnail renders like a PDF page: 300 dpi grayscale PNG. The
+thumbnail presets set `imageType: RGB` and a box for that reason.
 
 == `ocr`: the recognizer's budget and verdict
 
@@ -138,11 +146,17 @@ signal never trips it.
 
 == `inference`: what is released to the bindings
 
+NOTE: Experimental in 4.1.0 with the xref:configuration/inference.adoc[inference bindings] it
+feeds: the values may change in a minor release without a deprecation cycle. The rest of this
+block is stable.
+
 `["TEXT"]` by default. Add `PAGES` to render every page for a `PAGES`
 xref:configuration/inference.adoc#pages[inference binding]; the render is the `render` render, made
 once per page for OCR and inference alike, and nothing is rendered unless a `PAGES` binding runs
 for the request. A document that released `PAGES` records `tk:inference-released` and the `TEXT`
-stage skips it unless `TEXT` is listed too.
+stage skips it unless `TEXT` is listed too. This list is for bindings only: which pages a text
+recognizer sees is `text`, today and when recognition runs in batches through the same
+dispatcher (4.2); `["PAGES"]` never turns OCR on.
 
 == `emit`: page images as embedded documents
 
@@ -152,26 +166,33 @@ output that lists embedded documents. Off by default.
 `maxPages`::
 Pages emitted, counted from the first; `-1` for no limit. The parser's own page budget
 (`pdf-parser.maxPages`) bounds it too: a page that is not read is not rendered.
+`maxDepth`::
+Deepest document whose pages are emitted, as embedded documents are counted: `0` for the
+top-level document only, `1` to include its attachments, `-1` (the default) for any. "The first
+page of the PDF I sent, not of the twelve it attaches" is `maxDepth: 0`.
 `resourceTypes`::
 Emit only for documents embedded as one of these `tk:embedded-resource-type`s, e.g.
 `["THUMBNAIL"]` to rasterize the EMF thumbnail of an Office document but not the pictures of its
 embedded objects. Empty, the default, emits for every document; a top-level document has no
-resource type, so a non-empty list never matches it.
+resource type, so a non-empty list never matches it (that is `maxDepth`).
 `render`::
 An overlay on `render` for the emitted images only, so OCR can keep its 300 dpi grayscale pages
 while the emitted ones are small colour previews. When the two produce the same image, one
 render per page serves both.
 
-A page that breaks the text extraction is still emitted, at the end of the document; pages the
-parser never reached are not rendered, and a stop the caller asked for (the write limit, an
-embedded-document limit) renders nothing more. A PDF without pages to walk (XFA-only) has every
+A page the engine cannot render is a warning on the document, not a failed parse, whichever
+consumer asked for the render first. A page that breaks the text extraction is still emitted, at
+the end of the document; pages the parser never reached are not rendered, and a stop the caller
+asked for (the write limit, an embedded-document limit) renders nothing more. A document
+selector that refuses the embedded image is asked before the page is drawn. A PDF without pages to walk (XFA-only) has every
 page in budget emitted. When the engine renders is its own business; the parser emits at page
 end either way.
 
 A metafile is one page. The EMF/WMF parsers render it under `emit` with the same settings; the
 rendering of a `THUMBNAIL` is itself a `THUMBNAIL`, so a client that wants "the thumbnail" finds
 it by type. The xref:using-tika/server/index.adoc[thumbnail presets] are this block with a
-256-pixel box.
+256-pixel box, `maxDepth: 0` for the PDF page and `maxDepth: 1` on the metafile overlays (the
+Office thumbnail is an embedded document of the top-level one).
 
 == The 4.0 spellings
 

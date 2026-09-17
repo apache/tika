@@ -173,11 +173,13 @@ operator names them in the server's `tika-config.json`, and a server without tha
 { "presets": { "thumbnail": true, "render-thumbnail": true } }
 ----
 
-Both render the same two things the same way — the first page of a PDF and the EMF/WMF thumbnail
-of an Office document (that metafile only, not the document's pictures), in colour, fitted into
-256 x 256 pixels (one xref:configuration/pages.adoc[`pages`] block, `emit` with a box) — so an
-image found through one is the image the other returns, dimensions included. Both name the
-standard parsers, so they need `tika-parsers-standard-package` on the classpath.
+Both render the same two things the same way — the first page of a top-level PDF and the EMF/WMF
+thumbnail of a top-level Office document (that metafile only, not the document's pictures), in
+colour, fitted into 256 x 256 pixels (one xref:configuration/pages.adoc[`pages`] block, `emit`
+with a box and `maxDepth`) — so an image found through one is the image the other returns,
+dimensions included. Attachments are not rendered: the selection rule below would refuse their
+renders, so the presets do not make them. Both name the standard parsers, so they need
+`tika-parsers-standard-package` on the classpath.
 
 `/unpack/preset/thumbnail` — "just give me the thumbnail". The zip holds at most one raster
 image per request and nothing else: the stored thumbnail (Office docProps, audio cover art,

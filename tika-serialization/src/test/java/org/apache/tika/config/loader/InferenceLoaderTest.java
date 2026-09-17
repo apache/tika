@@ -228,6 +228,8 @@ public class InferenceLoaderTest {
                     + " \"tasks\": [\"test-task\"], \"chunker\": { \"identity\": {} } } ] }",
             "{" + ENGINES + ", \"inference\": [ { \"engine\": \"one\", \"input\": \"IMAGES\","
                     + " \"tasks\": [\"test-task\"], \"minWidth\": -1 } ] }",
+            "{" + ENGINES + ", \"inference\": [ { \"engine\": \"one\", \"input\": \"PAGES\","
+                    + " \"tasks\": [\"test-task\"], \"minWidth\": 100 } ] }",
         };
         for (String json : bad) {
             TikaConfigException e = assertThrows(TikaConfigException.class, () -> {

@@ -170,6 +170,8 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
                       ParseContext context) throws IOException, SAXException, TikaException {
 
         PDFParserConfig localConfig = getConfig(context);
+        // the default's overlay first: a class-keyed request config replaces it rather than
+        // extending it, and the JSON path is a no-op second application
         PagesConfig pages = PagesConfig.resolve(context, defaultConfig.getPages(),
                 localConfig.getPages());
         if (localConfig.isSetKCMS()) {

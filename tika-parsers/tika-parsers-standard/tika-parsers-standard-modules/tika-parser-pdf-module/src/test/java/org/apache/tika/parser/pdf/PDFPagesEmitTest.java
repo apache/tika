@@ -46,6 +46,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -361,6 +362,109 @@ public class PDFPagesEmitTest extends TikaTest {
                     () -> parser.parse(tis, new ToXMLContentHandler(), metadata, context));
         }
         assertEquals(2, calls[0], "once per page: OCR asked, emission did not ask again");
+    }
+
+    /**
+     * A page the engine cannot render is a warning whichever consumer asked first: emission
+     * sharing OCR's render (the default), emission with its own render, and the 4.0 alias.
+     */
+    @Test
+    public void testRenderFailureIsAWarningWhoeverAsked() throws Exception {
+        PDFParserConfig shared = new PDFParserConfig();
+        shared.pages().setText(TextPolicy.EXTRACT);
+        shared.pages().emit().setEnabled(true);
+        PDFParserConfig own = new PDFParserConfig();
+        own.pages().setText(TextPolicy.EXTRACT);
+        own.pages().emit().setEnabled(true);
+        own.pages().emit().render().setDpi(72);
+        PDFParserConfig alias = new PDFParserConfig();
+        alias.pages().setText(TextPolicy.EXTRACT);
+        alias.setImageStrategy(PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END);
+        for (PDFParserConfig config : List.of(shared, own, alias)) {
+            // a broken page tree throws from the page accessors, outside the draw
+            String text = parseWith(config, new PDFBoxRenderer() {
+                @Override
+                protected RenderResult renderPage(PDFRenderer renderer, PDPage page, int id,
+                                                  int pageNumber, Metadata metadata,
+                                                  ParseContext parseContext) {
+                    throw new IllegalStateException("broken page");
+                }
+            });
+            assertContains("Denmark bookmark is here", text);
+            // an engine that fails as a whole, as pdftoppm does on a page it cannot read
+            text = parseWith(config, new PDFBoxRenderer() {
+                @Override
+                public RenderResults render(TikaInputStream tis, Metadata metadata,
+                                            ParseContext parseContext, RenderRequest... requests)
+                        throws TikaException {
+                    throw new TikaException("engine failed");
+                }
+            });
+            assertContains("Denmark bookmark is here", text);
+        }
+    }
+
+    /** The parse completes; the failure is a warning per page, and the text is all there. */
+    private String parseWith(PDFParserConfig config, PDFBoxRenderer renderer) throws Exception {
+        PDFParser parser = new PDFParser();
+        parser.setRenderer(renderer);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser(new ImageSink()));
+        Metadata metadata = new Metadata();
+        ToXMLContentHandler handler = new ToXMLContentHandler();
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/" + TWO_PAGES))) {
+            parser.parse(tis, handler, metadata, context);
+        }
+        assertEquals(2, metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length,
+                "one warning per page");
+        return handler.toString();
+    }
+
+    /** A selector that refuses the page image is asked before anything is drawn. */
+    @Test
+    public void testSelectorIsAskedBeforeTheRender() throws Exception {
+        PDFParserConfig config = emitting();
+        config.pages().setText(TextPolicy.EXTRACT);
+        CountingRenderer renderer = new CountingRenderer();
+        PDFParser parser = new PDFParser();
+        parser.setRenderer(renderer);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser(new ImageSink()));
+        context.set(DocumentSelector.class,
+                metadata -> !"image/png".equals(metadata.get(HttpHeaders.CONTENT_TYPE)));
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/" + TWO_PAGES))) {
+            parser.parse(tis, new ToXMLContentHandler(), new Metadata(), context);
+        }
+        assertEquals(0, renderer.pages, "refused before the render");
+    }
+
+    /** emit.maxDepth 0 renders the document sent, not the PDFs it attaches. */
+    @Test
+    public void testMaxDepthKeepsAttachmentsUnrendered() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("pages", "{\"emit\": {\"enabled\": true, \"maxPages\": 1,"
+                + " \"render\": {\"dpi\": 20}}}");
+        assertEquals(List.of(1, 2, 2), renderingDepths("testPDFPackage.pdf", context),
+                "the package and its two attached PDFs");
+        context = new ParseContext();
+        context.setJsonConfig("pages", "{\"emit\": {\"enabled\": true, \"maxPages\": 1,"
+                + " \"maxDepth\": 0, \"render\": {\"dpi\": 20}}}");
+        assertEquals(List.of(1), renderingDepths("testPDFPackage.pdf", context));
+    }
+
+    private List<Integer> renderingDepths(String pdf, ParseContext context) throws Exception {
+        List<Integer> depths = new ArrayList<>();
+        for (Metadata m : getRecursiveMetadata(pdf, context)) {
+            if (TikaCoreProperties.EmbeddedResourceType.RENDERING.name()
+                    .equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE))) {
+                depths.add(m.getInt(TikaCoreProperties.EMBEDDED_DEPTH));
+            }
+        }
+        return depths;
     }
 
     /** An OCR-only strategy draws a different page: the emitted one is a full render. */

@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.inference.InputKind;
 import org.apache.tika.renderer.ImageType;
 import org.apache.tika.renderer.RenderSettings;
@@ -104,19 +105,57 @@ public class PagesConfigTest {
     @Test
     public void testEmitApplies() {
         PagesConfig.Emit emit = PagesConfig.Emit.defaults();
+        ParseContext context = new ParseContext();
         Metadata top = new Metadata();
-        assertFalse(emit.applies(top));
+        assertFalse(emit.applies(top, context));
         emit.setEnabled(true);
-        assertTrue(emit.applies(top));
+        assertTrue(emit.applies(top, context));
+        assertTrue(emit.applies(top, null), "no context is the top level");
         emit.setResourceTypes(Set.of("THUMBNAIL"));
-        assertFalse(emit.applies(top));
+        assertFalse(emit.applies(top, context));
         Metadata thumbnail = new Metadata();
         thumbnail.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, "THUMBNAIL");
-        assertTrue(emit.applies(thumbnail));
+        assertTrue(emit.applies(thumbnail, context));
         assertTrue(emit.withinBudget(50));
         emit.setMaxPages(1);
         assertTrue(emit.withinBudget(1));
         assertFalse(emit.withinBudget(2));
+    }
+
+    /** maxDepth reads the extractor's embedding depth: 0 is the top-level document only. */
+    @Test
+    public void testEmitMaxDepth() {
+        PagesConfig.Emit emit = PagesConfig.Emit.defaults();
+        emit.setEnabled(true);
+        ParseContext context = new ParseContext();
+        ParseRecord record = ParseRecord.newInstance(context);
+        context.set(ParseRecord.class, record);
+        Metadata attachment = new Metadata();
+        record.enterEmbedded();
+        assertTrue(emit.applies(attachment, context), "-1 is any depth");
+        emit.setMaxDepth(0);
+        assertFalse(emit.applies(attachment, context), "an attachment is depth 1");
+        record.exitEmbedded();
+        assertTrue(emit.applies(new Metadata(), context), "the top-level document is depth 0");
+        emit.setMaxDepth(1);
+        record.enterEmbedded();
+        assertTrue(emit.applies(attachment, context));
+        record.enterEmbedded();
+        assertFalse(emit.applies(attachment, context), "depth 2");
+        assertThrows(IllegalArgumentException.class, () -> emit.setMaxDepth(-2));
+    }
+
+    /** An overlay applied to a config never shares objects with the config it came from. */
+    @Test
+    public void testOverlayIsCopied() {
+        PagesConfig mine = new PagesConfig();
+        mine.ocr().auto().setTotalCharsPerPage(5);
+        mine.emit().render().setDpi(20);
+        PagesConfig applied = new PagesConfig().over(mine);
+        mine.ocr().auto().setTotalCharsPerPage(99);
+        mine.emit().render().setDpi(99);
+        assertEquals(5, applied.getOcr().getAuto().getTotalCharsPerPage());
+        assertEquals(20, applied.getEmit().getRender().getDpi());
     }
 
     @Test

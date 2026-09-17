@@ -12,7 +12,7 @@ Release 4.1.0 - unreleased
      EXTRACT_AND_OCR, OCR, NONE), "render" (dpi, maxWidth/maxHeight box,
      minWidth/minHeight, colour, format, quality, maxImagePixels), "ocr"
      (maxPages, auto), "inference" (TEXT, PAGES), "emit" (page renders as
-     RENDERING embedded documents); read from parse-context, the request,
+     RENDERING embedded documents, maxPages/maxDepth/resourceTypes); read from parse-context, the request,
      the parser's entry and the parser's entry in the request, later winning
      per field. The 4.0 pdf-parser "ocr" and "imageStrategy" load as aliases
      and dump as "pages"; renders are emitted at page end whichever
@@ -20,7 +20,11 @@ Release 4.1.0 - unreleased
      below 2 px is skipped. poppler-renderer renders each page at the dpi the
      settings resolve to, under its maxScaleTo ceiling (4.0 rendered every page
      with its long side at maxScaleTo, whatever dpi said); poi-metafile-renderer
-     honours maxImagePixels. Java: PDFParserConfig.getOcr()/getImageStrategy()
+     honours maxImagePixels. A page the engine cannot render is a warning on
+     the document whichever consumer asked first. The image settings on a
+     renderer's own entry (poppler-renderer dpi/gray, poi-metafile-renderer
+     width, the pdfbox-renderer setters) are deprecated: a parse always scopes
+     pages.render. Java: PDFParserConfig.getOcr()/getImageStrategy()
      replaced by getPages()/pages(); core PagesConfig, TextPolicy,
      RenderSettings, ImageType, ImageFormat. Deprecated, removal in 4.2.0:
      engines named under "parsers", openai-image-embedding-parser,

@@ -19,7 +19,6 @@ package org.apache.tika.parser.pdf;
 import java.io.IOException;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -29,6 +28,7 @@ import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
@@ -67,7 +67,7 @@ final class PageEmitter {
         this.renderer = renderer;
         this.metadata = metadata;
         this.context = context;
-        this.enabled = pages.getEmit().applies(metadata);
+        this.enabled = pages.getEmit().applies(metadata, context);
     }
 
     /**
@@ -109,9 +109,18 @@ final class PageEmitter {
     }
 
     /**
+     * {@link #wants}, and the embedded-document extractor accepts what the child will be: asked
+     * before anything is drawn, so a selector that refuses page images costs no render.
+     */
+    boolean accepts(int pageNo) {
+        return wants(pageNo) && extractor().shouldParseEmbedded(probe(pageNo), context);
+    }
+
+    /**
      * Emits the page: {@code shared} when it is the OCR render of the same image (a failed one
      * was already reported, nothing is emitted), else a render with the emitted settings.
      * Failures are recorded on the PDF, never thrown: an unrenderable page is not a failed parse.
+     * A caller passing {@code shared} has asked {@link #accepts} already.
      */
     void emit(int pageNo, RenderResult shared, ContentHandler handler) throws SAXException {
         if (!wants(pageNo)) {
@@ -119,6 +128,9 @@ final class PageEmitter {
         }
         emittedThrough = Math.max(emittedThrough, pageNo);
         try {
+            if (shared == null && !accepts(pageNo)) {
+                return;
+            }
             if (shared != null) {
                 if (shared.getStatus() == RenderResult.STATUS.SUCCESS) {
                     emitShared(pageNo, shared, handler);
@@ -126,8 +138,8 @@ final class PageEmitter {
                 return;
             }
             // too small to hold anything: a policy skip, not a failure
-            PDRectangle mediaBox = pdDocument.getPage(pageNo - 1).getMediaBox();
-            if (pages.emittedRender().belowMinimum(mediaBox.getWidth(), mediaBox.getHeight())) {
+            double[] size = PDFBoxRenderer.pageSize(pdDocument.getPage(pageNo - 1));
+            if (pages.emittedRender().belowMinimum(size[0], size[1])) {
                 return;
             }
             Metadata pageMetadata = Metadata.newInstance(context);
@@ -204,14 +216,25 @@ final class PageEmitter {
 
     private void emit(TikaInputStream tis, Metadata embedded, ContentHandler handler)
             throws IOException, SAXException {
-        EmbeddedDocumentExtractor extractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-        if (!extractor.shouldParseEmbedded(embedded, context)) {
-            return;
-        }
         // the page step enriches the render itself; the embedded copy is bytes and metadata
         try (ContentEnrichers.Suspension suspension = ContentEnrichers.suspend(context)) {
-            extractor.parseEmbedded(tis, handler, embedded, context, false);
+            extractor().parseEmbedded(tis, handler, embedded, context, false);
         }
+    }
+
+    private EmbeddedDocumentExtractor extractor() {
+        return EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+    }
+
+    /** What the child will be, for a selector to accept or refuse before the render. */
+    private Metadata probe(int pageNo) {
+        Metadata probe = Metadata.newInstance(context);
+        probe.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
+        probe.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
+        probe.set(TikaPagedText.PAGE_NUMBER, pageNo);
+        probe.set(HttpHeaders.CONTENT_TYPE,
+                "image/" + pages.emittedRender().getImageFormat().getFormatName());
+        return probe;
     }
 }

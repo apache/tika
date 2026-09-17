@@ -42,7 +42,8 @@ public class MetafileParserConfig implements Serializable {
         return pages;
     }
 
+    /** Applies the set fields of {@code pages} to the overlay, as the PDF parser's does. */
     public void setPages(PagesConfig pages) {
-        this.pages = pages == null ? new PagesConfig() : pages;
+        this.pages = this.pages.over(pages);
     }
 }

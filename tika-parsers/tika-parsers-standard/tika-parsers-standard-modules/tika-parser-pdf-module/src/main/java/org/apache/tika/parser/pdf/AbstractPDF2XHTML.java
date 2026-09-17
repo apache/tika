@@ -64,7 +64,6 @@ import org.apache.pdfbox.pdmodel.PDPageTree;
 import org.apache.pdfbox.pdmodel.common.COSObjectable;
 import org.apache.pdfbox.pdmodel.common.PDDestinationOrAction;
 import org.apache.pdfbox.pdmodel.common.PDNameTreeNode;
-import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDComplexFileSpecification;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDEmbeddedFile;
 import org.apache.pdfbox.pdmodel.common.filespecification.PDFileSpecification;
@@ -130,6 +129,7 @@ import org.apache.tika.parser.pdf.updates.StartXRefOffset;
 import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.RenderingTracker;
+import org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.ContentHandlerDecorator;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -243,7 +243,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         this.ocrEngine =
                 ContentEnrichers.get(contentEnrichers, ocrImageMediaType, renderTarget, context);
         Parser annotators = null;
-        if (pages.getEmit().applies(metadata)) {
+        if (pages.getEmit().applies(metadata, context)) {
             try (ContentEnrichers.Suspension recognizersOff =
                          ContentEnrichers.suspendRecognizers(context)) {
                 annotators = ContentEnrichers.get(contentEnrichers, ocrImageMediaType,
@@ -803,14 +803,29 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      * Emits the page's render as an embedded document when {@code pages.emit} says so; the OCR
      * render is shared when it is the same image, else the page is rendered again for it.
      */
-    private void emitCurrentPage(PDPage pdPage) throws IOException, TikaException, SAXException {
+    private void emitCurrentPage(PDPage pdPage) throws SAXException {
         if (!emitter.wants(getCurrentPageNo())) {
             return;
         }
         // an OCR-only strategy draws a different page than the one to emit
         boolean shared = pages.emitsSameImage()
                 && config.getRenderingStrategy() == OcrConfig.RenderingStrategy.ALL;
-        emitter.emit(getCurrentPageNo(), shared ? currentPageRender(pdPage) : null, xhtml);
+        RenderResult render = null;
+        if (shared) {
+            if (!emitter.accepts(getCurrentPageNo())) {
+                return;
+            }
+            try {
+                render = currentPageRender(pdPage);
+            } catch (SecurityException e) {
+                throw e;
+            } catch (IOException | TikaException | RuntimeException e) {
+                // emission's own policy, whoever asked first: an unrenderable page is a warning
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
+                return;
+            }
+        }
+        emitter.emit(getCurrentPageNo(), render, xhtml);
     }
 
     /** Hands the page's render to the hooks when a PAGES binding wants it. */
@@ -854,10 +869,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
 
     private RenderResults renderCurrentPage(PDPage pdPage) throws IOException, TikaException {
         Metadata pageMetadata = getCurrentPageMetadata(pdPage);
-        PDRectangle mediaBox = pdPage.getMediaBox();
+        double[] size = PDFBoxRenderer.pageSize(pdPage);
         // too small to hold anything: a policy skip, not a failure
-        RenderResults results = pages.getRender().belowMinimum(mediaBox.getWidth(),
-                mediaBox.getHeight()) ? skipped(pageMetadata)
+        RenderResults results = pages.getRender().belowMinimum(size[0], size[1])
+                ? skipped(pageMetadata)
                 : emitter.render(getCurrentPageNo(), pages.getRender(),
                         config.getRenderingStrategy(), pageMetadata);
         for (RenderResult result : results.getResults()) {

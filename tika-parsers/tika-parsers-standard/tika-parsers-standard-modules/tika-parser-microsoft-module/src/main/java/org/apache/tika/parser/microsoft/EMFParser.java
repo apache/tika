@@ -134,7 +134,7 @@ public class EMFParser extends AbstractMetafileParser {
         xhtml.startDocument();
         try {
             PagesConfig pages = pages(context, getConfig(context));
-            prepareForRendering(tis, pages, metadata);
+            prepareForRendering(tis, pages, metadata, context);
             HemfPicture ex = new HemfPicture(tis);
             ParseState parseState = new ParseState();
             long fudgeFactorX = 10;//derive this from the font or frame/bounds information
@@ -172,7 +172,7 @@ public class EMFParser extends AbstractMetafileParser {
                 xhtml.characters(buffer.toString());
                 xhtml.endElement("p");
             }
-            if (pages.getEmit().applies(metadata)) {
+            if (pages.getEmit().applies(metadata, context)) {
                 MetafileRendering.render(getRenderer(), pages, MEDIA_TYPE, tis, ex, xhtml,
                         metadata, context);
             }

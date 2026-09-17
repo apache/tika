@@ -21,10 +21,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
@@ -99,11 +103,31 @@ public class RenderThumbnailPresetTest extends CXFTestBase {
         assertNotNull(thumbnail.getInt(TIFF.IMAGE_WIDTH));
     }
 
+    /** The preset's maxDepth: an attached PDF is not rendered, since the rule would refuse its page. */
+    @Test
+    public void testAttachmentsAreNotRendered() throws Exception {
+        ByteArrayOutputStream zip = new ByteArrayOutputStream();
+        try (ZipOutputStream out = new ZipOutputStream(zip);
+                InputStream pdf = ClassLoader.getSystemResourceAsStream(
+                        "test-documents/testPDF_bookmarks.pdf")) {
+            out.putNextEntry(new ZipEntry("attached.pdf"));
+            pdf.transferTo(out);
+            out.closeEntry();
+        }
+        List<Metadata> metadataList = rmeta(new ByteArrayInputStream(zip.toByteArray()), "zip");
+        assertEquals(2, metadataList.size(), "the zip and the PDF, no render");
+        assertEquals(0, renderings(metadataList));
+    }
+
     private List<Metadata> rmeta(String file) throws Exception {
+        return rmeta(ClassLoader.getSystemResourceAsStream("test-documents/" + file), file);
+    }
+
+    private List<Metadata> rmeta(InputStream document, String label) throws Exception {
         Response response = WebClient.create(endPoint + PRESET_PATH)
                 .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream("test-documents/" + file));
-        assertEquals(200, response.getStatus(), file);
+                .put(document);
+        assertEquals(200, response.getStatus(), label);
         return JsonMetadataList.fromJson(
                 new InputStreamReader((InputStream) response.getEntity(), UTF_8));
     }

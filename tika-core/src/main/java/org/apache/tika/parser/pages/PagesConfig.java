@@ -31,6 +31,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.parser.inference.InputKind;
 import org.apache.tika.renderer.RenderSettings;
 
@@ -106,13 +107,13 @@ public class PagesConfig implements Serializable {
             result.text = overlay.text;
         }
         if (overlay.ocr != null) {
-            result.ocr = ocr == null ? overlay.ocr.over(null) : ocr.over(overlay.ocr);
+            result.ocr = ocr == null ? overlay.ocr.copy() : ocr.over(overlay.ocr);
         }
         if (overlay.inference != null) {
             result.inference = overlay.inference;
         }
         if (overlay.emit != null) {
-            result.emit = emit == null ? overlay.emit.over(null) : emit.over(overlay.emit);
+            result.emit = emit == null ? overlay.emit.copy() : emit.over(overlay.emit);
         }
         return result;
     }
@@ -218,9 +219,7 @@ public class PagesConfig implements Serializable {
         }
 
         public Ocr over(Ocr overlay) {
-            Ocr result = new Ocr();
-            result.maxPages = maxPages;
-            result.auto = auto;
+            Ocr result = copy();
             if (overlay == null) {
                 return result;
             }
@@ -228,8 +227,16 @@ public class PagesConfig implements Serializable {
                 result.maxPages = overlay.maxPages;
             }
             if (overlay.auto != null) {
-                result.auto = auto == null ? overlay.auto.over(null) : auto.over(overlay.auto);
+                result.auto = auto == null ? overlay.auto.copy() : auto.over(overlay.auto);
             }
+            return result;
+        }
+
+        /** A deep copy: an overlay applied later never reaches into this one. */
+        public Ocr copy() {
+            Ocr result = new Ocr();
+            result.maxPages = maxPages;
+            result.auto = auto == null ? null : auto.copy();
             return result;
         }
 
@@ -283,9 +290,7 @@ public class PagesConfig implements Serializable {
         }
 
         public Auto over(Auto overlay) {
-            Auto result = new Auto();
-            result.unmappedUnicodeCharsPerPage = unmappedUnicodeCharsPerPage;
-            result.totalCharsPerPage = totalCharsPerPage;
+            Auto result = copy();
             if (overlay == null) {
                 return result;
             }
@@ -295,6 +300,13 @@ public class PagesConfig implements Serializable {
             if (overlay.totalCharsPerPage != null) {
                 result.totalCharsPerPage = overlay.totalCharsPerPage;
             }
+            return result;
+        }
+
+        public Auto copy() {
+            Auto result = new Auto();
+            result.unmappedUnicodeCharsPerPage = unmappedUnicodeCharsPerPage;
+            result.totalCharsPerPage = totalCharsPerPage;
             return result;
         }
 
@@ -317,13 +329,14 @@ public class PagesConfig implements Serializable {
         }
     }
 
-    /** Whether, and which, renders are emitted as RENDERING embedded documents. */
+    /** Whether, and for which documents, renders are emitted as RENDERING embedded documents. */
     public static class Emit implements Serializable {
 
         private static final long serialVersionUID = 1L;
 
         private Boolean enabled;
         private Integer maxPages;
+        private Integer maxDepth;
         private Set<String> resourceTypes;
         private RenderSettings render;
 
@@ -331,17 +344,14 @@ public class PagesConfig implements Serializable {
             Emit emit = new Emit();
             emit.enabled = false;
             emit.maxPages = -1;
+            emit.maxDepth = -1;
             emit.resourceTypes = Collections.emptySet();
             emit.render = new RenderSettings();
             return emit;
         }
 
         public Emit over(Emit overlay) {
-            Emit result = new Emit();
-            result.enabled = enabled;
-            result.maxPages = maxPages;
-            result.resourceTypes = resourceTypes;
-            result.render = render;
+            Emit result = copy();
             if (overlay == null) {
                 return result;
             }
@@ -350,6 +360,9 @@ public class PagesConfig implements Serializable {
             }
             if (overlay.maxPages != null) {
                 result.maxPages = overlay.maxPages;
+            }
+            if (overlay.maxDepth != null) {
+                result.maxDepth = overlay.maxDepth;
             }
             if (overlay.resourceTypes != null) {
                 result.resourceTypes = overlay.resourceTypes;
@@ -360,13 +373,29 @@ public class PagesConfig implements Serializable {
             return result;
         }
 
+        public Emit copy() {
+            Emit result = new Emit();
+            result.enabled = enabled;
+            result.maxPages = maxPages;
+            result.maxDepth = maxDepth;
+            result.resourceTypes = resourceTypes;
+            result.render = render == null ? null : render.copy();
+            return result;
+        }
+
         /**
-         * Whether the document with this metadata has its renders emitted: on, and its
-         * {@code tk:embedded-resource-type} is listed when the list is not empty. A top-level
-         * document has no resource type, so a non-empty list never matches it.
+         * Whether the document being parsed has its renders emitted: on, no deeper than
+         * {@code maxDepth} (the embedding depth the extractor counts: 0 for the top-level
+         * document, 1 for its attachments), and its {@code tk:embedded-resource-type} is listed
+         * when the list is not empty. A top-level document has no resource type, so a non-empty
+         * list never matches it; {@code maxDepth: 0} is how "the top-level document only" is said.
          */
-        public boolean applies(Metadata metadata) {
+        public boolean applies(Metadata metadata, ParseContext context) {
             if (enabled == null || !enabled) {
+                return false;
+            }
+            ParseRecord record = context == null ? null : context.get(ParseRecord.class);
+            if (!withinDepth(record == null ? 0 : record.getEmbeddedDepth())) {
                 return false;
             }
             if (resourceTypes == null || resourceTypes.isEmpty()) {
@@ -374,6 +403,11 @@ public class PagesConfig implements Serializable {
             }
             String type = metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE);
             return type != null && resourceTypes.contains(type);
+        }
+
+        /** Whether a document at this embedding depth (0 = top-level) is within {@code maxDepth}. */
+        public boolean withinDepth(int depth) {
+            return maxDepth == null || maxDepth < 0 || depth <= maxDepth;
         }
 
         /** Whether the 1-based page is within {@code maxPages}. */
@@ -400,6 +434,22 @@ public class PagesConfig implements Serializable {
                         "emit.maxPages must be -1 (no limit) or at least 1, got: " + maxPages);
             }
             this.maxPages = maxPages;
+        }
+
+        public Integer getMaxDepth() {
+            return maxDepth;
+        }
+
+        /**
+         * Deepest document whose renders are emitted, as the embedded-document extractor counts
+         * depth: 0 for the top-level document only, 1 to include its attachments; -1 for any.
+         */
+        public void setMaxDepth(Integer maxDepth) {
+            if (maxDepth != null && maxDepth < -1) {
+                throw new IllegalArgumentException(
+                        "emit.maxDepth must be -1 (any depth) or at least 0, got: " + maxDepth);
+            }
+            this.maxDepth = maxDepth;
         }
 
         public Set<String> getResourceTypes() {
