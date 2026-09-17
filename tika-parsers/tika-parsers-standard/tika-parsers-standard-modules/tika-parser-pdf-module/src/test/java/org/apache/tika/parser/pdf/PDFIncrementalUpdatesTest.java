@@ -19,6 +19,7 @@ package org.apache.tika.parser.pdf;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -126,6 +127,32 @@ public class PDFIncrementalUpdatesTest extends TikaTest {
         //make sure that we are rewinding last character
         String s = "blah blah startxstartxref 123456\n%%EOFblah";
         assertEquals(1, getOffsets(s).size());
+    }
+
+    @Test
+    public void testStartXRefAcrossBlockBoundary() throws Exception {
+        //the scanner reads in blocks; a startxref that straddles a block boundary must still
+        //be found, at its true offset
+        int blockSize = 1 << 16;
+        for (int pad = blockSize - 20; pad < blockSize + 20; pad++) {
+            String s = "x".repeat(pad) + "startxref 123456\n%%EOF\n";
+            List<StartXRefOffset> offsets = getOffsets(s);
+            assertEquals(1, offsets.size(), "pad " + pad);
+            assertEquals(pad, offsets.get(0).getStartXrefOffset(), "pad " + pad);
+            assertEquals(123456, offsets.get(0).getStartxref(), "pad " + pad);
+            assertTrue(offsets.get(0).isHasEof(), "pad " + pad);
+        }
+    }
+
+    @Test
+    public void testMultipleStartXRefsAcrossBlockBoundary() throws Exception {
+        int blockSize = 1 << 16;
+        String update = "startxref 123456\n%%EOF\n";
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 6; i++) {
+            sb.append("x".repeat(blockSize / 4)).append(update);
+        }
+        assertEquals(6, getOffsets(sb.toString()).size());
     }
 
     private List<StartXRefOffset> getOffsets(String s) throws IOException {
