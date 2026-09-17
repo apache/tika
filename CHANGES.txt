@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * PDF incremental-update scanning reads the file in blocks instead of one
+     byte at a time; same output, about 4x less CPU (TIKA-4898).
+
    * Metadata never stores an unpaired UTF-16 surrogate: every write replaces
      one with U+FFFD (StringUtils.wellFormed), so no reader meets one; the
      Smile encoder on the pipes channel rejected them and the parent counted
