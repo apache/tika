@@ -192,6 +192,7 @@ public class EMFParserTest extends TikaTest {
         assertEquals(0, renderings.size());
         String warning = metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
         assertTrue(warning != null && warning.contains("maxImagePixels"), warning);
+        assertEquals("1", metadata.get(Rendering.RENDER_FAILED_PAGE), "a metafile is page 1");
     }
 
     private static EmbeddedDocumentExtractor collector(List<byte[]> renderings) {

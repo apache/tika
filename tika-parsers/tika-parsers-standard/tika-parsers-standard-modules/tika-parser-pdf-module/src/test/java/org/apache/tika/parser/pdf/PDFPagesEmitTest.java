@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.pdf;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -50,6 +51,7 @@ import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AutoDetectParser;
@@ -182,6 +184,8 @@ public class PDFPagesEmitTest extends TikaTest {
         String[] warnings = metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
         assertEquals(2, warnings.length, "one warning per skipped page");
         assertTrue(warnings[0].contains("maxImagePixels"), warnings[0]);
+        assertArrayEquals(new String[] {"1", "2"}, metadata.getValues(Rendering.RENDER_FAILED_PAGE),
+                "the flag a client filters on");
     }
 
     /** The box is a ceiling: 300 dpi would be 2550 px across, the box makes it 200. */
@@ -235,6 +239,8 @@ public class PDFPagesEmitTest extends TikaTest {
         assertEquals(1, ocr.images.size(), "OCR saw the letter page only");
         assertEquals(0, metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length,
                 "a policy skip is not a warning");
+        assertEquals(0, metadata.getValues(Rendering.RENDER_FAILED_PAGE).length,
+                "nor a failed page");
     }
 
     /** A writer that dies still emits the page it was on; pages it never started are not rendered. */
@@ -419,6 +425,8 @@ public class PDFPagesEmitTest extends TikaTest {
         }
         assertEquals(2, metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length,
                 "one warning per page");
+        assertArrayEquals(new String[] {"1", "2"}, metadata.getValues(Rendering.RENDER_FAILED_PAGE),
+                "each page flagged once");
         return handler.toString();
     }
 

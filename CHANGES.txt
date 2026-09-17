@@ -21,7 +21,8 @@ Release 4.1.0 - unreleased
      settings resolve to, under its maxScaleTo ceiling (4.0 rendered every page
      with its long side at maxScaleTo, whatever dpi said); poi-metafile-renderer
      honours maxImagePixels. A page the engine cannot render is a warning on
-     the document whichever consumer asked first. The image settings on a
+     the document whichever consumer asked first, and its number is listed
+     under tk:rendering:failed-page (new key). The image settings on a
      renderer's own entry (poppler-renderer dpi/gray, poi-metafile-renderer
      width, the pdfbox-renderer setters) are deprecated: a parse always scopes
      pages.render. Java: PDFParserConfig.getOcr()/getImageStrategy()

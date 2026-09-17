@@ -72,7 +72,9 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -451,11 +453,18 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
                 || localConfig.isParseIncrementalUpdates();
     }
 
-    /** A page the renderer could not make is a warning on the PDF, not a silent gap. */
+    /**
+     * A page the renderer could not make is a warning on the PDF and its number under
+     * {@link Rendering#RENDER_FAILED_PAGE}, not a silent gap.
+     */
     static void carryRenderWarnings(RenderResult result, Metadata parentMetadata) {
         for (String warning : result.getMetadata()
                 .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)) {
             parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+        }
+        Integer page = result.getMetadata().getInt(TikaPagedText.PAGE_NUMBER);
+        if (page != null) {
+            parentMetadata.add(Rendering.RENDER_FAILED_PAGE, page);
         }
     }
 

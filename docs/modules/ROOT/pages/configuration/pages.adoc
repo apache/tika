@@ -118,7 +118,8 @@ failure. 2 by default.
 effort knob for PNG: 1.0 is uncompressed).
 `maxImagePixels`::
 A page that would still be larger than this many pixels after the box is skipped, with a warning
-on the document. 100 megapixels by default; `-1` for no limit.
+on the document and its number under `tk:rendering:failed-page`. 100 megapixels by default; `-1`
+for no limit.
 
 These settings reach the renderer the parser uses (`pdfbox-renderer`, `poppler-renderer`,
 `poi-metafile-renderer`, whatever `renderers` names for the type) through the parse; a renderer's
@@ -180,8 +181,9 @@ An overlay on `render` for the emitted images only, so OCR can keep its 300 dpi 
 while the emitted ones are small colour previews. When the two produce the same image, one
 render per page serves both.
 
-A page the engine cannot render is a warning on the document, not a failed parse, whichever
-consumer asked for the render first. A page that breaks the text extraction is still emitted, at
+A page the engine cannot render is a warning on the document (`tk:exception:warn` says why,
+`tk:rendering:failed-page` lists the page so a client can filter for it), not a failed parse,
+whichever consumer asked for the render first. A page that breaks the text extraction is still emitted, at
 the end of the document; pages the parser never reached are not rendered, and a stop the caller
 asked for (the write limit, an embedded-document limit) renders nothing more. A document
 selector that refuses the embedded image is asked before the page is drawn. A PDF without pages to walk (XFA-only) has every

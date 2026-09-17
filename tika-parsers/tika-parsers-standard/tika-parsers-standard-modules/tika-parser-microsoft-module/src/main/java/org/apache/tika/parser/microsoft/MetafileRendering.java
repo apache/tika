@@ -30,6 +30,7 @@ import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
@@ -106,6 +107,7 @@ final class MetafileRendering {
                     for (String warning : warnings) {
                         metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
                     }
+                    metadata.add(Rendering.RENDER_FAILED_PAGE, 1);
                     continue;
                 }
                 Metadata renderingMetadata = result.getMetadata();
@@ -188,6 +190,7 @@ final class MetafileRendering {
             throw e;
         } catch (Exception e) {
             EmbeddedDocumentUtil.recordException(e, parentMetadata, context);
+            parentMetadata.add(Rendering.RENDER_FAILED_PAGE, 1);
             return null;
         }
     }

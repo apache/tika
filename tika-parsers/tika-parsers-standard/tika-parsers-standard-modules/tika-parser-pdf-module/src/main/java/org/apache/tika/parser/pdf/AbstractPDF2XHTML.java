@@ -112,6 +112,7 @@ import org.apache.tika.metadata.Font;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.PDF;
+import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
@@ -776,6 +777,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 pageRender = renderCurrentPage(pdPage);
             } catch (IOException | TikaException | RuntimeException e) {
                 pageRender = skipped(getCurrentPageMetadata(pdPage));
+                // the consumer records why; the page is flagged once, here, whoever asked
+                metadata.add(Rendering.RENDER_FAILED_PAGE, getCurrentPageNo());
                 throw e;
             }
         }
@@ -871,10 +874,11 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         Metadata pageMetadata = getCurrentPageMetadata(pdPage);
         double[] size = PDFBoxRenderer.pageSize(pdPage);
         // too small to hold anything: a policy skip, not a failure
-        RenderResults results = pages.getRender().belowMinimum(size[0], size[1])
-                ? skipped(pageMetadata)
-                : emitter.render(getCurrentPageNo(), pages.getRender(),
-                        config.getRenderingStrategy(), pageMetadata);
+        if (pages.getRender().belowMinimum(size[0], size[1])) {
+            return skipped(pageMetadata);
+        }
+        RenderResults results = emitter.render(getCurrentPageNo(), pages.getRender(),
+                config.getRenderingStrategy(), pageMetadata);
         for (RenderResult result : results.getResults()) {
             if (result.getStatus() != RenderResult.STATUS.SUCCESS) {
                 PDFParser.carryRenderWarnings(result, metadata);

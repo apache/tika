@@ -30,6 +30,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.ParseContext;
@@ -163,6 +164,7 @@ final class PageEmitter {
                 throw e instanceof SAXException sax ? sax : new SAXException(e);
             }
             EmbeddedDocumentUtil.recordException(e, metadata, context);
+            metadata.add(Rendering.RENDER_FAILED_PAGE, pageNo);
         }
     }
 
