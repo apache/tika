@@ -35,4 +35,15 @@ public interface EmbeddingEngine extends Engine {
             throws IOException, TikaException;
 
     int getMaxBatchSize();
+
+    /** Whether {@link #embedMedia} is implemented; a MEDIA binding on an engine without it fails at load. */
+    default boolean supportsMedia() {
+        return false;
+    }
+
+    /** One request; the vectors come back in the order of the inputs. */
+    default List<float[]> embedMedia(List<MediaInput> inputs, ParseContext context)
+            throws IOException, TikaException {
+        throw new TikaException("this engine does not embed audio or video");
+    }
 }

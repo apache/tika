@@ -27,7 +27,7 @@ NOTE: Inference is experimental in 4.1.0. The `inference` section, the keys of a
 or VLM engine's entry, the `tika-inference` and `tika-vlm` classes, and the chunk and vector
 output (`tk:chunks`, `tk:inference-released`) may change in a minor release without a
 deprecation cycle, and no compatibility shims are kept for earlier shapes; 4.2 adds batched
-recognition, media inputs and document-level tasks. The `engines` map itself, and the
+recognition and document-level tasks. The `engines` map itself, and the
 `text-recognizers` list, are stable. Pin the Tika version you validated against and read the
 release notes before moving.
 
@@ -50,7 +50,7 @@ different models. Secrets and paths live here and only here.
 `openai-embedding-engine` posts to `/v1/embeddings` in the OpenAI shape and sends up to
 `maxBatchSize` images per request. Options: `baseUrl`, `model`, `apiKey`, `timeoutMillis`
 (120000), `maxBatchSize` (32), `embeddingsPath`, `apiKeyHeaderName`, `apiKeyPrefix`,
-`requestParameters`, `imageInput`.
+`requestParameters`, `imageInput`, `mediaInput` (see <<media>>).
 
 === Vendor keys: `requestParameters`
 
@@ -169,17 +169,22 @@ A list of bindings. Each names an engine, says what it is fed, and what to ask:
   document is not one. `PAGES` is one image per rendered page of a document whose parser
   renders pages for inference: the PDF parser, when its `inference.input` says so (see
   <<pages>>). `TEXT` is the extracted text of every document in the tree (see <<text>>).
-  `MEDIA` (audio and video) is accepted by a binding but no task takes it in 4.1: 4.2 adds
-  media chunkers (time windows for transcription, sampled frames or clips for an image or
-  video model) that run at the flush, and a transcribing task.
+  `MEDIA` is every document in the `audio/` and `video/` families, cut into segments at the
+  flush (see <<media>>); playlists (m3u, pls, xspf, asx) are text that names other files and
+  are never media. Container types Tika detects as `application/*` (some ogg, matroska, mxf)
+  are not offered.
+`modality`:: What the engine is shown: `text`, `visual` or `audio`. Implied by `TEXT`,
+  `IMAGES` and `PAGES`; a `MEDIA` binding must say `visual` or `audio`.
 `tasks`:: One call per task on the same engine and input. `embed` writes one vector chunk per
   unit into `tk:chunks`, with the page locator when the unit has a page.
 `maxChunks`:: How many units one document tree may send; for `PAGES`, how many pages of one
-  document; for `TEXT`, how many chunks across the tree; -1 for no limit.
+  document; for `TEXT`, how many chunks across the tree; for `MEDIA`, how many segments of one
+  file (480 unless set: the ceiling a request's `media` block cannot raise); -1 for no limit.
 `chunker`:: `TEXT` only: how a document's text is cut, `{ "markdown-chunker": { "maxChunkChars":
   1500, "overlapChars": 200 } }`. Without one the whole text is one chunk.
 `maxBytes`:: Largest unit the binding accepts (20 MB unless set; -1 for no limit); larger
-  ones are skipped and counted.
+  ones are skipped and counted. For `MEDIA` the unit is one cut segment, not the file: a
+  film of any size is offered, and a segment over the limit is the one that is skipped.
 `enabled`:: `false` keeps the binding configured but idle until a request selects it.
 `_mime-include`, `_mime-exclude`:: Narrow by media type within the input kind. With neither,
   an `IMAGES` binding skips vector and CAD image types (SVG, EMF, DWG, ...) that no embedding
@@ -190,7 +195,7 @@ on a chat engine), or an unknown key fails config load.
 
 == How it runs
 
-Parsers do not call engines. Every image document Tika parses is offered to one dispatcher
+Parsers do not call engines. Every image, audio or video document Tika parses is offered to one dispatcher
 after its own parser has run, whatever container it came from and however deep. The
 dispatcher keeps the units of the whole document tree until the top-level parse ends, then
 sends each binding's units to its engine in requests of up to `maxBatchSize` units: a docx
@@ -303,6 +308,139 @@ per-request `inference` block below is the way to switch it off.
 The 4.0 `openai-embedding-filter` and `jina-embedding-filter` keep working and embed one
 document per request; the binding batches the tree and shares the engine with the other
 bindings.
+
+[[media]]
+== Media
+
+A `MEDIA` binding embeds audio and video. The engine sees one channel, so the binding says
+which: `modality` is `visual` (the picture, as short silent clips) or `audio` (the sound,
+as mono Opus). Two bindings on one engine index both channels of a video:
+
+[source,json]
+----
+{
+  "engines": {
+    "jina": { "openai-embedding-engine": { "baseUrl": "https://api.jina.ai", "apiKey": "...",
+              "model": "jina-embeddings-v5-omni-small", "mediaInput": "object",
+              "requestParameters": { "task": "retrieval.passage", "dimensions": 1024 } } }
+  },
+  "inference": [
+    { "id": "jina-video", "engine": "jina", "input": "MEDIA", "modality": "visual" },
+    { "id": "jina-audio", "engine": "jina", "input": "MEDIA", "modality": "audio" }
+  ]
+}
+----
+
+Tika cuts the file into segments with ffmpeg (on the `PATH`) on one grid per document, set
+in the parse context:
+
+[source,json]
+----
+{ "parse-context": { "media": { "segment": { "seconds": 30, "overlap": 5 }, "maxSegments": 480 } } }
+----
+
+Those are the defaults: 30 s windows, each starting 25 s after the last, so any event of
+5 s or less is whole in at least one segment; `maxSegments` caps a document, the rest of the
+file is not embedded. A block with `overlap` outside `[0, seconds)`, or `maxSegments` of 0
+or below -1, fails at config load and per request. The segmenter defines the unit and every binding on the document sees
+the same segments, so each segment's chunks share the segment's id: a chunk carries a
+`temporal` locator (`start_ms`, `end_ms` on the container's presentation timeline), its
+`producer` (the binding), its `modality` (`visual` or `audio`) and a `correlator`, the
+segment's id. Group by `correlator` to get a segment with both channels:
+
+[source,json]
+----
+[
+  { "producer": "jina-video", "modality": "visual", "correlator": "t:25000-55000",
+    "vector": "<base64 float32>", "locators": { "temporal": [{"start_ms": 25000, "end_ms": 55000}] } },
+  { "producer": "jina-audio", "modality": "audio", "correlator": "t:25000-55000",
+    "vector": "<base64 float32>", "locators": { "temporal": [{"start_ms": 25000, "end_ms": 55000}] } }
+]
+----
+
+An audio file has no picture and a silent video has no sound: the binding for the missing
+channel skips the document; cover art in an audio file is not a picture. The binding's
+`maxChunks` (480 unless set) also caps segments per document, and since a request may send
+its own `media` block, it is the ceiling an operator relies on: the smaller of the two wins.
+`maxBytes` bounds one cut segment (the cuts are small: 360p H.264 and 32 kbps Opus); the
+file's own size is not gated. The engine must accept media, which the OpenAI shape has no
+form for, so the vendor's form is declared: `mediaInput: "object"` sends
+`{"audio": data-uri}` and `{"video": data-uri}` items as Jina names them; without it a MEDIA
+binding on the engine fails at load. Each segment is one request input; a request holds up
+to `maxBatchSize` of them (the engine default is 32; the cuts are 100-500 KB each as base64,
+so set it lower for a small request body). A request the engine rejects is retried one
+segment at a time from the same cut files; nothing is cut twice. A file ffprobe cannot read
+is reported once as the binding's warning and the next file runs.
+
+ffmpeg and ffprobe are looked up on the `PATH` once, at config load: a MEDIA binding without
+them logs one warning and stands by, and each audio or video document is then skipped with a
+warning in its metadata rather than failed, the way OCR behaves without tesseract.
+
+ffmpeg runs under the parse's time budget: each probe and cut asks for its own cap (60 s and
+5 min) and gets the smaller of that and what remains of the request's total timeout, with
+the wait counted as progress. When the budget runs out mid-file the task writes the segments
+it has embedded, stops, and reports the timeout once as the binding's warning on the root
+document; every later MEDIA binding's first probe fails fast the same way.
+
+=== Jina omni
+
+`jina-embeddings-v5-omni-small` (1024 dimensions) and `-nano` (768) embed text, images,
+pages, audio and video in one space, one modality per input item, mixed within a request.
+There is no Jina engine class; it is the OpenAI shape with Jina's keys:
+
+[cols="1,3"]
+|===
+|Setting |Value for Jina omni
+
+|`baseUrl`
+|`https://api.jina.ai` (the engine appends `/v1/embeddings`).
+
+|`apiKey`
+|The Jina key; sent as `Authorization: Bearer`.
+
+|`model`
+|`jina-embeddings-v5-omni-small` or `jina-embeddings-v5-omni-nano`.
+
+|`imageInput`
+|`object` (the default): images and pages go as `{"image": data-uri}`.
+
+|`mediaInput`
+|`object`: audio as `{"audio": data-uri}`, video as `{"video": data-uri}`. Required for
+MEDIA bindings.
+
+|`maxBatchSize`
+|Items per request across modalities; the segment cuts are 100-500 KB each as base64, so
+keep the request well under Jina's body limit (start at 8).
+
+|`requestParameters`
+|`task`: `retrieval.passage` for indexing (default nothing is sent; set it), `retrieval.query`
+for queries, `text-matching`, `classification`, `separation`. `dimensions`: a Matryoshka
+size up to the model's. `normalized`: `true` for unit vectors, which makes cosine scores
+comparable across the picture, sound and text fields. `truncate` and `late_chunking` apply
+to text items. `embedding_type` is refused: the engine reads float vectors by index.
+|===
+
+Jina's documented limits: images 5 MB, PDFs 8 MB and one per request; audio as WAV, MP3,
+FLAC, OGG, M4A or Opus with no documented duration cap; video as 32 uniformly sampled frames
+whatever its length, and nothing says the video item's audio track is used, which is why
+Tika sends the sound as its own item. The 32 frames are why the grid matters: a whole film
+as one input is 32 frames for the film, a 30 s segment is about one frame a second. Byte
+caps for audio and video items are not documented; measure before raising `maxBytes`.
+
+A query is the same call with the query task, and one vector searches every field:
+
+[source,bash]
+----
+curl https://api.jina.ai/v1/embeddings -H "Authorization: Bearer $JINA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "jina-embeddings-v5-omni-small", "task": "retrieval.query",
+       "dimensions": 1024, "normalized": true, "input": ["a horse jumping a fence"]}'
+----
+
+For search, index one document per segment so a hit is a segment and its two vectors score
+together: the Elasticsearch and OpenSearch emitters do that with `chunkStrategy: DOCUMENTS`,
+which merges the chunks of one correlator into one document (see
+xref:migration-to-4x/chunk-strategies.adoc[Chunk strategies]).
 
 == Per request
 

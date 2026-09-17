@@ -18,6 +18,7 @@ package org.apache.tika.inference;
 
 import org.apache.tika.inference.locator.Locators;
 import org.apache.tika.inference.locator.TextLocator;
+import org.apache.tika.parser.inference.Modality;
 
 /**
  * A content chunk with multimodal locators and an optional embedding vector.
@@ -35,6 +36,8 @@ public class Chunk {
     private final Locators locators;
     private float[] vector;
     private String producer;
+    private Modality modality;
+    private String correlator;
 
     public Chunk(String text, Locators locators) {
         this.text = text;
@@ -86,6 +89,28 @@ public class Chunk {
 
     public void setProducer(String producer) {
         this.producer = producer;
+    }
+
+    /** What the engine was shown for this vector; null when the writer did not say. */
+    public Modality getModality() {
+        return modality;
+    }
+
+    public void setModality(Modality modality) {
+        this.modality = modality;
+    }
+
+    /**
+     * The id of the unit this chunk was cut from, assigned by the chunker that defined it, so
+     * chunks of one unit written by different bindings (a segment's sound and picture, a
+     * region's text and crop) can be grouped; null for a chunk that is its own unit.
+     */
+    public String getCorrelator() {
+        return correlator;
+    }
+
+    public void setCorrelator(String correlator) {
+        this.correlator = correlator;
     }
 
     public float[] getVector() {

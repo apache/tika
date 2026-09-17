@@ -19,6 +19,7 @@ package org.apache.tika.inference;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -94,8 +95,7 @@ public class EmbedTaskTest {
     }
 
     private static InferenceBinding binding() {
-        return new InferenceBinding("pics", "clip", InputKind.IMAGES, List.of("embed"), null,
-                null, -1, -1, true);
+        return InferenceBinding.builder("pics", "clip", InputKind.IMAGES).build();
     }
 
     @Test
@@ -146,8 +146,7 @@ public class EmbedTaskTest {
         Path p2 = Files.createTempFile(tmp, "p2", ".png");
         Files.write(p1, "one".getBytes(StandardCharsets.UTF_8));
         Files.write(p2, "two".getBytes(StandardCharsets.UTF_8));
-        InferenceBinding pages = new InferenceBinding("pages", "clip", InputKind.PAGES,
-                List.of("embed"), null, null, -1, -1, true);
+        InferenceBinding pages = InferenceBinding.builder("pages", "clip", InputKind.PAGES).build();
         EmbedTask task = new EmbedTask();
         task.validate(pages, engine);
         task.run(pages, List.of(
@@ -171,8 +170,8 @@ public class EmbedTaskTest {
         Metadata attachment = new Metadata();
         attachment.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, "ATTACHMENT");
         attachment.set(TikaCoreProperties.EMBEDDED_ID_PATH, "/1");
-        InferenceBinding text = new InferenceBinding("text-vectors", "clip", InputKind.TEXT,
-                List.of("embed"), null, null, -1, -1, true, new MarkdownChunker(10, 0));
+        InferenceBinding text = InferenceBinding.builder("text-vectors", "clip", InputKind.TEXT)
+                .chunker(new MarkdownChunker(10, 0)).build();
         EmbedTask task = new EmbedTask();
         task.validate(text, engine);
         // "one two" and "three" from the parent, "four five" and "six" from the attachment
@@ -205,8 +204,8 @@ public class EmbedTaskTest {
         server.enqueue(new TikaTestHttpServer.MockResponse(200, response(0)));
         Metadata a = new Metadata();
         Metadata b = new Metadata();
-        InferenceBinding text = new InferenceBinding("t", "clip", InputKind.TEXT,
-                List.of("embed"), null, null, 1, -1, true);
+        InferenceBinding text = InferenceBinding.builder("t", "clip", InputKind.TEXT)
+                .maxChunks(1).build();
         new EmbedTask().run(text, List.of(
                 new InferenceUnit(MediaType.TEXT_PLAIN, a, null, "whole document"),
                 new InferenceUnit(MediaType.TEXT_PLAIN, b, null, "dropped")),
@@ -221,10 +220,10 @@ public class EmbedTaskTest {
     public void testValidateRejectsANonEmbeddingEngine() {
         assertThrows(TikaConfigException.class,
                 () -> new EmbedTask().validate(binding(), new Engine() { }));
-        InferenceBinding media = new InferenceBinding("clips", "clip", InputKind.MEDIA,
-                List.of("embed"), null, null, -1, -1, true);
-        assertThrows(TikaConfigException.class, () -> new EmbedTask().validate(media, engine),
-                "embed takes IMAGES only");
+        InferenceBinding media = InferenceBinding.builder("clips", "clip", InputKind.MEDIA).build();
+        TikaConfigException e = assertThrows(TikaConfigException.class,
+                () -> new EmbedTask().validate(media, engine));
+        assertTrue(e.getMessage().contains("does not embed audio or video"), e.getMessage());
     }
 
     @Test

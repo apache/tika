@@ -611,7 +611,8 @@ public class ElasticsearchTest {
                         ESEmitterConfig.UpdateStrategy.OVERWRITE,
                         10, DEFAULT_EMBEDDED_FILE_FIELD_NAME, null,
                         new HttpClientConfig(null, null, null,
-                                -1, -1, null, 0, false));
+                                -1, -1, null, 0, false),
+                        ESEmitterConfig.ChunkStrategy.INLINE);
 
         return new ElasticsearchTestClient(config,
                 httpClientFactory.build());
