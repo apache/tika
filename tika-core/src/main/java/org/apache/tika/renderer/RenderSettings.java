@@ -115,13 +115,22 @@ public class RenderSettings implements Serializable {
         return result;
     }
 
-    /** True when a page rendered with either settings is the same image; gates do not count. */
-    public boolean rendersSameImageAs(RenderSettings other) {
-        return Objects.equals(dpi, other.dpi) && imageType == other.imageType
-                && imageFormat == other.imageFormat
+    @Override
+    public boolean equals(Object o) {
+        return o instanceof RenderSettings other && Objects.equals(dpi, other.dpi)
+                && imageType == other.imageType && imageFormat == other.imageFormat
                 && Objects.equals(imageQuality, other.imageQuality)
+                && Objects.equals(maxImagePixels, other.maxImagePixels)
                 && Objects.equals(maxWidth, other.maxWidth)
-                && Objects.equals(maxHeight, other.maxHeight);
+                && Objects.equals(maxHeight, other.maxHeight)
+                && Objects.equals(minWidth, other.minWidth)
+                && Objects.equals(minHeight, other.minHeight);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(dpi, imageType, imageFormat, imageQuality, maxImagePixels, maxWidth,
+                maxHeight, minWidth, minHeight);
     }
 
     /**
@@ -141,25 +150,19 @@ public class RenderSettings implements Serializable {
 
     /** True when the page rendered at the target dpi would be smaller than the minimum. */
     public boolean belowMinimum(double widthPoints, double heightPoints) {
-        return belowMinimum(Math.ceil(widthPoints / 72.0 * dpi),
-                Math.ceil(heightPoints / 72.0 * dpi), 1.0);
-    }
-
-    /** True when an image of this many pixels is smaller than the minimum in either dimension. */
-    public boolean belowMinimumPixels(long width, long height) {
-        return belowMinimum(width, height, 1.0);
-    }
-
-    private boolean belowMinimum(double width, double height, double scale) {
-        return width * scale < minWidth || height * scale < minHeight;
+        return Math.ceil(widthPoints / 72.0 * dpi) < minWidth
+                || Math.ceil(heightPoints / 72.0 * dpi) < minHeight;
     }
 
     /** Pixels of the page rendered at {@link #effectiveDpi}; what {@code maxImagePixels} bounds. */
     public long estimatedPixels(double widthPoints, double heightPoints) {
-        float effective = effectiveDpi(widthPoints, heightPoints);
-        long width = (long) Math.ceil(widthPoints / 72.0 * effective);
-        long height = (long) Math.ceil(heightPoints / 72.0 * effective);
-        return width * height;
+        return estimatedPixels(widthPoints, heightPoints, effectiveDpi(widthPoints, heightPoints));
+    }
+
+    /** Pixels of the page rendered at this dpi; saturates rather than overflowing. */
+    public static long estimatedPixels(double widthPoints, double heightPoints, double dpi) {
+        double pixels = Math.ceil(widthPoints / 72.0 * dpi) * Math.ceil(heightPoints / 72.0 * dpi);
+        return pixels >= Long.MAX_VALUE ? Long.MAX_VALUE : (long) pixels;
     }
 
     /** True when an image of this many pixels exceeds {@code maxImagePixels}. */

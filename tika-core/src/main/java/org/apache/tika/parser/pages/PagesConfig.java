@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import org.apache.tika.annotation.TikaComponent;
@@ -123,7 +124,7 @@ public class PagesConfig implements Serializable {
 
     /** Whether emitted renders are the same image as the render OCR and inference see. */
     public boolean emitsSameImage() {
-        return emittedRender().rendersSameImageAs(render);
+        return emittedRender().equals(render);
     }
 
     public RenderSettings getRender() {
@@ -418,7 +419,13 @@ public class PagesConfig implements Serializable {
             Set<String> types = new LinkedHashSet<>();
             for (String type : resourceTypes) {
                 // a typo would silently disable emission
-                types.add(TikaCoreProperties.EmbeddedResourceType.valueOf(type).name());
+                try {
+                    types.add(TikaCoreProperties.EmbeddedResourceType
+                            .valueOf(type.toUpperCase(Locale.ROOT)).name());
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("emit.resourceTypes: \"" + type
+                            + "\" is not a tk:embedded-resource-type", e);
+                }
             }
             this.resourceTypes = Collections.unmodifiableSet(types);
         }

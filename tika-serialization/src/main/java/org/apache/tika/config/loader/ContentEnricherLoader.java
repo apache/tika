@@ -73,7 +73,6 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
             } else {
                 Map.Entry<String, JsonNode> entry = inline(item, context);
                 label = "\"" + entry.getKey() + "\"";
-                // taken before the engine is built, which would refuse the keys
                 int[] gate = sizeGate(entry.getValue(), label);
                 enricher = sizeGated(instantiate(entry, context), gate);
             }
@@ -131,9 +130,9 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
     }
 
     /**
-     * The entry's {@code _min-width}/{@code _min-height}, removed from the node so the engine
-     * never sees them; null when neither is set. An image of unknown size passes the gate,
-     * and one below {@link ContentEnrichers#MIN_PIXELS} never reaches dispatch anyway.
+     * The entry's {@code _min-width}/{@code _min-height}; null when neither is set. An image of
+     * unknown size passes the gate, and one below {@link ContentEnrichers#MIN_PIXELS} never
+     * reaches dispatch anyway.
      */
     private static int[] sizeGate(JsonNode settings, String label) throws TikaConfigException {
         if (!settings.isObject()) {
@@ -161,7 +160,6 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
             throw new TikaConfigException("\"" + KEY + "\" entry " + label + ": \"" + field
                     + "\" must be a non-negative integer");
         }
-        ((ObjectNode) settings).remove(field);
         return v.asInt();
     }
 

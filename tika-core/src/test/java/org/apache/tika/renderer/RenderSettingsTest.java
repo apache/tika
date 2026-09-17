@@ -19,6 +19,7 @@ package org.apache.tika.renderer;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,8 +72,13 @@ public class RenderSettingsTest {
         s.setMaxWidth(8);
         s.setMaxHeight(8);
         assertFalse(s.belowMinimum(W, H));
-        assertTrue(s.belowMinimumPixels(1, 100));
-        assertFalse(s.belowMinimumPixels(2, 4));
+    }
+
+    @Test
+    public void testEstimatedPixelsSaturates() {
+        RenderSettings s = RenderSettings.defaults();
+        assertEquals(Long.MAX_VALUE, s.estimatedPixels(2_000_000_000, 2_000_000_000));
+        assertTrue(s.exceedsMaxPixels(s.estimatedPixels(2_000_000_000, 2_000_000_000)));
     }
 
     @Test
@@ -103,14 +109,13 @@ public class RenderSettingsTest {
     }
 
     @Test
-    public void testSameImageIgnoresGates() {
+    public void testEqualityIsFieldWise() {
         RenderSettings a = RenderSettings.defaults();
         RenderSettings b = RenderSettings.defaults();
+        assertEquals(a, b);
+        assertEquals(a, a.over(new RenderSettings()));
         b.setMaxImagePixels(5L);
-        b.setMinWidth(100);
-        assertTrue(a.rendersSameImageAs(b));
-        b.setMaxWidth(256);
-        assertFalse(a.rendersSameImageAs(b));
+        assertNotEquals(a, b);
     }
 
     @Test

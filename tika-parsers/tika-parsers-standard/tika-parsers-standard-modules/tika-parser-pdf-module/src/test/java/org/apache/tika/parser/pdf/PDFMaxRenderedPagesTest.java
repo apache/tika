@@ -49,6 +49,8 @@ public class PDFMaxRenderedPagesTest extends TikaTest {
 
         List<Metadata> metadataList = getRecursiveMetadata(TWO_PAGES, context);
         assertEquals(2, (int) metadataList.get(0).getInt(PagedText.N_PAGES));
+        // page 2 is still read
+        assertContains("Denmark", metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
         assertEquals(1, renderings(metadataList), "one rendering, the first page");
     }
 

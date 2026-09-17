@@ -48,8 +48,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * This parser offers a very rough capability to extract text if there
  * is text stored in the WMF files.
  * <p/>
- * With {@link MetafileParserConfig#setRenderImage(boolean)}
- * ("wmf-parser": {"renderImage": true}) the image is also rendered through the
+ * Under {@code "pages": {"emit": {"enabled": true}}} (the parse-context block, or the
+ * parser's own overlay) the image is also rendered through the
  * configured {@link Renderer}, the
  * {@link org.apache.tika.renderer.microsoft.POIMetafileRenderer} by
  * default, and emitted as a

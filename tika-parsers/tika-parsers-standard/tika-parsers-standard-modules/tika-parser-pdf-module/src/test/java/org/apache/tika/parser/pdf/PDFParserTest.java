@@ -2072,7 +2072,7 @@ public class PDFParserTest extends TikaTest {
         assertNotContained("Denmark", xml);
     }
 
-    /** The 4.0 ocr.strategy spellings map onto pages.text; an explicit pages.text wins. */
+    /** The 4.0 ocr.strategy spellings map onto pages.text; the later write wins. */
     @Test
     public void testOcrStrategyAlias() throws Exception {
         PDFParserConfig config = new PDFParserConfig();
@@ -2090,7 +2090,9 @@ public class PDFParserTest extends TikaTest {
             assertEquals(e.getValue(), config.getPages().getText());
         }
         config.pages().setText(TextPolicy.NONE);
-        assertEquals(TextPolicy.NONE, config.getPages().getText(), "pages wins over the alias");
+        assertEquals(TextPolicy.NONE, config.getPages().getText(), "the later write wins");
+        config.getPages().setText(TextPolicy.OCR);
+        assertEquals(TextPolicy.OCR, config.getPages().getText(), "getPages() is the overlay");
     }
 
     /** The request's switch: no OCR, text kept, and OCR_ONLY does not complain about an engine. */

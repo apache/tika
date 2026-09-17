@@ -39,11 +39,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -55,10 +57,14 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.TextRecognizer;
 import org.apache.tika.parser.pages.TextPolicy;
+import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.ImageType;
+import org.apache.tika.renderer.RenderRequest;
 import org.apache.tika.renderer.RenderResult;
+import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer;
 import org.apache.tika.sax.ToXMLContentHandler;
+import org.apache.tika.sax.WriteOutContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
@@ -230,7 +236,7 @@ public class PDFPagesEmitTest extends TikaTest {
                 "a policy skip is not a warning");
     }
 
-    /** Emission does not depend on the text pass: a writer that dies still emits its pages. */
+    /** A writer that dies still emits the page it was on; pages it never started are not rendered. */
     @Test
     public void testEmissionSurvivesAFailedTextPass() throws Exception {
         PDFParserConfig config = emitting();
@@ -257,7 +263,168 @@ public class PDFPagesEmitTest extends TikaTest {
             assertThrows(IllegalStateException.class,
                     () -> parser.parse(tis, dying, new Metadata(), context));
         }
-        assertEquals(2, pages.images.size(), "both pages emitted at document end");
+        assertEquals(1, pages.images.size(), "the page in flight, at document end");
+    }
+
+    /** The write limit is a stop: nothing more is rendered, nothing is written past it. */
+    @Test
+    public void testWriteLimitStopsEmission() throws Exception {
+        PDFParserConfig config = emitting();
+        config.pages().render().setDpi(36);
+        CountingRenderer renderer = new CountingRenderer();
+        PDFParser parser = new PDFParser();
+        parser.setRenderer(renderer);
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser(new ImageSink()));
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/" + TWO_PAGES))) {
+            assertThrows(WriteLimitReachedException.class, () -> parser.parse(tis,
+                    new WriteOutContentHandler(new ToXMLContentHandler(), 5), metadata, context));
+        }
+        assertEquals(0, renderer.pages, "the limit hit on page 1 before its end");
+        assertEquals("true", metadata.get(TikaCoreProperties.WRITE_LIMIT_REACHED));
+    }
+
+    /** The RENDERING child sits inside its page, as bytes and metadata: no file name as text. */
+    @Test
+    public void testEmittedPageSitsInsideThePage() throws Exception {
+        PDFParserConfig config = emitting();
+        config.pages().render().setDpi(36);
+        config.pages().emit().setMaxPages(1);
+        PDFParser parser = new PDFParser();
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser(new ImageSink()));
+        ToXMLContentHandler handler = new ToXMLContentHandler();
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/" + TWO_PAGES))) {
+            parser.parse(tis, handler, new Metadata(), context);
+        }
+        String xml = handler.toString();
+        int page1 = xml.indexOf("<div class=\"page\">");
+        int page2 = xml.indexOf("<div class=\"page\">", page1 + 1);
+        int embedded = xml.indexOf("seen");
+        assertTrue(page1 < embedded && embedded < page2, xml);
+        assertEquals(-1, xml.indexOf("<h1>"), "no file name in the text: " + xml);
+        assertEquals(-1, xml.indexOf("tika-pdfbox-rendering"), xml);
+    }
+
+    /** OCR renders through the configured engine, its leaf when composite, sharing the open document. */
+    @Test
+    public void testConfiguredEngineGetsTheOpenDocument() throws Exception {
+        PDFParserConfig config = emitting();
+        config.pages().setText(TextPolicy.EXTRACT_AND_OCR);
+        config.pages().render().setDpi(36);
+        config.pages().emit().render().setImageType(ImageType.RGB);
+        CountingRenderer renderer = new CountingRenderer();
+        PDFParser parser = new PDFParser();
+        parser.setRenderer(new CompositeRenderer(List.of(renderer)));
+        parser.setContentEnrichers(new CompositeContentEnricher(List.of(new ImageSink())));
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser(new ImageSink()));
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/" + TWO_PAGES))) {
+            parser.parse(tis, new ToXMLContentHandler(), new Metadata(), context);
+        }
+        assertEquals(4, renderer.pages, "OCR and emit, both through the leaf");
+        assertEquals(4, renderer.withOpenDocument, "never reloaded from the spool");
+    }
+
+    /** A render that throws is asked for once per page, however many consumers want it. */
+    @Test
+    public void testFailedRenderIsNotRetried() throws Exception {
+        PDFParserConfig config = emitting();
+        config.pages().setText(TextPolicy.EXTRACT_AND_OCR);
+        int[] calls = new int[1];
+        PDFParser parser = new PDFParser();
+        parser.setRenderer(new PDFBoxRenderer() {
+            @Override
+            public RenderResults render(TikaInputStream tis, Metadata metadata,
+                                        ParseContext parseContext, RenderRequest... requests)
+                    throws IOException {
+                calls[0]++;
+                throw new IOException("engine down");
+            }
+        });
+        parser.setContentEnrichers(new CompositeContentEnricher(List.of(new ImageSink())));
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser(new ImageSink()));
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/" + TWO_PAGES))) {
+            // recorded per page, rethrown at the end
+            assertThrows(TikaException.class,
+                    () -> parser.parse(tis, new ToXMLContentHandler(), metadata, context));
+        }
+        assertEquals(2, calls[0], "once per page: OCR asked, emission did not ask again");
+    }
+
+    /** An OCR-only strategy draws a different page: the emitted one is a full render. */
+    @Test
+    public void testOcrOnlyStrategyIsNotEmitted() throws Exception {
+        PDFParserConfig config = emitting();
+        config.pages().setText(TextPolicy.EXTRACT_AND_OCR);
+        config.pages().render().setDpi(36);
+        config.setRenderingStrategy(OcrConfig.RenderingStrategy.NO_TEXT);
+        assertEquals(4, renders(config), "two OCR renders without text, two full ones emitted");
+    }
+
+    /** A page the engine refuses is warned about once, whoever asked for the render. */
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testOcrRenderRefusedWarnsOnce(boolean emit) throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.pages().emit().setEnabled(emit);
+        config.pages().setText(TextPolicy.OCR);
+        config.pages().render().setMaxImagePixels(1000L);
+        ImageSink pages = new ImageSink();
+        ImageSink ocr = new ImageSink();
+
+        Metadata metadata = parse(config, pages, ocr);
+
+        assertEquals(0, ocr.images.size());
+        assertEquals(0, pages.images.size());
+        assertEquals(2, metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING).length,
+                "one per page");
+    }
+
+    /** The 4.0 aliases and the canonical spelling are one overlay: a request's alias wins. */
+    @Test
+    public void testRequestAliasOverridesConfigPages() throws Exception {
+        PDFParser parser = new PDFParser();
+        parser.getPDFParserConfig().pages().render().setDpi(72);
+        parser.getPDFParserConfig().pages().setText(TextPolicy.EXTRACT);
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("pdf-parser", "{\"ocr\": {\"dpi\": 36, \"strategy\": \"OCR_ONLY\"},"
+                + " \"imageStrategy\": \"RENDER_PAGES_AT_PAGE_END\"}");
+        ImageSink pages = new ImageSink();
+        ImageSink ocr = new ImageSink();
+        parser.setContentEnrichers(new CompositeContentEnricher(List.of(ocr)));
+        context.set(Parser.class, new AutoDetectParser(pages));
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/" + TWO_PAGES))) {
+            parser.parse(tis, new ToXMLContentHandler(), new Metadata(), context);
+        }
+        assertEquals(2, ocr.images.size(), "OCR_ONLY over the config's EXTRACT");
+        assertEquals(pixelsAcross(36), ocr.images.get(0).width, "ocr.dpi over pages.render.dpi");
+        assertEquals(2, pages.images.size(), "imageStrategy turned emission on");
+
+        // and the other way: a request's NONE turns a config's RENDER_PAGES off
+        parser.getPDFParserConfig().setImageStrategy(
+                PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_BEFORE_PARSE);
+        context = new ParseContext();
+        context.setJsonConfig("pdf-parser", "{\"imageStrategy\": \"NONE\"}");
+        pages = new ImageSink();
+        context.set(Parser.class, new AutoDetectParser(pages));
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/" + TWO_PAGES))) {
+            parser.parse(tis, new ToXMLContentHandler(), new Metadata(), context);
+        }
+        assertEquals(0, pages.images.size());
     }
 
     @Test
@@ -381,6 +548,17 @@ public class PDFPagesEmitTest extends TikaTest {
     private static final class CountingRenderer extends PDFBoxRenderer {
         private static final long serialVersionUID = 1L;
         int pages;
+        int withOpenDocument;
+
+        @Override
+        public RenderResults render(TikaInputStream tis, Metadata metadata,
+                                    ParseContext parseContext, RenderRequest... requests)
+                throws IOException, TikaException {
+            if (tis.getOpenContainer() instanceof PDDocument) {
+                withOpenDocument++;
+            }
+            return super.render(tis, metadata, parseContext, requests);
+        }
 
         @Override
         protected RenderResult renderPage(PDFRenderer renderer, PDPage page, int id,

@@ -130,6 +130,9 @@ public class ContentEnricherLoaderTest {
         assertEquals(50, ((SizeGatedEnricher) unwrapTo(matched.get(1), SizeGatedEnricher.class))
                 .getMinHeight());
         assertTrue(ContentEnrichers.isEnricher(matched.get(1)));
+        // the gate is config, not a load-time side effect: a dump keeps it
+        assertTrue(loader.toJson().contains("\"_min-width\" : 100"), loader.toJson());
+        assertTrue(loader.toJson().contains("\"_min-height\" : 50"), loader.toJson());
     }
 
     private static Parser unwrapTo(Parser parser, Class<? extends Parser> type) {

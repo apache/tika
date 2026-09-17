@@ -80,6 +80,7 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.EnrichingParser;
+import org.apache.tika.parser.inference.InputKind;
 import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.parser.pages.TextPolicy;
 import org.apache.tika.parser.pdf.updates.IncrementalUpdateRecord;
@@ -220,27 +221,31 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
             if (handler != null) {
                 PageEmitter emitter = new PageEmitter(pdfDocument, pages, renderer, metadata,
                         context);
+                Throwable failure = null;
                 try {
                     if (shouldHandleXFAOnly(hasXFA, localConfig)) {
-                        handleXFAOnly(pdfDocument, handler, metadata, context);
+                        handleXFAOnly(pdfDocument, handler, metadata, context, emitter,
+                                localConfig.getMaxPages());
                     } else if (pages.getText() == TextPolicy.OCR
                             || pages.getText() == TextPolicy.NONE) {
                         OCR2XHTML.process(pdfDocument, handler, context, metadata,
-                                localConfig, pages, emitter, renderer, contentEnrichers);
+                                localConfig, pages, emitter, contentEnrichers);
                     } else if (hasMarkedContent && localConfig.getMarkedContent().getStrategy()
                             != MarkedContentConfig.Strategy.NONE && !localConfig.isDetectAngles()) {
                         // detectAngles re-runs the page per angle; the tagged writer needs one pass
                         PDFMarkedContent2XHTML
                                 .process(pdfDocument, handler, context, metadata,
-                                        localConfig, pages, emitter, renderer, contentEnrichers);
+                                        localConfig, pages, emitter, contentEnrichers);
                     } else {
                         PDF2XHTML.process(pdfDocument, handler, context, metadata,
-                                localConfig, pages, emitter, renderer, contentEnrichers);
+                                localConfig, pages, emitter, contentEnrichers);
                     }
+                } catch (Throwable t) {
+                    failure = t;
+                    throw t;
                 } finally {
-                    // emission does not depend on the text pass: a page whose end was never
-                    // reached is emitted here, as it was when renders preceded the parse
-                    emitter.emitRemaining(handler, localConfig.getMaxPages());
+                    // a thumbnail even when page 1 broke the writer, as before the parse rendered
+                    emitter.emitUnfinished(handler, failure);
                 }
             }
         } catch (InvalidPasswordException e) {
@@ -251,11 +256,7 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
             context.set(OCRPageCounter.class, prevOCRCounter);
             //reset the incrementalUpdateRecord even if null
             context.set(IncrementalUpdateRecord.class, incomingIncrementalUpdateRecord);
-            PDFRenderingState currState = context.get(PDFRenderingState.class);
             try {
-                if (currState != null && currState.getRenderResults() != null) {
-                    currState.getRenderResults().close();
-                }
                 if (pdfDocument != null) {
                     pdfDocument.close();
                 }
@@ -440,16 +441,12 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
         }
     }
 
+    /** Whether a later stage re-reads the bytes: the xref scan, or a renderer that takes a file. */
     private boolean shouldSpool(PDFParserConfig localConfig, PagesConfig pages) {
-        if (pages.getEmit().getEnabled()) {
-            return true;
-        }
-        if (localConfig.isExtractIncrementalUpdateInfo() ||
-                localConfig.isParseIncrementalUpdates()) {
-            return true;
-        }
-        // NONE and EXTRACT never OCR; PAGES for inference renders from the open document
-        return pages.getText().ocrs();
+        return pages.getEmit().getEnabled() || pages.getText().ocrs()
+                || pages.getInference().contains(InputKind.PAGES)
+                || localConfig.isExtractIncrementalUpdateInfo()
+                || localConfig.isParseIncrementalUpdates();
     }
 
     /** A page the renderer could not make is a warning on the PDF, not a silent gap. */
@@ -725,7 +722,7 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
     }
 
     private void handleXFAOnly(PDDocument pdDocument, ContentHandler handler, Metadata metadata,
-                               ParseContext context)
+                               ParseContext context, PageEmitter emitter, int maxPages)
             throws SAXException, IOException, TikaException {
         XFAExtractor ex = new XFAExtractor();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
@@ -736,6 +733,8 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
         } catch (XMLStreamException e) {
             throw new TikaException("XML error in XFA", e);
         }
+        // no page walk: the renders go in here, before the document ends
+        emitter.emitAll(xhtml, maxPages);
         xhtml.endDocument();
     }
 

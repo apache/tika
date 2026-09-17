@@ -48,6 +48,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pdf.OcrConfig;
 import org.apache.tika.parser.pdf.PDFParser;
 import org.apache.tika.parser.pdf.PDFRandomAccess;
 import org.apache.tika.renderer.ImageFormat;
@@ -169,7 +170,7 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
 
     private void renderRange(PDDocument pdDocument, int start, int endInclusive, Metadata metadata,
                              ParseContext parseContext, PageBasedRenderResults results) {
-        PDFRenderer renderer = new PDFRenderer(pdDocument);
+        PDFRenderer renderer = renderer(pdDocument, parseContext);
         RenderingTracker tracker = parseContext.get(RenderingTracker.class);
         if (tracker == null) {
             tracker = new RenderingTracker();
@@ -189,6 +190,24 @@ public class PDFBoxRenderer implements PDDocumentRenderer {
                 EmbeddedDocumentUtil.recordException(e, m, parseContext);
                 results.add(new RenderResult(RenderResult.STATUS.EXCEPTION, id, null, m));
             }
+        }
+    }
+
+    /** What is drawn: everything, unless the parser scoped an OCR-only strategy. */
+    private static PDFRenderer renderer(PDDocument pdDocument, ParseContext parseContext) {
+        OcrConfig.RenderingStrategy strategy = parseContext.get(OcrConfig.RenderingStrategy.class);
+        if (strategy == null) {
+            return new PDFRenderer(pdDocument);
+        }
+        switch (strategy) {
+            case NO_TEXT:
+                return new NoTextPDFRenderer(pdDocument);
+            case TEXT_ONLY:
+                return new TextOnlyPDFRenderer(pdDocument);
+            case VECTOR_GRAPHICS_ONLY:
+                return new VectorGraphicsOnlyPDFRenderer(pdDocument);
+            default:
+                return new PDFRenderer(pdDocument);
         }
     }
 

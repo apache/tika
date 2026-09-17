@@ -23,12 +23,13 @@ import java.util.Set;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.enricher.ContentEnrichers;
 
 /** One entry of the {@code "inference"} list: engine, input, tasks, filters, budget. */
 public final class InferenceBinding {
 
     /** Below this, in either dimension, an image is a spacer, not a picture. */
-    public static final int DEFAULT_MIN_PIXELS = 2;
+    public static final int DEFAULT_MIN_PIXELS = ContentEnrichers.MIN_PIXELS;
 
     private final String id;
     private final String engine;

@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.function.Consumer;
 import javax.imageio.ImageIO;
 
 import org.apache.poi.hemf.usermodel.HemfPicture;
@@ -62,9 +63,9 @@ import org.apache.tika.renderer.RenderingTracker;
  * Renders EMF and WMF images to a raster image through POI's HEMF and HWMF,
  * the way {@code PDFBoxRenderer} renders PDF pages: at the {@code RenderSettings}
  * the parse scopes into the context (dpi, box, colour, format), else this
- * renderer's own, on a white canvas with the picture's aspect ratio. Metafiles
- * have no pages, so the render requests are ignored and a single result is
- * returned.
+ * renderer's own, on a white canvas with the picture's aspect ratio; a canvas
+ * over {@code maxImagePixels} is refused. Metafiles have no pages, so the
+ * render requests are ignored and a single result is returned.
  * <p>
  * The WMF thumbnails that Word stores in the SummaryInformation of a .doc
  * consist of a window extent and a single {@code dibStretchBlt} record, for
@@ -81,16 +82,6 @@ public class POIMetafileRenderer implements Renderer {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(EMF, WMF)));
-
-    private static final int MAX_WIDTH = 10000;
-
-    /**
-     * A metafile declares its own aspect ratio, so a hostile one could ask
-     * for an arbitrarily tall canvas at any width. The renderer refuses
-     * beyond this height; an OutOfMemoryError would escape every catch in
-     * the parse.
-     */
-    private static final int MAX_HEIGHT = 10000;
 
     /** What this renderer draws when the parse scopes no settings: 800 px wide, RGB PNG. */
     private final RenderSettings defaults = RenderSettings.defaults();
@@ -153,16 +144,8 @@ public class POIMetafileRenderer implements Renderer {
     }
 
     private BufferedImage draw(HemfPicture picture, RenderSettings settings) throws IOException {
-        Dimension2D size = picture.getSize();
-        BufferedImage image = canvas(size, settings);
-        Graphics2D graphics = image.createGraphics();
-        try {
-            picture.draw(graphics, new Rectangle2D.Double(0, 0, image.getWidth(),
-                    image.getHeight()));
-        } finally {
-            graphics.dispose();
-        }
-        return image;
+        BufferedImage image = canvas(picture.getSize(), settings);
+        return paint(image, graphics -> picture.draw(graphics, bounds(image)));
     }
 
     private BufferedImage draw(HwmfPicture picture, RenderSettings settings) throws IOException {
@@ -179,14 +162,7 @@ public class POIMetafileRenderer implements Renderer {
             return scale(bitmap, settings);
         }
         BufferedImage image = canvas(size, settings);
-        Graphics2D graphics = image.createGraphics();
-        try {
-            picture.draw(graphics, new Rectangle2D.Double(0, 0, image.getWidth(),
-                    image.getHeight()));
-        } finally {
-            graphics.dispose();
-        }
-        return image;
+        return paint(image, graphics -> picture.draw(graphics, bounds(image)));
     }
 
     private static BufferedImage firstBitmap(HwmfPicture picture) {
@@ -207,26 +183,29 @@ public class POIMetafileRenderer implements Renderer {
         return scoped == null ? defaults : defaults.over(scoped);
     }
 
-    /**
-     * A white canvas for the picture at the settings' dpi, scaled down to fit the box; the
-     * height follows the picture's aspect ratio.
-     */
-    private BufferedImage canvas(Dimension2D size, RenderSettings settings) throws IOException {
+    /** A white canvas for the picture at the settings' dpi, scaled down to fit the box. */
+    private static BufferedImage canvas(Dimension2D size, RenderSettings settings)
+            throws IOException {
         if (size == null || size.getWidth() <= 0 || size.getHeight() <= 0) {
             throw new IOException("metafile without a usable size: " + size);
         }
         int dpi = settings.getDpi();
-        long[] fit = settings.fit(Math.max(1, Math.round(size.getWidth() / 72.0 * dpi)),
-                Math.max(1, Math.round(size.getHeight() / 72.0 * dpi)));
-        int width = (int) fit[0];
-        if (width > MAX_WIDTH) {
-            throw new IOException("metafile asks for a " + width + " pixel wide rendering at "
-                    + dpi + " dpi, the maximum is " + MAX_WIDTH);
+        return canvas(Math.max(1, Math.round(size.getWidth() / 72.0 * dpi)),
+                Math.max(1, Math.round(size.getHeight() / 72.0 * dpi)), settings);
+    }
+
+    /** A white canvas of this size fitted into the box; {@code maxImagePixels} refuses bigger. */
+    private static BufferedImage canvas(long width, long height, RenderSettings settings)
+            throws IOException {
+        long[] fit = settings.fit(width, height);
+        double pixels = (double) fit[0] * fit[1];
+        if (settings.exceedsMaxPixels(pixels >= Long.MAX_VALUE ? Long.MAX_VALUE : (long) pixels)
+                || fit[0] > Integer.MAX_VALUE || fit[1] > Integer.MAX_VALUE) {
+            throw new IOException("metafile asks for a " + fit[0] + " x " + fit[1]
+                    + " pixel rendering, above maxImagePixels " + settings.getMaxImagePixels());
         }
-        BufferedImage image = new BufferedImage(width, height(size.getWidth(), size.getHeight(),
-                width), imageType(settings));
-        Graphics2D graphics = image.createGraphics();
-        try {
+        BufferedImage image = new BufferedImage((int) fit[0], (int) fit[1], imageType(settings));
+        return paint(image, graphics -> {
             graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                     RenderingHints.VALUE_ANTIALIAS_ON);
             graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
@@ -235,45 +214,32 @@ public class POIMetafileRenderer implements Renderer {
                     RenderingHints.VALUE_RENDER_QUALITY);
             graphics.setColor(Color.WHITE);
             graphics.fillRect(0, 0, image.getWidth(), image.getHeight());
+        });
+    }
+
+    private static BufferedImage paint(BufferedImage image, Consumer<Graphics2D> painter) {
+        Graphics2D graphics = image.createGraphics();
+        try {
+            painter.accept(graphics);
         } finally {
             graphics.dispose();
         }
         return image;
     }
 
-    /**
-     * The height that keeps the aspect ratio at the rendering's width.
-     *
-     * @throws IOException if the ratio asks for an image taller than
-     *                     {@link #MAX_HEIGHT}
-     */
-    private static int height(double sourceWidth, double sourceHeight, int width)
-            throws IOException {
-        long height = Math.max(1, Math.round(sourceHeight * width / sourceWidth));
-        if (height > MAX_HEIGHT) {
-            throw new IOException("metafile aspect ratio asks for a " + height
-                    + " pixel high rendering at width " + width + ", the maximum is " + MAX_HEIGHT);
-        }
-        return (int) height;
+    private static Rectangle2D bounds(BufferedImage image) {
+        return new Rectangle2D.Double(0, 0, image.getWidth(), image.getHeight());
     }
 
     /** A bitmap has no dpi: the box is its ceiling and it is never enlarged. */
-    private BufferedImage scale(BufferedImage bitmap, RenderSettings settings) throws IOException {
-        long[] fit = settings.fit(bitmap.getWidth(), bitmap.getHeight());
-        int width = (int) fit[0];
-        int height = height(bitmap.getWidth(), bitmap.getHeight(), width);
-        BufferedImage image = new BufferedImage(width, height, imageType(settings));
-        Graphics2D graphics = image.createGraphics();
-        try {
+    private static BufferedImage scale(BufferedImage bitmap, RenderSettings settings)
+            throws IOException {
+        BufferedImage image = canvas(bitmap.getWidth(), bitmap.getHeight(), settings);
+        return paint(image, graphics -> {
             graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                     RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            graphics.setColor(Color.WHITE);
-            graphics.fillRect(0, 0, width, height);
-            graphics.drawImage(bitmap, 0, 0, width, height, null);
-        } finally {
-            graphics.dispose();
-        }
-        return image;
+            graphics.drawImage(bitmap, 0, 0, image.getWidth(), image.getHeight(), null);
+        });
     }
 
     private static int imageType(RenderSettings settings) {
@@ -301,14 +267,10 @@ public class POIMetafileRenderer implements Renderer {
     }
 
     /**
-     * @param width the rendering's widest, in pixels, 1 to 10000, when the parse scopes no
-     *              settings; the height follows the image's aspect ratio. Default 800.
+     * @param width the rendering's widest, in pixels, when the parse scopes no settings; the
+     *              height follows the image's aspect ratio. Default 800.
      */
     public void setWidth(int width) {
-        if (width < 1 || width > MAX_WIDTH) {
-            throw new IllegalArgumentException(
-                    "width must be between 1 and " + MAX_WIDTH + ", got: " + width);
-        }
         defaults.setMaxWidth(width);
     }
 

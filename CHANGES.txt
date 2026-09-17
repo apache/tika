@@ -17,7 +17,10 @@ Release 4.1.0 - unreleased
      per field. The 4.0 pdf-parser "ocr" and "imageStrategy" load as aliases
      and dump as "pages"; renders are emitted at page end whichever
      RENDER_PAGES_* was given, a page not read is not rendered, a page
-     below 2 px is skipped. Java: PDFParserConfig.getOcr()/getImageStrategy()
+     below 2 px is skipped. poppler-renderer renders each page at the dpi the
+     settings resolve to, under its maxScaleTo ceiling (4.0 rendered every page
+     with its long side at maxScaleTo, whatever dpi said); poi-metafile-renderer
+     honours maxImagePixels. Java: PDFParserConfig.getOcr()/getImageStrategy()
      replaced by getPages()/pages(); core PagesConfig, TextPolicy,
      RenderSettings, ImageType, ImageFormat. Deprecated, removal in 4.2.0:
      engines named under "parsers", openai-image-embedding-parser,

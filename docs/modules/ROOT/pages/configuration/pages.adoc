@@ -36,14 +36,15 @@ read it.
                   "maxImagePixels": 100000000 },
       "ocr": { "maxPages": -1, "auto": { "totalCharsPerPage": 10, "unmappedUnicodeCharsPerPage": 10 } },
       "inference": ["TEXT"],
-      "emit": { "enabled": false, "maxPages": -1, "resourceTypes": [],
-                "render": { "dpi": 96, "imageType": "RGB" } }
+      "emit": { "enabled": false, "maxPages": -1, "resourceTypes": [], "render": {} }
     }
   }
 }
 ----
 
-Those are the defaults; a block names only what it changes.
+Those are the defaults; a block names only what it changes. `emit.render` is empty: emitted
+images are the `render` render until it says otherwise (`{"dpi": 96, "imageType": "RGB"}` for
+colour previews).
 
 == Where it goes
 
@@ -57,22 +58,25 @@ The block is read at four layers, later ones winning field by field:
   format's overlay, kept across requests.
 * `"pages"` inside that parser's entry in a request's `parse-context`: the same overlay per request.
 
-So "OCR at 200 dpi everywhere, RGB previews for PDFs" is
+So "PDFs render at 200 dpi, previews in colour", kept across requests, is
 
 [source,json]
 ----
 {
-  "parse-context": { "pages": { "render": { "dpi": 200 } } },
   "parsers": [
     { "default-parser": {} },
-    { "pdf-parser": { "pages": { "emit": { "render": { "imageType": "RGB" } } } } }
+    { "pdf-parser": { "pages": { "render": { "dpi": 200 },
+                                 "emit": { "render": { "imageType": "RGB" } } } } }
   ]
 }
 ----
 
 and a request that sends `{"pages": {"text": "OCR"}}` OCRs every page at 200 dpi, since the PDF's
-overlay still holds. In code, `context.set(PagesConfig.class, overlay)` is the request layer and
-`PDFParserConfig.pages()` the parser's.
+overlay still holds. Had the 200 dpi been under `parse-context.pages` instead, that request would
+have replaced it and OCR'd at 300: a request's `pages` is the whole block. The same overlay also
+means a request cannot undo a parser's own `pages` with the general block; it sends
+`{"pdf-parser": {"pages": {...}}}`. In code, `context.set(PagesConfig.class, overlay)` is the
+request layer and `PDFParserConfig.pages()` the parser's.
 
 == `text`: where a page's text comes from
 
@@ -104,7 +108,7 @@ The target resolution. 300 by default, which suits Tesseract.
 A box in pixels the image must fit: the page is rendered at `dpi`, scaled down to fit if it
 would exceed either side, aspect preserved, never enlarged. `-1` (the default) for no bound. A
 thumbnail is a box, not a resolution: `{"maxWidth": 256, "maxHeight": 256}` gives a 256-pixel
-image of an A0 poster and of a business card alike. Poppler fits a square of the smaller side.
+image of an A0 poster and of a business card alike.
 `minWidth`, `minHeight`::
 A page that would be narrower or shorter than this at the target dpi is not rendered at all: no
 OCR, no inference, no emitted image, and no warning, since a hairline rule in a document is not a
@@ -118,8 +122,9 @@ on the document. 100 megapixels by default; `-1` for no limit.
 
 These settings reach the renderer the parser uses (`pdfbox-renderer`, `poppler-renderer`,
 `poi-metafile-renderer`, whatever `renderers` names for the type) through the parse; a renderer's
-own entry under `renderers` holds only what is the engine's (the `pdftoppm` path, its timeout),
-and its own image settings apply when no parse scopes any.
+own entry under `renderers` holds only what is the engine's (the `pdftoppm` path, its timeout,
+`maxScaleTo`: `pdftoppm`'s own ceiling on a page's long side, 4096 by default), and its own
+image settings apply when no parse scopes any.
 
 == `ocr`: the recognizer's budget and verdict
 
@@ -157,10 +162,11 @@ An overlay on `render` for the emitted images only, so OCR can keep its 300 dpi 
 while the emitted ones are small colour previews. When the two produce the same image, one
 render per page serves both.
 
-Emission does not depend on the text pass: a page whose end the parser never reached (a page
-that broke the text extraction) is still emitted at the end of the document. The engine renders
-whenever it prefers (PDFBox per page, `pdftoppm` in one call); the parser emits at page end
-either way.
+A page that breaks the text extraction is still emitted, at the end of the document; pages the
+parser never reached are not rendered, and a stop the caller asked for (the write limit, an
+embedded-document limit) renders nothing more. A PDF without pages to walk (XFA-only) has every
+page in budget emitted. When the engine renders is its own business; the parser emits at page
+end either way.
 
 A metafile is one page. The EMF/WMF parsers render it under `emit` with the same settings; the
 rendering of a `THUMBNAIL` is itself a `THUMBNAIL`, so a client that wants "the thumbnail" finds
@@ -198,5 +204,6 @@ A 4.0 `pdf-parser` config still loads; every value lands in `pages` and a config
 |`pages.emit.enabled: true`; renders are emitted at page end whichever was given
 |===
 
-Within one layer `pages` wins over an alias; across layers the later layer wins, so a request's
-`"ocr": {"dpi": 96}` still overrides the config.
+The aliases write to the same overlay as `pages`, so a request's `"ocr": {"dpi": 96}` overrides
+the config whichever spelling it used, and `"imageStrategy": "NONE"` turns a config's emission
+off. In one JSON object that spells a setting both ways the later key wins: do not mix them.

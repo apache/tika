@@ -66,8 +66,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * We'd have to do something like what PDFBox or XPS do to sort the
  * runs and then put the cow back together from the hamburger...lol...
  * <p/>
- * With {@link MetafileParserConfig#setRenderImage(boolean)}
- * ("emf-parser": {"renderImage": true}) the image is rendered through the
+ * Under {@code "pages": {"emit": {"enabled": true}}} (the parse-context block, or the
+ * parser's own overlay) the image is rendered through the
  * configured {@link Renderer}, the
  * {@link org.apache.tika.renderer.microsoft.POIMetafileRenderer} by
  * default, and emitted as a

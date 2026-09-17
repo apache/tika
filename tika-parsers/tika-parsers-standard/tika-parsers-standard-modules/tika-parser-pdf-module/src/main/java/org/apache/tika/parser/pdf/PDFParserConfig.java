@@ -116,11 +116,8 @@ public class PDFParserConfig implements Serializable {
     //content from elsewhere in the document.
     private boolean ifXFAExtractOnlyXFA = false;
 
-    /** This parser's overlay on the {@code "pages"} block. */
+    /** This parser's overlay on the {@code "pages"} block; the 4.0 aliases write to it too. */
     private PagesConfig pages = new PagesConfig();
-
-    /** What the 4.0 aliases ({@code ocr}, {@code imageStrategy}) set; {@code pages} wins over it. */
-    private final PagesConfig legacy = new PagesConfig();
 
     private OcrConfig.RenderingStrategy renderingStrategy = OcrConfig.RenderingStrategy.ALL;
     private AccessCheckMode accessCheckMode = AccessCheckMode.DONT_CHECK;
@@ -516,28 +513,29 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * This parser's overlay on the {@code "pages"} block with whatever the 4.0 aliases set
-     * folded under it: a snapshot, which is what a config dump writes and what the parser
-     * folds onto the context's {@code "pages"} and the defaults
+     * This parser's overlay on the {@code "pages"} block, which the parser folds onto the
+     * context's {@code "pages"} and the defaults
      * ({@code PagesConfig.resolve(context, defaultConfig.getPages(), localConfig.getPages())}).
-     * Configure through {@link #pages()} or {@link #setPages}.
+     * The 4.0 aliases ({@link #setOcr}, {@link #setImageStrategy}) write to the same overlay,
+     * so in one JSON object the later spelling of a field wins.
      */
     public PagesConfig getPages() {
-        return legacy.over(pages);
+        return pages;
     }
 
-    /** The overlay itself, to configure in code: {@code config.pages().setText(TextPolicy.OCR)}. */
+    /** The overlay, to configure in code: {@code config.pages().setText(TextPolicy.OCR)}. */
     public PagesConfig pages() {
         return pages;
     }
 
+    /** Applies the set fields of {@code pages} to the overlay. */
     public void setPages(PagesConfig pages) {
-        this.pages = pages == null ? new PagesConfig() : pages;
+        this.pages = this.pages.over(pages);
     }
 
     /**
      * @deprecated since 4.1.0; the 4.0 {@code "ocr"} block. Every field it sets lands on
-     * {@link #getPages()}: {@code strategy} as {@code text}, {@code strategyAuto} as
+     * {@link #pages()}: {@code strategy} as {@code text}, {@code strategyAuto} as
      * {@code ocr.auto}, {@code maxPagesToOcr} as {@code ocr.maxPages}, the image settings as
      * {@code render}, {@code renderingStrategy} as {@link #setRenderingStrategy}.
      */
@@ -546,7 +544,7 @@ public class PDFParserConfig implements Serializable {
         if (ocr == null) {
             return;
         }
-        ocr.applyTo(legacy);
+        ocr.applyTo(pages);
         if (ocr.getRenderingStrategy() != null) {
             renderingStrategy = ocr.getRenderingStrategy();
         }
@@ -631,8 +629,9 @@ public class PDFParserConfig implements Serializable {
 
     /**
      * @deprecated since 4.1.0; {@code RAW_IMAGES} is {@link #setExtractInlineImages}, the
-     * {@code RENDER_PAGES_*} values are {@code "pages": {"emit": {"enabled": true}}}. Renders are
-     * emitted at page end whichever value is given; when the engine renders is its own business.
+     * {@code RENDER_PAGES_*} values are {@code "pages": {"emit": {"enabled": true}}} and
+     * {@code NONE} is {@code false}. Renders are emitted at page end whichever value is given;
+     * when the engine renders is its own business.
      */
     @Deprecated
     public void setImageStrategy(IMAGE_STRATEGY imageStrategy) {
@@ -645,9 +644,10 @@ public class PDFParserConfig implements Serializable {
                 break;
             case RENDER_PAGES_BEFORE_PARSE:
             case RENDER_PAGES_AT_PAGE_END:
-                legacy.emit().setEnabled(true);
+                pages.emit().setEnabled(true);
                 break;
-            default:
+            case NONE:
+                pages.emit().setEnabled(false);
                 break;
         }
     }

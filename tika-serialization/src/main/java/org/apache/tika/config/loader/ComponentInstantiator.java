@@ -299,6 +299,8 @@ public class ComponentInstantiator {
         ObjectNode cleaned = configNode.deepCopy();
         cleaned.remove("_mime-include");
         cleaned.remove("_mime-exclude");
+        cleaned.remove("_min-width");
+        cleaned.remove("_min-height");
         return cleaned;
     }
 

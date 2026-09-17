@@ -176,6 +176,24 @@ public class EMFParserTest extends TikaTest {
         assertEquals(width, ByteBuffer.wrap(renderings.get(0), 16, 4).getInt());
     }
 
+    /** A canvas over maxImagePixels is refused with a warning, whatever the box. */
+    @Test
+    public void testMaxImagePixels() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("emf-parser",
+                "{\"pages\": {\"emit\": {\"enabled\": true, \"render\": {\"maxImagePixels\": 1000}}}}");
+        List<byte[]> renderings = new ArrayList<>();
+        context.set(EmbeddedDocumentExtractor.class, collector(renderings));
+        Metadata metadata = new Metadata();
+        try (InputStream is = getResourceAsStream("/test-documents/testEMF.emf")) {
+            AUTO_DETECT_PARSER.parse(TikaInputStream.get(is), new BodyContentHandler(-1),
+                    metadata, context);
+        }
+        assertEquals(0, renderings.size());
+        String warning = metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertTrue(warning != null && warning.contains("maxImagePixels"), warning);
+    }
+
     private static EmbeddedDocumentExtractor collector(List<byte[]> renderings) {
         return new EmbeddedDocumentExtractor() {
             @Override

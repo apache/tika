@@ -21,8 +21,11 @@ import java.io.IOException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.xml.sax.ContentHandler;
+import org.xml.sax.SAXException;
 
+import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
@@ -37,15 +40,14 @@ import org.apache.tika.renderer.RenderResult;
 import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.renderer.Renderer;
-import org.apache.tika.renderer.pdf.pdfbox.PDDocumentRenderer;
+import org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer;
 import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
 
 /**
- * Emits page renders as RENDERING embedded documents under {@code pages.emit}: at the end
- * of each page the writer walks, and at document end for any page within the budget whose
- * end was never reached, so emission does not depend on the text pass. The page's OCR render
- * is reused when the emitted image is the same; otherwise the page is rendered again with
- * the emitted settings.
+ * One parse's page renders: draws a page through the configured engine, and emits renders as
+ * RENDERING embedded documents under {@code pages.emit} at the end of each page the writer
+ * walks. The OCR render is reused when the emitted image is the same; otherwise the page is
+ * rendered again with the emitted settings.
  */
 final class PageEmitter {
 
@@ -55,6 +57,7 @@ final class PageEmitter {
     private final Metadata metadata;
     private final ParseContext context;
     private final boolean enabled;
+    private int startedThrough = 0;
     private int emittedThrough = 0;
 
     PageEmitter(PDDocument pdDocument, PagesConfig pages, Renderer renderer, Metadata metadata,
@@ -64,7 +67,40 @@ final class PageEmitter {
         this.renderer = renderer;
         this.metadata = metadata;
         this.context = context;
-        this.enabled = pages.getEmit().applies(metadata) && renderer != null;
+        this.enabled = pages.getEmit().applies(metadata);
+    }
+
+    /**
+     * The page drawn by the engine under these settings, OCR-only strategies through PDFBox.
+     * The engine gets the open document and, when spooled, the file: each takes what it reads.
+     */
+    RenderResults render(int pageNo, RenderSettings settings, OcrConfig.RenderingStrategy strategy,
+                         Metadata pageMetadata) throws IOException, TikaException {
+        PDFRenderingState state = context.get(PDFRenderingState.class);
+        TikaInputStream tis = state == null ? TikaInputStream.getPlaceholder()
+                : state.getTikaInputStream();
+        Object container = tis.getOpenContainer();
+        RenderSettings outer = context.get(RenderSettings.class);
+        Renderer engine = strategy == OcrConfig.RenderingStrategy.ALL ? renderer : pdfBox();
+        tis.setOpenContainer(pdDocument);
+        context.set(RenderSettings.class, settings);
+        context.set(OcrConfig.RenderingStrategy.class, strategy);
+        try {
+            return engine.render(tis, pageMetadata, context, new PageRangeRequest(pageNo, pageNo));
+        } finally {
+            context.set(OcrConfig.RenderingStrategy.class, null);
+            context.set(RenderSettings.class, outer);
+            tis.setOpenContainer(container);
+        }
+    }
+
+    private Renderer pdfBox() {
+        return renderer instanceof PDFBoxRenderer ? renderer : new PDFBoxRenderer();
+    }
+
+    /** The writer started this 1-based page: the one in flight if it never ends. */
+    void started(int pageNo) {
+        startedThrough = pageNo;
     }
 
     /** Whether this 1-based page is emitted: on for this document and within {@code maxPages}. */
@@ -73,80 +109,85 @@ final class PageEmitter {
     }
 
     /**
-     * Emits the page, reusing {@code ocrRender} when the emitted image is that same image.
+     * Emits the page: {@code shared} when it is the OCR render of the same image (a failed one
+     * was already reported, nothing is emitted), else a render with the emitted settings.
      * Failures are recorded on the PDF, never thrown: an unrenderable page is not a failed parse.
      */
-    void emit(int pageNo, RenderResult ocrRender, ContentHandler handler) {
+    void emit(int pageNo, RenderResult shared, ContentHandler handler) throws SAXException {
         if (!wants(pageNo)) {
             return;
         }
         emittedThrough = Math.max(emittedThrough, pageNo);
-        // too small to hold anything: a policy skip, not a failure
-        PDRectangle mediaBox = pdDocument.getPage(pageNo - 1).getMediaBox();
-        if (pages.emittedRender().belowMinimum(mediaBox.getWidth(), mediaBox.getHeight())) {
-            return;
-        }
         try {
-            if (ocrRender != null && ocrRender.getStatus() == RenderResult.STATUS.SUCCESS
-                    && pages.emitsSameImage()) {
-                emitShared(pageNo, ocrRender, handler);
+            if (shared != null) {
+                if (shared.getStatus() == RenderResult.STATUS.SUCCESS) {
+                    emitShared(pageNo, shared, handler);
+                }
                 return;
             }
-            try (RenderResults results = render(pageNo)) {
+            // too small to hold anything: a policy skip, not a failure
+            PDRectangle mediaBox = pdDocument.getPage(pageNo - 1).getMediaBox();
+            if (pages.emittedRender().belowMinimum(mediaBox.getWidth(), mediaBox.getHeight())) {
+                return;
+            }
+            Metadata pageMetadata = Metadata.newInstance(context);
+            pageMetadata.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
+            try (RenderResults results = render(pageNo, pages.emittedRender(),
+                    OcrConfig.RenderingStrategy.ALL, pageMetadata)) {
                 for (RenderResult result : results.getResults()) {
-                    emitResult(result, handler);
+                    if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
+                        try (TikaInputStream tis = result.getInputStream()) {
+                            emit(tis, result.getMetadata(), handler);
+                        }
+                    } else {
+                        PDFParser.carryRenderWarnings(result, metadata);
+                    }
                 }
             }
-        } catch (SecurityException e) {
+        } catch (SecurityException | EmbeddedLimitReachedException e) {
             throw e;
         } catch (Exception e) {
+            if (WriteLimitReachedException.isWriteLimitReached(e)) {
+                throw e instanceof SAXException sax ? sax : new SAXException(e);
+            }
             EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
     }
 
     /**
-     * Emits every page within the budget past the last one emitted, bounded by the parse
-     * budget: called once the writer is done, whether it finished or threw.
+     * The page in flight when the writer died: started, never ended. Nothing when the caller
+     * asked to stop; what it throws rides on the failure.
      */
-    void emitRemaining(ContentHandler handler, int maxPages) {
-        if (!enabled) {
+    void emitUnfinished(ContentHandler handler, Throwable failure) {
+        if (failure == null || failure instanceof SecurityException
+                || failure instanceof EmbeddedLimitReachedException
+                || WriteLimitReachedException.isWriteLimitReached(failure)
+                || startedThrough <= emittedThrough) {
             return;
         }
+        try {
+            emit(startedThrough, null, handler);
+        } catch (SecurityException e) {
+            throw e;
+        } catch (Exception e) {
+            failure.addSuppressed(e);
+        }
+    }
+
+    /** Every page within the budgets, for a writer that walks none. */
+    void emitAll(ContentHandler handler, int maxPages) throws SAXException {
         int last = pdDocument.getNumberOfPages();
         if (maxPages > 0) {
             last = Math.min(last, maxPages);
         }
-        for (int pageNo = emittedThrough + 1; pageNo <= last && wants(pageNo); pageNo++) {
+        for (int pageNo = 1; pageNo <= last && wants(pageNo); pageNo++) {
             emit(pageNo, null, handler);
-        }
-    }
-
-    private RenderResults render(int pageNo) throws IOException, TikaException {
-        Metadata renderedMetadata = Metadata.newInstance(context);
-        renderedMetadata.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
-        PageRangeRequest request = new PageRangeRequest(pageNo, pageNo);
-        RenderSettings outer = context.get(RenderSettings.class);
-        context.set(RenderSettings.class, pages.emittedRender());
-        try {
-            if (renderer instanceof PDDocumentRenderer) {
-                // the placeholder must stay open: it is the parser's own document
-                TikaInputStream tis = TikaInputStream.getPlaceholder();
-                tis.setOpenContainer(pdDocument);
-                return renderer.render(tis, renderedMetadata, context, request);
-            }
-            PDFRenderingState state = context.get(PDFRenderingState.class);
-            if (state == null) {
-                throw new TikaException("no spooled document to render page " + pageNo + " from");
-            }
-            return renderer.render(state.getTikaInputStream(), renderedMetadata, context, request);
-        } finally {
-            context.set(RenderSettings.class, outer);
         }
     }
 
     /** The OCR render's file under the embedded document's own metadata, not the OCR step's. */
     private void emitShared(int pageNo, RenderResult ocrRender, ContentHandler handler)
-            throws IOException, TikaException {
+            throws IOException, SAXException {
         Metadata embedded = Metadata.newInstance(context);
         embedded.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
                 TikaCoreProperties.EmbeddedResourceType.RENDERING.name());
@@ -155,29 +196,14 @@ final class PageEmitter {
         if (rotation != null) {
             embedded.set(TikaPagedText.PAGE_ROTATION, rotation);
         }
-        try (TikaInputStream source = ocrRender.getInputStream()) {
-            if (!source.hasFile()) {
-                throw new TikaException("OCR render of page " + pageNo + " is not a file");
-            }
-            try (TikaInputStream tis = TikaInputStream.get(source.getPath(), embedded)) {
-                emit(tis, embedded, handler);
-            }
-        }
-    }
-
-    private void emitResult(RenderResult result, ContentHandler handler)
-            throws IOException, TikaException {
-        if (result.getStatus() != RenderResult.STATUS.SUCCESS) {
-            PDFParser.carryRenderWarnings(result, metadata);
-            return;
-        }
-        try (TikaInputStream tis = result.getInputStream()) {
-            emit(tis, result.getMetadata(), handler);
+        try (TikaInputStream source = ocrRender.getInputStream();
+                TikaInputStream tis = TikaInputStream.get(source.getPath(), embedded)) {
+            emit(tis, embedded, handler);
         }
     }
 
     private void emit(TikaInputStream tis, Metadata embedded, ContentHandler handler)
-            throws IOException, TikaException {
+            throws IOException, SAXException {
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         if (!extractor.shouldParseEmbedded(embedded, context)) {
@@ -185,11 +211,7 @@ final class PageEmitter {
         }
         // the page step enriches the render itself; the embedded copy is bytes and metadata
         try (ContentEnrichers.Suspension suspension = ContentEnrichers.suspend(context)) {
-            extractor.parseEmbedded(tis, handler, embedded, context, true);
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            EmbeddedDocumentUtil.recordException(e, metadata, context);
+            extractor.parseEmbedded(tis, handler, embedded, context, false);
         }
     }
 }
