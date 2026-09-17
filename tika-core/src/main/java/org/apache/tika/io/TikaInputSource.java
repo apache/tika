@@ -104,4 +104,20 @@ interface TikaInputSource extends Closeable {
      * @throws IOException if the source is partially read and cannot be rewound
      */
     SeekableByteChannel getSeekableByteChannel() throws IOException;
+
+    /**
+     * Asks the source to hold its full content in memory, so that later reads -- sequential
+     * or via {@link #getSeekableByteChannel()} -- are served from there instead of going
+     * back to the underlying source. Re-opening is cheap for a file (the page cache serves
+     * it) but not for a zip entry, where it means inflating the entry again.
+     * <p>
+     * Advisory and best effort: a source that would have to spill to disk, or that cannot
+     * tell whether the content fits, returns false and keeps its current behaviour. Callers
+     * must work the same either way. Does not change this source's read position.
+     *
+     * @return true if the full content is now held in memory
+     */
+    default boolean tryRetainInMemory() throws IOException {
+        return false;
+    }
 }

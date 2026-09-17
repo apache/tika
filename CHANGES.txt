@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * Digesting an embedded document no longer makes its source hand out the
+     bytes twice. Re-opening a zip entry means inflating it again, which the
+     page cache cannot help with, so the digest now asks the source to hold
+     the content for the parse that follows. Only for content that certainly
+     fits in memory; file-backed sources are unaffected (TIKA-4901).
+
    * PDF incremental-update scanning reads the file in blocks instead of one
      byte at a time; same output, about 4x less CPU (TIKA-4898).
 

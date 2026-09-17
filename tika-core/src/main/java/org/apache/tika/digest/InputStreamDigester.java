@@ -121,6 +121,9 @@ public class InputStreamDigester implements Digester {
         CacheMemoryBudget budget =
                 (parseContext == null) ? null : parseContext.get(CacheMemoryBudget.class);
         tis.enableRewind(budget);
+        // The parse re-reads what we are about to read. Where re-opening the source means
+        // inflating an embedded entry again, hold it in memory instead; a no-op for a file.
+        tis.tryRetainInMemory();
 
         MessageDigest messageDigest = newMessageDigest();
         byte[] buffer = new byte[8192];

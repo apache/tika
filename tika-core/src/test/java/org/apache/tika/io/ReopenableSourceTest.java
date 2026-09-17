@@ -62,6 +62,129 @@ public class ReopenableSourceTest {
         };
     }
 
+    private static byte[] readFully(InputStream in) throws IOException {
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        byte[] buf = new byte[4096];
+        int n;
+        while ((n = in.read(buf)) != -1) {
+            out.write(buf, 0, n);
+        }
+        return out.toByteArray();
+    }
+
+    @Test
+    public void testRetainInMemoryServesSequentialReads() throws Exception {
+        byte[] data = data(64 * 1024);
+        AtomicInteger opens = new AtomicInteger();
+        ReopenableSource source =
+                new ReopenableSource(countingOpener(data, opens), tmp, data.length, ".bin");
+        try {
+            assertTrue(source.tryRetainInMemory());
+            assertEquals(1, opens.get());
+            assertArrayEquals(data, readFully(source));
+            source.seekTo(0);
+            assertArrayEquals(data, readFully(source));
+            assertEquals(1, opens.get(), "reads after retention must not re-open the source");
+            assertFalse(source.hasPath(), "retention must not spill");
+        } finally {
+            source.close();
+        }
+    }
+
+    @Test
+    public void testRetainInMemoryIsIdempotent() throws Exception {
+        byte[] data = data(8192);
+        AtomicInteger opens = new AtomicInteger();
+        ReopenableSource source =
+                new ReopenableSource(countingOpener(data, opens), tmp, data.length, ".bin");
+        try {
+            assertTrue(source.tryRetainInMemory());
+            assertTrue(source.tryRetainInMemory());
+            assertEquals(1, opens.get());
+        } finally {
+            source.close();
+        }
+    }
+
+    @Test
+    public void testRetainInMemoryRefusedWhenLengthUnknown() throws Exception {
+        byte[] data = data(8192);
+        AtomicInteger opens = new AtomicInteger();
+        ReopenableSource source = new ReopenableSource(countingOpener(data, opens), tmp, -1, ".bin");
+        try {
+            assertFalse(source.tryRetainInMemory());
+            assertEquals(0, opens.get());
+            assertArrayEquals(data, readFully(source));
+        } finally {
+            source.close();
+        }
+    }
+
+    @Test
+    public void testRetainInMemoryRefusedOverFloorWithNoBudget() throws Exception {
+        byte[] data = data(FLOOR + 4096);
+        AtomicInteger opens = new AtomicInteger();
+        ReopenableSource source =
+                new ReopenableSource(countingOpener(data, opens), tmp, data.length, ".bin");
+        try {
+            assertFalse(source.tryRetainInMemory());
+            assertEquals(0, opens.get(), "a doomed attempt must not read the source");
+            assertFalse(source.hasPath(), "a refusal must not spill");
+            assertArrayEquals(data, readFully(source));
+        } finally {
+            source.close();
+        }
+    }
+
+    @Test
+    public void testRetainInMemoryOverFloorWithBudget() throws Exception {
+        byte[] data = data(FLOOR + 4096);
+        AtomicInteger opens = new AtomicInteger();
+        ReopenableSource source =
+                new ReopenableSource(countingOpener(data, opens), tmp, data.length, ".bin");
+        try {
+            source.enableRewind(new CacheMemoryBudget(8 * FLOOR));
+            assertTrue(source.tryRetainInMemory());
+            assertArrayEquals(data, readFully(source));
+            assertEquals(1, opens.get());
+        } finally {
+            source.close();
+        }
+    }
+
+    @Test
+    public void testRetainInMemoryRefusedWhenBudgetTooSmall() throws Exception {
+        byte[] data = data(4 * FLOOR);
+        AtomicInteger opens = new AtomicInteger();
+        ReopenableSource source =
+                new ReopenableSource(countingOpener(data, opens), tmp, data.length, ".bin");
+        try {
+            source.enableRewind(new CacheMemoryBudget(4096));
+            assertFalse(source.tryRetainInMemory());
+            assertEquals(0, opens.get());
+            assertFalse(source.hasPath());
+            assertArrayEquals(data, readFully(source));
+        } finally {
+            source.close();
+        }
+    }
+
+    @Test
+    public void testGetPathAfterRetainUsesRetainedBytes() throws Exception {
+        byte[] data = data(32 * 1024);
+        AtomicInteger opens = new AtomicInteger();
+        ReopenableSource source =
+                new ReopenableSource(countingOpener(data, opens), tmp, data.length, ".bin");
+        try {
+            assertTrue(source.tryRetainInMemory());
+            Path path = source.getPath(null);
+            assertArrayEquals(data, java.nio.file.Files.readAllBytes(path));
+            assertEquals(1, opens.get());
+        } finally {
+            source.close();
+        }
+    }
+
     private static byte[] readFully(SeekableByteChannel channel) throws IOException {
         ByteBuffer buf = ByteBuffer.allocate((int) channel.size());
         while (buf.hasRemaining() && channel.read(buf) != -1) {

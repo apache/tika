@@ -594,6 +594,23 @@ public class TikaInputStream extends TaggedInputStream {
     }
 
     /**
+     * Asks the underlying source to hold its full content in memory, so a later rewind and
+     * re-read does not go back to the source. Worth calling before a pass that will be
+     * followed by another (digest then parse) when re-opening is expensive -- a zip entry
+     * has to be inflated again, where a file is served by the page cache.
+     * <p>
+     * Advisory: sources that would have to spill, or cannot tell whether the content fits,
+     * return false and behave as before. Does not change the read position.
+     *
+     * @return true if the full content is now held in memory
+     * @see TikaInputSource#tryRetainInMemory()
+     */
+    public boolean tryRetainInMemory() throws IOException {
+        TikaInputSource source = inputSource();
+        return source != null && source.tryRetainInMemory();
+    }
+
+    /**
      * Zero-copy, read-only view of the content behind a channel from
      * {@link #getSeekableByteChannel()}, or {@code null} when that content is on disk. Lets a
      * consumer that wants random access (PDFBox, metadata-extractor) read what is already in
