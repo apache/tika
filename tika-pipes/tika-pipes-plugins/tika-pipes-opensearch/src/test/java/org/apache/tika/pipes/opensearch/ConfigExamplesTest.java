@@ -48,6 +48,8 @@ public class ConfigExamplesTest extends AbstractConfigExamplesTest {
         assertEquals(OpenSearchEmitterConfig.UpdateStrategy.OVERWRITE,
                 config.updateStrategy());
         assertEquals(1000, config.commitWithin());
+        assertEquals(OpenSearchEmitterConfig.ChunkStrategy.INLINE, config.chunkStrategy(),
+                "the documented example loads");
         assertNotNull(config.httpClientConfig());
         assertEquals("admin", config.httpClientConfig().userName());
     }

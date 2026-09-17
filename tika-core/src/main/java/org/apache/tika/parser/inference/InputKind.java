@@ -16,15 +16,22 @@
  */
 package org.apache.tika.parser.inference;
 
+import java.util.Set;
+
 import org.apache.tika.mime.MediaType;
 
 /** What a binding is fed: a document's text, its rendered pages, an image, or media bytes. */
 public enum InputKind {
     TEXT, PAGES, IMAGES, MEDIA;
 
-    /** The kind a document's bytes are, by media type family; null for the rest. */
+    // text that names other files; ffmpeg would open them
+    private static final Set<String> PLAYLISTS = Set.of("audio/x-mpegurl",
+            "application/vnd.apple.mpegurl", "video/vnd.mpegurl", "audio/x-scpls",
+            "application/xspf+xml", "audio/x-ms-wax", "video/x-ms-wvx", "application/x-ms-asx");
+
+    /** The kind a document's bytes are, by media type family; null for the rest and for playlists. */
     public static InputKind of(MediaType type) {
-        if (type == null) {
+        if (type == null || PLAYLISTS.contains(type.getBaseType().toString())) {
             return null;
         }
         switch (type.getType()) {

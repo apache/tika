@@ -426,7 +426,8 @@ public class OpenSearchTest {
         httpClientFactory.setVerifySsl(false);
         OpenSearchEmitterConfig config = new OpenSearchEmitterConfig(CONTAINER.getHttpHostAddress(), "_id", OpenSearchEmitterConfig.AttachmentStrategy.SEPARATE_DOCUMENTS,
                 OpenSearchEmitterConfig.UpdateStrategy.OVERWRITE, 10, DEFAULT_EMBEDDED_FILE_FIELD_NAME,
-                new HttpClientConfig(null, null, null, -1, -1, null, -1, false));
+                new HttpClientConfig(null, null, null, -1, -1, null, -1, false),
+                OpenSearchEmitterConfig.ChunkStrategy.INLINE);
         return new OpensearchTestClient(config, httpClientFactory.build());
 
     }

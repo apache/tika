@@ -18,6 +18,7 @@ package org.apache.tika.parser.inference;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.tika.metadata.Metadata;
@@ -43,36 +44,103 @@ public final class InferenceBinding {
     private final TextChunker chunker;
     private final int minWidth;
     private final int minHeight;
+    private final Modality modality;
 
-    public InferenceBinding(String id, String engine, InputKind input, List<String> tasks,
-                            Set<MediaType> include, Set<MediaType> exclude, int maxChunks,
-                            long maxBytes, boolean enabled) {
-        this(id, engine, input, tasks, include, exclude, maxChunks, maxBytes, enabled, null);
+    private InferenceBinding(Builder b) {
+        this.id = b.id;
+        this.engine = b.engine;
+        this.input = b.input;
+        this.tasks = List.copyOf(b.tasks);
+        this.include = b.include == null ? Collections.emptySet() : Set.copyOf(b.include);
+        this.exclude = b.exclude == null ? Collections.emptySet() : Set.copyOf(b.exclude);
+        this.maxChunks = b.maxChunks;
+        this.maxBytes = b.maxBytes;
+        this.enabled = b.enabled;
+        this.chunker = b.chunker;
+        this.minWidth = b.minWidth;
+        this.minHeight = b.minHeight;
+        this.modality = b.modality == null ? Modality.implied(b.input) : b.modality;
     }
 
-    public InferenceBinding(String id, String engine, InputKind input, List<String> tasks,
-                            Set<MediaType> include, Set<MediaType> exclude, int maxChunks,
-                            long maxBytes, boolean enabled, TextChunker chunker) {
-        this(id, engine, input, tasks, include, exclude, maxChunks, maxBytes, enabled, chunker,
-                DEFAULT_MIN_PIXELS, DEFAULT_MIN_PIXELS);
+    /** The three things every binding needs; everything else has a default. */
+    public static Builder builder(String id, String engine, InputKind input) {
+        return new Builder(id, engine, input);
     }
 
-    public InferenceBinding(String id, String engine, InputKind input, List<String> tasks,
-                            Set<MediaType> include, Set<MediaType> exclude, int maxChunks,
-                            long maxBytes, boolean enabled, TextChunker chunker, int minWidth,
-                            int minHeight) {
-        this.chunker = chunker;
-        this.minWidth = minWidth;
-        this.minHeight = minHeight;
-        this.id = id;
-        this.engine = engine;
-        this.input = input;
-        this.tasks = List.copyOf(tasks);
-        this.include = include == null ? Collections.emptySet() : Set.copyOf(include);
-        this.exclude = exclude == null ? Collections.emptySet() : Set.copyOf(exclude);
-        this.maxChunks = maxChunks;
-        this.maxBytes = maxBytes;
-        this.enabled = enabled;
+    public static final class Builder {
+        private final String id;
+        private final String engine;
+        private final InputKind input;
+        private List<String> tasks = List.of("embed");
+        private Set<MediaType> include;
+        private Set<MediaType> exclude;
+        private int maxChunks = -1;
+        private long maxBytes = -1;
+        private boolean enabled = true;
+        private TextChunker chunker;
+        private int minWidth = DEFAULT_MIN_PIXELS;
+        private int minHeight = DEFAULT_MIN_PIXELS;
+        private Modality modality;
+
+        private Builder(String id, String engine, InputKind input) {
+            this.id = Objects.requireNonNull(id, "id");
+            this.engine = Objects.requireNonNull(engine, "engine");
+            this.input = Objects.requireNonNull(input, "input");
+        }
+
+        public Builder tasks(List<String> tasks) {
+            this.tasks = tasks;
+            return this;
+        }
+
+        public Builder include(Set<MediaType> include) {
+            this.include = include;
+            return this;
+        }
+
+        public Builder exclude(Set<MediaType> exclude) {
+            this.exclude = exclude;
+            return this;
+        }
+
+        /** Units per document; -1 (the default) for no limit. */
+        public Builder maxChunks(int maxChunks) {
+            this.maxChunks = maxChunks;
+            return this;
+        }
+
+        /** Largest unit accepted, in bytes; -1 (the default) for no limit. */
+        public Builder maxBytes(long maxBytes) {
+            this.maxBytes = maxBytes;
+            return this;
+        }
+
+        public Builder enabled(boolean enabled) {
+            this.enabled = enabled;
+            return this;
+        }
+
+        public Builder chunker(TextChunker chunker) {
+            this.chunker = chunker;
+            return this;
+        }
+
+        /** IMAGES only: the smallest image taken, in pixels; 2 x 2 by default, 0 for any. */
+        public Builder minSize(int minWidth, int minHeight) {
+            this.minWidth = minWidth;
+            this.minHeight = minHeight;
+            return this;
+        }
+
+        /** Required for MEDIA; implied by the input kind otherwise. */
+        public Builder modality(Modality modality) {
+            this.modality = modality;
+            return this;
+        }
+
+        public InferenceBinding build() {
+            return new InferenceBinding(this);
+        }
     }
 
     public String getId() {
@@ -103,6 +171,11 @@ public final class InferenceBinding {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    /** What the engine is shown; implied by the input kind except for MEDIA, where it is required. */
+    public Modality getModality() {
+        return modality;
     }
 
     /** How a TEXT binding cuts a document's text; null means the whole text is one chunk. */

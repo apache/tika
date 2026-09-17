@@ -36,6 +36,7 @@ import org.apache.tika.parser.inference.InferenceBinding;
 import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.parser.inference.InferenceTask;
 import org.apache.tika.parser.inference.InputKind;
+import org.apache.tika.parser.inference.Modality;
 import org.apache.tika.parser.inference.TextChunker;
 
 /**
@@ -48,10 +49,12 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
     static final String KEY = "inference";
     private static final Set<String> KNOWN = Set.of("id", "engine", "input", "tasks",
             "maxChunks", "maxBytes", "enabled", "_mime-include", "_mime-exclude", "chunker",
-            "minWidth", "minHeight");
+            "minWidth", "minHeight", "modality");
     private static final Pattern LEGAL_ID = Pattern.compile("[A-Za-z0-9._-]+");
-    /** Largest unit a binding takes unless it says otherwise. */
+    /** Largest unit a binding takes unless it says otherwise; for MEDIA, one cut segment. */
     static final long DEFAULT_MAX_BYTES = 20L * 1024 * 1024;
+    /** Segments a MEDIA binding embeds per document unless it says otherwise: a request may narrow the grid, not widen it past this. */
+    static final int DEFAULT_MEDIA_MAX_CHUNKS = 480;
     /** Image types no embedding endpoint takes; a binding's own include list overrides. */
     private static final List<String> NON_RASTER = List.of("image/svg+xml", "image/vnd.dwg",
             "image/vnd.dxf", "image/x-emf", "image/x-wmf", "image/wmf", "image/emf",
@@ -122,10 +125,19 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
             } else {
                 taskNames.add("embed");
             }
-            int maxChunks = bounded(entry, "maxChunks", -1, id).intValue();
+            int maxChunks = bounded(entry, "maxChunks",
+                    input == InputKind.MEDIA ? DEFAULT_MEDIA_MAX_CHUNKS : -1, id).intValue();
             long maxBytes = bounded(entry, "maxBytes", DEFAULT_MAX_BYTES, id);
             Set<MediaType> include = mimeTypes(entry, "_mime-include", id);
             Set<MediaType> exclude = mimeTypes(entry, "_mime-exclude", id);
+            if (input == InputKind.MEDIA) {
+                for (MediaType t : include) {
+                    if (InputKind.of(t) != InputKind.MEDIA) {
+                        throw new TikaConfigException("binding \"" + id + "\": \"_mime-include\" "
+                                + t + " is not an audio or video type; a MEDIA binding would never see it");
+                    }
+                }
+            }
             if (input == InputKind.IMAGES && include.isEmpty() && exclude.isEmpty()) {
                 for (String t : NON_RASTER) {
                     exclude.add(MediaType.parse(t));
@@ -136,11 +148,13 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
                 throw new TikaConfigException("binding \"" + id + "\": \"minWidth\"/\"minHeight\""
                         + " apply to IMAGES only; a " + input + " binding has no image size");
             }
-            int minWidth = minimum(entry, "minWidth", id);
-            int minHeight = minimum(entry, "minHeight", id);
-            InferenceBinding binding = new InferenceBinding(id, engineName, input, taskNames,
-                    include, exclude, maxChunks, maxBytes,
-                    entry.path("enabled").asBoolean(true), chunker, minWidth, minHeight);
+            Modality modality = modality(entry, id, input);
+            InferenceBinding binding = InferenceBinding.builder(id, engineName, input)
+                    .tasks(taskNames).include(include).exclude(exclude).maxChunks(maxChunks)
+                    .maxBytes(maxBytes).enabled(entry.path("enabled").asBoolean(true))
+                    .chunker(chunker).modality(modality)
+                    .minSize(minimum(entry, "minWidth", id), minimum(entry, "minHeight", id))
+                    .build();
             List<InferenceTask> tasks = new ArrayList<>();
             for (String taskName : taskNames) {
                 InferenceTask task;
@@ -185,6 +199,34 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
             throw new TikaConfigException("binding \"" + id + "\" chunker \"" + type.getKey()
                     + "\": " + e.getMessage(), e);
         }
+    }
+
+    /** Implied by the input except for MEDIA, which must say {@code audio} or {@code visual}. */
+    private static Modality modality(JsonNode entry, String id, InputKind input)
+            throws TikaConfigException {
+        Modality implied = Modality.implied(input);
+        if (!entry.has("modality")) {
+            if (implied == null) {
+                throw new TikaConfigException("binding \"" + id + "\" is on MEDIA and needs "
+                        + "\"modality\": \"audio\" or \"visual\"");
+            }
+            return implied;
+        }
+        Modality given;
+        try {
+            given = Modality.valueOf(entry.get("modality").asText().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException e) {
+            throw new TikaConfigException("binding \"" + id + "\": \"modality\" must be one of "
+                    + "text, visual, audio");
+        }
+        if (implied != null && given != implied) {
+            throw new TikaConfigException("binding \"" + id + "\": " + input + " is always "
+                    + implied.name().toLowerCase(Locale.ROOT));
+        }
+        if (input == InputKind.MEDIA && given == Modality.TEXT) {
+            throw new TikaConfigException("binding \"" + id + "\": MEDIA has no text channel");
+        }
+        return given;
     }
 
     private static String required(JsonNode entry, String field) throws TikaConfigException {
