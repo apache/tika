@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
@@ -190,6 +191,132 @@ class ServerProtocolIOTest {
         PipesResult returned = exchange(result, limit);
 
         assertEquals(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, returned.status());
+    }
+
+    /**
+     * A lone surrogate in a metadata value (an HTML numeric character reference in a title,
+     * say) used to fail the Smile encoding of the whole result, which the server treated as
+     * a crash; Metadata stores U+FFFD in its place, so the value crosses the pipe. Extracted
+     * text is SafeContentHandler's job and never carries one.
+     */
+    @Test
+    void testLoneSurrogateInMetadataCrossesThePipe() throws Exception {
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.TITLE, "Korean : \uDB2C\u0620 : more");
+        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS,
+                new EmitDataImpl("key", List.of(m)));
+
+        PipesResult returned = exchange(result, PipesMessage.MAX_PAYLOAD_BYTES);
+
+        assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS, returned.status());
+        assertEquals("Korean : \uFFFD\u0620 : more",
+                returned.emitData().getMetadataList().get(0).get(TikaCoreProperties.TITLE));
+    }
+
+    /**
+     * A result that cannot be encoded at all is reported for its document, not as a worker
+     * crash: the parent gets a status-only result naming the failure, and an already
+     * emitted status is kept so the parent does not emit the document again.
+     */
+    @Test
+    void testUnserializableResultBecomesAStatusOnlyResult() throws Exception {
+        Metadata poison = new Metadata() {
+            @Override
+            public String[] getValues(String name) {
+                throw new IllegalStateException("cannot read this value");
+            }
+        };
+        poison.set("k", "v");
+
+        PipesResult notEmitted = new PipesResult(PipesResult.RESULT_STATUS.PARSE_SUCCESS,
+                new EmitDataImpl("key", List.of(poison)));
+        PipesResult returned = exchange(notEmitted, PipesMessage.MAX_PAYLOAD_BYTES);
+        assertEquals(PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT, returned.status());
+        assertTrue(returned.message().contains("could not be serialized"), returned.message());
+        assertTrue(returned.message().contains("cannot read this value"), returned.message());
+
+        PipesResult emitted = new PipesResult(PipesResult.RESULT_STATUS.EMIT_SUCCESS,
+                new EmitDataImpl("key", List.of(poison)));
+        returned = exchange(emitted, PipesMessage.MAX_PAYLOAD_BYTES);
+        assertEquals(PipesResult.RESULT_STATUS.EMIT_SUCCESS, returned.status());
+    }
+
+    /**
+     * A failure whose payload cannot be encoded keeps its status and category: the parent
+     * treats a fetch failure as a fetch failure, not as a parse it can report on.
+     */
+    @Test
+    void testUnserializableFailureKeepsItsStatus() throws Exception {
+        Metadata poison = new Metadata() {
+            @Override
+            public String[] getValues(String name) {
+                throw new IllegalStateException("cannot read this value");
+            }
+        };
+        poison.set("k", "v");
+        PipesResult fetchFailed = new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
+                new EmitDataImpl("key", List.of(poison)), "fetch failed");
+
+        PipesResult returned = exchange(fetchFailed, PipesMessage.MAX_PAYLOAD_BYTES);
+
+        assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, returned.status());
+        assertTrue(returned.message().contains("could not be serialized"), returned.message());
+    }
+
+    /** The category rule behind the fallback, over every status. */
+    @Test
+    void testUnserializableStatusRule() {
+        for (PipesResult.RESULT_STATUS status : PipesResult.RESULT_STATUS.values()) {
+            PipesResult.RESULT_STATUS fallback = ServerProtocolIO.unserializableStatus(status);
+            boolean emitted = status == PipesResult.RESULT_STATUS.EMIT_SUCCESS
+                    || status == PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK
+                    || status == PipesResult.RESULT_STATUS.EMIT_SUCCESS_PARSE_EXCEPTION;
+            if (emitted || status.getCategory() != PipesResult.CATEGORY.SUCCESS) {
+                assertEquals(status, fallback, status.name());
+            } else {
+                assertEquals(PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT, fallback, status.name());
+            }
+        }
+    }
+
+    /**
+     * When the status-only report does not fit the limit, the status is kept with a short
+     * fixed message (a fetch failure stays a fetch failure); only when even that does not
+     * fit does the guaranteed-fit frame go out, never an exception the parent counts as a crash.
+     */
+    @Test
+    void testUnserializableFallbackThatOverflowsKeepsTheStatus() throws Exception {
+        String longMessage = "x".repeat(4096);
+        Metadata poison = new Metadata() {
+            @Override
+            public String[] getValues(String name) {
+                throw new IllegalStateException(longMessage);
+            }
+        };
+        poison.set("k", "v");
+        PipesResult fetchFailed = new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
+                new EmitDataImpl("key", List.of(poison)), "fetch failed");
+
+        PipesResult returned = exchange(fetchFailed, 256);
+        assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, returned.status(),
+                "the long message is dropped, the status is not");
+        assertEquals("result could not be serialized", returned.message());
+
+        returned = exchange(fetchFailed, ServerProtocolIO.MIN_FALLBACK_PAYLOAD_BYTES);
+        assertEquals(PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED, returned.status(),
+                "nothing but the static frame fits the minimum limit");
+    }
+
+    /** A lone surrogate in an exception message crosses the Smile channel as U+FFFD. */
+    @Test
+    void testLoneSurrogateInMessageCrossesThePipe() throws Exception {
+        PipesResult result = new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
+                "no such file: \uD800.pdf");
+
+        PipesResult returned = exchange(result, PipesMessage.MAX_PAYLOAD_BYTES);
+
+        assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, returned.status());
+        assertEquals("no such file: \uFFFD.pdf", returned.message());
     }
 
     /**

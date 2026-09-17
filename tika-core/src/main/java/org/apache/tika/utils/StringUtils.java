@@ -221,4 +221,57 @@ public class StringUtils {
         }
         return sb.toString();
     }
+
+    /**
+     * The value with every unpaired UTF-16 surrogate replaced by U+FFFD. A parser can hand back
+     * a lone surrogate (an HTML numeric character reference for one, say); a UTF-8 or Smile
+     * encoder rejects it, and one bad value must not fail a whole document. Returns the same
+     * instance when nothing needs replacing.
+     */
+    public static String wellFormed(String value) {
+        if (value == null) {
+            return null;
+        }
+        int n = value.length();
+        StringBuilder out = null;
+        for (int i = 0; i < n; i++) {
+            char c = value.charAt(i);
+            if (!Character.isSurrogate(c)) {
+                if (out != null) {
+                    out.append(c);
+                }
+                continue;
+            }
+            boolean paired = Character.isHighSurrogate(c) && i + 1 < n
+                    && Character.isLowSurrogate(value.charAt(i + 1));
+            if (paired) {
+                if (out != null) {
+                    out.append(c).append(value.charAt(i + 1));
+                }
+                i++;
+                continue;
+            }
+            if (out == null) {
+                out = new StringBuilder(n);
+                out.append(value, 0, i);
+            }
+            out.append('\uFFFD');
+        }
+        return out == null ? value : out.toString();
+    }
+
+    /** {@link #wellFormed(String)} over an array: the same array when nothing needs replacing. */
+    public static String[] wellFormed(String[] values) {
+        String[] out = null;
+        for (int i = 0; i < values.length; i++) {
+            String w = wellFormed(values[i]);
+            if (w != values[i]) {
+                if (out == null) {
+                    out = values.clone();
+                }
+                out[i] = w;
+            }
+        }
+        return out == null ? values : out;
+    }
 }

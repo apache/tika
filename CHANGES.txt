@@ -1,5 +1,14 @@
 Release 4.1.0 - unreleased
 
+   * Metadata never stores an unpaired UTF-16 surrogate: every write replaces
+     one with U+FFFD (StringUtils.wellFormed), so no reader meets one; the
+     Smile encoder on the pipes channel rejected them and the parent counted
+     a worker crash. tk:content is exempt, since SafeContentHandler already
+     guarantees it. A result the worker cannot encode is reported for its
+     document with its own status (a fetch failure stays a fetch failure)
+     instead of counting as a crash, and that report cannot itself overflow
+     the payload limit (TIKA-4897).
+
    * openai-embedding-engine gains "requestParameters" to enable custom
      parameters per vendor (TIKA-4896).
      

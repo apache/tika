@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Locale;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,7 +129,16 @@ public class ServerProtocolIO {
         } catch (IOException e) {
             lastRespSerNanos = System.nanoTime() - serStart;
             if (!bos.overflowed()) {
-                throw e;
+                if (!(e instanceof JsonProcessingException)) {
+                    throw e;
+                }
+                // the result itself cannot be encoded (the buffer is in memory, so this is
+                // not the pipe): report it for this document rather than let the parent
+                // count a worker crash and lose the document
+                LOG.warn("result could not be serialized; returning a status-only result", e);
+                writeStatusOnly(unserializableStatus(pipesResult.status()),
+                        "result could not be serialized: " + e.getMessage());
+                return;
             }
             LOG.warn("Payload exceeded maxIpcPayloadBytes {}; returning PAYLOAD_LIMIT_EXCEEDED",
                     maxIpcPayloadBytes);
@@ -202,6 +212,41 @@ public class ServerProtocolIO {
         lastRespAckNanos = -1;
         lastRespBytes = -1;
         lastIntermediateNanos = -1;
+    }
+
+    /**
+     * A success whose payload is lost is a parse failure for the parent; an emitted status
+     * stays so the parent does not emit again, and a failure keeps its own status and category.
+     */
+    static PipesResult.RESULT_STATUS unserializableStatus(PipesResult.RESULT_STATUS status) {
+        if (alreadyEmitted(status) || status.getCategory() != PipesResult.CATEGORY.SUCCESS) {
+            return status;
+        }
+        return PipesResult.RESULT_STATUS.PARSE_EXCEPTION_NO_EMIT;
+    }
+
+    /**
+     * A status and message; the same status with a short fixed message when that overflows
+     * the limit (the status is what the parent's retry and reporting need); the guaranteed-fit
+     * frame when even that does not fit.
+     */
+    private void writeStatusOnly(PipesResult.RESULT_STATUS status, String message)
+            throws IOException {
+        for (String m : new String[]{message, "result could not be serialized"}) {
+            BoundedOutputStream fallbackBos = new BoundedOutputStream(maxIpcPayloadBytes);
+            try {
+                JsonPipesIpc.toStream(new PipesResult(status, m), fallbackBos);
+            } catch (IOException e) {
+                if (!fallbackBos.overflowed()) {
+                    throw e;
+                }
+                continue;
+            }
+            PipesMessage.finished(fallbackBos.toByteArray()).write(output);
+            awaitAck();
+            return;
+        }
+        doWritePayloadLimitExceeded();
     }
 
     /**

@@ -440,16 +440,7 @@ class PipesWorker implements Callable<PipesResult> {
 
         List<java.util.Map<String, Object>> metadataMapList = new java.util.ArrayList<>();
         for (Metadata metadata : metadataList) {
-            java.util.Map<String, Object> metadataMap = new java.util.LinkedHashMap<>();
-            for (String name : metadata.names()) {
-                String[] values = metadata.getValues(name);
-                if (values.length == 1) {
-                    metadataMap.put(name, values[0]);
-                } else {
-                    metadataMap.put(name, values);
-                }
-            }
-            metadataMapList.add(metadataMap);
+            metadataMapList.add(metadataMap(metadata));
         }
         mapper.writeValue(os, metadataMapList);
     }
@@ -498,17 +489,16 @@ class PipesWorker implements Callable<PipesResult> {
         ObjectMapper mapper = new ObjectMapper();
         // Disable auto-close so we don't close the zip output stream
         mapper.configure(com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
-        // Convert metadata to a map for JSON serialization
+        mapper.writeValue(os, metadataMap(metadata));
+    }
+
+    private static java.util.Map<String, Object> metadataMap(Metadata metadata) {
         java.util.Map<String, Object> metadataMap = new java.util.LinkedHashMap<>();
         for (String name : metadata.names()) {
             String[] values = metadata.getValues(name);
-            if (values.length == 1) {
-                metadataMap.put(name, values[0]);
-            } else {
-                metadataMap.put(name, values);
-            }
+            metadataMap.put(name, values.length == 1 ? values[0] : values);
         }
-        mapper.writeValue(os, metadataMap);
+        return metadataMap;
     }
 
     protected ParseDataOrPipesResult parseFromTuple() throws TikaException, InterruptedException {

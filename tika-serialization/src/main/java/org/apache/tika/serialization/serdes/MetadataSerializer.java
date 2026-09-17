@@ -73,4 +73,5 @@ public class MetadataSerializer extends JsonSerializer<Metadata> {
         }
         jsonGenerator.writeEndObject();
     }
+
 }
