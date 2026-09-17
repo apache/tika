@@ -45,8 +45,8 @@ public class InferenceTextStageTest {
     }
 
     private static InferenceBinding text(String id, Set<MediaType> include, long maxBytes) {
-        return new InferenceBinding(id, "engine", InputKind.TEXT, List.of("t"), include, null,
-                -1, maxBytes, true);
+        return InferenceBinding.builder(id, "engine", InputKind.TEXT).tasks(List.of("t"))
+                .include(include).maxBytes(maxBytes).build();
     }
 
     private static Metadata doc(String type, String content) {

@@ -43,6 +43,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.detect.Detector;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.extractor.EmbeddedMetadataLookup;
@@ -151,8 +152,8 @@ public class InferenceDispatcherTest {
 
     private static InferenceBinding binding(String id, InputKind kind, Set<MediaType> include,
                                             int maxChunks) {
-        return new InferenceBinding(id, "engine", kind, List.of("embed"), include, null,
-                maxChunks, -1, true);
+        return InferenceBinding.builder(id, "engine", kind).include(include)
+                .maxChunks(maxChunks).build();
     }
 
     @TempDir
@@ -246,8 +247,8 @@ public class InferenceDispatcherTest {
         InferenceDispatcher dispatcher = new InferenceDispatcher(List.of(
                 new InferenceDispatcher.Bound(binding("png", InputKind.IMAGES, null, -1),
                         new RecordingEngine(), List.of(pngTask)),
-                new InferenceDispatcher.Bound(new InferenceBinding("small", "engine",
-                        InputKind.IMAGES, List.of("embed"), null, null, -1, 2, true),
+                new InferenceDispatcher.Bound(InferenceBinding.builder("small", "engine",
+                        InputKind.IMAGES).maxBytes(2).build(),
                         new RecordingEngine(), List.of(smallTask))));
 
         ParseContext off = new ParseContext();
@@ -514,5 +515,50 @@ public class InferenceDispatcherTest {
         assertTrue(task.runs.isEmpty(), "a failed document costs no engine call");
         assertFalse(Files.exists(held));
         assertNull(context.get(InferenceDispatcher.State.class));
+    }
+
+    /** A MEDIA unit is the whole file; the segment cap applies later, not the file size. */
+    @Test
+    public void testMediaIsNotSizeGatedAtTheOffer() throws Exception {
+        RecordingTask task = new RecordingTask();
+        InferenceDispatcher dispatcher = new InferenceDispatcher(List.of(
+                new InferenceDispatcher.Bound(InferenceBinding.builder("v", "engine",
+                        InputKind.MEDIA).modality(Modality.VISUAL).maxBytes(2).build(),
+                        new RecordingEngine(), List.of(task))));
+        ParseContext context = new ParseContext();
+        MediaType mp4 = MediaType.video("mp4");
+        assertTrue(dispatcher.wants(mp4, new Metadata(), context));
+        dispatcher.offer(mp4, new Metadata(), new Metadata(), file("more than two"), context);
+        dispatcher.flush(new Metadata(), context);
+        assertEquals(1, task.runs.size());
+        assertEquals(1, task.runs.get(0).size(), "maxBytes does not drop a media file");
+
+        // a playlist is text that names other files; it is never a media unit
+        assertFalse(dispatcher.wants(MediaType.audio("x-mpegurl"), new Metadata(), context));
+        assertNull(InputKind.of(MediaType.parse("application/vnd.apple.mpegurl")));
+        assertNull(InputKind.of(MediaType.audio("x-scpls")));
+        assertNull(InputKind.of(MediaType.parse("video/vnd.mpegurl")));
+        assertNull(InputKind.of(MediaType.parse("application/xspf+xml")));
+        assertEquals(InputKind.MEDIA, InputKind.of(MediaType.audio("mpeg")));
+    }
+
+    @Test
+    public void testMediaConfigValidation() throws Exception {
+        MediaConfig config = new MediaConfig();
+        config.initialize();
+        config.getSegment().setOverlap(-1);
+        assertThrows(TikaConfigException.class, config::initialize, "negative overlap");
+        config.getSegment().setOverlap(30);
+        assertThrows(TikaConfigException.class, config::initialize, "overlap >= seconds");
+        config.getSegment().setOverlap(0);
+        config.getSegment().setSeconds(0);
+        assertThrows(TikaConfigException.class, config::initialize, "no window");
+        config.getSegment().setSeconds(10);
+        config.setMaxSegments(0);
+        assertThrows(TikaConfigException.class, config::initialize, "0 embeds nothing");
+        config.setMaxSegments(-2);
+        assertThrows(TikaConfigException.class, config::initialize);
+        config.setMaxSegments(-1);
+        config.initialize();
     }
 }

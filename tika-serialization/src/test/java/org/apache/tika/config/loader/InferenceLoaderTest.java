@@ -46,6 +46,8 @@ import org.apache.tika.parser.inference.InferenceBinding;
 import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.parser.inference.InferenceSelection;
 import org.apache.tika.parser.inference.InputKind;
+import org.apache.tika.parser.inference.MediaConfig;
+import org.apache.tika.parser.inference.Modality;
 
 public class InferenceLoaderTest {
 
@@ -225,5 +227,60 @@ public class InferenceLoaderTest {
             }, json);
             assertNotNull(e.getMessage());
         }
+    }
+
+    @Test
+    public void testModality() throws Exception {
+        TikaLoader loader = load("{" + ENGINES + ", \"inference\": ["
+                + " { \"id\": \"a\", \"engine\": \"one\", \"input\": \"MEDIA\","
+                + "   \"modality\": \"audio\", \"tasks\": [\"test-task\"] },"
+                + " { \"id\": \"p\", \"engine\": \"one\", \"input\": \"IMAGES\","
+                + "   \"tasks\": [\"test-task\"] } ] }");
+        InferenceDispatcher dispatcher = loader.get(InferenceDispatcher.class);
+        assertEquals(Modality.AUDIO, dispatcher.getBound().get(0).binding().getModality());
+        assertEquals(InferenceLoader.DEFAULT_MEDIA_MAX_CHUNKS,
+                dispatcher.getBound().get(0).binding().getMaxChunks(),
+                "a MEDIA binding has a config-side ceiling on segments");
+        assertEquals(-1, dispatcher.getBound().get(1).binding().getMaxChunks());
+        assertEquals(Modality.VISUAL, dispatcher.getBound().get(1).binding().getModality(),
+                "implied by the input");
+        for (String bad : new String[]{
+                "{ \"engine\": \"one\", \"input\": \"MEDIA\", \"tasks\": [\"test-task\"] }",
+                "{ \"engine\": \"one\", \"input\": \"MEDIA\", \"modality\": \"text\","
+                        + " \"tasks\": [\"test-task\"] }",
+                "{ \"engine\": \"one\", \"input\": \"IMAGES\", \"modality\": \"audio\","
+                        + " \"tasks\": [\"test-task\"] }",
+                "{ \"engine\": \"one\", \"input\": \"MEDIA\", \"modality\": \"smell\","
+                        + " \"tasks\": [\"test-task\"] }",
+                "{ \"engine\": \"one\", \"input\": \"MEDIA\", \"modality\": \"audio\","
+                        + " \"_mime-include\": [\"image/png\"], \"tasks\": [\"test-task\"] }",
+                "{ \"engine\": \"one\", \"input\": \"MEDIA\", \"modality\": \"audio\","
+                        + " \"_mime-include\": [\"audio/x-mpegurl\"], \"tasks\": [\"test-task\"] }"}) {
+            assertThrows(TikaConfigException.class, () -> load("{" + ENGINES
+                    + ", \"inference\": [" + bad + "] }").get(InferenceDispatcher.class), bad);
+        }
+    }
+
+    /** The media grid rides the parse-context like the inference selection does. */
+    @Test
+    public void testMediaBlockResolves() throws Exception {
+        TikaLoader loader = load("{" + ENGINES + ", \"inference\": ["
+                + " { \"id\": \"a\", \"engine\": \"one\", \"input\": \"MEDIA\","
+                + "   \"modality\": \"audio\", \"tasks\": [\"test-task\"] } ],"
+                + " \"parse-context\": { \"media\": { \"segment\": { \"seconds\": 10,"
+                + "   \"overlap\": 2 }, \"maxSegments\": 7 } } }");
+        MediaConfig media = loader.loadParseContext().get(MediaConfig.class);
+        assertNotNull(media, "the parse-context block resolves to the class-keyed DTO");
+        assertEquals(10, media.getSegment().getSeconds());
+        assertEquals(2, media.getSegment().getOverlap());
+        assertEquals(7, media.getMaxSegments());
+        assertEquals(30, new MediaConfig().getSegment().getSeconds(), "default window");
+        assertEquals(5, new MediaConfig().getSegment().getOverlap(), "default overlap");
+        assertThrows(TikaConfigException.class, () -> load("{" + ENGINES + ", \"inference\": ["
+                + " { \"id\": \"a\", \"engine\": \"one\", \"input\": \"MEDIA\","
+                + "   \"modality\": \"audio\", \"tasks\": [\"test-task\"] } ],"
+                + " \"parse-context\": { \"media\": { \"segment\": { \"seconds\": 10,"
+                + "   \"overlap\": 10 } } } }").loadParseContext(),
+                "a bad grid fails at load, not per document");
     }
 }

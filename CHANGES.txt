@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * MEDIA inference bindings: audio and video are cut into segments with ffmpeg on one
+     grid per document (parse-context "media" block) and each channel embedded per
+     segment; chunks in tk:chunks gain "modality" and "correlator"; the Elasticsearch and
+     OpenSearch emitters gain chunkStrategy DOCUMENTS, one search document per correlator
+     (TIKA-4900).
+
    * Metadata never stores an unpaired UTF-16 surrogate: every write replaces
      one with U+FFFD (StringUtils.wellFormed), so no reader meets one; the
      Smile encoder on the pipes channel rejected them and the parent counted

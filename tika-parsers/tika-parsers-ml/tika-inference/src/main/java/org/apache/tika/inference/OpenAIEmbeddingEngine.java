@@ -37,6 +37,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaHttpClient;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.inference.Modality;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -65,6 +66,9 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
     private String apiKeyPrefix = "Bearer ";
     private Map<String, Object> requestParameters = new LinkedHashMap<>();
     private String imageInput = IMAGE_INPUT_OBJECT;
+    private String mediaInput = MEDIA_INPUT_NONE;
+    public static final String MEDIA_INPUT_NONE = "none";
+    public static final String MEDIA_INPUT_OBJECT = "object";
 
     public static final String IMAGE_INPUT_OBJECT = "object";
     public static final String IMAGE_INPUT_DATA_URI = "data-uri";
@@ -87,6 +91,10 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
         if (!IMAGE_INPUT_OBJECT.equals(imageInput) && !IMAGE_INPUT_DATA_URI.equals(imageInput)) {
             throw new TikaConfigException("imageInput must be \"" + IMAGE_INPUT_OBJECT + "\" or \""
                     + IMAGE_INPUT_DATA_URI + "\", not \"" + imageInput + "\"");
+        }
+        if (!MEDIA_INPUT_NONE.equals(mediaInput) && !MEDIA_INPUT_OBJECT.equals(mediaInput)) {
+            throw new TikaConfigException("mediaInput must be \"" + MEDIA_INPUT_NONE + "\" or \""
+                    + MEDIA_INPUT_OBJECT + "\", not \"" + mediaInput + "\"");
         }
         for (String key : requestParameters.keySet()) {
             if (ENGINE_OWNED.contains(key)) {
@@ -117,6 +125,29 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
             }
         }
         return post(root, images.size(), context);
+    }
+
+    @Override
+    public boolean supportsMedia() {
+        return MEDIA_INPUT_OBJECT.equals(mediaInput);
+    }
+
+    /** Object form only: {@code {"audio": data-uri}} or {@code {"video": data-uri}}, as Jina names them. */
+    @Override
+    public List<float[]> embedMedia(List<MediaInput> inputs, ParseContext context)
+            throws IOException, TikaException {
+        if (!supportsMedia()) {
+            return EmbeddingEngine.super.embedMedia(inputs, context);
+        }
+        ObjectNode root = request();
+        ArrayNode input = root.putArray("input");
+        for (MediaInput item : inputs) {
+            String key = item.modality() == Modality.AUDIO ? "audio"
+                    : item.mimeType().startsWith("image/") ? "image" : "video";
+            input.addObject().put(key, "data:" + item.mimeType() + ";base64,"
+                    + Base64.getEncoder().encodeToString(item.bytes()));
+        }
+        return post(root, inputs.size(), context);
     }
 
     @Override
@@ -268,6 +299,15 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
 
     public void setImageInput(String imageInput) {
         this.imageInput = imageInput;
+    }
+
+    /** Whether audio and video may be sent, and how: {@code "none"} or {@code "object"} ({@code {"audio": ...}}, {@code {"video": ...}}). */
+    public String getMediaInput() {
+        return mediaInput;
+    }
+
+    public void setMediaInput(String mediaInput) {
+        this.mediaInput = mediaInput;
     }
 
     /** Extra keys for every request body, as the vendor names them; see the class note. */
