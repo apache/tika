@@ -1,22 +1,14 @@
 Release 4.1.0 - unreleased
 
    * Digesting an embedded document no longer makes its source hand out the
-     bytes twice. Re-opening a zip entry means inflating it again, which the
-     page cache cannot help with, so the digest now asks the source to hold
-     the content for the parse that follows. Only for content that certainly
-     fits in memory; file-backed sources are unaffected (TIKA-4901).
+     bytes twice. (TIKA-4901).
 
+   * Enable audio/video chunking with ffmpeg and inference (TIKA-4900).
+     
    * PDF incremental-update scanning reads the file in blocks instead of one
      byte at a time; same output, about 4x less CPU (TIKA-4898).
 
-   * Metadata never stores an unpaired UTF-16 surrogate: every write replaces
-     one with U+FFFD (StringUtils.wellFormed), so no reader meets one; the
-     Smile encoder on the pipes channel rejected them and the parent counted
-     a worker crash. tk:content is exempt, since SafeContentHandler already
-     guarantees it. A result the worker cannot encode is reported for its
-     document with its own status (a fetch failure stays a fetch failure)
-     instead of counting as a crash, and that report cannot itself overflow
-     the payload limit (TIKA-4897).
+   * Metadata never stores an unpaired UTF-16 surrogate (TIKA-4897).
 
    * openai-embedding-engine gains "requestParameters" to enable custom
      parameters per vendor (TIKA-4896).

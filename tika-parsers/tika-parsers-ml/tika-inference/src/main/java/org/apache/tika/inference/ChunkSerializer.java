@@ -19,6 +19,7 @@ package org.apache.tika.inference;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -32,6 +33,7 @@ import org.apache.tika.inference.locator.SpatialLocator;
 import org.apache.tika.inference.locator.TemporalLocator;
 import org.apache.tika.inference.locator.TextLocator;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.inference.Modality;
 
 /**
  * Serializes and deserializes a list of {@link Chunk} objects to/from JSON.
@@ -62,6 +64,12 @@ public final class ChunkSerializer {
             }
             if (chunk.getProducer() != null) {
                 node.put("producer", chunk.getProducer());
+            }
+            if (chunk.getModality() != null) {
+                node.put("modality", chunk.getModality().name().toLowerCase(Locale.ROOT));
+            }
+            if (chunk.getCorrelator() != null) {
+                node.put("correlator", chunk.getCorrelator());
             }
             serializeLocators(node, chunk.getLocators());
         }
@@ -113,6 +121,12 @@ public final class ChunkSerializer {
             if (node.hasNonNull("producer")) {
                 chunk.setProducer(node.get("producer").asText());
             }
+            if (node.hasNonNull("modality")) {
+                chunk.setModality(modality(node.get("modality").asText()));
+            }
+            if (node.hasNonNull("correlator")) {
+                chunk.setCorrelator(node.get("correlator").asText());
+            }
 
             JsonNode vectorNode = node.get("vector");
             if (vectorNode != null && !vectorNode.isNull()) {
@@ -124,6 +138,16 @@ public final class ChunkSerializer {
     }
 
     // ---- locator serialization --------------------------------------------
+
+    /** A value this reader does not know (a newer writer's) reads as unsaid, not as a failure. */
+    private static Modality modality(String text) {
+        for (Modality m : Modality.values()) {
+            if (m.name().equalsIgnoreCase(text)) {
+                return m;
+            }
+        }
+        return null;
+    }
 
     private static void serializeLocators(ObjectNode parent, Locators loc) {
         if (loc == null || loc.isEmpty()) {

@@ -21,8 +21,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -30,6 +36,8 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -101,6 +109,8 @@ public class OpenSearchClient {
         String routing = (config.attachmentStrategy() == OpenSearchEmitterConfig.AttachmentStrategy.PARENT_CHILD) ?
                 emitKey : null;
 
+        boolean chunkDocuments =
+                config.chunkStrategy() == OpenSearchEmitterConfig.ChunkStrategy.DOCUMENTS;
         for (Metadata metadata : metadataList) {
             StringBuilder id = new StringBuilder(emitKey);
             if (i > 0) {
@@ -108,14 +118,145 @@ public class OpenSearchClient {
             }
             String indexJson = metadataToJsonWriter.getBulkJson(id.toString(), routing);
             json.append(indexJson).append("\n");
+            JsonNode chunks = chunkDocuments ? chunkArray(metadata.get(CHUNKS_FIELD)) : null;
+            Metadata body = chunks == null ? metadata : without(metadata, CHUNKS_FIELD);
             if (i == 0) {
-                json.append(metadataToJsonWriter.writeContainer(metadata, config.attachmentStrategy()));
+                json.append(metadataToJsonWriter.writeContainer(body, config.attachmentStrategy()));
             } else {
-                json.append(metadataToJsonWriter.writeEmbedded(metadata, config.attachmentStrategy(), emitKey, config.embeddedFileFieldName()));
+                json.append(metadataToJsonWriter.writeEmbedded(body, config.attachmentStrategy(), emitKey, config.embeddedFileFieldName()));
             }
             json.append("\n");
+            if (chunks != null) {
+                appendChunks(id.toString(), emitKey, routing, chunks, json);
+            }
             i++;
         }
+    }
+
+    static final String CHUNKS_FIELD = "tk:chunks";
+
+    /**
+     * Chunks as their own documents, one per unit: chunks sharing a correlator (a segment's
+     * sound and picture, a region's text and crop) merge into one document whose vectors sit
+     * under {@code v.<producer>}, so a search scores the unit and two vectors of one unit add
+     * up on the same hit. Locators are flattened to fields and vectors decoded to float arrays.
+     */
+    /** The chunk array, or null when the value is not one and so stays on the document. */
+    private static JsonNode chunkArray(String chunks) throws IOException {
+        if (chunks == null || !isValidJson(chunks)) {
+            return null;
+        }
+        JsonNode array = VALIDATION_MAPPER.readTree(chunks);
+        return array.isArray() ? array : null;
+    }
+
+    private void appendChunks(String docId, String emitKey, String routing, JsonNode array,
+                              StringBuilder json) throws IOException {
+        int n = 0;
+        for (ObjectNode doc : chunkDocuments(array, docId, emitKey)) {
+            json.append(metadataToJsonWriter.getBulkJson(docId + "-chunk-" + n, routing))
+                    .append("\n");
+            json.append(metadataToJsonWriter.writeChunk(doc)).append("\n");
+            n++;
+        }
+    }
+
+    /** One document per correlator, in first-seen order; a chunk without one is its own. */
+    static List<ObjectNode> chunkDocuments(JsonNode chunks, String docId, String emitKey) {
+        List<ObjectNode> docs = new ArrayList<>();
+        Map<String, ObjectNode> byCorrelator = new HashMap<>();
+        for (JsonNode chunk : chunks) {
+            String correlator = chunk.hasNonNull("correlator") ? chunk.get("correlator").asText() : null;
+            ObjectNode doc = correlator == null ? null : byCorrelator.get(correlator);
+            if (doc == null) {
+                doc = VALIDATION_MAPPER.createObjectNode();
+                doc.put("file_id", docId);
+                doc.put("container_id", emitKey);
+                if (correlator != null) {
+                    doc.put("correlator", correlator);
+                    byCorrelator.put(correlator, doc);
+                }
+                docs.add(doc);
+            }
+            mergeChunk(doc, chunk);
+        }
+        for (ObjectNode doc : docs) {
+            if (doc.get("v").isEmpty()) {
+                doc.remove("v");
+            }
+        }
+        return docs;
+    }
+
+    /** Adds what the chunk knows: fields it is the first to set, and its vector under its producer. */
+    private static void mergeChunk(ObjectNode doc, JsonNode chunk) {
+        if (chunk.hasNonNull("text") && !doc.has("text")) {
+            doc.put("text", chunk.get("text").asText());
+        }
+        JsonNode locators = chunk.get("locators");
+        if (locators != null && locators.isObject()) {
+            JsonNode t = first(locators, "temporal");
+            if (t != null) {
+                setIfAbsent(doc, "start_ms", t.get("start_ms"));
+                setIfAbsent(doc, "end_ms", t.get("end_ms"));
+            }
+            JsonNode p = first(locators, "paginated");
+            if (p != null) {
+                setIfAbsent(doc, "page", p.get("page"));
+                setIfAbsent(doc, "bbox", p.get("bbox"));
+            }
+            JsonNode s = first(locators, "spatial");
+            if (s != null) {
+                setIfAbsent(doc, "bbox", s.get("bbox"));
+            }
+            JsonNode x = first(locators, "text");
+            if (x != null) {
+                setIfAbsent(doc, "start_offset", x.get("start_offset"));
+                setIfAbsent(doc, "end_offset", x.get("end_offset"));
+            }
+            JsonNode e = first(locators, "embedded");
+            if (e != null) {
+                setIfAbsent(doc, "embedded_id_path", e.get("id_path"));
+                setIfAbsent(doc, "embedded_name", e.get("name"));
+            }
+        }
+        ObjectNode v = doc.has("v") ? (ObjectNode) doc.get("v") : doc.putObject("v");
+        if (chunk.hasNonNull("vector") && chunk.get("vector").isTextual()) {
+            String key = chunk.hasNonNull("producer") ? chunk.get("producer").asText() : "default";
+            try {
+                floats(v.putArray(key), chunk.get("vector").asText());
+            } catch (IllegalArgumentException e) {
+                // a foreign writer's encoding: the document keeps its other fields
+                LOG.warn("chunk vector for {} is not base64 float32; dropped", key);
+                v.remove(key);
+            }
+        }
+    }
+
+    private static void setIfAbsent(ObjectNode doc, String field, JsonNode value) {
+        if (value != null && !value.isNull() && !doc.has(field)) {
+            doc.set(field, value);
+        }
+    }
+
+    private static JsonNode first(JsonNode locators, String kind) {
+        JsonNode list = locators.get(kind);
+        return list != null && list.isArray() && !list.isEmpty() ? list.get(0) : null;
+    }
+
+    /** Base64 big-endian float32, as tika-inference writes vectors. */
+    private static void floats(ArrayNode into, String base64) {
+        FloatBuffer fb = ByteBuffer.wrap(Base64.getDecoder().decode(base64)).asFloatBuffer();
+        while (fb.hasRemaining()) {
+            into.add(fb.get());
+        }
+    }
+
+    private static Metadata without(Metadata metadata, String field) {
+        Metadata copy = new Metadata();
+        copy.putAll(metadata);
+        copy.remove(field);
+        return copy;
     }
 
     //Only here for testing. These may disappear without notice in the future.
@@ -182,9 +323,16 @@ public class OpenSearchClient {
                              String emitKey, String embeddedFileFieldName) throws IOException;
 
         String getBulkJson(String id, String routing) throws IOException;
+
+        String writeChunk(ObjectNode chunk) throws IOException;
     }
 
     private static class InsertMetadataToJsonWriter implements MetadataToJsonWriter {
+
+        @Override
+        public String writeChunk(ObjectNode chunk) {
+            return chunk.toString();
+        }
 
         @Override
         public String writeContainer(Metadata metadata,
@@ -246,6 +394,14 @@ public class OpenSearchClient {
     }
 
     private static class UpsertMetadataToJsonWriter implements MetadataToJsonWriter {
+
+        @Override
+        public String writeChunk(ObjectNode chunk) {
+            ObjectNode wrapper = VALIDATION_MAPPER.createObjectNode();
+            wrapper.set("doc", chunk);
+            wrapper.put("doc_as_upsert", true);
+            return wrapper.toString();
+        }
 
         @Override
         public String writeContainer(Metadata metadata, OpenSearchEmitterConfig.AttachmentStrategy attachmentStrategy)

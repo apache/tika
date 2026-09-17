@@ -8,6 +8,7 @@
         "updateStrategy": "OVERWRITE",
         "commitWithin": 1000,
         "embeddedFileFieldName": "embedded",
+        "chunkStrategy": "INLINE",
         "apiKey": "REDACTED_BASE64_ID_AND_KEY",
         "httpClientConfig": {
           "connectionTimeoutMillis": 10000,

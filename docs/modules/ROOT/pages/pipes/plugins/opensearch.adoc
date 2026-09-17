@@ -131,6 +131,10 @@ include::example$pipes-opensearch-emitter.json[]
 |_unused_
 |Accepted by the config parser but never read. Control refresh visibility on the OpenSearch side instead.
 
+|`chunkStrategy`
+|`INLINE`
+|Where `tk:chunks` goes. `INLINE` — inside the document, as a JSON array; `DOCUMENTS` — one document per unit (`_id` is the document's id plus `-chunk-N`): chunks sharing a `correlator` merge into one, with `file_id`, `container_id`, `correlator`, the locators as flat fields (`start_ms`/`end_ms`, `page`, `start_offset`/`end_offset`, `embedded_id_path`) and every vector decoded to a float array under `v.<producer>`; the document itself is written without `tk:chunks`. Needs `attachmentStrategy: SEPARATE_DOCUMENTS`; re-indexing does not delete an earlier run's surplus chunk documents. See xref:migration-to-4x/chunk-strategies.adoc[Chunk strategies].
+
 |`embeddedFileFieldName`
 |_none_
 |Name of the field used to hold embedded-file content (used by `PARENT_CHILD`).

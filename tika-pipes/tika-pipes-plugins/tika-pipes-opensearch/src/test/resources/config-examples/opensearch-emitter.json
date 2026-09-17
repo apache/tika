@@ -8,6 +8,7 @@
         "updateStrategy": "OVERWRITE",
         "commitWithin": 1000,
         "embeddedFileFieldName": "embedded",
+        "chunkStrategy": "INLINE",
         "httpClientConfig": {
           "userName": "admin",
           "password": "REDACTED",

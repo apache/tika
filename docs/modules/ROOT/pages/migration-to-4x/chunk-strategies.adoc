@@ -37,28 +37,38 @@ by which locators it carries:
 |Chunk kind |Produced by, and what it carries
 
 |Text
-|`AbstractEmbeddingFilter` subclasses (e.g. `OpenAIEmbeddingFilter`) split `tk:content` with
-the `MarkdownChunker` and send each piece to a text embeddings endpoint. Carries `text`, a
-`vector`, and a `TextLocator` (character offsets).
+|A `TEXT` binding (or the 4.0 `AbstractEmbeddingFilter` subclasses) splits `tk:content` with
+the `MarkdownChunker` and sends each piece to a text embeddings endpoint. Carries `text`, a
+vector, and a `TextLocator` (character offsets).
 
 |Image
-|`OpenAIImageEmbeddingParser` sends rendered PDF page images (PDFBox or Poppler) to a
-CLIP-like image embeddings endpoint, e.g. Jina CLIP v2. Carries a `vector` and a
-`PaginatedLocator` (page number), and no `text`.
+|An `IMAGES` or `PAGES` binding sends pictures or rendered pages to an image embeddings
+endpoint. Carries a vector and a `PaginatedLocator` (page number) or an `EmbeddedLocator`,
+and no `text`.
+
+|Media segment
+|Two `MEDIA` bindings on the two channels of a video. Each writes a chunk with a
+`TemporalLocator` (millisecond range) and a vector; the two chunks of one segment share a
+`correlator`.
 |===
 
-`SpatialLocator` (bounding box) and `TemporalLocator` (millisecond range) are already defined
-and round-tripped by `ChunkSerializer`; no component produces them yet. `EmbeddedLocator`
-(`id_path`, `name`) marks a chunk that was lifted from an embedded document into its parent;
-see <<lifting>>.
+`SpatialLocator` (bounding box) is defined and round-tripped by `ChunkSerializer`; no
+component produces it yet. `EmbeddedLocator` (`id_path`, `name`) marks a chunk that was
+lifted from an embedded document into its parent; see <<lifting>>.
 
-A single chunk looks like:
+A chunk carries one vector and says where it came from three ways: `producer` is the binding
+that wrote it, `modality` is what the engine saw (`text`, `visual`, `audio`), and
+`correlator` is the id of the unit it was cut from, assigned by the chunker that defined the
+unit, so chunks of one unit written by different bindings can be grouped (a segment's sound
+and picture; later, a page region's OCR text and its crop):
 
 [source,json]
 ----
 {
   "text": "Revenue grew 15% year-over-year...",
   "vector": "base64-encoded-float32-be",
+  "producer": "text-vectors",
+  "modality": "text",
   "locators": {
     "text": [{"start_offset": 0, "end_offset": 120}],
     "paginated": [{"page": 1}]
@@ -66,9 +76,10 @@ A single chunk looks like:
 }
 ----
 
-When several pipeline components produce chunks for the same document — the image embedder
-during parsing, the text embedder as a metadata filter — they merge into the same array via
-`ChunkSerializer.mergeInto()`.
+When several components produce chunks for the same document, they append to the same
+array via `ChunkSerializer.mergeInto()`. The 4.0 filters set neither `producer`, `modality`
+nor `correlator`. A `modality` value this Tika does not know (a newer writer's) reads as
+unset, so a foreign chunk never breaks the array for the chunks after it.
 
 == What Tika Emits Today
 
@@ -165,7 +176,67 @@ xref:configuration/parsers/pdf-parser.adoc[PDF Parser]).
 
 == Elasticsearch/OpenSearch Mapping
 
-With `nested` kNN support, a mapping like this works:
+Two ways to index chunks. The emitters' `chunkStrategy: DOCUMENTS` writes one document per
+unit next to the file's document: chunks sharing a `correlator` merge into one document, a
+chunk without one is its own, the locators are flattened to fields and every vector is
+decoded to a float array under `v.<producer>`:
+
+[source,json]
+----
+{
+  "file_id": "s3://bucket/talk.mp4", "container_id": "s3://bucket/talk.mp4",
+  "correlator": "t:25000-55000", "start_ms": 25000, "end_ms": 55000,
+  "v": { "jina-video": [0.01, ...], "jina-audio": [0.02, ...] }
+}
+----
+
+A hit is then a chunk, and Elasticsearch adds up scores per document, so two `knn` clauses
+(or an `rrf` retriever) over `v.jina-video` and `v.jina-audio` rank a segment that matches
+in both channels above one that matches in either: search one channel with one clause, both
+with two. That cannot be done with segments nested inside the file's document, where each
+clause scores the file by its best child, possibly a different child per clause. Mapping:
+
+[source,json]
+----
+{
+  "mappings": {
+    "properties": {
+      "file_id": {"type": "keyword"},
+      "container_id": {"type": "keyword"},
+      "correlator": {"type": "keyword"},
+      "start_ms": {"type": "long"},
+      "end_ms": {"type": "long"},
+      "page": {"type": "integer"},
+      "text": {"type": "text"},
+      "v": {
+        "properties": {
+          "jina-video": {"type": "dense_vector", "dims": 1024, "index": true, "similarity": "cosine"},
+          "jina-audio": {"type": "dense_vector", "dims": 1024, "index": true, "similarity": "cosine"}
+        }
+      }
+    }
+  }
+}
+----
+
+Group hits back to files with `collapse` on `container_id`, the emit key, which is stable
+across runs; `file_id` is the emitter's id for the document the chunk came from, and for an
+attachment that id is minted per run. Text chunks carry `start_offset`, `end_offset` and
+`text`; page chunks `page` (and `bbox` when the locator has one); lifted chunks
+`embedded_id_path` and `embedded_name`. `modality` and `producer` are not fields on a merged
+document: the vector's key under `v` is the producer.
+
+Chunk documents carry no join field, so `DOCUMENTS` needs `attachmentStrategy:
+SEPARATE_DOCUMENTS`; the emitter refuses the pair at load. Re-indexing a file replaces its
+chunk documents by id (`<id>-chunk-0` ...) but never deletes the tail of an earlier run that
+had more of them, and under `UPSERT` a removed binding's `v.<producer>` survives on the
+documents that are rewritten: delete by `container_id` before re-indexing a changed grid or
+binding set. A chunk whose `vector` is not base64 float32 keeps its other fields and loses
+the vector, with a warning; a `tk:chunks` value that is not a JSON array stays on the file's
+document as `INLINE` would write it.
+
+The default, `chunkStrategy: INLINE`, keeps `tk:chunks` inside the file's document as a
+JSON array. With `nested` kNN support, a mapping like this works:
 
 [source,json]
 ----
@@ -180,6 +251,9 @@ With `nested` kNN support, a mapping like this works:
         "type": "nested",
         "properties": {
           "text": {"type": "text"},
+          "producer": {"type": "keyword"},
+          "modality": {"type": "keyword"},
+          "correlator": {"type": "keyword"},
           "vector": {
             "type": "dense_vector",
             "dims": 1024,
@@ -210,10 +284,9 @@ With `nested` kNN support, a mapping like this works:
 }
 ----
 
-NOTE: `vector` holds a base64-encoded float32 array throughout Tika processing, and the
-emitter writes it as-is. To use a `dense_vector` mapping you need an ingest pipeline or
-custom serialization to decode it at index time; alternatively, map `vector` as `keyword`
-and decode at query time.
+NOTE: Inline, each `vector` is a base64-encoded big-endian float32 array and the emitter
+writes it as-is. Elasticsearch 9.3+ accepts that encoding for `dense_vector`; earlier
+versions need an ingest pipeline to decode it, or `chunkStrategy: DOCUMENTS`, which decodes.
 
 == Alternatives Considered
 
