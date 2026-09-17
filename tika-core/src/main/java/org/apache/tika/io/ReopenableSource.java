@@ -17,6 +17,7 @@
 package org.apache.tika.io;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -81,9 +82,26 @@ class ReopenableSource extends InputStream implements TikaInputSource {
 
     private void ensureOpen() throws IOException {
         if (currentStream == null) {
-            currentStream = new BufferedInputStream(
-                    spilledPath != null ? Files.newInputStream(spilledPath) : opener.get());
+            currentStream = openAt(position);
         }
+    }
+
+    /**
+     * A fresh stream positioned at {@code at}. Served from the retained content when there is
+     * some: re-opening this source can mean inflating a zip entry again, which the page cache
+     * does nothing for.
+     */
+    private InputStream openAt(long at) throws IOException {
+        if (retainedBuffer != null && spilledPath == null) {
+            int from = (int) Math.min(at, retainedLength);
+            return new ByteArrayInputStream(retainedBuffer, from, retainedLength - from);
+        }
+        InputStream in = new BufferedInputStream(
+                spilledPath != null ? Files.newInputStream(spilledPath) : opener.get());
+        if (at > 0) {
+            IOUtils.skipFully(in, at);
+        }
+        return in;
     }
 
     @Override
@@ -128,11 +146,7 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         if (currentStream != null) {
             currentStream.close();
         }
-        currentStream = new BufferedInputStream(
-                spilledPath != null ? Files.newInputStream(spilledPath) : opener.get());
-        if (newPosition > 0) {
-            IOUtils.skipFully(currentStream, newPosition);
-        }
+        currentStream = openAt(newPosition);
         this.position = newPosition;
     }
 
@@ -188,6 +202,36 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         if (this.budget == null) {
             this.budget = budget;
         }
+    }
+
+    /**
+     * Drains into memory up front so the caller's read, and every later one, is served from
+     * there. Only worth it when the content certainly fits: a doomed attempt reads as far as
+     * the budget allows and throws it away, and {@link #getSeekableByteChannel()} would spill
+     * instead, which is what TIKA-4835 removed.
+     */
+    @Override
+    public boolean tryRetainInMemory() throws IOException {
+        if (retainedBuffer != null) {
+            return true;
+        }
+        if (spilledPath != null || closed || length < 0 || length > MAX_ARRAY_SIZE) {
+            return false;
+        }
+        if (length > IN_MEMORY_FLOOR) {
+            if (budget == null ||
+                    budget.getMaxBytes() - budget.getReservedBytes() < length - IN_MEMORY_FLOOR) {
+                return false;
+            }
+        }
+        if (!tryBufferInMemory()) {
+            return false;
+        }
+        if (currentStream != null) {
+            currentStream.close();
+            currentStream = openAt(position);
+        }
+        return true;
     }
 
     @Override

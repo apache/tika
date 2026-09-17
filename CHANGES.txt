@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * Digesting an embedded document no longer makes its source hand out the
+     bytes twice. (TIKA-4901).
+
    * Enable audio/video chunking with ffmpeg and inference (TIKA-4900).
      
    * PDF incremental-update scanning reads the file in blocks instead of one
