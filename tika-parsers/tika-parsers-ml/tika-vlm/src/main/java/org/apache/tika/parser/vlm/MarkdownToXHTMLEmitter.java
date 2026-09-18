@@ -18,6 +18,9 @@ package org.apache.tika.parser.vlm;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.commonmark.Extension;
 import org.commonmark.ext.gfm.strikethrough.Strikethrough;
@@ -51,6 +54,9 @@ import org.commonmark.node.StrongEmphasis;
 import org.commonmark.node.Text;
 import org.commonmark.node.ThematicBreak;
 import org.commonmark.parser.Parser;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
@@ -71,6 +77,11 @@ import org.xml.sax.helpers.AttributesImpl;
  *       {@code th}, {@code td})</li>
  *   <li>Thematic breaks ({@code hr})</li>
  *   <li>Hard / soft line breaks ({@code br})</li>
+ *   <li>Raw HTML blocks, which OCR models such as jina-ocr-v1 and DeepSeek-OCR use for
+ *       tables: parsed leniently and re-emitted as the same structural subset with
+ *       attributes dropped except {@code colspan}/{@code rowspan}; unknown elements
+ *       contribute their text. Inline HTML tags are
+ *       dropped (their text is kept), except {@code <br>}.</li>
  * </ul>
  *
  * @since Apache Tika 4.0
@@ -89,6 +100,23 @@ class MarkdownToXHTMLEmitter {
             .build();
 
     private static final AttributesImpl EMPTY_ATTRS = new AttributesImpl();
+
+    /** HTML elements re-emitted by name from a raw HTML block; the rest contribute text only. */
+    private static final Set<String> HTML_PASSTHROUGH = Set.of(
+            "table", "thead", "tbody", "tfoot", "tr", "th", "td",
+            "p", "br", "ul", "ol", "li", "blockquote", "pre", "code",
+            "h1", "h2", "h3", "h4", "h5", "h6", "b", "i", "s", "sup", "sub");
+
+    private static final Map<String, String> HTML_RENAMES = Map.of(
+            "strong", "b", "em", "i", "del", "s", "strike", "s");
+
+    private static final Set<String> HTML_DROPPED = Set.of("script", "style", "head");
+
+    /** Table structure elements, where whitespace-only text is formatting, not content. */
+    private static final Set<String> HTML_STRUCTURAL = Set.of(
+            "table", "thead", "tbody", "tfoot", "tr", "ul", "ol");
+
+    private static final Pattern INLINE_BR = Pattern.compile("(?i)<br\\s*/?>");
 
     /**
      * Parses the given markdown text and emits SAX events to the handler.
@@ -214,8 +242,54 @@ class MarkdownToXHTMLEmitter {
 
         @Override
         public void visit(HtmlBlock htmlBlock) {
-            // Emit raw HTML content as plain text — we don't parse nested HTML
-            characters(htmlBlock.getLiteral());
+            Element body = Jsoup.parseBodyFragment(htmlBlock.getLiteral()).body();
+            for (org.jsoup.nodes.Node child : body.childNodes()) {
+                emitHtml(child, false);
+            }
+        }
+
+        private void emitHtml(org.jsoup.nodes.Node node, boolean inStructure) {
+            if (node instanceof TextNode) {
+                String text = ((TextNode) node).getWholeText();
+                if (!(inStructure && text.isBlank())) {
+                    characters(text);
+                }
+                return;
+            }
+            if (!(node instanceof Element)) {
+                return;
+            }
+            String name = ((Element) node).normalName();
+            if (HTML_DROPPED.contains(name)) {
+                return;
+            }
+            String tag = HTML_RENAMES.getOrDefault(name, name);
+            boolean emit = HTML_PASSTHROUGH.contains(tag);
+            if (emit) {
+                startElement(tag, spanAttributes((Element) node));
+            }
+            boolean structural = HTML_STRUCTURAL.contains(tag);
+            for (org.jsoup.nodes.Node child : node.childNodes()) {
+                emitHtml(child, structural);
+            }
+            if (emit) {
+                endElement(tag);
+            }
+        }
+
+        /** colspan/rowspan are structure, not presentation: the only attributes kept. */
+        private AttributesImpl spanAttributes(Element element) {
+            AttributesImpl attrs = EMPTY_ATTRS;
+            for (String span : new String[] {"colspan", "rowspan"}) {
+                String v = element.attr(span).trim();
+                if (v.matches("[1-9][0-9]*") && !v.equals("1")) {
+                    if (attrs == EMPTY_ATTRS) {
+                        attrs = new AttributesImpl();
+                    }
+                    attrs.addAttribute("", span, span, "CDATA", v);
+                }
+            }
+            return attrs;
         }
 
         // --- inline nodes ---
@@ -290,8 +364,11 @@ class MarkdownToXHTMLEmitter {
 
         @Override
         public void visit(HtmlInline htmlInline) {
-            // Emit inline HTML as plain text
-            characters(htmlInline.getLiteral());
+            // Open and close tags arrive as separate nodes with the text between them as
+            // siblings, so the tag itself is dropped and the text survives.
+            if (INLINE_BR.matcher(htmlInline.getLiteral()).matches()) {
+                emptyElement("br");
+            }
         }
 
         // --- GFM extensions ---

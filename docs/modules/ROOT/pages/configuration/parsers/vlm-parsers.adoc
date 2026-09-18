@@ -247,6 +247,12 @@ https://github.com/commonmark/commonmark-java[commonmark-java] and emits
 proper XHTML elements (`<h1>`, `<p>`, `<table>`, `<b>`, `<i>`, etc.)
 instead of dumping raw text. GFM tables and strikethrough are supported.
 
+Document-OCR models such as jina-ocr-v1 and DeepSeek-OCR write tables as raw HTML inside the
+markdown, and a prompt does not change that. An HTML block is parsed leniently and re-emitted as
+the same structural elements (`table`, `tr`, `th`, `td`, `p`, lists, headings) with attributes
+dropped except `colspan` and `rowspan`; other elements contribute their text, and `script`/`style` contribute nothing. Inline
+HTML tags are dropped and their text kept, except `<br>`.
+
 [#_per_request_configuration]
 == Per-request configuration
 
