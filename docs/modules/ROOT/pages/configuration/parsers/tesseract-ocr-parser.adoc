@@ -73,6 +73,8 @@ include::example$tesseract-full.json[]
 icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/config-examples/tesseract-full.json[View source on GitHub]
 
 Arbitrary Tesseract variables go in `otherTesseractConfig` as a name-to-value map, as in the
-example above. Converting a 3.x config? See
+example above. The map is server-side configuration only: a per-request `tesseract-ocr-parser`
+block that carries it is rejected, because variables such as `debug_file` name files the
+tesseract binary opens. Converting a 3.x config? See
 xref:migration-to-4x/migrating-to-4x.adoc[Migrating to 4.x] — the automatic converter rewrites the
 old `otherTesseractSettings` list for you.

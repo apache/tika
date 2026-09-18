@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -231,6 +232,21 @@ public class TesseractOCRConfigTest extends TikaTest {
     public void testGoodOtherParameters() {
         TesseractOCRConfig config = new TesseractOCRConfig();
         config.addOtherTesseractConfig("good", "good");
+    }
+
+    @Test
+    public void testRuntimeConfigRefusesOtherParameters() {
+        TesseractOCRConfig.RuntimeConfig config = new TesseractOCRConfig.RuntimeConfig();
+        assertThrows(IllegalArgumentException.class, () -> {
+            config.addOtherTesseractConfig("debug_file", "/tmp/anywhere");
+        });
+        assertThrows(IllegalArgumentException.class, () -> {
+            config.setOtherTesseractConfig(Map.of("tessedit_char_whitelist", "0123456789"));
+        });
+        // nothing to refuse
+        config.setOtherTesseractConfig(Map.of());
+        config.setOtherTesseractConfig(null);
+        assertTrue(config.getOtherTesseractConfig().isEmpty());
     }
 
     @Test

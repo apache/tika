@@ -562,6 +562,33 @@ public class TikaResourceTest extends CXFTestBase {
     }
 
     @Test
+    public void testOtherTesseractConfigNotSettableAtRuntime() throws Exception {
+        assumeTrue(new TesseractOCRParser().hasTesseract(), "Tesseract not installed, skipping test");
+
+        // -c pass-through names files tesseract opens (debug_file); server-side only
+        String configJson = """
+                {
+                  "tesseract-ocr-parser": {
+                    "otherTesseractConfig": {
+                      "debug_file": "/tmp/tika-should-never-write-this"
+                    }
+                  }
+                }
+                """;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/config")
+                .type("multipart/form-data")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+        assertEquals(422, response.getStatus());
+    }
+
+    @Test
     public void testFloatInConfig() throws Exception {
         String configJson = """
                 {
