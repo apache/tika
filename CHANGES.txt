@@ -18,6 +18,9 @@ Release 4.1.0 - unreleased
      bytes twice. (TIKA-4901).
 
    * Enable audio/video chunking with ffmpeg and inference (TIKA-4900).
+     The default segment grid is 25 s windows with 5 s overlap: hosted omni
+     engines cap an audio item at 30 s inclusive, so the earlier 30 s default
+     had every audio segment refused.
 
    * Refactor OCR and inference to use engines for inference and 
      page rendering (TIKA-4889).

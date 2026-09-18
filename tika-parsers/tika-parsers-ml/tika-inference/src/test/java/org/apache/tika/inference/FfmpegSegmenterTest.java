@@ -43,11 +43,14 @@ public class FfmpegSegmenterTest {
     @Test
     public void testCells() throws Exception {
         MediaConfig config = new MediaConfig();
-        List<MediaSegmenter.Cell> cells = MediaSegmenter.cells(52_000, config, Integer.MAX_VALUE);
+        // defaults 25/5: [0,25] [20,44]; the next start (40) is inside the last cell
+        List<MediaSegmenter.Cell> cells = MediaSegmenter.cells(44_000, config, Integer.MAX_VALUE);
         assertEquals(2, cells.size(), "a tail inside the previous cell's overlap is not a cell");
-        assertEquals(25_000, cells.get(1).startMs());
-        assertEquals(52_000, cells.get(1).endMs());
-        assertEquals(1, MediaSegmenter.cells(30_000, config, Integer.MAX_VALUE).size());
+        assertEquals(20_000, cells.get(1).startMs());
+        assertEquals(44_000, cells.get(1).endMs());
+        assertEquals(1, MediaSegmenter.cells(25_000, config, Integer.MAX_VALUE).size());
+        assertEquals(2, MediaSegmenter.cells(30_000, config, Integer.MAX_VALUE).size(),
+                "a 30 s file is two cells: no cell may reach a 30 s audio cap");
         assertEquals(1, MediaSegmenter.cells(1_000, config, Integer.MAX_VALUE).size());
         assertEquals(0, MediaSegmenter.cells(0, config, Integer.MAX_VALUE).size());
         // a container may claim any duration: the cap bounds the work, not the claim
@@ -55,8 +58,9 @@ public class FfmpegSegmenterTest {
         config.getSegment().setOverlap(-5);
         assertThrows(TikaException.class, () -> MediaSegmenter.cells(52_000, config, 10),
                 "a negative overlap would leave gaps");
-        config.getSegment().setOverlap(30);
-        assertThrows(TikaException.class, () -> MediaSegmenter.cells(52_000, config, 10));
+        config.getSegment().setOverlap(25);
+        assertThrows(TikaException.class, () -> MediaSegmenter.cells(52_000, config, 10),
+                "overlap equal to the window is a zero stride");
     }
 
     @Test

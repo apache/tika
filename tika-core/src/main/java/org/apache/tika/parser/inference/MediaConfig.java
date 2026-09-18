@@ -25,7 +25,8 @@ import org.apache.tika.exception.TikaConfigException;
 /**
  * The {@code "media"} parse-context block: how audio and video are cut into segments before
  * a MEDIA binding sees them. One grid per document, shared by every binding, so the vectors of
- * one segment land on one chunk. Defaults: 30 s windows, 5 s overlap, 480 segments.
+ * one segment land on one chunk. Defaults: 25 s windows, 5 s overlap, 480 segments; 25 s
+ * keeps an audio item under the 30 s cap hosted omni engines enforce (Jina rejects 30.0 s).
  */
 @TikaComponent(name = "media", spi = false)
 public class MediaConfig implements Serializable, Initializable {
@@ -34,7 +35,7 @@ public class MediaConfig implements Serializable, Initializable {
 
     public static class Segment implements Serializable {
         private static final long serialVersionUID = 1L;
-        private int seconds = 30;
+        private int seconds = 25;
         private int overlap = 5;
 
         public int getSeconds() {
