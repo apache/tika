@@ -255,8 +255,13 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         });
     }
 
+    private void dropRetained() {
+        retainedBuffer = null;
+        maybeReleaseRetained();
+    }
+
     private void maybeReleaseRetained() {
-        if (closed && channelPins == 0 && retainedReservation > 0) {
+        if ((closed || retainedBuffer == null) && channelPins == 0 && retainedReservation > 0) {
             budget.release(retainedReservation);
             retainedReservation = 0;
         }
@@ -337,6 +342,11 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         retainedBuffer = data;
         retainedLength = total;
         retainedReservation = reservedHere;
+        if (tmp != null && reservedHere > 0) {
+            // tmp owns the retention: disposing tmp without closing this source still releases
+            // the reservation (once no handed-out channel pins the array)
+            tmp.addResource(this::dropRetained);
+        }
         // The full read is ground truth, even over a lying declared length
         length = total;
         lengthMeasured = true;

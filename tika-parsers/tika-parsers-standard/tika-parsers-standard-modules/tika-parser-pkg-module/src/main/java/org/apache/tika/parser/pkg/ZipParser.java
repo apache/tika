@@ -548,8 +548,7 @@ public class ZipParser extends AbstractArchiveParser {
 
         if (extractor.shouldParseEmbedded(entryMetadata, context)) {
             TemporaryResources tmp = new TemporaryResources();
-            try {
-                TikaInputStream tis = TikaInputStream.get(zis, tmp, entryMetadata);
+            try (TikaInputStream tis = TikaInputStream.get(zis, tmp, entryMetadata)) {
                 extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);
             } catch (UnsupportedZipFeatureException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);

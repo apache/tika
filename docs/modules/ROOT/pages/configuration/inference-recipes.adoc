@@ -41,6 +41,34 @@ configured once and named as the recognizer; the PDF's `AUTO` strategy is the de
 }
 ----
 
+== Hosted OCR: jina-ocr-v1
+
+A hosted document-OCR model in place of Tesseract, through the OpenAI chat-completions shape.
+It is a text recognizer like Tesseract: images and, under `AUTO`, the PDF pages whose extracted
+text is poor. The key comes from the environment
+(xref:configuration/index.adoc#env[Secrets from the environment]).
+
+[source,json]
+----
+{
+  "engines": {
+    "jina-ocr": { "openai-vlm-parser": {
+        "baseUrl": "https://api.jina.ai",
+        "model": "jina-ocr-v1",
+        "apiKey": "${env:JINA_API_KEY}",
+        "prompt": "Transcribe the provided document image into a clean Markdown format, preserving the natural reading order.",
+        "maxTokens": 8192 } }
+  },
+  "text-recognizers": [ { "engine": "jina-ocr" } ]
+}
+----
+
+The model returns markdown with tables as raw HTML, whatever the prompt says; Tika parses both
+into XHTML, so a table is a `<table>` in every output format and a pipe table in markdown. Body
+cells come back as `<th>` and are passed through as such. The load-time health check reads the
+public `/v1/models`, so a wrong key passes startup and surfaces on the first request as the
+document's parse exception (HTTP 401 in the message).
+
 == Text vectors for every document
 
 One embedding request per document tree, chunks of the container and its attachments mixed,
@@ -129,6 +157,43 @@ every other document is embedded by its text. List `["TEXT", "PAGES"]` on the PD
   ]
 }
 ----
+
+== Text, pictures, audio and video in one index (Jina omni)
+
+One engine, `jina-embeddings-v5-omni-small`, embeds every input kind into one 1024-dimension
+space: the extracted text of every document, every picture, and audio and video cut into
+segments. Four bindings share it. `mediaInput: "object"` is required for the MEDIA bindings,
+`normalized` makes cosine scores comparable across the four fields, and `task` selects the
+indexing adapter (a query uses `retrieval.query` with the same model).
+
+[source,json]
+----
+{
+  "engines": {
+    "jina": { "openai-embedding-engine": {
+        "baseUrl": "https://api.jina.ai",
+        "apiKey": "${env:JINA_API_KEY}",
+        "model": "jina-embeddings-v5-omni-small",
+        "mediaInput": "object",
+        "maxBatchSize": 8,
+        "requestParameters": { "task": "retrieval.passage", "dimensions": 1024, "normalized": true } } }
+  },
+  "inference": [
+    { "id": "text",       "engine": "jina", "input": "TEXT",   "tasks": ["embed"],
+      "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } } },
+    { "id": "pictures",   "engine": "jina", "input": "IMAGES", "tasks": ["embed"] },
+    { "id": "jina-video", "engine": "jina", "input": "MEDIA",  "modality": "visual" },
+    { "id": "jina-audio", "engine": "jina", "input": "MEDIA",  "modality": "audio" }
+  ]
+}
+----
+
+Media needs ffmpeg on the `PATH`; the `-full` Docker image ships it, the minimal one does not.
+The default grid, 25 s windows with 5 s overlap, stays under the 30 s cap Jina puts on an audio
+item; a `media` block that raises `seconds` to 30 or more has every audio segment refused. A
+segment's two vectors share a `correlator`, and the Elasticsearch and OpenSearch emitters'
+`chunkStrategy: DOCUMENTS` merges them into one document per segment (see
+xref:migration-to-4x/chunk-strategies.adoc[Chunk strategies]).
 
 == OCR off for PDFs only
 

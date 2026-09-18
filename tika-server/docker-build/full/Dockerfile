@@ -59,6 +59,7 @@ RUN set -eux \
     && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends $JRE \
         gdal-bin \
         imagemagick \
+        ffmpeg \
         tesseract-ocr \
         $(printf 'tesseract-ocr-%s ' $LANGUAGES) \
     && echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections \

@@ -44,14 +44,16 @@ external.
 
 |`apache/tika:<version>-full`
 |Adds the external tools some parsers shell out to: Tesseract OCR (with `eng`, `ita`, `fra`,
-`spa`, `deu`, `jpn` language packs), GDAL, ImageMagick, and the Liberation / FreeFont /
-msttcorefonts font sets. Considerably larger.
+`spa`, `deu`, `jpn` language packs), GDAL, ImageMagick, ffmpeg (for the audio and video
+segments of a MEDIA inference binding), and the Liberation / FreeFont / msttcorefonts font
+sets. Considerably larger.
 
 |`apache/tika-grpc:<version>`
 |gRPC server on port 9090, with OCR, GDAL and fonts included.
 |===
 
-Take `-full` if you OCR scanned documents or parse geospatial rasters; otherwise take minimal.
+Take `-full` if you OCR scanned documents, parse geospatial rasters, or embed audio and video
+with a xref:configuration/inference.adoc#media[MEDIA inference binding]; otherwise take minimal.
 
 Tags come in three forms: `<version>` rolls forward if the image is rebuilt for the same Tika
 release, `<version>-<N>` is immutable and is what to pin in production, and `latest` tracks the

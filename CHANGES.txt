@@ -1,11 +1,14 @@
 Release 4.1.0 - unreleased
 
-   * PDF page OCR: an engine's TikaException (a hosted OCR service answering
-     401 or 500, a tesseract exit code) no longer aborts the document with
-     "Unable to end a page". It is handled like the engine's IOException and a
-     timeout: recorded, the page keeps its extracted text, the remaining pages
-     run, and the failure surfaces once at the end (TIKA-4911).
+   * Handle inference exceptions more robustly in PDFParser (TIKA-4911).
 
+   * Add ffmpeg to tika-server's "full" Docker image (TIKA-4910).
+
+   * Enable environment variable interpolation in tika-config.json (TIKA-4909).
+
+   * Fix a cache-budget leak: tar, 7z and streamed zip entries never released
+     their in-memory cache's reservation (TIKA-4908).
+     
    * Mp3Parser no longer writes the literal "null" (a missing album) or the
      duration into the body; an untagged MP3 has an empty body, and a TEXT
      inference binding no longer embeds it (TIKA-4907).
