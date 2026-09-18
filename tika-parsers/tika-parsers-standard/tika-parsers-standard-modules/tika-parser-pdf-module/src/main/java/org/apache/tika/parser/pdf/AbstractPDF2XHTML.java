@@ -677,6 +677,20 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
     }
 
+    /**
+     * An engine's own failure on one page (a remote OCR service answering 401 or 500, a
+     * tesseract exit code): recorded like a timeout, the page keeps its text, the remaining
+     * pages still run, and the first failure surfaces once every page has been attempted.
+     */
+    void handleCatchableEngineFailure(TikaException e) throws TikaException {
+        if (config.isCatchIntermediateIOExceptions()) {
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
+            exceptions.add(e);
+        } else {
+            throw e;
+        }
+    }
+
     /** What the OCR step did with a page. */
     enum PageOcr {
         /** No engine was dispatched: NO_OCR, no engine, or maxPagesToOcr spent. */
@@ -764,6 +778,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             handleCatchableIOE(e);
         } catch (TikaTimeoutException e) {
             handleCatchableTimeout(e);
+        } catch (TikaException e) {
+            handleCatchableEngineFailure(e);
         } catch (SAXException e) {
             throw new IOException("error writing OCR content from PDF", e);
         }

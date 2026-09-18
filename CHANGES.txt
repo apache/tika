@@ -1,5 +1,7 @@
 Release 4.1.0 - unreleased
 
+   * Handle inference exceptions more robustly in PDFParser (TIKA-4911).
+
    * Add ffmpeg to tika-server's "full" Docker image (TIKA-4910).
 
    * Enable environment variable interpolation in tika-config.json (TIKA-4909).
