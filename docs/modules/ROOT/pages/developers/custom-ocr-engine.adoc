@@ -210,7 +210,7 @@ xref:configuration/index.adoc#tika-extras-dir[Adding extra jars].
 ----
 {
   "engines": {
-    "jina": { "jina-ocr-parser": { "endpoint": "http://jina:9000", "apiKey": "..." } }
+    "jina": { "jina-ocr-parser": { "endpoint": "http://jina:9000", "apiKey": "${env:JINA_API_KEY}" } }
   },
   "text-recognizers": [
     { "engine": "jina" }

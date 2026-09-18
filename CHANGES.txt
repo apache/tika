@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * A string in tika-config.json may name an environment variable as
+     ${env:NAME}, alone or inside a longer value; the loader substitutes it
+     at startup, in the forked workers too, and an unset variable fails the
+     load naming the variable and the JSON path. Only that exact form is
+     touched; request-supplied JSON is never interpolated (TIKA-4909).
+
    * Mp3Parser no longer writes the literal "null" (a missing album) or the
      duration into the body; an untagged MP3 has an empty body, and a TEXT
      inference binding no longer embeds it (TIKA-4907).

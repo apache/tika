@@ -49,6 +49,7 @@ include::example$pipes-http-fetcher.json[]
 |`userName` / `password`
 |_none_
 |Credentials. Applied only when `authScheme` is also set — without it they are silently ignored.
+`${env:NAME}` reads one from the environment (xref:configuration/index.adoc#env[Secrets from the environment]).
 
 |`ntDomain`
 |_none_

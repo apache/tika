@@ -51,7 +51,8 @@ client by either component, so setting them has no effect:
 
 |`userName` / `password`
 |_none_
-|Basic-auth credentials. Omit both for an anonymous client.
+|Basic-auth credentials. Omit both for an anonymous client. `${env:OPENSEARCH_PASSWORD}` reads
+the password from the environment (xref:configuration/index.adoc#env[Secrets from the environment]).
 
 |`verifySsl`
 |`true`

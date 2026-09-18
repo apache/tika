@@ -75,7 +75,7 @@ rendering as a PNG, never the PDF itself, and the PDF parser renders only when i
 {
   "engines": {
     "jina": { "openai-embedding-engine": {
-      "baseUrl": "https://api.jina.ai", "apiKey": "...",
+      "baseUrl": "https://api.jina.ai", "apiKey": "${env:JINA_API_KEY}",
       "model": "jina-embeddings-v5-omni-small", "maxBatchSize": 16,
       "requestParameters": { "task": "retrieval.passage", "dimensions": 1024 } } }
   },
@@ -104,7 +104,7 @@ same engine with the defaults and `"baseUrl": "https://api.openai.com"`:
     "azure": { "openai-embedding-engine": {
       "baseUrl": "https://my-resource.openai.azure.com",
       "embeddingsPath": "/openai/deployments/text-embedding-3-large/embeddings?api-version=2024-10-21",
-      "apiKeyHeaderName": "api-key", "apiKeyPrefix": "", "apiKey": "...",
+      "apiKeyHeaderName": "api-key", "apiKeyPrefix": "", "apiKey": "${env:AZURE_OPENAI_KEY}",
       "requestParameters": { "dimensions": 1024 } } }
   }
 }
@@ -128,10 +128,10 @@ asynchronous, object-store-backed jobs that an embeddings call cannot use.
 {
   "engines": {
     "gemini": { "openai-embedding-engine": {
-      "baseUrl": "http://litellm:4000", "apiKey": "...",
+      "baseUrl": "http://litellm:4000", "apiKey": "${env:LITELLM_KEY}",
       "model": "gemini-embedding-2-preview", "imageInput": "data-uri", "maxBatchSize": 6 } },
     "nova": { "openai-embedding-engine": {
-      "baseUrl": "http://litellm:4000", "apiKey": "...",
+      "baseUrl": "http://litellm:4000", "apiKey": "${env:LITELLM_KEY}",
       "model": "bedrock/amazon.nova-2-multimodal-embeddings-v1:0",
       "imageInput": "data-uri", "maxBatchSize": 1,
       "requestParameters": { "dimensions": 1024, "embedding_purpose": "GENERIC_INDEX" } } }
@@ -323,7 +323,7 @@ as mono Opus). Two bindings on one engine index both channels of a video:
 ----
 {
   "engines": {
-    "jina": { "openai-embedding-engine": { "baseUrl": "https://api.jina.ai", "apiKey": "...",
+    "jina": { "openai-embedding-engine": { "baseUrl": "https://api.jina.ai", "apiKey": "${env:JINA_API_KEY}",
               "model": "jina-embeddings-v5-omni-small", "mediaInput": "object",
               "requestParameters": { "task": "retrieval.passage", "dimensions": 1024 } } }
   },
@@ -399,7 +399,8 @@ There is no Jina engine class; it is the OpenAI shape with Jina's keys:
 |`https://api.jina.ai` (the engine appends `/v1/embeddings`).
 
 |`apiKey`
-|The Jina key; sent as `Authorization: Bearer`.
+|The Jina key, sent as `Authorization: Bearer`; `${env:JINA_API_KEY}` keeps it out of the file
+(see xref:configuration/index.adoc#env[Secrets from the environment]).
 
 |`model`
 |`jina-embeddings-v5-omni-small` or `jina-embeddings-v5-omni-nano`.

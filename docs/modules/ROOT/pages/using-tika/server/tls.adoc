@@ -56,7 +56,7 @@ Server authenticates to clients; clients present no certificate.
       "active": true,
       "keyStoreType": "PKCS12",
       "keyStoreFile": "/path/to/server-keystore.p12",
-      "keyStorePassword": "your-password",
+      "keyStorePassword": "${env:KEYSTORE_PASSWORD}",
       "clientAuthenticationWanted": false,
       "clientAuthenticationRequired": false
     }
@@ -78,10 +78,10 @@ Add a truststore holding the client certificates you trust, and require client a
       "active": true,
       "keyStoreType": "PKCS12",
       "keyStoreFile": "/path/to/server-keystore.p12",
-      "keyStorePassword": "your-password",
+      "keyStorePassword": "${env:KEYSTORE_PASSWORD}",
       "trustStoreType": "PKCS12",
       "trustStoreFile": "/path/to/server-truststore.p12",
-      "trustStorePassword": "your-password",
+      "trustStorePassword": "${env:TRUSTSTORE_PASSWORD}",
       "clientAuthenticationWanted": true,
       "clientAuthenticationRequired": true
     }
@@ -115,7 +115,8 @@ All properties below go in `server.tlsConfig`.
 |`keyStorePassword`
 |string
 |null
-|Password for the keystore.
+|Password for the keystore; `${env:KEYSTORE_PASSWORD}` reads it from the environment
+(xref:configuration/index.adoc#env[Secrets from the environment]).
 
 |`trustStoreType`
 |string
@@ -304,10 +305,10 @@ With `/tika/config/tika-config.json` holding, for example:
       "active": true,
       "keyStoreType": "PKCS12",
       "keyStoreFile": "/tika/certs/server-keystore.p12",
-      "keyStorePassword": "your-password",
+      "keyStorePassword": "${env:KEYSTORE_PASSWORD}",
       "trustStoreType": "PKCS12",
       "trustStoreFile": "/tika/certs/server-truststore.p12",
-      "trustStorePassword": "your-password",
+      "trustStorePassword": "${env:TRUSTSTORE_PASSWORD}",
       "clientAuthenticationRequired": true
     }
   }
