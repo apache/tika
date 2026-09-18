@@ -66,12 +66,12 @@ public class TikaCLIMediaBindingsTest {
         assumeTrue(answers("ffmpeg") && answers("ffprobe"), "ffmpeg not on the PATH");
         Path mp4 = tmp.resolve("clip.mp4");
         assertEquals(0, ProcessUtils.execute(new ProcessBuilder("ffmpeg", "-loglevel", "error",
-                "-y", "-f", "lavfi", "-i", "testsrc=duration=70:size=160x120:rate=5",
-                "-f", "lavfi", "-i", "sine=frequency=440:duration=70",
+                "-y", "-f", "lavfi", "-i", "testsrc=duration=65:size=160x120:rate=5",
+                "-f", "lavfi", "-i", "sine=frequency=440:duration=65",
                 "-c:v", "libx264", "-preset", "ultrafast", "-c:a", "aac", "-shortest",
                 mp4.toString()), 60_000, 10_000, 10_000).getExitValue());
         try (TikaTestHttpServer server = new TikaTestHttpServer()) {
-            // 70 s at 30/5 is three cells; one request per binding at the default batch size
+            // 65 s at 25/5 is three cells; one request per binding at the default batch size
             server.enqueue(new TikaTestHttpServer.MockResponse(200, response(3)));
             server.enqueue(new TikaTestHttpServer.MockResponse(200, response(3)));
             Path config = tmp.resolve("tika-config.json");
@@ -103,9 +103,9 @@ public class TikaCLIMediaBindingsTest {
             assertEquals(6, chunks.size(), "three cells, two channels");
             Chunk video2 = chunks.get(1);
             Chunk audio2 = chunks.get(4);
-            assertEquals(25000, video2.getLocators().getTemporal().get(0).getStartMs());
-            assertEquals(55000, video2.getLocators().getTemporal().get(0).getEndMs());
-            assertEquals("t:25000-55000", video2.getCorrelator());
+            assertEquals(20000, video2.getLocators().getTemporal().get(0).getStartMs());
+            assertEquals(45000, video2.getLocators().getTemporal().get(0).getEndMs());
+            assertEquals("t:20000-45000", video2.getCorrelator());
             assertEquals(video2.getCorrelator(), audio2.getCorrelator());
             assertEquals(Modality.VISUAL, video2.getModality());
             assertEquals(Modality.AUDIO, audio2.getModality());
