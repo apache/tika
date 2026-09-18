@@ -106,10 +106,18 @@ public class ImageMetadataExtractor {
     private DirectoryHandler[] handlers;
 
     /**
-     * @param metadata to extract to, using default directory handlers
+     * @param metadata to extract to, using default directory handlers and options
      */
     public ImageMetadataExtractor(Metadata metadata) {
-        this(metadata, new CopyUnknownFieldsHandler(), new TiffPageNumberHandler(),
+        this(metadata, new ImageMetadataConfig());
+    }
+
+    /**
+     * @param metadata to extract to, using default directory handlers
+     * @param config   options for the default handlers
+     */
+    public ImageMetadataExtractor(Metadata metadata, ImageMetadataConfig config) {
+        this(metadata, new CopyUnknownFieldsHandler(config), new TiffPageNumberHandler(),
                 new JpegCommentHandler(), new ExifHandler(), new DimensionsHandler(),
                 new GeotagHandler(), new IptcHandler());
     }
@@ -347,6 +355,24 @@ public class ImageMetadataExtractor {
      * This leads to more predictable behavior than {@link CopyAllFieldsHandler}.
      */
     static class CopyUnknownFieldsHandler implements DirectoryHandler {
+        // ICC tag-table entries carry a 4-byte type signature; these types are curves and LUTs
+        private static final int ICC_TYPE_CURV = 0x63757276;
+        private static final int ICC_TYPE_PARA = 0x70617261;
+        private static final int ICC_TYPE_MFT1 = 0x6D667431;
+        private static final int ICC_TYPE_MFT2 = 0x6D667432;
+        private static final int ICC_TYPE_MAB = 0x6D414220;
+        private static final int ICC_TYPE_MBA = 0x6D424120;
+
+        private final boolean includeIccCurvesAndLuts;
+
+        CopyUnknownFieldsHandler() {
+            this(new ImageMetadataConfig());
+        }
+
+        CopyUnknownFieldsHandler(ImageMetadataConfig config) {
+            this.includeIccCurvesAndLuts = config.isIncludeIccCurvesAndLuts();
+        }
+
         public boolean supports(Class<? extends Directory> directoryType) {
             return true;
         }
@@ -355,8 +381,17 @@ public class ImageMetadataExtractor {
             if (directory.getTags() != null) {
                 for (Tag tag : directory.getTags()) {
                     String name = tag.getTagName();
-                    if (!MetadataFields.isMetadataField(name) && tag.getDescription() != null) {
-                        String value = tag.getDescription().trim();
+                    if (MetadataFields.isMetadataField(name)) {
+                        continue;
+                    }
+                    // decided before getDescription(): formatting a curve is the whole cost
+                    if (!includeIccCurvesAndLuts && directory instanceof IccDirectory &&
+                            isIccCurveOrLut(directory, tag.getTagType())) {
+                        continue;
+                    }
+                    String description = tag.getDescription();
+                    if (description != null) {
+                        String value = description.trim();
                         if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
                             value = Boolean.TRUE.toString();
                         } else if (Boolean.FALSE.toString().equalsIgnoreCase(value)) {
@@ -371,6 +406,30 @@ public class ImageMetadataExtractor {
                         }
                     }
                 }
+            }
+        }
+
+        private static boolean isIccCurveOrLut(Directory directory, int tagType) {
+            // header fields sit below the printable-ASCII range of tag-table signatures
+            if (tagType <= 0x20202020 || tagType >= 0x7a7a7a7a) {
+                return false;
+            }
+            byte[] data = directory.getByteArray(tagType);
+            if (data == null || data.length < 4) {
+                return false;
+            }
+            int type = ((data[0] & 0xff) << 24) | ((data[1] & 0xff) << 16) |
+                    ((data[2] & 0xff) << 8) | (data[3] & 0xff);
+            switch (type) {
+                case ICC_TYPE_CURV:
+                case ICC_TYPE_PARA:
+                case ICC_TYPE_MFT1:
+                case ICC_TYPE_MFT2:
+                case ICC_TYPE_MAB:
+                case ICC_TYPE_MBA:
+                    return true;
+                default:
+                    return false;
             }
         }
     }

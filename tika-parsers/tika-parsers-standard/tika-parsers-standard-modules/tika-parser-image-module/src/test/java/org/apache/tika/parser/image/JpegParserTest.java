@@ -18,12 +18,20 @@ package org.apache.tika.parser.image;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.awt.color.ColorSpace;
+import java.awt.color.ICC_Profile;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.TimeZone;
+import javax.imageio.ImageIO;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -34,6 +42,7 @@ import org.junit.jupiter.api.parallel.Resources;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.HttpHeaders;
@@ -296,4 +305,66 @@ public class JpegParserTest extends TikaTest {
         assertEquals("xmp.did:49E997348D4911E1AB62EBF9B374B234", metadata.get(XMPMM.DOCUMENTID));
     }
 
+    @Test
+    public void testIccCurvesSkippedByDefault() throws Exception {
+        Metadata metadata = parseSyntheticIccJpeg(parser, new ParseContext());
+        assertEquals("RGB", metadata.get(ImageMetadataExtractor.ICC_NS + "Color space"));
+        assertNotNull(metadata.get(ImageMetadataExtractor.ICC_NS + "Profile Description"));
+        assertNull(metadata.get(ImageMetadataExtractor.ICC_NS + "Red TRC"));
+        assertNull(metadata.get(ImageMetadataExtractor.ICC_NS + "Blue TRC"));
+    }
+
+    @Test
+    public void testIccCurvesViaParseContext() throws Exception {
+        ImageMetadataConfig config = new ImageMetadataConfig();
+        config.setIncludeIccCurvesAndLuts(true);
+        ParseContext context = new ParseContext();
+        context.set(ImageMetadataConfig.class, config);
+        Metadata metadata = parseSyntheticIccJpeg(parser, context);
+        String redTrc = metadata.get(ImageMetadataExtractor.ICC_NS + "Red TRC");
+        assertNotNull(redTrc);
+        //the JDK sRGB profile has a 1024-point curve
+        assertEquals(1024, redTrc.split(", ").length);
+    }
+
+    @Test
+    public void testIccCurvesViaJsonConfig() throws Exception {
+        Parser loaded = TikaLoader
+                .load(getConfigPath(JpegParserTest.class, "tika-config-icc-curves-on.json"))
+                .loadParsers();
+        Metadata metadata = parseSyntheticIccJpeg(loaded, new ParseContext());
+        assertNotNull(metadata.get(ImageMetadataExtractor.ICC_NS + "Red TRC"));
+    }
+
+    private static Metadata parseSyntheticIccJpeg(Parser parser, ParseContext context)
+            throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/jpeg");
+        try (TikaInputStream tis = TikaInputStream.get(jpegWithSrgbProfile())) {
+            parser.parse(tis, new DefaultHandler(), metadata, context);
+        }
+        return metadata;
+    }
+
+    //a 4x4 JPEG with the JDK's sRGB profile in an APP2 ICC_PROFILE segment after SOI
+    private static byte[] jpegWithSrgbProfile() throws IOException {
+        ByteArrayOutputStream plain = new ByteArrayOutputStream();
+        ImageIO.write(new BufferedImage(4, 4, BufferedImage.TYPE_INT_RGB), "jpeg", plain);
+        byte[] jpeg = plain.toByteArray();
+        byte[] profile = ICC_Profile.getInstance(ColorSpace.CS_sRGB).getData();
+        byte[] marker = "ICC_PROFILE\0".getBytes(StandardCharsets.US_ASCII);
+        int segmentLength = 2 + marker.length + 2 + profile.length;
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.write(jpeg, 0, 2);
+        out.write(0xFF);
+        out.write(0xE2);
+        out.write(segmentLength >> 8);
+        out.write(segmentLength & 0xFF);
+        out.write(marker);
+        out.write(1);
+        out.write(1);
+        out.write(profile);
+        out.write(jpeg, 2, jpeg.length - 2);
+        return out.toByteArray();
+    }
 }

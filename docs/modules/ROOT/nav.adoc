@@ -57,6 +57,7 @@
 *** xref:pipes/plugins/json.adoc[JSON]
 * xref:configuration/index.adoc[Configuration]
 ** xref:configuration/parsers/pdf-parser.adoc[PDF Parser]
+** xref:configuration/parsers/image-parsers.adoc[Image Parsers]
 ** xref:configuration/parsers/tesseract-ocr-parser.adoc[Tesseract OCR]
 ** xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers (Claude, Gemini, OpenAI)]
 ** xref:configuration/parsers/external-parser.adoc[External Parser (ffmpeg, exiftool, etc.)]

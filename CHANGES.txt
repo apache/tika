@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * ICC tone-curve and lookup-table tags (rTRC and friends) are no longer
+     written to icc:* by default; "jpeg-parser": {"includeIccCurvesAndLuts":
+     true} (likewise tiff-, heif-, bpg-, web-p- and raw-tiff-parser) restores
+     them (TIKA-4902).
+
    * Digesting an embedded document no longer makes its source hand out the
      bytes twice. (TIKA-4901).
 
