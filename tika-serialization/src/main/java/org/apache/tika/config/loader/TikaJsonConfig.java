@@ -161,7 +161,9 @@ public class TikaJsonConfig {
     }
 
     /**
-     * Loads configuration from an input stream.
+     * Loads configuration from an input stream. A string value may reference an environment
+     * variable as {@code ${env:NAME}}, alone or inside a longer string; an unset one fails
+     * the load. No other form is interpolated.
      *
      * @param inputStream the input stream containing JSON configuration
      * @return the parsed configuration
@@ -170,6 +172,8 @@ public class TikaJsonConfig {
     public static TikaJsonConfig load(InputStream inputStream) throws TikaConfigException {
         try {
             JsonNode rootNode = OBJECT_MAPPER.readTree(inputStream);
+            // startup config only: a request's JSON never reaches this method
+            EnvInterpolator.resolve(rootNode, System::getenv);
             TikaJsonConfig tikaJsonConfig = new TikaJsonConfig(rootNode);
             tikaJsonConfig.validateKeys();
             return tikaJsonConfig;

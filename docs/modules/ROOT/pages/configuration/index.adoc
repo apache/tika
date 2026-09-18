@@ -256,6 +256,35 @@ engine still advertising them is treated as a text recognizer for the real types
 startup, until 5.0. Nothing else in Tika produces them; a `tk:content-type-parser-override`
 naming one matches no parser and falls to the empty fallback.
 
+[#env]
+== Secrets from the environment
+
+A string value in the startup config may name an environment variable as `${env:NAME}`, alone or
+inside a longer string, and the loader substitutes the variable's value when the config is read:
+
+[source,json]
+----
+{
+  "engines": {
+    "jina": { "openai-embedding-engine": { "baseUrl": "https://api.jina.ai",
+              "apiKey": "${env:JINA_API_KEY}", "model": "jina-embeddings-v5-omni-small" } }
+  },
+  "emitters": {
+    "es": { "es-emitter": { "esUrl": "http://${env:ES_HOST}:9200/tika", "apiKey": "${env:ES_API_KEY}" } }
+  }
+}
+----
+
+Only that exact form is touched: `${NAME}`, `$NAME`, `${sys:...}` and any other text stay literal,
+so a prompt or a pattern that happens to contain `${` is safe. A reference to a variable that is not
+set fails the load with the variable's name and the JSON path, never a value, so a missing secret
+stops the server at startup rather than reaching a service as an empty key. A literal value works as
+before.
+
+The forked parse workers of tika-server and Pipes inherit the parent's environment and read the same
+config file, so a reference resolves there too. Per-request configuration (`/config` endpoints,
+presets, pipes tuples) is never interpolated: a request cannot read the server's environment.
+
 == Windows file paths
 
 JSON treats the backslash as an escape character, so path options (`tesseractPath`,

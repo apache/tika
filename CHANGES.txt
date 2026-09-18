@@ -1,5 +1,7 @@
 Release 4.1.0 - unreleased
 
+   * Enable environment variable interpolation in tika-config.json (TIKA-4909).
+
    * Fix a cache-budget leak: tar, 7z and streamed zip entries never released
      their in-memory cache's reservation (TIKA-4908).
      
