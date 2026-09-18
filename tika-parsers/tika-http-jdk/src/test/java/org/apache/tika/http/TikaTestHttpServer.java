@@ -62,13 +62,20 @@ public class TikaTestHttpServer implements Closeable {
      *                                    after headers have already arrived, distinct
      *                                    from an overall-slow response
      */
-    public record MockResponse(int status, String body, long delayMillis, long bodyDelayAfterHeadersMillis) {
+    public record MockResponse(int status, String body, long delayMillis,
+                               long bodyDelayAfterHeadersMillis, Map<String, String> headers) {
         public MockResponse(int status, String body) {
-            this(status, body, 0, 0);
+            this(status, body, 0, 0, Map.of());
         }
-
         public MockResponse(int status, String body, long delayMillis) {
-            this(status, body, delayMillis, 0);
+            this(status, body, delayMillis, 0, Map.of());
+        }
+        public MockResponse(int status, String body, long delayMillis, long bodyDelayAfterHeadersMillis) {
+            this(status, body, delayMillis, bodyDelayAfterHeadersMillis, Map.of());
+        }
+        /** Extra response headers, e.g. {@code Retry-After}. */
+        public MockResponse(int status, String body, Map<String, String> headers) {
+            this(status, body, 0, 0, headers);
         }
     }
 
@@ -198,8 +205,11 @@ public class TikaTestHttpServer implements Closeable {
                     "HTTP/1.1 " + resp.status() + " " + statusText + "\r\n"
                     + "Content-Type: application/json\r\n"
                     + "Content-Length: " + responseBytes.length + "\r\n"
-                    + "Connection: close\r\n"
-                    + "\r\n";
+                    + "Connection: close\r\n";
+            for (Map.Entry<String, String> h : resp.headers().entrySet()) {
+                responseHeaders += h.getKey() + ": " + h.getValue() + "\r\n";
+            }
+            responseHeaders += "\r\n";
             out.write(responseHeaders.getBytes(StandardCharsets.US_ASCII));
             out.flush();
             if (resp.bodyDelayAfterHeadersMillis() > 0) {

@@ -50,8 +50,21 @@ different models. Secrets and paths live here and only here.
 
 `openai-embedding-engine` posts to `/v1/embeddings` in the OpenAI shape and sends up to
 `maxBatchSize` images per request. Options: `baseUrl`, `model`, `apiKey`, `timeoutMillis`
-(120000), `maxBatchSize` (32), `embeddingsPath`, `apiKeyHeaderName`, `apiKeyPrefix`,
-`requestParameters`, `imageInput`, `mediaInput` (see <<media>>).
+(120000), `maxBatchSize` (32), `maxRetries` (4), `embeddingsPath`, `apiKeyHeaderName`,
+`apiKeyPrefix`, `requestParameters`, `imageInput`, `mediaInput` (see <<media>>).
+
+[#concurrency]
+=== Hosted engines and concurrency
+
+A hosted engine caps the requests in flight per key and answers the excess with 429 at once,
+usually with no `Retry-After`; a saturated one answers 502, 503 or 504. Those four answers are
+retried, `maxRetries` times (4 unless set, 0 to fail at once), with a short jittered backoff
+from 250 ms doubling to 4 s, or the `Retry-After` the server sends, and never past the budget
+the parse granted the call. Any other answer, a 401 or a 400, fails at once. The retries cover
+collisions between a few parse workers; they do not turn more workers than the key allows
+into throughput. Keep `numClients` (tika-server, Pipes) at or below the key's concurrency,
+counting every engine the workers call, and raise the key's tier before raising the workers.
+The VLM parsers take the same `maxRetries`.
 
 === Vendor keys: `requestParameters`
 
@@ -416,6 +429,13 @@ MEDIA bindings.
 |`maxBatchSize`
 |Items per request across modalities; the segment cuts are 100-500 KB each as base64, so
 keep the request well under Jina's body limit (start at 8).
+
+|`maxRetries`
+|Jina's limit is concurrency per key, not requests per minute: 2 requests in flight on a free
+key (1 on the OCR endpoint), 50 on a paid key, 500 on premium; the excess gets a 429 at once
+with no `Retry-After`, and the limit clears as soon as an in-flight request returns. The
+default 4 retries absorb the collisions of two or three workers; more workers than the key's
+concurrency need a bigger key, not more retries (see <<concurrency>>).
 
 |`requestParameters`
 |`task`: `retrieval.passage` for indexing (default nothing is sent; set it), `retrieval.query`

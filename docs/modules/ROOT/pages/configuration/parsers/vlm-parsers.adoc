@@ -195,6 +195,12 @@ All three parsers share the same configuration POJO (`VLMOCRConfig`):
 |`120000`
 |HTTP read timeout in milliseconds.
 
+|`maxRetries`
+|`4`
+|Retries of a 429, 502, 503 or 504 answer, with a jittered backoff inside the parse budget;
+`0` fails at once. A hosted service caps requests in flight per key, so see
+xref:configuration/inference.adoc#concurrency[Hosted engines and concurrency].
+
 |`apiKey`
 |`""` (empty)
 |API key. Format depends on the parser (Bearer header, x-api-key header,
@@ -289,7 +295,7 @@ rejects cost- and security-sensitive changes with an exception:
 |May be lowered, never raised above the initialization-time value — that ceiling is what bounds
 cost on a paid endpoint.
 
-|`maxImagePixels`, `allowRuntimePrompt`
+|`maxImagePixels`, `maxRetries`, `allowRuntimePrompt`
 |Always blocked.
 
 |`prompt`, `textRecognizer`
