@@ -101,7 +101,7 @@ A full pipeline, with the handler type stated explicitly and chunks emitted to E
       "openai-embedding-filter": {
         "baseUrl": "https://api.openai.com",
         "model": "text-embedding-3-small",
-        "apiKey": "${OPENAI_API_KEY}",
+        "apiKey": "${env:OPENAI_API_KEY}",
         "maxChunkChars": 1500,
         "overlapChars": 200
       }
