@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * The forked-worker CPU cap (-XX:ActiveProcessorCount) is now clamped at its
+     floor of 2 instead of switched off when the fair share per fork falls below
+     it. On a 16-core host with 10 workers every fork used to see all 16 cores
+     and size its GC/JIT pools for the whole machine; measured at +18% wall
+     against the clamped run (TIKA-4905).
+
    * ICC tone-curve and lookup-table tags (rTRC and friends) are no longer
      written to icc:* by default; "jpeg-parser": {"includeIccCurvesAndLuts":
      true} (likewise tiff-, heif-, bpg-, web-p- and raw-tiff-parser) restores
