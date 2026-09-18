@@ -380,7 +380,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
     }
 
     private TikaHttpClient buildHttpClient() {
-        return TikaHttpClient.build(30);
+        return TikaHttpClient.build(30, defaultConfig.getMaxRetries());
     }
 
     // ---- delegating config getters/setters --------------------------------
@@ -427,6 +427,11 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
 
     public void setTimeoutMillis(long timeoutMillis) {
         defaultConfig.setTimeoutMillis(timeoutMillis);
+    }
+
+    /** Retries of a 429/502/503/504 answer from the service; 0 fails at once. */
+    public void setMaxRetries(int maxRetries) {
+        defaultConfig.setMaxRetries(maxRetries);
     }
 
     public String getApiKey() {

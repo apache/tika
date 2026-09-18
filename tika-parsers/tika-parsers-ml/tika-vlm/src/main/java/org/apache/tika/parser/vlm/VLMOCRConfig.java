@@ -67,6 +67,9 @@ public class VLMOCRConfig implements Serializable {
      */
     private long timeoutMillis = 120_000;
 
+    /** Retries of a 429/502/503/504 answer from the service; 0 fails at once. */
+    private int maxRetries = 4;
+
     /** Optional API key for authenticated endpoints. Empty means no auth. */
     private String apiKey = "";
 
@@ -163,6 +166,14 @@ public class VLMOCRConfig implements Serializable {
         this.timeoutMillis = timeoutMillis;
     }
 
+    public int getMaxRetries() {
+        return maxRetries;
+    }
+
+    public void setMaxRetries(int maxRetries) {
+        this.maxRetries = maxRetries;
+    }
+
     public String getApiKey() {
         return apiKey;
     }
@@ -241,7 +252,7 @@ public class VLMOCRConfig implements Serializable {
      * and cost-sensitive fields at parse time.
      * <p>
      * <b>Always blocked:</b> {@code baseUrl}, {@code apiKey}, {@code model},
-     * {@code maxTokens}, {@code allowRuntimePrompt}.
+     * {@code maxTokens}, {@code maxRetries}, {@code allowRuntimePrompt}.
      * <p>
      * <b>Blocked by default (opt-in):</b> {@code prompt} — set
      * {@code allowRuntimePrompt=true} at initialization time to permit
@@ -297,6 +308,12 @@ public class VLMOCRConfig implements Serializable {
                             + "Models must be configured at initialization time. "
                             + "If you need a different model, configure a "
                             + "separate parser instance.");
+        }
+
+        @Override
+        public void setMaxRetries(int maxRetries) {
+            throw new IllegalStateException("Cannot modify maxRetries at runtime. "
+                    + "Retries are configured at initialization time.");
         }
 
         @Override

@@ -67,6 +67,7 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
     private Map<String, Object> requestParameters = new LinkedHashMap<>();
     private String imageInput = IMAGE_INPUT_OBJECT;
     private String mediaInput = MEDIA_INPUT_NONE;
+    private int maxRetries = TikaHttpClient.DEFAULT_MAX_RETRIES;
     public static final String MEDIA_INPUT_NONE = "none";
     public static final String MEDIA_INPUT_OBJECT = "object";
 
@@ -84,6 +85,9 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
     public void initialize() throws TikaConfigException {
         if (StringUtils.isBlank(baseUrl)) {
             throw new TikaConfigException("openai-embedding-engine needs a baseUrl");
+        }
+        if (maxRetries < 0) {
+            throw new TikaConfigException("maxRetries must be at least 0");
         }
         if (maxBatchSize < 1) {
             throw new TikaConfigException("maxBatchSize must be at least 1");
@@ -107,7 +111,7 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
                         + "must stay the default");
             }
         }
-        httpClient = TikaHttpClient.build(30);
+        httpClient = TikaHttpClient.build(30, maxRetries);
     }
 
     @Override
@@ -175,7 +179,7 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
     private List<float[]> post(ObjectNode root, int expected, ParseContext context)
             throws IOException, TikaException {
         if (httpClient == null) {
-            httpClient = TikaHttpClient.build(30);
+            httpClient = TikaHttpClient.build(30, maxRetries);
         }
         Map<String, String> headers = new HashMap<>();
         if (!StringUtils.isBlank(apiKey)) {
@@ -265,6 +269,15 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
 
     public void setTimeoutMillis(long timeoutMillis) {
         this.timeoutMillis = timeoutMillis;
+    }
+
+    public int getMaxRetries() {
+        return maxRetries;
+    }
+
+    /** Retries of a 429/502/503/504 answer, with backoff inside the parse budget; 0 fails at once. */
+    public void setMaxRetries(int maxRetries) {
+        this.maxRetries = maxRetries;
     }
 
     @Override
