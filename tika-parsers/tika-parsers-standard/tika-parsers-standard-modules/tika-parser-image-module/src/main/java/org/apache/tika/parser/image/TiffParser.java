@@ -25,6 +25,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TemporaryResources;
@@ -44,6 +46,20 @@ public class TiffParser extends AbstractImageParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.image("tiff"));
 
+    private final ImageMetadataConfig defaultConfig;
+
+    public TiffParser() {
+        this(new ImageMetadataConfig());
+    }
+
+    public TiffParser(ImageMetadataConfig config) {
+        this.defaultConfig = config;
+    }
+
+    public TiffParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, ImageMetadataConfig.class));
+    }
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -59,9 +75,15 @@ public class TiffParser extends AbstractImageParser {
             // XMP first so it is canonical; metadata-extractor (IPTC/EXIF) fills gaps.
             ImageXmp.scanAndExtract(tis, metadata, parseContext);
             tis.rewind();
-            new ImageMetadataExtractor(metadata).parseTiff(tis);
+            new ImageMetadataExtractor(metadata, getImageMetadataConfig(parseContext))
+                    .parseTiff(tis);
         } finally {
             tmp.dispose();
         }
+    }
+
+    protected ImageMetadataConfig getImageMetadataConfig(ParseContext context)
+            throws TikaException, IOException {
+        return ImageMetadataConfig.resolve(context, "tiff-parser", defaultConfig);
     }
 }

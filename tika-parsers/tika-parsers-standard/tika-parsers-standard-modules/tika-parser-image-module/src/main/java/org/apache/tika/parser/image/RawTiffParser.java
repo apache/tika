@@ -18,7 +18,6 @@ package org.apache.tika.parser.image;
 
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.io.Serializable;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.util.ArrayDeque;
@@ -128,6 +127,7 @@ public class RawTiffParser extends TiffParser {
     }
 
     public RawTiffParser(RawTiffParserConfig config) {
+        super(config);
         this.defaultConfig = config;
     }
 
@@ -163,6 +163,12 @@ public class RawTiffParser extends TiffParser {
     private RawTiffParserConfig getConfig(ParseContext context) throws TikaException, IOException {
         return ParseContextConfig.getConfig(context, "raw-tiff-parser",
                 RawTiffParserConfig.class, defaultConfig);
+    }
+
+    @Override
+    protected ImageMetadataConfig getImageMetadataConfig(ParseContext context)
+            throws TikaException, IOException {
+        return getConfig(context);
     }
 
     private void extractPreviews(TikaInputStream tis, XHTMLContentHandler xhtml, Metadata metadata,
@@ -531,7 +537,7 @@ public class RawTiffParser extends TiffParser {
     /**
      * Configuration class for RawTiffParser.
      */
-    public static class RawTiffParserConfig implements Serializable {
+    public static class RawTiffParserConfig extends ImageMetadataConfig {
 
         private static final long serialVersionUID = 1990316744955315312L;
 

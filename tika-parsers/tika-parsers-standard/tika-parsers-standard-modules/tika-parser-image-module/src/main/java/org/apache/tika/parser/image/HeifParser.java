@@ -29,6 +29,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -44,6 +46,20 @@ public class HeifParser extends AbstractImageParser {
             new HashSet<>(Arrays.asList(MediaType.image("heif"), MediaType.image("heif-sequence"),
                     MediaType.image("heic"), MediaType.image("heic-sequence"),
                     MediaType.image("avif"))));
+
+    private final ImageMetadataConfig defaultConfig;
+
+    public HeifParser() {
+        this(new ImageMetadataConfig());
+    }
+
+    public HeifParser(ImageMetadataConfig config) {
+        this.defaultConfig = config;
+    }
+
+    public HeifParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, ImageMetadataConfig.class));
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -66,7 +82,9 @@ public class HeifParser extends AbstractImageParser {
                 ImageXmp.scanAndExtract(tis, metadata, parseContext);
             }
             try (InputStream heif = Files.newInputStream(file.toPath())) {
-                new ImageMetadataExtractor(metadata).parseHeif(heif);
+                new ImageMetadataExtractor(metadata,
+                        ImageMetadataConfig.resolve(parseContext, "heif-parser", defaultConfig))
+                        .parseHeif(heif);
             }
         } finally {
             tmp.dispose();

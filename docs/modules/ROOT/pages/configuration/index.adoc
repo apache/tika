@@ -294,6 +294,8 @@ Parser configuration:
 
 * xref:configuration/pages.adoc[Pages] — rendering, OCR policy and page images, for every parser that renders
 * xref:configuration/parsers/pdf-parser.adoc[PDFParser] — PDF parsing options
+* xref:configuration/parsers/image-parsers.adoc[Image Parsers] — ICC metadata options for JPEG,
+  TIFF, HEIF, BPG and WebP
 * xref:configuration/parsers/tesseract-ocr-parser.adoc[TesseractOCRParser] — OCR for image-based
   text extraction
 * xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR Parser] — in-process OCR via tess4j JNA

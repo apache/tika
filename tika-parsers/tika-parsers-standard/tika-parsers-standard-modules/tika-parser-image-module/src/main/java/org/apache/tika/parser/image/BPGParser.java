@@ -28,6 +28,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.io.EndianUtils;
@@ -57,6 +59,20 @@ public class BPGParser extends AbstractImageParser {
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
             new HashSet<>(
                     Arrays.asList(MediaType.image("x-bpg"), MediaType.image("bpg"))));
+
+    private final ImageMetadataConfig defaultConfig;
+
+    public BPGParser() {
+        this(new ImageMetadataConfig());
+    }
+
+    public BPGParser(ImageMetadataConfig config) {
+        this.defaultConfig = config;
+    }
+
+    public BPGParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, ImageMetadataConfig.class));
+    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -149,7 +165,8 @@ public class BPGParser extends AbstractImageParser {
         // Extension Data
         if (hasExtensions) {
             long extensionsDataSeen = 0;
-            ImageMetadataExtractor metadataExtractor = new ImageMetadataExtractor(metadata);
+            ImageMetadataExtractor metadataExtractor = new ImageMetadataExtractor(metadata,
+                    ImageMetadataConfig.resolve(parseContext, "bpg-parser", defaultConfig));
 
             while (extensionsDataSeen < extensionDataLength) {
                 int extensionType = (int) EndianUtils.readUE7(stream);
