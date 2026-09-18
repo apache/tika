@@ -1,5 +1,9 @@
 Release 4.1.0 - unreleased
 
+   * Mp3Parser no longer writes the literal "null" (a missing album) or the
+     duration into the body; an untagged MP3 has an empty body, and a TEXT
+     inference binding no longer embeds it (TIKA-4907).
+
    * VLM parsers: a raw HTML block in the model's markdown (jina-ocr-v1 and
      DeepSeek-OCR write tables that way) is now emitted as XHTML table (TIKA-4906).
 
