@@ -42,7 +42,7 @@ Apache Tika server with base dependencies (Java + the unpacked
 `tika-server-standard-<v>.zip`).
 
 full::
-Adds Tesseract OCR, GDAL, ImageMagick, and Microsoft fonts.
+Adds Tesseract OCR, GDAL, ImageMagick, ffmpeg, and Microsoft fonts.
 
 `apache/tika-grpc`::
 The gRPC server packaged with parser-package jars and pipes plugin zips.

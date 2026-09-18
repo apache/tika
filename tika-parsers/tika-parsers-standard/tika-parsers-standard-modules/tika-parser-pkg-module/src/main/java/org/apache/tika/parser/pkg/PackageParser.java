@@ -176,8 +176,9 @@ public class PackageParser extends AbstractArchiveParser {
 
             if (extractor.shouldParseEmbedded(entrydata, context)) {
                 TemporaryResources tmp = new TemporaryResources();
-                try {
-                    TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata);
+                // close the stream, not only the temp dir: an in-memory cache is not owned by
+                // tmp, and its budget reservation is released only on close
+                try (TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata)) {
                     extractor.parseEmbedded(tis, xhtml, entrydata, context, true);
                 } finally {
                     tmp.dispose();

@@ -204,7 +204,8 @@ xref:configuration/inference.adoc#concurrency[Hosted engines and concurrency].
 |`apiKey`
 |`""` (empty)
 |API key. Format depends on the parser (Bearer header, x-api-key header,
-or query parameter).
+or query parameter). `${env:NAME}` reads it from the environment
+(xref:configuration/index.adoc#env[Secrets from the environment]).
 
 |`inlineContent`
 |`true`

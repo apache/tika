@@ -1728,6 +1728,37 @@ public class PDFParserTest extends TikaTest {
         assertWellFormed(xml);
     }
 
+    /**
+     * An engine's TikaException (a remote OCR service answering 401) is handled like its
+     * IOException: recorded, the page keeps its text, later pages parse, the failure surfaces
+     * at the end. Before, it escaped as "Unable to end a page" and lost every page's text.
+     */
+    @Test
+    public void testAutoOcrEngineRefusalFallsBackToText() throws Exception {
+        PDFParserConfig config = autoOcrTriggeringPage16();
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, refusingOcrParser(config));
+        Metadata metadata = new Metadata();
+        ToXMLContentHandler handler = new ToXMLContentHandler();
+        TikaException thrown = null;
+        try (TikaInputStream tis =
+                     getResourceAsStream("/test-documents/testPDF_bad_page_303226.pdf")) {
+            new PDFParser().parse(tis, handler, metadata, context);
+        } catch (TikaException e) {
+            thrown = e;
+        }
+        String xml = handler.toString();
+
+        assertContains("42936", xml);
+        assertContains("ANABOLIC", xml);
+        assertContains("1308.44", xml);
+        assertContains("HTTP 401", String.join("\n",
+                metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)));
+        assertNotNull(thrown, "the recorded refusal still surfaces once every page is done");
+        assertWellFormed(xml);
+    }
+
     /** TIKA-4883: once maxPagesToOcr is exhausted, later triggering pages keep their text. */
     @Test
     public void testAutoOcrMaxPagesFallsBackToText() throws Exception {
@@ -2265,6 +2296,22 @@ public class PDFParserTest extends TikaTest {
                     xhtml.characters(text);
                 }
                 xhtml.endDocument();
+            }
+        };
+    }
+
+    /** A hosted engine refusing the request: the VLM parsers wrap HTTP errors this way. */
+    private static Parser refusingOcrParser(PDFParserConfig config) {
+        return new MockEngine() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(ocrMediaType(config));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws TikaException {
+                throw new TikaException("HTTP 401 from https://ocr.example/v1/chat/completions");
             }
         };
     }

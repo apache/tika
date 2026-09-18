@@ -1,13 +1,17 @@
 Release 4.1.0 - unreleased
 
    * Calls to a hosted inference engine retry a 429, 502, 503 or 504 answer
-     with a jittered backoff (250 ms doubling to 4 s, or the server's
-     Retry-After) up to maxRetries times (4; 0 fails at once), never past the
-     parse's budget; any other answer fails at once. A hosted engine caps the
-     requests in flight per key and refused every collision between parse
-     workers before. openai-embedding-engine and the VLM parsers take
-     maxRetries; per request it is blocked (TIKA-4912).
+     with a jittered backoff (TIKA-4912).
 
+   * Handle inference exceptions more robustly in PDFParser (TIKA-4911).
+
+   * Add ffmpeg to tika-server's "full" Docker image (TIKA-4910).
+
+   * Enable environment variable interpolation in tika-config.json (TIKA-4909).
+
+   * Fix a cache-budget leak: tar, 7z and streamed zip entries never released
+     their in-memory cache's reservation (TIKA-4908).
+     
    * Mp3Parser no longer writes the literal "null" (a missing album) or the
      duration into the body; an untagged MP3 has an empty body, and a TEXT
      inference binding no longer embeds it (TIKA-4907).
