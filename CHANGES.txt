@@ -4,7 +4,11 @@ Release 4.1.0 - unreleased
      reservation only when the entry's stream was closed, and the parsers
      disposed the temp resources without closing it. With a cache budget
      configured (tika-pipes) the budget read as full after a few thousand
-     documents and every cache spilled to disk from then on (TIKA-4908).
+     documents and every cache spilled to disk from then on. tmp now owns
+     the cache that TikaInputStream.get(stream, tmp, ...) builds for rewind
+     (buffer, budget reservation, spill file), so disposing tmp frees it
+     even if the stream is never closed; the caller's stream is still never
+     closed on their behalf (TIKA-4908).
 
    * VLM parsers: a raw HTML block in the model's markdown (jina-ocr-v1 and
      DeepSeek-OCR write tables that way) is now emitted as XHTML table (TIKA-4906).

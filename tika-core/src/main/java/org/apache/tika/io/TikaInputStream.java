@@ -85,6 +85,12 @@ public class TikaInputStream extends TaggedInputStream {
 
     /**
      * Returns the backing TikaInputSource, or null if using protected constructor.
+     * <p>
+     * {@code tmp} owns what this call creates, never {@code stream} itself: a cache built for
+     * rewind (its buffer, {@link CacheMemoryBudget} reservation and spill file) is registered
+     * with {@code tmp}, so disposing {@code tmp} frees it even if the returned stream is never
+     * closed, while the caller's stream stays open. If {@code stream} is already a
+     * TikaInputStream it is returned as-is.
      */
     private TikaInputSource inputSource() {
         return in instanceof TikaInputSource ? (TikaInputSource) in : null;
