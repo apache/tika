@@ -185,7 +185,7 @@ decoded to a float array under `v.<producer>`:
 ----
 {
   "file_id": "s3://bucket/talk.mp4", "container_id": "s3://bucket/talk.mp4",
-  "correlator": "t:25000-55000", "start_ms": 25000, "end_ms": 55000,
+  "correlator": "t:20000-45000", "start_ms": 20000, "end_ms": 45000,
   "v": { "jina-video": [0.01, ...], "jina-audio": [0.02, ...] }
 }
 ----
@@ -194,7 +194,13 @@ A hit is then a chunk, and Elasticsearch adds up scores per document, so two `kn
 (or an `rrf` retriever) over `v.jina-video` and `v.jina-audio` rank a segment that matches
 in both channels above one that matches in either: search one channel with one clause, both
 with two. That cannot be done with segments nested inside the file's document, where each
-clause scores the file by its best child, possibly a different child per clause. Mapping:
+clause scores the file by its best child, possibly a different child per clause. The `rrf`
+retriever is a licensed Elasticsearch feature and answers 403 on a basic license; a top-level
+`knn` array works on any license, but it adds the scores, so a segment with two vector fields
+outranks a text chunk with one even when the text is the better match. Search one channel at
+a time when that matters. Elasticsearch 9 leaves `dense_vector` values out of `_source` by
+default, so a fetched document shows no `v`; read them back with `fields` or check them with an
+`exists` query. Mapping:
 
 [source,json]
 ----
