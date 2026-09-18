@@ -204,6 +204,11 @@ class CachingSource extends InputStream implements TikaInputSource {
 
         // Switch to caching mode
         StreamCache cache = new StreamCache(tmp, suffix, budget);
+        if (tmp != null) {
+            // tmp owns the cache: a scope that disposes tmp without closing this stream still
+            // frees the buffer and its budget reservation. The wrapped stream is not tmp's to close.
+            tmp.addResource(cache);
+        }
         cachingStream = new CachingInputStream(passthroughStream, cache);
         passthroughStream = null;
     }

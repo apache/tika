@@ -339,11 +339,12 @@ in the parse context:
 
 [source,json]
 ----
-{ "parse-context": { "media": { "segment": { "seconds": 30, "overlap": 5 }, "maxSegments": 480 } } }
+{ "parse-context": { "media": { "segment": { "seconds": 25, "overlap": 5 }, "maxSegments": 480 } } }
 ----
 
-Those are the defaults: 30 s windows, each starting 25 s after the last, so any event of
-5 s or less is whole in at least one segment; `maxSegments` caps a document, the rest of the
+Those are the defaults: 25 s windows, each starting 20 s after the last, so any event of
+5 s or less is whole in at least one segment, and no audio item reaches the 30 s cap the
+hosted omni engines enforce (see <<jina-omni>>); `maxSegments` caps a document, the rest of the
 file is not embedded. A block with `overlap` outside `[0, seconds)`, or `maxSegments` of 0
 or below -1, fails at config load and per request. The segmenter defines the unit and every binding on the document sees
 the same segments, so each segment's chunks share the segment's id: a chunk carries a
@@ -354,10 +355,10 @@ segment's id. Group by `correlator` to get a segment with both channels:
 [source,json]
 ----
 [
-  { "producer": "jina-video", "modality": "visual", "correlator": "t:25000-55000",
-    "vector": "<base64 float32>", "locators": { "temporal": [{"start_ms": 25000, "end_ms": 55000}] } },
-  { "producer": "jina-audio", "modality": "audio", "correlator": "t:25000-55000",
-    "vector": "<base64 float32>", "locators": { "temporal": [{"start_ms": 25000, "end_ms": 55000}] } }
+  { "producer": "jina-video", "modality": "visual", "correlator": "t:20000-45000",
+    "vector": "<base64 float32>", "locators": { "temporal": [{"start_ms": 20000, "end_ms": 45000}] } },
+  { "producer": "jina-audio", "modality": "audio", "correlator": "t:20000-45000",
+    "vector": "<base64 float32>", "locators": { "temporal": [{"start_ms": 20000, "end_ms": 45000}] } }
 ]
 ----
 
@@ -385,6 +386,7 @@ the wait counted as progress. When the budget runs out mid-file the task writes 
 it has embedded, stops, and reports the timeout once as the binding's warning on the root
 document; every later MEDIA binding's first probe fails fast the same way.
 
+[[jina-omni]]
 === Jina omni
 
 `jina-embeddings-v5-omni-small` (1024 dimensions) and `-nano` (768) embed text, images,
@@ -424,11 +426,13 @@ comparable across the picture, sound and text fields. `truncate` and `late_chunk
 to text items. `embedding_type` is refused: the engine reads float vectors by index.
 |===
 
-Jina's documented limits: images 5 MB, PDFs 8 MB and one per request; audio as WAV, MP3,
-FLAC, OGG, M4A or Opus with no documented duration cap; video as 32 uniformly sampled frames
+Jina's limits: images 5 MB, PDFs 8 MB and one per request; audio as WAV, MP3, FLAC, OGG,
+M4A or Opus, capped at 30 s per item, inclusive (a 30.0 s clip is refused with HTTP 400 and
+the binding's warning names it), which is why the default window is 25 s and a `media` block
+for this engine should keep `seconds` below 30; video as 32 uniformly sampled frames
 whatever its length, and nothing says the video item's audio track is used, which is why
 Tika sends the sound as its own item. The 32 frames are why the grid matters: a whole film
-as one input is 32 frames for the film, a 30 s segment is about one frame a second. Byte
+as one input is 32 frames for the film, a 25 s segment is more than one frame a second. Byte
 caps for audio and video items are not documented; measure before raising `maxBytes`.
 
 A query is the same call with the query task, and one vector searches every field:
