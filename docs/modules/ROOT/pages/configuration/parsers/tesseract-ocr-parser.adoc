@@ -33,6 +33,14 @@ Name the engine in the top-level `text-recognizers` list; every default parser s
 }
 ----
 
+`language` takes tesseract's own names, joined with `+`: three-letter codes such as `eng` or
+`chi_tra_vert`, and script models such as `Latin` or `Japanese_vert`. A script model is written
+`script/Latin` when it lives in tessdata's `script/` subdirectory and `Latin` when it sits at
+the tessdata top level, which is where the Debian and Ubuntu `tesseract-ocr-script-*` packages
+put it; `tesseract --list-langs` prints the spelling that resolves. A script model reads every
+language of that script without a per-document choice, at roughly 1.6x the time of `eng` per
+page.
+
 With no `text-recognizers` at all, Tesseract is still the OCR engine whenever the `tesseract`
 binary is found: the loader finds it among the loaded parsers because it implements
 `TextRecognizer` and advertises the image types it reads, and logs the choice at startup. When
@@ -65,6 +73,8 @@ include::example$tesseract-full.json[]
 icon:github[] https://github.com/apache/tika/blob/main/tika-parsers/tika-parsers-standard/tika-parsers-standard-integration-tests/src/test/resources/config-examples/tesseract-full.json[View source on GitHub]
 
 Arbitrary Tesseract variables go in `otherTesseractConfig` as a name-to-value map, as in the
-example above. Converting a 3.x config? See
+example above. The map is server-side configuration only: a per-request `tesseract-ocr-parser`
+block that carries it is rejected, because variables such as `debug_file` name files the
+tesseract binary opens. Converting a 3.x config? See
 xref:migration-to-4x/migrating-to-4x.adoc[Migrating to 4.x] — the automatic converter rewrites the
 old `otherTesseractSettings` list for you.

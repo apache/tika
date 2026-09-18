@@ -115,9 +115,10 @@ public class TesseractOCRConfig implements Serializable {
         // Split on the + sign
         final String[] langs = language.split("\\+");
         for (String lang : langs) {
-            // First, make sure it conforms to the correct syntax
+            // Script models are capitalized and ship as either script/Latin or a top-level
+            // Latin.traineddata (Debian's tesseract-ocr-script-* packages); accept both.
             if (!lang.matches(
-                    "([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
+                    "([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|(script(/|\\\\))?[A-Z][a-zA-Z_]+")) {
                 invalidLangs.add(lang + " (invalid syntax)");
             } else {
                 validLangs.add(lang);
@@ -138,9 +139,12 @@ public class TesseractOCRConfig implements Serializable {
      * <ol>
      *   <li>Nominally an ISO-639-2 code but compound codes are allowed separated by underscore:
      *   e.g., chi_tra_vert, aze_cyrl</li>
-     *   <li>A file path in the script directory.  The name starts with upper-case letter.
-     *       Some of them have underscores and other upper-case letters: e.g., script/Arabic,
-     *       script/HanS_vert, script/Japanese_vert, script/Canadian_Aboriginal</li>
+     *   <li>A script model. The name starts with an upper-case letter and may contain
+     *       underscores and other upper-case letters: e.g., Arabic, HanS_vert, Japanese_vert,
+     *       Canadian_Aboriginal. Prefix with script/ when the model lives in tessdata's
+     *       script subdirectory (script/Arabic); use the bare name when it sits at the
+     *       tessdata top level, as the Debian/Ubuntu tesseract-ocr-script-* packages install
+     *       it.</li>
      * </ol>
      * Multiple languages may be specified, separated by plus characters.
      * e.g. "chi_tra+chi_sim+script/Arabic"
@@ -571,12 +575,15 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Runtime-only TesseractOCRConfig that prevents modification of paths.
-     * Used to enforce immutability of parser-level paths during parse-time configuration.
+     * Runtime-only TesseractOCRConfig that prevents modification of paths and of the
+     * {@code -c} pass-through map. Used to enforce immutability of parser-level paths
+     * during parse-time configuration.
      * <p>
      * This class is deserialized by ConfigDeserializer (in tika-serialization) which uses
      * Jackson to populate fields via setters. If the JSON contains any path fields, the
-     * overridden setters will throw TikaConfigException.
+     * overridden setters will throw TikaConfigException. {@code otherTesseractConfig} is
+     * refused as well: tesseract variables such as {@code debug_file} name files the
+     * binary opens, so the map is operator configuration only.
      */
     public static class RuntimeConfig extends TesseractOCRConfig {
 
@@ -608,6 +615,12 @@ public class TesseractOCRConfig implements Serializable {
         @Override
         public void setTrustedPageSeparator(String pageSeparator) {
             throw new IllegalArgumentException("Cannot use setTrustedPageSeparator at runtime. " + "Use setPageSeparator instead.");
+        }
+
+        @Override
+        public void addOtherTesseractConfig(String key, String value) {
+            throw new IllegalArgumentException("Cannot set otherTesseractConfig at runtime. " +
+                    "Tesseract variables must be configured at parser initialization time.");
         }
     }
 
