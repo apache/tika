@@ -250,7 +250,9 @@ public class Mp3Parser implements Parser {
 
             // ID3v1.1 Track addition
             StringBuilder sb = new StringBuilder();
-            sb.append(tag.getAlbum());
+            if (tag.getAlbum() != null) {
+                sb.append(tag.getAlbum());
+            }
             if (tag.getTrackNumber() != null) {
                 sb.append(", track ").append(tag.getTrackNumber());
                 metadata.set(Audio.RAW_TRACK_NUMBER, tag.getTrackNumber());
@@ -287,7 +289,6 @@ public class Mp3Parser implements Parser {
             xhtml.element("p", tag.getYear());
             xhtml.element("p", tag.getGenre());
         }
-        xhtml.element("p", String.valueOf(audioAndTags.durationSeconds()));
         for (String comment : comments) {
             xhtml.element("p", comment);
         }

@@ -17,6 +17,7 @@
 package org.apache.tika.parser.mp3;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.ByteArrayOutputStream;
@@ -413,6 +414,24 @@ public class Mp3ParserTest extends TikaTest {
     @Test
     public void testTIKA1589_noId3ReturnsDurationCorrectly() throws Exception {
         assertEquals("2.4555110931396484", getXML("testMP3noid3.mp3").metadata.get(XMPDM.DURATION));
+    }
+
+    /** An untagged file has no body text: no "null" album and no duration paragraph (TIKA-4907). */
+    @Test
+    public void testNoId3HasEmptyBody() throws Exception {
+        Metadata metadata = new Metadata();
+        String content = getText("testMP3noid3.mp3", metadata);
+        assertEquals("", content.trim());
+        assertEquals("2.4555110931396484", metadata.get(XMPDM.DURATION));
+    }
+
+    /** The duration lives in metadata only; a tagged file's body no longer repeats it. */
+    @Test
+    public void testDurationNotInBody() throws Exception {
+        Metadata metadata = new Metadata();
+        String content = getText("testMP3id3v2.mp3", metadata);
+        assertContains("Test Title", content);
+        assertFalse(content.contains(metadata.get(XMPDM.DURATION)), content);
     }
 
     /**
