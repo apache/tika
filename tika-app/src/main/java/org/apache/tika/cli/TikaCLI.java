@@ -907,7 +907,7 @@ public class TikaCLI {
         out.println("    -J  or --jsonRecursive Output metadata and content from all");
         out.println("                           embedded files (choose content type");
         out.println("                           with -x, -h, -t or -m; default is --md)");
-        out.println("    -a  or --async         Run Tika in async mode; must specify details in a" + " tikaConfig file");
+        out.println("    -a  or --async         Run Tika in async mode: -a -c <tika-config.json> [-p <pluginsDir>]");
         out.println("    -l  or --language      Output only language");
         out.println("    -d  or --detect        Detect document type");
         out.println("           --digest=X      Include digest X (md2, md5, sha1,");
