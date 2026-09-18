@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * Per-request tesseract-ocr-parser config no longer accepts
+     otherTesseractConfig; tesseract variables such as debug_file name
+     files the binary opens, so the -c pass-through is server-side
+     configuration only (TIKA-4904).
+
    * ICC tone-curve and lookup-table tags (rTRC and friends) are no longer
      written to icc:* by default; "jpeg-parser": {"includeIccCurvesAndLuts":
      true} (likewise tiff-, heif-, bpg-, web-p- and raw-tiff-parser) restores
