@@ -58,12 +58,25 @@ public class PerClientServerManager implements ServerManager {
      *  response deserialization, and heartbeat bookkeeping; if it's CPU-starved
      *  small operations like socket flush show pathological tail latency. */
     private static final int PARENT_RESERVED_CORES = 2;
-    /** Don't auto-cap below this many CPUs per fork. At cap=1 the fork's only
-     *  CPU is fully consumed by parsing, so its socket-reader thread can't run
-     *  and the parent's writes block on receiver-side back-pressure -- worse
-     *  than no cap at all. This guard matters for small k8s pods where the
-     *  formula could otherwise produce slice=1. */
-    private static final int MIN_AUTO_CAP_SLICE = 2;
+    /** Floor for the auto-cap. At cap=1 the fork's only CPU is fully consumed by
+     *  parsing, so its socket-reader thread can't run and the parent's writes block
+     *  on receiver-side back-pressure. The floor is a CLAMP, not a switch: when the
+     *  fair slice falls below it, the fork still gets this cap rather than none.
+     *  Skipping the cap hands every fork all the host's cores, and N forks then each
+     *  size their GC/JIT pools for the whole machine -- measured 2026-09-18 at 10
+     *  forks on 16 cores as +18% wall against the clamped run (TIKA-4905). */
+    static final int MIN_AUTO_CAP_SLICE = 2;
+
+    /**
+     * The {@code -XX:ActiveProcessorCount} each fork gets when the user has not set one: a
+     * fair share of the host after the parent's reservation, never below
+     * {@link #MIN_AUTO_CAP_SLICE}. Over-provisioned hosts (numClients above the recommended
+     * max) land on the floor for every fork; the caller warns separately.
+     */
+    static int autoCapSlice(int hostCores, int numClients) {
+        int budget = Math.max(1, hostCores - PARENT_RESERVED_CORES);
+        return Math.max(MIN_AUTO_CAP_SLICE, budget / Math.max(1, numClients));
+    }
 
     /** Share of host/container memory the forks may collectively claim; the remainder is
      *  left for the parent JVM, the OS, and page cache for spooled input. */
@@ -236,11 +249,11 @@ public class PerClientServerManager implements ServerManager {
         if (userSetCap) {
             capDecision = "user-set in forkedJvmArgs";
         } else {
-            int budget = Math.max(1, hostCores - PARENT_RESERVED_CORES);
-            int slice = budget / numClients;
-            capDecision = (slice >= MIN_AUTO_CAP_SLICE)
+            int fair = Math.max(1, hostCores - PARENT_RESERVED_CORES) / Math.max(1, numClients);
+            int slice = autoCapSlice(hostCores, numClients);
+            capDecision = (fair >= MIN_AUTO_CAP_SLICE)
                     ? "slice=" + slice
-                    : "skipped (slice<" + MIN_AUTO_CAP_SLICE + ")";
+                    : "slice=" + slice + " (clamped; fair share would be " + fair + ")";
         }
         String heapDecision;
         if (userSetHeap(pipesConfig.getForkedJvmArgs())) {
@@ -669,27 +682,24 @@ public class PerClientServerManager implements ServerManager {
         // fight each other. We also reserve PARENT_RESERVED_CORES so the parent
         // JVM (which serializes requests, deserializes responses, runs heartbeat
         // bookkeeping) isn't starved for CPU.
-        // Skip the auto-cap when the computed slice would drop below
-        // MIN_AUTO_CAP_SLICE -- below that, the fork can't keep its socket
-        // reader responsive and back-pressures the parent.
+        // The cap is clamped at MIN_AUTO_CAP_SLICE rather than skipped: a fork that
+        // sees every core on an over-provisioned host is the expensive case.
         if (!hasActiveProcessorCount) {
             int hostCores = Runtime.getRuntime().availableProcessors();
-            int forkBudget = Math.max(1, hostCores - PARENT_RESERVED_CORES);
-            int slice = forkBudget / pipesConfig.getNumClients();
-            if (slice >= MIN_AUTO_CAP_SLICE) {
-                configArgs.add("-XX:ActiveProcessorCount=" + slice);
+            int numClients = pipesConfig.getNumClients();
+            int fair = Math.max(1, hostCores - PARENT_RESERVED_CORES) / Math.max(1, numClients);
+            int slice = autoCapSlice(hostCores, numClients);
+            configArgs.add("-XX:ActiveProcessorCount=" + slice);
+            if (fair >= MIN_AUTO_CAP_SLICE) {
                 LOG.debug("clientId={}: auto-injected -XX:ActiveProcessorCount={} " +
                         "(hostCores={}, parentReserved={}, numClients={})",
-                        clientId, slice, hostCores, PARENT_RESERVED_CORES,
-                        pipesConfig.getNumClients());
+                        clientId, slice, hostCores, PARENT_RESERVED_CORES, numClients);
             } else {
-                LOG.info("clientId={}: skipping -XX:ActiveProcessorCount auto-cap " +
-                        "(would yield slice={} < MIN_AUTO_CAP_SLICE={}; " +
-                        "hostCores={}, parentReserved={}, numClients={}).{}",
-                        clientId, slice, MIN_AUTO_CAP_SLICE, hostCores,
-                        PARENT_RESERVED_CORES, pipesConfig.getNumClients(),
-                        pipesConfig.getNumClients() > 1
-                                ? " Consider lowering numClients on this host." : "");
+                LOG.info("clientId={}: -XX:ActiveProcessorCount clamped to {} " +
+                        "(fair share would be {}; hostCores={}, parentReserved={}, " +
+                        "numClients={}).{}", clientId, slice, fair, hostCores,
+                        PARENT_RESERVED_CORES, numClients,
+                        numClients > 1 ? " Consider lowering numClients on this host." : "");
             }
         }
 

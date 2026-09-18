@@ -75,13 +75,29 @@ public class PerClientServerManagerSizingTest {
     @Test
     public void cpuCapInjectedForSingleClient() throws Exception {
         List<String> caps = withPrefix(commandLine(1), "-XX:ActiveProcessorCount=");
-        int slice = Math.max(1, Runtime.getRuntime().availableProcessors() - 2);
-        if (slice >= 2) {
-            assertEquals(List.of("-XX:ActiveProcessorCount=" + slice), caps);
-        } else {
-            // Host too small for the auto-cap; injection is skipped by design.
-            assertTrue(caps.isEmpty(), "expected no auto-cap on tiny host: " + caps);
-        }
+        int slice = Math.max(PerClientServerManager.MIN_AUTO_CAP_SLICE,
+                Math.max(1, Runtime.getRuntime().availableProcessors() - 2));
+        assertEquals(List.of("-XX:ActiveProcessorCount=" + slice), caps);
+    }
+
+    /** The floor is a clamp, not a switch: an over-provisioned host still caps every fork. */
+    @Test
+    public void cpuCapClampedWhenOverProvisioned() throws Exception {
+        // a thousand clients yields a fair share below the floor on any host
+        assertEquals(List.of("-XX:ActiveProcessorCount=" + PerClientServerManager.MIN_AUTO_CAP_SLICE),
+                withPrefix(commandLine(1000), "-XX:ActiveProcessorCount="));
+    }
+
+    @Test
+    public void autoCapSlice() {
+        assertEquals(14, PerClientServerManager.autoCapSlice(16, 1));
+        assertEquals(2, PerClientServerManager.autoCapSlice(16, 7));
+        // 10 forks on 16 cores: fair share is 1, which used to disable the cap entirely
+        assertEquals(2, PerClientServerManager.autoCapSlice(16, 10));
+        assertEquals(2, PerClientServerManager.autoCapSlice(4, 8));
+        assertEquals(2, PerClientServerManager.autoCapSlice(1, 1));
+        // numClients=0 is nonsense; treated as 1 rather than dividing by zero
+        assertEquals(14, PerClientServerManager.autoCapSlice(16, 0));
     }
 
     @Test

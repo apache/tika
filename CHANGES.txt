@@ -1,11 +1,11 @@
 Release 4.1.0 - unreleased
 
    * VLM parsers: a raw HTML block in the model's markdown (jina-ocr-v1 and
-     DeepSeek-OCR write tables that way) is now emitted as XHTML table, list
-     and paragraph elements instead of escaped tag text; attributes other
-     than colspan/rowspan are dropped, script/style content is not emitted, and inline HTML tags are
-     dropped with their text kept (TIKA-4906).
+     DeepSeek-OCR write tables that way) is now emitted as XHTML table (TIKA-4906).
 
+   * The forked-worker CPU cap (-XX:ActiveProcessorCount) is now clamped at its
+     floor of 2 (TIKA-4905).
+     
    * Tesseract script models are accepted by their bare name ("language":
      "Latin", "eng+Japanese_vert") (TIKA-4903).
      
