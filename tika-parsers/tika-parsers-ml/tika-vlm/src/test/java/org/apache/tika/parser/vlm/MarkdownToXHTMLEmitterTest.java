@@ -17,6 +17,7 @@
 package org.apache.tika.parser.vlm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
@@ -224,6 +225,61 @@ public class MarkdownToXHTMLEmitterTest {
         String xml = emit(null);
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                 + "<root xmlns=\"http://www.w3.org/1999/xhtml\"/>", xml);
+    }
+
+    @Test
+    void testHtmlTableBlock() throws Exception {
+        // verbatim jina-ocr-v1 output for a three-column table followed by a sentence
+        String md = "<table>\n<thead>\n  <tr class=\"table-header\">\n    <th>Region</th>\n"
+                + "    <th>Q1</th>\n    <th>Q2</th>\n  </tr>\n</thead>\n<tbody>\n"
+                + "  <tr class=\"row-odd\">\n    <th>North</th>\n    <th>120</th>\n"
+                + "    <th>135</th>\n  </tr>\n</tbody>\n</table>\n\n"
+                + "Totals are in thousands of units.\n";
+        String xml = emit(md);
+        assertContains("<table><thead><tr><th>Region</th><th>Q1</th><th>Q2</th></tr></thead>"
+                + "<tbody><tr><th>North</th><th>120</th><th>135</th></tr></tbody></table>", xml);
+        assertContains("<p>Totals are in thousands of units.</p>", xml);
+        assertFalse(xml.contains("&lt;"), "raw tags leaked as text:\n" + xml);
+        assertFalse(xml.contains("class="), "attributes should be dropped:\n" + xml);
+    }
+
+    @Test
+    void testHtmlBlockUnknownElementsKeepTextDropScripts() throws Exception {
+        String md = "<div class=\"x\"><span>hello</span> <strong>there</strong>"
+                + "<script>alert(1)</script><style>p{}</style> a &amp; b</div>\n";
+        String xml = emit(md);
+        assertContains("hello <b>there</b> a &amp; b", xml);
+        assertFalse(xml.contains("alert"), xml);
+        assertFalse(xml.contains("p{}"), xml);
+        assertFalse(xml.contains("<div"), xml);
+        assertFalse(xml.contains("<span"), xml);
+    }
+
+    @Test
+    void testHtmlTableKeepsColspanRowspan() throws Exception {
+        String md = "<table><tr><th colspan=\"2\" class=\"hdr\">Sales</th></tr>"
+                + "<tr><td rowspan=\"1\" colspan=\"0\" style=\"x\">a</td>"
+                + "<td rowspan=\" 3 \">b</td></tr></table>\n";
+        String xml = emit(md);
+        assertContains("<th colspan=\"2\">Sales</th>", xml);
+        assertContains("<td>a</td>", xml);
+        assertContains("<td rowspan=\"3\">b</td>", xml);
+        assertFalse(xml.contains("class="), xml);
+        assertFalse(xml.contains("style="), xml);
+    }
+
+    @Test
+    void testHtmlBlockUnclosedTable() throws Exception {
+        String md = "<table><tr><td>a<td>b\n";
+        String xml = emit(md);
+        assertContains("<table><tbody><tr><td>a</td><td>b</td></tr></tbody></table>", xml);
+    }
+
+    @Test
+    void testInlineHtmlTagsDroppedTextKept() throws Exception {
+        String md = "This is <b>bold</b>, x<sup>2</sup> and a<br>break.";
+        String xml = emit(md);
+        assertContains("<p>This is bold, x2 and a<br/>break.</p>", xml);
     }
 
     private static final String XHTML_NS = "http://www.w3.org/1999/xhtml";
