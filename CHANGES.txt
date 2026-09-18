@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * Tesseract script models are accepted by their bare name ("language":
+     "Latin", "eng+Japanese_vert"), the spelling tesseract --list-langs
+     prints and the Debian/Ubuntu tesseract-ocr-script-* packages install;
+     script/Latin still works (TIKA-4903).
+
    * ICC tone-curve and lookup-table tags (rTRC and friends) are no longer
      written to icc:* by default; "jpeg-parser": {"includeIccCurvesAndLuts":
      true} (likewise tiff-, heif-, bpg-, web-p- and raw-tiff-parser) restores
