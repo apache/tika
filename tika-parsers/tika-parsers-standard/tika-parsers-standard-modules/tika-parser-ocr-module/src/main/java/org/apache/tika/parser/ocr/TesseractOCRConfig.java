@@ -571,12 +571,15 @@ public class TesseractOCRConfig implements Serializable {
     }
 
     /**
-     * Runtime-only TesseractOCRConfig that prevents modification of paths.
-     * Used to enforce immutability of parser-level paths during parse-time configuration.
+     * Runtime-only TesseractOCRConfig that prevents modification of paths and of the
+     * {@code -c} pass-through map. Used to enforce immutability of parser-level paths
+     * during parse-time configuration.
      * <p>
      * This class is deserialized by ConfigDeserializer (in tika-serialization) which uses
      * Jackson to populate fields via setters. If the JSON contains any path fields, the
-     * overridden setters will throw TikaConfigException.
+     * overridden setters will throw TikaConfigException. {@code otherTesseractConfig} is
+     * refused as well: tesseract variables such as {@code debug_file} name files the
+     * binary opens, so the map is operator configuration only.
      */
     public static class RuntimeConfig extends TesseractOCRConfig {
 
@@ -608,6 +611,12 @@ public class TesseractOCRConfig implements Serializable {
         @Override
         public void setTrustedPageSeparator(String pageSeparator) {
             throw new IllegalArgumentException("Cannot use setTrustedPageSeparator at runtime. " + "Use setPageSeparator instead.");
+        }
+
+        @Override
+        public void addOtherTesseractConfig(String key, String value) {
+            throw new IllegalArgumentException("Cannot set otherTesseractConfig at runtime. " +
+                    "Tesseract variables must be configured at parser initialization time.");
         }
     }
 
