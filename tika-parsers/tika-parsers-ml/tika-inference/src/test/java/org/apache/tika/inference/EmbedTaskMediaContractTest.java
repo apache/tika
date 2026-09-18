@@ -51,7 +51,7 @@ import org.apache.tika.parser.inference.Modality;
  */
 public class EmbedTaskMediaContractTest {
 
-    /** Probes every file as 70 s of audio and video; cuts are one-byte files. */
+    /** Probes every file as 65 s of audio and video; cuts are one-byte files. */
     static final class FakeSegmenter implements MediaSegmenter {
         final boolean available;
         final List<Path> cutDirs = new ArrayList<>();
@@ -59,7 +59,7 @@ public class EmbedTaskMediaContractTest {
         Path failProbe;
         int timeoutOnCut = -1;
         int ioOnCut = -1;
-        long durationMs = 70_000;
+        long durationMs = 65_000;
 
         FakeSegmenter(boolean available) {
             this.available = available;
@@ -158,7 +158,7 @@ public class EmbedTaskMediaContractTest {
         }
     }
 
-    /** 70 s at 30/5 is three cells: [0,30] [25,55] [50,70]; batch 2 means requests of 2 and 1. */
+    /** 65 s at 25/5 is three cells: [0,25] [20,45] [40,65]; batch 2 means requests of 2 and 1. */
     @Test
     public void testHappyPathReleasesTheDir() throws Exception {
         server.enqueue(new TikaTestHttpServer.MockResponse(200, response(2)));
@@ -184,7 +184,7 @@ public class EmbedTaskMediaContractTest {
         List<Chunk> chunks = chunks(unit);
         assertEquals(2, chunks.size(), "the good cells keep their vectors");
         assertEquals(0, chunks.get(0).getLocators().getTemporal().get(0).getStartMs());
-        assertEquals(50_000, chunks.get(1).getLocators().getTemporal().get(0).getStartMs());
+        assertEquals(40_000, chunks.get(1).getLocators().getTemporal().get(0).getStartMs());
         assertEquals(3, fake.cuts, "no cell is cut twice");
         assertEquals(4, server.getRequestCount());
         assertReleased();

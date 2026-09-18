@@ -288,7 +288,7 @@ public class InferenceLoaderTest {
         assertEquals(10, media.getSegment().getSeconds());
         assertEquals(2, media.getSegment().getOverlap());
         assertEquals(7, media.getMaxSegments());
-        assertEquals(30, new MediaConfig().getSegment().getSeconds(), "default window");
+        assertEquals(25, new MediaConfig().getSegment().getSeconds(), "default window");
         assertEquals(5, new MediaConfig().getSegment().getOverlap(), "default overlap");
         assertThrows(TikaConfigException.class, () -> load("{" + ENGINES + ", \"inference\": ["
                 + " { \"id\": \"a\", \"engine\": \"one\", \"input\": \"MEDIA\","

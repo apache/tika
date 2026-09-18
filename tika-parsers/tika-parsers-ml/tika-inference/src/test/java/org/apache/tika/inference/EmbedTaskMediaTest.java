@@ -120,10 +120,9 @@ public class EmbedTaskMediaTest {
     @Test
     public void testAudioAndVideoJoinOnTheCell() throws Exception {
         InferenceUnit unit = unit(clip(70, true), "video/mp4");
-        // 70 s at 30/5: [0,30] [25,55] [50,70]; batch size 2 -> requests of 2 and 1 per channel
-        for (int i = 0; i < 2; i++) {
+        // 70 s at 25/5: [0,25] [20,45] [40,65] [60,70]; batch size 2 -> two requests of 2 per channel
+        for (int i = 0; i < 4; i++) {
             server.enqueue(new TikaTestHttpServer.MockResponse(200, response(2)));
-            server.enqueue(new TikaTestHttpServer.MockResponse(200, response(1)));
         }
         EmbedTask task = new EmbedTask();
         InferenceBinding video = binding("jina-video", Modality.VISUAL);
@@ -144,19 +143,19 @@ public class EmbedTaskMediaTest {
 
         List<Chunk> chunks = ChunkSerializer.fromJson(
                 unit.getTarget().get(TikaCoreProperties.TIKA_CHUNKS));
-        assertEquals(6, chunks.size(), "one chunk per cell per channel");
+        assertEquals(8, chunks.size(), "one chunk per cell per channel");
         Chunk video2 = chunks.get(1);
-        Chunk audio2 = chunks.get(4);
-        assertEquals(25000, video2.getLocators().getTemporal().get(0).getStartMs());
-        assertEquals(55000, video2.getLocators().getTemporal().get(0).getEndMs());
-        assertEquals(70000, chunks.get(2).getLocators().getTemporal().get(0).getEndMs());
-        assertEquals("t:25000-55000", video2.getCorrelator());
+        Chunk audio2 = chunks.get(5);
+        assertEquals(20000, video2.getLocators().getTemporal().get(0).getStartMs());
+        assertEquals(45000, video2.getLocators().getTemporal().get(0).getEndMs());
+        assertEquals(70000, chunks.get(3).getLocators().getTemporal().get(0).getEndMs());
+        assertEquals("t:20000-45000", video2.getCorrelator());
         assertEquals(video2.getCorrelator(), audio2.getCorrelator(), "the cell's id groups them");
         assertEquals("jina-video", video2.getProducer());
         assertEquals(Modality.VISUAL, video2.getModality());
         assertEquals(Modality.AUDIO, audio2.getModality());
         assertEquals(1.0f, video2.getVector()[0], "placed by index");
-        assertEquals(0.0f, chunks.get(5).getVector()[0], "second request, index 0");
+        assertEquals(0.0f, chunks.get(6).getVector()[0], "second audio request, index 0");
     }
 
     /** The request's media block sets the grid; maxSegments cuts the tail. */
