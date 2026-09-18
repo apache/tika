@@ -1,9 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * Tesseract script models are accepted by their bare name ("language":
+     "Latin", "eng+Japanese_vert") (TIKA-4903).
+     
    * Per-request tesseract-ocr-parser config no longer accepts
-     otherTesseractConfig; tesseract variables such as debug_file name
-     files the binary opens, so the -c pass-through is server-side
-     configuration only (TIKA-4904).
+     otherTesseractConfig (TIKA-4904).
 
    * ICC tone-curve and lookup-table tags (rTRC and friends) are no longer
      written to icc:* by default; "jpeg-parser": {"includeIccCurvesAndLuts":

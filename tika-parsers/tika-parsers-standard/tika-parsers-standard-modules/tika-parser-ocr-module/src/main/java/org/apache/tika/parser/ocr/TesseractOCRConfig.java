@@ -115,9 +115,10 @@ public class TesseractOCRConfig implements Serializable {
         // Split on the + sign
         final String[] langs = language.split("\\+");
         for (String lang : langs) {
-            // First, make sure it conforms to the correct syntax
+            // Script models are capitalized and ship as either script/Latin or a top-level
+            // Latin.traineddata (Debian's tesseract-ocr-script-* packages); accept both.
             if (!lang.matches(
-                    "([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
+                    "([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|(script(/|\\\\))?[A-Z][a-zA-Z_]+")) {
                 invalidLangs.add(lang + " (invalid syntax)");
             } else {
                 validLangs.add(lang);
@@ -138,9 +139,12 @@ public class TesseractOCRConfig implements Serializable {
      * <ol>
      *   <li>Nominally an ISO-639-2 code but compound codes are allowed separated by underscore:
      *   e.g., chi_tra_vert, aze_cyrl</li>
-     *   <li>A file path in the script directory.  The name starts with upper-case letter.
-     *       Some of them have underscores and other upper-case letters: e.g., script/Arabic,
-     *       script/HanS_vert, script/Japanese_vert, script/Canadian_Aboriginal</li>
+     *   <li>A script model. The name starts with an upper-case letter and may contain
+     *       underscores and other upper-case letters: e.g., Arabic, HanS_vert, Japanese_vert,
+     *       Canadian_Aboriginal. Prefix with script/ when the model lives in tessdata's
+     *       script subdirectory (script/Arabic); use the bare name when it sits at the
+     *       tessdata top level, as the Debian/Ubuntu tesseract-ocr-script-* packages install
+     *       it.</li>
      * </ol>
      * Multiple languages may be specified, separated by plus characters.
      * e.g. "chi_tra+chi_sim+script/Arabic"
