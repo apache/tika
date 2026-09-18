@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * The forked-worker CPU cap (-XX:ActiveProcessorCount) is now clamped at its
+     floor of 2 (TIKA-4905).
+     
    * Tesseract script models are accepted by their bare name ("language":
      "Latin", "eng+Japanese_vert") (TIKA-4903).
      
