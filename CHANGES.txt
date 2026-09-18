@@ -1,5 +1,9 @@
 Release 4.1.0 - unreleased
 
+   * The tika-server full Docker image installs ffmpeg, so a MEDIA inference
+     binding cuts audio and video in the container instead of standing by
+     with a warning (TIKA-4910).
+
    * Mp3Parser no longer writes the literal "null" (a missing album) or the
      duration into the body; an untagged MP3 has an empty body, and a TEXT
      inference binding no longer embeds it (TIKA-4907).

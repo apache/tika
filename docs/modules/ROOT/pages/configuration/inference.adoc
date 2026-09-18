@@ -378,7 +378,8 @@ is reported once as the binding's warning and the next file runs.
 
 ffmpeg and ffprobe are looked up on the `PATH` once, at config load: a MEDIA binding without
 them logs one warning and stands by, and each audio or video document is then skipped with a
-warning in its metadata rather than failed, the way OCR behaves without tesseract.
+warning in its metadata rather than failed, the way OCR behaves without tesseract. The
+`apache/tika:<version>-full` image ships them; the minimal and grpc images do not.
 
 ffmpeg runs under the parse's time budget: each probe and cut asks for its own cap (60 s and
 5 min) and gets the smaller of that and what remains of the request's total timeout, with
