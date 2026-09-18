@@ -1,5 +1,16 @@
 Release 4.1.0 - unreleased
 
+   * The tika-server UAT gains an inference pass: a dependency-free mock
+     engine (release-tools/uat/MockInferenceServer.java) stands in for a
+     hosted OCR model and an embedding model, and run-uat.sh checks the
+     text recognizer, the TEXT, IMAGES and MEDIA bindings, the per-request
+     switches, ${env:...} interpolation into the forks and the client's
+     retry of a 429; docker-tool.sh test-uat runs it against both images,
+     asserting media on -full where ffmpeg ships, and test-uat-snapshot
+     builds the snapshot images from the local zip and runs it against
+     them. The full snapshot Dockerfile now installs ffmpeg as the release
+     one does (TIKA-4913).
+
    * Handle inference exceptions more robustly in PDFParser (TIKA-4911).
 
    * Add ffmpeg to tika-server's "full" Docker image (TIKA-4910).

@@ -43,6 +43,17 @@ OCRPNG="$FILES/testOCR_spacing.png"
 # the OCR check is skipped when OCR is unavailable (minimal image / no tesseract).
 REQUIRE_OCR="${TIKA_UAT_REQUIRE_OCR:-}"
 
+# Set TIKA_UAT_INFERENCE=1 when the server was started with uat-inference-config.json
+# pointed at a running MockInferenceServer: the inference checks (T40+) then run, and
+# the media check is a hard failure when TIKA_UAT_REQUIRE_MEDIA=1 (the -full image ships
+# ffmpeg) and a skip otherwise. Left unset, every inference check is skipped.
+INFERENCE="${TIKA_UAT_INFERENCE:-}"
+REQUIRE_MEDIA="${TIKA_UAT_REQUIRE_MEDIA:-}"
+VIDEO="$FILES/testVideo_3s.mp4"
+# TIKA_UAT_MOCK_URL: where the mock is reachable from THIS script (its /stats endpoint);
+# the server reaches it through the baseUrl in its config, which may differ (docker).
+MOCK_URL="${TIKA_UAT_MOCK_URL:-http://localhost:18080}"
+
 PASS=0
 FAIL=0
 SKIP=0
@@ -202,7 +213,13 @@ assert_contains "T17 POST /rmeta/form" "Content-Type" "$(curl -s -X POST -F "upl
 # Per-request /config endpoints must be 403 in default mode (allowPerRequestConfig=false).
 # Note: the unpack config-variant is /unpack/all/config; /unpack/config does not exist
 # (the {id} template requires a leading slash, so it 404s) -- the old docs were wrong.
+# uat-inference-config.json turns allowPerRequestConfig on (T44/T45 need it), so under
+# TIKA_UAT_INFERENCE the gate checks are skipped: they are covered by the default-mode run.
+if [[ -n "$INFERENCE" ]]; then
+  skip "T18/T18b per-request config gating -- allowPerRequestConfig is on in the inference config"
+fi
 for ep in meta/config rmeta/config tika/config unpack/all/config; do
+  [[ -n "$INFERENCE" ]] && break
   RESP=$(curl -s -w '\n%{http_code}' -X POST -F "file=@$PDF" "$BASE/$ep")
   CODE=$(printf '%s' "$RESP" | tail -n1)
   BODY=$(printf '%s' "$RESP" | sed '$d')
@@ -216,13 +233,15 @@ done
 # --- SECURITY GATING (gate 2: content-based multipart 'config' part) ---
 # A 'config' part on an endpoint that accepts one must be 403 even when the path
 # has no /config (TikaResource.setupMultipartConfig). Exercises the second enforcement point.
-RESP=$(curl -s -w '\n%{http_code}' -X POST -F "file=@$PDF" -F 'config={"parsers":[{"pdf-parser":{}}]}' "$BASE/unpack")
-CODE=$(printf '%s' "$RESP" | tail -n1)
-BODY=$(printf '%s' "$RESP" | sed '$d')
-if [[ "$CODE" == "403" ]] && printf '%s' "$BODY" | grep -qiF "disabled"; then
-  ok "T18b POST /unpack with config part blocked (403 + 'disabled')"
-else
-  bad "T18b POST /unpack with config part" "403 + 'disabled'" "HTTP $CODE $BODY"
+if [[ -z "$INFERENCE" ]]; then
+  RESP=$(curl -s -w '\n%{http_code}' -X POST -F "file=@$PDF" -F 'config={"parsers":[{"pdf-parser":{}}]}' "$BASE/unpack")
+  CODE=$(printf '%s' "$RESP" | tail -n1)
+  BODY=$(printf '%s' "$RESP" | sed '$d')
+  if [[ "$CODE" == "403" ]] && printf '%s' "$BODY" | grep -qiF "disabled"; then
+    ok "T18b POST /unpack with config part blocked (403 + 'disabled')"
+  else
+    bad "T18b POST /unpack with config part" "403 + 'disabled'" "HTTP $CODE $BODY"
+  fi
 fi
 
 # --- SECURITY GATING: /status is NOT registered by default (must be 404, not 200) ---
@@ -251,6 +270,83 @@ elif [[ -n "$REQUIRE_OCR" ]]; then
   bad "T30 OCR PUT /tika/text" "OCR text 'The quick' (tesseract required)" "$OCR_OUT"
 else
   skip "T30 OCR PUT /tika/text -- no OCR text (tesseract not available on server)"
+fi
+
+# --- INFERENCE (conditional: server started with uat-inference-config.json + mock engine) ---
+# The mock engine (MockInferenceServer.java) stands in for a hosted OCR model and an
+# embedding model. These checks prove the wiring between tika-server, its forked worker
+# and an engine: config load, the text-recognizers list, the four binding kinds, the
+# per-request switches, and ffmpeg where the image ships it.
+if [[ -n "$INFERENCE" ]]; then
+  # T40: the mock OCR model is the text recognizer for a standalone image; its markdown
+  # comes back as text, and the HTML table it emits is parsed, not escaped.
+  OCR_OUT=$(curl -s -X PUT -T "$OCRPNG" "$BASE/tika/text")
+  assert_contains "T40 mock OCR PUT /tika/text (image -> mock text)" "The quick brown fox" "$OCR_OUT"
+  OCR_XML=$(curl -s -X PUT -T "$OCRPNG" "$BASE/tika/xml")
+  assert_contains "T41 mock OCR HTML table parsed" "<table>" "$OCR_XML"
+  if printf '%s' "$OCR_XML" | grep -qF '&lt;table'; then
+    bad "T41b mock OCR table not escaped" "no &lt;table" "escaped tags in output"
+  else
+    ok "T41b mock OCR table not escaped"
+  fi
+
+  # T42: the IMAGES binding puts a vector on the image; the TEXT binding one on its text.
+  IMG_META=$(curl -s -X PUT -T "$OCRPNG" -H 'Accept: application/json' "$BASE/rmeta")
+  assert_contains "T42 IMAGES binding: tk:chunks on /rmeta" '"tk:chunks"' "$IMG_META"
+  # tk:chunks is a JSON string inside the metadata JSON, so its quotes are escaped on the wire
+  assert_contains "T42b IMAGES binding: producer pictures" '\"producer\":\"pictures\"' "$IMG_META"
+  TXT_META=$(curl -s -X PUT -T "$HTML" -H 'Accept: application/json' "$BASE/rmeta")
+  assert_contains "T43 TEXT binding: producer text on an html doc" '\"producer\":\"text\"' "$TXT_META"
+
+  # T44: per-request switches (allowPerRequestConfig is on in the UAT config): the
+  # recognizer off removes the OCR text; a bindings subset runs only that binding.
+  OFF=$(curl -s -X POST -F "file=@$OCRPNG" \
+        -F 'config={"parse-context":{"text-recognizers":{"enabled":false}}}' "$BASE/tika/config/text")
+  if printf '%s' "$OFF" | grep -qF "The quick brown fox"; then
+    bad "T44 text-recognizers.enabled=false per request" "no OCR text" "OCR text present"
+  else
+    ok "T44 text-recognizers.enabled=false per request"
+  fi
+  SUBSET=$(curl -s -X POST -F "file=@$OCRPNG" \
+        -F 'config={"parse-context":{"inference":{"bindings":["text"]}}}' \
+        -H 'Accept: application/json' "$BASE/rmeta/config")
+  if printf '%s' "$SUBSET" | grep -qF '\"producer\":\"pictures\"'; then
+    bad "T45 inference.bindings subset per request" "no pictures chunk" "pictures binding ran"
+  else
+    ok "T45 inference.bindings subset per request"
+  fi
+
+  # T46: MEDIA bindings need ffmpeg on the server. A 3 s clip with sound gives one
+  # segment per channel sharing a correlator. Hard failure only with TIKA_UAT_REQUIRE_MEDIA.
+  if [[ -f "$VIDEO" ]]; then
+    VID_META=$(curl -s -X PUT -T "$VIDEO" -H 'Accept: application/json' "$BASE/rmeta")
+    if printf '%s' "$VID_META" | grep -qF '\"producer\":\"video\"' \
+       && printf '%s' "$VID_META" | grep -qF '\"producer\":\"audio\"' \
+       && printf '%s' "$VID_META" | grep -qF '\"correlator\":\"t:0-3000\"'; then
+      ok "T46 MEDIA bindings: video + audio segment vectors (ffmpeg)"
+    elif [[ -n "$REQUIRE_MEDIA" ]]; then
+      bad "T46 MEDIA bindings" "video and audio chunks with correlator t:0-3000 (ffmpeg required)" "$(printf '%s' "$VID_META" | head -c 400)"
+    else
+      skip "T46 MEDIA bindings -- no segment vectors (ffmpeg not available on server)"
+    fi
+  else
+    skip "T46 MEDIA bindings -- $VIDEO missing"
+  fi
+
+  # T47: the mock started with --flaky refuses every other POST with 429 first, as a
+  # concurrency-capped engine does; the checks above passed only if the client retried.
+  # The mock's /stats says whether refusals happened at all.
+  STATS=$(curl -s --max-time 5 "$MOCK_URL/stats" || true)
+  REFUSED=$(printf '%s' "$STATS" | sed -n 's/.*"refused":\([0-9]*\).*/\1/p')
+  if [[ -z "$REFUSED" ]]; then
+    skip "T47 engine 429 retried -- mock /stats unreachable at $MOCK_URL"
+  elif [[ "$REFUSED" == "0" ]]; then
+    skip "T47 engine 429 retried -- mock not started with --flaky (no refusals)"
+  else
+    ok "T47 engine 429 retried ($REFUSED refusals absorbed by the client's retries)"
+  fi
+else
+  skip "T40-T47 inference checks -- TIKA_UAT_INFERENCE not set"
 fi
 
 echo "== UAT done: $PASS passed, $FAIL failed, $SKIP skipped =="

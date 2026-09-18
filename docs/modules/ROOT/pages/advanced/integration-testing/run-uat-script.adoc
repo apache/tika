@@ -83,6 +83,50 @@ Coverage includes:
   failure when `TIKA_UAT_REQUIRE_OCR=1` is set. `docker-tool.sh test-uat` sets that env
   var for the `-full` image, so OCR is asserted there and skipped for the minimal image.
 
+=== The inference pass
+
+A second run, against a server started on `release-tools/uat/uat-inference-config.json`,
+exercises what the default-mode run cannot: the engine wiring between tika-server, its forked
+parse worker and an inference engine. Nothing real is called. `MockInferenceServer.java` in
+the same directory stands in for a hosted OCR model and an embedding model; it speaks the two
+OpenAI-shaped endpoints Tika's engines use plus the health check, has no dependencies beyond
+the JDK, and runs from source (`java release-tools/uat/MockInferenceServer.java 18080 --flaky`).
+With `--flaky` it refuses every other request with a 429 first, the way a concurrency-capped
+engine answers, so the pass proves the client's retry as well.
+
+With `TIKA_UAT_INFERENCE=1` the script adds:
+
+* T40/T41: the mock OCR model is the configured text recognizer; its markdown comes back as
+  text, and the HTML table it emits (document-OCR models write tables that way) is parsed
+  into a `<table>`, not escaped.
+* T42/T43: the `IMAGES` binding puts a vector on an image, the `TEXT` binding one on a
+  document's text, on `/rmeta`.
+* T44/T45: the per-request switches, `text-recognizers.enabled: false` and an
+  `inference.bindings` subset, through `/tika/config` and `/rmeta/config`
+  (`allowPerRequestConfig` is on in the inference config, so the T18 gating checks are
+  skipped in this pass; the default-mode run covers them).
+* T46: the `MEDIA` bindings cut a 3 s clip into one segment per channel sharing a
+  correlator. This needs ffmpeg on the server: a hard failure with `TIKA_UAT_REQUIRE_MEDIA=1`
+  (the `-full` image ships it), a skip otherwise.
+* T47: the mock's `/stats` (reached at `TIKA_UAT_MOCK_URL`, default `http://localhost:18080`)
+  shows refusals, so the checks above passed only because the client retried. A mock started
+  without `--flaky` reports no refusals and T47 is a skip. `docker-tool.sh` and the e2e test
+  start it flaky only when the server under test carries the retry (TIKA-4912), detected
+  from its `tika-http-jdk` jar; `TIKA_UAT_MOCK_FLAKY=1` or `=0` overrides that in the tool.
+
+The config names the engine key as `${env:TIKA_UAT_MOCK_KEY}`, so the pass also proves
+environment interpolation reaches the forked workers. `docker-tool.sh test-uat` runs this
+pass against both images after the default-mode run, with the mock on the host and the
+container reaching it as `host.docker.internal`; the `RunUatSmokeTest` e2e test runs it
+against a forked `java -jar` server.
+
+`docker-tool.sh test-uat-snapshot` builds the two images the docker-snapshot workflow
+publishes, from `Dockerfile.snapshot` over this checkout's `tika-server-standard` zip, and
+runs both passes against each. No download and no signature check, so it works on any
+build, and what it tests is the image itself: that is how the full image's ffmpeg is
+verified before a release, and it is the run that showed the snapshot Dockerfile had
+been missed when ffmpeg was added to the release one.
+
 The `allowPipes=false` "refuse to start" gating and the stale-`enableUnsecureFeatures`
 upgrade behavior are *start-time* properties, so they are not in this script (which runs
 against an already-running server) -- they are covered by the
