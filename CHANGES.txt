@@ -1,5 +1,8 @@
 Release 4.1.0 - unreleased
 
+   * Calls to a hosted inference engine retry a 429, 502, 503 or 504 answer
+     with a jittered backoff (TIKA-4912).
+
    * Handle inference exceptions more robustly in PDFParser (TIKA-4911).
 
    * Add ffmpeg to tika-server's "full" Docker image (TIKA-4910).

@@ -18,6 +18,7 @@ package org.apache.tika.http;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
@@ -26,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.http.TikaTestHttpServer.MockResponse;
 import org.apache.tika.parser.ParseContext;
@@ -180,6 +182,106 @@ public class TikaHttpClientTest {
                             elapsed + "ms");
             assertEquals(0, server.getRequestCount(),
                     "no HTTP request should have been attempted at all with a 0ms granted budget");
+        }
+    }
+
+    /** A concurrency-capped engine answers 429 at once with no Retry-After: the retry succeeds. */
+    @Test
+    public void testRetriesA429ThenSucceeds() throws Exception {
+        try (TikaTestHttpServer server = new TikaTestHttpServer();
+             TikaHttpClient client = TikaHttpClient.build(30, 4)) {
+            server.enqueue(new MockResponse(429, "{\"detail\":\"Concurrency limit exceeded\"}"));
+            server.enqueue(new MockResponse(429, "{\"detail\":\"Concurrency limit exceeded\"}"));
+            server.enqueue(new MockResponse(200, "{\"ok\":true}"));
+            long start = System.currentTimeMillis();
+            String body = client.postJson(server.url(), "{}", Map.of(), 10_000, new ParseContext());
+            long elapsed = System.currentTimeMillis() - start;
+            assertEquals("{\"ok\":true}", body);
+            assertEquals(3, server.getRequestCount());
+            assertTrue(elapsed >= 187 + 375, "two backoffs, 250 and 500 ms less jitter: " + elapsed);
+        }
+    }
+
+    @Test
+    public void testNonRetryableStatusFailsAtOnce() throws Exception {
+        try (TikaTestHttpServer server = new TikaTestHttpServer();
+             TikaHttpClient client = TikaHttpClient.build(30, 4)) {
+            server.enqueue(new MockResponse(401, "{\"detail\":\"Invalid API key\"}"));
+            server.enqueue(new MockResponse(200, "{\"ok\":true}"));
+            TikaException e = assertThrows(TikaException.class,
+                    () -> client.postJson(server.url(), "{}", Map.of(), 10_000, new ParseContext()));
+            assertTrue(e.getMessage().contains("HTTP 401"), e.getMessage());
+            assertEquals(1, server.getRequestCount());
+        }
+    }
+
+    @Test
+    public void testGivesUpAfterMaxRetriesWithTheLastAnswer() throws Exception {
+        try (TikaTestHttpServer server = new TikaTestHttpServer();
+             TikaHttpClient client = TikaHttpClient.build(30, 2)) {
+            for (int i = 0; i < 4; i++) {
+                server.enqueue(new MockResponse(503, "{\"detail\":\"busy " + i + "\"}"));
+            }
+            TikaException e = assertThrows(TikaException.class,
+                    () -> client.postJson(server.url(), "{}", Map.of(), 10_000, new ParseContext()));
+            assertTrue(e.getMessage().contains("busy 2"), "the third answer is the one reported: " + e.getMessage());
+            assertEquals(3, server.getRequestCount(), "one attempt plus two retries");
+        }
+    }
+
+    @Test
+    public void testZeroRetriesFailsOnTheFirst429() throws Exception {
+        try (TikaTestHttpServer server = new TikaTestHttpServer();
+             TikaHttpClient client = TikaHttpClient.build(30, 0)) {
+            server.enqueue(new MockResponse(429, "{}"));
+            server.enqueue(new MockResponse(200, "{}"));
+            assertThrows(TikaException.class,
+                    () -> client.postJson(server.url(), "{}", Map.of(), 10_000, new ParseContext()));
+            assertEquals(1, server.getRequestCount());
+        }
+    }
+
+    @Test
+    public void testRetryAfterHeaderSetsTheDelay() throws Exception {
+        try (TikaTestHttpServer server = new TikaTestHttpServer();
+             TikaHttpClient client = TikaHttpClient.build(30, 4)) {
+            server.enqueue(new MockResponse(429, "{}", Map.of("Retry-After", "1")));
+            server.enqueue(new MockResponse(200, "{\"ok\":true}"));
+            long start = System.currentTimeMillis();
+            client.postJson(server.url(), "{}", Map.of(), 10_000, new ParseContext());
+            long elapsed = System.currentTimeMillis() - start;
+            assertTrue(elapsed >= 1000, "waited the second the server asked for: " + elapsed);
+            assertEquals(2, server.getRequestCount());
+        }
+    }
+
+    /** A backoff that would run past the parse budget is not taken: the last answer fails the call. */
+    @Test
+    public void testBackoffNeverSleepsPastTheBudget() throws Exception {
+        try (TikaTestHttpServer server = new TikaTestHttpServer();
+             TikaHttpClient client = TikaHttpClient.build(30, 4)) {
+            server.enqueue(new MockResponse(429, "{}", Map.of("Retry-After", "5")));
+            server.enqueue(new MockResponse(200, "{}"));
+            long start = System.currentTimeMillis();
+            TikaException e = assertThrows(TikaException.class,
+                    () -> client.postJson(server.url(), "{}", Map.of(), 800, new ParseContext()));
+            long elapsed = System.currentTimeMillis() - start;
+            assertTrue(e.getMessage().contains("HTTP 429"), e.getMessage());
+            assertTrue(elapsed < 800, "failed without waiting out the budget: " + elapsed);
+            assertEquals(1, server.getRequestCount());
+        }
+    }
+
+    @Test
+    public void testRetryAfterParsing() {
+        assertEquals(7000, TikaHttpClient.parseRetryAfterMillis("7"));
+        assertEquals(-1, TikaHttpClient.parseRetryAfterMillis("soon"));
+        assertEquals(0, TikaHttpClient.parseRetryAfterMillis("Wed, 21 Oct 2015 07:28:00 GMT"),
+                "a date in the past is now");
+        for (int attempt = 0; attempt < 6; attempt++) {
+            long b = TikaHttpClient.backoffMillis(attempt);
+            long base = Math.min(4000, 250L << attempt);
+            assertTrue(b >= base - base / 4 && b <= base + base / 4, attempt + ": " + b);
         }
     }
 }
