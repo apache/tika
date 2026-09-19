@@ -17,7 +17,10 @@
 package org.apache.tika.parser.mail;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.james.mime4j.MimeException;
@@ -34,6 +37,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -44,6 +48,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * Uses apache-mime4j to parse emails. Each part is treated with the
  * corresponding parser and displayed within elements.
+ * <p/>
+ * Also handles Apple Mail's emlx framing: a first line carrying the message's
+ * byte count, and an XML plist after the message. Both are dropped.
  * <p/>
  * A {@link MimeConfig} object can be passed in the parsing context
  * to better control the parsing process.
@@ -72,8 +79,12 @@ public class RFC822Parser implements Parser {
         }
     }
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.parse("message/rfc822"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(MediaType.parse("message/rfc822"),
+                    MediaType.parse("message/x-emlx"))));
+
+    // digits, then Apple Mail's space padding to 10 columns, then the newline
+    private static final int EMLX_COUNT_LINE_MAX = 11;
 
     //rely on the detector to be thread-safe
     //built lazily and then reused
@@ -134,7 +145,12 @@ public class RFC822Parser implements Parser {
         xhtml.startDocument();
         checkForZeroByte(tis);//avoid stackoverflow
         try {
-            parser.parse(tis);
+            InputStream message = tis;
+            long emlxLength = readEmlxByteCount(tis);
+            if (emlxLength >= 0) {
+                message = new BoundedInputStream(emlxLength, tis);
+            }
+            parser.parse(message);
         } catch (IOException e) {
             tis.throwIfCauseOf(e);
             throw new TikaException("Failed to parse an email message", e);
@@ -150,6 +166,33 @@ public class RFC822Parser implements Parser {
             }
         }
         xhtml.endDocument();
+    }
+
+    /**
+     * Consumes the emlx byte-count line if the stream starts with one.
+     *
+     * @return the message's length in bytes, or -1 if the stream is not emlx framed
+     */
+    private static long readEmlxByteCount(TikaInputStream tis) throws IOException {
+        tis.mark(EMLX_COUNT_LINE_MAX);
+        long count = 0;
+        int digits = 0;
+        boolean padding = false;
+        for (int i = 0; i < EMLX_COUNT_LINE_MAX; i++) {
+            int c = tis.read();
+            if (c >= '0' && c <= '9' && !padding) {
+                count = count * 10 + (c - '0');
+                digits++;
+            } else if (c == ' ' && digits > 0) {
+                padding = true;
+            } else if (c == '\n' && digits > 0) {
+                return count;
+            } else {
+                break;
+            }
+        }
+        tis.reset();
+        return -1;
     }
 
     private void checkForZeroByte(TikaInputStream tstream) throws IOException, ZeroByteFileException {
