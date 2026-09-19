@@ -168,7 +168,8 @@ public class RawTiffParser extends TiffParser {
     @Override
     protected ImageMetadataConfig getImageMetadataConfig(ParseContext context)
             throws TikaException, IOException {
-        return getConfig(context);
+        ImageMetadataConfig shared = context.get(ImageMetadataConfig.class);
+        return shared != null ? shared : getConfig(context);
     }
 
     private void extractPreviews(TikaInputStream tis, XHTMLContentHandler xhtml, Metadata metadata,

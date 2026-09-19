@@ -113,42 +113,27 @@ public class SevenZParser extends AbstractArchiveParser {
             password = provider.getPassword(metadata);
         }
 
-        SevenZFile sevenZFile;
-        // SevenZFile.close() closes the channel it was built on
-        SeekableByteChannel channel = tis.getSeekableByteChannel();
-        try {
-            // Use setMaxMemoryLimitKiB (direct KiB); setMaxMemoryLimitKb divides the arg by 1024.
-            SevenZFile.Builder builder = new SevenZFile.Builder()
-                    .setSeekableByteChannel(channel)
-                    .setMaxMemoryLimitKiB(defaultConfig.getMemoryLimitInKb());
-            if (password == null) {
-                sevenZFile = builder.get();
-            } else {
-                sevenZFile = builder.setPassword(password.toCharArray()).get();
-            }
-        } catch (PasswordRequiredException e) {
-            channel.close();
-            throw new EncryptedDocumentException(e);
-        } catch (MemoryLimitException e) {
-            // The limit can be exceeded at open time (assertValidity) as well as lazily on the
-            // first getNextEntry() when the LZMA/LZMA2 dictionary is allocated.
-            channel.close();
-            throw new TikaMemoryLimitException(e.getMessage());
-        } catch (IOException | RuntimeException e) {
-            // commons-compress throws unchecked exceptions on corrupt headers
-            channel.close();
-            throw e;
-        }
-
         metadata.set(HttpHeaders.CONTENT_TYPE, SEVENZ.toString());
 
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
-        xhtml.startDocument();
 
+        // SevenZFile.close() closes the channel it was built on; until it exists the channel
+        // is ours to close, and the SAX document is not started until the archive opened
+        SeekableByteChannel channel = tis.getSeekableByteChannel();
+        SevenZFile sevenZFile = null;
+        boolean started = false;
         try {
+            // Use setMaxMemoryLimitKiB (direct KiB); setMaxMemoryLimitKb divides the arg by 1024.
+            SevenZFile.Builder builder = new SevenZFile.Builder()
+                    .setSeekableByteChannel(channel)
+                    .setMaxMemoryLimitKiB(defaultConfig.getMemoryLimitInKb());
+            sevenZFile = password == null ? builder.get()
+                    : builder.setPassword(password.toCharArray()).get();
+            xhtml.startDocument();
+            started = true;
             SevenZArchiveEntry entry = sevenZFile.getNextEntry();
             while (entry != null) {
                 if (!entry.isDirectory()) {
@@ -159,10 +144,17 @@ public class SevenZParser extends AbstractArchiveParser {
         } catch (PasswordRequiredException e) {
             throw new EncryptedDocumentException(e);
         } catch (MemoryLimitException e) {
+            // at open time (assertValidity) or lazily on the first getNextEntry()
             throw new TikaMemoryLimitException(e.getMessage());
         } finally {
-            sevenZFile.close();
-            xhtml.endDocument();
+            if (sevenZFile != null) {
+                sevenZFile.close();
+            } else {
+                channel.close();
+            }
+            if (started) {
+                xhtml.endDocument();
+            }
         }
     }
 

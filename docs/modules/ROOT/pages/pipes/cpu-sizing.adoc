@@ -59,12 +59,12 @@ PARENT_RESERVED_CORES = 2
 MIN_AUTO_CAP_SLICE    = 2
 ----
 
-If `slice ≥ 2`, Tika injects `-XX:ActiveProcessorCount=<slice>` into each
-forked JVM. If `slice < 2`, the auto-cap is *skipped* and a `WARN` is
-logged advising the operator to lower `numClients`. Skipping is intentional:
-at `slice=1` the fork's only CPU is fully consumed by parsing, so its
-socket-reader thread cannot run and the parent's writes block on
-receiver-side back-pressure — measurably worse than no cap at all.
+Tika injects `-XX:ActiveProcessorCount=<slice>` into each forked JVM. A fair
+share below 2 is clamped to 2 rather than left uncapped: at `slice=1` the
+fork's only CPU is fully consumed by parsing, so its socket-reader thread
+cannot run, and with no cap at all every fork sizes its GC and JIT pools for
+the whole host. The clamp is logged as `slice=2 (clamped; fair share would be
+N)`, and with more than one client a `WARN` advises lowering `numClients`.
 
 == Recommended sizing
 
@@ -74,14 +74,14 @@ For typical cloud-VM core counts:
 |===
 |hostCores |numClients |slice |Notes
 
-|2  |1 |1 → skipped |Tight; auto-cap declines. Acceptable for low throughput.
+|2  |1 |1 → 2 (clamped) |Tight. Acceptable for low throughput.
 |4  |1 |2      |Comfortable single-fork deployment.
-|4  |2 |1 → skipped |Auto-cap declines; consider `numClients=1`.
+|4  |2 |1 → 2 (clamped) |Over-provisioned; consider `numClients=1`.
 |8  |1 |6      |Lots of headroom; single-fork lifecycle isolation is fine.
 |8  |3 |2      |Sweet spot for medium pods.
 |16 |4 |3      |Sweet spot for 16-core hosts. Measured winner in benchmarks.
 |16 |6 |2      |Higher concurrency; tighter per-fork breathing room.
-|16 |8 |1 → skipped |Doesn't fit 16 cores. Keep at 4 or 6.
+|16 |8 |1 → 2 (clamped) |Doesn't fit 16 cores. Keep at 4 or 6.
 |32 |8 |3      |Same shape as 16/4.
 |===
 
@@ -122,7 +122,7 @@ INFO  pipes-cpu-sizing: hostCores=16, numClients=4, parentReserved=2, autoCap=sl
 The `autoCap` field is one of:
 
 * `slice=N` — the auto-cap fired; each fork sees N CPUs.
-* `skipped (slice<2)` — over-provisioned; operator should reduce `numClients`.
+* `slice=2 (clamped; fair share would be N)` — over-provisioned; reduce `numClients`.
 * `user-set in forkedJvmArgs` — operator set `-XX:ActiveProcessorCount` themselves.
 
 Two `WARN`-level messages call out clearly-bad provisioning:

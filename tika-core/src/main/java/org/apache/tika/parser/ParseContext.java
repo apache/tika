@@ -142,14 +142,19 @@ public class ParseContext implements Serializable {
      * @since Apache Tika 4.0
      */
     public void setJsonConfig(String name, String json) {
-        setJsonConfig(name, json != null ? new StringJsonConfig(json) : null);
+        setJsonConfig(name, json, false);
+    }
+
+    /** {@code trusted}: operator-authored (config file, presets), never per-request input. */
+    public void setJsonConfig(String name, String json, boolean trusted) {
+        setJsonConfig(name, json != null ? new StringJsonConfig(json, trusted) : null);
     }
 
     /**
      * A simple Serializable implementation of JsonConfig that holds a JSON string.
      * This is used internally to ensure JSON configs can be serialized via Java serialization.
      */
-    private record StringJsonConfig(String json) implements JsonConfig, Serializable {
+    private record StringJsonConfig(String json, boolean trusted) implements JsonConfig, Serializable {
         private static final long serialVersionUID = 1L;
     }
 

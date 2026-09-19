@@ -16,13 +16,13 @@
  */
 package org.apache.tika.extractor.microsoft;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.CloseShieldOutputStream;
-import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
 import org.apache.poi.poifs.filesystem.DirectoryEntry;
 import org.apache.poi.poifs.filesystem.DocumentEntry;
 import org.apache.poi.poifs.filesystem.DocumentInputStream;
@@ -58,13 +58,11 @@ public class MSEmbeddedStreamTranslator implements EmbeddedStreamTranslator {
     public void translate(TikaInputStream tis, Metadata metadata, OutputStream os) throws IOException {
         String contentType = metadata.get(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE);
         if ("application/vnd.openxmlformats-officedocument.oleObject".equals(contentType)) {
-            UnsynchronizedByteArrayOutputStream bos = UnsynchronizedByteArrayOutputStream.builder().get();
-            IOUtils.copy(tis, bos);
-            POIFSFileSystem poifs = new POIFSFileSystem(bos.toInputStream());
+            byte[] data = IOUtils.toByteArray(tis);
+            POIFSFileSystem poifs = new POIFSFileSystem(new ByteArrayInputStream(data));
             OfficeParser.POIFSDocumentType type = OfficeParser.POIFSDocumentType.detectType(poifs);
             String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
 
-            byte[] data = bos.toByteArray();
             if (type == OfficeParser.POIFSDocumentType.OLE10_NATIVE) {
                 try {
                     Ole10Native ole = Ole10Native.createFromEmbeddedOleObject(poifs);

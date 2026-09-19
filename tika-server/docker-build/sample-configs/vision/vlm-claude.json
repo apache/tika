@@ -9,7 +9,7 @@
   "engines": {
     "claude": {
       "claude-vlm-parser": {
-        "apiKey": "${ANTHROPIC_API_KEY}",
+        "apiKey": "${env:ANTHROPIC_API_KEY}",
         "model": "claude-sonnet-4-20250514"
       }
     }

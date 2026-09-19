@@ -25,6 +25,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 
 /**
  * Package-private cache that stores bytes in memory up to a threshold,
@@ -57,6 +58,10 @@ class StreamCache implements Closeable {
     private Path spillFile;
     // one long-lived read handle; opening per read cost ~37x on byte-at-a-time readers
     private RandomAccessFile reader;
+    // a window over the spill file: byte-at-a-time readers otherwise pay a seek and a read each
+    private final byte[] window = new byte[8192];
+    private long windowStart = -1;
+    private int windowLength;
     private OutputStream spillOutputStream;
     private long totalSize;
 
@@ -217,12 +222,18 @@ class StreamCache implements Closeable {
 
         if (memoryBuffer != null) {
             return memoryBuffer[(int) position] & 0xFF;
-        } else {
+        }
+        if (position < windowStart || position >= windowStart + windowLength) {
             flushSpillStream();
             RandomAccessFile raf = reader();
             raf.seek(position);
-            return raf.read();
+            windowLength = Math.max(0, raf.read(window, 0, window.length));
+            windowStart = position;
+            if (windowLength == 0) {
+                return -1;
+            }
         }
+        return window[(int) (position - windowStart)] & 0xFF;
     }
 
     /**
@@ -241,11 +252,27 @@ class StreamCache implements Closeable {
         if (memoryBuffer != null) {
             System.arraycopy(memoryBuffer, (int) position, b, off, available);
             return available;
-        } else {
-            flushSpillStream();
-            RandomAccessFile raf = reader();
-            raf.seek(position);
-            return raf.read(b, off, available);
+        }
+        if (position >= windowStart && position + available <= windowStart + windowLength) {
+            System.arraycopy(window, (int) (position - windowStart), b, off, available);
+            return available;
+        }
+        flushSpillStream();
+        RandomAccessFile raf = reader();
+        raf.seek(position);
+        return raf.read(b, off, available);
+    }
+
+    /** The drain is complete: give the doubling slack back to the budget. */
+    void trim() {
+        if (memoryBuffer == null || memoryBuffer.length - memorySize <= 8192) {
+            return;
+        }
+        memoryBuffer = Arrays.copyOf(memoryBuffer, Math.max(memorySize, 1));
+        long target = Math.max(0, (long) memoryBuffer.length - memoryThreshold);
+        if (budget != null && reserved > target) {
+            budget.release(reserved - target);
+            reserved = target;
         }
     }
 
@@ -343,16 +370,11 @@ class StreamCache implements Closeable {
         closed = true;
         memoryBuffer = null;
         maybeReleaseReserved();
-
-        if (spillOutputStream != null) {
-            spillOutputStream.close();
-            spillOutputStream = null;
-        }
-        if (reader != null) {
-            reader.close();
-            reader = null;
-        }
-        // spillFile cleanup is handled by TemporaryResources
+        OutputStream out = spillOutputStream;
+        RandomAccessFile raf = reader;
+        spillOutputStream = null;
+        reader = null;
+        TemporaryResources.closeAll(out, raf);   // both, even if one throws; file deletion is tmp's
     }
 
     /**

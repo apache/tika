@@ -42,6 +42,15 @@ import org.apache.tika.sax.BodyContentHandler;
 
 public class OpenAIVLMParserTest {
 
+    @Test
+    public void testSetMaxRetriesReachesTheClient() throws Exception {
+        OpenAIVLMParser parser = new OpenAIVLMParser();
+        assertEquals(4, parser.httpClient().getMaxRetries());
+        parser.setMaxRetries(0);
+        assertEquals(0, parser.httpClient().getMaxRetries());
+    }
+
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private TikaTestHttpServer server;

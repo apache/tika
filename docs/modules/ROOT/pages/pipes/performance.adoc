@@ -241,11 +241,10 @@ outputs on the same pair of spindles. The corpus is far larger than RAM, so
 every run is effectively cold-cache. The configuration we settled on:
 
 * **Per-client mode, `numClients = 7`.** Tika auto-injects
-  `-XX:ActiveProcessorCount` per fork as `(cores − 2) / numClients` but only
-  when that slice is at least 2. On 16 logical cores, 8 workers give 1.75 and
-  the cap is *skipped* — eight JVMs each sizing GC and JIT for 16 cores, which
-  is what the 7.5 h run did. Seven workers get 2 cores each and the cap
-  applies. Per-client cost about 7% versus shared-server here (29.0 min vs
+  `-XX:ActiveProcessorCount` per fork as `(cores − 2) / numClients`, clamped
+  at 2. Before 4.1.0 a share below 2 switched the cap off: on 16 logical
+  cores, 8 workers gave 1.75 and eight JVMs each sized GC and JIT for 16
+  cores, which is what the 7.5 h run did. Seven workers get 2 cores each. Per-client cost about 7% versus shared-server here (29.0 min vs
   27.2 min in the controlled study above)
   and dropped no files, where the shared worker loses the in-flight documents
   of every other client when one document crashes it.
@@ -271,8 +270,8 @@ box:
   cache (or use a subset you have not touched) and write outputs to the real
   destination. Warm-cache runs with outputs on tmpfs hid this entire problem
   from us for weeks.
-* **Does your `numClients` trip the cap skip?** Check the startup log for the
-  `ActiveProcessorCount` decision; if it reports `skipped`, lower
+* **Is your `numClients` over-provisioned?** Check the startup log for the
+  `ActiveProcessorCount` decision; if it reports `clamped`, lower
   `numClients` or set the cap yourself in `forkedJvmArgs`.
 
 Beyond those: fix concurrency equal to the worker count when comparing, exclude

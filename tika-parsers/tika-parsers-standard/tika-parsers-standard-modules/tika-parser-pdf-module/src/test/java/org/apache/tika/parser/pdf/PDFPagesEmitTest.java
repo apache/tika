@@ -368,6 +368,47 @@ public class PDFPagesEmitTest extends TikaTest {
                     () -> parser.parse(tis, new ToXMLContentHandler(), metadata, context));
         }
         assertEquals(2, calls[0], "once per page: OCR asked, emission did not ask again");
+        assertEquals(2, metadata.getValues(Rendering.RENDER_FAILED_PAGE).length,
+                "one failure per page, none re-recorded after the parse threw");
+    }
+
+    /** A page whose render already failed is not rendered again when the writer then dies on it. */
+    @Test
+    public void testFailedPageIsNotRetriedWhenTheWriterDies() throws Exception {
+        PDFParserConfig config = emitting();
+        config.pages().setText(TextPolicy.EXTRACT_AND_OCR);
+        int[] calls = new int[1];
+        PDFParser parser = new PDFParser();
+        parser.setRenderer(new PDFBoxRenderer() {
+            @Override
+            public RenderResults render(TikaInputStream tis, Metadata metadata,
+                                        ParseContext parseContext, RenderRequest... requests)
+                    throws IOException {
+                calls[0]++;
+                throw new IOException("engine down");
+            }
+        });
+        parser.setContentEnrichers(new CompositeContentEnricher(List.of(new ImageSink())));
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new AutoDetectParser(new ImageSink()));
+        Metadata metadata = new Metadata();
+        ContentHandler dying = new ToXMLContentHandler() {
+            int pageDivs = 0;
+            @Override
+            public void endElement(String uri, String localName, String qName) throws SAXException {
+                super.endElement(uri, localName, qName);
+                if ("div".equals(localName) && ++pageDivs == 2) {
+                    throw new SAXException("writer died on page 2");
+                }
+            }
+        };
+        try (TikaInputStream tis = TikaInputStream.get(
+                getResourceAsStream("/test-documents/" + TWO_PAGES))) {
+            assertThrows(Exception.class, () -> parser.parse(tis, dying, metadata, context));
+        }
+        assertEquals(2, calls[0], "page 2's failed render is not attempted again");
+        assertEquals(2, metadata.getValues(Rendering.RENDER_FAILED_PAGE).length);
     }
 
     /**

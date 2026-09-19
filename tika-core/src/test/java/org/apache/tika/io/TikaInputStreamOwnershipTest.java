@@ -17,6 +17,7 @@
 package org.apache.tika.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -140,21 +141,19 @@ public class TikaInputStreamOwnershipTest {
     }
 
     @Test
-    public void aPinnedChannelOutlivesTmpAndReleasesOnClose() throws Exception {
+    public void aPinnedChannelClosesWithTmp() throws Exception {
         CacheMemoryBudget budget = budget();
         TemporaryResources tmp = new TemporaryResources();
         TikaInputStream tis = reopenable(data(BIG), tmp);
         tis.enableRewind(budget);
         SeekableByteChannel channel = tis.getSeekableByteChannel();
-        long reserved = budget.getReservedBytes();
-        assertTrue(reserved > 0);
+        assertTrue(budget.getReservedBytes() > 0);
 
-        tmp.close();
+        tmp.close();   // the scope ends without the channel being closed
 
-        assertEquals(reserved, budget.getReservedBytes(),
-                "a handed-out channel still pins the array; nothing is released under it");
-        assertEquals(BIG, channel.size());
+        assertFalse(channel.isOpen(), "the channel is tmp's to close");
+        assertEquals(0, budget.getReservedBytes(), "and its pin is released");
         channel.close();
-        assertEquals(0, budget.getReservedBytes(), "the last pin releases the reservation");
+        assertEquals(0, budget.getReservedBytes(), "never released twice");
     }
 }

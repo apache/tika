@@ -34,6 +34,7 @@ import org.gagravarr.skeleton.SkeletonPacketFactory;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -76,7 +77,10 @@ public class OggDetector implements Detector {
 
         // We could potentially need to go a long way through the
         // file in order to figure out what it is
-        tis.mark((int)tis.getLength() + 1);
+        // rewind-enabled, the mark is a position in a cache that spills past its budget,
+        // not a buffer sized by a limit; the limit itself is never taken from the length
+        tis.enableRewind(parseContext == null ? null : parseContext.get(CacheMemoryBudget.class));
+        tis.mark(Integer.MAX_VALUE);
 
         try {
             // Open the Ogg file - underlying stream stays open as detecting only

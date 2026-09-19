@@ -282,8 +282,13 @@ stops the server at startup rather than reaching a service as an empty key. A li
 before.
 
 The forked parse workers of tika-server and Pipes inherit the parent's environment and read the same
-config file, so a reference resolves there too. Per-request configuration (`/config` endpoints,
-presets, pipes tuples) is never interpolated: a request cannot read the server's environment.
+config file, so a reference resolves there too. Presets written inline in the config file resolve
+at startup with the rest of it; catalog presets and per-request configuration (`/config`
+endpoints, pipes tuples) never do: a request cannot read the server's environment.
+
+A reference keeps a secret out of tika-config.json, not out of every file: with a persistent
+config store (`configStoreType` `file` or Ignite) the resolved fetcher and emitter configurations
+are written to that store. The default in-memory store writes nothing.
 
 == Windows file paths
 
