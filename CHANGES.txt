@@ -3,7 +3,7 @@ Release 4.1.0 - unreleased
    * Apple Mail emlx files are detected as message/x-emlx (real files pad the
      byte-count line to 10 columns and were falling through to text/html or
      message/rfc822), and RFC822Parser now parses them, dropping the byte-count
-     line and the trailing plist (TIKA-4890).
+     line and, when the count is intact, the trailing plist (TIKA-4890).
 
    * The tika-server UAT gains an inference pass (TIKA-4913).
      
