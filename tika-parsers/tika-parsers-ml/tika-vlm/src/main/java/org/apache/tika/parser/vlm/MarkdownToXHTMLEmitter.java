@@ -243,8 +243,13 @@ class MarkdownToXHTMLEmitter {
         @Override
         public void visit(HtmlBlock htmlBlock) {
             Element body = Jsoup.parseBodyFragment(htmlBlock.getLiteral()).body();
+            org.jsoup.nodes.Node previous = null;
             for (org.jsoup.nodes.Node child : body.childNodes()) {
+                if (previous instanceof TextNode && child instanceof TextNode) {
+                    characters(" ");   // orphaned cells: jsoup dropped the tags between them
+                }
                 emitHtml(child, false);
+                previous = child;
             }
         }
 
@@ -274,6 +279,8 @@ class MarkdownToXHTMLEmitter {
             }
             if (emit) {
                 endElement(tag);
+            } else if (((Element) node).isBlock()) {
+                characters(" ");   // a dropped block still separates its text from the next
             }
         }
 

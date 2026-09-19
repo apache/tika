@@ -19,15 +19,22 @@ package org.apache.tika.parser.pkg;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 import java.util.List;
 
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.ar.ArArchiveEntry;
+import org.apache.commons.compress.archivers.ar.ArArchiveOutputStream;
+import org.apache.commons.compress.archivers.cpio.CpioArchiveEntry;
+import org.apache.commons.compress.archivers.cpio.CpioArchiveOutputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import org.apache.tika.digest.DigesterFactory;
 import org.apache.tika.digest.InputStreamDigester;
@@ -47,41 +54,64 @@ public class PackageEmbeddedBudgetTest extends AbstractPkgTest {
     @TempDir
     Path tmp;
 
+    private static byte[] entry(int i) {
+        byte[] data = new byte[2 * 1024 * 1024];
+        for (int j = 0; j < data.length; j++) {
+            data[j] = (byte) ('a' + (j + i) % 26);
+        }
+        return data;
+    }
+
     /** Three entries over the 1 MB StreamCache threshold, so each one reserves budget. */
-    private Path buildTar() throws Exception {
-        Path tar = tmp.resolve("entries.tar");
-        try (TarArchiveOutputStream out =
-                     new TarArchiveOutputStream(Files.newOutputStream(tar))) {
+    private Path build(String ext) throws Exception {
+        Path archive = tmp.resolve("entries." + ext);
+        try (OutputStream os = Files.newOutputStream(archive);
+             ArchiveOutputStream<?> out = switch (ext) {
+                 case "tar" -> new TarArchiveOutputStream(os);
+                 case "cpio" -> new CpioArchiveOutputStream(os);
+                 case "ar" -> new ArArchiveOutputStream(os);
+                 default -> throw new IllegalArgumentException(ext);
+             }) {
             for (int i = 0; i < 3; i++) {
-                byte[] data = new byte[2 * 1024 * 1024];
-                for (int j = 0; j < data.length; j++) {
-                    data[j] = (byte) ('a' + (j + i) % 26);
+                byte[] data = entry(i);
+                String name = "entry-" + i + ".txt";
+                switch (ext) {
+                    case "tar" -> {
+                        TarArchiveEntry e = new TarArchiveEntry(name);
+                        e.setSize(data.length);
+                        ((TarArchiveOutputStream) out).putArchiveEntry(e);
+                    }
+                    case "cpio" -> {
+                        CpioArchiveEntry e = new CpioArchiveEntry(name);
+                        e.setSize(data.length);
+                        ((CpioArchiveOutputStream) out).putArchiveEntry(e);
+                    }
+                    default -> ((ArArchiveOutputStream) out)
+                            .putArchiveEntry(new ArArchiveEntry(name, data.length));
                 }
-                TarArchiveEntry entry = new TarArchiveEntry("entry-" + i + ".txt");
-                entry.setSize(data.length);
-                out.putArchiveEntry(entry);
                 out.write(data);
                 out.closeArchiveEntry();
             }
         }
-        return tar;
+        return archive;
     }
 
-    @Test
-    public void budgetIsReleasedAfterEachEntry() throws Exception {
+    @ParameterizedTest
+    @ValueSource(strings = {"tar", "cpio", "ar"})
+    public void budgetIsReleasedAfterEachEntry(String ext) throws Exception {
         CacheMemoryBudget budget = new CacheMemoryBudget(64L * 1024 * 1024);
         ParseContext context = new ParseContext();
         context.set(DigesterFactory.class, () -> new InputStreamDigester("MD5", "tk:digest:MD5",
                 bytes -> Base64.getEncoder().encodeToString(bytes)));
         context.set(CacheMemoryBudget.class, budget);
 
-        List<Metadata> metadataList = getRecursiveMetadata(buildTar(), context, false);
+        List<Metadata> metadataList = getRecursiveMetadata(build(ext), context, false);
 
-        assertEquals(4, metadataList.size(), "container plus three entries");
+        assertEquals(4, metadataList.size(), ext + ": container plus three entries");
         for (int i = 1; i < metadataList.size(); i++) {
-            assertNotNull(metadataList.get(i).get("tk:digest:MD5"), "entry " + i + " digested");
+            assertNotNull(metadataList.get(i).get("tk:digest:MD5"), ext + " entry " + i + " digested");
         }
         assertEquals(0, budget.getReservedBytes(),
-                "every entry's in-memory cache must return its reservation on close");
+                ext + ": every entry's in-memory cache must return its reservation on close");
     }
 }

@@ -95,7 +95,14 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
 
     protected AbstractVLMParser(VLMOCRConfig config) {
         this.defaultConfig = config;
-        this.httpClient = buildHttpClient();
+    }
+
+    /** Built on first use, so the setters that feed it have run. */
+    synchronized TikaHttpClient httpClient() {
+        if (httpClient == null) {
+            httpClient = buildHttpClient();
+        }
+        return httpClient;
     }
 
     // ---- abstract contract for subclasses ---------------------------------
@@ -220,7 +227,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
 
         String responseText;
         try {
-            String responseBody = httpClient.postJson(
+            String responseBody = httpClient().postJson(
                     call.url(), call.json(), call.headers(), config.getTimeoutMillis(), parseContext);
             responseText = extractResponseText(responseBody, metadata);
             ParseTimeout.checkpoint(parseContext);
@@ -244,9 +251,6 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
 
     @Override
     public void initialize() throws TikaConfigException {
-        if (httpClient == null) {
-            httpClient = buildHttpClient();
-        }
         String healthUrl = getHealthCheckUrl(defaultConfig);
         if (healthUrl == null) {
             // No health check configured (e.g. Claude) — assume available
@@ -257,7 +261,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
             Map<String, String> healthHeaders = defaultConfig.getApiKey() != null
                     ? Map.of("Authorization", "Bearer " + defaultConfig.getApiKey())
                     : Map.of();
-            httpClient.get(healthUrl, healthHeaders, defaultConfig.getTimeoutMillis());
+            httpClient().get(healthUrl, healthHeaders, defaultConfig.getTimeoutMillis());
             serverAvailable = true;
             LOG.info("VLM server is available at {}", defaultConfig.getBaseUrl());
         } catch (TikaException e) {
@@ -430,8 +434,12 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
     }
 
     /** Retries of a 429/502/503/504 answer from the service; 0 fails at once. */
-    public void setMaxRetries(int maxRetries) {
+    public synchronized void setMaxRetries(int maxRetries) throws IOException {
         defaultConfig.setMaxRetries(maxRetries);
+        if (httpClient != null) {
+            httpClient.close();
+            httpClient = null;
+        }
     }
 
     public String getApiKey() {

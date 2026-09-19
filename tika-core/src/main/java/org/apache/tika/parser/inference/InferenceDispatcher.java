@@ -170,14 +170,15 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
             if (!runs(binding, context) || !binding.accepts(kind, type, target)) {
                 continue;
             }
-            // a media unit is the whole file; its maxBytes bounds one segment, in the task
+            // a media unit is the whole file; maxBytes and maxChunks bound its segments, in the task
             if (kind != InputKind.MEDIA && binding.getMaxBytes() >= 0 && size > binding.getMaxBytes()) {
                 state.dropped.merge(binding.getId() + " over maxBytes", 1, Integer::sum);
                 continue;
             }
             List<InferenceUnit> units = state.byBinding.computeIfAbsent(binding.getId(),
                     k -> new ArrayList<>());
-            if (binding.getMaxChunks() >= 0 && units.size() >= binding.getMaxChunks()) {
+            if (kind != InputKind.MEDIA && binding.getMaxChunks() >= 0
+                    && units.size() >= binding.getMaxChunks()) {
                 state.dropped.merge(binding.getId() + " over maxChunks", 1, Integer::sum);
                 continue;
             }

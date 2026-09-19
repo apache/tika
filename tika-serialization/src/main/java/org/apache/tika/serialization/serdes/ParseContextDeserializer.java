@@ -116,7 +116,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             JsonNode value = contextNode.get(name);
             checkForDuplicateContextKey(name, seenContextKeys);
             // Store as a lazy JSON config (plain mapper: the main one may be binary/Smile).
-            parseContext.setJsonConfig(name, plainMapper().writeValueAsString(value));
+            parseContext.setJsonConfig(name, plainMapper().writeValueAsString(value), !restricted);
         }
 
         return parseContext;

@@ -304,23 +304,20 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
         }
     }
 
-    private TesseractOCRConfig getConfig(ParseContext parseContext) throws TikaConfigException, IOException {
-        // Check for JSON config with component-specific runtime config
+    TesseractOCRConfig getConfig(ParseContext parseContext) throws TikaConfigException, IOException {
         if (parseContext.hasJsonConfig("tesseract-ocr-parser")) {
-            // First validate that no paths are being set by deserializing into RuntimeConfig
-            // The RuntimeConfig setters will throw TikaConfigException if JSON contains path fields
-            TesseractOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
-                    parseContext,
-                    "tesseract-ocr-parser",
-                    TesseractOCRConfig.RuntimeConfig.class,
-                    new TesseractOCRConfig.RuntimeConfig());
-
-            // Short-circuit if skipOcr is set
-            if (runtimeConfig.isSkipOcr()) {
-                return runtimeConfig;
+            // per-request JSON is screened by RuntimeConfig (no paths, no otherTesseractConfig);
+            // operator JSON (config file, presets) is not
+            if (!parseContext.getJsonConfig("tesseract-ocr-parser").trusted()) {
+                TesseractOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
+                        parseContext,
+                        "tesseract-ocr-parser",
+                        TesseractOCRConfig.RuntimeConfig.class,
+                        new TesseractOCRConfig.RuntimeConfig());
+                if (runtimeConfig.isSkipOcr()) {
+                    return runtimeConfig;
+                }
             }
-
-            // Now merge with defaultConfig using the base class
             return ParseContextConfig.getConfig(
                     parseContext,
                     "tesseract-ocr-parser",

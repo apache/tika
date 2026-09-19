@@ -300,17 +300,23 @@ if [[ -n "$INFERENCE" ]]; then
 
   # T44: per-request switches (allowPerRequestConfig is on in the UAT config): the
   # recognizer off removes the OCR text; a bindings subset runs only that binding.
-  OFF=$(curl -s -X POST -F "file=@$OCRPNG" \
+  OFF=$(curl -s -o /tmp/uat-t44.out -w '%{http_code}' -X POST -F "file=@$OCRPNG" \
         -F 'config={"parse-context":{"text-recognizers":{"enabled":false}}}' "$BASE/tika/config/text")
-  if printf '%s' "$OFF" | grep -qF "The quick brown fox"; then
+  if [[ "$OFF" != "200" ]]; then
+    bad "T44 text-recognizers.enabled=false per request" "HTTP 200" "HTTP $OFF"
+  elif grep -qF "The quick brown fox" /tmp/uat-t44.out; then
     bad "T44 text-recognizers.enabled=false per request" "no OCR text" "OCR text present"
   else
     ok "T44 text-recognizers.enabled=false per request"
   fi
-  SUBSET=$(curl -s -X POST -F "file=@$OCRPNG" \
+  SUBSET_CODE=$(curl -s -o /tmp/uat-t45.out -w '%{http_code}' -X POST -F "file=@$OCRPNG" \
         -F 'config={"parse-context":{"inference":{"bindings":["text"]}}}' \
         -H 'Accept: application/json' "$BASE/rmeta/config")
-  if printf '%s' "$SUBSET" | grep -qF '\"producer\":\"pictures\"'; then
+  if [[ "$SUBSET_CODE" != "200" ]]; then
+    bad "T45 inference.bindings subset per request" "HTTP 200" "HTTP $SUBSET_CODE"
+  elif ! grep -qF '\"producer\":\"text\"' /tmp/uat-t45.out; then
+    bad "T45 inference.bindings subset per request" "text chunk present" "no text chunk"
+  elif grep -qF '\"producer\":\"pictures\"' /tmp/uat-t45.out; then
     bad "T45 inference.bindings subset per request" "no pictures chunk" "pictures binding ran"
   else
     ok "T45 inference.bindings subset per request"
@@ -329,6 +335,8 @@ if [[ -n "$INFERENCE" ]]; then
     else
       skip "T46 MEDIA bindings -- no segment vectors (ffmpeg not available on server)"
     fi
+  elif [[ "${TIKA_UAT_REQUIRE_MEDIA:-}" == "1" ]]; then
+    bad "T46 MEDIA bindings" "$VIDEO present (TIKA_UAT_REQUIRE_MEDIA=1)" "missing"
   else
     skip "T46 MEDIA bindings -- $VIDEO missing"
   fi

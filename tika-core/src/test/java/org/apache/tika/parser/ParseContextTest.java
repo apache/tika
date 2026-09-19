@@ -17,12 +17,28 @@
 package org.apache.tika.parser;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
 public class ParseContextTest {
+
+    @Test
+    public void testJsonConfigTrustSurvivesCopy() {
+        ParseContext operator = new ParseContext();
+        operator.setJsonConfig("x", "{}", true);
+        ParseContext request = new ParseContext();
+        request.setJsonConfig("y", "{}");
+        ParseContext merged = new ParseContext();
+        merged.copyFrom(operator);
+        merged.copyFrom(request);
+        assertTrue(merged.getJsonConfig("x").trusted());
+        assertFalse(merged.getJsonConfig("y").trusted());
+    }
+
 
     @Test
     public void testCopyFromInvalidatesStaleResolvedConfigs() {

@@ -300,8 +300,8 @@ change with the aliases: page renders are emitted at the end of each page whiche
 and a page the parser does not read (`maxPages`) is not rendered. Two floors are new: a page
 narrower or shorter than 2 pixels at the target dpi is not rendered, and an image under 2 x 2
 pixels reaches no text recognizer or inference binding (`pages.render.minWidth`/`minHeight`,
-`_min-width`/`_min-height` on a recognizer entry, `minWidth`/`minHeight` on a binding; 0 restores
-4.0). A per-request `ocr` block now changes only the fields it names (4.0 replaced the whole
+`_min-width`/`_min-height` on a recognizer entry, `minWidth`/`minHeight` on a binding). A binding's
+`minWidth: 0` restores 4.0; the 2-pixel floor before the recognizers stays whatever the entry says. A per-request `ocr` block now changes only the fields it names (4.0 replaced the whole
 block). In Java, `PDFParserConfig.getOcr()` and `getImageStrategy()` are gone: `getPages()` is
 the overlay, the aliases write to it, the deprecated setters stay.
 

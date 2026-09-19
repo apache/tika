@@ -72,7 +72,7 @@ jobs:
           key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-${{ runner.os }}-
       - name: Install external tools
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg libimage-exiftool-perl
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg libimage-exiftool-perl tesseract-ocr
       # Everything except $IT_MODULES, which the integration-tests job owns.
       # sed turns each ':artifactId' into the '!:artifactId' exclusion form.
       # rat runs in its own SERIAL invocation: apache-rat-plugin 0.18 is not

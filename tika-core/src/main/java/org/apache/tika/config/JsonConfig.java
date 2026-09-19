@@ -35,4 +35,9 @@ public interface JsonConfig {
      * @return the JSON configuration
      */
     String json();
+
+    /** Operator-authored (config file, presets), as opposed to per-request input. */
+    default boolean trusted() {
+        return false;
+    }
 }

@@ -56,6 +56,17 @@ public class Tess4JConfigTest {
     }
 
     @Test
+    public void testScriptModelsByBareName() {
+        Tess4JConfig config = new Tess4JConfig();
+        for (String ok : new String[]{"Latin", "eng+Latin", "script/Latin", "Japanese_vert"}) {
+            config.setLanguage(ok);
+            assertEquals(ok, config.getLanguage());
+        }
+        assertThrows(IllegalArgumentException.class, () -> config.setLanguage("latin1"));
+        assertThrows(IllegalArgumentException.class, () -> config.setLanguage("script/"));
+    }
+
+    @Test
     public void testSetLanguageLeadingPlus() {
         Tess4JConfig config = new Tess4JConfig();
         assertThrows(IllegalArgumentException.class, () -> config.setLanguage("+eng"));

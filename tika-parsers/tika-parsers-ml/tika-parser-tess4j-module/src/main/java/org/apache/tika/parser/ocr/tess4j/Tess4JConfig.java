@@ -294,7 +294,7 @@ public class Tess4JConfig implements Serializable {
         final String[] langs = language.split("\\+");
         for (String lang : langs) {
             if (!lang.matches(
-                    "([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
+                    "([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|(script(/|\\\\))?[A-Z][a-zA-Z_]+")) {
                 invalidLangs.add(lang + " (invalid syntax)");
             } else {
                 validLangs.add(lang);
