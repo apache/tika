@@ -586,6 +586,26 @@ public class InferenceDispatcherTest {
     }
 
     @Test
+    public void testMediaUnitsAreBoundedPerTree() throws Exception {
+        RecordingTask task = new RecordingTask();
+        InferenceDispatcher dispatcher = new InferenceDispatcher(List.of(
+                new InferenceDispatcher.Bound(InferenceBinding.builder("v", "engine",
+                        InputKind.MEDIA).modality(Modality.AUDIO).build(),
+                        new RecordingEngine(), List.of(task))));
+        ParseContext context = new ParseContext();
+        MediaType mp3 = MediaType.audio("mpeg");
+        Path clip = file("clip");
+        for (int i = 0; i < InferenceDispatcher.MAX_MEDIA_UNITS + 5; i++) {
+            dispatcher.offer(mp3, new Metadata(), new Metadata(), clip, context);
+        }
+        Metadata root = new Metadata();
+        dispatcher.flush(root, context);
+        assertEquals(InferenceDispatcher.MAX_MEDIA_UNITS, task.runs.get(0).size());
+        assertTrue(String.join(" ", root.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .contains("media files"), "the drop is reported on the root");
+    }
+
+    @Test
     public void testMediaConfigValidation() throws Exception {
         MediaConfig config = new MediaConfig();
         config.initialize();

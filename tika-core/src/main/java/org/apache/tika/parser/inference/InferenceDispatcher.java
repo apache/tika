@@ -63,6 +63,7 @@ import org.apache.tika.parser.hook.ParseHooks;
  */
 public final class InferenceDispatcher implements ParseHook, TransientParseState {
 
+    static final int MAX_MEDIA_UNITS = 1000;
     private static final Logger LOG = LoggerFactory.getLogger(InferenceDispatcher.class);
     private static final InferenceSelection ALL = new InferenceSelection();
 
@@ -180,6 +181,12 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
             if (kind != InputKind.MEDIA && binding.getMaxChunks() >= 0
                     && units.size() >= binding.getMaxChunks()) {
                 state.dropped.merge(binding.getId() + " over maxChunks", 1, Integer::sum);
+                continue;
+            }
+            // a media unit is a held copy of a whole file; bound how many one tree may hold
+            if (kind == InputKind.MEDIA && units.size() >= MAX_MEDIA_UNITS) {
+                state.dropped.merge(binding.getId() + " over " + MAX_MEDIA_UNITS + " media files",
+                        1, Integer::sum);
                 continue;
             }
             if (unit == null) {
