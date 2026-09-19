@@ -17,12 +17,14 @@
 package org.apache.tika.io;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 
 /**
@@ -83,6 +85,40 @@ public class ReopenableSourceMarkResetTest {
             tis.reset();
             assertEquals(2, opens.get(), "beyond the 1 MB cap a reset re-opens rather than buffer");
             assertEquals(data[1] & 0xff, tis.read());
+        }
+    }
+
+    /** Copilot's finding on #3209: retention replaces the open stream; a mark taken before it
+     *  must not be served by the replacement stream's own default mark. */
+    @Test
+    public void resetAfterRetentionLandsOnTheMark() throws Exception {
+        byte[] data = data(64 * 1024);
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Integer.toString(data.length));
+        try (TikaInputStream tis = TikaInputStream.get(() -> new ByteArrayInputStream(data),
+                new TemporaryResources(), metadata)) {
+            tis.readNBytes(new byte[100], 0, 100);
+            tis.mark(1000);
+            tis.readNBytes(new byte[400], 0, 400);
+            assertTrue(tis.tryRetainInMemory(), "64 KB is retained without a budget");
+            tis.reset();
+            assertEquals(data[100] & 0xff, tis.read(), "reset lands on the mark, not where retention happened");
+        }
+    }
+
+    @Test
+    public void markBeforeAnyReadDoesNotReopen() throws Exception {
+        byte[] data = data(1024);
+        AtomicInteger opens = new AtomicInteger();
+        try (TikaInputStream tis = TikaInputStream.get(() -> {
+            opens.incrementAndGet();
+            return new ByteArrayInputStream(data);
+        }, new TemporaryResources(), new Metadata())) {
+            tis.mark(10);
+            assertEquals(data[0] & 0xff, tis.read());
+            tis.reset();
+            assertEquals(data[0] & 0xff, tis.read());
+            assertEquals(1, opens.get(), "a mark before the first read is held in the stream");
         }
     }
 

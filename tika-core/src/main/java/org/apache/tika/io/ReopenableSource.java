@@ -86,8 +86,14 @@ class ReopenableSource extends InputStream implements TikaInputSource {
 
     private void ensureOpen() throws IOException {
         if (currentStream == null) {
-            currentStream = openAt(position);
+            replaceStream(openAt(position));
         }
+    }
+
+    /** A new stream never holds the caller's mark, whatever the old one held. */
+    private void replaceStream(InputStream stream) {
+        currentStream = stream;
+        markInStream = false;
     }
 
     /**
@@ -150,8 +156,7 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         if (currentStream != null) {
             currentStream.close();
         }
-        currentStream = openAt(newPosition);
-        markInStream = false;
+        replaceStream(openAt(newPosition));
         this.position = newPosition;
     }
 
@@ -234,7 +239,7 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         }
         if (currentStream != null) {
             currentStream.close();
-            currentStream = openAt(position);
+            replaceStream(openAt(position));
         }
         return true;
     }
@@ -377,6 +382,13 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     public synchronized void mark(int readlimit) {
         markPosition = position;
         markInStream = false;
+        if (currentStream == null && retainedBuffer == null) {
+            try {
+                ensureOpen();   // a mark before the first read is the detector's usual first move
+            } catch (IOException e) {
+                return;         // the reset re-opens instead
+            }
+        }
         if (currentStream != null && retainedBuffer == null) {
             // the buffer grows to honour a mark; past the cap a reset re-opens instead
             currentStream.mark(Math.min(readlimit, MAX_BUFFERED_MARK));
