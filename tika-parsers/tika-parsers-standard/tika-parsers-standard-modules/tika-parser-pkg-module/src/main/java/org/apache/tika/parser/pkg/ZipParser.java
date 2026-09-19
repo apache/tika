@@ -38,6 +38,7 @@ import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -548,7 +549,10 @@ public class ZipParser extends AbstractArchiveParser {
 
         if (extractor.shouldParseEmbedded(entryMetadata, context)) {
             TemporaryResources tmp = new TemporaryResources();
-            try (TikaInputStream tis = TikaInputStream.get(zis, tmp, entryMetadata)) {
+            // shield the archive stream: a closed ZipArchiveInputStream silently reports no
+            // more entries
+            try (TikaInputStream tis = TikaInputStream.get(
+                    CloseShieldInputStream.wrap(zis), tmp, entryMetadata)) {
                 extractor.parseEmbedded(tis, xhtml, entryMetadata, context, true);
             } catch (UnsupportedZipFeatureException e) {
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);

@@ -35,6 +35,7 @@ import org.apache.commons.compress.archivers.arj.ArjArchiveInputStream;
 import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
 import org.apache.commons.compress.archivers.dump.DumpArchiveInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.io.input.CloseShieldInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -176,9 +177,10 @@ public class PackageParser extends AbstractArchiveParser {
 
             if (extractor.shouldParseEmbedded(entrydata, context)) {
                 TemporaryResources tmp = new TemporaryResources();
-                // close the stream, not only the temp dir: an in-memory cache is not owned by
-                // tmp, and its budget reservation is released only on close
-                try (TikaInputStream tis = TikaInputStream.get(archive, tmp, entrydata)) {
+                // Close the entry stream so its in-memory cache is released, but shield the
+                // archive: cpio's stream refuses further reads once closed.
+                try (TikaInputStream tis = TikaInputStream.get(
+                        CloseShieldInputStream.wrap(archive), tmp, entrydata)) {
                     extractor.parseEmbedded(tis, xhtml, entrydata, context, true);
                 } finally {
                     tmp.dispose();
