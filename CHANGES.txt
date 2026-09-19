@@ -1,5 +1,7 @@
 Release 4.1.0 - unreleased
 
+   * The tika-server UAT gains an inference pass (TIKA-4913).
+     
    * Calls to a hosted inference engine retry a 429, 502, 503 or 504 answer
      with a jittered backoff (TIKA-4912).
 

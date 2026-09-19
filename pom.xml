@@ -346,6 +346,8 @@ least three +1 Tika PMC votes are cast.
 
             <!-- UAT test fixtures (binary/markup test documents carry no license header) -->
             <inputExclude>release-tools/uat/test-files/**</inputExclude>
+            <!-- UAT server config: JSON carries no license header -->
+            <inputExclude>release-tools/uat/uat-inference-config.json</inputExclude>
 
             <!-- subprojects already checked, added for RAT 0.17, see also RAT-97 -->
             <inputExclude>tika-*/**</inputExclude>
