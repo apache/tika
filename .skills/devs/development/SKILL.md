@@ -166,6 +166,30 @@ personal configuration does not override it.
   legitimate exception: a path that is the data under test (e.g. an expected
   metadata value extracted from a test document) — leave those untouched.
 
+## NEVER: two mistakes that ship as vulnerabilities
+
+**Never trust a length that came from user input or from inside a file.** `Content-Length`
+on a request, a zip or 7z entry's declared size, an OLE/OOXML part size, a PDF embedded
+file's `/Size`, an ISO box length, a count line in a mail file: every one of them is an
+untrusted number. Never allocate, reserve, `mark()`, `skip()` or bound a loop by it as if it
+were true. A lie small truncates content silently; a lie large lets one document allocate the
+heap or a budget, or spin a reader waiting for bytes that never come. Use a declared length
+only to *decline* work (a size the budget cannot cover is not attempted) or as a hint that the
+actual read corrects; grow from a floor and reserve what was actually read; treat the measured
+end of the stream as the only ground truth (`hasReliableLength()`), and overwrite the claim
+with it. See TIKA-4908 and the 2026-09-19 stream audit for what this cost.
+
+**Never call `InputStream.skip()` on a stream that could be a `FileInputStream` (or a
+`BufferedInputStream` over one) and trust the answer.** `FileInputStream.skip(n)` seeks past
+EOF and returns `n` even when no bytes exist, so a reader that skips a payload and then reads
+the next header believes it is somewhere it is not, and loops or mis-parses forever;
+`BufferedInputStream.skip` can return 0 before EOF, which spins any `while (remaining > 0)
+remaining -= skip(remaining)` loop. Skip by reading (`IOUtils.skip` / `IOUtils.skipFully`) or
+seek on a channel or an in-memory buffer whose size you own; `TikaInputStream.skip`,
+`BoundedInputStream.skip` and every source's `seekTo` read for this reason. Do not "optimize"
+them back. Anything hot enough to need a real seek gets a channel from
+`getSeekableByteChannel()`, never a raw `skip`.
+
 ## Test Discipline
 
 - A behavioral change gets a regression test that fails without it.  Where

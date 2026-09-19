@@ -98,10 +98,6 @@ public class TikaHttpClient implements Closeable {
      *
      * @param connectTimeoutSeconds TCP connection timeout in seconds
      */
-    public int getMaxRetries() {
-        return maxRetries;
-    }
-
     public static TikaHttpClient build(int connectTimeoutSeconds) {
         return build(connectTimeoutSeconds, DEFAULT_MAX_RETRIES);
     }
@@ -129,6 +125,10 @@ public class TikaHttpClient implements Closeable {
                 .version(HttpClient.Version.HTTP_1_1)
                 .build();
         return new TikaHttpClient(client, executor, connectTimeoutSeconds, maxRetries);
+    }
+
+    public int getMaxRetries() {
+        return maxRetries;
     }
 
     /**

@@ -290,17 +290,8 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         }
         long reservedHere = 0;
         // Reservation invariant: reservedHere == max(0, data.length - IN_MEMORY_FLOOR)
-        int initial = (int) Math.max(8192, Math.min(length, IN_MEMORY_FLOOR));
-        if (length > IN_MEMORY_FLOOR && budget != null) {
-            // one reservation for a declared length the budget covers; a refusal is not a
-            // verdict, since the length may lie, so the ladder from the floor still runs
-            long delta = length - IN_MEMORY_FLOOR;
-            if (budget.tryReserve(delta) == delta) {
-                reservedHere = delta;
-                initial = (int) length;
-            }
-        }
-        byte[] data = new byte[initial];
+        // never sized from the declared length past the floor: it is the file's claim
+        byte[] data = new byte[(int) Math.max(8192, Math.min(length, IN_MEMORY_FLOOR))];
         int total = 0;
         boolean fits = false;
         try (InputStream in = opener.get()) {

@@ -28,7 +28,6 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.MemoryCacheImageInputStream;
 
 import org.apache.commons.io.input.CloseShieldInputStream;
 import org.slf4j.Logger;
@@ -40,6 +39,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -171,9 +171,8 @@ public class ImageParser extends AbstractImageParser {
             if (iterator.hasNext()) {
                 ImageReader reader = iterator.next();
                 try {
-                    // memory-cached: ImageIO's default cache writes every byte read to a temp file
-                    try (ImageInputStream imageStream =
-                                 new MemoryCacheImageInputStream(CloseShieldInputStream.wrap(stream))) {
+                    // a file we already have beats ImageIO copying the stream to its own cache file
+                    try (ImageInputStream imageStream = imageInput(stream)) {
                         reader.setInput(imageStream);
                         try {
                             int numImages = reader.getNumImages(true);
@@ -209,6 +208,13 @@ public class ImageParser extends AbstractImageParser {
                 throw new TikaException(type + " parse error", e);
             }
         }
+    }
+
+    private static ImageInputStream imageInput(InputStream stream) throws IOException {
+        if (stream instanceof TikaInputStream tis && tis.hasFile()) {
+            return ImageIO.createImageInputStream(tis.getPath().toFile());
+        }
+        return ImageIO.createImageInputStream(CloseShieldInputStream.wrap(stream));
     }
 
     @Override

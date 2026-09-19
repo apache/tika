@@ -434,7 +434,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
     }
 
     /** Retries of a 429/502/503/504 answer from the service; 0 fails at once. */
-    public synchronized void setMaxRetries(int maxRetries) throws IOException {
+    public synchronized void setMaxRetries(int maxRetries) {
         defaultConfig.setMaxRetries(maxRetries);
         if (httpClient != null) {
             httpClient.close();
