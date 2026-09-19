@@ -3975,7 +3975,11 @@
          columns; line 2 is the first RFC822 header. An XML plist follows the message,
          but it is beyond the magic window -->
     <magic priority="70">
-      <match value="(?i)[0-9]{1,10} {0,9}\n((Authentication-Results|Content-Type|Date|Delivered-To|From|Message-ID|MIME-Version|Received|Received-SPF|Return-Path|Subject|To):|(X|DKIM|ARC)-)" type="regex" offset="0"/>
+      <!-- gate: the count line ends within the first 11 bytes; keeps the regex (an 8K
+           decode per evaluation) off files that cannot be emlx -->
+      <match value="\n" type="string" offset="1:10">
+        <match value="(?i)[0-9]{1,10} {0,9}\n((Authentication-Results|Content-Type|Date|Delivered-To|From|Message-ID|MIME-Version|Received|Received-SPF|Return-Path|Subject|To):|(X|DKIM|ARC)-)" type="regex" offset="0"/>
+      </match>
     </magic>
     <glob pattern="*.emlx"/>
     <sub-class-of type="text/x-tika-text-based-message"/>
