@@ -161,6 +161,7 @@
 ** `application/vnd.apple.pages.18`
 * `org.apache.tika.parser.mail.` link:{tika-javadoc-url}/org/apache/tika/parser/mail/RFC822Parser.html[RFC822Parser]
 ** `message/rfc822`
+** `message/x-emlx`
 * `org.apache.tika.parser.markdown.` link:{tika-javadoc-url}/org/apache/tika/parser/markdown/MarkdownParser.html[MarkdownParser]
 ** `text/markdown`
 * `org.apache.tika.parser.mat.` link:{tika-javadoc-url}/org/apache/tika/parser/mat/MatParser.html[MatParser]

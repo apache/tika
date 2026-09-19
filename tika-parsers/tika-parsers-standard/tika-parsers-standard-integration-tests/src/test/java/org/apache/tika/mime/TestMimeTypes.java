@@ -1041,6 +1041,8 @@ public class TestMimeTypes {
     public void testEmail() throws IOException {
         // EMLX
         assertTypeDetection("testEMLX.emlx", "message/x-emlx");
+        assertTypeDetection("testEMLX_multipart_html.emlx", "message/x-emlx");
+        assertTypeDetection("testEMLX_single_part_html.emlx", "message/x-emlx");
 
         // Groupwise
         assertTypeDetection("testGroupWiseEml.eml", "message/rfc822");
