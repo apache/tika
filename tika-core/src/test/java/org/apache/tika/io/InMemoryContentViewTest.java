@@ -185,10 +185,12 @@ public class InMemoryContentViewTest {
             SeekableByteChannel channel = tis.getSeekableByteChannel();
             assertNotNull(TikaInputStream.inMemoryContent(channel), "2MB under a 64MB budget stays in memory");
             assertTrue(budget.getReservedBytes() > 0);
-            tis.close();
-            assertTrue(budget.getReservedBytes() > 0, "open channel still pins the reservation");
             channel.close();
-            assertEquals(0, budget.getReservedBytes(), "last close releases");
+            assertTrue(budget.getReservedBytes() > 0, "the live cache keeps its reservation");
+            SeekableByteChannel again = tis.getSeekableByteChannel();
+            tis.close();
+            assertFalse(again.isOpen(), "a channel is the stream's to close");
+            assertEquals(0, budget.getReservedBytes(), "closing the stream releases, pin or no pin");
         }
     }
 

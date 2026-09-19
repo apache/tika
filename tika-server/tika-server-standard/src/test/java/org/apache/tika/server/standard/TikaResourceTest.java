@@ -503,7 +503,8 @@ public class TikaResourceTest extends CXFTestBase {
                     .create(endPoint + TIKA_PATH + "/config")
                     .type("multipart/form-data")
                     .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
-            assertEquals(500, response.getStatus());
+            // a raw NUL in the JSON is rejected before any parse: bad request, not a parse failure
+            assertEquals(400, response.getStatus());
         } catch (ProcessingException e) {
             //can't tell why this intermittently happens. :(
             //started after the upgrade to 3.2.7

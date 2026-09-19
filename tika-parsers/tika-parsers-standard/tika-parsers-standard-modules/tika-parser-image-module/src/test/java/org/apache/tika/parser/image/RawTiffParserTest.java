@@ -17,6 +17,7 @@
 package org.apache.tika.parser.image;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -37,6 +38,17 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
 public class RawTiffParserTest extends TikaTest {
+
+    @Test
+    public void testSharedImageMetadataConfigApplies() throws Exception {
+        ImageMetadataConfig shared = new ImageMetadataConfig();
+        shared.setIncludeIccCurvesAndLuts(true);
+        ParseContext context = new ParseContext();
+        context.set(ImageMetadataConfig.class, shared);
+        assertTrue(new RawTiffParser().getImageMetadataConfig(context).isIncludeIccCurvesAndLuts());
+        assertFalse(new RawTiffParser().getImageMetadataConfig(new ParseContext())
+                .isIncludeIccCurvesAndLuts());
+    }
 
     private List<Metadata> parseByName(String fileName) throws Exception {
         Metadata metadata = new Metadata();

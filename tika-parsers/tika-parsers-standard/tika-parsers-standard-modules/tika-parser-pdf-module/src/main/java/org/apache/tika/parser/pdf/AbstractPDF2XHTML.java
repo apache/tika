@@ -631,8 +631,12 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         }
         //the file is in the document already: re-open (re-decode) it on rewind
         //rather than cache a copy that a digest of a large attachment would spill
+        Metadata sized = new Metadata();
+        if (pdEmbeddedFile.getSize() >= 0) {
+            sized.set(HttpHeaders.CONTENT_LENGTH, Long.toString(pdEmbeddedFile.getSize()));
+        }
         TikaInputStream tis = TikaInputStream.get(pdEmbeddedFile::createInputStream,
-                new TemporaryResources(), null);
+                new TemporaryResources(), sized);
 
         setOrReplaceAttribute("class", "embedded", attributes);
         setOrReplaceAttribute("id", fileName, attributes);

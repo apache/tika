@@ -225,7 +225,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
                 if (embeddedExtractor.shouldParseEmbedded(thumbnailMetadata, context)) {
                     try (TikaInputStream tis = TikaInputStream.get(tPart::getInputStream,
-                            new TemporaryResources(), null)) {
+                            new TemporaryResources(), sized(tPart))) {
                         embeddedExtractor.parseEmbedded(tis,
                                 new EmbeddedContentHandler(handler), thumbnailMetadata, context, false);
                     }
@@ -510,7 +510,7 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
             //the part is in the package already: re-open it on rewind instead of
             //caching a copy that a digest of a large part would spill to disk
             try (TikaInputStream tis = TikaInputStream.get(part::getInputStream,
-                    new TemporaryResources(), null)) {
+                    new TemporaryResources(), sized(part))) {
                 embeddedExtractor
                         .parseEmbedded(tis, xhtml, metadata, context, true);
             }
@@ -730,4 +730,14 @@ public abstract class AbstractOOXMLExtractor implements OOXMLExtractor {
 
     }
 
+
+    /** The part's size, so the stream can be retained and its length is known without a read. */
+    private static Metadata sized(PackagePart part) {
+        Metadata m = new Metadata();
+        long size = part.getSize();
+        if (size >= 0) {
+            m.set(HttpHeaders.CONTENT_LENGTH, Long.toString(size));
+        }
+        return m;
+    }
 }

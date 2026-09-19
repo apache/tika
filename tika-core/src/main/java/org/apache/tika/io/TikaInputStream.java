@@ -105,6 +105,9 @@ public class TikaInputStream extends TaggedInputStream {
         if (stream instanceof TikaInputStream) {
             return (TikaInputStream) stream;
         }
+        if (tmp == null) {
+            tmp = new TemporaryResources();
+        }
         String ext = getExtension(metadata);
         TikaInputSource inputSource =
                 new CachingSource(stream, tmp, declaredLength(metadata), metadata, ext);
@@ -331,6 +334,10 @@ public class TikaInputStream extends TaggedInputStream {
      */
     @Override
     public long skip(long n) throws IOException {
+        if (n <= 0) {
+            return 0;
+        }
+        // reads, never in.skip(): FileInputStream.skip seeks past EOF and reports the full count
         long skipped = IOUtils.skip(in, n);
         position += skipped;
         return skipped;
@@ -586,7 +593,7 @@ public class TikaInputStream extends TaggedInputStream {
      * spilled content from a file channel, and unread stream content is drained through the
      * cache which decides memory-vs-disk as it goes. Use this when random access is needed
      * (e.g. reading a zip central directory); reserve {@code getFile()} for callers that truly
-     * need a {@link java.io.File}. The caller owns closing the returned channel. Does not
+     * need a {@link java.io.File}. Closed with the stream if the caller does not close it first. Does not
      * disturb this stream's read position.
      *
      * @throws IOException if this stream has been partially read without rewind enabled
@@ -596,7 +603,11 @@ public class TikaInputStream extends TaggedInputStream {
         if (source == null) {
             throw new IOException("No TikaInputSource available");
         }
-        return source.getSeekableByteChannel();
+        SeekableByteChannel channel = source.getSeekableByteChannel();
+        if (tmp != null) {
+            tmp.addResource(channel);   // a caller that throws before closing it must not leak it
+        }
+        return channel;
     }
 
     /**

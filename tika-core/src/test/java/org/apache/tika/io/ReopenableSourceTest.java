@@ -107,17 +107,15 @@ public class ReopenableSourceTest {
     }
 
     @Test
-    public void testRetainInMemoryRefusedWhenLengthUnknown() throws Exception {
-        byte[] data = data(8192);
-        AtomicInteger opens = new AtomicInteger();
-        ReopenableSource source = new ReopenableSource(countingOpener(data, opens), tmp, -1, ".bin");
-        try {
-            assertFalse(source.tryRetainInMemory());
-            assertEquals(0, opens.get());
-            assertArrayEquals(data, readFully(source));
-        } finally {
-            source.close();
-        }
+    public void testRetainInMemoryWithUnknownLength() throws Exception {
+        // under the floor it is held; over it, with no budget, the attempt stops at the floor
+        byte[] small = new byte[64 * 1024];
+        ReopenableSource fits = new ReopenableSource(() -> new ByteArrayInputStream(small), null, -1, "");
+        assertTrue(fits.tryRetainInMemory());
+        assertEquals(small.length, fits.getLength());
+        byte[] big = new byte[2 * 1024 * 1024];
+        ReopenableSource over = new ReopenableSource(() -> new ByteArrayInputStream(big), null, -1, "");
+        assertFalse(over.tryRetainInMemory());
     }
 
     @Test

@@ -74,6 +74,7 @@ class CachingInputStream extends InputStream {
             cache.append(buffer, 0, n);
         }
         sourceExhausted = true;
+        cache.trim();
     }
 
     @Override
@@ -95,6 +96,7 @@ class CachingInputStream extends InputStream {
         int b = source.read();
         if (b == -1) {
             sourceExhausted = true;
+        cache.trim();
             return -1;
         }
 
@@ -129,6 +131,7 @@ class CachingInputStream extends InputStream {
             int n = source.read(b, off, len);
             if (n == -1) {
                 sourceExhausted = true;
+        cache.trim();
             } else if (n > 0) {
                 cache.append(b, off, n);
                 position += n;
@@ -144,13 +147,16 @@ class CachingInputStream extends InputStream {
         if (n <= 0) {
             return 0;
         }
-
-        // We need to actually read the bytes to cache them
         long skipped = 0;
-        byte[] buffer = new byte[4096];
+        long cached = cache.size() - position;
+        if (cached > 0) {
+            skipped = Math.min(n, cached);
+            position += skipped;
+        }
+        // beyond the cache the bytes must be read to be cached
+        byte[] buffer = new byte[8192];
         while (skipped < n) {
-            int toRead = (int) Math.min(buffer.length, n - skipped);
-            int read = read(buffer, 0, toRead);
+            int read = read(buffer, 0, (int) Math.min(buffer.length, n - skipped));
             if (read == -1) {
                 break;
             }
@@ -185,6 +191,10 @@ class CachingInputStream extends InputStream {
      */
     long getCachedSize() {
         return cache.size();
+    }
+
+    boolean isSourceExhausted() {
+        return sourceExhausted;
     }
 
     /**

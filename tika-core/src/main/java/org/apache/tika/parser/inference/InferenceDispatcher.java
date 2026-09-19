@@ -63,6 +63,7 @@ import org.apache.tika.parser.hook.ParseHooks;
  */
 public final class InferenceDispatcher implements ParseHook, TransientParseState {
 
+    static final int MAX_MEDIA_UNITS = 1000;
     private static final Logger LOG = LoggerFactory.getLogger(InferenceDispatcher.class);
     private static final InferenceSelection ALL = new InferenceSelection();
 
@@ -170,15 +171,22 @@ public final class InferenceDispatcher implements ParseHook, TransientParseState
             if (!runs(binding, context) || !binding.accepts(kind, type, target)) {
                 continue;
             }
-            // a media unit is the whole file; its maxBytes bounds one segment, in the task
+            // a media unit is the whole file; maxBytes and maxChunks bound its segments, in the task
             if (kind != InputKind.MEDIA && binding.getMaxBytes() >= 0 && size > binding.getMaxBytes()) {
                 state.dropped.merge(binding.getId() + " over maxBytes", 1, Integer::sum);
                 continue;
             }
             List<InferenceUnit> units = state.byBinding.computeIfAbsent(binding.getId(),
                     k -> new ArrayList<>());
-            if (binding.getMaxChunks() >= 0 && units.size() >= binding.getMaxChunks()) {
+            if (kind != InputKind.MEDIA && binding.getMaxChunks() >= 0
+                    && units.size() >= binding.getMaxChunks()) {
                 state.dropped.merge(binding.getId() + " over maxChunks", 1, Integer::sum);
+                continue;
+            }
+            // a media unit is a held copy of a whole file; bound how many one tree may hold
+            if (kind == InputKind.MEDIA && units.size() >= MAX_MEDIA_UNITS) {
+                state.dropped.merge(binding.getId() + " over " + MAX_MEDIA_UNITS + " media files",
+                        1, Integer::sum);
                 continue;
             }
             if (unit == null) {

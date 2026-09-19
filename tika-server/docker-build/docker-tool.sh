@@ -148,7 +148,8 @@ test_docker_image_uat() {
 # Whether the image's HTTP client retries a 429 (TIKA-4912): the images carry no unzip, so the
 # jar is copied out of a stopped container and inspected on the host.
 image_client_retries() {
-  local probe="$1-probe" tmp rc=1
+  local probe tmp rc=1
+  probe="$(printf "%s" "$1" | tr "/:" "__")-probe"   # a container name cannot hold / or :
   tmp="$(mktemp -d /tmp/tika-uat-probe.XXXXXX)"
   docker create --name "$probe" "$1" >/dev/null 2>&1 || { rm -rf "$tmp"; return 1; }
   if docker cp "$probe:/opt/tika-server/lib/." "$tmp/" >/dev/null 2>&1; then

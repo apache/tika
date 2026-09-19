@@ -41,6 +41,16 @@ public class MarkdownToXHTMLEmitterTest {
     }
 
     @Test
+    void testDroppedElementsStillSeparateText() throws Exception {
+        String split = "<table>\n<tr><td>North</td><td>120</td></tr>\n\n<tr><td>South</td><td>99</td></tr>\n</table>";
+        String xml = emit(split);
+        assertContains("<td>North</td>", xml);
+        assertContains("South 99", xml);
+        assertContains("k v", emit("<dl><dt>k</dt><dd>v</dd></dl>"));
+        assertContains("a b", emit("<div>a</div><div>b</div>"));
+    }
+
+    @Test
     void testParagraph() throws Exception {
         String md = "Hello world.\n\nSecond paragraph.";
         String xml = emit(md);

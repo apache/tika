@@ -127,6 +127,10 @@ public class TikaHttpClient implements Closeable {
         return new TikaHttpClient(client, executor, connectTimeoutSeconds, maxRetries);
     }
 
+    public int getMaxRetries() {
+        return maxRetries;
+    }
+
     /**
      * POST a JSON body to {@code url} and return the response body as a string.
      * <p>
