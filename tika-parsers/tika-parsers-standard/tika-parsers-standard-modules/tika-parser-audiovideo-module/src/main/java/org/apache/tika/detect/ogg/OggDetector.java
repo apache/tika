@@ -76,7 +76,7 @@ public class OggDetector implements Detector {
 
         // We could potentially need to go a long way through the
         // file in order to figure out what it is
-        tis.mark((int)tis.getLength() + 1);
+        tis.mark(tis.hasLength() ? (int) Math.min(tis.getLength() + 1, Integer.MAX_VALUE) : Integer.MAX_VALUE);
 
         try {
             // Open the Ogg file - underlying stream stays open as detecting only

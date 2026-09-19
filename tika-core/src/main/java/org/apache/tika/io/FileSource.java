@@ -87,12 +87,9 @@ class FileSource extends InputStream implements TikaInputSource {
             throw new IOException("Cannot seek past end of file. Position: " +
                     newPosition + ", length: " + length);
         }
-
-        // Close current stream and reopen at the beginning
         currentStream.close();
         currentStream = new BufferedInputStream(Files.newInputStream(path));
-
-        // Skip to the new position
+        markInStream = false;
         if (newPosition > 0) {
             IOUtils.skipFully(currentStream, newPosition);
         }
@@ -143,17 +140,30 @@ class FileSource extends InputStream implements TikaInputSource {
     }
 
     // Mark/reset support using seekTo
+    private static final int MAX_BUFFERED_MARK = 1024 * 1024;
     private long markPosition = -1;
+    private boolean markInStream;
 
     @Override
     public synchronized void mark(int readlimit) {
         markPosition = position;
+        currentStream.mark(Math.min(readlimit, MAX_BUFFERED_MARK));
+        markInStream = true;
     }
 
     @Override
     public synchronized void reset() throws IOException {
         if (markPosition < 0) {
             throw new IOException("Mark not set");
+        }
+        if (markInStream) {
+            try {
+                currentStream.reset();   // within the limit the buffer holds the mark
+                position = markPosition;
+                return;
+            } catch (IOException e) {
+                // past it: reopen
+            }
         }
         seekTo(markPosition);
     }

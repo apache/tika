@@ -36,6 +36,7 @@ public class BoundedInputStream extends InputStream {
     private final long max;
     private final InputStream in;
     private long pos;
+    private long markPos;
 
     public BoundedInputStream(long max, InputStream in) {
         this.max = max;
@@ -93,19 +94,14 @@ public class BoundedInputStream extends InputStream {
         return bytesRead;
     }
 
-    /**
-     * Invokes the delegate's <code>skip(long)</code> method.
-     * As with InputStream generally, this does not guarantee reading n bytes.
-     * Use IOUtils' skipFully for that functionality.
-     *
-     * @param n the number of bytes to skip
-     * @return the actual number of bytes skipped
-     * @throws IOException if an I/O error occurs
-     */
+    /** Reads, never {@code in.skip()}: FileInputStream seeks past EOF and reports the full count. */
     @Override
     public long skip(final long n) throws IOException {
         final long toSkip = max >= 0 ? Math.min(n, max - pos) : n;
-        final long skippedBytes = in.skip(toSkip);
+        if (toSkip <= 0) {
+            return 0;
+        }
+        final long skippedBytes = IOUtils.skip(in, toSkip);
         pos += skippedBytes;
         return skippedBytes;
     }
@@ -113,12 +109,13 @@ public class BoundedInputStream extends InputStream {
     @Override
     public void reset() throws IOException {
         in.reset();
-        pos = 0;
+        pos = markPos;
     }
 
     @Override
     public void mark(int readLimit) {
         in.mark(readLimit);
+        markPos = pos;
     }
 
     public boolean hasHitBound() {

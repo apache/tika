@@ -99,7 +99,12 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         InputStream in = new BufferedInputStream(
                 spilledPath != null ? Files.newInputStream(spilledPath) : opener.get());
         if (at > 0) {
-            IOUtils.skipFully(in, at);
+            try {
+                IOUtils.skipFully(in, at);
+            } catch (IOException e) {
+                in.close();
+                throw e;
+            }
         }
         return in;
     }
@@ -167,6 +172,9 @@ class ReopenableSource extends InputStream implements TikaInputSource {
             try (OutputStream out = Files.newOutputStream(p)) {
                 if (retainedBuffer != null) {
                     out.write(retainedBuffer, 0, retainedLength);
+                    if (channelPins == 0) {
+                        dropRetained();   // the file serves every read from here on
+                    }
                 } else {
                     try (InputStream in = opener.get()) {
                         IOUtils.copy(in, out);
@@ -193,7 +201,7 @@ class ReopenableSource extends InputStream implements TikaInputSource {
 
     @Override
     public void enableRewind(CacheMemoryBudget budget) throws IOException {
-        if (position != 0) {
+        if (position != 0 && retainedBuffer == null && spilledPath == null) {
             throw new IOException("Cannot enable rewind: position is " + position +
                     ", must be 0. Call enableRewind() before reading.");
         }
@@ -215,16 +223,10 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         if (retainedBuffer != null) {
             return true;
         }
-        if (spilledPath != null || closed || length < 0 || length > MAX_ARRAY_SIZE) {
+        if (spilledPath != null || closed || length > MAX_ARRAY_SIZE) {
             return false;
         }
-        if (length > IN_MEMORY_FLOOR) {
-            if (budget == null ||
-                    budget.getMaxBytes() - budget.getReservedBytes() < length - IN_MEMORY_FLOOR) {
-                return false;
-            }
-        }
-        if (!tryBufferInMemory()) {
+        if (!mayFitInMemory() || !tryBufferInMemory()) {
             return false;
         }
         if (currentStream != null) {
@@ -276,13 +278,29 @@ class ReopenableSource extends InputStream implements TikaInputSource {
      * grows, reserving, on what is actually read. Does not disturb this source's read
      * position.
      */
+    /** A declared length the budget cannot cover is not attempted; unknown is attempted. */
+    private boolean mayFitInMemory() {
+        return length <= IN_MEMORY_FLOOR || (budget != null
+                && budget.getMaxBytes() - budget.getReservedBytes() >= length - IN_MEMORY_FLOOR);
+    }
+
     private boolean tryBufferInMemory() throws IOException {
         if (length > MAX_ARRAY_SIZE || (length > IN_MEMORY_FLOOR && budget == null)) {
             return false;
         }
         long reservedHere = 0;
         // Reservation invariant: reservedHere == max(0, data.length - IN_MEMORY_FLOOR)
-        byte[] data = new byte[(int) Math.max(8192, Math.min(length, IN_MEMORY_FLOOR))];
+        int initial = (int) Math.max(8192, Math.min(length, IN_MEMORY_FLOOR));
+        if (length > IN_MEMORY_FLOOR && budget != null) {
+            // one reservation for a declared length the budget covers; a refusal is not a
+            // verdict, since the length may lie, so the ladder from the floor still runs
+            long delta = length - IN_MEMORY_FLOOR;
+            if (budget.tryReserve(delta) == delta) {
+                reservedHere = delta;
+                initial = (int) length;
+            }
+        }
+        byte[] data = new byte[initial];
         int total = 0;
         boolean fits = false;
         try (InputStream in = opener.get()) {

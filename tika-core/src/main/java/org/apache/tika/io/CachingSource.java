@@ -95,6 +95,8 @@ class CachingSource extends InputStream implements TikaInputSource {
         int b = passthroughStream.read();
         if (b != -1) {
             passthroughPosition++;
+        } else {
+            measured(passthroughPosition);
         }
         return b;
     }
@@ -114,6 +116,8 @@ class CachingSource extends InputStream implements TikaInputSource {
         int n = passthroughStream.read(b, off, len);
         if (n > 0) {
             passthroughPosition += n;
+        } else if (n == -1) {
+            measured(passthroughPosition);
         }
         return n;
     }
@@ -330,13 +334,23 @@ class CachingSource extends InputStream implements TikaInputSource {
         return spilledPath;
     }
 
+    /** The end of the source is ground truth, over a declared length either way. */
+    private void measured(long total) {
+        length = total;
+        lengthMeasured = true;
+    }
+
     @Override
     public long getLength() {
+        if (!lengthMeasured && cachingStream != null && cachingStream.isSourceExhausted()) {
+            measured(cachingStream.getCachedSize());
+        }
         return length;
     }
 
     @Override
     public boolean hasReliableLength() {
+        getLength();
         return lengthMeasured;
     }
 

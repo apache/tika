@@ -52,6 +52,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -242,7 +243,7 @@ public class ZipParser extends AbstractArchiveParser {
             parseWithZipFile(zipFile, tis, handler, metadata, context, config);
         } else {
             // Use streaming - enable rewind for DATA_DESCRIPTOR retry
-            tis.enableRewind();
+            tis.enableRewind(context.get(CacheMemoryBudget.class));
             String dataDescriptorRequired = metadata.get(Zip.DETECTOR_DATA_DESCRIPTOR_REQUIRED);
             parseWithStream(tis, handler, metadata, context, config,
                     "true".equals(dataDescriptorRequired));
@@ -294,7 +295,7 @@ public class ZipParser extends AbstractArchiveParser {
 
         // Perform integrity check if enabled
         if (config.isIntegrityCheck()) {
-            tis.enableRewind();
+            tis.enableRewind(context.get(CacheMemoryBudget.class));
             tis.rewind();
             performIntegrityCheck(tis, metadata, centralDirectoryEntries, config);
         }

@@ -115,6 +115,14 @@ public class SevenZParser extends AbstractArchiveParser {
 
         SevenZFile sevenZFile;
         // SevenZFile.close() closes the channel it was built on
+        metadata.set(HttpHeaders.CONTENT_TYPE, SEVENZ.toString());
+
+        EmbeddedDocumentExtractor extractor =
+                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
+
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
+        xhtml.startDocument();
+
         SeekableByteChannel channel = tis.getSeekableByteChannel();
         try {
             // Use setMaxMemoryLimitKiB (direct KiB); setMaxMemoryLimitKb divides the arg by 1024.
@@ -140,13 +148,6 @@ public class SevenZParser extends AbstractArchiveParser {
             throw e;
         }
 
-        metadata.set(HttpHeaders.CONTENT_TYPE, SEVENZ.toString());
-
-        EmbeddedDocumentExtractor extractor =
-                EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
-        xhtml.startDocument();
 
         try {
             SevenZArchiveEntry entry = sevenZFile.getNextEntry();
