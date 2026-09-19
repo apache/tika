@@ -30,7 +30,6 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.UnsupportedFormatException;
@@ -116,16 +115,17 @@ public class JackcessParser implements Parser {
             }
             throw e;
         } catch (IndexOutOfBoundsException e) {
-            // TIKA-4830
-            throw new CorruptedFileException(e.getMessage(), e);
+            // TIKA-4830. A TikaException, not CorruptedFileException: the latter aborts the
+            // whole container when the database is an embedded file.
+            throw new TikaException("Corrupt Access database: " + e.getMessage(), e);
         } catch (IllegalStateException e) {
             if (e.getMessage() != null) {
                 if (e.getMessage().contains("Incorrect password")) {
                     throw new EncryptedDocumentException(e);
                 }
                 if (e.getMessage().startsWith("invalid page number ")) {
-                    // TIKA-4830
-                    throw new CorruptedFileException(e.getMessage(), e);
+                    // TIKA-4830, as above
+                    throw new TikaException("Corrupt Access database: " + e.getMessage(), e);
                 }
             }
             throw e;
