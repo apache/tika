@@ -47,6 +47,8 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     // Per-object bytes that may be buffered in memory without a budget reservation;
     // matches StreamCache's default per-object threshold.
     private static final int IN_MEMORY_FLOOR = 1024 * 1024;
+    // how far past a mark the open stream buffers before a reset falls back to a re-open
+    private static final int MAX_BUFFERED_MARK = 1024 * 1024;
 
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
@@ -61,6 +63,8 @@ class ReopenableSource extends InputStream implements TikaInputSource {
     private long position;
     private Path spilledPath;
     private long markPosition = -1;
+    // the current stream's own mark is valid (set after it was opened, not yet invalidated)
+    private boolean markInStream;
 
     private CacheMemoryBudget budget;
     // Full content retained after an in-memory drain, with its budget reservation,
@@ -82,8 +86,14 @@ class ReopenableSource extends InputStream implements TikaInputSource {
 
     private void ensureOpen() throws IOException {
         if (currentStream == null) {
-            currentStream = openAt(position);
+            replaceStream(openAt(position));
         }
+    }
+
+    /** A new stream never holds the caller's mark, whatever the old one held. */
+    private void replaceStream(InputStream stream) {
+        currentStream = stream;
+        markInStream = false;
     }
 
     /**
@@ -146,7 +156,7 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         if (currentStream != null) {
             currentStream.close();
         }
-        currentStream = openAt(newPosition);
+        replaceStream(openAt(newPosition));
         this.position = newPosition;
     }
 
@@ -229,7 +239,7 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         }
         if (currentStream != null) {
             currentStream.close();
-            currentStream = openAt(position);
+            replaceStream(openAt(position));
         }
         return true;
     }
@@ -363,15 +373,42 @@ class ReopenableSource extends InputStream implements TikaInputSource {
         }
     }
 
+    /**
+     * A mark is kept in the open stream's buffer, so a reset within {@code readlimit} costs
+     * nothing. Re-opening on every reset is what a reader that marks and resets per record (POI
+     * reading a metafile's bitmaps) turned into inflating a zip entry thousands of times.
+     */
     @Override
     public synchronized void mark(int readlimit) {
         markPosition = position;
+        markInStream = false;
+        if (currentStream == null && retainedBuffer == null) {
+            try {
+                ensureOpen();   // a mark before the first read is the detector's usual first move
+            } catch (IOException e) {
+                return;         // the reset re-opens instead
+            }
+        }
+        if (currentStream != null && retainedBuffer == null) {
+            // the buffer grows to honour a mark; past the cap a reset re-opens instead
+            currentStream.mark(Math.min(readlimit, MAX_BUFFERED_MARK));
+            markInStream = true;
+        }
     }
 
     @Override
     public synchronized void reset() throws IOException {
         if (markPosition < 0) {
             throw new IOException("Mark not set");
+        }
+        if (markInStream && currentStream != null) {
+            try {
+                currentStream.reset();
+                position = markPosition;
+                return;
+            } catch (IOException e) {
+                // read past the readlimit: the buffer no longer holds the mark, re-open instead
+            }
         }
         seekTo(markPosition);
     }
