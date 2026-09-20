@@ -7542,8 +7542,10 @@
         <match value="\nDate:" type="string" offset="0:1000"/>
         <match value="\nServer:" type="string" offset="0:1000"/>
       </match>
-      <sub-class-of type="text/x-tika-text-based-message"/>
+      <!-- a capture without the version: "200 OK" then headers (LWP, curl -i on some proxies) -->
+      <match value="[1-5][0-9]{2} [A-Za-z][A-Za-z -]{0,40}\r?\n(Cache-Control|Content-Type|Content-Length|Content-Disposition|Date|Server|Set-Cookie|Client-Date|Last-Modified|Connection):" type="regex" offset="0"/>
     </magic>
+    <sub-class-of type="text/x-tika-text-based-message"/>
   </mime-type>
   <!-- TODO See TIKA-2723 for discussions on the mime type hierarchy -->
   <!--  and best parser structure for these email-like formats -->
