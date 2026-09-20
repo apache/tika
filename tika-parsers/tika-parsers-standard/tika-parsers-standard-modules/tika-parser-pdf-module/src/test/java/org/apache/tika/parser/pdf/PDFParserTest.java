@@ -613,6 +613,46 @@ public class PDFParserTest extends TikaTest {
         assertTrue(i < j);
     }
 
+    /** A wide outline (a transcript's word index) is written whole; past the budget the cut is recorded. */
+    @Test
+    public void testWideBookmarksAndTheBudget() throws Exception {
+        for (int n : new int[]{12000, 100500}) {
+            try (PDDocument doc = new PDDocument()) {
+                doc.addPage(new PDPage(PDRectangle.LETTER));
+                PDDocumentOutline outline = new PDDocumentOutline();
+                doc.getDocumentCatalog().setDocumentOutline(outline);
+                for (int i = 0; i < n / 4; i++) {
+                    PDOutlineItem word = new PDOutlineItem();
+                    word.setTitle("word" + i);
+                    outline.addLast(word);
+                    for (int j = 0; j < 3; j++) {
+                        PDOutlineItem ref = new PDOutlineItem();
+                        ref.setTitle("ref" + i + "-" + j);
+                        word.addLast(ref);
+                    }
+                }
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                doc.save(bos);
+                Metadata metadata = new Metadata();
+                String xml;
+                try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
+                    ToXMLContentHandler handler = new ToXMLContentHandler();
+                    new PDFParser().parse(tis, handler, metadata, new ParseContext());
+                    xml = handler.toString();
+                }
+                int items = xml.split("<li>").length - 1;
+                String warn = String.join(" ", metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+                if (n <= 100000) {
+                    assertEquals(n, items, "every item written");
+                    assertFalse(warn.contains("bookmark outline truncated"), warn);
+                } else {
+                    assertEquals(100000, items, "cut at the budget");
+                    assertContains("bookmark outline truncated at 100000 items", warn);
+                }
+            }
+        }
+    }
+
     /**
      * An outline as deep as the item budget allows, each item the only child of the last,
      * on a thread with a stack a quarter of the default: every title is written, lists nest

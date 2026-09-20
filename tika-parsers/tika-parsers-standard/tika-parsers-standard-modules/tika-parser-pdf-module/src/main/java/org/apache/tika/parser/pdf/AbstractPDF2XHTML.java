@@ -148,7 +148,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
      * the embedded document tree.
      */
     private final static int MAX_RECURSION_DEPTH = 100;
-    private final static int MAX_BOOKMARK_ITEMS = 10000;
+    // a transcript's word index is ~12k items; the budget bounds a hostile file, not a real one
+    private final static int MAX_BOOKMARK_ITEMS = 100000;
     /** Deeper bookmarks are written as items of the deepest list, within the XML nesting limit. */
     private final static int MAX_BOOKMARK_DEPTH = 50;
 
@@ -1466,8 +1467,13 @@ class AbstractPDF2XHTML extends PDFTextStripper {
         xhtml.startElement("ul");
         int lists = 1;
         int items = 0;
+        boolean truncated = false;
         while (true) {
-            if (current == null || seen.contains(current) || items > MAX_BOOKMARK_ITEMS) {
+            if (items >= MAX_BOOKMARK_ITEMS && current != null && !seen.contains(current)) {
+                truncated = true;
+                current = null;
+            }
+            if (current == null || seen.contains(current)) {
                 if (parents.isEmpty()) {
                     break;
                 }
@@ -1499,6 +1505,10 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             }
         }
         xhtml.endElement("ul");
+        if (truncated) {
+            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                    "bookmark outline truncated at " + MAX_BOOKMARK_ITEMS + " items");
+        }
     }
 
     void extractAcroForm(PDDocument pdf) throws IOException, SAXException, TikaException {

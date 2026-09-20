@@ -1,5 +1,10 @@
 Release 4.1.0 - unreleased
 
+   * PDF bookmark outlines over 10,000 items were silently cut, and the actions
+     on the dropped items with them (a transcript's word index is ~12,000
+     items; 4.0.0 counted per subtree so the cap never fired). The budget is
+     100,000 and a cut is recorded as a warning (TIKA-4894).
+
    * Apple Mail emlx files are detected as message/x-emlx (real files pad the
      byte-count line to 10 columns and were falling through to text/html or
      message/rfc822), and RFC822Parser now parses them, dropping the byte-count
