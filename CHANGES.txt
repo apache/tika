@@ -1,5 +1,11 @@
 Release 4.1.0 - unreleased
 
+   * A file name no longer turns plain text into a message type (emlx, mbox,
+     rfc822, news, HTTP capture) when the type's magic has already rejected
+     the bytes: prose named .emlx is text/plain. An HTTP response captured
+     without its version line ("200 OK", then headers) is detected as
+     application/x-httpresponse (TIKA-4890).
+
    * Apple Mail emlx files are detected as message/x-emlx (real files pad the
      byte-count line to 10 columns and were falling through to text/html or
      message/rfc822), and RFC822Parser now parses them, dropping the byte-count

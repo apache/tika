@@ -65,6 +65,8 @@ public final class MimeTypes implements Detector, Serializable {
      * Name of the {@link #rootMimeType root} type, application/octet-stream.
      */
     public static final String OCTET_STREAM = "application/octet-stream";
+    private static final MediaType TEXT_BASED_MESSAGE =
+            MediaType.parse("text/x-tika-text-based-message");
     /**
      * Name of the {@link #textMimeType text} type, text/plain.
      */
@@ -630,9 +632,14 @@ public final class MimeTypes implements Detector, Serializable {
             return Collections.singletonList(hint);
         } else {
             for (final MimeType type : possibleTypes) {
-                if (hint.equals(type) ||
-                        registry.isSpecializationOf(hint.getType(), type.getType())) {
-                    // Use just this type
+                if (hint.equals(type)) {
+                    return Collections.singletonList(hint);
+                }
+                // a message type's magic is the verdict: prose named .emlx is not mail, though
+                // prose named .java is still java source (no magic can tell)
+                if (registry.isSpecializationOf(hint.getType(), type.getType())
+                        && !(MediaType.TEXT_PLAIN.equals(type.getType())
+                        && registry.isSpecializationOf(hint.getType(), TEXT_BASED_MESSAGE))) {
                     return Collections.singletonList(hint);
                 }
             }
