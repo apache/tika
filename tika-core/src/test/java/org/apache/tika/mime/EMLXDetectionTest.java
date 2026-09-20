@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 
 public class EMLXDetectionTest {
@@ -77,6 +78,42 @@ public class EMLXDetectionTest {
         }
         sb.append(HEADERS.replace("\nbody\n", "\n<html><body>body</body></html>\n"));
         assertMime("message/x-emlx", sb.toString());
+    }
+
+    @Test
+    public void testHttpCaptureIsNotEmlx() throws Exception {
+        // an LWP-style capture: a status line without the version, then HTTP headers
+        String capture = "200 OK\nDate: Thu, 08 Aug 2002 10:44:35 GMT\n"
+                + "Server: Apache Tomcat/4.0.1 (HTTP/1.1 Connector)\nContent-Type: image/svg+xml\n"
+                + "Client-Date: Thu, 08 Aug 2002 10:39:29 GMT\n\n<svg/>\n";
+        assertMime("application/x-httpresponse", capture);
+        // the .emlx name must not turn it into mail either
+        Metadata named = new Metadata();
+        named.set(TikaCoreProperties.RESOURCE_NAME_KEY, "capture.emlx");
+        try (TikaInputStream tis = TikaInputStream.get(capture.getBytes(StandardCharsets.UTF_8))) {
+            assertEquals("application/x-httpresponse",
+                    MIME_TYPES.detect(tis, named, new ParseContext()).toString());
+        }
+        assertMime("application/x-httpresponse", "HTTP/1.1 404 Not Found\r\nServer: nginx\r\n\r\n");
+    }
+
+    @Test
+    public void testNameDoesNotMakeProseAMessage() throws Exception {
+        // the magic looked and said no; the extension cannot overrule it for a message type
+        String prose = "The quick brown fox jumps over the lazy dog.\n";
+        for (String name : new String[]{"fox.emlx", "fox.mbox", "fox.eml"}) {
+            Metadata named = new Metadata();
+            named.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+            try (TikaInputStream tis = TikaInputStream.get(prose.getBytes(StandardCharsets.UTF_8))) {
+                assertEquals("text/plain", MIME_TYPES.detect(tis, named, new ParseContext()).toString(), name);
+            }
+        }
+        // a type without magic still takes its name
+        Metadata java = new Metadata();
+        java.set(TikaCoreProperties.RESOURCE_NAME_KEY, "Fox.java");
+        try (TikaInputStream tis = TikaInputStream.get(prose.getBytes(StandardCharsets.UTF_8))) {
+            assertEquals("text/x-java-source", MIME_TYPES.detect(tis, java, new ParseContext()).toString());
+        }
     }
 
     private void assertMime(String expected, String txt) throws IOException {
