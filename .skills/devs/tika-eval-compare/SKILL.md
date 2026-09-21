@@ -108,6 +108,27 @@ ships the jsonl reporter (TIKA-4846), `crashes-<run.id>.jsonl` into
 (`-ra/-rb`, `-pa/-pb` override). A baseline without the reporter gets
 run-info but no ledger. Needs python3.
 
+Launching tika-app directly (a standing run script with its own config, as on a
+corpus box) skips `run-batch.sh`, so add the reporter to that config once with the
+ledger path read from the environment, and `export TIKA_EXTRACTS=<extracts-dir>`
+in the same shell as the run. An unset variable fails the load naming it and the
+JSON path, so a run cannot silently proceed without its ledger. The file name must
+keep the `crashes-` prefix for Compare/Profile to find it by default:
+
+```json
+"pipes-reporters": {
+  "file-system-jsonl-reporter": {
+    "path": "${env:TIKA_EXTRACTS}/.run-info/crashes-batch.jsonl",
+    "includes": ["OOM", "TIMEOUT", "UNSPECIFIED_CRASH", "FAILED_TO_INITIALIZE",
+                 "FETCHER_INITIALIZATION_EXCEPTION", "EMITTER_INITIALIZATION_EXCEPTION",
+                 "CLIENT_UNAVAILABLE_WITHIN_MS", "FETCH_EXCEPTION", "EMIT_EXCEPTION",
+                 "FETCHER_NOT_FOUND", "EMITTER_NOT_FOUND", "PAYLOAD_LIMIT_EXCEEDED"],
+    "onExists": "EXCEPTION",
+    "maxMessageLength": 4096
+  }
+}
+```
+
 ### Notes
 
 - Do NOT pass `-n <N>` as a trailing argument — it confuses the
