@@ -297,7 +297,7 @@
     <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.2.0</maven.antrun.version>
     <maven.assembly.version>3.8.0</maven.assembly.version>
-    <maven.bundle.version>6.1.2</maven.bundle.version>
+    <maven.bundle.version>6.2.0</maven.bundle.version>
     <maven.compiler.plugin.version>3.16.0</maven.compiler.plugin.version>
     <maven.failsafe.version>3.6.0</maven.failsafe.version>
     <maven.surefire.version>3.6.0</maven.surefire.version>
