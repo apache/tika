@@ -150,6 +150,6 @@ May the gods of dependency management fix this in the future.
   </build>
 
   <scm>
-    <tag>3.0.0-rc1</tag>
+    <tag>4.1.0-rc1</tag>
   </scm>
 </project>
