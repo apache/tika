@@ -453,8 +453,8 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.7</zookeeper.version>
-    <zstd.version>1.5.7-16</zstd.version>
-    <nimbus-jose-jwt.version>10.9.1</nimbus-jose-jwt.version>
+    <zstd.version>1.5.7-17</zstd.version>
+    <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
     <logback.version>1.6.3</logback.version>
     <javacpp.version>1.5.13</javacpp.version>
     <maven.site.version>3.22.0</maven.site.version>
@@ -1120,7 +1120,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-deploy-plugin</artifactId>
-        <version>3.1.4</version>
+        <version>3.2.0</version>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
