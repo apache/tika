@@ -62,6 +62,15 @@ public class XmpDatesTest {
         assertNull(XmpDates.normalize(null));
     }
 
+    /** Year 0 (from D:0000... producers) must not become 1 BC, i.e. -0001-12-30 / -0001-11-28. */
+    @Test
+    public void testYearZeroReturnsNull() {
+        assertNull(XmpDates.normalize("0-01-01T00:00:00Z"));        // DateConverter path
+        assertNull(XmpDates.normalize("0-00-00T00:00:00Z"));        // DateUtils fallback path
+        assertNull(XmpDates.normalize("0-00-00T00:00:00-04:00"));
+        assertNull(XmpDates.normalize("0000-01-01T00:00:00Z"));
+    }
+
     /**
      * A partial date (YYYY, YYYY-MM) inflates to a full timestamp; exact-equality (not assertNotNull)
      * pins that fabricated precision so the value-representation fix trips this test.

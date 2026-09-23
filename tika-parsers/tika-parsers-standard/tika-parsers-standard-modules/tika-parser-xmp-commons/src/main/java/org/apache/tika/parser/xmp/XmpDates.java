@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.xmp;
 
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -43,7 +45,7 @@ public final class XmpDates {
         try {
             Calendar c = DateConverter.toCalendar(s);
             if (c != null) {
-                return DateUtils.formatDate(c);
+                return beforeYearOne(c.toInstant()) ? null : DateUtils.formatDate(c);
             }
         } catch (SecurityException e) {
             throw e;
@@ -52,9 +54,14 @@ public final class XmpDates {
         }
         // DateUtils fallback catches EXIF yyyy:MM:dd; not thread-safe, so new instance.
         Date d = new DateUtils().tryToParse(s);
-        if (d != null) {
+        if (d != null && !beforeYearOne(d.toInstant())) {
             return DateUtils.formatDate(d);
         }
         return null;
+    }
+
+    // year 0 ("D:0000...") resolves to 1 BC and prints as -0001-12-30
+    private static boolean beforeYearOne(Instant i) {
+        return i.atOffset(ZoneOffset.UTC).getYear() < 1;
     }
 }

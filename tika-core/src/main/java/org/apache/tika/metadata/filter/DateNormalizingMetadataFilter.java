@@ -16,10 +16,16 @@
  */
 package org.apache.tika.metadata.filter;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.Date;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAccessor;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -56,6 +62,17 @@ public class DateNormalizingMetadataFilter extends MetadataFilterBase {
 
     private static TimeZone UTC = TimeZone.getTimeZone("UTC");
 
+    // full match only: an offset, when present, must be honored, never dropped
+    private static final DateTimeFormatter LOCAL_OR_OFFSET = new DateTimeFormatterBuilder()
+            .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
+            .optionalStart().appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true).optionalEnd()
+            .optionalStart().appendOffset("+HH:MM", "Z").optionalEnd()
+            .optionalStart().appendOffset("+HHMM", "Z").optionalEnd()
+            .toFormatter(Locale.ROOT);
+
+    private static final DateTimeFormatter UTC_OUT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
+
     private static final Logger LOGGER = LoggerFactory.getLogger(DateNormalizingMetadataFilter.class);
 
     private TimeZone defaultTimeZone = UTC;
@@ -83,34 +100,29 @@ public class DateNormalizingMetadataFilter extends MetadataFilterBase {
     }
 
     protected void filter(Metadata metadata) {
-        SimpleDateFormat dateFormatter = null;
-        SimpleDateFormat utcFormatter = null;
         for (String n : metadata.names()) {
-
             Property property = Property.get(n);
-            if (property != null) {
-                if (property.getValueType().equals(Property.ValueType.DATE)) {
-                    String dateString = metadata.get(property);
-                    if (dateString.endsWith("Z")) {
-                        continue;
-                    }
-                    if (dateFormatter == null) {
-                        dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-                        dateFormatter.setTimeZone(defaultTimeZone);
-                        utcFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-                        utcFormatter.setTimeZone(UTC);
-                    }
-                    Date d = null;
-                    try {
-                        d = dateFormatter.parse(dateString);
-                        metadata.set(property, utcFormatter.format(d));
-                    } catch (ParseException e) {
-                        LOGGER.warn("Couldn't convert date to default time zone: >"
-                                + dateString + "<");
-                    }
-                }
+            if (property == null || !property.getValueType().equals(Property.ValueType.DATE)) {
+                continue;
+            }
+            String dateString = metadata.get(property);
+            if (dateString.endsWith("Z")) {
+                continue;
+            }
+            try {
+                metadata.set(property, toUtc(dateString));
+            } catch (DateTimeParseException e) {
+                LOGGER.warn("Couldn't convert date to default time zone: >" + dateString + "<");
             }
         }
+    }
+
+    private String toUtc(String dateString) {
+        TemporalAccessor t = LOCAL_OR_OFFSET.parse(dateString);
+        OffsetDateTime odt = t.isSupported(ChronoField.OFFSET_SECONDS) ? OffsetDateTime.from(t)
+                : LocalDateTime.from(t).atZone(defaultTimeZone.toZoneId()).toOffsetDateTime();
+        return odt.withOffsetSameInstant(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS)
+                .format(UTC_OUT);
     }
 
     public void setDefaultTimeZone(String timeZoneId) {

@@ -214,6 +214,25 @@ public class TestMetadataFilter extends TikaTest {
         assertEquals("2021-07-23T08:02:24Z", m.get(TikaCoreProperties.CREATED));
     }
 
+    /** An explicit offset wins over the default zone; it used to be dropped and relabeled Z. */
+    @Test
+    public void testDateNormalizingFilterKeepsOffset() throws Exception {
+        DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();
+        filter.setDefaultTimeZone("America/Los_Angeles");
+        String[][] cases = {
+                {"2010-05-09T21:34:38+0200", "2010-05-09T19:34:38Z"},
+                {"2010-05-09T21:34:38+02:00", "2010-05-09T19:34:38Z"},
+                {"2010-05-09T21:34:38-05:00", "2010-05-10T02:34:38Z"},
+                {"2010-05-09T21:34:38.123+02:00", "2010-05-09T19:34:38Z"},
+        };
+        for (String[] c : cases) {
+            Metadata m = new Metadata();
+            m.set(TikaCoreProperties.CREATED, c[0]);
+            filter.filter(m);
+            assertEquals(c[1], m.get(TikaCoreProperties.CREATED), c[0]);
+        }
+    }
+
     @Test
     public void testCaptureGroupBasic() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-4133-capture-group.json"));

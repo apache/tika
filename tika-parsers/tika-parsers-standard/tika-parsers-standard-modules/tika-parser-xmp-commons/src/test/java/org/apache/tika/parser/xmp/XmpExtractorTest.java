@@ -93,6 +93,16 @@ public class XmpExtractorTest {
         assertEquals("2020-01-02T03:04:05Z", md.get(XMP.CREATE_DATE));              // xmp key still set
     }
 
+    /** An unparseable XMP date (here year 0) must not be promoted to the canonical created date. */
+    @Test
+    public void testYearZeroNotPromotedToCreated() throws Exception {
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(PACKET.replace("2020-01-02T03:04:05Z", "0-01-01T00:00:00Z")
+                .getBytes(UTF_8), md);
+        assertNull(md.get(TikaCoreProperties.CREATED));
+        assertEquals("0-01-01T00:00:00Z", md.get(XMP.CREATE_DATE));   // raw value kept on the xmp key
+    }
+
     @Test
     public void testMultiValued() {
         assertArrayEquals(new String[]{"Alice", "Bob"}, metadata.getValues(TikaCoreProperties.CREATOR));
