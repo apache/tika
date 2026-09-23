@@ -19,7 +19,6 @@ package org.apache.tika.parser.mail;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -60,13 +59,13 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.csv.TextAndCSVParser;
 import org.apache.tika.parser.html.JSoupParser;
-import org.apache.tika.parser.mailcommons.MailDateParser;
 import org.apache.tika.parser.mailcommons.MailUtil;
 import org.apache.tika.parser.txt.TXTParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Bridge between mime4j's content handler and the generic Sax content handler
@@ -199,7 +198,7 @@ class MailContentHandler implements ContentHandler {
     }
 
     private void tryToAddDate(String value, Property property, Metadata metadata) {
-        Date d = MailDateParser.parseDateLenient(value);
+        String d = TikaDates.toMetadataString(value);
         if (d != null) {
             metadata.set(property, d);
         }
@@ -374,16 +373,7 @@ class MailContentHandler implements ContentHandler {
                     metadata.add(Message.RAW_HEADER, parsedField.getName(), field.getBody());
                 }
             } else if (fieldname.equalsIgnoreCase("Date")) {
-                String dateBody = parsedField.getBody();
-                Date date = null;
-                try {
-                    date = MailDateParser.parseDateLenient(dateBody);
-                    metadata.set(TikaCoreProperties.CREATED, date);
-                } catch (SecurityException e) {
-                    throw e;
-                } catch (Exception e) {
-                    //swallow
-                }
+                tryToAddDate(parsedField.getBody(), TikaCoreProperties.CREATED, metadata);
             } else {
                 metadata.add(Message.RAW_HEADER, parsedField.getName(), field.getBody());
             }

@@ -16,7 +16,6 @@
  */
 package org.apache.tika.parser.mailcommons;
 
-import static java.time.ZoneOffset.UTC;
 import static java.time.temporal.ChronoField.AMPM_OF_DAY;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.DAY_OF_WEEK;
@@ -35,12 +34,8 @@ import java.text.ParseException;
 import java.text.ParsePosition;
 import java.time.DateTimeException;
 import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.time.format.DateTimeParseException;
 import java.time.format.ResolverStyle;
 import java.time.format.SignStyle;
 import java.time.temporal.ChronoField;
@@ -53,6 +48,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Dates in emails are a mess.  There are at least two major date related bugs in JDK 8.
@@ -467,27 +463,9 @@ public class MailDateParser {
                     .toFormatter(Locale.US).withZone(MIDDAY.toZoneId());
 
 
-    private static final DateTimeFormatter[] DATE_FORMATTERS = new DateTimeFormatter[] {
-            DD_MMM_YY,
-            MMM_DD_YY,
-            YYYY_MM_DD,
-            MM_SLASH_DD_SLASH_YYYY,//try American first?
-            DD_SLASH_MM_SLASH_YYYY,//if that fails, try rest of world?
-            YY_SLASH_MM_SLASH_DD
-    };
 
 
 
-    private static final DateTimeFormatter[] DATE_TIME_FORMATTERS = new DateTimeFormatter[] {
-            RFC_5322_LENIENT,
-            RFC_5322_AMPM_LENIENT,
-            MMM_D_YYYY_HH_MM,
-            MMM_D_YYYY_HH_MM_AM_PM,
-            YYYY_MM_DD_HH_MM,
-            MM_SLASH_DD_SLASH_YY_HH_MM,
-            MM_SLASH_DD_SLASH_YY_HH_MM_AM_PM
-
-    };
     public static Date parseRFC5322(String string) throws ParseException {
         //this fails on: MON, 9 MAY 2016 3:32:00 GMT+0200 ... it stops short and doesn't include
         // the +0200?!
@@ -498,51 +476,15 @@ public class MailDateParser {
         return Date.from(Instant.from(RFC_5322.parse(string, new ParsePosition(0))));
     }
 
+    /**
+     * @return the instant, or null if not a full-precision date
+     * @deprecated delegates to {@link TikaDates}; store {@link TikaDates#toMetadataString(String)}
+     * instead so zone-less dates stay zone-less.
+     */
+    @Deprecated
     public static Date parseDateLenient(String text) {
-        if (text == null) {
-            return null;
-        }
-        String normalized = normalize(text);
-        for (DateTimeFormatter dateTimeFormatter : DATE_TIME_FORMATTERS) {
-            try {
-                ZonedDateTime zonedDateTime = ZonedDateTime.parse(normalized, dateTimeFormatter);
-                return Date.from(Instant.from(zonedDateTime));
-            } catch (SecurityException e) {
-                throw e;
-            } catch (DateTimeParseException e) {
-
-                //There's a bug in java 8 that if we include .withZone in the DateTimeFormatter,
-                //that will override the offset/timezone id even if it included
-                // in the original string.  This is fixed in later versions of Java.
-                // Once we move to Java 11, we can get rid of this. Can't make this up...
-                try {
-                    LocalDateTime localDateTime = LocalDateTime.parse(normalized, dateTimeFormatter);
-                    return Date.from(Instant.from(localDateTime.atOffset(UTC)));
-                } catch (SecurityException e2) {
-                    throw e2;
-                } catch (Exception e2) {
-                    //swallow
-                }
-            } catch (Exception e) {
-                //can get StringIndexOutOfBoundsException because of a bug in java 8
-                //ignore
-            }
-        }
-
-        for (DateTimeFormatter dateFormatter : DATE_FORMATTERS) {
-            try {
-                TemporalAccessor temporalAccessor = dateFormatter.parse(normalized);
-                ZonedDateTime localDate = LocalDate.from(temporalAccessor)
-                        .atStartOfDay()
-                        .atZone(MIDDAY.toZoneId());
-                return Date.from(Instant.from(localDate));
-            } catch (SecurityException e) {
-                throw e;
-            } catch (Exception e) {
-                //ignore
-            }
-        }
-        return null;
+        return TikaDates.parse(text).filter(TikaDates.ParsedDate::isFullPrecision)
+                .map(d -> Date.from(d.toInstant())).orElse(null);
     }
 
     private static boolean hasInstantSeconds(TemporalAccessor temporalAccessor) {

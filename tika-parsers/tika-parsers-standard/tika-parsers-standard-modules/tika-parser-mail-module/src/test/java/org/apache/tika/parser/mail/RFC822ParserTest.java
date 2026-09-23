@@ -60,6 +60,24 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 public class RFC822ParserTest extends TikaTest {
 
+    /** TIKA-4917: a zone-less Date header stays zone-less; an unparseable one is not stored. */
+    @Test
+    public void testDateHeaderRepresentation() throws Exception {
+        assertEquals("2000-12-01T08:39:07", createdFor("Fri, 01 Dec 2000 08:39:07"));
+        assertEquals("2000-12-01T07:39:07Z", createdFor("Fri, 01 Dec 2000 08:39:07 +0100"));
+        assertEquals("1992-04-10T11:00:33Z", createdFor("Fri Apr 10 04:00:33 PDT 1992"));   // ctime
+        assertEquals(null, createdFor("not a date"));
+    }
+
+    private String createdFor(String dateHeader) throws Exception {
+        String eml = "From: a@example.com\r\nDate: " + dateHeader + "\r\nSubject: s\r\n\r\nbody\r\n";
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(eml.getBytes(US_ASCII))) {
+            new RFC822Parser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        }
+        return metadata.get(TikaCoreProperties.CREATED);
+    }
+
     //legacy RFC822 behavior...extract every alternative part
     private static Parser EXTRACT_ALL_ALTERNATIVES_PARSER;
 

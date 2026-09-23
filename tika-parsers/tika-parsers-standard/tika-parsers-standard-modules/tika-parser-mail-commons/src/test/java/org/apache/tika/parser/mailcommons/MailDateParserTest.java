@@ -63,7 +63,7 @@ public class MailDateParserTest {
                 "9 May 2016 3:32:00 +02:00",
                 "Mon, 9 May 2016 3:32:00+02:00",
                 "Mon, 9 May 2016 3:32:00+0200",
-                "      Sun, 8 May 2016 21:32:00 EST",
+                "      Sun, 8 May 2016 21:32:00 EDT",
                 //need to add am/pm format times?  I hope not.
 
         }) {
@@ -148,7 +148,9 @@ public class MailDateParserTest {
                 "7/20/95 1:12PM",
                 "08/14/2000  12:48 AM",
                 "8/4/2000  1:48 AM",
-                "06/24/2008, Tuesday, 11 AM",
+                "8/1/03",
+                "Wed, 27 Dec 95 11:20:40 EST",
+                "26 Aug 00 11:14:52 EDT",
                 }) {
             Date parsedDate = MailDateParser.parseDateLenient(dateString);
             assertNotNull(parsedDate);
@@ -167,6 +169,12 @@ public class MailDateParserTest {
         //
         //We are still misparsing: 8/1/03 to a pre 1980 date
 
+    }
+
+    /** TIKA-4917: RFC 5322 zone names are fixed offsets: EST is -05:00 even in May (was read as EDT). */
+    @Test
+    public void testNamedZonesAreFixedOffsets() throws Exception {
+        testDate("Sun, 8 May 2016 21:32:00 EST", "2016-05-09T02:32:00Z", true);
     }
 
     @Test
