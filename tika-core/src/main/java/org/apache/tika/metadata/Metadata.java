@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import org.slf4j.Logger;
@@ -42,6 +43,7 @@ import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.DateUtils;
 import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * A multi-valued metadata container.
@@ -175,14 +177,23 @@ public class Metadata implements Serializable {
     }
 
     /**
-     * Parses the given date string. This method is synchronized to prevent
+     * Parses the given date string. The legacy fallback is synchronized to prevent
      * concurrent access to the thread-unsafe date formats.
      *
      * @param date date string
      * @return parsed date, or <code>null</code> if the date can't be parsed
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
      */
-    private static synchronized Date parseDate(String date) {
+    private static Date parseDate(String date) {
+        // zone-less values resolve as UTC, never in the JVM default zone (TIKA-4917)
+        Optional<TikaDates.ParsedDate> parsed = TikaDates.parse(date);
+        if (parsed.isPresent() && parsed.get().isFullPrecision()) {
+            return Date.from(parsed.get().toInstant());
+        }
+        return legacyParseDate(date);
+    }
+
+    private static synchronized Date legacyParseDate(String date) {
         return DATE_UTILS.tryToParse(date);
     }
 
