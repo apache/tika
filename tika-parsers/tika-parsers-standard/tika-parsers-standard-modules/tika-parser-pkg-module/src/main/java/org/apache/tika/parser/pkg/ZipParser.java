@@ -22,9 +22,9 @@ import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.attribute.FileTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -35,6 +35,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.Feature;
+import org.apache.commons.compress.archivers.zip.X000A_NTFS;
+import org.apache.commons.compress.archivers.zip.X5455_ExtendedTimestamp;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
@@ -55,6 +57,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -615,6 +618,34 @@ public class ZipParser extends AbstractArchiveParser {
         }
     }
 
+    /**
+     * Entry times are file-system times ({@code fs:*}), never the embedded document's own dates.
+     * The extended-timestamp (0x5455) and NTFS (0x000A) extra fields hold UTC instants; without them
+     * only the MS-DOS field exists: local wall-clock time, stored zone-less.
+     */
+    static void setEntryTimes(ZipArchiveEntry entry, Metadata md) {
+        X5455_ExtendedTimestamp ts = entry.getExtraField(X5455_ExtendedTimestamp.HEADER_ID)
+                instanceof X5455_ExtendedTimestamp x ? x : null;
+        X000A_NTFS ntfs = entry.getExtraField(X000A_NTFS.HEADER_ID) instanceof X000A_NTFS n ? n : null;
+        Date modified = ts != null && ts.isBit0_modifyTimePresent() ? ts.getModifyJavaTime()
+                : ntfs != null ? ntfs.getModifyJavaTime() : null;
+        if (modified != null) {
+            md.set(FileSystem.MODIFIED, modified);
+        } else if (entry.getTime() != -1) {
+            AbstractArchiveParser.setLocalTime(md, FileSystem.MODIFIED, new Date(entry.getTime()));
+        }
+        Date created = ts != null && ts.isBit2_createTimePresent() ? ts.getCreateJavaTime()
+                : ntfs != null ? ntfs.getCreateJavaTime() : null;
+        if (created != null) {
+            md.set(FileSystem.CREATED, created);
+        }
+        Date accessed = ts != null && ts.isBit1_accessTimePresent() ? ts.getAccessJavaTime()
+                : ntfs != null ? ntfs.getAccessJavaTime() : null;
+        if (accessed != null) {
+            md.set(FileSystem.ACCESSED, accessed);
+        }
+    }
+
     private Metadata buildEntryMetadata(ZipArchiveEntry entry, String name, ParseContext context)
             throws IOException, TikaException, SAXException {
         Metadata entryMetadata = Metadata.newInstance(context);
@@ -625,14 +656,7 @@ public class ZipParser extends AbstractArchiveParser {
             entryMetadata.set(TikaCoreProperties.INTERNAL_PATH, name);
         }
 
-        FileTime creationTime = entry.getCreationTime();
-        if (creationTime != null) {
-            entryMetadata.set(TikaCoreProperties.CREATED, creationTime.toInstant().toString());
-        }
-        FileTime modifiedTime = entry.getLastModifiedTime();
-        if (modifiedTime != null) {
-            entryMetadata.set(TikaCoreProperties.MODIFIED, modifiedTime.toInstant().toString());
-        }
+        setEntryTimes(entry, entryMetadata);
 
         long size = entry.getSize();
         if (size >= 0) {

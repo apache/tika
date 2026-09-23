@@ -17,15 +17,21 @@
 package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.Locale;
 
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
@@ -36,6 +42,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * for handling embedded documents within archives.
  */
 public abstract class AbstractArchiveParser extends AbstractEncodingDetectorParser {
+
+    private static final DateTimeFormatter ZONELESS =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
 
     public AbstractArchiveParser() {
         super();
@@ -49,8 +58,8 @@ public abstract class AbstractArchiveParser extends AbstractEncodingDetectorPars
      * Handles metadata for an archive entry and writes appropriate XHTML elements.
      *
      * @param name       the entry name
-     * @param createAt   creation date (may be null)
-     * @param modifiedAt modification date (may be null)
+     * @param createAt   creation instant (may be null), stored as {@link FileSystem#CREATED}
+     * @param modifiedAt modification instant (may be null), stored as {@link FileSystem#MODIFIED}
      * @param size       entry size (may be null)
      * @param xhtml      the XHTML content handler
      * @param context    the parse context
@@ -61,11 +70,12 @@ public abstract class AbstractArchiveParser extends AbstractEncodingDetectorPars
                                                ParseContext context)
             throws SAXException, IOException, TikaException {
         Metadata entrydata = Metadata.newInstance(context);
+        // entry times are file-system times, never the embedded document's own dates
         if (createAt != null) {
-            entrydata.set(TikaCoreProperties.CREATED, createAt);
+            entrydata.set(FileSystem.CREATED, createAt);
         }
         if (modifiedAt != null) {
-            entrydata.set(TikaCoreProperties.MODIFIED, modifiedAt);
+            entrydata.set(FileSystem.MODIFIED, modifiedAt);
         }
         if (size != null) {
             entrydata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(size));
@@ -81,5 +91,16 @@ public abstract class AbstractArchiveParser extends AbstractEncodingDetectorPars
             xhtml.endElement("div");
         }
         return entrydata;
+    }
+
+    /**
+     * For formats that store local wall-clock time with no zone (MS-DOS times in zip, rar, arj):
+     * the library resolved it in the JVM default zone, so undo that and store it zone-less.
+     */
+    static void setLocalTime(Metadata metadata, Property property, Date resolvedInDefaultZone) {
+        if (resolvedInDefaultZone != null) {
+            metadata.set(property, ZONELESS.format(
+                    LocalDateTime.ofInstant(resolvedInDefaultZone.toInstant(), ZoneId.systemDefault())));
+        }
     }
 }

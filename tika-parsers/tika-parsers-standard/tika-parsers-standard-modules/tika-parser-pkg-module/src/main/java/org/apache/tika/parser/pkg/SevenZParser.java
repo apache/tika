@@ -41,6 +41,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -171,6 +172,9 @@ public class SevenZParser extends AbstractArchiveParser {
                 entry.getSize(),
                 xhtml,
                 context);
+        if (entry.getHasAccessDate()) {
+            entrydata.set(FileSystem.ACCESSED, entry.getAccessDate());
+        }
 
         if (extractor.shouldParseEmbedded(entrydata, context)) {
             TemporaryResources tmp = new TemporaryResources();
