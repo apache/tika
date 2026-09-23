@@ -149,7 +149,7 @@ public final class TikaDates {
             "([A-Z]{3,9})\\s+(\\d{1,2})\\s+" + TIME + "(?:\\s+([A-Z]{1,5}))?\\s+(\\d{4})" + ZONE);
     // M/d/yy[yy] or d/M/yy[yy] [time] [zone]
     private static final Pattern SLASH = Pattern.compile(
-            "(\\d{1,2})/(\\d{1,2})/(\\d{4}|\\d{2})(?:,?\\s+" + TIME + ")?" + ZONE);
+            "(\\d{1,2})/(\\d{1,2})/(\\d{4}|\\d{1,2})(?:,?\\s+" + TIME + ")?" + ZONE);
     private static final Pattern SLASH_YMD = Pattern.compile(
             "(\\d{4})/(\\d{1,2})/(\\d{1,2})(?:\\s+" + TIME + ")?" + ZONE);
 
@@ -409,6 +409,14 @@ public final class TikaDates {
         }
         int a = Integer.parseInt(m.group(1));
         int b = Integer.parseInt(m.group(2));
+        if (a > 31) {
+            // only a year can be > 31: yy/M/d
+            return build(year(m.group(1)), b, Integer.parseInt(m.group(3)), m.group(4), m.group(5), m.group(6),
+                    m.group(7), zone(m, 8));
+        }
+        if (m.group(3).length() == 1) {
+            return null;
+        }
         int month = a > 12 ? b : a;
         int day = a > 12 ? a : b;
         return build(year(m.group(3)), month, day, m.group(4), m.group(5), m.group(6), m.group(7), zone(m, 8));
