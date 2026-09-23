@@ -59,7 +59,9 @@ public class MetadataHandler extends DefaultHandler {
     public void addMetadata(String value) {
         if (value.length() > 0) {
             String previous = metadata.get(name);
-            if (previous != null && previous.length() > 0) {
+            // joined dates are unparseable: the document's own date replaces a container-set one
+            if (previous != null && previous.length() > 0
+                    && property.getPrimaryProperty().getValueType() != Property.ValueType.DATE) {
                 value = previous + ", " + value;
             }
             metadata.set(property, value);
