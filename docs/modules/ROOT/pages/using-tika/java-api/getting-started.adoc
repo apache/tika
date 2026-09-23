@@ -66,7 +66,8 @@ try (PipesForkParser parser = new PipesForkParser()) {
 See
 https://github.com/apache/tika/blob/main/tika-example/src/main/java/org/apache/tika/example/PipesForkParserExample.java[PipesForkParserExample.java]
 in the `tika-example` module for embedded documents, custom configuration, error handling and batch
-processing.
+processing. `PipesForkParser` reads local files only; for other sources and destinations, or for
+a whole iterator-to-emitter pipeline, see xref:using-tika/java-api/pipes.adoc[Tika Pipes from Java].
 
 == Without process isolation
 

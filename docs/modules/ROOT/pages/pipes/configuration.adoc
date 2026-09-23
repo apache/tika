@@ -41,7 +41,7 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 
 |`numClients`
 |_CPU-derived_
-|Number of parallel forked JVMs. Each processes one document at a time. Defaults to `max(1, min((cores - 2) / 2, 4))` -- roughly half the host's cores, capped at 4. The batch CLIs (`tika-app -i/-o`, `tika-async-cli`) override that to `2` when neither `-n` nor a config value is given -- see xref:using-tika/cli/index.adoc#_tika_pipes_processing[Tika Pipes Processing]. See xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing] for guidance on choosing this value relative to host CPU count.
+|Number of parallel forked JVMs. Each processes one document at a time. Defaults to `+max(1, min((cores - 2) / 2, 4))+` -- roughly half the host's cores, capped at 4. The batch CLIs (`tika-app -i/-o`, `tika-async-cli`) override that to `2` when neither `-n` nor a config value is given -- see xref:using-tika/cli/index.adoc#_tika_pipes_processing[Tika Pipes Processing]. See xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing] for guidance on choosing this value relative to host CPU count.
 
 |`forkedJvmArgs`
 |`[]`
