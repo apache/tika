@@ -18,6 +18,7 @@
 * xref:using-tika/index.adoc[Using Tika]
 ** xref:using-tika/java-api/index.adoc[Java API]
 *** xref:using-tika/java-api/getting-started.adoc[Getting Started with the Java API]
+*** xref:using-tika/java-api/pipes.adoc[Tika Pipes from Java]
 ** xref:using-tika/cli/index.adoc[Command Line]
 ** xref:using-tika/server/index.adoc[Tika Server]
 *** xref:using-tika/server/tls.adoc[TLS/SSL Configuration]
