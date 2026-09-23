@@ -103,6 +103,21 @@ public class XmpExtractorTest {
         assertEquals("0-01-01T00:00:00Z", md.get(XMP.CREATE_DATE));   // raw value kept on the xmp key
     }
 
+    /** TIKA-4917: zone-less and date-only XMP values stay as written through to the canonical keys. */
+    @Test
+    public void testZonelessDatesStayZoneless() throws Exception {
+        Metadata md = new Metadata();
+        new XmpExtractor().extract(PACKET.replace("2020-01-02T03:04:05Z", "2010-01-10T13:00:19")
+                .getBytes(UTF_8), md);
+        assertEquals("2010-01-10T13:00:19", md.get(XMP.CREATE_DATE));
+        assertEquals("2010-01-10T13:00:19", md.get(TikaCoreProperties.CREATED));
+
+        md = new Metadata();
+        new XmpExtractor().extract(PACKET.replace("2020-01-02T03:04:05Z", "2015:06:12")
+                .getBytes(UTF_8), md);
+        assertEquals("2015-06-12", md.get(TikaCoreProperties.CREATED));
+    }
+
     @Test
     public void testMultiValued() {
         assertArrayEquals(new String[]{"Alice", "Bob"}, metadata.getValues(TikaCoreProperties.CREATOR));
