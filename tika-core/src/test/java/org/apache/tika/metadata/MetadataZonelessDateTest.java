@@ -17,6 +17,7 @@
 package org.apache.tika.metadata;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.time.Instant;
 import java.util.TimeZone;
@@ -58,5 +59,16 @@ public class MetadataZonelessDateTest {
         Metadata m = new Metadata();
         m.set(TikaCoreProperties.CREATED, stored);
         return m.getDate(TikaCoreProperties.CREATED).toInstant();
+    }
+
+    /** TIKA-4917: no legacy DateUtils fallback, so garbage no longer comes back as a year-0 date. */
+    @Test
+    public void testGarbageIsNull() {
+        Metadata m = new Metadata();
+        for (String garbage : new String[]{"0-00-00T00:00:00Z", "0000-00-00", "2019", "INVALID"}) {
+            m.set(TikaCoreProperties.CREATED, garbage);
+            assertNull(m.getDate(TikaCoreProperties.CREATED), garbage);
+            assertNull(new org.apache.tika.utils.DateUtils().tryToParse(garbage), garbage);
+        }
     }
 }

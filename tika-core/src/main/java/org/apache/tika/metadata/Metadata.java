@@ -41,7 +41,6 @@ import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiter;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.utils.DateUtils;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.TikaDates;
 
@@ -115,7 +114,6 @@ public class Metadata implements Serializable {
      * Some parsers will have the date as a ISO-8601 string
      * already, and will set that into the Metadata object.
      */
-    private static final DateUtils DATE_UTILS = new DateUtils();
     /**
      * A map of all metadata attributes.
      */
@@ -177,24 +175,12 @@ public class Metadata implements Serializable {
     }
 
     /**
-     * Parses the given date string. The legacy fallback is synchronized to prevent
-     * concurrent access to the thread-unsafe date formats.
-     *
-     * @param date date string
-     * @return parsed date, or <code>null</code> if the date can't be parsed
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
+     * Parses a stored date. Zone-less values resolve as UTC, never in the JVM default zone;
+     * anything that isn't a full-precision date gives null.
      */
     private static Date parseDate(String date) {
-        // zone-less values resolve as UTC, never in the JVM default zone (TIKA-4917)
         Optional<TikaDates.ParsedDate> parsed = TikaDates.parse(date);
-        if (parsed.isPresent() && parsed.get().isFullPrecision()) {
-            return Date.from(parsed.get().toInstant());
-        }
-        return legacyParseDate(date);
-    }
-
-    private static synchronized Date legacyParseDate(String date) {
-        return DATE_UTILS.tryToParse(date);
+        return parsed.isPresent() && parsed.get().isFullPrecision() ? Date.from(parsed.get().toInstant()) : null;
     }
 
     /**
