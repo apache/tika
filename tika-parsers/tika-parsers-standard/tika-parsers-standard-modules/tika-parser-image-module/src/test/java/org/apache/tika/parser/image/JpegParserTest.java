@@ -63,10 +63,9 @@ public class JpegParserTest extends TikaTest {
 
     @BeforeAll
     static void init() {
-        // metadata-extractor 2.20.0 started making these parsed dates depend on the JVM default time zone;
-        // force GMT so the assertions remain deterministic across environments
+        // Zone-less EXIF dates must not depend on the JVM default zone (TIKA-4917); +14h makes any leak fail.
         originalTimeZone = TimeZone.getDefault();
-        TimeZone.setDefault(TimeZone.getTimeZone("GMT"));
+        TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Kiritimati"));
     }
     @AfterAll
     static void tearDown() {
