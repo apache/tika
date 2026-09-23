@@ -105,15 +105,18 @@ public class DateNormalizingMetadataFilter extends MetadataFilterBase {
             if (property == null || !property.getValueType().equals(Property.ValueType.DATE)) {
                 continue;
             }
-            String dateString = metadata.get(property);
-            if (dateString.endsWith("Z")) {
-                continue;
+            String[] values = metadata.getValues(property);
+            for (int i = 0; i < values.length; i++) {
+                if (values[i].endsWith("Z")) {
+                    continue;
+                }
+                try {
+                    values[i] = toUtc(values[i]);
+                } catch (DateTimeParseException e) {
+                    LOGGER.warn("Couldn't convert date to default time zone: >" + values[i] + "<");
+                }
             }
-            try {
-                metadata.set(property, toUtc(dateString));
-            } catch (DateTimeParseException e) {
-                LOGGER.warn("Couldn't convert date to default time zone: >" + dateString + "<");
-            }
+            metadata.set(property, values);
         }
     }
 

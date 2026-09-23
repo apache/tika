@@ -233,6 +233,19 @@ public class TestMetadataFilter extends TikaTest {
         }
     }
 
+    /** Every value of a multi-valued date is normalized; it used to keep only the first. */
+    @Test
+    public void testDateNormalizingFilterMultiValued() throws Exception {
+        DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();
+        Metadata m = new Metadata();
+        m.add(TikaCoreProperties.SIGNATURE_DATE, "2010-05-09T21:34:38+02:00");
+        m.add(TikaCoreProperties.SIGNATURE_DATE, "2011-01-01T00:00:00Z");
+        m.add(TikaCoreProperties.SIGNATURE_DATE, "2012-06-01T08:00:00");
+        filter.filter(m);
+        assertArrayEquals(new String[]{"2010-05-09T19:34:38Z", "2011-01-01T00:00:00Z", "2012-06-01T08:00:00Z"},
+                m.getValues(TikaCoreProperties.SIGNATURE_DATE));
+    }
+
     @Test
     public void testCaptureGroupBasic() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-4133-capture-group.json"));
