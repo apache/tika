@@ -48,7 +48,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.mailcommons.MailUtil;
+import org.apache.tika.parser.mail.MailUtil;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.TikaDates;

@@ -59,7 +59,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.csv.TextAndCSVParser;
 import org.apache.tika.parser.html.JSoupParser;
-import org.apache.tika.parser.mailcommons.MailUtil;
 import org.apache.tika.parser.txt.TXTParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
