@@ -30,10 +30,10 @@ import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
 
@@ -325,6 +325,8 @@ final class TextExtractor {
     private int uprState = -1;
     // Used when extracting CREATION date; reset per \\creatim group
     private int year = -1, month = -1, day = -1, hour, minute;
+    private static final DateTimeFormatter ZONELESS =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
 
     //This keeps track of the following elements as they are
     //written to the handler: p, li, ol, ul
@@ -1482,13 +1484,13 @@ final class TextExtractor {
         in.unread(b2);
     }
 
-    // RTF times carry no zone: read as UTC (never the JVM default); missing or invalid fields -> no date
-    private Date creationDate() {
+    // RTF times carry no zone, so the stored value has none; missing or invalid fields -> no date
+    private String creationDate() {
         if (year < TikaDates.MIN_YEAR || year > TikaDates.MAX_YEAR) {
             return null;
         }
         try {
-            return Date.from(LocalDateTime.of(year, month, day, hour, minute).toInstant(ZoneOffset.UTC));
+            return ZONELESS.format(LocalDateTime.of(year, month, day, hour, minute));
         } catch (DateTimeException e) {
             return null;
         }
@@ -1499,7 +1501,7 @@ final class TextExtractor {
         if (inHeader) {
             if (nextMetaData != null) {
                 if (nextMetaData == TikaCoreProperties.CREATED) {
-                    Date created = creationDate();
+                    String created = creationDate();
                     if (created != null) {
                         metadata.set(nextMetaData, created);
                     }
