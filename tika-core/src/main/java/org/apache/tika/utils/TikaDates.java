@@ -43,6 +43,8 @@ import java.util.regex.Pattern;
  * unless the first field is over 12; years outside {@link #MIN_YEAR}..{@link #MAX_YEAR} are
  * rejected. Partial dates (year or year-month) parse but never {@link #normalize}.
  * <p>
+ * Storage ({@link #toMetadataString}) keeps a missing zone visible: zone-less values stay zone-less.
+ * <p>
  * Thread-safe.
  */
 public final class TikaDates {
@@ -96,6 +98,20 @@ public final class TikaDates {
             return CANONICAL.format(toInstant().truncatedTo(ChronoUnit.SECONDS).atOffset(ZoneOffset.UTC));
         }
 
+        /**
+         * The form to store on a DATE property: canonical UTC {@code ...Z} when the source had a zone,
+         * zone-less {@code yyyy-MM-dd'T'HH:mm:ss} when it had none, {@code yyyy-MM-dd} for a date only.
+         */
+        public String toMetadataString() {
+            if (precision == Precision.DAY) {
+                return DATE_ONLY.format(local);
+            }
+            if (offset != null) {
+                return toCanonicalString();
+            }
+            return ZONELESS.format(local);
+        }
+
         @Override
         public String toString() {
             return local + (offset == null ? "" : offset.toString()) + " (" + precision + ")";
@@ -104,6 +120,9 @@ public final class TikaDates {
 
     private static final DateTimeFormatter CANONICAL =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
+    private static final DateTimeFormatter ZONELESS =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
+    private static final DateTimeFormatter DATE_ONLY = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ROOT);
 
     // offsets: Z, +hh, +hhmm, +hh:mm, +h:mm, optionally prefixed by GMT/UTC (e.g. "GMT+0200")
     private static final String OFFSET = "(?:(?:GMT|UTC)?([+-])(\\d{1,2})(?::?(\\d{2}))?)";
@@ -177,6 +196,11 @@ public final class TikaDates {
     /** @return canonical UTC string for a full-precision date, else null */
     public static String normalize(String raw) {
         return parse(raw).filter(ParsedDate::isFullPrecision).map(ParsedDate::toCanonicalString).orElse(null);
+    }
+
+    /** @return {@link ParsedDate#toMetadataString()} for a full-precision date, else null */
+    public static String toMetadataString(String raw) {
+        return parse(raw).filter(ParsedDate::isFullPrecision).map(ParsedDate::toMetadataString).orElse(null);
     }
 
     private static boolean inBounds(ParsedDate d) {

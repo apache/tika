@@ -253,4 +253,52 @@ public class TikaDatesTest {
             assertEquals(n, TikaDates.normalize(n), s);
         }
     }
+
+    /** Storage form: a zone only when the source had one; date-only stays a date. */
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = '|', quoteCharacter = '"', value = {
+            "2006-07-15T00:01:46+01:00         | 2006-07-14T23:01:46Z",
+            "2016-08-26T07:06Z                 | 2016-08-26T07:06:00Z",
+            "2010-01-10T13:00:19               | 2010-01-10T13:00:19",
+            "2013-09-08T04:14:06.006           | 2013-09-08T04:14:06",
+            "2015-08-26T09:39                  | 2015-08-26T09:39:00",
+            "D:20041028184621                  | 2004-10-28T18:46:21",
+            "D:20080528153425+02'00'           | 2008-05-28T13:34:25Z",
+            "2014:08:21 13:33:53               | 2014-08-21T13:33:53",
+            "\"Fri, 01 Dec 2000 08:39:07\"   | 2000-12-01T08:39:07",
+            "\"Fri, 01 Dec 2006 00:06:00 GMT\" | 2006-12-01T00:06:00Z",
+            "2005-11-03                        | 2005-11-03",
+            "2015:06:12                        | 2015-06-12",
+            "D:20041109                        | 2004-11-09",
+            "\"August 12, 1999\"             | 1999-08-12",
+    })
+    public void testToMetadataString(String raw, String expected) {
+        assertEquals(expected, TikaDates.toMetadataString(raw));
+    }
+
+    /** What we store must re-parse to the same local time, zone-or-not and instant; idempotent. */
+    @Test
+    public void testMetadataStringRoundTrip() {
+        for (String s : new String[]{"2006-07-15T00:01:46+01:00", "2010-01-10T13:00:19", "2015-08-26T09:39",
+                "D:20041028184621", "2014:08:21 13:33:53", "2005-11-03", "Fri, 01 Dec 2006 00:06:00 GMT"}) {
+            TikaDates.ParsedDate a = TikaDates.parse(s).get();
+            String stored = a.toMetadataString();
+            TikaDates.ParsedDate b = TikaDates.parse(stored).get();
+            assertEquals(a.toInstant(), b.toInstant(), s);
+            assertEquals(a.hasZone(), b.hasZone(), s);
+            assertEquals(a.getPrecision() == TikaDates.Precision.DAY, b.getPrecision() == TikaDates.Precision.DAY, s);
+            if (!a.hasZone()) {
+                assertEquals(a.getLocalDateTime(), b.getLocalDateTime(), s);
+            }
+            assertEquals(stored, TikaDates.toMetadataString(stored), s);
+        }
+    }
+
+    @Test
+    public void testMetadataStringPartialAndGarbage() {
+        assertNull(TikaDates.toMetadataString("2019"));
+        assertNull(TikaDates.toMetadataString("2019-06"));
+        assertNull(TikaDates.toMetadataString("0-01-01T00:00:00Z"));
+        assertNull(TikaDates.toMetadataString(null));
+    }
 }
