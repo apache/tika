@@ -28,13 +28,14 @@ import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
-import java.util.Calendar;
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Stack;
-import java.util.TimeZone;
 
 import org.apache.commons.io.IOUtils;
 import org.xml.sax.ContentHandler;
@@ -53,6 +54,7 @@ import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.CharsetUtils;
+import org.apache.tika.utils.TikaDates;
 
 /* Tokenizes and performs a "shallow" parse of the RTF
  * document, just enough to properly decode the text.
@@ -321,8 +323,8 @@ final class TextExtractor {
     // Used to process the sub-groups inside the upr
     // group:
     private int uprState = -1;
-    // Used when extracting CREATION date:
-    private int year, month, day, hour, minute;
+    // Used when extracting CREATION date; reset per \\creatim group
+    private int year = -1, month = -1, day = -1, hour, minute;
 
     //This keeps track of the following elements as they are
     //written to the handler: p, li, ol, ul
@@ -1162,6 +1164,8 @@ final class TextExtractor {
                     nextMetaData = OfficeOpenXMLExtended.TEMPLATE;
                 } else if (equals("creatim")) {
                     nextMetaData = TikaCoreProperties.CREATED;
+                    year = month = day = -1;
+                    hour = minute = 0;
                 }
             }
 
@@ -1478,14 +1482,27 @@ final class TextExtractor {
         in.unread(b2);
     }
 
+    // RTF times carry no zone: read as UTC (never the JVM default); missing or invalid fields -> no date
+    private Date creationDate() {
+        if (year < TikaDates.MIN_YEAR || year > TikaDates.MAX_YEAR) {
+            return null;
+        }
+        try {
+            return Date.from(LocalDateTime.of(year, month, day, hour, minute).toInstant(ZoneOffset.UTC));
+        } catch (DateTimeException e) {
+            return null;
+        }
+    }
+
     // Pop current GroupState
     private void processGroupEnd() throws IOException, SAXException, TikaException {
         if (inHeader) {
             if (nextMetaData != null) {
                 if (nextMetaData == TikaCoreProperties.CREATED) {
-                    Calendar cal = Calendar.getInstance(TimeZone.getDefault(), Locale.ROOT);
-                    cal.set(year, month - 1, day, hour, minute, 0);
-                    metadata.set(nextMetaData, cal.getTime());
+                    Date created = creationDate();
+                    if (created != null) {
+                        metadata.set(nextMetaData, created);
+                    }
                 } else if (nextMetaData.isMultiValuePermitted()) {
                     metadata.add(nextMetaData, pendingBuffer.toString());
                 } else {
