@@ -225,6 +225,43 @@ public class TikaDatesTest {
         assertNull(TikaDates.normalize(raw), raw);
     }
 
+    /** The former MailDateParserTest suite (MailDateParser removed in 4.2.0), all through TikaDates. */
+    @Test
+    public void testMailRegressionSuite() {
+        for (String s : new String[]{
+                "Mon, 9 May 16 01:32:00 GMT", "9 May 16 01:32:00 GMT", "Monday, 9 May 16 01:32:00 GMT",
+                "Mon, 9 May 2016 01:32:00 UTC", "9 May 2016 01:32:00 UTC", "09 May 2016 01:32:00 UTC",
+                "Mon, 9 May 2016 01:32:00Z", "Mon, 9 May 2016 01:32:00 Z", "Mon, 9 May 2016 01:32:00 GMT",
+                "Mon, 9 May 2016 01:32:00GMT", "Mon, 9 May 2016 01:32:00UTC",
+                "Mon, 9 May 2016 3:32:00 GMT+0200", "Mon, 9 May 2016 3:32:00 UTC+0200",
+                "Mon, 9 May 2016 7:32:00 UTC+0600 (BST)", "       9 May 2016 3:32:00 +0200",
+                "      Mon, 9 May 2016 3:32:00 +0200", "Mon, 9 May 2016 3:32:00 +02:00", "9 May 2016 3:32:00 +02:00",
+                "Mon, 9 May 2016 3:32:00+02:00", "Mon, 9 May 2016 3:32:00+0200", "      Sun, 8 May 2016 21:32:00 EDT"}) {
+            assertEquals("2016-05-09T01:32:00Z", TikaDates.normalize(s), s);
+        }
+        // zone-less: read as UTC for the instant, stored zone-less
+        for (String s : new String[]{"Mon, 9 May 2016 01:32:00", "Monday, 9 May 2016 1:32 AM", "May 9 2016 1:32am",
+                "May 9 2016 1:32 am", "2016-05-09 01:32:00"}) {
+            assertEquals("2016-05-09T01:32:00Z", TikaDates.normalize(s), s);
+            assertEquals("2016-05-09T01:32:00", TikaDates.toMetadataString(s), s);
+        }
+        for (String s : new String[]{"May 15, 2016", "Sun, 15 May 2016", "15 May 2016", "2016-05-15"}) {
+            assertEquals("2016-05-15T12:00:00Z", TikaDates.normalize(s), s);
+        }
+        // RFC 5322 named zones are fixed offsets: EST is -05:00 even in May
+        assertEquals("2016-05-09T02:32:00Z", TikaDates.normalize("Sun, 8 May 2016 21:32:00 EST"));
+        // two-digit years and slash forms must land in 1980..2010, never year 90 A.D.
+        for (String s : new String[]{"11/14/08", "1/14/08", "1/2/08", "12/1/2008", "12/02/1996", "96/1/02",
+                "96/12/02", "96/12/2", "1996/12/02", "Mon, 29 Jan 96 14:02 GMT", "7/20/95 1:12PM",
+                "08/14/2000  12:48 AM", "8/4/2000  1:48 AM", "8/1/03", "Wed, 27 Dec 95 11:20:40 EST",
+                "26 Aug 00 11:14:52 EDT"}) {
+            String n = TikaDates.normalize(s);
+            assertTrue(n != null && n.compareTo("1980") > 0 && n.compareTo("2010") < 0, s + " -> " + n);
+        }
+        // a dd-MM-yyyy-like hyphenated year must not be mistaken for an offset
+        assertNull(TikaDates.normalize("10-10-2022 not a date"));
+    }
+
     @Test
     public void testKeepPartial() {
         assertEquals("2018", TikaDates.toMetadataStringKeepPartial("2018"));
