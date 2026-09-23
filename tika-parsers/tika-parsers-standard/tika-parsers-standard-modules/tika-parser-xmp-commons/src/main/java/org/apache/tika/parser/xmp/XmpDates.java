@@ -16,52 +16,18 @@
  */
 package org.apache.tika.parser.xmp;
 
-import java.time.Instant;
-import java.time.ZoneOffset;
-import java.util.Calendar;
-import java.util.Date;
+import org.apache.tika.utils.TikaDates;
 
-import org.apache.pdfbox.util.DateConverter;
-
-import org.apache.tika.utils.DateUtils;
-
-/** XMP date string -&gt; canonical ISO-8601 UTC (seconds), or null if unrecognizable. */
+/**
+ * XMP date string -&gt; canonical ISO-8601 UTC (seconds), or null if not a full-precision date.
+ * Partial dates (YYYY, YYYY-MM) return null so callers keep the raw value and never promote it.
+ */
 public final class XmpDates {
 
     private XmpDates() {
     }
 
     public static String normalize(String raw) {
-        if (raw == null) {
-            return null;
-        }
-        String s = raw.trim();
-        if (s.isEmpty()) {
-            return null;
-        }
-        // Known gap: a partial date (YYYY, YYYY-MM) inflates to a full timestamp -- preserving it
-        // breaks Metadata.getDate() (can't re-parse year/month-only). Deferred to the
-        // value-representation ticket. PDFBox handles PDF D: dates, producer formats, robust TZ.
-        try {
-            Calendar c = DateConverter.toCalendar(s);
-            if (c != null) {
-                return beforeYearOne(c.toInstant()) ? null : DateUtils.formatDate(c);
-            }
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            // fall through
-        }
-        // DateUtils fallback catches EXIF yyyy:MM:dd; not thread-safe, so new instance.
-        Date d = new DateUtils().tryToParse(s);
-        if (d != null && !beforeYearOne(d.toInstant())) {
-            return DateUtils.formatDate(d);
-        }
-        return null;
-    }
-
-    // year 0 ("D:0000...") resolves to 1 BC and prints as -0001-12-30
-    private static boolean beforeYearOne(Instant i) {
-        return i.atOffset(ZoneOffset.UTC).getYear() < 1;
+        return TikaDates.normalize(raw);
     }
 }

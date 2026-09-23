@@ -49,9 +49,11 @@ public class XmpDatesTest {
     /** PDF D: form and date-only forms are recognized. */
     @Test
     public void testOtherRecognizedForms() {
-        assertNotNull(XmpDates.normalize("D:20030101120000+05'30'"));
-        assertNotNull(XmpDates.normalize("2015-06-12"));
-        assertNotNull(XmpDates.normalize("2015:06:12"));   // EXIF date-only, via DateUtils fallback
+        assertEquals("2003-01-01T06:30:00Z", XmpDates.normalize("D:20030101120000+05'30'"));
+        assertEquals("2015-06-12T12:00:00Z", XmpDates.normalize("2015-06-12"));   // date-only -> midday UTC
+        // EXIF: was 2015-01-01T00:06:12Z (DateConverter read yyyy:HH:mm:ss) and noon-with-time-dropped
+        assertEquals("2015-06-12T12:00:00Z", XmpDates.normalize("2015:06:12"));
+        assertEquals("2007-10-06T16:27:07Z", XmpDates.normalize("2007:10:06 16:27:07"));
     }
 
     /** Non-dates degrade to null so the caller can pass the raw value through. */
@@ -65,19 +67,16 @@ public class XmpDatesTest {
     /** Year 0 (from D:0000... producers) must not become 1 BC, i.e. -0001-12-30 / -0001-11-28. */
     @Test
     public void testYearZeroReturnsNull() {
-        assertNull(XmpDates.normalize("0-01-01T00:00:00Z"));        // DateConverter path
-        assertNull(XmpDates.normalize("0-00-00T00:00:00Z"));        // DateUtils fallback path
+        assertNull(XmpDates.normalize("0-01-01T00:00:00Z"));
+        assertNull(XmpDates.normalize("0-00-00T00:00:00Z"));
         assertNull(XmpDates.normalize("0-00-00T00:00:00-04:00"));
         assertNull(XmpDates.normalize("0000-01-01T00:00:00Z"));
     }
 
-    /**
-     * A partial date (YYYY, YYYY-MM) inflates to a full timestamp; exact-equality (not assertNotNull)
-     * pins that fabricated precision so the value-representation fix trips this test.
-     */
+    /** Partial dates are not full-precision dates: never inflated to a fabricated timestamp. */
     @Test
-    public void testPartialDatesInflateToFullTimestamp() {
-        assertEquals("2019-01-01T00:00:00Z", XmpDates.normalize("2019"));
-        assertEquals("2019-06-01T00:00:00Z", XmpDates.normalize("2019-06"));
+    public void testPartialDatesReturnNull() {
+        assertNull(XmpDates.normalize("2019"));
+        assertNull(XmpDates.normalize("2019-06"));
     }
 }
