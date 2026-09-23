@@ -173,7 +173,7 @@ public class PackageParser extends AbstractArchiveParser {
         String name = entry.getName();
 
         if (archive.canReadEntryData(entry)) {
-            // arj from a non-Unix host stores DOS local time; everything else here is an epoch instant
+            // non-Unix arj stores DOS local time; the rest are epoch instants
             boolean localTime = entry instanceof ArjArchiveEntry && !((ArjArchiveEntry) entry).isHostOsUnix();
             Metadata entrydata = handleEntryMetadata(
                     name, null, localTime ? null : entry.getLastModifiedDate(), entry.getSize(),

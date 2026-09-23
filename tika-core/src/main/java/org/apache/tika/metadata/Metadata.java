@@ -174,10 +174,7 @@ public class Metadata implements Serializable {
         return sdf;
     }
 
-    /**
-     * Parses a stored date. Zone-less values resolve as UTC, never in the JVM default zone;
-     * anything that isn't a full-precision date gives null.
-     */
+    /** Zone-less values read as UTC. */
     private static Date parseDate(String date) {
         Optional<TikaDates.ParsedDate> parsed = TikaDates.parse(date);
         return parsed.isPresent() && parsed.get().isFullPrecision() ? Date.from(parsed.get().toInstant()) : null;

@@ -85,7 +85,7 @@ public class TrueTypeParser implements Parser {
 
             // Report the details of the font
             metadata.set(HttpHeaders.CONTENT_TYPE, TYPE.toString());
-            // font header LONGDATETIMEs hold junk in the wild (e.g. year 138339611)
+            // header dates are often junk (e.g. year 138339611)
             Calendar created = font.getHeader().getCreated();
             if (created != null && TikaDates.inYearBounds(created.toInstant())) {
                 metadata.set(TikaCoreProperties.CREATED, created);

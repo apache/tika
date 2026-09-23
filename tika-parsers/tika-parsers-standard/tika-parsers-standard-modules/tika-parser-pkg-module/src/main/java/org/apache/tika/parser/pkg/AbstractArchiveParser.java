@@ -93,10 +93,7 @@ public abstract class AbstractArchiveParser extends AbstractEncodingDetectorPars
         return entrydata;
     }
 
-    /**
-     * For formats that store local wall-clock time with no zone (MS-DOS times in zip, rar, arj):
-     * the library resolved it in the JVM default zone, so undo that and store it zone-less.
-     */
+    /** DOS-style local time the library resolved in the JVM zone: undo that, store zone-less. */
     static void setLocalTime(Metadata metadata, Property property, Date resolvedInDefaultZone) {
         if (resolvedInDefaultZone != null) {
             metadata.set(property, ZONELESS.format(

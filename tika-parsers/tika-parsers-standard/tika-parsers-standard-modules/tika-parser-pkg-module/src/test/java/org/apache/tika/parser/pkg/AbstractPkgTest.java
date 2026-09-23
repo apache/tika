@@ -113,7 +113,6 @@ public abstract class AbstractPkgTest extends TikaTest {
                           ParseContext context) throws IOException, SAXException, TikaException {
             filenames.add(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
             mediatypes.add(metadata.get(HttpHeaders.CONTENT_TYPE));
-            // archive entry times are file-system times, never the document's own dates (TIKA-4917)
             assertNull(metadata.get(TikaCoreProperties.CREATED));
             assertNull(metadata.get(TikaCoreProperties.MODIFIED));
             createdAts.add(metadata.get(FileSystem.CREATED));

@@ -30,22 +30,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Lenient-in-format, strict-in-value date parsing for the date strings found in documents
- * (XMP, PDF, mail headers, EXIF, office metadata).
- * <p>
- * The input is routed by shape to one family (ISO/W3C-DTF, PDF {@code D:}/compact, EXIF,
- * RFC 5322 and month-name forms, ctime, slash dates). Each family must match the whole string,
- * and every field is validated; nothing is rolled over or prefix-matched. Anything else is
- * rejected rather than guessed.
- * <p>
- * Conventions: no zone means UTC (never the JVM default); a date-only value is midday UTC;
- * two-digit years follow RFC 5322 (00-49 is 20xx, 50-99 is 19xx); slash dates are month-first
- * unless the first field is over 12; years outside {@link #MIN_YEAR}..{@link #MAX_YEAR} are
- * rejected. Partial dates (year or year-month) parse but never {@link #normalize}.
- * <p>
- * Storage ({@link #toMetadataString}) keeps a missing zone visible: zone-less values stay zone-less.
- * <p>
- * Thread-safe.
+ * Parses document date strings strictly: whole-string match, no guessing.
+ * No zone means UTC; date-only means midday UTC. Thread-safe.
  */
 public final class TikaDates {
 
@@ -54,7 +40,7 @@ public final class TikaDates {
 
     public enum Precision { YEAR, MONTH, DAY, MINUTE, SECOND }
 
-    /** A parsed date. The local fields are as written; the offset is null when none was given. */
+    /** The offset is null when the source had none. */
     public static final class ParsedDate {
         private final LocalDateTime local;
         private final ZoneOffset offset;
@@ -70,7 +56,6 @@ public final class TikaDates {
             return local;
         }
 
-        /** @return the explicit offset, or null if the source gave none */
         public ZoneOffset getOffset() {
             return offset;
         }
@@ -83,12 +68,12 @@ public final class TikaDates {
             return precision;
         }
 
-        /** Day precision or finer; only these may be stored on a DATE property. */
+        /** Day precision or finer. */
         public boolean isFullPrecision() {
             return precision.compareTo(Precision.DAY) >= 0;
         }
 
-        /** The instant, reading a zone-less value as UTC. */
+        /** Zone-less values read as UTC. */
         public Instant toInstant() {
             return local.toInstant(offset == null ? ZoneOffset.UTC : offset);
         }
@@ -98,10 +83,7 @@ public final class TikaDates {
             return CANONICAL.format(toInstant().truncatedTo(ChronoUnit.SECONDS).atOffset(ZoneOffset.UTC));
         }
 
-        /**
-         * The form to store on a DATE property: canonical UTC {@code ...Z} when the source had a zone,
-         * zone-less {@code yyyy-MM-dd'T'HH:mm:ss} when it had none, {@code yyyy-MM-dd} for a date only.
-         */
+        /** Stored form: {@code ...Z} if zoned, else zone-less {@code yyyy-MM-dd'T'HH:mm:ss} or {@code yyyy-MM-dd}. */
         public String toMetadataString() {
             if (precision == Precision.DAY) {
                 return DATE_ONLY.format(local);
@@ -124,13 +106,12 @@ public final class TikaDates {
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
     private static final DateTimeFormatter DATE_ONLY = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ROOT);
 
-    // offsets: Z, +hh, +hhmm, +hh:mm, +h:mm, optionally prefixed by GMT/UTC (e.g. "GMT+0200")
     private static final String OFFSET = "(?:(?:GMT|UTC)?([+-])(\\d{1,2})(?::?(\\d{2}))?)";
     private static final String ZONE = "(?:\\s*(?:" + OFFSET + "|(Z|[A-Z]{1,5})))?";
     private static final String TIME =
             "(\\d{1,2}):(\\d{1,2})(?::(\\d{1,2})(?:[.,]\\d{1,9})?)?(?:\\s*([AP])\\.?M\\.?)?";
 
-    // producer quirks seen in XMP: HH:mmss, HH.mm.ss, single-digit seconds, trailing :cc centiseconds
+    // also producer quirks: HH:mmss, HH.mm.ss, 1-digit seconds, trailing :cc
     private static final Pattern ISO = Pattern.compile("(\\d{4})(?:-(\\d{1,2})(?:-(\\d{1,2})"
             + "(?:(?:T|\\s+)(\\d{1,2})([:.])(\\d{2})(?:(?:\\5|(?<=:\\d\\d))(\\d{1,2})(?::\\d{2})?(?:[.,]\\d{1,9})?)?"
             + "(?:\\s*([AP])\\.?M\\.?)?)?)?)?(?:Z00:?00)?" + ZONE);
@@ -177,7 +158,6 @@ public final class TikaDates {
     private TikaDates() {
     }
 
-    /** @return the parsed date, or empty if the string is not a date this class accepts */
     public static Optional<ParsedDate> parse(String raw) {
         if (raw == null) {
             return Optional.empty();
@@ -207,10 +187,7 @@ public final class TikaDates {
         return inYearBounds(d.toInstant());
     }
 
-    /**
-     * Like {@link #toMetadataString(String)} but keeps year or year-month precision as {@code yyyy} /
-     * {@code yyyy-MM}. Only for source-specific keys (e.g. a music release year), never canonical dates.
-     */
+    /** Like {@link #toMetadataString(String)} but keeps {@code yyyy} / {@code yyyy-MM}; source-specific keys only. */
     public static String toMetadataStringKeepPartial(String raw) {
         return parse(raw).map(d -> {
             LocalDateTime l = d.getLocalDateTime();
@@ -225,7 +202,7 @@ public final class TikaDates {
         }).orElse(null);
     }
 
-    /** For dates decoded from binary fields: true if the year is within {@link #MIN_YEAR}..{@link #MAX_YEAR}. */
+    /** For dates decoded from binary fields. */
     public static boolean inYearBounds(Instant instant) {
         if (instant == null) {
             return false;
@@ -319,7 +296,7 @@ public final class TikaDates {
         for (int g = 3; g <= 7 && m.group(g) != null; g++) {
             digits += 2;
         }
-        // bare digit strings are dates only at full lengths; shorter runs are counters and ids
+        // bare digits are dates only at 8, 12 or 14 digits
         if (!prefixed && digits != 8 && digits != 12 && digits != 14) {
             return null;
         }
@@ -431,7 +408,7 @@ public final class TikaDates {
                 m.group(4), m.group(5), m.group(6), m.group(7), zone(m, 8));
     }
 
-    /** Reads the ZONE groups starting at {@code g}: sign, hours, minutes, name. Null means reject. */
+    /** ZONE groups from {@code g}; null means reject. */
     private static ZoneOffset[] zone(Matcher m, int g) {
         if (m.group(g) != null) {
             return new ZoneOffset[]{offset(m.group(g), m.group(g + 1), m.group(g + 2))};
@@ -447,7 +424,7 @@ public final class TikaDates {
         return h == null ? null : ZoneOffset.ofHours(h);
     }
 
-    // RFC 5322 4.3: an unrecognized alphabetic zone (BST, IST, ...: often ambiguous) is unknown, not an error
+    // RFC 5322 4.3: an unknown zone name means zone unknown
     private static ZoneOffset[] namedOrUnknown(String name) {
         ZoneOffset named = named(name);
         if (named != null) {

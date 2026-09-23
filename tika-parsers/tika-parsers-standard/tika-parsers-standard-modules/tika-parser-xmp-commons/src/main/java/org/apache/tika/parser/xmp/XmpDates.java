@@ -18,12 +18,7 @@ package org.apache.tika.parser.xmp;
 
 import org.apache.tika.utils.TikaDates;
 
-/**
- * XMP date string -&gt; the form stored on a DATE property: UTC {@code ...Z} when the value had a zone,
- * zone-less {@code yyyy-MM-dd'T'HH:mm:ss} when it had none, {@code yyyy-MM-dd} for a date only; null if not
- * a full-precision date. Partial dates (YYYY, YYYY-MM) return null so callers keep the raw value and never
- * promote it.
- */
+/** Delegates to {@link TikaDates#toMetadataString(String)}. */
 public final class XmpDates {
 
     private XmpDates() {

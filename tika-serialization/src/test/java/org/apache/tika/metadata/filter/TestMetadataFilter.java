@@ -214,7 +214,6 @@ public class TestMetadataFilter extends TikaTest {
         assertEquals("2021-07-23T08:02:24Z", m.get(TikaCoreProperties.CREATED));
     }
 
-    /** An explicit offset wins over the default zone; it used to be dropped and relabeled Z. */
     @Test
     public void testDateNormalizingFilterKeepsOffset() throws Exception {
         DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();
@@ -233,7 +232,6 @@ public class TestMetadataFilter extends TikaTest {
         }
     }
 
-    /** Every value of a multi-valued date is normalized; it used to keep only the first. */
     @Test
     public void testDateNormalizingFilterMultiValued() throws Exception {
         DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();

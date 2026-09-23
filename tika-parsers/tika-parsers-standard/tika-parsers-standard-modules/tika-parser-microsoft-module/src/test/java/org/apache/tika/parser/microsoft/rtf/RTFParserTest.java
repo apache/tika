@@ -426,12 +426,9 @@ public class RTFParserTest extends TikaTest {
         assertEquals("1", xml.metadata.get(Office.PAGE_COUNT));
         assertEquals("70", xml.metadata.get(Office.WORD_COUNT));
         assertEquals("401", xml.metadata.get(Office.CHARACTER_COUNT));
-        // \\creatim\\yr2010\\mo10\\dy13\\hr2\\min55 has no zone, so neither does the value (TIKA-4917;
-        // was shifted by the JVM default zone, TIKA-4043)
         assertEquals("2010-10-13T02:55:00", xml.metadata.get(TikaCoreProperties.CREATED));
     }
 
-    /** TIKA-4917: missing/invalid \\creatim fields give no date, never a negative or rolled-over one. */
     @Test
     public void testCreationDateFields() throws Exception {
         assertEquals("2012-03-04T05:06:00", created("{\\creatim\\yr2012\\mo3\\dy4\\hr5\\min6}"));
@@ -439,7 +436,7 @@ public class RTFParserTest extends TikaTest {
         assertNull(created("{\\creatim}"));                            // was a negative year
         assertNull(created("{\\creatim\\yr0\\mo0\\dy0\\hr0\\min0}"));
         assertNull(created("{\\creatim\\yr2012\\mo13\\dy40}"));        // was rolled over into 2013
-        // fields must not leak from an earlier date group into \\creatim
+        // no leak from an earlier date group
         assertNull(created("{\\printim\\yr2011\\mo1\\dy1}{\\creatim}"));
     }
 

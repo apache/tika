@@ -51,12 +51,10 @@ public class XmpDatesTest {
     public void testOtherRecognizedForms() {
         assertEquals("2003-01-01T06:30:00Z", XmpDates.normalize("D:20030101120000+05'30'"));
         assertEquals("2015-06-12", XmpDates.normalize("2015-06-12"));   // date-only stays a date
-        // EXIF: was 2015-01-01T00:06:12Z (DateConverter read yyyy:HH:mm:ss) and noon-with-time-dropped
         assertEquals("2015-06-12", XmpDates.normalize("2015:06:12"));
         assertEquals("2007-10-06T16:27:07", XmpDates.normalize("2007:10:06 16:27:07"));
     }
 
-    /** No zone in the source -> none in the output; a Z would claim UTC the file never stated. */
     @Test
     public void testZonelessStaysZoneless() {
         assertEquals("2010-01-10T13:00:19", XmpDates.normalize("2010-01-10T13:00:19"));
@@ -73,7 +71,6 @@ public class XmpDatesTest {
         assertNull(XmpDates.normalize(null));
     }
 
-    /** Year 0 (from D:0000... producers) must not become 1 BC, i.e. -0001-12-30 / -0001-11-28. */
     @Test
     public void testYearZeroReturnsNull() {
         assertNull(XmpDates.normalize("0-01-01T00:00:00Z"));
@@ -82,7 +79,6 @@ public class XmpDatesTest {
         assertNull(XmpDates.normalize("0000-01-01T00:00:00Z"));
     }
 
-    /** Partial dates are not full-precision dates: never inflated to a fabricated timestamp. */
     @Test
     public void testPartialDatesReturnNull() {
         assertNull(XmpDates.normalize("2019"));

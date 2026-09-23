@@ -85,10 +85,6 @@ public class ODFParserTest extends TikaTest {
         }
     }
 
-    /**
-     * TIKA-4917: a date already set by the container (e.g. the zip entry time) must be replaced by the
-     * document's own date, not comma-joined with it into an unparseable DATE value.
-     */
     @Test
     public void testContainerDateNotJoined() throws Exception {
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testOpenOffice2.odt")) {
@@ -100,7 +96,6 @@ public class ODFParserTest extends TikaTest {
         }
     }
 
-    /** TIKA-4917: meta.xml dates are stored in Tika's form; invalid ones are dropped, not stored raw. */
     @Test
     public void testMetaDates() throws Exception {
         assertArrayEquals(new String[]{"2011-03-04T10:22:33", "2011-03-05T01:02:03Z"},

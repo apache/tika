@@ -62,7 +62,6 @@ public class DateNormalizingMetadataFilter extends MetadataFilterBase {
 
     private static TimeZone UTC = TimeZone.getTimeZone("UTC");
 
-    // full match only: an offset, when present, must be honored, never dropped
     private static final DateTimeFormatter LOCAL_OR_OFFSET = new DateTimeFormatterBuilder()
             .appendPattern("yyyy-MM-dd'T'HH:mm:ss")
             .optionalStart().appendFraction(ChronoField.NANO_OF_SECOND, 0, 9, true).optionalEnd()

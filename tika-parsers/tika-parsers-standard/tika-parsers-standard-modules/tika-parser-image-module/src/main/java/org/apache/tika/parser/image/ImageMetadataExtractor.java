@@ -511,8 +511,7 @@ public class ImageMetadataExtractor {
 
     static class ExifHandler implements DirectoryHandler {
         // There's a new ExifHandler for each file processed, so this is thread safe
-        // EXIF dates carry no zone: read and write them in GMT so the wall-clock survives.
-        // metadata-extractor >= 2.20 otherwise reads them in the JVM default zone.
+        // EXIF dates have no zone: read and write in GMT (metadata-extractor >= 2.20 uses the JVM zone)
         private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
         private final SimpleDateFormat dateUnspecifiedTz = getUnspecifiedTzDateFormat();
 

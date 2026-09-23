@@ -557,7 +557,6 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                     if (headerKey.toLowerCase(Locale.ROOT).startsWith("date:")) {
                         String date = headerKey.substring(headerKey.indexOf(':') + 1).trim();
 
-                        // never store an unparseable header raw on a DATE property
                         String d = TikaDates.toMetadataString(date);
                         if (d != null) {
                             metadata.set(TikaCoreProperties.CREATED, d);

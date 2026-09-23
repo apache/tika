@@ -99,13 +99,7 @@ public class DateUtils {
         return calendar.toInstant().truncatedTo(ChronoUnit.SECONDS).toString();
     }
 
-    /**
-     * Tries to parse the date string; returns null if it isn't a full-precision date.
-     * Zone-less values resolve as UTC. Thread safe: delegates to {@link TikaDates}.
-     *
-     * @param dateString
-     * @return
-     */
+    /** Delegates to {@link TikaDates}. */
     public Date tryToParse(String dateString) {
         return TikaDates.parse(dateString).filter(TikaDates.ParsedDate::isFullPrecision)
                 .map(d -> Date.from(d.toInstant())).orElse(null);

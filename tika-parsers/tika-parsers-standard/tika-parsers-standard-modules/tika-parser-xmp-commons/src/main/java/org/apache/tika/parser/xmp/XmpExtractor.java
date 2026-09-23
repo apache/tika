@@ -416,7 +416,7 @@ public class XmpExtractor {
         boolean topLevel = p.path.indexOf('/') < 0;
         Property fill = FILL_IF_ABSENT.get(uri + " " + ln);
         if (topLevel && fill != null && metadata.get(fill) == null) {
-            String norm = XmpDates.normalize(value);   // canonical date: only if none yet, never raw
+            String norm = XmpDates.normalize(value);  // fill-if-absent, never raw
             if (norm != null) {
                 metadata.set(fill, norm);
             }

@@ -259,7 +259,7 @@ public class SummaryExtractor {
     }
 
     private void set(Property property, Date value) {
-        // FILETIME fields hold junk in the wild (e.g. year 31135)
+        // FILETIMEs are often junk (e.g. year 31135)
         if (value != null && TikaDates.inYearBounds(value.toInstant())) {
             metadata.set(property, value);
         }

@@ -323,7 +323,7 @@ final class TextExtractor {
     // Used to process the sub-groups inside the upr
     // group:
     private int uprState = -1;
-    // Used when extracting CREATION date; reset per \\creatim group
+    // \\creatim fields, reset per group
     private int year = -1, month = -1, day = -1, hour, minute;
     private static final DateTimeFormatter ZONELESS =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
@@ -1484,7 +1484,7 @@ final class TextExtractor {
         in.unread(b2);
     }
 
-    // RTF times carry no zone, so the stored value has none; missing or invalid fields -> no date
+    // zone-less; missing or invalid fields -> no date
     private String creationDate() {
         if (year < TikaDates.MIN_YEAR || year > TikaDates.MAX_YEAR) {
             return null;

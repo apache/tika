@@ -23,10 +23,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.utils.TikaDates;
 
-/**
- * A date element in ODF meta.xml: stored in Tika's metadata form (zone-less stays zone-less);
- * values that aren't full-precision dates are dropped, never stored raw on a DATE property.
- */
+/** ODF meta.xml date element; invalid values are dropped. */
 class DateElementHandler extends DefaultHandler {
 
     private final String namespace;

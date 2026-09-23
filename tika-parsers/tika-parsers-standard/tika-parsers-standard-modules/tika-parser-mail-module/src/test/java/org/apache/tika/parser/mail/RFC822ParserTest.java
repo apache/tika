@@ -60,7 +60,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 public class RFC822ParserTest extends TikaTest {
 
-    /** TIKA-4917: a zone-less Date header stays zone-less; an unparseable one is not stored. */
     @Test
     public void testDateHeaderRepresentation() throws Exception {
         assertEquals("2000-12-01T08:39:07", createdFor("Fri, 01 Dec 2000 08:39:07"));

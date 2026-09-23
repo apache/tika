@@ -46,10 +46,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 
-/**
- * TIKA-4917: zip entry times go to fs:*, never dcterms:*. A DOS-only time is local wall-clock and stays
- * zone-less whatever the JVM zone; an extended-timestamp time is a UTC instant. Runs in a +14h zone.
- */
+/** Runs in a +14h zone. */
 @Isolated
 @ResourceLock(Resources.TIME_ZONE)
 public class ZipEntryTimesTest extends TikaTest {

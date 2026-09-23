@@ -93,7 +93,6 @@ public class XmpExtractorTest {
         assertEquals("2020-01-02T03:04:05Z", md.get(XMP.CREATE_DATE));              // xmp key still set
     }
 
-    /** An unparseable XMP date (here year 0) must not be promoted to the canonical created date. */
     @Test
     public void testYearZeroNotPromotedToCreated() throws Exception {
         Metadata md = new Metadata();
@@ -103,7 +102,6 @@ public class XmpExtractorTest {
         assertEquals("0-01-01T00:00:00Z", md.get(XMP.CREATE_DATE));   // raw value kept on the xmp key
     }
 
-    /** TIKA-4917: zone-less and date-only XMP values stay as written through to the canonical keys. */
     @Test
     public void testZonelessDatesStayZoneless() throws Exception {
         Metadata md = new Metadata();

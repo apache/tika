@@ -29,7 +29,6 @@ import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
 
-/** TIKA-4917: zone-less stored dates read as UTC, never in the JVM default zone. */
 @Isolated
 @ResourceLock(Resources.TIME_ZONE)
 public class MetadataZonelessDateTest {
@@ -61,7 +60,6 @@ public class MetadataZonelessDateTest {
         return m.getDate(TikaCoreProperties.CREATED).toInstant();
     }
 
-    /** TIKA-4917: no legacy DateUtils fallback, so garbage no longer comes back as a year-0 date. */
     @Test
     public void testGarbageIsNull() {
         Metadata m = new Metadata();

@@ -130,7 +130,6 @@ public class ImageMetadataExtractorTest {
                 "Should try EXIF Date/Time if Original is not set");
     }
 
-    /** TIKA-4917: metadata-extractor turns junk like "2" into year 1; that must not become a date. */
     @Test
     public void testExifHandlerParseDateOutOfBounds() throws MetadataException {
         ExifSubIFDDirectory exif = Mockito.mock(ExifSubIFDDirectory.class);

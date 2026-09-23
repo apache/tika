@@ -618,11 +618,7 @@ public class ZipParser extends AbstractArchiveParser {
         }
     }
 
-    /**
-     * Entry times are file-system times ({@code fs:*}), never the embedded document's own dates.
-     * The extended-timestamp (0x5455) and NTFS (0x000A) extra fields hold UTC instants; without them
-     * only the MS-DOS field exists: local wall-clock time, stored zone-less.
-     */
+    /** 0x5455/0x000A extra fields are UTC; otherwise only the DOS field: local time, stored zone-less. */
     static void setEntryTimes(ZipArchiveEntry entry, Metadata md) {
         X5455_ExtendedTimestamp ts = entry.getExtraField(X5455_ExtendedTimestamp.HEADER_ID)
                 instanceof X5455_ExtendedTimestamp x ? x : null;

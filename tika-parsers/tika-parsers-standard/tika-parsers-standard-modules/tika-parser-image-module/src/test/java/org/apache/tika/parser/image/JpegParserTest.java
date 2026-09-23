@@ -63,7 +63,7 @@ public class JpegParserTest extends TikaTest {
 
     @BeforeAll
     static void init() {
-        // Zone-less EXIF dates must not depend on the JVM default zone (TIKA-4917); +14h makes any leak fail.
+        // +14h: EXIF dates must not depend on the JVM zone
         originalTimeZone = TimeZone.getDefault();
         TimeZone.setDefault(TimeZone.getTimeZone("Pacific/Kiritimati"));
     }

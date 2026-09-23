@@ -32,10 +32,7 @@ import org.junit.jupiter.api.parallel.Resources;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-/**
- * Cases come from the TIKA-4917 corpus scrapes (XMP packets, mail headers). Runs in a +14h default
- * zone so any dependence on the JVM zone fails.
- */
+/** Runs in a +14h zone to catch JVM-zone leaks. */
 @Isolated
 @ResourceLock(Resources.TIME_ZONE)
 public class TikaDatesTest {
@@ -149,7 +146,7 @@ public class TikaDatesTest {
             "2009/8/26                         | 2009-08-26T12:00:00Z",
             "96/1/02                           | 1996-01-02T12:00:00Z",   // first field > 31: yy/M/d
             "96/12/2                           | 1996-12-02T12:00:00Z",
-            // producer quirks recovered (XMP / mail scrape losses)
+            // producer quirks
             "2017-11-20T13:5836                | 2017-11-20T13:58:36Z",
             "2018-09-13T18.20.16Z              | 2018-09-13T18:20:16Z",
             "2006-06-19T12:37:3Z               | 2006-06-19T12:37:03Z",
@@ -158,7 +155,7 @@ public class TikaDatesTest {
             "2016-01-14T11:27:45-6':00         | 2016-01-14T17:27:45Z",
             "2017-12-31 07:09:59 PM            | 2017-12-31T19:09:59Z",
             "D:2018-08-02T16:06:22+02'00'      | 2018-08-02T14:06:22Z",
-            // PDF quirks PDFBox accepts in docinfo (full-probe losses)
+            // PDF quirks
             "D:20160308221458Z'                | 2016-03-08T22:14:58Z",
             "D:20210712135012+02'00''          | 2021-07-12T11:50:12Z",
             "D:20190221101345-6'00'            | 2019-02-21T16:13:45Z",
@@ -169,7 +166,7 @@ public class TikaDatesTest {
             "\"Thu, 27 Aug 1998 08:39:32 +0200 <br>\" | 1998-08-27T06:39:32Z",
             "\"Sat, 19 Jun 93 16:34:27 JST\"   | 1993-06-19T07:34:27Z",
             "\"Wed, 16 Aug 2000 4:19:1 GMT\"   | 2000-08-16T04:19:01Z",
-            // ambiguous zone name (BST: British or Bangladesh) is unknown -> zone-less, not rejected
+            // ambiguous zone name -> zone unknown
             "15 Oct 99 13:47:26 BST            | 1999-10-15T13:47:26Z",
             "2010-07-28T11:02:12.000CEST       | 2010-07-28T09:02:12Z",
             "7-JUL-1994 02:36:51.00            | 1994-07-07T02:36:51Z",
@@ -181,7 +178,6 @@ public class TikaDatesTest {
         assertEquals(expected, TikaDates.normalize(raw));
     }
 
-    /** Rejected, not guessed: every one of these was silently misparsed by an existing parser. */
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', quoteCharacter = '"', value = {
             "0-01-01T00:00:00Z",          // year 0 -> -0001-12-30 (DateConverter)
@@ -225,7 +221,6 @@ public class TikaDatesTest {
         assertNull(TikaDates.normalize(raw), raw);
     }
 
-    /** The former MailDateParserTest suite (MailDateParser removed in 4.2.0), all through TikaDates. */
     @Test
     public void testMailRegressionSuite() {
         for (String s : new String[]{
@@ -239,7 +234,6 @@ public class TikaDatesTest {
                 "Mon, 9 May 2016 3:32:00+02:00", "Mon, 9 May 2016 3:32:00+0200", "      Sun, 8 May 2016 21:32:00 EDT"}) {
             assertEquals("2016-05-09T01:32:00Z", TikaDates.normalize(s), s);
         }
-        // zone-less: read as UTC for the instant, stored zone-less
         for (String s : new String[]{"Mon, 9 May 2016 01:32:00", "Monday, 9 May 2016 1:32 AM", "May 9 2016 1:32am",
                 "May 9 2016 1:32 am", "2016-05-09 01:32:00"}) {
             assertEquals("2016-05-09T01:32:00Z", TikaDates.normalize(s), s);
@@ -248,9 +242,9 @@ public class TikaDatesTest {
         for (String s : new String[]{"May 15, 2016", "Sun, 15 May 2016", "15 May 2016", "2016-05-15"}) {
             assertEquals("2016-05-15T12:00:00Z", TikaDates.normalize(s), s);
         }
-        // RFC 5322 named zones are fixed offsets: EST is -05:00 even in May
+        // named zones are fixed offsets (RFC 5322)
         assertEquals("2016-05-09T02:32:00Z", TikaDates.normalize("Sun, 8 May 2016 21:32:00 EST"));
-        // two-digit years and slash forms must land in 1980..2010, never year 90 A.D.
+        // must land in 1980..2010
         for (String s : new String[]{"11/14/08", "1/14/08", "1/2/08", "12/1/2008", "12/02/1996", "96/1/02",
                 "96/12/02", "96/12/2", "1996/12/02", "Mon, 29 Jan 96 14:02 GMT", "7/20/95 1:12PM",
                 "08/14/2000  12:48 AM", "8/4/2000  1:48 AM", "8/1/03", "Wed, 27 Dec 95 11:20:40 EST",
@@ -258,7 +252,7 @@ public class TikaDatesTest {
             String n = TikaDates.normalize(s);
             assertTrue(n != null && n.compareTo("1980") > 0 && n.compareTo("2010") < 0, s + " -> " + n);
         }
-        // a dd-MM-yyyy-like hyphenated year must not be mistaken for an offset
+        // hyphenated year is not an offset
         assertNull(TikaDates.normalize("10-10-2022 not a date"));
     }
 
@@ -288,7 +282,6 @@ public class TikaDatesTest {
         assertFalse(TikaDates.parse(null).isPresent());
     }
 
-    /** Partial dates parse (so callers can see them) but never normalize: no fabricated precision. */
     @Test
     public void testPartialDates() {
         assertEquals(TikaDates.Precision.YEAR, TikaDates.parse("2019").get().getPrecision());
@@ -311,7 +304,6 @@ public class TikaDatesTest {
         assertTrue(TikaDates.parse("2005-11-03").get().isFullPrecision());
     }
 
-    /** Everything normalize() writes must read back to itself (Metadata.getDate() round trip). */
     @Test
     public void testRoundTrip() {
         for (String s : new String[]{"2006-07-15T00:01:46+01:00", "D:20080528153425+02'00'",
@@ -321,7 +313,6 @@ public class TikaDatesTest {
         }
     }
 
-    /** Storage form: a zone only when the source had one; date-only stays a date. */
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = '|', quoteCharacter = '"', value = {
             "2006-07-15T00:01:46+01:00         | 2006-07-14T23:01:46Z",
@@ -343,7 +334,6 @@ public class TikaDatesTest {
         assertEquals(expected, TikaDates.toMetadataString(raw));
     }
 
-    /** What we store must re-parse to the same local time, zone-or-not and instant; idempotent. */
     @Test
     public void testMetadataStringRoundTrip() {
         for (String s : new String[]{"2006-07-15T00:01:46+01:00", "2010-01-10T13:00:19", "2015-08-26T09:39",

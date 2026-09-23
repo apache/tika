@@ -373,7 +373,7 @@ public class Mp3Parser implements Parser {
     }
 
 
-    // ID3 year fields are free text in the wild: empty strings, "2018 2018", URLs
+    // ID3 years are free text: empty, "2018 2018", URLs
     private static void setReleaseDate(Metadata metadata, String raw) {
         String value = TikaDates.toMetadataStringKeepPartial(raw);
         if (value != null) {
