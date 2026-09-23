@@ -44,6 +44,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 public class ImageMetadataExtractorTest {
@@ -127,6 +128,22 @@ public class ImageMetadataExtractorTest {
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
         assertEquals("1999-01-01T00:00:00", metadata.get(TikaCoreProperties.CREATED),
                 "Should try EXIF Date/Time if Original is not set");
+    }
+
+    /** TIKA-4917: metadata-extractor turns junk like "2" into year 1; that must not become a date. */
+    @Test
+    public void testExifHandlerParseDateOutOfBounds() throws MetadataException {
+        ExifSubIFDDirectory exif = Mockito.mock(ExifSubIFDDirectory.class);
+        Mockito.when(exif.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
+        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"), Locale.ROOT);
+        calendar.setTimeInMillis(0);
+        calendar.set(4, 11, 31, 23, 0, 0);
+        Mockito.when(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL, TimeZone.getTimeZone("GMT")))
+                .thenReturn(calendar.getTime());
+        Metadata metadata = new Metadata();
+        new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
+        assertNull(metadata.get(TikaCoreProperties.CREATED));
+        assertNull(metadata.get(TIFF.ORIGINAL_DATE));
     }
 
     @Test

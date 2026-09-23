@@ -81,6 +81,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Uses the <a href="http://www.drewnoakes.com/code/exif/">Metadata Extractor</a> library
@@ -515,6 +516,11 @@ public class ImageMetadataExtractor {
         private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
         private final SimpleDateFormat dateUnspecifiedTz = getUnspecifiedTzDateFormat();
 
+        // metadata-extractor turns junk like "2" into year 1
+        private static Date inBounds(Date d) {
+            return d != null && TikaDates.inYearBounds(d.toInstant()) ? d : null;
+        }
+
         private SimpleDateFormat getUnspecifiedTzDateFormat() {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
             df.setTimeZone(GMT);
@@ -687,7 +693,7 @@ public class ImageMetadataExtractor {
             // Date/Time Original overrides value from ExifDirectory.TAG_DATETIME
             Date original = null;
             if (directory.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)) {
-                original = directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL, GMT);
+                original = inBounds(directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL, GMT));
                 // Unless we have GPS time we don't know the time zone so date must be set
                 // as ISO 8601 datetime without timezone suffix (no Z or +/-)
                 if (original != null) {
@@ -697,7 +703,7 @@ public class ImageMetadataExtractor {
                 }
             }
             if (directory.containsTag(ExifIFD0Directory.TAG_DATETIME)) {
-                Date datetime = directory.getDate(ExifIFD0Directory.TAG_DATETIME, GMT);
+                Date datetime = inBounds(directory.getDate(ExifIFD0Directory.TAG_DATETIME, GMT));
                 if (datetime != null) {
                     String datetimeNoTimeZone = dateUnspecifiedTz.format(datetime);
                     metadata.set(TikaCoreProperties.MODIFIED, datetimeNoTimeZone);

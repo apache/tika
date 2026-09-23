@@ -17,6 +17,7 @@
 package org.apache.tika.parser.font;
 
 import java.io.IOException;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Set;
 
@@ -41,6 +42,7 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Parser for TrueType font files (TTF).
@@ -83,8 +85,15 @@ public class TrueTypeParser implements Parser {
 
             // Report the details of the font
             metadata.set(HttpHeaders.CONTENT_TYPE, TYPE.toString());
-            metadata.set(TikaCoreProperties.CREATED, font.getHeader().getCreated());
-            metadata.set(TikaCoreProperties.MODIFIED, font.getHeader().getModified());
+            // font header LONGDATETIMEs hold junk in the wild (e.g. year 138339611)
+            Calendar created = font.getHeader().getCreated();
+            if (created != null && TikaDates.inYearBounds(created.toInstant())) {
+                metadata.set(TikaCoreProperties.CREATED, created);
+            }
+            Calendar modified = font.getHeader().getModified();
+            if (modified != null && TikaDates.inYearBounds(modified.toInstant())) {
+                metadata.set(TikaCoreProperties.MODIFIED, modified);
+            }
             metadata.set(Property.externalText(AdobeFontMetricParser.MET_DOC_VERSION),
                     Float.toString(font.getHeader().getVersion()));
 
