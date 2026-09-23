@@ -156,6 +156,11 @@ public class TikaDatesTest {
             "2016-01-14T11:27:45-6':00         | 2016-01-14T17:27:45Z",
             "2017-12-31 07:09:59 PM            | 2017-12-31T19:09:59Z",
             "D:2018-08-02T16:06:22+02'00'      | 2018-08-02T14:06:22Z",
+            // PDF quirks PDFBox accepts in docinfo (full-probe losses)
+            "D:20160308221458Z'                | 2016-03-08T22:14:58Z",
+            "D:20210712135012+02'00''          | 2021-07-12T11:50:12Z",
+            "D:20190221101345-6'00'            | 2019-02-21T16:13:45Z",
+            "8/11/2008 14:8:23                 | 2008-08-11T14:08:23Z",
             "\"Wednesday, 16/02/2011\"         | 2011-02-16T12:00:00Z",
             "2006-10-18 16:01:00 -0700 (Wed, 18 Oct 2006) | 2006-10-18T23:01:00Z",
             "\"Mon, 29 Oct 2007 20:20:52 -0500From: someone\" | 2007-10-30T01:20:52Z",
@@ -208,9 +213,31 @@ public class TikaDatesTest {
             "2017-09-12T02:10:54-21:00",
             "2015-09-28T17:25:50+17:00",
             "2017-05-11T19:05:84",        // second 84 -> rolled to 19:06:24 (DateConverter)
+            "D:20080702212348+20'00'",    // offset out of range
+            "D:2012010510394209'00'",     // 16 digits, unsigned offset: ambiguous
+            "D:191010111144159",
+            "D:20170112095532--4'00'",
     })
     public void testRejected(String raw) {
         assertNull(TikaDates.normalize(raw), raw);
+    }
+
+    @Test
+    public void testKeepPartial() {
+        assertEquals("2018", TikaDates.toMetadataStringKeepPartial("2018"));
+        assertEquals("2018-05", TikaDates.toMetadataStringKeepPartial("2018-05"));
+        assertEquals("2018-05-01", TikaDates.toMetadataStringKeepPartial("2018-05-01"));
+        for (String junk : new String[]{"", "   ", "0", "18", "0312", "2018 2018", "[www.example.com]"}) {
+            assertNull(TikaDates.toMetadataStringKeepPartial(junk), junk);
+        }
+    }
+
+    @Test
+    public void testInYearBounds() {
+        assertTrue(TikaDates.inYearBounds(java.time.Instant.parse("2012-02-20T16:44:22Z")));
+        assertFalse(TikaDates.inYearBounds(java.time.Instant.parse("0004-12-31T23:00:00Z")));
+        assertFalse(TikaDates.inYearBounds(java.time.Instant.parse("+31135-02-07T00:18:29Z")));
+        assertFalse(TikaDates.inYearBounds(null));
     }
 
     @Test

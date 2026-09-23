@@ -128,14 +128,14 @@ public final class TikaDates {
     private static final String OFFSET = "(?:(?:GMT|UTC)?([+-])(\\d{1,2})(?::?(\\d{2}))?)";
     private static final String ZONE = "(?:\\s*(?:" + OFFSET + "|(Z|[A-Z]{1,5})))?";
     private static final String TIME =
-            "(\\d{1,2}):(\\d{2})(?::(\\d{1,2})(?:[.,]\\d{1,9})?)?(?:\\s*([AP])\\.?M\\.?)?";
+            "(\\d{1,2}):(\\d{1,2})(?::(\\d{1,2})(?:[.,]\\d{1,9})?)?(?:\\s*([AP])\\.?M\\.?)?";
 
     // producer quirks seen in XMP: HH:mmss, HH.mm.ss, single-digit seconds, trailing :cc centiseconds
     private static final Pattern ISO = Pattern.compile("(\\d{4})(?:-(\\d{1,2})(?:-(\\d{1,2})"
             + "(?:(?:T|\\s+)(\\d{1,2})([:.])(\\d{2})(?:(?:\\5|(?<=:\\d\\d))(\\d{1,2})(?::\\d{2})?(?:[.,]\\d{1,9})?)?"
             + "(?:\\s*([AP])\\.?M\\.?)?)?)?)?(?:Z00:?00)?" + ZONE);
     private static final Pattern PDF = Pattern.compile("(D:)?\\s*(\\d{4})(\\d{2})?(\\d{2})?(\\d{2})?(\\d{2})?(\\d{2})?"
-            + "(?:(Z)(?:00'?00'?)?|([+-])(\\d{2})(?:'?(\\d{2})'?)?)?");
+            + "(?:(Z)(?:00'?00'?|')?|([+-])(\\d{1,2})(?:'?(\\d{2})'{0,2})?)?");
     private static final Pattern EXIF = Pattern.compile("(\\d{4}):(\\d{2}):(\\d{2})"
             + "(?:[ T](\\d{2}):(\\d{2})(?::(\\d{2})(?:\\.\\d{1,9})?)?)?" + ZONE);
     // d MMM yyyy [time] [zone]
@@ -204,7 +204,33 @@ public final class TikaDates {
     }
 
     private static boolean inBounds(ParsedDate d) {
-        int y = d.toInstant().atOffset(ZoneOffset.UTC).getYear();
+        return inYearBounds(d.toInstant());
+    }
+
+    /**
+     * Like {@link #toMetadataString(String)} but keeps year or year-month precision as {@code yyyy} /
+     * {@code yyyy-MM}. Only for source-specific keys (e.g. a music release year), never canonical dates.
+     */
+    public static String toMetadataStringKeepPartial(String raw) {
+        return parse(raw).map(d -> {
+            LocalDateTime l = d.getLocalDateTime();
+            switch (d.getPrecision()) {
+                case YEAR:
+                    return String.format(Locale.ROOT, "%04d", l.getYear());
+                case MONTH:
+                    return String.format(Locale.ROOT, "%04d-%02d", l.getYear(), l.getMonthValue());
+                default:
+                    return d.toMetadataString();
+            }
+        }).orElse(null);
+    }
+
+    /** For dates decoded from binary fields: true if the year is within {@link #MIN_YEAR}..{@link #MAX_YEAR}. */
+    public static boolean inYearBounds(Instant instant) {
+        if (instant == null) {
+            return false;
+        }
+        int y = instant.atOffset(ZoneOffset.UTC).getYear();
         return y >= MIN_YEAR && y <= MAX_YEAR;
     }
 
