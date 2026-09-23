@@ -17,12 +17,17 @@
 package org.apache.tika.plugins;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.pf4j.DefaultPluginManager;
 import org.pf4j.RuntimeMode;
 
 public class TikaPluginManagerTest {
@@ -52,6 +57,56 @@ public class TikaPluginManagerTest {
             assertEquals(RuntimeMode.DEPLOYMENT, manager.getRuntimeMode());
         } finally {
             System.clearProperty("tika.plugin.dev.mode");
+        }
+    }
+
+    @Test
+    public void classpathExtensionsAreNotDiscovered(@TempDir Path tmpDir) throws Exception {
+        // the index is on the test classpath and pf4j's stock manager does see it
+        assertNotNull(getClass().getResource("/META-INF/extensions.idx"));
+        DefaultPluginManager stock = new DefaultPluginManager(tmpDir);
+        stock.loadPlugins();
+        stock.startPlugins();
+        assertFalse(stock.getExtensions(TikaExtensionFactory.class).isEmpty());
+
+        TikaPluginManager manager = new TikaPluginManager(Collections.singletonList(tmpDir));
+        manager.loadPlugins();
+        manager.startPlugins();
+        assertTrue(manager.getExtensions(TikaExtensionFactory.class).isEmpty(),
+                "a factory on the application classpath must not be discovered");
+    }
+
+    @Test
+    public void developmentModeLoadsAnExplodedClassesDirectory(@TempDir Path classes)
+            throws Exception {
+        // the documented recipe: plugin-roots points at target/classes, no zip
+        Files.writeString(classes.resolve("plugin.properties"),
+                "plugin.id=exploded-test\nplugin.class=" + TestPlugin.class.getName()
+                        + "\nplugin.version=1\n");
+        Files.createDirectories(classes.resolve("META-INF"));
+        Files.writeString(classes.resolve("META-INF/extensions.idx"),
+                ClasspathTestFactory.class.getName() + "\n");
+        System.setProperty("tika.plugin.dev.mode", "true");
+        try {
+            TikaPluginManager manager = new TikaPluginManager(Collections.singletonList(classes));
+            manager.loadPlugins();
+            manager.startPlugins();
+            assertEquals(1, manager.getExtensions(TikaExtensionFactory.class).size());
+        } finally {
+            System.clearProperty("tika.plugin.dev.mode");
+        }
+    }
+
+    @Test
+    public void classpathExtensionsDiscoveredWhenOptedIn(@TempDir Path tmpDir) throws Exception {
+        System.setProperty(TikaPluginManager.CLASSPATH_PLUGINS_PROPERTY, "true");
+        try {
+            TikaPluginManager manager = new TikaPluginManager(Collections.singletonList(tmpDir));
+            manager.loadPlugins();
+            manager.startPlugins();
+            assertEquals(1, manager.getExtensions(TikaExtensionFactory.class).size());
+        } finally {
+            System.clearProperty(TikaPluginManager.CLASSPATH_PLUGINS_PROPERTY);
         }
     }
 }

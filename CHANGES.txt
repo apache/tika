@@ -1,3 +1,12 @@
+Release 4.2.0 - ???
+
+   * Pipes plugins load only from the zips in plugin-roots; a plugin jar on the
+     application classpath is no longer discovered unless the JVM opts in with
+     -Dtika.plugins.classpath=true, which PipesForkParser sets on its fork when
+     there is no plugins directory. Development mode loads an exploded
+     target/classes directory as a plugin without relying on the classpath
+     (TIKA-4918).
+
 Release 4.1.0 - 9/21/2026
 
    * Apple Mail emlx files are detected as message/x-emlx and parsed by

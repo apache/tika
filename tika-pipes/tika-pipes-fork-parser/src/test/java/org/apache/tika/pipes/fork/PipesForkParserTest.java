@@ -44,6 +44,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
@@ -73,6 +74,35 @@ public class PipesForkParserTest {
             }
         }
         return zipPath;
+    }
+
+    @Test
+    public void testClasspathPluginsOnlyWhenOptedIn() throws Exception {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "classpath plugin");
+        Path noPlugins = Files.createDirectories(tempDir.resolve("no-plugins"));
+
+        PipesForkParserConfig optedIn = new PipesForkParserConfig()
+                .setPluginsDir(noPlugins)
+                .addJvmArg("-Dtika.plugins.classpath=true")
+                .addJvmArg("-Xmx256m");
+        try (PipesForkParser parser = new PipesForkParser(optedIn)) {
+            PipesForkResult result = parser.parse(testFile);
+            assertTrue(result.isSuccess(), "Status: " + result.getStatus()
+                    + ", message: " + result.getMessage());
+            assertTrue(result.getContent().contains("classpath plugin"));
+        }
+
+        PipesForkParserConfig zipsOnly = new PipesForkParserConfig()
+                .setPluginsDir(noPlugins)
+                .addJvmArg("-Xmx256m");
+        try (PipesForkParser parser = new PipesForkParser(zipsOnly)) {
+            PipesForkResult result = parser.parse(testFile);
+            assertFalse(result.isSuccess(), "the file-system plugin jar is on the classpath, "
+                    + "but without the opt-in the fork must not find it: " + result.getStatus());
+        } catch (PipesForkParserException | PipesException e) {
+            // fork refused to start without its fetcher: also the right answer
+        }
     }
 
     @Test
