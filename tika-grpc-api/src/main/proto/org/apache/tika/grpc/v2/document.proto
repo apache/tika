@@ -15,17 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// The Document shape: a single, small, stable contract for a parsed Tika document,
-// instead of a proto message per source format.
+// The Document shape: one contract for a parsed Tika document, instead of a proto
+// message per source format.
 //
-// Metadata: typed common fields (the Dublin Core descriptive core) plus a TAGGED tail
-// that is lossless. Tags come from Tika's declared Property value type; unknown keys
-// are strings, never guessed.
+// Metadata: typed common fields (the Dublin Core descriptive core) plus a tagged tail
+// for the remaining metadata. Tags come from Tika's declared Property value type;
+// unknown keys are strings, never guessed. The extracted text and embedded documents
+// are not included.
 //
-// Format specifics arrive via per-parser DocumentTransformer code, not a proto-per-type,
-// so adding a parser never touches the wire. Planned additive follow-ups (structured
-// content tree, embedded-document recursion) extend this file with new fields; proto3
-// field additions are wire-compatible, so none of them break existing clients.
+// Format specifics arrive via per-parser DocumentTransformer code, not a proto per type,
+// so adding a parser does not change the wire format.
 
 syntax = "proto3";
 
@@ -48,9 +47,7 @@ message Document {
   DocumentMetadata metadata = 20;      // typed common fields
   repeated MetadataField extra = 21;   // tagged tail: everything not already typed
 
-  // Field numbers 3, 10-19, and 30+ are intentionally unassigned: planned additive
-  // features (structured content blocks, embedded-document recursion) claim them
-  // without renumbering anything that has shipped.
+  // Field numbers 3, 10-19 and 30+ are left unassigned for later fields.
 }
 
 message SourceOrigin {
@@ -58,7 +55,7 @@ message SourceOrigin {
   int64 byte_size = 2;
   string parser = 3;
   // Hex-encoded SHA-256 of the source bytes, taken from the digest the parse pipeline
-  // recorded (the X-TIKA:digest:SHA256 metadata value). Empty when the pipeline has no
+  // recorded (the tk:digest:SHA-256 metadata value). Empty when the pipeline has no
   // digester configured. Downstream consumers use it to tie derived artifacts
   // (annotations, index entries) back to the exact bytes that were parsed.
   string sha256 = 4;

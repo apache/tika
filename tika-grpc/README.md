@@ -23,12 +23,10 @@ requests through the configured fetchers.
 
 The server exposes two gRPC services on the same port:
 
-- **`tika.Tika` (v1)** — the existing fetcher/iterator management RPCs and
-  fetch-and-parse replies that return the legacy `fields` map. Unchanged for
-  current clients; whether/when to deprecate it is a separate maintainers' call.
+- **`tika.Tika` (v1)** — the fetcher/iterator management RPCs and fetch-and-parse
+  replies that return the `fields` map.
 - **`org.apache.tika.grpc.v2.TikaV2` (experimental)** — typed parse replies that
-  return `org.apache.tika.grpc.v2.Document`. Fetcher management stays on v1;
-  additive follow-ups (ParseBytes, content tree, embedded recursion) extend v2.
+  return `org.apache.tika.grpc.v2.Document`. Fetcher management stays on v1.
 
 Rather than one proto message per source format, `Document` models metadata by
 concern:
@@ -39,8 +37,8 @@ concern:
    consumer wants, typed.
 2. **Tagged tail**: `extra` (`repeated MetadataField`) carries everything
    format-specific (PDF permissions, EXIF/GPS, OOXML core properties, …), typed where
-   Tika's own `Property` declares a type and a string otherwise — never guessed. This
-   is the lossless catch-all; nothing is dropped.
+   Tika's own `Property` declares a type and a string otherwise — never guessed. The
+   extracted text (`tk:content`) is not carried in the Document.
 3. **Envelope**: detected `content_type`, `origin` (filename, byte size, parser,
    source SHA-256 when a digester is configured), and a typed `ParseStatus`.
 
@@ -58,7 +56,7 @@ Mapper tests live under `tika-grpc-mapper/src/test/java`.
 Build the API and mapper with the rest of the reactor:
 
 ```bash
-./mvnw -pl tika-grpc-api,tika-grpc-mapper,tika-grpc test
+./mvnw clean test -pl tika-grpc-api,tika-grpc-mapper,tika-grpc
 ```
 
 ## Distribution and Maven Artifact

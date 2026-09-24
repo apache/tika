@@ -4,15 +4,15 @@ Typed protobuf messages and service stubs for Tika parse output under
 `org.apache.tika.grpc.v2`. This module owns that whole Java package (one package =
 one module, the reactor-wide JPMS invariant).
 
-This is the experimental v2 document contract. The existing `tika.Tika` gRPC service
-(legacy `fields` map replies) is unchanged and lives outside this module.
+This is the experimental v2 document contract. The `tika.Tika` gRPC service, which
+replies with a `fields` map, lives outside this module.
 
 ## Contents
 
-- **Document** (`document.proto`) — the single, small, stable parse-result contract:
-  an envelope (content type, origin, parse status), typed common metadata
-  (`DocumentMetadata`), and a tagged metadata tail (`extra`) that losslessly carries
-  everything else.
+- **Document** (`document.proto`) — the parse-result contract: an envelope (content
+  type, origin, parse status), typed common metadata (`DocumentMetadata`), and a
+  tagged metadata tail (`extra`) for the remaining metadata. The extracted text and
+  embedded documents are not included.
 - **TikaV2 service** (`tika_v2.proto`) — the v2 fetch-and-parse RPCs returning
   `Document`, with generated gRPC stubs. The server implementation lives in
   `tika-grpc`.
@@ -38,8 +38,8 @@ Rather than one proto message per source format, `Document` models metadata by
   Dublin Core descriptive core (title, authors, description, keywords, languages,
   publishers, identifiers, created/modified, rights). These are the cross-format
   facts every consumer wants, typed.
-- **`extra`** (a `repeated MetadataField`) is the lossless tagged tail for everything
-  else — PDF permissions, EXIF/GPS, OOXML core properties, custom keys. Every entry
+- **`extra`** (a `repeated MetadataField`) is the tagged tail for the remaining
+  metadata — PDF permissions, EXIF/GPS, OOXML core properties, custom keys. Every entry
   is a typed **array**, mirroring Tika's own `String[]`-backed metadata model: the
   tag comes from Tika's declared `Property` element type
   (integers/numbers/booleans/timestamps), so a declared integer sequence like
@@ -54,12 +54,6 @@ falls through to `extra`) lives in `tika-grpc-mapper`'s
 `org.apache.tika.grpc.mapper.transform.DocumentTransformer` implementations — code,
 not schema. Adding a parser means adding a transformer; the wire contract does not
 change.
-
-Planned follow-ups extend `Document` additively (proto3 field additions are
-wire-compatible): a structured content tree, and recursion into embedded documents.
-Field numbers for those are intentionally left unassigned in `document.proto`.
-Parse-only entrypoints such as ParseBytes are separate issues that reuse this same
-`Document` reply on the v2 service.
 
 ## Lint
 

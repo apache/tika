@@ -24,7 +24,7 @@ import org.apache.tika.metadata.Metadata;
 /**
  * Always-applicable fallback. Pulls the universal Dublin Core fields into typed metadata
  * and routes everything else to the tagged tail, so an unknown or unsupported format
- * still produces a useful, lossless Document.
+ * still produces a useful Document.
  */
 public final class GenericDocumentTransformer implements DocumentTransformer {
 

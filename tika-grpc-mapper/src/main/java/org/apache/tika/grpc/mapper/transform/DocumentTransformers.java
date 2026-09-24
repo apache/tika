@@ -25,7 +25,7 @@ import org.apache.tika.metadata.Metadata;
 /**
  * Picks and runs the applicable transformer(s) for a parsed document. The generic
  * fallback runs whenever no format-specific transformer matched, so an unknown format
- * still yields a useful, lossless Document.
+ * still yields a useful Document.
  *
  * Adding support for a new format means adding a transformer to {@link #defaults()}.
  * The proto does not change, so clients never rebuild for it.
@@ -40,8 +40,7 @@ public final class DocumentTransformers {
     }
 
     /**
-     * Ships with only the generic Dublin Core mapping for now; per-format transformers
-     * (PDF, Office, HTML, ...) are planned as code-only additions here.
+     * Only the generic Dublin Core mapping; format-specific transformers are added here.
      */
     public static DocumentTransformers defaults() {
         return new DocumentTransformers(List.of());

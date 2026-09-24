@@ -33,7 +33,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 /**
  * Builds a {@link Document} from Tika's parse output: the envelope (content type,
  * origin, status), the typed Dublin Core metadata via {@link DocumentTransformers},
- * and the lossless tagged tail for everything else.
+ * and the tagged tail for the remaining metadata.
  */
 public final class DocumentBuilder {
 
@@ -80,10 +80,9 @@ public final class DocumentBuilder {
         }
 
         // Keys the envelope maps below are consumed up front so the tagged tail never
-        // carries them a second time. tk:content is consumed without a typed home
-        // yet: the reply's fields map still carries the flat content, and the structured
-        // content tree is a planned additive follow-up -- duplicating the whole body
-        // into `extra` as a string would defeat both.
+        // carries them a second time. tk:content is consumed too: the Document does not
+        // carry the extracted text, and copying the whole body into `extra` as a string
+        // would bloat every reply.
         Set<String> consumed = new HashSet<>();
         consumed.add(TikaCoreProperties.TIKA_CONTENT.getName());
 
