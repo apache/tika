@@ -1,6 +1,9 @@
 Release 4.2.0 - ???
 
-   * Refactor date parsing for more consistent, accurate dates (TIKA-4917).
+   * Refactor date parsing for more consistent, accurate dates. File-system
+     times from archive entries and mail attachments move to fs:created/
+     fs:modified; MailDateParser and tika-parser-mail-commons are removed
+     (TIKA-4917).
 
 Release 4.1.0 - 9/21/2026
 

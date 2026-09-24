@@ -49,6 +49,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
@@ -168,10 +169,13 @@ class MailContentHandler implements ContentHandler {
             for (Entry<String, String> param : contentDispositionParameters.entrySet()) {
                 contentDisposition.append("; ").append(param.getKey()).append("=\"")
                         .append(param.getValue()).append('"');
+                // RFC 2183: the attached file's file-system dates, not the document's own
                 if ("creation-date".equalsIgnoreCase(param.getKey())) {
-                    tryToAddDate(param.getValue(), TikaCoreProperties.CREATED, submd);
+                    tryToAddDate(param.getValue(), FileSystem.CREATED, submd);
                 } else if ("modification-date".equalsIgnoreCase(param.getKey())) {
-                    tryToAddDate(param.getValue(), TikaCoreProperties.MODIFIED, submd);
+                    tryToAddDate(param.getValue(), FileSystem.MODIFIED, submd);
+                } else if ("read-date".equalsIgnoreCase(param.getKey())) {
+                    tryToAddDate(param.getValue(), FileSystem.ACCESSED, submd);
                 }
                 //do anything with "size"?
             }

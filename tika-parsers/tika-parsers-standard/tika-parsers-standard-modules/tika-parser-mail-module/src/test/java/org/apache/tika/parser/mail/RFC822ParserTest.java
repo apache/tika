@@ -20,6 +20,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -46,6 +47,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.ContainerExtractor;
 import org.apache.tika.extractor.ParserContainerExtractor;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Message;
 import org.apache.tika.metadata.Metadata;
@@ -66,6 +68,28 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("2000-12-01T07:39:07Z", createdFor("Fri, 01 Dec 2000 08:39:07 +0100"));
         assertEquals("1992-04-10T11:00:33Z", createdFor("Fri Apr 10 04:00:33 PDT 1992"));   // ctime
         assertEquals(null, createdFor("not a date"));
+    }
+
+    @Test
+    public void testAttachmentDatesAreFileSystemDates() throws Exception {
+        String eml = "From: a@example.com\r\nSubject: s\r\nMIME-Version: 1.0\r\n"
+                + "Content-Type: multipart/mixed; boundary=\"b\"\r\n\r\n"
+                + "--b\r\nContent-Type: text/plain\r\n\r\nbody\r\n"
+                + "--b\r\nContent-Type: text/plain\r\nContent-Disposition: attachment; filename=\"a.txt\";"
+                + " creation-date=\"Tue, 21 Oct 2003 10:11:12 +0200\";"
+                + " modification-date=\"Wed, 22 Oct 2003 10:11:12 +0200\";"
+                + " read-date=\"Thu, 23 Oct 2003 10:11:12 +0200\"\r\n\r\nattached\r\n--b--\r\n";
+        List<Metadata> list;
+        try (TikaInputStream tis = TikaInputStream.get(eml.getBytes(US_ASCII))) {
+            list = getRecursiveMetadata(tis, AUTO_DETECT_PARSER, new Metadata(), new ParseContext(), false);
+        }
+        Metadata att = list.stream().filter(m -> "a.txt".equals(m.get(TikaCoreProperties.RESOURCE_NAME_KEY)))
+                .findFirst().orElseThrow();
+        assertEquals("2003-10-21T08:11:12Z", att.get(FileSystem.CREATED));
+        assertEquals("2003-10-22T08:11:12Z", att.get(FileSystem.MODIFIED));
+        assertEquals("2003-10-23T08:11:12Z", att.get(FileSystem.ACCESSED));
+        assertNull(att.get(TikaCoreProperties.CREATED));
+        assertNull(att.get(TikaCoreProperties.MODIFIED));
     }
 
     private String createdFor(String dateHeader) throws Exception {
@@ -609,9 +633,10 @@ public class RFC822ParserTest extends TikaTest {
         assertEquals("/Test TxtA.txt", metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
                 metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-        //make sure we extracted creation and modified dates
-        assertTrue(metadataList.get(1).get(TikaCoreProperties.CREATED).startsWith("2022-11-"));
-        assertTrue(metadataList.get(1).get(TikaCoreProperties.MODIFIED).startsWith("2022-11-"));
+        // Content-Disposition dates are the attached file's, not the document's
+        assertTrue(metadataList.get(1).get(FileSystem.CREATED).startsWith("2022-11-"));
+        assertTrue(metadataList.get(1).get(FileSystem.MODIFIED).startsWith("2022-11-"));
+        assertNull(metadataList.get(1).get(TikaCoreProperties.CREATED));
 
 
         assertContains("This is Test TXTB File for parser",
@@ -622,9 +647,8 @@ public class RFC822ParserTest extends TikaTest {
                 metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
         assertEquals(TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString(),
                 metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-        //make sure we extracted creation and modified dates
-        assertTrue(metadataList.get(2).get(TikaCoreProperties.CREATED).startsWith("2022-11-"));
-        assertTrue(metadataList.get(2).get(TikaCoreProperties.MODIFIED).startsWith("2022-11-"));
+        assertTrue(metadataList.get(2).get(FileSystem.CREATED).startsWith("2022-11-"));
+        assertTrue(metadataList.get(2).get(FileSystem.MODIFIED).startsWith("2022-11-"));
     }
 
 }
