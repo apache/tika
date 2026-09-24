@@ -25,3 +25,10 @@ updates:
       # Allow up to 20 open pull requests
       open-pull-requests-limit: 20
 
+    # Actions pinned by SHA with a "# vX.Y.Z" comment get bumped too. The ASF
+    # allow-list expires a superseded version three months after approving the
+    # next one; asf-allowlist-check.yml fails a bump that is not yet approved.
+    - package-ecosystem: "github-actions"
+      directory: "/"
+      schedule:
+          interval: "weekly"
