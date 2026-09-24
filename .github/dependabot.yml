@@ -41,3 +41,7 @@ updates:
           - "/tika-server/docker-build/minimal"
       schedule:
           interval: "weekly"
+      # the devcontainer stays on the Java baseline (17); digest refreshes still flow
+      ignore:
+          - dependency-name: "eclipse-temurin"
+            update-types: ["version-update:semver-major"]
