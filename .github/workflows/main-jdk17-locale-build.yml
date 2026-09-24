@@ -63,7 +63,7 @@ jobs:
           restore-keys: maven-${{ runner.os }}-
       - name: Install external tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg libimage-exiftool-perl
-      # The Docker-backed integration tests spin up Elasticsearch/OpenSearch/Solr/Kafka/MinIO
+      # The Docker-backed integration tests spin up Elasticsearch/OpenSearch/Solr/Kafka/RustFS
       # for ~7.5 min and carry no locale signal, so they are excluded here; the main jdk17
       # build runs them. If a new testcontainers module appears, add it to this list --
       # forgetting only makes this job slower, it does not weaken it.
