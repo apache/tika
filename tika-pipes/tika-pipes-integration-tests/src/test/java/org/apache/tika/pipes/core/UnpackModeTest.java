@@ -18,14 +18,19 @@ package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -41,6 +46,7 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
+import org.apache.tika.serialization.JsonMetadataList;
 
 /**
  * Tests for the UNPACK ParseMode functionality.
@@ -62,7 +68,7 @@ public class UnpackModeTest {
 
     @Test
     public void testUnpackModeBasic(@TempDir Path tmp) throws Exception {
-        // Test that UNPACK mode works and returns metadata like RMETA
+        // No UnpackConfig: UNPACK sets up the extractor and emitter itself
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
             ParseContext parseContext = new ParseContext();
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
@@ -71,52 +77,26 @@ public class UnpackModeTest {
                     new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
                             new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
                             FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
-            assertTrue(pipesResult.isSuccess(), "UNPACK mode should succeed. Status: " + pipesResult.status() +
+            assertTrue(pipesResult.isSuccess(), "Status: " + pipesResult.status() +
                     ", Message: " + pipesResult.message());
-            
-            // UNPACK mode may return EMIT_SUCCESS (without emitData) if passback filter is not used
-            // Check if we have emitData, otherwise just verify success
-            if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
-                // With RMETA-like behavior, we should get metadata for container + embedded docs
-                // mock-embedded.xml has 4 embedded documents, so we expect 5 metadata objects
-                List<Metadata> metadataList = pipesResult.emitData().getMetadataList();
-                assertEquals(5, metadataList.size(),
-                        "UNPACK should return RMETA-style metadata list (container + 4 embedded docs)");
-
-                // Verify container metadata
-                assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
-
-                // Verify embedded metadata
-                for (int i = 1; i < metadataList.size(); i++) {
-                    assertEquals("embeddedAuthor", metadataList.get(i).get("author"),
-                            "Embedded document " + i + " should have embedded author");
-                }
-            }
-            // Even without emitData passback, the fact that isSuccess() is true means UNPACK worked
+        }
+        Path outputDir = tmp.resolve("output");
+        // container + 4 embedded, RMETA-style
+        List<Metadata> metadataList = readMetadataList(outputDir, testDocWithEmbedded);
+        assertEquals(5, metadataList.size());
+        assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
+        for (int i = 1; i < metadataList.size(); i++) {
+            assertEquals("embeddedAuthor", metadataList.get(i).get("author"), "embedded " + i);
+        }
+        for (Metadata m : metadataList) {
+            assertNotNull(m.get("Content-Type"));
+        }
+        List<Path> embedded = embeddedFiles(outputDir, testDocWithEmbedded);
+        assertEquals(4, embedded.size(), "embedded bytes: " + embedded);
+        for (Path p : embedded) {
+            assertTrue(Files.size(p) > 0, p.toString());
         }
     }
-
-    @Test
-    public void testUnpackModeAutoSetup(@TempDir Path tmp) throws Exception {
-        // Test that UNPACK mode works without explicit UnpackConfig
-        try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
-            // It should automatically set up UnpackExtractor and EmittingUnpackHandler
-            ParseContext parseContext = new ParseContext();
-            parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            // No UnpackConfig set - should be created automatically
-
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
-                            new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
-                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-            assertTrue(pipesResult.isSuccess(),
-                    "UNPACK should work without explicit UnpackConfig. Status: " + pipesResult.status() +
-                            ", Message: " + pipesResult.message());
-        }
-    }
-
     @Test
     public void testUnpackModeRequiresEmitter(@TempDir Path tmp) throws Exception {
         // Test that UNPACK mode fails gracefully when no emitter is specified
@@ -142,35 +122,6 @@ public class UnpackModeTest {
     }
 
     @Test
-    public void testUnpackModeReturnsMetadata(@TempDir Path tmp) throws Exception {
-        // Test that UNPACK mode returns full metadata list like RMETA
-        try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
-            ParseContext parseContext = new ParseContext();
-            parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
-                            new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
-                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-            assertTrue(pipesResult.isSuccess(), "Processing should succeed. Status: " + pipesResult.status() +
-                    ", Message: " + pipesResult.message());
-            
-            // Check if emitData is available (depends on emit strategy)
-            if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
-                List<Metadata> metadataList = pipesResult.emitData().getMetadataList();
-                assertTrue(metadataList.size() > 1,
-                        "UNPACK should return multiple metadata objects for documents with embedded content");
-
-                // Each metadata object should have content type
-                for (Metadata m : metadataList) {
-                    assertNotNull(m.get("Content-Type"), "Each document should have Content-Type");
-                }
-            }
-        }
-    }
-
-    @Test
     public void testUnpackModeWithCustomUnpackConfig(@TempDir Path tmp) throws Exception {
         // Test that UNPACK mode respects custom UnpackConfig settings
         try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
@@ -191,6 +142,12 @@ public class UnpackModeTest {
 
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with custom UnpackConfig should succeed. Status: " + pipesResult.status());
+        }
+        List<String> names = embeddedFiles(tmp.resolve("output"), testDocWithEmbedded).stream()
+                .map(f -> f.getFileName().toString()).toList();
+        assertEquals(4, names.size(), names.toString());
+        for (String name : names) {
+            assertTrue(name.matches("\\d{8}\\..+"), "zero-padded with detected suffix: " + name);
         }
     }
 
@@ -214,6 +171,8 @@ public class UnpackModeTest {
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with includeOriginal should succeed. Status: " + pipesResult.status());
         }
+        List<Path> embedded = embeddedFiles(tmp.resolve("output"), testDocWithEmbedded);
+        assertEquals(5, embedded.size(), "4 embedded + the original: " + embedded);
     }
 
     @Test
@@ -243,26 +202,19 @@ public class UnpackModeTest {
             assertTrue(unpackResult.isSuccess(), "UNPACK processing should succeed. Status: " + unpackResult.status() +
                     ", Message: " + unpackResult.message());
 
-            // If emitData is available for both, compare them
-            if (rmetaResult.emitData() != null && rmetaResult.emitData().getMetadataList() != null &&
-                    unpackResult.emitData() != null && unpackResult.emitData().getMetadataList() != null) {
-                List<Metadata> rmetaList = rmetaResult.emitData().getMetadataList();
-                List<Metadata> unpackList = unpackResult.emitData().getMetadataList();
 
-                assertEquals(rmetaList.size(), unpackList.size(),
-                        "UNPACK should return same number of metadata objects as RMETA");
-
-                // Compare key metadata values
-                for (int i = 0; i < rmetaList.size(); i++) {
-                    assertEquals(rmetaList.get(i).get("author"), unpackList.get(i).get("author"),
-                            "Author metadata should match at index " + i);
-                    assertEquals(rmetaList.get(i).get("Content-Type"), unpackList.get(i).get("Content-Type"),
-                            "Content-Type should match at index " + i);
-                }
+            // RMETA passes the list back; UNPACK only emits it
+            List<Metadata> rmetaList = rmetaResult.emitData().getMetadataList();
+            List<Metadata> unpackList = readMetadataList(tmp.resolve("output"), testDocWithEmbedded + "-unpack");
+            assertEquals(5, rmetaList.size());
+            assertEquals(rmetaList.size(), unpackList.size());
+            for (int i = 0; i < rmetaList.size(); i++) {
+                assertEquals(rmetaList.get(i).get("author"), unpackList.get(i).get("author"), "index " + i);
+                assertEquals(rmetaList.get(i).get("Content-Type"), unpackList.get(i).get("Content-Type"),
+                        "index " + i);
             }
         }
     }
-
     @Test
     public void testUnpackModeWithSimpleDocument(@TempDir Path tmp) throws Exception {
         // Test UNPACK mode with a simple document (no embedded files)
@@ -280,56 +232,22 @@ public class UnpackModeTest {
                     "UNPACK should work with simple documents. Status: " + pipesResult.status() +
                             ", Message: " + pipesResult.message());
 
-            // Check emitData if available
-            if (pipesResult.emitData() != null && pipesResult.emitData().getMetadataList() != null) {
-                assertEquals(1, pipesResult.emitData().getMetadataList().size(),
-                        "Simple document should have exactly one metadata object");
-            }
         }
+        Path outputDir = tmp.resolve("output");
+        assertEquals(1, readMetadataList(outputDir, simpleDoc).size());
+        assertTrue(embeddedFiles(outputDir, simpleDoc).isEmpty());
     }
-
     @Test
     public void testParseModeParseMethod() {
-        // Test the parse() method includes UNPACK in error message
-        try {
-            ParseMode.parse("INVALID_MODE");
-        } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().contains("UNPACK"),
-                    "Error message should include UNPACK as a valid option: " + e.getMessage());
-        }
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> ParseMode.parse("INVALID_MODE"));
+        assertTrue(e.getMessage().contains("UNPACK"),
+                "Error message should include UNPACK as a valid option: " + e.getMessage());
 
-        // Test that UNPACK can be parsed
         assertEquals(ParseMode.UNPACK, ParseMode.parse("UNPACK"));
         assertEquals(ParseMode.UNPACK, ParseMode.parse("unpack"));
         assertEquals(ParseMode.UNPACK, ParseMode.parse("Unpack"));
     }
-
-    @Test
-    public void testUnpackModeBytesEmittedToOutputDir(@TempDir Path tmp) throws Exception {
-        // Test that embedded bytes are actually emitted to the output directory
-        Path outputDir = tmp.resolve("output");
-        Files.createDirectories(outputDir);
-
-        try (PipesClient pipesClient = init(tmp, testDocWithEmbedded)) {
-            ParseContext parseContext = new ParseContext();
-            parseContext.set(ParseMode.class, ParseMode.UNPACK);
-
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testDocWithEmbedded, new FetchKey(fetcherName, testDocWithEmbedded),
-                            new EmitKey(emitterName, testDocWithEmbedded), new Metadata(), parseContext,
-                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-
-            assertTrue(pipesResult.isSuccess(), "UNPACK should succeed");
-            
-            // Check that output files were created for the embedded documents
-            // The exact naming depends on the EmittingUnpackHandler configuration
-            // At minimum, we verify the metadata JSON was written
-            assertTrue(Files.exists(outputDir.resolve(testDocWithEmbedded + ".json")) ||
-                    Files.list(outputDir).count() > 0,
-                    "Output directory should contain emitted files");
-        }
-    }
-
     @Test
     public void testUnpackModeZipOutput(@TempDir Path tmp) throws Exception {
         // Test that zipEmbeddedFiles=true creates a zip file containing embedded documents
@@ -520,17 +438,9 @@ public class UnpackModeTest {
                 .filter(p -> p.toString().endsWith("-embedded.zip"))
                 .toList();
 
-        // Either no zip file is created, or it's empty (no entries except possibly the original)
-        if (!zipFiles.isEmpty()) {
-            try (ZipFile zip = new ZipFile(zipFiles.get(0).toFile())) {
-                // The zip might be empty or only contain the original document
-                // With a simple doc and no includeOriginal, it should be very small
-                assertTrue(zip.size() <= 1,
-                        "Zip for document without embedded files should be nearly empty");
-            }
-        }
+        assertTrue(zipFiles.isEmpty(), "no embedded files, no zip: " + zipFiles);
+        assertEquals(1, readMetadataList(outputDir, simpleDoc).size());
     }
-
     @Test
     public void testMaxUnpackBytesLimit(@TempDir Path tmp) throws Exception {
         // Test that maxUnpackBytes limit is enforced during byte extraction
@@ -575,7 +485,8 @@ public class UnpackModeTest {
 
         // With a 10-byte limit, we should have extracted very little
         // The first embedded file in mock-embedded.xml is larger than 10 bytes
-        assertTrue(totalBytesWritten <= 20,
+        // testMaxUnpackBytesUnlimited shows these files otherwise total 4 x 146 bytes
+        assertTrue(totalBytesWritten <= 10,
                 "Total bytes written should be limited by maxUnpackBytes. Got: " + totalBytesWritten);
     }
 
@@ -605,8 +516,12 @@ public class UnpackModeTest {
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with default maxUnpackBytes should succeed. Status: " + pipesResult.status());
         }
+        List<Path> embedded = embeddedFiles(outputDir, testDocWithEmbedded + "-default");
+        assertEquals(4, embedded.size(), embedded.toString());
+        for (Path p : embedded) {
+            assertEquals(146, Files.size(p), p.toString());
+        }
     }
-
     @Test
     public void testMaxUnpackBytesUnlimited(@TempDir Path tmp) throws Exception {
         // Test that maxUnpackBytes=-1 allows unlimited extraction
@@ -630,6 +545,28 @@ public class UnpackModeTest {
 
             assertTrue(pipesResult.isSuccess(),
                     "UNPACK with unlimited maxUnpackBytes should succeed. Status: " + pipesResult.status());
+        }
+        List<Path> embedded = embeddedFiles(outputDir, testDocWithEmbedded + "-unlimited");
+        assertEquals(4, embedded.size(), embedded.toString());
+        for (Path p : embedded) {
+            assertEquals(146, Files.size(p), p.toString());
+        }
+    }
+
+    private static List<Metadata> readMetadataList(Path outputDir, String emitKey) throws IOException {
+        try (Reader reader = Files.newBufferedReader(outputDir.resolve(emitKey + ".json"),
+                StandardCharsets.UTF_8)) {
+            return JsonMetadataList.fromJson(reader);
+        }
+    }
+
+    private static List<Path> embeddedFiles(Path outputDir, String emitKey) throws IOException {
+        Path dir = outputDir.resolve(emitKey + "-embed");
+        if (!Files.isDirectory(dir)) {
+            return List.of();
+        }
+        try (Stream<Path> files = Files.list(dir)) {
+            return files.sorted().toList();
         }
     }
 }

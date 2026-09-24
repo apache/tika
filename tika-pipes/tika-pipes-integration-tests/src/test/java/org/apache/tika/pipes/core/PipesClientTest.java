@@ -434,11 +434,8 @@ public class PipesClientTest {
             assertEquals(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, pipesResult.status());
             assertTrue(pipesResult.isFatal(), "FAILED_TO_INITIALIZE should be a fatal error");
             Assertions.assertNotNull(pipesResult.message(), "Should have error message from server");
-            assertTrue(pipesResult.message().contains("non-existent-fetcher-plugin") ||
-                      pipesResult.message().contains("TikaConfigException") ||
-                      pipesResult.message().contains("error") ||
-                      pipesResult.message().contains("Exception"),
-                      "Error message should contain details about the failure");
+            assertTrue(pipesResult.message().contains("non-existent-fetcher-plugin"),
+                    "message should name the unknown component: " + pipesResult.message());
         }
     }
 
