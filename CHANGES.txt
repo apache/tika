@@ -1,3 +1,11 @@
+Release 4.2.0 - unreleased
+
+   * tika-grpc: experimental TikaV2 service on the same port as the existing
+     one. Its FetchAndParse replies carry a typed Document with the content
+     type, metadata, parse status and source origin, but not the extracted
+     text. Protos in the new tika-grpc-api module, metadata mapping in
+     tika-grpc-mapper (TIKA-4766).
+
 Release 4.1.0 - 9/21/2026
 
    * Apple Mail emlx files are detected as message/x-emlx and parsed by
