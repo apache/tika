@@ -52,6 +52,15 @@ public class DefaultPluginsDirTest {
     }
 
     @Test
+    public void findIsEmptyWhenNothingExists(@TempDir Path install, @TempDir Path cwd)
+            throws Exception {
+        assertTrue(DefaultPluginsDir.find(install.resolve("lib"), cwd).isEmpty());
+        Path plugins = Files.createDirectories(cwd.resolve("plugins"));
+        assertEquals(plugins.toAbsolutePath(),
+                DefaultPluginsDir.find(install.resolve("lib"), cwd).get());
+    }
+
+    @Test
     public void missingPluginsDirStaysAbsolute(@TempDir Path cwd) {
         //the forked pipes server must not re-resolve the path against its own cwd
         assertTrue(DefaultPluginsDir.resolve(null, cwd).isAbsolute());

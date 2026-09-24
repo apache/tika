@@ -18,6 +18,7 @@ package org.apache.tika.plugins;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 
@@ -50,6 +51,27 @@ public class TikaPluginManagerTest {
         try {
             TikaPluginManager manager = new TikaPluginManager(Collections.singletonList(tmpDir));
             assertEquals(RuntimeMode.DEPLOYMENT, manager.getRuntimeMode());
+        } finally {
+            System.clearProperty("tika.plugin.dev.mode");
+        }
+    }
+
+    @Test
+    public void developmentModeLoadsAnExplodedClassesDirectory(@TempDir Path classes)
+            throws Exception {
+        // the documented recipe: plugin-roots points at target/classes, no zip
+        Files.writeString(classes.resolve("plugin.properties"),
+                "plugin.id=exploded-test\nplugin.class=" + TestPlugin.class.getName()
+                        + "\nplugin.version=1\n");
+        Files.createDirectories(classes.resolve("META-INF"));
+        Files.writeString(classes.resolve("META-INF/extensions.idx"),
+                TestExtensionFactory.class.getName() + "\n");
+        System.setProperty("tika.plugin.dev.mode", "true");
+        try {
+            TikaPluginManager manager = new TikaPluginManager(Collections.singletonList(classes));
+            manager.loadPlugins();
+            manager.startPlugins();
+            assertEquals(1, manager.getExtensions(TikaExtensionFactory.class).size());
         } finally {
             System.clearProperty("tika.plugin.dev.mode");
         }

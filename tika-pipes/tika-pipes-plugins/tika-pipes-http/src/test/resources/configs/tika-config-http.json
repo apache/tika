@@ -17,5 +17,5 @@
       }
     }
   },
-  "plugin-roots": "target/plugins"
+  "plugin-roots": "target/classes"
 }

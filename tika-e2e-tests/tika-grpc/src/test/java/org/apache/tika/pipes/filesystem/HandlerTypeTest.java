@@ -119,7 +119,7 @@ class HandlerTypeTest {
         }
 
         Path tikaGrpcDir = tikaRootDir.resolve("tika-grpc");
-        Path configFile = Path.of("src/test/resources/tika-config-ignite-handlertype.json").toAbsolutePath();
+        Path configFile = ExternalTestBase.localConfig("tika-config-ignite-handlertype.json");
         if (!Files.exists(configFile)) {
             throw new IllegalStateException("Config file not found: " + configFile);
         }
