@@ -48,9 +48,7 @@ public class IntegrationTestBase extends TikaTest {
     static final String TEST_OOM = "test-documents/mock/fake_oom.xml";
     static final String TEST_SYSTEM_EXIT = "test-documents/mock/system_exit.xml";
     static final String TEST_HEAVY_HANG = "test-documents/mock/heavy_hang_30000.xml";
-    static final String TEST_HEAVY_HANG_SHORT = "test-documents/mock/heavy_hang_100.xml";
     static final String TEST_STDOUT_STDERR = "test-documents/mock/testStdOutErr.xml";
-    static final String TEST_STATIC_STDOUT_STDERR = "test-documents/mock/testStaticStdOutErr.xml";
     static final String RMETA_PATH = "/rmeta";
     static final String STATUS_PATH = "/status";
 

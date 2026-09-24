@@ -157,26 +157,10 @@ public class OpenSearchTest {
         assertEquals(1, (int) statusCounts.get("PARSE_SUCCESS_WITH_EXCEPTION"), "should have had 1 parse exception: " + statusCounts);
         //the embedded docx is emitted directly
         assertEquals(1, (int) statusCounts.get("EMIT_SUCCESS"), "should have had 1 emit success: " + statusCounts);
-        assertEquals(2, numberOfCrashes(statusCounts),
-                "should have had 2 forked-process crashes (OOM/TIMEOUT/UNSPECIFIED_CRASH): " +
-                        statusCounts);
+        assertEquals(1, (int) statusCounts.get("OOM"), "fake_oom.xml should be reported as OOM: " + statusCounts);
 
     }
 
-    private int numberOfCrashes(Map<String, Integer> statusCounts) {
-        // oom.xml (a real heap exhaustion) and fake_oom.xml both crash the fork; how a genuine OOM
-        // surfaces -- OOM vs UNSPECIFIED_CRASH vs TIMEOUT -- is nondeterministic under load, but all
-        // three are PipesResult PROCESS_CRASH statuses. Count the whole category so the assertion is
-        // deterministic and doesn't flake on the exact sub-classification.
-        int sum = 0;
-        for (String crashStatus : new String[]{"OOM", "TIMEOUT", "UNSPECIFIED_CRASH"}) {
-            Integer cnt = statusCounts.get(crashStatus);
-            if (cnt != null) {
-                sum += cnt;
-            }
-        }
-        return sum;
-    }
 
 
     @Test
@@ -207,7 +191,7 @@ public class OpenSearchTest {
                 "\"match_all\": {} } }";
         results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + 3 + 12, // 3 mock files and...
+        assertEquals(numHtmlDocs + 2 + 12, // 2 mock files and...
                 // the .docx file has 11 embedded files, plus itself
                 results.getJson().get("hits").get("total").get("value").asInt());
 
@@ -276,7 +260,7 @@ public class OpenSearchTest {
                 "\"match_all\": {} } }";
         results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + 3 + 12, //3 for the mock docs,
+        assertEquals(numHtmlDocs + 2 + 12, //2 for the mock docs,
                 // and the .docx file has 11 embedded files, plus itself
                 results.getJson().get("hits").get("total").get("value").asInt());
 
@@ -341,7 +325,7 @@ public class OpenSearchTest {
                 "\"match_all\": {} } }";
         results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        assertEquals(numHtmlDocs + 3 + 12, //3 for the mock docs,
+        assertEquals(numHtmlDocs + 2 + 12, //2 for the mock docs,
                 // and the .docx file has 11 embedded files, plus itself
                 results.getJson().get("hits").get("total").get("value").asInt());
 

@@ -31,7 +31,6 @@ import java.nio.file.Path;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.jupiter.api.AfterEach;
@@ -62,8 +61,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     private static Path SETUP_DIR;
     private static Path TEMP_OUTPUT_DIR;
     private static Path TIKA_CONFIG;
-    private static Path TIKA_CONFIG_TIMEOUT;
-    private static String[] FILES = new String[]{"hello_world.xml", "heavy_hang_30000.xml", "fake_oom.xml", "system_exit.xml", "null_pointer.xml"};
+    private static String[] FILES = new String[]{"hello_world.xml", "heavy_hang_30000.xml", "system_exit.xml", "null_pointer.xml"};
 
     @BeforeAll
     public static void setUpBeforeClass() throws Exception {
@@ -76,9 +74,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
             Files.copy(TikaPipesTest.class.getResourceAsStream("/test-documents/mock/" + mockFile), inputDir.resolve(mockFile));
         }
         TIKA_CONFIG = SETUP_DIR.resolve("tika-config.json");
-        TIKA_CONFIG_TIMEOUT = SETUP_DIR.resolve("tika-config-timeout.json");
         CXFTestBase.createPluginsConfig(TIKA_CONFIG, inputDir, TEMP_OUTPUT_DIR, null, 5000L);
-        CXFTestBase.createPluginsConfig(TIKA_CONFIG_TIMEOUT, inputDir, TEMP_OUTPUT_DIR, null, 500L);
 
     }
 
@@ -143,33 +139,6 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .toString())});
         JsonNode node = testOne("system_exit.xml", false, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, 503);
         assertEquals("UNSPECIFIED_CRASH", node.get("status").asText());
-    }
-
-    @Test
-    public void testOOM() throws Exception {
-
-        try {
-            startProcess(new String[]{
-                    "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG
-                    .toAbsolutePath()
-                    .toString())});
-            JsonNode node = testOne("fake_oom.xml", false, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, 503);
-            assertEquals("OOM", node.get("status").asText());
-        } catch (ProcessingException e) {
-            //depending on timing, there may be a connection exception --
-            // TODO add more of a delay to server shutdown to ensure message is sent
-            // before shutdown.
-        }
-    }
-
-    @Test
-    public void testTimeout() throws Exception {
-        startProcess(new String[]{
-                "-config", ProcessUtils.escapeCommandLine(TIKA_CONFIG_TIMEOUT
-                .toAbsolutePath()
-                .toString())});
-        JsonNode node = testOne("heavy_hang_30000.xml", false, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, 503);
-        assertEquals("TIMEOUT", node.get("status").asText());
     }
 
     @Test

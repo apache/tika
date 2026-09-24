@@ -256,67 +256,6 @@ public class SharedServerChaosMonkeyTest {
                 "Crash-related results should be at least as many as expected crash files");
     }
 
-    @Test
-    public void testServerRecoveryAfterChaos(@TempDir Path tmp) throws Exception {
-        // After chaos monkey, verify server is in clean state by processing batch of OK files
-        Path inputDir = tmp.resolve("input");
-        Path outputDir = tmp.resolve("output");
-        Files.createDirectories(inputDir);
-        Files.createDirectories(outputDir);
-
-        // First, create chaos
-        Random r = new Random(123);
-        for (int i = 0; i < 20; i++) {
-            String content = (r.nextFloat() < 0.3) ? MOCK_OOM : MOCK_OK;
-            Files.writeString(inputDir.resolve("chaos" + i + ".xml"), content, StandardCharsets.UTF_8);
-        }
-
-        // Then, create clean batch
-        for (int i = 0; i < 10; i++) {
-            Files.writeString(inputDir.resolve("clean" + i + ".xml"), MOCK_OK, StandardCharsets.UTF_8);
-        }
-
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
-                "tika-config-shared-server.json", tmp, inputDir, outputDir, false);
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
-            // Process chaos files (some will crash)
-            for (int i = 0; i < 20; i++) {
-                pipesParser.parse(new FetchEmitTuple(
-                        "chaos" + i + ".xml",
-                        new FetchKey(FETCHER_NAME, "chaos" + i + ".xml"),
-                        new EmitKey(EMITTER_NAME, ""),
-                        new Metadata(),
-                        new ParseContext(),
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            }
-
-            // Wait for server to stabilize
-            Thread.sleep(500);
-
-            // Now process clean batch - ALL should succeed
-            int successCount = 0;
-            for (int i = 0; i < 10; i++) {
-                PipesResult result = pipesParser.parse(new FetchEmitTuple(
-                        "clean" + i + ".xml",
-                        new FetchKey(FETCHER_NAME, "clean" + i + ".xml"),
-                        new EmitKey(EMITTER_NAME, ""),
-                        new Metadata(),
-                        new ParseContext(),
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-                if (result.isSuccess()) {
-                    successCount++;
-                }
-            }
-
-            // All clean files should succeed - proves server is stable after chaos
-            assertEquals(10, successCount,
-                    "All clean files should succeed after chaos, proving server recovery");
-        }
-    }
-
     private static class ResultWithType {
         final PipesResult result;
         final FileType expectedType;

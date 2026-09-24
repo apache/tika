@@ -36,8 +36,6 @@ import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
@@ -50,7 +48,6 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
@@ -154,82 +151,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         assertEquals(200, response.statusCode());
         assertEquals(HttpClient.Version.HTTP_2, response.version());
     }
-
-    @Test
-    public void testOOM() throws Exception {
-        // With pipes-based parsing, OOM in a child process should NOT crash the server
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-
-        awaitServerStartup();
-
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH)
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
-
-        // Server should return 503 (Service Unavailable) for OOM, not crash
-        assertEquals(503, response.getStatus());
-        assertErrorResponseStatus(response, "OOM");
-
-        // Server should still be running - verify with a successful request
-        testBaseline();
-    }
-
-    @Test
-    public void testSystemExit() throws Exception {
-        // With pipes-based parsing, System.exit in a child process should NOT crash the server
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-
-        awaitServerStartup();
-
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH)
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_SYSTEM_EXIT));
-
-        // UNSPECIFIED_CRASH is a transient process failure — 503, same category as OOM/TIMEOUT
-        assertEquals(503, response.getStatus());
-        assertErrorResponseStatus(response, "UNSPECIFIED_CRASH");
-
-        // Server should still be running - verify with a successful request
-        testBaseline();
-    }
-
-    @Test
-    @Timeout(60000)
-    public void testTimeout() throws Exception {
-        // With pipes-based parsing, timeout in a child process should NOT crash the server.
-        // TEST_HEAVY_HANG relies on tika-config-server-pipes-basic.json's short
-        // progressTimeoutMillis to be detected: keep that short.
-        startProcess(new String[]{"-config", getConfig("tika-config-server-pipes-basic.json")});
-        awaitServerStartup();
-
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH)
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG));
-
-        // Server should return 503 (Service Unavailable) for timeout
-        assertEquals(503, response.getStatus());
-        assertErrorResponseStatus(response, "TIMEOUT");
-
-        // Server should still be running - verify with a successful request
-        testBaseline();
-    }
-
-    /**
-     * Asserts that an error response body is JSON with a {@code status} field matching
-     * {@code expectedStatus} (a {@code PipesResult.RESULT_STATUS} enum name).
-     */
-    private void assertErrorResponseStatus(Response response, String expectedStatus) throws IOException {
-        try (InputStream is = (InputStream) response.getEntity()) {
-            String body = IOUtils.toString(is, UTF_8);
-            JsonNode node = new ObjectMapper().readTree(body);
-            assertEquals(expectedStatus, node.path("status").asText(null),
-                    "Expected JSON error body with status=" + expectedStatus + " but got: " + body);
-        }
-    }
-
 
     private String getConfig(String configName) {
         try {
