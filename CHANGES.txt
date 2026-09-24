@@ -7,7 +7,14 @@ Release 4.2.0 - ???
      target/classes directory as a plugin without relying on the classpath
      (TIKA-4918).
 
-Release 4.1.0 - 9/21/2026
+Release 4.1.0 - 9/24/2026
+
+   * tika-annotation-processor is no longer a transitive dependency of
+     tika-pipes-core or the tika-langdetect modules (provided scope).
+
+   * Setting progressTimeoutMillis equal to totalTaskTimeoutMillis, the
+     documented way to disable stall detection, no longer logs a warning
+     on every parse (TIKA-4919).
 
    * Apple Mail emlx files are detected as message/x-emlx and parsed by
      RFC822Parser; a file name no longer turns plain text into a message type
@@ -38,7 +45,8 @@ Release 4.1.0 - 9/21/2026
 
    * ICC tone-curve and lookup-table tags are no longer written to icc:* by
      default; "includeIccCurvesAndLuts": true on the image parsers restores
-     them (TIKA-4902).
+     them. Curve values are formatted independently of the JVM's default
+     locale, and single-entry gamma curves decode correctly (TIKA-4902).
 
    * Digesting an embedded document no longer inflates it twice (TIKA-4901).
 

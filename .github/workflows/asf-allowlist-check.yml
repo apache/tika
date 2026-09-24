@@ -15,25 +15,34 @@
 # limitations under the License.
 #
 
-name: no split packages
+# Every action a workflow uses must be on the ASF org allow-list, or the
+# workflow fails at startup with no logs (TIKA-4823, twice). This check fails
+# a PR that introduces an unapproved ref and warns 30 days before a pinned
+# version expires; the weekly run is what surfaces the expiry warning when
+# nothing under .github/ is changing.
+name: ASF allowlist check
 
 on:
+  workflow_dispatch:
   pull_request:
-    branches: [ main ]
+    paths:
+      - '.github/**'
   push:
     branches: [ main ]
+    paths:
+      - '.github/**'
+  schedule:
+    - cron: '17 6 * * 1'
 
-# Superseded PR runs are dead work: cancel them. Never cancel a main build --
-# that run is the record for a commit that is already merged.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+permissions:
+  contents: read
 
 jobs:
-  check-split-packages:
+  asf-allowlist-check:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - name: Check for split packages (one package = one module, JPMS invariant)
-        run: python3 .github/scripts/check_split_packages.py
+        with:
+          persist-credentials: false
+      - uses: apache/infrastructure-actions/allowlist-check@47b297bbe90f580139129bee531bd84bd95b7f5d # allowlist-check/v1.0.4

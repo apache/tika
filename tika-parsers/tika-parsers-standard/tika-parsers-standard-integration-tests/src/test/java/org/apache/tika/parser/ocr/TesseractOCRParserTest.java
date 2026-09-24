@@ -31,6 +31,7 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.ParseContextConfig;
@@ -221,6 +222,8 @@ public class TesseractOCRParserTest extends TikaTest {
     }
 
 
+    // TODO TIKA-4923: metadata-extractor lowercases the resolution unit in the default locale
+    @DisabledIfSystemProperty(named = "user.language", matches = "tr")
     @Test
     public void getNormalMetadataToo() throws Exception {
         //this should be successful whether or not TesseractOCR is installed/active

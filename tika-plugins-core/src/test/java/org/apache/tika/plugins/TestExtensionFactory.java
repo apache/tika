@@ -16,15 +16,11 @@
  */
 package org.apache.tika.plugins;
 
-/**
- * Listed in src/test/resources/META-INF/extensions.idx, so it sits on the test classpath
- * exactly the way a plugin jar pulled in through Maven would.
- */
-public class ClasspathTestFactory implements TikaExtensionFactory<TikaExtension> {
+public class TestExtensionFactory implements TikaExtensionFactory<TikaExtension> {
 
     @Override
     public String getName() {
-        return "classpath-test-factory";
+        return "test-extension-factory";
     }
 
     @Override

@@ -44,4 +44,12 @@ public class TimeoutLimitsTest {
         assertDoesNotThrow(new TimeoutLimits(0, 0)::initialize);
         assertDoesNotThrow(new TimeoutLimits()::initialize);
     }
+
+    /** progress == total is the supported way to disable stall detection. */
+    @Test
+    public void testProgressEqualToTotalIsValid() {
+        TimeoutLimits limits = new TimeoutLimits(60_000, 60_000);
+        assertDoesNotThrow(limits::initialize);
+        assertDoesNotThrow(() -> ParseTimeout.start(limits));
+    }
 }

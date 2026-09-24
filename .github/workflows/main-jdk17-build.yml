@@ -43,7 +43,7 @@ env:
   # nowhere, and CI stays green while the tests stop existing.
   #
   # These six are ~15 of the build's 37 minutes -- five are testcontainers-backed
-  # (Elasticsearch/OpenSearch/Solr/Kafka/MinIO) and tika-pipes-integration-tests
+  # (Elasticsearch/OpenSearch/Solr/Kafka/RustFS) and tika-pipes-integration-tests
   # forks JVMs. Adding a slow IT module here is the intended way to rebalance.
   IT_MODULES: ':tika-pipes-integration-tests,:tika-pipes-es-integration-tests,:tika-pipes-opensearch-integration-tests,:tika-pipes-solr-integration-tests,:tika-pipes-kafka-integration-tests,:tika-pipes-s3-integration-tests'
 
@@ -56,9 +56,9 @@ jobs:
         java: [ '17' ]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
@@ -107,9 +107,9 @@ jobs:
         java: [ '17' ]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
@@ -150,9 +150,9 @@ jobs:
         java: [ '17' ]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
