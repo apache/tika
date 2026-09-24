@@ -33,6 +33,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,8 @@ import org.apache.tika.plugins.ExtensionConfig;
 /**
  * Integration tests for {@link IgniteConfigStore} using an embedded Ignite 3.x server.
  */
+// TODO TIKA-4922: Ignite uppercases unquoted table names in the default locale
+@DisabledIfSystemProperty(named = "user.language", matches = "tr")
 public class IgniteConfigStoreTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(IgniteConfigStoreTest.class);
