@@ -1,0 +1,48 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Every action a workflow uses must be on the ASF org allow-list, or the
+# workflow fails at startup with no logs (TIKA-4823, twice). This check fails
+# a PR that introduces an unapproved ref and warns 30 days before a pinned
+# version expires; the weekly run is what surfaces the expiry warning when
+# nothing under .github/ is changing.
+name: ASF allowlist check
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/**'
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/**'
+  schedule:
+    - cron: '17 6 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  asf-allowlist-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: apache/infrastructure-actions/allowlist-check@47b297bbe90f580139129bee531bd84bd95b7f5d # allowlist-check/v1.0.4
