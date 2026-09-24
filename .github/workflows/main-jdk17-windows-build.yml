@@ -19,10 +19,11 @@
 #   - path handling: the checkout dir below deliberately contains a space
 #   - an alternate (non-en_US) locale
 #
-# Locale is set with -Duser.language/-Duser.country, NOT LANG/LC_ALL. Those env
-# vars are POSIX-only: the Windows JVM reads the OS locale via Win32 and ignores
-# them, and even on Linux the JVM silently falls back to en_US when the named
-# locale is not generated on the box. -D always applies.
+# Locale is set with JAVA_TOOL_OPTIONS, which every JVM (surefire forks included)
+# reads at startup. NOT LANG/LC_ALL: the Windows JVM reads the OS locale via Win32
+# and ignores them. NOT -Duser.language on the mvn command line: surefire sets that
+# in the fork only after the default Locale is fixed, so the tests ran in en_US.
+# DefaultLocaleCanaryTest fails the build if the locale does not reach the fork.
 #
 # push-only, like the jdk21/jdk25 and tr_TR builds. This is the most expensive
 # job in CI -- a full reactor on a 2x-cost runner, ~48 min -- and it gated PR
@@ -66,11 +67,11 @@ jobs:
           restore-keys: maven-${{ runner.os }}-
       - name: Build with Maven (de_DE locale)
         working-directory: 'tika build dir'
-        # The -Duser.* args MUST stay quoted: PowerShell splits an unquoted dotted
-        # -D property before it reaches mvn, so the locale silently never applies
-        # and the leftover fragment fails the build as an unknown lifecycle phase.
+        env:
+          JAVA_TOOL_OPTIONS: -Duser.language=de -Duser.country=DE
+          TIKA_EXPECTED_LOCALE: de-DE
         # No -T1C here (TIKA-4867): this is the heaviest job (locale + e2e + javadoc)
         # on a 4-core runner; parallel modules starved the tika-server integration
         # tests into startup timeouts. Serial reactor also needs no annotation-
         # processor pre-install.
-        run: mvn clean test install javadoc:aggregate -Pci -Pe2e "-Duser.language=de" "-Duser.country=DE" -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        run: mvn clean test install javadoc:aggregate -Pci -Pe2e -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
