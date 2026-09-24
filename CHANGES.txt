@@ -1,4 +1,11 @@
-Release 4.1.0 - 9/24/2026
+Release 4.1.0 - 9/25/2026
+
+   * Ogg, Vorbis, Opus and FLAC comment fields are read independently of the
+     JVM's default locale: on a Turkish JVM TITLE and ARTIST were silently
+     lost. The OCR image-rotation value is formatted the same way (TIKA-4921).
+
+   * The Ignite config store quotes its table name, so lookups work under any
+     default locale (TIKA-4922).
 
    * tika-annotation-processor is no longer a transitive dependency of
      tika-pipes-core or the tika-langdetect modules (provided scope).
