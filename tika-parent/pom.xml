@@ -455,7 +455,6 @@
     <zstd.version>1.5.7-18</zstd.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.7</zookeeper.version>
-    <zstd.version>1.5.7-17</zstd.version>
     <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
     <logback.version>1.6.3</logback.version>
     <javacpp.version>1.5.13</javacpp.version>
