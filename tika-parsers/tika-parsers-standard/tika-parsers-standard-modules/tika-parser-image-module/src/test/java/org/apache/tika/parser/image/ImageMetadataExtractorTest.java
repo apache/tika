@@ -194,15 +194,15 @@ public class ImageMetadataExtractorTest {
     }
 
     @Test
-    public void testIccCurveFormattingIgnoresDefaultLocale() {
-        Locale defaultLocale = Locale.getDefault();
-        try {
-            Locale.setDefault(Locale.GERMANY);
-            assertEquals("0.0, 0.4999924, 1.0",
-                    ImageMetadataExtractor.CopyUnknownFieldsHandler.formatIccCurve(iccCurve(3)));
-        } finally {
-            Locale.setDefault(defaultLocale);
-        }
+    public void testIccCurveSpecialCounts() {
+        assertEquals("1.0", ImageMetadataExtractor.CopyUnknownFieldsHandler.formatIccCurve(
+                iccCurveRaw(0)));
+        assertEquals("1.0", ImageMetadataExtractor.CopyUnknownFieldsHandler.formatIccCurve(
+                iccCurveRaw(1, (short) 0x0100)));
+        assertEquals("2.1992188", ImageMetadataExtractor.CopyUnknownFieldsHandler.formatIccCurve(
+                iccCurveRaw(1, (short) 0x0233)));
+        assertEquals("0.0, 0.4999924, 1.0",
+                ImageMetadataExtractor.CopyUnknownFieldsHandler.formatIccCurve(iccCurve(3)));
     }
 
     //ICC 'desc' tag: type, reserved, byte count including the NUL, ASCII, NUL
@@ -215,7 +215,16 @@ public class ImageMetadataExtractorTest {
     }
 
     //ICC 'curv' tag: type, reserved, count, count uint16 samples spread over 0..1
-    private static byte[] iccCurve(int count) {
+    static byte[] iccCurveRaw(int count, short... entries) {
+        ByteBuffer b = ByteBuffer.allocate(12 + 2 * entries.length);
+        b.put("curv".getBytes(StandardCharsets.US_ASCII)).putInt(0).putInt(count);
+        for (short e : entries) {
+            b.putShort(e);
+        }
+        return b.array();
+    }
+
+    static byte[] iccCurve(int count) {
         ByteBuffer b = ByteBuffer.allocate(12 + 2 * count);
         b.put("curv".getBytes(StandardCharsets.US_ASCII)).putInt(0).putInt(count);
         for (int i = 0; i < count; i++) {

@@ -449,20 +449,30 @@ public class ImageMetadataExtractor {
             if (count > (data.length - 12) / 2) {
                 return null;
             }
+            // per the ICC curveType: no entries is identity, one entry is a u8Fixed8 gamma
+            if (count == 0) {
+                return "1.0";
+            }
+            if (count == 1) {
+                return formatIccNumber((b.getShort(12) & 0xffff) / 256.0);
+            }
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < count; i++) {
                 if (i > 0) {
                     sb.append(", ");
                 }
-                String v = String.format(Locale.ROOT, "%.7f",
-                        (b.getShort(12 + i * 2) & 0xffff) / 65535.0);
-                int end = v.length();
-                while (end > v.indexOf('.') + 2 && v.charAt(end - 1) == '0') {
-                    end--;
-                }
-                sb.append(v, 0, end);
+                sb.append(formatIccNumber((b.getShort(12 + i * 2) & 0xffff) / 65535.0));
             }
             return sb.toString();
+        }
+
+        private static String formatIccNumber(double value) {
+            String v = String.format(Locale.ROOT, "%.7f", value);
+            int end = v.length();
+            while (end > v.indexOf('.') + 2 && v.charAt(end - 1) == '0') {
+                end--;
+            }
+            return v.substring(0, end);
         }
     }
 
