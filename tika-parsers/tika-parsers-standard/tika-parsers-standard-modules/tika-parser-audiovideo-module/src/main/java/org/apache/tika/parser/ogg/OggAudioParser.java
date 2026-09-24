@@ -19,6 +19,7 @@ package org.apache.tika.parser.ogg;
 import java.io.IOException;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
@@ -26,8 +27,13 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 import org.gagravarr.ogg.audio.OggAudioHeaders;
 import org.gagravarr.ogg.audio.OggAudioInfoHeader;
@@ -82,9 +88,9 @@ public abstract class OggAudioParser extends AbstractParser {
      * Returns the first positive integer found under the given comment keys,
      * or null if there is none.
      */
-    private static Integer firstPositiveInteger(VorbisStyleComments comments, String... keys) {
+    private static Integer firstPositiveInteger(Map<String, List<String>> fields, String... keys) {
         for (String key : keys) {
-            for (String value : comments.getComments(key)) {
+            for (String value : all(fields, key)) {
                 try {
                     int parsed = Integer.parseInt(value.trim());
                     if (parsed > 0) {
@@ -123,53 +129,60 @@ public abstract class OggAudioParser extends AbstractParser {
     protected static List<PictureBlock> extractComments(Metadata metadata,
             XHTMLContentHandler xhtml, VorbisStyleComments comments)
             throws IOException, TikaException, SAXException {
+        Map<String, List<String>> fields = fields(comments);
+        String title = first(fields, VorbisComments.KEY_TITLE);
+        String artist = first(fields, VorbisComments.KEY_ARTIST);
+        String album = first(fields, VorbisComments.KEY_ALBUM);
+        String trackNumber = first(fields, VorbisComments.KEY_TRACKNUMBER);
         // Get the specific known comments
-        metadata.set(TikaCoreProperties.TITLE, comments.getTitle());
-        metadata.set(TikaCoreProperties.CREATOR, comments.getArtist());
-        metadata.set(XMPDM.ARTIST, comments.getArtist());
-        metadata.set(XMPDM.ALBUM, comments.getAlbum());
-        metadata.set(XMPDM.GENRE, comments.getGenre());
-        metadata.set(XMPDM.RELEASE_DATE, comments.getDate());
+        metadata.set(TikaCoreProperties.TITLE, title);
+        metadata.set(TikaCoreProperties.CREATOR, artist);
+        metadata.set(XMPDM.ARTIST, artist);
+        metadata.set(XMPDM.ALBUM, album);
+        metadata.set(XMPDM.GENRE, first(fields, VorbisComments.KEY_GENRE));
+        metadata.set(XMPDM.RELEASE_DATE, first(fields, VorbisComments.KEY_DATE));
         metadata.add(XMP.CREATOR_TOOL, comments.getVendor());
         metadata.add(VORBIS_VENDOR, comments.getVendor());
 
         //xmpDM:copyright is single-valued, so map the first comment; like
         //vendor, the raw comments also stay available under the vorbis: name
-        List<String> copyrights = comments.getComments("copyright");
-        if (!copyrights.isEmpty()) {
-            metadata.set(XMPDM.COPYRIGHT, copyrights.get(0));
+        String copyright = first(fields, "copyright");
+        if (copyright != null) {
+            metadata.set(XMPDM.COPYRIGHT, copyright);
         }
 
-        for (String comment : comments.getComments("comment")) {
+        for (String comment : all(fields, "comment")) {
             metadata.add(XMPDM.LOG_COMMENT, comment);
         }
 
         // Grab the rest just in case; the pictures become embedded
         //  documents instead, their raw base64 blocks help nobody
-        List<String> done = Arrays.asList(
+        Set<String> done = new HashSet<>();
+        for (String key : Arrays.asList(
                 VorbisComments.KEY_TITLE, VorbisComments.KEY_ARTIST,
                 VorbisComments.KEY_ALBUM, VorbisComments.KEY_GENRE,
                 VorbisComments.KEY_DATE, VorbisComments.KEY_TRACKNUMBER,
-                "vendor", "comment", METADATA_BLOCK_PICTURE
-        );
+                "vendor", "comment", METADATA_BLOCK_PICTURE)) {
+            done.add(fieldName(key));
+        }
         // BAG: a Vorbis comment field can legitimately repeat.
-        for (String key : comments.getAllComments().keySet()) {
-            if (!done.contains(key)) {
-                for (String value : comments.getAllComments().get(key)) {
-                    metadata.add(VORBIS, key, value);
+        for (Map.Entry<String, List<String>> field : fields.entrySet()) {
+            if (!done.contains(field.getKey())) {
+                for (String value : field.getValue()) {
+                    metadata.add(VORBIS, field.getKey(), value);
                 }
             }
         }
 
         // Output as text too
-        xhtml.element("h1", comments.getTitle());
-        xhtml.element("p", comments.getArtist());
+        xhtml.element("h1", title);
+        xhtml.element("p", artist);
 
         // Album and Track number
-        if (comments.getTrackNumber() != null) {
-            xhtml.element("p", comments.getAlbum() + ", track " + comments.getTrackNumber());
-            metadata.set(Audio.RAW_TRACK_NUMBER, comments.getTrackNumber());
-            NumberAndTotal trackNumberAndTotal = NumberAndTotal.parse(comments.getTrackNumber());
+        if (trackNumber != null) {
+            xhtml.element("p", album + ", track " + trackNumber);
+            metadata.set(Audio.RAW_TRACK_NUMBER, trackNumber);
+            NumberAndTotal trackNumberAndTotal = NumberAndTotal.parse(trackNumber);
             if (trackNumberAndTotal != null) {
                 if (trackNumberAndTotal.number != null) {
                     metadata.set(XMPDM.TRACK_NUMBER, trackNumberAndTotal.number);
@@ -179,9 +192,9 @@ public abstract class OggAudioParser extends AbstractParser {
                 }
             }
         } else {
-            xhtml.element("p", comments.getAlbum());
+            xhtml.element("p", album);
         }
-        for (String discValue : comments.getComments("discnumber")) {
+        for (String discValue : all(fields, "discnumber")) {
             metadata.set(Audio.RAW_DISC_NUMBER, discValue);
             NumberAndTotal discNumberAndTotal = NumberAndTotal.parse(discValue);
             if (discNumberAndTotal != null) {
@@ -194,24 +207,111 @@ public abstract class OggAudioParser extends AbstractParser {
             }
         }
         //explicit totals win over the combined "n/total" form
-        Integer trackTotal = firstPositiveInteger(comments, "tracktotal", "totaltracks");
+        Integer trackTotal = firstPositiveInteger(fields, "tracktotal", "totaltracks");
         if (trackTotal != null) {
             metadata.set(Audio.TRACK_COUNT, trackTotal);
         }
-        Integer discTotal = firstPositiveInteger(comments, "disctotal", "totaldiscs");
+        Integer discTotal = firstPositiveInteger(fields, "disctotal", "totaldiscs");
         if (discTotal != null) {
             metadata.set(Audio.DISC_COUNT, discTotal);
         }
 
         // A few other bits
-        xhtml.element("p", comments.getDate());
-        for (String comment : comments.getComments("comment")) {
+        xhtml.element("p", first(fields, VorbisComments.KEY_DATE));
+        for (String comment : all(fields, "comment")) {
             xhtml.element("p", comment);
         }
-        xhtml.element("p", comments.getGenre());
+        xhtml.element("p", first(fields, VorbisComments.KEY_GENRE));
 
         // The pictures are the caller's to emit
-        return parsePictures(comments);
+        return parsePictures(fields);
+    }
+
+    /**
+     * The comment fields keyed by lower-case name, re-read from the raw comment header:
+     * vorbis-java folds names in the default locale and then strips non-ASCII, so a
+     * Turkic JVM turns TITLE into "ttle" (TIKA-4921). Falls back to the library's map
+     * when there is no raw header, as for comments built in code.
+     */
+    static Map<String, List<String>> fields(VorbisStyleComments comments) {
+        Map<String, List<String>> fields = rawFields(comments);
+        if (fields != null) {
+            return fields;
+        }
+        fields = new LinkedHashMap<>();
+        for (Map.Entry<String, List<String>> field : comments.getAllComments().entrySet()) {
+            fields.computeIfAbsent(fieldName(field.getKey()), k -> new ArrayList<>())
+                    .addAll(field.getValue());
+        }
+        return fields;
+    }
+
+    private static Map<String, List<String>> rawFields(VorbisStyleComments comments) {
+        byte[] data;
+        try {
+            data = comments.getData();
+        } catch (NullPointerException e) {
+            // no packet behind comments built in code
+            return null;
+        }
+        if (data == null) {
+            return null;
+        }
+        // the format-specific header size is protected; find the vendor string instead
+        String vendor = comments.getVendor() == null ? "" : comments.getVendor();
+        byte[] vendorBytes = vendor.getBytes(StandardCharsets.UTF_8);
+        ByteBuffer buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
+        int offset = -1;
+        for (int headerSize : new int[]{0, 4, 7, 8}) {
+            int end = headerSize + 4 + vendorBytes.length;
+            if (end <= data.length && buffer.getInt(headerSize) == vendorBytes.length &&
+                    Arrays.equals(data, headerSize + 4, end, vendorBytes, 0, vendorBytes.length)) {
+                offset = end;
+                break;
+            }
+        }
+        if (offset < 0) {
+            return null;
+        }
+        try {
+            buffer.position(offset);
+            int count = buffer.getInt();
+            if (count < 0) {
+                return null;
+            }
+            Map<String, List<String>> fields = new LinkedHashMap<>();
+            for (int i = 0; i < count; i++) {
+                int length = buffer.getInt();
+                if (length < 0 || length > buffer.remaining()) {
+                    return null;
+                }
+                byte[] bytes = new byte[length];
+                buffer.get(bytes);
+                String comment = new String(bytes, StandardCharsets.UTF_8);
+                int eq = comment.indexOf('=');
+                if (eq < 0) {
+                    continue;
+                }
+                fields.computeIfAbsent(fieldName(comment.substring(0, eq)), k -> new ArrayList<>())
+                        .add(comment.substring(eq + 1));
+            }
+            return fields;
+        } catch (BufferUnderflowException e) {
+            return null;
+        }
+    }
+
+    private static String fieldName(String name) {
+        return name.toLowerCase(Locale.ROOT);
+    }
+
+    private static String first(Map<String, List<String>> fields, String name) {
+        List<String> values = fields.get(fieldName(name));
+        return values == null || values.isEmpty() ? null : values.get(0);
+    }
+
+    private static List<String> all(Map<String, List<String>> fields, String name) {
+        return fields.getOrDefault(fieldName(name), Collections.emptyList());
     }
 
     /**
@@ -219,9 +319,9 @@ public abstract class OggAudioParser extends AbstractParser {
      * The pictures are carried as base64 encoded FLAC picture blocks;
      * malformed blocks are skipped silently.
      */
-    private static List<PictureBlock> parsePictures(VorbisStyleComments comments) {
+    private static List<PictureBlock> parsePictures(Map<String, List<String>> fields) {
         List<PictureBlock> pictures = new ArrayList<>();
-        for (String block : comments.getComments(METADATA_BLOCK_PICTURE)) {
+        for (String block : all(fields, METADATA_BLOCK_PICTURE)) {
             byte[] decoded;
             try {
                 decoded = Base64.getMimeDecoder().decode(block);

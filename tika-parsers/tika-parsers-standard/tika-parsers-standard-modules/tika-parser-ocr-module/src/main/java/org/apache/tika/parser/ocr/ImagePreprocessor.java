@@ -125,7 +125,7 @@ class ImagePreprocessor implements Serializable {
             angle = 0d;
         } else {
             metadata.add(TesseractOCRParser.IMAGE_ROTATION,
-                    String.format(Locale.getDefault(), "%.3f", angle));
+                    String.format(Locale.ROOT, "%.3f", angle));
         }
 
         return angle;
