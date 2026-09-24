@@ -32,3 +32,12 @@ updates:
       directory: "/"
       schedule:
           interval: "weekly"
+
+    - package-ecosystem: "docker"
+      directories:
+          - "/.devcontainer"
+          - "/tika-grpc/docker-build"
+          - "/tika-server/docker-build/full"
+          - "/tika-server/docker-build/minimal"
+      schedule:
+          interval: "weekly"
