@@ -451,6 +451,8 @@
     <vorbis.version>0.8</vorbis.version>
     <woodstox.core.version>7.2.2</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
+    <zookeeper.version>3.9.6</zookeeper.version>
+    <zstd.version>1.5.7-18</zstd.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.7</zookeeper.version>
     <zstd.version>1.5.7-17</zstd.version>
