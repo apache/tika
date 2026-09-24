@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
@@ -88,6 +89,8 @@ public class FlacParserTest extends TikaTest {
      * both sources are merged before the pick (both are front covers here,
      * so the first one, from the comment, wins).
      */
+    // TODO TIKA-4921: vorbis-java lowercases comment keys in the default locale
+    @DisabledIfSystemProperty(named = "user.language", matches = "tr")
     @Test
     public void testCommentAndNativePictureYieldOneThumbnail() throws Exception {
         List<Metadata> metadataList =
