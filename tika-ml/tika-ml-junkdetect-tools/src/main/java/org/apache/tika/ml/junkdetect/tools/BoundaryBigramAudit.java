@@ -64,7 +64,7 @@ public final class BoundaryBigramAudit {
                     .sorted().toArray(Path[]::new);
         }
 
-        System.out.printf("%-22s %14s %14s %14s %14s %12s | %14s %14s%n",
+        System.out.printf(Locale.ROOT, "%-22s %14s %14s %14s %14s %12s | %14s %14s%n",
                 "script", "in_S_occ", "boundary_occ", "foreign_occ",
                 "ascii_run_occ", "total_occ",
                 "drop_foreign_dist", "drop_asciirun_dist");
@@ -135,7 +135,7 @@ public final class BoundaryBigramAudit {
             int distForeignDrop = distinctKeptUnderForeignDrop.size();
             int distAsciiDrop = distinctKeptUnderAsciiDrop.size();
 
-            System.out.printf("%-22s %,14d %,14d %,14d %,14d %,12d | %,14d %,14d%n",
+            System.out.printf(Locale.ROOT, "%-22s %,14d %,14d %,14d %,14d %,12d | %,14d %,14d%n",
                     name.toLowerCase(Locale.ROOT), inS, boundary, foreign, asciiRun, total,
                     distAll - distForeignDrop, distAll - distAsciiDrop);
         }

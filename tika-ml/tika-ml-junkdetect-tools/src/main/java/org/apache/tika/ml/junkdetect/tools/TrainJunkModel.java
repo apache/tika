@@ -238,11 +238,11 @@ public class TrainJunkModel {
         System.out.println("  data-dir:           " + dataDir);
         System.out.println("  output:             " + output);
         System.out.println("  --- format constants (TrainJunkModel) ---");
-        System.out.printf( "  backoff_alpha:      %.2f%n", BACKOFF_ALPHA);
+        System.out.printf(Locale.ROOT,  "  backoff_alpha:      %.2f%n", BACKOFF_ALPHA);
         System.out.println("  --- config (JunkDetectorTrainingConfig) ---");
-        System.out.printf( "  min_bigram_count:   %d%n", minBigramCount);
-        System.out.printf( "  oa_load_factor:     %.2f%n", loadFactor);
-        System.out.printf( "  key_index_bits:     %d%n", keyIndexBits);
+        System.out.printf(Locale.ROOT,  "  min_bigram_count:   %d%n", minBigramCount);
+        System.out.printf(Locale.ROOT,  "  oa_load_factor:     %.2f%n", loadFactor);
+        System.out.printf(Locale.ROOT,  "  key_index_bits:     %d%n", keyIndexBits);
 
         if (!Files.isDirectory(dataDir)) {
             System.err.println("ERROR: data-dir not found: " + dataDir);
@@ -250,7 +250,7 @@ public class TrainJunkModel {
         }
 
         int blockN = org.apache.tika.ml.junkdetect.UnicodeBlockRanges.bucketCount();
-        System.out.printf("Block bucketing: %d named blocks + 1 unassigned "
+        System.out.printf(Locale.ROOT, "Block bucketing: %d named blocks + 1 unassigned "
                 + "(scheme version %d, JVM-independent)%n",
                 blockN - 1, org.apache.tika.ml.junkdetect.UnicodeBlockRanges.SCHEME_VERSION);
         long t0 = System.currentTimeMillis();
@@ -303,7 +303,7 @@ public class TrainJunkModel {
                     unigramsByScript.get(script), totals[0],
                     minBigramCount, loadFactor, keyIndexBits);
             f1TablesByScript.put(script, tables);
-            System.out.printf("  [%s] %s (%dms)%n", script, tables.statsString(),
+            System.out.printf(Locale.ROOT, "  [%s] %s (%dms)%n", script, tables.statsString(),
                     System.currentTimeMillis() - t0);
         }
 
@@ -331,7 +331,7 @@ public class TrainJunkModel {
             float[] cal = scores.isEmpty() ? new float[]{0f, 1f} : muSigma(scores);
             cal[1] = Math.max(cal[1], Z1_MIN_SIGMA);   // floor degenerate (under-trained) sigma
             f1Calibrations.put(script, cal);
-            System.out.printf("  [%s] mu=%.4f sigma=%.4f (%,d windows)%n",
+            System.out.printf(Locale.ROOT, "  [%s] mu=%.4f sigma=%.4f (%,d windows)%n",
                     script, cal[0], cal[1], scores.size());
         }
 
@@ -350,15 +350,15 @@ public class TrainJunkModel {
         scriptTransTable = quantizeDequantizeRoundTrip(scriptTransTable);
         float[] scriptTransCal = calibrateScriptTransitions(allTrainFiles, scriptTransTable,
                 scriptBucketMap, numScriptBuckets);
-        System.out.printf("  scriptTrans: mu=%.4f sigma=%.4f%n",
+        System.out.printf(Locale.ROOT, "  scriptTrans: mu=%.4f sigma=%.4f%n",
                 scriptTransCal[0], scriptTransCal[1]);
 
         float[] blockTable = quantizeDequantizeRoundTrip(trainGlobalBlockTable(allTrainFiles));
         float[] blockCal = computeGlobalBlockCalibration(allTrainFiles, blockTable);
-        System.out.printf("  block:       mu=%.4f sigma=%.4f%n", blockCal[0], blockCal[1]);
+        System.out.printf(Locale.ROOT, "  block:       mu=%.4f sigma=%.4f%n", blockCal[0], blockCal[1]);
 
         float[] controlCal = computeGlobalControlCalibration(allTrainFiles);
-        System.out.printf("  control:     mu=%.6f sigma=%.6f%n", controlCal[0], controlCal[1]);
+        System.out.printf(Locale.ROOT, "  control:     mu=%.6f sigma=%.6f%n", controlCal[0], controlCal[1]);
 
         // -----------------------------------------------------------------------
         // Phase 3 — ONE global combiner over z1..z9, trained pointwise
@@ -376,17 +376,17 @@ public class TrainJunkModel {
 
         t0 = System.currentTimeMillis();
         float[] combiner = trainGlobalCombiner(featExtractor, trainFilePaths);
-        System.out.printf(
+        System.out.printf(Locale.ROOT, 
                 "  global w=[%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f] bias=%.3f (%dms)%n",
                 combiner[0], combiner[1], combiner[2], combiner[3], combiner[4], combiner[5],
                 combiner[6], combiner[7], combiner[8], combiner[9],
                 System.currentTimeMillis() - t0);
 
-        System.out.printf("%nWriting model (%d scripts, blockN=%d, scriptBuckets=%d) → %s%n",
+        System.out.printf(Locale.ROOT, "%nWriting model (%d scripts, blockN=%d, scriptBuckets=%d) → %s%n",
                 f1TablesByScript.size(), blockN, numScriptBuckets, output);
         saveModel(f1TablesByScript, f1Calibrations, blockTable, blockCal, controlCal,
                 combiner, scriptBuckets, scriptTransTable, scriptTransCal, output);
-        System.out.printf("Model size: %,d bytes (%.1f KB)%n",
+        System.out.printf(Locale.ROOT, "Model size: %,d bytes (%.1f KB)%n",
                 Files.size(output), Files.size(output) / 1024.0);
         System.out.println("Done.");
     }
@@ -1081,7 +1081,7 @@ public class TrainJunkModel {
             values[i] = (byte) (sortable[i] & 0xFF);
         }
 
-        System.out.printf(
+        System.out.printf(Locale.ROOT, 
                 "    pair_counts: distinct=%,d, kept=%,d (>=%d), dropped=%,d  "
                 + "cp_index=%,d  bigram_entries=%,d%n",
                 totalDistinct, keptPairs, minBigramCount, dropped,
@@ -1218,7 +1218,7 @@ public class TrainJunkModel {
                 }
             }
         }
-        System.out.printf("  examples: good=%,d bad=%,d pairs=%,d%n",
+        System.out.printf(Locale.ROOT, "  examples: good=%,d bad=%,d pairs=%,d%n",
                 good.size(), bad.size(), pairCorrect.size());
         return fitContrastiveCombiner(good, bad, pairCorrect, pairWrong);
     }
@@ -1612,7 +1612,7 @@ public class TrainJunkModel {
                 }
             }
         }
-        System.out.printf("%,d script transitions across %d files%n", totalTransitions, trainFiles.size());
+        System.out.printf(Locale.ROOT, "%,d script transitions across %d files%n", totalTransitions, trainFiles.size());
         return laplaceSmoothLogProb(counts, numBuckets);
     }
 
@@ -1638,7 +1638,7 @@ public class TrainJunkModel {
                 }
             }
         }
-        System.out.printf("%,d dev windows pooled%n", scores.size());
+        System.out.printf(Locale.ROOT, "%,d dev windows pooled%n", scores.size());
         return muSigma(scores);
     }
 

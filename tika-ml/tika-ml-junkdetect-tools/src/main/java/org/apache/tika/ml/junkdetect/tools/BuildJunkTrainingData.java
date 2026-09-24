@@ -159,16 +159,16 @@ public class BuildJunkTrainingData {
         System.out.println("  data-dir:               " + dataDir);
         System.out.println("  output-dir:             " + outputDir);
         System.out.println("  --- config (JunkDetectorTrainingConfig) ---");
-        System.out.printf( "  total-budget-bytes:     %,d (%.1f MB)%n",
+        System.out.printf(Locale.ROOT,  "  total-budget-bytes:     %,d (%.1f MB)%n",
                 totalBudgetBytes, totalBudgetBytes / 1_000_000.0);
-        System.out.printf( "  per-language-cap:       %,d (%.1f MB)%n",
+        System.out.printf(Locale.ROOT,  "  per-language-cap:       %,d (%.1f MB)%n",
                 perLanguageCapBytes, perLanguageCapBytes / 1_000_000.0);
-        System.out.printf( "  min-bytes:              %d%n", minBytes);
-        System.out.printf( "  max-punc-frac:          %.2f%n", maxPuncFrac);
-        System.out.printf( "  min-target-script-frac: %.2f%n", minTargetScriptFrac);
-        System.out.printf( "  min-dev-sentences:      %d  (min total ≈ %d)%n",
+        System.out.printf(Locale.ROOT,  "  min-bytes:              %d%n", minBytes);
+        System.out.printf(Locale.ROOT,  "  max-punc-frac:          %.2f%n", maxPuncFrac);
+        System.out.printf(Locale.ROOT,  "  min-target-script-frac: %.2f%n", minTargetScriptFrac);
+        System.out.printf(Locale.ROOT,  "  min-dev-sentences:      %d  (min total ≈ %d)%n",
                 minDevSentences, (int)(minDevSentences / DEV_FRAC));
-        System.out.printf( "  seed:                   %d%n", seed);
+        System.out.printf(Locale.ROOT,  "  seed:                   %d%n", seed);
         if (!dropScripts.isEmpty()) {
             System.out.println("  drop-scripts:           " + dropScripts);
         }
@@ -198,19 +198,19 @@ public class BuildJunkTrainingData {
                 String script = detectDominantScript(langDir, scriptSampleLines);
                 langToScript.put(lang, script);
                 scriptGroups.computeIfAbsent(script, k -> new ArrayList<>()).add(langDir);
-                System.out.printf("  %-12s → %s%n", lang, script);
+                System.out.printf(Locale.ROOT, "  %-12s → %s%n", lang, script);
             }
         }
 
         if (!dropScripts.isEmpty()) {
             for (String s : dropScripts) {
                 if (scriptGroups.remove(s) != null) {
-                    System.out.printf("  DROP script: %s%n", s);
+                    System.out.printf(Locale.ROOT, "  DROP script: %s%n", s);
                 }
             }
         }
 
-        System.out.printf("%n  → %d languages, %d script groups%n",
+        System.out.printf(Locale.ROOT, "%n  → %d languages, %d script groups%n",
                 langToScript.size(), scriptGroups.size());
 
         // -----------------------------------------------------------------------
@@ -233,7 +233,7 @@ public class BuildJunkTrainingData {
 
             double entropy = computeBigramEntropy(sample);
             scriptEntropy.put(script, entropy);
-            System.out.printf("  %-20s H=%.3f bits  (%d sentences)%n",
+            System.out.printf(Locale.ROOT, "  %-20s H=%.3f bits  (%d sentences)%n",
                     script, entropy, sample.size());
         }
 
@@ -251,13 +251,13 @@ public class BuildJunkTrainingData {
             long budget = (long) (totalBudgetBytes * e.getValue() / totalEntropy);
             Long override = scriptBudgetOverrides.get(e.getKey());
             if (override != null) {
-                System.out.printf("  %-20s H=%.3f → %,d bytes (%.1f MB)"
+                System.out.printf(Locale.ROOT, "  %-20s H=%.3f → %,d bytes (%.1f MB)"
                         + "  [OVERRIDE: was %,d (%.1f MB)]%n",
                         e.getKey(), e.getValue(), override, override / 1_000_000.0,
                         budget, budget / 1_000_000.0);
                 budget = override;
             } else {
-                System.out.printf("  %-20s H=%.3f → %,d bytes (%.1f MB)%n",
+                System.out.printf(Locale.ROOT, "  %-20s H=%.3f → %,d bytes (%.1f MB)%n",
                         e.getKey(), e.getValue(), budget, budget / 1_000_000.0);
             }
             scriptBudget.put(e.getKey(), budget);
@@ -265,7 +265,7 @@ public class BuildJunkTrainingData {
         // Warn about overrides for scripts that aren't in the bucket set.
         for (String k : scriptBudgetOverrides.keySet()) {
             if (!scriptBudget.containsKey(k)) {
-                System.err.printf("WARNING: --script-budget-override for %s ignored"
+                System.err.printf(Locale.ROOT, "WARNING: --script-budget-override for %s ignored"
                         + " (script not in bucket set)%n", k);
             }
         }
@@ -315,7 +315,7 @@ public class BuildJunkTrainingData {
                         sentences);
                 totalBytesLoaded += langBytes;
                 if (langBytes > 0) {
-                    System.out.printf("  %-12s %-20s +%,d bytes%n",
+                    System.out.printf(Locale.ROOT, "  %-12s %-20s +%,d bytes%n",
                             script, langDir.getFileName(), langBytes);
                 }
             }
@@ -335,7 +335,7 @@ public class BuildJunkTrainingData {
 
         // Round 2: redistribute surplus to saturated scripts proportional to entropy
         if (surplus > 0) {
-            System.out.printf(
+            System.out.printf(Locale.ROOT, 
                     "\n--- Phase 4b: Redistributing %,d surplus bytes (%.1f MB) ---\n",
                     surplus, surplus / 1_000_000.0);
 
@@ -377,7 +377,7 @@ public class BuildJunkTrainingData {
                 if (!sentences.isEmpty()) {
                     allSentences.put(script, sentences);
                     actualBytes.put(script, totalBytesLoaded);
-                    System.out.printf("  %-20s +%,d extra → %,d total bytes, %,d sentences%n",
+                    System.out.printf(Locale.ROOT, "  %-20s +%,d extra → %,d total bytes, %,d sentences%n",
                             script, extra, totalBytesLoaded, sentences.size());
                 }
             }
@@ -395,7 +395,7 @@ public class BuildJunkTrainingData {
 
             int expectedDevSize = (int) (sentences.size() * DEV_FRAC);
             if (sentences.isEmpty() || expectedDevSize < minDevSentences) {
-                System.out.printf(
+                System.out.printf(Locale.ROOT, 
                         "  SKIP %-20s — %,d sentences → dev=%d < min-dev-sentences=%d%n",
                         script, sentences.size(), expectedDevSize, minDevSentences);
                 manifestStats.put(script, new long[]{0, 0, 0, 0, 0});
@@ -418,7 +418,7 @@ public class BuildJunkTrainingData {
             long totalBytesLoaded = actualBytes.getOrDefault(script, 0L);
             manifestStats.put(script,
                     new long[]{totalBytesLoaded, sentences.size(), nTrain, nDev, test.size()});
-            System.out.printf(
+            System.out.printf(Locale.ROOT, 
                     "  WROTE %-12s — %,d bytes, %,d sentences (train=%,d dev=%,d test=%,d)%n",
                     script, totalBytesLoaded, sentences.size(),
                     nTrain, nDev, test.size());
@@ -440,7 +440,7 @@ public class BuildJunkTrainingData {
                 String langs = scriptGroups.get(script).stream()
                         .map(p -> p.getFileName().toString())
                         .reduce((a, b) -> a + "," + b).orElse("");
-                w.write(String.format("%s\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%s%n",
+                w.write(String.format(Locale.ROOT, "%s\t%.3f\t%d\t%d\t%d\t%d\t%d\t%d\t%s%n",
                         script, entropy, budget,
                         stats[0], stats[1], stats[2], stats[3], stats[4], langs));
             }

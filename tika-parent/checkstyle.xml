@@ -65,8 +65,8 @@
     <!--<module name="FileContentsHolder"/>-->
     <module name="IllegalImport">
       <property name="regexp" value="true"/>
-      <!-- Reject any org.junit import that's not also org.junit.jupiter: -->
-      <property name="illegalClasses" value="^org\.junit\.(?!jupiter\.).+"/>
+      <!-- Reject JUnit 4: any org.junit import outside org.junit.jupiter and org.junit.platform -->
+      <property name="illegalClasses" value="^org\.junit\.(?!(jupiter|platform)\.).+"/>
     </module>
     <module name="OuterTypeFilename"/>
     <module name="IllegalTokenText">

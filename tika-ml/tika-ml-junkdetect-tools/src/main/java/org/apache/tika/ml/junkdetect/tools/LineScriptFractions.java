@@ -68,7 +68,7 @@ public final class LineScriptFractions {
             System.exit(1);
         }
 
-        System.out.printf("%-20s %10s %10s | %s%n",
+        System.out.printf(Locale.ROOT, "%-20s %10s %10s | %s%n",
                 "script", "lines", "<5%",
                 "lines at target-frac threshold (cumulative dropped %)");
         System.out.println("                                            "
@@ -81,7 +81,7 @@ public final class LineScriptFractions {
                     .toUpperCase(Locale.ROOT);
             Character.UnicodeScript target = mapScript(name);
             if (target == null) {
-                System.out.printf("%-20s  (no UnicodeScript mapping for '%s')%n", name, name);
+                System.out.printf(Locale.ROOT, "%-20s  (no UnicodeScript mapping for '%s')%n", name, name);
                 continue;
             }
 
@@ -131,11 +131,11 @@ public final class LineScriptFractions {
                     if (hi <= t) dropped += bucketCounts[j];
                 }
                 double pct = 100.0 * dropped / Math.max(1, lines);
-                sb.append(String.format(" %6.1f", pct));
+                sb.append(String.format(Locale.ROOT, " %6.1f", pct));
             }
 
             long below5 = bucketCounts[0];
-            System.out.printf("%-20s %,10d %,10d |%s%n",
+            System.out.printf(Locale.ROOT, "%-20s %,10d %,10d |%s%n",
                     name.toLowerCase(Locale.ROOT), lines, below5, sb.toString());
         }
     }

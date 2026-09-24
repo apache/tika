@@ -1511,8 +1511,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.version}</version>
         <configuration>
-          <!-- for manual testing of i18n, try for example: -Duser.language=zh -Duser.region=CN or
-          -Duser.language=de -Duser.country=DE -->
+          <!-- Tests run under a random default locale (RandomLocaleListener); pin one with
+               -Dtika.test.locale=tr-TR. -Duser.language here would not work: surefire sets
+               it in the fork only after the default Locale is fixed. -->
           <!-- java.io.tmpdir MUST be quoted: argLine is split on whitespace, and the Windows
                job deliberately checks out into a path containing a space. It must also be a
                real -D on the command line, not <systemPropertyVariables>: Files.createTempFile
@@ -1723,6 +1724,28 @@
   </build>
 
   <profiles>
+    <profile>
+      <!-- Puts RandomLocaleListener on the test classpath of every module that has tests:
+           each test JVM then runs under a random default locale. A profile, not a plain
+           dependency: aggregator poms and tika-test-support itself (which keeps its test
+           in tika-core for this reason) must not depend on it, or the reactor cycles. -->
+      <id>test-support</id>
+      <activation>
+        <file>
+          <exists>${basedir}/src/test/java</exists>
+        </file>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-test-support</artifactId>
+          <!-- revision, not project.version: flatten writes the literal Tika version
+               into the published tika-parent, so a foreign child of it resolves the right jar -->
+          <version>${revision}</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
     <profile>
       <id>pedantic</id>
       <build>
