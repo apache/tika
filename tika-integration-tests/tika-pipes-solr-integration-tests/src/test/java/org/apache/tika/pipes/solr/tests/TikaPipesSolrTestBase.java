@@ -20,11 +20,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.utility.DockerImageName;
 
@@ -60,8 +60,7 @@ import org.apache.tika.utils.SystemUtils;
 public abstract class TikaPipesSolrTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaPipesSolrTestBase.class);
-    private static final int SOLR_READY_TIMEOUT_MS = 30_000;
-    private static final int SOLR_READY_POLL_MS = 500;
+    private static final Duration SOLR_READY_TIMEOUT = Duration.ofMinutes(3);
 
     private final String collection = "testcol";
     private final int numDocs = 42;
@@ -75,11 +74,7 @@ public abstract class TikaPipesSolrTestBase {
     private String solrEndpoint;
 
     public TikaPipesSolrTestBase() {
-        try {
-            init();
-        } catch (InterruptedException e) {
-            //swallow
-        }
+        init();
     }
 
     public abstract boolean useZk();
@@ -90,53 +85,28 @@ public abstract class TikaPipesSolrTestBase {
         return true;
     }
 
-    private void init() throws InterruptedException {
+    private void init() {
+        // Solr resolves its own canonical hostname while loading and Docker Desktop
+        // (Windows/Mac) can stall that reverse lookup for tens of seconds (TIKA-4832)
+        String noReverseDns = " -Dsolr.dns.prevent.reverse.lookup=true";
         if (SystemUtils.IS_OS_MAC_OSX || SystemUtils.IS_OS_VERSION_WSL) {
             // Networking on these operating systems needs fixed ports and localhost to be passed for the SolrCloud
             // with Zookeeper tests to succeed. This means stopping and starting needs
             solr = new FixedHostPortGenericContainer<>(
                     DockerImageName.parse(getSolrImageName()).toString()).withFixedExposedPort(8983,
-                    8983).withFixedExposedPort(9983, 9983).withCommand("-DzkRun -Dhost=localhost");
+                    8983).withFixedExposedPort(9983, 9983)
+                    .withCommand("-DzkRun -Dhost=localhost" + noReverseDns);
         } else {
             solr = new GenericContainer<>(
                     DockerImageName.parse(getSolrImageName())).withExposedPorts(8983, 9983)
-                    .withCommand("-DzkRun");
+                    .withCommand("-DzkRun" + noReverseDns);
         }
+        // Jetty answers 503 until the CoreContainer has loaded; on failure Testcontainers
+        // includes the container log in the exception
+        solr.waitingFor(Wait.forHttp("/solr/admin/info/system").forPort(8983).forStatusCode(200)
+                .withStartupTimeout(SOLR_READY_TIMEOUT));
         solr.start();
-        waitForSolrReady();
-    }
-
-    private void waitForSolrReady() {
-        String host = solr.getHost();
-        int port = solr.getMappedPort(8983);
-        String adminUrl = "http://" + host + ":" + port + "/solr/admin/info/system";
-        long deadline = System.currentTimeMillis() + SOLR_READY_TIMEOUT_MS;
-        LOG.info("Waiting for Solr to be ready at {}...", adminUrl);
-        while (System.currentTimeMillis() < deadline) {
-            try {
-                HttpURLConnection conn = (HttpURLConnection) new URL(adminUrl).openConnection();
-                conn.setConnectTimeout(1000);
-                conn.setReadTimeout(1000);
-                int code = conn.getResponseCode();
-                conn.disconnect();
-                if (code == 200) {
-                    LOG.info("Solr is ready (responded 200 in {} ms)",
-                            SOLR_READY_TIMEOUT_MS - (deadline - System.currentTimeMillis()));
-                    return;
-                }
-                LOG.debug("Solr returned status {}, retrying...", code);
-            } catch (Exception e) {
-                LOG.debug("Solr not ready yet: {}", e.getMessage());
-            }
-            try {
-                Thread.sleep(SOLR_READY_POLL_MS);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Interrupted waiting for Solr", e);
-            }
-        }
-        LOG.error("Solr did not become ready within {} ms at {}", SOLR_READY_TIMEOUT_MS, adminUrl);
-        throw new RuntimeException("Solr did not become ready within " + SOLR_READY_TIMEOUT_MS + " ms");
+        LOG.info("Solr is ready at http://{}:{}", solr.getHost(), solr.getMappedPort(8983));
     }
 
     @AfterEach
