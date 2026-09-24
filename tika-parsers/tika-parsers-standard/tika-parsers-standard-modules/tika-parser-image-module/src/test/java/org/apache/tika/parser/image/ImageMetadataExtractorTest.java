@@ -193,6 +193,18 @@ public class ImageMetadataExtractorTest {
         assertEquals("0.0, 1.0", metadata.get(ImageMetadataExtractor.ICC_NS + "Red TRC"));
     }
 
+    @Test
+    public void testIccCurveFormattingIgnoresDefaultLocale() {
+        Locale defaultLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.GERMANY);
+            assertEquals("0.0, 0.4999924, 1.0",
+                    ImageMetadataExtractor.CopyUnknownFieldsHandler.formatIccCurve(iccCurve(3)));
+        } finally {
+            Locale.setDefault(defaultLocale);
+        }
+    }
+
     //ICC 'desc' tag: type, reserved, byte count including the NUL, ASCII, NUL
     private static byte[] iccDesc(String text) {
         byte[] ascii = text.getBytes(StandardCharsets.US_ASCII);

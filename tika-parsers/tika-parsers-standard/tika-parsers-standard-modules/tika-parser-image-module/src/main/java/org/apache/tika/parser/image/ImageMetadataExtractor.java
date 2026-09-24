@@ -384,12 +384,15 @@ public class ImageMetadataExtractor {
                     if (MetadataFields.isMetadataField(name)) {
                         continue;
                     }
+                    int iccType = directory instanceof IccDirectory ?
+                            iccTagDataType(directory, tag.getTagType()) : 0;
                     // decided before getDescription(): formatting a curve is the whole cost
-                    if (!includeIccCurvesAndLuts && directory instanceof IccDirectory &&
-                            isIccCurveOrLut(directory, tag.getTagType())) {
+                    if (!includeIccCurvesAndLuts && isIccCurveOrLut(iccType)) {
                         continue;
                     }
-                    String description = tag.getDescription();
+                    String description = iccType == ICC_TYPE_CURV ?
+                            formatIccCurve(directory.getByteArray(tag.getTagType())) :
+                            tag.getDescription();
                     if (description != null) {
                         String value = description.trim();
                         if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
@@ -409,17 +412,20 @@ public class ImageMetadataExtractor {
             }
         }
 
-        private static boolean isIccCurveOrLut(Directory directory, int tagType) {
+        private static int iccTagDataType(Directory directory, int tagType) {
             // header fields sit below the printable-ASCII range of tag-table signatures
             if (tagType <= 0x20202020 || tagType >= 0x7a7a7a7a) {
-                return false;
+                return 0;
             }
             byte[] data = directory.getByteArray(tagType);
             if (data == null || data.length < 4) {
-                return false;
+                return 0;
             }
-            int type = ((data[0] & 0xff) << 24) | ((data[1] & 0xff) << 16) |
+            return ((data[0] & 0xff) << 24) | ((data[1] & 0xff) << 16) |
                     ((data[2] & 0xff) << 8) | (data[3] & 0xff);
+        }
+
+        private static boolean isIccCurveOrLut(int type) {
             switch (type) {
                 case ICC_TYPE_CURV:
                 case ICC_TYPE_PARA:
@@ -431,6 +437,32 @@ public class ImageMetadataExtractor {
                 default:
                     return false;
             }
+        }
+
+        // metadata-extractor 2.21.0 formats curv in the default locale: "0," under de_DE
+        static String formatIccCurve(byte[] data) {
+            if (data.length < 12) {
+                return null;
+            }
+            ByteBuffer b = ByteBuffer.wrap(data);
+            long count = Integer.toUnsignedLong(b.getInt(8));
+            if (count > (data.length - 12) / 2) {
+                return null;
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < count; i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                String v = String.format(Locale.ROOT, "%.7f",
+                        (b.getShort(12 + i * 2) & 0xffff) / 65535.0);
+                int end = v.length();
+                while (end > v.indexOf('.') + 2 && v.charAt(end - 1) == '0') {
+                    end--;
+                }
+                sb.append(v, 0, end);
+            }
+            return sb.toString();
         }
     }
 
