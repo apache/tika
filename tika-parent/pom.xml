@@ -294,7 +294,6 @@
          https://github.com/mojohaus/versions/issues/1070 -->
     <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
     <forbiddenapis.version>3.11</forbiddenapis.version>
-    <groovy.maven.version>2.1.1</groovy.maven.version>
     <maven.antrun.version>3.2.0</maven.antrun.version>
     <maven.assembly.version>3.8.0</maven.assembly.version>
     <maven.bundle.version>6.2.0</maven.bundle.version>

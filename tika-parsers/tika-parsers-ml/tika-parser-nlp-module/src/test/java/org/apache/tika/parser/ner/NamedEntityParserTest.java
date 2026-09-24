@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -41,8 +42,24 @@ public class NamedEntityParserTest extends TikaTest {
 
     public static final String CONFIG_FILE = "tika-config.json";
 
+    @AfterEach
+    public void clearNerImpl() {
+        System.clearProperty(NamedEntityParser.SYS_PROP_NER_IMPL);
+    }
+
+    // downloaded at build time, best effort; see the antrun plugin in the pom
+    private static void assumeModels() {
+        for (String model : new String[]{OpenNLPNERecogniser.NER_PERSON_MODEL,
+                OpenNLPNERecogniser.NER_LOCATION_MODEL, OpenNLPNERecogniser.NER_ORGANIZATION_MODEL,
+                OpenNLPNERecogniser.NER_DATE_MODEL}) {
+            assumeTrue(NamedEntityParserTest.class.getClassLoader().getResource(model) != null,
+                    "missing OpenNLP model " + model);
+        }
+    }
+
     @Test
     public void testParse() throws Exception {
+        assumeModels();
         //test config is added to resources directory
         Parser parser = TikaLoader.load(
                         getConfigPath(NamedEntityParserTest.class, CONFIG_FILE))
@@ -56,23 +73,23 @@ public class NamedEntityParserTest extends TikaTest {
 
         HashSet<String> set = new HashSet<>(
                 Arrays.asList(md.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
-        assumeTrue(set.contains(NamedEntityParser.class.getName()));
+        assertTrue(set.contains(NamedEntityParser.class.getName()));
 
         set.clear();
         set.addAll(Arrays.asList(md.getValues("ner:PERSON")));
-        assumeTrue(set.contains("John McKay"));
+        assertTrue(set.contains("John McKay"));
 
         set.clear();
         set.addAll(Arrays.asList(md.getValues("ner:LOCATION")));
-        assumeTrue(set.contains("Los Angeles"));
+        assertTrue(set.contains("Los Angeles"));
 
         set.clear();
         set.addAll(Arrays.asList(md.getValues("ner:ORGANIZATION")));
-        assumeTrue(set.contains("University of Southern California"));
+        assertTrue(set.contains("University of Southern California"));
 
         set.clear();
         set.addAll(Arrays.asList(md.getValues("ner:DATE")));
-        assumeTrue(set.contains("1960 - 1975"));
+        assertTrue(set.contains("1960 - 1975"));
     }
 
     @Test
@@ -90,6 +107,7 @@ public class NamedEntityParserTest extends TikaTest {
                 parser, new Metadata()).metadata;
         HashSet<String> keys = new HashSet<>(Arrays.asList(md.names()));
         assertTrue(keys.contains("ner:WEEK_DAY"));
-        assumeTrue(keys.contains("ner:LOCATION"));
+        assumeModels();
+        assertTrue(keys.contains("ner:LOCATION"));
     }
 }

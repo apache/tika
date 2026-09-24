@@ -111,6 +111,7 @@
     <properties>
     <!-- TIKA-4816 metadata string-key ban, main sources; see tika-parent -->
     <forbiddenapis.module.signaturesFile>${metadata.forbiddenapis.signaturesFile}</forbiddenapis.module.signaturesFile>
+    <opennlp.models.url>https://opennlp.sourceforge.net/models-1.5</opennlp.models.url>
   </properties>
 
   <build>
@@ -125,53 +126,52 @@
                     </inputExcludes>
                 </configuration>
             </plugin>
+            <!-- OpenNLP NER models for NamedEntityParserTest. Best effort: a failed download
+                 or checksum mismatch only warns, and the tests that need the models skip. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>opennlp-models</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipTests}</skip>
+                            <target xmlns:if="ant:if" xmlns:unless="ant:unless">
+                                <property name="cache" value="${settings.localRepository}/.cache/tika-opennlp-models"/>
+                                <mkdir dir="${cache}"/>
+                                <macrodef name="model">
+                                    <attribute name="name"/>
+                                    <attribute name="sha256"/>
+                                    <sequential>
+                                        <local name="present"/>
+                                        <local name="verified"/>
+                                        <get src="${opennlp.models.url}/en-ner-@{name}.bin" dest="${cache}/en-ner-@{name}.bin"
+                                             skipexisting="true" ignoreerrors="true" retries="3"/>
+                                        <available file="${cache}/en-ner-@{name}.bin" property="present"/>
+                                        <checksum if:set="present" file="${cache}/en-ner-@{name}.bin" algorithm="SHA-256"
+                                                  property="@{sha256}" verifyproperty="verified"/>
+                                        <copy if:true="${verified}" file="${cache}/en-ner-@{name}.bin"
+                                              tofile="${project.build.testOutputDirectory}/org/apache/tika/parser/ner/opennlp/ner-@{name}.bin"/>
+                                        <echo unless:true="${verified}" level="warning"
+                                              message="OpenNLP model en-ner-@{name}.bin unavailable or corrupt; NER tests will skip"/>
+                                        <delete unless:true="${verified}" file="${cache}/en-ner-@{name}.bin" quiet="true"/>
+                                    </sequential>
+                                </macrodef>
+                                <model name="person" sha256="687a9263d96b37fced707c9f2ac0560f9edaf54658856395555901924f64dbe4"/>
+                                <model name="location" sha256="8fe39e48633f4a86c4132d9c54b396a2d8e0460c1d71e3562dacf976984f447b"/>
+                                <model name="organization" sha256="0136c12afe1ac357142260c39bb879b7c9d121e41024114db5a6455b4fd5ba00"/>
+                                <model name="date" sha256="1207030923852e1c244919d8f15d9e78c217323728fcf909029abd1703967855"/>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
-    <profiles>
-        <profile>
-            <id>testSetup</id>
-            <activation>
-                <!-- auto activate -->
-                <file>
-                    <missing>src/test/resources/org/apache/tika/parser/ner/opennlp/ner-person.bin</missing>
-                </file>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.gmaven</groupId>
-                        <artifactId>groovy-maven-plugin</artifactId>
-                        <version>${groovy.maven.version}</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>org.apache.maven</groupId>
-                                <artifactId>maven-model</artifactId>
-                                <version>3.9.16</version>
-                            </dependency>
-                            <dependency>
-                                <groupId>org.apache.groovy</groupId>
-                                <artifactId>groovy-all</artifactId>
-                                <version>6.0.0</version>
-                                <type>pom</type>
-                            </dependency>
-                        </dependencies>
-                        <executions>
-                            <execution>
-                                <id>testSetup</id>
-                                <phase>process-test-resources</phase>
-                                <goals>
-                                    <goal>execute</goal>
-                                </goals>
-                                <configuration>
-                                    <source>${basedir}/src/test/resources/org/apache/tika/parser/ner/opennlp/ModelGetter.groovy</source>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
   <scm>
     <tag>4.1.0-rc1</tag>
   </scm>
