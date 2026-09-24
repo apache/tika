@@ -134,10 +134,11 @@ public class OpenDocumentMetaParser extends XMLParser {
                         getDublinCoreHandler(md, TikaCoreProperties.RIGHTS, "rights"));
         ch = getVersion(ch, md);
         // Process the OO Meta Attributes
-        ch = getMeta(ch, md, TikaCoreProperties.CREATED, "creation-date");
+        ch = new TeeContentHandler(ch,
+                new DateElementHandler(META_NS, "creation-date", md, TikaCoreProperties.CREATED));
         // ODF uses dc:date for modified
         ch = new TeeContentHandler(ch,
-                new ElementMetadataHandler(DublinCore.NAMESPACE_URI_DC, "date", md,
+                new DateElementHandler(DublinCore.NAMESPACE_URI_DC, "date", md,
                         TikaCoreProperties.MODIFIED));
 
         // ODF uses dc:subject for description

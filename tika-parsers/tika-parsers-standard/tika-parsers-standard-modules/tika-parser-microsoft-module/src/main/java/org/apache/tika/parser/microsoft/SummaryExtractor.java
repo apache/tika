@@ -47,6 +47,7 @@ import org.apache.tika.metadata.PagedText;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Extractor for Common OLE2 (HPSF) metadata
@@ -258,7 +259,8 @@ public class SummaryExtractor {
     }
 
     private void set(Property property, Date value) {
-        if (value != null) {
+        // FILETIMEs are often junk (e.g. year 31135)
+        if (value != null && TikaDates.inYearBounds(value.toInstant())) {
             metadata.set(property, value);
         }
     }

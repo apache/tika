@@ -25,7 +25,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import org.apache.tika.utils.DateUtils;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * This class is intended to handle anything that might contain IBodyElements:
@@ -174,7 +174,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final StringBuilder instrTextBuffer = new StringBuilder();
     private EditType editType =
             EditType.NONE;
-    private DateUtils dateUtils = new DateUtils();
 
     private boolean hiddenSlide = false;
     private boolean hasAnimations = false;
@@ -481,7 +480,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         String editDateString = atts.getValue(W_NS, "date");
         Date editDate = null;
         if (editDateString != null) {
-            editDate = dateUtils.tryToParse(editDateString);
+            editDate = TikaDates.parse(editDateString).filter(TikaDates.ParsedDate::isFullPrecision)
+                    .map(d -> Date.from(d.toInstant())).orElse(null);
         }
         bodyContentsHandler.startEditedSection(editAuthor, editDate, editType);
         this.editType = editType;

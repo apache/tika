@@ -271,11 +271,6 @@
       </dependency>
       <dependency>
         <groupId>org.apache.tika</groupId>
-        <artifactId>tika-parser-mail-commons</artifactId>
-        <version>${revision}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.tika</groupId>
         <artifactId>tika-parser-xmp-commons</artifactId>
         <version>${revision}</version>
       </dependency>

@@ -31,7 +31,6 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -83,7 +82,6 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.JSoupParser;
-import org.apache.tika.parser.mailcommons.MailDateParser;
 import org.apache.tika.parser.microsoft.msg.ExtendedMetadataExtractor;
 import org.apache.tika.parser.microsoft.rtf.RTFParser;
 import org.apache.tika.parser.microsoft.rtf.jflex.RTFHtmlDecapsulator;
@@ -91,6 +89,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.TikaDates;
 
 
 /**
@@ -558,17 +557,10 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
                     if (headerKey.toLowerCase(Locale.ROOT).startsWith("date:")) {
                         String date = headerKey.substring(headerKey.indexOf(':') + 1).trim();
 
-                        // See if we can parse it as a normal mail date
-                        try {
-                            Date d = MailDateParser.parseDateLenient(date);
+                        String d = TikaDates.toMetadataString(date);
+                        if (d != null) {
                             metadata.set(TikaCoreProperties.CREATED, d);
                             metadata.set(TikaCoreProperties.MODIFIED, d);
-                        } catch (SecurityException e) {
-                            throw e;
-                        } catch (Exception e) {
-                            // Store it as-is, and hope for the best...
-                            metadata.set(TikaCoreProperties.CREATED, date);
-                            metadata.set(TikaCoreProperties.MODIFIED, date);
                         }
                         break;
                     }

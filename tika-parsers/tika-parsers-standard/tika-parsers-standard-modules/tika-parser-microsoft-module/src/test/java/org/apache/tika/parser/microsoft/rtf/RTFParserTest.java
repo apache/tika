@@ -18,16 +18,19 @@ package org.apache.tika.parser.microsoft.rtf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.Tika;
 import org.apache.tika.TikaTest;
@@ -423,9 +426,27 @@ public class RTFParserTest extends TikaTest {
         assertEquals("1", xml.metadata.get(Office.PAGE_COUNT));
         assertEquals("70", xml.metadata.get(Office.WORD_COUNT));
         assertEquals("401", xml.metadata.get(Office.CHARACTER_COUNT));
-        //RTFParser's legacy behavior is to apply local timezone to dates/times.
-        //This needs to be flexible enough to pass in various time-zones TIKA-4043
-        assertTrue(xml.metadata.get(TikaCoreProperties.CREATED).startsWith("2010-10-"));
+        assertEquals("2010-10-13T02:55:00", xml.metadata.get(TikaCoreProperties.CREATED));
+    }
+
+    @Test
+    public void testCreationDateFields() throws Exception {
+        assertEquals("2012-03-04T05:06:00", created("{\\creatim\\yr2012\\mo3\\dy4\\hr5\\min6}"));
+        assertEquals("2012-03-04T00:00:00", created("{\\creatim\\yr2012\\mo3\\dy4}"));
+        assertNull(created("{\\creatim}"));                            // was a negative year
+        assertNull(created("{\\creatim\\yr0\\mo0\\dy0\\hr0\\min0}"));
+        assertNull(created("{\\creatim\\yr2012\\mo13\\dy40}"));        // was rolled over into 2013
+        // no leak from an earlier date group
+        assertNull(created("{\\printim\\yr2011\\mo1\\dy1}{\\creatim}"));
+    }
+
+    private String created(String infoGroups) throws Exception {
+        String rtf = "{\\rtf1\\ansi{\\info" + infoGroups + "}hello}";
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(rtf.getBytes(StandardCharsets.US_ASCII))) {
+            new RTFParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        }
+        return metadata.get(TikaCoreProperties.CREATED);
     }
 
     // TIKA-1192

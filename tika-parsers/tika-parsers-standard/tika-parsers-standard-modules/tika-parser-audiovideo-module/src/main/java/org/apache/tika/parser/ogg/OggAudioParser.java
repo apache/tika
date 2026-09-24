@@ -50,6 +50,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.audio.CoverArt;
 import org.apache.tika.parser.audio.NumberAndTotal;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Parent parser for the various Ogg Audio formats, such as
@@ -129,7 +130,10 @@ public abstract class OggAudioParser extends AbstractParser {
         metadata.set(XMPDM.ARTIST, comments.getArtist());
         metadata.set(XMPDM.ALBUM, comments.getAlbum());
         metadata.set(XMPDM.GENRE, comments.getGenre());
-        metadata.set(XMPDM.RELEASE_DATE, comments.getDate());
+        String releaseDate = TikaDates.toMetadataStringKeepPartial(comments.getDate());
+        if (releaseDate != null) {
+            metadata.set(XMPDM.RELEASE_DATE, releaseDate);
+        }
         metadata.add(XMP.CREATOR_TOOL, comments.getVendor());
         metadata.add(VORBIS_VENDOR, comments.getVendor());
 
