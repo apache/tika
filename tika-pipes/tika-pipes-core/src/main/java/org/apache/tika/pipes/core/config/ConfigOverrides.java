@@ -150,14 +150,30 @@ public class ConfigOverrides {
         private final int numClients;
         private final int maxFilesProcessedPerProcess;
         private final List<String> forkedJvmArgs;
+        private final long socketTimeoutMillis;
+        private final String javaPath;
 
         public PipesConfigOverride(int numClients,
                                    int maxFilesProcessedPerProcess,
                                    List<String> forkedJvmArgs) {
+            this(numClients, maxFilesProcessedPerProcess, forkedJvmArgs, -1, null);
+        }
+
+        /**
+         * @param socketTimeoutMillis written when positive; -1 leaves the existing config's value
+         * @param javaPath written when non-null; null leaves the existing config's value
+         */
+        public PipesConfigOverride(int numClients,
+                                   int maxFilesProcessedPerProcess,
+                                   List<String> forkedJvmArgs,
+                                   long socketTimeoutMillis,
+                                   String javaPath) {
             this.numClients = numClients;
             this.maxFilesProcessedPerProcess = maxFilesProcessedPerProcess;
             this.forkedJvmArgs = forkedJvmArgs != null ?
                     new ArrayList<>(forkedJvmArgs) : new ArrayList<>();
+            this.socketTimeoutMillis = socketTimeoutMillis;
+            this.javaPath = javaPath;
         }
 
         public int getNumClients() {
@@ -170,6 +186,14 @@ public class ConfigOverrides {
 
         public List<String> getForkedJvmArgs() {
             return forkedJvmArgs;
+        }
+
+        public long getSocketTimeoutMillis() {
+            return socketTimeoutMillis;
+        }
+
+        public String getJavaPath() {
+            return javaPath;
         }
     }
 
@@ -238,8 +262,26 @@ public class ConfigOverrides {
         public Builder setPipesConfig(int numClients,
                                       int maxFilesProcessedPerProcess,
                                       List<String> forkedJvmArgs) {
+            return setPipesConfig(numClients, maxFilesProcessedPerProcess, forkedJvmArgs,
+                    -1, null);
+        }
+
+        /**
+         * Set pipes configuration including the parent-side process settings.
+         *
+         * @param socketTimeoutMillis socket read timeout for the forked process, -1 to leave
+         *                            the existing config's value
+         * @param javaPath java executable for the forked process, null to leave the existing
+         *                 config's value
+         * @return this builder
+         */
+        public Builder setPipesConfig(int numClients,
+                                      int maxFilesProcessedPerProcess,
+                                      List<String> forkedJvmArgs,
+                                      long socketTimeoutMillis,
+                                      String javaPath) {
             this.pipesConfig = new PipesConfigOverride(numClients,
-                    maxFilesProcessedPerProcess, forkedJvmArgs);
+                    maxFilesProcessedPerProcess, forkedJvmArgs, socketTimeoutMillis, javaPath);
             return this;
         }
 
