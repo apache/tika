@@ -36,7 +36,6 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.core.EmitStrategy;
-import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.config.ConfigMerger;
@@ -401,19 +400,13 @@ public class PipesForkParser implements Closeable {
      * @return MergeResult containing the config path and generated fetcher ID
      */
     private ConfigMerger.MergeResult createTikaConfigFile() throws IOException {
-        PipesConfig pc = config.getPipesConfig();
-
         // Build configuration overrides
         ConfigOverrides.Builder builder = ConfigOverrides.builder()
                 // Add internal fetcher with UUID-based name to avoid conflicts
                 // Use null ID to trigger UUID generation
                 .addFetcher(null, "file-system-fetcher",
                         Map.of("allowAbsolutePaths", true))
-                // Set pipes configuration
-                .setPipesConfig(
-                        pc.getNumClients(),
-                        pc.getMaxFilesProcessedPerProcess(),
-                        pc.getForkedJvmArgs())
+                .setPipesConfig(config.getPipesConfig())
                 // Use PASSBACK_ALL strategy - results returned through socket
                 .setEmitStrategy(EmitStrategy.PASSBACK_ALL);
 

@@ -181,10 +181,17 @@ public class ConfigMerger {
             LOG.debug("Applied pipes config: numClients={}", pc.getNumClients());
         }
 
+        if (overrides.getPipesConfigValues() != null) {
+            ObjectNode values =
+                    TikaObjectMapperFactory.getMapper().valueToTree(overrides.getPipesConfigValues());
+            getOrCreateObject(mapper, root, "pipes").setAll(values);
+        }
+
         // Apply emit strategy
         if (overrides.getEmitStrategy() != null) {
             ObjectNode pipesNode = getOrCreateObject(mapper, root, "pipes");
-            ObjectNode emitStrategyNode = getOrCreateObject(mapper, pipesNode, "emitStrategy");
+            // replaced whole: thresholdBytes is rejected by every type but DYNAMIC
+            ObjectNode emitStrategyNode = pipesNode.putObject("emitStrategy");
             emitStrategyNode.put("type", overrides.getEmitStrategy().name());
             LOG.debug("Applied emit strategy: {}", overrides.getEmitStrategy());
         }

@@ -89,6 +89,12 @@ Release 4.1.0 - 9/25/2026
      crashes; tika-eval Profile/Compare read that ledger and the run-info
      json to classify NO_EXTRACT_FILE by cause (TIKA-4846, TIKA-4847).
 
+   * PipesForkParser no longer drops PipesConfig settings made in code
+     (javaPath, socketTimeoutMillis and others). Settings made in code now
+     win over the user config file, which wins over PipesForkParser's
+     defaults; setUserConfigPath() applies the file's pipes section when
+     called, so call it before setting pipes options in code (TIKA-4931).
+
   EXTRACTION AND FORMATS
 
    * Improve extraction of tagged PDFs. New tika-eval-structure tool compares

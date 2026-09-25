@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +35,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.core.EmitStrategy;
+import org.apache.tika.pipes.core.PipesConfig;
 
 public class ConfigMergerTest {
 
@@ -384,6 +388,44 @@ public class ConfigMergerTest {
         ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(null, overrides);
         JsonNode root = new ObjectMapper().readTree(result.configPath().toFile());
         assertTrue(root.get("fetchers").has("__tika-server"));
+
+        Files.deleteIfExists(result.configPath());
+    }
+
+    /** TIKA-4931: every field set in code must reach the merged file, not a hand-picked few. */
+    @Test
+    public void testPipesConfigValuesRoundTrip() throws IOException, TikaConfigException {
+        PipesConfig set = new PipesConfig();
+        set.setSocketTimeoutMillis(1234);
+        set.setJavaPath("/opt/jdk/bin/java");
+        set.setStartupTimeoutMillis(5678);
+        set.setForkedJvmArgs(new ArrayList<>(List.of("-Xmx512m")));
+
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(null,
+                ConfigOverrides.builder().setPipesConfig(set)
+                        .setEmitStrategy(EmitStrategy.PASSBACK_ALL).build());
+
+        PipesConfig loaded = PipesConfig.load(TikaJsonConfig.load(result.configPath()));
+        assertEquals(1234, loaded.getSocketTimeoutMillis());
+        assertEquals("/opt/jdk/bin/java", loaded.getJavaPath());
+        assertEquals(5678, loaded.getStartupTimeoutMillis());
+        assertEquals(List.of("-Xmx512m"), loaded.getForkedJvmArgs());
+        assertEquals(EmitStrategy.PASSBACK_ALL, loaded.getEmitStrategy().getType());
+
+        Files.deleteIfExists(result.configPath());
+    }
+
+    /** A PipesConfig override is written whole: callers load the user's values into it first. */
+    @Test
+    public void testPipesConfigValuesReplaceUserValues() throws IOException, TikaConfigException {
+        Path userConfig = tempDir.resolve("user-config.json");
+        Files.writeString(userConfig, "{\"pipes\":{\"socketTimeoutMillis\":4321}}");
+
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(userConfig,
+                ConfigOverrides.builder().setPipesConfig(new PipesConfig()).build());
+
+        PipesConfig loaded = PipesConfig.load(TikaJsonConfig.load(result.configPath()));
+        assertEquals(PipesConfig.DEFAULT_SOCKET_TIMEOUT_MILLIS, loaded.getSocketTimeoutMillis());
 
         Files.deleteIfExists(result.configPath());
     }
