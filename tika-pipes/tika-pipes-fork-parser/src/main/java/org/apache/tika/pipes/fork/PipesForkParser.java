@@ -400,8 +400,6 @@ public class PipesForkParser implements Closeable {
      *
      * @return MergeResult containing the config path and generated fetcher ID
      */
-    private static final String DEFAULT_JAVA_PATH = new PipesConfig().getJavaPath();
-
     private ConfigMerger.MergeResult createTikaConfigFile() throws IOException {
         PipesConfig pc = config.getPipesConfig();
 
@@ -411,15 +409,14 @@ public class PipesForkParser implements Closeable {
                 // Use null ID to trigger UUID generation
                 .addFetcher(null, "file-system-fetcher",
                         Map.of("allowAbsolutePaths", true))
-                // Set pipes configuration. socketTimeoutMillis/javaPath only when set in
-                // code (TIKA-4931): writing the default would clobber a user config's value.
+                // socketTimeoutMillis/javaPath start unset in PipesForkParserConfig, so a
+                // value here was set in code and overrides the user config (TIKA-4931)
                 .setPipesConfig(
                         pc.getNumClients(),
                         pc.getMaxFilesProcessedPerProcess(),
                         pc.getForkedJvmArgs(),
-                        pc.getSocketTimeoutMillis() == PipesConfig.DEFAULT_SOCKET_TIMEOUT_MILLIS
-                                ? -1 : pc.getSocketTimeoutMillis(),
-                        DEFAULT_JAVA_PATH.equals(pc.getJavaPath()) ? null : pc.getJavaPath())
+                        pc.getSocketTimeoutMillis(),
+                        pc.getJavaPath())
                 // Use PASSBACK_ALL strategy - results returned through socket
                 .setEmitStrategy(EmitStrategy.PASSBACK_ALL);
 
