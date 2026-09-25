@@ -141,32 +141,28 @@
                         <configuration>
                             <skip>${skipTests}</skip>
                             <target xmlns:if="ant:if" xmlns:unless="ant:unless">
-                                <property name="cache" value="${settings.localRepository}/.cache/tika-opennlp-models"/>
-                                <mkdir dir="${cache}"/>
+                                <property name="cache" value="${settings.localRepository}/.cache/tika-opennlp-models" />
+                                <mkdir dir="${cache}" />
                                 <macrodef name="model">
-                                    <attribute name="name"/>
-                                    <attribute name="sha256"/>
+                                    <attribute name="name" />
+                                    <attribute name="sha256" />
                                     <sequential>
-                                        <local name="present"/>
-                                        <local name="verified"/>
-                                        <get src="${opennlp.models.url}/en-ner-@{name}.bin" dest="${cache}/en-ner-@{name}.bin"
-                                             skipexisting="true" ignoreerrors="true" retries="3"/>
-                                        <available file="${cache}/en-ner-@{name}.bin" property="present"/>
-                                        <checksum if:set="present" file="${cache}/en-ner-@{name}.bin" algorithm="SHA-256"
-                                                  property="@{sha256}" verifyproperty="verified"/>
+                                        <local name="present" />
+                                        <local name="verified" />
+                                        <get src="${opennlp.models.url}/en-ner-@{name}.bin" dest="${cache}/en-ner-@{name}.bin" skipexisting="true" ignoreerrors="true" retries="3" />
+                                        <available file="${cache}/en-ner-@{name}.bin" property="present" />
+                                        <checksum if:set="present" file="${cache}/en-ner-@{name}.bin" algorithm="SHA-256" property="@{sha256}" verifyproperty="verified" />
                                         <!-- overwrite: testResources may already have copied a stale
                                              src/test/resources copy left behind by the old ModelGetter -->
-                                        <copy if:true="${verified}" file="${cache}/en-ner-@{name}.bin" overwrite="true"
-                                              tofile="${project.build.testOutputDirectory}/org/apache/tika/parser/ner/opennlp/ner-@{name}.bin"/>
-                                        <echo unless:true="${verified}" level="warning"
-                                              message="OpenNLP model en-ner-@{name}.bin unavailable or corrupt; NER tests will skip"/>
-                                        <delete unless:true="${verified}" file="${cache}/en-ner-@{name}.bin" quiet="true"/>
+                                        <copy if:true="${verified}" file="${cache}/en-ner-@{name}.bin" overwrite="true" tofile="${project.build.testOutputDirectory}/org/apache/tika/parser/ner/opennlp/ner-@{name}.bin" />
+                                        <echo unless:true="${verified}" level="warning" message="OpenNLP model en-ner-@{name}.bin unavailable or corrupt; NER tests will skip" />
+                                        <delete unless:true="${verified}" file="${cache}/en-ner-@{name}.bin" quiet="true" />
                                     </sequential>
                                 </macrodef>
-                                <model name="person" sha256="687a9263d96b37fced707c9f2ac0560f9edaf54658856395555901924f64dbe4"/>
-                                <model name="location" sha256="8fe39e48633f4a86c4132d9c54b396a2d8e0460c1d71e3562dacf976984f447b"/>
-                                <model name="organization" sha256="0136c12afe1ac357142260c39bb879b7c9d121e41024114db5a6455b4fd5ba00"/>
-                                <model name="date" sha256="1207030923852e1c244919d8f15d9e78c217323728fcf909029abd1703967855"/>
+                                <model name="person" sha256="687a9263d96b37fced707c9f2ac0560f9edaf54658856395555901924f64dbe4" />
+                                <model name="location" sha256="8fe39e48633f4a86c4132d9c54b396a2d8e0460c1d71e3562dacf976984f447b" />
+                                <model name="organization" sha256="0136c12afe1ac357142260c39bb879b7c9d121e41024114db5a6455b4fd5ba00" />
+                                <model name="date" sha256="1207030923852e1c244919d8f15d9e78c217323728fcf909029abd1703967855" />
                             </target>
                         </configuration>
                     </execution>
@@ -175,6 +171,6 @@
         </plugins>
     </build>
   <scm>
-    <tag>4.1.0-rc1</tag>
+    <tag>4.1.0-rc2</tag>
   </scm>
 </project>
