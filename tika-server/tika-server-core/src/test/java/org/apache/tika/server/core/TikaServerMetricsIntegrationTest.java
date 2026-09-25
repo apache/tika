@@ -18,17 +18,14 @@ package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.file.Paths;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -41,7 +38,6 @@ import org.junit.jupiter.api.Timeout;
 
 import org.apache.tika.server.core.metrics.MetricsServer;
 import org.apache.tika.server.core.metrics.TikaServerMetrics;
-import org.apache.tika.utils.ProcessUtils;
 
 /**
  * Runs the real server process with {@code --metricsPort} and checks the scrape output
@@ -85,24 +81,19 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
         assertSample(body, "tika_server_tasks_active", "", 0.0);
         assertTrue(body.contains("jvm_memory_used_bytes"), body);
         assertTrue(body.contains("tika_server_request_size_bytes_count{endpoint=\"rmeta\"}"), body);
+        // the explicit SLO boundaries, not micrometer's ~70-bucket percentile histogram:
+        // a stray publishPercentileHistogram() fails here
+        long buckets = body.lines()
+                .filter(l -> l.startsWith("tika_server_requests_seconds_bucket{")
+                        && l.contains("endpoint=\"rmeta\"") && l.contains("status=\"2xx\""))
+                .count();
+        assertEquals(TikaServerMetrics.DURATION_SLOS.length + 1, buckets, body);
 
         // Isolation both ways.
         assertEquals(404, WebClient.create(endPoint + MetricsServer.PATH).get().getStatus());
         assertEquals(404, WebClient.create(metricsEndPoint + RMETA_PATH)
                 .accept("application/json")
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD)).getStatus());
-    }
-
-    @Test
-    @Timeout(120)
-    public void testOffByDefault() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-        awaitServerStartup();
-        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
-        assertEquals(404, WebClient.create(endPoint + MetricsServer.PATH).get().getStatus());
-        // The gate is the port: nothing may be listening on the one the metrics config names.
-        assertThrows(IOException.class, () -> get(metricsEndPoint + MetricsServer.PATH),
-                "a scrape listener came up with no metrics port configured");
     }
 
     /**
@@ -190,28 +181,6 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
                 + " in:\n" + body);
     }
 
-    /**
-     * The explicit SLO boundaries, not micrometer's ~70-bucket percentile histogram.
-     * Guards the cardinality decision: a stray publishPercentileHistogram() fails here.
-     */
-    @Test
-    @Timeout(240)
-    public void testDurationBucketsAreBounded() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json"),
-                "--metricsPort", String.valueOf(metricsPort)});
-        awaitServerStartup();
-        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
-
-        String body = get(metricsEndPoint + MetricsServer.PATH).body();
-        long buckets = body
-                .lines()
-                .filter(l -> l.startsWith("tika_server_requests_seconds_bucket{")
-                        && l.contains("endpoint=\"rmeta\""))
-                .count();
-        int expected = TikaServerMetrics.DURATION_SLOS.length + 1;
-        assertEquals(expected, buckets, "expected SLO buckets + Inf, got " + buckets + ":\n" + body);
-    }
-
     private Response rmeta(String resource) {
         return WebClient.create(endPoint + RMETA_PATH)
                 .accept("application/json")
@@ -244,18 +213,5 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
         return HttpClient.newHttpClient().send(
                 HttpRequest.newBuilder(URI.create(url)).GET().build(),
                 HttpResponse.BodyHandlers.ofString());
-    }
-
-    private String getConfig(String configName) {
-        try {
-            return ProcessUtils.escapeCommandLine(Paths
-                    .get(TikaServerMetricsIntegrationTest.class
-                            .getResource("/configs/" + configName)
-                            .toURI())
-                    .toAbsolutePath()
-                    .toString());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

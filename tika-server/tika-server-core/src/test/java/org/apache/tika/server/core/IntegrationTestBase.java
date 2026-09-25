@@ -16,8 +16,17 @@
  */
 package org.apache.tika.server.core;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,9 +35,11 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.common.logging.LogUtils;
 import org.apache.cxf.jaxrs.client.WebClient;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -37,6 +48,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.utils.ProcessUtils;
 
 // PER_CLASS so subclasses' state (notably TEMP_WORKING_DIR below) is isolated
 // per test class instead of shared via one static field on this common base --
@@ -67,6 +81,7 @@ public class IntegrationTestBase extends TikaTest {
     @TempDir
     Path TEMP_WORKING_DIR;
     protected Process process = null;
+    private boolean classScoped = false;
 
     @BeforeAll
     public void setUp() throws Exception {
@@ -75,6 +90,19 @@ public class IntegrationTestBase extends TikaTest {
 
     @AfterEach
     public void tearDown() throws Exception {
+        if (!classScoped) {
+            stopProcess();
+        }
+    }
+
+    @AfterAll
+    public void tearDownClass() throws Exception {
+        if (classScoped) {
+            stopProcess();
+        }
+    }
+
+    private void stopProcess() throws Exception {
         if (process != null) {
             LOG.info("Trying graceful shutdown; supported? {}",
                     process.toHandle().supportsNormalTermination());
@@ -125,9 +153,24 @@ public class IntegrationTestBase extends TikaTest {
         LOG.info("post-teardown orphan PipesServer count: {}", count);
     }
 
+    /**
+     * One server for every test in the class, stopped after the last one. Call from a
+     * non-static {@code @BeforeAll}; the instance {@code @TempDir} isn't injected yet there,
+     * so the caller supplies the working dir.
+     */
+    public void startClassProcess(String[] extraArgs, Path workingDir) throws Exception {
+        classScoped = true;
+        process = start(extraArgs, workingDir);
+        awaitServerStartup();
+    }
+
     public void startProcess(String[] extraArgs) throws IOException {
-        String[] base = new String[]{"java", 
-                "-Djava.io.tmpdir=" + TEMP_WORKING_DIR.toAbsolutePath(), // make sure we're using subdir cleaned up by JUnit
+        process = start(extraArgs, TEMP_WORKING_DIR);
+    }
+
+    private Process start(String[] extraArgs, Path workingDir) throws IOException {
+        String[] base = new String[]{"java",
+                "-Djava.io.tmpdir=" + workingDir.toAbsolutePath(), // make sure we're using subdir cleaned up by JUnit
                 "-cp", System.getProperty("java.class.path"), "org.apache.tika.server.core.TikaServerCli",
                 "-p", INTEGRATION_TEST_PORT};
         List<String> args = new ArrayList<>(Arrays.asList(base));
@@ -137,7 +180,48 @@ public class IntegrationTestBase extends TikaTest {
 //        pb.redirectInput(Files.createTempFile(STREAMS_DIR, "tika-stream-out", ".log").toFile());
         //      pb.redirectError(Files.createTempFile(STREAMS_DIR,
         //      "tika-stream-err", ".log").toFile());
-        process = pb.start();
+        return pb.start();
+    }
+
+    static String getConfig(String configName) {
+        try {
+            return ProcessUtils.escapeCommandLine(Paths
+                    .get(IntegrationTestBase.class
+                            .getResource("/configs/" + configName)
+                            .toURI())
+                    .toAbsolutePath()
+                    .toString());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /** Parses hello_world through /rmeta, retrying while the server or its worker warms up. */
+    void testBaseline() throws Exception {
+        int maxTries = 3;
+        int tries = 0;
+        while (++tries < maxTries) {
+            awaitServerStartup();
+            Response response;
+            try {
+                response = WebClient
+                        .create(endPoint + RMETA_PATH)
+                        .accept("application/json")
+                        .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+            } catch (ProcessingException e) {
+                continue;
+            }
+            if (response.getStatus() == 503) {
+                continue;
+            }
+            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
+            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
+            assertEquals(1, metadataList.size());
+            assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
+            assertContains("hello world", metadataList.get(0).get("tk:content"));
+            return;
+        }
+        fail("should have completed within 3 tries");
     }
 
     void awaitServerStartup() throws Exception {
