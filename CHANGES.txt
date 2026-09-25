@@ -1,7 +1,143 @@
 Release 4.1.0 - 9/25/2026
 
-   * Revert jackcess to 5.0.0: 5.0.1 failed to open some Access databases that
-     5.0.0 reads ("Did not find required parent table id") (TIKA-4880).
+  HIGHLIGHTS
+
+   * OCR and enrichment engines are selected by name in a new
+     "text-recognizers" list ("[]" turns enrichment off; no list resolves one
+     engine per media type at startup); the image and PDF parsers invoke them
+     rather than the composite dispatching to them. The image/ocr-*
+     pseudo-types are retired; a third-party engine still advertising them is
+     a legacy text recognizer with a WARN. VLM parsers gain "textRecognizer"
+     (TIKA-4872, TIKA-4884).
+
+   * New "exception-reporting" parse-context config redacts and bounds
+     exception text in metadata, tika-server error bodies and pipes/grpc
+     messages; FileSystemEmitter writes atomically. Compat: tk:exception:*
+     values may now begin with the TikaException wrapper line (TIKA-4848).
+
+  PERFORMANCE
+
+   * Detection (magic ~35% faster on unmatched input, override
+     keys honored before magic, cached type->parser map), markdown output
+     ~30x faster, .doc cleanup, CSV sniffing, zip legacy-method rewinds, pipes
+     ACK overlap, raw UTF-8 content passback for tika-server
+     (content-bytes-config). Compat: with a Content-Type override set,
+     DefaultDetector no longer lets a more specific magic result overrule it
+     (TIKA-4868).
+
+   * PDF incremental-update scanning reads in blocks; ~4x less CPU (TIKA-4898).
+
+   * Embedded documents in Office files, PDFs, PST and the zip-family
+     containers are re-opened from their container on rewind instead of
+     cached (TIKA-4878).
+
+   * Improve spooling/decrease number of spills to disk. The pipes cache
+     memory budget defaults to a quarter of the fork heap
+     (-Dtika.pipes.cacheMemoryBudgetBytes overrides) (TIKA-4835).
+
+   * Digesting embedded documents no longer spools each to a temp file; a
+     process-wide CacheMemoryBudget keeps them in memory. Zip-family parsing
+     uses seekable channels, so hasFile() may be false afterward (TIKA-4828).
+
+  BREAKING CHANGES AND DEPRECATIONS
+
+   * Pipes IPC carries inline bytes as a raw binary field, not in the tuple;
+     4.0.0 tuples with an "inline-bytes" parse-context entry are rejected
+     (TIKA-4829).
+
+   * Pipes plugins no longer bundle Jackson; plugin config is parsed by a
+     shared strict mapper that rejects unknown and duplicate keys (TIKA-4840).
+
+   * OpenAIVLMParser no longer auto-registers via SPI; per-request config for
+     the embedding filters works and locks baseUrl/apiKey/model; inline PDF
+     page OCR accumulates tk:chunks from every page (TIKA-4871).
+
+   * Temp files follow -Djava.io.tmpdir on the parent JVM (Tika, its
+     libraries and forks); pipes.tempDirectory is deprecated. A fork whose
+     parent dies deletes its own temp dir; failure-path temp leaks fixed
+     (TIKA-4877).
+
+   * Kafka pipes iterator no longer stops on the first empty poll
+     (assignmentTimeoutMs, drainIdleMs); groupInitialRebalanceDelayMs is
+     deprecated (TIKA-4833).
+
+  INFERENCE (EXPERIMENTAL)
+
+   * tika-inference and tika-vlm are still experimental: classes, config keys and
+     output may change in minor releases. Stable: the "engines" map, the
+     "text-recognizers" list and pdf-parser "text" (TIKA-4884, TIKA-4895).
+
+   * Refactor OCR and inference to use engines for inference and
+     page rendering (TIKA-4889).
+
+   * Enable audio/video chunking with ffmpeg and inference; the default
+     segment grid is 25 s windows with 5 s overlap (TIKA-4900).
+
+  SERVER, PIPES AND OPERATIONS
+
+   * tika-server: named configuration presets, and catalog presets that are
+     inert until the config names them (TIKA-4856).
+
+   * Add Micrometer reporting and opt-in endpoint for tika-server (TIKA-4839).
+
+   * Enable environment variable interpolation in tika-config.json (TIKA-4909).
+
+   * tika-server and tika-async-cli accept // and /* */ comments in config
+     during override merging (TIKA-4834).
+
+   * New file-system-jsonl-reporter pipes reporter records a batch run's
+     crashes; tika-eval Profile/Compare read that ledger and the run-info
+     json to classify NO_EXTRACT_FILE by cause (TIKA-4846, TIKA-4847).
+
+  EXTRACTION AND FORMATS
+
+   * Improve extraction of tagged PDFs. New tika-eval-structure tool compares
+     two sets of XHTML extracts block by block (TIKA-4891).
+
+   * OneNote: document-order extraction, superseded revisions omitted,
+     embedded BLOBs extracted, bounded recursion; malformed files fall back
+     to the legacy string dump via Henry Lindeman (TIKA-4814).
+
+   * Raw camera formats (NEF/NRW, PEF/PTX, ARW/SRF/SR2, SRW, DNG, RAF, RW2,
+     MRW, ORF) are detected by content instead of as image/tiff via Dominik
+     Schmidt (TIKA-4861).
+
+   * AVIF images are parsed by HeifParser (dimensions, EXIF, XMP) via Dominik
+     Schmidt (TIKA-4870).
+
+   * New GeoGebraParser for *.ggb/*.ggs/*.ggt with content-based detection
+     and THUMBNAIL embedded documents via Dominik Schmidt (TIKA-4831).
+
+   * The video of a Google/Android motion photo is emitted as an ATTACHMENT
+     embedded document via Dominik Schmidt (TIKA-4869).
+
+   * RawTiffParser extracts embedded JPEG previews as THUMBNAIL embedded
+     documents; image/x-raw-* are now subtypes of image/tiff
+     ("extractPreviews": false disables) via Dominik Schmidt (TIKA-4824).
+
+   * Apple Mail emlx files are detected as message/x-emlx and parsed by
+     RFC822Parser; a file name no longer turns plain text into a message type
+     once the type's magic has rejected the bytes (TIKA-4890).
+
+   * Audio cover art (ID3/FLAC/Vorbis front cover, MP4 covr) is emitted as a
+     THUMBNAIL embedded document rather than INLINE via Dominik Schmidt
+     (TIKA-4850).
+
+   * EpubParser emits the OPF cover image as a THUMBNAIL embedded document
+     via Dominik Schmidt (TIKA-4852).
+
+   * DWGReadParser emits THUMBNAILIMAGE as THUMBNAIL instead of INLINE
+     via Dominik Schmidt (TIKA-4853).
+
+   * iWork '09 and '18 preview images are emitted as THUMBNAIL embedded
+     documents via Dominik Schmidt (TIKA-4854).
+
+   * New poi-metafile-renderer rasterizes EMF/WMF (opt-in "renderImage");
+     OfficeParser emits the OLE2 SummaryInformation thumbnail as a THUMBNAIL
+     embedded document ("extractThumbnail": false disables) via Dominik
+     Schmidt (TIKA-4855).
+
+  OTHER CHANGES
 
    * Ogg, Vorbis, Opus and FLAC comment fields are read independently of the
      JVM's default locale: on a Turkish JVM TITLE and ARTIST were silently
@@ -17,19 +153,8 @@ Release 4.1.0 - 9/25/2026
      documented way to disable stall detection, no longer logs a warning
      on every parse (TIKA-4919).
 
-   * Apple Mail emlx files are detected as message/x-emlx and parsed by
-     RFC822Parser; a file name no longer turns plain text into a message type
-     once the type's magic has rejected the bytes (TIKA-4890).
-
    * Retry a 429, 502, 503 or 504 answer from a hosted inference engine with
      a jittered backoff (TIKA-4912).
-
-   * Handle inference exceptions more robustly in PDFParser (TIKA-4911).
-
-   * Enable environment variable interpolation in tika-config.json (TIKA-4909).
-
-   * Fix a cache-budget leak: tar, 7z and streamed zip entries never released
-     their in-memory cache's reservation (TIKA-4908).
 
    * Mp3Parser no longer writes "null" (a missing album) or the duration into
      the body (TIKA-4907).
@@ -49,36 +174,10 @@ Release 4.1.0 - 9/25/2026
      them. Curve values are formatted independently of the JVM's default
      locale, and single-entry gamma curves decode correctly (TIKA-4902).
 
-   * Digesting an embedded document no longer inflates it twice (TIKA-4901).
-
-   * Enable audio/video chunking with ffmpeg and inference; the default
-     segment grid is 25 s windows with 5 s overlap (TIKA-4900).
-
-   * Refactor OCR and inference to use engines for inference and
-     page rendering (TIKA-4889).
-
-   * PDF incremental-update scanning reads in blocks; ~4x less CPU (TIKA-4898).
-
    * Metadata never stores an unpaired UTF-16 surrogate (TIKA-4897).
-
-   * openai-embedding-engine gains "requestParameters" (TIKA-4896).
-
-   * tika-server: named configuration presets, and catalog presets that are
-     inert until the config names them (TIKA-4856).
 
    * unpack-config gains includeMetadata; tika-server /rmeta gains
      config/{handlerType} (TIKA-4881).
-
-   * Improve extraction of tagged PDFs. New tika-eval-structure tool compares
-     two sets of XHTML extracts block by block (TIKA-4891).
-
-   * Inference results in the single-object outputs (/tika as JSON, tika-app
-     -j, pipes CONCATENATE) land on the one metadata object handed back, with
-     an embedded locator, instead of being discarded (TIKA-4895).
-
-   * tika-inference and tika-vlm are experimental: classes, config keys and
-     output may change in minor releases. Stable: the "engines" map, the
-     "text-recognizers" list and pdf-parser "text" (TIKA-4884, TIKA-4895).
 
    * PDF bookmark outlines are walked without recursion; lists nest at most
      50 deep (TIKA-4894).
@@ -90,15 +189,9 @@ Release 4.1.0 - 9/25/2026
    * A PDF page rendered as an embedded document is enriched once, by the
      PDF parser; NO_OCR now means no page OCR at all (TIKA-4887).
 
-   * OCR engines are named in "text-recognizers" ("[]" turns enrichment off;
-     no list resolves one engine per media type at startup). The image/ocr-*
-     pseudo-types are retired; a third-party engine still advertising them is
-     a legacy text recognizer with a WARN until 5.0. VLM parsers gain
-     "textRecognizer" (TIKA-4884).
-
    * PDF AUTO OCR no longer emits a page's extracted text next to the OCR
      output that superseded it; AUTO without a text recognizer behaves as
-     NO_OCR. New TextRecognizer capability for content enrichers (TIKA-4883).
+     NO_OCR. (TIKA-4883).
 
    * tika-app -m and --json no longer drop metadata keys added after
      endDocument (TIKA-4885).
@@ -106,62 +199,16 @@ Release 4.1.0 - 9/25/2026
    * A missing OOXML relationship target (xlsx threaded comments, vsdx pages)
      no longer aborts the whole file (TIKA-4879).
 
-   * Raw camera formats (NEF/NRW, PEF/PTX, ARW/SRF/SR2, SRW, DNG, RAF, RW2,
-     MRW, ORF) are detected by content instead of as image/tiff. Fix a
-     BigTIFF offset overflow in RawTiffDetector that failed detection for the
-     whole document (TIKA-4861).
-
-   * Embedded documents in Office files, PDFs, PST and the zip-family
-     containers are re-opened from their container on rewind instead of
-     cached (TIKA-4878).
-
-   * Temp files follow -Djava.io.tmpdir on the parent JVM (Tika, its
-     libraries and forks); pipes.tempDirectory is deprecated. A fork whose
-     parent dies deletes its own temp dir; failure-path temp leaks fixed
-     (TIKA-4877).
-
    * tika-eval Profile/Compare speedups: langdetect preprocessing, H2 page
      cache sizing, a per-interval rate in the status log (TIKA-4875).
 
-   * New "text-recognizers" config list selects OCR and enrichment engines by
-     name; enrichers are invoked by the image and PDF parsers rather than
-     dispatched to by the composite (TIKA-4872).
-
-   * OpenAIVLMParser no longer auto-registers via SPI; per-request config for
-     the embedding filters works and locks baseUrl/apiKey/model; inline PDF
-     page OCR accumulates tk:chunks from every page (TIKA-4871).
-
-   * Performance: detection (magic ~35% faster on unmatched input, override
-     keys honored before magic, cached type->parser map), markdown output
-     ~30x faster, .doc cleanup, CSV sniffing, zip legacy-method rewinds, pipes
-     ACK overlap, raw UTF-8 content passback for tika-server
-     (content-bytes-config). Compat: with a Content-Type override set,
-     DefaultDetector no longer lets a more specific magic result overrule it
-     (TIKA-4868).
-
    * Embedded documents carry Content-Length where the stream knows it
-     (TIKA-4873).
-
-   * AVIF images are parsed by HeifParser (dimensions, EXIF, XMP) (TIKA-4870).
-
-   * The video of a Google/Android motion photo is emitted as an ATTACHMENT
-     embedded document (TIKA-4869).
-
-   * New poi-metafile-renderer rasterizes EMF/WMF (opt-in "renderImage");
-     OfficeParser emits the OLE2 SummaryInformation thumbnail as a THUMBNAIL
-     embedded document ("extractThumbnail": false disables) (TIKA-4855).
-
-   * New "exception-reporting" parse-context config redacts and bounds
-     exception text in metadata, tika-server error bodies and pipes/grpc
-     messages; FileSystemEmitter writes atomically. Compat: tk:exception:*
-     values may now begin with the TikaException wrapper line (TIKA-4848).
-
-   * Audio cover art (ID3/FLAC/Vorbis front cover, MP4 covr) is emitted as a
-     THUMBNAIL embedded document rather than INLINE (TIKA-4850).
+     via Dominik Schmidt (TIKA-4873).
 
    * The default plugins directory (tika-server, PipesForkParser, async CLI)
      and tika-grpc's plugin-roots fallback are resolved against the install
-     layout instead of the working directory (TIKA-4864, TIKA-4865).
+     layout instead of the working directory via Dominik Schmidt (TIKA-4864,
+     TIKA-4865).
 
    * Allow image compression settings in PDFBox-based renderer (TIKA-4862).
 
@@ -170,38 +217,10 @@ Release 4.1.0 - 9/25/2026
      CPU under forked parse workers (TIKA-4910, TIKA-4866, TIKA-4863).
 
    * embedded-limits maxDepth counts embedding levels again; values above 1
-     used to stop one level early (TIKA-4857).
-
-   * New GeoGebraParser for *.ggb/*.ggs/*.ggt with content-based detection
-     and THUMBNAIL embedded documents (TIKA-4831).
+     used to stop one level early via Dominik Schmidt (TIKA-4857).
 
    * Enum values in JSON configuration are matched case-insensitively
-     (TIKA-4859).
-
-   * iWork '09 and '18 preview images are emitted as THUMBNAIL embedded
-     documents (TIKA-4854).
-
-   * DWGReadParser emits THUMBNAILIMAGE as THUMBNAIL instead of INLINE
-     (TIKA-4853).
-
-   * EpubParser emits the OPF cover image as a THUMBNAIL embedded document
-     (TIKA-4852).
-
-   * RawTiffParser marks only the largest JPEG preview as THUMBNAIL; smaller
-     previews are INLINE (TIKA-4851).
-
-   * New file-system-jsonl-reporter pipes reporter records a batch run's
-     crashes; tika-eval Profile/Compare read that ledger and the run-info
-     json to classify NO_EXTRACT_FILE by cause (TIKA-4846, TIKA-4847).
-
-   * Stop spooling OLE2 objects whose header over-reserves BAT capacity
-     (TIKA-4845).
-
-   * Add Micrometer reporting and opt-in endpoint for tika-server (TIKA-4839).
-
-   * Improve spooling/decrease number of spills to disk. The pipes cache
-     memory budget defaults to a quarter of the fork heap
-     (-Dtika.pipes.cacheMemoryBudgetBytes overrides) (TIKA-4835).
+     via Dominik Schmidt (TIKA-4859).
 
    * Per-request config for parsers that lock fields (Tess4J, VLM, OpenAI
      image-embedding) threw even when empty (TIKA-4843).
@@ -216,34 +235,20 @@ Release 4.1.0 - 9/25/2026
      extractFontNames NullPointerException on a PDF page with no /Resources
      (TIKA-4842).
 
-   * Pipes plugins no longer bundle Jackson; plugin config is parsed by a
-     shared strict mapper that rejects unknown and duplicate keys (TIKA-4840).
-
-   * tika-server and tika-async-cli accept // and /* */ comments in config
-     during override merging (TIKA-4834).
-
-   * Kafka pipes iterator no longer stops on the first empty poll
-     (assignmentTimeoutMs, drainIdleMs); groupInitialRebalanceDelayMs is
-     deprecated (TIKA-4833).
-
-   * Pipes IPC carries inline bytes as a raw binary field, not in the tuple;
-     4.0.0 tuples with an "inline-bytes" parse-context entry are rejected
-     (TIKA-4829).
-
-   * Digesting embedded documents no longer spools each to a temp file; a
-     process-wide CacheMemoryBudget keeps them in memory. Zip-family parsing
-     uses seekable channels, so hasFile() may be false afterward (TIKA-4828).
-
    * Pipes carries the client Content-Type into the forked worker as a
-     detection hint for every forked endpoint (TIKA-4825).
+     detection hint for every forked endpoint via Dominik Schmidt (TIKA-4825).
 
-   * OneNote: document-order extraction, superseded revisions omitted,
-     embedded BLOBs extracted, bounded recursion; malformed files fall back
-     to the legacy string dump (TIKA-4814).
+   * MP4 audio and video track codecs are exposed as FourCCs (audio:fourcc,
+     video:fourcc) via Dominik Schmidt (TIKA-4838).
 
-   * RawTiffParser extracts embedded JPEG previews as THUMBNAIL embedded
-     documents; image/x-raw-* are now subtypes of image/tiff
-     ("extractPreviews": false disables) (TIKA-4824).
+   * FilenameUtils returns the default value for an unknown extension via
+     Tim Grein (TIKA-4882).
+
+   * ProcessUtils does not start a subprocess when the granted timeout is
+     <= 0 via Tim Grein (TIKA-4886).
+
+   * Remove the unnecessary jaxb-runtime dependency from the pdf and
+     miscoffice modules via Thorsten Heit (TIKA-4849).
 
 Release 4.0.0 - 8/18/2026
 
