@@ -1,5 +1,8 @@
 Release 4.1.0 - 9/25/2026
 
+   * Revert jackcess to 5.0.0: 5.0.1 failed to open some Access databases that
+     5.0.0 reads ("Did not find required parent table id") (TIKA-4880).
+
    * Ogg, Vorbis, Opus and FLAC comment fields are read independently of the
      JVM's default locale: on a Turkish JVM TITLE and ARTIST were silently
      lost. The OCR image-rotation value is formatted the same way (TIKA-4921).
