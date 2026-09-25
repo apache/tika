@@ -319,6 +319,10 @@ class EmitHandler {
     void injectUserMetadata(Metadata userMetadata, List<Metadata> metadataList) {
         Metadata target = metadataList.get(0);
         for (String n : userMetadata.names()) {
+            // parse inputs come back from the parse itself, not from here (TIKA-4932)
+            if (PipesWorker.CALLER_INPUT_KEY_NAMES.contains(n)) {
+                continue;
+            }
             //overwrite whatever was there
             target.setTrusted(n, null);
             for (String val : userMetadata.getValues(n)) {

@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 
@@ -72,5 +73,25 @@ public class EmitHandlerUserMetadataTest {
 
         assertEquals("user title", parsed.get("dc:title"));
         assertEquals("untouched", parsed.get("keep:me"));
+    }
+
+    /** TIKA-4932: parse inputs are carried in by PipesWorker; the parse's value comes back. */
+    @Test
+    public void parseInputsAreNotReinjected() {
+        Metadata parsed = new Metadata();
+        parsed.set(HttpHeaders.CONTENT_TYPE, "text/plain; charset=ISO-8859-1");
+        parsed.set(TikaCoreProperties.RESOURCE_NAME_KEY, "given.txt");
+        parsed.set("dc:title", "parsed title");
+
+        Metadata user = new Metadata();
+        user.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
+        user.set(TikaCoreProperties.RESOURCE_NAME_KEY, "given.txt");
+        user.set("dc:title", "user title");
+
+        emitHandler().injectUserMetadata(user, List.of(parsed));
+
+        assertEquals("text/plain; charset=ISO-8859-1", parsed.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("given.txt", parsed.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+        assertEquals("user title", parsed.get("dc:title"));
     }
 }

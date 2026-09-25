@@ -23,7 +23,9 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -38,6 +40,7 @@ import org.apache.tika.extractor.UnpackHandler;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
@@ -542,15 +545,30 @@ class PipesWorker implements Callable<PipesResult> {
     }
 
     /**
-     * Carries the caller-supplied detection hints from the tuple metadata across the
-     * fresh-metadata boundary into the metadata used for fetch and detection.
+     * The user-metadata keys that are inputs to the parse: carried across the fresh-metadata
+     * boundary into detection here, and NOT re-injected onto the result by
+     * {@code EmitHandler#injectUserMetadata} -- the parse's own value for them (the detected
+     * type, the given name) is what the caller gets back. Every other user key is the reverse:
+     * invisible to the parse, injected verbatim on output.
      * <p>
-     * Only the resource name and the {@code Content-Type} soft hint are carried.
-     * {@code Content-Type} is applied by {@code MimeTypes.detect} via {@code applyHint},
-     * which keeps it only when it equals or specializes the magic-detected type (e.g.
-     * {@code image/tiff} -&gt; {@code image/x-raw-nikon} for a NEF supplied without a
-     * filename). The {@code CONTENT_TYPE_USER_OVERRIDE} key is deliberately NOT carried:
-     * it short-circuits detection unconditionally and would let a caller force any type.
+     * {@code Content-Type} is a soft hint: {@code MimeTypes.detect} keeps it only when it equals
+     * or specializes the magic-detected type (e.g. {@code image/tiff} -&gt;
+     * {@code image/x-raw-nikon} for a NEF supplied without a filename). The
+     * {@code CONTENT_TYPE_USER_OVERRIDE} and {@code CONTENT_TYPE_PARSER_OVERRIDE} keys are
+     * deliberately NOT in this set: they short-circuit detection unconditionally and would let a
+     * caller force any type.
+     */
+    static final Set<Property> CALLER_INPUT_KEYS = Set.of(
+            TikaCoreProperties.RESOURCE_NAME_KEY,
+            HttpHeaders.CONTENT_TYPE);
+
+    /** {@link #CALLER_INPUT_KEYS} by name, for callers holding a key as a String. */
+    static final Set<String> CALLER_INPUT_KEY_NAMES = CALLER_INPUT_KEYS.stream()
+            .map(Property::getName).collect(Collectors.toUnmodifiableSet());
+
+    /**
+     * Carries {@link #CALLER_INPUT_KEYS} from the tuple metadata into the metadata used for
+     * fetch and detection.
      *
      * @param tupleMetadata the caller-supplied metadata (may be null)
      * @param target the fresh metadata used for fetch and detection
@@ -559,16 +577,13 @@ class PipesWorker implements Callable<PipesResult> {
         if (tupleMetadata == null) {
             return;
         }
-        String suppliedName = tupleMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-        if (!StringUtils.isBlank(suppliedName)) {
-            target.set(TikaCoreProperties.RESOURCE_NAME_KEY, suppliedName);
-        }
-        String suppliedContentType = tupleMetadata.get(HttpHeaders.CONTENT_TYPE);
-        if (!StringUtils.isBlank(suppliedContentType)) {
-            target.set(HttpHeaders.CONTENT_TYPE, suppliedContentType);
+        for (Property key : CALLER_INPUT_KEYS) {
+            String supplied = tupleMetadata.get(key);
+            if (!StringUtils.isBlank(supplied)) {
+                target.set(key, supplied);
+            }
         }
     }
-
     private ParseContext setupParseContext() throws TikaException, IOException {
         // ContentHandlerFactory and ParseMode are retrieved from ParseContext in ParseHandler.
         // They are set in ParseContext from PipesConfig loaded via TikaLoader at startup.
