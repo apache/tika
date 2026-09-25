@@ -300,9 +300,10 @@ public class TikaResource {
             mediaType = null;
         }
 
+        // a detection hint, not an override: PipesWorker carries Content-Type into the fork,
+        // where MimeTypes.detect keeps it only if it equals or specializes the detected type
         if (mediaType != null) {
             metadata.set(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE, mediaType.toString());
-            metadata.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, mediaType.toString());
         }
 
         if (httpHeaders.containsKey("Content-Length")) {
@@ -380,7 +381,6 @@ public class TikaResource {
             if (contentType != null && !contentType.startsWith("multipart/") &&
                     !"application/octet-stream".equals(contentType)) {
                 metadata.set(org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE, contentType);
-                metadata.add(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE, contentType);
             }
         }
 

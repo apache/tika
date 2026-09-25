@@ -107,6 +107,24 @@ public class PipesForkParserTest {
         }
     }
 
+    /** TIKA-4932: a Content-Type hint the detector rejected must not replace the detected type. */
+    @Test
+    public void testRejectedContentTypeHintDoesNotOverwriteDetectedType() throws Exception {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "plain text, not a pdf");
+        PipesForkParserConfig config = new PipesForkParserConfig().setPluginsDir(PLUGINS_DIR);
+
+        Metadata hints = new Metadata();
+        hints.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis, hints, new ParseContext());
+            assertTrue(result.isSuccess(), "status: " + result.getStatus());
+            String detected = result.getMetadata().get(HttpHeaders.CONTENT_TYPE);
+            assertTrue(detected.startsWith("text/plain"), detected);
+        }
+    }
+
     /** TIKA-4931: javaPath set in code must reach the process that starts the fork. */
     @Test
     public void testJavaPathReachesFork() throws Exception {
