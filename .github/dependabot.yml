@@ -24,6 +24,10 @@ updates:
           interval: "weekly"
       # Allow up to 20 open pull requests
       open-pull-requests-limit: 20
+      ignore:
+          # TIKA-4880: fails some Access catalogs that 5.0.0 reads; a later release still flows
+          - dependency-name: "com.healthmarketscience.jackcess:jackcess"
+            versions: ["5.0.1"]
 
     # Actions pinned by SHA with a "# vX.Y.Z" comment get bumped too. The ASF
     # allow-list expires a superseded version three months after approving the
