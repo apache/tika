@@ -50,6 +50,10 @@ public class PipesForkParserConfig {
                 BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1);
         // Default to single client for simple fork parser use case
         this.pipesConfig.setNumClients(1);
+        // Unset, not defaulted: anything still null/-1 at merge time is left to the user
+        // config file (else PipesConfig's default); anything else was set in code and wins.
+        this.pipesConfig.setJavaPath(null);
+        this.pipesConfig.setSocketTimeoutMillis(-1);
     }
 
     /**
@@ -227,6 +231,8 @@ public class PipesForkParserConfig {
 
     /**
      * Set the Java executable path.
+     *
+     * Unset by default: the user config file's {@code javaPath}, else {@code java}, applies.
      *
      * @param javaPath path to the java executable
      * @return this config for chaining

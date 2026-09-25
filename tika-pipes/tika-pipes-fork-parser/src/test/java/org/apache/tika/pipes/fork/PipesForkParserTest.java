@@ -107,6 +107,63 @@ public class PipesForkParserTest {
         }
     }
 
+    /** TIKA-4931: javaPath set in code must reach the process that starts the fork. */
+    @Test
+    public void testJavaPathReachesFork() throws Exception {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "hello");
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setJavaPath(tempDir.resolve("no-such-java").toString());
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkParserException e =
+                    assertThrows(PipesForkParserException.class, () -> parser.parse(tis));
+            assertTrue(e.getMessage().contains("no-such-java"), e.getMessage());
+        }
+    }
+
+    /** TIKA-4931: a code setting equal to the default still overrides the user config file. */
+    @Test
+    public void testExplicitDefaultJavaPathBeatsUserConfig() throws Exception {
+        Path userConfig = tempDir.resolve("user-config.json");
+        Files.writeString(userConfig, "{\"pipes\":{\"javaPath\":\""
+                + tempDir.resolve("no-such-java").toString().replace("\\", "\\\\") + "\"}}");
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "hello");
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setUserConfigPath(userConfig)
+                .setJavaPath("java");
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
+            assertTrue(result.isSuccess(), "status: " + result.getStatus());
+        }
+    }
+
+    /** TIKA-4931: javaPath never set in code leaves the user config file's value in force. */
+    @Test
+    public void testUnsetJavaPathLeavesUserConfig() throws Exception {
+        Path userConfig = tempDir.resolve("user-config.json");
+        Files.writeString(userConfig, "{\"pipes\":{\"javaPath\":\""
+                + tempDir.resolve("no-such-java").toString().replace("\\", "\\\\") + "\"}}");
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "hello");
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setUserConfigPath(userConfig);
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkParserException e =
+                    assertThrows(PipesForkParserException.class, () -> parser.parse(tis));
+            assertTrue(e.getMessage().contains("no-such-java"), e.getMessage());
+        }
+    }
+
     /**
      * The inline payload is request-owned: a caller reusing the ParseContext must not have this
      * document's bytes retained and re-serialized into later requests.
