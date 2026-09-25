@@ -16,18 +16,12 @@
  */
 package org.apache.tika.pipes.fork;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.TimeoutLimits;
-import org.apache.tika.config.loader.TikaJsonConfig;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -326,33 +320,12 @@ public class PipesForkParserConfig {
      * The user's configuration will be merged with the automatically generated
      * configuration for PipesForkParser. User settings are preserved except
      * for the internal fetcher which is always added.
-     * <p>
-     * The file's {@code pipes} section is applied to {@link #getPipesConfig()} now, so call
-     * this before setting pipes options in code: a setting made in code wins over the file
-     * only if it is made after this call.
      *
      * @param userConfigPath path to the user's configuration file
      * @return this config for chaining
-     * @throws IllegalArgumentException if the file's {@code pipes} section cannot be read
      */
     public PipesForkParserConfig setUserConfigPath(Path userConfigPath) {
         this.userConfigPath = userConfigPath;
-        if (userConfigPath != null) {
-            applyPipesSection(userConfigPath);
-        }
         return this;
-    }
-
-    private void applyPipesSection(Path userConfigPath) {
-        try {
-            JsonNode pipesNode = TikaJsonConfig.load(userConfigPath).getRootNode().get("pipes");
-            if (pipesNode != null && !pipesNode.isNull()) {
-                TikaObjectMapperFactory.getMapper().readerForUpdating(pipesConfig)
-                        .readValue(pipesNode);
-            }
-        } catch (IOException | TikaConfigException e) {
-            throw new IllegalArgumentException(
-                    "Failed to read the pipes section of " + userConfigPath, e);
-        }
     }
 }

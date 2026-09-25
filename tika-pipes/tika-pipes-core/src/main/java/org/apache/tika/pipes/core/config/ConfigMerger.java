@@ -168,6 +168,13 @@ public class ConfigMerger {
                 pipesNode.put("maxFilesProcessedPerProcess", pc.getMaxFilesProcessedPerProcess());
             }
 
+            if (pc.getSocketTimeoutMillis() > 0) {
+                pipesNode.put("socketTimeoutMillis", pc.getSocketTimeoutMillis());
+            }
+            if (pc.getJavaPath() != null) {
+                pipesNode.put("javaPath", pc.getJavaPath());
+            }
+
             // Apply forked JVM args
             List<String> jvmArgs = pc.getForkedJvmArgs();
             if (jvmArgs != null && !jvmArgs.isEmpty()) {
@@ -181,17 +188,10 @@ public class ConfigMerger {
             LOG.debug("Applied pipes config: numClients={}", pc.getNumClients());
         }
 
-        if (overrides.getPipesConfigValues() != null) {
-            ObjectNode values =
-                    TikaObjectMapperFactory.getMapper().valueToTree(overrides.getPipesConfigValues());
-            getOrCreateObject(mapper, root, "pipes").setAll(values);
-        }
-
         // Apply emit strategy
         if (overrides.getEmitStrategy() != null) {
             ObjectNode pipesNode = getOrCreateObject(mapper, root, "pipes");
-            // replaced whole: thresholdBytes is rejected by every type but DYNAMIC
-            ObjectNode emitStrategyNode = pipesNode.putObject("emitStrategy");
+            ObjectNode emitStrategyNode = getOrCreateObject(mapper, pipesNode, "emitStrategy");
             emitStrategyNode.put("type", overrides.getEmitStrategy().name());
             LOG.debug("Applied emit strategy: {}", overrides.getEmitStrategy());
         }

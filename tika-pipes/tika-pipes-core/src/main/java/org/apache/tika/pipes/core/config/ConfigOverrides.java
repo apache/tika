@@ -24,7 +24,6 @@ import java.util.Map;
 
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.pipes.core.EmitStrategy;
-import org.apache.tika.pipes.core.PipesConfig;
 
 /**
  * Configuration overrides for merging with or creating Tika JSON configuration.
@@ -49,7 +48,6 @@ public class ConfigOverrides {
     private final List<FetcherOverride> fetchers;
     private final List<EmitterOverride> emitters;
     private final PipesConfigOverride pipesConfig;
-    private final PipesConfig pipesConfigValues;
     private final String pluginRoots;
     private final EmitStrategy emitStrategy;
     private final TimeoutLimits timeoutLimits;
@@ -58,7 +56,6 @@ public class ConfigOverrides {
         this.fetchers = Collections.unmodifiableList(new ArrayList<>(builder.fetchers));
         this.emitters = Collections.unmodifiableList(new ArrayList<>(builder.emitters));
         this.pipesConfig = builder.pipesConfig;
-        this.pipesConfigValues = builder.pipesConfigValues;
         this.pluginRoots = builder.pluginRoots;
         this.emitStrategy = builder.emitStrategy;
         this.timeoutLimits = builder.timeoutLimits;
@@ -78,10 +75,6 @@ public class ConfigOverrides {
 
     public PipesConfigOverride getPipesConfig() {
         return pipesConfig;
-    }
-
-    public PipesConfig getPipesConfigValues() {
-        return pipesConfigValues;
     }
 
     public String getPluginRoots() {
@@ -157,14 +150,30 @@ public class ConfigOverrides {
         private final int numClients;
         private final int maxFilesProcessedPerProcess;
         private final List<String> forkedJvmArgs;
+        private final long socketTimeoutMillis;
+        private final String javaPath;
 
         public PipesConfigOverride(int numClients,
                                    int maxFilesProcessedPerProcess,
                                    List<String> forkedJvmArgs) {
+            this(numClients, maxFilesProcessedPerProcess, forkedJvmArgs, -1, null);
+        }
+
+        /**
+         * @param socketTimeoutMillis written when positive; -1 leaves the existing config's value
+         * @param javaPath written when non-null; null leaves the existing config's value
+         */
+        public PipesConfigOverride(int numClients,
+                                   int maxFilesProcessedPerProcess,
+                                   List<String> forkedJvmArgs,
+                                   long socketTimeoutMillis,
+                                   String javaPath) {
             this.numClients = numClients;
             this.maxFilesProcessedPerProcess = maxFilesProcessedPerProcess;
             this.forkedJvmArgs = forkedJvmArgs != null ?
                     new ArrayList<>(forkedJvmArgs) : new ArrayList<>();
+            this.socketTimeoutMillis = socketTimeoutMillis;
+            this.javaPath = javaPath;
         }
 
         public int getNumClients() {
@@ -178,6 +187,14 @@ public class ConfigOverrides {
         public List<String> getForkedJvmArgs() {
             return forkedJvmArgs;
         }
+
+        public long getSocketTimeoutMillis() {
+            return socketTimeoutMillis;
+        }
+
+        public String getJavaPath() {
+            return javaPath;
+        }
     }
 
     /**
@@ -187,7 +204,6 @@ public class ConfigOverrides {
         private final List<FetcherOverride> fetchers = new ArrayList<>();
         private final List<EmitterOverride> emitters = new ArrayList<>();
         private PipesConfigOverride pipesConfig;
-        private PipesConfig pipesConfigValues;
         private String pluginRoots;
         private EmitStrategy emitStrategy;
         private TimeoutLimits timeoutLimits;
@@ -246,22 +262,26 @@ public class ConfigOverrides {
         public Builder setPipesConfig(int numClients,
                                       int maxFilesProcessedPerProcess,
                                       List<String> forkedJvmArgs) {
-            this.pipesConfig = new PipesConfigOverride(numClients,
-                    maxFilesProcessedPerProcess, forkedJvmArgs);
-            return this;
+            return setPipesConfig(numClients, maxFilesProcessedPerProcess, forkedJvmArgs,
+                    -1, null);
         }
 
         /**
-         * Set pipes configuration from a {@link PipesConfig}. Every field is written, replacing
-         * the existing config's values, so load that config into it first if they should be
-         * kept. Host code only: this can set {@code javaPath} and {@code forkedJvmArgs}, so
-         * never build it from request input.
+         * Set pipes configuration including the parent-side process settings.
          *
-         * @param pipesConfig the pipes configuration
+         * @param socketTimeoutMillis socket read timeout for the forked process, -1 to leave
+         *                            the existing config's value
+         * @param javaPath java executable for the forked process, null to leave the existing
+         *                 config's value
          * @return this builder
          */
-        public Builder setPipesConfig(PipesConfig pipesConfig) {
-            this.pipesConfigValues = pipesConfig;
+        public Builder setPipesConfig(int numClients,
+                                      int maxFilesProcessedPerProcess,
+                                      List<String> forkedJvmArgs,
+                                      long socketTimeoutMillis,
+                                      String javaPath) {
+            this.pipesConfig = new PipesConfigOverride(numClients,
+                    maxFilesProcessedPerProcess, forkedJvmArgs, socketTimeoutMillis, javaPath);
             return this;
         }
 

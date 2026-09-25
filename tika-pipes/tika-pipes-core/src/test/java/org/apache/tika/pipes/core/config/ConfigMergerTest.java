@@ -26,7 +26,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -35,10 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.config.loader.TikaJsonConfig;
-import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.core.EmitStrategy;
-import org.apache.tika.pipes.core.PipesConfig;
 
 public class ConfigMergerTest {
 
@@ -392,40 +388,37 @@ public class ConfigMergerTest {
         Files.deleteIfExists(result.configPath());
     }
 
-    /** TIKA-4931: every field set in code must reach the merged file, not a hand-picked few. */
+    /** TIKA-4931: socketTimeoutMillis and javaPath set in code reach the merged file. */
     @Test
-    public void testPipesConfigValuesRoundTrip() throws IOException, TikaConfigException {
-        PipesConfig set = new PipesConfig();
-        set.setSocketTimeoutMillis(1234);
-        set.setJavaPath("/opt/jdk/bin/java");
-        set.setStartupTimeoutMillis(5678);
-        set.setForkedJvmArgs(new ArrayList<>(List.of("-Xmx512m")));
+    public void testSocketTimeoutAndJavaPathWritten() throws IOException {
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .setPipesConfig(1, 100, List.of("-Xmx512m"), 1234, "/opt/jdk/bin/java")
+                .build();
 
-        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(null,
-                ConfigOverrides.builder().setPipesConfig(set)
-                        .setEmitStrategy(EmitStrategy.PASSBACK_ALL).build());
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(null, overrides);
 
-        PipesConfig loaded = PipesConfig.load(TikaJsonConfig.load(result.configPath()));
-        assertEquals(1234, loaded.getSocketTimeoutMillis());
-        assertEquals("/opt/jdk/bin/java", loaded.getJavaPath());
-        assertEquals(5678, loaded.getStartupTimeoutMillis());
-        assertEquals(List.of("-Xmx512m"), loaded.getForkedJvmArgs());
-        assertEquals(EmitStrategy.PASSBACK_ALL, loaded.getEmitStrategy().getType());
+        JsonNode pipes = new ObjectMapper().readTree(result.configPath().toFile()).get("pipes");
+        assertEquals(1234, pipes.get("socketTimeoutMillis").asLong());
+        assertEquals("/opt/jdk/bin/java", pipes.get("javaPath").asText());
 
         Files.deleteIfExists(result.configPath());
     }
 
-    /** A PipesConfig override is written whole: callers load the user's values into it first. */
+    /** Unset (-1 / null) leaves the user config file's values alone. */
     @Test
-    public void testPipesConfigValuesReplaceUserValues() throws IOException, TikaConfigException {
+    public void testSocketTimeoutAndJavaPathUnsetKeepUserValues() throws IOException {
         Path userConfig = tempDir.resolve("user-config.json");
-        Files.writeString(userConfig, "{\"pipes\":{\"socketTimeoutMillis\":4321}}");
+        Files.writeString(userConfig,
+                "{\"pipes\":{\"socketTimeoutMillis\":4321,\"javaPath\":\"/file/java\"}}");
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .setPipesConfig(1, 100, null, -1, null)
+                .build();
 
-        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(userConfig,
-                ConfigOverrides.builder().setPipesConfig(new PipesConfig()).build());
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(userConfig, overrides);
 
-        PipesConfig loaded = PipesConfig.load(TikaJsonConfig.load(result.configPath()));
-        assertEquals(PipesConfig.DEFAULT_SOCKET_TIMEOUT_MILLIS, loaded.getSocketTimeoutMillis());
+        JsonNode pipes = new ObjectMapper().readTree(result.configPath().toFile()).get("pipes");
+        assertEquals(4321, pipes.get("socketTimeoutMillis").asLong());
+        assertEquals("/file/java", pipes.get("javaPath").asText());
 
         Files.deleteIfExists(result.configPath());
     }
