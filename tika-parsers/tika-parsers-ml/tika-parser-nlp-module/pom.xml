@@ -154,7 +154,9 @@
                                         <available file="${cache}/en-ner-@{name}.bin" property="present"/>
                                         <checksum if:set="present" file="${cache}/en-ner-@{name}.bin" algorithm="SHA-256"
                                                   property="@{sha256}" verifyproperty="verified"/>
-                                        <copy if:true="${verified}" file="${cache}/en-ner-@{name}.bin"
+                                        <!-- overwrite: testResources may already have copied a stale
+                                             src/test/resources copy left behind by the old ModelGetter -->
+                                        <copy if:true="${verified}" file="${cache}/en-ner-@{name}.bin" overwrite="true"
                                               tofile="${project.build.testOutputDirectory}/org/apache/tika/parser/ner/opennlp/ner-@{name}.bin"/>
                                         <echo unless:true="${verified}" level="warning"
                                               message="OpenNLP model en-ner-@{name}.bin unavailable or corrupt; NER tests will skip"/>
