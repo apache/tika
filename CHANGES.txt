@@ -96,7 +96,10 @@ Release 4.1.0 - 9/25/2026
      what comes back; every other caller key is still injected verbatim.
      Affects PipesForkParser and every tika-server forked-parse endpoint.
      tika-server no longer stamps tk:content-type-override from the request
-     Content-Type; the worker never carried it (TIKA-4932).
+     Content-Type; the worker never carried it. Compat: under CONTENT_ONLY,
+     or a metadata filter that excludes them, Content-Type and
+     tk:resource-name are now absent from the result rather than the
+     caller's own values (TIKA-4932).
 
   EXTRACTION AND FORMATS
 
