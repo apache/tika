@@ -29,7 +29,28 @@
       <includes>
         <include>org.apache.tika:tika-core</include>
         <include>org.apache.tika:tika-bundle-standard</include>
+        <!-- Dependencies that are OSGi bundles themselves (not embedded) -->
+        <include>com.adobe.xmp:xmpcore</include>
+        <include>com.googlecode.plist:dd-plist</include>
+        <include>commons-codec:commons-codec</include>
         <include>commons-io:commons-io</include>
+        <include>commons-logging:commons-logging</include>
+        <include>org.apache.commons:commons-collections4</include>
+        <include>org.apache.commons:commons-compress</include>
+        <include>org.apache.commons:commons-csv</include>
+        <include>org.apache.commons:commons-exec</include>
+        <include>org.apache.commons:commons-lang3</include>
+        <include>org.apache.commons:commons-math3</include>
+        <include>org.apache.pdfbox:fontbox</include>
+        <include>org.apache.pdfbox:pdfbox</include>
+        <include>org.apache.pdfbox:pdfbox-io</include>
+        <include>org.bouncycastle:bcjmail-jdk18on</include>
+        <include>org.bouncycastle:bcpkix-jdk18on</include>
+        <include>org.bouncycastle:bcprov-jdk18on</include>
+        <include>org.bouncycastle:bcutil-jdk18on</include>
+        <include>org.jsoup:jsoup</include>
+        <include>org.ow2.asm:asm</include>
+        <include>org.tukaani:xz</include>
         <include>org.commonmark:commonmark</include>
         <include>org.commonmark:commonmark-ext-gfm-tables</include>
         <include>org.commonmark:commonmark-ext-gfm-strikethrough</include>
