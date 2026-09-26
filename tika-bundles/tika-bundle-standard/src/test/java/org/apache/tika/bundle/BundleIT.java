@@ -20,12 +20,18 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.io.File;
+import java.lang.reflect.Method;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,6 +42,7 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
+import org.xml.sax.ContentHandler;
 
 /**
  * Integration test that boots an Apache Felix OSGi container, installs the
@@ -83,29 +90,24 @@ public class BundleIT {
         ctx = framework.getBundleContext();
 
         // Install all bundles first, then start.
-        // tika-core requires osgi.serviceloader capabilities that are
-        // provided by tika-bundle-standard, so both must be installed
-        // before either can resolve. tika-core also imports the org.commonmark
-        // packages (Markdown serialization), so those bundles must be present too.
-        Bundle commonsIo = install("commons-io.jar");
-        Bundle commonmark = install("commonmark.jar");
-        Bundle commonmarkTables = install("commonmark-ext-gfm-tables.jar");
-        Bundle commonmarkStrikethrough = install("commonmark-ext-gfm-strikethrough.jar");
-        Bundle tikaCore = install("tika-core.jar");
-        Bundle tikaBundle = install("tika-bundle-standard.jar");
+        //
+        // tika-core requires osgi.serviceloader capabilities that are provided by tika-bundle-standard,
+        // so both must be installed before either can resolve.
+        //
+        // The test-bundles directory also holds the dependencies of both that are OSGi bundles themselves.
+        List<Bundle> bundles = new ArrayList<>();
+        try (DirectoryStream<Path> jars = Files.newDirectoryStream(TEST_BUNDLES, "*.jar")) {
+            for (Path jar : jars) {
+                bundles.add(ctx.installBundle(jar.toUri().toString()));
+            }
+        }
+        assertNotNull(findBundle("org.apache.tika.core"), "tika-core bundle not installed");
+        assertNotNull(findBundle("org.apache.tika.bundle-standard"),
+                "tika-bundle-standard not installed");
 
-        commonsIo.start();
-        commonmark.start();
-        commonmarkTables.start();
-        commonmarkStrikethrough.start();
-        tikaCore.start();
-        tikaBundle.start();
-    }
-
-    private static Bundle install(String filename) throws Exception {
-        File f = TEST_BUNDLES.resolve(filename).toFile();
-        assertTrue(f.exists(), "Bundle not found: " + f);
-        return ctx.installBundle(f.toURI().toString());
+        for (Bundle bundle : bundles) {
+            bundle.start();
+        }
     }
 
     @AfterAll
@@ -131,6 +133,44 @@ public class BundleIT {
         }
         assertTrue(hasCore, "Core bundle not found");
         assertTrue(hasBundle, "Standard bundle not found");
+    }
+
+    @Test
+    public void testAllBundlesActive() {
+        for (Bundle b : ctx.getBundles()) {
+            assertEquals(Bundle.ACTIVE, b.getState(), "Bundle not active: " + b.getSymbolicName());
+        }
+    }
+
+    @Test
+    public void testExternalDependenciesWired() throws Exception {
+        // All imports of tika-bundle-standard are optional, so check that the
+        // packages of dependencies that are not embedded are actually wired.
+        Bundle tikaBundle = findBundle("org.apache.tika.bundle-standard");
+        assertNotNull(tikaBundle, "tika-bundle-standard not found");
+        for (String className : new String[]{
+                "com.adobe.internal.xmp.XMPMetaFactory",
+                "com.dd.plist.PropertyListParser",
+                "org.apache.commons.codec.digest.DigestUtils",
+                "org.apache.commons.collections4.MapUtils",
+                "org.apache.commons.compress.archivers.ArchiveStreamFactory",
+                "org.apache.commons.csv.CSVFormat",
+                "org.apache.commons.exec.CommandLine",
+                "org.apache.commons.io.IOUtils",
+                "org.apache.commons.lang3.StringUtils",
+                "org.apache.commons.math3.util.FastMath",
+                "org.apache.fontbox.ttf.TrueTypeFont",
+                "org.apache.pdfbox.Loader",
+                "org.apache.pdfbox.io.RandomAccessRead",
+                "org.bouncycastle.cms.CMSSignedData",
+                "org.bouncycastle.jce.provider.BouncyCastleProvider",
+                "org.jsoup.Jsoup",
+                "org.objectweb.asm.ClassReader"}) {
+            assertNotNull(tikaBundle.loadClass(className), className);
+        }
+        Bundle commonsCompress = findBundle("org.apache.commons.commons-compress");
+        assertNotNull(commonsCompress, "commons-compress bundle not found");
+        assertNotNull(commonsCompress.loadClass("org.tukaani.xz.XZInputStream"));
     }
 
     @Test
@@ -182,6 +222,48 @@ public class BundleIT {
     }
 
     @Test
+    public void testPdfParsing() throws Exception {
+        byte[] pdf = null;
+        try (ZipInputStream zip = new ZipInputStream(
+                BundleIT.class.getResourceAsStream("/test-documents.zip"))) {
+            for (ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
+                if ("testPDF.pdf".equals(entry.getName())) {
+                    pdf = zip.readAllBytes();
+                }
+            }
+        }
+        assertNotNull(pdf, "testPDF.pdf not found");
+
+        Bundle tikaCore = findBundle("org.apache.tika.core");
+        Class<?> metadataClass = tikaCore.loadClass("org.apache.tika.metadata.Metadata");
+        Class<?> tisClass = tikaCore.loadClass("org.apache.tika.io.TikaInputStream");
+        Class<?> contextClass = tikaCore.loadClass("org.apache.tika.parser.ParseContext");
+        Method parse = tikaCore.loadClass("org.apache.tika.parser.Parser").getMethod("parse",
+                tisClass, ContentHandler.class, metadataClass, contextClass);
+
+        Object metadata = metadataClass.getConstructor().newInstance();
+        metadataClass.getMethod("set", String.class, String.class)
+                .invoke(metadata, "Content-Type", "application/pdf");
+        ContentHandler handler = (ContentHandler) tikaCore
+                .loadClass("org.apache.tika.sax.BodyContentHandler")
+                .getConstructor(int.class).newInstance(-1);
+
+        // Uses PDFParser directly: parsing through the registered DefaultParser
+        // service recurses, as TikaActivator feeds it back to itself.
+        Object parser = findBundle("org.apache.tika.bundle-standard")
+                .loadClass("org.apache.tika.parser.pdf.PDFParser")
+                .getConstructor().newInstance();
+        try (AutoCloseable tis = (AutoCloseable) tisClass.getMethod("get", byte[].class)
+                .invoke(null, (Object) pdf)) {
+            parse.invoke(parser, tis, handler, metadata, contextClass.getConstructor().newInstance());
+        }
+
+        Method get = metadataClass.getMethod("get", String.class);
+        assertEquals("Apache Tika - Apache Tika", get.invoke(metadata, "dc:title"));
+        assertTrue(handler.toString().contains("Apache Tika"), "PDF content not extracted");
+    }
+
+    @Test
     public void testTikaClassLoadable() throws Exception {
         // Verify key Tika classes can be loaded from the bundle's classloader
         Bundle tikaCore = findBundle("org.apache.tika.core");
@@ -197,7 +279,7 @@ public class BundleIT {
         assertNotNull(tikaBundle.loadClass("org.apache.tika.parser.microsoft.ooxml.OOXMLParser"));
     }
 
-    private Bundle findBundle(String symbolicName) {
+    private static Bundle findBundle(String symbolicName) {
         for (Bundle b : ctx.getBundles()) {
             if (symbolicName.equals(b.getSymbolicName())) {
                 return b;

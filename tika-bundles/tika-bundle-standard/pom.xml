@@ -101,39 +101,20 @@
               tika-encoding-detector-*|
               tika-langdetect-*|
               jakarta.activation|
-              commons-compress|
-              xz|
-              commons-codec|
-              commons-csv|
-              commons-io|
-              commons-exec|
-              commons-collections4|
-              dd-plist|
               junrar|
-              pdfbox|
               pdfbox-tools|
-              fontbox|
-              bcjmail-jdk18on|
-              bcprov-jdk18on|
-              bcpkix-jdk18on|
-              bcutil-jdk18on|
               poi|
               poi-scratchpad|
               poi-ooxml|
               poi-ooxml-lite|
-              commons-math3|
               curvesapi|
               xmlbeans|
               jackcess|
               jackcess-encrypt|
-              commons-lang3|
-              jsoup|
-              asm|
               juniversalchardet|
               vorbis-java-core|
               vorbis-java-tika|
               metadata-extractor|
-              xmpcore|
               json-simple|
               boilerpipe|
               rome|
