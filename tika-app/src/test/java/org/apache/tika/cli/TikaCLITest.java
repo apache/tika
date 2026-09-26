@@ -408,8 +408,14 @@ public class TikaCLITest {
      */
     @Test
     public void testListMetModels() throws Exception {
-        String content = getParamOutContent("--list-met-models", "-x", resourcePrefix + "alice.cli.test");
-        assertTrue(content.contains("text/plain"));
+        String content = getParamOutContent("--list-met-models");
+        assertTrue(content.contains("AccessPermissions"), "AccessPermissions model missing");
+        assertTrue(content.contains("CAN_MODIFY"), "AccessPermissions.CAN_MODIFY key missing");
+        assertTrue(content.contains("Zip"), "Zip model missing");
+        assertTrue(content.contains("COMMENT"), "Zip.COMMENT key missing");
+        assertTrue(content.contains("TIFF"), "TIFF model missing");
+        assertTrue(content.contains("Message"), "Message model missing");
+        assertTrue(content.contains("PDF"), "PDF model missing");
     }
 
     /**
