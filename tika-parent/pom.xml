@@ -1260,6 +1260,11 @@
         <artifactId>jspecify</artifactId>
         <version>1.0.1</version>
       </dependency>      
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-secure-xml</artifactId>
+        <version>1.0.0</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 

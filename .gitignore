@@ -3,6 +3,7 @@ target
 dependency-reduced-pom.xml
 .idea
 .classpath
+.checkstyle
 .project
 .settings
 *.iml
@@ -25,3 +26,6 @@ tika-grpc/ignite
 # Python bytecode (e.g. from .skills scripts)
 __pycache__/
 *.pyc
+
+_remote.repositories
+/.local_m2_repo/
