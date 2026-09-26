@@ -20,16 +20,29 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -231,6 +244,77 @@ public class XMLReaderUtilsTest {
 
             }
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testTransformerExternalEntity(boolean saxFactory, @TempDir Path dir) throws Exception {
+        Path external = dir.resolve("external.txt");
+        Files.writeString(external, "EXTERNAL_CONTENT");
+        String xml = "<!DOCTYPE root [<!ENTITY external SYSTEM '" + external.toUri() + "'>]>" +
+                "<root>before&external;after</root>";
+        TransformerFactory factory = saxFactory ? XMLReaderUtils.getSAXTransformerFactory() : XMLReaderUtils.getTransformerFactory();
+        Transformer transformer = factory.newTransformer();
+        DOMResult output = new DOMResult();
+        transformer.transform(new StreamSource(new StringReader(xml)), output);
+        assertEquals("beforeafter", ((Document) output.getNode()).getDocumentElement().getTextContent());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testTransformerDocumentResolver(boolean saxFactory, @TempDir Path dir) throws Exception {
+        Path external = dir.resolve("external.xml");
+        Files.writeString(external, "<secret>EXTERNAL_CONTENT</secret>");
+        String uri = external.toUri().toString();
+        String stylesheet = String.format(Locale.ROOT, """
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output method="text"/>
+                  <xsl:template match="/">before<xsl:value-of select="document('%s')/secret"/>after</xsl:template>
+                </xsl:stylesheet>
+                """, uri);
+        TransformerFactory factory = saxFactory ? XMLReaderUtils.getSAXTransformerFactory() : XMLReaderUtils.getTransformerFactory();
+        Transformer transformer = factory.newTransformer(new StreamSource(new StringReader(stylesheet)));
+        StringWriter output = new StringWriter();
+        transformer.transform(new StreamSource(new StringReader("<root/>")), new StreamResult(output));
+        assertEquals("beforeafter", output.toString());
+
+        transformer.setURIResolver((href, base) -> uri.equals(href) ?
+                new StreamSource(new StringReader("<secret>ALLOWED_CONTENT</secret>")) : null);
+        output = new StringWriter();
+        transformer.transform(new StreamSource(new StringReader("<root/>")), new StreamResult(output));
+        assertEquals("beforeALLOWED_CONTENTafter", output.toString());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, include", "true, include", "false, import", "true, import"})
+    public void testTransformerStylesheetResolver(boolean saxFactory, String directive, @TempDir Path dir) throws Exception {
+        String externalStylesheet = """
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:template match="payload" mode="external">EXTERNAL_CONTENT</xsl:template>
+                </xsl:stylesheet>
+                """;
+        Path external = dir.resolve("external.xsl");
+        Files.writeString(external, externalStylesheet);
+        String uri = external.toUri().toString();
+        String stylesheet = String.format(Locale.ROOT, """
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:%s href="%s"/>
+                  <xsl:output method="text"/>
+                  <xsl:template match="/">before<xsl:apply-templates select="root/payload" mode="external"/>after</xsl:template>
+                </xsl:stylesheet>
+                """, directive, uri);
+        TransformerFactory factory = saxFactory ? XMLReaderUtils.getSAXTransformerFactory() : XMLReaderUtils.getTransformerFactory();
+        Transformer transformer = factory.newTransformer(new StreamSource(new StringReader(stylesheet)));
+        StringWriter output = new StringWriter();
+        transformer.transform(new StreamSource(new StringReader("<root><payload/></root>")), new StreamResult(output));
+        assertEquals("beforeafter", output.toString());
+
+        factory.setURIResolver((href, base) -> uri.equals(href) ?
+                new StreamSource(new StringReader(externalStylesheet.replace("EXTERNAL_CONTENT", "ALLOWED_CONTENT"))) : null);
+        transformer = factory.newTransformer(new StreamSource(new StringReader(stylesheet)));
+        output = new StringWriter();
+        transformer.transform(new StreamSource(new StringReader("<root><payload/></root>")), new StreamResult(output));
+        assertEquals("beforeALLOWED_CONTENTafter", output.toString());
     }
 
     private void limitCheck(SAXException e) throws SAXException {

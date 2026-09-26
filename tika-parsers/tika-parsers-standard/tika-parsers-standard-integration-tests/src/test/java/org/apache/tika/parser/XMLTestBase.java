@@ -33,6 +33,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.xml.secure.SecureSAXParserFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -116,7 +117,7 @@ public class XMLTestBase extends TikaTest {
 
             TaggedContentHandler tagged = new TaggedContentHandler(handler);
             try {
-                SAXParserFactory saxParserFactory = SAXParserFactory
+                SAXParserFactory saxParserFactory = SecureSAXParserFactory
                         .newInstance("org.apache.xerces.parsers.SAXParser",
                                 this.getClass().getClassLoader());
                 SAXParser parser = saxParserFactory.newSAXParser();
@@ -141,7 +142,7 @@ public class XMLTestBase extends TikaTest {
 
             TaggedContentHandler tagged = new TaggedContentHandler(handler);
             try {
-                SAXParserFactory saxParserFactory = SAXParserFactory
+                SAXParserFactory saxParserFactory = SecureSAXParserFactory
                         .newInstance();
                 SAXParser parser = saxParserFactory.newSAXParser();
                 parser.parse(stream, new TextContentHandler(handler, true));

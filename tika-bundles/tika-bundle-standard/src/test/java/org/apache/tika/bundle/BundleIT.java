@@ -88,6 +88,7 @@ public class BundleIT {
         // before either can resolve. tika-core also imports the org.commonmark
         // packages (Markdown serialization), so those bundles must be present too.
         Bundle commonsIo = install("commons-io.jar");
+        Bundle commonsSecureXml = install("commons-secure-xml.jar");
         Bundle commonmark = install("commonmark.jar");
         Bundle commonmarkTables = install("commonmark-ext-gfm-tables.jar");
         Bundle commonmarkStrikethrough = install("commonmark-ext-gfm-strikethrough.jar");
@@ -95,6 +96,7 @@ public class BundleIT {
         Bundle tikaBundle = install("tika-bundle-standard.jar");
 
         commonsIo.start();
+        commonsSecureXml.start();
         commonmark.start();
         commonmarkTables.start();
         commonmarkStrikethrough.start();
