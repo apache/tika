@@ -269,6 +269,53 @@ public class TikaGrpcServerTest {
     }
 
     @NotNull
+    /**
+     * TIKA-4930: a fetcher saved at runtime must be usable by the forked worker. With the
+     * default in-memory ConfigStore it lived only in the gRPC JVM and every fetch came back
+     * FETCHER_NOT_FOUND.
+     */
+    @Test
+    public void testRuntimeSavedFetcherReachesTheFork(Resources resources) throws Exception {
+        String serverName = InProcessServerBuilder.generateName();
+        Server server = InProcessServerBuilder
+                .forName(serverName)
+                .directExecutor()
+                .addService(newService(tikaConfigUnlocked))
+                .build()
+                .start();
+        resources.register(server, Duration.ofSeconds(10));
+        ManagedChannel channel = InProcessChannelBuilder
+                .forName(serverName)
+                .directExecutor()
+                .build();
+        resources.register(channel, Duration.ofSeconds(10));
+        TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
+
+        String fetcherId = "runtime-saved-" + UUID.randomUUID();
+        blockingStub.saveFetcher(SaveFetcherRequest
+                .newBuilder()
+                .setFetcherId(fetcherId)
+                .setFetcherType("file-system-fetcher")
+                .setFetcherConfigJson(OBJECT_MAPPER.writeValueAsString(
+                        Map.of("basePath", new File("target").getAbsolutePath())))
+                .build());
+
+        String fetchKey = "tika4930-" + UUID.randomUUID() + ".html";
+        File testFile = new File("target", fetchKey);
+        FileUtils.writeStringToFile(testFile,
+                "<html><body>runtime fetcher</body></html>", StandardCharsets.UTF_8);
+        try {
+            FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey(fetchKey)
+                    .build());
+            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(), reply.getStatus());
+        } finally {
+            FileUtils.deleteQuietly(testFile);
+        }
+    }
+
     private static String createFetcherId(int i) {
         // ComponentIds restricts ids to letters, digits, '.', '_' and '-'
         return "nick" + i + ".is.cool.super-fs";
@@ -538,8 +585,6 @@ public class TikaGrpcServerTest {
         resources.register(channel, Duration.ofSeconds(10));
         TikaGrpc.TikaStub tikaStub = TikaGrpc.newStub(channel);
 
-        // The fetcher must come from the config file: one saved at runtime through
-        // saveFetcher is not visible to the forked worker, and the fetch would fail.
         String fetcherId = createFetcherId(1);
         String fetchKey = "tika4804-" + UUID.randomUUID() + ".html";
         File testFile = new File("target", fetchKey);

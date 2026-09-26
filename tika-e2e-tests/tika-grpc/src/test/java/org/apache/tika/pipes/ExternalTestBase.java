@@ -55,6 +55,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
 import org.apache.tika.pipes.grpc.proto.ListFetchersRequest;
 import org.apache.tika.pipes.grpc.proto.TikaGrpc;
@@ -71,6 +72,7 @@ public abstract class ExternalTestBase {
     public static final int GOV_DOCS_FROM_IDX = Integer.parseInt(System.getProperty("govdocs1.fromIndex", "1"));
     public static final int GOV_DOCS_TO_IDX = Integer.parseInt(System.getProperty("govdocs1.toIndex", "1"));
     public static final String DIGITAL_CORPORA_ZIP_FILES_URL = "https://corp.digitalcorpora.org/corpora/files/govdocs1/zipfiles";
+    private static final boolean USE_GOVDOCS = Boolean.parseBoolean(System.getProperty("tika.e2e.useGovdocs", "false"));
     private static final boolean USE_LOCAL_SERVER = Boolean.parseBoolean(System.getProperty("tika.e2e.useLocalServer", "true"));
     private static final int GRPC_PORT = Integer.parseInt(System.getProperty("tika.e2e.grpcPort", "50052"));
     
@@ -217,7 +219,7 @@ public abstract class ExternalTestBase {
     }
 
     private static void loadGovdocs1() throws IOException, InterruptedException {
-        if (Boolean.parseBoolean(System.getProperty("tika.e2e.useGovdocs", "false"))) {
+        if (USE_GOVDOCS) {
             // Opt-in: download the actual GovDocs1 corpus when explicitly requested via -Dtika.e2e.useGovdocs=true.
             // Default CI runs use committed test fixtures to avoid any network dependency.
             int retries = 3;
@@ -338,12 +340,27 @@ public abstract class ExternalTestBase {
         }
         
         Assertions.assertNotEquals(0, successes.size(), "Should have some successful fetches");
+        assertNoFixtureFailures(errors);
         LOG.info("Processed {} files: {} successes, {} errors", allFetchKeys.size(), successes.size(), errors.size());
         Assertions.assertEquals(keysFromGovdocs1, allFetchKeys, () -> {
             Set<String> missing = new HashSet<>(keysFromGovdocs1);
             missing.removeAll(allFetchKeys);
             return "Missing fetch keys: " + missing;
         });
+    }
+
+    /** The committed fixtures all parse, so any failure on them is a regression; govdocs1 may have real ones. */
+    public static void assertNoFixtureFailures(List<FetchAndParseReply> errors) {
+        if (!USE_GOVDOCS) {
+            Assertions.assertTrue(errors.isEmpty(), () -> "Unexpected failures: " + errors.stream()
+                    .map(r -> r.getFetchKey() + "=" + r.getStatus() + " " + r.getErrorMessage())
+                    .toList());
+        }
+    }
+
+    /** A reply's status is a {@link PipesResult.RESULT_STATUS} name. */
+    public static boolean isSuccess(FetchAndParseReply reply) {
+        return PipesResult.RESULT_STATUS.valueOf(reply.getStatus()).isSuccess();
     }
 
     public static ManagedChannel getManagedChannel() {
