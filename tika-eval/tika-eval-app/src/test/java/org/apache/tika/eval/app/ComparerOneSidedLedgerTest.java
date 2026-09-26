@@ -33,7 +33,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.eval.app.db.H2Util;
 
-/** A 3.x baseline has no jsonl ledger; B's is discovered from extractsB/.run-info without flags. */
+/** A 3.x baseline has no jsonl ledger; B's is discovered from {@code <extractsB>/.run-info} without flags. */
 public class ComparerOneSidedLedgerTest {
 
     @Test
@@ -46,7 +46,7 @@ public class ComparerOneSidedLedgerTest {
             ExtractComparerRunner.main(new String[]{
                     "-i", testDirs.resolve("raw_input").toString(),
                     "-a", testDirs.resolve("extractsA").toString(),
-                    "-b", testDirs.resolve("extractsB").toString(),
+                    "-b", RunInfoFixture.extractsBWithRunInfo(dir).toString(),
                     "-d", db.toAbsolutePath().toString(),
                     "-r", "-rd", reports.toString()
             });
