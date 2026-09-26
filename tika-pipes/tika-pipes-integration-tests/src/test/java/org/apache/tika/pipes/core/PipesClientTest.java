@@ -35,6 +35,8 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -432,11 +434,8 @@ public class PipesClientTest {
             assertEquals(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, pipesResult.status());
             assertTrue(pipesResult.isFatal(), "FAILED_TO_INITIALIZE should be a fatal error");
             Assertions.assertNotNull(pipesResult.message(), "Should have error message from server");
-            assertTrue(pipesResult.message().contains("non-existent-fetcher-plugin") ||
-                      pipesResult.message().contains("TikaConfigException") ||
-                      pipesResult.message().contains("error") ||
-                      pipesResult.message().contains("Exception"),
-                      "Error message should contain details about the failure");
+            assertTrue(pipesResult.message().contains("non-existent-fetcher-plugin"),
+                    "message should name the unknown component: " + pipesResult.message());
         }
     }
 
@@ -1013,6 +1012,42 @@ public class PipesClientTest {
             assertEquals(1, normalResult.emitData().getMetadataList().size());
             Metadata metadata = normalResult.emitData().getMetadataList().get(0);
             assertEquals("Normal Author", metadata.get("dc:creator"));
+        }
+    }
+
+    @Test
+    public void testRecoveryAfterRealOom(@TempDir Path tmp) throws Exception {
+        // Genuine heap exhaustion, not a thrown OutOfMemoryError: the fork must report OOM
+        // and the next document must succeed on a restarted fork.
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+        String oomFile = "mock-real-oom.xml";
+        Files.writeString(inputDir.resolve(oomFile),
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><mock><oom/></mock>", StandardCharsets.UTF_8);
+        String normalFile = "mock-normal.xml";
+        Files.writeString(inputDir.resolve(normalFile),
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><mock>" +
+                        "<metadata action=\"add\" name=\"dc:creator\">Normal Author</metadata>" +
+                        "<write element=\"p\">normal content</write></mock>", StandardCharsets.UTF_8);
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
+        PipesConfig pipesConfig = PipesConfig.load(TikaJsonConfig.load(tikaConfigPath));
+        pipesConfig.setForkedJvmArgs(new ArrayList<>(List.of("-Xmx128m")));
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
+            PipesResult oomResult = pipesClient.process(
+                    new FetchEmitTuple(oomFile, new FetchKey(fetcherName, oomFile),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            assertEquals(PipesResult.RESULT_STATUS.OOM, oomResult.status(), oomResult.message());
+
+            PipesResult normalResult = pipesClient.process(
+                    new FetchEmitTuple(normalFile, new FetchKey(fetcherName, normalFile),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            assertTrue(normalResult.isSuccess(), "after OOM: " + normalResult.status() + " " + normalResult.message());
+            assertEquals("Normal Author",
+                    normalResult.emitData().getMetadataList().get(0).get("dc:creator"));
         }
     }
 

@@ -151,9 +151,8 @@ public class ElasticsearchTest {
                 "\"from\": 0, \"size\": 1000 }";
         results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        // OOM/crash docs (oom.xml, fake_oom.xml) kill the forked JVM and
-        // never emit to the data index, so subtract 2
-        assertEquals(numHtmlDocs + numTestDocs - 2,
+        // fake_oom.xml kills the fork and never emits to the data index
+        assertEquals(numHtmlDocs + numTestDocs - 1,
                 results.getJson().get("hits").get("total").get("value")
                         .asInt());
 
@@ -177,25 +176,9 @@ public class ElasticsearchTest {
                 "should have had 1 parse exception: " + statusCounts);
         assertEquals(1, (int) statusCounts.get("EMIT_SUCCESS"),
                 "should have had 1 emit success: " + statusCounts);
-        assertEquals(2, numberOfCrashes(statusCounts),
-                "should have had 2 forked-process crashes (OOM/TIMEOUT/UNSPECIFIED_CRASH): " +
-                        statusCounts);
+        assertEquals(1, (int) statusCounts.get("OOM"), "fake_oom.xml should be reported as OOM: " + statusCounts);
     }
 
-    private int numberOfCrashes(Map<String, Integer> statusCounts) {
-        // oom.xml (a real heap exhaustion) and fake_oom.xml both crash the fork; how a genuine OOM
-        // surfaces -- OOM vs UNSPECIFIED_CRASH vs TIMEOUT -- is nondeterministic under load, but all
-        // three are PipesResult PROCESS_CRASH statuses. Count the whole category so the assertion is
-        // deterministic and doesn't flake on the exact sub-classification.
-        int sum = 0;
-        for (String crashStatus : new String[]{"OOM", "TIMEOUT", "UNSPECIFIED_CRASH"}) {
-            Integer cnt = statusCounts.get(crashStatus);
-            if (cnt != null) {
-                sum += cnt;
-            }
-        }
-        return sum;
-    }
 
     @Test
     public void testParentChildFSToElasticsearch(
@@ -224,7 +207,7 @@ public class ElasticsearchTest {
         JsonResponse results =
                 client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        // 1 mock file (npe.xml emits; oom.xml + fake_oom.xml crash)
+        // 1 mock file (npe.xml emits; fake_oom.xml crashes)
         // + the .docx has 11 embedded + itself = 12
         assertEquals(numHtmlDocs + 1 + 12,
                 results.getJson().get("hits").get("total").get("value")
@@ -312,7 +295,7 @@ public class ElasticsearchTest {
                 "\"match_all\": {} } }";
         results = client.postJson(endpoint + "/_search", query);
         assertEquals(200, results.getStatus());
-        // 1 mock file (npe.xml emits; oom.xml + fake_oom.xml crash)
+        // 1 mock file (npe.xml emits; fake_oom.xml crashes)
         // + the .docx has 11 embedded + itself = 12
         assertEquals(numHtmlDocs + 1 + 12,
                 results.getJson().get("hits").get("total").get("value")

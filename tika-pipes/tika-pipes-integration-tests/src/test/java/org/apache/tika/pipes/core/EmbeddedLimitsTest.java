@@ -75,8 +75,8 @@ public class EmbeddedLimitsTest {
             // With maxCount=1, we should get the container (1) + 1 embedded = 2 metadata objects
             // Note: The actual count depends on how EmbeddedLimits is applied
             int metadataCount = pipesResult.emitData().getMetadataList().size();
-            assertTrue(metadataCount <= 2,
-                    "Should have at most 2 metadata objects (container + 1 embedded), got: " + metadataCount);
+            assertEquals(2, metadataCount,
+                    "container + 1 embedded, got: " + metadataCount);
         }
     }
 
@@ -120,8 +120,8 @@ public class EmbeddedLimitsTest {
             assertTrue(pipesResult.isSuccess(), "Parse should succeed");
             // Without limits, should get container + all embedded documents
             int metadataCount = pipesResult.emitData().getMetadataList().size();
-            assertTrue(metadataCount >= 2,
-                    "Should have at least 2 metadata objects (container + embedded), got: " + metadataCount);
+            assertEquals(5, metadataCount,
+                    "container + all 4 embedded, got: " + metadataCount);
         }
     }
 
@@ -148,8 +148,8 @@ public class EmbeddedLimitsTest {
             assertTrue(pipesResult.isSuccess(), "Parse should succeed");
             // With maxCount=1, should have limited embedded documents
             int metadataCount = pipesResult.emitData().getMetadataList().size();
-            assertTrue(metadataCount <= 2,
-                    "Should have at most 2 metadata objects with maxCount=1, got: " + metadataCount);
+            assertEquals(2, metadataCount,
+                    "container + 1 embedded, got: " + metadataCount);
         }
     }
 
@@ -206,8 +206,8 @@ public class EmbeddedLimitsTest {
             // The key behavior: parsing stops early, limited metadata is returned
             assertTrue(pipesResult.isSuccess(), "Parse should complete (with exception recorded)");
             int metadataCount = pipesResult.emitData().getMetadataList().size();
-            assertTrue(metadataCount <= 2,
-                    "Should have at most 2 metadata objects with maxCount=1, got: " + metadataCount);
+            assertEquals(2, metadataCount,
+                    "container + 1 embedded, got: " + metadataCount);
             // The status should indicate an exception was encountered
             assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION, pipesResult.status(),
                     "Should have parse exception status when throwOnMaxCount=true and limit exceeded");
@@ -235,8 +235,8 @@ public class EmbeddedLimitsTest {
             // With maxDepth=2, first-level embedded should be parsed
             // mock-embedded.xml has 4 embedded documents
             int metadataCount = pipesResult.emitData().getMetadataList().size();
-            assertTrue(metadataCount >= 2,
-                    "Should have at least 2 metadata objects with maxDepth=2, got: " + metadataCount);
+            assertEquals(5, metadataCount,
+                    "container + all 4 embedded, got: " + metadataCount);
         }
     }
 
@@ -260,8 +260,8 @@ public class EmbeddedLimitsTest {
             assertTrue(pipesResult.isSuccess(), "Parse should succeed");
             // With maxCount=2, we should get container + 2 embedded = 3 metadata objects
             int metadataCount = pipesResult.emitData().getMetadataList().size();
-            assertTrue(metadataCount <= 3,
-                    "Should have at most 3 metadata objects with maxCount=2, got: " + metadataCount);
+            assertEquals(3, metadataCount,
+                    "container + 2 embedded, got: " + metadataCount);
             
             // Check that the limit reached flag is set
             Metadata containerMetadata = pipesResult.emitData().getMetadataList().get(0);

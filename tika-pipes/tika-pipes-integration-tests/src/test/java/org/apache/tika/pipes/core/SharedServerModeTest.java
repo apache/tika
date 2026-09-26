@@ -395,112 +395,11 @@ public class SharedServerModeTest {
     }
 
     @Test
-    public void testOomCausesServerRestart(@TempDir Path tmp) throws Exception {
-        // Test that an OOM causes server crash, and subsequent requests succeed after restart
-        Path inputDir = setupInputDir(tmp);
-        Files.writeString(inputDir.resolve("oom.xml"), MOCK_OOM, StandardCharsets.UTF_8);
-        Files.writeString(inputDir.resolve("ok.xml"), MOCK_OK, StandardCharsets.UTF_8);
-
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
-                "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
-            // First, trigger OOM
-            PipesResult oomResult = pipesParser.parse(new FetchEmitTuple(
-                    "oom.xml",
-                    new FetchKey(FETCHER_NAME, "oom.xml"),
-                    new EmitKey(EMITTER_NAME, ""),
-                    new Metadata(),
-                    new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-            // OOM should be reported
-            assertEquals(PipesResult.RESULT_STATUS.OOM, oomResult.status(),
-                    "OOM file should return OOM status");
-
-            // Now verify the server restarts and subsequent requests succeed
-            // This tests the critical restart-after-crash behavior
-            PipesResult okResult = pipesParser.parse(new FetchEmitTuple(
-                    "ok.xml",
-                    new FetchKey(FETCHER_NAME, "ok.xml"),
-                    new EmitKey(EMITTER_NAME, ""),
-                    new Metadata(),
-                    new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-            assertTrue(okResult.isSuccess(),
-                    "After OOM, server should restart and subsequent request should succeed. Got: " + okResult.status());
-            assertEquals("Test Author", okResult.emitData().getMetadataList().get(0).get("dc:creator"));
-        }
-    }
-
-    @Test
-    public void testOomCausesServerPortChange(@TempDir Path tmp) throws Exception {
-        // CRITICAL TEST: Verify that OOM actually kills the server and restarts on a NEW port.
-        // This test would have caught the bug where ConnectionHandler didn't call System.exit()
-        // and clients were reconnecting to the same (corrupted) server.
+    public void testOomsRestartServerOnNewPort(@TempDir Path tmp) throws Exception {
+        // Each OOM must kill the shared JVM and restart it on a new port; reconnecting to the
+        // same (corrupted) server was a real bug when ConnectionHandler didn't System.exit().
         Path inputDir = setupInputDir(tmp);
         Files.writeString(inputDir.resolve("warmup.xml"), MOCK_OK, StandardCharsets.UTF_8);
-        Files.writeString(inputDir.resolve("oom.xml"), MOCK_OOM, StandardCharsets.UTF_8);
-        Files.writeString(inputDir.resolve("ok.xml"), MOCK_OK, StandardCharsets.UTF_8);
-
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
-                "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
-            // First, make a request to ensure the server is started (lazy initialization)
-            PipesResult warmupResult = pipesParser.parse(new FetchEmitTuple(
-                    "warmup.xml",
-                    new FetchKey(FETCHER_NAME, "warmup.xml"),
-                    new EmitKey(EMITTER_NAME, ""),
-                    new Metadata(),
-                    new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            assertTrue(warmupResult.isSuccess(), "Warmup request should succeed");
-
-            // Now get the initial server port
-            int initialPort = pipesParser.getCurrentServerPort();
-            assertTrue(initialPort > 0, "Should have valid initial port after warmup");
-
-            // Trigger OOM
-            PipesResult oomResult = pipesParser.parse(new FetchEmitTuple(
-                    "oom.xml",
-                    new FetchKey(FETCHER_NAME, "oom.xml"),
-                    new EmitKey(EMITTER_NAME, ""),
-                    new Metadata(),
-                    new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-            assertEquals(PipesResult.RESULT_STATUS.OOM, oomResult.status());
-
-            // Process another request to trigger server restart
-            PipesResult okResult = pipesParser.parse(new FetchEmitTuple(
-                    "ok.xml",
-                    new FetchKey(FETCHER_NAME, "ok.xml"),
-                    new EmitKey(EMITTER_NAME, ""),
-                    new Metadata(),
-                    new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            assertTrue(okResult.isSuccess(), "Post-OOM request should succeed. Got: " + okResult.status());
-
-            // CRITICAL: Verify the server port changed - proves server was actually killed and restarted
-            int newPort = pipesParser.getCurrentServerPort();
-            assertTrue(newPort > 0, "Should have valid new port");
-            assertTrue(newPort != initialPort,
-                    "Server port MUST change after OOM. Initial port: " + initialPort +
-                    ", new port: " + newPort + ". If ports are the same, the server wasn't " +
-                    "properly killed and restarted - this is a critical bug!");
-        }
-    }
-
-    @Test
-    public void testMultipleOomsWithRecovery(@TempDir Path tmp) throws Exception {
-        // Test multiple OOMs with recovery between each
-        Path inputDir = setupInputDir(tmp);
         for (int i = 0; i < 3; i++) {
             Files.writeString(inputDir.resolve("oom" + i + ".xml"), MOCK_OOM, StandardCharsets.UTF_8);
             Files.writeString(inputDir.resolve("ok" + i + ".xml"), MOCK_OK, StandardCharsets.UTF_8);
@@ -512,120 +411,29 @@ public class SharedServerModeTest {
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
         try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
-            for (int i = 0; i < 3; i++) {
-                // Trigger OOM
-                PipesResult oomResult = pipesParser.parse(new FetchEmitTuple(
-                        "oom" + i + ".xml",
-                        new FetchKey(FETCHER_NAME, "oom" + i + ".xml"),
-                        new EmitKey(EMITTER_NAME, ""),
-                        new Metadata(),
-                        new ParseContext(),
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-                assertEquals(PipesResult.RESULT_STATUS.OOM, oomResult.status(),
-                        "OOM " + i + " should return OOM status");
+            assertTrue(parse(pipesParser, "warmup.xml").isSuccess(), "warmup should succeed");
+            int port = pipesParser.getCurrentServerPort();
+            assertTrue(port > 0, "should have a port after warmup");
 
-                // Verify recovery
-                PipesResult okResult = pipesParser.parse(new FetchEmitTuple(
-                        "ok" + i + ".xml",
-                        new FetchKey(FETCHER_NAME, "ok" + i + ".xml"),
-                        new EmitKey(EMITTER_NAME, ""),
-                        new Metadata(),
-                        new ParseContext(),
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-                assertTrue(okResult.isSuccess(),
-                        "After OOM " + i + ", recovery should succeed. Got: " + okResult.status());
+            for (int i = 0; i < 3; i++) {
+                assertEquals(PipesResult.RESULT_STATUS.OOM, parse(pipesParser, "oom" + i + ".xml").status(),
+                        "OOM " + i);
+                PipesResult okResult = parse(pipesParser, "ok" + i + ".xml");
+                assertTrue(okResult.isSuccess(), "after OOM " + i + ": " + okResult.status());
+                assertEquals("Test Author", okResult.emitData().getMetadataList().get(0).get("dc:creator"));
+
+                int newPort = pipesParser.getCurrentServerPort();
+                assertTrue(newPort > 0 && newPort != port,
+                        "server must restart on a new port after OOM " + i + ": " + port + " -> " + newPort);
+                port = newPort;
             }
         }
     }
 
-    @Test
-    public void testConcurrentRequestsDuringOom(@TempDir Path tmp) throws Exception {
-        // Test that when OOM occurs, in-flight requests on other connections
-        // get reasonable results (either success if they completed before crash, or failure)
-        // and that subsequent requests succeed after restart
-        Path inputDir = setupInputDir(tmp);
-
-        // Create a mix of slow files and one OOM file
-        for (int i = 0; i < 10; i++) {
-            Files.writeString(inputDir.resolve("slow" + i + ".xml"), MOCK_SLOW, StandardCharsets.UTF_8);
-        }
-        Files.writeString(inputDir.resolve("oom.xml"), MOCK_OOM, StandardCharsets.UTF_8);
-        Files.writeString(inputDir.resolve("verify.xml"), MOCK_OK, StandardCharsets.UTF_8);
-
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
-                "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
-            ExecutorService executor = Executors.newFixedThreadPool(6);
-            List<Future<PipesResult>> futures = new ArrayList<>();
-
-            // Submit slow requests
-            for (int i = 0; i < 4; i++) {
-                final int idx = i;
-                futures.add(executor.submit(() -> pipesParser.parse(new FetchEmitTuple(
-                        "slow" + idx + ".xml",
-                        new FetchKey(FETCHER_NAME, "slow" + idx + ".xml"),
-                        new EmitKey(EMITTER_NAME, ""),
-                        new Metadata(),
-                        new ParseContext(),
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP))));
-            }
-
-            // Wait a bit for requests to start processing
-            Thread.sleep(100);
-
-            // Submit OOM request
-            Future<PipesResult> oomFuture = executor.submit(() -> pipesParser.parse(new FetchEmitTuple(
-                    "oom.xml",
-                    new FetchKey(FETCHER_NAME, "oom.xml"),
-                    new EmitKey(EMITTER_NAME, ""),
-                    new Metadata(),
-                    new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP)));
-
-            // Wait for all concurrent requests to complete
-            int oomCount = 0;
-            int successCount = 0;
-            int crashCount = 0;
-
-            for (Future<PipesResult> future : futures) {
-                PipesResult result = future.get();
-                if (result.status() == PipesResult.RESULT_STATUS.OOM) {
-                    oomCount++;
-                } else if (result.isSuccess()) {
-                    successCount++;
-                } else if (result.isProcessCrash()) {
-                    crashCount++;
-                }
-            }
-
-            PipesResult oomResult = oomFuture.get();
-            if (oomResult.status() == PipesResult.RESULT_STATUS.OOM) {
-                oomCount++;
-            }
-
-            // The OOM should have been detected
-            assertTrue(oomCount >= 1, "At least one OOM should be detected");
-
-            executor.shutdown();
-
-            // Now verify the server recovered and can process more requests
-            PipesResult verifyResult = pipesParser.parse(new FetchEmitTuple(
-                    "verify.xml",
-                    new FetchKey(FETCHER_NAME, "verify.xml"),
-                    new EmitKey(EMITTER_NAME, ""),
-                    new Metadata(),
-                    new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-            assertTrue(verifyResult.isSuccess(),
-                    "After concurrent OOM, server should restart and process new request. Got: " + verifyResult.status());
-
-            assertRestartsAttributedToOom(pipesParser);
-            assertOneForkPerDeath(pipesParser, 1);
-        }
+    private static PipesResult parse(PipesParser pipesParser, String name) throws Exception {
+        return pipesParser.parse(new FetchEmitTuple(name, new FetchKey(FETCHER_NAME, name),
+                new EmitKey(EMITTER_NAME, ""), new Metadata(), new ParseContext(),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
     }
 
     @Test
@@ -708,7 +516,8 @@ public class SharedServerModeTest {
                         FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP))));
             }
 
-            // Submit OOM request
+            // Let the slow parses get in flight so the OOM kills live siblings
+            Thread.sleep(100);
             phase1Futures.add(executor.submit(() -> pipesParser.parse(new FetchEmitTuple(
                     "oom.xml",
                     new FetchKey(FETCHER_NAME, "oom.xml"),

@@ -39,7 +39,7 @@
   "pipes": {
     "parseMode": "RMETA",
     "onParseException": "EMIT",
-    "numClients": 4,
+    "numClients": 1,
     "emitIntermediateResults": "EMIT_INTERMEDIATE_RESULTS",
     "forkedJvmArgs": ["-Xmx512m"],
     "emitStrategy": {
