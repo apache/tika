@@ -271,14 +271,14 @@ public final class BuildJunkAugmentationData {
                 ? null
                 : loadProfileCsv(profileCsv);
         if (profiles != null) {
-            System.out.printf("  loaded %,d profile rows%n", profiles.size());
+            System.out.printf(Locale.ROOT, "  loaded %,d profile rows%n", profiles.size());
         }
 
         // --- Phase 1: discover baseline scripts + line counts -------------------
         System.out.println("\n--- Phase 1: scanning baseline train files ---");
         Map<String, Long> baselineLineCounts = scanBaselineLineCounts(baselineDir);
         for (Map.Entry<String, Long> e : baselineLineCounts.entrySet()) {
-            System.out.printf("  %-20s baseline=%,d lines%n", e.getKey(), e.getValue());
+            System.out.printf(Locale.ROOT, "  %-20s baseline=%,d lines%n", e.getKey(), e.getValue());
         }
 
         // --- Phase 2: walk extracts ---------------------------------------------
@@ -369,17 +369,17 @@ public final class BuildJunkAugmentationData {
             }
         }
 
-        System.out.printf("  total extracts seen:    %,d%n", totalSeen);
-        System.out.printf("  dropped no-content:     %,d%n", droppedNoContent);
-        System.out.printf("  dropped short:          %,d%n", droppedShort);
+        System.out.printf(Locale.ROOT, "  total extracts seen:    %,d%n", totalSeen);
+        System.out.printf(Locale.ROOT, "  dropped no-content:     %,d%n", droppedNoContent);
+        System.out.printf(Locale.ROOT, "  dropped short:          %,d%n", droppedShort);
         if (profiles != null) {
-            System.out.printf("  dropped no-profile:     %,d%n", droppedNoProfile);
-            System.out.printf("  dropped OOV>%.2f:       %,d%n", maxOov, droppedOov);
-            System.out.printf("  dropped langness<%.2f:  %,d%n", minLangness, droppedLangness);
+            System.out.printf(Locale.ROOT, "  dropped no-profile:     %,d%n", droppedNoProfile);
+            System.out.printf(Locale.ROOT, "  dropped OOV>%.2f:       %,d%n", maxOov, droppedOov);
+            System.out.printf(Locale.ROOT, "  dropped langness<%.2f:  %,d%n", minLangness, droppedLangness);
         }
-        System.out.printf("  dropped mixed-script:   %,d%n", droppedMixedScript);
-        System.out.printf("  dropped no-baseline:    %,d%n", droppedNoBaseline);
-        System.out.printf("  contributed ≥1 chunk:   %,d%n", accepted);
+        System.out.printf(Locale.ROOT, "  dropped mixed-script:   %,d%n", droppedMixedScript);
+        System.out.printf(Locale.ROOT, "  dropped no-baseline:    %,d%n", droppedNoBaseline);
+        System.out.printf(Locale.ROOT, "  contributed ≥1 chunk:   %,d%n", accepted);
 
         // --- Phase 3: apply per-script gates and caps ---------------------------
         System.out.println("\n--- Phase 3: per-script gating and capping ---");
@@ -398,7 +398,7 @@ public final class BuildJunkAugmentationData {
             long cap = Math.min(hardCap, fracCapVal);
 
             if (docs < minDocs) {
-                System.out.printf(
+                System.out.printf(Locale.ROOT, 
                         "  SKIP %-20s docs=%-6d (<%d gate)  chunks=%,d  cap=%,d%n",
                         script, docs, minDocs, chunks.size(), cap);
                 manifest.put(script, new long[]{docs, chunks.size(), 0, baselineLines, cap});
@@ -428,7 +428,7 @@ public final class BuildJunkAugmentationData {
                 for (int k = quota; kept.size() < cap && k < withSym.size(); k++) {
                     kept.add(withSym.get(k));
                 }
-                System.out.printf(
+                System.out.printf(Locale.ROOT, 
                         "  KEEP %-20s docs=%-6d chunks=%,8d -> append=%,6d  "
                         + "(baseline=%,d, cap=%,d, symbol-quota=%d, symbol-bearing-pool=%d)%n",
                         script, docs, chunks.size(), kept.size(), baselineLines, cap,
@@ -437,7 +437,7 @@ public final class BuildJunkAugmentationData {
                 kept = chunks.size() > cap
                         ? new ArrayList<>(chunks.subList(0, (int) cap))
                         : chunks;
-                System.out.printf(
+                System.out.printf(Locale.ROOT, 
                         "  KEEP %-20s docs=%-6d chunks=%,8d -> append=%,6d  (baseline=%,d, cap=%,d)%n",
                         script, docs, chunks.size(), kept.size(), baselineLines, cap);
             }
@@ -468,10 +468,10 @@ public final class BuildJunkAugmentationData {
                     List<String> add = finalLines.get(script);
                     if (add != null && !add.isEmpty()) {
                         rewriteTrainWithAppend(src, dst, add);
-                        System.out.printf("  WROTE  %-30s +%,d lines appended%n", name, add.size());
+                        System.out.printf(Locale.ROOT, "  WROTE  %-30s +%,d lines appended%n", name, add.size());
                     } else {
                         Files.copy(src, dst);
-                        System.out.printf("  COPY   %-30s (no augmentation)%n", name);
+                        System.out.printf(Locale.ROOT, "  COPY   %-30s (no augmentation)%n", name);
                     }
                 } else {
                     Files.copy(src, dst);
@@ -485,7 +485,7 @@ public final class BuildJunkAugmentationData {
             w.write("script\tdocs\tchunks_pre_cap\tlines_appended\tbaseline_lines\tcap\n");
             for (Map.Entry<String, long[]> e : manifest.entrySet()) {
                 long[] r = e.getValue();
-                w.write(String.format("%s\t%d\t%d\t%d\t%d\t%d%n",
+                w.write(String.format(Locale.ROOT, "%s\t%d\t%d\t%d\t%d\t%d%n",
                         e.getKey(), r[0], r[1], r[2], r[3], r[4]));
             }
         }

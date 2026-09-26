@@ -27,6 +27,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -624,6 +625,7 @@ public class PerClientServerManager implements ServerManager {
         boolean hasLog4j = false;
         boolean hasActiveProcessorCount = false;
         boolean hasErrorFile = false;
+        boolean hasLocale = false;
         String origGCString = null;
         String newGCLogString = null;
 
@@ -645,6 +647,9 @@ public class PerClientServerManager implements ServerManager {
             }
             if (arg.startsWith("-XX:ErrorFile=")) {
                 hasErrorFile = true;
+            }
+            if (arg.startsWith("-Duser.language")) {
+                hasLocale = true;
             }
             if (arg.startsWith("-Xloggc:")) {
                 origGCString = arg;
@@ -728,6 +733,10 @@ public class PerClientServerManager implements ServerManager {
             commandLine.add("-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
         }
         commandLine.add("-DpipesClientId=" + clientId);
+        // the fork parses like the parent would; a fresh JVM would take the OS locale instead
+        if (!hasLocale) {
+            commandLine.addAll(ProcessUtils.defaultLocaleJvmArgs(Locale.getDefault()));
+        }
         commandLine.addAll(configArgs);
         commandLine.add("-Djava.io.tmpdir=" + tmpDir.toAbsolutePath());
         commandLine.add("org.apache.tika.pipes.core.server.PipesServer");

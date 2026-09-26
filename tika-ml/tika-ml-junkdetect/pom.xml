@@ -97,13 +97,6 @@
         </configuration>
       </plugin>
       <!-- Diagnostic tests print to stdout / use default-locale formatting freely. -->
-      <plugin>
-        <groupId>de.thetaphi</groupId>
-        <artifactId>forbiddenapis</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
 
