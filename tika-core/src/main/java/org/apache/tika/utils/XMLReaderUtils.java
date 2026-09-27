@@ -36,14 +36,16 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLResolver;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.sax.SAXTransformerFactory;
 
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.xml.secure.SecureDocumentBuilderFactory;
+import org.apache.commons.xml.secure.SecureSAXParserFactory;
+import org.apache.commons.xml.secure.SecureTransformerFactory;
+import org.apache.commons.xml.secure.SecureXMLInputFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -125,10 +127,6 @@ public class XMLReaderUtils implements Serializable {
     private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER =
             (publicId, systemId) -> new InputSource(new StringReader(""));
 
-    //BE CAREFUL with the return type. Some parsers will silently ignore an unexpected return type: CVE-2025-54988
-    private static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER =
-            (publicID, systemID, baseURI, namespace) ->
-                    UnsynchronizedByteArrayInputStream.nullInputStream();
     /**
      * Parser pool size
      */
@@ -222,20 +220,11 @@ public class XMLReaderUtils implements Serializable {
      * @since Apache Tika 0.8
      */
     public static SAXParserFactory getSAXParserFactory() {
-        SAXParserFactory factory = SAXParserFactory.newInstance();
+        SAXParserFactory factory = SecureSAXParserFactory.newNSInstance();
         if (LOG.isDebugEnabled()) {
             LOG.debug("SAXParserFactory class {}", factory.getClass());
         }
-        factory.setNamespaceAware(true);
         factory.setValidating(false);
-        trySetSAXFeature(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        trySetSAXFeature(factory, "http://xml.org/sax/features/external-general-entities", false);
-        trySetSAXFeature(factory, "http://xml.org/sax/features/external-parameter-entities", false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-                false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
-                false);
-
         return factory;
     }
 
@@ -251,22 +240,14 @@ public class XMLReaderUtils implements Serializable {
      */
     public static DocumentBuilderFactory getDocumentBuilderFactory() {
         //borrowed from Apache POI
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = SecureDocumentBuilderFactory.newNSInstance();
         if (LOG.isDebugEnabled()) {
             LOG.debug("DocumentBuilderFactory class {}", factory.getClass());
         }
 
         factory.setExpandEntityReferences(false);
-        factory.setNamespaceAware(true);
         factory.setValidating(false);
 
-        trySetSAXFeature(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        trySetSAXFeature(factory, "http://xml.org/sax/features/external-general-entities", false);
-        trySetSAXFeature(factory, "http://xml.org/sax/features/external-parameter-entities", false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-                false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
-                false);
         trySetXercesSecurityManager(factory);
         return factory;
     }
@@ -304,7 +285,7 @@ public class XMLReaderUtils implements Serializable {
      * @since Apache Tika 1.13
      */
     public static XMLInputFactory getXMLInputFactory() {
-        XMLInputFactory factory = XMLInputFactory.newFactory();
+        XMLInputFactory factory = SecureXMLInputFactory.newFactory();
         if (LOG.isDebugEnabled()) {
             LOG.debug("XMLInputFactory class {}", factory.getClass());
         }
@@ -312,67 +293,15 @@ public class XMLReaderUtils implements Serializable {
         tryToSetStaxProperty(factory, XMLInputFactory.IS_NAMESPACE_AWARE, true);
 
         //try to configure secure processing
-        tryToSetStaxProperty(factory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
         tryToSetStaxProperty(factory, XMLInputFactory.IS_VALIDATING, false);
         tryToSetStaxProperty(factory, XMLInputFactory.SUPPORT_DTD, false);
         tryToSetStaxProperty(factory, XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
 
-        //defense in depth
-        factory.setXMLResolver(IGNORING_STAX_ENTITY_RESOLVER);
         trySetStaxSecurityManager(factory);
         return factory;
     }
 
-    private static void trySetTransformerAttribute(TransformerFactory transformerFactory,
-                                                   String attribute, String value) {
-        try {
-            transformerFactory.setAttribute(attribute, value);
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.warn("Transformer Attribute unsupported: {}", attribute, e);
-        } catch (AbstractMethodError ame) {
-            LOG.warn(
-                    "Cannot set Transformer attribute because outdated XML parser in classpath: {}",
-                    attribute, ame);
-        }
-    }
-
-    private static void trySetSAXFeature(SAXParserFactory saxParserFactory, String feature,
-                                         boolean enabled) {
-        try {
-            saxParserFactory.setFeature(feature, enabled);
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.warn("SAX Feature unsupported: {}", feature, e);
-        } catch (AbstractMethodError ame) {
-            LOG.warn("Cannot set SAX feature because outdated XML parser in classpath: {}", feature,
-                    ame);
-        }
-    }
-
-    private static void trySetSAXFeature(DocumentBuilderFactory documentBuilderFactory,
-                                         String feature, boolean enabled) {
-        try {
-            documentBuilderFactory.setFeature(feature, enabled);
-        } catch (Exception e) {
-            LOG.warn("SAX Feature unsupported: {}", feature, e);
-        } catch (AbstractMethodError ame) {
-            LOG.warn("Cannot set SAX feature because outdated XML parser in classpath: {}", feature,
-                    ame);
-        }
-    }
-
     private static void tryToSetStaxProperty(XMLInputFactory factory, String key, boolean value) {
-        try {
-            factory.setProperty(key, value);
-        } catch (IllegalArgumentException e) {
-            LOG.warn("StAX Feature unsupported: {}", key, e);
-        }
-    }
-
-    private static void tryToSetStaxProperty(XMLInputFactory factory, String key, String value) {
         try {
             factory.setProperty(key, value);
         } catch (IllegalArgumentException e) {
@@ -409,13 +338,8 @@ public class XMLReaderUtils implements Serializable {
      */
     public static TransformerFactory getTransformerFactory() throws TikaException {
         try {
-
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-            return transformerFactory;
-        } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
+            return SecureTransformerFactory.newInstance();
+        } catch (TransformerFactoryConfigurationError e) {
             throw new TikaException("Transformer not available", e);
         }
     }
@@ -430,13 +354,8 @@ public class XMLReaderUtils implements Serializable {
      */
     public static SAXTransformerFactory getSAXTransformerFactory() throws TikaException {
         try {
-
-            SAXTransformerFactory transformerFactory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
-            transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-            return transformerFactory;
-        } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
+            return (SAXTransformerFactory) SecureTransformerFactory.newInstance();
+        } catch (TransformerFactoryConfigurationError e) {
             throw new TikaException("Transformer not available", e);
         }
     }

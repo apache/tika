@@ -27,13 +27,47 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.utils.XMLReaderUtils;
 
 public class TikaConfigAsyncWriterTest {
 
+
+    @Test
+    public void testWriteNewXMLConfig(@TempDir Path dir) throws Exception {
+        SimpleAsyncConfig config = new SimpleAsyncConfig(dir.toString(), dir.toString(), 4,
+                10000L, null, null, null, BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                SimpleAsyncConfig.ExtractBytesMode.NONE, null);
+        Path output = dir.resolve("output.xml");
+        new TikaConfigAsyncWriter(config).write(output);
+
+        Document document = XMLReaderUtils.buildDOM(output);
+        assertEquals("properties", document.getDocumentElement().getTagName());
+        assertEquals(0, document.getDocumentElement().getElementsByTagName("*").getLength());
+    }
+
+    @Test
+    public void testWriteExistingXMLConfig(@TempDir Path dir) throws Exception {
+        Path input = dir.resolve("input.xml");
+        Files.writeString(input, "<properties><entry key=\"test\">value &amp; more</entry></properties>");
+        SimpleAsyncConfig config = new SimpleAsyncConfig(dir.toString(), dir.toString(), 4,
+                10000L, null, null, input.toString(), BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                SimpleAsyncConfig.ExtractBytesMode.NONE, null);
+        Path output = dir.resolve("output.xml");
+        new TikaConfigAsyncWriter(config).write(output);
+
+        Document document = XMLReaderUtils.buildDOM(output);
+        assertEquals("properties", document.getDocumentElement().getTagName());
+        assertEquals(1, document.getElementsByTagName("entry").getLength());
+        Element entry = (Element) document.getElementsByTagName("entry").item(0);
+        assertEquals("test", entry.getAttribute("key"));
+        assertEquals("value & more", entry.getTextContent());
+    }
 
     @Test
     public void testBasic(@TempDir Path dir) throws Exception {

@@ -22,12 +22,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
@@ -63,7 +60,7 @@ class TikaConfigAsyncWriter {
         }
     }
 
-    void _write(Path output) throws ParserConfigurationException, TransformerException, IOException, TikaException, SAXException {
+    void _write(Path output) throws TransformerException, IOException, TikaException, SAXException {
         Document document = null;
         Element properties = null;
         if (simpleAsyncConfig.getTikaConfig() != null) {
@@ -74,8 +71,7 @@ class TikaConfigAsyncWriter {
                         simpleAsyncConfig.getTikaConfig());
             }
         } else {
-            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            document = dbf.newDocumentBuilder().newDocument();
+            document = XMLReaderUtils.getDocumentBuilder().newDocument();
             properties = document.createElement("properties");
             document.appendChild(properties);
         }
@@ -88,8 +84,7 @@ class TikaConfigAsyncWriter {
             }
         }
 
-        Transformer transformer = TransformerFactory
-                .newInstance().newTransformer();
+        Transformer transformer = XMLReaderUtils.getTransformer();
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
         try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
