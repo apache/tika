@@ -44,6 +44,10 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-secure-xml</artifactId>
+    </dependency>
     <!-- Markdown serialization (ToMarkdownContentHandler). BSD 2-Clause, ASF Category A,
          zero transitive dependencies. -->
     <dependency>

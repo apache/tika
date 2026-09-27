@@ -171,6 +171,9 @@ public class BundleIT {
         Bundle commonsCompress = findBundle("org.apache.commons.commons-compress");
         assertNotNull(commonsCompress, "commons-compress bundle not found");
         assertNotNull(commonsCompress.loadClass("org.tukaani.xz.XZInputStream"));
+        Bundle tikaCore = findBundle("org.apache.tika.core");
+        assertNotNull(tikaCore, "tika-core bundle not found");
+        assertNotNull(tikaCore.loadClass("org.apache.commons.xml.secure.SecureSAXParserFactory"));
     }
 
     @Test

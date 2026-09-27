@@ -20,9 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.charset.StandardCharsets;
-import javax.xml.XMLConstants;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.commons.xml.secure.SecureSAXParserFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -117,11 +117,10 @@ public class TestXMLEntityExpansion extends XMLTestBase {
         // create a new SAXParserFactory
         SAXParserFactory factory = null;
         try {
-            factory = SAXParserFactory.newInstance(provider, null);
+            factory = SecureSAXParserFactory.newInstance(provider, null);
         } catch (Exception e) {
             return;
         }
-        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         context.set(SAXParserFactory.class, factory);
         for (int i = 0; i < XMLReaderUtils.getPoolSize() * 2; i++) {
             test("built-in SAX", injected, AUTO_DETECT_PARSER, context);

@@ -281,14 +281,14 @@
   </contributors>
 
   <properties>
-    <revision>4.1.0-SNAPSHOT</revision>
+    <revision>4.1.1-SNAPSHOT</revision>
     <javaVersion>17</javaVersion>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <project.build.outputTimestamp>2026-09-25T19:00:47Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-09-26T15:31:38Z</project.build.outputTimestamp>
     <!-- plugin versions -->
     <!-- updates may not be detected by the maven versions plugin:
          https://github.com/mojohaus/versions/issues/1070 -->
@@ -1260,6 +1260,11 @@
         <artifactId>jspecify</artifactId>
         <version>1.0.1</version>
       </dependency>      
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-secure-xml</artifactId>
+        <version>1.0.0</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
