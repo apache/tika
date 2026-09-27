@@ -30,6 +30,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -79,13 +80,27 @@ public class ExecutableParser implements Parser, MachineMetadata {
                             MACH_O_DYLINKER, MACH_O_BUNDLE, MACH_O_DYLIB_STUB, MACH_O_DSYM,
                             MACH_O_KEXT_BUNDLE)));
 
+    private boolean extractIcons = true;
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
+    /**
+     * Whether icons of PE files (EXE/DLL) are extracted as embedded
+     * <code>.ico</code> documents. Defaults to true.
+     */
+    public boolean isExtractIcons() {
+        return extractIcons;
+    }
+
+    public void setExtractIcons(boolean extractIcons) {
+        this.extractIcons = extractIcons;
+    }
+
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        // We only do metadata, for now
+        // We only do metadata (plus icons for PE files), for now
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         // What kind is it?
@@ -93,7 +108,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
         IOUtils.readFully(tis, first4);
 
         if (first4[0] == (byte) 'M' && first4[1] == (byte) 'Z') {
-            parsePE(xhtml, metadata, tis, first4);
+            parsePE(xhtml, metadata, tis, first4, context);
         } else if (first4[0] == (byte) 0x7f && first4[1] == (byte) 'E' && first4[2] == (byte) 'L' &&
                 first4[3] == (byte) 'F') {
             parseELF(xhtml, metadata, tis, first4);
@@ -112,10 +127,12 @@ public class ExecutableParser implements Parser, MachineMetadata {
     }
 
     /**
-     * Parses a DOS or Windows PE file
+     * Parses a DOS or Windows PE file, extracting metadata and, if
+     * {@link #isExtractIcons()} is set, the icon resources as embedded documents.
      */
-    public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, InputStream tis,
-                        byte[] first4) throws TikaException, IOException {
+    public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, TikaInputStream tis,
+                        byte[] first4, ParseContext context)
+            throws TikaException, IOException, SAXException {
         metadata.set(HttpHeaders.CONTENT_TYPE, PE_EXE.toString());
         metadata.set(PLATFORM, PLATFORM_WINDOWS);
 
@@ -254,6 +271,15 @@ public class ExecutableParser implements Parser, MachineMetadata {
             default:
                 metadata.set(MACHINE_TYPE, MACHINE_UNKNOWN);
                 break;
+        }
+
+        if (extractIcons) {
+            try {
+                PEIconExtractor.extract(tis, sizeOptHdrs, numSectors, xhtml, context);
+            } catch (IOException | TikaException | RuntimeException e) {
+                // A broken resource section must not cost us the metadata above
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
+            }
         }
     }
 
