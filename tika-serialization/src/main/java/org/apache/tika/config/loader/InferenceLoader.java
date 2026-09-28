@@ -59,7 +59,7 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
     private static final List<String> NON_RASTER = List.of("image/svg+xml", "image/vnd.dwg",
             "image/vnd.dxf", "image/x-emf", "image/x-wmf", "image/wmf", "image/emf",
             "image/vnd.adobe.photoshop", "image/x-photoshop", "image/vnd.microsoft.icon",
-            "image/x-icon");
+            "image/x-icon", "image/x-win-bitmap");
 
     @Override
     public InferenceDispatcher load(TikaJsonConfig config, LoaderContext context)
