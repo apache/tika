@@ -17,6 +17,8 @@
 package org.apache.tika.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
@@ -31,6 +33,8 @@ import java.util.NoSuchElementException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.events.XMLEvent;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
@@ -140,6 +144,75 @@ public class XMLReaderUtilsTest {
                 fail("Parser tried to access resource: " + xml, e);
             }
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testStaxRejectsSmallInternalEntity(boolean eventReader) throws Exception {
+        // A single expansion stays below the limit, so this specifically guards disabled DTD processing.
+        String xml = "<!DOCTYPE root [<!ENTITY value 'INTERNAL_CONTENT'>]><root>&value;</root>";
+        XMLInputFactory factory = XMLReaderUtils.getXMLInputFactory(new ParseContext());
+        if (eventReader) {
+            XMLEventReader reader = factory.createXMLEventReader(new StringReader(xml));
+            try {
+                assertThrows(XMLStreamException.class, () -> {
+                    while (reader.hasNext()) {
+                        reader.nextEvent();
+                    }
+                });
+            } finally {
+                reader.close();
+            }
+        } else {
+            XMLStreamReader reader = factory.createXMLStreamReader(new StringReader(xml));
+            try {
+                assertThrows(XMLStreamException.class, () -> {
+                    while (reader.hasNext()) {
+                        reader.next();
+                    }
+                });
+            } finally {
+                reader.close();
+            }
+        }
+    }
+
+    @Test
+    public void testStaxNamespaceAware() throws Exception {
+        // Coverage only: provider defaults preserve this behavior even without Tika's explicit settings.
+        XMLStreamReader reader = XMLReaderUtils.getXMLInputFactory().createXMLStreamReader(
+                new StringReader("<p:root xmlns:p='urn:tika:test' p:flag='value'/>"));
+        try {
+            assertEquals(XMLStreamReader.START_ELEMENT, reader.nextTag());
+            assertEquals("root", reader.getLocalName());
+            assertEquals("urn:tika:test", reader.getNamespaceURI());
+            assertEquals("value", reader.getAttributeValue("urn:tika:test", "flag"));
+        } finally {
+            reader.close();
+        }
+    }
+
+    @Test
+    public void testStaxDoesNotExposeReadableExternalEntity(@TempDir Path tempDir) throws Exception {
+        // Coverage only: Commons Secure XML also blocks this content when DTD support is enabled.
+        Path external = tempDir.resolve("entity.txt");
+        Files.writeString(external, "EXTERNAL_CONTENT", StandardCharsets.UTF_8);
+        String xml = "<!DOCTYPE root [<!ENTITY value SYSTEM '" + external.toUri() + "'>]><root>&value;</root>";
+        XMLEventReader reader = XMLReaderUtils.getXMLInputFactory().createXMLEventReader(new StringReader(xml));
+        StringBuilder text = new StringBuilder();
+        try {
+            while (reader.hasNext()) {
+                XMLEvent event = reader.nextEvent();
+                if (event.isCharacters()) {
+                    text.append(event.asCharacters().getData());
+                }
+            }
+        } catch (XMLStreamException e) {
+            // Rejecting the entity is also acceptable; inspect any content delivered before rejection.
+        } finally {
+            reader.close();
+        }
+        assertFalse(text.toString().contains("EXTERNAL_CONTENT"), text.toString());
     }
 
     @Test

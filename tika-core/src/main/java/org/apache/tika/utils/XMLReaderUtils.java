@@ -267,12 +267,8 @@ public class XMLReaderUtils implements Serializable {
             LOG.debug("XMLInputFactory class {}", factory.getClass());
         }
 
-        tryToSetStaxProperty(factory, XMLInputFactory.IS_NAMESPACE_AWARE, true);
-
-        //try to configure secure processing
-        tryToSetStaxProperty(factory, XMLInputFactory.IS_VALIDATING, false);
+        //try to cause DTDs to throw exceptions
         tryToSetStaxProperty(factory, XMLInputFactory.SUPPORT_DTD, false);
-        tryToSetStaxProperty(factory, XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
         return factory;
     }
 
