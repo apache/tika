@@ -1,5 +1,8 @@
 Release 3.3.3 - ???
 
+  * XFAExtractor now parses XFA with SAX instead of StAX;
+    XMLReaderUtils.getXMLInputFactory() is deprecated (TIKA-4938).
+    
   * PDF: a bookmark outline is now walked without recursion, and lists nest at
     most 50 deep with deeper items joining the deepest list (TIKA-4894).
 

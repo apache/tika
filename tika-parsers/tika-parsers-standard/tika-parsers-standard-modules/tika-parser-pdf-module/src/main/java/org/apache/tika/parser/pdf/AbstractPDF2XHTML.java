@@ -47,7 +47,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
@@ -1307,8 +1306,8 @@ class AbstractPDF2XHTML extends PDFTextStripper {
                 try {
                     xfaExtractor.extract(is, xhtml, metadata, context);
                     return;
-                } catch (XMLStreamException e) {
-                    //if there was an xml parse exception in xfa, try the AcroForm
+                } catch (TikaException e) {
+                    //malformed xfa: record and try the AcroForm
                     EmbeddedDocumentUtil.recordException(e, metadata);
                 } finally {
                     IOUtils.closeQuietly(is);
