@@ -1,5 +1,8 @@
 Release 3.3.3 - ???
 
+  * XFAExtractor now parses XFA with SAX instead of StAX;
+    XMLReaderUtils.getXMLInputFactory() is deprecated (TIKA-4938).
+
   * MagicDetector now compiles its regular expression once, in the
     constructor, instead of recompiling it on every match (TIKA-4796).
 
