@@ -138,6 +138,11 @@ public class XmlSecurityContractTest {
         xmls.add("<?xml version=\"1.0\" standalone=\"no\"?><!DOCTYPE r SYSTEM \"tutorials.dtd\"><r/>");
         xmls.add("<?xml version=\"1.0\" standalone=\"no\"?><!DOCTYPE r SYSTEM \"" + UNROUTABLE +
                 "\"><r/>");
+        // XInclude, in case a provider enables it by default
+        xmls.add("<r xmlns:xi=\"http://www.w3.org/2001/XInclude\"><xi:include href=\"" + secretUri +
+                "\" parse=\"text\"/></r>");
+        xmls.add("<r xmlns:xi=\"http://www.w3.org/2001/XInclude\"><xi:include href=\"" + UNROUTABLE +
+                "\"/></r>");
         // external parameter entity pulling in the declaration
         xmls.add("<!DOCTYPE r [<!ENTITY % p SYSTEM \"" + leakDtdUri + "\">%p;]><r>&leak;</r>");
         xmls.add("<!DOCTYPE r [<!ENTITY % p SYSTEM \"file:///usr/local/app/schema.dtd\">%p;]><r/>");

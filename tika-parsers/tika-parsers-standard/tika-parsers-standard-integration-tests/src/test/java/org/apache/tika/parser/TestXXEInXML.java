@@ -37,6 +37,7 @@ import javax.xml.parsers.SAXParserFactory;
 import org.apache.commons.io.IOUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDMetadata;
 import org.apache.pdfbox.pdmodel.common.PDStream;
 import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
 import org.apache.pdfbox.pdmodel.interactive.form.PDXFAResource;
@@ -60,8 +61,8 @@ import org.apache.tika.utils.XMLReaderUtils;
  * injected into every XML-based format Tika reads: bare XML and its dialects, and the XML
  * parts inside zip containers. The oracle for "fetched" is a local socket that must never
  * see a connection, plus the file-not-found that a resolved bogus file URI would raise.
- * The XFA stream inside a synthesized PDF is covered; XMP packets inside binary formats
- * are not.
+ * XFA and XMP streams inside a synthesized PDF, and XMP packets inside image formats, are
+ * covered by injecting into the packet's own padding.
  */
 public class TestXXEInXML extends XMLTestBase {
 
@@ -134,6 +135,26 @@ public class TestXXEInXML extends XMLTestBase {
                 assertNoFetch(fileName, () -> parseBytes(fileName, injected));
             }
         }
+    }
+
+    // every XML plist carries an Apple DTD reference; dd-plist parses it with its own parser
+    @Test
+    public void testPlistDoctype() throws Exception {
+        String plist = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE plist SYSTEM \"" +
+                new String(xxeHttp, StandardCharsets.UTF_8).replaceAll(".*SYSTEM \"([^\"]+)\".*", "$1") +
+                "\"><plist version=\"1.0\"><dict><key>k</key><string>v</string></dict></plist>";
+        byte[] bytes = plist.getBytes(StandardCharsets.UTF_8);
+        assertNoFetch("inline.plist", () -> parseBytes("inline.plist", bytes));
+    }
+
+    // an XInclude is a fetch vector only if a parser enables it; none may
+    @Test
+    public void testXIncludeNotResolved() throws Exception {
+        String base = new String(xxeHttp, StandardCharsets.UTF_8).replaceAll(".*SYSTEM \"([^\"]+)/xxe.dtd\".*", "$1");
+        byte[] doc = ("<?xml version=\"1.0\"?><r xmlns:xi=\"http://www.w3.org/2001/XInclude\">" +
+                "<xi:include href=\"" + base + "/inc.xml\"/><xi:include href=\"" + BOGUS_FILE + "\" parse=\"text\"/></r>")
+                .getBytes(StandardCharsets.UTF_8);
+        assertNoFetch("xinclude.xml", () -> parseBytes("xinclude.xml", doc));
     }
 
     @ParameterizedTest
@@ -211,6 +232,87 @@ public class TestXXEInXML extends XMLTestBase {
                 "<template xmlns=\"http://www.xfa.org/schema/xfa-template/3.3/\">" +
                 "<subform name=\"form1\"><field name=\"n\"><assist><toolTip>Name</toolTip>" +
                 "</assist></field></subform></template></xdp:xdp>").getBytes(StandardCharsets.UTF_8);
+    }
+
+    // XMP packets inside binary containers: the payload goes in after the xpacket PI and
+    // the same number of padding bytes comes out before the closing PI, so no offset moves
+    private static final String[] XMP_FILES = {"testJPEG_GEO.jpg", "testTIFF.tif", "testPSD_xmp.psd", "testJXL_ISOBMFF.jxl"};
+
+    @ParameterizedTest
+    @ValueSource(strings = {"http", "file"})
+    public void testXmpInBinaryFormats(String payload) throws Exception {
+        for (String fileName : XMP_FILES) {
+            byte[] original = read(fileName);
+            Metadata clean = new Metadata();
+            parseBytes(fileName, original, clean);
+            assertTrue(hasXmpKey(clean), fileName + ": the clean fixture yields no XMP metadata");
+            byte[] injected = injectIntoXmpPacket(original, payload(payload));
+            assertNoFetch(fileName, () -> parseBytes(fileName, injected));
+        }
+    }
+
+    @Test
+    @Timeout(300)
+    public void testExpansionBombInXmp() throws Exception {
+        for (String fileName : XMP_FILES) {
+            byte[] injected = injectIntoXmpPacket(read(fileName), ENTITY_EXPANSION_BOMB);
+            assertBounded(fileName, () -> parseBytes(fileName, injected));
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"http", "file"})
+    public void testXmpInPdf(String payload) throws Exception {
+        byte[] pdf = pdfWithXmp(injectXML(xmpPacket(), payload(payload)));
+        Metadata metadata = new Metadata();
+        assertNoFetch("xmp.pdf", () -> parseBytes("xmp.pdf", pdf, metadata));
+        assertEquals("true", metadata.get(PDF.HAS_XMP), "the XMP stream was not reached");
+    }
+
+    private static boolean hasXmpKey(Metadata metadata) {
+        for (String name : metadata.names()) {
+            if (name.startsWith("xmp") || name.startsWith("dc:")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static byte[] injectIntoXmpPacket(byte[] file, byte[] payload) {
+        String s = new String(file, StandardCharsets.ISO_8859_1);
+        int begin = s.indexOf("<?xpacket begin");
+        assertTrue(begin >= 0, "no XMP packet");
+        int insert = s.indexOf("?>", begin) + 2;
+        int end = s.indexOf("<?xpacket end", insert);
+        int pad = 0;
+        while (pad < end - insert && Character.isWhitespace(s.charAt(end - 1 - pad))) {
+            pad++;
+        }
+        assertTrue(pad >= payload.length, "packet padding " + pad + " < payload " + payload.length);
+        byte[] out = new byte[file.length];
+        System.arraycopy(file, 0, out, 0, insert);
+        System.arraycopy(payload, 0, out, insert, payload.length);
+        System.arraycopy(file, insert, out, insert + payload.length, end - payload.length - insert);
+        System.arraycopy(file, end, out, end, file.length - end);
+        return out;
+    }
+
+    private static byte[] xmpPacket() {
+        return ("<?xpacket begin=\"\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?>" +
+                "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">" +
+                "<rdf:Description rdf:about=\"\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\">" +
+                "<dc:title><rdf:Alt><rdf:li xml:lang=\"x-default\">t</rdf:li></rdf:Alt></dc:title>" +
+                "</rdf:Description></rdf:RDF></x:xmpmeta><?xpacket end=\"w\"?>").getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static byte[] pdfWithXmp(byte[] xmp) throws IOException {
+        try (PDDocument doc = new PDDocument()) {
+            doc.addPage(new PDPage());
+            doc.getDocumentCatalog().setMetadata(new PDMetadata(doc, new ByteArrayInputStream(xmp)));
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            doc.save(bos);
+            return bos.toByteArray();
+        }
     }
 
     private interface Parse {

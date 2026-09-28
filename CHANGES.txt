@@ -9,7 +9,9 @@ Release 4.2.0 - unreleased
      parseSAX and buildDOM never consult the caller's resolver, including a resolver on a
      SAXParser or DocumentBuilder supplied through the ParseContext. TestXXEInXML,
      lost with the parsers-standard-package module, is back in the parsers integration
-     tests and injects XXE and expansion payloads into every XML-based format (TIKA-4939).
+     tests and injects XXE and expansion payloads into every XML-based format, XML plists,
+     XInclude and XMP packets inside JPEG, TIFF, PSD, JXL and PDF included; GeographicInformationXxeTest does the same for the ISO 19139
+     parser's own StAX reader, xlink:href and schemaLocation included (TIKA-4939).
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
 Release 4.1.0 - 9/26/2026
