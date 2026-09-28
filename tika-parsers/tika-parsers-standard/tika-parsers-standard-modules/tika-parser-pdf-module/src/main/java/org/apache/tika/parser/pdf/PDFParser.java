@@ -27,7 +27,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import javax.xml.stream.XMLStreamException;
 
 import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
 import org.apache.pdfbox.Loader;
@@ -741,8 +740,6 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
         try (InputStream is = 
                 UnsynchronizedByteArrayInputStream.builder().setByteArray(pdDocument.getDocumentCatalog().getAcroForm(null).getXFA().getBytes()).get()) {
             ex.extract(is, xhtml, metadata, context);
-        } catch (XMLStreamException e) {
-            throw new TikaException("XML error in XFA", e);
         }
         // no page walk: the renders go in here, before the document ends
         emitter.emitAll(xhtml, maxPages);
