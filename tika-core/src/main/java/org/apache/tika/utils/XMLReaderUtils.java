@@ -68,6 +68,7 @@ import org.apache.tika.sax.OfflineContentHandler;
 /**
  * Utility functions for reading XML.
  */
+@SuppressForbidden
 public class XMLReaderUtils implements Serializable {
 
     /**

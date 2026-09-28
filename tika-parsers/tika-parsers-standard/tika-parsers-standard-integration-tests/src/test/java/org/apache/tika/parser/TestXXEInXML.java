@@ -1,0 +1,269 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.apache.tika.parser;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ConnectException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.utils.XMLReaderUtils;
+
+/**
+ * Drives the document parsers, not XMLReaderUtils, with XXE and entity-expansion payloads
+ * injected into every XML-based format Tika reads: bare XML and its dialects, and the XML
+ * parts inside zip containers. The oracle for "fetched" is a local socket that must never
+ * see a connection, plus the file-not-found that a resolved bogus file URI would raise.
+ * XMP packets and XFA streams inside binary formats are not covered here.
+ */
+public class TestXXEInXML extends XMLTestBase {
+
+    private static final String[] XML_FILES = {"testXXE.xml", "testWORD_2003ml.xml",
+            "testWORD_2006ml.xml", "testSVG.svg", "rsstest_20.rss", "testATOM.atom",
+            "testXLIFF12.xlf", "testTMX.tmx", "test.fb2", "testODTMacro.fodt"};
+
+    private static final String[] ZIP_FILES = {"testWORD.docx", "testWORD_macros.docm",
+            "testEXCEL_textbox.xlsx", "testEXCEL_macro.xlsm", "testPPT_2imgs.pptx",
+            "testPPT_macros.pptm", "testVISIO.vsdx", "testXPS_various.xps", "testEPUB.epub",
+            "testODTStyles2.odt", "testFooter.ods", "testMasterFooter.odp",
+            "testKeynote2018.key", "testPages2013.pages", "testNumbers2013.numbers"};
+
+    private static final String BOGUS_FILE = "file:///couldnt_possibly_exist/xxe.dtd";
+    private static final long MAX_CHARS = 50_000_000L;
+
+    private static ServerSocket oracle;
+    private static Thread acceptor;
+    private static final AtomicInteger CONNECTIONS = new AtomicInteger();
+    private static byte[] xxeHttp;
+    private static byte[] xxeFile;
+
+    @BeforeAll
+    public static void startOracle() throws IOException {
+        oracle = new ServerSocket(0, 50, java.net.InetAddress.getLoopbackAddress());
+        acceptor = new Thread(() -> {
+            while (!oracle.isClosed()) {
+                try (Socket s = oracle.accept()) {
+                    CONNECTIONS.incrementAndGet();
+                } catch (IOException e) {
+                    return;
+                }
+            }
+        }, "xxe-oracle");
+        acceptor.setDaemon(true);
+        acceptor.start();
+        String base = "http://127.0.0.1:" + oracle.getLocalPort() + "/";
+        xxeHttp = ("<!DOCTYPE roottag SYSTEM \"" + base + "xxe.dtd\" [<!ENTITY % p SYSTEM \"" +
+                base + "p.dtd\">%p;]>").getBytes(StandardCharsets.UTF_8);
+        xxeFile = ("<!DOCTYPE roottag SYSTEM \"" + BOGUS_FILE + "\" [<!ENTITY % p SYSTEM \"" +
+                BOGUS_FILE + "\">%p;]>").getBytes(StandardCharsets.UTF_8);
+    }
+
+    @AfterAll
+    public static void stopOracle() throws IOException {
+        oracle.close();
+    }
+
+    // the oracle must catch a parser that does fetch, or every green test below is vacuous
+    @Test
+    public void testOracleDetectsFetch() throws Exception {
+        byte[] doc = injectXML(bareXml(), xxeHttp);
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", true);
+        int before = CONNECTIONS.get();
+        try {
+            factory.newSAXParser().parse(new ByteArrayInputStream(doc), new DefaultHandler());
+        } catch (SAXException | IOException e) {
+            // the oracle closes the connection without answering; an error is expected
+        }
+        assertTrue(CONNECTIONS.get() > before, "unsecured parser did not reach the oracle");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"http", "file"})
+    public void testXmlFiles(String payload) throws Exception {
+        for (String fileName : XML_FILES) {
+            byte[] injected = injectXML(read(fileName), payload(payload));
+            for (int i = 0; i < XMLReaderUtils.getPoolSize() + 1; i++) {
+                assertNoFetch(fileName, () -> parseBytes(fileName, injected));
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"http", "file"})
+    public void testZipContainers(String payload) throws Exception {
+        for (String fileName : ZIP_FILES) {
+            Path injected = injectZip(fileName, payload(payload));
+            try {
+                assertNoFetch(fileName, () -> parsePath(fileName, injected));
+            } finally {
+                Files.delete(injected);
+            }
+        }
+    }
+
+    @Test
+    @Timeout(300)
+    public void testExpansionBombInXmlFiles() throws Exception {
+        for (String fileName : XML_FILES) {
+            byte[] injected = injectXML(read(fileName), ENTITY_EXPANSION_BOMB);
+            assertBounded(fileName, () -> parseBytes(fileName, injected));
+        }
+    }
+
+    @Test
+    @Timeout(600)
+    public void testExpansionBombInZipContainers() throws Exception {
+        for (String fileName : ZIP_FILES) {
+            Path injected = injectZip(fileName, ENTITY_EXPANSION_BOMB);
+            try {
+                assertBounded(fileName, () -> parsePath(fileName, injected));
+            } finally {
+                Files.delete(injected);
+            }
+        }
+    }
+
+    private interface Parse {
+        long run() throws Exception;
+    }
+
+    private static void assertNoFetch(String fileName, Parse parse) {
+        int before = CONNECTIONS.get();
+        try {
+            parse.run();
+        } catch (Exception e) {
+            // injection may well corrupt the document; only a fetch is a failure
+            assertNotAFetch(fileName, e);
+        }
+        assertEquals(before, CONNECTIONS.get(), fileName + ": parser connected to the oracle");
+    }
+
+    private static void assertBounded(String fileName, Parse parse) {
+        try {
+            long chars = parse.run();
+            assertTrue(chars < MAX_CHARS, fileName + ": expanded " + chars + " chars");
+        } catch (Exception e) {
+            Throwable t = e;
+            while (t != null) {
+                if (t.getMessage() != null && t.getMessage().startsWith("harness:")) {
+                    fail(fileName + ": " + t.getMessage());
+                }
+                t = t.getCause();
+            }
+        }
+    }
+
+    private static void assertNotAFetch(String fileName, Exception e) {
+        Throwable t = e;
+        while (t != null) {
+            if (t instanceof FileNotFoundException || t instanceof ConnectException) {
+                fail(fileName + ": parser tried to fetch an external resource", e);
+            }
+            String msg = t.getMessage();
+            if (msg != null && (msg.contains("couldnt_possibly_exist") ||
+                    msg.contains("No such file") || msg.contains("Connection refused"))) {
+                fail(fileName + ": parser tried to fetch an external resource", e);
+            }
+            t = t.getCause();
+        }
+    }
+
+    private static byte[] payload(String name) {
+        return "http".equals(name) ? xxeHttp : xxeFile;
+    }
+
+    private static byte[] bareXml() {
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?><document>blah</document>"
+                .getBytes(StandardCharsets.UTF_8);
+    }
+
+    private static byte[] read(String fileName) throws IOException {
+        try (InputStream is = TestXXEInXML.class.getResourceAsStream("/test-documents/" + fileName)) {
+            assertTrue(is != null, "missing fixture " + fileName);
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            IOUtils.copy(is, bos);
+            return bos.toByteArray();
+        }
+    }
+
+    private static Path injectZip(String fileName, byte[] payload) throws IOException {
+        try (TikaInputStream tis = TikaInputStream.get(
+                TestXXEInXML.class.getResourceAsStream("/test-documents/" + fileName))) {
+            return injectZippedXMLs(tis.getPath(), payload);
+        }
+    }
+
+    private static long parseBytes(String fileName, byte[] bytes) throws Exception {
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            return parseCounting(fileName, tis);
+        }
+    }
+
+    private static long parsePath(String fileName, Path path) throws Exception {
+        try (TikaInputStream tis = TikaInputStream.get(path)) {
+            return parseCounting(fileName, tis);
+        }
+    }
+
+    private static long parseCounting(String fileName, TikaInputStream tis) throws Exception {
+        CountingHandler handler = new CountingHandler();
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
+        AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
+        return handler.count;
+    }
+
+    // stops a runaway expansion instead of waiting for the timeout
+    private static class CountingHandler extends DefaultHandler {
+        long count = 0;
+
+        @Override
+        public void characters(char[] ch, int start, int length) throws SAXException {
+            count += length;
+            if (count > MAX_CHARS) {
+                throw new SAXException("harness: more than " + MAX_CHARS + " characters expanded");
+            }
+        }
+    }
+}
