@@ -112,6 +112,9 @@
 ** `image/heif-sequence`
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/ICNSParser.html[ICNSParser]
 ** `image/icns`
+* `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/ICOParser.html[ICOParser]
+** `image/vnd.microsoft.icon`
+** `image/x-win-bitmap`
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/ImageParser.html[ImageParser]
 ** `image/bmp`
 ** `image/gif`
@@ -119,7 +122,6 @@
 ** `image/jpx`
 ** `image/png`
 ** `image/vnd.wap.wbmp`
-** `image/x-icon`
 ** `image/x-jbig2`
 ** `image/x-ms-bmp`
 ** `image/x-portable-pixmap`
