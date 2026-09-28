@@ -26,11 +26,11 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.xml.sax.Attributes;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -68,7 +68,7 @@ public final class BlockExtractor extends DefaultHandler {
     public static List<Block> extract(String xhtml) throws TikaException, SAXException,
             IOException {
         BlockExtractor extractor = new BlockExtractor();
-        XMLReaderUtils.getSAXParser().parse(new InputSource(new StringReader(xhtml)), extractor);
+        XMLReaderUtils.parseSAX(new StringReader(xhtml), extractor, new ParseContext());
         return extractor.blocks;
     }
 

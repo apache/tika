@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * XmlSecurityContractTest pins XMLReaderUtils' XXE and entity-expansion defenses
+     forbidden-apis now rejects building JAXP or Commons Secure XML parsers anywhere but 
+     XMLReaderUtils (TIKA-4939).
+     
    * Retire Tika's entity expansion limit (default 20) in SAX, DOM and StAX
      parsing in favor of standard Java configuration methods (TIKA-4940).
    

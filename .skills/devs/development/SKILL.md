@@ -156,6 +156,13 @@ personal configuration does not override it.
   invariant, workaround, spec quirk).  Never restate the code, narrate the
   next line, justify the change to a reviewer, or describe past states of
   the code.
+- **XML is parsed only through `XMLReaderUtils.parseSAX` / `buildDOM`** (forbidden-apis
+  rejects the JAXP and Commons Secure XML factories and the raw `getSAXParser` /
+  `getXMLReader` / `getDocumentBuilder` in main code). Never install an `EntityResolver`;
+  a resolver that returns null or a stream-less `InputSource` makes the parser fetch the
+  id itself (CVE-2025-66516). A new XML-bearing format gets a fixture in `TestXXEInXML`;
+  a third-party library that parses XML with its own parser gets its own oracle test
+  (see `GeographicInformationXxeTest`) before it ships.
 - **Input files are hostile**: bound anything derived from document content
   (loop counts, allocations, timeouts); release external processes, temp
   files, and pool slots on every failure path.
