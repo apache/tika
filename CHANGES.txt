@@ -7,6 +7,11 @@ Release 4.2.0 - unreleased
    * Retire Tika's entity expansion limit (default 20) in SAX, DOM and StAX
      parsing in favor of standard Java configuration methods (TIKA-4940).
    
+   * Report the external DTDs and entities a document's XML referenced, which Tika never
+     resolves: tk:xml-external-reference (up to 20 system ids) and
+     tk:xml-external-reference-count on that document's metadata, and
+     tk:xml-external-reference-embedded on a container whose embedded document had any.
+     Every resolver Tika installs answers with an empty stream, never null (TIKA-4941).
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
 Release 4.1.0 - 9/26/2026

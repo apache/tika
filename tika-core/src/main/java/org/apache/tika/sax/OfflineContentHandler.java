@@ -16,9 +16,10 @@
  */
 package org.apache.tika.sax;
 
-import org.apache.commons.io.input.ClosedInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.InputSource;
+
+import org.apache.tika.parser.ParseContext;
 
 /**
  * Content handler decorator that always returns an empty stream from the
@@ -29,8 +30,19 @@ import org.xml.sax.InputSource;
  */
 public class OfflineContentHandler extends ContentHandlerDecorator {
 
+    private final OfflineEntityResolver resolver;
+
     public OfflineContentHandler(ContentHandler handler) {
+        this(handler, null);
+    }
+
+    /**
+     * @param context records refused external references on the document's metadata
+     *                when it holds a {@link org.apache.tika.parser.ParseRecord}; may be null
+     */
+    public OfflineContentHandler(ContentHandler handler, ParseContext context) {
         super(handler);
+        this.resolver = new OfflineEntityResolver(context);
     }
 
     /**
@@ -39,7 +51,7 @@ public class OfflineContentHandler extends ContentHandlerDecorator {
      */
     @Override
     public InputSource resolveEntity(String publicId, String systemId) {
-        return new InputSource(new ClosedInputStream());
+        return resolver.resolveEntity(publicId, systemId);
     }
 
 }
