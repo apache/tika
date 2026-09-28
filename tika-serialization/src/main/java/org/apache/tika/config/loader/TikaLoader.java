@@ -582,7 +582,6 @@ public class TikaLoader {
      *     "maxNumberLength": 500
      *   },
      *   "xml-reader-utils": {
-     *     "maxEntityExpansions": 1000,
      *     "maxNumReuses": 100,
      *     "poolSize": 10
      *   }
@@ -610,6 +609,10 @@ public class TikaLoader {
             GlobalSettings.XmlReaderUtilsConfig xmlReaderUtilsConfig =
                     config.deserialize("xml-reader-utils", GlobalSettings.XmlReaderUtilsConfig.class);
             if (xmlReaderUtilsConfig != null) {
+                if (xmlReaderUtilsConfig.getMaxEntityExpansions() != null) {
+                    LOG.warn("xml-reader-utils.maxEntityExpansions is ignored since 4.2.0; " +
+                            "the JAXP provider's secure-processing limits apply");
+                }
                 globalSettings.setXmlReaderUtils(xmlReaderUtilsConfig);
             }
         }
