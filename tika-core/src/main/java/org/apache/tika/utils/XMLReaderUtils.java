@@ -21,11 +21,9 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringReader;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -75,6 +73,11 @@ public class XMLReaderUtils implements Serializable {
      * and the pool of DOM builders
      */
     public static final int DEFAULT_POOL_SIZE = 10;
+    /**
+     * @deprecated since 4.2.0, removal planned for 5.0; Tika no longer sets an entity
+     * expansion limit. The JAXP provider's secure-processing limits apply.
+     */
+    @Deprecated
     public static final int DEFAULT_MAX_ENTITY_EXPANSIONS = 20;
     public static final int DEFAULT_NUM_REUSES = 100;
     /**
@@ -82,11 +85,7 @@ public class XMLReaderUtils implements Serializable {
      */
     private static final long serialVersionUID = 6110455808615143122L;
     private static final Logger LOG = LoggerFactory.getLogger(XMLReaderUtils.class);
-    private static final String XERCES_SECURITY_MANAGER = "org.apache.xerces.util.SecurityManager";
-    private static final String XERCES_SECURITY_MANAGER_PROPERTY =
-            "http://apache.org/xml/properties/security-manager";
-
-    private static final AtomicBoolean HAS_WARNED_STAX = new AtomicBoolean(false);
+    private static final AtomicBoolean HAS_WARNED_ENTITY_LIMIT = new AtomicBoolean(false);
     private static final ContentHandler IGNORING_CONTENT_HANDLER = new DefaultHandler();
     private static final DTDHandler IGNORING_DTD_HANDLER = new DTDHandler() {
         @Override
@@ -117,7 +116,6 @@ public class XMLReaderUtils implements Serializable {
 
         }
     };
-    private static final String JAXP_ENTITY_EXPANSION_LIMIT_KEY = "jdk.xml.entityExpansionLimit";
     //TODO: figure out if the rw lock is any better than a simple lock
     //these lock the pool arrayblocking queues so that there isn't a race condition
     //of trying to acquire a parser while the pool is being resized
@@ -132,8 +130,6 @@ public class XMLReaderUtils implements Serializable {
      */
     private static int POOL_SIZE = DEFAULT_POOL_SIZE;
     private static int MAX_NUM_REUSES = DEFAULT_NUM_REUSES;
-    private static long LAST_LOG = -1;
-    private static volatile int MAX_ENTITY_EXPANSIONS = determineMaxEntityExpansions();
     private static ArrayBlockingQueue<PoolSAXParser> SAX_PARSERS =
             new ArrayBlockingQueue<>(POOL_SIZE);
     private static ArrayBlockingQueue<PoolDOMBuilder> DOM_BUILDERS =
@@ -145,21 +141,6 @@ public class XMLReaderUtils implements Serializable {
         } catch (TikaException e) {
             throw new RuntimeException("problem initializing SAXParser and DOMBuilder pools", e);
         }
-    }
-
-    private static int determineMaxEntityExpansions() {
-        String expansionLimit = System.getProperty(JAXP_ENTITY_EXPANSION_LIMIT_KEY);
-        if (expansionLimit != null) {
-            try {
-                return Integer.parseInt(expansionLimit);
-            } catch (NumberFormatException e) {
-                LOG.warn(
-                        "Couldn't parse an integer for the entity expansion limit: {}; " +
-                                "backing off to default: {}",
-                        expansionLimit, DEFAULT_MAX_ENTITY_EXPANSIONS);
-            }
-        }
-        return DEFAULT_MAX_ENTITY_EXPANSIONS;
     }
 
     /**
@@ -199,9 +180,7 @@ public class XMLReaderUtils implements Serializable {
      */
     public static SAXParser getSAXParser() throws TikaException {
         try {
-            SAXParser parser = getSAXParserFactory().newSAXParser();
-            trySetXercesSecurityManager(parser);
-            return parser;
+            return getSAXParserFactory().newSAXParser();
         } catch (ParserConfigurationException e) {
             throw new TikaException("Unable to configure a SAX parser", e);
         } catch (SAXException e) {
@@ -247,8 +226,6 @@ public class XMLReaderUtils implements Serializable {
 
         factory.setExpandEntityReferences(false);
         factory.setValidating(false);
-
-        trySetXercesSecurityManager(factory);
         return factory;
     }
 
@@ -296,8 +273,6 @@ public class XMLReaderUtils implements Serializable {
         tryToSetStaxProperty(factory, XMLInputFactory.IS_VALIDATING, false);
         tryToSetStaxProperty(factory, XMLInputFactory.SUPPORT_DTD, false);
         tryToSetStaxProperty(factory, XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-
-        trySetStaxSecurityManager(factory);
         return factory;
     }
 
@@ -736,111 +711,6 @@ public class XMLReaderUtils implements Serializable {
         }
     }
 
-    private static void trySetXercesSecurityManager(DocumentBuilderFactory factory) {
-        //from POI
-        // Try built-in JVM one first, standalone if not
-        for (String securityManagerClassName : new String[]{
-                //"com.sun.org.apache.xerces.internal.util.SecurityManager",
-                XERCES_SECURITY_MANAGER}) {
-            try {
-                Object mgr =
-                        Class.forName(securityManagerClassName).getDeclaredConstructor().newInstance();
-                Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit",
-                        Integer.TYPE);
-                setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
-                factory.setAttribute(XERCES_SECURITY_MANAGER_PROPERTY, mgr);
-                // Stop once one can be setup without error
-                return;
-            } catch (ClassNotFoundException e) {
-                // continue without log, this is expected in some setups
-            } catch (Throwable e) {     // NOSONAR - also catch things like NoClassDefError here
-                // throttle the log somewhat as it can spam the log otherwise
-                if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                    LOG.warn(
-                            "SAX Security Manager could not be setup [log suppressed for 5 " +
-                                    "minutes]",
-                            e);
-                    LAST_LOG = System.currentTimeMillis();
-                }
-            }
-        }
-
-        // separate old version of Xerces not found => use the builtin way of setting the property
-        try {
-            factory.setAttribute("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
-                    MAX_ENTITY_EXPANSIONS);
-        } catch (IllegalArgumentException e) {
-            // NOSONAR - also catch things like NoClassDefError here
-            // throttle the log somewhat as it can spam the log otherwise
-            if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                LOG.warn("SAX Security Manager could not be setup [log suppressed for 5 minutes]",
-                        e);
-                LAST_LOG = System.currentTimeMillis();
-            }
-        }
-    }
-
-    private static void trySetXercesSecurityManager(SAXParser parser) {
-        //from POI
-        // Try built-in JVM one first, standalone if not
-        for (String securityManagerClassName : new String[]{
-                //"com.sun.org.apache.xerces.internal.util.SecurityManager",
-                XERCES_SECURITY_MANAGER}) {
-            try {
-                Object mgr =
-                        Class.forName(securityManagerClassName).getDeclaredConstructor().newInstance();
-                Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
-                setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
-
-                parser.setProperty(XERCES_SECURITY_MANAGER_PROPERTY, mgr);
-                // Stop once one can be setup without error
-                return;
-            } catch (ClassNotFoundException e) {
-                // continue without log, this is expected in some setups
-            } catch (Throwable e) {
-                // NOSONAR - also catch things like NoClassDefError here
-                // throttle the log somewhat as it can spam the log otherwise
-                if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                    LOG.warn(
-                            "SAX Security Manager could not be setup [log suppressed for 5 " +
-                                    "minutes]",
-                            e);
-                    LAST_LOG = System.currentTimeMillis();
-                }
-            }
-        }
-
-        // separate old version of Xerces not found => use the builtin way of setting the property
-        try {
-            parser.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
-                    MAX_ENTITY_EXPANSIONS);
-        } catch (SAXException e) {     // NOSONAR - also catch things like NoClassDefError here
-            // throttle the log somewhat as it can spam the log otherwise
-            if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                LOG.warn("SAX Security Manager could not be setup [log suppressed for 5 minutes]",
-                        e);
-                LAST_LOG = System.currentTimeMillis();
-            }
-        }
-    }
-
-    private static void trySetStaxSecurityManager(XMLInputFactory inputFactory) {
-        //try default java entity expansion, then fallback to woodstox, then warn...once.
-        try {
-            inputFactory.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
-                    MAX_ENTITY_EXPANSIONS);
-        } catch (IllegalArgumentException e) {
-            try {
-                inputFactory.setProperty("com.ctc.wstx.maxEntityCount", MAX_ENTITY_EXPANSIONS);
-            } catch (IllegalArgumentException e2) {
-                if (HAS_WARNED_STAX.getAndSet(true) == false) {
-                    LOG.warn("Could not set limit on maximum entity expansions for: " + inputFactory.getClass());
-                }
-            }
-
-        }
-    }
-
     /**
      * Get the maximum number of times a SAXParser or DOMBuilder may be reused.
      *
@@ -861,7 +731,7 @@ public class XMLReaderUtils implements Serializable {
     /**
      * Set the pool size for cached XML parsers.  This has a side
      * effect of locking the pool, and rebuilding the pool from
-     * scratch with the most recent settings, such as {@link #MAX_ENTITY_EXPANSIONS}
+     * scratch with the most recent settings.
      *
      * As of Tika 3.2.1, if a value of <code>0</code> is passed in, no SAXParsers or DOMBuilders
      * will be pooled, and a new parser/builder will be built for each parse.
@@ -920,26 +790,28 @@ public class XMLReaderUtils implements Serializable {
         POOL_SIZE = poolSize;
     }
 
+    /**
+     * @return -1: Tika sets no entity expansion limit; the JAXP provider's
+     * secure-processing limits apply
+     * @deprecated since 4.2.0, removal planned for 5.0
+     */
+    @Deprecated
     public static int getMaxEntityExpansions() {
-        return MAX_ENTITY_EXPANSIONS;
+        return -1;
     }
 
     /**
-     * Set the maximum number of entity expansions allowable in SAX/DOM/StAX parsing.
-     * <b>NOTE:</b>A value less than or equal to zero indicates no limit.
-     * This will override the system property {@link #JAXP_ENTITY_EXPANSION_LIMIT_KEY}
-     * and the {@link #DEFAULT_MAX_ENTITY_EXPANSIONS} value for allowable entity expansions
-     * <p>
-     * <b>NOTE:</b> To trigger a rebuild of the pool of parsers with this setting,
-     * the client must call {@link #setPoolSize(int)} to rebuild the SAX and DOM parsers
-     * with this setting.
-     * </p>
+     * No-op. Tika no longer sets an entity expansion limit; the JAXP provider's
+     * secure-processing limits apply on every parse.
      *
-     * @param maxEntityExpansions -- maximum number of allowable entity expansions
-     * @since Apache Tika 1.19
+     * @deprecated since 4.2.0, removal planned for 5.0
      */
+    @Deprecated
     public static void setMaxEntityExpansions(int maxEntityExpansions) {
-        MAX_ENTITY_EXPANSIONS = maxEntityExpansions;
+        if (!HAS_WARNED_ENTITY_LIMIT.getAndSet(true)) {
+            LOG.warn("setMaxEntityExpansions is ignored since 4.2.0; " +
+                    "the JAXP provider's secure-processing limits apply");
+        }
     }
 
     /**
@@ -957,66 +829,12 @@ public class XMLReaderUtils implements Serializable {
     }
 
     private static PoolSAXParser buildPoolParser(int generation, SAXParser parser) {
-        boolean canReset = false;
         try {
             parser.reset();
-            canReset = true;
-        } catch (UnsupportedOperationException e) {
-            canReset = false;
-        }
-        boolean hasSecurityManager = false;
-        try {
-            Object mgr =
-                    Class.forName(XERCES_SECURITY_MANAGER).getDeclaredConstructor().newInstance();
-            Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
-            setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
-
-            parser.setProperty(XERCES_SECURITY_MANAGER_PROPERTY, mgr);
-            hasSecurityManager = true;
-        } catch (SecurityException e) {
-            //don't swallow security exceptions
-            throw e;
-        } catch (ClassNotFoundException e) {
-            // continue without log, this is expected in some setups
-        } catch (Throwable e) {
-            // NOSONAR - also catch things like NoClassDefError here
-            // throttle the log somewhat as it can spam the log otherwise
-            if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                LOG.warn("SAX Security Manager could not be setup [log suppressed for 5 minutes]",
-                        e);
-                LAST_LOG = System.currentTimeMillis();
-            }
-        }
-
-        boolean canSetJaxPEntity = false;
-        if (!hasSecurityManager) {
-            // use the builtin way of setting the property
-            try {
-                parser.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
-                        MAX_ENTITY_EXPANSIONS);
-                canSetJaxPEntity = true;
-            } catch (SAXException e) {     // NOSONAR - also catch things like NoClassDefError here
-                // throttle the log somewhat as it can spam the log otherwise
-                if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                    LOG.warn(
-                            "SAX Security Manager could not be setup [log suppressed for 5 " +
-                                    "minutes]",
-                            e);
-                    LAST_LOG = System.currentTimeMillis();
-                }
-            }
-        }
-
-        if (!canReset && hasSecurityManager) {
-            return new XercesPoolSAXParser(generation, parser);
-        } else if (canReset && hasSecurityManager) {
-            return new Xerces2PoolSAXParser(generation, parser);
-        } else if (canReset && !hasSecurityManager && canSetJaxPEntity) {
             return new BuiltInPoolSAXParser(generation, parser);
-        } else {
+        } catch (UnsupportedOperationException e) {
             return new UnrecognizedPoolSAXParser(generation, parser);
         }
-
     }
 
     private static void clearReader(XMLReader reader) {
@@ -1083,46 +901,6 @@ public class XMLReaderUtils implements Serializable {
 
     }
 
-    private static class XercesPoolSAXParser extends PoolSAXParser {
-        public XercesPoolSAXParser(int generation, SAXParser parser) {
-            super(generation, parser);
-        }
-
-        @Override
-        public void reset() {
-            //don't do anything
-            try {
-                XMLReader reader = saxParser.getXMLReader();
-                clearReader(reader);
-            } catch (SAXException e) {
-                //swallow
-            }
-        }
-    }
-
-    private static class Xerces2PoolSAXParser extends PoolSAXParser {
-        public Xerces2PoolSAXParser(int generation, SAXParser parser) {
-            super(generation, parser);
-        }
-
-        @Override
-        void reset() {
-            try {
-                Object object = saxParser.getProperty(XERCES_SECURITY_MANAGER_PROPERTY);
-                saxParser.reset();
-                saxParser.setProperty(XERCES_SECURITY_MANAGER_PROPERTY, object);
-            } catch (SAXException e) {
-                LOG.warn("problem resetting sax parser", e);
-            }
-            try {
-                XMLReader reader = saxParser.getXMLReader();
-                clearReader(reader);
-            } catch (SAXException e) {
-                // ignored
-            }
-        }
-    }
-
     private static class BuiltInPoolSAXParser extends PoolSAXParser {
         public BuiltInPoolSAXParser(int generation, SAXParser parser) {
             super(generation, parser);
@@ -1140,9 +918,8 @@ public class XMLReaderUtils implements Serializable {
         }
     }
 
+    //parser that does not support reset(); try anyway on every release
     private static class UnrecognizedPoolSAXParser extends PoolSAXParser {
-        //if unrecognized, try to set all protections
-        //and try to reset every time
         public UnrecognizedPoolSAXParser(int generation, SAXParser parser) {
             super(generation, parser);
         }
@@ -1160,7 +937,6 @@ public class XMLReaderUtils implements Serializable {
             } catch (SAXException e) {
                 // ignored
             }
-            trySetXercesSecurityManager(saxParser);
         }
     }
 

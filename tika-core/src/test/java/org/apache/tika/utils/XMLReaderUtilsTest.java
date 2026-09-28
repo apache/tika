@@ -47,6 +47,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ToTextContentHandler;
@@ -106,6 +107,9 @@ public class XMLReaderUtilsTest {
 
     private static final String[] EXTERNAL_ENTITY_XMLS = new String[]{ EXTERNAL_DTD_SIMPLE_FILE, EXTERNAL_DTD_SIMPLE_URL,
             EXTERNAL_ENTITY, EXTERNAL_LOCAL_DTD };
+
+    //above the entity expansion limit Tika set through 4.1.0
+    private static final int EXTERNAL_REFERENCES = 25;
 
     private static final String[] BILLION_LAUGHS = new String[]{ BILLION_LAUGHS_CLASSICAL, BILLION_LAUGHS_VARIANT };
 
@@ -315,6 +319,35 @@ public class XMLReaderUtilsTest {
         output = new StringWriter();
         transformer.transform(new StreamSource(new StringReader("<root><payload/></root>")), new StreamResult(output));
         assertEquals("beforeALLOWED_CONTENTafter", output.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testManyExternalReferencesParse(boolean dom, @TempDir Path dir) throws Exception {
+        // external references resolve to nothing and must not fail the parse; nothing is read
+        Path external = dir.resolve("external.dtd");
+        Files.writeString(external, "<!ENTITY ext 'LEAKED'>");
+        StringBuilder sb = new StringBuilder("<!DOCTYPE root SYSTEM '" + external.toUri() +
+                "' [<!ENTITY ext SYSTEM '" + external.toUri() + "'>]><root>");
+        for (int i = 0; i < EXTERNAL_REFERENCES; i++) {
+            sb.append("<e>a&ext;b</e>");
+        }
+        String xml = sb.append("</root>").toString();
+        String text;
+        if (dom) {
+            Document doc = XMLReaderUtils.buildDOM(new StringReader(xml), new ParseContext());
+            text = doc.getDocumentElement().getTextContent();
+        } else {
+            StringBuilder chars = new StringBuilder();
+            XMLReaderUtils.parseSAX(new StringReader(xml), new DefaultHandler() {
+                @Override
+                public void characters(char[] ch, int start, int length) {
+                    chars.append(ch, start, length);
+                }
+            }, new ParseContext());
+            text = chars.toString();
+        }
+        assertEquals("ab".repeat(EXTERNAL_REFERENCES), text);
     }
 
     private void limitCheck(SAXException e) throws SAXException {
