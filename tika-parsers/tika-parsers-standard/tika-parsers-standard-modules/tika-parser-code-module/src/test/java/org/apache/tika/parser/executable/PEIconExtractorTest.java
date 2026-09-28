@@ -352,6 +352,21 @@ public class PEIconExtractorTest extends TikaTest {
     }
 
     /**
+     * The pre-4.1.1 entry point still yields the metadata, just no icons.
+     */
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testLegacyParsePE() throws Exception {
+        Metadata metadata = new Metadata();
+        byte[] exe = readTestResource(EXE);
+        try (ByteArrayInputStream is = new ByteArrayInputStream(exe, 4, exe.length - 4)) {
+            new ExecutableParser().parsePE(null, metadata, is, Arrays.copyOf(exe, 4));
+        }
+        assertEquals(ExecutableParser.MACHINE_x86_32, metadata.get(ExecutableParser.MACHINE_TYPE));
+        assertEquals("Windows", metadata.get(ExecutableParser.PLATFORM));
+    }
+
+    /**
      * Cutting the file inside the resource section yields the icons that are
      * still complete, silently; cutting before it is reported, but never
      * costs the header metadata.

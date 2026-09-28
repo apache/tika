@@ -128,12 +128,49 @@ public class ExecutableParser implements Parser, MachineMetadata {
     }
 
     /**
+     * Parses a DOS or Windows PE file, extracting metadata only.
+     *
+     * @deprecated since 4.1.1, use
+     * {@link #parsePE(XHTMLContentHandler, Metadata, TikaInputStream, byte[], ParseContext)},
+     * which also extracts the icons as embedded documents
+     */
+    @Deprecated
+    public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, InputStream tis,
+                        byte[] first4) throws TikaException, IOException {
+        parsePEHeader(metadata, tis);
+    }
+
+    /**
      * Parses a DOS or Windows PE file, extracting metadata and, if
      * {@link #isExtractIcons()} is set, the icon resources as embedded documents.
      */
     public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, TikaInputStream tis,
                         byte[] first4, ParseContext context)
             throws TikaException, IOException, SAXException {
+        CoffHeader header = parsePEHeader(metadata, tis);
+        if (header == null || !extractIcons) {
+            return;
+        }
+        try {
+            PEIconExtractor.extract(tis, header.sizeOptHdrs(), header.numSections(), xhtml,
+                    metadata, context);
+        } catch (SecurityException | EmbeddedLimitReachedException e) {
+            // Limits and sandboxing must surface to the caller
+            throw e;
+        } catch (IOException | TikaException | RuntimeException e) {
+            // A broken resource section must not cost us the metadata above
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
+        }
+    }
+
+    /**
+     * Reads the MS-DOS stub and the COFF header into metadata.
+     *
+     * @return the header fields the resource walk needs, or null if this is
+     * not a PE file
+     */
+    private CoffHeader parsePEHeader(Metadata metadata, InputStream tis)
+            throws TikaException, IOException {
         metadata.set(HttpHeaders.CONTENT_TYPE, PE_EXE.toString());
         metadata.set(PLATFORM, PLATFORM_WINDOWS);
 
@@ -146,7 +183,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         // Reasonability check - while it may go anywhere, it's normally in the first few kb
         if (peOffset > 4096 || peOffset < 0x3f) {
-            return;
+            return null;
         }
 
         // Skip the rest of the MS-DOS stub (if PE), until we reach what should
@@ -162,7 +199,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
             // Good, has a valid PE signature
         } else {
             // Old style MS-DOS
-            return;
+            return null;
         }
 
         // Read the header values
@@ -273,18 +310,10 @@ public class ExecutableParser implements Parser, MachineMetadata {
                 metadata.set(MACHINE_TYPE, MACHINE_UNKNOWN);
                 break;
         }
+        return new CoffHeader(sizeOptHdrs, numSectors);
+    }
 
-        if (extractIcons) {
-            try {
-                PEIconExtractor.extract(tis, sizeOptHdrs, numSectors, xhtml, metadata, context);
-            } catch (SecurityException | EmbeddedLimitReachedException e) {
-                // Limits and sandboxing must surface to the caller
-                throw e;
-            } catch (IOException | TikaException | RuntimeException e) {
-                // A broken resource section must not cost us the metadata above
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
-            }
-        }
+    private record CoffHeader(int sizeOptHdrs, int numSections) {
     }
 
     /**
