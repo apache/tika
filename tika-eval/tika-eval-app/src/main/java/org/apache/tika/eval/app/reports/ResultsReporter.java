@@ -18,7 +18,6 @@ package org.apache.tika.eval.app.reports;
 
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.xml.parsers.DocumentBuilder;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
@@ -86,11 +84,7 @@ public class ResultsReporter {
 
         ResultsReporter r = new ResultsReporter();
 
-        DocumentBuilder docBuilder = XMLReaderUtils.getDocumentBuilder();
-        Document doc;
-        try (InputStream is = Files.newInputStream(p)) {
-            doc = docBuilder.parse(is);
-        }
+        Document doc = XMLReaderUtils.buildDOM(p);
         Node docElement = doc.getDocumentElement();
         assert (docElement
                 .getNodeName()

@@ -198,6 +198,8 @@ public class XMLReaderUtils implements Serializable {
      * @see #getSAXParserFactory()
      * @since Apache Tika 0.8
      */
+    // a raw parser honors a caller resolver that answers with a bare system id; in-tree
+    // code parses through parseSAX, which shadows the caller's resolver (TIKA-4939)
     public static SAXParser getSAXParser() throws TikaException {
         try {
             SAXParser parser = getSAXParserFactory().newSAXParser();
@@ -262,6 +264,15 @@ public class XMLReaderUtils implements Serializable {
      *
      * @return DOM Builder
      * @since Apache Tika 1.13
+     */
+    public static Document newDocument() throws TikaException {
+        return getDocumentBuilder().newDocument();
+    }
+
+    /**
+     * Returns a builder that accepts a caller-supplied {@link org.xml.sax.EntityResolver},
+     * which a parser will honor even when it answers with a bare system id. Parse
+     * untrusted XML with {@link #buildDOM(InputStream, ParseContext)} instead.
      */
     public static DocumentBuilder getDocumentBuilder() throws TikaException {
         try {
@@ -387,6 +398,8 @@ public class XMLReaderUtils implements Serializable {
             }
         }
 
+        //a supplied builder never brings its own resolver along
+        builder.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
         try {
             return builder.parse(is);
         } finally {
@@ -423,6 +436,8 @@ public class XMLReaderUtils implements Serializable {
             }
         }
 
+        //a supplied builder never brings its own resolver along
+        builder.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
         try {
             return builder.parse(new InputSource(reader));
         } finally {
@@ -471,6 +486,8 @@ public class XMLReaderUtils implements Serializable {
             }
         }
 
+        //a supplied builder never brings its own resolver along
+        builder.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
         try {
             return builder.parse(uriString);
         } finally {
@@ -502,6 +519,8 @@ public class XMLReaderUtils implements Serializable {
             }
         }
 
+        //a supplied builder never brings its own resolver along
+        builder.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
         try {
             return builder.parse(is);
         } finally {

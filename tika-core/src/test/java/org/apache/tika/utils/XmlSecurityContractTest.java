@@ -35,7 +35,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerFactory;
@@ -49,6 +51,7 @@ import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -171,6 +174,59 @@ public class XmlSecurityContractTest {
         // size bomb runs to completion there. Known gap; Tika verifies the JDK only.
         assumeFalse("xerces".equals(PROVIDER), "standalone Xerces has no entity size limit");
         assertRejected(path, SIZE_BOMB);
+    }
+
+    // the caller's resolver is never consulted on the parseSAX path, so a resolver that
+    // answers with a bare system id (which a raw parser would fetch) changes nothing
+    @Test
+    public void testCallerResolverShadowed() throws Exception {
+        DefaultHandler systemIdOnly = new DefaultHandler() {
+            @Override
+            public InputSource resolveEntity(String publicId, String systemId) {
+                return new InputSource(systemId);
+            }
+        };
+        for (String xml : xxePayloads()) {
+            try {
+                XMLReaderUtils.parseSAX(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8)),
+                        systemIdOnly, new ParseContext());
+            } catch (Exception e) {
+                assertNotAFetch(xml, e);
+            }
+        }
+    }
+
+    // a parser supplied through the ParseContext never brings its own resolver along:
+    // these are raw, unsecured JDK parsers with a resolver that fetches
+    @ParameterizedTest
+    @ValueSource(strings = {"sax", "dom"})
+    public void testSuppliedParserStillOffline(String path) throws Exception {
+        ParseContext context = new ParseContext();
+        if ("sax".equals(path)) {
+            context.set(SAXParser.class, SAXParserFactory.newInstance().newSAXParser());
+        } else {
+            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            builder.setEntityResolver((publicId, systemId) -> new InputSource(systemId));
+            context.set(DocumentBuilder.class, builder);
+        }
+        for (String xml : xxePayloads()) {
+            byte[] bytes = xml.getBytes(StandardCharsets.UTF_8);
+            String text;
+            try {
+                if ("sax".equals(path)) {
+                    BoundedTextHandler handler = new BoundedTextHandler();
+                    XMLReaderUtils.parseSAX(new ByteArrayInputStream(bytes), handler, context);
+                    text = handler.text();
+                } else {
+                    text = XMLReaderUtils.buildDOM(new ByteArrayInputStream(bytes), context)
+                            .getDocumentElement().getTextContent();
+                }
+            } catch (Exception e) {
+                assertNotAFetch(xml, e);
+                continue;
+            }
+            assertFalse(text.contains(SECRET), path + " leaked external content for " + xml);
+        }
     }
 
     @Test

@@ -71,3 +71,11 @@ org.apache.commons.xml.secure.SecureXMLInputFactory#newDefaultFactory()
 # StAX is deprecated for removal in 5.0 (TIKA-4938); main code must not reintroduce it
 org.apache.tika.utils.XMLReaderUtils#getXMLInputFactory() @ StAX is deprecated; parse with XMLReaderUtils.parseSAX
 org.apache.tika.utils.XMLReaderUtils#getXMLInputFactory(org.apache.tika.parser.ParseContext) @ StAX is deprecated; parse with XMLReaderUtils.parseSAX
+
+# a raw parser honors a caller-supplied EntityResolver, and a resolver that answers with a
+# bare system id makes the parser fetch it (measured on the JDK and standalone Xerces);
+# parseSAX and buildDOM install Tika's resolver and never consult the caller's
+org.apache.tika.utils.XMLReaderUtils#getSAXParser() @ parse with XMLReaderUtils.parseSAX; a raw parser accepts a caller resolver that can fetch external entities
+org.apache.tika.utils.XMLReaderUtils#getXMLReader() @ parse with XMLReaderUtils.parseSAX; a raw reader accepts a caller resolver that can fetch external entities
+org.apache.tika.utils.XMLReaderUtils#getDocumentBuilder() @ parse with XMLReaderUtils.buildDOM, create with newDocument; a raw builder accepts a caller resolver that can fetch external entities
+org.apache.tika.utils.XMLReaderUtils#getDocumentBuilder(org.apache.tika.parser.ParseContext) @ parse with XMLReaderUtils.buildDOM; a raw builder accepts a caller resolver that can fetch external entities

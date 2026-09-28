@@ -35,6 +35,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.common.PDStream;
+import org.apache.pdfbox.pdmodel.interactive.form.PDAcroForm;
+import org.apache.pdfbox.pdmodel.interactive.form.PDXFAResource;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -46,6 +51,7 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.PDF;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -54,7 +60,8 @@ import org.apache.tika.utils.XMLReaderUtils;
  * injected into every XML-based format Tika reads: bare XML and its dialects, and the XML
  * parts inside zip containers. The oracle for "fetched" is a local socket that must never
  * see a connection, plus the file-not-found that a resolved bogus file URI would raise.
- * XMP packets and XFA streams inside binary formats are not covered here.
+ * The XFA stream inside a synthesized PDF is covered; XMP packets inside binary formats
+ * are not.
  */
 public class TestXXEInXML extends XMLTestBase {
 
@@ -164,6 +171,48 @@ public class TestXXEInXML extends XMLTestBase {
         }
     }
 
+    // CVE-2025-66516: the XFA stream inside a PDF is XML parsed straight out of the file
+    @ParameterizedTest
+    @ValueSource(strings = {"http", "file"})
+    public void testXfaInPdf(String payload) throws Exception {
+        byte[] pdf = pdfWithXfa(injectXML(xfaXml(), payload(payload)));
+        for (int i = 0; i < XMLReaderUtils.getPoolSize() + 1; i++) {
+            Metadata metadata = new Metadata();
+            assertNoFetch("xfa.pdf", () -> parseBytes("xfa.pdf", pdf, metadata));
+            assertEquals("true", metadata.get(PDF.HAS_XFA), "the XFA stream was not reached");
+        }
+    }
+
+    @Test
+    @Timeout(120)
+    public void testExpansionBombInXfa() throws Exception {
+        byte[] pdf = pdfWithXfa(injectXML(xfaXml(), ENTITY_EXPANSION_BOMB));
+        Metadata metadata = new Metadata();
+        assertBounded("xfa.pdf", () -> parseBytes("xfa.pdf", pdf, metadata));
+        assertEquals("true", metadata.get(PDF.HAS_XFA), "the XFA stream was not reached");
+    }
+
+    private static byte[] pdfWithXfa(byte[] xfa) throws IOException {
+        try (PDDocument doc = new PDDocument()) {
+            doc.addPage(new PDPage());
+            PDAcroForm form = new PDAcroForm(doc);
+            doc.getDocumentCatalog().setAcroForm(form);
+            PDStream stream = new PDStream(doc, new ByteArrayInputStream(xfa));
+            form.setXFA(new PDXFAResource(stream.getCOSObject()));
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            doc.save(bos);
+            return bos.toByteArray();
+        }
+    }
+
+    private static byte[] xfaXml() {
+        return ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+                "<xdp:xdp xmlns:xdp=\"http://ns.adobe.com/xdp/\">" +
+                "<template xmlns=\"http://www.xfa.org/schema/xfa-template/3.3/\">" +
+                "<subform name=\"form1\"><field name=\"n\"><assist><toolTip>Name</toolTip>" +
+                "</assist></field></subform></template></xdp:xdp>").getBytes(StandardCharsets.UTF_8);
+    }
+
     private interface Parse {
         long run() throws Exception;
     }
@@ -235,20 +284,25 @@ public class TestXXEInXML extends XMLTestBase {
     }
 
     private static long parseBytes(String fileName, byte[] bytes) throws Exception {
+        return parseBytes(fileName, bytes, new Metadata());
+    }
+
+    private static long parseBytes(String fileName, byte[] bytes, Metadata metadata)
+            throws Exception {
         try (TikaInputStream tis = TikaInputStream.get(bytes)) {
-            return parseCounting(fileName, tis);
+            return parseCounting(fileName, tis, metadata);
         }
     }
 
     private static long parsePath(String fileName, Path path) throws Exception {
         try (TikaInputStream tis = TikaInputStream.get(path)) {
-            return parseCounting(fileName, tis);
+            return parseCounting(fileName, tis, new Metadata());
         }
     }
 
-    private static long parseCounting(String fileName, TikaInputStream tis) throws Exception {
+    private static long parseCounting(String fileName, TikaInputStream tis, Metadata metadata)
+            throws Exception {
         CountingHandler handler = new CountingHandler();
-        Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fileName);
         AUTO_DETECT_PARSER.parse(tis, handler, metadata, new ParseContext());
         return handler.count;

@@ -3,7 +3,11 @@ Release 4.2.0 - unreleased
    * XmlSecurityContractTest pins XMLReaderUtils' XXE and entity-expansion defenses and
      runs on the JDK's Xerces and, for external access and expansion count only, on
      standalone Xerces 2.12, which has no entity size limit. forbidden-apis now rejects
-     building JAXP or Commons Secure XML parsers anywhere but XMLReaderUtils. TestXXEInXML,
+     building JAXP or Commons Secure XML parsers anywhere but XMLReaderUtils, and calling
+     its raw getSAXParser, getXMLReader and getDocumentBuilder from main code: a raw parser
+     honors a caller resolver that answers with a bare system id and fetches it, while
+     parseSAX and buildDOM never consult the caller's resolver, including a resolver on a
+     SAXParser or DocumentBuilder supplied through the ParseContext. TestXXEInXML,
      lost with the parsers-standard-package module, is back in the parsers integration
      tests and injects XXE and expansion payloads into every XML-based format (TIKA-4939).
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
