@@ -246,9 +246,10 @@ class PEIconExtractor {
                 long subdir = resources.rootOffset + (dataField & ~HIGH_BIT);
                 if (depth == 0) {
                     readDirectory(resources, subdir, 1, visited, entryId, 0, null);
-                } else {
+                } else if (depth == 1) {
                     readDirectory(resources, subdir, 2, visited, type, entryId, entryName);
                 }
+                // a subdirectory below the language level is malformed; nothing to find there
             } else if (depth == MAX_RESOURCE_TREE_DEPTH - 1 && !named) {
                 // Language ids are always numeric
                 readDataEntry(resources, resources.rootOffset + dataField,

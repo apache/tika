@@ -288,6 +288,28 @@ public class PEIconExtractorTest extends TikaTest {
     }
 
     /**
+     * Subdirectories below the language level are malformed and must stop the
+     * walk there: a chain of 25000 nested directories under one language entry
+     * would otherwise be followed to the end and exhaust the entry budget.
+     */
+    @Test
+    public void testDepthCapBelowLanguageLevel() throws Exception {
+        int chain = 25000;
+        int dirSize = 16 + 8;
+        ByteBuffer rsrc = ByteBuffer.allocate(dirSize * (3 + chain)).order(ByteOrder.LITTLE_ENDIAN);
+        // root -> type RT_ICON -> name 1 -> language dir, then the chain
+        for (int i = 0; i < 3 + chain; i++) {
+            int dir = i * dirSize;
+            rsrc.position(dir + 12).putShort((short) 0).putShort((short) 1);
+            rsrc.putInt(i == 0 ? 3 : 1).putInt(0x80000000 | (dir + dirSize));
+        }
+        RecordingExtractor extractor = parse(SyntheticPE.build(rsrc.array(), 0));
+        assertEquals(0, extractor.contents.size());
+        assertNull(extractor.parentMetadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertNull(extractor.parentMetadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
+    }
+
+    /**
      * A file without icon types must not have its resource section read; the
      * synthetic section declares 1 MB behind a directory that only lists bitmaps.
      */
