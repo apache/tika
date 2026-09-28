@@ -325,6 +325,7 @@
     <metadata.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
     <!-- TIKA-4848: default-on in every module's main sources (see forbiddenapis-check below) -->
     <exception.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
+    <xml.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
     <!-- Per-module extra main-source bans; a module overrides this (e.g. to
          ${metadata.forbiddenapis.signaturesFile}) instead of overriding the
          forbiddenapis-check execution, whose child list would REPLACE the parent's
@@ -1455,6 +1456,9 @@
         <version>${forbiddenapis.version}</version>
         <configuration>
           <targetVersion>${maven.compiler.target}</targetVersion>
+          <suppressAnnotations>
+            <suppressAnnotation>org.apache.tika.utils.SuppressForbidden</suppressAnnotation>
+          </suppressAnnotations>
           <ignoreSignaturesOfMissingClasses>true</ignoreSignaturesOfMissingClasses>
           <failOnUnsupportedJava>false</failOnUnsupportedJava>
           <excludes>test-documents/*.class</excludes>
@@ -1481,6 +1485,7 @@
             <configuration>
               <signaturesFiles>
                 <signaturesFile>${exception.forbiddenapis.signaturesFile}</signaturesFile>
+                <signaturesFile>${xml.forbiddenapis.signaturesFile}</signaturesFile>
                 <signaturesFile>${forbiddenapis.module.signaturesFile}</signaturesFile>
               </signaturesFiles>
             </configuration>

@@ -71,7 +71,7 @@ class TikaConfigAsyncWriter {
                         simpleAsyncConfig.getTikaConfig());
             }
         } else {
-            document = XMLReaderUtils.getDocumentBuilder().newDocument();
+            document = XMLReaderUtils.newDocument();
             properties = document.createElement("properties");
             document.appendChild(properties);
         }

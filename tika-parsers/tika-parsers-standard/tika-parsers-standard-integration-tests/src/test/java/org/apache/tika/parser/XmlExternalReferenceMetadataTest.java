@@ -66,7 +66,7 @@ public class XmlExternalReferenceMetadataTest extends XMLTestBase {
         Path injected;
         try (TikaInputStream tis = TikaInputStream.get(
                 getClass().getResourceAsStream("/test-documents/testEPUB.epub"))) {
-            injected = injectZippedXMLs(tis.getPath(), DOCTYPE, false);
+            injected = injectZippedXMLs(tis.getPath(), DOCTYPE);
         }
         try {
             Metadata container = getRecursiveMetadata(injected).get(0);
