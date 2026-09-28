@@ -29,6 +29,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
@@ -150,7 +151,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         // Skip the rest of the MS-DOS stub (if PE), until we reach what should
         //  be the PE header (if this is a PE executable)
-        tis.skip(peOffset - 0x40);
+        IOUtils.skipFully(tis, peOffset - 0x40);
 
         // Read the PE header
         byte[] pe = new byte[24];
@@ -275,7 +276,10 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         if (extractIcons) {
             try {
-                PEIconExtractor.extract(tis, sizeOptHdrs, numSectors, xhtml, context);
+                PEIconExtractor.extract(tis, sizeOptHdrs, numSectors, xhtml, metadata, context);
+            } catch (SecurityException | EmbeddedLimitReachedException e) {
+                // Limits and sandboxing must surface to the caller
+                throw e;
             } catch (IOException | TikaException | RuntimeException e) {
                 // A broken resource section must not cost us the metadata above
                 EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
