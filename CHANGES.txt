@@ -1,3 +1,7 @@
+Release 4.1.1 - unreleased
+
+   * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
+
 Release 4.1.0 - 9/26/2026
 
   HIGHLIGHTS
