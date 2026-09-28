@@ -1,13 +1,9 @@
 Release 4.2.0 - unreleased
 
    * Retire Tika's entity expansion limit (default 20) in SAX, DOM and StAX
-     parsing; the JAXP provider's secure-processing limits apply instead.
-     XMLReaderUtils.setMaxEntityExpansions and the xml-reader-utils
-     maxEntityExpansions setting are deprecated no-ops. Documents with more
-     than 20 entity references, internal or external, now parse (TIKA-4940).
-   * Tika's XML defenses are verified only on the JDK's built-in Xerces. Any
-     other JAXP provider, including one selected through a javax.xml.parsers.*
-     system property, is unsupported and untested (TIKA-4940).
+     parsing in favor of standard Java configuration methods (TIKA-4940).
+   
+   * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
 Release 4.1.0 - 9/26/2026
 

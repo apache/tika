@@ -252,15 +252,16 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Returns the StAX input factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware and to apply reasonable security
-     * precautions.
+     * Returns a StAX input factory configured to be namespace-aware and to
+     * apply reasonable security precautions.
      *
      * @return StAX input factory
      * @since Apache Tika 1.13
+     * @deprecated since 4.2, removal planned for 5.0. Tika no longer parses with StAX;
+     * its security settings are best-effort and implementation-dependent. Use
+     * {@link #parseSAX(InputStream, ContentHandler, ParseContext)}.
      */
+    @Deprecated
     public static XMLInputFactory getXMLInputFactory() {
         XMLInputFactory factory = SecureXMLInputFactory.newFactory();
         if (LOG.isDebugEnabled()) {
@@ -957,14 +958,13 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Returns the StAX input factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware and to apply reasonable security
-     * precautions.
+     * Returns the StAX input factory in the context, or {@link #getXMLInputFactory()}.
      *
      * @return StAX input factory
+     * @deprecated since 4.2, removal planned for 5.0; see {@link #getXMLInputFactory()}.
+     * Use {@link #parseSAX(InputStream, ContentHandler, ParseContext)}.
      */
+    @Deprecated
     public static XMLInputFactory getXMLInputFactory(ParseContext context) {
         XMLInputFactory factory = context.get(XMLInputFactory.class);
         if (factory != null) {
