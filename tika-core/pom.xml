@@ -44,6 +44,10 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-secure-xml</artifactId>
+    </dependency>
     <!-- Markdown serialization (ToMarkdownContentHandler). BSD 2-Clause, ASF Category A,
          zero transitive dependencies. -->
     <dependency>
@@ -120,6 +124,10 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <properties>
+    <xerces.test.version>2.12.2</xerces.test.version>
+  </properties>
 
   <build>
     <plugins>
@@ -253,6 +261,62 @@
           </execution>
         </executions>
       </plugin> -->
+      <!-- XmlSecurityContractTest runs once per JAXP provider Tika verifies: the default
+           surefire execution on the JDK's Xerces, and this one with standalone Xerces on the
+           classpath. The jars are copied, not declared, so nothing else in tika-core sees them
+           (the enforcer bans them as dependencies). -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-xml-providers</id>
+            <phase>generate-test-resources</phase>
+            <goals>
+              <goal>copy</goal>
+            </goals>
+            <configuration>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>xerces</groupId>
+                  <artifactId>xercesImpl</artifactId>
+                  <version>${xerces.test.version}</version>
+                  <destFileName>xercesImpl.jar</destFileName>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>xml-apis</groupId>
+                  <artifactId>xml-apis</artifactId>
+                  <version>1.4.01</version>
+                  <destFileName>xml-apis.jar</destFileName>
+                </artifactItem>
+              </artifactItems>
+              <outputDirectory>${project.build.directory}/xml-providers</outputDirectory>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>xml-provider-xerces</id>
+            <goals>
+              <goal>test</goal>
+            </goals>
+            <configuration>
+              <test>XmlSecurityContractTest</test>
+              <additionalClasspathElements>
+                <additionalClasspathElement>${project.build.directory}/xml-providers/xercesImpl.jar</additionalClasspathElement>
+                <additionalClasspathElement>${project.build.directory}/xml-providers/xml-apis.jar</additionalClasspathElement>
+              </additionalClasspathElements>
+              <systemPropertyVariables>
+                <tika.test.xml.provider>xerces</tika.test.xml.provider>
+              </systemPropertyVariables>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>${maven.failsafe.version}</version>
@@ -339,6 +403,6 @@
   </ciManagement>
 
   <scm>
-    <tag>4.1.0-rc1</tag>
+    <tag>4.1.0-rc2</tag>
   </scm>
 </project>

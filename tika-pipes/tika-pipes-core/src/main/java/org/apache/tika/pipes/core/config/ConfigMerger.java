@@ -168,6 +168,13 @@ public class ConfigMerger {
                 pipesNode.put("maxFilesProcessedPerProcess", pc.getMaxFilesProcessedPerProcess());
             }
 
+            if (pc.getSocketTimeoutMillis() > 0) {
+                pipesNode.put("socketTimeoutMillis", pc.getSocketTimeoutMillis());
+            }
+            if (pc.getJavaPath() != null) {
+                pipesNode.put("javaPath", pc.getJavaPath());
+            }
+
             // Apply forked JVM args
             List<String> jvmArgs = pc.getForkedJvmArgs();
             if (jvmArgs != null && !jvmArgs.isEmpty()) {

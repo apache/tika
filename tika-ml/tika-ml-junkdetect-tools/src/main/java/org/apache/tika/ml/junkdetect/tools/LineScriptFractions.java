@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -77,7 +78,7 @@ public final class LineScriptFractions {
         for (Path file : files) {
             String fname = file.getFileName().toString();
             String name = fname.substring(0, fname.length() - ".train.gz".length())
-                    .toUpperCase();
+                    .toUpperCase(Locale.ROOT);
             Character.UnicodeScript target = mapScript(name);
             if (target == null) {
                 System.out.printf("%-20s  (no UnicodeScript mapping for '%s')%n", name, name);
@@ -135,7 +136,7 @@ public final class LineScriptFractions {
 
             long below5 = bucketCounts[0];
             System.out.printf("%-20s %,10d %,10d |%s%n",
-                    name.toLowerCase(), lines, below5, sb.toString());
+                    name.toLowerCase(Locale.ROOT), lines, below5, sb.toString());
         }
     }
 

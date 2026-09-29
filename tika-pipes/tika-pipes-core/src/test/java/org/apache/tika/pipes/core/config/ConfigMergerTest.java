@@ -387,4 +387,39 @@ public class ConfigMergerTest {
 
         Files.deleteIfExists(result.configPath());
     }
+
+    /** TIKA-4931: socketTimeoutMillis and javaPath set in code reach the merged file. */
+    @Test
+    public void testSocketTimeoutAndJavaPathWritten() throws IOException {
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .setPipesConfig(1, 100, List.of("-Xmx512m"), 1234, "/opt/jdk/bin/java")
+                .build();
+
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(null, overrides);
+
+        JsonNode pipes = new ObjectMapper().readTree(result.configPath().toFile()).get("pipes");
+        assertEquals(1234, pipes.get("socketTimeoutMillis").asLong());
+        assertEquals("/opt/jdk/bin/java", pipes.get("javaPath").asText());
+
+        Files.deleteIfExists(result.configPath());
+    }
+
+    /** Unset (-1 / null) leaves the user config file's values alone. */
+    @Test
+    public void testSocketTimeoutAndJavaPathUnsetKeepUserValues() throws IOException {
+        Path userConfig = tempDir.resolve("user-config.json");
+        Files.writeString(userConfig,
+                "{\"pipes\":{\"socketTimeoutMillis\":4321,\"javaPath\":\"/file/java\"}}");
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .setPipesConfig(1, 100, null, -1, null)
+                .build();
+
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(userConfig, overrides);
+
+        JsonNode pipes = new ObjectMapper().readTree(result.configPath().toFile()).get("pipes");
+        assertEquals(4321, pipes.get("socketTimeoutMillis").asLong());
+        assertEquals("/file/java", pipes.get("javaPath").asText());
+
+        Files.deleteIfExists(result.configPath());
+    }
 }

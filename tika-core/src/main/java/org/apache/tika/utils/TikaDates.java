@@ -37,6 +37,8 @@ public final class TikaDates {
 
     public static final int MIN_YEAR = 1000;
     public static final int MAX_YEAR = 2200;
+    // real dates, mail comments included, are far shorter; bounds regex work on hostile input
+    static final int MAX_LENGTH = 256;
 
     public enum Precision { YEAR, MONTH, DAY, MINUTE, SECOND }
 
@@ -114,7 +116,7 @@ public final class TikaDates {
     // also producer quirks: HH:mmss, HH.mm.ss, 1-digit seconds, trailing :cc
     private static final Pattern ISO = Pattern.compile("(\\d{4})(?:-(\\d{1,2})(?:-(\\d{1,2})"
             + "(?:(?:T|\\s+)(\\d{1,2})([:.])(\\d{2})(?:(?:\\5|(?<=:\\d\\d))(\\d{1,2})(?::\\d{2})?(?:[.,]\\d{1,9})?)?"
-            + "(?:\\s*([AP])\\.?M\\.?)?)?)?)?(?:Z00:?00)?" + ZONE);
+            + "(?:\\s*([AP])\\.?M\\.?)?)?)?)?" + ZONE);
     private static final Pattern PDF = Pattern.compile("(D:)?\\s*(\\d{4})(\\d{2})?(\\d{2})?(\\d{2})?(\\d{2})?(\\d{2})?"
             + "(?:(Z)(?:00'?00'?|')?|([+-])(\\d{1,2})(?:'?(\\d{2})'{0,2})?)?");
     private static final Pattern EXIF = Pattern.compile("(\\d{4}):(\\d{2}):(\\d{2})"
@@ -136,7 +138,10 @@ public final class TikaDates {
 
     private static final Pattern WEEKDAY = Pattern.compile(
             "^(?:MON|TUE|TUES|WED|THU|THUR|THURS|FRI|SAT|SUN)(?:DAY|NESDAY|SDAY|RSDAY|URDAY)?\\.?,?\\s+");
-    private static final Pattern TRAILING_COMMENT = Pattern.compile("\\s*\\([^)]*\\)$");
+    private static final Pattern TRAILING_COMMENT = Pattern.compile("\\s*\\([^()]*\\)$");
+    private static final Pattern WHITESPACE = Pattern.compile("\\s+");
+    // producer quirk: an explicit UTC marker followed by a redundant zero offset
+    private static final Pattern Z_ZERO = Pattern.compile("Z00:?00");
     // "-0400 EDT": a name after an explicit offset is redundant
     private static final Pattern OFFSET_THEN_NAME = Pattern.compile("([+-]\\d{2}:?\\d{2})\\s+[A-Z]{2,5}$");
     private static final Pattern AFTER_OFFSET = Pattern.compile("\\d:\\d{2}(?::\\d{2})?\\s*([+-]\\d{4})(?![\\d:]).+$");
@@ -162,7 +167,11 @@ public final class TikaDates {
         if (raw == null) {
             return Optional.empty();
         }
-        String s = raw.trim().replaceAll("\\s+", " ").toUpperCase(Locale.ROOT);
+        String trimmed = raw.trim();
+        if (trimmed.length() > MAX_LENGTH) {
+            return Optional.empty();
+        }
+        String s = WHITESPACE.matcher(trimmed).replaceAll(" ").toUpperCase(Locale.ROOT);
         if (s.isEmpty()) {
             return Optional.empty();
         }
@@ -270,7 +279,8 @@ public final class TikaDates {
     }
 
     private static ParsedDate iso(String s) {
-        Matcher m = ISO.matcher(s.replace("'", ""));   // PDF-style offsets in ISO strings: -06'00'
+        // PDF-style offsets in ISO strings: -06'00'
+        Matcher m = ISO.matcher(Z_ZERO.matcher(s.replace("'", "")).replaceFirst("Z"));
 
         if (!m.matches()) {
             return null;

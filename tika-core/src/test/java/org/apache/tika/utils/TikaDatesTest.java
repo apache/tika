@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.Resources;
@@ -357,5 +358,25 @@ public class TikaDatesTest {
         assertNull(TikaDates.toMetadataString("2019-06"));
         assertNull(TikaDates.toMetadataString("0-01-01T00:00:00Z"));
         assertNull(TikaDates.toMetadataString(null));
+    }
+
+    // the trailing-comment strip was quadratic: 80k '(' took tens of seconds per value
+    @Test
+    @Timeout(5)
+    public void testHostileLengthIsCheap() {
+        for (String prefix : new String[]{"", "1", "MON ", "JAN "}) {
+            String hostile = prefix + "(".repeat(100_000);
+            assertTrue(TikaDates.parse(hostile).isEmpty());
+            assertTrue(TikaDates.parse(hostile + ")X").isEmpty());
+        }
+        assertTrue(TikaDates.parse("2020-01-01T10:00:00Z" + " ".repeat(1000)).isPresent());
+    }
+
+    // an explicit UTC marker with a redundant zero offset is still a zone
+    @Test
+    public void testZeroOffsetQuirkKeepsZone() {
+        assertEquals("2020-01-01T10:00:00Z", TikaDates.toMetadataString("2020-01-01T10:00:00Z00:00"));
+        assertEquals("2020-01-01T10:00:00Z", TikaDates.toMetadataString("2020-01-01T10:00:00Z0000"));
+        assertTrue(TikaDates.parse("2020-01-01T10:00:00Z00:00").get().hasZone());
     }
 }

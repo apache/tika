@@ -66,7 +66,7 @@ class S3PipeIntegrationTest {
     private static final ComposeContainer minioContainer = new ComposeContainer(
             new File("src/test/resources/docker-compose.yml")).withStartupTimeout(
                     Duration.of(MAX_STARTUP_TIMEOUT, ChronoUnit.SECONDS))
-            .withExposedService("minio-service", 9000);
+            .withExposedService("s3-service", 9000);
     private static final String MINIO_ENDPOINT = "http://localhost:9000";
     private static final String ACCESS_KEY = "minio";
     private static final String SECRET_KEY = "minio123";

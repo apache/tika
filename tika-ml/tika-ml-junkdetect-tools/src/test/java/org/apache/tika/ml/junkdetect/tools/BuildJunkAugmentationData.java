@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
@@ -336,7 +337,7 @@ public final class BuildJunkAugmentationData {
                     continue;
                 }
                 String scriptName = ds.script.name();
-                if (!baselineLineCounts.containsKey(scriptName.toLowerCase())) {
+                if (!baselineLineCounts.containsKey(scriptName.toLowerCase(Locale.ROOT))) {
                     // No baseline bucket for this script — nothing to augment.
                     droppedNoBaseline++;
                     continue;
@@ -392,7 +393,7 @@ public final class BuildJunkAugmentationData {
             String script = entry.getKey();
             List<String> chunks = entry.getValue();
             int docs = scriptDocCount.getOrDefault(script, 0);
-            long baselineLines = baselineLineCounts.getOrDefault(script.toLowerCase(), 0L);
+            long baselineLines = baselineLineCounts.getOrDefault(script.toLowerCase(Locale.ROOT), 0L);
             long fracCapVal = (long) Math.floor(baselineLines * fracCap);
             long cap = Math.min(hardCap, fracCapVal);
 
@@ -463,7 +464,7 @@ public final class BuildJunkAugmentationData {
                 Path dst = outputDir.resolve(name);
                 if (name.endsWith(".train.gz")) {
                     String script = name.substring(0, name.length() - ".train.gz".length())
-                            .toUpperCase();
+                            .toUpperCase(Locale.ROOT);
                     List<String> add = finalLines.get(script);
                     if (add != null && !add.isEmpty()) {
                         rewriteTrainWithAppend(src, dst, add);
@@ -740,7 +741,7 @@ public final class BuildJunkAugmentationData {
             int idxLang = -1;
             int idxLangId = -1;
             for (int i = 0; i < cols.length; i++) {
-                switch (cols[i].toUpperCase()) {
+                switch (cols[i].toUpperCase(Locale.ROOT)) {
                     case "FILE_PATH":
                         idxPath = i;
                         break;

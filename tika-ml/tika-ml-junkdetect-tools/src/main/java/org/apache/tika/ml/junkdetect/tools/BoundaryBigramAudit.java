@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
@@ -72,7 +73,7 @@ public final class BoundaryBigramAudit {
         for (Path file : files) {
             String fname = file.getFileName().toString();
             String name = fname.substring(0, fname.length() - ".train.gz".length())
-                    .toUpperCase();
+                    .toUpperCase(Locale.ROOT);
             Character.UnicodeScript target;
             try {
                 target = Character.UnicodeScript.valueOf(name);
@@ -135,7 +136,7 @@ public final class BoundaryBigramAudit {
             int distAsciiDrop = distinctKeptUnderAsciiDrop.size();
 
             System.out.printf("%-22s %,14d %,14d %,14d %,14d %,12d | %,14d %,14d%n",
-                    name.toLowerCase(), inS, boundary, foreign, asciiRun, total,
+                    name.toLowerCase(Locale.ROOT), inS, boundary, foreign, asciiRun, total,
                     distAll - distForeignDrop, distAll - distAsciiDrop);
         }
     }

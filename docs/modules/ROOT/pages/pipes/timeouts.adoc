@@ -27,7 +27,10 @@ Three timeout settings bound a parse, and each answers a different question:
   including all of its embedded documents. Default: `3600000` (1 hour).
 
 * **`progressTimeoutMillis`** -- How long may the parse go *silent* before it is
-  considered hung and killed. Default: `120000` (2 minutes).
+  considered hung and killed. Default: `120000` (2 minutes). To turn stall detection
+  off and keep only the total deadline, set it equal to `totalTaskTimeoutMillis`.
+  Don't use `0` (rejected when the total is positive) or `Long.MAX_VALUE` (it also
+  removes the pipes client's backstop for a wedged server).
 
 * **Per-parser timeouts** (e.g., `tesseract-ocr-parser.timeoutMillis`) -- How long may
   *one call* to that parser's external process or service take.

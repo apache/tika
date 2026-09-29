@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
@@ -409,7 +410,7 @@ public class BuildJunkTrainingData {
             List<String> dev   = sentences.subList(nTrain, nTrain + nDev);
             List<String> test  = sentences.subList(nTrain + nDev, sentences.size());
 
-            String baseName = script.toLowerCase();
+            String baseName = script.toLowerCase(Locale.ROOT);
             writeGzipped(outputDir.resolve(baseName + ".train.gz"), train);
             writeGzipped(outputDir.resolve(baseName + ".dev.gz"),   dev);
             writeGzipped(outputDir.resolve(baseName + ".test.gz"),  test);

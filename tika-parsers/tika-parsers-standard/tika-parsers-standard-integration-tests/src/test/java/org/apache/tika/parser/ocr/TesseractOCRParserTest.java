@@ -31,6 +31,7 @@ import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.ParseContextConfig;
@@ -255,6 +256,13 @@ public class TesseractOCRParserTest extends TikaTest {
         m = getXML("testTIFF.tif").metadata;
         assertEquals("100", m.get(TIFF.IMAGE_WIDTH));
         assertEquals("75", m.get(TIFF.IMAGE_LENGTH));
+    }
+
+    // TODO TIKA-4923: metadata-extractor lowercases the resolution unit in the default locale
+    @DisabledIfSystemProperty(named = "user.language", matches = "tr")
+    @Test
+    public void getNormalMetadataTooUnknownField() throws Exception {
+        Metadata m = getXML("testTIFF.tif").metadata;
         assertEquals("72 dots per inch", m.get(ImageMetadataExtractor.UNKNOWN_IMG_NS + "Exif IFD0:Y Resolution"));
     }
 

@@ -288,13 +288,12 @@
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <project.build.outputTimestamp>2026-09-21T14:09:43Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-09-26T15:31:38Z</project.build.outputTimestamp>
     <!-- plugin versions -->
     <!-- updates may not be detected by the maven versions plugin:
          https://github.com/mojohaus/versions/issues/1070 -->
     <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
-    <forbiddenapis.version>3.10</forbiddenapis.version>
-    <groovy.maven.version>2.1.1</groovy.maven.version>
+    <forbiddenapis.version>3.11</forbiddenapis.version>
     <maven.antrun.version>3.2.0</maven.antrun.version>
     <maven.assembly.version>3.8.0</maven.assembly.version>
     <maven.bundle.version>6.2.0</maven.bundle.version>
@@ -326,6 +325,7 @@
     <metadata.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
     <!-- TIKA-4848: default-on in every module's main sources (see forbiddenapis-check below) -->
     <exception.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
+    <xml.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
     <!-- Per-module extra main-source bans; a module overrides this (e.g. to
          ${metadata.forbiddenapis.signaturesFile}) instead of overriding the
          forbiddenapis-check execution, whose child list would REPLACE the parent's
@@ -333,8 +333,8 @@
     <forbiddenapis.module.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.73.0</google.cloud.version>
-    <aws2.version>2.55.0</aws2.version>
+    <google.cloud.version>2.74.0</google.cloud.version>
+    <aws2.version>2.55.6</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -383,7 +383,8 @@
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.4</jackrabbit.version>
-    <jackson.version>2.22.2</jackson.version>
+    <jackson.version>2.22.3</jackson.version>
+    <!-- TIKA-4880: 5.0.1 fails some catalogs 5.0.0 reads ("Did not find required parent table id") -->
     <jackcess.version>5.0.0</jackcess.version>
     <jackcess.encrypt.version>5.0.0</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
@@ -424,8 +425,8 @@
          which no longer exists in 4.0: https://stackoverflow.com/questions/79937141/    -->
     <micronaut.version>3.10.12</micronaut.version>
     <mime4j.version>0.8.15</mime4j.version>
-    <mockito.version>5.23.0</mockito.version>
-    <mockito-junit-jupiter.version>5.23.0</mockito-junit-jupiter.version>
+    <mockito.version>5.24.0</mockito.version>
+    <mockito-junit-jupiter.version>5.24.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.18.Final</netty.version>
     <oak.jackrabbit.version>2.6.0</oak.jackrabbit.version>
@@ -446,7 +447,7 @@
     <reactor.core.version>3.8.7</reactor.core.version>
     <reactor.netty.version>1.3.7</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
-    <slf4j.version>2.0.19</slf4j.version>
+    <slf4j.version>2.0.20</slf4j.version>
     <sis.version>1.6</sis.version>
     <snappy.version>1.1.10.8</snappy.version>
     <!-- SolrJ 10 splits the Jetty client/ZK code into solr-solrj-jetty / solr-solrj-zookeeper -->
@@ -457,7 +458,7 @@
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.12</tukaani.version>
-    <twelvemonkeys.version>3.15.1</twelvemonkeys.version>
+    <twelvemonkeys.version>3.15.2</twelvemonkeys.version>
     <uimafit.version>3.6.1</uimafit.version>
     <uimaj.core.version>3.6.1</uimaj.core.version>
     <uimaj.cpe.version>3.6.1</uimaj.cpe.version>
@@ -466,7 +467,7 @@
     <woodstox.core.version>7.2.2</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.6</zookeeper.version>
-    <zstd.version>1.5.7-17</zstd.version>
+    <zstd.version>1.5.7-20</zstd.version>
     <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
     <javacpp.version>1.5.13</javacpp.version>
     <maven.exec.version>3.6.4</maven.exec.version>
@@ -853,7 +854,7 @@
       <dependency>
         <groupId>joda-time</groupId>
         <artifactId>joda-time</artifactId>
-        <version>2.14.3</version>
+        <version>2.14.4</version>
       </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
@@ -970,7 +971,7 @@
       <dependency>
         <groupId>org.apache.xmlbeans</groupId>
         <artifactId>xmlbeans</artifactId>
-        <version>5.4.0</version>
+        <version>5.4.1</version>
         <!-- need to exclude these provided dependencies -->
         <exclusions>
           <exclusion>
@@ -1159,7 +1160,7 @@
       <dependency>
         <groupId>org.pf4j</groupId>
         <artifactId>pf4j</artifactId>
-        <version>3.15.1</version>
+        <version>3.16.0</version>
       </dependency>
       <dependency>
         <groupId>com.nimbusds</groupId>
@@ -1260,6 +1261,11 @@
         <artifactId>jspecify</artifactId>
         <version>1.0.1</version>
       </dependency>      
+      <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-secure-xml</artifactId>
+        <version>1.0.0</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -1450,6 +1456,9 @@
         <version>${forbiddenapis.version}</version>
         <configuration>
           <targetVersion>${maven.compiler.target}</targetVersion>
+          <suppressAnnotations>
+            <suppressAnnotation>org.apache.tika.utils.SuppressForbidden</suppressAnnotation>
+          </suppressAnnotations>
           <ignoreSignaturesOfMissingClasses>true</ignoreSignaturesOfMissingClasses>
           <failOnUnsupportedJava>false</failOnUnsupportedJava>
           <excludes>test-documents/*.class</excludes>
@@ -1476,6 +1485,7 @@
             <configuration>
               <signaturesFiles>
                 <signaturesFile>${exception.forbiddenapis.signaturesFile}</signaturesFile>
+                <signaturesFile>${xml.forbiddenapis.signaturesFile}</signaturesFile>
                 <signaturesFile>${forbiddenapis.module.signaturesFile}</signaturesFile>
               </signaturesFiles>
             </configuration>
@@ -1852,7 +1862,7 @@
 
   </profiles>
   <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false" child.scm.url.inherit.append.path="false">
-    <tag>4.1.0-rc1</tag>
+    <tag>4.1.0-rc2</tag>
     <connection>scm:git:https://github.com/apache/tika.git</connection>
     <developerConnection>scm:git:https://github.com/apache/tika.git</developerConnection>
     <url>https://github.com/apache/tika</url>

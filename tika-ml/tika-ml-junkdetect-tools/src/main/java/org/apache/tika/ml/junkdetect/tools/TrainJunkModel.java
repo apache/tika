@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
@@ -289,7 +290,7 @@ public class TrainJunkModel {
             allTrainFiles.add(trainFile);
             String filename = trainFile.getFileName().toString();
             String script = filename.substring(0, filename.length() - ".train.gz".length())
-                    .toUpperCase();
+                    .toUpperCase(Locale.ROOT);
             trainFilePaths.put(script, trainFile);
             tallyFileBuckets(trainFile, pairsByScript, unigramsByScript, totalsByScript);
         }
@@ -947,7 +948,7 @@ public class TrainJunkModel {
 
         String filename = trainFile.getFileName().toString();
         String script = filename.endsWith(".train.gz")
-                ? filename.substring(0, filename.length() - ".train.gz".length()).toUpperCase()
+                ? filename.substring(0, filename.length() - ".train.gz".length()).toUpperCase(Locale.ROOT)
                 : null;
         if (script == null || !pairsByScript.containsKey(script)) {
             // Fall back to the bucket with the most bigrams.

@@ -173,7 +173,7 @@ public class SevenZParser extends AbstractArchiveParser {
                 xhtml,
                 context);
         if (entry.getHasAccessDate()) {
-            entrydata.set(FileSystem.ACCESSED, entry.getAccessDate());
+            setInstant(entrydata, FileSystem.ACCESSED, entry.getAccessDate());
         }
 
         if (extractor.shouldParseEmbedded(entrydata, context)) {

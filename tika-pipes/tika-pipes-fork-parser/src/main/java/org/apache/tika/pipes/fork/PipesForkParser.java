@@ -409,11 +409,14 @@ public class PipesForkParser implements Closeable {
                 // Use null ID to trigger UUID generation
                 .addFetcher(null, "file-system-fetcher",
                         Map.of("allowAbsolutePaths", true))
-                // Set pipes configuration
+                // socketTimeoutMillis/javaPath start unset in PipesForkParserConfig, so a
+                // value here was set in code and overrides the user config (TIKA-4931)
                 .setPipesConfig(
                         pc.getNumClients(),
                         pc.getMaxFilesProcessedPerProcess(),
-                        pc.getForkedJvmArgs())
+                        pc.getForkedJvmArgs(),
+                        pc.getSocketTimeoutMillis(),
+                        pc.getJavaPath())
                 // Use PASSBACK_ALL strategy - results returned through socket
                 .setEmitStrategy(EmitStrategy.PASSBACK_ALL);
 

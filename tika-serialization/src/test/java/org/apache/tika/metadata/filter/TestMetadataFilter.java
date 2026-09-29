@@ -233,6 +233,28 @@ public class TestMetadataFilter extends TikaTest {
     }
 
     @Test
+    public void testDateNormalizingFilterStoredForms() throws Exception {
+        DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();
+        filter.setDefaultTimeZone("America/New_York");
+        String[][] cases = {
+                // date-only reads as midday, like Metadata.getDate(), in the default zone
+                {"2015-06-12", "2015-06-12T16:00:00Z"},
+                {"2020-01-01T10:00:00Z00:00", "2020-01-01T10:00:00Z"},
+                // partial and unparseable values are left as they are, without an exception
+                {"2018", "2018"},
+                {"2018-06", "2018-06"},
+                {"garbage", "garbage"},
+                {"+999999999-12-31T23:59:59-10:00", "+999999999-12-31T23:59:59-10:00"},
+        };
+        for (String[] c : cases) {
+            Metadata m = new Metadata();
+            m.set(TikaCoreProperties.CREATED, c[0]);
+            filter.filter(m);
+            assertEquals(c[1], m.get(TikaCoreProperties.CREATED), c[0]);
+        }
+    }
+
+    @Test
     public void testDateNormalizingFilterMultiValued() throws Exception {
         DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();
         Metadata m = new Metadata();

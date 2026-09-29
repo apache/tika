@@ -19,6 +19,7 @@ package org.apache.tika.parser.pkg;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Locale;
@@ -36,6 +37,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Abstract base class for archive parsers that provides common functionality
@@ -71,12 +73,8 @@ public abstract class AbstractArchiveParser extends AbstractEncodingDetectorPars
             throws SAXException, IOException, TikaException {
         Metadata entrydata = Metadata.newInstance(context);
         // entry times are file-system times, never the embedded document's own dates
-        if (createAt != null) {
-            entrydata.set(FileSystem.CREATED, createAt);
-        }
-        if (modifiedAt != null) {
-            entrydata.set(FileSystem.MODIFIED, modifiedAt);
-        }
+        setInstant(entrydata, FileSystem.CREATED, createAt);
+        setInstant(entrydata, FileSystem.MODIFIED, modifiedAt);
         if (size != null) {
             entrydata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(size));
         }
@@ -93,11 +91,20 @@ public abstract class AbstractArchiveParser extends AbstractEncodingDetectorPars
         return entrydata;
     }
 
+    /** An archive-header instant; junk years (e.g. a garbage FILETIME) are not stored. */
+    static void setInstant(Metadata metadata, Property property, Date date) {
+        if (date != null && TikaDates.inYearBounds(date.toInstant())) {
+            metadata.set(property, date);
+        }
+    }
+
     /** DOS-style local time the library resolved in the JVM zone: undo that, store zone-less. */
     static void setLocalTime(Metadata metadata, Property property, Date resolvedInDefaultZone) {
         if (resolvedInDefaultZone != null) {
-            metadata.set(property, ZONELESS.format(
-                    LocalDateTime.ofInstant(resolvedInDefaultZone.toInstant(), ZoneId.systemDefault())));
+            LocalDateTime local = LocalDateTime.ofInstant(resolvedInDefaultZone.toInstant(), ZoneId.systemDefault());
+            if (TikaDates.inYearBounds(local.toInstant(ZoneOffset.UTC))) {
+                metadata.set(property, ZONELESS.format(local));
+            }
         }
     }
 }

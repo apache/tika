@@ -30,7 +30,8 @@ xref:pipes/index.adoc[Tika Pipes], which runs each parse in a forked JVM with ti
 limits; xref:using-tika/server/index.adoc[tika-server] and xref:using-tika/grpc/index.adoc[tika-grpc]
 provide the same robustness as a service. See
 xref:using-tika/java-api/getting-started.adoc[Getting Started with the Java API] for how to choose,
-and xref:advanced/robustness.adoc[Robustness] for what goes wrong without isolation.
+xref:using-tika/java-api/pipes.adoc[Tika Pipes from Java] for the Pipes API, and
+xref:advanced/robustness.adoc[Robustness] for what goes wrong without isolation.
 
 Know where the line falls before you call `AutoDetectParser` in your own JVM. Tika's sandboxing is
 the forked JVM, and calling a parser directly opts out of it. Untrusted data can often

@@ -22,11 +22,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
 import javax.xml.transform.OutputKeys;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.xml.secure.SecureTransformerFactory;
 import org.junit.jupiter.api.Test;
 
 public class MarkdownToXHTMLEmitterTest {
@@ -302,7 +302,7 @@ public class MarkdownToXHTMLEmitterTest {
     private String emit(String markdown) throws Exception {
         StringWriter sw = new StringWriter();
         SAXTransformerFactory tf =
-                (SAXTransformerFactory) TransformerFactory.newInstance();
+                (SAXTransformerFactory) SecureTransformerFactory.newInstance();
         TransformerHandler th = tf.newTransformerHandler();
         th.getTransformer().setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "no");
         th.getTransformer().setOutputProperty(OutputKeys.INDENT, "no");

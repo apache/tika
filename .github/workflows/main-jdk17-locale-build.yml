@@ -21,9 +21,11 @@
 # Linux, not Windows: locale bugs are JVM-level, so the 2x-cost Windows runner
 # buys nothing here -- main-jdk17-windows-build covers the OS-specific surface.
 #
-# Locale via -Duser.language/-Duser.country, not LANG/LC_ALL: the JVM silently
-# falls back to en_US when the named locale is not generated on the runner, so
-# the env-var form can pass while testing nothing.
+# Locale via JAVA_TOOL_OPTIONS, which every JVM (surefire forks included) reads at
+# startup. Not LANG/LC_ALL: the JVM falls back to en_US when the locale is not
+# generated on the runner. Not -Duser.language on the mvn command line: surefire
+# sets that in the fork only after the default Locale is fixed, so it tests nothing.
+# DefaultLocaleCanaryTest fails the build if the locale does not reach the fork.
 #
 # push-only, like the jdk21/jdk25 builds: locale regressions are rare and not
 # usually PR-specific, so a full reactor build per PR is not worth the cost.
@@ -44,9 +46,9 @@ jobs:
         java: [ '17' ]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
@@ -61,14 +63,16 @@ jobs:
           restore-keys: maven-${{ runner.os }}-
       - name: Install external tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg libimage-exiftool-perl
-      # The Docker-backed integration tests spin up Elasticsearch/OpenSearch/Solr/Kafka/MinIO
+      # The Docker-backed integration tests spin up Elasticsearch/OpenSearch/Solr/Kafka/RustFS
       # for ~7.5 min and carry no locale signal, so they are excluded here; the main jdk17
       # build runs them. If a new testcontainers module appears, add it to this list --
       # forgetting only makes this job slower, it does not weaken it.
       - name: Build with Maven (tr_TR locale)
+        env:
+          JAVA_TOOL_OPTIONS: -Duser.language=tr -Duser.country=TR
+          TIKA_EXPECTED_LOCALE: tr-TR
         run: |
           mvn install -Pfast -pl :tika-annotation-processor -am -B -q
           mvn clean test install -Pci -T1C \
             -pl '!:tika-pipes-es-integration-tests,!:tika-pipes-kafka-integration-tests,!:tika-pipes-opensearch-integration-tests,!:tika-pipes-s3-integration-tests,!:tika-pipes-solr-integration-tests' \
-            -Duser.language=tr -Duser.country=TR \
             -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"

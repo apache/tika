@@ -626,20 +626,16 @@ public class ZipParser extends AbstractArchiveParser {
         Date modified = ts != null && ts.isBit0_modifyTimePresent() ? ts.getModifyJavaTime()
                 : ntfs != null ? ntfs.getModifyJavaTime() : null;
         if (modified != null) {
-            md.set(FileSystem.MODIFIED, modified);
+            AbstractArchiveParser.setInstant(md, FileSystem.MODIFIED, modified);
         } else if (entry.getTime() != -1) {
             AbstractArchiveParser.setLocalTime(md, FileSystem.MODIFIED, new Date(entry.getTime()));
         }
         Date created = ts != null && ts.isBit2_createTimePresent() ? ts.getCreateJavaTime()
                 : ntfs != null ? ntfs.getCreateJavaTime() : null;
-        if (created != null) {
-            md.set(FileSystem.CREATED, created);
-        }
+        AbstractArchiveParser.setInstant(md, FileSystem.CREATED, created);
         Date accessed = ts != null && ts.isBit1_accessTimePresent() ? ts.getAccessJavaTime()
                 : ntfs != null ? ntfs.getAccessJavaTime() : null;
-        if (accessed != null) {
-            md.set(FileSystem.ACCESSED, accessed);
-        }
+        AbstractArchiveParser.setInstant(md, FileSystem.ACCESSED, accessed);
     }
 
     private Metadata buildEntryMetadata(ZipArchiveEntry entry, String name, ParseContext context)
