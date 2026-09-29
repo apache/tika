@@ -35,6 +35,7 @@ import org.apache.tika.metadata.Icon;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -52,7 +53,9 @@ public class ICOParserTest extends TikaTest {
         // the 256 px entry is stored as 0x0 in the directory; the size comes from the PNG header
         assertEquals(256, metadata.getInt(TIFF.IMAGE_WIDTH));
         assertEquals(256, metadata.getInt(TIFF.IMAGE_LENGTH));
-        assertEquals("32", metadata.get(TIFF.BITS_PER_SAMPLE));
+        // 32 bpp RGBA: 8 bits per sample, 4 samples
+        assertEquals("8", metadata.get(TIFF.BITS_PER_SAMPLE));
+        assertEquals(4, metadata.getInt(TIFF.SAMPLES_PER_PIXEL));
         assertEquals(3, metadata.getInt(Icon.IMAGE_COUNT));
         assertArrayEquals(new String[]{"16x16@32bpp bmp", "32x32@32bpp bmp", "256x256@32bpp png"},
                 metadata.getValues(Icon.IMAGES));
@@ -76,11 +79,44 @@ public class ICOParserTest extends TikaTest {
         assertEquals("image/x-win-bitmap", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals(32, metadata.getInt(TIFF.IMAGE_WIDTH));
         assertEquals(32, metadata.getInt(TIFF.IMAGE_LENGTH));
-        assertEquals("32", metadata.get(TIFF.BITS_PER_SAMPLE));
+        assertEquals("8", metadata.get(TIFF.BITS_PER_SAMPLE));
+        assertEquals(4, metadata.getInt(TIFF.SAMPLES_PER_PIXEL));
         assertEquals(7, metadata.getInt(Icon.HOTSPOT_X));
         assertEquals(5, metadata.getInt(Icon.HOTSPOT_Y));
         assertArrayEquals(new String[]{"16x16@32bpp bmp", "32x32@32bpp bmp"},
                 metadata.getValues(Icon.IMAGES));
+    }
+
+    /**
+     * A cursor's directory entry carries the hotspot where an icon's carries
+     * the bit count, so a cursor whose image header is cut has a hotspot but
+     * no colour depth.
+     */
+    @Test
+    public void testCursorWithUnreadableImage() throws Exception {
+        byte[] cur = readTestResource("testCUR.cur");
+        // header + 2 entries = 38 bytes, then the 1128 byte 16 px image; cut into the 32 px one
+        Metadata metadata = parse(Arrays.copyOf(cur, 38 + 1128 + 10));
+        assertEquals(32, metadata.getInt(TIFF.IMAGE_WIDTH));
+        assertNull(metadata.get(TIFF.BITS_PER_SAMPLE));
+        assertEquals(7, metadata.getInt(Icon.HOTSPOT_X));
+        assertEquals(5, metadata.getInt(Icon.HOTSPOT_Y));
+        assertArrayEquals(new String[]{"16x16@32bpp bmp", "32x32 unknown"},
+                metadata.getValues(Icon.IMAGES));
+    }
+
+    /**
+     * The legacy alias reaches this parser too, whichever type the caller names.
+     */
+    @Test
+    public void testAliasRoutesHere() throws Exception {
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/x-icon");
+        try (TikaInputStream tis = TikaInputStream.get(readTestResource("testICO.ico"))) {
+            new DefaultParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        }
+        assertEquals(3, metadata.getInt(Icon.IMAGE_COUNT));
+        assertEquals(256, metadata.getInt(TIFF.IMAGE_WIDTH));
     }
 
     /**
@@ -118,6 +154,8 @@ public class ICOParserTest extends TikaTest {
         assertEquals(32, metadata.getInt(TIFF.IMAGE_WIDTH));
         assertArrayEquals(new String[]{"16x16@32bpp bmp", "32x32@32bpp unknown"},
                 metadata.getValues(Icon.IMAGES));
+        // the second image's depth comes from the directory, so it is still 32 bpp
+        assertEquals("8", metadata.get(TIFF.BITS_PER_SAMPLE));
         assertContains("1 of 3 images", metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
 
         metadata = parse(Arrays.copyOf(file, 30));

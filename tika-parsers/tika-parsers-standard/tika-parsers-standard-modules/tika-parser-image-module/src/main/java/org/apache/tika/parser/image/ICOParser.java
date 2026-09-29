@@ -47,7 +47,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * The directory's own width, height and colour fields are unreliable (256 px
  * is stored as 0, many tools leave the bit count empty), so the values come
  * from each image's PNG IHDR or BITMAPINFOHEADER and the directory is only
- * the fallback.
+ * the fallback. Colour depth is reported the TIFF way, bits per sample and
+ * samples per pixel; the per-image list carries the total bits per pixel.
  */
 @TikaComponent
 public class ICOParser implements Parser {
@@ -55,9 +56,10 @@ public class ICOParser implements Parser {
     private static final long serialVersionUID = 4212837190215395123L;
 
     static final MediaType ICO_TYPE = MediaType.image("vnd.microsoft.icon");
+    static final MediaType ICO_ALIAS = MediaType.image("x-icon");
     static final MediaType CUR_TYPE = MediaType.image("x-win-bitmap");
 
-    private static final Set<MediaType> SUPPORTED_TYPES = Set.of(ICO_TYPE, CUR_TYPE);
+    private static final Set<MediaType> SUPPORTED_TYPES = Set.of(ICO_TYPE, ICO_ALIAS, CUR_TYPE);
 
     private static final int TYPE_ICON = 1;
     private static final int TYPE_CURSOR = 2;
@@ -99,7 +101,7 @@ public class ICOParser implements Parser {
                 unreadable += count - i;
                 break;
             }
-            Image image = readImage(file, entry);
+            Image image = readImage(file, entry, type == TYPE_CURSOR);
             if (image == null) {
                 unreadable++;
                 continue;
@@ -112,7 +114,10 @@ public class ICOParser implements Parser {
         if (largest != null) {
             metadata.set(TIFF.IMAGE_WIDTH, largest.width);
             metadata.set(TIFF.IMAGE_LENGTH, largest.height);
-            metadata.set(TIFF.BITS_PER_SAMPLE, Integer.toString(largest.bitsPerPixel));
+            if (largest.bitsPerSample > 0) {
+                metadata.set(TIFF.BITS_PER_SAMPLE, Integer.toString(largest.bitsPerSample));
+                metadata.set(TIFF.SAMPLES_PER_PIXEL, largest.samplesPerPixel);
+            }
             if (type == TYPE_CURSOR) {
                 metadata.set(Icon.HOTSPOT_X, largest.hotspotX);
                 metadata.set(Icon.HOTSPOT_Y, largest.hotspotY);
@@ -134,15 +139,18 @@ public class ICOParser implements Parser {
      *
      * @return the image, or null if its data lies outside the file
      */
-    private static Image readImage(byte[] file, int entry) {
+    private static Image readImage(byte[] file, int entry, boolean cursor) {
         Image image = new Image();
         // 0 in the directory means 256
         image.width = file[entry] == 0 ? 256 : file[entry] & 0xff;
         image.height = file[entry + 1] == 0 ? 256 : file[entry + 1] & 0xff;
-        // planes and bit count for icons, hotspot for cursors
-        image.hotspotX = EndianUtils.getUShortLE(file, entry + 4);
-        image.hotspotY = EndianUtils.getUShortLE(file, entry + 6);
-        image.bitsPerPixel = image.hotspotY;
+        if (cursor) {
+            // a cursor's directory holds the hotspot where an icon's holds planes and bit count
+            image.hotspotX = EndianUtils.getUShortLE(file, entry + 4);
+            image.hotspotY = EndianUtils.getUShortLE(file, entry + 6);
+        } else {
+            image.setDepth(EndianUtils.getUShortLE(file, entry + 6));
+        }
         long size = EndianUtils.getUIntLE(file, entry + 8);
         long offset = EndianUtils.getUIntLE(file, entry + 12);
         if (offset < HEADER_SIZE || offset >= file.length) {
@@ -154,14 +162,15 @@ public class ICOParser implements Parser {
             image.encoding = "png";
             image.width = EndianUtils.getIntBE(file, data + 16);
             image.height = EndianUtils.getIntBE(file, data + 20);
-            image.bitsPerPixel = pngBitsPerPixel(file[data + 24] & 0xff, file[data + 25] & 0xff);
+            image.bitsPerSample = file[data + 24] & 0xff;
+            image.samplesPerPixel = pngSamplesPerPixel(file[data + 25] & 0xff);
         } else if (available >= BITMAP_INFO_HEADER_SIZE &&
                 EndianUtils.getUIntLE(file, data) == BITMAP_INFO_HEADER_SIZE) {
             image.encoding = "bmp";
             image.width = Math.abs(EndianUtils.getIntLE(file, data + 4));
             // the height covers the XOR bitmap and the AND mask
             image.height = Math.abs(EndianUtils.getIntLE(file, data + 8)) / 2;
-            image.bitsPerPixel = EndianUtils.getUShortLE(file, data + 14);
+            image.setDepth(EndianUtils.getUShortLE(file, data + 14));
         } else {
             image.encoding = "unknown";
         }
@@ -177,26 +186,48 @@ public class ICOParser implements Parser {
         return true;
     }
 
-    private static int pngBitsPerPixel(int bitDepth, int colorType) {
+    private static int pngSamplesPerPixel(int colorType) {
         switch (colorType) {
             case 2: // truecolour
-                return 3 * bitDepth;
+                return 3;
             case 4: // greyscale with alpha
-                return 2 * bitDepth;
+                return 2;
             case 6: // truecolour with alpha
-                return 4 * bitDepth;
+                return 4;
             default: // greyscale or palette
-                return bitDepth;
+                return 1;
         }
     }
 
     private static final class Image {
         int width;
         int height;
-        int bitsPerPixel;
+        int bitsPerSample;
+        int samplesPerPixel;
         int hotspotX;
         int hotspotY;
         String encoding;
+
+        /**
+         * Splits a DIB colour depth into samples: 32 and 24 bit images are
+         * 8 bits per channel, 16 bit ones 5, anything below is palette or mono.
+         */
+        void setDepth(int bitsPerPixel) {
+            if (bitsPerPixel == 32 || bitsPerPixel == 24) {
+                bitsPerSample = 8;
+                samplesPerPixel = bitsPerPixel / 8;
+            } else if (bitsPerPixel == 16) {
+                bitsPerSample = 5;
+                samplesPerPixel = 3;
+            } else {
+                bitsPerSample = bitsPerPixel;
+                samplesPerPixel = bitsPerPixel > 0 ? 1 : 0;
+            }
+        }
+
+        int bitsPerPixel() {
+            return bitsPerSample * samplesPerPixel;
+        }
 
         /**
          * Larger area wins, then the higher colour depth, like Windows' own choice.
@@ -204,11 +235,12 @@ public class ICOParser implements Parser {
         boolean outranks(Image other) {
             long area = (long) width * height;
             long otherArea = (long) other.width * other.height;
-            return area > otherArea || area == otherArea && bitsPerPixel > other.bitsPerPixel;
+            return area > otherArea || area == otherArea && bitsPerPixel() > other.bitsPerPixel();
         }
 
         String describe() {
-            return width + "x" + height + "@" + bitsPerPixel + "bpp " + encoding;
+            String depth = bitsPerPixel() > 0 ? "@" + bitsPerPixel() + "bpp" : "";
+            return width + "x" + height + depth + " " + encoding;
         }
     }
 }
