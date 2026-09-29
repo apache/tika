@@ -106,6 +106,10 @@ public class ICOParser implements Parser {
                 unreadable++;
                 continue;
             }
+            if (image.encoding.equals("unknown")) {
+                // still listed with what the directory says, but worth a warning
+                unreadable++;
+            }
             metadata.add(Icon.IMAGES, image.describe());
             if (largest == null || image.outranks(largest)) {
                 largest = image;

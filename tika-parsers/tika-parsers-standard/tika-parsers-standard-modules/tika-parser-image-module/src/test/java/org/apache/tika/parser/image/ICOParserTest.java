@@ -18,7 +18,6 @@ package org.apache.tika.parser.image;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -103,6 +102,7 @@ public class ICOParserTest extends TikaTest {
         assertEquals(5, metadata.getInt(Icon.HOTSPOT_Y));
         assertArrayEquals(new String[]{"16x16@32bpp bmp", "32x32 unknown"},
                 metadata.getValues(Icon.IMAGES));
+        assertContains("1 of 2 images", metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 
     /**
@@ -156,12 +156,14 @@ public class ICOParserTest extends TikaTest {
                 metadata.getValues(Icon.IMAGES));
         // the second image's depth comes from the directory, so it is still 32 bpp
         assertEquals("8", metadata.get(TIFF.BITS_PER_SAMPLE));
-        assertContains("1 of 3 images", metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        // one image cut, one beyond the end
+        assertContains("2 of 3 images", metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
 
+        // cut inside the directory itself
         metadata = parse(Arrays.copyOf(file, 30));
         assertNull(metadata.get(TIFF.IMAGE_WIDTH));
         assertEquals(3, metadata.getInt(Icon.IMAGE_COUNT));
-        assertNotNull(metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertContains("3 of 3 images", metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 
     /**
