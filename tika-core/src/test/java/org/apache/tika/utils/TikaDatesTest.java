@@ -379,4 +379,30 @@ public class TikaDatesTest {
         assertEquals("2020-01-01T10:00:00Z", TikaDates.toMetadataString("2020-01-01T10:00:00Z0000"));
         assertTrue(TikaDates.parse("2020-01-01T10:00:00Z00:00").get().hasZone());
     }
+
+    @Test
+    public void testCtimeZoneNames() {
+        // an unknown name means zone unknown, as in the other families
+        assertEquals("2020-01-01T10:00:00", TikaDates.toMetadataString("Wed Jan 1 10:00:00 IST 2020"));
+        assertEquals("2020-01-01T15:00:00Z", TikaDates.toMetadataString("Wed Jan 1 10:00:00 EST 2020"));
+        assertEquals("2020-01-01T15:00:00Z", TikaDates.toMetadataString("Wed Jan 1 10:00:00 EST 2020 -0500"));
+        assertNull(TikaDates.toMetadataString("Wed Jan 1 10:00:00 EST 2020 +0100"));
+    }
+
+    @Test
+    public void testOffsetRangeIncludesMinutes() {
+        assertEquals("2019-12-31T20:00:00Z", TikaDates.normalize("2020-01-01T10:00:00+14:00"));
+        assertEquals("2020-01-01T22:00:00Z", TikaDates.normalize("2020-01-01T10:00:00-12:00"));
+        assertEquals("2020-01-01T04:15:00Z", TikaDates.normalize("2020-01-01T10:00:00+05:45"));
+        assertNull(TikaDates.normalize("2020-01-01T10:00:00+14:45"));
+        assertNull(TikaDates.normalize("2020-01-01T10:00:00-12:30"));
+    }
+
+    // an offset on a bare date would move it to another day; date-only values have no zone
+    @Test
+    public void testDateOnlyIgnoresOffset() {
+        assertEquals("2020-01-01", TikaDates.toMetadataString("2020-01-01+14:00"));
+        assertEquals("2020-01-01T12:00:00Z", TikaDates.normalize("2020-01-01+14:00"));
+        assertFalse(TikaDates.parse("2020-01-01-12:00").get().hasZone());
+    }
 }

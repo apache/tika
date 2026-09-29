@@ -29,6 +29,7 @@ import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.time.DateTimeException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -324,9 +325,10 @@ final class TextExtractor {
     // group:
     private int uprState = -1;
     // \\creatim fields, reset per group
-    private int year = -1, month = -1, day = -1, hour, minute;
+    private int year = -1, month = -1, day = -1, hour = -1, minute = -1;
     private static final DateTimeFormatter ZONELESS =
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss", Locale.ROOT);
+    private static final DateTimeFormatter DATE_ONLY = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.ROOT);
 
     //This keeps track of the following elements as they are
     //written to the handler: p, li, ol, ul
@@ -1166,8 +1168,7 @@ final class TextExtractor {
                     nextMetaData = OfficeOpenXMLExtended.TEMPLATE;
                 } else if (equals("creatim")) {
                     nextMetaData = TikaCoreProperties.CREATED;
-                    year = month = day = -1;
-                    hour = minute = 0;
+                    year = month = day = hour = minute = -1;
                 }
             }
 
@@ -1490,7 +1491,10 @@ final class TextExtractor {
             return null;
         }
         try {
-            return ZONELESS.format(LocalDateTime.of(year, month, day, hour, minute));
+            if (hour < 0) {
+                return DATE_ONLY.format(LocalDate.of(year, month, day));
+            }
+            return ZONELESS.format(LocalDateTime.of(year, month, day, hour, Math.max(minute, 0)));
         } catch (DateTimeException e) {
             return null;
         }

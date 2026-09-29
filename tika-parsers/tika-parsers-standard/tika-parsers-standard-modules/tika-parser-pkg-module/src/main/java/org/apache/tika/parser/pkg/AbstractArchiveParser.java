@@ -98,13 +98,21 @@ public abstract class AbstractArchiveParser extends AbstractEncodingDetectorPars
         }
     }
 
-    /** DOS-style local time the library resolved in the JVM zone: undo that, store zone-less. */
+    /**
+     * DOS-style local time the library resolved in the JVM zone: undo that, store zone-less.
+     * Not exact inside a DST spring-forward gap (02:30 comes back as 03:30); only the raw
+     * header field can fix that, which zip (via {@link ZipParser#readDosTime}) reads and RAR/ARJ don't expose.
+     */
     static void setLocalTime(Metadata metadata, Property property, Date resolvedInDefaultZone) {
         if (resolvedInDefaultZone != null) {
-            LocalDateTime local = LocalDateTime.ofInstant(resolvedInDefaultZone.toInstant(), ZoneId.systemDefault());
-            if (TikaDates.inYearBounds(local.toInstant(ZoneOffset.UTC))) {
-                metadata.set(property, ZONELESS.format(local));
-            }
+            setLocalTime(metadata, property,
+                    LocalDateTime.ofInstant(resolvedInDefaultZone.toInstant(), ZoneId.systemDefault()));
+        }
+    }
+
+    static void setLocalTime(Metadata metadata, Property property, LocalDateTime local) {
+        if (local != null && TikaDates.inYearBounds(local.toInstant(ZoneOffset.UTC))) {
+            metadata.set(property, ZONELESS.format(local));
         }
     }
 }

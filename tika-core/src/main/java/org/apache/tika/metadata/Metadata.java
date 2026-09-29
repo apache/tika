@@ -269,6 +269,12 @@ public class Metadata implements Serializable {
     /**
      * Returns the value of the identified Date based metadata property. If many values are
      * associated to the specified property, then the first one is returned.
+     * <p>
+     * The value is read with {@link org.apache.tika.utils.TikaDates}: a zone-less value is read
+     * as UTC (never the JVM default zone), a date-only {@code yyyy-MM-dd} value as midday UTC.
+     * Partial dates ({@code yyyy}, {@code yyyy-MM}) and years outside
+     * {@value org.apache.tika.utils.TikaDates#MIN_YEAR}..{@value org.apache.tika.utils.TikaDates#MAX_YEAR}
+     * return null.
      *
      * @param property simple date property definition
      * @return property value as a Date, or <code>null</code> if the property is not set, or not

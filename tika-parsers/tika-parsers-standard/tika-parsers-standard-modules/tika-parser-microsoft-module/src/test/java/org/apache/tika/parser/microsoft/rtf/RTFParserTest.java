@@ -432,7 +432,8 @@ public class RTFParserTest extends TikaTest {
     @Test
     public void testCreationDateFields() throws Exception {
         assertEquals("2012-03-04T05:06:00", created("{\\creatim\\yr2012\\mo3\\dy4\\hr5\\min6}"));
-        assertEquals("2012-03-04T00:00:00", created("{\\creatim\\yr2012\\mo3\\dy4}"));
+        assertEquals("2012-03-04", created("{\\creatim\\yr2012\\mo3\\dy4}"));   // no time: date-only
+        assertEquals("2012-03-04T05:00:00", created("{\\creatim\\yr2012\\mo3\\dy4\\hr5}"));
         assertNull(created("{\\creatim}"));                            // was a negative year
         assertNull(created("{\\creatim\\yr0\\mo0\\dy0\\hr0\\min0}"));
         assertNull(created("{\\creatim\\yr2012\\mo13\\dy40}"));        // was rolled over into 2013

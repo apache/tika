@@ -30,8 +30,27 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Parses document date strings strictly: whole-string match, no guessing.
- * No zone means UTC; date-only means midday UTC. Thread-safe.
+ * The one parser for date strings from documents. Each value is routed by its leading shape
+ * to a family (ISO 8601 / W3C-DTF, PDF {@code D:}, EXIF, RFC 5322 and other month-name forms,
+ * ctime, slash dates, 8/12/14-digit strings) and must match that family whole; there is no
+ * prefix matching. Thread-safe.
+ * <p>
+ * Rules: years outside {@value #MIN_YEAR}..{@value #MAX_YEAR} and offsets outside
+ * -12:00..+14:00 are rejected; the calendar is proleptic Gregorian as written; slash dates are
+ * month-first unless the first field is over 12 (day-first) or over 31 (yy/M/d); two-digit
+ * years 00-49 are 20xx (RFC 5322); named zones are fixed offsets (EDT is -4 all year) and an
+ * unknown 2-5 letter name means the zone is unknown (RFC 5322 4.3); a date-only value has no
+ * zone even if one was written.
+ * <p>
+ * Producer quirks accepted: {@code HH:mmss}, {@code HH.mm.ss}, one-digit seconds, trailing
+ * {@code :cc} after seconds, {@code Z00:00}, apostrophes in offsets ({@code -06'00'}),
+ * AM/PM after an ISO time, {@code D:} followed by ISO, a trailing {@code (comment)}, a missing
+ * sign on a {@code 0000} offset, and, in mail forms only, junk after a complete time and
+ * numeric offset. Inputs over {@value #MAX_LENGTH} characters are rejected unread.
+ * <p>
+ * Storage ({@link ParsedDate#toMetadataString()}): explicit zone -> canonical UTC {@code ...Z};
+ * no zone -> {@code yyyy-MM-dd'T'HH:mm:ss}; date-only -> {@code yyyy-MM-dd}. Reading back
+ * ({@link ParsedDate#toInstant()}) treats no zone as UTC and date-only as midday UTC.
  */
 public final class TikaDates {
 
@@ -85,7 +104,7 @@ public final class TikaDates {
             return CANONICAL.format(toInstant().truncatedTo(ChronoUnit.SECONDS).atOffset(ZoneOffset.UTC));
         }
 
-        /** Stored form: {@code ...Z} if zoned, else zone-less {@code yyyy-MM-dd'T'HH:mm:ss} or {@code yyyy-MM-dd}. */
+        /** Stored form: {@code yyyy-MM-dd} if date-only, else {@code ...Z} if zoned, else {@code yyyy-MM-dd'T'HH:mm:ss}. */
         public String toMetadataString() {
             if (precision == Precision.DAY) {
                 return DATE_ONLY.format(local);
@@ -379,11 +398,15 @@ public final class TikaDates {
             return null;
         }
         if (m.group(7) != null) {
-            ZoneOffset named = named(m.group(7));
-            if (named == null || z[0] != null) {
+            ZoneOffset[] named = namedOrUnknown(m.group(7));
+            if (named == null) {
                 return null;
             }
-            z = new ZoneOffset[]{named};
+            if (z[0] == null) {
+                z = named;
+            } else if (named[0] != null && !named[0].equals(z[0])) {
+                return null;   // a known name contradicting the numeric offset
+            }
         }
         return build(Integer.parseInt(m.group(8)), month, Integer.parseInt(m.group(2)),
                 m.group(3), m.group(4), m.group(5), m.group(6), z);
@@ -446,7 +469,8 @@ public final class TikaDates {
     private static ZoneOffset offset(String sign, String hh, String mm) {
         int h = Integer.parseInt(hh);
         int min = mm == null ? 0 : Integer.parseInt(mm);
-        if ("-".equals(sign) ? h > 12 : h > 14) {
+        int total = h * 60 + min;
+        if (min > 59 || ("-".equals(sign) ? total > 12 * 60 : total > 14 * 60)) {
             throw new DateTimeException("offset out of range");
         }
         return "-".equals(sign) ? ZoneOffset.ofHoursMinutes(-h, -min) : ZoneOffset.ofHoursMinutes(h, min);
@@ -487,7 +511,7 @@ public final class TikaDates {
             return null;
         }
         if (hh == null) {
-            return new ParsedDate(LocalDateTime.of(year, month, day, 12, 0), zone[0], Precision.DAY);
+            return new ParsedDate(LocalDateTime.of(year, month, day, 12, 0), null, Precision.DAY);
         }
         int hour = Integer.parseInt(hh);
         if (ampm != null) {
