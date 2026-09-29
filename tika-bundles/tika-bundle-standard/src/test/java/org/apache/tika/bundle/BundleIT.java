@@ -21,11 +21,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,6 +39,7 @@ import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.launch.Framework;
 import org.osgi.framework.launch.FrameworkFactory;
+import org.xml.sax.ContentHandler;
 
 /**
  * Integration test that boots an Apache Felix OSGi container, installs the
@@ -181,6 +185,54 @@ public class BundleIT {
         int size = ((java.util.Collection<?>) parsers).size();
         assertTrue(size > 15,
                 "Should have lots of parsers, found " + size);
+    }
+
+    // parse and detect through the registered services, the way an OSGi consumer does;
+    // before the fix both recursed into themselves until the stack overflowed
+    @Test
+    public void testParseThroughRegisteredServices() throws Exception {
+        byte[] html = null;
+        try (ZipInputStream zip = new ZipInputStream(
+                BundleIT.class.getResourceAsStream("/test-documents.zip"))) {
+            for (ZipEntry entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
+                if ("testHTML.html".equals(entry.getName())) {
+                    html = zip.readAllBytes();
+                }
+            }
+        }
+        assertNotNull(html, "testHTML.html not found");
+
+        Bundle tikaCore = findBundle("org.apache.tika.core");
+        Class<?> metadataClass = tikaCore.loadClass("org.apache.tika.metadata.Metadata");
+        Class<?> tisClass = tikaCore.loadClass("org.apache.tika.io.TikaInputStream");
+        Class<?> contextClass = tikaCore.loadClass("org.apache.tika.parser.ParseContext");
+        Method tisGet = tisClass.getMethod("get", byte[].class);
+        Method metadataSet = metadataClass.getMethod("set", String.class, String.class);
+
+        Object detector = ctx.getService(ctx.getAllServiceReferences(
+                "org.apache.tika.detect.Detector", null)[0]);
+        Method detect = tikaCore.loadClass("org.apache.tika.detect.Detector").getMethod("detect",
+                tisClass, metadataClass, contextClass);
+        Object type;
+        try (AutoCloseable tis = (AutoCloseable) tisGet.invoke(null, (Object) html)) {
+            type = detect.invoke(detector, tis, metadataClass.getConstructor().newInstance(),
+                    contextClass.getConstructor().newInstance());
+        }
+        assertEquals("text/html", type.toString());
+
+        Object parser = ctx.getService(ctx.getAllServiceReferences(
+                "org.apache.tika.parser.Parser", null)[0]);
+        Method parse = tikaCore.loadClass("org.apache.tika.parser.Parser").getMethod("parse",
+                tisClass, ContentHandler.class, metadataClass, contextClass);
+        Object metadata = metadataClass.getConstructor().newInstance();
+        metadataSet.invoke(metadata, "Content-Type", type.toString());
+        ContentHandler handler = (ContentHandler) tikaCore
+                .loadClass("org.apache.tika.sax.BodyContentHandler")
+                .getConstructor(int.class).newInstance(-1);
+        try (AutoCloseable tis = (AutoCloseable) tisGet.invoke(null, (Object) html)) {
+            parse.invoke(parser, tis, handler, metadata, contextClass.getConstructor().newInstance());
+        }
+        assertTrue(handler.toString().contains("Test Indexation Html"), handler.toString());
     }
 
     @Test
