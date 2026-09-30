@@ -240,9 +240,10 @@ public class TestMetadataFilter extends TikaTest {
                 // date-only reads as midday, like Metadata.getDate(), in the default zone
                 {"2015-06-12", "2015-06-12T16:00:00Z"},
                 {"2020-01-01T10:00:00Z00:00", "2020-01-01T10:00:00Z"},
-                // partial and unparseable values are left as they are, without an exception
-                {"2018", "2018"},
-                {"2018-06", "2018-06"},
+                // partials: missing fields take their minimum, midday in the default zone
+                {"2018", "2018-01-01T17:00:00Z"},
+                {"2018-06", "2018-06-01T16:00:00Z"},
+                // unparseable values are left as they are, without an exception
                 {"garbage", "garbage"},
                 {"+999999999-12-31T23:59:59-10:00", "+999999999-12-31T23:59:59-10:00"},
         };

@@ -80,6 +80,7 @@
     <module>tika-parser-apple-module</module>
     <module>tika-parser-cad-module</module>
     <module>tika-parser-mail-module</module>
+    <module>tika-parser-mail-commons</module>
     <module>tika-parser-miscoffice-module</module>
     <module>tika-parser-news-module</module>
     <module>tika-parser-crypto-module</module>

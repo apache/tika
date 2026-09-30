@@ -39,7 +39,9 @@ import org.apache.tika.utils.TikaDates;
  * Rewrites every value of every DATE property to canonical UTC, "yyyy-MM-dd'T'HH:mm:ss'Z'",
  * for end points that require a 'Z' timezone. An explicit offset is honored; zone-less values
  * are read in the default time zone (UTC unless set), and date-only values as midday there.
- * Partial dates (yyyy, yyyy-MM) and unparseable values are left as they are.
+ * Partial dates are coerced: missing fields take their minimum, so "2019" becomes
+ * 2019-01-01 and "2019-06" becomes 2019-06-01, both at midday in the default zone.
+ * Unparseable values are left as they are.
  *
  * Users can specify an alternate defaultTimeZone with
  * {@link DateNormalizingMetadataFilter#setDefaultTimeZone(String)} to apply
@@ -104,17 +106,15 @@ public class DateNormalizingMetadataFilter extends MetadataFilterBase {
         }
     }
 
-    /** @return canonical UTC, or null to leave the value as is (partial or unparseable) */
+    /** @return canonical UTC, or null to leave the value as is (unparseable) */
     private String toUtc(String value) {
         Optional<TikaDates.ParsedDate> parsed = TikaDates.parse(value);
         if (parsed.isEmpty()) {
             LOGGER.warn("Couldn't convert date to UTC: >{}<", abbreviate(value));
             return null;
         }
+        // a partial's LocalDateTime is already day 1 at midday
         TikaDates.ParsedDate d = parsed.get();
-        if (!d.isFullPrecision()) {
-            return null;
-        }
         try {
             OffsetDateTime odt = d.hasZone() ? d.getLocalDateTime().atOffset(d.getOffset())
                     : d.getLocalDateTime().atZone(defaultTimeZone.toZoneId()).toOffsetDateTime();
