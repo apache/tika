@@ -24,6 +24,8 @@ Release 4.2.0 - unreleased
      Every resolver Tika installs answers with an empty stream, never null (TIKA-4941).
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
+   * OneNote preserves table and list structure in XHTML (TIKA-4943).
+
 Release 4.1.0 - 9/26/2026
 
   HIGHLIGHTS
