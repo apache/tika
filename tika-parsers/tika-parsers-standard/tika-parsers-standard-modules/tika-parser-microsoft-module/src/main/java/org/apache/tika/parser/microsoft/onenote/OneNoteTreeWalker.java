@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,6 +48,8 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OneNote;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -96,6 +99,10 @@ class OneNoteTreeWalker {
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
+    private final Set<String> pageGuids = new HashSet<>();
+    private final Set<String> pageSeriesGuids = new HashSet<>();
+    private final Set<String> conflictPageGuids = new HashSet<>();
+    private final Set<String> entityGuids = new HashSet<>();
     private final OneNoteTreeWalkerOptions options;
     private final OneNoteDocument oneNoteDocument;
     private final OneNoteDirectFileResource dif;
@@ -157,6 +164,12 @@ class OneNoteTreeWalker {
         Map<String, Object> structure = new HashMap<>();
         structure.put("header", oneNoteDocument.header);
         structure.put("rootFileNodes", walkRootFileNodes());
+        if (parentMetadata != null) {
+            setGuidBag(parentMetadata, OneNote.PAGE_GUIDS, pageGuids);
+            setGuidBag(parentMetadata, OneNote.PAGE_SERIES_GUIDS, pageSeriesGuids);
+            setGuidBag(parentMetadata, OneNote.CONFLICT_PAGE_GUIDS, conflictPageGuids);
+            setGuidBag(parentMetadata, OneNote.ENTITY_GUIDS, entityGuids);
+        }
         return structure;
     }
 
@@ -384,7 +397,8 @@ class OneNoteTreeWalker {
             structure.put("childFileNodeList", walkFileNodeList(fileNode.childFileNodeList, parentPropertyId));
         }
         if (fileNode.propertySet != null) {
-            List<Map<String, Object>> propSet = processPropertySet(fileNode.propertySet, parentPropertyId);
+            List<Map<String, Object>> propSet =
+                    processPropertySet(fileNode.propertySet, parentPropertyId, jcidIndex(fileNode));
             if (!propSet.isEmpty()) {
                 structure.put("propertySet", propSet);
             }
@@ -461,12 +475,13 @@ class OneNoteTreeWalker {
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
     private List<Map<String, Object>> processPropertySet(PropertySet propertySet,
-                                                         OneNotePropertyId parentPropertyId)
+                                                         OneNotePropertyId parentPropertyId,
+                                                         int objectType)
             throws IOException, TikaException, SAXException {
         List<Map<String, Object>> propValues = new ArrayList<>();
         for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
             PropertyValue propertyValue = propertySet.rgPridsData.get(i);
-            propValues.add(processPropertyValue(propertyValue, parentPropertyId));
+            propValues.add(processPropertyValue(propertyValue, parentPropertyId, objectType));
         }
         return propValues;
     }
@@ -496,7 +511,8 @@ class OneNoteTreeWalker {
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
     private Map<String, Object> processPropertyValue(PropertyValue propertyValue,
-                                                     OneNotePropertyId parentPropertyId)
+                                                     OneNotePropertyId parentPropertyId,
+                                                     int objectType)
             throws IOException, TikaException, SAXException {
         Map<String, Object> propMap = new HashMap<>();
         propMap.put("oneNoteType", "PropertyValue");
@@ -615,6 +631,17 @@ class OneNoteTreeWalker {
                         // have the onlyLatestRevision = false
                         handleRichEditTextUnicode(content.size());
                     }
+                } else if (propertyValue.propertyId.propertyEnum ==
+                        OneNotePropertyEnum.NotebookManagementEntityGuid
+                        && content.size() == 16) {
+                    ByteBuffer guidBuffer = ByteBuffer.allocate(16);
+                    dif.read(guidBuffer);
+                    GUID parsed = GUID.fromMicrosoftBytes(guidBuffer.array());
+                    if (parsed != null) {
+                        String guid = parsed.toString();
+                        propMap.put("notebookManagementEntityGuid", guid);
+                        addClassicEntityGuid(objectType, guid);
+                    }
                 } else {
                     //TODO -- these seem to be somewhat broken font files and other
                     //odds and ends...what are they and how should we process them?
@@ -633,7 +660,8 @@ class OneNoteTreeWalker {
             }
         }
         if (propertyValue.propertySet != null && propertyValue.propertySet.rgPridsData != null) {
-            List<Map<String, Object>> propSet = processPropertySet(propertyValue.propertySet, parentPropertyId);
+            List<Map<String, Object>> propSet =
+                    processPropertySet(propertyValue.propertySet, parentPropertyId, objectType);
             if (!propSet.isEmpty()) {
                 propMap.put("propertySet", propSet);
             }
@@ -701,6 +729,43 @@ class OneNoteTreeWalker {
                 xhtml.endElement(P);
             }
         }
+    }
+
+    private void addClassicEntityGuid(int objectType, String guid) {
+        switch (objectType) {
+            case OneNoteJcid.PAGE_METADATA:
+                pageGuids.add(guid);
+                break;
+            case OneNoteJcid.PAGE_SERIES_NODE:
+                pageSeriesGuids.add(guid);
+                break;
+            case OneNoteJcid.CONFLICT_PAGE_METADATA:
+                conflictPageGuids.add(guid);
+                break;
+            case OneNoteJcid.SECTION_NODE:
+                break;
+            default:
+                entityGuids.add(guid);
+                break;
+        }
+    }
+
+    private static void setGuidBag(Metadata metadata, Property property, Set<String> guids) {
+        if (!guids.isEmpty()) {
+            String[] values = guids.toArray(new String[0]);
+            Arrays.sort(values);
+            metadata.set(property, values);
+        }
+    }
+
+    private static int jcidIndex(FileNode fileNode) {
+        if (fileNode == null || fileNode.subType == null
+                || fileNode.subType.objectDeclarationWithRefCount == null
+                || fileNode.subType.objectDeclarationWithRefCount.body == null
+                || fileNode.subType.objectDeclarationWithRefCount.body.jcid == null) {
+            return -1;
+        }
+        return (int) fileNode.subType.objectDeclarationWithRefCount.body.jcid.index;
     }
 
     public Set<String> getAuthors() {

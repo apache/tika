@@ -51,6 +51,7 @@ import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
@@ -77,6 +78,21 @@ public class OneNoteParserTest extends TikaTest {
             new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata, context);
         }
         return metadata;
+    }
+
+    @Test
+    public void testSectionGuidIsExtractedFromClassicHeader() throws Exception {
+        Metadata metadata = new Metadata();
+        try (InputStream input = getClass().getResourceAsStream("/test-documents/testOneNote1.one");
+             TikaInputStream tis = TikaInputStream.get(input)) {
+            new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata,
+                    new ParseContext());
+        }
+        String[] guids = metadata.getValues(OneNote.SECTION_GUIDS);
+        assertNotNull(guids);
+        assertEquals(1, guids.length);
+        assertTrue(guids[0].matches("\\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-"
+                + "[0-9A-F]{4}-[0-9A-F]{12}\\}"));
     }
 
     @Test
@@ -295,6 +311,11 @@ public class OneNoteParserTest extends TikaTest {
         List<String> originalAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "originalAuthors"));
         assertNotContained("Microsoft\u0000", originalAuthors);
         assertContains("ndipiazza\u0000", mostRecentAuthors);
+
+        String[] pageGuids = metadata.getValues(OneNote.PAGE_GUIDS);
+        assertNotNull(pageGuids);
+        assertTrue(pageGuids.length > 0);
+        assertEquals(pageGuids.length, Arrays.stream(pageGuids).distinct().count());
 
         assertEquals(Instant.ofEpochSecond(1574426385),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));

@@ -129,6 +129,7 @@ public class OneNoteParser implements Parser {
                         "0x" + Long.toHexString(oneNoteDocument.header.nFileVersionGeneration));
                 metadata.set(OneNote.RGB_PLACEHOLDER,
                         "0x" + Long.toHexString(oneNoteDocument.header.rgbPlaceholder));
+                emitSectionFileGuid(header, metadata);
 
                 Exception structureFailure = oneNoteDocument.structureParseException;
                 boolean walked = false;
@@ -209,6 +210,13 @@ public class OneNoteParser implements Parser {
         }
 
 
+    }
+
+    private static void emitSectionFileGuid(OneNoteHeader header, Metadata metadata) {
+        GUID guidFile = header.getGuidFile();
+        if (guidFile != null && !guidFile.equals(GUID.nil())) {
+            metadata.add(OneNote.SECTION_GUIDS, guidFile.toString());
+        }
     }
 
     private static String[] sortedValues(Set<String> values) {
