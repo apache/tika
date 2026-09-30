@@ -81,8 +81,10 @@ public class GUIDTest {
     }
 
     @Test
-    public void testFromMicrosoftBytesRejectsShortInput() {
+    public void testFromMicrosoftBytesRejectsInvalidLengths() {
         assertNull(GUID.fromMicrosoftBytes(null));
         assertNull(GUID.fromMicrosoftBytes(new byte[15]));
+        assertNull(GUID.fromMicrosoftBytes(new byte[17]));
+        assertNull(GUID.fromMicrosoftBytes(new byte[32]));
     }
 }

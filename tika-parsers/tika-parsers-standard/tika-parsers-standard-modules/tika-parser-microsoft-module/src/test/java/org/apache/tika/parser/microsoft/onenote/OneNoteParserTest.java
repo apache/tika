@@ -96,6 +96,22 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testEmitSectionGuidSkipsNullAndNil() {
+        Metadata metadata = new Metadata();
+        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(null), metadata);
+        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(GUID.nil()), metadata);
+        assertEquals(0, metadata.getValues(OneNote.SECTION_GUIDS).length);
+
+        GUID fileGuid = new GUID(new int[] {
+                0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x08,
+                0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00
+        });
+        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(fileGuid), metadata);
+        assertEquals(List.of(fileGuid.toString()),
+                Arrays.asList(metadata.getValues(OneNote.SECTION_GUIDS)));
+    }
+
+    @Test
     public void testFuzzerRegressionInputsFallBackToLegacyDump() throws Exception {
         // a structural failure falls back to the legacy string dump; the human warning names
         // no exception text -- the throwable is recorded separately, under the policy
@@ -316,6 +332,9 @@ public class OneNoteParserTest extends TikaTest {
         assertNotNull(pageGuids);
         assertTrue(pageGuids.length > 0);
         assertEquals(pageGuids.length, Arrays.stream(pageGuids).distinct().count());
+        String[] pageSeriesGuids = metadata.getValues(OneNote.PAGE_SERIES_GUIDS);
+        assertNotNull(pageSeriesGuids);
+        assertTrue(pageSeriesGuids.length > 0);
 
         assertEquals(Instant.ofEpochSecond(1574426385),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));

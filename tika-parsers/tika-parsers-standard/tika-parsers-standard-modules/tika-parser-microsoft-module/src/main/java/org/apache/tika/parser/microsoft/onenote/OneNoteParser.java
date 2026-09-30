@@ -212,7 +212,7 @@ public class OneNoteParser implements Parser {
 
     }
 
-    private static void emitSectionFileGuid(OneNoteHeader header, Metadata metadata) {
+    static void emitSectionFileGuid(OneNoteHeader header, Metadata metadata) {
         GUID guidFile = header.getGuidFile();
         if (guidFile != null && !guidFile.equals(GUID.nil())) {
             metadata.add(OneNote.SECTION_GUIDS, guidFile.toString());
