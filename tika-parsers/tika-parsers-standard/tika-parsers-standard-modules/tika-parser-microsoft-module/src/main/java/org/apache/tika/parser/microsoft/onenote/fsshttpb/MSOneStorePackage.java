@@ -49,7 +49,6 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.microsoft.onenote.OneNoteJcid;
 import org.apache.tika.parser.microsoft.onenote.OneNotePropertyEnum;
 import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
@@ -148,6 +147,8 @@ public class MSOneStorePackage {
     // flattened property actions per object; objects can be re-flattened many times during
     // picture/resource-name resolution, which is quadratic without this cache
     private final Map<RevisionStoreObject, List<PropertyAction>> objectActionsCache =
+            new IdentityHashMap<>();
+    private final Map<RevisionStoreObject, NumberListInfo> numberListInfoCache =
             new IdentityHashMap<>();
     private final Map<CellID, StorageIndexCellMapping> storageIndexCellMappingsById =
             new HashMap<>();
@@ -260,11 +261,7 @@ public class MSOneStorePackage {
             // no cell information available - walk the object groups in revision order
             Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(OtherFileNodeList);
             Set<ExGuid> visited = new HashSet<>();
-            for (RevisionStoreObjectGroup objectGroup : OtherFileNodeList) {
-                for (RevisionStoreObject object : objectGroup.objects) {
-                    walkRootObject(object, objectsById, visited, options, metadata, xhtml);
-                }
-            }
+            walkObjectGroupRoots(OtherFileNodeList, objectsById, visited, options, metadata, xhtml);
         }
         if (!authors.isEmpty()) {
             metadata.set(TikaCoreProperties.CREATOR, sortedValues(authors));
@@ -402,11 +399,8 @@ public class MSOneStorePackage {
             } else {
                 recordParseWarning("OneNote cell root objects could not be resolved; walking all objects");
             }
-            for (RevisionStoreObjectGroup objectGroup : cell.objectGroups) {
-                for (RevisionStoreObject object : objectGroup.objects) {
-                    walkRootObject(object, objectsById, visited, options, metadata, xhtml);
-                }
-            }
+            walkObjectGroupRoots(cell.objectGroups, objectsById, visited, options, metadata,
+                    xhtml);
         }
     }
 
@@ -459,7 +453,7 @@ public class MSOneStorePackage {
         Map<ExGuid, RevisionStoreObject> objectsById = new HashMap<>();
         for (RevisionStoreObjectGroup objectGroup : objectGroups) {
             for (RevisionStoreObject object : objectGroup.objects) {
-                if (object.objectID != null) {
+                if (object != null && object.objectID != null) {
                     objectsById.put(object.objectID, object);
                 }
             }
@@ -572,7 +566,11 @@ public class MSOneStorePackage {
                 break;
             case OneNoteJcid.OUTLINE_ELEMENT_NODE:
                 if (listStyle != null) {
-                    xhtml.startElement("li");
+                    if (listStyle.restartValue == null) {
+                        xhtml.startElement("li");
+                    } else {
+                        xhtml.startElement("li", "value", listStyle.restartValue.toString());
+                    }
                 }
                 break;
             default:
@@ -602,6 +600,64 @@ public class MSOneStorePackage {
         }
     }
 
+    private void walkObjectGroupRoots(List<RevisionStoreObjectGroup> objectGroups,
+                                      Map<ExGuid, RevisionStoreObject> objectsById,
+                                      Set<ExGuid> visited, OneNoteTreeWalkerOptions options,
+                                      Metadata metadata, XHTMLContentHandler xhtml)
+            throws SAXException, TikaException, IOException {
+        Set<ExGuid> tableDescendantIds = collectTableDescendantIds(objectsById);
+        List<RevisionStoreObject> deferredTables = new ArrayList<>();
+        for (RevisionStoreObjectGroup objectGroup : objectGroups) {
+            for (RevisionStoreObject object : objectGroup.objects) {
+                if (object != null && object.objectID != null &&
+                        tableDescendantIds.contains(object.objectID)) {
+                    if (jcidIndex(object) == OneNoteJcid.TABLE_NODE) {
+                        deferredTables.add(object);
+                    }
+                    continue;
+                }
+                walkRootObject(object, objectsById, visited, options, metadata, xhtml);
+            }
+        }
+        for (RevisionStoreObject table : deferredTables) {
+            if (!visited.contains(table.objectID)) {
+                walkRootObject(table, objectsById, visited, options, metadata, xhtml);
+            }
+        }
+    }
+
+    private Set<ExGuid> collectTableDescendantIds(
+            Map<ExGuid, RevisionStoreObject> objectsById) {
+        Set<ExGuid> descendants = new HashSet<>();
+        Set<ExGuid> traversed = new HashSet<>();
+        List<RevisionStoreObject> pending = new ArrayList<>();
+        for (RevisionStoreObject object : objectsById.values()) {
+            if (jcidIndex(object) == OneNoteJcid.TABLE_NODE) {
+                traversed.add(object.objectID);
+                pending.add(object);
+            }
+        }
+        for (int index = 0; index < pending.size(); index++) {
+            RevisionStoreObject object = pending.get(index);
+            if (object.propertySet == null ||
+                    object.propertySet.objectSpaceObjectPropSet == null) {
+                continue;
+            }
+            for (PropertyAction action : collectObjectActions(object)) {
+                if (!action.isChildReference || action.childReference == null) {
+                    continue;
+                }
+                ExGuid childId = action.childReference;
+                descendants.add(childId);
+                RevisionStoreObject child = objectsById.get(childId);
+                if (child != null && traversed.add(childId)) {
+                    pending.add(child);
+                }
+            }
+        }
+        return descendants;
+    }
+
     private void walkRootObject(RevisionStoreObject object,
                                 Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
                                 OneNoteTreeWalkerOptions options, Metadata metadata,
@@ -612,7 +668,7 @@ public class MSOneStorePackage {
                 collectObjectActions(object) : Collections.emptyList();
         ListStyle listStyle = listStyleForObject(object, actions, objectsById);
         if (listStyle != null) {
-            xhtml.startElement(listStyle.elementName);
+            startList(listStyle, xhtml);
         }
         try {
             walkObject(object, objectsById, visited, AuthorRole.NONE, options, metadata, xhtml,
@@ -641,7 +697,7 @@ public class MSOneStorePackage {
                 index++;
                 continue;
             }
-            xhtml.startElement(style.elementName);
+            startList(style, xhtml);
             int next = index;
             try {
                 while (next < actions.size()) {
@@ -677,78 +733,176 @@ public class MSOneStorePackage {
 
     private ListStyle listStyleForObject(RevisionStoreObject object, List<PropertyAction> actions,
                                          Map<ExGuid, RevisionStoreObject> objectsById) {
-        if (jcidIndex(object) != OneNoteJcid.OUTLINE_ELEMENT_NODE) {
+        if (object == null || jcidIndex(object) != OneNoteJcid.OUTLINE_ELEMENT_NODE) {
             return null;
         }
         boolean isListItem = false;
-        byte[] format = null;
+        NumberListInfo numberListInfo = null;
+        NumberListInfo malformedNumberListInfo = null;
+        byte[] indent = null;
         for (PropertyAction action : actions) {
-            if (action.oneNotePropertyEnum != OneNotePropertyEnum.ListNodes) {
-                continue;
-            }
-            isListItem = true;
-            RevisionStoreObject listNode = action.childReference == null ? null :
-                    objectsById.get(action.childReference);
-            byte[] candidate = numberListFormat(listNode);
-            if (candidate != null) {
-                format = candidate;
+            if (action.oneNotePropertyEnum == OneNotePropertyEnum.ListNodes) {
+                isListItem = true;
+                RevisionStoreObject listNode = action.childReference == null ? null :
+                        objectsById.get(action.childReference);
+                NumberListInfo candidate = numberListInfo(listNode);
+                if (candidate != null && candidate.formatValid) {
+                    numberListInfo = candidate;
+                } else if (candidate != null) {
+                    malformedNumberListInfo = candidate;
+                }
+            } else if (action.oneNotePropertyEnum == OneNotePropertyEnum.RgOutlineIndentDistance
+                    && action.property instanceof PrtFourBytesOfLengthFollowedByData) {
+                indent = ((PrtFourBytesOfLengthFollowedByData) action.property).data;
             }
         }
         if (!isListItem) {
             return null;
         }
-        byte[] indent = null;
-        for (PropertyAction action : actions) {
-            if (action.oneNotePropertyEnum == OneNotePropertyEnum.RgOutlineIndentDistance
-                    && action.property instanceof PrtFourBytesOfLengthFollowedByData) {
-                indent = ((PrtFourBytesOfLengthFollowedByData) action.property).data;
-                break;
-            }
+        if (numberListInfo == null) {
+            numberListInfo = malformedNumberListInfo;
         }
-        return new ListStyle(isNumberedListFormat(format) ? "ol" : "ul", format, indent);
+        boolean numbered = numberListInfo != null && numberListInfo.numbered;
+        ListStyle style = new ListStyle(numbered ? "ol" : "ul",
+                numberListInfo == null ? null : numberListInfo.htmlType,
+                numberListInfo == null ? null : numberListInfo.format, indent,
+                numbered ? numberListInfo.restartValue : null);
+        return style;
     }
 
-    private byte[] numberListFormat(RevisionStoreObject listNode) {
+    private NumberListInfo numberListInfo(RevisionStoreObject listNode) {
         if (listNode == null || listNode.propertySet == null
                 || listNode.propertySet.objectSpaceObjectPropSet == null
                 || jcidIndex(listNode) != OneNoteJcid.NUMBER_LIST_NODE) {
             return null;
         }
+        if (numberListInfoCache.containsKey(listNode)) {
+            return numberListInfoCache.get(listNode);
+        }
+        byte[] format = null;
+        Long restartValue = null;
         for (PropertyAction action : collectObjectActions(listNode)) {
             if (action.oneNotePropertyEnum == OneNotePropertyEnum.NumberListFormat
                     && action.property instanceof PrtFourBytesOfLengthFollowedByData) {
-                return ((PrtFourBytesOfLengthFollowedByData) action.property).data;
+                format = ((PrtFourBytesOfLengthFollowedByData) action.property).data;
+            } else if (action.oneNotePropertyEnum == OneNotePropertyEnum.ListRestart
+                    && action.property instanceof FourBytesOfData) {
+                restartValue = unsignedInt32(((FourBytesOfData) action.property).data);
             }
         }
-        return null;
+        ParsedListFormat parsedFormat = parseListFormat(format);
+        NumberListInfo info = new NumberListInfo(format, parsedFormat != null,
+                parsedFormat != null && parsedFormat.numbered,
+                parsedFormat == null ? null : parsedFormat.htmlType,
+                parsedFormat != null && parsedFormat.numbered ? restartValue : null);
+        numberListInfoCache.put(listNode, info);
+        return info;
     }
 
-    private static boolean isNumberedListFormat(byte[] format) {
-        if (format == null) {
-            return false;
+    private static ParsedListFormat parseListFormat(byte[] format) {
+        if (format == null || format.length < 2 || (format.length & 1) != 0) {
+            return null;
         }
-        for (int i = 0; i + 1 < format.length; i += 2) {
-            if ((format[i] & 0xff) == 0xfd && (format[i + 1] & 0xff) == 0xff) {
-                return true;
+        int characterCount = unsignedInt16(format, 0);
+        if (characterCount != format.length / 2 - 1) {
+            return null;
+        }
+        for (int i = 2; i + 1 < format.length; i += 2) {
+            if (unsignedInt16(format, i) == 0xfffd) {
+                if (i + 3 >= format.length) {
+                    return null;
+                }
+                return new ParsedListFormat(true,
+                        htmlListType(unsignedInt16(format, i + 2)));
             }
         }
-        return false;
+        return new ParsedListFormat(false, null);
+    }
+
+    private static int unsignedInt16(byte[] data, int index) {
+        return (data[index] & 0xff) | ((data[index + 1] & 0xff) << 8);
+    }
+
+    private static Long unsignedInt32(byte[] data) {
+        if (data == null || data.length != 4) {
+            return null;
+        }
+        return (data[0] & 0xffL) | ((data[1] & 0xffL) << 8) |
+                ((data[2] & 0xffL) << 16) | ((data[3] & 0xffL) << 24);
+    }
+
+    private static String htmlListType(int formatCode) {
+        switch (formatCode) {
+            case 0x00:
+                return "1";
+            case 0x01:
+                return "I";
+            case 0x02:
+                return "i";
+            case 0x03:
+                return "A";
+            case 0x04:
+                return "a";
+            default:
+                return null;
+        }
+    }
+
+    private void startList(ListStyle style, XHTMLContentHandler xhtml) throws SAXException {
+        if (style.htmlType == null) {
+            xhtml.startElement(style.elementName);
+        } else {
+            xhtml.startElement(style.elementName, "type", style.htmlType);
+        }
+    }
+
+    private static final class ParsedListFormat {
+        private final boolean numbered;
+        private final String htmlType;
+
+        private ParsedListFormat(boolean numbered, String htmlType) {
+            this.numbered = numbered;
+            this.htmlType = htmlType;
+        }
+    }
+
+    private static final class NumberListInfo {
+        private final byte[] format;
+        private final boolean formatValid;
+        private final boolean numbered;
+        private final String htmlType;
+        private final Long restartValue;
+
+        private NumberListInfo(byte[] format, boolean formatValid, boolean numbered,
+                               String htmlType, Long restartValue) {
+            this.format = format;
+            this.formatValid = formatValid;
+            this.numbered = numbered;
+            this.htmlType = htmlType;
+            this.restartValue = restartValue;
+        }
     }
 
     private static final class ListStyle {
         private final String elementName;
+        private final String htmlType;
         private final byte[] format;
         private final byte[] indent;
+        private final Long restartValue;
 
-        private ListStyle(String elementName, byte[] format, byte[] indent) {
+        private ListStyle(String elementName, String htmlType, byte[] format, byte[] indent,
+                          Long restartValue) {
             this.elementName = elementName;
+            this.htmlType = htmlType;
             this.format = format;
             this.indent = indent;
+            this.restartValue = restartValue;
         }
 
         private boolean matches(ListStyle other) {
-            return elementName.equals(other.elementName) && Arrays.equals(format, other.format)
-                    && Arrays.equals(indent, other.indent);
+            return elementName.equals(other.elementName) &&
+                    (htmlType == null ? other.htmlType == null : htmlType.equals(other.htmlType)) &&
+                    Arrays.equals(format, other.format) && Arrays.equals(indent, other.indent);
         }
     }
 

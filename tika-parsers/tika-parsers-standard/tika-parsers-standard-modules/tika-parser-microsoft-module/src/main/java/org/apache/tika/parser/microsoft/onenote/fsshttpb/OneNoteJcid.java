@@ -14,17 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.parser.microsoft.onenote;
+package org.apache.tika.parser.microsoft.onenote.fsshttpb;
 
 /** JCID index values from MS-ONE 2.1.13. */
-public final class OneNoteJcid {
+final class OneNoteJcid {
 
-    public static final int OUTLINE_NODE = 0x0C;
-    public static final int OUTLINE_ELEMENT_NODE = 0x0D;
-    public static final int NUMBER_LIST_NODE = 0x12;
-    public static final int TABLE_NODE = 0x22;
-    public static final int TABLE_ROW_NODE = 0x23;
-    public static final int TABLE_CELL_NODE = 0x24;
+    static final int OUTLINE_NODE = 0x0C;
+    static final int OUTLINE_ELEMENT_NODE = 0x0D;
+    static final int NUMBER_LIST_NODE = 0x12;
+    static final int TABLE_NODE = 0x22;
+    static final int TABLE_ROW_NODE = 0x23;
+    static final int TABLE_CELL_NODE = 0x24;
 
     private OneNoteJcid() {
     }
