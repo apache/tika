@@ -1,5 +1,15 @@
 Release 4.2.0 - unreleased
 
+   * Refactor date parsing for more consistent, accurate dates. File-system
+     times from archive entries and mail attachments move to fs:created/
+     fs:modified. MailDateParser is superseded by TikaDates and MailUtil
+     moved to org.apache.tika.parser.mail in tika-parser-mail-module;
+     tika-parser-mail-commons remains as a deprecated shim and will be
+     removed in 4.3.0. DateNormalizingMetadataFilter honors explicit
+     offsets, normalizes every value of a multi-valued key, and fills in
+     partial dates (2019 -> 2019-01-01T12:00:00Z) so date fields never
+     reject a document (TIKA-4917).
+
    * XmlSecurityContractTest pins XMLReaderUtils' XXE and entity-expansion defenses
      forbidden-apis now rejects building JAXP or Commons Secure XML parsers anywhere but 
      XMLReaderUtils (TIKA-4939).

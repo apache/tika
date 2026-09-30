@@ -70,11 +70,16 @@
       <artifactId>tika-parser-xml-module</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <!-- needed for msg files -->
+    <!-- needed for msg files (transport headers) -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>tika-parser-mail-commons</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.apache.james</groupId>
+      <artifactId>apache-mime4j-core</artifactId>
+      <version>${mime4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.james</groupId>
+      <artifactId>apache-mime4j-dom</artifactId>
+      <version>${mime4j.version}</version>
     </dependency>
     <dependency>
       <groupId>com.pff</groupId>
