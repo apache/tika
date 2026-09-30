@@ -51,6 +51,7 @@ import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
@@ -77,6 +78,37 @@ public class OneNoteParserTest extends TikaTest {
             new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata, context);
         }
         return metadata;
+    }
+
+    @Test
+    public void testSectionGuidIsExtractedFromClassicHeader() throws Exception {
+        Metadata metadata = new Metadata();
+        try (InputStream input = getClass().getResourceAsStream("/test-documents/testOneNote1.one");
+             TikaInputStream tis = TikaInputStream.get(input)) {
+            new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata,
+                    new ParseContext());
+        }
+        String[] guids = metadata.getValues(OneNote.SECTION_GUIDS);
+        assertNotNull(guids);
+        assertEquals(1, guids.length);
+        assertTrue(guids[0].matches("\\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-"
+                + "[0-9A-F]{4}-[0-9A-F]{12}\\}"));
+    }
+
+    @Test
+    public void testEmitSectionGuidSkipsNullAndNil() {
+        Metadata metadata = new Metadata();
+        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(null), metadata);
+        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(GUID.nil()), metadata);
+        assertEquals(0, metadata.getValues(OneNote.SECTION_GUIDS).length);
+
+        GUID fileGuid = new GUID(new int[] {
+                0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x08,
+                0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00
+        });
+        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(fileGuid), metadata);
+        assertEquals(List.of(fileGuid.toString()),
+                Arrays.asList(metadata.getValues(OneNote.SECTION_GUIDS)));
     }
 
     @Test
@@ -295,6 +327,14 @@ public class OneNoteParserTest extends TikaTest {
         List<String> originalAuthors = Arrays.asList(metadata.getValues(ONE_NOTE_PREFIX + "originalAuthors"));
         assertNotContained("Microsoft\u0000", originalAuthors);
         assertContains("ndipiazza\u0000", mostRecentAuthors);
+
+        String[] pageGuids = metadata.getValues(OneNote.PAGE_GUIDS);
+        assertNotNull(pageGuids);
+        assertTrue(pageGuids.length > 0);
+        assertEquals(pageGuids.length, Arrays.stream(pageGuids).distinct().count());
+        String[] pageSeriesGuids = metadata.getValues(OneNote.PAGE_SERIES_GUIDS);
+        assertNotNull(pageSeriesGuids);
+        assertTrue(pageSeriesGuids.length > 0);
 
         assertEquals(Instant.ofEpochSecond(1574426385),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));
