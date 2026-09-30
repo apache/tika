@@ -49,6 +49,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.onenote.OneNoteJcid;
 import org.apache.tika.parser.microsoft.onenote.OneNotePropertyEnum;
 import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
@@ -261,8 +262,7 @@ public class MSOneStorePackage {
             Set<ExGuid> visited = new HashSet<>();
             for (RevisionStoreObjectGroup objectGroup : OtherFileNodeList) {
                 for (RevisionStoreObject object : objectGroup.objects) {
-                    walkObject(object, objectsById, visited, AuthorRole.NONE, options, metadata,
-                            xhtml, 0);
+                    walkRootObject(object, objectsById, visited, options, metadata, xhtml);
                 }
             }
         }
@@ -393,8 +393,7 @@ public class MSOneStorePackage {
                 if (rootObject.propertySet != null) {
                     resolvedContentRoot = true;
                 }
-                walkObject(rootObject, objectsById, visited, AuthorRole.NONE, options,
-                        metadata, xhtml, 0);
+                walkRootObject(rootObject, objectsById, visited, options, metadata, xhtml);
             }
         }
         if (cell.rootDeclares.isEmpty() || (unresolvedRoot && !resolvedContentRoot)) {
@@ -405,8 +404,7 @@ public class MSOneStorePackage {
             }
             for (RevisionStoreObjectGroup objectGroup : cell.objectGroups) {
                 for (RevisionStoreObject object : objectGroup.objects) {
-                    walkObject(object, objectsById, visited, AuthorRole.NONE, options, metadata,
-                            xhtml, 0);
+                    walkRootObject(object, objectsById, visited, options, metadata, xhtml);
                 }
             }
         }
@@ -530,24 +528,227 @@ public class MSOneStorePackage {
                 break;
             }
         }
-        // The title structure of a page (StructureElementChildNodes) appears above the page
-        // body on screen, but is declared after the body child nodes. Emit it first so the
-        // text comes out in visual order.
-        for (PropertyAction action : actions) {
-            if (action.oneNotePropertyEnum == OneNotePropertyEnum.StructureElementChildNodes) {
-                processAction(action, objectsById, visited, authorRole, options, metadata, xhtml,
-                        depth, resourceInfo);
+        int objectType = jcidIndex(object);
+        ListStyle listStyle = listStyleForObject(object, actions, objectsById);
+        startObjectStructure(objectType, listStyle, xhtml);
+        try {
+            // Emit the title structure before page body nodes to preserve visual order.
+            List<PropertyAction> structureActions = new ArrayList<>();
+            for (PropertyAction action : actions) {
+                if (action.oneNotePropertyEnum == OneNotePropertyEnum.StructureElementChildNodes) {
+                    structureActions.add(action);
+                }
+            }
+            processStructureChildActions(structureActions, objectsById, visited, authorRole,
+                    options, metadata, xhtml, depth, resourceInfo);
+            List<PropertyAction> remainingActions = new ArrayList<>();
+            for (PropertyAction action : actions) {
+                if (hasPrimaryPicture &&
+                        action.oneNotePropertyEnum == OneNotePropertyEnum.WebPictureContainer14) {
+                    continue;
+                }
+                if (action.oneNotePropertyEnum != OneNotePropertyEnum.StructureElementChildNodes) {
+                    remainingActions.add(action);
+                }
+            }
+            processStructureChildActions(remainingActions, objectsById, visited, authorRole,
+                    options, metadata, xhtml, depth, resourceInfo);
+        } finally {
+            endObjectStructure(objectType, listStyle, xhtml);
+        }
+    }
+
+    private void startObjectStructure(int objectType, ListStyle listStyle,
+                                      XHTMLContentHandler xhtml) throws SAXException {
+        switch (objectType) {
+            case OneNoteJcid.TABLE_NODE:
+                xhtml.startElement("table");
+                break;
+            case OneNoteJcid.TABLE_ROW_NODE:
+                xhtml.startElement("tr");
+                break;
+            case OneNoteJcid.TABLE_CELL_NODE:
+                xhtml.startElement("td");
+                break;
+            case OneNoteJcid.OUTLINE_ELEMENT_NODE:
+                if (listStyle != null) {
+                    xhtml.startElement("li");
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void endObjectStructure(int objectType, ListStyle listStyle,
+                                    XHTMLContentHandler xhtml) throws SAXException {
+        switch (objectType) {
+            case OneNoteJcid.TABLE_NODE:
+                xhtml.endElement("table");
+                break;
+            case OneNoteJcid.TABLE_ROW_NODE:
+                xhtml.endElement("tr");
+                break;
+            case OneNoteJcid.TABLE_CELL_NODE:
+                xhtml.endElement("td");
+                break;
+            case OneNoteJcid.OUTLINE_ELEMENT_NODE:
+                if (listStyle != null) {
+                    xhtml.endElement("li");
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void walkRootObject(RevisionStoreObject object,
+                                Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
+                                OneNoteTreeWalkerOptions options, Metadata metadata,
+                                XHTMLContentHandler xhtml)
+            throws SAXException, TikaException, IOException {
+        List<PropertyAction> actions = object != null && object.propertySet != null
+                && object.propertySet.objectSpaceObjectPropSet != null ?
+                collectObjectActions(object) : Collections.emptyList();
+        ListStyle listStyle = listStyleForObject(object, actions, objectsById);
+        if (listStyle != null) {
+            xhtml.startElement(listStyle.elementName);
+        }
+        try {
+            walkObject(object, objectsById, visited, AuthorRole.NONE, options, metadata, xhtml,
+                    0);
+        } finally {
+            if (listStyle != null) {
+                xhtml.endElement(listStyle.elementName);
             }
         }
-        for (PropertyAction action : actions) {
-            if (hasPrimaryPicture &&
-                    action.oneNotePropertyEnum == OneNotePropertyEnum.WebPictureContainer14) {
-                continue;
-            }
-            if (action.oneNotePropertyEnum != OneNotePropertyEnum.StructureElementChildNodes) {
+    }
+
+    private void processStructureChildActions(List<PropertyAction> actions,
+                                              Map<ExGuid, RevisionStoreObject> objectsById,
+                                              Set<ExGuid> visited, AuthorRole authorRole,
+                                              OneNoteTreeWalkerOptions options, Metadata metadata,
+                                              XHTMLContentHandler xhtml, int depth,
+                                              EmbeddedResourceInfo resourceInfo)
+            throws SAXException, TikaException, IOException {
+        int index = 0;
+        while (index < actions.size()) {
+            PropertyAction action = actions.get(index);
+            ListStyle style = listStyleForChild(action, objectsById);
+            if (style == null) {
                 processAction(action, objectsById, visited, authorRole, options, metadata, xhtml,
                         depth, resourceInfo);
+                index++;
+                continue;
             }
+            xhtml.startElement(style.elementName);
+            int next = index;
+            try {
+                while (next < actions.size()) {
+                    PropertyAction sibling = actions.get(next);
+                    ListStyle siblingStyle = listStyleForChild(sibling, objectsById);
+                    if (siblingStyle == null || !style.matches(siblingStyle)) {
+                        break;
+                    }
+                    processAction(sibling, objectsById, visited, authorRole, options, metadata,
+                            xhtml, depth, resourceInfo);
+                    next++;
+                }
+            } finally {
+                xhtml.endElement(style.elementName);
+            }
+            index = next;
+        }
+    }
+
+    private ListStyle listStyleForChild(PropertyAction action,
+                                        Map<ExGuid, RevisionStoreObject> objectsById) {
+        if (!action.isChildReference || action.childReference == null) {
+            return null;
+        }
+        RevisionStoreObject child = objectsById.get(action.childReference);
+        if (child == null || child.propertySet == null
+                || child.propertySet.objectSpaceObjectPropSet == null
+                || jcidIndex(child) != OneNoteJcid.OUTLINE_ELEMENT_NODE) {
+            return null;
+        }
+        return listStyleForObject(child, collectObjectActions(child), objectsById);
+    }
+
+    private ListStyle listStyleForObject(RevisionStoreObject object, List<PropertyAction> actions,
+                                         Map<ExGuid, RevisionStoreObject> objectsById) {
+        if (jcidIndex(object) != OneNoteJcid.OUTLINE_ELEMENT_NODE) {
+            return null;
+        }
+        boolean isListItem = false;
+        byte[] format = null;
+        for (PropertyAction action : actions) {
+            if (action.oneNotePropertyEnum != OneNotePropertyEnum.ListNodes) {
+                continue;
+            }
+            isListItem = true;
+            RevisionStoreObject listNode = action.childReference == null ? null :
+                    objectsById.get(action.childReference);
+            byte[] candidate = numberListFormat(listNode);
+            if (candidate != null) {
+                format = candidate;
+            }
+        }
+        if (!isListItem) {
+            return null;
+        }
+        byte[] indent = null;
+        for (PropertyAction action : actions) {
+            if (action.oneNotePropertyEnum == OneNotePropertyEnum.RgOutlineIndentDistance
+                    && action.property instanceof PrtFourBytesOfLengthFollowedByData) {
+                indent = ((PrtFourBytesOfLengthFollowedByData) action.property).data;
+                break;
+            }
+        }
+        return new ListStyle(isNumberedListFormat(format) ? "ol" : "ul", format, indent);
+    }
+
+    private byte[] numberListFormat(RevisionStoreObject listNode) {
+        if (listNode == null || listNode.propertySet == null
+                || listNode.propertySet.objectSpaceObjectPropSet == null
+                || jcidIndex(listNode) != OneNoteJcid.NUMBER_LIST_NODE) {
+            return null;
+        }
+        for (PropertyAction action : collectObjectActions(listNode)) {
+            if (action.oneNotePropertyEnum == OneNotePropertyEnum.NumberListFormat
+                    && action.property instanceof PrtFourBytesOfLengthFollowedByData) {
+                return ((PrtFourBytesOfLengthFollowedByData) action.property).data;
+            }
+        }
+        return null;
+    }
+
+    private static boolean isNumberedListFormat(byte[] format) {
+        if (format == null) {
+            return false;
+        }
+        for (int i = 0; i + 1 < format.length; i += 2) {
+            if ((format[i] & 0xff) == 0xfd && (format[i + 1] & 0xff) == 0xff) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static final class ListStyle {
+        private final String elementName;
+        private final byte[] format;
+        private final byte[] indent;
+
+        private ListStyle(String elementName, byte[] format, byte[] indent) {
+            this.elementName = elementName;
+            this.format = format;
+            this.indent = indent;
+        }
+
+        private boolean matches(ListStyle other) {
+            return elementName.equals(other.elementName) && Arrays.equals(format, other.format)
+                    && Arrays.equals(indent, other.indent);
         }
     }
 
@@ -937,6 +1138,13 @@ public class MSOneStorePackage {
                         ((PrtFourBytesOfLengthFollowedByData) action.property).data), role);
             }
         }
+    }
+
+    private static int jcidIndex(RevisionStoreObject object) {
+        if (object == null || object.jcid == null || object.jcid.jcid == null) {
+            return -1;
+        }
+        return object.jcid.jcid.index;
     }
 
     private EmbeddedResourceInfo embeddedResourceInfo(List<PropertyAction> actions) {

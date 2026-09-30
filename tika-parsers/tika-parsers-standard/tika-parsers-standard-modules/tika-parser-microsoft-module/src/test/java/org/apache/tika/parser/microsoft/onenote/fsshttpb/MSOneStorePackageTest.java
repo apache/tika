@@ -42,6 +42,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.onenote.OneNoteJcid;
 import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.IProperty;
@@ -50,6 +51,7 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtArrayOfProp
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.PrtFourBytesOfLengthFollowedByData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.DataElement;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.FileDataObject;
+import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.JCIDObject;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectDataBLOB;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectDataBLOBDataElementData;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj.ObjectGroupObjectData;
@@ -71,6 +73,104 @@ import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
 public class MSOneStorePackageTest {
+
+    @Test
+    public void testTableAndListObjectsRetainXhtmlStructure() throws Exception {
+        ExGuid tableId = id(1100);
+        ExGuid rowId = id(1101);
+        ExGuid cellId = id(1102);
+        ExGuid listId = id(1103);
+        RevisionStoreObject tableCell = object(cellId,
+                propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C003498, text("table text"))), Collections.emptyList(),
+                Collections.emptyList());
+        RevisionStoreObject row = object(rowId,
+                propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
+                        arrayNumber(1))), Collections.singletonList(cellId), Collections.emptyList());
+        RevisionStoreObject table = object(tableId,
+                propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
+                        arrayNumber(1))), Collections.singletonList(rowId), Collections.emptyList());
+        RevisionStoreObject listItem = object(listId,
+                propertySet(new PropertySpec(PropertyType.NoData, 0x24001C26, new NoData()),
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003498, text("list text"))),
+                Collections.emptyList(), Collections.emptyList());
+        setJcid(table, OneNoteJcid.TABLE_NODE);
+        setJcid(row, OneNoteJcid.TABLE_ROW_NODE);
+        setJcid(tableCell, OneNoteJcid.TABLE_CELL_NODE);
+        setJcid(listItem, OneNoteJcid.OUTLINE_ELEMENT_NODE);
+
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(table, row, tableCell, listItem));
+        cell.rootDeclares.add(rootDeclare(tableId));
+        cell.rootDeclares.add(rootDeclare(listId));
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        String xml = walkXml(pkg);
+        assertTrue(xml.contains("<table>"));
+        assertTrue(xml.contains("<tr>"));
+        assertTrue(xml.contains("<td>"));
+        assertTrue(xml.contains("table text"));
+        assertTrue(xml.contains("<ul>"));
+        assertTrue(xml.contains("<li>"));
+        assertTrue(xml.contains("list text"));
+    }
+
+    @Test
+    public void testNumberedListItemsShareOrderedListMarkup() throws Exception {
+        ExGuid outlineId = id(1150);
+        ExGuid firstItemId = id(1151);
+        ExGuid secondItemId = id(1152);
+        ExGuid firstNumberListId = id(1153);
+        ExGuid secondNumberListId = id(1154);
+        byte[] numberFormat = new byte[] {0x02, 0x00, (byte) 0xfd, (byte) 0xff, 0x01, 0x00};
+
+        RevisionStoreObject firstNumberList = object(firstNumberListId,
+                propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C001C1A, bytes(numberFormat))), Collections.emptyList(),
+                Collections.emptyList());
+        RevisionStoreObject secondNumberList = object(secondNumberListId,
+                propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C001C1A, bytes(numberFormat))), Collections.emptyList(),
+                Collections.emptyList());
+        setJcid(firstNumberList, OneNoteJcid.NUMBER_LIST_NODE);
+        setJcid(secondNumberList, OneNoteJcid.NUMBER_LIST_NODE);
+
+        RevisionStoreObject firstItem = object(firstItemId,
+                propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C26,
+                                arrayNumber(1)),
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003498, text("first numbered item"))),
+                Collections.singletonList(firstNumberListId), Collections.emptyList());
+        RevisionStoreObject secondItem = object(secondItemId,
+                propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C26,
+                                arrayNumber(1)),
+                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003498, text("second numbered item"))),
+                Collections.singletonList(secondNumberListId), Collections.emptyList());
+        setJcid(firstItem, OneNoteJcid.OUTLINE_ELEMENT_NODE);
+        setJcid(secondItem, OneNoteJcid.OUTLINE_ELEMENT_NODE);
+        RevisionStoreObject outline = object(outlineId,
+                propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
+                        arrayNumber(2))), Arrays.asList(firstItemId, secondItemId),
+                Collections.emptyList());
+        setJcid(outline, OneNoteJcid.OUTLINE_NODE);
+
+        RevisionStoreCell cell = new RevisionStoreCell();
+        cell.objectGroups.add(group(outline, firstItem, secondItem, firstNumberList,
+                secondNumberList));
+        cell.rootDeclares.add(rootDeclare(outlineId));
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+
+        String xml = walkXml(pkg);
+        assertEquals(1, countOccurrences(xml, "<ol>"), xml);
+        assertEquals(2, countOccurrences(xml, "<li>"));
+        assertTrue(xml.contains("first numbered item"));
+        assertTrue(xml.contains("second numbered item"));
+        assertFalse(xml.contains("<ul>"));
+    }
 
     @Test
     public void testParseWarningsAreBoundedAcrossParserAndWalkPhases() throws Exception {
@@ -719,6 +819,28 @@ public class MSOneStorePackageTest {
 
     private static int count(String value, String needle) {
         return value.split(java.util.regex.Pattern.quote(needle), -1).length - 1;
+    }
+
+    private static RevisionManifestRootDeclare rootDeclare(ExGuid objectID) {
+        RevisionManifestRootDeclare declare = new RevisionManifestRootDeclare();
+        declare.objectExGuid = objectID;
+        return declare;
+    }
+
+    private static void setJcid(RevisionStoreObject object, int index) throws Exception {
+        JCIDObject jcidObject = new JCIDObject(null, emptyObjectData());
+        jcidObject.jcid.index = index;
+        object.jcid = jcidObject;
+    }
+
+    private static int countOccurrences(String text, String fragment) {
+        int count = 0;
+        int index = 0;
+        while ((index = text.indexOf(fragment, index)) >= 0) {
+            count++;
+            index += fragment.length();
+        }
+        return count;
     }
 
     private static RevisionStoreCell cellWithText(CellID cellID, String value) throws Exception {
