@@ -66,15 +66,7 @@ public class BundleIT {
                 "org.slf4j.helpers;version=2.0.17",
                 "org.slf4j.spi;version=2.0.17"
         ));
-        config.put("org.osgi.framework.system.capabilities.extra", String.join(",",
-                "osgi.extender;osgi.extender=osgi.serviceloader.processor;version:Version=1.0",
-                "osgi.extender;osgi.extender=osgi.serviceloader.registrar;version:Version=1.0",
-                "osgi.serviceloader;osgi.serviceloader=org.apache.tika.detect.Detector",
-                "osgi.serviceloader;osgi.serviceloader=org.apache.tika.detect.EncodingDetector",
-                "osgi.serviceloader;osgi.serviceloader=org.apache.tika.language.detect.LanguageDetector",
-                "osgi.serviceloader;osgi.serviceloader=org.apache.tika.metadata.filter.MetadataFilter",
-                "osgi.serviceloader;osgi.serviceloader=org.apache.tika.parser.Parser"
-        ));
+        // No Service Loader Mediator capabilities: tika-core must resolve without one (TIKA-4945).
 
         FrameworkFactory factory = ServiceLoader.load(FrameworkFactory.class)
                 .iterator().next();
@@ -82,10 +74,7 @@ public class BundleIT {
         framework.start();
         ctx = framework.getBundleContext();
 
-        // Install all bundles first, then start.
-        // tika-core requires osgi.serviceloader capabilities that are
-        // provided by tika-bundle-standard, so both must be installed
-        // before either can resolve. tika-core also imports the org.commonmark
+        // Install all bundles first, then start. tika-core imports the org.commonmark
         // packages (Markdown serialization), so those bundles must be present too.
         Bundle commonsIo = install("commons-io.jar");
         Bundle commonsSecureXml = install("commons-secure-xml.jar");
