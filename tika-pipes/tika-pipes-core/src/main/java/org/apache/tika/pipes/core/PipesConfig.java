@@ -88,7 +88,7 @@ public class PipesConfig {
         return Math.max(1, Math.min(byCores, MAX_AUTO_NUM_CLIENTS));
     }
 
-    public static final int DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS = 10000;
+    public static final int DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS = 100000;
 
     public static final long DEFAULT_MAX_WAIT_FOR_CLIENT_MILLIS = 60000;
 

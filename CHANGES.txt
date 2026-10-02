@@ -24,6 +24,9 @@ Release 4.2.0 - unreleased
      Every resolver Tika installs answers with an empty stream, never null (TIKA-4941).
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
+   * Raise the default maxFilesProcessedPerProcess from 10,000 to 100,000;
+     forked pipes JVMs restart a tenth as often (TIKA-4950).
+
 Release 4.1.0 - 9/26/2026
 
   HIGHLIGHTS
