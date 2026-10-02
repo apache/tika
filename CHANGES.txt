@@ -24,6 +24,11 @@ Release 4.2.0 - unreleased
      Every resolver Tika installs answers with an empty stream, never null (TIKA-4941).
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
+   * tika-core's OSGi manifest no longer requires a Service Loader Mediator or
+     providers for Parser, Detector, EncodingDetector, LanguageDetector and
+     MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
+     (TIKA-4945).
+
 Release 4.1.0 - 9/26/2026
 
   HIGHLIGHTS
