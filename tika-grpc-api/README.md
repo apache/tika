@@ -1,23 +1,20 @@
 # Apache Tika gRPC API
 
-Typed protobuf messages and service stubs for Tika parse output under
-`org.apache.tika.grpc.v2`. This module owns that whole Java package (one package =
-one module, the reactor-wide JPMS invariant).
+Protobuf messages and gRPC service stubs for Tika parse results, in the Java package
+`org.apache.tika.grpc.v2`. Every class of that package lives in this module.
 
-This is the experimental v2 document contract. The existing `tika.Tika` gRPC service
-(legacy `fields` map replies) is unchanged and lives outside this module.
+This is the experimental v2 contract. The v1 `tika.Tika` service, which returns
+metadata as a `fields` map of strings, is defined in the `tika-grpc` module.
 
 ## Contents
 
-- **Document** (`document.proto`) — the single, small, stable parse-result contract:
-  an envelope (content type, origin, parse status), typed common metadata
-  (`DocumentMetadata`), and a tagged metadata tail (`extra`) that losslessly carries
-  everything else.
-- **TikaV2 service** (`tika_v2.proto`) — the v2 fetch-and-parse RPCs returning
-  `Document`, with generated gRPC stubs. The server implementation lives in
-  `tika-grpc`.
-- **Bundled descriptors** — `META-INF/org.apache.tika.grpc.v2.descriptors` in the
-  published jar.
+- **Document** (`document.proto`): the parse result. It holds the detected content
+  type, the origin of the bytes, the parse status, common metadata as typed fields
+  (`DocumentMetadata`) and all other metadata as key/value entries (`extra`). It does
+  not include the extracted text or embedded documents.
+- **TikaV2 service** (`tika_v2.proto`): the v2 FetchAndParse RPCs, which return a
+  `Document`, with generated stubs. The server implementation is in `tika-grpc`.
+- **Descriptors**: the jar contains `META-INF/org.apache.tika.grpc.v2.descriptors`.
 
 ## Usage
 
@@ -31,35 +28,24 @@ This is the experimental v2 document contract. The existing `tika.Tika` gRPC ser
 
 ## The Document shape
 
-Rather than one proto message per source format, `Document` models metadata by
-*concern*, not by *format*:
+`Document` uses the same fields for every source format:
 
-- **`DocumentMetadata`** carries a small, bounded set of typed common fields — the
-  Dublin Core descriptive core (title, authors, description, keywords, languages,
-  publishers, identifiers, created/modified, rights). These are the cross-format
-  facts every consumer wants, typed.
-- **`extra`** (a `repeated MetadataField`) is the lossless tagged tail for everything
-  else — PDF permissions, EXIF/GPS, OOXML core properties, custom keys. Every entry
-  is a typed **array**, mirroring Tika's own `String[]`-backed metadata model: the
-  tag comes from Tika's declared `Property` element type
-  (integers/numbers/booleans/timestamps), so a declared integer sequence like
-  `pdf:charsPerPage` arrives as int64s per page — and untyped keys stay strings,
-  never guessed. A metadata key is data, not schema: new or renamed keys never force
-  a client rebuild.
-- **`ParseStatus`** carries the typed outcome (`SUCCESS`/`PARTIAL`/`FAILED`), the raw
-  pipes status for diagnostics, timing, and the producing Tika version.
+- **`DocumentMetadata`**: typed fields for the Dublin Core properties most formats
+  share: title, authors, description, keywords, languages, publishers, identifiers,
+  created and modified dates, rights.
+- **`extra`** (`repeated MetadataField`): every other metadata key, such as PDF
+  permissions, EXIF/GPS or OOXML core properties. Each entry is an array, because a
+  Tika metadata key can hold several values. The value type follows the `Property`
+  type Tika declares for the key (integer, number, boolean or timestamp); keys
+  without a declared type are strings. For example, `pdf:charsPerPage` arrives as
+  one int64 per page. New or renamed keys need no change to the proto.
+- **`ParseStatus`**: the outcome (`SUCCESS`, `PARTIAL` or `FAILED`), the raw Tika
+  Pipes status, the parse time and the Tika version.
 
-Format-specific mapping (which Tika `Property` becomes which typed field, and what
-falls through to `extra`) lives in `tika-grpc-mapper`'s
-`org.apache.tika.grpc.mapper.transform.DocumentTransformer` implementations — code,
-not schema. Adding a parser means adding a transformer; the wire contract does not
-change.
-
-Planned follow-ups extend `Document` additively (proto3 field additions are
-wire-compatible): a structured content tree, and recursion into embedded documents.
-Field numbers for those are intentionally left unassigned in `document.proto`.
-Parse-only entrypoints such as ParseBytes are separate issues that reuse this same
-`Document` reply on the v2 service.
+`tika-grpc-mapper` decides which Tika property becomes which typed field, and what
+goes to `extra`, in its `org.apache.tika.grpc.mapper.transform.DocumentTransformer`
+implementations. Mapping a format's properties to typed fields means adding a
+transformer; the proto stays the same.
 
 ## Lint
 

@@ -29,7 +29,7 @@ import org.apache.tika.parser.ParseContext;
 /**
  * Experimental v2 parse surface. Reuses the same pipes/fetcher runtime as the v1
  * {@link TikaGrpcServerImpl}; fetcher management stays on v1. Replies carry the typed
- * {@link org.apache.tika.grpc.v2.Document} contract instead of the legacy fields map.
+ * {@link org.apache.tika.grpc.v2.Document} contract instead of the v1 fields map.
  */
 class TikaGrpcV2ServerImpl extends TikaV2Grpc.TikaV2ImplBase {
 

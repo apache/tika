@@ -15,17 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// The Document shape: a single, small, stable contract for a parsed Tika document,
-// instead of a proto message per source format.
+// The Document: one message for a parsed Tika document, whatever the source format.
 //
-// Metadata: typed common fields (the Dublin Core descriptive core) plus a TAGGED tail
-// that is lossless. Tags come from Tika's declared Property value type; unknown keys
-// are strings, never guessed.
+// Metadata: typed fields for the common Dublin Core properties, plus `extra` for every
+// other key. A value in `extra` is typed when Tika declares a type for its key, and a
+// string otherwise. The extracted text and embedded documents are not included.
 //
-// Format specifics arrive via per-parser DocumentTransformer code, not a proto-per-type,
-// so adding a parser never touches the wire. Planned additive follow-ups (structured
-// content tree, embedded-document recursion) extend this file with new fields; proto3
-// field additions are wire-compatible, so none of them break existing clients.
+// Format-specific mapping lives in DocumentTransformer code in tika-grpc-mapper, so
+// supporting a new parser does not change this file.
 
 syntax = "proto3";
 
@@ -48,9 +45,7 @@ message Document {
   DocumentMetadata metadata = 20;      // typed common fields
   repeated MetadataField extra = 21;   // tagged tail: everything not already typed
 
-  // Field numbers 3, 10-19, and 30+ are intentionally unassigned: planned additive
-  // features (structured content blocks, embedded-document recursion) claim them
-  // without renumbering anything that has shipped.
+  // Field numbers 3, 10-19 and 30+ are left unassigned for later fields.
 }
 
 message SourceOrigin {
@@ -58,19 +53,17 @@ message SourceOrigin {
   int64 byte_size = 2;
   string parser = 3;
   // Hex-encoded SHA-256 of the source bytes, taken from the digest the parse pipeline
-  // recorded (the X-TIKA:digest:SHA256 metadata value). Empty when the pipeline has no
+  // recorded (the tk:digest:SHA-256 metadata value). Empty when the pipeline has no
   // digester configured. Downstream consumers use it to tie derived artifacts
   // (annotations, index entries) back to the exact bytes that were parsed.
   string sha256 = 4;
 }
 
 // =========================================================================
-// Metadata: typed common fields. The descriptive core follows the Dublin Core
-// element set (title, creator, description, subject, language, publisher,
-// identifier, date, rights), which is also the vocabulary Tika's own property
-// model and XMP anchor to. Anything narrower -- page counts, dimensions,
-// format-specific keys -- travels in `extra` with its declared type preserved,
-// so it never forces a wire-contract change.
+// Metadata: typed common fields from the Dublin Core element set (title, creator,
+// description, subject, language, publisher, identifier, date, rights), the same
+// vocabulary Tika's property model and XMP use. Narrower keys (page counts,
+// dimensions, format-specific keys) go to `extra` with their declared type.
 // =========================================================================
 message DocumentMetadata {
   string title = 1;
@@ -90,19 +83,17 @@ message DocumentMetadata {
 }
 
 // =========================================================================
-// Tagged tail: typed where Tika declares the type, string otherwise (never guessed).
-//
-// A Tika metadata entry is an ARRAY of values under one key (tika-core's Metadata is
-// String[]-backed; a single value is a one-element array, and declared sequences such
-// as pdf:charsPerPage or tiff:BitsPerSample carry one element per page/sample). The
-// oneof therefore tags the ELEMENT type of the whole array -- integers stay int64,
-// dates stay Timestamps, even when there are many of them. Scalar consumers read
-// values[0]; nothing is ever collapsed or stringified to make that convenient.
+// A metadata key with its values. Tika stores every metadata value as an array of
+// strings under one key: a single value is a one-element array, and declared
+// sequences such as pdf:charsPerPage or tiff:BitsPerSample have one element per page
+// or sample. The oneof gives the element type of the whole array, so integers stay
+// int64 and dates stay Timestamps however many there are. Consumers of a single value
+// read values[0].
 // =========================================================================
 message MetadataField { string key = 1; MetadataValue value = 2; }
 message MetadataValue {
   oneof values {
-    StringValues strings = 1;           // default for untyped text; never guessed
+    StringValues strings = 1;           // keys without a declared type
     IntegerValues integers = 2;
     NumberValues numbers = 3;
     BooleanValues booleans = 4;
@@ -118,18 +109,16 @@ message TimestampValues { repeated google.protobuf.Timestamp values = 1; }
 message ParseStatus {
   enum Status { UNSPECIFIED = 0; SUCCESS = 1; PARTIAL = 2; FAILED = 3; }
   Status status = 1;
-  // Wall-clock milliseconds for the whole fetch+parse round trip as observed by the
-  // server. Fetch and parse happen together inside the forked pipes worker, so a
-  // parse-only time is not separable here -- the name says what is actually measured.
+  // Milliseconds for the whole fetch and parse, measured by the server. Both happen
+  // in the forked pipes worker, so the parse time alone is not available.
   int64 fetch_parse_time_ms = 2;
   repeated string parsers_used = 3;
   repeated string errors = 4;
   // Version string of the Tika that produced this document (e.g. "Apache Tika 4.0.0"),
   // so long-lived stores can tell which producer wrote an entry.
   string tika_version = 5;
-  // The raw pipes result name this document's status was derived from (e.g.
-  // "PARSE_SUCCESS", "TIMEOUT"; see org.apache.tika.pipes.api.PipesResult.RESULT_STATUS).
-  // Diagnostic detail behind the typed `status`, not a stable enumeration: branch on
-  // `status`, log this.
+  // The raw pipes result `status` was derived from (e.g. "PARSE_SUCCESS", "TIMEOUT";
+  // see org.apache.tika.pipes.api.PipesResult.RESULT_STATUS). Its values can change
+  // between Tika versions: branch on `status` and use this for logs.
   string pipes_status = 6;
 }

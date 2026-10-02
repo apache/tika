@@ -19,46 +19,45 @@ requests through the configured fetchers.
 > the config. See the
 > [Tika gRPC security configuration docs](../docs/modules/ROOT/pages/using-tika/grpc/index.adoc).
 
-## v1 and v2 parse surfaces
+## v1 and v2 services
 
 The server exposes two gRPC services on the same port:
 
-- **`tika.Tika` (v1)** — the existing fetcher/iterator management RPCs and
-  fetch-and-parse replies that return the legacy `fields` map. Unchanged for
-  current clients; whether/when to deprecate it is a separate maintainers' call.
-- **`org.apache.tika.grpc.v2.TikaV2` (experimental)** — typed parse replies that
-  return `org.apache.tika.grpc.v2.Document`. Fetcher management stays on v1;
-  additive follow-ups (ParseBytes, content tree, embedded recursion) extend v2.
+- **`tika.Tika` (v1)**: fetcher and iterator management, and FetchAndParse replies
+  that return metadata as a `fields` map of strings.
+- **`org.apache.tika.grpc.v2.TikaV2` (experimental)**: FetchAndParse replies that
+  return a typed `org.apache.tika.grpc.v2.Document`. Fetchers are still managed
+  through v1.
 
-Rather than one proto message per source format, `Document` models metadata by
-concern:
+A `Document` holds:
 
-1. **Typed metadata**: a small, bounded set of common fields on `DocumentMetadata` —
-   the Dublin Core descriptive core (title, authors, description, keywords,
-   languages, publishers, identifiers, dates, rights) — the cross-format facts every
-   consumer wants, typed.
-2. **Tagged tail**: `extra` (`repeated MetadataField`) carries everything
-   format-specific (PDF permissions, EXIF/GPS, OOXML core properties, …), typed where
-   Tika's own `Property` declares a type and a string otherwise — never guessed. This
-   is the lossless catch-all; nothing is dropped.
-3. **Envelope**: detected `content_type`, `origin` (filename, byte size, parser,
-   source SHA-256 when a digester is configured), and a typed `ParseStatus`.
+1. **Common metadata** in typed fields on `DocumentMetadata`: the Dublin Core
+   properties most formats share (title, authors, description, keywords, languages,
+   publishers, identifiers, dates, rights).
+2. **All other metadata** in `extra` (`repeated MetadataField`), such as PDF
+   permissions, EXIF/GPS or OOXML core properties. A value is typed when Tika
+   declares a type for its key, and a string otherwise.
+3. **The envelope**: the detected `content_type`, the `origin` (filename, byte size,
+   parser, and the source SHA-256 when a digester is configured) and a typed
+   `ParseStatus`.
+
+The extracted text (`tk:content`) is not part of the `Document`.
 
 Supporting artifacts live in sibling Maven modules (also listed in `tika-bom`):
 
 | Module | Role |
 |--------|------|
 | `tika-grpc-api` | Protobuf definitions (`org.apache.tika.grpc.v2`: `document.proto`, `tika_v2.proto`), generated message and service stubs, bundled `FileDescriptorSet` under `META-INF/` |
-| `tika-grpc-mapper` | Maps Tika `Metadata` to `Document` via `DocumentTransformer`s (code, not schema) |
+| `tika-grpc-mapper` | Maps Tika `Metadata` to `Document` with `DocumentTransformer` classes |
 | `tika-grpc` | gRPC service implementation (this module): v1 + v2 |
 
-See [tika-grpc-api/README.md](../tika-grpc-api/README.md) for the full shape.
+[tika-grpc-api/README.md](../tika-grpc-api/README.md) describes the `Document` in more detail.
 Mapper tests live under `tika-grpc-mapper/src/test/java`.
 
 Build the API and mapper with the rest of the reactor:
 
 ```bash
-./mvnw -pl tika-grpc-api,tika-grpc-mapper,tika-grpc test
+./mvnw clean test -pl tika-grpc-api,tika-grpc-mapper,tika-grpc
 ```
 
 ## Distribution and Maven Artifact
