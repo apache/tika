@@ -30,19 +30,19 @@ public class GoogleDrivePipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting Google Drive Pipes Plugin");
+        LOG.debug("Starting Google Drive Pipes Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping Google Drive Pipes Plugin");
+        LOG.debug("Stopping Google Drive Pipes Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting Google Drive Pipes Plugin");
+        LOG.debug("Deleting Google Drive Pipes Plugin");
         super.delete();
     }
 }
