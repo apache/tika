@@ -37,6 +37,7 @@
   <modules>
     <module>tika-parent</module>
     <module>tika-bom</module>
+    <module>tika-test-support</module>
     <module>tika-core</module>
     <module>tika-annotation-processor</module>
     <module>tika-serialization</module>

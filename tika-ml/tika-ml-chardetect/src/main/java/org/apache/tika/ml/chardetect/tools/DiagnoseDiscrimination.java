@@ -386,7 +386,7 @@ public final class DiagnoseDiscrimination {
         for (int i = 0; i < s.length(); ) {
             int cp = s.codePointAt(i);
             if (cp < 0x20 || cp == 0x7F) {
-                sb.append(String.format("\\x%02X", cp));
+                sb.append(String.format(Locale.ROOT, "\\x%02X", cp));
             } else if (cp == 0xFFFD) {
                 sb.append("<FFFD>");
             } else {
