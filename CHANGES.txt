@@ -31,6 +31,14 @@ Release 4.2.0 - unreleased
      SERVER/RESOURCE_TIMING) move from INFO to TRACE, and per-fork-start,
      per-connection and plugin lifecycle lines move to DEBUG (TIKA-4949).
 
+   * ExecutableParser extracts the icon groups of PE files (EXE/DLL) as
+     embedded .ico documents, the first one typed THUMBNAIL. Compat: this is
+     on by default, so every EXE/DLL with icons now yields embedded documents
+     (extra RMETA entries, extra unpacked files); "extractIcons": false on
+     the executable-parser turns it off. parsePE(XHTMLContentHandler,
+     Metadata, InputStream, byte[]) is deprecated in favour of the overload
+     that takes a ParseContext (TIKA-4936).
+
 Release 4.1.0 - 9/26/2026
 
   HIGHLIGHTS
