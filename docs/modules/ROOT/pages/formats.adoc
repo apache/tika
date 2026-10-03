@@ -218,9 +218,12 @@ AVIF),
 link:{api}/org/apache/tika/parser/image/JXLParser.html[JXLParser] (JPEG XL),
 link:{api}/org/apache/tika/parser/image/WebPParser.html[WebPParser],
 link:{api}/org/apache/tika/parser/image/PSDParser.html[PSDParser],
-link:{api}/org/apache/tika/parser/image/BPGParser.html[BPGParser] and
-link:{api}/org/apache/tika/parser/image/ICNSParser.html[ICNSParser] extract
-metadata from their respective formats.
+link:{api}/org/apache/tika/parser/image/BPGParser.html[BPGParser],
+link:{api}/org/apache/tika/parser/image/ICNSParser.html[ICNSParser] and
+link:{api}/org/apache/tika/parser/image/ICOParser.html[ICOParser] extract
+metadata from their respective formats; ICOParser reports the size and colour
+depth of the largest image in a Windows icon or cursor, the list of all its
+images and, for cursors, the hotspot.
 
 link:{api}/org/apache/tika/parser/microsoft/WMFParser.html[WMFParser] and
 link:{api}/org/apache/tika/parser/microsoft/EMFParser.html[EMFParser] extract
