@@ -182,16 +182,22 @@ public class ICOParser implements Parser {
         return true;
     }
 
+    /**
+     * @return the samples per pixel, or 0 for a colour type PNG does not define
+     */
     private static int pngSamplesPerPixel(int colorType) {
         switch (colorType) {
+            case 0: // greyscale
+            case 3: // palette
+                return 1;
             case 2: // truecolour
                 return 3;
             case 4: // greyscale with alpha
                 return 2;
             case 6: // truecolour with alpha
                 return 4;
-            default: // greyscale or palette
-                return 1;
+            default:
+                return 0;
         }
     }
 
@@ -234,9 +240,7 @@ public class ICOParser implements Parser {
                 if (image.trySetSize(EndianUtils.getUIntBE(file, dataOffset + 16),
                         EndianUtils.getUIntBE(file, dataOffset + 20))) {
                     image.encoding = Encoding.PNG;
-                    image.bitsPerSample = file[dataOffset + 24] & 0xff;
-                    image.samplesPerPixel = pngSamplesPerPixel(file[dataOffset + 25] & 0xff);
-                    image.bitsPerPixel = image.bitsPerSample * image.samplesPerPixel;
+                    image.setPngDepth(file[dataOffset + 24] & 0xff, file[dataOffset + 25] & 0xff);
                 }
             } else if (available >= BITMAP_INFO_HEADER_SIZE &&
                     EndianUtils.getUIntLE(file, dataOffset) == BITMAP_INFO_HEADER_SIZE) {
@@ -270,19 +274,42 @@ public class ICOParser implements Parser {
         /**
          * Splits a DIB colour depth into samples: 32 and 24 bit images are
          * 8 bits per channel, 16 bit ones 5, anything below is palette or mono.
+         * A bit count no DIB has leaves the depth as it was.
          */
         void setDepth(int bitsPerPixel) {
-            this.bitsPerPixel = bitsPerPixel;
-            if (bitsPerPixel == 32 || bitsPerPixel == 24) {
-                bitsPerSample = 8;
-                samplesPerPixel = bitsPerPixel / 8;
-            } else if (bitsPerPixel == 16) {
-                bitsPerSample = 5;
-                samplesPerPixel = 3;
-            } else {
-                bitsPerSample = bitsPerPixel;
-                samplesPerPixel = bitsPerPixel > 0 ? 1 : 0;
+            switch (bitsPerPixel) {
+                case 32:
+                case 24:
+                    bitsPerSample = 8;
+                    samplesPerPixel = bitsPerPixel / 8;
+                    break;
+                case 16:
+                    bitsPerSample = 5;
+                    samplesPerPixel = 3;
+                    break;
+                case 8:
+                case 4:
+                case 1:
+                    bitsPerSample = bitsPerPixel;
+                    samplesPerPixel = 1;
+                    break;
+                default:
+                    return;
             }
+            this.bitsPerPixel = bitsPerPixel;
+        }
+
+        /**
+         * A bit depth or colour type PNG does not define leaves the depth as it was.
+         */
+        void setPngDepth(int bitDepth, int colorType) {
+            int samples = pngSamplesPerPixel(colorType);
+            if (samples == 0 || bitDepth > 16 || Integer.bitCount(bitDepth) != 1) {
+                return;
+            }
+            bitsPerSample = bitDepth;
+            samplesPerPixel = samples;
+            bitsPerPixel = bitDepth * samples;
         }
 
         /**

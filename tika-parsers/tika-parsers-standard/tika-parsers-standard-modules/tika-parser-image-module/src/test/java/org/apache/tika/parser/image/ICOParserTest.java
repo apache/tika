@@ -257,6 +257,26 @@ public class ICOParserTest extends TikaTest {
         assertDepth(patch(withPng, bitDepth, 16, 6), "256x256@64bpp png", "16", 4);
     }
 
+    /**
+     * A depth no DIB or PNG can have is ignored; the directory's 32 bpp stands in.
+     */
+    @Test
+    public void testImplausibleColourDepths() throws Exception {
+        byte[] bmpOnly = readTestResource("testICO_bmpOnly.ico");
+        int bitCount = (int) EndianUtils.getUIntLE(bmpOnly, 6 + 16 + 12) + 14;
+        assertDepth(patch(bmpOnly, bitCount, 0xff, 0xff), "48x48@32bpp bmp", "8", 4);
+        assertDepth(patch(bmpOnly, bitCount, 7, 0), "48x48@32bpp bmp", "8", 4);
+
+        byte[] withPng = readTestResource("testICO.ico");
+        int bitDepth = 5446 + 24;
+        assertDepth(patch(withPng, bitDepth, 0xff, 6), "256x256@32bpp png", "8", 4);
+        assertDepth(patch(withPng, bitDepth, 8, 5), "256x256@32bpp png", "8", 4);
+
+        // the directory's own bit count is no more trusted: the 32 px image is cut and has no other
+        byte[] cut = Arrays.copyOf(patch(withPng, 6 + 16 + 6, 0xff, 0xff), 54 + 1128 + 10);
+        assertContains("32x32 unknown", Arrays.asList(parse(cut).getValues(Icon.IMAGES)));
+    }
+
     private static void assertDepth(byte[] file, String expectedImage, String bitsPerSample,
                                     int samplesPerPixel) throws Exception {
         Metadata metadata = parse(file);
