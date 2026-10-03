@@ -90,6 +90,7 @@
 ** xref:advanced/charset-detection-design.adoc[Charset Detection Pipeline]
 ** xref:advanced/zip-detection.adoc[ZIP Detection and Salvaging]
 ** xref:advanced/embedded-documents.adoc[Embedded Document Metadata]
+** xref:advanced/date-handling.adoc[Date Handling]
 ** xref:advanced/local-vlm-server.adoc[Running a Local VLM Server]
 ** Integration Testing
 *** xref:advanced/integration-testing/tika-app.adoc[Testing with Tika App]

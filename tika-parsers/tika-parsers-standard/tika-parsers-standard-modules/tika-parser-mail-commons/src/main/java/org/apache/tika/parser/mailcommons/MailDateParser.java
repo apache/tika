@@ -64,7 +64,10 @@ import org.apache.tika.utils.StringUtils;
  * This code does not spark joy especially given the diffs in behavior between jdk versions.
  *
  * At some point, we should probably try joda or, heaven forfend, a pile of regexes.
+ *
+ * @deprecated since 4.2.0, removed in 4.3.0; use {@link org.apache.tika.utils.TikaDates}.
  */
+@Deprecated(since = "4.2.0", forRemoval = true)
 public class MailDateParser {
 
     //TIKA-1970 Mac Mail's format is GMT+1 so we need to check for hour only

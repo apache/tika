@@ -45,6 +45,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.utils.SuppressForbidden;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -210,6 +211,8 @@ public class MimeTypesReader extends DefaultHandler implements MimeTypesReaderMe
         }
     }
 
+    //non-namespace parser for the trusted type registry only
+    @SuppressForbidden
     private static SAXParser newSAXParser() throws TikaException {
         SAXParserFactory factory = SecureSAXParserFactory.newInstance();
         try {
