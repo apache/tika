@@ -30,19 +30,19 @@ public class AZBlobPipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting Azure Blob Emitter Plugin");
+        LOG.debug("Starting Azure Blob Emitter Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping Azure Blob Emitter Plugin");
+        LOG.debug("Stopping Azure Blob Emitter Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting Azure Blob Emitter Plugin");
+        LOG.debug("Deleting Azure Blob Emitter Plugin");
         super.delete();
     }
 }

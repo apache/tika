@@ -24,6 +24,10 @@ Release 4.2.0 - unreleased
      Every resolver Tika installs answers with an empty stream, never null (TIKA-4941).
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
+   * Quiet default pipes logging: per-parse timing lines (WORKER/CLIENT/
+     SERVER/RESOURCE_TIMING) move from INFO to TRACE, and per-fork-start,
+     per-connection and plugin lifecycle lines move to DEBUG (TIKA-4949).
+
 Release 4.1.0 - 9/26/2026
 
   HIGHLIGHTS

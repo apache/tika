@@ -961,12 +961,12 @@ public class TikaResource {
             long writeStart = System.nanoTime();
             outputStream.write(finalContent);
             outputStream.flush();
-            if (TIMING_LOG.isInfoEnabled()) {
+            if (TIMING_LOG.isTraceEnabled()) {
                 // pre = header/context setup before the pipes call; build = result
                 // unpacking after it; write = streaming the body (invoked later by the
                 // JAX-RS runtime, so anything left over vs the client-observed total is
                 // the HTTP stack itself)
-                TIMING_LOG.info("RESOURCE_TIMING pre_us={} pipes_us={} build_us={} write_us={} bytes={}",
+                TIMING_LOG.trace("RESOURCE_TIMING pre_us={} pipes_us={} build_us={} write_us={} bytes={}",
                         (parseStartNanos - entryNanos) / 1000,
                         (parseEndNanos - parseStartNanos) / 1000,
                         (buildEndNanos - parseEndNanos) / 1000,
