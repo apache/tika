@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.executable;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Date;
@@ -130,7 +131,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
     /**
      * Parses a DOS or Windows PE file, extracting metadata only.
      *
-     * @deprecated since 4.1.1, use
+     * @deprecated since 4.2.0, use
      * {@link #parsePE(XHTMLContentHandler, Metadata, TikaInputStream, byte[], ParseContext)},
      * which also extracts the icons as embedded documents
      */
@@ -157,8 +158,9 @@ public class ExecutableParser implements Parser, MachineMetadata {
         } catch (SecurityException | EmbeddedLimitReachedException e) {
             // Limits and sandboxing must surface to the caller
             throw e;
-        } catch (IOException | TikaException | RuntimeException e) {
-            // A broken resource section must not cost us the metadata above
+        } catch (EOFException | TikaException | RuntimeException e) {
+            // A cut or broken resource section must not cost us the metadata
+            // above; any other IOException is the source failing and surfaces
             EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
         }
     }
@@ -182,7 +184,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
         int peOffset = EndianUtils.readIntLE(tis);
 
         // Reasonability check - while it may go anywhere, it's normally in the first few kb
-        if (peOffset > 4096 || peOffset < 0x3f) {
+        if (peOffset > 4096 || peOffset < 0x40) {
             return null;
         }
 

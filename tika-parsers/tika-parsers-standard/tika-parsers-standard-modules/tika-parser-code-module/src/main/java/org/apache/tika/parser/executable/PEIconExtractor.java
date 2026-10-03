@@ -24,6 +24,7 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -63,8 +64,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * directory. File-backed input is read through a positioned channel,
  * anything else by skipping forward, so non-seekable input works too.
  * Hostile input is contained by bounds checking every offset, capping the
- * section size, the number of directory entries visited, the icons per group
- * and the size of a rebuilt icon, and by refusing cycles in the tree.
+ * section size, the number of directory entries visited, the icons per group,
+ * the size of a rebuilt icon and the size of all rebuilt icons together, and
+ * by refusing cycles in the tree.
  */
 class PEIconExtractor {
 
@@ -93,6 +95,9 @@ class PEIconExtractor {
     private static final int MAX_ICONS_PER_GROUP = 256;
     // A genuine icon never outgrows the section it came from
     private static final long MAX_ICO_SIZE = MAX_RESOURCE_SECTION_SIZE;
+    // Groups may share images, so all icons together may outgrow the section read, but not by much
+    private static final int MAX_OUTPUT_FACTOR = 4;
+    private static final int SECTION_BUFFER_FLOOR = 8192;
 
     private PEIconExtractor() {
     }
@@ -105,7 +110,8 @@ class PEIconExtractor {
      * @param sizeOptHdrs the SizeOfOptionalHeader field of the COFF header
      * @param numSections the NumberOfSections field of the COFF header
      * @param metadata    the PE file's own metadata, receives a warning if the
-     *                    resource tree was too large to walk completely
+     *                    resource tree was too large to walk completely or
+     *                    its icons too large to rebuild them all
      */
     static void extract(TikaInputStream stream, int sizeOptHdrs, int numSections,
                         XHTMLContentHandler xhtml, Metadata metadata, ParseContext context)
@@ -192,7 +198,7 @@ class PEIconExtractor {
                     "PE resource directory has more than " + MAX_DIRECTORY_ENTRIES +
                             " entries; icon extraction stopped early"), metadata, context);
         }
-        emitIcons(resources, xhtml, context);
+        emitIcons(resources, xhtml, metadata, context);
     }
 
     /**
@@ -306,7 +312,8 @@ class PEIconExtractor {
      * output; its name is Tika's invention, not content of the file.
      */
     private static void emitIcons(Resources resources, XHTMLContentHandler xhtml,
-                                  ParseContext context) throws IOException, SAXException {
+                                  Metadata parentMetadata, ParseContext context)
+            throws IOException, SAXException {
         if (resources.groups.isEmpty()) {
             return;
         }
@@ -317,6 +324,7 @@ class PEIconExtractor {
         for (Resource group : resources.groups) {
             languagesPerGroup.merge(group.displayName(), 1, Integer::sum);
         }
+        long budget = (long) MAX_OUTPUT_FACTOR * resources.section.length;
         boolean first = true;
         for (Resource group : resources.groups) {
             List<Resource> images = resolveGroup(group, resources);
@@ -339,6 +347,14 @@ class PEIconExtractor {
             first = false;
             if (!extractor.shouldParseEmbedded(metadata, context)) {
                 continue;
+            }
+            budget -= icoSize(images);
+            if (budget < 0) {
+                EmbeddedDocumentUtil.recordException(new TikaException(
+                        "PE icons add up to more than " + MAX_OUTPUT_FACTOR +
+                                " times the resource section they were read from; icon" +
+                                " extraction stopped early"), parentMetadata, context);
+                return;
             }
             try (TikaInputStream tis = TikaInputStream.get(buildIco(group, images, resources))) {
                 extractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml), metadata, context,
@@ -365,19 +381,26 @@ class PEIconExtractor {
             return null;
         }
         List<Resource> images = new ArrayList<>(count);
-        Set<Integer> ids = new HashSet<>();
-        long total = 6 + (long) count * ICON_DIR_ENTRY_SIZE;
+        Set<Long> seen = new HashSet<>();
         for (int i = 0; i < count; i++) {
             int id = EndianUtils.getUShortLE(rsrc, g + 6 + i * GRP_ICON_DIR_ENTRY_SIZE + 12);
             Resource image = resources.findIcon(id, group.language);
-            // Repeated ids would let a tiny group inflate into a huge file
-            if (image == null || !ids.add(id)) {
+            // The same image twice, under one id or several, would let a tiny
+            // group inflate into a huge file
+            if (image == null || !seen.add((long) image.offset << 32 | image.size)) {
                 return null;
             }
             images.add(image);
-            total += image.size;
         }
-        return total > MAX_ICO_SIZE ? null : images;
+        return icoSize(images) > MAX_ICO_SIZE ? null : images;
+    }
+
+    private static long icoSize(List<Resource> images) {
+        long size = 6 + (long) images.size() * ICON_DIR_ENTRY_SIZE;
+        for (Resource image : images) {
+            size += image.size;
+        }
+        return size;
     }
 
     /**
@@ -388,11 +411,7 @@ class PEIconExtractor {
         byte[] rsrc = resources.section.buf;
         int count = images.size();
         int imageOffset = 6 + count * ICON_DIR_ENTRY_SIZE;
-        int total = imageOffset;
-        for (Resource image : images) {
-            total += image.size;
-        }
-        ByteBuffer ico = ByteBuffer.allocate(total).order(ByteOrder.LITTLE_ENDIAN);
+        ByteBuffer ico = ByteBuffer.allocate((int) icoSize(images)).order(ByteOrder.LITTLE_ENDIAN);
         // ICONDIR: reserved, type, count - identical to the GRPICONDIR
         ico.put(rsrc, group.offset, 6);
         for (int i = 0; i < count; i++) {
@@ -412,12 +431,13 @@ class PEIconExtractor {
 
     /**
      * The raw bytes of the resource section, pulled from the source only as
-     * far as the tree walk needs them.
+     * far as the tree walk needs them. The buffer grows with the bytes that
+     * arrive, never with a size the file merely declares.
      */
-    private static final class Section {
+    static final class Section {
         private final InputStream source;
         private final int declaredSize;
-        private byte[] buf = new byte[0];
+        byte[] buf = new byte[0];
         private int length;
         private boolean eof;
 
@@ -439,23 +459,19 @@ class PEIconExtractor {
         }
 
         private boolean ensure(int end) throws IOException {
-            if (end > this.length && !eof) {
-                if (end > buf.length) {
-                    byte[] grown = new byte[(int) Math.min(declaredSize,
-                            Math.max((long) end, 2L * buf.length))];
-                    System.arraycopy(buf, 0, grown, 0, this.length);
-                    buf = grown;
+            while (length < end && !eof) {
+                if (length == buf.length) {
+                    buf = Arrays.copyOf(buf, (int) Math.min(declaredSize,
+                            Math.max(SECTION_BUFFER_FLOOR, 2L * buf.length)));
                 }
-                while (this.length < end) {
-                    int n = source.read(buf, this.length, end - this.length);
-                    if (n < 0) {
-                        eof = true;
-                        break;
-                    }
-                    this.length += n;
+                int n = source.read(buf, length, Math.min(end, buf.length) - length);
+                if (n < 0) {
+                    eof = true;
+                } else {
+                    length += n;
                 }
             }
-            return end <= this.length;
+            return end <= length;
         }
     }
 
