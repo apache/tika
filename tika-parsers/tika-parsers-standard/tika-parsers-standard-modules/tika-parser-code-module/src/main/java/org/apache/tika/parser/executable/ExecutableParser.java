@@ -16,9 +16,9 @@
  */
 package org.apache.tika.parser.executable;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.sql.Date;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,9 +30,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.exception.EmbeddedLimitReachedException;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
@@ -82,22 +82,25 @@ public class ExecutableParser implements Parser, MachineMetadata {
                             MACH_O_DYLINKER, MACH_O_BUNDLE, MACH_O_DYLIB_STUB, MACH_O_DSYM,
                             MACH_O_KEXT_BUNDLE)));
 
-    private boolean extractIcons = true;
+    private ExecutableParserConfig defaultConfig = new ExecutableParserConfig();
+
+    public ExecutableParser() {
+    }
+
+    public ExecutableParser(ExecutableParserConfig config) {
+        this.defaultConfig = config;
+    }
+
+    public ExecutableParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, ExecutableParserConfig.class));
+    }
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
-    /**
-     * Whether icons of PE files (EXE/DLL) are extracted as embedded
-     * <code>.ico</code> documents. Defaults to true.
-     */
-    public boolean isExtractIcons() {
-        return extractIcons;
-    }
-
-    public void setExtractIcons(boolean extractIcons) {
-        this.extractIcons = extractIcons;
+    public ExecutableParserConfig getDefaultConfig() {
+        return defaultConfig;
     }
 
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
@@ -144,26 +147,18 @@ public class ExecutableParser implements Parser, MachineMetadata {
     }
 
     /**
-     * Parses a DOS or Windows PE file, extracting metadata and, if
-     * {@link #isExtractIcons()} is set, the icon resources as embedded documents.
+     * Parses a DOS or Windows PE file, extracting metadata and, unless
+     * {@link ExecutableParserConfig#isExtractIcons()} says otherwise, the icon
+     * resources as embedded documents. An {@link ExecutableParserConfig} in
+     * the context takes precedence over the parser's own.
      */
     public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, TikaInputStream tis,
                         byte[] first4, ParseContext context)
             throws TikaException, IOException, SAXException {
         CoffHeader header = parsePEHeader(metadata, tis);
-        if (header == null || !extractIcons) {
-            return;
-        }
-        try {
-            PEIconExtractor.extract(tis, header.end(), header.sizeOptHdrs(),
-                    header.numSections(), xhtml, metadata, context);
-        } catch (SecurityException | EmbeddedLimitReachedException e) {
-            // Limits and sandboxing must surface to the caller
-            throw e;
-        } catch (EOFException | TikaException | RuntimeException e) {
-            // A cut or broken resource section must not cost us the metadata
-            // above; any other IOException is the source failing and surfaces
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
+        if (header != null &&
+                context.get(ExecutableParserConfig.class, defaultConfig).isExtractIcons()) {
+            PEIconExtractor.extract(tis, header, xhtml, metadata, context);
         }
     }
 
@@ -320,7 +315,30 @@ public class ExecutableParser implements Parser, MachineMetadata {
     /**
      * @param end the file offset right after the COFF header
      */
-    private record CoffHeader(long end, int sizeOptHdrs, int numSections) {
+    record CoffHeader(long end, int sizeOptHdrs, int numSections) {
+    }
+
+    /**
+     * Configuration of {@link ExecutableParser}. One set on the
+     * {@link ParseContext} replaces the parser's own for that parse.
+     */
+    public static class ExecutableParserConfig implements Serializable {
+
+        private static final long serialVersionUID = 5210478935624115573L;
+
+        private boolean extractIcons = true;
+
+        /**
+         * Whether icons of PE files (EXE/DLL) are extracted as embedded
+         * <code>.ico</code> documents. Defaults to true.
+         */
+        public boolean isExtractIcons() {
+            return extractIcons;
+        }
+
+        public void setExtractIcons(boolean extractIcons) {
+            this.extractIcons = extractIcons;
+        }
     }
 
     /**

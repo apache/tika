@@ -24,17 +24,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.input.CountingInputStream;
 import org.junit.jupiter.api.Test;
@@ -45,6 +50,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.EndianUtils;
@@ -54,6 +60,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ParseRecord;
+import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 
@@ -63,7 +70,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * groups: id 1 (from testWindows-icons-app.ico, 16/32 px BMP + 256 px PNG)
  * and the named group DOCICON (from testWindows-icons-doc.ico, 16/48 px BMP).
  * testWindows-x86-64-icons-lang.dll instead carries group 1 twice, in
- * language 1033 (app.ico) and 1031 (doc.ico).
+ * language 1033 (app.ico) and 1031 (doc.ico). The two .ico files were drawn
+ * for these tests, a blue circle and a red square.
  * <p>
  * To rebuild them, on Ubuntu 24.04 with gcc-mingw-w64 13.2.0 (13-win32) and
  * binutils-mingw-w64 2.41.90; the result differs from the files here only in
@@ -256,6 +264,39 @@ public class PEIconExtractorTest extends TikaTest {
     }
 
     /**
+     * Images may not share bytes at all: icon 5's data entry (0x3570) starts
+     * one byte into icon 4's data.
+     */
+    @Test
+    public void testOverlappingImagesInGroupAreRejected() throws Exception {
+        byte[] exe = readTestResource(EXE);
+        putIntLE(exe, 0x3570, EndianUtils.getIntLE(exe, 0x3560) + 1);
+        putIntLE(exe, 0x3574, EndianUtils.getIntLE(exe, 0x3564));
+        RecordingExtractor extractor = parse(exe);
+        assertEquals(1, extractor.contents.size());
+        assertIcon(extractor.metadata.get(0), "icon_1.ico", "14/1/1033", THUMBNAIL);
+    }
+
+    /**
+     * What goes wrong while an icon is handed on is not a broken resource
+     * section: it reaches the caller like any other embedded document's failure.
+     */
+    @Test
+    public void testEmbeddedFailureSurfaces() throws Exception {
+        RecordingExtractor extractor = new RecordingExtractor() {
+            @Override
+            public void parseEmbedded(TikaInputStream stream, ContentHandler handler,
+                                      Metadata metadata, ParseContext context,
+                                      boolean outputHtml) throws IOException {
+                throw new EOFException("embedded failed");
+            }
+        };
+        assertThrows(EOFException.class, () -> parse(readTestResource(EXE), extractor));
+        assertNull(extractor.parentMetadata.get(
+                TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
+    }
+
+    /**
      * Any number of groups can share one image, each rebuilding it into a file
      * of its own. Together they may not outgrow a small multiple of the
      * section they were read from; extraction stops there with a warning.
@@ -264,47 +305,14 @@ public class PEIconExtractorTest extends TikaTest {
     public void testOutputBudgetAcrossGroups() throws Exception {
         int groups = 40;
         int imageSize = 4096;
-        int dirSize = 16 + 8;
-        // root, the RT_ICON type and language directories, the RT_GROUP_ICON type
-        // directory, one language directory per group, two data entries, the
-        // GRPICONDIR and the image
-        int iconTypeDir = 16 + 2 * 8;
-        int iconLangDir = iconTypeDir + dirSize;
-        int groupTypeDir = iconLangDir + dirSize;
-        int groupLangDirs = groupTypeDir + 16 + 8 * groups;
-        int iconDataEntry = groupLangDirs + groups * dirSize;
-        int groupDataEntry = iconDataEntry + 16;
-        int grpIconDir = groupDataEntry + 16;
-        int image = grpIconDir + 6 + 14;
-        ByteBuffer rsrc = ByteBuffer.allocate(image + imageSize).order(ByteOrder.LITTLE_ENDIAN);
-        rsrc.position(12).putShort((short) 0).putShort((short) 2);
-        rsrc.putInt(3).putInt(0x80000000 | iconTypeDir);
-        rsrc.putInt(14).putInt(0x80000000 | groupTypeDir);
-        rsrc.position(iconTypeDir + 12).putShort((short) 0).putShort((short) 1);
-        rsrc.putInt(1).putInt(0x80000000 | iconLangDir);
-        rsrc.position(iconLangDir + 12).putShort((short) 0).putShort((short) 1);
-        rsrc.putInt(1033).putInt(iconDataEntry);
-        rsrc.position(groupTypeDir + 12).putShort((short) 0).putShort((short) groups);
-        for (int i = 0; i < groups; i++) {
-            rsrc.putInt(i + 1).putInt(0x80000000 | (groupLangDirs + i * dirSize));
-        }
-        for (int i = 0; i < groups; i++) {
-            rsrc.position(groupLangDirs + i * dirSize + 12).putShort((short) 0).putShort((short) 1);
-            rsrc.putInt(1033).putInt(groupDataEntry);
-        }
-        rsrc.position(iconDataEntry).putInt(SyntheticPE.SECTION_VA + image).putInt(imageSize);
-        rsrc.position(groupDataEntry).putInt(SyntheticPE.SECTION_VA + grpIconDir).putInt(6 + 14);
-        // GRPICONDIR: reserved, type 1, one image, whose id is 1
-        rsrc.position(grpIconDir).putShort((short) 0).putShort((short) 1).putShort((short) 1);
-        rsrc.position(grpIconDir + 6 + 12).putShort((short) 1);
-
-        RecordingExtractor extractor = parse(SyntheticPE.build(rsrc.array(), 0));
+        byte[] pe = sharedImagePe(groups, imageSize);
+        RecordingExtractor extractor = parse(pe);
         long emitted = 0;
         for (byte[] ico : extractor.contents) {
             emitted += ico.length;
         }
         assertTrue(emitted > imageSize, "emitted " + emitted);
-        assertTrue(emitted <= 4L * rsrc.capacity(), "emitted " + emitted);
+        assertTrue(emitted <= 4L * (pe.length - SyntheticPE.SECTION_RAW_PTR), "emitted " + emitted);
         assertTrue(extractor.contents.size() < groups);
         assertContains("stopped early",
                 extractor.parentMetadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
@@ -317,14 +325,7 @@ public class PEIconExtractorTest extends TikaTest {
      */
     @Test
     public void testGroupsAreReadBeforeIcons() throws Exception {
-        byte[] data = new byte[20 + 16];
-        System.arraycopy(grpIconDir(1), 0, data, 0, 20);
-        SyntheticResources resources = new SyntheticResources(data);
-        resources.group(0, 20);
-        for (int i = 0; i < 12000; i++) {
-            resources.icon(20, 16);
-        }
-        RecordingExtractor extractor = parse(SyntheticPE.build(resources.build(), 0));
+        RecordingExtractor extractor = parse(manyIconsPe());
         assertEquals(1, extractor.contents.size());
         assertIcon(extractor.metadata.get(0), "icon_1.ico", "14/1/1033", THUMBNAIL);
         assertContains("20000 entries",
@@ -358,27 +359,35 @@ public class PEIconExtractorTest extends TikaTest {
     }
 
     /**
-     * A group whose images add up to more than 64 MB is skipped on its own:
-     * five overlapping 13.5 MB images here. The group after it still comes
-     * out and nothing is reported.
+     * A group whose images add up to more than 64 MB is skipped on its own;
+     * the group after it still comes out and nothing is reported. The three
+     * 23 MB images lie in the hole of a sparse file, which only a file-backed
+     * parse can reach.
      */
     @Test
-    public void testOversizedGroupIsSkipped() throws Exception {
-        int imageSize = 13_500_000;
-        byte[] oversized = grpIconDir(1, 2, 3, 4, 5);
-        byte[] small = grpIconDir(6);
+    public void testOversizedGroupIsSkipped(@TempDir Path tmp) throws Exception {
+        int imageSize = 23 * 1024 * 1024;
+        byte[] oversized = grpIconDir(1, 2, 3);
+        byte[] small = grpIconDir(4);
         int images = oversized.length + small.length;
-        byte[] data = new byte[images + imageSize];
+        byte[] data = new byte[images + 16];
         System.arraycopy(oversized, 0, data, 0, oversized.length);
         System.arraycopy(small, 0, data, oversized.length, small.length);
         SyntheticResources resources = new SyntheticResources(data);
         resources.group(0, oversized.length);
         resources.group(oversized.length, small.length);
-        for (int i = 0; i < 5; i++) {
-            resources.icon(images + i, imageSize - 5);
+        for (int i = 0; i < 3; i++) {
+            resources.icon(data.length + i * imageSize, imageSize);
         }
         resources.icon(images, 16);
-        RecordingExtractor extractor = parse(SyntheticPE.build(resources.build(), 0));
+        byte[] section = resources.build();
+        int declared = section.length + 3 * imageSize;
+        Path file = Files.write(tmp.resolve("oversized.exe"),
+                SyntheticPE.build(section, 0, declared));
+        try (FileChannel channel = FileChannel.open(file, StandardOpenOption.WRITE)) {
+            channel.write(ByteBuffer.allocate(1), SyntheticPE.SECTION_RAW_PTR + declared - 1);
+        }
+        RecordingExtractor extractor = parseFile(file);
         assertEquals(1, extractor.contents.size());
         assertIcon(extractor.metadata.get(0), "icon_2.ico", "14/2/1033", THUMBNAIL);
         assertNull(extractor.parentMetadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
@@ -409,7 +418,7 @@ public class PEIconExtractorTest extends TikaTest {
         exe[0x3522] = '1';
         RecordingExtractor extractor = parse(exe);
         assertEquals(1, extractor.contents.size());
-        assertIcon(extractor.metadata.get(0), "icon_1_1033.ico", "14/1/1033", THUMBNAIL);
+        assertIcon(extractor.metadata.get(0), "icon_1.ico", "14/1/1033", THUMBNAIL);
         assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
     }
 
@@ -439,23 +448,13 @@ public class PEIconExtractorTest extends TikaTest {
     @Test
     public void testSectionLargerThanBuffer(@TempDir Path tmp) throws Exception {
         int declared = 100 * 1024 * 1024;
-        byte[] exe = readTestResource(EXE);
-        byte[] rsrc = Arrays.copyOfRange(exe, 0x3400, 0x7c00);
-        for (int entry = 0x130; entry <= 0x190; entry += 16) {
-            int rva = EndianUtils.getIntLE(rsrc, entry);
-            putIntLE(rsrc, entry, rva - 0xa000 + SyntheticPE.SECTION_VA);
-        }
+        byte[] rsrc = resourceSectionAt(SyntheticPE.SECTION_VA);
         byte[] pe = SyntheticPE.build(rsrc, 0, declared);
         RecordingExtractor extractor = parse(pe);
         assertEquals(2, extractor.contents.size());
         assertNull(extractor.parentMetadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
 
-        Path file = Files.write(tmp.resolve("large-section.exe"), pe);
-        extractor = new RecordingExtractor();
-        try (TikaInputStream tis = TikaInputStream.get(file)) {
-            new ExecutableParser().parse(tis, new BodyContentHandler(), extractor.parentMetadata,
-                    extractor.context());
-        }
+        extractor = parseFile(Files.write(tmp.resolve("large-section.exe"), pe));
         assertEquals(2, extractor.contents.size());
 
         // icon 1 (data entry 0x130) now lies 70 MB into the section
@@ -473,18 +472,58 @@ public class PEIconExtractorTest extends TikaTest {
      */
     @Test
     public void testFileBackedTruncation(@TempDir Path tmp) throws Exception {
-        Path file = Files.write(tmp.resolve("truncated.exe"),
-                Arrays.copyOf(readTestResource(EXE), 0x3000));
-        RecordingExtractor extractor = new RecordingExtractor();
-        try (TikaInputStream tis = TikaInputStream.get(file)) {
-            new ExecutableParser().parse(tis, new BodyContentHandler(), extractor.parentMetadata,
-                    extractor.context());
-        }
+        RecordingExtractor extractor = parseFile(Files.write(tmp.resolve("truncated.exe"),
+                Arrays.copyOf(readTestResource(EXE), 0x3000)));
         assertEquals(0, extractor.contents.size());
         assertEquals(ExecutableParser.MACHINE_x86_32,
                 extractor.parentMetadata.get(ExecutableParser.MACHINE_TYPE));
         assertContains("EOFException", extractor.parentMetadata.get(
                 TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
+    }
+
+    /**
+     * A file and a stream take different paths through the resource section.
+     * Whatever the input, they must come to the same icons and the same notes.
+     */
+    @Test
+    public void testFileBackedInputBehavesLikeStream(@TempDir Path tmp) throws Exception {
+        byte[] exe = readTestResource(EXE);
+        Map<String, byte[]> inputs = new LinkedHashMap<>();
+        inputs.put("exe", exe);
+        inputs.put("dll", readTestResource(DLL));
+        inputs.put("language variants", readTestResource(LANG_DLL));
+        inputs.put("cycle", patched(exe, 0x3414, 0x80000000));
+        inputs.put("data outside the section", patched(exe, 0x3530, 0x1000));
+        inputs.put("images sharing bytes",
+                patched(exe, 0x3570, EndianUtils.getIntLE(exe, 0x3560) + 1));
+        inputs.put("name with a slash", patched(exe, 0x3528, '/'));
+        for (int length : new int[]{0x200, 0x3000, 0x3400, 0x4000, 0x7b20, 0x7b50, 0x7fff}) {
+            inputs.put("cut at 0x" + Integer.toHexString(length), Arrays.copyOf(exe, length));
+        }
+        inputs.put("output budget", sharedImagePe(40, 4096));
+        inputs.put("entry budget", manyIconsPe());
+
+        for (Map.Entry<String, byte[]> input : inputs.entrySet()) {
+            String label = input.getKey();
+            RecordingExtractor stream = parse(input.getValue());
+            RecordingExtractor file = parseFile(
+                    Files.write(Files.createTempFile(tmp, "pe", ".exe"), input.getValue()));
+            assertEquals(stream.contents.size(), file.contents.size(), label);
+            for (int i = 0; i < stream.contents.size(); i++) {
+                assertArrayEquals(stream.contents.get(i), file.contents.get(i), label);
+            }
+            assertEquals(stream.metadata.size(), file.metadata.size(), label);
+            for (int i = 0; i < stream.metadata.size(); i++) {
+                assertEquals(stream.metadata.get(i), file.metadata.get(i), label);
+            }
+            assertEquals(warning(stream), warning(file), label);
+            // the messages differ, what was noticed must not
+            assertEquals(stream.parentMetadata.get(
+                            TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM) == null,
+                    file.parentMetadata.get(
+                            TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM) == null,
+                    label);
+        }
     }
 
     /**
@@ -494,8 +533,8 @@ public class PEIconExtractorTest extends TikaTest {
     @Test
     public void testSectionBufferFollowsBytesRead() throws Exception {
         int declared = 64 * 1024 * 1024;
-        PEIconExtractor.Section section =
-                PEIconExtractor.Section.of(new ByteArrayInputStream(new byte[100]), declared);
+        PEIconExtractor.BufferedSection section = new PEIconExtractor.BufferedSection(
+                new ByteArrayInputStream(new byte[100]), declared);
         assertNull(section.read(declared - 16, 16));
         assertTrue(section.buf.length <= 64 * 1024, "allocated " + section.buf.length);
         assertEquals(90, section.read(10, 90).length);
@@ -583,13 +622,7 @@ public class PEIconExtractorTest extends TikaTest {
     @Test
     public void testResourceRootNotAtSectionStart() throws Exception {
         for (int shift : new int[]{0, 0x300}) {
-            byte[] exe = readTestResource(EXE);
-            byte[] rsrc = Arrays.copyOfRange(exe, 0x3400, 0x7c00);
-            // the seven data entries carry RVAs; rebase them from RVA 0xa000 to the new place
-            for (int entry = 0x130; entry <= 0x190; entry += 16) {
-                int rva = EndianUtils.getIntLE(rsrc, entry);
-                putIntLE(rsrc, entry, rva - 0xa000 + SyntheticPE.SECTION_VA + shift);
-            }
+            byte[] rsrc = resourceSectionAt(SyntheticPE.SECTION_VA + shift);
             byte[] section = new byte[shift + rsrc.length];
             System.arraycopy(rsrc, 0, section, shift, rsrc.length);
             RecordingExtractor extractor = parse(SyntheticPE.build(section, shift));
@@ -700,12 +733,29 @@ public class PEIconExtractorTest extends TikaTest {
 
     @Test
     public void testExtractIconsDisabled() throws Exception {
-        ExecutableParser parser = new ExecutableParser();
-        parser.setExtractIcons(false);
-        List<Metadata> metadataList = getRecursiveMetadata(EXE, parser);
+        ExecutableParser.ExecutableParserConfig noIcons =
+                new ExecutableParser.ExecutableParserConfig();
+        noIcons.setExtractIcons(false);
+
+        List<Metadata> metadataList = getRecursiveMetadata(EXE, new ExecutableParser(noIcons));
         assertEquals(1, metadataList.size());
         assertEquals(ExecutableParser.MACHINE_x86_32,
                 metadataList.get(0).get(ExecutableParser.MACHINE_TYPE));
+
+        // for one parse, through the context
+        RecordingExtractor extractor = new RecordingExtractor();
+        ParseContext context = extractor.context();
+        context.set(ExecutableParser.ExecutableParserConfig.class, noIcons);
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/" + EXE)) {
+            new ExecutableParser().parse(tis, new BodyContentHandler(), new Metadata(), context);
+        }
+        assertEquals(0, extractor.metadata.size());
+
+        // from a JSON configuration
+        Parser loaded = TikaLoader.load(getConfigPath(PEIconExtractorTest.class,
+                "tika-config-executable-no-icons.json")).loadParsers();
+        assertEquals(1, getRecursiveMetadata(EXE, loaded).size());
+        assertEquals(3, getRecursiveMetadata(EXE).size());
     }
 
     /**
@@ -785,6 +835,62 @@ public class PEIconExtractorTest extends TikaTest {
         return dir.array();
     }
 
+    /**
+     * @return a file in which the given number of groups all list one image
+     */
+    private static byte[] sharedImagePe(int groups, int imageSize) {
+        byte[] data = new byte[20 + imageSize];
+        System.arraycopy(grpIconDir(1), 0, data, 0, 20);
+        SyntheticResources resources = new SyntheticResources(data);
+        for (int i = 0; i < groups; i++) {
+            resources.group(0, 20);
+        }
+        resources.icon(20, imageSize);
+        return SyntheticPE.build(resources.build(), 0);
+    }
+
+    /**
+     * @return a file with one group and 12000 icons, more than the entry
+     * budget of 20000 lets the walk visit
+     */
+    private static byte[] manyIconsPe() {
+        byte[] data = new byte[20 + 16];
+        System.arraycopy(grpIconDir(1), 0, data, 0, 20);
+        SyntheticResources resources = new SyntheticResources(data);
+        resources.group(0, 20);
+        for (int i = 0; i < 12000; i++) {
+            resources.icon(20, 16);
+        }
+        return SyntheticPE.build(resources.build(), 0);
+    }
+
+    /**
+     * @return the resource section of the test EXE, its seven data entries
+     * rebased from RVA 0xa000 to the given one
+     */
+    private byte[] resourceSectionAt(int rva) throws IOException {
+        byte[] rsrc = Arrays.copyOfRange(readTestResource(EXE), 0x3400, 0x7c00);
+        for (int entry = 0x130; entry <= 0x190; entry += 16) {
+            putIntLE(rsrc, entry, EndianUtils.getIntLE(rsrc, entry) - 0xa000 + rva);
+        }
+        return rsrc;
+    }
+
+    /**
+     * @return the warning's message without the stack trace that follows it
+     */
+    private static String warning(RecordingExtractor extractor) {
+        String warning = extractor.parentMetadata.get(
+                TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        return warning == null ? null : warning.lines().findFirst().orElse("");
+    }
+
+    private static byte[] patched(byte[] data, int offset, int value) {
+        byte[] patched = data.clone();
+        putIntLE(patched, offset, value);
+        return patched;
+    }
+
     private static void putIntLE(byte[] data, int offset, int value) {
         ByteBuffer.wrap(data, offset, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(value);
     }
@@ -802,6 +908,15 @@ public class PEIconExtractorTest extends TikaTest {
     private static RecordingExtractor parse(byte[] pe, RecordingExtractor extractor)
             throws Exception {
         try (TikaInputStream tis = TikaInputStream.get(pe)) {
+            new ExecutableParser().parse(tis, new BodyContentHandler(), extractor.parentMetadata,
+                    extractor.context());
+        }
+        return extractor;
+    }
+
+    private static RecordingExtractor parseFile(Path file) throws Exception {
+        RecordingExtractor extractor = new RecordingExtractor();
+        try (TikaInputStream tis = TikaInputStream.get(file)) {
             new ExecutableParser().parse(tis, new BodyContentHandler(), extractor.parentMetadata,
                     extractor.context());
         }
