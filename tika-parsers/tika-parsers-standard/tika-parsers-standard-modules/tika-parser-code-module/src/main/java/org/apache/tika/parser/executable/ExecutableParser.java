@@ -133,7 +133,9 @@ public class ExecutableParser implements Parser, MachineMetadata {
      *
      * @deprecated since 4.2.0, use
      * {@link #parsePE(XHTMLContentHandler, Metadata, TikaInputStream, byte[], ParseContext)},
-     * which also extracts the icons as embedded documents
+     * which also extracts the icons as embedded documents. That is the one
+     * {@link #parse} calls, so overriding this method no longer changes what
+     * a parse does.
      */
     @Deprecated
     public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, InputStream tis,
@@ -153,8 +155,8 @@ public class ExecutableParser implements Parser, MachineMetadata {
             return;
         }
         try {
-            PEIconExtractor.extract(tis, header.sizeOptHdrs(), header.numSections(), xhtml,
-                    metadata, context);
+            PEIconExtractor.extract(tis, header.end(), header.sizeOptHdrs(),
+                    header.numSections(), xhtml, metadata, context);
         } catch (SecurityException | EmbeddedLimitReachedException e) {
             // Limits and sandboxing must surface to the caller
             throw e;
@@ -312,10 +314,13 @@ public class ExecutableParser implements Parser, MachineMetadata {
                 metadata.set(MACHINE_TYPE, MACHINE_UNKNOWN);
                 break;
         }
-        return new CoffHeader(sizeOptHdrs, numSectors);
+        return new CoffHeader(peOffset + pe.length, sizeOptHdrs, numSectors);
     }
 
-    private record CoffHeader(int sizeOptHdrs, int numSections) {
+    /**
+     * @param end the file offset right after the COFF header
+     */
+    private record CoffHeader(long end, int sizeOptHdrs, int numSections) {
     }
 
     /**

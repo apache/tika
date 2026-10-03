@@ -30,12 +30,15 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.input.CountingInputStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -52,6 +55,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ParseRecord;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * The test executables were built with MinGW from an empty {@code main()}
@@ -307,6 +311,183 @@ public class PEIconExtractorTest extends TikaTest {
     }
 
     /**
+     * The entry budget is spent on the groups first: 12000 icons take more
+     * than the 20000 entries allowed, yet the group whose icon was reached
+     * before the budget ran out still comes out.
+     */
+    @Test
+    public void testGroupsAreReadBeforeIcons() throws Exception {
+        byte[] data = new byte[20 + 16];
+        System.arraycopy(grpIconDir(1), 0, data, 0, 20);
+        SyntheticResources resources = new SyntheticResources(data);
+        resources.group(0, 20);
+        for (int i = 0; i < 12000; i++) {
+            resources.icon(20, 16);
+        }
+        RecordingExtractor extractor = parse(SyntheticPE.build(resources.build(), 0));
+        assertEquals(1, extractor.contents.size());
+        assertIcon(extractor.metadata.get(0), "icon_1.ico", "14/1/1033", THUMBNAIL);
+        assertContains("20000 entries",
+                extractor.parentMetadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    /**
+     * A group may list 256 images, not 257.
+     */
+    @Test
+    public void testIconsPerGroupLimit() throws Exception {
+        int[] ids = new int[257];
+        for (int i = 0; i < ids.length; i++) {
+            ids[i] = i + 1;
+        }
+        byte[] tooMany = grpIconDir(ids);
+        byte[] allowed = grpIconDir(Arrays.copyOf(ids, 256));
+        byte[] data = new byte[tooMany.length + allowed.length + ids.length];
+        System.arraycopy(tooMany, 0, data, 0, tooMany.length);
+        System.arraycopy(allowed, 0, data, tooMany.length, allowed.length);
+        SyntheticResources resources = new SyntheticResources(data);
+        resources.group(0, tooMany.length);
+        resources.group(tooMany.length, allowed.length);
+        for (int i = 0; i < ids.length; i++) {
+            resources.icon(tooMany.length + allowed.length + i, 1);
+        }
+        RecordingExtractor extractor = parse(SyntheticPE.build(resources.build(), 0));
+        assertEquals(1, extractor.contents.size());
+        assertIcon(extractor.metadata.get(0), "icon_2.ico", "14/2/1033", THUMBNAIL);
+        assertEquals(6 + 256 * 16 + 256, extractor.contents.get(0).length);
+    }
+
+    /**
+     * A group whose images add up to more than 64 MB is skipped on its own:
+     * five overlapping 13.5 MB images here. The group after it still comes
+     * out and nothing is reported.
+     */
+    @Test
+    public void testOversizedGroupIsSkipped() throws Exception {
+        int imageSize = 13_500_000;
+        byte[] oversized = grpIconDir(1, 2, 3, 4, 5);
+        byte[] small = grpIconDir(6);
+        int images = oversized.length + small.length;
+        byte[] data = new byte[images + imageSize];
+        System.arraycopy(oversized, 0, data, 0, oversized.length);
+        System.arraycopy(small, 0, data, oversized.length, small.length);
+        SyntheticResources resources = new SyntheticResources(data);
+        resources.group(0, oversized.length);
+        resources.group(oversized.length, small.length);
+        for (int i = 0; i < 5; i++) {
+            resources.icon(images + i, imageSize - 5);
+        }
+        resources.icon(images, 16);
+        RecordingExtractor extractor = parse(SyntheticPE.build(resources.build(), 0));
+        assertEquals(1, extractor.contents.size());
+        assertIcon(extractor.metadata.get(0), "icon_2.ico", "14/2/1033", THUMBNAIL);
+        assertNull(extractor.parentMetadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    /**
+     * A resource name ends up in a file name and in an id that is separated
+     * by slashes: DOCICON's I (0x3528) becomes a slash.
+     */
+    @Test
+    public void testResourceNameIsCleaned() throws Exception {
+        byte[] exe = readTestResource(EXE);
+        exe[0x3528] = '/';
+        RecordingExtractor extractor = parse(exe);
+        assertEquals(2, extractor.contents.size());
+        assertIcon(extractor.metadata.get(0), "icon_DOC_CON.ico", "14/DOC_CON/1033", THUMBNAIL);
+    }
+
+    /**
+     * A name can spell an id: DOCICON is renamed to "1" (length at 0x3520,
+     * characters from 0x3522) next to the group with id 1. Only one of the
+     * two can be told apart by name and id, so only one comes out.
+     */
+    @Test
+    public void testNameThatSpellsAnId() throws Exception {
+        byte[] exe = readTestResource(EXE);
+        exe[0x3520] = 1;
+        exe[0x3522] = '1';
+        RecordingExtractor extractor = parse(exe);
+        assertEquals(1, extractor.contents.size());
+        assertIcon(extractor.metadata.get(0), "icon_1_1033.ico", "14/1/1033", THUMBNAIL);
+        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
+    }
+
+    /**
+     * A stream that starts after the four bytes the caller has already read
+     * is all the public entry point promises; the section must still be found.
+     */
+    @Test
+    public void testStreamStartingAfterFirstFourBytes() throws Exception {
+        byte[] exe = readTestResource(EXE);
+        RecordingExtractor extractor = new RecordingExtractor();
+        ParseContext context = extractor.context();
+        try (TikaInputStream tis = TikaInputStream.get(Arrays.copyOfRange(exe, 4, exe.length))) {
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(new BodyContentHandler(),
+                    extractor.parentMetadata, context);
+            new ExecutableParser().parsePE(xhtml, extractor.parentMetadata, tis,
+                    Arrays.copyOf(exe, 4), context);
+        }
+        assertEquals(2, extractor.contents.size());
+        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
+    }
+
+    /**
+     * A section larger than what is buffered from a stream still yields the
+     * icons within reach; one beyond it is reported. A file has no such limit.
+     */
+    @Test
+    public void testSectionLargerThanBuffer(@TempDir Path tmp) throws Exception {
+        int declared = 100 * 1024 * 1024;
+        byte[] exe = readTestResource(EXE);
+        byte[] rsrc = Arrays.copyOfRange(exe, 0x3400, 0x7c00);
+        for (int entry = 0x130; entry <= 0x190; entry += 16) {
+            int rva = EndianUtils.getIntLE(rsrc, entry);
+            putIntLE(rsrc, entry, rva - 0xa000 + SyntheticPE.SECTION_VA);
+        }
+        byte[] pe = SyntheticPE.build(rsrc, 0, declared);
+        RecordingExtractor extractor = parse(pe);
+        assertEquals(2, extractor.contents.size());
+        assertNull(extractor.parentMetadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        Path file = Files.write(tmp.resolve("large-section.exe"), pe);
+        extractor = new RecordingExtractor();
+        try (TikaInputStream tis = TikaInputStream.get(file)) {
+            new ExecutableParser().parse(tis, new BodyContentHandler(), extractor.parentMetadata,
+                    extractor.context());
+        }
+        assertEquals(2, extractor.contents.size());
+
+        // icon 1 (data entry 0x130) now lies 70 MB into the section
+        putIntLE(rsrc, 0x130, SyntheticPE.SECTION_VA + 70 * 1024 * 1024);
+        extractor = parse(SyntheticPE.build(rsrc, 0, declared));
+        assertEquals(1, extractor.contents.size());
+        assertIcon(extractor.metadata.get(0), "icon_DOCICON.ico", "14/DOCICON/1033", THUMBNAIL);
+        assertContains("64 MB",
+                extractor.parentMetadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    /**
+     * A file that ends before its resource section is reported the same way
+     * whether it is read from a file or from a stream.
+     */
+    @Test
+    public void testFileBackedTruncation(@TempDir Path tmp) throws Exception {
+        Path file = Files.write(tmp.resolve("truncated.exe"),
+                Arrays.copyOf(readTestResource(EXE), 0x3000));
+        RecordingExtractor extractor = new RecordingExtractor();
+        try (TikaInputStream tis = TikaInputStream.get(file)) {
+            new ExecutableParser().parse(tis, new BodyContentHandler(), extractor.parentMetadata,
+                    extractor.context());
+        }
+        assertEquals(0, extractor.contents.size());
+        assertEquals(ExecutableParser.MACHINE_x86_32,
+                extractor.parentMetadata.get(ExecutableParser.MACHINE_TYPE));
+        assertContains("EOFException", extractor.parentMetadata.get(
+                TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
+    }
+
+    /**
      * The section buffer follows what was read, not what the header declares:
      * 64 MB declared, 100 bytes there.
      */
@@ -314,10 +495,10 @@ public class PEIconExtractorTest extends TikaTest {
     public void testSectionBufferFollowsBytesRead() throws Exception {
         int declared = 64 * 1024 * 1024;
         PEIconExtractor.Section section =
-                new PEIconExtractor.Section(new ByteArrayInputStream(new byte[100]), declared);
-        assertEquals(-1, section.index(declared - 16, 16));
+                PEIconExtractor.Section.of(new ByteArrayInputStream(new byte[100]), declared);
+        assertNull(section.read(declared - 16, 16));
         assertTrue(section.buf.length <= 64 * 1024, "allocated " + section.buf.length);
-        assertEquals(10, section.index(10, 90));
+        assertEquals(90, section.read(10, 90).length);
     }
 
     /**
@@ -592,6 +773,18 @@ public class PEIconExtractorTest extends TikaTest {
         assertEquals(resourceType, metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
     }
 
+    /**
+     * @return a GRPICONDIR that lists the icons with the given ids
+     */
+    private static byte[] grpIconDir(int... ids) {
+        ByteBuffer dir = ByteBuffer.allocate(6 + 14 * ids.length).order(ByteOrder.LITTLE_ENDIAN);
+        dir.putShort((short) 0).putShort((short) 1).putShort((short) ids.length);
+        for (int i = 0; i < ids.length; i++) {
+            dir.putShort(6 + 14 * i + 12, (short) ids[i]);
+        }
+        return dir.array();
+    }
+
     private static void putIntLE(byte[] data, int offset, int value) {
         ByteBuffer.wrap(data, offset, 4).order(ByteOrder.LITTLE_ENDIAN).putInt(value);
     }
@@ -645,6 +838,65 @@ public class PEIconExtractorTest extends TikaTest {
     }
 
     /**
+     * A resource section whose icons and icon groups are numbered from 1 in
+     * the order they are added, all in language 1033, their data being ranges
+     * of one block that follows the tree.
+     */
+    private static final class SyntheticResources {
+        private static final int DIR_SIZE = 16 + 8;
+        private final List<int[]> icons = new ArrayList<>();
+        private final List<int[]> groups = new ArrayList<>();
+        private final byte[] data;
+
+        SyntheticResources(byte[] data) {
+            this.data = data;
+        }
+
+        void icon(int offset, int size) {
+            icons.add(new int[]{offset, size});
+        }
+
+        void group(int offset, int size) {
+            groups.add(new int[]{offset, size});
+        }
+
+        byte[] build() {
+            int iconTypeDir = 16 + 2 * 8;
+            int iconLangDirs = iconTypeDir + 16 + 8 * icons.size();
+            int groupTypeDir = iconLangDirs + DIR_SIZE * icons.size();
+            int groupLangDirs = groupTypeDir + 16 + 8 * groups.size();
+            int dataEntries = groupLangDirs + DIR_SIZE * groups.size();
+            int block = dataEntries + 16 * (icons.size() + groups.size());
+            ByteBuffer rsrc = ByteBuffer.allocate(block + data.length)
+                    .order(ByteOrder.LITTLE_ENDIAN);
+            rsrc.position(12).putShort((short) 0).putShort((short) 2);
+            rsrc.putInt(3).putInt(0x80000000 | iconTypeDir);
+            rsrc.putInt(14).putInt(0x80000000 | groupTypeDir);
+            writeType(rsrc, iconTypeDir, iconLangDirs, dataEntries, icons, block);
+            writeType(rsrc, groupTypeDir, groupLangDirs, dataEntries + 16 * icons.size(), groups,
+                    block);
+            rsrc.position(block);
+            rsrc.put(data);
+            return rsrc.array();
+        }
+
+        private static void writeType(ByteBuffer rsrc, int typeDir, int langDirs, int dataEntries,
+                                      List<int[]> resources, int block) {
+            rsrc.position(typeDir + 12).putShort((short) 0).putShort((short) resources.size());
+            for (int i = 0; i < resources.size(); i++) {
+                rsrc.putInt(i + 1).putInt(0x80000000 | (langDirs + i * DIR_SIZE));
+            }
+            for (int i = 0; i < resources.size(); i++) {
+                rsrc.position(langDirs + i * DIR_SIZE + 12).putShort((short) 0).putShort((short) 1);
+                rsrc.putInt(1033).putInt(dataEntries + i * 16);
+                rsrc.position(dataEntries + i * 16);
+                rsrc.putInt(SyntheticPE.SECTION_VA + block + resources.get(i)[0]);
+                rsrc.putInt(resources.get(i)[1]);
+            }
+        }
+    }
+
+    /**
      * The smallest PE32 file that gets a resource section past ExecutableParser:
      * DOS stub, PE signature, COFF header, full optional header, one .rsrc
      * section header, and the section itself at {@link #SECTION_RAW_PTR}.
@@ -656,6 +908,13 @@ public class PEIconExtractorTest extends TikaTest {
         private static final int OPT_HEADER_SIZE = 224;
 
         static byte[] build(byte[] section, int rootOffset) {
+            return build(section, rootOffset, section.length);
+        }
+
+        /**
+         * @param declaredSize the section size the header claims, whatever the section holds
+         */
+        static byte[] build(byte[] section, int rootOffset, int declaredSize) {
             ByteBuffer pe = ByteBuffer.allocate(SECTION_RAW_PTR + section.length)
                     .order(ByteOrder.LITTLE_ENDIAN);
             pe.put((byte) 'M').put((byte) 'Z');
@@ -669,12 +928,12 @@ public class PEIconExtractorTest extends TikaTest {
             pe.putShort((short) 0x10b);                     // PE32
             pe.putInt(opt + 92, 16);                        // NumberOfRvaAndSizes
             pe.putInt(opt + 96 + 2 * 8, SECTION_VA + rootOffset);
-            pe.putInt(opt + 96 + 2 * 8 + 4, section.length - rootOffset);
+            pe.putInt(opt + 96 + 2 * 8 + 4, declaredSize - rootOffset);
             int sec = opt + OPT_HEADER_SIZE;
             pe.position(sec);
             pe.put(".rsrc\0\0\0".getBytes(StandardCharsets.US_ASCII));
-            pe.putInt(section.length).putInt(SECTION_VA);
-            pe.putInt(section.length).putInt(SECTION_RAW_PTR);
+            pe.putInt(declaredSize).putInt(SECTION_VA);
+            pe.putInt(declaredSize).putInt(SECTION_RAW_PTR);
             pe.position(SECTION_RAW_PTR);
             pe.put(section);
             return pe.array();

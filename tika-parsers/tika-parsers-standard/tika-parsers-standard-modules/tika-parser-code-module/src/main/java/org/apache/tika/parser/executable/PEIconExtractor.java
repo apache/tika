@@ -16,11 +16,11 @@
  */
 package org.apache.tika.parser.executable;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -59,14 +59,15 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * whereas the file refers to them by file offset. This class rebuilds the
  * file from the two resource types.
  * <p>
- * The resource section is read lazily and only as far as the icon data
- * reaches: a file without icons costs little more than its resource
- * directory. File-backed input is read through a positioned channel,
- * anything else by skipping forward, so non-seekable input works too.
- * Hostile input is contained by bounds checking every offset, capping the
- * section size, the number of directory entries visited, the icons per group,
- * the size of a rebuilt icon and the size of all rebuilt icons together, and
- * by refusing cycles in the tree.
+ * File-backed input is read where the resource tree points, so only the
+ * directories and the icons themselves are touched. Anything else has to be
+ * read from the start: up to the resource section, then the section as far
+ * as its icons reach.
+ * Hostile input is contained by bounds checking every offset and by capping
+ * the buffered part of a section, the number of directory entries visited,
+ * the icons per group, the size of a rebuilt icon and the size of all
+ * rebuilt icons together. The tree is walked to its three levels and no
+ * deeper, so a cycle cannot loop.
  */
 class PEIconExtractor {
 
@@ -82,20 +83,19 @@ class PEIconExtractor {
     private static final int RESOURCE_DIRECTORY_SIZE = 16;
     private static final int RESOURCE_DIRECTORY_ENTRY_SIZE = 8;
     private static final int RESOURCE_DATA_ENTRY_SIZE = 16;
+    private static final int GRP_ICON_DIR_SIZE = 6;
     private static final int GRP_ICON_DIR_ENTRY_SIZE = 14;
     private static final int ICON_DIR_ENTRY_SIZE = 16;
     private static final long HIGH_BIT = 0x80000000L;
 
     // Sanity limits for hostile input
     private static final int MAX_SECTIONS = 96; // the PE spec's own limit
-    private static final int MAX_RESOURCE_SECTION_SIZE = 64 * 1024 * 1024;
-    private static final int MAX_RESOURCE_TREE_DEPTH = 3; // type / name / language
+    private static final int MAX_BUFFERED_SECTION_MB = 64;
     private static final int MAX_DIRECTORY_ENTRIES = 20000; // visited across the whole tree
     private static final int MAX_RESOURCE_NAME_LENGTH = 256;
     private static final int MAX_ICONS_PER_GROUP = 256;
-    // A genuine icon never outgrows the section it came from
-    private static final long MAX_ICO_SIZE = MAX_RESOURCE_SECTION_SIZE;
-    // Groups may share images, so all icons together may outgrow the section read, but not by much
+    private static final long MAX_ICO_SIZE = 64 * 1024 * 1024;
+    // Groups may share images, so all icons together may outgrow the section, but not by much
     private static final int MAX_OUTPUT_FACTOR = 4;
     private static final int SECTION_BUFFER_FLOOR = 8192;
 
@@ -107,13 +107,13 @@ class PEIconExtractor {
      * emits every icon group as an embedded document.
      *
      * @param stream      the input positioned right after the 24 byte COFF header
+     * @param position    the offset of that position in the PE file
      * @param sizeOptHdrs the SizeOfOptionalHeader field of the COFF header
      * @param numSections the NumberOfSections field of the COFF header
-     * @param metadata    the PE file's own metadata, receives a warning if the
-     *                    resource tree was too large to walk completely or
-     *                    its icons too large to rebuild them all
+     * @param metadata    the PE file's own metadata, receives a warning if not
+     *                    all of the resource tree or of the icons could be handled
      */
-    static void extract(TikaInputStream stream, int sizeOptHdrs, int numSections,
+    static void extract(TikaInputStream stream, long position, int sizeOptHdrs, int numSections,
                         XHTMLContentHandler xhtml, Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         if (numSections <= 0 || numSections > MAX_SECTIONS) {
@@ -166,39 +166,38 @@ class PEIconExtractor {
                 break;
             }
         }
-        if (sectionVa < 0 || sectionRawSize > MAX_RESOURCE_SECTION_SIZE) {
+        if (sectionVa < 0) {
             return;
         }
 
-        InputStream source;
+        Section section;
         if (stream.hasFile()) {
-            FileChannel channel = stream.getFileChannel();
-            if (sectionRawPtr >= channel.size()) {
-                return;
-            }
-            channel.position(sectionRawPtr);
-            source = Channels.newInputStream(channel);
+            section = Section.of(stream.getFileChannel(), sectionRawPtr, sectionRawSize);
         } else {
-            // Everything read so far: DOS header up to and including the section table
-            long position = stream.getPosition();
+            position += optHdr.length + sections.length;
             if (sectionRawPtr < position) {
                 return;
             }
             IOUtils.skipFully(stream, sectionRawPtr - position);
-            source = stream;
+            section = Section.of(stream, sectionRawSize);
         }
 
         // Offsets inside the resource tree are relative to its root, which
         // normally but not necessarily sits at the start of the section
-        Resources resources = new Resources(new Section(source, (int) sectionRawSize), sectionVa,
-                rsrcRva - sectionVa);
-        readDirectory(resources, resources.rootOffset, 0, new HashSet<>(), 0, 0, null);
+        Resources resources = new Resources(section, sectionVa, rsrcRva - sectionVa);
+        readDirectory(resources, resources.rootOffset, 0, 0, 0, null);
         if (resources.budget < 0) {
             EmbeddedDocumentUtil.recordException(new TikaException(
                     "PE resource directory has more than " + MAX_DIRECTORY_ENTRIES +
                             " entries; icon extraction stopped early"), metadata, context);
         }
         emitIcons(resources, xhtml, metadata, context);
+        if (section.beyondLimit) {
+            EmbeddedDocumentUtil.recordException(new TikaException(
+                    "PE resource section is larger than " + MAX_BUFFERED_SECTION_MB +
+                            " MB and the input is not a file; icons beyond that were not" +
+                            " extracted"), metadata, context);
+        }
     }
 
     /**
@@ -206,81 +205,78 @@ class PEIconExtractor {
      * collects every icon and icon group. {@code type}, {@code id} and
      * {@code name} carry what the levels above have established.
      */
-    private static void readDirectory(Resources resources, long dirOffset, int depth,
-                                      Set<Long> visited, int type, int id, String name)
-            throws IOException {
-        if (depth >= MAX_RESOURCE_TREE_DEPTH || !visited.add(dirOffset)) {
+    private static void readDirectory(Resources resources, long dirOffset, int depth, int type,
+                                      int id, String name) throws IOException {
+        if (resources.budget < 0) {
             return;
         }
         Section section = resources.section;
-        int dir = section.index(dirOffset, RESOURCE_DIRECTORY_SIZE);
-        if (dir < 0) {
+        byte[] dir = section.read(dirOffset, RESOURCE_DIRECTORY_SIZE);
+        if (dir == null) {
             return;
         }
-        int numEntries = EndianUtils.getUShortLE(section.buf, dir + 12) +
-                EndianUtils.getUShortLE(section.buf, dir + 14);
+        int numEntries = EndianUtils.getUShortLE(dir, 12) + EndianUtils.getUShortLE(dir, 14);
+        // no more than the budget still lets us look at
+        byte[] entries = section.read(dirOffset + RESOURCE_DIRECTORY_SIZE,
+                Math.min(numEntries, resources.budget) * RESOURCE_DIRECTORY_ENTRY_SIZE);
+        if (entries == null) {
+            return;
+        }
+        long groupDir = -1;
+        long iconDir = -1;
         for (int i = 0; i < numEntries; i++) {
             if (--resources.budget < 0) {
                 return;
             }
-            int entry = section.index(dirOffset + RESOURCE_DIRECTORY_SIZE +
-                    (long) i * RESOURCE_DIRECTORY_ENTRY_SIZE, RESOURCE_DIRECTORY_ENTRY_SIZE);
-            if (entry < 0) {
-                return;
-            }
-            long nameField = EndianUtils.getUIntLE(section.buf, entry);
-            long dataField = EndianUtils.getUIntLE(section.buf, entry + 4);
+            long nameField = EndianUtils.getUIntLE(entries, i * RESOURCE_DIRECTORY_ENTRY_SIZE);
+            long dataField = EndianUtils.getUIntLE(entries, i * RESOURCE_DIRECTORY_ENTRY_SIZE + 4);
+            boolean subdirectory = (dataField & HIGH_BIT) != 0;
+            long target = resources.rootOffset + (dataField & ~HIGH_BIT);
+            boolean named = (nameField & HIGH_BIT) != 0;
+            int entryId = (int) (nameField & 0xffff);
 
             if (depth == 0) {
                 // Only icons are interesting, and a well-formed tree lists each type once
-                if (nameField != RT_ICON && nameField != RT_GROUP_ICON ||
-                        !resources.typesSeen.add((int) nameField)) {
-                    continue;
+                if (subdirectory && nameField == RT_GROUP_ICON && groupDir < 0) {
+                    groupDir = target;
+                } else if (subdirectory && nameField == RT_ICON && iconDir < 0) {
+                    iconDir = target;
                 }
-            }
-            boolean named = (nameField & HIGH_BIT) != 0;
-            String entryName = null;
-            if (named) {
-                entryName = readName(section, resources.rootOffset + (nameField & ~HIGH_BIT));
-                if (entryName == null) {
-                    continue;
+            } else if (depth == 1) {
+                String entryName = named ?
+                        readName(section, resources.rootOffset + (nameField & ~HIGH_BIT)) : null;
+                if (subdirectory && (!named || entryName != null)) {
+                    readDirectory(resources, target, 2, type, entryId, entryName);
                 }
+            } else if (!subdirectory && !named) {
+                // Language ids are always numeric, and a subdirectory below the
+                // language level is malformed; nothing to find there
+                readDataEntry(resources, target, new Resource(type, id, name, entryId));
             }
-            int entryId = (int) (nameField & 0xffff);
-
-            if ((dataField & HIGH_BIT) != 0) {
-                long subdir = resources.rootOffset + (dataField & ~HIGH_BIT);
-                if (depth == 0) {
-                    readDirectory(resources, subdir, 1, visited, entryId, 0, null);
-                } else if (depth == 1) {
-                    readDirectory(resources, subdir, 2, visited, type, entryId, entryName);
-                }
-                // a subdirectory below the language level is malformed; nothing to find there
-            } else if (depth == MAX_RESOURCE_TREE_DEPTH - 1 && !named) {
-                // Language ids are always numeric
-                readDataEntry(resources, resources.rootOffset + dataField,
-                        new Resource(type, id, name, entryId));
-            }
+        }
+        // Groups first: should the entry budget run out among the icons, the
+        // groups whose icons were reached still come out
+        if (groupDir >= 0) {
+            readDirectory(resources, groupDir, 1, RT_GROUP_ICON, 0, null);
+        }
+        if (iconDir >= 0) {
+            readDirectory(resources, iconDir, 1, RT_ICON, 0, null);
         }
     }
 
     private static void readDataEntry(Resources resources, long offset, Resource resource)
             throws IOException {
-        Section section = resources.section;
-        int entry = section.index(offset, RESOURCE_DATA_ENTRY_SIZE);
-        if (entry < 0) {
+        byte[] entry = resources.section.read(offset, RESOURCE_DATA_ENTRY_SIZE);
+        if (entry == null) {
             return;
         }
-        long dataRva = EndianUtils.getUIntLE(section.buf, entry);
-        long size = EndianUtils.getUIntLE(section.buf, entry + 4);
-        // Resource data normally lives in the same section as the tree; if
-        // it doesn't we can't reach it with a forward-only read
-        int dataIdx = section.index(dataRva - resources.sectionVa, size);
-        if (dataIdx < 0) {
+        // Resource data normally lives in the same section as the tree; data
+        // elsewhere is out of reach
+        resource.offset = EndianUtils.getUIntLE(entry, 0) - resources.sectionVa;
+        resource.size = EndianUtils.getUIntLE(entry, 4);
+        if (!resources.section.contains(resource.offset, resource.size)) {
             return;
         }
-        resource.offset = dataIdx;
-        resource.size = (int) size;
         if (resource.type == RT_ICON) {
             // Groups reference icons by numeric id, so a named icon is unreachable
             if (resource.name == null) {
@@ -292,17 +288,31 @@ class PEIconExtractor {
         }
     }
 
+    /**
+     * @return the name with path separators and control characters replaced:
+     * it ends up in a file name and in an id whose parts are separated by slashes
+     */
     private static String readName(Section section, long offset) throws IOException {
-        int idx = section.index(offset, 2);
-        if (idx < 0) {
+        byte[] prefix = section.read(offset, 2);
+        if (prefix == null) {
             return null;
         }
-        int length = EndianUtils.getUShortLE(section.buf, idx);
-        if (length == 0 || length > MAX_RESOURCE_NAME_LENGTH ||
-                section.index(offset + 2, (long) length * 2) < 0) {
+        int length = EndianUtils.getUShortLE(prefix, 0);
+        if (length == 0 || length > MAX_RESOURCE_NAME_LENGTH) {
             return null;
         }
-        return new String(section.buf, idx + 2, length * 2, StandardCharsets.UTF_16LE);
+        byte[] chars = section.read(offset + 2, length * 2);
+        if (chars == null) {
+            return null;
+        }
+        StringBuilder name = new StringBuilder(new String(chars, StandardCharsets.UTF_16LE));
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c == '/' || c == '\\' || Character.isISOControl(c)) {
+                name.setCharAt(i, '_');
+            }
+        }
+        return name.toString();
     }
 
     /**
@@ -324,11 +334,16 @@ class PEIconExtractor {
         for (Resource group : resources.groups) {
             languagesPerGroup.merge(group.displayName(), 1, Integer::sum);
         }
-        long budget = (long) MAX_OUTPUT_FACTOR * resources.section.length;
+        Set<String> relationshipIds = new HashSet<>();
+        long emitted = 0;
         boolean first = true;
         for (Resource group : resources.groups) {
-            List<Resource> images = resolveGroup(group, resources);
-            if (images == null) {
+            Icon icon = resolveGroup(group, resources);
+            String relationshipId =
+                    RT_GROUP_ICON + "/" + group.displayName() + "/" + group.language;
+            // A name can spell an id, or two names can clean up to the same one;
+            // what cannot be told apart comes out once
+            if (icon == null || !relationshipIds.add(relationshipId)) {
                 continue;
             }
             String name = "icon_" + group.displayName();
@@ -339,8 +354,7 @@ class PEIconExtractor {
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name + ".ico");
             metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
             metadata.set(HttpHeaders.CONTENT_TYPE, ICON_MIME_TYPE);
-            metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID,
-                    RT_GROUP_ICON + "/" + group.displayName() + "/" + group.language);
+            metadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, relationshipId);
             metadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, first ?
                     TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString() :
                     TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
@@ -348,15 +362,19 @@ class PEIconExtractor {
             if (!extractor.shouldParseEmbedded(metadata, context)) {
                 continue;
             }
-            budget -= icoSize(images);
-            if (budget < 0) {
+            emitted += icoSize(icon.images);
+            if (emitted > MAX_OUTPUT_FACTOR * resources.section.available()) {
                 EmbeddedDocumentUtil.recordException(new TikaException(
                         "PE icons add up to more than " + MAX_OUTPUT_FACTOR +
                                 " times the resource section they were read from; icon" +
                                 " extraction stopped early"), parentMetadata, context);
                 return;
             }
-            try (TikaInputStream tis = TikaInputStream.get(buildIco(group, images, resources))) {
+            byte[] ico = buildIco(icon, resources.section);
+            if (ico == null) {
+                continue;
+            }
+            try (TikaInputStream tis = TikaInputStream.get(ico)) {
                 extractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml), metadata, context,
                         false);
             }
@@ -366,37 +384,48 @@ class PEIconExtractor {
     /**
      * Checks a {@code GRPICONDIR} and looks up the images it references.
      *
-     * @return the images in directory order, or null if the group is unusable
+     * @return the directory and its images in directory order, or null if the
+     * group is unusable
      */
-    private static List<Resource> resolveGroup(Resource group, Resources resources) {
-        byte[] rsrc = resources.section.buf;
-        int g = group.offset;
-        if (group.size < 6 || EndianUtils.getUShortLE(rsrc, g) != 0 ||
-                EndianUtils.getUShortLE(rsrc, g + 2) != 1) {
+    private static Icon resolveGroup(Resource group, Resources resources) throws IOException {
+        Section section = resources.section;
+        byte[] dir = section.read(group.offset, (int) Math.min(group.size,
+                GRP_ICON_DIR_SIZE + MAX_ICONS_PER_GROUP * GRP_ICON_DIR_ENTRY_SIZE));
+        if (dir == null || dir.length < GRP_ICON_DIR_SIZE || EndianUtils.getUShortLE(dir, 0) != 0 ||
+                EndianUtils.getUShortLE(dir, 2) != 1) {
             return null;
         }
-        int count = EndianUtils.getUShortLE(rsrc, g + 4);
+        int count = EndianUtils.getUShortLE(dir, 4);
         if (count == 0 || count > MAX_ICONS_PER_GROUP ||
-                6 + count * GRP_ICON_DIR_ENTRY_SIZE > group.size) {
+                GRP_ICON_DIR_SIZE + count * GRP_ICON_DIR_ENTRY_SIZE > group.size) {
             return null;
         }
         List<Resource> images = new ArrayList<>(count);
-        Set<Long> seen = new HashSet<>();
+        Set<List<Long>> seen = new HashSet<>();
         for (int i = 0; i < count; i++) {
-            int id = EndianUtils.getUShortLE(rsrc, g + 6 + i * GRP_ICON_DIR_ENTRY_SIZE + 12);
+            int id = EndianUtils.getUShortLE(dir,
+                    GRP_ICON_DIR_SIZE + i * GRP_ICON_DIR_ENTRY_SIZE + 12);
             Resource image = resources.findIcon(id, group.language);
             // The same image twice, under one id or several, would let a tiny
             // group inflate into a huge file
-            if (image == null || !seen.add((long) image.offset << 32 | image.size)) {
+            if (image == null || !seen.add(List.of(image.offset, image.size))) {
                 return null;
             }
             images.add(image);
         }
-        return icoSize(images) > MAX_ICO_SIZE ? null : images;
+        if (icoSize(images) > MAX_ICO_SIZE) {
+            return null;
+        }
+        for (Resource image : images) {
+            if (!section.has(image.offset, image.size)) {
+                return null;
+            }
+        }
+        return new Icon(dir, images);
     }
 
     private static long icoSize(List<Resource> images) {
-        long size = 6 + (long) images.size() * ICON_DIR_ENTRY_SIZE;
+        long size = GRP_ICON_DIR_SIZE + (long) images.size() * ICON_DIR_ENTRY_SIZE;
         for (Resource image : images) {
             size += image.size;
         }
@@ -406,62 +435,148 @@ class PEIconExtractor {
     /**
      * Converts a {@code GRPICONDIR} plus its {@code RT_ICON} images into an
      * {@code ICONDIR} based <code>.ico</code> file.
+     *
+     * @return the file, or null if an image could not be read after all
      */
-    private static byte[] buildIco(Resource group, List<Resource> images, Resources resources) {
-        byte[] rsrc = resources.section.buf;
-        int count = images.size();
-        int imageOffset = 6 + count * ICON_DIR_ENTRY_SIZE;
-        ByteBuffer ico = ByteBuffer.allocate((int) icoSize(images)).order(ByteOrder.LITTLE_ENDIAN);
+    private static byte[] buildIco(Icon icon, Section section) throws IOException {
+        int count = icon.images.size();
+        int imageOffset = GRP_ICON_DIR_SIZE + count * ICON_DIR_ENTRY_SIZE;
+        ByteBuffer ico = ByteBuffer.allocate((int) icoSize(icon.images))
+                .order(ByteOrder.LITTLE_ENDIAN);
         // ICONDIR: reserved, type, count - identical to the GRPICONDIR
-        ico.put(rsrc, group.offset, 6);
+        ico.put(icon.dir, 0, GRP_ICON_DIR_SIZE);
         for (int i = 0; i < count; i++) {
-            Resource image = images.get(i);
+            int size = (int) icon.images.get(i).size;
             // width, height, colours, reserved, planes and bit count are shared
-            ico.put(rsrc, group.offset + 6 + i * GRP_ICON_DIR_ENTRY_SIZE, 8);
+            ico.put(icon.dir, GRP_ICON_DIR_SIZE + i * GRP_ICON_DIR_ENTRY_SIZE, 8);
             // the group's BytesInRes may disagree with the actual resource; trust the resource
-            ico.putInt(image.size);
+            ico.putInt(size);
             ico.putInt(imageOffset);
-            imageOffset += image.size;
+            imageOffset += size;
         }
-        for (Resource image : images) {
-            ico.put(rsrc, image.offset, image.size);
+        for (Resource image : icon.images) {
+            if (!section.read(image.offset, ico.array(), ico.position(), (int) image.size)) {
+                return null;
+            }
+            ico.position(ico.position() + (int) image.size);
         }
         return ico.array();
     }
 
     /**
-     * The raw bytes of the resource section, pulled from the source only as
-     * far as the tree walk needs them. The buffer grows with the bytes that
-     * arrive, never with a size the file merely declares.
+     * The resource section. A file is read where the walk points. Anything
+     * else is buffered from the start of the section as far as the walk has
+     * reached; the buffer grows with the bytes that arrive, never with a size
+     * the file merely declares.
      */
     static final class Section {
+        private final FileChannel channel;
+        private final long start;
         private final InputStream source;
-        private final int declaredSize;
+        private final long declaredSize;
+        private final long limit;
         byte[] buf = new byte[0];
         private int length;
         private boolean eof;
+        private boolean beyondLimit;
 
-        Section(InputStream source, int declaredSize) {
+        private Section(FileChannel channel, long start, InputStream source, long declaredSize,
+                        long limit) {
+            this.channel = channel;
+            this.start = start;
             this.source = source;
             this.declaredSize = declaredSize;
+            this.limit = limit;
         }
 
         /**
-         * @return the index of {@code offset}, or -1 if {@code length} bytes
-         * starting there are not available. Reads more of the section if needed,
-         * which may replace {@link #buf}.
+         * @param start the file offset of the section
          */
-        int index(long offset, long length) throws IOException {
-            if (offset < 0 || length < 0 || offset + length > declaredSize) {
-                return -1;
+        static Section of(FileChannel channel, long start, long declaredSize) throws IOException {
+            long present = channel.size() - start;
+            if (present < 0) {
+                throw new EOFException("The file ends before its resource section");
             }
-            return ensure((int) (offset + length)) ? (int) offset : -1;
+            return new Section(channel, start, null, declaredSize,
+                    Math.min(declaredSize, present));
+        }
+
+        /**
+         * @param source a stream positioned at the start of the section
+         */
+        static Section of(InputStream source, long declaredSize) {
+            return new Section(null, 0, source, declaredSize,
+                    Math.min(declaredSize, MAX_BUFFERED_SECTION_MB * 1024L * 1024L));
+        }
+
+        /**
+         * @return whether the range lies inside the section as declared
+         */
+        boolean contains(long offset, long length) {
+            return offset >= 0 && length >= 0 && offset + length <= declaredSize;
+        }
+
+        /**
+         * @return the bytes of the section known to exist: in a file all that
+         * are there, otherwise those read so far
+         */
+        long available() {
+            return channel != null ? limit : length;
+        }
+
+        /**
+         * @return whether the range can be read; buffered input is read that far
+         */
+        boolean has(long offset, long length) throws IOException {
+            if (!contains(offset, length)) {
+                return false;
+            }
+            if (offset + length > limit) {
+                beyondLimit |= channel == null;
+                return false;
+            }
+            return channel != null || ensure((int) (offset + length));
+        }
+
+        /**
+         * @return false if the range cannot be read, see {@link #has(long, long)}
+         */
+        boolean read(long offset, byte[] target, int targetOffset, int length)
+                throws IOException {
+            if (!has(offset, length)) {
+                return false;
+            }
+            if (channel == null) {
+                System.arraycopy(buf, (int) offset, target, targetOffset, length);
+                return true;
+            }
+            ByteBuffer buffer = ByteBuffer.wrap(target, targetOffset, length);
+            long position = start + offset;
+            while (buffer.hasRemaining()) {
+                int n = channel.read(buffer, position);
+                if (n < 0) {
+                    return false;
+                }
+                position += n;
+            }
+            return true;
+        }
+
+        /**
+         * @return the bytes, or null if the range cannot be read
+         */
+        byte[] read(long offset, int length) throws IOException {
+            if (!has(offset, length)) {
+                return null;
+            }
+            byte[] bytes = new byte[length];
+            return read(offset, bytes, 0, length) ? bytes : null;
         }
 
         private boolean ensure(int end) throws IOException {
             while (length < end && !eof) {
                 if (length == buf.length) {
-                    buf = Arrays.copyOf(buf, (int) Math.min(declaredSize,
+                    buf = Arrays.copyOf(buf, (int) Math.min(limit,
                             Math.max(SECTION_BUFFER_FLOOR, 2L * buf.length)));
                 }
                 int n = source.read(buf, length, Math.min(end, buf.length) - length);
@@ -484,8 +599,8 @@ class PEIconExtractor {
         final int id;
         final String name;
         final int language;
-        int offset;
-        int size;
+        long offset;
+        long size;
 
         Resource(int type, int id, String name, int language) {
             this.type = type;
@@ -499,11 +614,16 @@ class PEIconExtractor {
         }
     }
 
+    /**
+     * A usable icon group: its {@code GRPICONDIR} and the images it lists.
+     */
+    private record Icon(byte[] dir, List<Resource> images) {
+    }
+
     private static final class Resources {
         final Section section;
         final long sectionVa;
         final long rootOffset;
-        final Set<Integer> typesSeen = new HashSet<>();
         // icon id -> language -> icon, in directory order
         final Map<Integer, Map<Integer, Resource>> icons = new HashMap<>();
         final List<Resource> groups = new ArrayList<>();
