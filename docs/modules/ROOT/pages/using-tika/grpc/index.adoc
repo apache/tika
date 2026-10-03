@@ -123,6 +123,13 @@ contain passwords, access keys and tokens. When `false`, the mutating RPCs are r
 config.
 |===
 
+Components saved at runtime must reach the forked pipes workers, which load their own copy of the
+configuration. With the default `configStoreType` of `memory`, tika-grpc therefore keeps the store
+in a private, owner-only temporary file that the workers also read, and deletes it on shutdown, so
+saved components do not survive a restart. For a persistent or shared store, set `configStoreType`
+to `file` or `ignite` (see xref:pipes/configuration.adoc#_distributed_config_store[Distributed
+Config Store]).
+
 Enable these only for trusted callers over a secured channel:
 
 [source,json]

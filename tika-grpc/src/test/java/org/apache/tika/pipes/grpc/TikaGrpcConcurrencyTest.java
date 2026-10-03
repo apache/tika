@@ -67,8 +67,6 @@ public class TikaGrpcConcurrencyTest {
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    // The fetcher must come from the config file: one saved at runtime through
-    // saveFetcher is not visible to the forked worker.
     private static final String FETCHER_ID = "nick1.is.cool.super-fs";
 
     /**

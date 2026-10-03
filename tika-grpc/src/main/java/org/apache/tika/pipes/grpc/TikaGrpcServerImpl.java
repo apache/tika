@@ -18,6 +18,7 @@ package org.apache.tika.pipes.grpc;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Objects;
@@ -27,17 +28,20 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchema;
 import com.fasterxml.jackson.module.jsonSchema.JsonSchemaGenerator;
 import com.google.rpc.Status;
 import io.grpc.protobuf.StatusProto;
 import io.grpc.stub.StreamObserver;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.pf4j.PluginManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -99,6 +103,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     Path tikaConfigPath;
     PluginManager pluginManager;
     private AutoCloseable igniteStoreServer;
+    private Path sharedConfigStoreDir;
 
     TikaGrpcServerImpl(String tikaConfigPath) throws TikaConfigException, IOException {
         this(tikaConfigPath, null);
@@ -126,7 +131,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         tikaGrpcConfig = TikaGrpcConfig.load(tikaJsonConfig);
 
         // PipesClient is single-threaded; the pool admits pipes.numClients at a time.
-        pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, configPath);
+        pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, shareRuntimeConfigStore(configPath));
         
         try {
             if (pluginRootsOverride != null && !pluginRootsOverride.trim().isEmpty()) {
@@ -168,6 +173,39 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
         fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig,
                 tikaGrpcConfig.isAllowComponentManagement(), this.configStore);
+    }
+
+    /**
+     * Fetchers and iterators saved at runtime live in this JVM's ConfigStore, but each forked
+     * worker builds its own from the config file, so with the default in-memory store a saved
+     * fetcher was FETCHER_NOT_FOUND in the worker. Back the store with a private file that the
+     * workers read too, and hand them a config pointing at it.
+     *
+     * @return the config path the workers should load
+     */
+    private Path shareRuntimeConfigStore(Path configPath) throws IOException {
+        String storeType = pipesConfig.getConfigStoreType();
+        if (!tikaGrpcConfig.isAllowComponentManagement()
+                || (storeType != null && !"memory".equalsIgnoreCase(storeType))) {
+            return configPath;
+        }
+        // owner-only on POSIX: stored fetcher configs may carry credentials
+        sharedConfigStoreDir = Files.createTempDirectory("tika-grpc-config-store-");
+        String storeParams = OBJECT_MAPPER.writeValueAsString(
+                Map.of("path", sharedConfigStoreDir.resolve("config-store.json").toString()));
+        pipesConfig.setConfigStoreType("file");
+        pipesConfig.setConfigStoreParams(storeParams);
+
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
+        ObjectNode root = (ObjectNode) mapper.readTree(configPath.toFile());
+        ObjectNode pipes = root.has("pipes") ? (ObjectNode) root.get("pipes") : root.putObject("pipes");
+        pipes.put("configStoreType", "file");
+        pipes.put("configStoreParams", storeParams);
+        Path workerConfig = sharedConfigStoreDir.resolve("tika-config.json");
+        mapper.writeValue(workerConfig.toFile(), root);
+        LOG.info("allowComponentManagement with an in-memory config store: sharing runtime-saved "
+                + "components with the pipes workers through {}", sharedConfigStoreDir);
+        return workerConfig;
     }
 
     private ConfigStore createConfigStore() throws TikaConfigException {
@@ -726,6 +764,13 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
                 LOG.error("Error closing the pipes parser", e);
             } finally {
                 pipesParser = null;
+            }
+        }
+        if (sharedConfigStoreDir != null) {
+            try {
+                FileUtils.deleteDirectory(sharedConfigStoreDir.toFile());
+            } catch (IOException e) {
+                LOG.warn("Could not delete {}", sharedConfigStoreDir, e);
             }
         }
     }
