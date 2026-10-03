@@ -17,11 +17,11 @@
 package org.apache.tika.metadata;
 
 /**
- * Properties of icon containers that hold several images of one motif in
- * different sizes and colour depths, such as Windows ICO and CUR files.
+ * Properties of Windows icon (ICO) and cursor (CUR) files, which hold
+ * several images of one motif in different sizes and colour depths.
  * The dimensions of the largest image go to the {@link TIFF} properties.
  *
- * @since Apache Tika 4.1.1
+ * @since Apache Tika 4.2.0
  */
 public interface Icon {
 
