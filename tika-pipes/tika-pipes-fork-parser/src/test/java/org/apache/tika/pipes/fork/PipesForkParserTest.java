@@ -43,7 +43,6 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ParseMode;
-import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
@@ -501,9 +500,10 @@ public class PipesForkParserTest {
              TikaInputStream tis = TikaInputStream.get(testFile)) {
             PipesForkResult result = parser.parse(tis);
 
-            // Note: behavior depends on throwOnWriteLimitReached setting
-            // With default (true), this may result in an exception being recorded
-            assertNotNull(result);
+            assertTrue(result.isSuccess(), "status: " + result.getStatus());
+            String content = result.getContent();
+            assertTrue(content.contains("line 0 "), content);
+            assertFalse(content.contains("line 999 "), "write limit ignored: " + content.length() + " chars");
         }
     }
 
@@ -556,32 +556,6 @@ public class PipesForkParserTest {
                 PipesForkResult result2 = parser.parse(tis2);
                 assertTrue(result2.isSuccess(), "Should succeed for existing file");
                 assertTrue(result2.getContent().contains("This file exists"));
-            }
-        }
-    }
-
-    @Test
-    public void testParseSuccessWithExceptionStatus() throws Exception {
-        // Create a file that will parse but may have warnings
-        // For example, a file with content that might trigger a write limit
-        Path testFile = tempDir.resolve("parse_with_warning.txt");
-        Files.writeString(testFile, "Simple content");
-
-        PipesForkParserConfig config = new PipesForkParserConfig()
-                .setPluginsDir(PLUGINS_DIR);
-
-        try (PipesForkParser parser = new PipesForkParser(config);
-             TikaInputStream tis = TikaInputStream.get(testFile)) {
-            PipesForkResult result = parser.parse(tis);
-
-            // Verify we can check for different success states
-            if (result.isSuccess()) {
-                // Could be PARSE_SUCCESS, PARSE_SUCCESS_WITH_EXCEPTION, or EMIT_SUCCESS_PASSBACK
-                assertTrue(
-                        result.getStatus() == PipesResult.RESULT_STATUS.PARSE_SUCCESS ||
-                        result.getStatus() == PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION ||
-                        result.getStatus() == PipesResult.RESULT_STATUS.EMIT_SUCCESS_PASSBACK,
-                        "Success status should be one of the success types");
             }
         }
     }
@@ -667,6 +641,7 @@ public class PipesForkParserTest {
             assertTrue(result.isSuccess(), "Parse should succeed");
             assertNotNull(result.getMetadata(), "Metadata should not be null");
             assertTrue(result.getContent().contains("metadata test"));
+            assertEquals("custom-value", result.getMetadata().get("custom-key"));
         }
     }
 
@@ -697,7 +672,6 @@ public class PipesForkParserTest {
 
     @Test
     public void testParsePathMatchesTikaInputStream() throws Exception {
-        // Verify that parse(Path) produces the same result as parse(TikaInputStream)
         Path testFile = tempDir.resolve("compare.txt");
         Files.writeString(testFile, "Content for comparison test");
 
@@ -706,25 +680,15 @@ public class PipesForkParserTest {
                 .setHandlerType(BasicContentHandlerFactory.HANDLER_TYPE.TEXT)
                 .setParseMode(ParseMode.RMETA);
 
-        // Parse with Path
-        String pathContent;
         try (PipesForkParser parser = new PipesForkParser(config)) {
-            PipesForkResult result = parser.parse(testFile);
-            assertTrue(result.isSuccess());
-            pathContent = result.getContent();
+            PipesForkResult pathResult = parser.parse(testFile);
+            assertTrue(pathResult.isSuccess());
+            assertTrue(pathResult.getContent().contains("comparison test"), pathResult.getContent());
+            try (TikaInputStream tis = TikaInputStream.get(testFile)) {
+                PipesForkResult tisResult = parser.parse(tis);
+                assertTrue(tisResult.isSuccess());
+                assertEquals(pathResult.getContent(), tisResult.getContent());
+            }
         }
-
-        // Parse with TikaInputStream
-        String tisContent;
-        try (PipesForkParser parser = new PipesForkParser(config);
-             TikaInputStream tis = TikaInputStream.get(testFile)) {
-            PipesForkResult result = parser.parse(tis);
-            assertTrue(result.isSuccess());
-            tisContent = result.getContent();
-        }
-
-        // Results should match
-        assertEquals(pathContent, tisContent,
-                "parse(Path) and parse(TikaInputStream) should produce same content");
     }
 }

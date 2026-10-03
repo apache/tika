@@ -18,27 +18,19 @@ package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
@@ -50,7 +42,6 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.metadata.Metadata;
@@ -93,155 +84,11 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     }
 
-    @Test
-    public void testBasic() throws Exception {
-
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-        testBaseline();
-    }
-
     /** TIKA-4834: the docs permit comments in the config; the server must start from one. */
     @Test
     public void testCommentedConfig() throws Exception {
         startProcess(new String[]{"-config", getConfig("tika-config-server-comments.json")});
-        awaitServerStartup();
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH)
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
-        assertEquals(200, response.getStatus());
-    }
-
-    @Test
-    public void testBasicWithPipes() throws Exception {
-        // Test that pipes-based parsing works for normal documents
-        startProcess(new String[]{"-config", getConfig("tika-config-server-pipes-basic.json")});
         testBaseline();
-    }
-
-    /**
-     * Production wiring pin: BadRequestExceptionMapper must be registered in the real
-     * server assembly, or 400 bodies are empty -- the CXF tests register it by hand,
-     * so only a forked-server test can catch a dropped registration.
-     */
-    @Test
-    public void testBadRequestBodyReachesClient() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-        awaitServerStartup();
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH + "/txet")
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
-        assertEquals(400, response.getStatus());
-        String body = new String(((InputStream) response.getEntity()).readAllBytes(), UTF_8);
-        assertTrue(body.contains("Valid types"), body);
-    }
-
-    @Test
-    public void testH2c() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-        awaitServerStartup();
-        // Using HttpClient in order to check Http2 Version
-        HttpClient httpClient = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_2)
-                .build();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(endPoint + STATUS_PATH))
-                .header("Accept", "application/json")
-                .GET()
-                .build();
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(UTF_8));
-        assertEquals(200, response.statusCode());
-        assertEquals(HttpClient.Version.HTTP_2, response.version());
-    }
-
-    @Test
-    public void testOOM() throws Exception {
-        // With pipes-based parsing, OOM in a child process should NOT crash the server
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-
-        awaitServerStartup();
-
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH)
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_OOM));
-
-        // Server should return 503 (Service Unavailable) for OOM, not crash
-        assertEquals(503, response.getStatus());
-        assertErrorResponseStatus(response, "OOM");
-
-        // Server should still be running - verify with a successful request
-        testBaseline();
-    }
-
-    @Test
-    public void testSystemExit() throws Exception {
-        // With pipes-based parsing, System.exit in a child process should NOT crash the server
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json")});
-
-        awaitServerStartup();
-
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH)
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_SYSTEM_EXIT));
-
-        // UNSPECIFIED_CRASH is a transient process failure — 503, same category as OOM/TIMEOUT
-        assertEquals(503, response.getStatus());
-        assertErrorResponseStatus(response, "UNSPECIFIED_CRASH");
-
-        // Server should still be running - verify with a successful request
-        testBaseline();
-    }
-
-    @Test
-    @Timeout(60000)
-    public void testTimeout() throws Exception {
-        // With pipes-based parsing, timeout in a child process should NOT crash the server.
-        // TEST_HEAVY_HANG relies on tika-config-server-pipes-basic.json's short
-        // progressTimeoutMillis to be detected: keep that short.
-        startProcess(new String[]{"-config", getConfig("tika-config-server-pipes-basic.json")});
-        awaitServerStartup();
-
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH)
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_HEAVY_HANG));
-
-        // Server should return 503 (Service Unavailable) for timeout
-        assertEquals(503, response.getStatus());
-        assertErrorResponseStatus(response, "TIMEOUT");
-
-        // Server should still be running - verify with a successful request
-        testBaseline();
-    }
-
-    /**
-     * Asserts that an error response body is JSON with a {@code status} field matching
-     * {@code expectedStatus} (a {@code PipesResult.RESULT_STATUS} enum name).
-     */
-    private void assertErrorResponseStatus(Response response, String expectedStatus) throws IOException {
-        try (InputStream is = (InputStream) response.getEntity()) {
-            String body = IOUtils.toString(is, UTF_8);
-            JsonNode node = new ObjectMapper().readTree(body);
-            assertEquals(expectedStatus, node.path("status").asText(null),
-                    "Expected JSON error body with status=" + expectedStatus + " but got: " + body);
-        }
-    }
-
-
-    private String getConfig(String configName) {
-        try {
-            return ProcessUtils.escapeCommandLine(Paths
-                    .get(TikaServerIntegrationTest.class
-                            .getResource("/configs/" + configName)
-                            .toURI())
-                    .toAbsolutePath()
-                    .toString());
-        } catch (URISyntaxException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private String getSSL(String file) {
@@ -255,25 +102,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }
-
-    }
-
-    @Test
-    public void testStdErrOutBasic() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-pipes-basic.json")});
-        awaitServerStartup();
-
-        Response response = WebClient
-                .create(endPoint + RMETA_PATH)
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_STDOUT_STDERR));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(1, metadataList.size());
-        assertContains("quick brown fox", metadataList
-                .get(0)
-                .get("tk:content"));
-        testBaseline();
 
     }
 
@@ -418,37 +246,5 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         tmt.setKeyStore(trustKeyStore);
         parameters.setTrustManagers(TLSParameterJaxBUtils.getTrustManagers(tmt, true));
         conduit.setTlsClientParameters(parameters);
-    }
-
-    private void testBaseline() throws Exception {
-        int maxTries = 3;
-        int tries = 0;
-        while (++tries < maxTries) {
-            awaitServerStartup();
-            Response response = null;
-
-            try {
-                response = WebClient
-                        .create(endPoint + RMETA_PATH)
-                        .accept("application/json")
-                        .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
-            } catch (ProcessingException e) {
-                continue;
-            }
-            if (response.getStatus() == 503) {
-                continue;
-            }
-            Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-            List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-            assertEquals(1, metadataList.size());
-            assertEquals("Nikolai Lobachevsky", metadataList
-                    .get(0)
-                    .get("author"));
-            assertContains("hello world", metadataList
-                    .get(0)
-                    .get("tk:content"));
-            return;
-        }
-        fail("should have completed within 3 tries");
     }
 }

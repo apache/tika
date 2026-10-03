@@ -45,7 +45,7 @@
     "queueSize": 10000,
     "numEmitters": 1,
     "emitIntermediateResults": false,
-    "numClients": 4,
+    "numClients": 1,
     "maxFilesProcessedPerProcess": 10000,
     "forkedJvmArgs": [
       "-Xmx1g",

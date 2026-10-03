@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +30,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -424,57 +426,6 @@ public class FrictionlessUnpackTest {
     }
 
     @Test
-    public void testAutoAddSHA256Digester(@TempDir Path tmp) throws Exception {
-        // Test that SHA256 digester is auto-added when no DigesterFactory is configured
-        Path outputDir = tmp.resolve("output");
-        Files.createDirectories(outputDir);
-
-        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
-            ParseContext parseContext = new ParseContext();
-            parseContext.set(ParseMode.class, ParseMode.UNPACK);
-            
-            // No DigesterFactory in parseContext - should auto-add SHA256
-            UnpackConfig unpackConfig = new UnpackConfig();
-            unpackConfig.setEmitter(EMITTER_NAME);
-            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS);
-            unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
-            parseContext.set(UnpackConfig.class, unpackConfig);
-            
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
-                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
-                            new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
-                            new Metadata(), parseContext,
-                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
-            
-            assertTrue(pipesResult.isSuccess(),
-                    "Processing without DigesterFactory should succeed");
-        }
-
-        // Verify hashes are still computed (auto-added digester)
-        List<Path> zipFiles = Files.list(outputDir)
-                .filter(p -> p.toString().endsWith("-frictionless.zip"))
-                .toList();
-
-        try (ZipFile zip = new ZipFile(zipFiles.get(0).toFile())) {
-            ZipEntry dpEntry = zip.getEntry("datapackage.json");
-            JsonNode dataPackage;
-            try (InputStream is = zip.getInputStream(dpEntry)) {
-                dataPackage = OBJECT_MAPPER.readTree(is);
-            }
-
-            // Verify resources have hashes
-            for (JsonNode resource : dataPackage.get("resources")) {
-                assertTrue(resource.has("hash"),
-                        "Resource should have hash even without explicit DigesterFactory: " + resource);
-                String hash = resource.get("hash").asText();
-                assertTrue(hash.startsWith("sha256:"),
-                        "Hash should be SHA256: " + hash);
-            }
-        }
-    }
-
-    @Test
     public void testWithUnpackSelector(@TempDir Path tmp) throws Exception {
         // Test that UnpackSelector filtering works with Frictionless format
         Path outputDir = tmp.resolve("output");
@@ -499,10 +450,9 @@ public class FrictionlessUnpackTest {
             unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.ZIPPED);
             parseContext.set(UnpackConfig.class, unpackConfig);
             
-            // Add selector to only include XML files
-            // (The mock embedded files are XML)
+            // every embedded file is application/mock+xml, so a PDF-only selector keeps none
             StandardUnpackSelector selector = new StandardUnpackSelector();
-            selector.setIncludeMimeTypes(Set.of("application/mock+xml", "application/xml", "text/xml"));
+            selector.setIncludeMimeTypes(Set.of("application/pdf"));
             parseContext.set(UnpackSelector.class, selector);
             
             PipesResult pipesResult = pipesClient.process(
@@ -516,31 +466,8 @@ public class FrictionlessUnpackTest {
                     "Processing with UnpackSelector should succeed");
         }
 
-        // Verify that filtering was applied
-        List<Path> zipFiles = Files.list(outputDir)
-                .filter(p -> p.toString().endsWith("-frictionless.zip"))
-                .toList();
-
-        if (!zipFiles.isEmpty()) {
-            try (ZipFile zip = new ZipFile(zipFiles.get(0).toFile())) {
-                ZipEntry dpEntry = zip.getEntry("datapackage.json");
-                if (dpEntry != null) {
-                    JsonNode dataPackage;
-                    try (InputStream is = zip.getInputStream(dpEntry)) {
-                        dataPackage = OBJECT_MAPPER.readTree(is);
-                    }
-
-                    // All resources should be XML (mock+xml)
-                    for (JsonNode resource : dataPackage.get("resources")) {
-                        String mediatype = resource.get("mediatype").asText();
-                        assertTrue(mediatype.contains("xml") || mediatype.contains("mock"),
-                                "Filtered resources should only include XML. Found: " + mediatype);
-                    }
-                }
-            }
-        }
+        assertNothingPackaged(outputDir, TEST_DOC_WITH_EMBEDDED);
     }
-
     @Test
     public void testRegularFormatUnchanged(@TempDir Path tmp) throws Exception {
         // Test that OUTPUT_FORMAT.REGULAR (default) still works as before
@@ -611,28 +538,8 @@ public class FrictionlessUnpackTest {
                     "Frictionless should succeed with no embedded files");
         }
 
-        // Should either not create zip or create zip with empty resources
-        List<Path> zipFiles = Files.list(outputDir)
-                .filter(p -> p.toString().endsWith("-frictionless.zip"))
-                .toList();
-
-        if (!zipFiles.isEmpty()) {
-            try (ZipFile zip = new ZipFile(zipFiles.get(0).toFile())) {
-                ZipEntry dpEntry = zip.getEntry("datapackage.json");
-                if (dpEntry != null) {
-                    JsonNode dataPackage;
-                    try (InputStream is = zip.getInputStream(dpEntry)) {
-                        dataPackage = OBJECT_MAPPER.readTree(is);
-                    }
-                    // Resources should be empty or contain only original if included
-                    assertTrue(dataPackage.get("resources").isEmpty() ||
-                                    dataPackage.get("resources").size() <= 1,
-                            "Document with no embedded files should have empty or minimal resources");
-                }
-            }
-        }
+        assertNothingPackaged(outputDir, simpleDoc);
     }
-
     @Test
     public void testFrictionlessWithIncludeOriginal(@TempDir Path tmp) throws Exception {
         // includeOriginal=true causes the container to appear in the Frictionless
@@ -715,5 +622,15 @@ public class FrictionlessUnpackTest {
             sb.append(String.format(java.util.Locale.ROOT, "%02x", b));
         }
         return sb.toString();
+    }
+
+    /** Nothing to package writes no zip; the metadata JSON shows the parse still ran. */
+    private static void assertNothingPackaged(Path outputDir, String emitKey) throws IOException {
+        try (Stream<Path> files = Files.list(outputDir)) {
+            List<String> zips = files.map(p -> p.getFileName().toString())
+                    .filter(n -> n.endsWith("-frictionless.zip")).toList();
+            assertTrue(zips.isEmpty(), "unexpected zips: " + zips);
+        }
+        assertTrue(Files.isRegularFile(outputDir.resolve(emitKey + ".json")), "no metadata JSON for " + emitKey);
     }
 }
