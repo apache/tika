@@ -162,8 +162,35 @@ public class ICOParserTest extends TikaTest {
     }
 
     /**
-     * Directory values are the fallback when the image header is unreadable:
-     * a 256 px entry then reads as 256, not 0.
+     * A PNG signature alone is no PNG header: the first chunk has to be an
+     * IHDR of 13 bytes.
+     */
+    @Test
+    public void testPngWithoutIhdr() throws Exception {
+        byte[] file = readTestResource("testICO.ico");
+        // the 256 px image's first chunk: its length at 5446 + 8, its type at 5446 + 12
+        assertFallsBackToDirectory(patch(file, 5446 + 12, 'X', 'X', 'X', 'X'),
+                "256x256@32bpp unknown");
+        assertFallsBackToDirectory(patch(file, 5446 + 8, 0, 0, 0, 12), "256x256@32bpp unknown");
+    }
+
+    /**
+     * Of two images of one size the deeper one is reported, wherever it stands.
+     */
+    @Test
+    public void testDeeperImageWinsAtEqualSize() throws Exception {
+        byte[] file = readTestResource("testICO_bmpOnly.ico");
+        // the 16 px image's header at 38 is made 48 px and 24 bpp, ahead of the 48 px, 32 bpp one
+        byte[] sameSize = patch(patch(patch(file, 38 + 4, 48), 38 + 8, 96), 38 + 14, 24);
+        Metadata metadata = parse(sameSize);
+        assertArrayEquals(new String[]{"48x48@24bpp bmp", "48x48@32bpp bmp"},
+                metadata.getValues(Icon.IMAGES));
+        assertEquals(4, metadata.getInt(TIFF.SAMPLES_PER_PIXEL));
+    }
+
+    /**
+     * An image whose data lies outside the file is not listed at all; the
+     * largest of the others is reported.
      */
     @Test
     public void testDirectoryFallback() throws Exception {

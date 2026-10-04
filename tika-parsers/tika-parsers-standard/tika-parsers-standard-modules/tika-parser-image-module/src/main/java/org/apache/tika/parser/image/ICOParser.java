@@ -71,8 +71,9 @@ public class ICOParser implements Parser {
     private static final int HEADER_SIZE = 6;
     private static final int ENTRY_SIZE = 16;
     private static final int BITMAP_INFO_HEADER_SIZE = 40;
-    private static final byte[] PNG_SIGNATURE =
-            {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
+    // the signature, then the first chunk's length and type: an IHDR of 13 bytes
+    private static final byte[] PNG_HEADER_START =
+            {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n', 0, 0, 0, 13, 'I', 'H', 'D', 'R'};
     private static final int PNG_IHDR_SIZE = 8 + 8 + 13;
     // Icons are small; anything bigger is read only this far
     static final int MAX_FILE_SIZE = 16 * 1024 * 1024;
@@ -173,9 +174,9 @@ public class ICOParser implements Parser {
         EmbeddedDocumentUtil.recordException(new TikaException(message), metadata, context);
     }
 
-    private static boolean startsWithPngSignature(byte[] file, int offset) {
-        for (int i = 0; i < PNG_SIGNATURE.length; i++) {
-            if (file[offset + i] != PNG_SIGNATURE[i]) {
+    private static boolean startsWithPngHeader(byte[] file, int offset) {
+        for (int i = 0; i < PNG_HEADER_START.length; i++) {
+            if (file[offset + i] != PNG_HEADER_START[i]) {
                 return false;
             }
         }
@@ -236,7 +237,7 @@ public class ICOParser implements Parser {
             }
             int dataOffset = (int) offset;
             long available = Math.min(size, file.length - offset);
-            if (available >= PNG_IHDR_SIZE && startsWithPngSignature(file, dataOffset)) {
+            if (available >= PNG_IHDR_SIZE && startsWithPngHeader(file, dataOffset)) {
                 if (image.trySetSize(EndianUtils.getUIntBE(file, dataOffset + 16),
                         EndianUtils.getUIntBE(file, dataOffset + 20))) {
                     image.encoding = Encoding.PNG;

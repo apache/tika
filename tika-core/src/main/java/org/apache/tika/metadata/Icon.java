@@ -34,7 +34,10 @@ public interface Icon {
 
     /**
      * One value per image, in container order: {@code WIDTHxHEIGHT@BITSbpp ENCODING},
-     * for example {@code 32x32@32bpp bmp} or {@code 256x256@32bpp png}.
+     * for example {@code 32x32@32bpp bmp} or {@code 256x256@32bpp png}. An
+     * image whose own header cannot be read is listed with the container's
+     * values for it and the encoding {@code unknown}; a colour depth that is
+     * not known is left out, as in {@code 32x32 unknown}.
      */
     Property IMAGES = Property.internalTextBag(ICON_PREFIX + "images");
 
