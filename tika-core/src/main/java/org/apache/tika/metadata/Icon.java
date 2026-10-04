@@ -28,7 +28,8 @@ public interface Icon {
     String ICON_PREFIX = "icon" + TikaCoreProperties.NAMESPACE_PREFIX_DELIMITER;
 
     /**
-     * Number of images in the container.
+     * Number of images found in the container, the ones {@link #IMAGES}
+     * lists. A damaged container may claim more than it holds.
      */
     Property IMAGE_COUNT = Property.internalInteger(ICON_PREFIX + "image-count");
 

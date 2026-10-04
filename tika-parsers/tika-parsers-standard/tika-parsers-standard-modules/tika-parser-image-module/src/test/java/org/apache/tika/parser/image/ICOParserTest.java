@@ -151,13 +151,14 @@ public class ICOParserTest extends TikaTest {
                 metadata.getValues(Icon.IMAGES));
         // the second image's depth comes from the directory, so it is still 32 bpp
         assertEquals("8", metadata.get(TIFF.BITS_PER_SAMPLE));
-        // one image cut, one beyond the end
+        // one image cut, one beyond the end; the count is what was found, not what the header says
         assertContains("2 of 3 images", metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertEquals(2, metadata.getInt(Icon.IMAGE_COUNT));
 
         // cut inside the directory itself
         metadata = parse(Arrays.copyOf(file, 30));
         assertNull(metadata.get(TIFF.IMAGE_WIDTH));
-        assertEquals(3, metadata.getInt(Icon.IMAGE_COUNT));
+        assertEquals(0, metadata.getInt(Icon.IMAGE_COUNT));
         assertContains("3 of 3 images", metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
     }
 

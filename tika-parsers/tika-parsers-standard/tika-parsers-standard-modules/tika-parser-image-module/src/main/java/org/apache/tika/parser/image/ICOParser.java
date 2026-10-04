@@ -125,12 +125,13 @@ public class ICOParser implements Parser {
         }
 
         int count = EndianUtils.getUShortLE(file, COUNT_OFFSET);
-        metadata.set(Icon.IMAGE_COUNT, count);
         if (count == 0) {
+            metadata.set(Icon.IMAGE_COUNT, 0);
             warn("The directory lists no images", metadata, context);
             return;
         }
         Image largest = null;
+        int listed = 0;
         int unreadable = 0;
         for (int i = 0; i < count; i++) {
             int entryOffset = HEADER_SIZE + i * ENTRY_SIZE;
@@ -148,10 +149,13 @@ public class ICOParser implements Parser {
                 unreadable++;
             }
             metadata.add(Icon.IMAGES, image.describe());
+            listed++;
             if (largest == null || image.outranks(largest)) {
                 largest = image;
             }
         }
+        // what the header claims beyond that is in the warning
+        metadata.set(Icon.IMAGE_COUNT, listed);
         if (largest != null) {
             metadata.set(TIFF.IMAGE_WIDTH, largest.width);
             metadata.set(TIFF.IMAGE_LENGTH, largest.height);
