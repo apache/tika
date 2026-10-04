@@ -95,8 +95,8 @@ public class ICOParserTest extends TikaTest {
     @Test
     public void testCursorWithUnreadableImage() throws Exception {
         byte[] cur = readTestResource("testCUR.cur");
-        // header + 2 entries = 38 bytes, then the 1128 byte 16 px image; cut into the 32 px one
-        Metadata metadata = parse(Arrays.copyOf(cur, 38 + 1128 + 10));
+        // cut ten bytes into the second image, the 32 px one
+        Metadata metadata = parse(Arrays.copyOf(cur, imageOffset(cur, 1) + 10));
         assertEquals(32, metadata.getInt(TIFF.IMAGE_WIDTH));
         assertNull(metadata.get(TIFF.BITS_PER_SAMPLE));
         assertEquals(7, metadata.getInt(Icon.HOTSPOT_X));
@@ -134,9 +134,9 @@ public class ICOParserTest extends TikaTest {
     @Test
     public void testTruncated() throws Exception {
         byte[] file = readTestResource("testICO.ico");
-        // header + 3 entries = 54 bytes, then 1128 + 4264 bytes of BMP images; the PNG image
-        // is cut but its 29 byte header survives, and headers are all this parser reads
-        Metadata metadata = parse(Arrays.copyOf(file, 54 + 1128 + 4264 + 100));
+        // the third image, the PNG one, is cut, but its 29 byte header survives, and headers
+        // are all this parser reads
+        Metadata metadata = parse(Arrays.copyOf(file, imageOffset(file, 2) + 100));
         assertEquals(256, metadata.getInt(TIFF.IMAGE_WIDTH));
         assertEquals(3, metadata.getInt(Icon.IMAGE_COUNT));
         assertArrayEquals(new String[]{"16x16@32bpp bmp", "32x32@32bpp bmp", "256x256@32bpp png"},
@@ -145,7 +145,7 @@ public class ICOParserTest extends TikaTest {
 
         // the second image's header is cut: its directory entry still says 32x32, and the
         // third image lies beyond the end
-        metadata = parse(Arrays.copyOf(file, 54 + 1128 + 10));
+        metadata = parse(Arrays.copyOf(file, imageOffset(file, 1) + 10));
         assertEquals(32, metadata.getInt(TIFF.IMAGE_WIDTH));
         assertArrayEquals(new String[]{"16x16@32bpp bmp", "32x32@32bpp unknown"},
                 metadata.getValues(Icon.IMAGES));
@@ -168,10 +168,11 @@ public class ICOParserTest extends TikaTest {
     @Test
     public void testPngWithoutIhdr() throws Exception {
         byte[] file = readTestResource("testICO.ico");
-        // the 256 px image's first chunk: its length at 5446 + 8, its type at 5446 + 12
-        assertFallsBackToDirectory(patch(file, 5446 + 12, 'X', 'X', 'X', 'X'),
+        // the 256 px image's first chunk: its length 8 bytes in, its type 12
+        int png = imageOffset(file, 2);
+        assertFallsBackToDirectory(patch(file, png + 12, 'X', 'X', 'X', 'X'),
                 "256x256@32bpp unknown");
-        assertFallsBackToDirectory(patch(file, 5446 + 8, 0, 0, 0, 12), "256x256@32bpp unknown");
+        assertFallsBackToDirectory(patch(file, png + 8, 0, 0, 0, 12), "256x256@32bpp unknown");
     }
 
     /**
@@ -180,8 +181,9 @@ public class ICOParserTest extends TikaTest {
     @Test
     public void testDeeperImageWinsAtEqualSize() throws Exception {
         byte[] file = readTestResource("testICO_bmpOnly.ico");
-        // the 16 px image's header at 38 is made 48 px and 24 bpp, ahead of the 48 px, 32 bpp one
-        byte[] sameSize = patch(patch(patch(file, 38 + 4, 48), 38 + 8, 96), 38 + 14, 24);
+        // the 16 px image's header is made 48 px and 24 bpp, ahead of the 48 px, 32 bpp one
+        int header = imageOffset(file, 0);
+        byte[] sameSize = patch(patch(patch(file, header + 4, 48), header + 8, 96), header + 14, 24);
         Metadata metadata = parse(sameSize);
         assertArrayEquals(new String[]{"48x48@24bpp bmp", "48x48@32bpp bmp"},
                 metadata.getValues(Icon.IMAGES));
@@ -237,11 +239,11 @@ public class ICOParserTest extends TikaTest {
     @Test
     public void testHostileDimensions() throws Exception {
         byte[] file = readTestResource("testICO.ico");
-        // the 16 px BMP image starts at 54, the 256 px PNG image at 5446
-        int bmpWidth = 54 + 4;
-        int bmpHeight = 54 + 8;
-        int pngWidth = 5446 + 16;
-        int pngHeight = 5446 + 20;
+        // the first image is a 16 px BMP, the third a 256 px PNG
+        int bmpWidth = imageOffset(file, 0) + 4;
+        int bmpHeight = imageOffset(file, 0) + 8;
+        int pngWidth = imageOffset(file, 2) + 16;
+        int pngHeight = imageOffset(file, 2) + 20;
 
         // little endian -1 and Integer.MIN_VALUE
         assertFallsBackToDirectory(patch(file, bmpWidth, 0xff, 0xff, 0xff, 0xff),
@@ -269,7 +271,7 @@ public class ICOParserTest extends TikaTest {
     public void testColourDepths() throws Exception {
         byte[] bmpOnly = readTestResource("testICO_bmpOnly.ico");
         // the 48 px image is the second entry; a BITMAPINFOHEADER holds the bit count at 14
-        int bitCount = (int) EndianUtils.getUIntLE(bmpOnly, 6 + 16 + 12) + 14;
+        int bitCount = imageOffset(bmpOnly, 1) + 14;
         assertDepth(patch(bmpOnly, bitCount, 24, 0), "48x48@24bpp bmp", "8", 3);
         assertDepth(patch(bmpOnly, bitCount, 16, 0), "48x48@16bpp bmp", "5", 3);
         assertDepth(patch(bmpOnly, bitCount, 8, 0), "48x48@8bpp bmp", "8", 1);
@@ -277,7 +279,7 @@ public class ICOParserTest extends TikaTest {
 
         byte[] withPng = readTestResource("testICO.ico");
         // an IHDR holds the bit depth at 24 and the colour type at 25
-        int bitDepth = 5446 + 24;
+        int bitDepth = imageOffset(withPng, 2) + 24;
         assertDepth(patch(withPng, bitDepth, 8, 2), "256x256@24bpp png", "8", 3);
         assertDepth(patch(withPng, bitDepth, 8, 4), "256x256@16bpp png", "8", 2);
         assertDepth(patch(withPng, bitDepth, 8, 3), "256x256@8bpp png", "8", 1);
@@ -290,17 +292,17 @@ public class ICOParserTest extends TikaTest {
     @Test
     public void testImplausibleColourDepths() throws Exception {
         byte[] bmpOnly = readTestResource("testICO_bmpOnly.ico");
-        int bitCount = (int) EndianUtils.getUIntLE(bmpOnly, 6 + 16 + 12) + 14;
+        int bitCount = imageOffset(bmpOnly, 1) + 14;
         assertDepth(patch(bmpOnly, bitCount, 0xff, 0xff), "48x48@32bpp bmp", "8", 4);
         assertDepth(patch(bmpOnly, bitCount, 7, 0), "48x48@32bpp bmp", "8", 4);
 
         byte[] withPng = readTestResource("testICO.ico");
-        int bitDepth = 5446 + 24;
+        int bitDepth = imageOffset(withPng, 2) + 24;
         assertDepth(patch(withPng, bitDepth, 0xff, 6), "256x256@32bpp png", "8", 4);
         assertDepth(patch(withPng, bitDepth, 8, 5), "256x256@32bpp png", "8", 4);
 
         // the directory's own bit count is no more trusted: the 32 px image is cut and has no other
-        byte[] cut = Arrays.copyOf(patch(withPng, 6 + 16 + 6, 0xff, 0xff), 54 + 1128 + 10);
+        byte[] cut = Arrays.copyOf(patch(withPng, 6 + 16 + 6, 0xff, 0xff), imageOffset(withPng, 1) + 10);
         assertContains("32x32 unknown", Arrays.asList(parse(cut).getValues(Icon.IMAGES)));
     }
 
@@ -341,7 +343,7 @@ public class ICOParserTest extends TikaTest {
         int limit = ICOParser.MAX_FILE_SIZE;
         byte[] large = Arrays.copyOf(file, limit + 64);
         // the 256 px image's PNG header, copied to just beyond the limit, and its entry's offset
-        System.arraycopy(file, 5446, large, limit, 29);
+        System.arraycopy(file, imageOffset(file, 2), large, limit, 29);
         int offset = 6 + 2 * 16 + 12;
         large[offset] = (byte) limit;
         large[offset + 1] = (byte) (limit >> 8);
@@ -353,6 +355,13 @@ public class ICOParserTest extends TikaTest {
         assertArrayEquals(new String[]{"16x16@32bpp bmp", "32x32@32bpp bmp"},
                 metadata.getValues(Icon.IMAGES));
         assertContains("1 of 3 images", metadata.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    /**
+     * @return where the image with the given index starts, as its directory entry says
+     */
+    private static int imageOffset(byte[] file, int index) {
+        return (int) EndianUtils.getUIntLE(file, 6 + index * 16 + 12);
     }
 
     private static byte[] patch(byte[] file, int offset, int... bytes) {
