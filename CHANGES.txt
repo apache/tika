@@ -9,7 +9,8 @@ Release 4.2.0 - unreleased
      EncodingDetector, LanguageDetector and MetadataFilter providers, so tika-core's
      defaults match the classpath. Restores OOXMLParser, HttpParser, GeoGebraParser and
      charset detection in OSGi, which had fallen back to BOM and declared charsets
-     only (TIKA-4955).
+     only. The bundle now declares its real Java requirement (JavaSE 17, not 1.8)
+     and drops 67 imports of packages it never referenced (TIKA-4955).
 
    * Refactor date parsing for more consistent, accurate dates. File-system
      times from archive entries and mail attachments move to fs:created/
