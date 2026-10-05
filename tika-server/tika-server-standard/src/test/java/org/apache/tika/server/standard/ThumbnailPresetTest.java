@@ -116,7 +116,6 @@ public class ThumbnailPresetTest extends CXFTestBase {
     @ParameterizedTest
     @CsvSource({
             "testDOCX_Thumbnail.docx, png", // EMF thumbnail, rasterized by the metafile renderer
-            "testPDFTwoTextBoxes.pdf, png", // first page rendering
             "testMP3_twoCovers.mp3, png"    // two stored covers; the first one wins
     })
     public void testExactlyOneThumbnail(String file, String format) throws Exception {
@@ -129,7 +128,12 @@ public class ThumbnailPresetTest extends CXFTestBase {
 
     @Test
     public void testPdfPageIsFittedInColour() throws Exception {
-        byte[] png = unpack(PRESET_PATH, "testPDFTwoTextBoxes.pdf").values().iterator().next();
+        Map<String, byte[]> entries = unpack(PRESET_PATH, "testPDFTwoTextBoxes.pdf");
+        assertEquals(1, entries.size(), entries.keySet().toString());
+        Map.Entry<String, byte[]> entry = entries.entrySet().iterator().next();
+        assertTrue(entry.getKey().endsWith(".png"), entry.getKey());
+        byte[] png = entry.getValue();
+        assertEquals("png", imageFormat(png), entry.getKey());
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(png));
         // the preset's box, not the 300 dpi grayscale page OCR would see: a portrait page
         // is 256 tall and narrower, within a pixel of PDFBox's flooring

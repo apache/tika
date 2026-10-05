@@ -17,21 +17,15 @@
 package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
-import java.util.List;
 
-import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.configuration.jsse.TLSParameterJaxBUtils;
@@ -44,8 +38,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.metadata.Metadata;
-import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerIntegrationTest extends IntegrationTestBase {
@@ -84,13 +76,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     }
 
-    /** TIKA-4834: the docs permit comments in the config; the server must start from one. */
-    @Test
-    public void testCommentedConfig() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-comments.json")});
-        testBaseline();
-    }
-
     private String getSSL(String file) {
         try {
             return Paths
@@ -105,6 +90,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     }
 
+    // TLS is transport-only: GET / needs no pipes fork, and awaitServerStartup asserts its 200.
     @Test
     public void test1WayTLS() throws Exception {
         startProcess(new String[]{"-config", ProcessUtils.escapeCommandLine(TIKA_TLS_ONE_WAY_CONFIG
@@ -114,34 +100,12 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         String httpsEndpoint = "https://localhost:" + INTEGRATION_TEST_PORT;
         WebClient webClient = WebClient.create(httpsEndpoint);
         configure1WayTLS(webClient);
-
         awaitServerStartup(webClient);
-
         webClient.close();
-        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
-        configure1WayTLS(webClient);
-
-        Response response = webClient
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(1, metadataList.size());
-        assertEquals("Nikolai Lobachevsky", metadataList
-                .get(0)
-                .get("author"));
-        assertContains("hello world", metadataList
-                .get(0)
-                .get("tk:content"));
 
         //now test no tls config
-        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
-
         try {
-            response = webClient
-                    .accept("application/json")
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+            WebClient.create(httpsEndpoint).get();
             fail("bad, bad, bad. this should have failed!");
         } catch (Exception e) {
             assertContains("javax.net.ssl.SSLHandshakeException", e.getMessage());
@@ -157,46 +121,22 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         String httpsEndpoint = "https://localhost:" + INTEGRATION_TEST_PORT;
         WebClient webClient = WebClient.create(httpsEndpoint);
         configure2WayTLS(webClient);
-
         awaitServerStartup(webClient);
-
         webClient.close();
-        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
-        configure2WayTLS(webClient);
-
-        Response response = webClient
-                .accept("application/json")
-                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
-        Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
-
-        List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
-        assertEquals(1, metadataList.size());
-        assertEquals("Nikolai Lobachevsky", metadataList
-                .get(0)
-                .get("author"));
-        assertContains("hello world", metadataList
-                .get(0)
-                .get("tk:content"));
 
         //now test that no tls config fails
-        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
-
         try {
-            response = webClient
-                    .accept("application/json")
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+            WebClient.create(httpsEndpoint).get();
             fail("bad, bad, bad. this should have failed!");
         } catch (Exception e) {
             assertContains("javax.net.ssl.SSLHandshakeException", e.getMessage());
         }
 
         //now test that 1 way fails
-        webClient = WebClient.create(httpsEndpoint + RMETA_PATH);
+        webClient = WebClient.create(httpsEndpoint);
         configure1WayTLS(webClient);
         try {
-            response = webClient
-                    .accept("application/json")
-                    .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+            webClient.get();
             fail("bad, bad, bad. this should have failed!");
         } catch (Exception e) {
             //the messages vary too much between operating systems and

@@ -58,9 +58,15 @@ public class TikaCLIAsyncTest {
     @TempDir
     private static Path ASYNC_OUTPUT_DIR;
 
+    @TempDir
+    private static Path ASYNC_INPUT_DIR;
+
     @BeforeAll
     public static void setUpClass() throws Exception {
         TIKA_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "plugins-", ".json");
+        for (String f : new String[]{"alice.cli.test", "testJsonMultipleInts.html", "test_recursive_embedded.docx"}) {
+            Files.copy(TEST_DATA_FILE.toPath().resolve(f), ASYNC_INPUT_DIR.resolve(f));
+        }
 
         Path pluginsDir = Paths.get("target/plugins");
         if (!Files.isDirectory(pluginsDir)) {
@@ -68,7 +74,7 @@ public class TikaCLIAsyncTest {
         }
 
         Map<String, Object> replacements = new HashMap<>();
-        replacements.put("FETCHER_BASE_PATH", TEST_DATA_FILE.toPath());
+        replacements.put("FETCHER_BASE_PATH", ASYNC_INPUT_DIR);
         replacements.put("EMITTER_BASE_PATH", ASYNC_OUTPUT_DIR);
         replacements.put("PLUGIN_ROOTS", pluginsDir);
 
@@ -138,7 +144,7 @@ public class TikaCLIAsyncTest {
                 json++;
             }
         }
-        assertEquals(18, json);
+        assertEquals(3, json);
     }
 
     private void checkForPrettyPrint(File f) throws IOException {

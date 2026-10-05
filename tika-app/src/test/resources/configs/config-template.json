@@ -57,5 +57,6 @@
       "thresholdBytes": 100000
     }
   },
+  "text-recognizers": [],
   "plugin-roots": "PLUGIN_ROOTS"
 }

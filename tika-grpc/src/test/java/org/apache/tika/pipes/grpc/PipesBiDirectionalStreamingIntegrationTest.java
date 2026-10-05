@@ -116,6 +116,7 @@ class PipesBiDirectionalStreamingIntegrationTest {
         String javaHome = System.getProperty("java.home");
         String javaPath = javaHome + File.separator + "bin" + File.separator + "java";
         pipesSection.put("javaPath", javaPath);
+        pipesSection.put("numClients", 1);
 
         // Write the modified config
         String modifiedConfig = OBJECT_MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(configMap);

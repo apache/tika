@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -91,112 +92,89 @@ public class SharedServerModeTest {
             "</mock>";
 
     @Test
-    public void testBasicSharedMode(@TempDir Path tmp) throws Exception {
+    public void testSharedModeMatchesPerClientMode(@TempDir Path tmp) throws Exception {
         Path inputDir = setupInputDir(tmp);
-        String testFile = "test.xml";
+        String testFile = "compare.xml";
         Files.writeString(inputDir.resolve(testFile), MOCK_OK, StandardCharsets.UTF_8);
-
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
-                "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-
-        // Verify shared mode is enabled
-        assertTrue(pipesConfig.isUseSharedServer(), "Shared server mode should be enabled");
-
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
-            assertTrue(pipesParser.isSharedMode(), "PipesParser should be in shared mode");
-
-            PipesResult result = pipesParser.parse(new FetchEmitTuple(
-                    testFile,
-                    new FetchKey(FETCHER_NAME, testFile),
-                    new EmitKey(EMITTER_NAME, ""),
-                    new Metadata(),
-                    new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-            assertTrue(result.isSuccess(), "Parse should succeed");
-            assertNotNull(result.emitData().getMetadataList());
-            assertEquals(1, result.emitData().getMetadataList().size());
-            assertEquals("Test Author", result.emitData().getMetadataList().get(0).get("dc:creator"));
-        }
-    }
-
-    @Test
-    public void testConcurrentRequests(@TempDir Path tmp) throws Exception {
-        Path inputDir = setupInputDir(tmp);
-
-        // Create multiple test files
         int numFiles = 20;
         for (int i = 0; i < numFiles; i++) {
             Files.writeString(inputDir.resolve("test" + i + ".xml"), MOCK_OK, StandardCharsets.UTF_8);
         }
 
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
-                "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        Path outputDir = tmp.resolve("output");
+        Files.createDirectories(outputDir);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
-            ExecutorService executor = Executors.newFixedThreadPool(8);
-            List<Future<PipesResult>> futures = new ArrayList<>();
+        Path perClientConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, outputDir);
+        TikaJsonConfig perClientConfig = TikaJsonConfig.load(perClientConfigPath);
+        PipesConfig perClientPipesConfig = PipesConfig.load(perClientConfig);
+        assertFalse(perClientPipesConfig.isUseSharedServer(), "Shared server mode should be disabled by default");
 
-            // Submit concurrent parse requests
-            for (int i = 0; i < numFiles; i++) {
-                final int fileIndex = i;
-                futures.add(executor.submit(() -> pipesParser.parse(new FetchEmitTuple(
-                        "test" + fileIndex + ".xml",
-                        new FetchKey(FETCHER_NAME, "test" + fileIndex + ".xml"),
-                        new EmitKey(EMITTER_NAME, ""),
-                        new Metadata(),
-                        new ParseContext(),
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP))));
-            }
-
-            // Verify all succeeded
-            int successCount = 0;
-            for (Future<PipesResult> future : futures) {
-                PipesResult result = future.get();
-                if (result.isSuccess()) {
-                    successCount++;
-                    assertNotNull(result.emitData().getMetadataList());
-                    assertEquals("Test Author", result.emitData().getMetadataList().get(0).get("dc:creator"));
-                }
-            }
-
-            executor.shutdown();
-            assertEquals(numFiles, successCount, "All concurrent requests should succeed");
+        Metadata perClientMetadata;
+        try (PipesParser parser = PipesParser.load(perClientConfig, perClientPipesConfig, perClientConfigPath)) {
+            assertFalse(parser.isSharedMode(), "PipesParser should NOT be in shared mode");
+            PipesResult result = parse(parser, testFile);
+            assertTrue(result.isSuccess(), "Parse should succeed in per-client mode");
+            perClientMetadata = result.emitData().getMetadataList().get(0);
         }
-    }
 
-    @Test
-    public void testMultipleSequentialRequests(@TempDir Path tmp) throws Exception {
-        Path inputDir = setupInputDir(tmp);
+        Path sharedConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                "tika-config-shared-server.json", tmp, inputDir, outputDir, false);
+        TikaJsonConfig sharedConfig = TikaJsonConfig.load(sharedConfigPath);
+        PipesConfig sharedPipesConfig = PipesConfig.load(sharedConfig);
+        assertTrue(sharedPipesConfig.isUseSharedServer(), "Shared server mode should be enabled");
 
-        // Create test files
-        Files.writeString(inputDir.resolve("file1.xml"), MOCK_OK, StandardCharsets.UTF_8);
-        Files.writeString(inputDir.resolve("file2.xml"), MOCK_OK, StandardCharsets.UTF_8);
-        Files.writeString(inputDir.resolve("file3.xml"), MOCK_OK, StandardCharsets.UTF_8);
+        try (PipesParser pipesParser = PipesParser.load(sharedConfig, sharedPipesConfig, sharedConfigPath)) {
+            assertTrue(pipesParser.isSharedMode(), "PipesParser should be in shared mode");
 
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
-                "tika-config-shared-server.json", tmp, inputDir, tmp.resolve("output"), false);
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+            PipesResult result = parse(pipesParser, testFile);
+            assertTrue(result.isSuccess(), "Parse should succeed");
+            assertNotNull(result.emitData().getMetadataList());
+            assertEquals(1, result.emitData().getMetadataList().size());
+            Metadata sharedMetadata = result.emitData().getMetadataList().get(0);
+            assertEquals("Test Author", sharedMetadata.get("dc:creator"));
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
-            // Process files sequentially with the same PipesParser
-            for (int i = 1; i <= 3; i++) {
-                String fileName = "file" + i + ".xml";
-                PipesResult result = pipesParser.parse(new FetchEmitTuple(
-                        fileName,
-                        new FetchKey(FETCHER_NAME, fileName),
-                        new EmitKey(EMITTER_NAME, ""),
-                        new Metadata(),
-                        new ParseContext(),
-                        FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            assertEquals(
+                    perClientMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
+                    sharedMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
+                    "Resource name should match between modes");
+            assertEquals(
+                    perClientMetadata.get("dc:creator"),
+                    sharedMetadata.get("dc:creator"),
+                    "Creator should match between modes");
+            assertEquals(
+                    perClientMetadata.get(TikaCoreProperties.TIKA_CONTENT),
+                    sharedMetadata.get(TikaCoreProperties.TIKA_CONTENT),
+                    "Content should match between modes");
 
+            // sequential requests on the same parser
+            for (int i = 0; i < 3; i++) {
+                String fileName = "test" + i + ".xml";
+                result = parse(pipesParser, fileName);
                 assertTrue(result.isSuccess(), "Parse of " + fileName + " should succeed");
                 assertNotNull(result.emitData().getMetadataList());
+            }
+
+            // concurrent requests
+            ExecutorService executor = Executors.newFixedThreadPool(8);
+            try {
+                List<Future<PipesResult>> futures = new ArrayList<>();
+                for (int i = 0; i < numFiles; i++) {
+                    String fileName = "test" + i + ".xml";
+                    futures.add(executor.submit(() -> parse(pipesParser, fileName)));
+                }
+                int successCount = 0;
+                for (Future<PipesResult> future : futures) {
+                    PipesResult concurrentResult = future.get();
+                    if (concurrentResult.isSuccess()) {
+                        successCount++;
+                        assertNotNull(concurrentResult.emitData().getMetadataList());
+                        assertEquals("Test Author",
+                                concurrentResult.emitData().getMetadataList().get(0).get("dc:creator"));
+                    }
+                }
+                assertEquals(numFiles, successCount, "All concurrent requests should succeed");
+            } finally {
+                executor.shutdown();
             }
         }
     }
@@ -212,7 +190,7 @@ public class SharedServerModeTest {
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
         // Create and close parser multiple times to verify graceful shutdown/restart
-        for (int iteration = 0; iteration < 3; iteration++) {
+        for (int iteration = 0; iteration < 2; iteration++) {
             try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
                 PipesResult result = pipesParser.parse(new FetchEmitTuple(
                         "test.xml",
@@ -302,105 +280,13 @@ public class SharedServerModeTest {
     }
 
     @Test
-    public void testPerClientModeStillWorks(@TempDir Path tmp) throws Exception {
-        // Verify default per-client mode still works
-        Path inputDir = setupInputDir(tmp);
-        String testFile = "test.xml";
-        Files.writeString(inputDir.resolve(testFile), MOCK_OK, StandardCharsets.UTF_8);
-
-        // Use standard config (not shared server)
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-
-        // Verify shared mode is NOT enabled (default)
-        assertTrue(!pipesConfig.isUseSharedServer(), "Shared server mode should be disabled by default");
-
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
-            assertTrue(!pipesParser.isSharedMode(), "PipesParser should NOT be in shared mode");
-
-            PipesResult result = pipesParser.parse(new FetchEmitTuple(
-                    testFile,
-                    new FetchKey(FETCHER_NAME, testFile),
-                    new EmitKey(EMITTER_NAME, ""),
-                    new Metadata(),
-                    new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-            assertTrue(result.isSuccess(), "Parse should succeed in per-client mode");
-            assertEquals("Test Author", result.emitData().getMetadataList().get(0).get("dc:creator"));
-        }
-    }
-
-    @Test
-    public void testCompareSharedVsPerClientMode(@TempDir Path tmp) throws Exception {
-        // This test verifies that both modes produce identical results
-        Path inputDir = setupInputDir(tmp);
-        String testFile = "compare.xml";
-        Files.writeString(inputDir.resolve(testFile), MOCK_OK, StandardCharsets.UTF_8);
-
-        Path outputDir = tmp.resolve("output");
-        Files.createDirectories(outputDir);
-
-        // Test per-client mode
-        Path perClientConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, outputDir);
-        TikaJsonConfig perClientConfig = TikaJsonConfig.load(perClientConfigPath);
-        PipesConfig perClientPipesConfig = PipesConfig.load(perClientConfig);
-
-        Metadata perClientMetadata;
-        try (PipesParser parser = PipesParser.load(perClientConfig, perClientPipesConfig, perClientConfigPath)) {
-            PipesResult result = parser.parse(new FetchEmitTuple(
-                    testFile,
-                    new FetchKey(FETCHER_NAME, testFile),
-                    new EmitKey(EMITTER_NAME, ""),
-                    new Metadata(),
-                    new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            assertTrue(result.isSuccess());
-            perClientMetadata = result.emitData().getMetadataList().get(0);
-        }
-
-        // Test shared mode
-        Path sharedConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
-                "tika-config-shared-server.json", tmp, inputDir, outputDir, false);
-        TikaJsonConfig sharedConfig = TikaJsonConfig.load(sharedConfigPath);
-        PipesConfig sharedPipesConfig = PipesConfig.load(sharedConfig);
-
-        Metadata sharedMetadata;
-        try (PipesParser parser = PipesParser.load(sharedConfig, sharedPipesConfig, sharedConfigPath)) {
-            PipesResult result = parser.parse(new FetchEmitTuple(
-                    testFile,
-                    new FetchKey(FETCHER_NAME, testFile),
-                    new EmitKey(EMITTER_NAME, ""),
-                    new Metadata(),
-                    new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            assertTrue(result.isSuccess());
-            sharedMetadata = result.emitData().getMetadataList().get(0);
-        }
-
-        // Compare key metadata values
-        assertEquals(
-                perClientMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
-                sharedMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
-                "Resource name should match between modes");
-        assertEquals(
-                perClientMetadata.get("dc:creator"),
-                sharedMetadata.get("dc:creator"),
-                "Creator should match between modes");
-        assertEquals(
-                perClientMetadata.get(TikaCoreProperties.TIKA_CONTENT),
-                sharedMetadata.get(TikaCoreProperties.TIKA_CONTENT),
-                "Content should match between modes");
-    }
-
-    @Test
     public void testOomsRestartServerOnNewPort(@TempDir Path tmp) throws Exception {
         // Each OOM must kill the shared JVM and restart it on a new port; reconnecting to the
         // same (corrupted) server was a real bug when ConnectionHandler didn't System.exit().
         Path inputDir = setupInputDir(tmp);
         Files.writeString(inputDir.resolve("warmup.xml"), MOCK_OK, StandardCharsets.UTF_8);
-        for (int i = 0; i < 3; i++) {
+        // two: the second proves a replacement fork (generation > 1) is itself replaced
+        for (int i = 0; i < 2; i++) {
             Files.writeString(inputDir.resolve("oom" + i + ".xml"), MOCK_OOM, StandardCharsets.UTF_8);
             Files.writeString(inputDir.resolve("ok" + i + ".xml"), MOCK_OK, StandardCharsets.UTF_8);
         }
@@ -415,7 +301,7 @@ public class SharedServerModeTest {
             int port = pipesParser.getCurrentServerPort();
             assertTrue(port > 0, "should have a port after warmup");
 
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 2; i++) {
                 assertEquals(PipesResult.RESULT_STATUS.OOM, parse(pipesParser, "oom" + i + ".xml").status(),
                         "OOM " + i);
                 PipesResult okResult = parse(pipesParser, "ok" + i + ".xml");

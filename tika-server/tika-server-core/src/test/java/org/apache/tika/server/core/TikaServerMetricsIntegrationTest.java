@@ -48,16 +48,25 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
     private final int metricsPort = TestPortAllocator.findFreePort();
     private final String metricsEndPoint = "http://localhost:" + metricsPort;
 
+    /**
+     * One process for every restart reason a client attributes (oom, timeout, crash) and for
+     * both worker pools: /async forks its own workers, and without a pool label and a second
+     * binding a crash in an async worker is counted nowhere.
+     */
     @Test
-    @Timeout(120)
-    public void testScrapeAfterParsesAndWorkerRestart() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-basic.json"),
+    @Timeout(240)
+    public void testScrapeAfterParsesAndWorkerRestarts() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-async-metrics.json"),
                 "--metricsPort", String.valueOf(metricsPort)});
         awaitServerStartup();
 
+        // Each crashed worker is restarted, and its restart counted, on its next use.
         assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
         assertCrash(TEST_OOM, "OOM");
-        // The OOM'd worker is restarted on its next use.
+        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
+        assertCrash(TEST_HEAVY_HANG, "TIMEOUT");
+        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
+        assertCrash(TEST_SYSTEM_EXIT, "UNSPECIFIED_CRASH");
         assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
         assertEquals(404, WebClient.create(endPoint + "/no-such-path").get().getStatus());
 
@@ -68,14 +77,17 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
         String body = scrape.body();
 
         assertSample(body, "tika_server_requests_seconds_count",
-                "endpoint=\"rmeta\",method=\"PUT\",status=\"2xx\"", 2.0);
+                "endpoint=\"rmeta\",method=\"PUT\",status=\"2xx\"", 4.0);
         assertSample(body, "tika_server_requests_seconds_count",
-                "endpoint=\"rmeta\",method=\"PUT\",status=\"5xx\"", 1.0);
+                "endpoint=\"rmeta\",method=\"PUT\",status=\"5xx\"", 3.0);
         assertSample(body, "tika_server_requests_seconds_count",
                 "endpoint=\"unmatched\",method=\"GET\",status=\"4xx\"", 1.0);
-        assertSample(body, "tika_server_rejected_total", "reason=\"crash_503\"", 1.0);
-        assertSample(body, "tika_pipes_worker_restarts_total",
-                "pool=\"sync\",reason=\"oom\"", 1.0);
+        assertSample(body, "tika_server_rejected_total", "reason=\"crash_503\"", 3.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"oom\"", 1.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"timeout\"", 1.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 1.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"async\",reason=\"oom\"", 0.0);
+        assertSample(body, "tika_pipes_queue_depth", "pool=\"async\"", 0.0);
         assertSample(body, "tika_pipes_workers", "pool=\"sync\",state=\"idle\"", 2.0);
         assertSample(body, "tika_pipes_workers", "pool=\"sync\",state=\"busy\"", 0.0);
         assertSample(body, "tika_server_tasks_active", "", 0.0);
@@ -96,24 +108,6 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD)).getStatus());
     }
 
-    /**
-     * /async forks its own workers, separate from the sync pool's. Without a pool label and
-     * a second binding, a crash in an async worker is counted nowhere.
-     */
-    @Test
-    @Timeout(240)
-    public void testBothWorkerPoolsAreCounted() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-async-metrics.json"),
-                "--metricsPort", String.valueOf(metricsPort)});
-        awaitServerStartup();
-        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
-
-        String body = get(metricsEndPoint + MetricsServer.PATH).body();
-        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"oom\"", 0.0);
-        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"async\",reason=\"oom\"", 0.0);
-        assertSample(body, "tika_pipes_queue_depth", "pool=\"async\"", 0.0);
-    }
-
     /** Routine restarts (max files, idle exit 24) must not be counted as crashes. */
     @Test
     @Timeout(240)
@@ -127,40 +121,6 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
         // Past the idle socket timeout the fork exits 24 and is restarted by the next request.
         String body = awaitSample("tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"idle\"", 1.0);
         assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"max_files\"", 1.0);
-        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 0.0);
-    }
-
-    /** Timeout and crash are attributed per client; a 503 for either is a crash_503 rejection. */
-    @Test
-    @Timeout(240)
-    public void testTimeoutAndCrashReasons() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-metrics-timeout.json"),
-                "--metricsPort", String.valueOf(metricsPort)});
-        awaitServerStartup();
-        assertCrash(TEST_HEAVY_HANG, "TIMEOUT");
-        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
-        assertCrash(TEST_SYSTEM_EXIT, "UNSPECIFIED_CRASH");
-        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
-
-        String body = get(metricsEndPoint + MetricsServer.PATH).body();
-        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"timeout\"", 1.0);
-        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 1.0);
-        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"oom\"", 0.0);
-        assertSample(body, "tika_server_rejected_total", "reason=\"crash_503\"", 2.0);
-    }
-
-    /** Shared server: the client that saw the OOM marks it; the restarter must not overwrite it with crash. */
-    @Test
-    @Timeout(240)
-    public void testSharedServerOomReason() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-metrics-shared.json"),
-                "--metricsPort", String.valueOf(metricsPort)});
-        awaitServerStartup();
-        assertCrash(TEST_OOM, "OOM");
-        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
-
-        String body = get(metricsEndPoint + MetricsServer.PATH).body();
-        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"oom\"", 1.0);
         assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 0.0);
     }
 

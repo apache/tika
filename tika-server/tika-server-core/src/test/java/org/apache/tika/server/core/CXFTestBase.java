@@ -33,6 +33,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -44,6 +45,7 @@ import org.apache.commons.compress.archivers.ArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.endpoint.Server;
@@ -103,6 +105,73 @@ public abstract class CXFTestBase {
     private PipesParser pipesParser;
     private Path pipesConfigPath;
     private Path inputTempDirectory = null;
+
+    // Keyed on the worker config's bytes; later classes with the same config reuse warm forks.
+    // Bounded so one-off configs don't pile up idle forks; classes run sequentially, so the
+    // evicted parser is never in use.
+    private static final int MAX_SHARED_WORKERS = 4;
+    private static final Map<String, SharedWorker> SHARED_WORKERS =
+            new LinkedHashMap<>(16, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, SharedWorker> eldest) {
+                    if (size() <= MAX_SHARED_WORKERS) {
+                        return false;
+                    }
+                    LOG.info("shared pipes worker: evicted");
+                    eldest.getValue().close();
+                    return true;
+                }
+            };
+    private static Path sharedInputDir;
+    private static Path sharedUnpackDir;
+
+    private record SharedWorker(PipesParser parser, Path configPath) {
+        void close() {
+            try {
+                parser.close();
+                Files.deleteIfExists(configPath);
+            } catch (Exception e) {
+                LOG.warn("Error closing shared PipesParser", e);
+            }
+        }
+    }
+
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread(CXFTestBase::closeSharedWorkers));
+    }
+
+    private static synchronized void closeSharedWorkers() {
+        SHARED_WORKERS.values().forEach(SharedWorker::close);
+        SHARED_WORKERS.clear();
+        for (Path dir : new Path[]{sharedInputDir, sharedUnpackDir}) {
+            if (dir != null) {
+                FileUtils.deleteQuietly(dir.toFile());
+            }
+        }
+    }
+
+    private static synchronized Path sharedInputDir() throws IOException {
+        if (sharedInputDir == null) {
+            sharedInputDir = Files.createTempDirectory("tika-server-test-input-");
+        }
+        return sharedInputDir;
+    }
+
+    /**
+     * Unpack-emitter basePath for classes that share a worker; per-class dirs would make
+     * every config unique.
+     */
+    protected static synchronized Path sharedUnpackDir() throws IOException {
+        if (sharedUnpackDir == null) {
+            sharedUnpackDir = Files.createTempDirectory("tika-server-test-unpack-");
+        }
+        return sharedUnpackDir;
+    }
+
+    /** Return false if the class kills, times out or restarts a worker, or counts restarts. */
+    protected boolean sharesWorker() {
+        return true;
+    }
 
     public static void createPluginsConfig(Path configPath, Path inputDir, Path jsonOutputDir, Path bytesOutputDir, Long timeoutMillis) throws IOException {
 
@@ -201,7 +270,8 @@ public abstract class CXFTestBase {
             this.tika = TikaLoader.load(tmp);
 
             // Create input temp directory for pipes-based parsing
-            inputTempDirectory = Files.createTempDirectory("tika-server-test-input-");
+            inputTempDirectory = sharesWorker() ? sharedInputDir()
+                    : Files.createTempDirectory("tika-server-test-input-");
 
             // Initialize PipesParsingHelper for pipes-based parsing
             // Merge the fetcher config with basePath pointing to the temp directory
@@ -213,7 +283,8 @@ public abstract class CXFTestBase {
                 pipesConfig = new PipesConfig();
             }
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
-            this.pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, this.pipesConfigPath);
+            this.pipesParser = sharesWorker() ? sharedPipesParser(tikaJsonConfig, pipesConfig)
+                    : PipesParser.load(tikaJsonConfig, pipesConfig, this.pipesConfigPath);
             PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig,
                     inputTempDirectory, getUnpackEmitterBasePath());
 
@@ -243,6 +314,25 @@ public abstract class CXFTestBase {
 
         manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
         server = sf.create();
+    }
+
+    private PipesParser sharedPipesParser(TikaJsonConfig tikaJsonConfig, PipesConfig pipesConfig)
+            throws Exception {
+        String key = Files.readString(pipesConfigPath, UTF_8);
+        synchronized (CXFTestBase.class) {
+            SharedWorker w = SHARED_WORKERS.get(key);
+            if (w == null) {
+                w = new SharedWorker(PipesParser.load(tikaJsonConfig, pipesConfig, pipesConfigPath),
+                        pipesConfigPath);
+                SHARED_WORKERS.put(key, w);
+                LOG.info("shared pipes worker: new for {}", getClass().getSimpleName());
+            } else {
+                Files.delete(pipesConfigPath);
+                LOG.info("shared pipes worker: reused by {}", getClass().getSimpleName());
+            }
+            pipesConfigPath = w.configPath();
+            return w.parser();
+        }
     }
 
     /**
@@ -451,6 +541,9 @@ public abstract class CXFTestBase {
         server.stop();
         server.destroy();
 
+        if (sharesWorker()) {
+            return;
+        }
         // Close PipesParser and clean up config file
         if (pipesParser != null) {
             try {

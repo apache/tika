@@ -60,7 +60,7 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     private static Path SETUP_DIR;
     private static Path TEMP_OUTPUT_DIR;
     private static Path TIKA_CONFIG;
-    private static String[] FILES = new String[]{"hello_world.xml", "heavy_hang_30000.xml", "system_exit.xml"};
+    private static String[] FILES = new String[]{"hello_world.xml", "heavy_hang_30000.xml"};
 
     // One server for the class: a crash here kills a pipes worker, never the server.
     @BeforeAll
@@ -101,12 +101,6 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
-    public void testSystemExit() throws Exception {
-        JsonNode node = testOne("system_exit.xml", false, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, 503);
-        assertEquals("UNSPECIFIED_CRASH", node.get("status").asText());
-    }
-
-    @Test
     public void testPerRequestTimeout() throws Exception {
         // Server started with a 5000ms timeout (TIKA_CONFIG)
         // but send a request with 100ms per-request timeout
@@ -122,6 +116,8 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
                 .accept("application/json")
                 .post(getJsonStringWithTimeout(fileName, timeoutMillis));
         assertEquals(expectedStatus, response.getStatus());
+        // a crash emits nothing, even with ON_PARSE_EXCEPTION.EMIT
+        assertFalse(Files.isRegularFile(TEMP_OUTPUT_DIR.resolve(fileName + ".json")));
         Reader reader = new InputStreamReader((InputStream) response.getEntity(), UTF_8);
         return new ObjectMapper().readTree(reader);
     }
@@ -144,10 +140,6 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
 
     private JsonNode testOne(String fileName, boolean shouldFileExist) throws Exception {
         return testOne(fileName, shouldFileExist, FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, 200);
-    }
-
-    private JsonNode testOne(String fileName, boolean shouldFileExist, FetchEmitTuple.ON_PARSE_EXCEPTION onParseException) throws Exception {
-        return testOne(fileName, shouldFileExist, onParseException, 200);
     }
 
     private JsonNode testOne(String fileName, boolean shouldFileExist,

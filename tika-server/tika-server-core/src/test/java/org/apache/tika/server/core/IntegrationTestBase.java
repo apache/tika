@@ -51,6 +51,7 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.ProcessUtils;
+import org.apache.tika.utils.SystemUtils;
 
 // PER_CLASS so subclasses' state (notably TEMP_WORKING_DIR below) is isolated
 // per test class instead of shared via one static field on this common base --
@@ -131,7 +132,9 @@ public class IntegrationTestBase extends TikaTest {
             // We give the OS a moment for the kill to propagate, then list
             // any PipesServer JVMs still alive. Anything that shows up here
             // is an orphan and explains downstream @TempDir cleanup failures.
-            logOrphanPipesServers();
+            if (SystemUtils.IS_OS_WINDOWS) {
+                logOrphanPipesServers();
+            }
         }
     }
 
@@ -253,7 +256,7 @@ public class IntegrationTestBase extends TikaTest {
                 LOG.debug("tika test client failed to connect to server", e);
             }
 
-            Thread.sleep(1000);
+            Thread.sleep(200);
             elapsed = Duration
                     .between(started, Instant.now())
                     .toMillis();
