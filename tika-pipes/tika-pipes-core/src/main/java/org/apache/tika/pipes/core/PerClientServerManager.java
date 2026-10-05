@@ -402,8 +402,8 @@ public class PerClientServerManager implements ServerManager {
             throw new IllegalStateException("Server not started. Call ensureRunning() first.");
         }
 
-        // Accept incoming connection from the server process
-        ss.setSoTimeout(1000); // 1 second timeout for each poll
+        // Accept the server's connection; poll briefly so a child that dies first is noticed fast
+        ss.setSoTimeout(100);
         long startTime = System.currentTimeMillis();
 
         while (true) {

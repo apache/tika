@@ -31,6 +31,12 @@ Release 4.2.0 - unreleased
      SERVER/RESOURCE_TIMING) move from INFO to TRACE, and per-fork-start,
      per-connection and plugin lifecycle lines move to DEBUG (TIKA-4949).
 
+   * Faster parser loading and pipes fork startup: parsers no longer build a
+     default EncodingDetector (loading the charset models) only to have the
+     loader replace it, saving about 1.3s per AutoDetectParser build and per
+     forked JVM; a fork that fails to start is recognized within 100ms instead
+     of 1s (TIKA-4954).
+
 Release 4.1.0 - 9/26/2026
 
   HIGHLIGHTS

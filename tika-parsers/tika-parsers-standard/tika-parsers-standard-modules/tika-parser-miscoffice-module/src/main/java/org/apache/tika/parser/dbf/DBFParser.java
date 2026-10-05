@@ -58,7 +58,6 @@ public class DBFParser implements Parser {
     private static final int ROWS_TO_BUFFER_FOR_CHARSET_DETECTION = 10;
     private static final int MAX_CHARS_FOR_CHARSET_DETECTION = 20000;
     private static final Charset DEFAULT_CHARSET = StandardCharsets.ISO_8859_1;
-    private static final EncodingDetector DEFAULT_ENCODING_DETECTOR = new DefaultEncodingDetector();
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-dbf"));
@@ -144,7 +143,7 @@ public class DBFParser implements Parser {
         if (bytes.length > 20) {
             EncodingDetector detector = parseContext.get(EncodingDetector.class);
             if (detector == null) {
-                detector = DEFAULT_ENCODING_DETECTOR;
+                detector = DefaultDetectorHolder.DETECTOR;
             }
             try (TikaInputStream tis = TikaInputStream.get(bytes)) {
                 List<EncodingResult> results =
@@ -167,5 +166,10 @@ public class DBFParser implements Parser {
         }
         xhtml.endElement("tr");
 
+    }
+
+    // holder: loading the models at class init taxes every JVM that never parses a DBF
+    private static final class DefaultDetectorHolder {
+        private static final EncodingDetector DETECTOR = new DefaultEncodingDetector();
     }
 }
