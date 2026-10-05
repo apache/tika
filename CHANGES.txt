@@ -1,5 +1,10 @@
 Release 4.2.0 - unreleased
 
+   * Forked pipes servers receive their config over stdin instead of reading a file,
+     with env references resolved once in the parent. PipesForkParser and tika-server
+     no longer write a merged config to the temp dir. Per-client forks now present an
+     auth token on connect, as shared-mode forks already did (TIKA-4952).
+
    * Refactor date parsing for more consistent, accurate dates. File-system
      times from archive entries and mail attachments move to fs:created/
      fs:modified. MailDateParser is superseded by TikaDates and MailUtil

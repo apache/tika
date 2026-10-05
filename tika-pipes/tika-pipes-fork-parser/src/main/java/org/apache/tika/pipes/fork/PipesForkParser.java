@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.tika.config.EmbeddedLimits;
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -120,13 +121,12 @@ public class PipesForkParser implements Closeable {
 
     private final PipesForkParserConfig config;
     private final PipesParser pipesParser;
-    private final Path tikaConfigPath;
     private final String internalFetcherId;
 
     /**
      * Creates a new PipesForkParser with default configuration.
      *
-     * @throws IOException if the temporary config file cannot be created
+     * @throws IOException if the user config cannot be read
      * @throws TikaConfigException if configuration is invalid
      */
     public PipesForkParser() throws IOException, TikaConfigException {
@@ -137,17 +137,17 @@ public class PipesForkParser implements Closeable {
      * Creates a new PipesForkParser with the specified configuration.
      *
      * @param config the configuration for this parser
-     * @throws IOException if the temporary config file cannot be created
+     * @throws IOException if the user config cannot be read
      * @throws TikaConfigException if configuration is invalid
      */
     public PipesForkParser(PipesForkParserConfig config) throws IOException, TikaConfigException {
         this.config = config;
         // Jackson-deserialized configs are checked on binding; setter-built ones are checked here.
         config.getPipesConfig().checkPayloadLimits();
-        ConfigMerger.MergeResult mergeResult = createTikaConfigFile();
-        this.tikaConfigPath = mergeResult.configPath();
-        this.internalFetcherId = mergeResult.fetcherId();
-        this.pipesParser = PipesParser.load(tikaConfigPath);
+        ConfigMerger.MergedConfig merged = createTikaConfig();
+        this.internalFetcherId = merged.fetcherId();
+        TikaJsonConfig tikaJsonConfig = merged.load();
+        this.pipesParser = PipesParser.load(tikaJsonConfig, PipesConfig.load(tikaJsonConfig));
     }
 
     /**
@@ -384,23 +384,19 @@ public class PipesForkParser implements Closeable {
     @Override
     public void close() throws IOException {
         pipesParser.close();
-        // Clean up temp config file
-        if (tikaConfigPath != null) {
-            Files.deleteIfExists(tikaConfigPath);
-        }
     }
 
     /**
-     * Creates a temporary tika-config.json file for the forked process.
+     * Builds the tika-config for the forked processes, in memory.
      * <p>
      * Uses ConfigMerger to:
      * - Add a FileSystemFetcher with UUID-based name for absolute path access
      * - Set PASSBACK_ALL emit strategy (no emitter, return results to client)
      * - Merge with user config if provided
      *
-     * @return MergeResult containing the config path and generated fetcher ID
+     * @return the merged config and generated fetcher ID
      */
-    private ConfigMerger.MergeResult createTikaConfigFile() throws IOException {
+    private ConfigMerger.MergedConfig createTikaConfig() throws IOException {
         PipesConfig pc = config.getPipesConfig();
 
         // Build configuration overrides
@@ -436,7 +432,7 @@ public class PipesForkParser implements Closeable {
         ConfigOverrides overrides = builder.build();
 
         // Merge with user config if provided, otherwise create new
-        return ConfigMerger.mergeOrCreate(config.getUserConfigPath(), overrides);
+        return ConfigMerger.merge(config.getUserConfigPath(), overrides);
     }
 
 

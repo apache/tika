@@ -31,6 +31,7 @@ import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 import org.apache.tika.plugins.TikaPluginManager;
 
 public class PipesParser implements Closeable {
@@ -55,7 +56,7 @@ public class PipesParser implements Closeable {
     public static PipesParser load(Path tikaConfigPath) throws IOException, TikaConfigException {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-        return load(tikaJsonConfig, pipesConfig, tikaConfigPath);
+        return load(tikaJsonConfig, pipesConfig);
     }
 
     /**
@@ -64,20 +65,29 @@ public class PipesParser implements Closeable {
      * Use this method when you need to modify the PipesConfig before creating
      * the parser (e.g., to override emit strategy).
      *
-     * @param tikaJsonConfig the pre-loaded JSON configuration
+     * @param tikaJsonConfig the pre-loaded JSON configuration; forked servers receive this
+     *                       config, env references already resolved, over their stdin
      * @param pipesConfig the pipes configuration (may be modified by caller)
-     * @param tikaConfigPath path to the config file (passed to child processes)
      * @return a new PipesParser instance
      * @throws IOException if plugin extraction fails
      */
+    public static PipesParser load(TikaJsonConfig tikaJsonConfig, PipesConfig pipesConfig)
+            throws IOException {
+        TikaPluginManager.preExtractPlugins(tikaJsonConfig);
+        return new PipesParser(pipesConfig, ForkBootstrap.toBytes(tikaJsonConfig));
+    }
+
+    /**
+     * @deprecated forked servers no longer read the config file; use
+     * {@link #load(TikaJsonConfig, PipesConfig)}. {@code tikaConfigPath} is ignored.
+     */
+    @Deprecated
     public static PipesParser load(TikaJsonConfig tikaJsonConfig, PipesConfig pipesConfig,
             Path tikaConfigPath) throws IOException {
-        TikaPluginManager.preExtractPlugins(tikaJsonConfig);
-        return new PipesParser(pipesConfig, tikaConfigPath);
+        return load(tikaJsonConfig, pipesConfig);
     }
 
     private final PipesConfig pipesConfig;
-    private final Path tikaConfigPath;
     private final List<PipesClient> clients = new ArrayList<>();
     private final List<ServerManager> serverManagers = new ArrayList<>();
     // LIFO: the most-recently-returned client is borrowed next, so light traffic
@@ -86,9 +96,8 @@ public class PipesParser implements Closeable {
     private final LinkedBlockingDeque<PipesClient> clientQueue;
     private final boolean isSharedMode;
 
-    private PipesParser(PipesConfig pipesConfig, Path tikaConfigPath) {
+    private PipesParser(PipesConfig pipesConfig, byte[] tikaConfigJson) {
         this.pipesConfig = pipesConfig;
-        this.tikaConfigPath = tikaConfigPath;
         this.isSharedMode = pipesConfig.isUseSharedServer();
         this.clientQueue = new LinkedBlockingDeque<>(pipesConfig.getNumClients());
 
@@ -96,7 +105,7 @@ public class PipesParser implements Closeable {
             // Shared mode: one ServerManager for all clients
             LOG.info("Using shared server mode with {} clients", pipesConfig.getNumClients());
             SharedServerManager sharedManager = new SharedServerManager(
-                    pipesConfig, tikaConfigPath, pipesConfig.getNumClients());
+                    pipesConfig, tikaConfigJson, pipesConfig.getNumClients());
             serverManagers.add(sharedManager);
 
             for (int i = 0; i < pipesConfig.getNumClients(); i++) {
@@ -109,7 +118,7 @@ public class PipesParser implements Closeable {
             LOG.info("Using per-client server mode with {} clients", pipesConfig.getNumClients());
             for (int i = 0; i < pipesConfig.getNumClients(); i++) {
                 PerClientServerManager serverManager = new PerClientServerManager(
-                        pipesConfig, tikaConfigPath, i);
+                        pipesConfig, tikaConfigJson, i);
                 serverManagers.add(serverManager);
 
                 PipesClient client = new PipesClient(pipesConfig, serverManager);

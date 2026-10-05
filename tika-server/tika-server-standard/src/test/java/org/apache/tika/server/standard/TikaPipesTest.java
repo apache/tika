@@ -144,7 +144,7 @@ public class TikaPipesTest extends CXFTestBase {
             TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
             PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
-            pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath);
+            pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
             pipesResource = new PipesResource(pipesParser, pipesConfig);
             rCoreProviders.add(new SingletonResourceProvider(pipesResource));
         } catch (IOException | TikaConfigException e) {
