@@ -36,8 +36,10 @@ import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.Channels;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -70,6 +72,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -78,6 +81,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Parser for various compression formats.
@@ -329,13 +333,18 @@ public class CompressorParser implements Parser {
         if (gzipParameters == null) {
             return false;
         }
+        // MTIME 0 means no timestamp (RFC 1952)
+        Instant mtime = gzipParameters.getModificationInstant();
+        if (mtime != null && mtime.getEpochSecond() != 0 && TikaDates.inYearBounds(mtime)) {
+            metadata.set(FileSystem.MODIFIED, Date.from(mtime));
+        }
         String name = gzipParameters.getFileName();
         if (!StringUtils.isBlank(name)) {
             metadata.set(TikaCoreProperties.INTERNAL_PATH, name);
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
             return true;
         }
-        //TODO: modification, OS, comment
+        //TODO: OS, comment
         return false;
     }
 

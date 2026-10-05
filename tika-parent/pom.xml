@@ -281,7 +281,7 @@
   </contributors>
 
   <properties>
-    <revision>4.1.1-SNAPSHOT</revision>
+    <revision>4.2.0-SNAPSHOT</revision>
     <javaVersion>17</javaVersion>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
@@ -333,8 +333,8 @@
     <forbiddenapis.module.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.74.0</google.cloud.version>
-    <aws2.version>2.55.6</aws2.version>
+    <google.cloud.version>2.75.0</google.cloud.version>
+    <aws2.version>2.55.10</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
@@ -356,7 +356,7 @@
     <commons.exec.version>1.6.0</commons.exec.version>
     <commons.fileupload.version>1.6.0</commons.fileupload.version>
     <commons.io.version>2.22.0</commons.io.version>
-    <commons.lang3.version>3.20.0</commons.lang3.version>
+    <commons.lang3.version>3.21.0</commons.lang3.version>
     <commons.logging.version>1.4.0</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
     <commons.net.version>3.12.0</commons.net.version>
@@ -371,8 +371,8 @@
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.14.0</gson.version>
     <grpc.version>1.84.0</grpc.version>
-    <guava.version>33.7.1-jre</guava.version>
-    <h2.version>2.5.250</h2.version>
+    <guava.version>33.7.2-jre</guava.version>
+    <h2.version>2.5.252</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
     <httpcomponents.version>4.5.14</httpcomponents.version>
     <httpcore.version>4.4.16</httpcore.version>
@@ -385,8 +385,8 @@
     <jackrabbit.version>2.22.4</jackrabbit.version>
     <jackson.version>2.22.3</jackson.version>
     <!-- TIKA-4880: 5.0.1 fails some catalogs 5.0.0 reads ("Did not find required parent table id") -->
-    <jackcess.version>5.0.0</jackcess.version>
-    <jackcess.encrypt.version>5.0.0</jackcess.encrypt.version>
+    <jackcess.version>5.0.2</jackcess.version>
+    <jackcess.encrypt.version>5.0.1</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
     <jakarta.activation.version>2.1.4</jakarta.activation.version>
     <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
@@ -423,7 +423,7 @@
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- can't update to 4 because Apache Ignite needs io.micronaut.core.convert.DefaultConversionService
          which no longer exists in 4.0: https://stackoverflow.com/questions/79937141/    -->
-    <micronaut.version>3.10.12</micronaut.version>
+    <micronaut.version>3.10.13</micronaut.version>
     <mime4j.version>0.8.15</mime4j.version>
     <mockito.version>5.24.0</mockito.version>
     <mockito-junit-jupiter.version>5.24.0</mockito-junit-jupiter.version>
@@ -464,7 +464,7 @@
     <uimaj.cpe.version>3.6.1</uimaj.cpe.version>
     <unit.api.version>2.2</unit.api.version>
     <vorbis.version>0.8</vorbis.version>
-    <woodstox.core.version>7.2.2</woodstox.core.version>
+    <woodstox.core.version>7.3.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.6</zookeeper.version>
     <zstd.version>1.5.7-20</zstd.version>
@@ -854,7 +854,7 @@
       <dependency>
         <groupId>joda-time</groupId>
         <artifactId>joda-time</artifactId>
-        <version>2.14.4</version>
+        <version>2.15.0</version>
       </dependency>
       <dependency>
         <groupId>org.junit.jupiter</groupId>
@@ -1657,7 +1657,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.10.2</version>
+        <version>3.10.3</version>
         <configuration>
           <lineEndings>UNIX</lineEndings>
           <java>
@@ -1841,6 +1841,7 @@
         <checkstyle.configLocation>${session.executionRootDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
         <metadata.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
         <exception.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
+        <xml.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
         <forbiddenapis.module.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
       </properties>
     </profile>

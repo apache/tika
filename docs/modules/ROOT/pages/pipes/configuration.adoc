@@ -26,7 +26,7 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
   "pipes": {
     "numClients": 4,
     "socketTimeoutMillis": 60000,
-    "maxFilesProcessedPerProcess": 10000,
+    "maxFilesProcessedPerProcess": 100000,
     "parseMode": "RMETA",
     "forkedJvmArgs": ["-Xmx512m"]
   }
@@ -52,7 +52,7 @@ how many forked JVMs to run, timeouts, memory management, and parse behavior.
 |Path to the Java executable for forked processes.
 
 |`maxFilesProcessedPerProcess`
-|`10000`
+|`100000`
 |Restart forked processes after this many files. Prevents slow-building memory leaks in parsing libraries.
 
 |`tempDirectory`

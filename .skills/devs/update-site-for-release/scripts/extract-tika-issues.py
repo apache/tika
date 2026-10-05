@@ -41,6 +41,16 @@ changelog.
 """
 import re
 import sys
+import textwrap
+
+_SMALL_WORDS = {"and", "or", "of", "the", "in", "to", "for", "with"}
+
+
+def section_title(caps):
+    """"SERVER, PIPES AND OPERATIONS" -> "Server, Pipes and Operations"."""
+    words = caps.title().split(" ")
+    return " ".join(w if i == 0 or w.lower() not in _SMALL_WORDS else w.lower()
+                    for i, w in enumerate(words))
 
 USAGE = ("Usage: extract-tika-issues.py CHANGES_FILE OUTPUT_FILE RELEASE_VERSION\n"
          "  e.g. extract-tika-issues.py CHANGES-3.3.2.txt out-3.3.2.apt 3.3.2")
@@ -76,11 +86,12 @@ def main():
     #   blank line                  separates entries
     release_re = re.compile(r".*\d{1,2}/\d{1,2}/\d{4}.*")
     bullet_re = re.compile(r"^\s*\*\s+(.*)")
-    # All-caps line = section header. Restricting to A-Z and spaces (no digits,
-    # slashes, or lowercase) keeps wrapped prose from being mistaken for a header.
+    # All-caps line = section header, e.g. "SERVER, PIPES AND OPERATIONS" or
+    # "INFERENCE (EXPERIMENTAL)". No digits or lowercase, so wrapped prose is
+    # never mistaken for a header.
     # NOTE: the old numeric-list heuristic was removed -- it mangled entries
     # containing version numbers ("Port the 4.x SAX-based parsers..." -> "x SAX...").
-    section_re = re.compile(r"^[A-Z][A-Z ]{2,38}$")
+    section_re = re.compile(r"^[A-Z][A-Z ,()/-]{2,48}$")
     SECTION_MARKER = "__SECTION__:"
 
     with open(changesFile, mode="r", encoding="utf-8") as cf:
@@ -113,7 +124,7 @@ def main():
             if issueTxt:
                 versionIssues.append(issueTxt)
                 issueTxt = ""
-            versionIssues.append(SECTION_MARKER + stripped.title())
+            versionIssues.append(SECTION_MARKER + section_title(stripped))
         else:                                          # continuation of current entry
             issueTxt = (issueTxt + " " + stripped) if issueTxt else stripped
 
@@ -136,11 +147,19 @@ def main():
             if issue.startswith(SECTION_MARKER):
                 of.write("* " + issue[len(SECTION_MARKER):] + "\n\n")
                 continue
+            # apt markup chars in prose ("<= 0", "type->parser", "{handlerType}",
+            # "[]", "~35%") must be backslash-escaped, before the links below add
+            # their own braces.
+            out = re.sub(r"([<>{}\[\]~])", r"\\\1", issue)
             out = re.sub(r"TIKA-(\d+)",
-                         r"{{{http://issues.apache.org/jira/browse/TIKA-\1}TIKA-\1}}", issue)
+                         r"{{{http://issues.apache.org/jira/browse/TIKA-\1}TIKA-\1}}", out)
             out = re.sub(r"Github-(\d+)",
                          r"{{{http://github.com/apache/tika/pull/\1}Github-\1}}", out, flags=re.I)
-            of.write("\t * " + out + "\n\n")
+            # Wrap for readable apt source. Never split on hyphens or inside a
+            # long token: a {{{url}text}} link or "text-recognizers" must stay whole.
+            of.write(textwrap.fill(out, width=78, initial_indent="\t * ",
+                                   subsequent_indent="\t   ", break_on_hyphens=False,
+                                   break_long_words=False) + "\n\n")
 
     print(f"Wrote {outputFile} for release {relVersion} "
           f"({len(versionChangeLog[key])} entries). Review & hand-edit before pasting.",

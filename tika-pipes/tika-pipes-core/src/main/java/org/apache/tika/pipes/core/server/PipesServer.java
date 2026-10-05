@@ -131,7 +131,7 @@ public class PipesServer implements AutoCloseable {
             return null;
         }
         if (bytes == 0) {
-            LOG.info("Cache memory budget disabled ({}); per-object 1MB spill threshold applies",
+            LOG.debug("Cache memory budget disabled ({}); per-object 1MB spill threshold applies",
                     source);
             return null;
         }
@@ -141,7 +141,7 @@ public class PipesServer implements AutoCloseable {
             bytes = clamp;
             source += ", clamped to a quarter of max heap";
         }
-        LOG.info("Cache memory budget: {} bytes ({})", bytes, source);
+        LOG.debug("Cache memory budget: {} bytes ({})", bytes, source);
         return new CacheMemoryBudget(bytes);
     }
 
@@ -580,11 +580,11 @@ public class PipesServer implements AutoCloseable {
      * {@code resp_*} is the FINISHED frame's serialize, socket write, and the client-ACK wait.
      */
     private void logTiming(String id) {
-        if (!TIMING_LOG.isInfoEnabled()) {
+        if (!TIMING_LOG.isTraceEnabled()) {
             return;
         }
         PipesWorker w = tLastWorker;
-        TIMING_LOG.info("WORKER_TIMING id={} req_deser_us={} ctx_merge_us={} intermediate_wait_us={}"
+        TIMING_LOG.trace("WORKER_TIMING id={} req_deser_us={} ctx_merge_us={} intermediate_wait_us={}"
                         + " handoff_us={} fetch_us={} parse_us={} emit_us={} worker_wall_us={}"
                         + " intermediate_us={} resp_ser_us={} resp_write_us={} resp_ack_us={}"
                         + " resp_bytes={}",
@@ -747,7 +747,7 @@ public class PipesServer implements AutoCloseable {
     private static void watchParentProcess() {
         String parentPidStr = System.getenv(PARENT_PID_ENV);
         if (parentPidStr == null || parentPidStr.isEmpty()) {
-            LOG.info("{} not set; skipping parent-watch", PARENT_PID_ENV);
+            LOG.warn("{} not set; skipping parent-watch", PARENT_PID_ENV);
             return;
         }
         long parentPid;
@@ -770,7 +770,7 @@ public class PipesServer implements AutoCloseable {
                     parentPid);
             exitParentGone();
         });
-        LOG.info("watching parent pid {} for exit", parentPid);
+        LOG.debug("watching parent pid {} for exit", parentPid);
     }
 
     /** Only when the parent is gone: on the fork's own crash the dir must survive for the parent to read. */
@@ -806,7 +806,7 @@ public class PipesServer implements AutoCloseable {
      *  portable way to resolve that to bytes. The child knows what it actually got. */
     private static void checkUsableHeap() {
         long maxHeapMb = Runtime.getRuntime().maxMemory() / (1024 * 1024);
-        LOG.info("forked JVM max heap: {} MB", maxHeapMb);
+        LOG.debug("forked JVM max heap: {} MB", maxHeapMb);
         if (maxHeapMb < MIN_USABLE_HEAP_BYTES / (1024 * 1024)) {
             LOG.warn("forked JVM max heap is {} MB, below the {} MB needed to parse " +
                             "reliably. Lower pipes.numClients, raise the container memory " +
