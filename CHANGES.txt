@@ -10,6 +10,11 @@ Release 4.2.0 - unreleased
      partial dates (2019 -> 2019-01-01T12:00:00Z) so date fields never
      reject a document (TIKA-4917).
 
+   * Fix a StackOverflowError when parsing or detecting through the Parser and Detector
+     services tika-bundle-standard registers in OSGi: the registered DefaultParser and
+     DefaultDetector no longer consume dynamic services, and a dynamic DefaultParser or
+     DefaultDetector no longer nests another dynamic one (TIKA-4942).
+
    * XmlSecurityContractTest pins XMLReaderUtils' XXE and entity-expansion defenses
      forbidden-apis now rejects building JAXP or Commons Secure XML parsers anywhere but 
      XMLReaderUtils (TIKA-4939).

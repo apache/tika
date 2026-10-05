@@ -21,8 +21,11 @@ import java.util.Hashtable;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceRegistration;
 
+import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.DefaultDetector;
 import org.apache.tika.detect.Detector;
+import org.apache.tika.mime.MediaTypeRegistry;
+import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.parser.DefaultParser;
 import org.apache.tika.parser.Parser;
 
@@ -37,10 +40,11 @@ public class BundleActivator implements org.osgi.framework.BundleActivator {
 
     @Override
     public void start(BundleContext context) throws Exception {
+        //a registered service must not itself consume dynamic services, or it finds itself
+        ServiceLoader loader = new ServiceLoader(BundleActivator.class.getClassLoader(), false);
         detectorService = context.registerService(Detector.class.getName(),
-                new DefaultDetector(BundleActivator.class.getClassLoader()),
-                new Hashtable<>());
-        Parser parser = new DefaultParser(BundleActivator.class.getClassLoader());
+                new DefaultDetector(MimeTypes.getDefaultMimeTypes(), loader), new Hashtable<>());
+        Parser parser = new DefaultParser(MediaTypeRegistry.getDefaultRegistry(), loader);
         parserService = context.registerService(Parser.class.getName(),
                 parser, new Hashtable<>());
     }
