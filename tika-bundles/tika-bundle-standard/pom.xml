@@ -61,11 +61,17 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Test: programmatic Felix container + JUnit 5 -->
+    <!-- Test: programmatic Felix and Equinox containers + JUnit 5 -->
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.framework</artifactId>
       <version>7.0.5</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.platform</groupId>
+      <artifactId>org.eclipse.osgi</artifactId>
+      <version>3.24.300</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -100,6 +106,7 @@
               tika-handler-boilerpipe|
               tika-encoding-detector-*|
               tika-langdetect-*|
+              tika-ml-*|
               jakarta.activation|
               junrar|
               pdfbox-tools|
@@ -116,6 +123,7 @@
               vorbis-java-tika|
               metadata-extractor|
               json-simple|
+              jwarc|
               boilerpipe|
               rome|
               rome-utils|
@@ -290,6 +298,31 @@
               sun.nio.ch;resolution:=optional,
               sun.reflect.generics.reflectiveObjects;resolution:=optional,
               thredds.featurecollection;resolution:=optional,
+              com.adobe.internal.xmp.impl;resolution:=optional,
+              org.apache.pdfbox.debugger;resolution:=optional,
+              <!-- Deployed as separate bundles (see test-bundles.xml): mandatory, so a missing
+                   bundle fails resolution rather than a parse -->
+              com.adobe.internal.xmp;com.adobe.internal.xmp.*,
+              com.dd.plist,
+              com.fasterxml.jackson.core;com.fasterxml.jackson.core.*,
+              com.fasterxml.jackson.databind,
+              org.apache.commons.codec;org.apache.commons.codec.*,
+              org.apache.commons.collections4;org.apache.commons.collections4.*,
+              org.apache.commons.compress;org.apache.commons.compress.*,
+              org.apache.commons.csv,
+              org.apache.commons.exec,
+              <!-- commons-io 2.x also exports a 1.4.9999 compatibility version, which bnd would pick -->
+              org.apache.commons.io;org.apache.commons.io.*;version="${range;[==,+);${commons.io.version}}",
+              org.apache.commons.lang3;org.apache.commons.lang3.*,
+              org.apache.commons.logging,
+              org.apache.commons.math3;org.apache.commons.math3.*,
+              org.apache.fontbox;org.apache.fontbox.*,
+              org.apache.logging.log4j;org.apache.logging.log4j.message;org.apache.logging.log4j.spi;org.apache.logging.log4j.util,
+              org.apache.pdfbox;org.apache.pdfbox.*,
+              org.bouncycastle;org.bouncycastle.*,
+              org.jsoup;org.jsoup.*,
+              org.objectweb.asm,
+              org.tukaani.xz,
               *;resolution:=optional
             </Import-Package>
           </instructions>
@@ -325,12 +358,40 @@
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>${maven.failsafe.version}</version>
+        <!-- Equinox and Felix both ship org.apache.felix.resolver, so one framework per run -->
         <executions>
           <execution>
+            <id>felix</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
+            <configuration>
+              <includes>
+                <include>**/FelixBundleIT.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>org.eclipse.platform:org.eclipse.osgi</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+              <reportNameSuffix>felix</reportNameSuffix>
+            </configuration>
+          </execution>
+          <execution>
+            <id>equinox</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>**/EquinoxBundleIT.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>org.apache.felix:org.apache.felix.framework</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+              <reportNameSuffix>equinox</reportNameSuffix>
+              <summaryFile>${project.build.directory}/failsafe-reports/failsafe-summary-equinox.xml</summaryFile>
+            </configuration>
           </execution>
         </executions>
       </plugin>
