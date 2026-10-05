@@ -314,6 +314,7 @@
 
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
+    <aws2.version>2.55.6</aws2.version>
     <google.cloud.version>2.74.0</google.cloud.version>
     <aws2.version>2.55.10</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
