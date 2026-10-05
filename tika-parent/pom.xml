@@ -333,7 +333,7 @@
     <forbiddenapis.module.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
-    <google.cloud.version>2.74.0</google.cloud.version>
+    <google.cloud.version>2.75.0</google.cloud.version>
     <aws2.version>2.55.6</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
