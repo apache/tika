@@ -39,6 +39,7 @@ import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
+import org.apache.tika.pipes.core.ServerInitializationException;
 import org.apache.tika.pipes.core.config.ConfigMerger;
 import org.apache.tika.pipes.core.config.ConfigOverrides;
 import org.apache.tika.pipes.core.config.DefaultPluginsDir;
@@ -148,6 +149,23 @@ public class PipesForkParser implements Closeable {
         this.tikaConfigPath = mergeResult.configPath();
         this.internalFetcherId = mergeResult.fetcherId();
         this.pipesParser = PipesParser.load(tikaConfigPath);
+    }
+
+    /**
+     * Starts the forked processes now and waits until each is ready, instead of on the first
+     * {@link #parse}. Optional: call it to find out that the forks can't start (bad config,
+     * missing plugins, bad JVM args) before any work is queued.
+     *
+     * @throws PipesForkParserException with status {@code FAILED_TO_INITIALIZE} if a forked
+     *         process fails to start
+     */
+    public void start() throws InterruptedException, PipesForkParserException {
+        try {
+            pipesParser.start();
+        } catch (ServerInitializationException e) {
+            throw new PipesForkParserException(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
+                    "Failed to start forked process: " + e.getMessage(), e);
+        }
     }
 
     /**
