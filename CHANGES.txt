@@ -1,5 +1,8 @@
 Release 4.2.0 - unreleased
 
+   * PipesParser.start() and PipesForkParser.start() bring the forks up before the
+     first parse and fail fast if one can't start (TIKA-4953).
+
    * Refactor date parsing for more consistent, accurate dates. File-system
      times from archive entries and mail attachments move to fs:created/
      fs:modified. MailDateParser is superseded by TikaDates and MailUtil
