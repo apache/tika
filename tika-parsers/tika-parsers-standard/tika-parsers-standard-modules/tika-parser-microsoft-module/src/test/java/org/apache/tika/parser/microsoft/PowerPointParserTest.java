@@ -32,6 +32,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -45,6 +46,8 @@ import org.apache.tika.metadata.TikaPagedText;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
 
+//pins the JVM default locale, which is global: no other class may run alongside
+@Isolated
 public class PowerPointParserTest extends TikaTest {
 
     //POI formats dates with the JVM default locale's digits whatever locale it is given;
