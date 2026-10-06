@@ -56,6 +56,7 @@ import org.apache.tika.pipes.core.ServerManager;
 import org.apache.tika.pipes.core.SharedServerManager;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 import org.apache.tika.pipes.core.reporter.ReporterManager;
 import org.apache.tika.plugins.TikaPluginManager;
 
@@ -76,7 +77,6 @@ public class AsyncProcessor implements Closeable {
     private final ExecutorCompletionService<Integer> executorCompletionService;
     private final ExecutorService executorService;
     private final PipesConfig asyncConfig;
-    private final Path tikaConfigPath;
     private final PipesReporter pipesReporter;
     private final List<ServerManager> serverManagers = new ArrayList<>();
     private final AtomicLong totalProcessed = new AtomicLong(0);
@@ -120,15 +120,16 @@ public class AsyncProcessor implements Closeable {
             throws TikaException, IOException {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         TikaPluginManager.preExtractPlugins(tikaJsonConfig);
-        return new AsyncProcessor(tikaConfigPath, pipesIterator, tikaJsonConfig);
+        return new AsyncProcessor(pipesIterator, tikaJsonConfig);
     }
 
-    private AsyncProcessor(Path tikaConfigPath, PipesIterator pipesIterator,
-            TikaJsonConfig tikaJsonConfig) throws TikaException, IOException {
+    private AsyncProcessor(PipesIterator pipesIterator, TikaJsonConfig tikaJsonConfig)
+            throws TikaException, IOException {
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
-        MetadataFilter metadataFilter = TikaLoader.load(tikaConfigPath).loadMetadataFilters();
+        MetadataFilter metadataFilter = TikaLoader.load(tikaJsonConfig,
+                Thread.currentThread().getContextClassLoader()).loadMetadataFilters();
         this.asyncConfig = PipesConfig.load(tikaJsonConfig);
-        this.tikaConfigPath = tikaConfigPath;
+        byte[] tikaConfigJson = ForkBootstrap.toBytes(tikaJsonConfig);
         this.pipesReporter = ReporterManager.load(tikaPluginManager, tikaJsonConfig);
         LOG.debug("loaded reporter {}", pipesReporter.getClass());
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
@@ -166,7 +167,7 @@ public class AsyncProcessor implements Closeable {
             if (isSharedMode) {
                 LOG.info("Using shared server mode with {} workers", asyncConfig.getNumClients());
                 SharedServerManager sharedManager = new SharedServerManager(
-                        asyncConfig, tikaConfigPath, asyncConfig.getNumClients());
+                        asyncConfig, tikaConfigJson, asyncConfig.getNumClients());
                 serverManagers.add(sharedManager);
 
                 for (int i = 0; i < asyncConfig.getNumClients(); i++) {
@@ -178,7 +179,7 @@ public class AsyncProcessor implements Closeable {
                 LOG.info("Using per-client server mode with {} workers", asyncConfig.getNumClients());
                 for (int i = 0; i < asyncConfig.getNumClients(); i++) {
                     PerClientServerManager serverManager = new PerClientServerManager(
-                            asyncConfig, tikaConfigPath, i);
+                            asyncConfig, tikaConfigJson, i);
                     serverManagers.add(serverManager);
 
                     executorCompletionService.submit(

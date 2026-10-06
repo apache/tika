@@ -78,6 +78,12 @@ jobs:
       # rat runs in its own SERIAL invocation: apache-rat-plugin 0.18 is not
       # thread-safe (ConcurrentModificationException / corrupted counters under
       # -T), so it must never share a -T1C command line.
+      - name: No dot-directories under src/*/resources (the source release excludes **/.*/**)
+        run: |
+          if git ls-files -- '*/src/main/resources/*' '*/src/test/resources/*' | grep -E '/\.[^/]+/'; then
+            echo "::error::dot-directory fixtures are dropped from the source release by assembly.xml; build them at test time instead"
+            exit 1
+          fi
       - name: License check (apache-rat, serial)
         run: |
           mvn apache-rat:check -Pci \

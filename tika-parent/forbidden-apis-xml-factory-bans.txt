@@ -1,0 +1,81 @@
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# TIKA-4939: every XML parser in main code comes from org.apache.tika.utils.XMLReaderUtils,
+# which is pooled, secured and covered by XmlSecurityContractTest. Building one anywhere
+# else bypasses all three. XMLReaderUtils itself is exempted with @SuppressForbidden.
+
+@defaultMessage build XML parsers through org.apache.tika.utils.XMLReaderUtils
+
+javax.xml.parsers.SAXParserFactory#newInstance()
+javax.xml.parsers.SAXParserFactory#newInstance(java.lang.String,java.lang.ClassLoader)
+javax.xml.parsers.SAXParserFactory#newDefaultInstance()
+javax.xml.parsers.SAXParserFactory#newDefaultNSInstance()
+javax.xml.parsers.SAXParserFactory#newNSInstance()
+javax.xml.parsers.SAXParserFactory#newNSInstance(java.lang.String,java.lang.ClassLoader)
+javax.xml.parsers.DocumentBuilderFactory#newInstance()
+javax.xml.parsers.DocumentBuilderFactory#newInstance(java.lang.String,java.lang.ClassLoader)
+javax.xml.parsers.DocumentBuilderFactory#newDefaultInstance()
+javax.xml.parsers.DocumentBuilderFactory#newDefaultNSInstance()
+javax.xml.parsers.DocumentBuilderFactory#newNSInstance()
+javax.xml.parsers.DocumentBuilderFactory#newNSInstance(java.lang.String,java.lang.ClassLoader)
+javax.xml.transform.TransformerFactory#newInstance()
+javax.xml.transform.TransformerFactory#newInstance(java.lang.String,java.lang.ClassLoader)
+javax.xml.transform.TransformerFactory#newDefaultInstance()
+javax.xml.stream.XMLInputFactory#newInstance()
+javax.xml.stream.XMLInputFactory#newFactory()
+javax.xml.stream.XMLInputFactory#newInstance(java.lang.String,java.lang.ClassLoader)
+javax.xml.stream.XMLInputFactory#newFactory(java.lang.String,java.lang.ClassLoader)
+javax.xml.stream.XMLInputFactory#newDefaultFactory()
+javax.xml.xpath.XPathFactory#newInstance()
+javax.xml.xpath.XPathFactory#newInstance(java.lang.String)
+javax.xml.xpath.XPathFactory#newInstance(java.lang.String,java.lang.String,java.lang.ClassLoader)
+javax.xml.xpath.XPathFactory#newDefaultInstance()
+javax.xml.validation.SchemaFactory#newInstance(java.lang.String)
+javax.xml.validation.SchemaFactory#newInstance(java.lang.String,java.lang.String,java.lang.ClassLoader)
+javax.xml.validation.SchemaFactory#newDefaultInstance()
+org.xml.sax.helpers.XMLReaderFactory#createXMLReader()
+org.xml.sax.helpers.XMLReaderFactory#createXMLReader(java.lang.String)
+org.apache.commons.xml.secure.SecureSAXParserFactory#newInstance()
+org.apache.commons.xml.secure.SecureSAXParserFactory#newInstance(java.lang.String,java.lang.ClassLoader)
+org.apache.commons.xml.secure.SecureSAXParserFactory#newNSInstance()
+org.apache.commons.xml.secure.SecureSAXParserFactory#newNSInstance(java.lang.String,java.lang.ClassLoader)
+org.apache.commons.xml.secure.SecureSAXParserFactory#newDefaultInstance()
+org.apache.commons.xml.secure.SecureSAXParserFactory#newDefaultNSInstance()
+org.apache.commons.xml.secure.SecureDocumentBuilderFactory#newInstance()
+org.apache.commons.xml.secure.SecureDocumentBuilderFactory#newInstance(java.lang.String,java.lang.ClassLoader)
+org.apache.commons.xml.secure.SecureDocumentBuilderFactory#newNSInstance()
+org.apache.commons.xml.secure.SecureDocumentBuilderFactory#newNSInstance(java.lang.String,java.lang.ClassLoader)
+org.apache.commons.xml.secure.SecureDocumentBuilderFactory#newDefaultInstance()
+org.apache.commons.xml.secure.SecureDocumentBuilderFactory#newDefaultNSInstance()
+org.apache.commons.xml.secure.SecureTransformerFactory#newInstance()
+org.apache.commons.xml.secure.SecureTransformerFactory#newInstance(java.lang.String,java.lang.ClassLoader)
+org.apache.commons.xml.secure.SecureTransformerFactory#newDefaultInstance()
+org.apache.commons.xml.secure.SecureXMLInputFactory#newFactory()
+org.apache.commons.xml.secure.SecureXMLInputFactory#newInstance()
+org.apache.commons.xml.secure.SecureXMLInputFactory#newFactory(java.lang.String,java.lang.ClassLoader)
+org.apache.commons.xml.secure.SecureXMLInputFactory#newDefaultFactory()
+
+# StAX is deprecated for removal in 5.0 (TIKA-4938); main code must not reintroduce it
+org.apache.tika.utils.XMLReaderUtils#getXMLInputFactory() @ StAX is deprecated; parse with XMLReaderUtils.parseSAX
+org.apache.tika.utils.XMLReaderUtils#getXMLInputFactory(org.apache.tika.parser.ParseContext) @ StAX is deprecated; parse with XMLReaderUtils.parseSAX
+
+# a raw parser honors a caller-supplied EntityResolver, and a resolver that answers with a
+# bare system id makes the parser fetch it (measured on the JDK and standalone Xerces);
+# parseSAX and buildDOM install Tika's resolver and never consult the caller's
+org.apache.tika.utils.XMLReaderUtils#getSAXParser() @ parse with XMLReaderUtils.parseSAX; a raw parser accepts a caller resolver that can fetch external entities
+org.apache.tika.utils.XMLReaderUtils#getXMLReader() @ parse with XMLReaderUtils.parseSAX; a raw reader accepts a caller resolver that can fetch external entities
+org.apache.tika.utils.XMLReaderUtils#getDocumentBuilder() @ parse with XMLReaderUtils.buildDOM, create with newDocument; a raw builder accepts a caller resolver that can fetch external entities
+org.apache.tika.utils.XMLReaderUtils#getDocumentBuilder(org.apache.tika.parser.ParseContext) @ parse with XMLReaderUtils.buildDOM; a raw builder accepts a caller resolver that can fetch external entities

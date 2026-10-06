@@ -25,6 +25,7 @@
 *** xref:using-tika/server/monitoring.adoc[Monitoring with Prometheus]
 ** xref:using-tika/grpc/index.adoc[gRPC]
 ** xref:using-tika/docker.adoc[Running Tika in Docker]
+** xref:using-tika/osgi.adoc[Using Tika in OSGi]
 * xref:pipes/index.adoc[Pipes]
 ** xref:pipes/getting-started.adoc[Getting Started]
 ** xref:pipes/configuration.adoc[Pipeline Configuration]
@@ -90,6 +91,7 @@
 ** xref:advanced/charset-detection-design.adoc[Charset Detection Pipeline]
 ** xref:advanced/zip-detection.adoc[ZIP Detection and Salvaging]
 ** xref:advanced/embedded-documents.adoc[Embedded Document Metadata]
+** xref:advanced/date-handling.adoc[Date Handling]
 ** xref:advanced/local-vlm-server.adoc[Running a Local VLM Server]
 ** Integration Testing
 *** xref:advanced/integration-testing/tika-app.adoc[Testing with Tika App]

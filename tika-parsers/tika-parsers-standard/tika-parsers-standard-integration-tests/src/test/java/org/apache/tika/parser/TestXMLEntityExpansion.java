@@ -20,9 +20,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.nio.charset.StandardCharsets;
-import javax.xml.XMLConstants;
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.commons.xml.secure.SecureSAXParserFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -37,28 +37,6 @@ import org.apache.tika.utils.XMLReaderUtils;
  */
 
 public class TestXMLEntityExpansion extends XMLTestBase {
-
-    private static final byte[] ENTITY_EXPANSION_BOMB = new String(
-            "<!DOCTYPE kaboom [ " + "<!ENTITY a \"1234567890\" > " +
-                    "<!ENTITY b \"&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;\" >" +
-                    "<!ENTITY c \"&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;\" > " +
-                    "<!ENTITY d \"&c;&c;&c;&c;&c;&c;&c;&c;&c;&c;\" > " +
-                    "<!ENTITY e \"&d;&d;&d;&d;&d;&d;&d;&d;&d;&d;\" > " +
-                    "<!ENTITY f \"&e;&e;&e;&e;&e;&e;&e;&e;&e;&e;\" > " +
-                    "<!ENTITY g \"&f;&f;&f;&f;&f;&f;&f;&f;&f;&f;\" > " +
-                    "<!ENTITY h \"&g;&g;&g;&g;&g;&g;&g;&g;&g;&g;\" > " +
-                    "<!ENTITY i \"&h;&h;&h;&h;&h;&h;&h;&h;&h;&h;\" > " +
-                    "<!ENTITY j \"&i;&i;&i;&i;&i;&i;&i;&i;&i;&i;\" > " +
-                    "<!ENTITY k \"&j;&j;&j;&j;&j;&j;&j;&j;&j;&j;\" > " +
-                    "<!ENTITY l \"&k;&k;&k;&k;&k;&k;&k;&k;&k;&k;\" > " +
-                    "<!ENTITY m \"&l;&l;&l;&l;&l;&l;&l;&l;&l;&l;\" > " +
-                    "<!ENTITY n \"&m;&m;&m;&m;&m;&m;&m;&m;&m;&m;\" > " +
-                    "<!ENTITY o \"&n;&n;&n;&n;&n;&n;&n;&n;&n;&n;\" > " +
-                    "<!ENTITY p \"&o;&o;&o;&o;&o;&o;&o;&o;&o;&o;\" > " +
-                    "<!ENTITY q \"&p;&p;&p;&p;&p;&p;&p;&p;&p;&p;\" > " +
-                    "<!ENTITY r \"&q;&q;&q;&q;&q;&q;&q;&q;&q;&q;\" > " +
-                    "<!ENTITY s \"&r;&r;&r;&r;&r;&r;&r;&r;&r;&r;\" > " + "]> " +
-                    "<kaboom>&s;</kaboom>").getBytes(StandardCharsets.UTF_8);
 
     private static void test(String testFileName, byte[] bytes, Parser parser, ParseContext context)
             throws Exception {
@@ -117,11 +95,10 @@ public class TestXMLEntityExpansion extends XMLTestBase {
         // create a new SAXParserFactory
         SAXParserFactory factory = null;
         try {
-            factory = SAXParserFactory.newInstance(provider, null);
+            factory = SecureSAXParserFactory.newInstance(provider, null);
         } catch (Exception e) {
             return;
         }
-        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         context.set(SAXParserFactory.class, factory);
         for (int i = 0; i < XMLReaderUtils.getPoolSize() * 2; i++) {
             test("built-in SAX", injected, AUTO_DETECT_PARSER, context);

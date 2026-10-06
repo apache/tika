@@ -14,9 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.plugins;
 
-/**
- * Apache Tika.
- */
-@aQute.bnd.annotation.Version("2.0.0")
-package org.apache.tika;
+public class TestExtensionFactory implements TikaExtensionFactory<TikaExtension> {
+
+    @Override
+    public String getName() {
+        return "test-extension-factory";
+    }
+
+    @Override
+    public TikaExtension buildExtension(ExtensionConfig extensionConfig) {
+        return null;
+    }
+}

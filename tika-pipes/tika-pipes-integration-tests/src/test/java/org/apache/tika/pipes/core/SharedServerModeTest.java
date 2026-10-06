@@ -104,7 +104,7 @@ public class SharedServerModeTest {
         // Verify shared mode is enabled
         assertTrue(pipesConfig.isUseSharedServer(), "Shared server mode should be enabled");
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             assertTrue(pipesParser.isSharedMode(), "PipesParser should be in shared mode");
 
             PipesResult result = pipesParser.parse(new FetchEmitTuple(
@@ -137,7 +137,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             ExecutorService executor = Executors.newFixedThreadPool(8);
             List<Future<PipesResult>> futures = new ArrayList<>();
 
@@ -183,7 +183,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             // Process files sequentially with the same PipesParser
             for (int i = 1; i <= 3; i++) {
                 String fileName = "file" + i + ".xml";
@@ -213,7 +213,7 @@ public class SharedServerModeTest {
 
         // Create and close parser multiple times to verify graceful shutdown/restart
         for (int iteration = 0; iteration < 3; iteration++) {
-            try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+            try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
                 PipesResult result = pipesParser.parse(new FetchEmitTuple(
                         "test.xml",
                         new FetchKey(FETCHER_NAME, "test.xml"),
@@ -257,7 +257,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath);
+        PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             // Warmup so the shared server is fully started; without this, short
@@ -316,7 +316,7 @@ public class SharedServerModeTest {
         // Verify shared mode is NOT enabled (default)
         assertTrue(!pipesConfig.isUseSharedServer(), "Shared server mode should be disabled by default");
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             assertTrue(!pipesParser.isSharedMode(), "PipesParser should NOT be in shared mode");
 
             PipesResult result = pipesParser.parse(new FetchEmitTuple(
@@ -348,7 +348,7 @@ public class SharedServerModeTest {
         PipesConfig perClientPipesConfig = PipesConfig.load(perClientConfig);
 
         Metadata perClientMetadata;
-        try (PipesParser parser = PipesParser.load(perClientConfig, perClientPipesConfig, perClientConfigPath)) {
+        try (PipesParser parser = PipesParser.load(perClientConfig, perClientPipesConfig)) {
             PipesResult result = parser.parse(new FetchEmitTuple(
                     testFile,
                     new FetchKey(FETCHER_NAME, testFile),
@@ -367,7 +367,7 @@ public class SharedServerModeTest {
         PipesConfig sharedPipesConfig = PipesConfig.load(sharedConfig);
 
         Metadata sharedMetadata;
-        try (PipesParser parser = PipesParser.load(sharedConfig, sharedPipesConfig, sharedConfigPath)) {
+        try (PipesParser parser = PipesParser.load(sharedConfig, sharedPipesConfig)) {
             PipesResult result = parser.parse(new FetchEmitTuple(
                     testFile,
                     new FetchKey(FETCHER_NAME, testFile),
@@ -406,7 +406,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             // First, trigger OOM
             PipesResult oomResult = pipesParser.parse(new FetchEmitTuple(
                     "oom.xml",
@@ -451,7 +451,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             // First, make a request to ensure the server is started (lazy initialization)
             PipesResult warmupResult = pipesParser.parse(new FetchEmitTuple(
                     "warmup.xml",
@@ -511,7 +511,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             for (int i = 0; i < 3; i++) {
                 // Trigger OOM
                 PipesResult oomResult = pipesParser.parse(new FetchEmitTuple(
@@ -557,7 +557,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             ExecutorService executor = Executors.newFixedThreadPool(6);
             List<Future<PipesResult>> futures = new ArrayList<>();
 
@@ -640,7 +640,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             // Trigger timeout
             PipesResult timeoutResult = pipesParser.parse(new FetchEmitTuple(
                     "timeout.xml",
@@ -690,7 +690,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             ExecutorService executor = Executors.newFixedThreadPool(6);
 
             // Phase 1: Submit 5 slow requests + 1 OOM concurrently
@@ -835,7 +835,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             ExecutorService executor = Executors.newFixedThreadPool(6);
             try {
                 List<Future<PipesResult>> futures = new ArrayList<>();

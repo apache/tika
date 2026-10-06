@@ -59,6 +59,10 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-secure-xml</artifactId>
+    </dependency>
 
     <!-- test -->
     <dependency>
@@ -114,6 +118,6 @@
   </build>
 
   <scm>
-    <tag>4.1.0-rc1</tag>
+    <tag>4.1.0-rc2</tag>
   </scm>
 </project>

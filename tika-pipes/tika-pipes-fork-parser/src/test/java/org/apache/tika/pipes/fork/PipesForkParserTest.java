@@ -44,6 +44,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
+import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 
@@ -76,6 +77,35 @@ public class PipesForkParserTest {
     }
 
     @Test
+    public void testClasspathPluginsOnlyWhenOptedIn() throws Exception {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "classpath plugin");
+        Path noPlugins = Files.createDirectories(tempDir.resolve("no-plugins"));
+
+        PipesForkParserConfig optedIn = new PipesForkParserConfig()
+                .setPluginsDir(noPlugins)
+                .addJvmArg("-Dtika.plugins.classpath=true")
+                .addJvmArg("-Xmx256m");
+        try (PipesForkParser parser = new PipesForkParser(optedIn)) {
+            PipesForkResult result = parser.parse(testFile);
+            assertTrue(result.isSuccess(), "Status: " + result.getStatus()
+                    + ", message: " + result.getMessage());
+            assertTrue(result.getContent().contains("classpath plugin"));
+        }
+
+        PipesForkParserConfig zipsOnly = new PipesForkParserConfig()
+                .setPluginsDir(noPlugins)
+                .addJvmArg("-Xmx256m");
+        try (PipesForkParser parser = new PipesForkParser(zipsOnly)) {
+            PipesForkResult result = parser.parse(testFile);
+            assertFalse(result.isSuccess(), "the file-system plugin jar is on the classpath, "
+                    + "but without the opt-in the fork must not find it: " + result.getStatus());
+        } catch (PipesForkParserException | PipesException e) {
+            // fork refused to start without its fetcher: also the right answer
+        }
+    }
+
+    @Test
     public void testParseTextFile() throws Exception {
         // Create a simple test file
         Path testFile = tempDir.resolve("test.txt");
@@ -104,6 +134,108 @@ public class PipesForkParserTest {
             assertNotNull(extractedContent, "Content should not be null");
             assertTrue(extractedContent.contains("Hello"), "Content should contain 'Hello'");
             assertTrue(extractedContent.contains("test document"), "Content should contain 'test document'");
+        }
+    }
+
+    /** TIKA-4932: a Content-Type hint the detector rejected must not replace the detected type. */
+    @Test
+    public void testRejectedContentTypeHintDoesNotOverwriteDetectedType() throws Exception {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "plain text, not a pdf");
+        PipesForkParserConfig config = new PipesForkParserConfig().setPluginsDir(PLUGINS_DIR);
+
+        Metadata hints = new Metadata();
+        hints.set(HttpHeaders.CONTENT_TYPE, "application/pdf");
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis, hints, new ParseContext());
+            assertTrue(result.isSuccess(), "status: " + result.getStatus());
+            String detected = result.getMetadata().get(HttpHeaders.CONTENT_TYPE);
+            assertTrue(detected.startsWith("text/plain"), detected);
+        }
+    }
+
+    /** TIKA-4931: javaPath set in code must reach the process that starts the fork. */
+    @Test
+    public void testJavaPathReachesFork() throws Exception {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "hello");
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setJavaPath(tempDir.resolve("no-such-java").toString());
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkParserException e =
+                    assertThrows(PipesForkParserException.class, () -> parser.parse(tis));
+            assertTrue(e.getMessage().contains("no-such-java"), e.getMessage());
+        }
+    }
+
+    /** TIKA-4931: a code setting equal to the default still overrides the user config file. */
+    @Test
+    public void testStartBeforeFirstParse() throws Exception {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "hello");
+        PipesForkParserConfig config = new PipesForkParserConfig().setPluginsDir(PLUGINS_DIR);
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            parser.start();
+            assertTrue(parser.parse(tis).isSuccess());
+        }
+    }
+
+    /** start() reports a fork that can't start, without a parse to provoke it. */
+    @Test
+    public void testStartFailsFast() throws Exception {
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setJavaPath(tempDir.resolve("no-such-java").toString());
+
+        try (PipesForkParser parser = new PipesForkParser(config)) {
+            PipesForkParserException e = assertThrows(PipesForkParserException.class, parser::start);
+            assertEquals(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, e.getStatus());
+            assertTrue(e.getMessage().contains("no-such-java"), e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExplicitDefaultJavaPathBeatsUserConfig() throws Exception {
+        Path userConfig = tempDir.resolve("user-config.json");
+        Files.writeString(userConfig, "{\"pipes\":{\"javaPath\":\""
+                + tempDir.resolve("no-such-java").toString().replace("\\", "\\\\") + "\"}}");
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "hello");
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setUserConfigPath(userConfig)
+                .setJavaPath("java");
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkResult result = parser.parse(tis);
+            assertTrue(result.isSuccess(), "status: " + result.getStatus());
+        }
+    }
+
+    /** TIKA-4931: javaPath never set in code leaves the user config file's value in force. */
+    @Test
+    public void testUnsetJavaPathLeavesUserConfig() throws Exception {
+        Path userConfig = tempDir.resolve("user-config.json");
+        Files.writeString(userConfig, "{\"pipes\":{\"javaPath\":\""
+                + tempDir.resolve("no-such-java").toString().replace("\\", "\\\\") + "\"}}");
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "hello");
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setUserConfigPath(userConfig);
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            PipesForkParserException e =
+                    assertThrows(PipesForkParserException.class, () -> parser.parse(tis));
+            assertTrue(e.getMessage().contains("no-such-java"), e.getMessage());
         }
     }
 

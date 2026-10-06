@@ -40,7 +40,7 @@ public class PerClientServerManagerLocaleTest {
         PipesConfig pipesConfig = new PipesConfig();
         pipesConfig.setForkedJvmArgs(new ArrayList<>(Arrays.asList(forkedJvmArgs)));
         PerClientServerManager manager =
-                new PerClientServerManager(pipesConfig, tmp.resolve("tika-config.json"), 0);
+                new PerClientServerManager(pipesConfig, new byte[0], 0);
         return Arrays.stream(manager.getCommandline(tmp))
                 .filter(a -> a.startsWith("-Duser.")).toList();
     }

@@ -14,9 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.bundle;
 
-/**
- * IO utilities.
- */
-@aQute.bnd.annotation.Version("2.0.0")
-package org.apache.tika.io;
+import org.osgi.framework.launch.FrameworkFactory;
+
+public class FelixBundleIT extends BundleIT {
+
+    @Override
+    protected FrameworkFactory frameworkFactory() {
+        return new org.apache.felix.framework.FrameworkFactory();
+    }
+}

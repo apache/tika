@@ -235,7 +235,20 @@ public class TikaLoader {
      */
     public static TikaLoader load(Path configPath, ClassLoader classLoader)
             throws TikaConfigException, IOException {
-        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        return load(TikaJsonConfig.load(configPath), classLoader);
+    }
+
+    /**
+     * Creates a Tika loader from an already-loaded configuration.
+     * Global settings are automatically loaded and applied during initialization.
+     *
+     * @param config the configuration
+     * @param classLoader the class loader to use for loading components
+     * @return the Tika loader
+     * @throws TikaConfigException if loading global settings fails
+     */
+    public static TikaLoader load(TikaJsonConfig config, ClassLoader classLoader)
+            throws TikaConfigException, IOException {
         TikaLoader loader = new TikaLoader(config, classLoader);
         loader.init();
         return loader;
@@ -582,7 +595,6 @@ public class TikaLoader {
      *     "maxNumberLength": 500
      *   },
      *   "xml-reader-utils": {
-     *     "maxEntityExpansions": 1000,
      *     "maxNumReuses": 100,
      *     "poolSize": 10
      *   }
@@ -610,6 +622,10 @@ public class TikaLoader {
             GlobalSettings.XmlReaderUtilsConfig xmlReaderUtilsConfig =
                     config.deserialize("xml-reader-utils", GlobalSettings.XmlReaderUtilsConfig.class);
             if (xmlReaderUtilsConfig != null) {
+                if (xmlReaderUtilsConfig.getMaxEntityExpansions() != null) {
+                    LOG.warn("xml-reader-utils.maxEntityExpansions is ignored since 4.2.0; " +
+                            "the JAXP provider's secure-processing limits apply");
+                }
                 globalSettings.setXmlReaderUtils(xmlReaderUtilsConfig);
             }
         }
