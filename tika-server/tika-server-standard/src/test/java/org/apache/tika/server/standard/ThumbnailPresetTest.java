@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -171,10 +172,20 @@ public class ThumbnailPresetTest extends CXFTestBase {
                 .getStatus(), inner);
     }
 
+    /**
+     * @return the embedded documents of the Frictionless package, without its
+     *         datapackage.json and metadata.json
+     */
     private Map<String, byte[]> unpack(String path, String file) throws IOException {
         Response response = put(path, fixture(file));
         assertEquals(200, response.getStatus(), file);
-        return readZipArchiveBytes((InputStream) response.getEntity());
+        Map<String, byte[]> unpacked = new LinkedHashMap<>();
+        readZipArchiveBytes((InputStream) response.getEntity()).forEach((name, bytes) -> {
+            if (name.startsWith("unpacked/")) {
+                unpacked.put(name, bytes);
+            }
+        });
+        return unpacked;
     }
 
     private Response put(String path, InputStream body) {
