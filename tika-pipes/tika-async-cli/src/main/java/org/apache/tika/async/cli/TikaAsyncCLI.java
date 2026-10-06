@@ -85,10 +85,9 @@ public class TikaAsyncCLI {
         options.addOption(null, "concatenate", false, "concatenate content from all embedded documents into a single content field");
         options.addOption(null, "content-only", false, "output only extracted content (no metadata, no JSON wrapper); implies --concatenate");
         options.addOption(null, "unpack-format", true,
-                "output format for unpacking: REGULAR (default) or FRICTIONLESS");
+                "output format for unpacking: FRICTIONLESS (default) or REGULAR");
         options.addOption(null, "unpack-mode", true,
-                "output mode for unpacking: ZIPPED (default) or DIRECTORY; DIRECTORY when "
-                        + "--unpack-format FRICTIONLESS is given with no mode");
+                "output mode for unpacking: DIRECTORY (default: loose files) or ZIPPED");
         options.addOption(null, "unpack-include-metadata", false,
                 "metadata for every extracted file: a Frictionless package carries metadata.json "
                         + "by default; this adds per-file sidecars to REGULAR zip output");
@@ -406,14 +405,11 @@ public class TikaAsyncCLI {
         config.setZeroPadName(8);
         config.setKeyBaseStrategy(UnpackConfig.KEY_BASE_STRATEGY.DEFAULT);
 
-        // Command-line flags win over the file
+        // Packaging is the CLI's too: loose files unless --unpack-mode asks for a zip
+        config.setOutputMode(UnpackConfig.OUTPUT_MODE.DIRECTORY);
+
         if (asyncConfig.getUnpackFormat() != null) {
             config.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.valueOf(asyncConfig.getUnpackFormat()));
-            // Loose files are what -z otherwise writes; a zip only when asked for
-            if (asyncConfig.getUnpackMode() == null
-                    && config.getOutputFormat() == UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS) {
-                config.setOutputMode(UnpackConfig.OUTPUT_MODE.DIRECTORY);
-            }
         }
         if (asyncConfig.getUnpackMode() != null) {
             config.setOutputMode(UnpackConfig.OUTPUT_MODE.valueOf(asyncConfig.getUnpackMode()));

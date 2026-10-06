@@ -343,6 +343,7 @@ public class UnpackModeTest {
             // Configure UnpackConfig for zip output
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);
             unpackConfig.setZipEmbeddedFiles(true);
             unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
             parseContext.set(UnpackConfig.class, unpackConfig);
@@ -396,6 +397,7 @@ public class UnpackModeTest {
             // Configure UnpackConfig for zip output with metadata
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);
             unpackConfig.setZipEmbeddedFiles(true);
             unpackConfig.setIncludeMetadataInZip(true);
             unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
@@ -450,6 +452,7 @@ public class UnpackModeTest {
             // Configure UnpackConfig for zip output with original document
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);
             unpackConfig.setZipEmbeddedFiles(true);
             unpackConfig.setIncludeOriginal(true);
             unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
@@ -503,6 +506,7 @@ public class UnpackModeTest {
 
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
+            unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);
             unpackConfig.setZipEmbeddedFiles(true);
             parseContext.set(UnpackConfig.class, unpackConfig);
 
@@ -546,6 +550,7 @@ public class UnpackModeTest {
             UnpackConfig unpackConfig = new UnpackConfig();
             unpackConfig.setEmitter(emitterName);
             unpackConfig.setMaxUnpackBytes(10L);  // Only allow 10 bytes total
+            unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.DIRECTORY);
             parseContext.set(UnpackConfig.class, unpackConfig);
 
             PipesResult pipesResult = pipesClient.process(
@@ -563,7 +568,7 @@ public class UnpackModeTest {
         // or that they were truncated
         long totalBytesWritten = Files.walk(outputDir)
                 .filter(Files::isRegularFile)
-                .filter(p -> !p.toString().endsWith(".json"))  // Exclude metadata JSON
+                .filter(p -> p.toString().replace('\\', '/').contains("/unpacked/"))
                 .mapToLong(p -> {
                     try {
                         return Files.size(p);

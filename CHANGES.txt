@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * Unpack output is a Frictionless Data Package by default on every surface: tika-server
+     /unpack, tika-app -z/-Z and pipes UNPACK mode. Set unpack-config.outputFormat to REGULAR
+     (--unpack-format=REGULAR) for the pre-4.2 flat layout (TIKA-4681).
+
    * Pipes plugins load only from the zips in plugin-roots; a plugin jar on the classpath
      needs -Dtika.plugins.classpath=true, which PipesForkParser sets on its fork when it
      has no plugins directory. Dev mode loads an exploded target/classes (TIKA-4918).

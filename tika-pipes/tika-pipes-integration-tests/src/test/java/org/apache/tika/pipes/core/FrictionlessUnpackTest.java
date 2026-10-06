@@ -83,6 +83,38 @@ public class FrictionlessUnpackTest {
         return new PipesClient(pipesConfig, tikaConfigPath);
     }
 
+    /** TIKA-4681: an UnpackConfig that says nothing about format is a Frictionless package. */
+    @Test
+    public void testDefaultFormatIsFrictionless(@TempDir Path tmp) throws Exception {
+        Path outputDir = tmp.resolve("output");
+        Files.createDirectories(outputDir);
+
+        try (PipesClient pipesClient = init(tmp, TEST_DOC_WITH_EMBEDDED)) {
+            ParseContext parseContext = new ParseContext();
+            parseContext.set(ParseMode.class, ParseMode.UNPACK);
+            UnpackConfig unpackConfig = new UnpackConfig();
+            unpackConfig.setEmitter(EMITTER_NAME);
+            parseContext.set(UnpackConfig.class, unpackConfig);
+
+            PipesResult pipesResult = pipesClient.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(EMITTER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            assertTrue(pipesResult.isSuccess(), "Status: " + pipesResult.status()
+                    + ", Message: " + pipesResult.message());
+        }
+
+        List<String> names = Files.list(outputDir).map(p -> p.getFileName().toString()).toList();
+        assertTrue(names.contains(TEST_DOC_WITH_EMBEDDED + "-frictionless.zip"), names.toString());
+        assertFalse(names.contains(TEST_DOC_WITH_EMBEDDED + "-embedded.zip"), names.toString());
+        try (ZipFile zip = new ZipFile(outputDir.resolve(TEST_DOC_WITH_EMBEDDED + "-frictionless.zip").toFile())) {
+            assertNotNull(zip.getEntry("datapackage.json"));
+            assertNotNull(zip.getEntry("metadata.json"), "a package carries metadata.json by default");
+        }
+    }
+
     @Test
     public void testFrictionlessZippedOutput(@TempDir Path tmp) throws Exception {
         // Test that FRICTIONLESS format with ZIPPED output mode creates correct structure

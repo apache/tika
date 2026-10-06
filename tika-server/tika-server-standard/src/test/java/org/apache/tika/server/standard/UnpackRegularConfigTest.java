@@ -28,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,9 +37,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
-import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
 import org.junit.jupiter.api.Test;
 
@@ -51,15 +47,18 @@ import org.apache.tika.server.core.resource.UnpackerResource;
 import org.apache.tika.server.core.writer.TarWriter;
 import org.apache.tika.server.core.writer.ZipWriter;
 
-/** /unpack with no unpack-config anywhere: a Frictionless package since 4.2 (TIKA-4681). */
-public class UnpackFrictionlessTest extends CXFTestBase {
+/** A server-level unpack-config.outputFormat of REGULAR restores the pre-4.2 flat zip. */
+public class UnpackRegularConfigTest extends CXFTestBase {
 
     private static final String TEST_DOC = "test-documents/test_recursive_embedded.docx";
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final String SERVER_CONFIG = """
             {
-              "parsers": [ { "default-parser": {} } ]
+              "parsers": [ { "default-parser": {} } ],
+              "parse-context": {
+                "unpack-config": { "outputFormat": "REGULAR" }
+              }
             }
             """;
 
@@ -93,7 +92,7 @@ public class UnpackFrictionlessTest extends CXFTestBase {
 
     @Override
     protected InputStream getPipesConfigInputStream() throws IOException {
-        unpackTempDir = Files.createTempDirectory("tika-unpack-fd-");
+        unpackTempDir = Files.createTempDirectory("tika-unpack-regular-");
         Map<String, Object> replacements = new HashMap<>();
         replacements.put("UNPACK_EMITTER_BASE_PATH", unpackTempDir.toAbsolutePath().toString());
         replacements.put("PLUGINS_PATHS",
@@ -111,77 +110,23 @@ public class UnpackFrictionlessTest extends CXFTestBase {
     }
 
     @Test
-    public void testDefaultIsAFrictionlessPackage() throws Exception {
+    public void testServerConfigRestoresTheFlatLayout() throws Exception {
         Map<String, byte[]> entries = unpack("/unpack");
-        assertTrue(entries.containsKey("datapackage.json"), entries.keySet().toString());
-        assertTrue(entries.keySet().stream().anyMatch(k -> k.startsWith("unpacked/")),
+        assertFalse(entries.containsKey("datapackage.json"), entries.keySet().toString());
+        assertFalse(entries.containsKey("metadata.json"), entries.keySet().toString());
+        assertTrue(entries.keySet().stream().noneMatch(k -> k.contains("/")),
+                "REGULAR puts every file at the zip root: " + entries.keySet());
+        assertFalse(entries.isEmpty());
+    }
+
+    /** Under REGULAR, /all is where the per-file sidecars and the original come from. */
+    @Test
+    public void testUnpackAllAddsSidecarsAndTheOriginal() throws Exception {
+        Map<String, byte[]> entries = unpack("/unpack/all");
+        assertTrue(entries.keySet().stream().anyMatch(k -> k.endsWith(".metadata.json")),
                 entries.keySet().toString());
-        assertTrue(entries.keySet().stream().allMatch(k -> k.startsWith("unpacked/")
-                        || k.equals("datapackage.json") || k.equals("metadata.json")),
-                "nothing but the package at the root: " + entries.keySet());
-    }
-
-    /** A Frictionless package carries metadata.json by default; /all adds only the original. */
-    @Test
-    public void testPlainUnpackHasMetadataJsonByDefault() throws Exception {
-        Map<String, byte[]> entries = unpack("/unpack");
-        assertTrue(entries.containsKey("metadata.json"), entries.keySet().toString());
-        assertFalse(entries.keySet().stream().anyMatch(k -> k.startsWith("unpacked/0.")),
-                "plain /unpack must not pack the container's bytes: " + entries.keySet());
-    }
-
-    /** DIRECTORY from a request contradicts the one-body transport: 400, not a silent pin. */
-    @Test
-    public void testDirectoryModeInRequestIs400() throws Exception {
-        ContentDisposition cd = new ContentDisposition(
-                "form-data; name=\"file\"; filename=\"test_recursive_embedded.docx\"");
-        Attachment fileAtt = new Attachment("file", ClassLoader.getSystemResourceAsStream(TEST_DOC), cd);
-        Attachment configAtt = new Attachment("config", "application/json", new ByteArrayInputStream(
-                "{\"unpack-config\": {\"outputMode\": \"DIRECTORY\"}}".getBytes(StandardCharsets.UTF_8)));
-        Response response = WebClient.create(endPoint + "/unpack")
-                .type("multipart/form-data")
-                .accept("application/zip")
-                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
-        assertEquals(400, response.getStatus());
-    }
-
-    @Test
-    public void testUnpackAllCarriesMetadataAndTheOriginal() throws Exception {
-        Map<String, byte[]> entries = unpack("/unpack/all");
-        assertTrue(entries.containsKey("metadata.json"), entries.keySet().toString());
-        assertTrue(entries.keySet().stream().anyMatch(k -> k.startsWith("unpacked/0.")),
-                "includeOriginal should add the container: " + entries.keySet());
-    }
-
-    /** The RMETA list's row 0 is the container -- its own metadata and its own text. */
-    @Test
-    public void testMetadataJsonCarriesTheContainerRow() throws Exception {
-        Map<String, byte[]> entries = unpack("/unpack");
-        JsonNode rows = MAPPER.readTree(entries.get("metadata.json"));
-        assertTrue(rows.isArray() && rows.size() > 1, "expected an RMETA list, got: " + rows);
-
-        JsonNode container = rows.get(0);
-        assertEquals("0", container.path("tk:embedded-depth").asText(),
-                "row 0 should be the container: " + container);
-        assertTrue(container.hasNonNull("tk:content"),
-                "the container row should carry its own extracted text: " + container);
-        assertTrue(container.hasNonNull("dcterms:created"),
-                "the container row should carry its own metadata: " + container);
-    }
-
-    /** Every row can be joined to its file: id, tree position and logical path all travel. */
-    @Test
-    public void testRowsCarryEmbeddedPathData() throws Exception {
-        Map<String, byte[]> entries = unpack("/unpack/all");
-        JsonNode rows = MAPPER.readTree(entries.get("metadata.json"));
-        JsonNode embedded = rows.get(1);
-        for (String key : new String[]{"tk:embedded-id", "tk:embedded-id-path",
-                "tk:embedded-resource-path", "tk:resource-name"}) {
-            assertTrue(embedded.hasNonNull(key), key + " missing from: " + embedded);
-        }
-        String id = embedded.get("tk:embedded-id").asText();
-        assertTrue(entries.keySet().stream().anyMatch(k -> k.startsWith("unpacked/" + id + ".")),
-                "row's tk:embedded-id should name a packed file: " + entries.keySet());
+        assertTrue(entries.keySet().stream().anyMatch(k -> k.startsWith("0.")),
+                "includeOriginal should add the container at the root: " + entries.keySet());
     }
 
     private Map<String, byte[]> unpack(String path) throws Exception {

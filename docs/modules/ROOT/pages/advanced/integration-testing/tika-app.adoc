@@ -328,27 +328,30 @@ java -jar tika-app.jar -a --config=/tmp/tika-app-test/my-config.json
 
 *Expected:* Same as Test 21 but using explicit async flag.
 
-=== Test 23: Unpack with Frictionless Format
+=== Test 23: Unpack (Frictionless package, the default)
 
 [source,bash]
 ----
 mkdir -p /tmp/tika-app-test/frictionless-out
-java -jar tika-app.jar -Z --extract-dir=/tmp/tika-app-test/frictionless-out --unpack-format=FRICTIONLESS --unpack-include-metadata test_recursive_embedded.docx
-ls /tmp/tika-app-test/frictionless-out
+java -jar tika-app.jar -Z --extract-dir=/tmp/tika-app-test/frictionless-out test_recursive_embedded.docx
+ls -R /tmp/tika-app-test/frictionless-out
 ----
 
-*Expected:* Extracts embedded files in Frictionless data package format with metadata.json.
+*Expected:* `test_recursive_embedded.docx.json` plus a `test_recursive_embedded.docx/`
+directory holding `datapackage.json`, `metadata.json` and `unpacked/`.
 
-=== Test 24: Unpack to Directory (not zipped)
+=== Test 24: Unpack zipped, and the pre-4.2 flat layout
 
 [source,bash]
 ----
-mkdir -p /tmp/tika-app-test/unpack-dir-out
-java -jar tika-app.jar -Z --extract-dir=/tmp/tika-app-test/unpack-dir-out --unpack-mode=DIRECTORY test_recursive_embedded.docx
-ls -R /tmp/tika-app-test/unpack-dir-out
+mkdir -p /tmp/tika-app-test/unpack-zip-out /tmp/tika-app-test/unpack-regular-out
+java -jar tika-app.jar -Z --extract-dir=/tmp/tika-app-test/unpack-zip-out --unpack-mode=ZIPPED test_recursive_embedded.docx
+java -jar tika-app.jar -Z --extract-dir=/tmp/tika-app-test/unpack-regular-out --unpack-format=REGULAR test_recursive_embedded.docx
+ls -R /tmp/tika-app-test/unpack-zip-out /tmp/tika-app-test/unpack-regular-out
 ----
 
-*Expected:* Extracts embedded files to directory structure instead of zipped.
+*Expected:* One `test_recursive_embedded.docx-frictionless.zip` in the first directory;
+loose files under `test_recursive_embedded.docx-embed/` with no manifest in the second.
 
 === Test 25: Batch with Multiple Workers
 

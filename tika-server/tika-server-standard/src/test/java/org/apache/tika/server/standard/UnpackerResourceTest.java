@@ -178,11 +178,8 @@ public class UnpackerResourceTest extends CXFTestBase {
                 .toList();
         assertEquals(2, wavFiles.size(), "Should have 2 WAV files");
 
-        // With saveAll=true, metadata JSON files should be included
-        List<String> metadataFiles = data.keySet().stream()
-                .filter(k -> k.endsWith(".metadata.json"))
-                .toList();
-        assertTrue(metadataFiles.size() >= 2, "Should have metadata JSON files for each embedded doc");
+        assertTrue(data.containsKey("metadata.json"),
+                "/all carries the parse as metadata.json. Entries: " + data.keySet());
     }
 
     @Test
@@ -277,7 +274,6 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     @Test
     public void testMetadataJsonIncluded() throws Exception {
-        // Test that /unpack/all includes metadata JSON files
         Response response = WebClient
                 .create(endPoint + ALL_PATH)
                 .type(APPLICATION_MSWORD)
@@ -286,14 +282,9 @@ public class UnpackerResourceTest extends CXFTestBase {
 
         Map<String, byte[]> data = readZipArchiveBytes((InputStream) response.getEntity());
 
-        // Should have metadata JSON files
-        List<String> metadataFiles = data.keySet().stream()
-                .filter(k -> k.endsWith(".metadata.json"))
-                .toList();
-        assertFalse(metadataFiles.isEmpty(), "Should have metadata JSON files");
-
-        // Verify the JSON contains expected metadata fields
-        String metadataJson = new String(data.get(metadataFiles.get(0)), StandardCharsets.UTF_8);
+        byte[] metadata = data.get("metadata.json");
+        assertNotNull(metadata, "Should have metadata.json. Entries: " + data.keySet());
+        String metadataJson = new String(metadata, StandardCharsets.UTF_8);
         assertTrue(metadataJson.contains("Content-Type"), "Metadata JSON should contain Content-Type");
     }
 
@@ -466,8 +457,9 @@ public class UnpackerResourceTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
 
-        // With maxCount=1, should only have 1 embedded document
-        assertEquals(1, data.size(), "Should have exactly 1 embedded document with maxCount=1");
+        long unpacked = data.keySet().stream().filter(k -> k.startsWith("unpacked/")).count();
+        assertEquals(1, unpacked, "Should have exactly 1 embedded document with maxCount=1. Entries: "
+                + data.keySet());
     }
 
     /**
@@ -637,15 +629,20 @@ public class UnpackerResourceTest extends CXFTestBase {
      */
     @Test
     public void testRegularAllContainerAppearsOnce() throws Exception {
+        String configJson = """
+                { "parse-context": { "unpack-config": { "outputFormat": "REGULAR" } } }
+                """;
         ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"Doc1_ole.doc\"");
         Attachment fileAtt = new Attachment("file",
                 ClassLoader.getSystemResourceAsStream(TEST_DOC_WAV), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
 
         Response response = WebClient
                 .create(endPoint + ALL_PATH)
                 .type("multipart/form-data")
                 .accept("application/zip")
-                .post(new MultipartBody(Arrays.asList(fileAtt)));
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
 
         assertEquals(200, response.getStatus());
         Map<String, String> data = readZipArchive((InputStream) response.getEntity());
