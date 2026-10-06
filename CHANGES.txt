@@ -1,5 +1,17 @@
 Release 4.2.0 - unreleased
 
+   * tika-bundle-standard no longer embeds dependencies that are OSGi bundles
+     themselves (commons-*, pdfbox, fontbox, bouncycastle, jsoup, asm, xz, xmpcore,
+     dd-plist); deploy them alongside it (TIKA-4934). Its imports of those packages,
+     plus log4j-api and jackson, are now mandatory, so a missing bundle fails
+     resolution instead of silently dropping parsers; tika-ml-core and jwarc are now
+     embedded, along with tika-ml-junkdetect. The bundle now registers its
+     EncodingDetector, LanguageDetector and MetadataFilter providers, so tika-core's
+     defaults match the classpath. Restores OOXMLParser, HttpParser, GeoGebraParser and
+     charset detection in OSGi, which had fallen back to BOM and declared charsets
+     only. The bundle now declares its real Java requirement (JavaSE 17, not 1.8)
+     and drops 67 imports of packages it never referenced (TIKA-4955).
+     
    * PipesParser.start() and PipesForkParser.start() bring the forks up before the
      first parse and fail fast if one can't start (TIKA-4953).
 
