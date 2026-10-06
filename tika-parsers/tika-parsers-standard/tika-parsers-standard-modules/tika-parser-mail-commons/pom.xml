@@ -28,19 +28,14 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-parser-mail-commons</artifactId>
-  <name>Apache Tika mail commons</name>
+  <name>Apache Tika mail commons (deprecated, removed in 4.3.0)</name>
 
 
   <dependencies>
     <dependency>
-      <groupId>org.apache.james</groupId>
-      <artifactId>apache-mime4j-core</artifactId>
-      <version>${mime4j.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.james</groupId>
-      <artifactId>apache-mime4j-dom</artifactId>
-      <version>${mime4j.version}</version>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-parser-mail-module</artifactId>
+      <version>${project.version}</version>
     </dependency>
   </dependencies>
   <build>
@@ -59,6 +54,6 @@
     </plugins>
   </build>
   <scm>
-    <tag>4.1.0-rc1</tag>
+    <tag>4.1.0-rc2</tag>
   </scm>
 </project>

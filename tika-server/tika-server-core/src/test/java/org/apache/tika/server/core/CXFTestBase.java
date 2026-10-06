@@ -284,7 +284,7 @@ public abstract class CXFTestBase {
             }
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
             this.pipesParser = sharesWorker() ? sharedPipesParser(tikaJsonConfig, pipesConfig)
-                    : PipesParser.load(tikaJsonConfig, pipesConfig, this.pipesConfigPath);
+                    : PipesParser.load(tikaJsonConfig, pipesConfig);
             PipesParsingHelper pipesParsingHelper = new PipesParsingHelper(this.pipesParser, pipesConfig,
                     inputTempDirectory, getUnpackEmitterBasePath());
 
@@ -322,7 +322,7 @@ public abstract class CXFTestBase {
         synchronized (CXFTestBase.class) {
             SharedWorker w = SHARED_WORKERS.get(key);
             if (w == null) {
-                w = new SharedWorker(PipesParser.load(tikaJsonConfig, pipesConfig, pipesConfigPath),
+                w = new SharedWorker(PipesParser.load(tikaJsonConfig, pipesConfig),
                         pipesConfigPath);
                 SHARED_WORKERS.put(key, w);
                 LOG.info("shared pipes worker: new for {}", getClass().getSimpleName());

@@ -110,7 +110,7 @@ public class SharedServerModeTest {
         assertFalse(perClientPipesConfig.isUseSharedServer(), "Shared server mode should be disabled by default");
 
         Metadata perClientMetadata;
-        try (PipesParser parser = PipesParser.load(perClientConfig, perClientPipesConfig, perClientConfigPath)) {
+        try (PipesParser parser = PipesParser.load(perClientConfig, perClientPipesConfig)) {
             assertFalse(parser.isSharedMode(), "PipesParser should NOT be in shared mode");
             PipesResult result = parse(parser, testFile);
             assertTrue(result.isSuccess(), "Parse should succeed in per-client mode");
@@ -123,7 +123,7 @@ public class SharedServerModeTest {
         PipesConfig sharedPipesConfig = PipesConfig.load(sharedConfig);
         assertTrue(sharedPipesConfig.isUseSharedServer(), "Shared server mode should be enabled");
 
-        try (PipesParser pipesParser = PipesParser.load(sharedConfig, sharedPipesConfig, sharedConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(sharedConfig, sharedPipesConfig)) {
             assertTrue(pipesParser.isSharedMode(), "PipesParser should be in shared mode");
 
             PipesResult result = parse(pipesParser, testFile);
@@ -191,7 +191,7 @@ public class SharedServerModeTest {
 
         // Create and close parser multiple times to verify graceful shutdown/restart
         for (int iteration = 0; iteration < 2; iteration++) {
-            try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+            try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
                 PipesResult result = pipesParser.parse(new FetchEmitTuple(
                         "test.xml",
                         new FetchKey(FETCHER_NAME, "test.xml"),
@@ -235,7 +235,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath);
+        PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
             // Warmup so the shared server is fully started; without this, short
@@ -296,7 +296,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             assertTrue(parse(pipesParser, "warmup.xml").isSuccess(), "warmup should succeed");
             int port = pipesParser.getCurrentServerPort();
             assertTrue(port > 0, "should have a port after warmup");
@@ -334,7 +334,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             // Trigger timeout
             PipesResult timeoutResult = pipesParser.parse(new FetchEmitTuple(
                     "timeout.xml",
@@ -384,7 +384,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             ExecutorService executor = Executors.newFixedThreadPool(6);
 
             // Phase 1: Submit 5 slow requests + 1 OOM concurrently
@@ -530,7 +530,7 @@ public class SharedServerModeTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             ExecutorService executor = Executors.newFixedThreadPool(6);
             try {
                 List<Future<PipesResult>> futures = new ArrayList<>();

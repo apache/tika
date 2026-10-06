@@ -144,7 +144,7 @@ public class SharedServerChaosMonkeyTest {
         AtomicInteger observedCrash = new AtomicInteger(0);
         AtomicInteger collateralDamage = new AtomicInteger(0); // OK files that failed due to concurrent crash
 
-        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             assertTrue(pipesParser.isSharedMode(), "Should be in shared mode");
 
             ExecutorService executor = Executors.newFixedThreadPool(8);

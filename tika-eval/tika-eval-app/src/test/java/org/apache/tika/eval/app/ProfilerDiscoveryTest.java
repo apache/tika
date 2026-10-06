@@ -41,7 +41,7 @@ public class ProfilerDiscoveryTest {
     @Test
     public void testDiscoversRunInfoAndSkipsItInCrawl(@TempDir Path tmp) throws Exception {
         Path db = tmp.resolve("db");
-        ExtractProfileRunner.main(new String[]{"-e", testDirs().resolve("extractsB").toString(), "-d", db.toAbsolutePath().toString()});
+        ExtractProfileRunner.main(new String[]{"-e", RunInfoFixture.extractsBWithRunInfo(tmp).toString(), "-d", db.toAbsolutePath().toString()});
         try (Connection c = new H2Util(db).getConnection(); Statement st = c.createStatement()) {
             assertEquals("run-b1", one(st, "select run_value from run_info where run_key='batch.run.id'"));
             assertEquals("EMIT_SUCCESS", one(st, "select pipes_status from containers where file_path='file1.pdf'"));

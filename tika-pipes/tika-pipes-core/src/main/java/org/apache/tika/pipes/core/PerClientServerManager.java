@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -35,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaExtras;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ProcessUtils;
 
@@ -46,13 +48,16 @@ import org.apache.tika.utils.ProcessUtils;
  * <p>
  * Connection model: The client creates a ServerSocket and the server connects TO it.
  * This is the reverse of typical client-server patterns but allows the client to
- * control the port assignment.
+ * control the port assignment. The config and a per-process auth token go to the
+ * server on its stdin ({@link ForkBootstrap}); the server presents the token as the
+ * first bytes of its connection.
  */
 public class PerClientServerManager implements ServerManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(PerClientServerManager.class);
     private static final long WAIT_ON_DESTROY_MS = 10000;
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
+    private static final int TOKEN_READ_TIMEOUT_MS = 10000;
     /** Cores reserved for the parent JVM when auto-sizing forked JVMs'
      *  -XX:ActiveProcessorCount. The parent has client-side serialization,
      *  response deserialization, and heartbeat bookkeeping; if it's CPU-starved
@@ -184,12 +189,13 @@ public class PerClientServerManager implements ServerManager {
 
 
     private final PipesConfig pipesConfig;
-    private final Path tikaConfigPath;
+    private final byte[] tikaConfigJson;
     private final int clientId;
 
     private volatile Process process;
     private volatile ServerSocket serverSocket;
     private volatile Path tmpDir;
+    private volatile byte[] token;
     private volatile int port = -1;
     private long filesProcessed = 0;
     private volatile long generation;
@@ -199,9 +205,13 @@ public class PerClientServerManager implements ServerManager {
     // process after the manager has been torn down (which would leak the child).
     private volatile boolean closed = false;
 
-    public PerClientServerManager(PipesConfig pipesConfig, Path tikaConfigPath, int clientId) {
+    /**
+     * @param tikaConfigJson the parent's resolved config, from {@link ForkBootstrap#toBytes};
+     *                       handed to every fork this manager starts
+     */
+    public PerClientServerManager(PipesConfig pipesConfig, byte[] tikaConfigJson, int clientId) {
         this.pipesConfig = pipesConfig;
-        this.tikaConfigPath = tikaConfigPath;
+        this.tikaConfigJson = tikaConfigJson;
         this.clientId = clientId;
         // Emit CPU-sizing diagnostics once per PipesParser (only on the first client).
         if (clientId == 0) {
@@ -398,6 +408,7 @@ public class PerClientServerManager implements ServerManager {
         // Capture the socket up front: shutdown() may null the field concurrently, but this
         // request keeps using (and detects the close on) the instance it started with.
         ServerSocket ss = serverSocket;
+        byte[] expectedToken = token;
         if (ss == null) {
             throw new IllegalStateException("Server not started. Call ensureRunning() first.");
         }
@@ -409,6 +420,18 @@ public class PerClientServerManager implements ServerManager {
         while (true) {
             try {
                 Socket socket = ss.accept();
+                if (!presentsToken(socket, expectedToken)) {
+                    LOG.warn("clientId={}: rejected a connection that did not present the fork's token",
+                            clientId);
+                    try {
+                        socket.close();
+                    } catch (IOException closeEx) {
+                        LOG.debug("clientId={}: error closing rejected connection", clientId, closeEx);
+                    }
+                    // Strangers must not be able to hold the deadline open.
+                    checkConnectDeadline(startTime);
+                    continue;
+                }
                 socket.setSoTimeout(socketTimeoutMillis);
                 socket.setTcpNoDelay(true);
                 LOG.debug("clientId={}: accepted connection from server", clientId);
@@ -438,15 +461,28 @@ public class PerClientServerManager implements ServerManager {
                     throw new IOException(
                             "Server process died before connecting (exit code " + exitValue + ") - will retry");
                 }
-                // Check if we've exceeded the overall timeout
-                long elapsed = System.currentTimeMillis() - startTime;
-                if (elapsed > SOCKET_CONNECT_TIMEOUT_MS) {
-                    LOG.error("clientId={}: Timed out waiting for server to connect after {}ms", clientId, elapsed);
-                    throw new ServerInitializationException(
-                            "Server did not connect within " + SOCKET_CONNECT_TIMEOUT_MS + "ms");
-                }
+                checkConnectDeadline(startTime);
                 // Continue polling
             }
+        }
+    }
+
+    private void checkConnectDeadline(long startTime) throws ServerInitializationException {
+        long elapsed = System.currentTimeMillis() - startTime;
+        if (elapsed > SOCKET_CONNECT_TIMEOUT_MS) {
+            LOG.error("clientId={}: Timed out waiting for server to connect after {}ms", clientId, elapsed);
+            throw new ServerInitializationException(
+                    "Server did not connect within " + SOCKET_CONNECT_TIMEOUT_MS + "ms");
+        }
+    }
+
+    private static boolean presentsToken(Socket socket, byte[] expectedToken) {
+        try {
+            // The fork writes its token immediately; a silent stranger only costs this wait.
+            socket.setSoTimeout(TOKEN_READ_TIMEOUT_MS);
+            return ForkBootstrap.checkToken(socket.getInputStream(), expectedToken);
+        } catch (IOException e) {
+            return false;
         }
     }
 
@@ -498,6 +534,8 @@ public class PerClientServerManager implements ServerManager {
             pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
             pb.redirectError(ProcessBuilder.Redirect.DISCARD);
         }
+        // stdin carries the ForkBootstrap
+        pb.redirectInput(ProcessBuilder.Redirect.PIPE);
 
         try {
             process = pb.start();
@@ -511,6 +549,14 @@ public class PerClientServerManager implements ServerManager {
                 msg += ": " + e.getMessage();
             }
             throw new ServerInitializationException(msg, e);
+        }
+
+        token = ForkBootstrap.newToken();
+        try (OutputStream stdin = process.getOutputStream()) {
+            ForkBootstrap.write(stdin, token, tikaConfigJson);
+        } catch (IOException e) {
+            // The fork died before reading it; connect() sees the exit and retries.
+            LOG.warn("clientId={}: couldn't send the bootstrap to the server process", clientId, e);
         }
 
         // Server is started, but we don't wait for connection here.
@@ -733,7 +779,6 @@ public class PerClientServerManager implements ServerManager {
         commandLine.add("org.apache.tika.pipes.core.server.PipesServer");
 
         commandLine.add(Integer.toString(port));
-        commandLine.add(tikaConfigPath.toAbsolutePath().toString());
 
         LOG.debug("clientId={}: commandline: {}", clientId, commandLine);
         return commandLine.toArray(new String[0]);

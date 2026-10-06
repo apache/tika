@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.plugins;
 
-/**
- * XPath utilities
- */
-@aQute.bnd.annotation.Version("2.0.0")
-package org.apache.tika.sax.xpath;
+import org.pf4j.Plugin;
+
+/** Named by plugin.properties in the development-mode test. */
+public class TestPlugin extends Plugin {
+}

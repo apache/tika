@@ -44,6 +44,7 @@ import org.apache.tika.parser.audio.NumberAndTotal;
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
 import org.apache.tika.parser.mp3.ID3Tags.ID3Picture;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * The <code>Mp3Parser</code> is used to parse ID3 Version 1 Tag information
@@ -225,7 +226,7 @@ public class Mp3Parser implements Parser {
             metadata.set(XMPDM.COPYRIGHT, tag.getCopyright());
             metadata.set(XMPDM.ALBUM, tag.getAlbum());
             metadata.set(XMPDM.COMPILATION, tag.getCompilation());
-            metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
+            setReleaseDate(metadata, tag.getYear());
             metadata.set(XMPDM.GENRE, tag.getGenre());
 
             for (ID3Comment comment : tag.getComments()) {
@@ -371,4 +372,12 @@ public class Mp3Parser implements Parser {
         }
     }
 
+
+    // ID3 years are free text: empty, "2018 2018", URLs
+    private static void setReleaseDate(Metadata metadata, String raw) {
+        String value = TikaDates.toMetadataStringKeepPartial(raw);
+        if (value != null) {
+            metadata.set(XMPDM.RELEASE_DATE, value);
+        }
+    }
 }

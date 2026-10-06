@@ -81,6 +81,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Uses the <a href="http://www.drewnoakes.com/code/exif/">Metadata Extractor</a> library
@@ -552,13 +553,18 @@ public class ImageMetadataExtractor {
 
     static class ExifHandler implements DirectoryHandler {
         // There's a new ExifHandler for each file processed, so this is thread safe
+        // EXIF dates have no zone: read and write in GMT (metadata-extractor >= 2.20 uses the JVM zone)
+        private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
         private final SimpleDateFormat dateUnspecifiedTz = getUnspecifiedTzDateFormat();
+
+        // metadata-extractor turns junk like "2" into year 1
+        private static Date inBounds(Date d) {
+            return d != null && TikaDates.inYearBounds(d.toInstant()) ? d : null;
+        }
 
         private SimpleDateFormat getUnspecifiedTzDateFormat() {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-            // As of Drew Noakes' metadata-extractor 2.8.1, unspecified
-            // timezones are set to TimeZone.getTimeZone("GMT")
-            df.setTimeZone(TimeZone.getTimeZone("GMT"));
+            df.setTimeZone(GMT);
             return df;
         }
 
@@ -728,18 +734,17 @@ public class ImageMetadataExtractor {
             // Date/Time Original overrides value from ExifDirectory.TAG_DATETIME
             Date original = null;
             if (directory.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)) {
-                original = directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
+                original = inBounds(directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL, GMT));
                 // Unless we have GPS time we don't know the time zone so date must be set
                 // as ISO 8601 datetime without timezone suffix (no Z or +/-)
                 if (original != null) {
-                    String datetimeNoTimeZone = dateUnspecifiedTz
-                            .format(original); // Same time zone as Metadata Extractor uses
+                    String datetimeNoTimeZone = dateUnspecifiedTz.format(original);
                     metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
                     metadata.set(TIFF.ORIGINAL_DATE, datetimeNoTimeZone);
                 }
             }
             if (directory.containsTag(ExifIFD0Directory.TAG_DATETIME)) {
-                Date datetime = directory.getDate(ExifIFD0Directory.TAG_DATETIME);
+                Date datetime = inBounds(directory.getDate(ExifIFD0Directory.TAG_DATETIME, GMT));
                 if (datetime != null) {
                     String datetimeNoTimeZone = dateUnspecifiedTz.format(datetime);
                     metadata.set(TikaCoreProperties.MODIFIED, datetimeNoTimeZone);

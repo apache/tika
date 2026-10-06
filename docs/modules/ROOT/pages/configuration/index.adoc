@@ -281,8 +281,9 @@ set fails the load with the variable's name and the JSON path, never a value, so
 stops the server at startup rather than reaching a service as an empty key. A literal value works as
 before.
 
-The forked parse workers of tika-server and Pipes inherit the parent's environment and read the same
-config file, so a reference resolves there too. Presets written inline in the config file resolve
+The forked parse workers of tika-server and Pipes never read the config file or the environment:
+the parent resolves every reference once and hands each fork the resolved config over its stdin,
+so a value that itself contains `${env:...}` is not expanded a second time. Presets written inline in the config file resolve
 at startup with the rest of it; catalog presets and per-request configuration (`/config`
 endpoints, pipes tuples) never do: a request cannot read the server's environment.
 
