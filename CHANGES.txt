@@ -70,6 +70,20 @@ Release 4.2.0 - unreleased
      SERVER/RESOURCE_TIMING) move from INFO to TRACE, and per-fork-start,
      per-connection and plugin lifecycle lines move to DEBUG (TIKA-4949).
 
+   * New ICOParser reads Windows icons and cursors: dimensions and colour
+     depth of the largest image, icon:image-count, icon:images and, for
+     cursors, icon:hotspot-x/-y. Cursors are detected as the new type
+     image/x-win-bitmap (*.cur). Compat: image/vnd.microsoft.icon moves
+     from ImageParser to ICOParser (TIKA-4937).
+
+   * ExecutableParser extracts the icon groups of PE files (EXE/DLL) as
+     embedded .ico documents, the first one typed THUMBNAIL. Compat: this is
+     on by default, so every EXE/DLL with icons now yields embedded documents
+     (extra RMETA entries, extra unpacked files); "extractIcons": false on
+     the executable-parser turns it off. parsePE(XHTMLContentHandler,
+     Metadata, InputStream, byte[]) is deprecated in favour of the overload
+     that takes a ParseContext (TIKA-4936).
+
    * tika-core's OSGi manifest no longer requires a Service Loader Mediator or
      providers for Parser, Detector, EncodingDetector, LanguageDetector and
      MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
@@ -229,6 +243,14 @@ Release 4.1.0 - 9/26/2026
 
    * The Ignite config store quotes its table name, so lookups work under any
      default locale (TIKA-4922).
+
+   * CI runs each test JVM under a random default locale (-Dtika.test.locale=random,
+     tika-test-support's RandomLocaleListener); a failure names the locale and
+     -Dtika.test.locale=<tag> reproduces it. Replaces the fixed tr_TR CI job (TIKA-4920).
+
+   * Pipes forks now start with the parent JVM's default locale (-Duser.*)
+     unless forkedJvmArgs set user.language; a fresh JVM took the OS locale,
+     so forked parsing could differ from in-process parsing (TIKA-4920).
 
    * tika-annotation-processor is no longer a transitive dependency of
      tika-pipes-core or the tika-langdetect modules (provided scope).

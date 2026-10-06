@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -108,11 +109,11 @@ public class LatinSiblingComparisonTest {
                 TextQualityComparison cmp = detector.compare(
                         "windows-1252", asWin1252, wrong, asWrong);
 
-                String tag = String.format("%-20s vs %-12s", probe.name, wrong);
+                String tag = String.format(Locale.ROOT, "%-20s vs %-12s", probe.name, wrong);
                 if ("windows-1252".equals(cmp.winner())) {
-                    passes.add(String.format("PASS %s  delta=%.3f", tag, cmp.delta()));
+                    passes.add(String.format(Locale.ROOT, "PASS %s  delta=%.3f", tag, cmp.delta()));
                 } else {
-                    failures.add(String.format("FAIL %s  winner=%-12s delta=%.3f",
+                    failures.add(String.format(Locale.ROOT, "FAIL %s  winner=%-12s delta=%.3f",
                             tag, cmp.winner(), cmp.delta()));
                 }
             }
@@ -121,7 +122,7 @@ public class LatinSiblingComparisonTest {
         System.out.println("\n=== Latin SBCS sibling comparison: " + label + " ===");
         passes.forEach(System.out::println);
         failures.forEach(System.out::println);
-        System.out.printf("%d pass, %d fail (of %d cells)%n",
+        System.out.printf(Locale.ROOT, "%d pass, %d fail (of %d cells)%n",
                 passes.size(), failures.size(), passes.size() + failures.size());
 
         assertEquals(0, failures.size(),

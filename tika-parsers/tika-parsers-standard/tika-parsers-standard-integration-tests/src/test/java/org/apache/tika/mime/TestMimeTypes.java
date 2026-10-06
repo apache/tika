@@ -534,6 +534,16 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testWindowsIconDetection() throws Exception {
+        assertType("image/vnd.microsoft.icon", "testICO.ico");
+        assertTypeByData("image/vnd.microsoft.icon", "testICO.ico");
+        assertTypeByName("image/vnd.microsoft.icon", "x.ico");
+        assertType("image/x-win-bitmap", "testCUR.cur");
+        assertTypeByData("image/x-win-bitmap", "testCUR.cur");
+        assertTypeByName("image/x-win-bitmap", "x.cur");
+    }
+
+    @Test
     public void testTiffDetection() throws Exception {
         assertType("image/tiff", "testTIFF.tif");
         assertTypeByData("image/tiff", "testTIFF.tif");

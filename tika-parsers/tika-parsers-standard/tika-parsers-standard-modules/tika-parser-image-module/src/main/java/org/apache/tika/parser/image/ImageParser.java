@@ -66,7 +66,7 @@ public class ImageParser extends AbstractImageParser {
         TMP_SUPPORTED = new HashSet<>(
                 Arrays.asList(MAIN_BMP_TYPE, OLD_BMP_TYPE, MediaType.image("gif"),
                         MediaType.image("png"), MediaType.image("vnd.wap.wbmp"),
-                        MediaType.image("x-icon"), MediaType.image("x-xcf"),
+                        MediaType.image("x-xcf"),
                         MediaType.image("x-jbig2"),
                         // no JPEG 2000 reader (license): owned so OCR still reaches them
                         MediaType.image("jp2"), MediaType.image("jpx"),
