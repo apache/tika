@@ -3391,20 +3391,44 @@
   
   <mime-type type="image/x-tga">
      <alias type="image/x-targa"/>
-     <!-- trailer bytes: 54 52 55 45 56 49 53 49 4F 4E 2D 58 46 49 4C 45 2E 00
-          trailer as string: TRUEVISION-XFILE\\x2E\\x00
-          Some .tga files may be conflicting with application/x-123 recognition, 
-          therefore this mime-type must be set in front of application/x-123 -->
      <_comment>Targa image data</_comment>
-     <magic priority="90">
-        <match value="0x01010000" type="big32" offset="1" >
-           <match value=".*[\\x54\\x52\\x55\\x45\\x56\\x49\\x53\\x49\\x4F\\x4E\\x2D\\x58\\x46\\x49\\x4C\\x45\\x2E\\x00]" type="regex" offset="8" />
+     <!-- No signature: colour map type and image type at 1, then the colour map spec
+          (all zero without a colour map) and the pixel depth at 16, or the colour map
+          entry size at 7. The optional TRUEVISION-XFILE footer is out of reach. -->
+     <magic priority="50">
+        <!-- true colour, greyscale, and their RLE forms: 2, 3, 10, 11 -->
+        <match value="\000\002\000\000\000\000\000" type="string" offset="1">
+           <match value="\010" type="string" offset="16"/>
+           <match value="\020" type="string" offset="16"/>
+           <match value="\030" type="string" offset="16"/>
+           <match value="\040" type="string" offset="16"/>
         </match>
-        <match value="0x00020000" type="big32" offset="1" >
-           <match value=".*[\\x54\\x52\\x55\\x45\\x56\\x49\\x53\\x49\\x4F\\x4E\\x2D\\x58\\x46\\x49\\x4C\\x45\\x2E\\x00]" type="regex" offset="8" />
+        <match value="\000\003\000\000\000\000\000" type="string" offset="1">
+           <match value="\010" type="string" offset="16"/>
+           <match value="\020" type="string" offset="16"/>
         </match>
-        <match value="0x00030000" type="big32" offset="1" >
-           <match value=".*[\\x54\\x52\\x55\\x45\\x56\\x49\\x53\\x49\\x4F\\x4E\\x2D\\x58\\x46\\x49\\x4C\\x45\\x2E\\x00]" type="regex" offset="8" />
+        <match value="\000\012\000\000\000\000\000" type="string" offset="1">
+           <match value="\010" type="string" offset="16"/>
+           <match value="\020" type="string" offset="16"/>
+           <match value="\030" type="string" offset="16"/>
+           <match value="\040" type="string" offset="16"/>
+        </match>
+        <match value="\000\013\000\000\000\000\000" type="string" offset="1">
+           <match value="\010" type="string" offset="16"/>
+           <match value="\020" type="string" offset="16"/>
+        </match>
+        <!-- colour mapped and RLE colour mapped: 1, 9 -->
+        <match value="\001\001" type="string" offset="1">
+           <match value="\017" type="string" offset="7"/>
+           <match value="\020" type="string" offset="7"/>
+           <match value="\030" type="string" offset="7"/>
+           <match value="\040" type="string" offset="7"/>
+        </match>
+        <match value="\001\011" type="string" offset="1">
+           <match value="\017" type="string" offset="7"/>
+           <match value="\020" type="string" offset="7"/>
+           <match value="\030" type="string" offset="7"/>
+           <match value="\040" type="string" offset="7"/>
         </match>
      </magic>
      <glob pattern="*.tga"/>
@@ -6893,8 +6917,6 @@
     <tika:uti>com.microsoft.ico</tika:uti>
     <alias type="image/x-icon" />
     <magic priority="50">
-      <match value="\102\101\050\000\000\000\056\000\000\000\000\000\000\000"
-             type="string" offset="0"/>
       <match value="\000\000\001\000" type="string" offset="0"/>
     </magic>
     <glob pattern="*.ico"/>

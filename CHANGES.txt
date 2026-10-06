@@ -72,6 +72,15 @@ Release 4.2.0 - unreleased
      image/x-win-bitmap (*.cur). Compat: image/vnd.microsoft.icon moves
      from ImageParser to ICOParser (TIKA-4937).
 
+   * OS/2 bitmap arrays are detected as image/x-os2-graphics; the first
+     entry's header no longer matches a Windows icon rule, which had sent
+     them to the icon parser (TIKA-4937).
+
+   * TGA detection keys on the header's image type, colour map spec and
+     pixel depth. The old rules matched any file with the right two bytes
+     and a zero byte somewhere after them, at a priority that beat every
+     other type (TIKA-4937).
+
    * tika-core's OSGi manifest no longer requires a Service Loader Mediator or
      providers for Parser, Detector, EncodingDetector, LanguageDetector and
      MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
