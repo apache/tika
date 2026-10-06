@@ -8,6 +8,12 @@ Release 4.2.0 - unreleased
      streaming parser; tika-parser-miscoffice-module and tika-parser-cad-module no
      longer depend on jackson-databind, and OSGi deployments of tika-bundle-standard
      need only jackson-core (TIKA-4956).
+     
+   * Forked pipes servers get their config and auth token over stdin; nothing is written
+     to the temp dir. Server-manager and PipesServer signatures change accordingly (TIKA-4952).
+     
+   * GeoGebraParser switched to stream parsing to drop jackson-databind as
+     a dependency (TIKA-4956).
 
    * tika-bundle-standard no longer embeds dependencies that are OSGi bundles
      themselves (commons-*, pdfbox, fontbox, bouncycastle, jsoup, asm, xz, xmpcore,
