@@ -19,8 +19,9 @@
 #   - path handling: the checkout dir below deliberately contains a space
 #   - child JVMs (tika-server, pipes forks) started under a non-en_US locale
 #
-# The Linux jobs run in-process tests under a random default locale
-# (-Dtika.test.locale=random, RandomLocaleListener); this one runs them under
+# In-process tests can run under a random default locale
+# (-Dtika.test.locale=random, RandomLocaleListener; off in CI until the remaining
+# locale-dependent tests are fixed, TIKA-4920); this one runs them under
 # de_DE. Pipes forks receive their parent's locale as -D flags, but JVMs the
 # tests start themselves (tika-server) inherit only the environment, hence
 # JAVA_TOOL_OPTIONS here, which every JVM reads at startup.
