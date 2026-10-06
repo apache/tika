@@ -18,6 +18,10 @@ package org.apache.tika.parser.grib;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
@@ -37,6 +41,10 @@ public class GribParserTest {
     @Test
     public void testParseGlobalMetadata() throws Exception {
         Parser parser = new GribParser();
+        // TODO: netcdf-java formats with the default locale, so dimension sizes and a WMO
+        // code-table file name come out in the locale's digits; report upstream
+        assumeTrue(DecimalFormatSymbols.getInstance(Locale.getDefault()).getZeroDigit() == '0',
+                "netcdf-java needs ASCII digits in the default locale");
         Metadata metadata = new Metadata();
         ContentHandler handler = new BodyContentHandler();
         try (TikaInputStream tis = TikaInputStream.get(GribParser.class

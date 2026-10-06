@@ -100,6 +100,7 @@ jobs:
         run: |
           mvn install -Pfast -pl :tika-annotation-processor -am -B -q
           mvn clean test install ${{ github.event_name == 'push' && 'javadoc:aggregate' || '' }} -Pci -T1C \
+            -Dtika.test.locale=random \
             -pl "$(echo "$IT_MODULES" | sed 's/:/!:/g')" \
             -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 
@@ -140,7 +141,7 @@ jobs:
       # so without this they would drop out of license checking entirely.
       - name: Run integration tests
         run: |
-          mvn clean apache-rat:check test -Pci \
+          mvn clean apache-rat:check test -Pci -Dtika.test.locale=random \
             -pl "$IT_MODULES" \
             -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 

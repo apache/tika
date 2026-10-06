@@ -28,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -504,6 +505,7 @@ public class SharedServerManager implements ServerManager {
         boolean hasExitOnOOM = false;
         boolean hasLog4j = false;
         boolean hasErrorFile = false;
+        boolean hasLocale = false;
 
         for (String arg : configArgs) {
             if (arg.startsWith("-Djava.awt.headless")) {
@@ -520,6 +522,9 @@ public class SharedServerManager implements ServerManager {
             }
             if (arg.startsWith("-XX:ErrorFile=")) {
                 hasErrorFile = true;
+            }
+            if (arg.startsWith("-Duser.language")) {
+                hasLocale = true;
             }
         }
 
@@ -553,6 +558,10 @@ public class SharedServerManager implements ServerManager {
             commandLine.add("-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
         }
         commandLine.add("-DpipesClientId=shared");
+        // the fork parses like the parent would; a fresh JVM would take the OS locale instead
+        if (!hasLocale) {
+            commandLine.addAll(ProcessUtils.defaultLocaleJvmArgs(Locale.getDefault()));
+        }
         commandLine.addAll(configArgs);
         commandLine.add("-Djava.io.tmpdir=" + tmpDir.toAbsolutePath());
         commandLine.add("org.apache.tika.pipes.core.server.PipesServer");
