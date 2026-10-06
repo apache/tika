@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * GeoGebraParser reads structure.json and inline text content with jackson-core's
+     streaming parser; tika-parser-miscoffice-module and tika-parser-cad-module no
+     longer depend on jackson-databind (TIKA-4956).
+
    * PipesParser.start() and PipesForkParser.start() bring the forks up before the
      first parse and fail fast if one can't start (TIKA-4953).
 
