@@ -72,6 +72,14 @@ Release 4.2.0 - unreleased
      image/x-win-bitmap (*.cur). Compat: image/vnd.microsoft.icon moves
      from ImageParser to ICOParser (TIKA-4937).
 
+   * ExecutableParser extracts the icon groups of PE files (EXE/DLL) as
+     embedded .ico documents, the first one typed THUMBNAIL. Compat: this is
+     on by default, so every EXE/DLL with icons now yields embedded documents
+     (extra RMETA entries, extra unpacked files); "extractIcons": false on
+     the executable-parser turns it off. parsePE(XHTMLContentHandler,
+     Metadata, InputStream, byte[]) is deprecated in favour of the overload
+     that takes a ParseContext (TIKA-4936).
+
    * tika-core's OSGi manifest no longer requires a Service Loader Mediator or
      providers for Parser, Detector, EncodingDetector, LanguageDetector and
      MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
