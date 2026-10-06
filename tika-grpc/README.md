@@ -10,6 +10,7 @@ requests through the configured fetchers.
     * Update
     * Delete
 * Fetch + Parse a given Fetch Item
+* Parse bytes sent with the request (ParseBytes, v2 only)
 
 > **Security note:** runtime fetcher/iterator management — mutations (Create/Update/Delete)
 > and reading stored configs back (Read), which may contain secrets — plus per-request parse
@@ -25,9 +26,9 @@ The server exposes two gRPC services on the same port:
 
 - **`tika.Tika` (v1)**: fetcher and iterator management, and FetchAndParse replies
   that return metadata as a `fields` map of strings.
-- **`org.apache.tika.grpc.v2.TikaV2` (experimental)**: FetchAndParse replies that
-  return a typed `org.apache.tika.grpc.v2.Document`. Fetchers are still managed
-  through v1.
+- **`org.apache.tika.grpc.v2.TikaV2` (experimental)**: FetchAndParse and ParseBytes,
+  which return a typed `org.apache.tika.grpc.v2.Document`. Fetchers are still
+  managed through v1.
 
 A `Document` holds:
 
@@ -60,6 +61,56 @@ Build the API and mapper with the rest of the reactor:
 ./mvnw clean test -pl tika-grpc-api,tika-grpc-mapper,tika-grpc
 ```
 
+## ParseBytes
+
+`TikaV2.ParseBytes` parses bytes that the caller sends in the request. Tika fetches
+nothing, so no fetcher has to be registered. The reply is the same `Document` that
+FetchAndParse returns.
+
+| Request field | Meaning |
+|---------------|---------|
+| `content` | The bytes to parse. Required, at most `parseBytesMaxContentBytes`. |
+| `resource_name` | File name, used as a hint for type detection and returned as `origin.filename`. |
+| `correlation_id` | Any string, returned as `Document.id` and `ParseBytesReply.correlation_id`. |
+| `source_uri`, `effective_uri`, `base_uri` | URIs the caller records for the bytes, such as the requested URL, the URL after redirects and the base URL for relative links. Returned in `origin`; Tika does not use them. |
+| `truncated` | Set it when the bytes were cut short, for example at a crawler's size limit. Returned as `origin.truncated`. |
+| `parse_context_json` | Parse settings for this request, refused with `PERMISSION_DENIED` unless `allowPerRequestConfig` is on. |
+
+Content up to `pipes.maxInlineBytes` (10 MiB by default) goes to the worker JVM with
+the request. Larger content goes through a temporary file that the server deletes
+after the parse. ParseBytes and FetchAndParse share the same workers (see
+[Concurrency](#concurrency)).
+
+An empty `content` returns `INVALID_ARGUMENT`, and `content` above
+`parseBytesMaxContentBytes` returns `RESOURCE_EXHAUSTED`. A document the parser
+fails on still returns a `Document`, with the outcome in its `status`.
+
+### Message size
+
+By default the server keeps gRPC's inbound message limit of 4 MiB. Raise it
+with `maxInboundMessageBytes` in the `grpc` section:
+
+```json
+{
+  "grpc": {
+    "maxInboundMessageBytes": 104857600,
+    "parseBytesMaxContentBytes": 33554432
+  }
+}
+```
+
+The limit applies to every RPC on the server. gRPC holds each request in memory in
+full before Tika sees it, so each request in flight takes at least this much heap,
+and the server does not limit how many requests are in flight. The server logs a
+warning at startup when the maximum heap is below three times the limit.
+
+`parseBytesMaxContentBytes` (64 MiB by default, must be positive) limits the
+`content` field of ParseBytes. gRPC applies the inbound limit to the whole request
+first, so with the default 4 MiB limit ParseBytes accepts less than 4 MiB of content.
+Set `maxInboundMessageBytes` above `parseBytesMaxContentBytes`; when it is set at or
+below it, the server logs a warning at startup. `dev-tika-config.json` sets a 100 MiB
+inbound limit.
+
 ## Distribution and Maven Artifact
 
 **tika-grpc is designed to be run via Docker — it is not a standalone runnable artifact published to Maven Central.**
@@ -80,11 +131,11 @@ to avoid uploading hundreds of megabytes of native libraries and plugin bundles 
 
 ## Concurrency
 
-`fetchAndParse` runs on a pool of forked worker JVMs sized by `pipes.numClients`
-(when unset, derived from host cores, at most 4). A call that cannot get a
-worker within `pipes.maxWaitForClientMillis` (default 60s) returns the in-band
-status `CLIENT_UNAVAILABLE_WITHIN_MS`: the server is at capacity, not failing.
-With `pipes.useSharedServer: true` the workers share one JVM instead.
+FetchAndParse and ParseBytes run on a pool of forked worker JVMs sized by
+`pipes.numClients` (when unset, derived from host cores, at most 4). A call that
+cannot get a worker within `pipes.maxWaitForClientMillis` (default 60s) returns
+the in-band status `CLIENT_UNAVAILABLE_WITHIN_MS`, which means the server is at
+capacity. With `pipes.useSharedServer: true` the workers share one JVM instead.
 
 ## Quick Start - Development Mode
 

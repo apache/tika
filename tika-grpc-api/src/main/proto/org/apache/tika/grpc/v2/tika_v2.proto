@@ -36,6 +36,10 @@ service TikaV2 {
       returns (stream FetchAndParseReply) {}
   rpc FetchAndParseBiDirectionalStreaming(stream FetchAndParseRequest)
       returns (stream FetchAndParseReply) {}
+
+  // Parses the bytes sent in the request, without a fetcher, and returns the same
+  // Document as FetchAndParse.
+  rpc ParseBytes(ParseBytesRequest) returns (ParseBytesReply) {}
 }
 
 message FetchAndParseRequest {
@@ -50,5 +54,34 @@ message FetchAndParseRequest {
 
 message FetchAndParseReply {
   string fetch_key = 1;
+  Document document = 2;
+}
+
+message ParseBytesRequest {
+  // The caller's id for this request, returned unchanged as Document.id and
+  // ParseBytesReply.correlation_id.
+  string correlation_id = 1;
+  // Bytes to parse. Required, at most the server's parseBytesMaxContentBytes. The
+  // whole request must also fit the server's gRPC inbound limit: 4 MiB unless
+  // maxInboundMessageBytes sets another value.
+  bytes content = 2;
+  // Optional file name, such as "page.html". Tika uses it to detect the content type
+  // and returns it as Document.origin.filename.
+  string resource_name = 3;
+  // Optional URIs the caller records for the bytes, such as the requested URL, the
+  // URL after redirects and the base URL for relative links. Tika returns them in
+  // Document.origin and does not use them.
+  string source_uri = 4;
+  string effective_uri = 5;
+  string base_uri = 6;
+  // Set when the caller cut the bytes short, for example at a crawler's size limit.
+  // Returned as Document.origin.truncated.
+  bool truncated = 7;
+  // Optional JSON object to configure the ParseContext for this request.
+  string parse_context_json = 8;
+}
+
+message ParseBytesReply {
+  string correlation_id = 1;
   Document document = 2;
 }

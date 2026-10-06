@@ -6,6 +6,11 @@ Release 4.2.1 - unreleased
      text. Protos in the new tika-grpc-api module, metadata mapping in
      tika-grpc-mapper (TIKA-4766).
 
+   * tika-grpc: the new TikaV2.ParseBytes RPC parses bytes sent in the
+     request and returns the same Document as FetchAndParse, without fetching
+     anything. New "grpc" settings: parseBytesMaxContentBytes (64 MiB by
+     default) and maxInboundMessageBytes (TIKA-4795).
+
 Release 4.2.0 - 10/22/2026
 
   BREAKING CHANGES AND DEPRECATIONS

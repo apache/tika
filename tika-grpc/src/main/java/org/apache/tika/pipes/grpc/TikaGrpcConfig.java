@@ -38,9 +38,16 @@ import org.apache.tika.config.loader.TikaJsonConfig;
  */
 public class TikaGrpcConfig {
 
+    /** The ParseBytes content limit when {@code parseBytesMaxContentBytes} is not set. */
+    public static final long DEFAULT_PARSE_BYTES_MAX_CONTENT_BYTES = 64L * 1024 * 1024;
+
     private boolean allowPerRequestConfig = false;
 
     private boolean allowComponentManagement = false;
+
+    private Integer maxInboundMessageBytes = null;
+
+    private Long parseBytesMaxContentBytes = null;
 
     /**
      * Loads {@link TikaGrpcConfig} from the {@code "grpc"} section of the JSON
@@ -102,5 +109,66 @@ public class TikaGrpcConfig {
 
     public void setAllowComponentManagement(boolean allowComponentManagement) {
         this.allowComponentManagement = allowComponentManagement;
+    }
+
+    /**
+     * The largest message the server accepts on any RPC, in bytes, passed to gRPC's
+     * {@code maxInboundMessageSize}. When it is not set, gRPC's default of 4 MiB applies.
+     * <p>
+     * gRPC reads a whole unary request into memory before the handler runs, so each
+     * request in flight takes at least this much heap.
+     *
+     * @return the configured limit in bytes, or {@code null} if not set
+     */
+    public Integer getMaxInboundMessageBytes() {
+        return maxInboundMessageBytes;
+    }
+
+    /**
+     * @param maxInboundMessageBytes positive limit in bytes, or {@code null} for gRPC's
+     *                               default
+     * @throws IllegalArgumentException if the value is present and not positive
+     */
+    public void setMaxInboundMessageBytes(Integer maxInboundMessageBytes) {
+        if (maxInboundMessageBytes != null && maxInboundMessageBytes <= 0) {
+            throw new IllegalArgumentException(
+                    "maxInboundMessageBytes must be positive, got: " + maxInboundMessageBytes);
+        }
+        this.maxInboundMessageBytes = maxInboundMessageBytes;
+    }
+
+    /**
+     * The largest {@code content} a ParseBytes request may carry, in bytes. gRPC applies
+     * {@link #getMaxInboundMessageBytes()} to the whole request first, so a limit above
+     * that one has no effect.
+     *
+     * @return the configured limit in bytes, or {@code null} if not set
+     */
+    public Long getParseBytesMaxContentBytes() {
+        return parseBytesMaxContentBytes;
+    }
+
+    /**
+     * @param parseBytesMaxContentBytes positive limit in bytes, or {@code null} to use
+     *                                  {@link #DEFAULT_PARSE_BYTES_MAX_CONTENT_BYTES}
+     * @throws IllegalArgumentException if the value is present and not positive
+     */
+    public void setParseBytesMaxContentBytes(Long parseBytesMaxContentBytes) {
+        if (parseBytesMaxContentBytes != null && parseBytesMaxContentBytes <= 0) {
+            throw new IllegalArgumentException(
+                    "parseBytesMaxContentBytes must be positive, got: "
+                            + parseBytesMaxContentBytes);
+        }
+        this.parseBytesMaxContentBytes = parseBytesMaxContentBytes;
+    }
+
+    /**
+     * @return the configured {@link #getParseBytesMaxContentBytes()}, or
+     *         {@link #DEFAULT_PARSE_BYTES_MAX_CONTENT_BYTES} when it is not set
+     */
+    public long effectiveParseBytesMaxContentBytes() {
+        return parseBytesMaxContentBytes != null
+                ? parseBytesMaxContentBytes
+                : DEFAULT_PARSE_BYTES_MAX_CONTENT_BYTES;
     }
 }

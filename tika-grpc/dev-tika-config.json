@@ -34,5 +34,8 @@
         }
       }
     }
-  ]
+  ],
+  "grpc": {
+    "maxInboundMessageBytes": 104857600
+  }
 }

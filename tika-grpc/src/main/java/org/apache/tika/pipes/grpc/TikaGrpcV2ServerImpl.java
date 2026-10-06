@@ -21,8 +21,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.grpc.mapper.DocumentBuilder;
+import org.apache.tika.grpc.v2.Document;
 import org.apache.tika.grpc.v2.FetchAndParseReply;
 import org.apache.tika.grpc.v2.FetchAndParseRequest;
+import org.apache.tika.grpc.v2.ParseBytesReply;
+import org.apache.tika.grpc.v2.ParseBytesRequest;
+import org.apache.tika.grpc.v2.SourceOrigin;
 import org.apache.tika.grpc.v2.TikaV2Grpc;
 import org.apache.tika.parser.ParseContext;
 
@@ -106,9 +110,83 @@ class TikaGrpcV2ServerImpl extends TikaV2Grpc.TikaV2ImplBase {
         };
     }
 
+
+    @Override
+    public void parseBytes(ParseBytesRequest request,
+                           StreamObserver<ParseBytesReply> responseObserver) {
+        if (request.getContent().isEmpty()) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription("content is required")
+                    .asRuntimeException());
+            return;
+        }
+        if (v1.denyPerRequestConfig(null, request.getParseContextJson(), responseObserver)) {
+            return;
+        }
+        ParseContext parseContext = v1.buildRequestParseContext(null, null,
+                request.getParseContextJson(), responseObserver);
+        if (parseContext == null) {
+            return;
+        }
+        try {
+            // newInput() reads the bytes protobuf already holds without copying them.
+            TikaGrpcServerImpl.ParseBytesOutcome parseBytesOutcome = v1.runParseBytes(
+                    request.getContent().newInput(),
+                    request.getContent().size(),
+                    request.getResourceName(),
+                    parseContext);
+            if (parseBytesOutcome == null) {
+                // The parse was interrupted, so there is no Document to return.
+                responseObserver.onError(io.grpc.Status.UNAVAILABLE
+                        .withDescription("parse was interrupted before a reply could be built")
+                        .asRuntimeException());
+                return;
+            }
+            Document.Builder document = DocumentBuilder.build(
+                            parseBytesOutcome.primary(),
+                            request.getCorrelationId(),
+                            parseBytesOutcome.status(),
+                            parseBytesOutcome.fetchParseTimeMs())
+                    .toBuilder();
+            SourceOrigin.Builder origin = document.getOriginBuilder();
+            if (!request.getResourceName().isBlank()) {
+                origin.setFilename(request.getResourceName().trim());
+            }
+            origin.setByteSize(request.getContent().size());
+            if (!request.getSourceUri().isBlank()) {
+                origin.setSourceUri(request.getSourceUri());
+            }
+            if (!request.getEffectiveUri().isBlank()) {
+                origin.setEffectiveUri(request.getEffectiveUri());
+            }
+            if (!request.getBaseUri().isBlank()) {
+                origin.setBaseUri(request.getBaseUri());
+            }
+            origin.setTruncated(request.getTruncated());
+            document.setOrigin(origin);
+            ParseBytesReply.Builder reply = ParseBytesReply.newBuilder()
+                    .setDocument(document);
+            if (!request.getCorrelationId().isEmpty()) {
+                reply.setCorrelationId(request.getCorrelationId());
+            }
+            responseObserver.onNext(reply.build());
+            responseObserver.onCompleted();
+        } catch (TikaGrpcServerImpl.ParseBytesTooLargeException e) {
+            responseObserver.onError(io.grpc.Status.RESOURCE_EXHAUSTED
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        } catch (IllegalArgumentException e) {
+            responseObserver.onError(io.grpc.Status.INVALID_ARGUMENT
+                    .withDescription(e.getMessage())
+                    .asRuntimeException());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
                                    StreamObserver<FetchAndParseReply> responseObserver) {
-        TikaGrpcServerImpl.FetchParseOutcome outcome = v1.runFetchAndParse(
+        TikaGrpcServerImpl.FetchParseOutcome outcome = v1.runPublicFetchAndParse(
                 request.getFetcherId(), request.getFetchKey(), parseContext);
         if (outcome == null) {
             return;

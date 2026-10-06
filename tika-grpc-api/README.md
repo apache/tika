@@ -12,8 +12,9 @@ metadata as a `fields` map of strings, is defined in the `tika-grpc` module.
   type, the origin of the bytes, the parse status, common metadata as typed fields
   (`DocumentMetadata`) and all other metadata as key/value entries (`extra`). It does
   not include the extracted text or embedded documents.
-- **TikaV2 service** (`tika_v2.proto`): the v2 FetchAndParse RPCs, which return a
-  `Document`, with generated stubs. The server implementation is in `tika-grpc`.
+- **TikaV2 service** (`tika_v2.proto`): the v2 FetchAndParse and ParseBytes RPCs,
+  which return a `Document`, with generated stubs. The server implementation is in
+  `tika-grpc`.
 - **Descriptors**: the jar contains `META-INF/org.apache.tika.grpc.v2.descriptors`.
 
 ## Usage

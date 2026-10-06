@@ -35,6 +35,9 @@ option java_package = "org.apache.tika.grpc.v2";
 
 message Document {
   // envelope
+  // The caller's key for the request: fetch_key on FetchAndParse, correlation_id
+  // on ParseBytes, returned unchanged. To identify the parsed bytes, use
+  // origin.sha256, which is set when a digester is configured.
   string id = 1;
   string content_type = 2;             // Tika-detected MIME type
   google.protobuf.Timestamp parsed_at = 4;
@@ -57,6 +60,13 @@ message SourceOrigin {
   // digester configured. Downstream consumers use it to tie derived artifacts
   // (annotations, index entries) back to the exact bytes that were parsed.
   string sha256 = 4;
+  // Set only by ParseBytes, from the request; empty for FetchAndParse. The URIs the
+  // caller recorded for the bytes, which Tika does not use, and whether the caller
+  // cut the bytes short.
+  string source_uri = 5;
+  string effective_uri = 6;
+  string base_uri = 7;
+  bool truncated = 8;
 }
 
 // =========================================================================

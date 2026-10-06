@@ -24,6 +24,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import com.beust.jcommander.JCommander;
@@ -31,6 +33,7 @@ import com.beust.jcommander.Parameter;
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
+import io.grpc.ServerBuilder;
 import io.grpc.ServerCredentials;
 import io.grpc.TlsServerCredentials;
 import io.grpc.protobuf.services.HealthStatusManager;
@@ -45,7 +48,7 @@ public class TikaGrpcServer {
     private static final Logger LOGGER = LoggerFactory.getLogger(TikaGrpcServer.class);
     public static final int TIKA_SERVER_GRPC_DEFAULT_PORT = 50052;
     private Server server;
-    private TikaGrpcServerImpl serviceImpl;
+    TikaGrpcServerImpl serviceImpl;
     @Parameter(names = {"-p", "--port"}, description = "The grpc server port", help = true)
     private Integer port = TIKA_SERVER_GRPC_DEFAULT_PORT;
 
@@ -110,18 +113,32 @@ public class TikaGrpcServer {
         File tikaConfigFile = new File(tikaConfig.getAbsolutePath());
         healthStatusManager.setStatus(TikaGrpcServer.class.getSimpleName(), ServingStatus.SERVING);
         serviceImpl = new TikaGrpcServerImpl(tikaConfigFile.getAbsolutePath(), pluginRoots);
-        // v1 (tika.Tika) stays the stable fields-map contract; v2 (TikaV2) is the
-        // experimental typed Document surface. Both share the same pipes runtime.
-        server = Grpc
-                .newServerBuilderForPort(port, creds)
-                .addService(serviceImpl)
-                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
-                .addService(healthStatusManager.getHealthService())
-                .addService(ProtoReflectionServiceV1.newInstance())
-                .build()
-                .start();
-        // port 0 asks the OS to pick one; adopt what it actually bound
-        port = server.getPort();
+        try {
+            ServerBuilder<?> serverBuilder = Grpc.newServerBuilderForPort(port, creds);
+            applyInboundLimit(serverBuilder, serviceImpl.tikaGrpcConfig);
+            for (String warning : startupWarnings(
+                    serviceImpl.tikaGrpcConfig.getMaxInboundMessageBytes(),
+                    serviceImpl.tikaGrpcConfig.effectiveParseBytesMaxContentBytes(),
+                    Runtime.getRuntime().maxMemory())) {
+                LOGGER.warn(warning);
+            }
+            // v1 (tika.Tika) stays the stable fields-map contract; v2 (TikaV2) is the
+            // experimental typed Document surface. Both share the same pipes runtime.
+            server = serverBuilder
+                    .addService(serviceImpl)
+                    .addService(new TikaGrpcV2ServerImpl(serviceImpl))
+                    .addService(healthStatusManager.getHealthService())
+                    .addService(ProtoReflectionServiceV1.newInstance())
+                    .build()
+                    .start();
+            // port 0 asks the OS to pick one; adopt what it actually bound
+            port = server.getPort();
+        } catch (Exception e) {
+            // Nothing else holds the impl yet: release its pipes pool and spool directory.
+            serviceImpl.postShutdown();
+            serviceImpl = null;
+            throw e;
+        }
         LOGGER.info("Server started, listening on " + port);
         Runtime
                 .getRuntime()
@@ -139,16 +156,18 @@ public class TikaGrpcServer {
     }
 
     public void stop() throws InterruptedException {
-        if (serviceImpl != null) {
-            serviceImpl.shutdown();
-        }
-        if (server != null) {
-            server
-                    .shutdown()
-                    .awaitTermination(30, TimeUnit.SECONDS);
-        }
-        if (serviceImpl != null) {
-            serviceImpl.postShutdown();
+        try {
+            if (server != null) {
+                server.shutdown();
+                if (!server.awaitTermination(30, TimeUnit.SECONDS)) {
+                    // Cancel the calls still running after 30 seconds.
+                    server.shutdownNow();
+                }
+            }
+        } finally {
+            if (serviceImpl != null) {
+                serviceImpl.postShutdown();
+            }
         }
     }
 
@@ -196,6 +215,71 @@ public class TikaGrpcServer {
             throw new IllegalArgumentException(
                     "Tika config file is required. Use -c to specify a config file.", e);
         }
+    }
+
+    /** Sets the configured inbound limit on the builder. Without one, gRPC's default applies. */
+    static void applyInboundLimit(ServerBuilder<?> builder, TikaGrpcConfig config) {
+        Integer maxInboundMessageBytes = config.getMaxInboundMessageBytes();
+        if (maxInboundMessageBytes != null) {
+            builder.maxInboundMessageSize(maxInboundMessageBytes);
+        }
+    }
+
+    /**
+     * A warning when {@code maxInboundMessageBytes} is set at or below the ParseBytes
+     * content limit, or {@code null}. Equal values warn too: the request carries field tags
+     * and other fields besides {@code content}, so it is larger than the content.
+     */
+    static String inboundLimitWarning(Integer maxInboundMessageBytes,
+                                  long parseBytesMaxContentBytes) {
+        if (maxInboundMessageBytes == null
+                || maxInboundMessageBytes > parseBytesMaxContentBytes) {
+            return null;
+        }
+        return "ParseBytes accepts content up to " + parseBytesMaxContentBytes
+                + " bytes, but maxInboundMessageBytes is " + maxInboundMessageBytes
+                + ", so gRPC refuses a request with that much content before ParseBytes "
+                + "checks it.";
+    }
+
+    /**
+     * Estimated heap one request needs, as a multiple of its size. gRPC assembles a unary request
+     * into a byte array, on top of its transport buffers, before protobuf parses it.
+     */
+    private static final int HEAP_HEADROOM_MULTIPLE = 3;
+
+    /** The warnings to log at startup about the configured message limits, possibly none. */
+    static List<String> startupWarnings(Integer maxInboundMessageBytes,
+                                        long parseBytesMaxContentBytes, long maxHeapBytes) {
+        List<String> warnings = new ArrayList<>(2);
+        String inboundLimit = inboundLimitWarning(maxInboundMessageBytes, parseBytesMaxContentBytes);
+        if (inboundLimit != null) {
+            warnings.add(inboundLimit);
+        }
+        String heapHeadroom = heapHeadroomWarning(maxInboundMessageBytes, maxHeapBytes);
+        if (heapHeadroom != null) {
+            warnings.add(heapHeadroom);
+        }
+        return warnings;
+    }
+
+    /**
+     * A warning when this JVM's maximum heap is below {@link #HEAP_HEADROOM_MULTIPLE} times
+     * {@code maxInboundMessageBytes}, or {@code null}. gRPC reads each request into this
+     * JVM's heap; the forked parser processes have heaps of their own.
+     */
+    static String heapHeadroomWarning(Integer maxInboundMessageBytes, long maxHeapBytes) {
+        if (maxInboundMessageBytes == null || maxHeapBytes == Long.MAX_VALUE) {
+            return null;
+        }
+        long wanted = (long) maxInboundMessageBytes * HEAP_HEADROOM_MULTIPLE;
+        if (maxHeapBytes >= wanted) {
+            return null;
+        }
+        return "maxInboundMessageBytes is " + maxInboundMessageBytes + ", but the maximum "
+                + "heap is " + maxHeapBytes + " bytes. gRPC holds each request in memory "
+                + "before parsing starts, so one request of that size needs about " + wanted
+                + " bytes. Raise the heap or lower the limit.";
     }
 
     public TikaGrpcServer setTikaConfig(File tikaConfig) {
