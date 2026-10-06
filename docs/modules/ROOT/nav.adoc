@@ -25,6 +25,7 @@
 *** xref:using-tika/server/monitoring.adoc[Monitoring with Prometheus]
 ** xref:using-tika/grpc/index.adoc[gRPC]
 ** xref:using-tika/docker.adoc[Running Tika in Docker]
+** xref:using-tika/osgi.adoc[Using Tika in OSGi]
 * xref:pipes/index.adoc[Pipes]
 ** xref:pipes/getting-started.adoc[Getting Started]
 ** xref:pipes/configuration.adoc[Pipeline Configuration]

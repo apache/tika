@@ -14,9 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.plugins;
 
-/**
- * Tika exception.
- */
-@aQute.bnd.annotation.Version("2.0.0")
-package org.apache.tika.exception;
+import org.pf4j.Plugin;
+
+/** Named by plugin.properties in the development-mode test. */
+public class TestPlugin extends Plugin {
+}

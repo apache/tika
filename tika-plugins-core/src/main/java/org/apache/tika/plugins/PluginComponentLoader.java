@@ -218,24 +218,17 @@ public class PluginComponentLoader {
 
         Map<String, TikaExtensionFactory<T>> factories = new HashMap<>();
         for (TikaExtensionFactory<T> factory : pluginManager.getExtensions(factoryClass)) {
-            String name = factory.getName();
-            ClassLoader cl = factory.getClass().getClassLoader();
-            boolean isFromPlugin = cl instanceof PluginClassLoader;
-
-            TikaExtensionFactory<T> existing = factories.get(name);
-            if (existing != null) {
-                boolean existingIsFromPlugin = existing.getClass().getClassLoader()
-                        instanceof PluginClassLoader;
-                if (isFromPlugin && !existingIsFromPlugin) {
-                    // Replace classpath version with plugin version
-                    factories.put(name, factory);
-                }
-                // Otherwise skip duplicate (keep existing)
-                continue;
+            TikaExtensionFactory<T> existing = factories.get(factory.getName());
+            // a plugin wins over the same factory found on the classpath (tika.plugins.classpath)
+            if (existing == null || (isFromPlugin(factory) && !isFromPlugin(existing))) {
+                factories.put(factory.getName(), factory);
             }
-            factories.put(name, factory);
         }
         return factories;
+    }
+
+    private static boolean isFromPlugin(Object factory) {
+        return factory.getClass().getClassLoader() instanceof PluginClassLoader;
     }
 
     private static String extractTypeName(JsonNode wrapper, String contextName)

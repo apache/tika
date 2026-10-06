@@ -39,12 +39,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 import org.apache.tika.pipes.core.protocol.PayloadLimitExceededException;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
@@ -132,14 +135,38 @@ public class PipesClient implements Closeable {
      * lazily on first use and shut down when this client is closed.
      *
      * @param pipesConfig the pipes configuration
-     * @param tikaConfigPath path to the tika config file
+     * @param tikaConfigPath path to the tika config file; read once, here
+     * @throws IOException if the config can't be read
+     * @throws TikaConfigException if the config is invalid
      */
-    public PipesClient(PipesConfig pipesConfig, java.nio.file.Path tikaConfigPath) {
+    public PipesClient(PipesConfig pipesConfig, java.nio.file.Path tikaConfigPath)
+            throws IOException, TikaConfigException {
         this.pipesConfig = pipesConfig;
         this.maxIpcPayloadBytes = pipesConfig.getMaxIpcPayloadBytes();
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
-        this.serverManager = new PerClientServerManager(pipesConfig, tikaConfigPath, pipesClientId);
+        byte[] tikaConfigJson = ForkBootstrap.toBytes(TikaJsonConfig.load(tikaConfigPath));
+        this.serverManager = new PerClientServerManager(pipesConfig, tikaConfigJson, pipesClientId);
         this.ownsServerManager = true;
+    }
+
+    /**
+     * Brings the server up and waits until it is ready, rather than on the first
+     * {@link #process}. Does nothing if it is already up.
+     *
+     * @throws ServerInitializationException if the server can't start
+     */
+    public void start() throws InterruptedException, ServerInitializationException {
+        try {
+            maybeInit();
+        } catch (InterruptedException e) {
+            serverManager.connectionAbandoned();
+            closeConnection();
+            throw e;
+        } catch (ServerInitializationException e) {
+            serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
+            closeConnection();
+            throw e;
+        }
     }
 
     public int getFilesProcessed() {
