@@ -172,7 +172,6 @@
               com.adobe.internal.xmp;com.adobe.internal.xmp.*,
               com.dd.plist,
               com.fasterxml.jackson.core;com.fasterxml.jackson.core.*,
-              com.fasterxml.jackson.databind,
               org.apache.commons.codec;org.apache.commons.codec.*,
               org.apache.commons.collections4;org.apache.commons.collections4.*,
               org.apache.commons.compress;org.apache.commons.compress.*,

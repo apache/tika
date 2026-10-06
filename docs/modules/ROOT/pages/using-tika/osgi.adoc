@@ -48,7 +48,7 @@ Tika bundles so they can be shared with the rest of your container and updated o
 |`org.bouncycastle:bcprov-jdk18on`, `bcpkix-jdk18on`, `bcutil-jdk18on`, `bcjmail-jdk18on`
 
 |Jackson
-|`com.fasterxml.jackson.core:jackson-databind`, `jackson-core`, `jackson-annotations`
+|`com.fasterxml.jackson.core:jackson-core`
 
 |CommonMark
 |`org.commonmark:commonmark`, `commonmark-ext-gfm-tables`, `commonmark-ext-gfm-strikethrough`

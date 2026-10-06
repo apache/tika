@@ -1,5 +1,10 @@
 Release 4.2.0 - unreleased
 
+   * GeoGebraParser reads structure.json and inline text content with jackson-core's
+     streaming parser; tika-parser-miscoffice-module and tika-parser-cad-module no
+     longer depend on jackson-databind, and OSGi deployments of tika-bundle-standard
+     need only jackson-core (TIKA-4956).
+
    * tika-bundle-standard no longer embeds dependencies that are OSGi bundles
      themselves (commons-*, pdfbox, fontbox, bouncycastle, jsoup, asm, xz, xmpcore,
      dd-plist); deploy them alongside it (TIKA-4934). Its imports of those packages,
