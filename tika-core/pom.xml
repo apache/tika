@@ -63,22 +63,15 @@
       <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
     </dependency>
 
-    <!-- Optional OSGi dependencies, used only when running within OSGi -->
+    <!-- OSGi API, used only when running within OSGi -->
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.core</artifactId>
       <scope>provided</scope>
-      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.osgi</groupId>
       <artifactId>org.osgi.compendium</artifactId>
-      <scope>provided</scope>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>biz.aQute.bnd</groupId>
-      <artifactId>biz.aQute.bndlib</artifactId>
       <scope>provided</scope>
     </dependency>
 

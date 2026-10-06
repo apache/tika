@@ -14,9 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.bundle;
 
-/**
- * XPath utilities
- */
-@aQute.bnd.annotation.Version("2.0.0")
-package org.apache.tika.sax.xpath;
+import org.eclipse.osgi.launch.EquinoxFactory;
+import org.osgi.framework.launch.FrameworkFactory;
+
+public class EquinoxBundleIT extends BundleIT {
+
+    @Override
+    protected FrameworkFactory frameworkFactory() {
+        return new EquinoxFactory();
+    }
+}

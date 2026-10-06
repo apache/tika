@@ -1,0 +1,97 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Using Tika in OSGi
+:toc:
+
+Tika ships two OSGi bundles:
+
+* `tika-core`: the API, the MIME type registry and the default detectors.
+* `tika-bundle-standard`: the standard parsers, with the Tika modules and the libraries
+  that are not OSGi bundles themselves embedded inside it.
+
+Libraries that already ship as OSGi bundles are not embedded. Deploy them alongside the two
+Tika bundles so they can be shared with the rest of your container and updated on their own.
+
+== Bundles to deploy
+
+[cols="1,2"]
+|===
+|Group |Artifacts
+
+|Apache Tika
+|`org.apache.tika:tika-core`, `org.apache.tika:tika-bundle-standard`
+
+|Apache Commons
+|`commons-io:commons-io`, `commons-codec:commons-codec`, `commons-logging:commons-logging`,
+`org.apache.commons:commons-collections4`, `commons-compress`, `commons-csv`, `commons-exec`,
+`commons-lang3`, `commons-math3`, `commons-secure-xml`
+
+|Apache PDFBox
+|`org.apache.pdfbox:pdfbox`, `pdfbox-io`, `fontbox`
+
+|Bouncy Castle
+|`org.bouncycastle:bcprov-jdk18on`, `bcpkix-jdk18on`, `bcutil-jdk18on`, `bcjmail-jdk18on`
+
+|Jackson
+|`com.fasterxml.jackson.core:jackson-databind`, `jackson-core`, `jackson-annotations`
+
+|CommonMark
+|`org.commonmark:commonmark`, `commonmark-ext-gfm-tables`, `commonmark-ext-gfm-strikethrough`
+
+|Other
+|`org.apache.logging.log4j:log4j-api`, `org.jsoup:jsoup`, `org.ow2.asm:asm`,
+`org.tukaani:xz`, `com.adobe.xmp:xmpcore`, `com.googlecode.plist:dd-plist`
+|===
+
+Tika also logs through SLF4J 2.x, so the container needs `org.slf4j` packages and a logging
+backend.
+
+The authoritative list is the one Tika's own OSGi integration tests install:
+link:https://github.com/apache/tika/blob/main/tika-bundles/tika-bundle-standard/test-bundles.xml[`test-bundles.xml`].
+Use the versions that Tika release depends on (`mvn dependency:list` on
+`tika-bundle-standard` prints them); later minor versions of the same major also resolve.
+
+If one of these bundles is missing, `tika-bundle-standard` does not resolve, and the
+container's error names the missing package.
+
+== Services
+
+When it starts, `tika-bundle-standard` registers:
+
+* a `Parser` service (a `DefaultParser` over all the standard parsers)
+* a `Detector` service (a `DefaultDetector` over all the standard detectors)
+* its `EncodingDetector`, `LanguageDetector` and `MetadataFilter` providers, which `tika-core`
+  merges into its own defaults, so charset detection matches a classpath deployment
+
+No Service Loader Mediator (such as Apache Aries SPI Fly) is needed.
+
+To parse a document, including the documents embedded in it, build an `AutoDetectParser` from
+the two services:
+
+[source,java]
+----
+include::example$OsgiParseExample.java[tag=parse,indent=0]
+----
+
+== Tested containers
+
+Every build runs Tika's OSGi integration tests on Apache Felix and Eclipse Equinox. They
+check that both bundles resolve, that `tika-core` resolves on its own, and that detection and
+parsing through the registered services match a classpath deployment. If you run Tika in
+another container, such as Apache Karaf or an Eclipse p2 installation, reports on the
+https://issues.apache.org/jira/projects/TIKA[Tika issue tracker] are very welcome.
