@@ -586,6 +586,16 @@ public class TikaCLITest {
         return mine;
     }
 
+    /** Every file the shared -z run wrote belongs to some input; a stray would hide from the per-input filters. */
+    @Test
+    public void testShallowOutputHasNoStrays() {
+        Set<String> claimed = new HashSet<>();
+        for (String input : SHALLOW_INPUTS) {
+            claimed.addAll(shallowOutputOf(input));
+        }
+        assertEquals(shallowOutput, claimed);
+    }
+
     private static void assertShallow(String inputName, int expectedCount, String... expected) {
         Set<String> fileNames = shallowOutputOf(inputName);
         assertEquals(expectedCount, fileNames.size(), fileNames.toString());

@@ -60,7 +60,8 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
     private static Path SETUP_DIR;
     private static Path TEMP_OUTPUT_DIR;
     private static Path TIKA_CONFIG;
-    private static String[] FILES = new String[]{"hello_world.xml", "heavy_hang_30000.xml"};
+    private static String[] FILES = new String[]{"hello_world.xml", "heavy_hang_30000.xml",
+            "fake_oom.xml", "system_exit.xml"};
 
     // One server for the class: a crash here kills a pipes worker, never the server.
     @BeforeAll
@@ -107,6 +108,16 @@ public class TikaServerPipesIntegrationTest extends IntegrationTestBase {
         // This should timeout after 100ms, not 5000ms
         JsonNode node = testOneWithPerRequestTimeout("heavy_hang_30000.xml", 100, 503);
         assertEquals("TIMEOUT", node.get("status").asText());
+    }
+
+    /** /pipes shares /rmeta's response builder; pin the crash family on this endpoint too. */
+    @Test
+    public void testWorkerCrashes() throws Exception {
+        assertEquals("OOM", testOne("fake_oom.xml", false,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, 503).get("status").asText());
+        assertEquals("UNSPECIFIED_CRASH", testOne("system_exit.xml", false,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, 503).get("status").asText());
+        assertEquals("EMIT_SUCCESS", testOne("hello_world.xml", true).get("status").asText());
     }
 
     private JsonNode testOneWithPerRequestTimeout(String fileName, long timeoutMillis, int expectedStatus) throws Exception {

@@ -285,8 +285,8 @@ public class SharedServerModeTest {
         // same (corrupted) server was a real bug when ConnectionHandler didn't System.exit().
         Path inputDir = setupInputDir(tmp);
         Files.writeString(inputDir.resolve("warmup.xml"), MOCK_OK, StandardCharsets.UTF_8);
-        // two: the second proves a replacement fork (generation > 1) is itself replaced
-        for (int i = 0; i < 2; i++) {
+        // three: generations > 1 must be replaced too, and the restart bookkeeping must not drift
+        for (int i = 0; i < 3; i++) {
             Files.writeString(inputDir.resolve("oom" + i + ".xml"), MOCK_OOM, StandardCharsets.UTF_8);
             Files.writeString(inputDir.resolve("ok" + i + ".xml"), MOCK_OK, StandardCharsets.UTF_8);
         }
@@ -301,7 +301,7 @@ public class SharedServerModeTest {
             int port = pipesParser.getCurrentServerPort();
             assertTrue(port > 0, "should have a port after warmup");
 
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 3; i++) {
                 assertEquals(PipesResult.RESULT_STATUS.OOM, parse(pipesParser, "oom" + i + ".xml").status(),
                         "OOM " + i);
                 PipesResult okResult = parse(pipesParser, "ok" + i + ".xml");

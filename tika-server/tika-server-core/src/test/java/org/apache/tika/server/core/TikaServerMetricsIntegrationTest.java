@@ -124,6 +124,21 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
         assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 0.0);
     }
 
+    /** Shared server: the client that saw the OOM marks it; the restarter must not overwrite it with crash. */
+    @Test
+    @Timeout(240)
+    public void testSharedServerOomReason() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-metrics-shared.json"),
+                "--metricsPort", String.valueOf(metricsPort)});
+        awaitServerStartup();
+        assertCrash(TEST_OOM, "OOM");
+        assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
+
+        String body = get(metricsEndPoint + MetricsServer.PATH).body();
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"oom\"", 1.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 0.0);
+    }
+
     /** Polls (parse + scrape) until the sample reaches {@code expected}; returns the last body. */
     private String awaitSample(String name, String labels, double expected) throws Exception {
         long deadline = System.currentTimeMillis() + 30_000;

@@ -107,9 +107,11 @@ public abstract class CXFTestBase {
     private Path inputTempDirectory = null;
 
     // Keyed on the worker config's bytes; later classes with the same config reuse warm forks.
-    // Bounded so one-off configs don't pile up idle forks; classes run sequentially, so the
-    // evicted parser is never in use.
-    private static final int MAX_SHARED_WORKERS = 4;
+    // Forks start lazily and idle-exit, so the bound only caps parser objects; it must exceed
+    // the distinct configs in a module (server-standard has ~12) or warm forks get evicted and
+    // re-forked. Classes run sequentially (junit-platform.properties), so an evicted parser is
+    // never in use.
+    private static final int MAX_SHARED_WORKERS = 32;
     private static final Map<String, SharedWorker> SHARED_WORKERS =
             new LinkedHashMap<>(16, 0.75f, true) {
                 @Override
@@ -168,7 +170,11 @@ public abstract class CXFTestBase {
         return sharedUnpackDir;
     }
 
-    /** Return false if the class kills, times out or restarts a worker, or counts restarts. */
+    /**
+     * Return false if the class kills, times out or restarts a worker, or counts restarts.
+     * Today none does: restart counting lives in {@code TikaServerMetricsIntegrationTest},
+     * which runs a forked server, not this base.
+     */
     protected boolean sharesWorker() {
         return true;
     }
@@ -322,8 +328,14 @@ public abstract class CXFTestBase {
         synchronized (CXFTestBase.class) {
             SharedWorker w = SHARED_WORKERS.get(key);
             if (w == null) {
-                w = new SharedWorker(PipesParser.load(tikaJsonConfig, pipesConfig),
-                        pipesConfigPath);
+                PipesParser parser;
+                try {
+                    parser = PipesParser.load(tikaJsonConfig, pipesConfig);
+                } catch (Exception e) {
+                    Files.deleteIfExists(pipesConfigPath);
+                    throw e;
+                }
+                w = new SharedWorker(parser, pipesConfigPath);
                 SHARED_WORKERS.put(key, w);
                 LOG.info("shared pipes worker: new for {}", getClass().getSimpleName());
             } else {

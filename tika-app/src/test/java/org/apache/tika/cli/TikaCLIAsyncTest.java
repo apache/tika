@@ -64,7 +64,9 @@ public class TikaCLIAsyncTest {
     @BeforeAll
     public static void setUpClass() throws Exception {
         TIKA_CONFIG = Files.createTempFile(ASYNC_OUTPUT_DIR, "plugins-", ".json");
-        for (String f : new String[]{"alice.cli.test", "testJsonMultipleInts.html", "test_recursive_embedded.docx"}) {
+        // bad_xml.xml: onParseException EMIT must still write an output for a document that throws
+        for (String f : new String[]{"alice.cli.test", "testJsonMultipleInts.html",
+                "test_recursive_embedded.docx", "bad_xml.xml"}) {
             Files.copy(TEST_DATA_FILE.toPath().resolve(f), ASYNC_INPUT_DIR.resolve(f));
         }
 
@@ -144,7 +146,7 @@ public class TikaCLIAsyncTest {
                 json++;
             }
         }
-        assertEquals(3, json);
+        assertEquals(4, json);
     }
 
     private void checkForPrettyPrint(File f) throws IOException {

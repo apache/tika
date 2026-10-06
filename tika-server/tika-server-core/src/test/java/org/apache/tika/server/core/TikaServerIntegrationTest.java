@@ -17,15 +17,20 @@
 package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
+import java.util.List;
 
+import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.configuration.jsse.TLSParameterJaxBUtils;
@@ -38,6 +43,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.ProcessUtils;
 
 public class TikaServerIntegrationTest extends IntegrationTestBase {
@@ -90,7 +97,6 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
 
     }
 
-    // TLS is transport-only: GET / needs no pipes fork, and awaitServerStartup asserts its 200.
     @Test
     public void test1WayTLS() throws Exception {
         startProcess(new String[]{"-config", ProcessUtils.escapeCommandLine(TIKA_TLS_ONE_WAY_CONFIG
@@ -101,6 +107,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         WebClient webClient = WebClient.create(httpsEndpoint);
         configure1WayTLS(webClient);
         awaitServerStartup(webClient);
+        assertRmetaOverTls(webClient);
         webClient.close();
 
         //now test no tls config
@@ -122,6 +129,7 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
         WebClient webClient = WebClient.create(httpsEndpoint);
         configure2WayTLS(webClient);
         awaitServerStartup(webClient);
+        assertRmetaOverTls(webClient);
         webClient.close();
 
         //now test that no tls config fails
@@ -142,6 +150,18 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             //the messages vary too much between operating systems and
             //java versions to make a reliable assertion
         }
+    }
+
+    /** A TLS server forks too; a tlsConfig branch that leaves /rmeta unwired must fail here. */
+    private void assertRmetaOverTls(WebClient webClient) throws Exception {
+        Response response = webClient.path(RMETA_PATH).accept("application/json")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        assertEquals(200, response.getStatus());
+        List<Metadata> metadataList = JsonMetadataList.fromJson(
+                new InputStreamReader((InputStream) response.getEntity(), UTF_8));
+        assertEquals(1, metadataList.size());
+        assertEquals("Nikolai Lobachevsky", metadataList.get(0).get("author"));
+        assertContains("hello world", metadataList.get(0).get("tk:content"));
     }
 
     private void configure2WayTLS(WebClient webClient) throws GeneralSecurityException, IOException {
