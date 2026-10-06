@@ -28,19 +28,33 @@ import org.junit.platform.launcher.TestExecutionListener;
 import org.junit.platform.launcher.TestIdentifier;
 
 /**
- * Runs each test JVM under a random default locale, as Lucene's test framework does, so
- * locale-sensitive code paths are exercised across the JDK's whole locale set over time
- * rather than in one pinned locale. Registered through {@code META-INF/services}; the
- * launcher picks it up from the test classpath.
+ * With {@code -Dtika.test.locale=random}, runs the test JVM under a random default locale, as
+ * Lucene's test framework does, so locale-sensitive code paths are exercised across the
+ * JDK's whole locale set over time rather than in one pinned locale. CI passes that flag;
+ * a plain build keeps the JVM's own locale, so release and developer builds are
+ * deterministic. Registered through {@code META-INF/services}; the launcher picks it up
+ * from the test classpath.
  * <p>
- * {@code -Dtika.test.locale=<language tag>} pins the locale (as printed by a failed run),
- * {@code -Dtika.test.locale=system} keeps the JVM's own. The effective language tag is
- * published under the same property, and every failure carries it as a suppressed
- * exception so a surefire report shows how to reproduce.
+ * {@code -Dtika.test.locale=<language tag>} pins the locale (as printed by a failed run).
+ * The effective language tag is published under the same property, and every failure
+ * carries it as a suppressed exception so a surefire report shows how to reproduce.
  */
 public class RandomLocaleListener implements LauncherSessionListener, TestExecutionListener {
 
     public static final String PROPERTY = "tika.test.locale";
+
+    /**
+     * Half of the random picks come from here: locales whose casing, digit, calendar or
+     * shaping rules differ from en-US in ways code often overlooks, and which uniform
+     * sampling would each reach only once in several hundred runs.
+     */
+    static final List<Locale> PRIORITY_LOCALES = List.of(
+            Locale.forLanguageTag("tr-TR"),
+            Locale.forLanguageTag("az-Latn-AZ"),
+            Locale.forLanguageTag("th-TH-u-nu-thai-x-lvariant-TH"),
+            Locale.forLanguageTag("ja-JP-u-ca-japanese-x-lvariant-JP"),
+            Locale.forLanguageTag("ar-EG"),
+            Locale.forLanguageTag("de-DE"));
 
     private static volatile boolean reported;
 
@@ -54,12 +68,13 @@ public class RandomLocaleListener implements LauncherSessionListener, TestExecut
     }
 
     static Locale choose(String setting) {
-        if (setting == null || setting.isEmpty() || "random".equals(setting)) {
-            List<Locale> candidates = candidates();
-            return candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
-        }
-        if ("system".equals(setting)) {
+        if (setting == null || setting.isEmpty() || "system".equals(setting)) {
             return Locale.getDefault();
+        }
+        if ("random".equals(setting)) {
+            ThreadLocalRandom random = ThreadLocalRandom.current();
+            List<Locale> candidates = random.nextBoolean() ? PRIORITY_LOCALES : candidates();
+            return candidates.get(random.nextInt(candidates.size()));
         }
         Locale locale = Locale.forLanguageTag(setting);
         if (locale.getLanguage().isEmpty()) {

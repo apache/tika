@@ -48,4 +48,4 @@ jobs:
           key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-${{ runner.os }}-
       - name: Build with Maven
-        run: mvn install -Pfast -pl :tika-annotation-processor -am -B -q && mvn clean test install javadoc:aggregate -Pci -T1C -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        run: mvn install -Pfast -pl :tika-annotation-processor -am -B -q && mvn clean test install javadoc:aggregate -Pci -T1C -Dtika.test.locale=random -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"

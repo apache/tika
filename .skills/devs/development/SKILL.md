@@ -204,10 +204,10 @@ them back. Anything hot enough to need a real seek gets a channel from
   CONCATENATE-only bugs).
 - Keep tests non-duplicative: don't add a test whose failure another test
   already guarantees.
-- Every test JVM runs under a random default locale (`RandomLocaleListener` in
-  `tika-test-support`, wired through tika-parent).  A failure's stack trace and
-  the fork's stderr name the locale; reproduce with `-Dtika.test.locale=<tag>`,
-  or `-Dtika.test.locale=system` to keep the JVM's own.  A test that fails only
+- CI runs every test JVM under a random default locale (`-Dtika.test.locale=random`;
+  `RandomLocaleListener` in `tika-test-support`, wired through tika-parent). A plain
+  build keeps the JVM's own locale. A CI failure's stack trace and the fork's stderr
+  name the locale; reproduce with `-Dtika.test.locale=<tag>`.  A test that fails only
   in some locales is a bug in the code under test (use `Locale.ROOT`), not a
   reason to pin `Locale.US` in the test.
 - Where there's bang for the buck, prefer parameterized tests over

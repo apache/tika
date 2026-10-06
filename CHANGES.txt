@@ -1,9 +1,8 @@
 Release 4.1.0 - 9/24/2026
 
-   * Every test JVM runs under a random default locale (tika-test-support's
-     RandomLocaleListener); a failure names the locale and
-     -Dtika.test.locale=<tag> reproduces it. Replaces the fixed tr_TR CI job.
-     forbidden-apis runs in the tika-ml modules again (TIKA-4920).
+   * CI runs each test JVM under a random default locale (-Dtika.test.locale=random,
+     tika-test-support's RandomLocaleListener); a failure names the locale and
+     -Dtika.test.locale=<tag> reproduces it. Replaces the fixed tr_TR CI job (TIKA-4920).
 
    * Pipes forks now start with the parent JVM's default locale (-Duser.*)
      unless forkedJvmArgs set user.language; a fresh JVM took the OS locale,

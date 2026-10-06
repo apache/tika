@@ -1511,8 +1511,8 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.version}</version>
         <configuration>
-          <!-- Tests run under a random default locale (RandomLocaleListener); pin one with
-               -Dtika.test.locale=tr-TR. -Duser.language here would not work: surefire sets
+          <!-- -Dtika.test.locale=random (CI) or =tr-TR runs the tests under that default locale
+               (RandomLocaleListener). -Duser.language here would not work: surefire sets
                it in the fork only after the default Locale is fixed. -->
           <!-- java.io.tmpdir MUST be quoted: argLine is split on whitespace, and the Windows
                job deliberately checks out into a path containing a space. It must also be a

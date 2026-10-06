@@ -45,11 +45,12 @@ public class RandomLocaleListenerTest {
     public void testChoose() {
         assertEquals(Locale.forLanguageTag("tr-TR"), RandomLocaleListener.choose("tr-TR"));
         assertSame(Locale.getDefault(), RandomLocaleListener.choose("system"));
+        assertSame(Locale.getDefault(), RandomLocaleListener.choose(null));
+        assertSame(Locale.getDefault(), RandomLocaleListener.choose(""));
         assertThrows(IllegalArgumentException.class, () -> RandomLocaleListener.choose("?"));
         List<Locale> candidates = RandomLocaleListener.candidates();
         assertTrue(candidates.size() > 500, "only " + candidates.size() + " candidates");
-        assertTrue(candidates.contains(Locale.forLanguageTag("tr-TR")));
-        assertTrue(candidates.contains(Locale.forLanguageTag("th-TH-u-nu-thai-x-lvariant-TH")));
+        assertTrue(candidates.containsAll(RandomLocaleListener.PRIORITY_LOCALES));
         // the tag printed on failure must reproduce the pick, variants and extensions included
         for (Locale candidate : candidates) {
             assertFalse(candidate.getLanguage().isEmpty());
@@ -57,7 +58,7 @@ public class RandomLocaleListenerTest {
                     candidate.toString());
         }
         for (int i = 0; i < 20; i++) {
-            assertTrue(candidates.contains(RandomLocaleListener.choose(null)));
+            assertTrue(candidates.contains(RandomLocaleListener.choose("random")));
         }
     }
 }
