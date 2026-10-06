@@ -31,9 +31,7 @@
         <include>org.apache.tika:tika-bundle-standard</include>
         <!-- Dependencies that are OSGi bundles themselves (not embedded) -->
         <include>com.adobe.xmp:xmpcore</include>
-        <include>com.fasterxml.jackson.core:jackson-annotations</include>
         <include>com.fasterxml.jackson.core:jackson-core</include>
-        <include>com.fasterxml.jackson.core:jackson-databind</include>
         <include>com.googlecode.plist:dd-plist</include>
         <include>commons-codec:commons-codec</include>
         <include>commons-io:commons-io</include>
