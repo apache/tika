@@ -213,8 +213,9 @@ them back. Anything hot enough to need a real seek gets a channel from
   already guarantees.
 - `-Dtika.test.locale=random` runs every test JVM under a random default locale
   (`RandomLocaleListener` in `tika-test-support`, wired through tika-parent); run it
-  before touching anything that formats or parses text. It is off in CI until the
-  remaining locale-dependent tests are fixed (TIKA-4920). A plain build keeps the
+  before touching anything that formats or parses text. The PR jobs leave it off
+  until `nightly-locale-build` (one full build per priority locale, plus a random
+  draw) has been green several nights running (TIKA-4920). A plain build keeps the
   JVM's own locale. A failure's stack trace and the fork's stderr name the locale;
   reproduce with `-Dtika.test.locale=<tag>`.  A test that fails only
   in some locales is a bug in the code under test (use `Locale.ROOT`), not a
