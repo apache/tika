@@ -428,6 +428,8 @@ public class PerClientServerManager implements ServerManager {
                     } catch (IOException closeEx) {
                         LOG.debug("clientId={}: error closing rejected connection", clientId, closeEx);
                     }
+                    // Strangers must not be able to hold the deadline open.
+                    checkConnectDeadline(startTime);
                     continue;
                 }
                 socket.setSoTimeout(socketTimeoutMillis);
@@ -459,15 +461,18 @@ public class PerClientServerManager implements ServerManager {
                     throw new IOException(
                             "Server process died before connecting (exit code " + exitValue + ") - will retry");
                 }
-                // Check if we've exceeded the overall timeout
-                long elapsed = System.currentTimeMillis() - startTime;
-                if (elapsed > SOCKET_CONNECT_TIMEOUT_MS) {
-                    LOG.error("clientId={}: Timed out waiting for server to connect after {}ms", clientId, elapsed);
-                    throw new ServerInitializationException(
-                            "Server did not connect within " + SOCKET_CONNECT_TIMEOUT_MS + "ms");
-                }
+                checkConnectDeadline(startTime);
                 // Continue polling
             }
+        }
+    }
+
+    private void checkConnectDeadline(long startTime) throws ServerInitializationException {
+        long elapsed = System.currentTimeMillis() - startTime;
+        if (elapsed > SOCKET_CONNECT_TIMEOUT_MS) {
+            LOG.error("clientId={}: Timed out waiting for server to connect after {}ms", clientId, elapsed);
+            throw new ServerInitializationException(
+                    "Server did not connect within " + SOCKET_CONNECT_TIMEOUT_MS + "ms");
         }
     }
 

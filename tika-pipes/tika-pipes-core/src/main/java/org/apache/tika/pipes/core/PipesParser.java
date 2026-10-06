@@ -21,6 +21,10 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
@@ -69,7 +73,7 @@ public class PipesParser implements Closeable {
      *                       config, env references already resolved, over their stdin
      * @param pipesConfig the pipes configuration (may be modified by caller)
      * @return a new PipesParser instance
-     * @throws IOException if plugin extraction fails
+     * @throws IOException if plugin extraction or config serialization fails
      */
     public static PipesParser load(TikaJsonConfig tikaJsonConfig, PipesConfig pipesConfig)
             throws IOException {
@@ -141,6 +145,67 @@ public class PipesParser implements Closeable {
         } finally {
             if (client != null) {
                 clientQueue.offerFirst(client);
+            }
+        }
+    }
+
+    /**
+     * Starts every idle client's server now and waits until each is ready, instead of on the
+     * first {@link #parse}. Optional: it surfaces a server that can't start (bad config, a
+     * missing plugin) before work is queued. Clients busy in a {@link #parse} are skipped;
+     * they are already up.
+     *
+     * @throws ServerInitializationException if a server fails to start
+     */
+    public void start() throws InterruptedException, ServerInitializationException {
+        List<PipesClient> idle = new ArrayList<>();
+        PipesClient client;
+        while ((client = clientQueue.pollFirst()) != null) {
+            idle.add(client);
+        }
+        if (idle.isEmpty()) {
+            return;
+        }
+        ExecutorService executor = Executors.newFixedThreadPool(idle.size());
+        try {
+            List<Future<Void>> futures = new ArrayList<>();
+            for (PipesClient c : idle) {
+                futures.add(executor.submit(() -> {
+                    c.start();
+                    return null;
+                }));
+            }
+            ServerInitializationException failure = null;
+            for (Future<Void> future : futures) {
+                try {
+                    future.get();
+                } catch (ExecutionException e) {
+                    if (failure == null) {
+                        failure = e.getCause() instanceof ServerInitializationException sie ? sie
+                                : new ServerInitializationException("server failed to start", e.getCause());
+                    }
+                }
+            }
+            if (failure != null) {
+                throw failure;
+            }
+        } finally {
+            // A client goes back in the queue only once nothing is using it; each start is
+            // bounded by the startup timeouts.
+            executor.shutdownNow();
+            boolean interrupted = false;
+            while (true) {
+                try {
+                    if (executor.awaitTermination(1, TimeUnit.SECONDS)) {
+                        break;
+                    }
+                } catch (InterruptedException e) {
+                    interrupted = true;
+                }
+            }
+            idle.forEach(clientQueue::offerFirst);
+            if (interrupted) {
+                Thread.currentThread().interrupt();
             }
         }
     }

@@ -61,11 +61,17 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Test: programmatic Felix container + JUnit 5 -->
+    <!-- Test: programmatic Felix and Equinox containers + JUnit 5 -->
     <dependency>
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.framework</artifactId>
       <version>7.0.5</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.platform</groupId>
+      <artifactId>org.eclipse.osgi</artifactId>
+      <version>3.24.300</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -89,9 +95,6 @@
         <extensions>true</extensions>
         <configuration>
           <instructions>
-            <_runsystempackages>com.sun.xml.bind.marshaller, com.sun.xml.internal.bind.marshaller</_runsystempackages>
-            <!--  The file below and the _include entry may be removed once Tika targets OpenJDK 9.0 or above -->
-            <_include>src/main/resources/META-INF/MANIFEST.MF</_include>
             <Bundle-Activator>
               org.apache.tika.bundle.internal.BundleActivator
             </Bundle-Activator>
@@ -100,41 +103,24 @@
               tika-handler-boilerpipe|
               tika-encoding-detector-*|
               tika-langdetect-*|
+              tika-ml-*|
               jakarta.activation|
-              commons-compress|
-              xz|
-              commons-codec|
-              commons-csv|
-              commons-io|
-              commons-exec|
-              commons-collections4|
-              dd-plist|
               junrar|
-              pdfbox|
               pdfbox-tools|
-              fontbox|
-              bcjmail-jdk18on|
-              bcprov-jdk18on|
-              bcpkix-jdk18on|
-              bcutil-jdk18on|
               poi|
               poi-scratchpad|
               poi-ooxml|
               poi-ooxml-lite|
-              commons-math3|
               curvesapi|
               xmlbeans|
               jackcess|
               jackcess-encrypt|
-              commons-lang3|
-              jsoup|
-              asm|
               juniversalchardet|
               vorbis-java-core|
               vorbis-java-tika|
               metadata-extractor|
-              xmpcore|
               json-simple|
+              jwarc|
               boilerpipe|
               rome|
               rome-utils|
@@ -178,137 +164,32 @@
               org.slf4j,
               org.slf4j.event,
               org.slf4j.helpers,
-              android.util;resolution:=optional,
-              colorspace;resolution:=optional,
-              com.apple.eawt;resolution:=optional,
-              com.beust.jcommander;resolution:=optional,
-              com.github.luben.zstd;resolution:=optional,
-              com.github.javaparser;resolution:=optional,
-              com.github.javaparser.ast;resolution:=optional,
-              com.github.javaparser.ast.body;resolution:=optional,
-              com.github.javaparser.ast.expr;resolution:=optional,
-              com.github.javaparser.ast.nodeTypes;resolution:=optional,
-              com.github.javaparser.ast.type;resolution:=optional,
-              com.github.javaparser.resolution;resolution:=optional,
-              com.github.javaparser.resolution.declarations;resolution:=optional,
-              com.github.javaparser.resolution.types;resolution:=optional,
-              com.github.javaparser.symbolsolver;resolution:=optional,
-              com.github.javaparser.symbolsolver.resolution.typesolvers;resolution:=optional,
-              com.github.javaparser.utils;resolution:=optional,
-              com.google.common.base;resolution:=optional,
-              com.google.common.math;resolution:=optional,
-              com.google.common.util.concurrent.internal;resolution:=optional,
-              com.google.errorprone.annotations;resolution:=optional,
-              com.google.errorprone.annotations.concurrent;resolution:=optional,
-              com.google.protobuf;resolution:=optional,
-              com.ibm.icu.text;resolution:=optional,
-              com.microsoft.schemas.office.powerpoint;resolution:=optional,
-              com.microsoft.schemas.office.word;resolution:=optional,
-              com.sleepycat.je;resolution:=optional,
-              com.sun.javadoc;resolution:=optional,
-              com.sun.jna;resolution:=optional,
-              com.sun.jna.ptr;resolution:=optional,
-              com.sun.org.apache.xalan.internal;resolution:=optional,
-              com.sun.org.apache.xml.internal.resolver;resolution:=optional,
-              com.sun.org.apache.xml.internal.resolver.tools;resolution:=optional,
-              com.sun.org.apache.xpath.internal.jaxp;resolution:=optional,
-              com.sun.xml.bind.marshaller;resolution:=optional,
-              com.sun.xml.internal.bind.marshaller;resolution:=optional,
-              com.sun.msv.datatype;resolution:=optional,
-              com.sun.msv.datatype.xsd;resolution:=optional,
-              com.sun.tools.javadoc;resolution:=optional,
-              de.rototor.pdfbox.graphics2d;resolution:=optional,
-              icc;resolution:=optional,
-              jakarta.annotation;resolution:=optional,
-              javax.mail;resolution:=optional,
-              javax.mail.internet;resolution:=optional,
-              javax.net.ssl;resolution:=optional,
-              javax.servlet;resolution:=optional,
-              javax.servlet.annotation;resolution:=optional,
-              javax.servlet.http;resolution:=optional,
-              javax.measure.converter;resolution:=optional,
-              jakarta.ws.rs.core;resolution:=optional,
-              javax.xml.bind;resolution:=optional,
-              javax.xml.bind.annotation;resolution:=optional,
-              javax.xml.bind.annotation.adapters;resolution:=optional,
-              javax.xml.bind.attachment;resolution:=optional,
-              javax.xml.bind.helpers;resolution:=optional,
-              javax.xml.bind.util;resolution:=optional,
-              javax.xml.xpath;resolution:=optional,
-              jj2000.j2k.codestream;resolution:=optional,
-              jj2000.j2k.codestream.reader;resolution:=optional,
-              jj2000.j2k.decoder;resolution:=optional,
-              jj2000.j2k.entropy.decoder;resolution:=optional,
-              jj2000.j2k.fileformat.reader;resolution:=optional,
-              jj2000.j2k.image;resolution:=optional,
-              jj2000.j2k.image.invcomptransf;resolution:=optional,
-              jj2000.j2k.image.output;resolution:=optional,
-              jj2000.j2k.io;resolution:=optional,
-              jj2000.j2k.quantization.dequantizer;resolution:=optional,
-              jj2000.j2k.roi;resolution:=optional,
-              jj2000.j2k.util;resolution:=optional,
-              jj2000.j2k.wavelet.synthesis;resolution:=optional,
-              net.sf.saxon;resolution:=optional,
-              net.sf.saxon.dom;resolution:=optional,
-              net.sf.saxon.lib;resolution:=optional,
-              net.sf.saxon.ma.map;resolution:=optional,
-              net.sf.saxon.om;resolution:=optional,
-              net.sf.saxon.query;resolution:=optional,
-              net.sf.saxon.sxpath;resolution:=optional,
-              net.sf.saxon.trans;resolution:=optional,
-              net.sf.saxon.tree.wrapper;resolution:=optional,
-              net.sf.saxon.type;resolution:=optional,
-              net.sf.saxon.value;resolution:=optional,
-              org.apache.batik.anim.dom;resolution:=optional,
-              org.apache.batik.bridge;resolution:=optional,
-              org.apache.batik.dom;resolution:=optional,
-              org.apache.batik.ext.awt;resolution:=optional,
-              org.apache.batik.ext.awt.image.renderable;resolution:=optional,
-              org.apache.batik.gvt;resolution:=optional,
-              org.apache.batik.parser;resolution:=optional,
-              org.apache.batik.svggen;resolution:=optional,
-              org.apache.batik.util;resolution:=optional,
-              org.apache.jcp.xml.dsig.internal.dom;resolution:=optional,
-              org.apache.maven.model;resolution:=optional,
-              org.apache.maven.plugin;resolution:=optional,
-              org.apache.maven.plugin.logging;resolution:=optional,
-              org.apache.maven.project;resolution:=optional,
-              org.apache.tools.ant;resolution:=optional,
-              org.apache.tools.ant.taskdefs;resolution:=optional,
-              org.apache.tools.ant.types;resolution:=optional,
-              org.apache.xml.resolver;resolution:=optional,
-              org.apache.xml.resolver.readers;resolution:=optional,
-              org.apache.xml.resolver.tools;resolution:=optional,
-              org.apache.xml.security;resolution:=optional,
-              org.apache.xml.security.c14n;resolution:=optional,
-              org.apache.xml.security.signature;resolution:=optional,
-              org.apache.xml.security.utils;resolution:=optional,
-              org.apache.xmlbeans.impl.xpath.saxon;resolution:=optional,
-              org.apache.xmlbeans.impl.xquery.saxon;resolution:=optional,
-              org.brotli.dec;resolution:=optional,
-              org.cyberneko.html.xercesbridge;resolution:=optional,
-              org.etsi.uri.x01903.v14;resolution:=optional,
-              org.itadaki.bzip2;resolution:=optional,
-              org.jaxen;resolution:=optional,
-              org.jaxen.dom4j;resolution:=optional,
-              org.jaxen.pattern;resolution:=optional,
-              org.jaxen.saxpath;resolution:=optional,
-              org.jaxen.util;resolution:=optional,
-              org.openxmlformats.schemas.officeDocument.x2006.math;resolution:=optional,
-              org.openxmlformats.schemas.schemaLibrary.x2006.main;resolution:=optional,
-              org.w3c.dom;resolution:=optional,
-              org.w3c.dom.ranges;resolution:=optional,
-              org.w3c.dom.svg;resolution:=optional,
-              org.w3c.dom.traversal;resolution:=optional,
-              org.xml.sax;resolution:=optional,
-              org.xml.sax.ext;resolution:=optional,
-              org.xml.sax.helpers;resolution:=optional,
-              sun.io;resolution:=optional,
-              sun.java2d.cmm.kcms;resolution:=optional,
-              sun.misc;resolution:=optional,
-              sun.nio.ch;resolution:=optional,
-              sun.reflect.generics.reflectiveObjects;resolution:=optional,
-              thredds.featurecollection;resolution:=optional,
+              <!-- not exported by any deployed bundle; carved out of the mandatory patterns below -->
+              com.adobe.internal.xmp.impl;resolution:=optional,
+              org.apache.pdfbox.debugger;resolution:=optional,
+              <!-- Deployed as separate bundles (see test-bundles.xml): mandatory, so a missing
+                   bundle fails resolution rather than a parse -->
+              com.adobe.internal.xmp;com.adobe.internal.xmp.*,
+              com.dd.plist,
+              com.fasterxml.jackson.core;com.fasterxml.jackson.core.*,
+              com.fasterxml.jackson.databind,
+              org.apache.commons.codec;org.apache.commons.codec.*,
+              org.apache.commons.collections4;org.apache.commons.collections4.*,
+              org.apache.commons.compress;org.apache.commons.compress.*,
+              org.apache.commons.csv,
+              org.apache.commons.exec,
+              <!-- commons-io 2.x also exports a 1.4.9999 compatibility version, which bnd would pick -->
+              org.apache.commons.io;org.apache.commons.io.*;version="${range;[==,+);${commons.io.version}}",
+              org.apache.commons.lang3;org.apache.commons.lang3.*,
+              org.apache.commons.logging,
+              org.apache.commons.math3;org.apache.commons.math3.*,
+              org.apache.fontbox;org.apache.fontbox.*,
+              org.apache.logging.log4j;org.apache.logging.log4j.message;org.apache.logging.log4j.spi;org.apache.logging.log4j.util,
+              org.apache.pdfbox;org.apache.pdfbox.*,
+              org.bouncycastle;org.bouncycastle.*,
+              org.jsoup;org.jsoup.*,
+              org.objectweb.asm,
+              org.tukaani.xz,
               *;resolution:=optional
             </Import-Package>
           </instructions>
@@ -344,12 +225,40 @@
       <plugin>
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>${maven.failsafe.version}</version>
+        <!-- Equinox and Felix both ship org.apache.felix.resolver, so one framework per run -->
         <executions>
           <execution>
+            <id>felix</id>
             <goals>
               <goal>integration-test</goal>
               <goal>verify</goal>
             </goals>
+            <configuration>
+              <includes>
+                <include>**/FelixBundleIT.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>org.eclipse.platform:org.eclipse.osgi</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+              <reportNameSuffix>felix</reportNameSuffix>
+            </configuration>
+          </execution>
+          <execution>
+            <id>equinox</id>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+            <configuration>
+              <includes>
+                <include>**/EquinoxBundleIT.java</include>
+              </includes>
+              <classpathDependencyExcludes>
+                <classpathDependencyExclude>org.apache.felix:org.apache.felix.framework</classpathDependencyExclude>
+              </classpathDependencyExcludes>
+              <reportNameSuffix>equinox</reportNameSuffix>
+              <summaryFile>${project.build.directory}/failsafe-reports/failsafe-summary-equinox.xml</summaryFile>
+            </configuration>
           </execution>
         </executions>
       </plugin>

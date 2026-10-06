@@ -98,11 +98,6 @@
       <version>${project.version}</version>
       <type>pom</type>
     </dependency>
-    <dependency>
-      <groupId>biz.aQute.bnd</groupId>
-      <artifactId>biz.aQute.bndlib</artifactId>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
 
   <description>Java-7 reliant components, including FileTypeDetector implementations</description>

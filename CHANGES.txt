@@ -1,9 +1,22 @@
 Release 4.2.0 - unreleased
 
-   * Forked pipes servers receive their config over stdin instead of reading a file,
-     with env references resolved once in the parent. PipesForkParser and tika-server
-     no longer write a merged config to the temp dir. Per-client forks now present an
-     auth token on connect, as shared-mode forks already did (TIKA-4952).
+   * Forked pipes servers get their config and auth token over stdin; nothing is written
+     to the temp dir. Server-manager and PipesServer signatures change accordingly (TIKA-4952).
+
+   * tika-bundle-standard no longer embeds dependencies that are OSGi bundles
+     themselves (commons-*, pdfbox, fontbox, bouncycastle, jsoup, asm, xz, xmpcore,
+     dd-plist); deploy them alongside it (TIKA-4934). Its imports of those packages,
+     plus log4j-api and jackson, are now mandatory, so a missing bundle fails
+     resolution instead of silently dropping parsers; tika-ml-core and jwarc are now
+     embedded, along with tika-ml-junkdetect. The bundle now registers its
+     EncodingDetector, LanguageDetector and MetadataFilter providers, so tika-core's
+     defaults match the classpath. Restores OOXMLParser, HttpParser, GeoGebraParser and
+     charset detection in OSGi, which had fallen back to BOM and declared charsets
+     only. The bundle now declares its real Java requirement (JavaSE 17, not 1.8)
+     and drops 67 imports of packages it never referenced (TIKA-4955).
+     
+   * PipesParser.start() and PipesForkParser.start() bring the forks up before the
+     first parse and fail fast if one can't start (TIKA-4953).
 
    * Refactor date parsing for more consistent, accurate dates. File-system
      times from archive entries and mail attachments move to fs:created/
@@ -14,6 +27,11 @@ Release 4.2.0 - unreleased
      offsets, normalizes every value of a multi-valued key, and fills in
      partial dates (2019 -> 2019-01-01T12:00:00Z) so date fields never
      reject a document (TIKA-4917).
+
+   * Fix a StackOverflowError when parsing or detecting through the Parser and Detector
+     services tika-bundle-standard registers in OSGi: the registered DefaultParser and
+     DefaultDetector no longer consume dynamic services, and a dynamic DefaultParser or
+     DefaultDetector no longer nests another dynamic one (TIKA-4942).
 
    * XmlSecurityContractTest pins XMLReaderUtils' XXE and entity-expansion defenses
      forbidden-apis now rejects building JAXP or Commons Secure XML parsers anywhere but 
@@ -35,6 +53,11 @@ Release 4.2.0 - unreleased
    * Quiet default pipes logging: per-parse timing lines (WORKER/CLIENT/
      SERVER/RESOURCE_TIMING) move from INFO to TRACE, and per-fork-start,
      per-connection and plugin lifecycle lines move to DEBUG (TIKA-4949).
+
+   * tika-core's OSGi manifest no longer requires a Service Loader Mediator or
+     providers for Parser, Detector, EncodingDetector, LanguageDetector and
+     MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
+     (TIKA-4945).
 
 Release 4.1.0 - 9/26/2026
 

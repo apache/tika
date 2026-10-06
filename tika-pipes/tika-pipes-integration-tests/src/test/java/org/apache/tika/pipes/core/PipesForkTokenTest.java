@@ -18,11 +18,15 @@ package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.file.Path;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -54,14 +58,25 @@ public class PipesForkTokenTest {
         try (PerClientServerManager manager = new PerClientServerManager(
                 pipesConfig, ForkBootstrap.toBytes(tikaJsonConfig), 0);
                 PipesClient client = new PipesClient(pipesConfig, manager)) {
+            // The port is bound before the fork is launched; connecting as soon as it appears
+            // puts the stranger first in the backlog regardless of how fast the fork's JVM starts.
+            CompletableFuture<Socket> strangerFuture = CompletableFuture.supplyAsync(() -> {
+                try {
+                    while (manager.getPort() <= 0) {
+                        Thread.sleep(1);
+                    }
+                    Socket stranger = new Socket();
+                    stranger.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(),
+                            manager.getPort()));
+                    stranger.getOutputStream().write(new byte[ForkBootstrap.TOKEN_LENGTH_BYTES]);
+                    stranger.getOutputStream().flush();
+                    return stranger;
+                } catch (IOException | InterruptedException e) {
+                    throw new CompletionException(e);
+                }
+            });
             manager.ensureRunning();
-            // Connects while the fork's JVM is still starting, so it is first in the backlog.
-            try (Socket stranger = new Socket()) {
-                stranger.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(),
-                        manager.getPort()));
-                stranger.getOutputStream().write(new byte[ForkBootstrap.TOKEN_LENGTH_BYTES]);
-                stranger.getOutputStream().flush();
-
+            try (Socket stranger = strangerFuture.get(30, TimeUnit.SECONDS)) {
                 PipesResult result = client.process(new FetchEmitTuple(TEST_DOC,
                         new FetchKey("fsf", TEST_DOC), new EmitKey(), new Metadata(),
                         new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));

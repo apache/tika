@@ -149,6 +149,26 @@ public class PipesClient implements Closeable {
         this.ownsServerManager = true;
     }
 
+    /**
+     * Brings the server up and waits until it is ready, rather than on the first
+     * {@link #process}. Does nothing if it is already up.
+     *
+     * @throws ServerInitializationException if the server can't start
+     */
+    public void start() throws InterruptedException, ServerInitializationException {
+        try {
+            maybeInit();
+        } catch (InterruptedException e) {
+            serverManager.connectionAbandoned();
+            closeConnection();
+            throw e;
+        } catch (ServerInitializationException e) {
+            serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
+            closeConnection();
+            throw e;
+        }
+    }
+
     public int getFilesProcessed() {
         return filesProcessed;
     }
