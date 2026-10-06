@@ -32,6 +32,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
@@ -81,6 +82,8 @@ public class ExecutableParser implements Parser, MachineMetadata {
                             MACH_O_FVMLIB, MACH_O_CORE, MACH_O_PRELOAD, MACH_O_DYLIB,
                             MACH_O_DYLINKER, MACH_O_BUNDLE, MACH_O_DYLIB_STUB, MACH_O_DSYM,
                             MACH_O_KEXT_BUNDLE)));
+
+    private static final String CONFIG_KEY = "executable-parser";
 
     private ExecutableParserConfig defaultConfig = new ExecutableParserConfig();
 
@@ -149,15 +152,17 @@ public class ExecutableParser implements Parser, MachineMetadata {
     /**
      * Parses a DOS or Windows PE file, extracting metadata and, unless
      * {@link ExecutableParserConfig#isExtractIcons()} says otherwise, the icon
-     * resources as embedded documents. An {@link ExecutableParserConfig} in
-     * the context takes precedence over the parser's own.
+     * resources as embedded documents. A configuration in the context, an
+     * {@link ExecutableParserConfig} or JSON under "executable-parser", takes
+     * precedence over the parser's own.
      */
     public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, TikaInputStream tis,
                         byte[] first4, ParseContext context)
             throws TikaException, IOException, SAXException {
         CoffHeader header = parsePEHeader(metadata, tis);
-        if (header != null &&
-                context.get(ExecutableParserConfig.class, defaultConfig).isExtractIcons()) {
+        ExecutableParserConfig config = ParseContextConfig.getConfig(context, CONFIG_KEY,
+                ExecutableParserConfig.class, defaultConfig);
+        if (header != null && config.isExtractIcons()) {
             PEIconExtractor.extract(tis, header, xhtml, metadata, context);
         }
     }
@@ -320,7 +325,8 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
     /**
      * Configuration of {@link ExecutableParser}. One set on the
-     * {@link ParseContext} replaces the parser's own for that parse.
+     * {@link ParseContext}, as an object or as JSON under "executable-parser",
+     * takes the parser's place for that parse.
      */
     public static class ExecutableParserConfig implements Serializable {
 

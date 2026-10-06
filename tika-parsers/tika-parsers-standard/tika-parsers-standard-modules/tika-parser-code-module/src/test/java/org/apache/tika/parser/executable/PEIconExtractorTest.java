@@ -759,6 +759,34 @@ public class PEIconExtractorTest extends TikaTest {
     }
 
     /**
+     * A request to tika-server or through pipes carries its configuration as
+     * JSON under the parser's name, not as an object under its class.
+     */
+    @Test
+    public void testExtractIconsPerRequestJson() throws Exception {
+        RecordingExtractor extractor = new RecordingExtractor();
+        ParseContext context = extractor.context();
+        context.setJsonConfig("executable-parser", "{\"extractIcons\": false}");
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/" + EXE)) {
+            new ExecutableParser().parse(tis, new BodyContentHandler(), new Metadata(), context);
+        }
+        assertEquals(0, extractor.metadata.size());
+
+        // and the other way round, over a parser that was configured without icons
+        ExecutableParser.ExecutableParserConfig noIcons =
+                new ExecutableParser.ExecutableParserConfig();
+        noIcons.setExtractIcons(false);
+        extractor = new RecordingExtractor();
+        context = extractor.context();
+        context.setJsonConfig("executable-parser", "{\"extractIcons\": true}");
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/" + EXE)) {
+            new ExecutableParser(noIcons).parse(tis, new BodyContentHandler(), new Metadata(),
+                    context);
+        }
+        assertEquals(2, extractor.contents.size());
+    }
+
+    /**
      * The pre-4.2.0 entry point still yields the metadata, just no icons.
      */
     @Test
