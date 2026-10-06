@@ -258,8 +258,8 @@ public class TesseractOCRParserTest extends TikaTest {
         assertEquals("75", m.get(TIFF.IMAGE_LENGTH));
     }
 
-    // TODO TIKA-4923: metadata-extractor lowercases the resolution unit in the default locale
-    @DisabledIfSystemProperty(named = "tika.test.locale", matches = "tr(-.*)?")
+    // TODO TIKA-4923: metadata-extractor lowercases the resolution unit in the default locale (tr/az dotless i)
+    @DisabledIfSystemProperty(named = "tika.test.locale", matches = "(tr|az)(-.*)?")
     @Test
     public void getNormalMetadataTooUnknownField() throws Exception {
         Metadata m = getXML("testTIFF.tif").metadata;
