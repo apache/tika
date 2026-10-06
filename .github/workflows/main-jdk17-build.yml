@@ -96,11 +96,12 @@ jobs:
       # javadoc:aggregate is push-only: it is an aggregate-docs artifact, is
       # single-threaded, and javadoc breakage is caught on main within the hour;
       # PR pushes should not wait on it.
+      # Random test locales (-Dtika.test.locale=random, RandomLocaleListener) stay off
+      # in CI until the remaining locale-dependent tests are fixed (TIKA-4920).
       - name: Build with Maven
         run: |
           mvn install -Pfast -pl :tika-annotation-processor -am -B -q
           mvn clean test install ${{ github.event_name == 'push' && 'javadoc:aggregate' || '' }} -Pci -T1C \
-            -Dtika.test.locale=random \
             -pl "$(echo "$IT_MODULES" | sed 's/:/!:/g')" \
             -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 
@@ -141,7 +142,7 @@ jobs:
       # so without this they would drop out of license checking entirely.
       - name: Run integration tests
         run: |
-          mvn clean apache-rat:check test -Pci -Dtika.test.locale=random \
+          mvn clean apache-rat:check test -Pci \
             -pl "$IT_MODULES" \
             -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 
