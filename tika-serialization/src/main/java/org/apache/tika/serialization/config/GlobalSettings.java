@@ -26,7 +26,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * <pre>
  * {
  *   "xml-reader-utils": {
- *     "maxEntityExpansions": 1000,
  *     "maxNumReuses": 100,
  *     "poolSize": 10
  *   }
@@ -74,8 +73,11 @@ public class GlobalSettings {
      */
     public static class XmlReaderUtilsConfig {
         /**
-         * Maximum entity expansions allowed in XML parsing.
+         * Ignored since 4.2.0: the JAXP provider's secure-processing limits apply.
+         *
+         * @deprecated since 4.2.0, removal planned for 5.0
          */
+        @Deprecated
         @JsonProperty("maxEntityExpansions")
         private Integer maxEntityExpansions;
 

@@ -61,6 +61,7 @@ public abstract class TikaPipesSolrTestBase {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaPipesSolrTestBase.class);
     private static final Duration SOLR_READY_TIMEOUT = Duration.ofMinutes(3);
+    private static final Duration SOLR_PROBE_READ_TIMEOUT = Duration.ofSeconds(30);
 
     private final String collection = "testcol";
     private final int numDocs = 42;
@@ -102,8 +103,10 @@ public abstract class TikaPipesSolrTestBase {
                     .withCommand("-DzkRun" + noReverseDns);
         }
         // Jetty answers 503 until the CoreContainer has loaded; on failure Testcontainers
-        // includes the container log in the exception
+        // includes the container log in the exception. On some Windows Docker Desktop setups a
+        // ~15ms Solr response still misses the default 1s read timeout (TIKA-4832)
         solr.waitingFor(Wait.forHttp("/solr/admin/info/system").forPort(8983).forStatusCode(200)
+                .withReadTimeout(SOLR_PROBE_READ_TIMEOUT)
                 .withStartupTimeout(SOLR_READY_TIMEOUT));
         solr.start();
         LOG.info("Solr is ready at http://{}:{}", solr.getHost(), solr.getMappedPort(8983));

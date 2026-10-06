@@ -40,10 +40,6 @@
     	<groupId>com.fasterxml.jackson.core</groupId>
     	<artifactId>jackson-core</artifactId>
     </dependency>
-    <dependency>
-    	<groupId>com.fasterxml.jackson.core</groupId>
-    	<artifactId>jackson-databind</artifactId>
-    </dependency>
   </dependencies>
   <properties>
     <!-- TIKA-4816 metadata string-key ban, main sources; see tika-parent -->
@@ -73,6 +69,6 @@
     </plugins>
   </build>
   <scm>
-    <tag>4.1.0-rc1</tag>
+    <tag>4.1.0-rc2</tag>
   </scm>
 </project>

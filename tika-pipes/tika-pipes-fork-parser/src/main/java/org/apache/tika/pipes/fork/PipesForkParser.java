@@ -20,8 +20,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,13 +43,13 @@ import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
+import org.apache.tika.pipes.core.ServerInitializationException;
 import org.apache.tika.pipes.core.config.ConfigMerger;
 import org.apache.tika.pipes.core.config.ConfigOverrides;
 import org.apache.tika.pipes.core.config.DefaultPluginsDir;
 import org.apache.tika.pipes.core.fetcher.BytesFetcher;
 import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.pipes.core.fetcher.PayloadRouter;
-import org.apache.tika.plugins.TikaPluginManager;
 import org.apache.tika.sax.ContentHandlerFactory;
 
 /**
@@ -157,6 +155,23 @@ public class PipesForkParser implements Closeable {
         this.tikaConfigPath = mergeResult.configPath();
         this.internalFetcherId = mergeResult.fetcherId();
         this.pipesParser = PipesParser.load(tikaConfigPath);
+    }
+
+    /**
+     * Starts the forked processes now and waits until each is ready, instead of on the first
+     * {@link #parse}. Optional: call it to find out that the forks can't start (bad config,
+     * missing plugins, bad JVM args) before any work is queued.
+     *
+     * @throws PipesForkParserException with status {@code FAILED_TO_INITIALIZE} if a forked
+     *         process fails to start
+     */
+    public void start() throws InterruptedException, PipesForkParserException {
+        try {
+            pipesParser.start();
+        } catch (ServerInitializationException e) {
+            throw new PipesForkParserException(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
+                    "Failed to start forked process: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -411,12 +426,9 @@ public class PipesForkParser implements Closeable {
      */
     private ConfigMerger.MergeResult createTikaConfigFile() throws IOException {
         PipesConfig pc = config.getPipesConfig();
-        List<String> jvmArgs = new ArrayList<>();
-        if (pc.getForkedJvmArgs() != null) {
-            jvmArgs.addAll(pc.getForkedJvmArgs());
-        }
 
         String pluginRoots;
+        boolean classpathPlugins = false;
         if (config.getPluginsDir() != null) {
             pluginRoots = config.getPluginsDir().toAbsolutePath().toString();
         } else {
@@ -427,7 +439,7 @@ public class PipesForkParser implements Closeable {
                 // No install layout, so this is a Maven consumer: the file-system plugin this
                 // parser needs is on the classpath, and only the fork is told to look there.
                 pluginRoots = Path.of(DefaultPluginsDir.PLUGINS_DIR_NAME).toAbsolutePath().toString();
-                jvmArgs.add("-D" + TikaPluginManager.CLASSPATH_PLUGINS_PROPERTY + "=true");
+                classpathPlugins = true;
                 LOG.info("no plugins directory found; the fork loads plugins from its classpath");
             }
         }
@@ -438,7 +450,15 @@ public class PipesForkParser implements Closeable {
                 // Use null ID to trigger UUID generation
                 .addFetcher(null, "file-system-fetcher",
                         Map.of("allowAbsolutePaths", true))
-                .setPipesConfig(pc.getNumClients(), pc.getMaxFilesProcessedPerProcess(), jvmArgs)
+                // socketTimeoutMillis/javaPath start unset in PipesForkParserConfig, so a
+                // value here was set in code and overrides the user config (TIKA-4931)
+                .setPipesConfig(
+                        pc.getNumClients(),
+                        pc.getMaxFilesProcessedPerProcess(),
+                        pc.getForkedJvmArgs(),
+                        pc.getSocketTimeoutMillis(),
+                        pc.getJavaPath())
+                .setClasspathPlugins(classpathPlugins)
                 // Use PASSBACK_ALL strategy - results returned through socket
                 .setEmitStrategy(EmitStrategy.PASSBACK_ALL)
                 .setPluginRoots(pluginRoots);

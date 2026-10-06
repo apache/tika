@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.pipes.api.ComponentIds;
+import org.apache.tika.plugins.TikaPluginManager;
 
 /**
  * Utility for merging configuration overrides with existing Tika JSON configuration.
@@ -168,6 +169,13 @@ public class ConfigMerger {
                 pipesNode.put("maxFilesProcessedPerProcess", pc.getMaxFilesProcessedPerProcess());
             }
 
+            if (pc.getSocketTimeoutMillis() > 0) {
+                pipesNode.put("socketTimeoutMillis", pc.getSocketTimeoutMillis());
+            }
+            if (pc.getJavaPath() != null) {
+                pipesNode.put("javaPath", pc.getJavaPath());
+            }
+
             // Apply forked JVM args
             List<String> jvmArgs = pc.getForkedJvmArgs();
             if (jvmArgs != null && !jvmArgs.isEmpty()) {
@@ -179,6 +187,20 @@ public class ConfigMerger {
             }
 
             LOG.debug("Applied pipes config: numClients={}", pc.getNumClients());
+        }
+
+        // Appended, not set: the user config's forkedJvmArgs must survive the opt-in
+        if (overrides.isClasspathPlugins()) {
+            ObjectNode pipesNode = getOrCreateObject(mapper, root, "pipes");
+            ArrayNode argsArray = pipesNode.withArray("forkedJvmArgs");
+            String arg = "-D" + TikaPluginManager.CLASSPATH_PLUGINS_PROPERTY + "=true";
+            boolean present = false;
+            for (JsonNode existing : argsArray) {
+                present |= arg.equals(existing.asText());
+            }
+            if (!present) {
+                argsArray.add(arg);
+            }
         }
 
         // Apply emit strategy

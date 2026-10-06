@@ -14,9 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.tika.utils;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Tika exception.
+ * Exempts a class or member from the forbidden-apis bans in tika-parent. Use only where
+ * the banned call is the chokepoint itself, such as {@link XMLReaderUtils} building the
+ * XML parsers every other caller must obtain from it.
  */
-@aQute.bnd.annotation.Version("2.0.0")
-package org.apache.tika.exception;
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD})
+public @interface SuppressForbidden {
+}

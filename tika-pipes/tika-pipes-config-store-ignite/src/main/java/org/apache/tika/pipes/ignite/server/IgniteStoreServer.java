@@ -19,7 +19,6 @@ package org.apache.tika.pipes.ignite.server;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.ignite.IgniteServer;
@@ -27,6 +26,8 @@ import org.apache.ignite.InitParameters;
 import org.apache.ignite.table.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.tika.pipes.ignite.IgniteConfigStore;
 
 /**
  * Embedded Ignite 3.x server node that hosts the config store table.
@@ -116,19 +117,18 @@ public class IgniteStoreServer implements AutoCloseable {
             node.api().sql().execute(null, createZoneSql);
             LOG.info("Distribution zone 'tika_zone' created/verified");
 
-            Table existingTable = node.api().tables().table(tableName);
+            Table existingTable = node.api().tables().table(IgniteConfigStore.quotedName(tableName));
             if (existingTable != null) {
                 LOG.info("Table {} already exists", tableName);
                 return;
             }
 
-            String createTableSql = String.format(Locale.ROOT,
-                    "CREATE TABLE IF NOT EXISTS %s (" +
+            String createTableSql = "CREATE TABLE IF NOT EXISTS " +
+                    IgniteConfigStore.quotedName(tableName) + " (" +
                     "  id VARCHAR PRIMARY KEY," +
                     "  name VARCHAR," +
                     "  json VARCHAR(10000)" +
-                    ") ZONE tika_zone",
-                    tableName);
+                    ") ZONE tika_zone";
 
             node.api().sql().execute(null, createTableSql);
             LOG.info("Table {} created successfully", tableName);

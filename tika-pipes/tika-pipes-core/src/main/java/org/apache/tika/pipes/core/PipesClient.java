@@ -142,6 +142,26 @@ public class PipesClient implements Closeable {
         this.ownsServerManager = true;
     }
 
+    /**
+     * Brings the server up and waits until it is ready, rather than on the first
+     * {@link #process}. Does nothing if it is already up.
+     *
+     * @throws ServerInitializationException if the server can't start
+     */
+    public void start() throws InterruptedException, ServerInitializationException {
+        try {
+            maybeInit();
+        } catch (InterruptedException e) {
+            serverManager.connectionAbandoned();
+            closeConnection();
+            throw e;
+        } catch (ServerInitializationException e) {
+            serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
+            closeConnection();
+            throw e;
+        }
+    }
+
     public int getFilesProcessed() {
         return filesProcessed;
     }
@@ -318,10 +338,10 @@ public class PipesClient implements Closeable {
      * the response leg costs; the worker logs its side under the same {@code id}.
      */
     private void logTiming(String id, PipesResult result, long totalNanos) {
-        if (!TIMING_LOG.isInfoEnabled()) {
+        if (!TIMING_LOG.isTraceEnabled()) {
             return;
         }
-        TIMING_LOG.info("CLIENT_TIMING client={} id={} status={} init_us={} req_ser_us={}"
+        TIMING_LOG.trace("CLIENT_TIMING client={} id={} status={} init_us={} req_ser_us={}"
                         + " req_write_us={} first_frame_us={} finished_us={} resp_deser_us={}"
                         + " ack_us={} frames={} total_us={}",
                 pipesClientId, id, result == null ? "NULL" : result.status().name(),
@@ -643,7 +663,7 @@ public class PipesClient implements Closeable {
         }
         PipesMessage msg = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
         if (msg.type() == PipesMessageType.READY) {
-            LOG.info("clientId={}: server successfully started", pipesClientId);
+            LOG.debug("clientId={}: server successfully started", pipesClientId);
         } else if (msg.type() == PipesMessageType.STARTUP_FAILED) {
             // Send ACK for startup failure
             PipesMessage.ack().write(tuple.output);

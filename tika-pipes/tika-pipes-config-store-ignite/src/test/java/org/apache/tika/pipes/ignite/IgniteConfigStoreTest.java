@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 import org.junit.jupiter.api.AfterAll;
@@ -33,8 +34,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperty;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,8 +45,8 @@ import org.apache.tika.plugins.ExtensionConfig;
 /**
  * Integration tests for {@link IgniteConfigStore} using an embedded Ignite 3.x server.
  */
-// TODO TIKA-4922: Ignite uppercases unquoted table names in the default locale
-@DisabledIfSystemProperty(named = "user.language", matches = "tr")
+// testTurkishLocale sets the JVM-wide default locale
+@Isolated
 public class IgniteConfigStoreTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(IgniteConfigStoreTest.class);
@@ -157,6 +158,24 @@ public class IgniteConfigStoreTest {
             assertNotNull(config);
             assertEquals(id, config.id());
             assertEquals("type" + i, config.name());
+        }
+    }
+
+    // TIKA-4922: Ignite folds unquoted table names in the default locale
+    @Test
+    public void testTurkishLocale() throws Exception {
+        Locale defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+        IgniteConfigStore trStore = new IgniteConfigStore();
+        try {
+            trStore.init();
+            trStore.put("tr1", new ExtensionConfig("tr1", "type1", "{}"));
+            assertNotNull(trStore.get("tr1"));
+            assertTrue(trStore.keySet().contains("tr1"));
+            assertEquals(1, trStore.size());
+        } finally {
+            trStore.close();
+            Locale.setDefault(defaultLocale);
         }
     }
 
