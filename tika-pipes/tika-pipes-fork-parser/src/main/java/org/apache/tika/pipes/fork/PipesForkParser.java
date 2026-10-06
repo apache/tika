@@ -21,7 +21,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
@@ -119,6 +123,8 @@ import org.apache.tika.sax.ContentHandlerFactory;
 public class PipesForkParser implements Closeable {
 
     public static final String DEFAULT_FETCHER_NAME = "fs";
+
+    private static final Logger LOG = LoggerFactory.getLogger(PipesForkParser.class);
 
     private final PipesForkParserConfig config;
     private final PipesParser pipesParser;
@@ -417,6 +423,23 @@ public class PipesForkParser implements Closeable {
     private ConfigMerger.MergedConfig createTikaConfig() throws IOException {
         PipesConfig pc = config.getPipesConfig();
 
+        String pluginRoots;
+        boolean classpathPlugins = false;
+        if (config.getPluginsDir() != null) {
+            pluginRoots = config.getPluginsDir().toAbsolutePath().toString();
+        } else {
+            Optional<Path> found = DefaultPluginsDir.find(PipesForkParser.class);
+            if (found.isPresent()) {
+                pluginRoots = found.get().toString();
+            } else {
+                // No install layout, so this is a Maven consumer: the file-system plugin this
+                // parser needs is on the classpath, and only the fork is told to look there.
+                pluginRoots = Path.of(DefaultPluginsDir.PLUGINS_DIR_NAME).toAbsolutePath().toString();
+                classpathPlugins = true;
+                LOG.info("no plugins directory found; the fork loads plugins from its classpath");
+            }
+        }
+
         // Build configuration overrides
         ConfigOverrides.Builder builder = ConfigOverrides.builder()
                 // Add internal fetcher with UUID-based name to avoid conflicts
@@ -431,20 +454,14 @@ public class PipesForkParser implements Closeable {
                         pc.getForkedJvmArgs(),
                         pc.getSocketTimeoutMillis(),
                         pc.getJavaPath())
+                .setClasspathPlugins(classpathPlugins)
                 // Use PASSBACK_ALL strategy - results returned through socket
-                .setEmitStrategy(EmitStrategy.PASSBACK_ALL);
+                .setEmitStrategy(EmitStrategy.PASSBACK_ALL)
+                .setPluginRoots(pluginRoots);
 
         // Set timeout limits if configured
         if (config.getTimeoutLimits() != null) {
             builder.setTimeoutLimits(config.getTimeoutLimits());
-        }
-
-        // plugin-roots is mandatory downstream (TikaPluginManager.load throws without it), so an
-        // unset pluginsDir has to resolve to something rather than fail construction.
-        if (config.getPluginsDir() != null) {
-            builder.setPluginRoots(config.getPluginsDir().toAbsolutePath().toString());
-        } else {
-            builder.setPluginRoots(DefaultPluginsDir.resolve(PipesForkParser.class));
         }
 
         ConfigOverrides overrides = builder.build();

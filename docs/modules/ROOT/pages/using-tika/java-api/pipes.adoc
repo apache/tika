@@ -50,31 +50,36 @@ API; use the classes above.
 
 == Where plugins come from
 
-Fetchers, emitters, iterators and reporters are xref:pipes/plugins/index.adoc[PF4J plugins]. An
-embedding application can supply them two ways:
+Fetchers, emitters, iterators and reporters are xref:pipes/plugins/index.adoc[PF4J plugins], and
+Tika loads them from **zip files in the directories named by `plugin-roots`**. A plugin jar on
+your application's classpath is not scanned; the only thing a Maven dependency on a plugin gives
+you is its classes to call directly. The zips are distributed from the
+https://tika.apache.org/download.html[Apache download page], and the `tika-app` and `tika-server`
+distributions carry them in `plugins/`.
 
-* **As Maven dependencies.** A plugin jar on the application's classpath is discovered through
-  its `META-INF/extensions.idx`, and the forked JVM inherits the parent's classpath.
-  `tika-pipes-fork-parser` already depends on `tika-pipes-file-system`, so `PipesForkParser`
-  works with no further setup. For another source or destination, add that plugin's jar
-  (`tika-pipes-s3`, `tika-pipes-opensearch`, ...) as an ordinary dependency.
-* **As zips in a plugins directory.** This is the distribution layout: `tika-app` and
-  `tika-server` ship a `plugins/` directory of plugin zips, and `plugin-roots` points at it.
-  Get the zips from the distribution zips on the https://tika.apache.org/download.html[download
-  page]; they are not on Maven Central. A zip plugin takes precedence over a classpath plugin of
-  the same name.
+----
+/opt/tika/plugins/
+  tika-pipes-file-system-{tika-version}.zip
+  tika-pipes-s3-{tika-version}.zip
+----
 
-Either way, `plugin-roots` must be present in the JSON config for `PipesParser` and
-`AsyncProcessor`, even if the directory is empty. `PipesForkParser` fills it in for you (a
-`plugins` directory beside the jar, else one in the working directory) and logs a warning when it
-finds none; with the plugins on the classpath the warning is harmless.
-`PipesForkParserConfig.setPluginsDir(Path)` sets it explicitly.
+`PipesParser` and `AsyncProcessor` require `plugin-roots` in the JSON config. `PipesForkParser`
+resolves it: an explicit `PipesForkParserConfig.setPluginsDir(Path)`, else a `plugins` directory
+beside the jar or in the working directory. When there is neither, which is the plain Maven case,
+it starts its fork with `-Dtika.plugins.classpath=true` so the file-system plugin it needs comes
+from the classpath, where the `tika-pipes-fork-parser` dependency put it.
+
+That property is the one deliberate exception. Set on any Tika process, it makes pf4j also
+accept factories found through `META-INF/extensions.idx` on the classpath, running in the
+application classloader with none of the plugin isolation; a zip in `plugin-roots` still wins over
+a classpath copy of the same plugin. It is there for embedding, not for installing plugins, and
+what happens on a classpath assembled that way is yours to own.
 
 == Dependencies
 
 [source,xml,subs=attributes+]
 ----
-<!-- PipesForkParser; pulls in tika-pipes-core, the file-system plugin and the standard parsers -->
+<!-- PipesForkParser; pulls in tika-pipes-core and the standard parsers -->
 <dependency>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-pipes-fork-parser</artifactId>
@@ -95,8 +100,8 @@ finds none; with the plugins on the classpath the warning is harmless.
 </dependency>
 ----
 
-The forked JVM is launched with the parent's classpath, so the parsers and plugins your application
-depends on are the ones the fork uses.
+The forked JVM is launched with the parent's classpath, so the parsers your application depends on
+are the parsers the fork uses.
 
 == PipesForkParser: one document, result returned
 

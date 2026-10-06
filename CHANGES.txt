@@ -1,5 +1,14 @@
 Release 4.2.0 - unreleased
 
+   * Pipes plugins load only from the zips in plugin-roots; a plugin jar on the classpath
+     needs -Dtika.plugins.classpath=true, which PipesForkParser sets on its fork when it
+     has no plugins directory. Dev mode loads an exploded target/classes (TIKA-4918).
+
+   * GeoGebraParser reads structure.json and inline text content with jackson-core's
+     streaming parser; tika-parser-miscoffice-module and tika-parser-cad-module no
+     longer depend on jackson-databind, and OSGi deployments of tika-bundle-standard
+     need only jackson-core (TIKA-4956).
+     
    * Forked pipes servers get their config and auth token over stdin; nothing is written
      to the temp dir. Server-manager and PipesServer signatures change accordingly (TIKA-4952).
      

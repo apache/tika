@@ -103,6 +103,8 @@ class PipesBiDirectionalStreamingIntegrationTest {
         // Parse it as JSON to inject the correct javaPath
         @SuppressWarnings("unchecked")
         Map<String, Object> configMap = OBJECT_MAPPER.readValue(configContent, Map.class);
+        configMap.put("plugin-roots",
+                Paths.get("target").toAbsolutePath().resolve("plugins").toString());
 
         // Get or create the pipes section
         @SuppressWarnings("unchecked")
