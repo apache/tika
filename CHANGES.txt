@@ -11,6 +11,9 @@ Release 4.2.0 - unreleased
      charset detection in OSGi, which had fallen back to BOM and declared charsets
      only. The bundle now declares its real Java requirement (JavaSE 17, not 1.8)
      and drops 67 imports of packages it never referenced (TIKA-4955).
+     
+   * PipesParser.start() and PipesForkParser.start() bring the forks up before the
+     first parse and fail fast if one can't start (TIKA-4953).
 
    * Refactor date parsing for more consistent, accurate dates. File-system
      times from archive entries and mail attachments move to fs:created/

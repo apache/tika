@@ -331,6 +331,10 @@ problems instead of returning them.
 
 == Lifecycle
 
+Forks start on the first parse. To start them up front, call `start()` on `PipesParser` or
+`PipesForkParser`: it waits until every fork is ready and throws if one can't start (bad config,
+a missing plugin, bad `javaPath`), so a broken setup shows up before any work is queued.
+
 All three classes are `Closeable`. Closing kills the forked JVMs and removes the temporary files
 the parent created for them. Each fork also restarts itself after `maxFilesProcessedPerProcess` documents to
 bound slow leaks in the parsing libraries. Sizing the pool — `numClients`, heap per fork, CPU

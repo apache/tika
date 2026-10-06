@@ -144,6 +144,33 @@ public class PipesForkParserTest {
 
     /** TIKA-4931: a code setting equal to the default still overrides the user config file. */
     @Test
+    public void testStartBeforeFirstParse() throws Exception {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.writeString(testFile, "hello");
+        PipesForkParserConfig config = new PipesForkParserConfig().setPluginsDir(PLUGINS_DIR);
+
+        try (PipesForkParser parser = new PipesForkParser(config);
+             TikaInputStream tis = TikaInputStream.get(testFile)) {
+            parser.start();
+            assertTrue(parser.parse(tis).isSuccess());
+        }
+    }
+
+    /** start() reports a fork that can't start, without a parse to provoke it. */
+    @Test
+    public void testStartFailsFast() throws Exception {
+        PipesForkParserConfig config = new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setJavaPath(tempDir.resolve("no-such-java").toString());
+
+        try (PipesForkParser parser = new PipesForkParser(config)) {
+            PipesForkParserException e = assertThrows(PipesForkParserException.class, parser::start);
+            assertEquals(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, e.getStatus());
+            assertTrue(e.getMessage().contains("no-such-java"), e.getMessage());
+        }
+    }
+
+    @Test
     public void testExplicitDefaultJavaPathBeatsUserConfig() throws Exception {
         Path userConfig = tempDir.resolve("user-config.json");
         Files.writeString(userConfig, "{\"pipes\":{\"javaPath\":\""
