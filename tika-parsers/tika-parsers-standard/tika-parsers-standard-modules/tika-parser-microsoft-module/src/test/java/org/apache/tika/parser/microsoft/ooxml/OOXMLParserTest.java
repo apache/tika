@@ -36,6 +36,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 
 import org.apache.tika.MultiThreadedTikaTest;
 import org.apache.tika.config.loader.TikaLoader;
@@ -57,6 +58,8 @@ import org.apache.tika.parser.microsoft.OfficeParser;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.OfficeParserTest;
 
+//pins the JVM default locale, which is global: no other class may run alongside
+@Isolated
 public class OOXMLParserTest extends MultiThreadedTikaTest {
 
     private static Locale USER_LOCALE = null;
