@@ -25,7 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -39,11 +38,9 @@ import javax.imageio.ImageIO;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -86,7 +83,7 @@ public class ThumbnailPresetTest extends CXFTestBase {
 
     @Override
     protected InputStream getPipesConfigInputStream() throws IOException {
-        unpackTempDir = Files.createTempDirectory("tika-unpack-test-");
+        unpackTempDir = sharedUnpackDir();
         Map<String, Object> replacements = new HashMap<>();
         replacements.put("UNPACK_EMITTER_BASE_PATH", unpackTempDir.toAbsolutePath().toString());
         replacements.put("PLUGINS_PATHS",
@@ -104,19 +101,9 @@ public class ThumbnailPresetTest extends CXFTestBase {
         return unpackTempDir;
     }
 
-    @Override
-    @AfterAll
-    public void tearDown() throws Exception {
-        super.tearDown();
-        if (unpackTempDir != null && Files.exists(unpackTempDir)) {
-            FileUtils.deleteDirectory(unpackTempDir.toFile());
-        }
-    }
-
     @ParameterizedTest
     @CsvSource({
             "testDOCX_Thumbnail.docx, png", // EMF thumbnail, rasterized by the metafile renderer
-            "testPDFTwoTextBoxes.pdf, png", // first page rendering
             "testMP3_twoCovers.mp3, png"    // two stored covers; the first one wins
     })
     public void testExactlyOneThumbnail(String file, String format) throws Exception {
@@ -129,7 +116,12 @@ public class ThumbnailPresetTest extends CXFTestBase {
 
     @Test
     public void testPdfPageIsFittedInColour() throws Exception {
-        byte[] png = unpack(PRESET_PATH, "testPDFTwoTextBoxes.pdf").values().iterator().next();
+        Map<String, byte[]> entries = unpack(PRESET_PATH, "testPDFTwoTextBoxes.pdf");
+        assertEquals(1, entries.size(), entries.keySet().toString());
+        Map.Entry<String, byte[]> entry = entries.entrySet().iterator().next();
+        assertTrue(entry.getKey().endsWith(".png"), entry.getKey());
+        byte[] png = entry.getValue();
+        assertEquals("png", imageFormat(png), entry.getKey());
         BufferedImage image = ImageIO.read(new ByteArrayInputStream(png));
         // the preset's box, not the 300 dpi grayscale page OCR would see: a portrait page
         // is 256 tall and narrower, within a pixel of PDFBox's flooring

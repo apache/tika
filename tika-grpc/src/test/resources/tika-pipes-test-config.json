@@ -34,5 +34,6 @@
       }
     }
   },
+  "text-recognizers": [],
   "plugin-roots": "PLUGIN_ROOTS"
 }

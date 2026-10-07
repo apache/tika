@@ -16,12 +16,22 @@
  */
 package org.apache.tika.bundle;
 
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import java.text.DecimalFormatSymbols;
+import java.util.Locale;
+
 import org.osgi.framework.launch.FrameworkFactory;
 
 public class FelixBundleIT extends BundleIT {
 
     @Override
     protected FrameworkFactory frameworkFactory() {
+        // TODO: drop once Felix formats its JavaSE version with Locale.ROOT (Util.java:168 in
+        // 7.0.5 builds "0.0.0.JavaSE_%03d" in the default locale; Arabic-Indic digits make an
+        // invalid qualifier, the system bundle exports no java.* and nothing resolves)
+        assumeTrue(DecimalFormatSymbols.getInstance(Locale.getDefault()).getZeroDigit() == '0',
+                "Felix cannot start under a locale with non-ASCII digits");
         return new org.apache.felix.framework.FrameworkFactory();
     }
 }

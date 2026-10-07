@@ -331,7 +331,11 @@ pull in large native and scientific dependencies and are not in `tika-app`.
 
 link:{api}/org/apache/tika/parser/executable/ExecutableParser.html[ExecutableParser]
 extracts platform, architecture and type metadata from a range of executable
-and library formats, such as Windows PE and Linux/BSD ELF binaries;
+and library formats, such as Windows PE and Linux/BSD ELF binaries. For
+Windows PE files (EXE, DLL) it also emits each icon group as an embedded
+`image/vnd.microsoft.icon` document, the first one, which Windows shows for
+the file, typed as a thumbnail; the text output stays empty. The
+`extractIcons` option (on by default) turns this off.
 link:{api}/org/apache/tika/parser/executable/UniversalExecutableParser.html[UniversalExecutableParser]
 unpacks macOS universal (fat) binaries.
 

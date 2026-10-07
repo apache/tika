@@ -80,7 +80,7 @@ public class PluginsTestHelper {
             Files.createDirectories(inputDir);
         }
         for (String testDoc : testDocs) {
-            Files.copy(PipesServerTest.class.getResourceAsStream("/test-documents/" + testDoc), inputDir.resolve(testDoc));
+            Files.copy(PluginsTestHelper.class.getResourceAsStream("/test-documents/" + testDoc), inputDir.resolve(testDoc));
         }
     }
 

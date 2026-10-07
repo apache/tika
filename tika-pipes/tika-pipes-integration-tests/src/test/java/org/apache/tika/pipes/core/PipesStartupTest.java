@@ -56,7 +56,7 @@ public class PipesStartupTest {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         pipesConfig.setNumClients(2);
-        try (PipesParser parser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser parser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             assertEquals(0, parser.startedServerCount());
             parser.start();
             assertEquals(2, parser.startedServerCount());
@@ -72,7 +72,7 @@ public class PipesStartupTest {
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         pipesConfig.setNumClients(2);
         pipesConfig.setUseSharedServer(true);
-        try (PipesParser parser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser parser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             parser.start();
             assertEquals(1, parser.startedServerCount());
             assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS, parse(parser).status());
@@ -85,7 +85,7 @@ public class PipesStartupTest {
                 "tika-config-bad-class.json", tmp);
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-        try (PipesParser parser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser parser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             assertThrows(ServerInitializationException.class, parser::start);
             assertEquals(pipesConfig.getNumClients(), parser.getIdleClientCount(),
                     "a failed start() must still return every client");
