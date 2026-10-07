@@ -404,7 +404,6 @@
   {"key":"onenote:conflictPageGuids","namespace":"onenote","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
   {"key":"onenote:crcName","namespace":"onenote","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"onenote:creationTimestamp","namespace":"onenote","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
-  {"key":"onenote:entityGuids","namespace":"onenote","valueType":"TEXT","cardinality":"BAG","module":"tika-core"},
   {"key":"onenote:ffvLastCodeThatWroteToThisFile","namespace":"onenote","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"onenote:ffvNewestCodeThatHasWrittenToThisFile","namespace":"onenote","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"onenote:ffvOldestCodeThatHasWrittenToThisFile","namespace":"onenote","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},

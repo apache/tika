@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -408,27 +409,13 @@ public class MSOneStorePackage {
         // Only objects reachable from the root objects of the current revision are part of
         // the current content. The object groups may also contain older, superseded versions
         // of objects (under a different object ID); those are intentionally not walked.
-        // A blob-only root (no property set) cannot reach the page body, so it does not
-        // count as a resolved content root: if the content root declare dangles next to it,
-        // the walk-everything fallback must still fire or the page body is silently lost.
-        boolean resolvedContentRoot = false;
-        boolean unresolvedRoot = false;
-        for (RevisionManifestRootDeclare rootDeclare : cell.rootDeclares) {
-            RevisionStoreObject rootObject = objectsById.get(rootDeclare.objectExGuid);
-            if (rootObject == null) {
-                recordParseWarning("OneNote cell root object " + rootDeclare.objectExGuid +
-                        " could not be resolved");
-                unresolvedRoot = true;
-            } else {
-                if (rootObject.propertySet != null) {
-                    resolvedContentRoot = true;
-                }
-                walkObject(rootObject, objectsById, visited, AuthorRole.NONE, options, metadata,
-                        xhtml, 0);
-            }
+        CellRoots roots = cellRoots(cell, objectsById, this::recordParseWarning);
+        for (RevisionStoreObject rootObject : roots.declared) {
+            walkObject(rootObject, objectsById, visited, AuthorRole.NONE, options, metadata,
+                    xhtml, 0);
         }
-        if (cell.rootDeclares.isEmpty() || (unresolvedRoot && !resolvedContentRoot)) {
-            if (cell.rootDeclares.isEmpty()) {
+        if (roots.walkAll) {
+            if (cell.rootDeclares != null && cell.rootDeclares.isEmpty()) {
                 recordParseWarning("OneNote cell has no declared root objects; walking all objects");
             } else {
                 recordParseWarning("OneNote cell root objects could not be resolved; walking all objects");
@@ -440,6 +427,48 @@ public class MSOneStorePackage {
                 }
             }
         }
+    }
+
+    /**
+     * Resolves the objects a cell walk starts from: the root objects declared by the current
+     * revision, then, when the declares are empty or dangle without a property-set root, every
+     * object in the groups. A blob-only root (no property set) cannot reach the page body, so
+     * it does not count as a resolved content root: if the content root declare dangles next
+     * to it, the walk-everything fallback must still fire or the page body is silently lost.
+     */
+    private CellRoots cellRoots(RevisionStoreCell cell,
+                                Map<ExGuid, RevisionStoreObject> objectsById,
+                                Consumer<String> unresolvedRootWarning) {
+        CellRoots roots = new CellRoots();
+        if (cell.rootDeclares != null) {
+            for (RevisionManifestRootDeclare rootDeclare : cell.rootDeclares) {
+                RevisionStoreObject rootObject = objectsById.get(rootDeclare.objectExGuid);
+                if (rootObject == null) {
+                    unresolvedRootWarning.accept("OneNote cell root object " +
+                            rootDeclare.objectExGuid + " could not be resolved");
+                    roots.unresolvedRoot = true;
+                } else {
+                    if (rootObject.propertySet != null) {
+                        roots.resolvedContentRoot = true;
+                    }
+                    roots.declared.add(rootObject);
+                }
+            }
+        }
+        roots.walkAll = cell.rootDeclares == null || cell.rootDeclares.isEmpty()
+                || (roots.unresolvedRoot && !roots.resolvedContentRoot);
+        return roots;
+    }
+
+    /**
+     * Root resolution shared by {@link #walkCell} and
+     * {@link #findPageGuid(RevisionStoreCell, Map)} so the two cannot diverge.
+     */
+    private static final class CellRoots {
+        final List<RevisionStoreObject> declared = new ArrayList<>();
+        boolean resolvedContentRoot;
+        boolean unresolvedRoot;
+        boolean walkAll;
     }
 
     private String[] sortedValues(Set<String> values) {
@@ -904,7 +933,8 @@ public class MSOneStorePackage {
                 lastModified = lastMod;
             }
             metadata.set(TikaCoreProperties.MODIFIED, String.valueOf(lastModified));
-        } else if (oneNotePropertyEnum == OneNotePropertyEnum.Author) {
+        } else if (oneNotePropertyEnum == OneNotePropertyEnum.Author
+                && property instanceof PrtFourBytesOfLengthFollowedByData) {
             recordAuthor(decodeOneNoteText(
                     ((PrtFourBytesOfLengthFollowedByData) property).data), authorRole);
         } else if (propertyType == PropertyType.FourBytesOfLengthFollowedByData) {
@@ -984,23 +1014,25 @@ public class MSOneStorePackage {
         }
     }
 
+    // later file-identity candidates are ignored by the collector (first wins), so the
+    // scan only short-circuits between sources, not within one
     private boolean sectionGuidCollected() {
         return !guids.values(OneNoteGuidCollector.Category.SECTION).isEmpty();
     }
 
     void collectFileIdentityGuidsFromGroups(List<RevisionStoreObjectGroup> groups) {
-        if (groups == null || guids.isFull() || sectionGuidCollected()) {
+        if (groups == null || guids.isFull()) {
             return;
         }
         for (RevisionStoreObjectGroup group : groups) {
-            if (guids.isFull() || sectionGuidCollected()) {
+            if (guids.isFull()) {
                 return;
             }
             if (group == null || group.objects == null) {
                 continue;
             }
             for (RevisionStoreObject object : group.objects) {
-                if (guids.isFull() || sectionGuidCollected()) {
+                if (guids.isFull()) {
                     return;
                 }
                 if (object == null || object.propertySet == null
@@ -1014,12 +1046,11 @@ public class MSOneStorePackage {
 
     void collectFileIdentityGuids(PropertySet propertySet, int depth) {
         if (propertySet == null || propertySet.rgPrids == null || propertySet.rgData == null
-                || depth >= PropertySet.MAX_PROPERTY_NESTING || guids.isFull()
-                || sectionGuidCollected()) {
+                || depth >= PropertySet.MAX_PROPERTY_NESTING || guids.isFull()) {
             return;
         }
         int count = Math.min(propertySet.rgPrids.length, propertySet.rgData.size());
-        for (int i = 0; i < count && !guids.isFull() && !sectionGuidCollected(); i++) {
+        for (int i = 0; i < count && !guids.isFull(); i++) {
             PropertyID propertyID = propertySet.rgPrids[i];
             IProperty property = propertySet.rgData.get(i);
             long propertyIdValue = Unsigned.uint(propertyID.value).longValue();
@@ -1037,7 +1068,7 @@ public class MSOneStorePackage {
                     && property instanceof PrtArrayOfPropertyValues
                     && ((PrtArrayOfPropertyValues) property).data != null) {
                 for (PropertySet nested : ((PrtArrayOfPropertyValues) property).data) {
-                    if (guids.isFull() || sectionGuidCollected()) {
+                    if (guids.isFull()) {
                         return;
                     }
                     collectFileIdentityGuids(nested, depth + 1);
@@ -1056,26 +1087,14 @@ public class MSOneStorePackage {
             return null;
         }
         Set<ExGuid> visited = new HashSet<>();
-        boolean resolvedContentRoot = false;
-        boolean unresolvedRoot = false;
-        if (cell.rootDeclares != null) {
-            for (RevisionManifestRootDeclare rootDeclare : cell.rootDeclares) {
-                RevisionStoreObject rootObject = objectsById.get(rootDeclare.objectExGuid);
-                if (rootObject == null) {
-                    unresolvedRoot = true;
-                    continue;
-                }
-                if (rootObject.propertySet != null) {
-                    resolvedContentRoot = true;
-                }
-                String guid = findPageGuid(rootObject, objectsById, visited, 0);
-                if (guid != null) {
-                    return guid;
-                }
+        CellRoots roots = cellRoots(cell, objectsById, warning -> { });
+        for (RevisionStoreObject rootObject : roots.declared) {
+            String guid = findPageGuid(rootObject, objectsById, visited, 0);
+            if (guid != null) {
+                return guid;
             }
         }
-        if (cell.rootDeclares == null || cell.rootDeclares.isEmpty()
-                || (unresolvedRoot && !resolvedContentRoot)) {
+        if (roots.walkAll) {
             for (RevisionStoreObjectGroup group : cell.objectGroups) {
                 if (group == null || group.objects == null) {
                     continue;

@@ -58,12 +58,20 @@ public interface OneNote {
 
     Property MOST_RECENT_AUTHORS = Property.externalTextBag(PREFIX + "mostRecentAuthors");
     Property ORIGINAL_AUTHORS = Property.externalTextBag(PREFIX + "originalAuthors");
+
+    /**
+     * GUID of the section file: guidFile from the classic header, or the first
+     * FileIdentityGuid property found in a newer-format package.
+     */
     Property SECTION_GUID = Property.externalText(PREFIX + "sectionGuid");
+    /** GUIDs of jcidPageMetadata (0x30) objects; version-history copies are excluded. */
     Property PAGE_GUIDS = Property.externalTextBag(PREFIX + "pageGuids");
+    /** GUIDs of jcidPageSeriesNode (0x08) objects. */
     Property PAGE_SERIES_GUIDS = Property.externalTextBag(PREFIX + "pageSeriesGuids");
+    /** GUIDs of jcidPageNode (0x0B) objects. */
     Property PAGE_NODE_GUIDS = Property.externalTextBag(PREFIX + "pageNodeGuids");
+    /** GUIDs of jcidConflictPageMetadata (0x38) objects. */
     Property CONFLICT_PAGE_GUIDS = Property.externalTextBag(PREFIX + "conflictPageGuids");
-    Property ENTITY_GUIDS = Property.externalTextBag(PREFIX + "entityGuids");
     Property CREATION_TIMESTAMP = Property.externalText(PREFIX + "creationTimestamp");
     Property LAST_MODIFIED_TIMESTAMP = Property.externalText(PREFIX + "lastModifiedTimestamp");
 }

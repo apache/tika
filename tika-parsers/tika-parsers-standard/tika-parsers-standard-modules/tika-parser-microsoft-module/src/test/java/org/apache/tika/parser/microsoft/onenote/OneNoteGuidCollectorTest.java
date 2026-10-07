@@ -39,14 +39,14 @@ public class OneNoteGuidCollectorTest {
         assertFalse(collector.isFull());
         collector.add(OneNoteGuidCollector.Category.PAGE, null);
         for (int i = 0; i < OneNoteGuidCollector.MAX_GUID_COUNT; i++) {
-            collector.add(OneNoteGuidCollector.Category.ENTITY, "guid-" + i);
+            collector.add(OneNoteGuidCollector.Category.CONFLICT_PAGE, "guid-" + i);
         }
-        collector.add(OneNoteGuidCollector.Category.ENTITY, "guid-0");
+        collector.add(OneNoteGuidCollector.Category.CONFLICT_PAGE, "guid-0");
         collector.add(OneNoteGuidCollector.Category.PAGE, "overflow-1");
         collector.add(OneNoteGuidCollector.Category.PAGE, "overflow-2");
 
         assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT,
-                collector.values(OneNoteGuidCollector.Category.ENTITY).size());
+                collector.values(OneNoteGuidCollector.Category.CONFLICT_PAGE).size());
         assertTrue(collector.values(OneNoteGuidCollector.Category.PAGE).isEmpty());
         assertEquals(1, warnings.size());
         assertTrue(collector.isFull());
@@ -63,8 +63,7 @@ public class OneNoteGuidCollectorTest {
         assertEquals(OneNoteGuidCollector.Category.CONFLICT_PAGE,
                 OneNoteGuidCollector.categoryFor(OneNoteJcid.CONFLICT_PAGE_METADATA));
         assertNull(OneNoteGuidCollector.categoryFor(OneNoteJcid.SECTION_NODE));
-        assertEquals(OneNoteGuidCollector.Category.ENTITY,
-                OneNoteGuidCollector.categoryFor(0x7fff));
+        assertNull(OneNoteGuidCollector.categoryFor(0x7fff));
     }
 
     @Test

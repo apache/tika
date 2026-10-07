@@ -111,7 +111,6 @@ public class OneNoteParserTest extends TikaTest {
         assertArrayEquals(new String[] {"{52ADC330-8420-4DDC-A381-C8C30ECD8739}",
                 "{EE2E0DFD-9B11-4E22-AB62-53C667EF58D1}"},
                 metadata.getValues(OneNote.PAGE_NODE_GUIDS));
-        assertEquals(0, metadata.getValues(OneNote.ENTITY_GUIDS).length);
     }
 
     @Test

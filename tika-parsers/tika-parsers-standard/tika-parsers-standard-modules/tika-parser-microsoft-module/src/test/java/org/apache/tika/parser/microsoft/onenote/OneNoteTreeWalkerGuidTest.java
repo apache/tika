@@ -19,6 +19,7 @@ package org.apache.tika.parser.microsoft.onenote;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -53,24 +54,24 @@ public class OneNoteTreeWalkerGuidTest {
         walker.addClassicEntityGuid(OneNoteJcid.SECTION_NODE, "section-node-guid");
         walker.addClassicEntityGuid(OneNoteJcid.PAGE_NODE, "page-node-guid");
         walker.addClassicEntityGuid(0x7fff, "entity-guid");
-        for (int i = 0; i < OneNoteGuidCollector.MAX_GUID_COUNT - 5; i++) {
-            walker.addClassicEntityGuid(0x7fff, "entity-" + i);
+        for (int i = 0; i < OneNoteGuidCollector.MAX_GUID_COUNT - 4; i++) {
+            walker.addClassicEntityGuid(OneNoteJcid.PAGE_SERIES_NODE, "series-" + i);
         }
-        walker.addClassicEntityGuid(0x7fff, "overflow-guid");
+        walker.addClassicEntityGuid(OneNoteJcid.PAGE_SERIES_NODE, "overflow-guid");
 
         assertThrows(TikaException.class, walker::walkTree);
         assertEquals(List.of("page-guid"),
                 Arrays.asList(metadata.getValues(OneNote.PAGE_GUIDS)));
-        assertEquals(List.of("series-guid"),
-                Arrays.asList(metadata.getValues(OneNote.PAGE_SERIES_GUIDS)));
         assertEquals(List.of("conflict-guid"),
                 Arrays.asList(metadata.getValues(OneNote.CONFLICT_PAGE_GUIDS)));
         assertEquals(List.of("page-node-guid"),
                 Arrays.asList(metadata.getValues(OneNote.PAGE_NODE_GUIDS)));
-        assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT - 4,
-                metadata.getValues(OneNote.ENTITY_GUIDS).length);
-        assertFalse(Arrays.asList(metadata.getValues(OneNote.ENTITY_GUIDS))
-                .contains("section-node-guid"));
+        assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT - 3,
+                metadata.getValues(OneNote.PAGE_SERIES_GUIDS).length);
+        assertTrue(Arrays.asList(metadata.getValues(OneNote.PAGE_SERIES_GUIDS))
+                .contains("series-guid"));
+        assertFalse(Arrays.asList(metadata.getValues(OneNote.PAGE_SERIES_GUIDS))
+                .contains("overflow-guid"));
         assertEquals(1, Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
                 .filter(w -> w.contains("Capping OneNote GUID metadata")).count());
     }

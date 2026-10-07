@@ -381,7 +381,6 @@
   {"class":"org.apache.tika.metadata.OneNote","field":"CRC_NAME","key":"onenote:crcName"},
   {"class":"org.apache.tika.metadata.OneNote","field":"CREATION_TIMESTAMP","key":"onenote:creationTimestamp"},
   {"class":"org.apache.tika.metadata.OneNote","field":"C_TRANSACTIONS_IN_LOG","key":"onenote:cTransactionsInLog"},
-  {"class":"org.apache.tika.metadata.OneNote","field":"ENTITY_GUIDS","key":"onenote:entityGuids"},
   {"class":"org.apache.tika.metadata.OneNote","field":"FFV_LAST_CODE_THAT_WROTE_TO_THIS_FILE","key":"onenote:ffvLastCodeThatWroteToThisFile"},
   {"class":"org.apache.tika.metadata.OneNote","field":"FFV_NEWEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE","key":"onenote:ffvNewestCodeThatHasWrittenToThisFile"},
   {"class":"org.apache.tika.metadata.OneNote","field":"FFV_OLDEST_CODE_THAT_HAS_WRITTEN_TO_THIS_FILE","key":"onenote:ffvOldestCodeThatHasWrittenToThisFile"},

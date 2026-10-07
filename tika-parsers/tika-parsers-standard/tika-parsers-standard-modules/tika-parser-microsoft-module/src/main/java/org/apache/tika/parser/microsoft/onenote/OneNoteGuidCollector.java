@@ -41,8 +41,7 @@ public final class OneNoteGuidCollector {
         PAGE(OneNote.PAGE_GUIDS),
         PAGE_SERIES(OneNote.PAGE_SERIES_GUIDS),
         PAGE_NODE(OneNote.PAGE_NODE_GUIDS),
-        CONFLICT_PAGE(OneNote.CONFLICT_PAGE_GUIDS),
-        ENTITY(OneNote.ENTITY_GUIDS);
+        CONFLICT_PAGE(OneNote.CONFLICT_PAGE_GUIDS);
 
         private final Property property;
 
@@ -85,7 +84,7 @@ public final class OneNoteGuidCollector {
 
     /**
      * Records a NotebookManagementEntityGuid under the key for the JCID of the object that
-     * carries it. Section-node GUIDs are skipped.
+     * carries it. Section-node objects and unrecognized JCIDs are skipped.
      */
     public void addForObjectType(int jcid, String guid) {
         Category category = categoryFor(jcid);
@@ -104,10 +103,9 @@ public final class OneNoteGuidCollector {
                 return Category.PAGE_NODE;
             case OneNoteJcid.CONFLICT_PAGE_METADATA:
                 return Category.CONFLICT_PAGE;
-            case OneNoteJcid.SECTION_NODE:
-                return null;
             default:
-                return Category.ENTITY;
+                // section nodes and unrecognized JCIDs contribute no GUID metadata
+                return null;
         }
     }
 
