@@ -95,6 +95,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * x86_64-w64-mingw32-gcc -Os -s -shared -nostdlib -o testWindows-x86-64-icons-lang.dll \
  *         dll.c icons-lang64.o
  * </pre>
+ * The -rebuilt.ico files hold the same images as the .ico files the resources
+ * were compiled from, ordered largest first, which is what the extractor writes.
+ *
  * Layout of testWindows-x86-32-icons.exe (file offsets, from pefile):
  * .rsrc raw 0x3400-0x7c00 at RVA 0xa000; root directory 0x3400 with the
  * type entries at 0x3410 (RT_ICON) and 0x3418 (RT_GROUP_ICON); data entries
@@ -107,8 +110,12 @@ public class PEIconExtractorTest extends TikaTest {
     private static final String EXE = "testWindows-x86-32-icons.exe";
     private static final String DLL = "testWindows-x86-64-icons.dll";
     private static final String LANG_DLL = "testWindows-x86-64-icons-lang.dll";
+    private static final int ICON_DIR_ENTRY_SIZE = 16;
     private static final String APP_ICO = "testWindows-icons-app.ico";
     private static final String DOC_ICO = "testWindows-icons-doc.ico";
+    /** The same images as the .ico files above, largest first - see the class comment. */
+    private static final String APP_ICO_REBUILT = "testWindows-icons-app-rebuilt.ico";
+    private static final String DOC_ICO_REBUILT = "testWindows-icons-doc-rebuilt.ico";
 
     private static final String THUMBNAIL =
             TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString();
@@ -156,17 +163,41 @@ public class PEIconExtractorTest extends TikaTest {
     }
 
     /**
-     * The resource compiler copies the images verbatim, so the rebuilt
-     * .ico files must be identical to the ones that went in. Checks the
-     * metadata as handed to the extractor, before any re-detection.
+     * A reader that takes an icon group for a multi-page image hands out the
+     * first entry, so the largest image goes there. The app icon is compiled
+     * from a 16, a 32 and a 256 pixel image, in that order; a width of 0 in a
+     * directory entry stands for 256.
      */
     @Test
-    public void testReconstructedIcoIsByteIdentical() throws Exception {
+    public void testLargestIconComesFirst() throws Exception {
+        assertArrayEquals(new int[]{16, 32, 0}, widths(readTestResource(APP_ICO)),
+                "the icon the resources were compiled from");
+
+        RecordingExtractor extractor = parse(readTestResource(EXE));
+        assertArrayEquals(new int[]{0, 32, 16}, widths(extractor.contents.get(1)));
+    }
+
+    /** The width of every directory entry of an .ico, in file order. */
+    private static int[] widths(byte[] ico) {
+        int[] widths = new int[ico[4] & 0xff];
+        for (int i = 0; i < widths.length; i++) {
+            widths[i] = ico[6 + i * ICON_DIR_ENTRY_SIZE] & 0xff;
+        }
+        return widths;
+    }
+
+    /**
+     * The resource compiler copies the images verbatim, so the rebuilt .ico
+     * files hold the images of the ones that went in, ordered largest first.
+     * Checks the metadata as handed to the extractor, before any re-detection.
+     */
+    @Test
+    public void testReconstructedIcoMatchesTheSource() throws Exception {
         for (String file : new String[]{EXE, DLL}) {
             RecordingExtractor extractor = parse(readTestResource(file));
             assertEquals(2, extractor.contents.size(), file);
-            assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0), file);
-            assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(1), file);
+            assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0), file);
+            assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(1), file);
             assertIcon(extractor.metadata.get(0), "icon_DOCICON.ico", "14/DOCICON/1033", THUMBNAIL);
             assertIcon(extractor.metadata.get(1), "icon_1.ico", "14/1/1033", ATTACHMENT);
         }
@@ -186,8 +217,8 @@ public class PEIconExtractorTest extends TikaTest {
                     extractor.context());
         }
         assertEquals(2, extractor.contents.size());
-        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
-        assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(1));
+        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(1));
     }
 
     @Test
@@ -197,8 +228,8 @@ public class PEIconExtractorTest extends TikaTest {
         // 1031 sorts before 1033 in the language directory
         assertIcon(extractor.metadata.get(0), "icon_1_1031.ico", "14/1/1031", THUMBNAIL);
         assertIcon(extractor.metadata.get(1), "icon_1_1033.ico", "14/1/1033", ATTACHMENT);
-        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
-        assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(1));
+        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(1));
     }
 
     /**
@@ -215,7 +246,7 @@ public class PEIconExtractorTest extends TikaTest {
         RecordingExtractor extractor = parse(dll);
         assertEquals(2, extractor.contents.size());
         assertIcon(extractor.metadata.get(0), "icon_1_1031.ico", "14/1/1031", THUMBNAIL);
-        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
     }
 
     /**
@@ -229,7 +260,7 @@ public class PEIconExtractorTest extends TikaTest {
         putIntLE(exe, 0x7b26, 0x00ffffff);
         RecordingExtractor extractor = parse(exe);
         assertEquals(2, extractor.contents.size());
-        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
     }
 
     /**
@@ -245,7 +276,7 @@ public class PEIconExtractorTest extends TikaTest {
         RecordingExtractor extractor = parse(exe);
         assertEquals(1, extractor.contents.size());
         assertIcon(extractor.metadata.get(0), "icon_1.ico", "14/1/1033", THUMBNAIL);
-        assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(0));
     }
 
     /**
@@ -260,7 +291,7 @@ public class PEIconExtractorTest extends TikaTest {
         RecordingExtractor extractor = parse(exe);
         assertEquals(1, extractor.contents.size());
         assertIcon(extractor.metadata.get(0), "icon_1.ico", "14/1/1033", THUMBNAIL);
-        assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(0));
     }
 
     /**
@@ -419,7 +450,7 @@ public class PEIconExtractorTest extends TikaTest {
         RecordingExtractor extractor = parse(exe);
         assertEquals(1, extractor.contents.size());
         assertIcon(extractor.metadata.get(0), "icon_1.ico", "14/1/1033", THUMBNAIL);
-        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
     }
 
     /**
@@ -438,7 +469,7 @@ public class PEIconExtractorTest extends TikaTest {
                     Arrays.copyOf(exe, 4), context);
         }
         assertEquals(2, extractor.contents.size());
-        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
     }
 
     /**
@@ -627,8 +658,8 @@ public class PEIconExtractorTest extends TikaTest {
             System.arraycopy(rsrc, 0, section, shift, rsrc.length);
             RecordingExtractor extractor = parse(SyntheticPE.build(section, shift));
             assertEquals(2, extractor.contents.size(), "shift " + shift);
-            assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
-            assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(1));
+            assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
+            assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(1));
         }
     }
 
@@ -809,7 +840,7 @@ public class PEIconExtractorTest extends TikaTest {
     @Test
     public void testTruncatedFile() throws Exception {
         byte[] full = readTestResource(EXE);
-        byte[] docIco = readTestResource(DOC_ICO);
+        byte[] docIco = readTestResource(DOC_ICO_REBUILT);
         // length -> expected number of icons
         int[][] cases = {
                 {0x200, 0},   // inside the section table
