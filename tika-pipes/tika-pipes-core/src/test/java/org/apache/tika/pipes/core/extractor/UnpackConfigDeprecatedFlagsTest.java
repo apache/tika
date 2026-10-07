@@ -65,7 +65,9 @@ public class UnpackConfigDeprecatedFlagsTest {
         UnpackConfig c = MAPPER.readValue("{\"outputFormat\": \"FRICTIONLESS\"}", UnpackConfig.class);
         assertTrue(c.writesMetadata());
         assertFalse(MAPPER.readValue("{\"outputFormat\": \"REGULAR\"}", UnpackConfig.class).writesMetadata());
-        assertFalse(new UnpackConfig().writesMetadata());
+        // TIKA-4681: a fresh config is a Frictionless package
+        assertEquals(UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS, new UnpackConfig().getOutputFormat());
+        assertTrue(new UnpackConfig().writesMetadata());
 
         UnpackConfig optOut = MAPPER.readValue(
                 "{\"outputFormat\": \"FRICTIONLESS\", \"includeMetadata\": false}", UnpackConfig.class);

@@ -336,28 +336,7 @@ public class TikaResourceTest extends CXFTestBase {
         // With skipOcr=true, the OCR text should not be present
         assertNotFound("Happy New Year 2003!", responseMsg);
 
-        // Test ocr_only strategy
-        configJson = """
-                {
-                  "pdf-parser": {
-                    "ocr": {
-                      "strategy": "OCR_ONLY"
-                    }
-                  }
-                }
-                """;
-        fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
-        fileAtt = new Attachment("file",
-                ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
-        configAtt = new Attachment("config", "application/json",
-                new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
-
-        response = WebClient
-                .create(endPoint + TIKA_PATH + "/config")
-                .type("multipart/form-data")
-                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
-        responseMsg = getStringFromInputStream((InputStream) response.getEntity());
-        assertContains("Happy New Year 2003!", responseMsg);
+        // the positive control (OCR_ONLY finds the text) is testOCRLanguageConfig
 
         // Test bad value - should return error
         configJson = """

@@ -422,4 +422,24 @@ public class ConfigMergerTest {
 
         Files.deleteIfExists(result.configPath());
     }
+
+    /** The classpath opt-in is appended; the user config's own JVM args survive. */
+    @Test
+    public void testClasspathPluginsKeepsUserJvmArgs() throws IOException {
+        Path userConfig = tempDir.resolve("user-config.json");
+        Files.writeString(userConfig, "{\"pipes\":{\"forkedJvmArgs\":[\"-Xmx4g\"]}}");
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .setPipesConfig(1, 100, null)
+                .setClasspathPlugins(true)
+                .build();
+
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(userConfig, overrides);
+
+        JsonNode args = new ObjectMapper().readTree(result.configPath().toFile())
+                .get("pipes").get("forkedJvmArgs");
+        assertEquals(List.of("-Xmx4g", "-Dtika.plugins.classpath=true"),
+                new ObjectMapper().convertValue(args, List.class));
+
+        Files.deleteIfExists(result.configPath());
+    }
 }

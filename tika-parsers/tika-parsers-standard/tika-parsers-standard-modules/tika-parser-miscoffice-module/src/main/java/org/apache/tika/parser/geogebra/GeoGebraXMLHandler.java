@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -53,7 +52,7 @@ class GeoGebraXMLHandler extends DefaultHandler {
 
     /**
      * Longest content JSON that is parsed; a real inline text, table or mind
-     * map is a few kilobytes, anything far beyond that is not worth a tree.
+     * map is a few kilobytes.
      */
     private static final int MAX_CONTENT_LENGTH = 1024 * 1024;
 
@@ -164,15 +163,13 @@ class GeoGebraXMLHandler extends DefaultHandler {
             //not a JSON document; a plain string carries no text runs
             return;
         }
-        JsonNode root;
+        StringBuilder sb = new StringBuilder();
         try {
-            root = GeoGebraParser.OBJECT_MAPPER.readTree(trimmed);
+            for (String text : GeoGebraJson.textValues(trimmed)) {
+                sb.append(text);
+            }
         } catch (IOException e) {
             return;
-        }
-        StringBuilder sb = new StringBuilder();
-        for (String text : root.findValuesAsText("text")) {
-            sb.append(text);
         }
         for (String line : sb.toString().split("\r\n|[\r\n]")) {
             paragraph(line);

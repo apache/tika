@@ -18,6 +18,7 @@ package org.apache.tika.pipes.emitter.jdbc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -29,11 +30,13 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -140,6 +143,42 @@ public class JDBCEmitterTest {
                         rows++;
                     }
                 }
+            }
+        }
+    }
+
+    @Test
+    public void testTimestampForms(@TempDir Path tmpDir) throws Exception {
+        Files.createDirectories(tmpDir.resolve("db"));
+        String connectionString = "jdbc:h2:file:" + tmpDir.resolve("db/h2").toAbsolutePath();
+        LinkedHashMap<String, String> keys = new LinkedHashMap<>();
+        keys.put("k6", "timestamp");
+        ObjectNode configNode = createConfigNode(connectionString,
+                "insert into test (path, k6) values (?,?)",
+                "create table test (path varchar(512) primary key, k6 timestamp)",
+                null, "first_only", keys);
+        JDBCEmitter emitter = JDBCEmitter.build(new ExtensionConfig("test-jdbc", "jdbc-emitter",
+                MAPPER.writeValueAsString(configNode)));
+        // stored form -> expected UTC instant (zone-less is UTC, date-only is midday UTC)
+        String[][] cases = {
+                {"2022-11-04T17:10:15Z", "2022-11-04T17:10:15Z"},
+                {"2022-11-04T17:10:15", "2022-11-04T17:10:15Z"},
+                {"2022-11-04", "2022-11-04T12:00:00Z"},
+                {"2022-11-04T19:10:15+02:00", "2022-11-04T17:10:15Z"},
+        };
+        for (int i = 0; i < cases.length; i++) {
+            emitter.emit("id" + i, Collections.singletonList(m(new String[]{"k6", cases[i][0]})),
+                    new ParseContext());
+        }
+        Calendar utc = Calendar.getInstance(TimeZone.getTimeZone("UTC"), Locale.ROOT);
+        try (Connection connection = DriverManager.getConnection(connectionString);
+                Statement st = connection.createStatement();
+                ResultSet rs = st.executeQuery("select path, k6 from test order by path")) {
+            for (String[] c : cases) {
+                assertTrue(rs.next());
+                Timestamp ts = rs.getTimestamp(2, utc);
+                assertNotNull(ts, c[0]);
+                assertEquals(c[1], ts.toInstant().toString(), c[0]);
             }
         }
     }

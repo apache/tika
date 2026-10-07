@@ -63,7 +63,6 @@
     <module>tika-parser-jdbc-commons</module>
     <module>tika-parser-datauri-commons</module>
     <module>tika-parser-digest-commons</module>
-    <module>tika-parser-mail-commons</module>
     <module>tika-parser-xmp-commons</module>
     <module>tika-parser-zip-commons</module>
 
@@ -81,6 +80,7 @@
     <module>tika-parser-apple-module</module>
     <module>tika-parser-cad-module</module>
     <module>tika-parser-mail-module</module>
+    <module>tika-parser-mail-commons</module>
     <module>tika-parser-miscoffice-module</module>
     <module>tika-parser-news-module</module>
     <module>tika-parser-crypto-module</module>

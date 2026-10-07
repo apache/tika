@@ -39,6 +39,7 @@ import org.apache.tika.metadata.XMP;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.TikaDates;
 
 public class TikaUserDataBox {
 
@@ -150,7 +151,8 @@ public class TikaUserDataBox {
         if (len < 8L || len >= Integer.MAX_VALUE) {
             throw new IOException("Malformed ilst length in udta metadata: " + len);
         }
-        processIList(reader, len);
+        //len includes the 8-byte ilst header already read above
+        processIList(reader, len - 8);
     }
 
 
@@ -310,7 +312,10 @@ public class TikaUserDataBox {
                 break;
             case "\u00A9day" :
                 //this can be a year "2008" or a date "2017-04-26T07:00:00Z"
-                metadata.set(XMPDM.RELEASE_DATE, value);
+                String releaseDate = TikaDates.toMetadataStringKeepPartial(value);
+                if (releaseDate != null) {
+                    metadata.set(XMPDM.RELEASE_DATE, releaseDate);
+                }
                 xhtml.element("p", value);
                 break;
             case "\u00A9cmt" :

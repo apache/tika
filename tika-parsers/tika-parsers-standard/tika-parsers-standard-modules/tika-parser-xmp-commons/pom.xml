@@ -29,17 +29,6 @@
   <artifactId>tika-parser-xmp-commons</artifactId>
   <name>Apache Tika XMP commons</name>
 
-
-  <dependencies>
-    <!-- pdfbox-core for org.apache.pdfbox.util.DateConverter (XMP date normalization).
-         Already on the standard-bundle classpath via the PDF module; net-new only to
-         standalone image/IDML consumers. See the XMP-unification plan. -->
-    <dependency>
-      <groupId>org.apache.pdfbox</groupId>
-      <artifactId>pdfbox</artifactId>
-      <version>${pdfbox.version}</version>
-    </dependency>
-  </dependencies>
   <build>
     <plugins>
       <plugin>

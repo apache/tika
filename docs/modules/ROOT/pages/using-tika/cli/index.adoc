@@ -396,12 +396,12 @@ through every level. Both accept a single file or a directory as input.
 |Output directory for the extracted bytes; equivalent to `-o`.
 
 |`--unpack-format=<format>`
-|Output format: `REGULAR` (default) or `FRICTIONLESS`.
+|Output format: `FRICTIONLESS` (default) or `REGULAR`, the pre-4.2 flat layout.
 
 |`--unpack-mode=<mode>`
-|Output mode: `ZIPPED` (default) or `DIRECTORY`. With `--unpack-format=FRICTIONLESS` and no
-mode, `DIRECTORY`: the package is laid out under `<out>/<input>/` (`datapackage.json`,
-`unpacked/...`) rather than zipped.
+|Output mode: `DIRECTORY` (default) or `ZIPPED`. `DIRECTORY` lays the package out under
+`<out>/<input>/` (`datapackage.json`, `metadata.json`, `unpacked/...`); `ZIPPED` writes
+`<out>/<input>-frictionless.zip`.
 
 |`--unpack-include-metadata`
 |Metadata for every extracted file. A Frictionless package carries `metadata.json` by default;
@@ -411,8 +411,9 @@ this adds a `.metadata.json` sidecar per file to REGULAR zip output.
 A `-c`/`--config` file's `unpack-config` is honoured and the flags above are applied on top
 of it. That is the only way to get the source document itself into the output
 (`"unpack-config": {"includeOriginal": true}`); no flag does it. File naming stays the
-CLI's own (`<input>-embed/00000001.<ext>`, detected suffixes) regardless of the file's
-`suffixStrategy`, `zeroPadName`, `embeddedIdPrefix` or `keyBaseStrategy`. See
+CLI's own (`<input>/unpacked/00000001.<ext>`, or `<input>-embed/00000001.<ext>` under
+`REGULAR`, detected suffixes, loose files unless `--unpack-mode=ZIPPED`) regardless of the
+file's `suffixStrategy`, `zeroPadName`, `embeddedIdPrefix`, `keyBaseStrategy` or `outputMode`. See
 xref:pipes/unpack-config.adoc#_what_each_surface_produces[what each surface produces].
 
 === Examples

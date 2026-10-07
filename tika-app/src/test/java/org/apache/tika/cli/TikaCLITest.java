@@ -45,6 +45,7 @@ import java.util.Set;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -67,6 +68,9 @@ public class TikaCLITest {
 
     static final File TEST_DATA_FILE = new File("src/test/resources/test-data");
     static final File CONFIGS_DIR = new File("src/test/resources/configs");
+    // OCR off for the image-heavy fork runs (CI installs tesseract). Only the fork path merges
+    // a --config onto its defaults; in-process, any --config replaces the CLI defaults wholesale.
+    static final String NO_OCR = "--config=" + new File(CONFIGS_DIR, "tika-config-no-ocr.json").getAbsolutePath();
     private final URI testDataURI = TEST_DATA_FILE.toURI();
     @TempDir
     private Path extractDir;
@@ -76,6 +80,26 @@ public class TikaCLITest {
     private PrintStream stdout = null;
     private PrintStream stderr = null;
     private String resourcePrefix;
+
+    // -z inputs share one directory-mode run: one pipes startup instead of one per file
+    private static final String[] SHALLOW_INPUTS = {"coffee.xls", "testZip_absolutePath.zip",
+            "testZip_relative.zip", "testZip_overlappingNames.zip", "testZip_zeroByte.zip",
+            "test-documents.tgz", "testWithSubdirs.zip", "testPDF_childAttachments.pdf"};
+    @TempDir
+    private static Path shallowInputDir;
+    @TempDir
+    private static Path shallowOutputDir;
+    private static Set<String> shallowOutput;
+
+    @BeforeAll
+    public static void extractShallowOnce() throws Exception {
+        for (String f : SHALLOW_INPUTS) {
+            Files.copy(TEST_DATA_FILE.toPath().resolve(f), shallowInputDir.resolve(f));
+        }
+        TikaCLI.main(new String[]{"-z", NO_OCR, "-p", Paths.get("target/plugins").toAbsolutePath().toString(),
+                shallowInputDir.toAbsolutePath().toString(), shallowOutputDir.toAbsolutePath().toString()});
+        shallowOutput = getFileNames(shallowOutputDir);
+    }
 
 
     protected static void assertExtracted(Path p, String allFiles) throws IOException {
@@ -347,10 +371,10 @@ public class TikaCLITest {
         String[] expectedChildren = new String[]{
                 "testPDFPackage.pdf.json",
                 //the first two test that the default single file config is working
-                "testPDFPackage.pdf-embed/00000001.bin",
-                "testPDFPackage.pdf-embed/00000002.jpg",
-                "testPDFPackage.pdf-embed/00000003.pdf",
-                "testPDFPackage.pdf-embed/00000004.pdf"};
+                "testPDFPackage.pdf/unpacked/00000001.bin",
+                "testPDFPackage.pdf/unpacked/00000002.jpg",
+                "testPDFPackage.pdf/unpacked/00000003.pdf",
+                "testPDFPackage.pdf/unpacked/00000004.pdf"};
         testRecursiveUnpack("testPDFPackage.pdf", expectedChildren, 2);
     }
 
@@ -359,15 +383,15 @@ public class TikaCLITest {
         // TODO: The .bin extensions for embedded .msg files are wrong - they should be .msg
         // CONTENT_TYPE is not being set for embedded documents - see ~/Desktop/unpack-discussion/mime-todo.txt
         String[] expectedChildren = new String[]{"testPST.pst.json",
-                "testPST.pst-embed/00000007.bin",
-                "testPST.pst-embed/00000001.bin",
-                "testPST.pst-embed/00000008.bin",
-                "testPST.pst-embed/00000004.bin",
-                "testPST.pst-embed/00000003.bin",
-                "testPST.pst-embed/00000002.bin",
-                "testPST.pst-embed/00000005.bin",
-                "testPST.pst-embed/00000009.docx",
-                "testPST.pst-embed/00000006.bin"};
+                "testPST.pst/unpacked/00000007.bin",
+                "testPST.pst/unpacked/00000001.bin",
+                "testPST.pst/unpacked/00000008.bin",
+                "testPST.pst/unpacked/00000004.bin",
+                "testPST.pst/unpacked/00000003.bin",
+                "testPST.pst/unpacked/00000002.bin",
+                "testPST.pst/unpacked/00000005.bin",
+                "testPST.pst/unpacked/00000009.docx",
+                "testPST.pst/unpacked/00000006.bin"};
         testRecursiveUnpack("testPST.pst", expectedChildren, 2);
         try (Reader reader = Files.newBufferedReader(extractDir.resolve("testPST.pst.json"))) {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
@@ -425,53 +449,31 @@ public class TikaCLITest {
 
     @Test
     public void testExtractSimple() throws Exception {
-        // New pipes-based output format: json metadata + embedded files in subdirectory
-        String[] expectedChildren = new String[]{
-                "coffee.xls.json",
-                "coffee.xls-embed/00000001.emf",
-                "coffee.xls-embed/00000006.cdx",
-                "coffee.xls-embed/00000005.png"
-        };
-        testExtract("/coffee.xls", expectedChildren, 9);
+        assertShallow("coffee.xls", 11, "coffee.xls.json", "coffee.xls/unpacked/00000001.emf",
+                "coffee.xls/unpacked/00000006.cdx", "coffee.xls/unpacked/00000005.png");
     }
 
     @Test
     public void testExtractAbsolute() throws Exception {
-        // New pipes format: json metadata + embedded files in subdirectory with numbered names
-        String[] expectedChildren = new String[]{
-                "testZip_absolutePath.zip.json",
-                "testZip_absolutePath.zip-embed/00000001.bin"
-        };
-        testExtract("testZip_absolutePath.zip", expectedChildren, 3);
+        assertShallow("testZip_absolutePath.zip", 5, "testZip_absolutePath.zip.json",
+                "testZip_absolutePath.zip/unpacked/00000001.bin");
     }
 
     @Test
     public void testExtractRelative() throws Exception {
-        // New pipes format
-        String[] expectedChildren = new String[]{
-                "testZip_relative.zip.json"
-        };
-        testExtract("testZip_relative.zip", expectedChildren, 2);
+        assertShallow("testZip_relative.zip", 4, "testZip_relative.zip.json");
     }
 
     @Test
     public void testExtractOverlapping() throws Exception {
-        // New pipes format - overlapping names are handled by numbering
-        String[] expectedChildren = new String[]{
-                "testZip_overlappingNames.zip.json"
-        };
-        testExtract("testZip_overlappingNames.zip", expectedChildren, 3);
+        // overlapping names are handled by numbering
+        assertShallow("testZip_overlappingNames.zip", 5, "testZip_overlappingNames.zip.json");
     }
 
     @Test
     public void testExtract0x00() throws Exception {
-        // New pipes format
-        String[] expectedChildren = new String[]{
-                "testZip_zeroByte.zip.json"
-        };
-        testExtract("testZip_zeroByte.zip", expectedChildren, 2);
+        assertShallow("testZip_zeroByte.zip", 4, "testZip_zeroByte.zip.json");
     }
-
 
     private void testRecursiveUnpack(String targetFile, String[] expectedChildrenFileNames) throws Exception {
         testRecursiveUnpack(targetFile, expectedChildrenFileNames, expectedChildrenFileNames.length);
@@ -481,7 +483,7 @@ public class TikaCLITest {
         Path input = Paths.get(new URI(resourcePrefix + "/" + targetFile));
         Path pluginsDir = Paths.get("target/plugins");
 
-        String[] params = {"-Z",
+        String[] params = {"-Z", NO_OCR,
                 "-p", pluginsDir.toAbsolutePath().toString(),
                 input.toAbsolutePath().toString(),
                 extractDir.toAbsolutePath().toString()};
@@ -508,7 +510,7 @@ public class TikaCLITest {
         }
     }
 
-    private Set<String> getFileNames(Path extractDir) throws IOException {
+    private static Set<String> getFileNames(Path extractDir) throws IOException {
         final Set<String> names = new HashSet<>();
         Files.walkFileTree(extractDir, new FileVisitor<Path>() {
             @Override
@@ -539,52 +541,10 @@ public class TikaCLITest {
         assertTrue(fileNames.contains(expected), "Expected " + expected + " in " + fileNames);
     }
 
-    private void testExtract(String targetFile, String[] expectedChildrenFileNames) throws Exception {
-        testExtract(targetFile, expectedChildrenFileNames, expectedChildrenFileNames.length);
-    }
-
-    private void testExtract(String targetFile, String[] expectedChildrenFileNames, int expectedLength) throws Exception {
-        Path input = Paths.get(new URI(resourcePrefix + "/" + targetFile));
-        Path pluginsDir = Paths.get("target/plugins");
-
-        String[] params = {"-z",
-                "-p", pluginsDir.toAbsolutePath().toString(),
-                input.toAbsolutePath().toString(),
-                extractDir.toAbsolutePath().toString()};
-
-        TikaCLI.main(params);
-
-        Set<String> fileNames = getFileNames(extractDir);
-
-        // Debug: log actual files found
-        LOG.info("=== Actual files found for -z ===");
-        for (String name : fileNames) {
-            LOG.info("  {}", name);
-        }
-        LOG.info("=== End actual files ===");
-
-        assertEquals(expectedLength, fileNames.size());
-
-        for (String expectedChildName : expectedChildrenFileNames) {
-            assertContainsFile(fileNames, expectedChildName);
-        }
-    }
-
     @Test
     public void testExtractTgz() throws Exception {
         //TIKA-2564
-        Path input = Paths.get(new URI(resourcePrefix + "/test-documents.tgz"));
-        Path pluginsDir = Paths.get("target/plugins");
-
-        String[] params = {"-z",
-                "-p", pluginsDir.toAbsolutePath().toString(),
-                input.toAbsolutePath().toString(),
-                extractDir.toAbsolutePath().toString()};
-
-        TikaCLI.main(params);
-
-        Set<String> fileNames = getFileNames(extractDir);
-        assertTrue(fileNames.size() > 0, "Should have extracted some files");
+        assertFalse(shallowOutputOf("test-documents.tgz").isEmpty(), "Should have extracted some files");
     }
 
     // TIKA-920
@@ -600,44 +560,48 @@ public class TikaCLITest {
     // TIKA-1031
     @Test
     public void testZipWithSubdirs() throws Exception {
-        Path input = Paths.get(new URI(resourcePrefix + "/testWithSubdirs.zip"));
-        Path pluginsDir = Paths.get("target/plugins");
-
-        String[] params = {"-z",
-                "-p", pluginsDir.toAbsolutePath().toString(),
-                input.toAbsolutePath().toString(),
-                extractDir.toAbsolutePath().toString()};
-
-        TikaCLI.main(params);
-
-        Set<String> fileNames = getFileNames(extractDir);
-
-        // Async mode creates: .json metadata file + -embed/ directory with extracted bytes
+        Set<String> fileNames = shallowOutputOf("testWithSubdirs.zip");
         assertTrue(fileNames.stream().anyMatch(f -> f.endsWith(".json")),
                 "Should have a .json metadata file, got: " + fileNames);
-        assertTrue(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
-                "Should have extracted embedded files in -embed/ directory, got: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.contains("/unpacked/")),
+                "Should have extracted embedded files under unpacked/, got: " + fileNames);
     }
 
     @Test
     public void testExtractInlineImages() throws Exception {
-        Path input = Paths.get(new URI(resourcePrefix + "/testPDF_childAttachments.pdf"));
-        Path pluginsDir = Paths.get("target/plugins");
-
-        String[] params = {"-z",
-                "-p", pluginsDir.toAbsolutePath().toString(),
-                input.toAbsolutePath().toString(),
-                extractDir.toAbsolutePath().toString()};
-
-        TikaCLI.main(params);
-
-        Set<String> fileNames = getFileNames(extractDir);
-
-        // New pipes format: should have json plus embedded files in subdirectory
+        Set<String> fileNames = shallowOutputOf("testPDF_childAttachments.pdf");
         assertTrue(fileNames.stream().anyMatch(f -> f.endsWith(".json")),
                 "Should have a .json metadata file in " + fileNames);
         assertTrue(fileNames.size() >= 2,
                 "Should have at least 2 files (json + embedded), got " + fileNames.size() + ": " + fileNames);
+    }
+
+    private static Set<String> shallowOutputOf(String inputName) {
+        Set<String> mine = new HashSet<>();
+        for (String f : shallowOutput) {
+            if (f.equals(inputName + ".json") || f.startsWith(inputName + "/")) {
+                mine.add(f);
+            }
+        }
+        return mine;
+    }
+
+    /** Every file the shared -z run wrote belongs to some input; a stray would hide from the per-input filters. */
+    @Test
+    public void testShallowOutputHasNoStrays() {
+        Set<String> claimed = new HashSet<>();
+        for (String input : SHALLOW_INPUTS) {
+            claimed.addAll(shallowOutputOf(input));
+        }
+        assertEquals(shallowOutput, claimed);
+    }
+
+    private static void assertShallow(String inputName, int expectedCount, String... expected) {
+        Set<String> fileNames = shallowOutputOf(inputName);
+        assertEquals(expectedCount, fileNames.size(), fileNames.toString());
+        for (String e : expected) {
+            assertTrue(fileNames.contains(e), "Expected " + e + " in " + fileNames);
+        }
     }
 
     /**
@@ -662,38 +626,14 @@ public class TikaCLITest {
         // Should have extracted files in the specified directory, not current dir
         assertTrue(fileNames.stream().anyMatch(f -> f.endsWith(".json")),
                 "Should have a .json metadata file in extractDir, got: " + fileNames);
-        assertTrue(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
+        assertTrue(fileNames.stream().anyMatch(f -> f.contains("/unpacked/")),
                 "Should have extracted embedded files in extractDir, got: " + fileNames);
     }
 
-    /**
-     * Test that --extract-dir option works with -Z (recursive) extraction.
-     */
+    /** TIKA-4681: the default is a Frictionless package laid out as loose files. */
     @Test
-    public void testExtractDirOptionRecursive() throws Exception {
-        Path input = Paths.get(new URI(resourcePrefix + "/test_recursive_embedded.docx"));
-        Path pluginsDir = Paths.get("target/plugins");
-
-        // Test with -Z (recursive extraction)
-        String[] params = {"-Z",
-                "--extract-dir=" + extractDir.toAbsolutePath(),
-                "-p", pluginsDir.toAbsolutePath().toString(),
-                input.toAbsolutePath().toString()};
-
-        TikaCLI.main(params);
-
-        Set<String> fileNames = getFileNames(extractDir);
-
-        // Should have extracted files in the specified directory
-        assertTrue(fileNames.stream().anyMatch(f -> f.endsWith(".json")),
-                "Should have a .json metadata file in extractDir, got: " + fileNames);
-        assertTrue(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
-                "Should have extracted embedded files in extractDir, got: " + fileNames);
-    }
-
-    @Test
-    public void testFrictionlessWithoutModeIsADirectory() throws Exception {
-        Set<String> fileNames = unpack("-Z", "--unpack-format=FRICTIONLESS");
+    public void testDefaultIsALooseFrictionlessPackage() throws Exception {
+        Set<String> fileNames = unpack("-Z");
         assertTrue(fileNames.stream().anyMatch(f -> f.endsWith("/datapackage.json")),
                 "package should be laid out as a directory, got: " + fileNames);
         assertTrue(fileNames.stream().anyMatch(f -> f.contains("/unpacked/")), fileNames.toString());
@@ -704,8 +644,34 @@ public class TikaCLITest {
     }
 
     @Test
+    public void testZippedModeWritesOnePackageZip() throws Exception {
+        Set<String> fileNames = unpack("-Z", "--unpack-mode=ZIPPED");
+        assertTrue(fileNames.contains("test_recursive_embedded.docx-frictionless.zip"), fileNames.toString());
+        assertFalse(fileNames.stream().anyMatch(f -> f.contains("/unpacked/")),
+                "ZIPPED must not also write loose files: " + fileNames);
+    }
+
+    @Test
+    public void testRegularFormatIsTheFlatLayout() throws Exception {
+        Set<String> fileNames = unpack("-Z", "--unpack-format=REGULAR");
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches("test_recursive_embedded\\.docx-embed/0+1\\.[^/]+")),
+                fileNames.toString());
+        assertFalse(fileNames.stream().anyMatch(f -> f.endsWith("datapackage.json") || f.contains("/unpacked/")),
+                "REGULAR has no manifest and no unpacked/: " + fileNames);
+    }
+
+    /** --unpack-mode is the CLI's packaging knob in both formats. */
+    @Test
+    public void testRegularZippedWritesOneFlatZip() throws Exception {
+        Set<String> fileNames = unpack("-Z", "--unpack-format=REGULAR", "--unpack-mode=ZIPPED");
+        assertTrue(fileNames.contains("test_recursive_embedded.docx-embedded.zip"), fileNames.toString());
+        assertFalse(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
+                "ZIPPED must not also write loose files: " + fileNames);
+    }
+
+    @Test
     public void testFrictionlessIncludeMetadata() throws Exception {
-        Set<String> fileNames = unpack("-Z", "--unpack-format=FRICTIONLESS", "--unpack-include-metadata");
+        Set<String> fileNames = unpack("-Z", "--unpack-include-metadata");
         String metadataJson = fileNames.stream().filter(f -> f.endsWith("/metadata.json")).findFirst()
                 .orElseThrow(() -> new AssertionError("no metadata.json in " + fileNames));
         String content = Files.readString(extractDir.resolve(metadataJson));
@@ -718,15 +684,18 @@ public class TikaCLITest {
     @Test
     public void testConfigFileUnpackConfigIsHonoured() throws Exception {
         Set<String> fileNames = unpack("-Z", "--config=" + CONFIGS_DIR + "/tika-config-unpack-original.json");
-        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*-embed/0+\\.[^/]+")),
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*/unpacked/0+\\.[^/]+")),
                 "includeOriginal from -c should add the container as 00000000.<ext>: " + fileNames);
-        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*-embed/0+1\\.[^/]+")),
-                "-c must not change the CLI's file naming: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*/unpacked/0+1\\.[^/]+")),
+                "-c must not change the CLI's file naming or packaging: " + fileNames);
     }
 
     private Set<String> unpack(String... flags) throws Exception {
         Path input = Paths.get(new URI(resourcePrefix + "/test_recursive_embedded.docx"));
         List<String> params = new ArrayList<>(Arrays.asList(flags));
+        if (params.stream().noneMatch(f -> f.startsWith("--config="))) {
+            params.add(NO_OCR);
+        }
         params.add("-p");
         params.add(Paths.get("target/plugins").toAbsolutePath().toString());
         params.add(input.toAbsolutePath().toString());
@@ -855,8 +824,12 @@ public class TikaCLITest {
         assertTrue(content.contains("application/vnd.oasis.opendocument.text-web"));
     }
 
+    /**
+     * The docs' Supported Formats page includes a checked-in copy of the adoc
+     * listing. Fail when it drifts from the parsers actually on the classpath.
+     */
     @Test
-    public void testListParserDetailAdoc() throws Exception {
+    public void testSupportedFormatsPartialIsCurrent() throws Exception {
         String content = getParamOutContent("--list-parser-details-adoc");
         assertTrue(content.startsWith(SupportedFormatsAdoc.HEADER));
         assertTrue(content.contains(
@@ -864,17 +837,10 @@ public class TikaCLITest {
         assertTrue(content.contains("** `application/vnd.oasis.opendocument.text-web`"));
         // Tesseract is hidden so the listing is the same with or without the binary.
         assertFalse(content.contains("TesseractOCRParser"));
-    }
 
-    /**
-     * The docs' Supported Formats page includes a checked-in copy of the adoc
-     * listing. Fail when it drifts from the parsers actually on the classpath.
-     */
-    @Test
-    public void testSupportedFormatsPartialIsCurrent() throws Exception {
         Path partial = Paths.get("..", "docs", "modules", "ROOT", "partials", "supported-formats.adoc");
         assumeTrue(Files.isRegularFile(partial), "docs partial not present in this checkout");
-        String expected = getParamOutContent("--list-parser-details-adoc").replace("\r\n", "\n");
+        String expected = content.replace("\r\n", "\n");
         String actual = Files.readString(partial, UTF_8).replace("\r\n", "\n");
         assertEquals(expected, actual, "docs/modules/ROOT/partials/supported-formats.adoc is stale; regenerate with:\n" +
                 "  java -jar tika-app/target/tika-app-<version>.jar --list-parser-details-adoc " +

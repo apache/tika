@@ -88,11 +88,25 @@ public abstract class ExternalTestBase {
         }
     }
     
+    /**
+     * The checked-in configs name the Docker image's plugins dir; the local server gets a copy
+     * pointed at the zip this module copies into target/plugins.
+     */
+    public static Path localConfig(String name) throws IOException {
+        Path pluginsDir = Path.of("target/plugins").toAbsolutePath();
+        String json = Files.readString(Path.of("src/test/resources", name));
+        String local = json.replace("/var/cache/tika/plugins",
+                pluginsDir.toString().replace("\\", "\\\\"));
+        Path out = Path.of("target", name).toAbsolutePath();
+        Files.writeString(out, local);
+        return out;
+    }
+
     private static void startLocalGrpcServer() throws Exception {
         LOG.info("Starting local tika-grpc server using Maven exec");
         
         Path tikaGrpcDir = findTikaGrpcDirectory();
-        Path configFile = Path.of("src/test/resources/tika-config.json").toAbsolutePath();
+        Path configFile = localConfig("tika-config.json");
         
         if (!Files.exists(configFile)) {
             throw new IllegalStateException("Config file not found: " + configFile);

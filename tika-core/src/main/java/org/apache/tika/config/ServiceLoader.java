@@ -34,31 +34,23 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import aQute.bnd.annotation.spi.ServiceConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.detect.Detector;
-import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.language.detect.LanguageDetector;
-import org.apache.tika.metadata.filter.MetadataFilter;
-import org.apache.tika.parser.Parser;
 import org.apache.tika.utils.ServiceLoaderUtils;
 
 /**
  * Internal utility class that Tika uses to look up service providers.
- * Supports both static service loading using the {@link ServiceLoader} mechanism (and via
- * <a href="https://docs.osgi.org/specification/osgi.cmpn/7.0.0/service.loader.html">OSGi Service Loader Mediator</a>)
- * as well as dynamic loading via OSGi service tracking (from the {@link TikaActivator} class).
+ * Supports both static service loading from {@code META-INF/services} as well as dynamic
+ * loading via OSGi service tracking (from the {@link TikaActivator} class).
+ * <p>
+ * Static loading reads {@code META-INF/services} itself rather than calling
+ * {@link java.util.ServiceLoader}, so there is nothing for an OSGi Service Loader Mediator
+ * processor to weave; this class must not declare {@code @ServiceConsumer} requirements.
  *
  * @since Apache Tika 0.9
  */
-@ServiceConsumer(Parser.class)
-@ServiceConsumer(Detector.class)
-@ServiceConsumer(EncodingDetector.class)
-@ServiceConsumer(LanguageDetector.class)
-@ServiceConsumer(MetadataFilter.class)
 public class ServiceLoader {
 
     private static final Logger LOG = LoggerFactory.getLogger(ServiceLoader.class);
