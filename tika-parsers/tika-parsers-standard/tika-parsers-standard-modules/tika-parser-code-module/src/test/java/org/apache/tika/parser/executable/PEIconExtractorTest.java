@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import org.apache.commons.io.input.CountingInputStream;
 import org.junit.jupiter.api.Test;
@@ -95,6 +96,9 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * x86_64-w64-mingw32-gcc -Os -s -shared -nostdlib -o testWindows-x86-64-icons-lang.dll \
  *         dll.c icons-lang64.o
  * </pre>
+ * The -rebuilt.ico files hold the same images as the .ico files the resources
+ * were compiled from, ordered largest first, which is what the extractor writes.
+ *
  * Layout of testWindows-x86-32-icons.exe (file offsets, from pefile):
  * .rsrc raw 0x3400-0x7c00 at RVA 0xa000; root directory 0x3400 with the
  * type entries at 0x3410 (RT_ICON) and 0x3418 (RT_GROUP_ICON); data entries
@@ -107,8 +111,10 @@ public class PEIconExtractorTest extends TikaTest {
     private static final String EXE = "testWindows-x86-32-icons.exe";
     private static final String DLL = "testWindows-x86-64-icons.dll";
     private static final String LANG_DLL = "testWindows-x86-64-icons-lang.dll";
-    private static final String APP_ICO = "testWindows-icons-app.ico";
-    private static final String DOC_ICO = "testWindows-icons-doc.ico";
+    private static final int ICON_DIR_ENTRY_SIZE = 16;
+    private static final String APP_ICO_SOURCE = "testWindows-icons-app.ico";
+    private static final String APP_ICO = "testWindows-icons-app-rebuilt.ico";
+    private static final String DOC_ICO = "testWindows-icons-doc-rebuilt.ico";
 
     private static final String THUMBNAIL =
             TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString();
@@ -156,9 +162,82 @@ public class PEIconExtractorTest extends TikaTest {
     }
 
     /**
-     * The resource compiler copies the images verbatim, so the rebuilt
-     * .ico files must be identical to the ones that went in. Checks the
-     * metadata as handed to the extractor, before any re-detection.
+     * A reader that takes an icon group for a multi-page image hands out the
+     * first entry, so the largest image goes there. The app icon is compiled
+     * from a 16, a 32 and a 256 pixel image, in that order; a width of 0 in a
+     * directory entry stands for 256.
+     */
+    @Test
+    public void testLargestIconComesFirst() throws Exception {
+        assertArrayEquals(new int[]{16, 32, 0}, widths(readTestResource(APP_ICO_SOURCE)),
+                "the icon the resources were compiled from");
+
+        RecordingExtractor extractor = parse(readTestResource(EXE));
+        assertArrayEquals(new int[]{0, 32, 16}, widths(extractor.contents.get(1)));
+    }
+
+    /**
+     * A side of 0 stands for anything from 256 up, so only the images tell a
+     * 1024 pixel PNG from a 256 pixel bitmap, and an entry that claims 16
+     * pixels for a 48 pixel bitmap is not believed either. The images differ
+     * in length, which is how the result tells them apart.
+     */
+    @Test
+    public void testOrderFollowsTheImagesNotTheDirectory() throws Exception {
+        byte[] pe = groupPe(new int[][]{{0, 32}, {0, 32}, {16, 32}, {32, 32}},
+                bitmap(41, 256, 256), png(42, 1024, 1024), bitmap(43, 48, 48),
+                bitmap(44, 32, 32));
+        RecordingExtractor extractor = parse(pe);
+        assertEquals(1, extractor.contents.size());
+        assertArrayEquals(new int[]{42, 41, 43, 44}, imageLengths(extractor.contents.get(0)));
+    }
+
+    /**
+     * Among images of one size the deeper one comes first, and those that
+     * agree in both keep the order of the group.
+     */
+    @Test
+    public void testColourDepthBreaksTies() throws Exception {
+        byte[] pe = groupPe(new int[][]{{32, 4}, {32, 32}, {32, 8}, {32, 32}},
+                bitmap(41, 32, 32), bitmap(42, 32, 32), bitmap(43, 32, 32),
+                bitmap(44, 32, 32));
+        RecordingExtractor extractor = parse(pe);
+        assertEquals(1, extractor.contents.size());
+        assertArrayEquals(new int[]{42, 44, 43, 41}, imageLengths(extractor.contents.get(0)));
+    }
+
+    /**
+     * A size no image can have - sides beyond what PNG allows, a negative
+     * width, no height at all - is not sorted by, and neither is what follows
+     * a PNG signature without an IHDR chunk; the directory entry is. The
+     * entries rank the images the other way round than those sizes would.
+     */
+    @Test
+    public void testImplausibleImageSizeFallsBackToTheDirectory() throws Exception {
+        byte[] noIhdr = png(45, 1024, 1024);
+        noIhdr[12] = 'J';
+        byte[] pe = groupPe(new int[][]{{16, 32}, {8, 32}, {48, 32}, {32, 32}, {24, 32}},
+                bitmap(44, 16, 16), noIhdr, png(41, -1, -1), bitmap(42, -4096, 4096),
+                bitmap(43, 4096, 0));
+        RecordingExtractor extractor = parse(pe);
+        assertEquals(1, extractor.contents.size());
+        assertArrayEquals(new int[]{41, 42, 43, 44, 45},
+                imageLengths(extractor.contents.get(0)));
+    }
+
+    /** The width of every directory entry of an .ico, in file order. */
+    private static int[] widths(byte[] ico) {
+        int[] widths = new int[ico[4] & 0xff];
+        for (int i = 0; i < widths.length; i++) {
+            widths[i] = ico[6 + i * ICON_DIR_ENTRY_SIZE] & 0xff;
+        }
+        return widths;
+    }
+
+    /**
+     * The resource compiler copies the images verbatim, so the rebuilt .ico
+     * files hold the images of the ones that went in, ordered largest first.
+     * Checks the metadata as handed to the extractor, before any re-detection.
      */
     @Test
     public void testReconstructedIcoIsByteIdentical() throws Exception {
@@ -861,6 +940,58 @@ public class PEIconExtractorTest extends TikaTest {
             dir.putShort(6 + 14 * i + 12, (short) ids[i]);
         }
         return dir.array();
+    }
+
+    /**
+     * @param entries the side and the bit count each directory entry claims
+     * @return a file with one group of the given images, in the given order
+     */
+    private static byte[] groupPe(int[][] entries, byte[]... images) {
+        byte[] dir = grpIconDir(IntStream.rangeClosed(1, images.length).toArray());
+        int size = dir.length;
+        for (byte[] image : images) {
+            size += image.length;
+        }
+        ByteBuffer data = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);
+        SyntheticResources resources = new SyntheticResources(data.array());
+        resources.group(0, dir.length);
+        data.put(dir);
+        for (int i = 0; i < images.length; i++) {
+            data.put(6 + 14 * i, (byte) entries[i][0]).put(6 + 14 * i + 1, (byte) entries[i][0]);
+            data.putShort(6 + 14 * i + 6, (short) entries[i][1]);
+            resources.icon(data.position(), images[i].length);
+            data.put(images[i]);
+        }
+        return SyntheticPE.build(resources.build(), 0);
+    }
+
+    /**
+     * @return the start of a PNG of the given size, padded to the given length
+     */
+    private static byte[] png(int length, int width, int height) {
+        ByteBuffer png = ByteBuffer.allocate(length);
+        png.putLong(0x89504e470d0a1a0aL).putInt(13).putInt(0x49484452);
+        png.putInt(width).putInt(height);
+        return png.array();
+    }
+
+    /**
+     * @return the BITMAPINFOHEADER of an icon image of the given size, its
+     * height doubled for the mask, padded to the given length
+     */
+    private static byte[] bitmap(int length, int width, int height) {
+        ByteBuffer bitmap = ByteBuffer.allocate(length).order(ByteOrder.LITTLE_ENDIAN);
+        bitmap.putInt(40).putInt(width).putInt(2 * height);
+        return bitmap.array();
+    }
+
+    /** The length of every image of an .ico, in file order. */
+    private static int[] imageLengths(byte[] ico) {
+        int[] lengths = new int[ico[4] & 0xff];
+        for (int i = 0; i < lengths.length; i++) {
+            lengths[i] = EndianUtils.getIntLE(ico, 6 + i * ICON_DIR_ENTRY_SIZE + 8);
+        }
+        return lengths;
     }
 
     /**
