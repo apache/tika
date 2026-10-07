@@ -59,7 +59,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * The {@code .ico} file format is nearly identical to the group resource;
  * the only difference is that the group refers to its images by resource id
  * whereas the file refers to them by file offset. This class rebuilds the
- * file from the two resource types.
+ * file from the two resource types, with the largest image first.
  * <p>
  * File-backed input is read where the resource tree points, so only the
  * directories and the icons themselves are touched. Anything else has to be
@@ -328,7 +328,7 @@ class PEIconExtractor {
             pixels[i] = pixelCount(icon, i, section);
             order.add(i);
         }
-        // a stable sort, so images of one size keep the order the group has
+        // a stable sort, so images of one size and depth keep the order the group has
         order.sort(Comparator.<Integer>comparingLong(index -> pixels[index])
                 .thenComparingInt(icon::bitCount).reversed());
         return order;

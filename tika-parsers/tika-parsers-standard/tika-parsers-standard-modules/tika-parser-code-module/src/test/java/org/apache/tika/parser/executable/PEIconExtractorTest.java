@@ -240,7 +240,7 @@ public class PEIconExtractorTest extends TikaTest {
      * Checks the metadata as handed to the extractor, before any re-detection.
      */
     @Test
-    public void testReconstructedIcoMatchesTheSource() throws Exception {
+    public void testReconstructedIcoIsByteIdentical() throws Exception {
         for (String file : new String[]{EXE, DLL}) {
             RecordingExtractor extractor = parse(readTestResource(file));
             assertEquals(2, extractor.contents.size(), file);
