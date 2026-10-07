@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -124,6 +125,31 @@ public class FrictionlessUnpackTest {
         }
         parseContext.set(UnpackConfig.class, unpackConfig);
         return parseContext;
+    }
+
+    /** TIKA-4681: an UnpackConfig that says nothing about format is a Frictionless package. */
+    @Test
+    public void testDefaultFormatIsFrictionless() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(EMITTER_NAME);
+        parseContext.set(UnpackConfig.class, unpackConfig);
+
+        PipesResult pipesResult = process("defaultFormat", TEST_DOC_WITH_EMBEDDED, parseContext);
+        assertTrue(pipesResult.isSuccess(), "Status: " + pipesResult.status()
+                + ", Message: " + pipesResult.message());
+
+        Path outputDir = outputDir("defaultFormat");
+        List<String> names;
+        try (Stream<Path> files = Files.list(outputDir)) {
+            names = files.map(p -> p.getFileName().toString()).toList();
+        }
+        assertTrue(names.contains(TEST_DOC_WITH_EMBEDDED + "-frictionless.zip"), names.toString());
+        assertFalse(names.contains(TEST_DOC_WITH_EMBEDDED + "-embedded.zip"), names.toString());
+        Set<String> entries = zipEntries(onlyFrictionlessZip(outputDir));
+        assertTrue(entries.contains("datapackage.json"), entries.toString());
+        assertTrue(entries.contains("metadata.json"), "a package carries metadata.json by default: " + entries);
     }
 
     @Test

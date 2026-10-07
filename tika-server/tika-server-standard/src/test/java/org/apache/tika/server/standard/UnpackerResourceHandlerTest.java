@@ -54,11 +54,21 @@ import org.apache.tika.server.core.writer.ZipWriter;
 /**
  * /unpack has no format segment, so the config part is the only place a handler is named --
  * and it reaches the RMETA list written to metadata.json.
+ * Per-file sidecars exist only in the REGULAR layout, so the server config pins it; the
+ * metadata.json probes ask for FRICTIONLESS explicitly.
  */
 public class UnpackerResourceHandlerTest extends CXFTestBase {
 
     private static final String TEST_DOC = "test-documents/test_recursive_embedded.docx";
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final String SERVER_CONFIG = """
+            {
+              "parsers": [ { "default-parser": {} } ],
+              "parse-context": {
+                "unpack-config": { "outputFormat": "REGULAR" }
+              }
+            }
+            """;
     private static final String FRICTIONLESS =
             "\"unpack-config\": {\"outputFormat\": \"FRICTIONLESS\", \"outputMode\": \"ZIPPED\", "
                     + "\"includeFullMetadata\": true}";
@@ -88,7 +98,7 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() throws IOException {
-        return this.getClass().getResourceAsStream("/configs/tika-config-unpacker.json");
+        return new ByteArrayInputStream(SERVER_CONFIG.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
@@ -171,10 +181,10 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
     /** includeMetadataInZip writes a sidecar per extracted file; it carries tk:content too. */
     @Test
     public void testPerFileSidecarsFollowTheConfigPartHandler() throws Exception {
-        assertTrue(perFileSidecar("{\"unpack-config\": {\"includeMetadataInZip\": true}}")
+        assertTrue(perFileSidecar("{\"unpack-config\": {\"outputFormat\": \"REGULAR\", \"includeMetadataInZip\": true}}")
                 .contains("\"tk:content-handler-type\":\"MARKDOWN\""));
 
-        String xml = perFileSidecar("{\"unpack-config\": {\"includeMetadataInZip\": true}, "
+        String xml = perFileSidecar("{\"unpack-config\": {\"outputFormat\": \"REGULAR\", \"includeMetadataInZip\": true}, "
                 + "\"basic-content-handler-factory\": {\"type\": \"XML\"}}");
         assertTrue(xml.contains("\"tk:content-handler-type\":\"XML\""), xml);
         assertTrue(xml.contains("<html xmlns="), xml);
@@ -183,8 +193,8 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
     /** IGNORE is the opt-out: sidecars keep their metadata but carry no extracted text. */
     @Test
     public void testIgnoreHandlerLeavesSidecarsWithoutContent() throws Exception {
-        String withText = "{\"unpack-config\": {\"includeMetadataInZip\": true}}";
-        String ignore = "{\"unpack-config\": {\"includeMetadataInZip\": true}, "
+        String withText = "{\"unpack-config\": {\"outputFormat\": \"REGULAR\", \"includeMetadataInZip\": true}}";
+        String ignore = "{\"unpack-config\": {\"outputFormat\": \"REGULAR\", \"includeMetadataInZip\": true}, "
                 + "\"basic-content-handler-factory\": {\"type\": \"IGNORE\"}}";
 
         assertTrue(sidecarsWithContent(withText) > 0, "baseline should carry tk:content");

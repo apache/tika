@@ -371,10 +371,10 @@ public class TikaCLITest {
         String[] expectedChildren = new String[]{
                 "testPDFPackage.pdf.json",
                 //the first two test that the default single file config is working
-                "testPDFPackage.pdf-embed/00000001.bin",
-                "testPDFPackage.pdf-embed/00000002.jpg",
-                "testPDFPackage.pdf-embed/00000003.pdf",
-                "testPDFPackage.pdf-embed/00000004.pdf"};
+                "testPDFPackage.pdf/unpacked/00000001.bin",
+                "testPDFPackage.pdf/unpacked/00000002.jpg",
+                "testPDFPackage.pdf/unpacked/00000003.pdf",
+                "testPDFPackage.pdf/unpacked/00000004.pdf"};
         testRecursiveUnpack("testPDFPackage.pdf", expectedChildren, 2);
     }
 
@@ -383,15 +383,15 @@ public class TikaCLITest {
         // TODO: The .bin extensions for embedded .msg files are wrong - they should be .msg
         // CONTENT_TYPE is not being set for embedded documents - see ~/Desktop/unpack-discussion/mime-todo.txt
         String[] expectedChildren = new String[]{"testPST.pst.json",
-                "testPST.pst-embed/00000007.bin",
-                "testPST.pst-embed/00000001.bin",
-                "testPST.pst-embed/00000008.bin",
-                "testPST.pst-embed/00000004.bin",
-                "testPST.pst-embed/00000003.bin",
-                "testPST.pst-embed/00000002.bin",
-                "testPST.pst-embed/00000005.bin",
-                "testPST.pst-embed/00000009.docx",
-                "testPST.pst-embed/00000006.bin"};
+                "testPST.pst/unpacked/00000007.bin",
+                "testPST.pst/unpacked/00000001.bin",
+                "testPST.pst/unpacked/00000008.bin",
+                "testPST.pst/unpacked/00000004.bin",
+                "testPST.pst/unpacked/00000003.bin",
+                "testPST.pst/unpacked/00000002.bin",
+                "testPST.pst/unpacked/00000005.bin",
+                "testPST.pst/unpacked/00000009.docx",
+                "testPST.pst/unpacked/00000006.bin"};
         testRecursiveUnpack("testPST.pst", expectedChildren, 2);
         try (Reader reader = Files.newBufferedReader(extractDir.resolve("testPST.pst.json"))) {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
@@ -449,30 +449,30 @@ public class TikaCLITest {
 
     @Test
     public void testExtractSimple() throws Exception {
-        assertShallow("coffee.xls", 9, "coffee.xls.json", "coffee.xls-embed/00000001.emf",
-                "coffee.xls-embed/00000006.cdx", "coffee.xls-embed/00000005.png");
+        assertShallow("coffee.xls", 11, "coffee.xls.json", "coffee.xls/unpacked/00000001.emf",
+                "coffee.xls/unpacked/00000006.cdx", "coffee.xls/unpacked/00000005.png");
     }
 
     @Test
     public void testExtractAbsolute() throws Exception {
-        assertShallow("testZip_absolutePath.zip", 3, "testZip_absolutePath.zip.json",
-                "testZip_absolutePath.zip-embed/00000001.bin");
+        assertShallow("testZip_absolutePath.zip", 5, "testZip_absolutePath.zip.json",
+                "testZip_absolutePath.zip/unpacked/00000001.bin");
     }
 
     @Test
     public void testExtractRelative() throws Exception {
-        assertShallow("testZip_relative.zip", 2, "testZip_relative.zip.json");
+        assertShallow("testZip_relative.zip", 4, "testZip_relative.zip.json");
     }
 
     @Test
     public void testExtractOverlapping() throws Exception {
         // overlapping names are handled by numbering
-        assertShallow("testZip_overlappingNames.zip", 3, "testZip_overlappingNames.zip.json");
+        assertShallow("testZip_overlappingNames.zip", 5, "testZip_overlappingNames.zip.json");
     }
 
     @Test
     public void testExtract0x00() throws Exception {
-        assertShallow("testZip_zeroByte.zip", 2, "testZip_zeroByte.zip.json");
+        assertShallow("testZip_zeroByte.zip", 4, "testZip_zeroByte.zip.json");
     }
 
     private void testRecursiveUnpack(String targetFile, String[] expectedChildrenFileNames) throws Exception {
@@ -563,8 +563,8 @@ public class TikaCLITest {
         Set<String> fileNames = shallowOutputOf("testWithSubdirs.zip");
         assertTrue(fileNames.stream().anyMatch(f -> f.endsWith(".json")),
                 "Should have a .json metadata file, got: " + fileNames);
-        assertTrue(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
-                "Should have extracted embedded files in -embed/ directory, got: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.contains("/unpacked/")),
+                "Should have extracted embedded files under unpacked/, got: " + fileNames);
     }
 
     @Test
@@ -579,7 +579,7 @@ public class TikaCLITest {
     private static Set<String> shallowOutputOf(String inputName) {
         Set<String> mine = new HashSet<>();
         for (String f : shallowOutput) {
-            if (f.equals(inputName + ".json") || f.startsWith(inputName + "-embed/")) {
+            if (f.equals(inputName + ".json") || f.startsWith(inputName + "/")) {
                 mine.add(f);
             }
         }
@@ -626,13 +626,14 @@ public class TikaCLITest {
         // Should have extracted files in the specified directory, not current dir
         assertTrue(fileNames.stream().anyMatch(f -> f.endsWith(".json")),
                 "Should have a .json metadata file in extractDir, got: " + fileNames);
-        assertTrue(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
+        assertTrue(fileNames.stream().anyMatch(f -> f.contains("/unpacked/")),
                 "Should have extracted embedded files in extractDir, got: " + fileNames);
     }
 
+    /** TIKA-4681: the default is a Frictionless package laid out as loose files. */
     @Test
-    public void testFrictionlessWithoutModeIsADirectory() throws Exception {
-        Set<String> fileNames = unpack("-Z", "--unpack-format=FRICTIONLESS");
+    public void testDefaultIsALooseFrictionlessPackage() throws Exception {
+        Set<String> fileNames = unpack("-Z");
         assertTrue(fileNames.stream().anyMatch(f -> f.endsWith("/datapackage.json")),
                 "package should be laid out as a directory, got: " + fileNames);
         assertTrue(fileNames.stream().anyMatch(f -> f.contains("/unpacked/")), fileNames.toString());
@@ -643,8 +644,34 @@ public class TikaCLITest {
     }
 
     @Test
+    public void testZippedModeWritesOnePackageZip() throws Exception {
+        Set<String> fileNames = unpack("-Z", "--unpack-mode=ZIPPED");
+        assertTrue(fileNames.contains("test_recursive_embedded.docx-frictionless.zip"), fileNames.toString());
+        assertFalse(fileNames.stream().anyMatch(f -> f.contains("/unpacked/")),
+                "ZIPPED must not also write loose files: " + fileNames);
+    }
+
+    @Test
+    public void testRegularFormatIsTheFlatLayout() throws Exception {
+        Set<String> fileNames = unpack("-Z", "--unpack-format=REGULAR");
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches("test_recursive_embedded\\.docx-embed/0+1\\.[^/]+")),
+                fileNames.toString());
+        assertFalse(fileNames.stream().anyMatch(f -> f.endsWith("datapackage.json") || f.contains("/unpacked/")),
+                "REGULAR has no manifest and no unpacked/: " + fileNames);
+    }
+
+    /** --unpack-mode is the CLI's packaging knob in both formats. */
+    @Test
+    public void testRegularZippedWritesOneFlatZip() throws Exception {
+        Set<String> fileNames = unpack("-Z", "--unpack-format=REGULAR", "--unpack-mode=ZIPPED");
+        assertTrue(fileNames.contains("test_recursive_embedded.docx-embedded.zip"), fileNames.toString());
+        assertFalse(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
+                "ZIPPED must not also write loose files: " + fileNames);
+    }
+
+    @Test
     public void testFrictionlessIncludeMetadata() throws Exception {
-        Set<String> fileNames = unpack("-Z", "--unpack-format=FRICTIONLESS", "--unpack-include-metadata");
+        Set<String> fileNames = unpack("-Z", "--unpack-include-metadata");
         String metadataJson = fileNames.stream().filter(f -> f.endsWith("/metadata.json")).findFirst()
                 .orElseThrow(() -> new AssertionError("no metadata.json in " + fileNames));
         String content = Files.readString(extractDir.resolve(metadataJson));
@@ -657,10 +684,10 @@ public class TikaCLITest {
     @Test
     public void testConfigFileUnpackConfigIsHonoured() throws Exception {
         Set<String> fileNames = unpack("-Z", "--config=" + CONFIGS_DIR + "/tika-config-unpack-original.json");
-        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*-embed/0+\\.[^/]+")),
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*/unpacked/0+\\.[^/]+")),
                 "includeOriginal from -c should add the container as 00000000.<ext>: " + fileNames);
-        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*-embed/0+1\\.[^/]+")),
-                "-c must not change the CLI's file naming: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*/unpacked/0+1\\.[^/]+")),
+                "-c must not change the CLI's file naming or packaging: " + fileNames);
     }
 
     private Set<String> unpack(String... flags) throws Exception {

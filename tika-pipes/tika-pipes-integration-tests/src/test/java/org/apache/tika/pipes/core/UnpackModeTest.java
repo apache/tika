@@ -29,7 +29,9 @@ import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -120,10 +122,10 @@ public class UnpackModeTest {
         for (Metadata m : metadataList) {
             assertNotNull(m.get("Content-Type"));
         }
-        List<Path> embedded = embeddedFiles(outputDir, testDocWithEmbedded);
+        Map<String, Long> embedded = embeddedFiles(outputDir, testDocWithEmbedded);
         assertEquals(4, embedded.size(), "embedded bytes: " + embedded);
-        for (Path p : embedded) {
-            assertTrue(Files.size(p) > 0, p.toString());
+        for (Map.Entry<String, Long> e : embedded.entrySet()) {
+            assertTrue(e.getValue() > 0, e.toString());
         }
     }
 
@@ -168,8 +170,7 @@ public class UnpackModeTest {
         assertTrue(pipesResult.isSuccess(),
                 "UNPACK with custom UnpackConfig should succeed. Status: " + pipesResult.status());
 
-        List<String> names = embeddedFiles(outputDir("custom"), testDocWithEmbedded).stream()
-                .map(f -> f.getFileName().toString()).toList();
+        Set<String> names = embeddedFiles(outputDir("custom"), testDocWithEmbedded).keySet();
         assertEquals(4, names.size(), names.toString());
         for (String name : names) {
             assertTrue(name.matches("\\d{8}\\..+"), "zero-padded with detected suffix: " + name);
@@ -191,7 +192,7 @@ public class UnpackModeTest {
         assertTrue(pipesResult.isSuccess(),
                 "UNPACK with includeOriginal should succeed. Status: " + pipesResult.status());
 
-        List<Path> embedded = embeddedFiles(outputDir("includeOriginal"), testDocWithEmbedded);
+        Map<String, Long> embedded = embeddedFiles(outputDir("includeOriginal"), testDocWithEmbedded);
         assertEquals(5, embedded.size(), "4 embedded + the original: " + embedded);
     }
 
@@ -260,6 +261,7 @@ public class UnpackModeTest {
 
         UnpackConfig unpackConfig = new UnpackConfig();
         unpackConfig.setEmitter(emitterName);
+        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);
         unpackConfig.setZipEmbeddedFiles(true);
         unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
         parseContext.set(UnpackConfig.class, unpackConfig);
@@ -286,6 +288,7 @@ public class UnpackModeTest {
 
         UnpackConfig unpackConfig = new UnpackConfig();
         unpackConfig.setEmitter(emitterName);
+        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);
         unpackConfig.setZipEmbeddedFiles(true);
         unpackConfig.setIncludeMetadataInZip(true);
         unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
@@ -315,6 +318,7 @@ public class UnpackModeTest {
 
         UnpackConfig unpackConfig = new UnpackConfig();
         unpackConfig.setEmitter(emitterName);
+        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);
         unpackConfig.setZipEmbeddedFiles(true);
         unpackConfig.setIncludeOriginal(true);
         unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
@@ -338,6 +342,7 @@ public class UnpackModeTest {
 
         UnpackConfig unpackConfig = new UnpackConfig();
         unpackConfig.setEmitter(emitterName);
+        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);
         unpackConfig.setZipEmbeddedFiles(true);
         parseContext.set(UnpackConfig.class, unpackConfig);
 
@@ -359,6 +364,7 @@ public class UnpackModeTest {
         UnpackConfig unpackConfig = new UnpackConfig();
         unpackConfig.setEmitter(emitterName);
         unpackConfig.setMaxUnpackBytes(10L);
+        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.DIRECTORY);
         parseContext.set(UnpackConfig.class, unpackConfig);
 
         PipesResult pipesResult = process("limited", testDocWithEmbedded, testDocWithEmbedded + "-limited",
@@ -371,7 +377,7 @@ public class UnpackModeTest {
         try (Stream<Path> files = Files.walk(outputDir("limited"))) {
             totalBytesWritten = files
                     .filter(Files::isRegularFile)
-                    .filter(p -> !p.toString().endsWith(".json"))
+                    .filter(p -> p.toString().replace('\\', '/').contains("/unpacked/"))
                     .mapToLong(p -> {
                         try {
                             return Files.size(p);
@@ -403,10 +409,10 @@ public class UnpackModeTest {
         assertTrue(pipesResult.isSuccess(),
                 "UNPACK with default maxUnpackBytes should succeed. Status: " + pipesResult.status());
 
-        List<Path> embedded = embeddedFiles(outputDir("default"), testDocWithEmbedded + "-default");
+        Map<String, Long> embedded = embeddedFiles(outputDir("default"), testDocWithEmbedded + "-default");
         assertEquals(4, embedded.size(), embedded.toString());
-        for (Path p : embedded) {
-            assertEquals(146, Files.size(p), p.toString());
+        for (Map.Entry<String, Long> e : embedded.entrySet()) {
+            assertEquals(146, e.getValue(), e.toString());
         }
     }
 
@@ -426,10 +432,10 @@ public class UnpackModeTest {
         assertTrue(pipesResult.isSuccess(),
                 "UNPACK with unlimited maxUnpackBytes should succeed. Status: " + pipesResult.status());
 
-        List<Path> embedded = embeddedFiles(outputDir("unlimited"), testDocWithEmbedded + "-unlimited");
+        Map<String, Long> embedded = embeddedFiles(outputDir("unlimited"), testDocWithEmbedded + "-unlimited");
         assertEquals(4, embedded.size(), embedded.toString());
-        for (Path p : embedded) {
-            assertEquals(146, Files.size(p), p.toString());
+        for (Map.Entry<String, Long> e : embedded.entrySet()) {
+            assertEquals(146, e.getValue(), e.toString());
         }
     }
 
@@ -463,13 +469,22 @@ public class UnpackModeTest {
         }
     }
 
-    private static List<Path> embeddedFiles(Path outputDir, String emitKey) throws IOException {
-        Path dir = outputDir.resolve(emitKey + "-embed");
-        if (!Files.isDirectory(dir)) {
-            return List.of();
+    /** The default package is a ZIPPED Frictionless one: entry name under unpacked/ -> size. */
+    private static Map<String, Long> embeddedFiles(Path outputDir, String emitKey) throws IOException {
+        Path zipFile = outputDir.resolve(emitKey + "-frictionless.zip");
+        Map<String, Long> embedded = new TreeMap<>();
+        if (!Files.isRegularFile(zipFile)) {
+            return embedded;
         }
-        try (Stream<Path> files = Files.list(dir)) {
-            return files.sorted().toList();
+        try (ZipFile zip = new ZipFile(zipFile.toFile())) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (entry.getName().startsWith("unpacked/") && !entry.isDirectory()) {
+                    embedded.put(entry.getName().substring("unpacked/".length()), entry.getSize());
+                }
+            }
         }
+        return embedded;
     }
 }
