@@ -50,9 +50,6 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * from each image's PNG IHDR or BITMAPINFOHEADER and the directory is only
  * the fallback. Colour depth is reported the TIFF way, bits per sample and
  * samples per pixel; the per-image list carries the total bits per pixel.
- * <p>
- * OS/2 bitmap arrays are detected as the same type. They pass through
- * without metadata.
  */
 @TikaComponent
 public class ICOParser implements Parser {
@@ -93,19 +90,11 @@ public class ICOParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         byte[] file = IOUtils.toByteArray(new BoundedInputStream(MAX_FILE_SIZE, tis));
-        if (isOs2BitmapArray(file)) {
-            metadata.set(HttpHeaders.CONTENT_TYPE, ICO_TYPE.toString());
-        } else {
-            extractMetadata(file, metadata, context);
-        }
+        extractMetadata(file, metadata, context);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         xhtml.endDocument();
-    }
-
-    private static boolean isOs2BitmapArray(byte[] file) {
-        return file.length >= 2 && file[0] == 'B' && file[1] == 'A';
     }
 
     private static void extractMetadata(byte[] file, Metadata metadata, ParseContext context)

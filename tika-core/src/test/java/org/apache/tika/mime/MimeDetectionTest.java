@@ -93,6 +93,99 @@ public class MimeDetectionTest {
         testFile("application/vnd.android.axml", "test-android-binary.xml");
     }
 
+    /** An OS/2 bitmap array's first entry header (size 40, next at 46) is not an icon. */
+    @Test
+    public void testOs2BitmapArrayIsNotAnIcon() throws Exception {
+        for (String tag : new String[]{"BM", "IC", "CI", "CP", "PT"}) {
+            byte[] bitmapArray = new byte[64];
+            bitmapArray[0] = 'B';
+            bitmapArray[1] = 'A';
+            bitmapArray[2] = 0x28;
+            bitmapArray[6] = 0x2e;
+            bitmapArray[14] = (byte) tag.charAt(0);
+            bitmapArray[15] = (byte) tag.charAt(1);
+            try (TikaInputStream tis = TikaInputStream.get(bitmapArray)) {
+                assertEquals(MediaType.parse("image/x-os2-graphics; charset=binary"),
+                        MIME_TYPES.detect(tis, new Metadata(), new ParseContext()), tag);
+            }
+        }
+    }
+
+    /**
+     * TGA has no signature. The rules key on the colour map type and image
+     * type, the colour map spec and the pixel depth.
+     */
+    @Test
+    public void testTgaDetection() throws Exception {
+        MediaType tga = MediaType.image("x-tga");
+        MediaType cursor = MediaType.image("x-win-bitmap");
+        // true colour, no id, no colour map, 24 bpp
+        assertDetected(tga, tgaHeader(0, 0, 2, 0, 24));
+        // the same with an id field and 32 bpp, and the RLE form
+        assertDetected(tga, tgaHeader(5, 0, 2, 0, 32));
+        assertDetected(tga, tgaHeader(0, 0, 10, 0, 32));
+        // 15 bpp, with and without an id
+        assertDetected(tga, tgaHeader(0, 0, 2, 0, 15));
+        assertDetected(tga, tgaHeader(3, 0, 2, 0, 15));
+        // greyscale
+        assertDetected(tga, tgaHeader(0, 0, 3, 0, 8));
+        assertDetected(tga, tgaHeader(0, 0, 11, 0, 8));
+        // colour mapped, 24 bit entries, 8 bit indices, and the RLE form
+        assertDetected(tga, tgaHeader(0, 1, 1, 24, 8));
+        assertDetected(tga, tgaHeader(0, 1, 9, 24, 8));
+        // no colour map but an entry size in the spec, as some writers leave it
+        byte[] strayEntrySize = tgaHeader(0, 0, 2, 0, 24);
+        strayEntrySize[7] = 24;
+        assertDetected(tga, strayEntrySize);
+
+        // a pixel depth no TGA has
+        assertDetected(MediaType.OCTET_STREAM, tgaHeader(0, 0, 2, 0, 7));
+        assertDetected(MediaType.OCTET_STREAM, tgaHeader(1, 0, 2, 0, 7));
+        // a colour map entry size and an index depth no TGA has
+        assertDetected(MediaType.OCTET_STREAM, tgaHeader(0, 1, 1, 7, 8));
+        assertDetected(MediaType.OCTET_STREAM, tgaHeader(0, 1, 1, 24, 99));
+        // a Windows cursor with one image starts like a true colour TGA
+        byte[] oneImage = tgaHeader(0, 0, 2, 0, 24);
+        oneImage[4] = 1;
+        assertDetected(cursor, oneImage);
+        // a cursor with no images is nothing; 256 images is a TGA with a colour map length
+        byte[] noImages = tgaHeader(0, 0, 2, 0, 24);
+        noImages[16] = 0;
+        assertDetected(MediaType.OCTET_STREAM, noImages);
+        byte[] images256 = tgaHeader(0, 0, 2, 0, 24);
+        images256[5] = 1;
+        assertDetected(MediaType.OCTET_STREAM, images256);
+        // Lotus 1-2-3 shares the first four bytes
+        byte[] lotus = new byte[64];
+        lotus[2] = 2;
+        lotus[4] = 4;
+        lotus[5] = 4;
+        assertDetected(MediaType.parse("application/vnd.lotus-1-2-3;version=1"), lotus);
+    }
+
+    private static byte[] tgaHeader(int idLength, int colourMapType, int imageType,
+                                    int colourMapEntrySize, int pixelDepth) {
+        byte[] header = new byte[64];
+        header[0] = (byte) idLength;
+        header[1] = (byte) colourMapType;
+        header[2] = (byte) imageType;
+        if (colourMapType == 1) {
+            // 256 entries
+            header[6] = 1;
+            header[7] = (byte) colourMapEntrySize;
+        }
+        header[12] = 32;
+        header[14] = 32;
+        header[16] = (byte) pixelDepth;
+        return header;
+    }
+
+    private static void assertDetected(MediaType expected, byte[] bytes) throws IOException {
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            assertEquals(expected, MIME_TYPES.detect(tis, new Metadata(), new ParseContext()));
+        }
+    }
+
     @Test
     public void testDetectionWithoutContent() throws IOException {
         testUrlWithoutContent("text/html", "test.html");

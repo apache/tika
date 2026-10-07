@@ -207,8 +207,8 @@ public class ICOParserTest extends TikaTest {
     }
 
     /**
-     * OS/2 bitmap arrays share the icon type's magic. They are not read, but
-     * they are not a failure either.
+     * An OS/2 bitmap array is not an icon: it is detected as its own type and
+     * never reaches this parser, which rejects it when called directly.
      */
     @Test
     public void testOs2BitmapArray() throws Exception {
@@ -217,19 +217,17 @@ public class ICOParserTest extends TikaTest {
         bitmapArray[1] = 'A';
         bitmapArray[2] = 0x28;
         bitmapArray[6] = 0x2e;
+        bitmapArray[14] = 'I';
+        bitmapArray[15] = 'C';
 
-        Metadata metadata = parse(bitmapArray);
-        assertEquals("image/vnd.microsoft.icon", metadata.get(HttpHeaders.CONTENT_TYPE));
-        assertNull(metadata.get(Icon.IMAGE_COUNT));
-        assertNull(metadata.get(TIFF.IMAGE_WIDTH));
+        assertThrows(TikaException.class, () -> parse(bitmapArray));
 
         Metadata detected = new Metadata();
         try (TikaInputStream tis = TikaInputStream.get(bitmapArray)) {
             getXML(tis, AUTO_DETECT_PARSER, detected);
         }
-        assertEquals("image/vnd.microsoft.icon", detected.get(HttpHeaders.CONTENT_TYPE));
-        assertContains(ICOParser.class.getName(),
-                Arrays.asList(detected.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
+        assertEquals("image/x-os2-graphics; charset=binary",
+                detected.get(HttpHeaders.CONTENT_TYPE));
         assertNull(detected.get(TikaCoreProperties.CONTAINER_EXCEPTION));
     }
 
