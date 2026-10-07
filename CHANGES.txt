@@ -1,7 +1,8 @@
 Release 4.2.0 - unreleased
 
    * Unpack output is a Frictionless Data Package by default on every surface: tika-server
-     /unpack, tika-app -z/-Z and pipes UNPACK mode. Set unpack-config.outputFormat to REGULAR
+     /unpack, tika-app -z/-Z and pipes UNPACK mode, where it is one <key>-frictionless.zip per
+     container unless outputMode is DIRECTORY. Set unpack-config.outputFormat to REGULAR
      (--unpack-format=REGULAR) for the pre-4.2 flat layout (TIKA-4681).
 
    * Pipes plugins load only from the zips in plugin-roots; a plugin jar on the classpath

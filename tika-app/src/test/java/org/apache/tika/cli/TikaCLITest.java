@@ -721,6 +721,15 @@ public class TikaCLITest {
                 "REGULAR has no manifest and no unpacked/: " + fileNames);
     }
 
+    /** --unpack-mode is the CLI's packaging knob in both formats. */
+    @Test
+    public void testRegularZippedWritesOneFlatZip() throws Exception {
+        Set<String> fileNames = unpack("-Z", "--unpack-format=REGULAR", "--unpack-mode=ZIPPED");
+        assertTrue(fileNames.contains("test_recursive_embedded.docx-embedded.zip"), fileNames.toString());
+        assertFalse(fileNames.stream().anyMatch(f -> f.contains("-embed/")),
+                "ZIPPED must not also write loose files: " + fileNames);
+    }
+
     @Test
     public void testFrictionlessIncludeMetadata() throws Exception {
         Set<String> fileNames = unpack("-Z", "--unpack-include-metadata");
