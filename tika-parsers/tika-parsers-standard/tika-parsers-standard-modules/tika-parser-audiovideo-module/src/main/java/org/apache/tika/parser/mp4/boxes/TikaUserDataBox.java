@@ -151,7 +151,8 @@ public class TikaUserDataBox {
         if (len < 8L || len >= Integer.MAX_VALUE) {
             throw new IOException("Malformed ilst length in udta metadata: " + len);
         }
-        processIList(reader, len);
+        //len includes the 8-byte ilst header already read above
+        processIList(reader, len - 8);
     }
 
 
