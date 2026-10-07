@@ -104,7 +104,6 @@ public final class OneNoteGuidCollector {
             case OneNoteJcid.CONFLICT_PAGE_METADATA:
                 return Category.CONFLICT_PAGE;
             default:
-                // section nodes and unrecognized JCIDs contribute no GUID metadata
                 return null;
         }
     }

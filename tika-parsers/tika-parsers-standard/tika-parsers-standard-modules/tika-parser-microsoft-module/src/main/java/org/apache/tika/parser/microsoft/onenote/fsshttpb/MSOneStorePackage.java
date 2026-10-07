@@ -102,6 +102,9 @@ public class MSOneStorePackage {
     private static final int MAX_OBJECT_WALK_DEPTH = 1000;
     private static final int MAX_REFERENCE_COUNT = 100000;
     private static final int MAX_PARSE_WARNINGS = 100;
+
+    /** Defensive bound on root objects resolved per cell; real cells declare a handful. */
+    static final int MAX_CELL_ROOTS = 10_000;
     private static final int FILE_IDENTITY_GUID_PROPERTY_ID = 0x1C001D94;
 
     static {
@@ -119,7 +122,7 @@ public class MSOneStorePackage {
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
-    private final OneNoteGuidCollector guids = new OneNoteGuidCollector(this::recordParseWarning);
+    private final OneNoteGuidCollector guids = new OneNoteGuidCollector(this::recordGuidCapWarning);
     /**
      * The fully populated storage index. Set this before performing storage-index lookups; its
      * mapping lists are indexed once and must not be mutated afterward.
@@ -417,6 +420,11 @@ public class MSOneStorePackage {
         if (roots.walkAll) {
             if (cell.rootDeclares != null && cell.rootDeclares.isEmpty()) {
                 recordParseWarning("OneNote cell has no declared root objects; walking all objects");
+            } else if (roots.truncated) {
+                // reachable only when no content root survived the cap, so the plain
+                // check is enough here
+                recordParseWarning("OneNote cell has more than " + MAX_CELL_ROOTS
+                        + " root objects; walking all objects");
             } else {
                 recordParseWarning("OneNote cell root objects could not be resolved; walking all objects");
             }
@@ -435,39 +443,48 @@ public class MSOneStorePackage {
      * object in the groups. A blob-only root (no property set) cannot reach the page body, so
      * it does not count as a resolved content root: if the content root declare dangles next
      * to it, the walk-everything fallback must still fire or the page body is silently lost.
+     * The same holds when the root cap truncates the declares before reaching a content root.
      */
     private CellRoots cellRoots(RevisionStoreCell cell,
                                 Map<ExGuid, RevisionStoreObject> objectsById,
                                 Consumer<String> unresolvedRootWarning) {
         CellRoots roots = new CellRoots();
         if (cell.rootDeclares != null) {
+            Set<RevisionStoreObject> seenRoots = new HashSet<>();
             for (RevisionManifestRootDeclare rootDeclare : cell.rootDeclares) {
                 RevisionStoreObject rootObject = objectsById.get(rootDeclare.objectExGuid);
                 if (rootObject == null) {
                     unresolvedRootWarning.accept("OneNote cell root object " +
                             rootDeclare.objectExGuid + " could not be resolved");
                     roots.unresolvedRoot = true;
-                } else {
-                    if (rootObject.propertySet != null) {
-                        roots.resolvedContentRoot = true;
+                } else if (seenRoots.add(rootObject)) {
+                    if (roots.declared.size() < MAX_CELL_ROOTS) {
+                        if (rootObject.propertySet != null) {
+                            roots.resolvedContentRoot = true;
+                        }
+                        roots.declared.add(rootObject);
+                    } else if (!roots.truncated) {
+                        roots.truncated = true;
+                        unresolvedRootWarning.accept("OneNote cell has more than " + MAX_CELL_ROOTS
+                                + " root objects; ignoring the rest");
                     }
-                    roots.declared.add(rootObject);
                 }
             }
         }
         roots.walkAll = cell.rootDeclares == null || cell.rootDeclares.isEmpty()
-                || (roots.unresolvedRoot && !roots.resolvedContentRoot);
+                || ((roots.unresolvedRoot || roots.truncated) && !roots.resolvedContentRoot);
         return roots;
     }
 
     /**
      * Root resolution shared by {@link #walkCell} and
-     * {@link #findPageGuid(RevisionStoreCell, Map)} so the two cannot diverge.
+     * {@link #findPageGuid(RevisionStoreCell, Map)}.
      */
     private static final class CellRoots {
         final List<RevisionStoreObject> declared = new ArrayList<>();
         boolean resolvedContentRoot;
         boolean unresolvedRoot;
+        boolean truncated;
         boolean walkAll;
     }
 
@@ -509,6 +526,14 @@ public class MSOneStorePackage {
         } else {
             parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         }
+    }
+
+    /**
+     * Exempt from the parse-warning budget: capped GUID metadata must always carry its own
+     * incompleteness signal, even when generic warnings were suppressed.
+     */
+    private void recordGuidCapWarning(String warning) {
+        emitParseWarning(warning);
     }
 
     /**
@@ -1014,8 +1039,8 @@ public class MSOneStorePackage {
         }
     }
 
-    // later file-identity candidates are ignored by the collector (first wins), so the
-    // scan only short-circuits between sources, not within one
+    // sectionGuid is a scalar: past the first candidate, further scanning cannot change
+    // the output, only burn work on values the collector will refuse
     private boolean sectionGuidCollected() {
         return !guids.values(OneNoteGuidCollector.Category.SECTION).isEmpty();
     }
@@ -1025,7 +1050,7 @@ public class MSOneStorePackage {
             return;
         }
         for (RevisionStoreObjectGroup group : groups) {
-            if (guids.isFull()) {
+            if (guids.isFull() || sectionGuidCollected()) {
                 return;
             }
             if (group == null || group.objects == null) {
@@ -1050,7 +1075,7 @@ public class MSOneStorePackage {
             return;
         }
         int count = Math.min(propertySet.rgPrids.length, propertySet.rgData.size());
-        for (int i = 0; i < count && !guids.isFull(); i++) {
+        for (int i = 0; i < count && !guids.isFull() && !sectionGuidCollected(); i++) {
             PropertyID propertyID = propertySet.rgPrids[i];
             IProperty property = propertySet.rgData.get(i);
             long propertyIdValue = Unsigned.uint(propertyID.value).longValue();
@@ -1068,7 +1093,7 @@ public class MSOneStorePackage {
                     && property instanceof PrtArrayOfPropertyValues
                     && ((PrtArrayOfPropertyValues) property).data != null) {
                 for (PropertySet nested : ((PrtArrayOfPropertyValues) property).data) {
-                    if (guids.isFull()) {
+                    if (guids.isFull() || sectionGuidCollected()) {
                         return;
                     }
                     collectFileIdentityGuids(nested, depth + 1);

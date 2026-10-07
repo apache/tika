@@ -144,7 +144,7 @@ class OneNoteTreeWalker {
         this.xhtml = xhtml;
         this.parentMetadata = parentMetadata;
         this.parseContext = parseContext;
-        this.guidCollector = new OneNoteGuidCollector(this::recordGuidLimitWarning);
+        this.guidCollector = new OneNoteGuidCollector(this::recordGuidCapWarning);
         this.embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
     }
@@ -629,7 +629,7 @@ class OneNoteTreeWalker {
                         && content.size() == 16) {
                     ByteBuffer guidBuffer = ByteBuffer.allocate(16);
                     dif.read(guidBuffer);
-                    String guid = GUID.fromMicrosoftBytes(guidBuffer.array()).toString();
+                    String guid = pooledGuid(GUID.fromMicrosoftBytes(guidBuffer.array()).toString());
                     propMap.put("notebookManagementEntityGuid", guid);
                     // Version-history copies of a page are object-space roots; only the
                     // current page's metadata is referenced via MetaDataObjectsAboveGraphSpace.
@@ -731,17 +731,33 @@ class OneNoteTreeWalker {
         guidCollector.addForObjectType(objectType, guid);
     }
 
-    private void recordGuidLimitWarning(String warning) {
+    private void publishGuidBags() {
+        if (parentMetadata != null) {
+            guidCollector.publish(parentMetadata);
+        }
+    }
+
+    /**
+     * Exempt from any warning budget: capped GUID metadata must always carry its own
+     * incompleteness signal.
+     */
+    private void recordGuidCapWarning(String warning) {
         LOG.warn(warning);
         if (parentMetadata != null) {
             parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         }
     }
 
-    private void publishGuidBags() {
-        if (parentMetadata != null) {
-            guidCollector.publish(parentMetadata);
+    // revisit-heavy graphs decode the same GUID many times; pool the canonical string so the
+    // retained per-node maps share one instance instead of one string per visit
+    final Map<String, String> guidStringPool = new HashMap<>();
+
+    String pooledGuid(String guid) {
+        if (guidStringPool.size() >= OneNoteGuidCollector.MAX_GUID_COUNT) {
+            return guid;
         }
+        String pooled = guidStringPool.putIfAbsent(guid, guid);
+        return pooled != null ? pooled : guid;
     }
 
     static int jcidIndex(FileNode fileNode) {

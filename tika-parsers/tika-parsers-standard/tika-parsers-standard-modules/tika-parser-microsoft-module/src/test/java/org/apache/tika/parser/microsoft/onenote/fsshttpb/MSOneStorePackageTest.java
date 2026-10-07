@@ -230,38 +230,43 @@ public class MSOneStorePackageTest {
     @Test
     public void testFileIdentityScannerHandlesNestedSetsArraysAndMalformedValues() {
         byte[] firstGuidBytes = sectionGuidBytes();
-        byte[] secondGuidBytes = new byte[] {
-                0x43, 0x32, 0x21, 0x10, 0x65, 0x54, (byte) 0x87, 0x76,
-                (byte) 0x98, (byte) 0xa9, (byte) 0xba, (byte) 0xcb,
-                (byte) 0xdc, (byte) 0xed, (byte) 0xfe, 0x0f
-        };
         PropertySet noProperties = new PropertySet();
         noProperties.rgData = new ArrayList<>();
         PropertySet noData = new PropertySet();
         noData.rgPrids = new PropertyID[0];
-        PrtArrayOfPropertyValues array = new PrtArrayOfPropertyValues();
-        array.data = new PropertySet[] {
-                fileIdentitySet(secondGuidBytes), null, noProperties, noData
+        // guid-free nested structures first: once the winning GUID is found, the scan stops,
+        // so anything placed later would never be scanned
+        PrtArrayOfPropertyValues guidFreeArray = new PrtArrayOfPropertyValues();
+        guidFreeArray.data = new PropertySet[] {
+                propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C003498, text("nested"))), null, noProperties, noData
         };
         PropertySet deep = noProperties;
         for (int i = 0; i <= PropertySet.MAX_PROPERTY_NESTING; i++) {
             deep = propertySet(new PropertySpec(PropertyType.PropertySet, 0x24000001, deep));
         }
+        PrtArrayOfPropertyValues winningArray = new PrtArrayOfPropertyValues();
+        winningArray.data = new PropertySet[] {
+                fileIdentitySet(firstGuidBytes), noProperties
+        };
         PrtArrayOfPropertyValues emptyArray = new PrtArrayOfPropertyValues();
         PropertySet top = propertySet(
                 new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
                         0x1C001D94, bytes(new byte[17])),
-                new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
-                        0x1C001D95, bytes(firstGuidBytes)),
                 new PropertySpec(PropertyType.PropertySet, 0x24000002,
-                        fileIdentitySet(firstGuidBytes)),
+                        propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003498, text("nested")))),
                 new PropertySpec(PropertyType.PropertySet, 0x1C001D94,
-                        fileIdentitySet(secondGuidBytes)),
+                        propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                0x1C003498, text("nested")))),
                 new PropertySpec(PropertyType.PropertySet, 0x24000003, new NoData()),
-                new PropertySpec(PropertyType.ArrayOfPropertyValues, 0x24000004, array),
+                new PropertySpec(PropertyType.ArrayOfPropertyValues, 0x24000004, guidFreeArray),
                 new PropertySpec(PropertyType.ArrayOfPropertyValues, 0x24000005, emptyArray),
                 new PropertySpec(PropertyType.ArrayOfPropertyValues, 0x24000007, new NoData()),
-                new PropertySpec(PropertyType.PropertySet, 0x24000006, deep));
+                new PropertySpec(PropertyType.PropertySet, 0x24000006, deep),
+                new PropertySpec(PropertyType.ArrayOfPropertyValues, 0x24000008, winningArray),
+                new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C003498, text("after the guid")));
         MSOneStorePackage pkg = new MSOneStorePackage();
 
         pkg.collectFileIdentityGuids(null, 0);
@@ -330,6 +335,48 @@ public class MSOneStorePackageTest {
     }
 
     @Test
+    public void testSectionShortCircuitStopsWithBudgetToSpare() throws Exception {
+        byte[] secondGuidBytes = new byte[] {
+                0x43, 0x32, 0x21, 0x10, 0x65, 0x54, (byte) 0x87, 0x76,
+                (byte) 0x98, (byte) 0xa9, (byte) 0xba, (byte) 0xcb,
+                (byte) 0xdc, (byte) 0xed, (byte) 0xfe, 0x0f
+        };
+        // the winning identity is NOT the cap-filling value, so every stop below is
+        // attributable to the sectionCollected short-circuit alone: removing the property
+        // loop or nested-array operand sends the scan into the deep chain, removing the
+        // group-loop operand enters the second group - either way the entry count grows
+        PrtArrayOfPropertyValues array = new PrtArrayOfPropertyValues();
+        array.data = new PropertySet[] {
+                fileIdentitySet(sectionGuidBytes()), propertySet()
+        };
+        PropertySet deep = propertySet();
+        for (int i = 0; i <= PropertySet.MAX_PROPERTY_NESTING; i++) {
+            deep = propertySet(new PropertySpec(PropertyType.PropertySet, 0x24000006, deep));
+        }
+        RevisionStoreObject first = object(id(1474),
+                propertySet(new PropertySpec(PropertyType.ArrayOfPropertyValues,
+                                0x24000007, array),
+                        new PropertySpec(PropertyType.PropertySet, 0x24000006, deep)),
+                Collections.emptyList(), Collections.emptyList());
+        RevisionStoreObject afterLimit = object(id(1475), fileIdentitySet(secondGuidBytes),
+                Collections.emptyList(), Collections.emptyList());
+        CountingMSOneStorePackage pkg = new CountingMSOneStorePackage();
+        fillGuidBudget(pkg, OneNoteGuidCollector.MAX_GUID_COUNT - 5);
+        pkg.dataRootCell = new RevisionStoreCell();
+        pkg.dataRootCell.objectGroups.add(group(first));
+        pkg.dataRootCell.objectGroups.add(group(afterLimit));
+        Metadata metadata = new Metadata();
+
+        walk(pkg, metadata);
+
+        assertArrayEquals(new String[] {"{00112233-4455-6677-8899-AABBCCDDEEFF}"},
+                metadata.getValues(OneNote.SECTION_GUID));
+        assertEquals(2, pkg.identityScanEntries);
+        assertEquals(0, Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(w -> w.contains("Capping OneNote GUID metadata")).count());
+    }
+
+    @Test
     public void testSectionIdentityScanStopsAtGuidLimit() throws Exception {
         byte[] firstGuidBytes = sectionGuidBytes();
         byte[] secondGuidBytes = new byte[] {
@@ -346,7 +393,7 @@ public class MSOneStorePackageTest {
                         0x24000007, array)), Collections.emptyList(), Collections.emptyList());
         RevisionStoreObject afterLimit = object(id(1471), fileIdentitySet(secondGuidBytes),
                 Collections.emptyList(), Collections.emptyList());
-        MSOneStorePackage pkg = new MSOneStorePackage();
+        CountingMSOneStorePackage pkg = new CountingMSOneStorePackage();
         fillGuidBudget(pkg, OneNoteGuidCollector.MAX_GUID_COUNT - 1);
         pkg.dataRootCell = new RevisionStoreCell();
         pkg.dataRootCell.objectGroups.add(group(withArray));
@@ -357,27 +404,37 @@ public class MSOneStorePackageTest {
 
         assertArrayEquals(new String[] {"{00112233-4455-6677-8899-AABBCCDDEEFF}"},
                 metadata.getValues(OneNote.SECTION_GUID));
+        // exact-work check: the nested array's first element wins, so the scan must not
+        // enter the second element, the rest of the property list, or the second group
+        assertEquals(2, pkg.identityScanEntries);
         assertEquals(1, Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
                 .filter(w -> w.contains("Capping OneNote GUID metadata")).count());
     }
 
     @Test
-    public void testSectionIdentityScanStopsWithinObjectAtGuidLimit() throws Exception {
-        byte[] firstGuidBytes = sectionGuidBytes();
+    public void testSectionScanStopsAtLimitWithExactWork() throws Exception {
         byte[] secondGuidBytes = new byte[] {
                 0x43, 0x32, 0x21, 0x10, 0x65, 0x54, (byte) 0x87, 0x76,
                 (byte) 0x98, (byte) 0xa9, (byte) 0xba, (byte) 0xcb,
                 (byte) 0xdc, (byte) 0xed, (byte) 0xfe, 0x0f
         };
+        // a nested property-set chain deeper than MAX_PROPERTY_NESTING: isFull and
+        // sectionCollected both fire at the winning identity here, so the chain is reached
+        // only when BOTH stop conditions are removed (removing one leaves the other
+        // stopping the scan); single-operand attribution is covered by
+        // testSectionShortCircuitStopsWithBudgetToSpare
+        PropertySet deep = propertySet();
+        for (int i = 0; i <= PropertySet.MAX_PROPERTY_NESTING; i++) {
+            deep = propertySet(new PropertySpec(PropertyType.PropertySet, 0x24000006, deep));
+        }
         RevisionStoreObject first = object(id(1472),
                 propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
-                                0x1C001D94, bytes(firstGuidBytes)),
-                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
-                                0x1C001D94, bytes(secondGuidBytes))),
+                                0x1C001D94, bytes(sectionGuidBytes())),
+                        new PropertySpec(PropertyType.PropertySet, 0x24000006, deep)),
                 Collections.emptyList(), Collections.emptyList());
         RevisionStoreObject afterLimit = object(id(1473), fileIdentitySet(secondGuidBytes),
                 Collections.emptyList(), Collections.emptyList());
-        MSOneStorePackage pkg = new MSOneStorePackage();
+        CountingMSOneStorePackage pkg = new CountingMSOneStorePackage();
         fillGuidBudget(pkg, OneNoteGuidCollector.MAX_GUID_COUNT - 1);
         pkg.dataRootCell = new RevisionStoreCell();
         pkg.dataRootCell.objectGroups.add(group(first, afterLimit));
@@ -387,34 +444,161 @@ public class MSOneStorePackageTest {
 
         assertArrayEquals(new String[] {"{00112233-4455-6677-8899-AABBCCDDEEFF}"},
                 metadata.getValues(OneNote.SECTION_GUID));
+        assertEquals(1, pkg.identityScanEntries);
+        assertEquals(1, Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(w -> w.contains("Capping OneNote GUID metadata")).count());
     }
 
     @Test
-    public void testSectionIdentityScanStopsBeforeFollowingObjectAtGuidLimit() throws Exception {
-        byte[] firstGuidBytes = sectionGuidBytes();
-        byte[] secondGuidBytes = new byte[] {
+    public void testSectionGuidSourcePrecedence() throws Exception {
+        byte[] dataRootBytes = new byte[] {
                 0x43, 0x32, 0x21, 0x10, 0x65, 0x54, (byte) 0x87, 0x76,
                 (byte) 0x98, (byte) 0xa9, (byte) 0xba, (byte) 0xcb,
                 (byte) 0xdc, (byte) 0xed, (byte) 0xfe, 0x0f
         };
-        RevisionStoreObject first = object(id(1474),
-                propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
-                                0x1C001D94, bytes(firstGuidBytes)),
-                        new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
-                                0x1C001D94, bytes(secondGuidBytes))),
-                Collections.emptyList(), Collections.emptyList());
-        RevisionStoreObject afterLimit = object(id(1475), fileIdentitySet(secondGuidBytes),
-                Collections.emptyList(), Collections.emptyList());
+        byte[] fallbackBytes = new byte[] {
+                0x63, 0x52, 0x41, 0x30, (byte) 0x85, 0x74, (byte) 0xa7, (byte) 0x96,
+                (byte) 0xb8, (byte) 0xc9, (byte) 0xda, (byte) 0xeb,
+                (byte) 0xfc, 0x0d, 0x1e, 0x2f
+        };
+
+        // the header wins over both lower-priority sources
+        MSOneStorePackage withHeader = new MSOneStorePackage();
+        withHeader.headerCell = new HeaderCell();
+        withHeader.headerCell.objectData = new ObjectSpaceObjectPropSet();
+        withHeader.headerCell.objectData.body = fileIdentitySet(sectionGuidBytes());
+        withHeader.dataRootCell = new RevisionStoreCell();
+        withHeader.dataRootCell.objectGroups.add(group(object(id(1500),
+                fileIdentitySet(dataRootBytes), Collections.emptyList(),
+                Collections.emptyList())));
+        withHeader.OtherFileNodeList.add(group(object(id(1501),
+                fileIdentitySet(fallbackBytes), Collections.emptyList(),
+                Collections.emptyList())));
+        Metadata headerMetadata = new Metadata();
+        walk(withHeader, headerMetadata);
+        assertEquals("{00112233-4455-6677-8899-AABBCCDDEEFF}",
+                headerMetadata.get(OneNote.SECTION_GUID));
+
+        // without a usable header, the data root wins over the OtherFileNodeList fallback
+        MSOneStorePackage withoutHeader = new MSOneStorePackage();
+        withoutHeader.dataRootCell = new RevisionStoreCell();
+        withoutHeader.dataRootCell.objectGroups.add(group(object(id(1502),
+                fileIdentitySet(dataRootBytes), Collections.emptyList(),
+                Collections.emptyList())));
+        withoutHeader.OtherFileNodeList.add(group(object(id(1503),
+                fileIdentitySet(fallbackBytes), Collections.emptyList(),
+                Collections.emptyList())));
+        Metadata fallbackMetadata = new Metadata();
+        walk(withoutHeader, fallbackMetadata);
+        assertEquals("{10213243-5465-7687-98A9-BACBDCEDFE0F}",
+                fallbackMetadata.get(OneNote.SECTION_GUID));
+
+        // a scan entered after the section GUID was found must stop at the group check
+        // (budget not full, so the short-circuit is the sectionCollected operand): the
+        // assertion pins the collector at exactly one SECTION value, so collecting the
+        // fallback GUID here would fail
+        withHeader.collectFileIdentityGuidsFromGroups(withHeader.OtherFileNodeList);
+        assertEquals(Collections.singleton("{00112233-4455-6677-8899-AABBCCDDEEFF}"),
+                sectionGuidValues(withHeader));
+        assertEquals("{00112233-4455-6677-8899-AABBCCDDEEFF}",
+                headerMetadata.get(OneNote.SECTION_GUID));
+    }
+
+    @Test
+    public void testCellRootsDeduplicatesAndCapsRoots() throws Exception {
+        RevisionStoreCell cell = new RevisionStoreCell();
+        RevisionStoreObject textRoot = object(id(2100), propertySet(
+                new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C003498, text("root text"))), Collections.emptyList(),
+                Collections.emptyList());
+        cell.rootDeclares.add(rootDeclare(textRoot.objectID));
+        cell.rootDeclares.add(rootDeclare(textRoot.objectID));
+        List<RevisionStoreObject> roots = new ArrayList<>();
+        roots.add(textRoot);
+        for (int i = 0; i <= MSOneStorePackage.MAX_CELL_ROOTS; i++) {
+            RevisionStoreObject root = object(id(2101 + i), propertySet(),
+                    Collections.emptyList(), Collections.emptyList());
+            roots.add(root);
+            cell.rootDeclares.add(rootDeclare(root.objectID));
+        }
+        cell.objectGroups.add(group(roots.toArray(new RevisionStoreObject[0])));
         MSOneStorePackage pkg = new MSOneStorePackage();
-        fillGuidBudget(pkg, OneNoteGuidCollector.MAX_GUID_COUNT - 1);
-        pkg.dataRootCell = new RevisionStoreCell();
-        pkg.dataRootCell.objectGroups.add(group(first, afterLimit));
+        pkg.cells.add(cell);
         Metadata metadata = new Metadata();
 
-        walk(pkg, metadata);
+        String xml = walk(pkg, metadata);
 
-        assertArrayEquals(new String[] {"{00112233-4455-6677-8899-AABBCCDDEEFF}"},
-                metadata.getValues(OneNote.SECTION_GUID));
+        assertTrue(xml.contains("root text"));
+        assertEquals(1, Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(w -> w.contains("more than " + MSOneStorePackage.MAX_CELL_ROOTS
+                        + " root objects")).count());
+    }
+
+    @Test
+    public void testCellRootCapTruncationStillWalksContentRoot() throws Exception {
+        // the cap must not silence the walk-everything fallback: 10,000 blob-only roots
+        // fill it, so the real content root is declare #10,001 and gets truncated
+        RevisionStoreCell cell = new RevisionStoreCell();
+        List<RevisionStoreObject> roots = new ArrayList<>();
+        for (int i = 0; i < MSOneStorePackage.MAX_CELL_ROOTS; i++) {
+            RevisionStoreObject blob = new RevisionStoreObject();
+            blob.objectID = id(2200 + i);
+            roots.add(blob);
+            cell.rootDeclares.add(rootDeclare(blob.objectID));
+        }
+        RevisionStoreObject contentRoot = object(id(2199),
+                propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C003498, text("root text"))), Collections.emptyList(),
+                Collections.emptyList());
+        roots.add(contentRoot);
+        cell.rootDeclares.add(rootDeclare(contentRoot.objectID));
+        cell.objectGroups.add(group(roots.toArray(new RevisionStoreObject[0])));
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+        Metadata metadata = new Metadata();
+
+        String xml = walk(pkg, metadata);
+
+        assertTrue(xml.contains("root text"));
+        assertEquals(1, Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(w -> w.contains("more than " + MSOneStorePackage.MAX_CELL_ROOTS
+                        + " root objects; ignoring the rest")).count());
+        assertEquals(1, Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(w -> w.contains("more than " + MSOneStorePackage.MAX_CELL_ROOTS
+                        + " root objects; walking all objects")).count());
+    }
+
+    @Test
+    public void testCellRootsDeduplicatesRootDeclares() throws Exception {
+        // two declares of the same object plus MAX_CELL_ROOTS - 1 distinct roots fit the cap
+        // exactly when deduplicated; without dedupe the duplicate consumes a slot and the
+        // last distinct root is truncated, so the absent-truncation assertion fails
+        RevisionStoreCell cell = new RevisionStoreCell();
+        RevisionStoreObject textRoot = object(id(2300), propertySet(
+                new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C003498, text("root text"))), Collections.emptyList(),
+                Collections.emptyList());
+        cell.rootDeclares.add(rootDeclare(textRoot.objectID));
+        cell.rootDeclares.add(rootDeclare(textRoot.objectID));
+        List<RevisionStoreObject> roots = new ArrayList<>();
+        roots.add(textRoot);
+        for (int i = 0; i < MSOneStorePackage.MAX_CELL_ROOTS - 1; i++) {
+            RevisionStoreObject root = object(id(2301 + i), propertySet(),
+                    Collections.emptyList(), Collections.emptyList());
+            roots.add(root);
+            cell.rootDeclares.add(rootDeclare(root.objectID));
+        }
+        cell.objectGroups.add(group(roots.toArray(new RevisionStoreObject[0])));
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.cells.add(cell);
+        Metadata metadata = new Metadata();
+
+        String xml = walk(pkg, metadata);
+
+        assertTrue(xml.contains("root text"));
+        assertEquals(0, Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                .filter(w -> w.contains("more than " + MSOneStorePackage.MAX_CELL_ROOTS
+                        + " root objects")).count());
     }
 
     @Test
@@ -599,6 +783,37 @@ public class MSOneStorePackageTest {
     }
 
     @Test
+    public void testGuidCapWarningSurvivesSuppressedParseWarnings() throws Exception {
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        for (int i = 0; i < 101; i++) {
+            pkg.recordParseWarning("warning " + i);
+        }
+        fillGuidBudget(pkg, OneNoteGuidCollector.MAX_GUID_COUNT - 1);
+        RevisionStoreObject pageMetadata = notebookGuidObject(1304, OneNoteJcid.PAGE_METADATA,
+                new byte[] {
+                        0x43, 0x32, 0x21, 0x10, 0x65, 0x54, (byte) 0x87, 0x76,
+                        (byte) 0x98, (byte) 0xa9, (byte) 0xba, (byte) 0xcb,
+                        (byte) 0xdc, (byte) 0xed, (byte) 0xfe, 0x0f
+                });
+        RevisionStoreCell pageCell = new RevisionStoreCell();
+        pageCell.objectGroups.add(group(pageMetadata));
+        pageCell.rootDeclares.add(rootDeclare(pageMetadata.objectID));
+        pkg.cells.add(pageCell);
+        Metadata metadata = new Metadata();
+
+        walk(pkg, metadata);
+
+        String[] warnings = metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+        assertTrue(Arrays.stream(warnings)
+                .anyMatch(warning -> warning.contains("Additional OneNote parse warnings were suppressed")));
+        // the cap signal is exempt from the budget the generic notice consumed
+        assertEquals(1, Arrays.stream(warnings)
+                .filter(warning -> warning.contains("Capping OneNote GUID metadata")).count());
+        assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT,
+                metadata.getValues(OneNote.PAGE_GUIDS).length);
+    }
+
+    @Test
     public void testGuidsCollectedBeforeWalkFailureArePublished() throws Exception {
         String sectionGuid = "{00112233-4455-6677-8899-AABBCCDDEEFF}";
         String pageGuid = "{10213243-5465-7687-98A9-BACBDCEDFE0F}";
@@ -706,6 +921,10 @@ public class MSOneStorePackageTest {
         RevisionStoreCell oldPageOneCell = cellWithText(oldPageOne, "old page one");
         RevisionStoreCell pageOneCell = cellWithText(pageOne, "page one");
         RevisionStoreCell unrelatedCell = cellWithText(cell(30, 300), "unrelated");
+        // reverse-lexical page GUIDs: page one's GUID sorts after page two's, so the sorted
+        // bag order cannot be mistaken for document order
+        attachPageGuid(pageOneCell, 3100, (byte) 0x60);
+        attachPageGuid(pageTwoCell, 3200, (byte) 0x50);
 
         RevisionStoreObject sectionRoot = object(sectionRootId,
                 propertySet(new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78,
@@ -727,12 +946,25 @@ public class MSOneStorePackageTest {
         pkg.cells.addAll(Arrays.asList(pageTwoCell, oldPageOneCell, pageOneCell, unrelatedCell));
 
         Metadata metadata = new Metadata();
-        String text = walk(pkg, metadata);
+        // div ids are attributes, so the pairing assertions need the XML output
+        String text = walkXml(pkg, metadata);
         assertTrue(text.indexOf("page one") >= 0);
         assertTrue(text.indexOf("page two") >= 0);
         assertTrue(text.indexOf("page one") < text.indexOf("page two"));
         assertFalse(text.contains("old page one"));
         assertTrue(text.contains("unrelated"));
+        // each page div carries its own page GUID, in document order
+        int idPageOne = text.indexOf("id=\"{60000000-0000-0000-0000-000000000000}\"");
+        int idPageTwo = text.indexOf("id=\"{50000000-0000-0000-0000-000000000000}\"");
+        assertTrue(idPageOne >= 0);
+        assertTrue(idPageTwo >= 0);
+        assertTrue(idPageOne < text.indexOf("page one"));
+        assertTrue(text.indexOf("page one") < idPageTwo);
+        assertTrue(idPageTwo < text.indexOf("page two"));
+        // the published bag is sorted, not document-ordered
+        assertArrayEquals(new String[] {"{50000000-0000-0000-0000-000000000000}",
+                "{60000000-0000-0000-0000-000000000000}"},
+                metadata.getValues(OneNote.PAGE_GUIDS));
         assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
                 .anyMatch(warning -> warning.contains("could not be resolved")));
     }
@@ -1347,12 +1579,19 @@ public class MSOneStorePackageTest {
 
     private static class CountingMSOneStorePackage extends MSOneStorePackage {
         private int objectIndexBuilds;
+        private int identityScanEntries;
 
         @Override
         Map<ExGuid, RevisionStoreObject> indexObjectsById(
                 List<RevisionStoreObjectGroup> objectGroups) {
             objectIndexBuilds++;
             return super.indexObjectsById(objectGroups);
+        }
+
+        @Override
+        void collectFileIdentityGuids(PropertySet propertySet, int depth) {
+            identityScanEntries++;
+            super.collectFileIdentityGuids(propertySet, depth);
         }
     }
 
@@ -1405,7 +1644,10 @@ public class MSOneStorePackageTest {
     }
 
     private static String walkXml(MSOneStorePackage pkg) throws Exception {
-        Metadata metadata = new Metadata();
+        return walkXml(pkg, new Metadata());
+    }
+
+    private static String walkXml(MSOneStorePackage pkg, Metadata metadata) throws Exception {
         ParseContext context = new ParseContext();
         ToXMLContentHandler xml = new ToXMLContentHandler();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(xml, metadata, context);
@@ -1429,6 +1671,17 @@ public class MSOneStorePackageTest {
         JCIDObject jcidObject = new JCIDObject(null, emptyObjectData());
         jcidObject.jcid.index = index;
         object.jcid = jcidObject;
+    }
+
+    /** Adds a PAGE_METADATA guid object as a second root so the page div carries its id. */
+    private static void attachPageGuid(RevisionStoreCell cell, int objectId, byte firstGroupByte)
+            throws Exception {
+        byte[] guidBytes = new byte[16];
+        guidBytes[3] = firstGroupByte;
+        RevisionStoreObject pageMetadata = notebookGuidObject(objectId,
+                OneNoteJcid.PAGE_METADATA, guidBytes);
+        cell.objectGroups.add(group(pageMetadata));
+        cell.rootDeclares.add(rootDeclare(pageMetadata.objectID));
     }
 
     private static RevisionStoreCell cellWithText(CellID cellID, String value) throws Exception {
@@ -1496,6 +1749,8 @@ public class MSOneStorePackageTest {
         return set;
     }
 
+    // PropertyID.type and .value are set independently here; the real deserializer derives
+    // the type from the value's high bits, so some fixtures are deliberately impossible inputs
     private static PropertyID propertyID(PropertyType type, int value) {
         PropertyID id = new PropertyID();
         id.type = type.getIntVal();

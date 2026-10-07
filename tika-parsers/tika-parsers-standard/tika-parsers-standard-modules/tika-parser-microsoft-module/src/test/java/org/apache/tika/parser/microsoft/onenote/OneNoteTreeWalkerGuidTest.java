@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.onenote;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -118,7 +119,6 @@ public class OneNoteTreeWalkerGuidTest {
         Path input = tempDir.resolve("guid-data.bin");
         Files.write(input, guidBytes);
         Metadata metadata = new Metadata();
-        ParseContext context = new ParseContext();
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(input.toFile())) {
             OneNoteTreeWalker walker = newWalker(metadata, false, dif);
             PropertyValue valid = notebookGuidProperty(guidBytes.length);
@@ -177,6 +177,24 @@ public class OneNoteTreeWalkerGuidTest {
         value.propertyId.type = 7;
         value.rawData.setStp(0).setCb(length);
         return value;
+    }
+
+    @Test
+    public void testGuidStringPoolSharesAndBoundsInstances() {
+        OneNoteTreeWalker walker = newWalker(new Metadata(), false, null);
+        // equal-but-distinct instances: an identity implementation would fail assertSame
+        String first = walker.pooledGuid("{A}");
+        String second = walker.pooledGuid(new String("{A}"));
+        assertSame(first, second);
+
+        walker.guidStringPool.clear();
+        for (int i = 0; i < OneNoteGuidCollector.MAX_GUID_COUNT; i++) {
+            walker.guidStringPool.put("g" + i, "g" + i);
+        }
+        String input = new String("{B}");
+        assertSame(input, walker.pooledGuid(input));
+        // a full pool must not grow: without the size guard this becomes MAX + 1
+        assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT, walker.guidStringPool.size());
     }
 
     private static OneNoteTreeWalker newWalker(Metadata metadata, boolean fail,

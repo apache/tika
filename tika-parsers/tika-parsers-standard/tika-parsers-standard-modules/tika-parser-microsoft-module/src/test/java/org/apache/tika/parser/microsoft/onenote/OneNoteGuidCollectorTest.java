@@ -53,6 +53,26 @@ public class OneNoteGuidCollectorTest {
     }
 
     @Test
+    public void testDuplicateValuesDoNotConsumeBudgetBeforeSaturation() {
+        List<String> warnings = new ArrayList<>();
+        OneNoteGuidCollector collector = new OneNoteGuidCollector(warnings::add);
+        collector.add(OneNoteGuidCollector.Category.PAGE, "dup");
+        collector.add(OneNoteGuidCollector.Category.PAGE, "dup");
+        for (int i = 0; i < OneNoteGuidCollector.MAX_GUID_COUNT - 1; i++) {
+            collector.add(OneNoteGuidCollector.Category.CONFLICT_PAGE, "e" + i);
+        }
+        collector.add(OneNoteGuidCollector.Category.CONFLICT_PAGE, "final-extra");
+
+        assertEquals(1, collector.values(OneNoteGuidCollector.Category.PAGE).size());
+        assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT - 1,
+                collector.values(OneNoteGuidCollector.Category.CONFLICT_PAGE).size());
+        assertFalse(collector.values(OneNoteGuidCollector.Category.CONFLICT_PAGE)
+                .contains("final-extra"));
+        assertEquals(1, warnings.size());
+        assertTrue(collector.isFull());
+    }
+
+    @Test
     public void testObjectTypesMapToKeys() {
         assertEquals(OneNoteGuidCollector.Category.PAGE,
                 OneNoteGuidCollector.categoryFor(OneNoteJcid.PAGE_METADATA));

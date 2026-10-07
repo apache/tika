@@ -18,10 +18,20 @@ package org.apache.tika.metadata;
 
 /**
  * OneNote file-header and revision metadata. Key suffixes are the [MS-ONESTORE]/[MS-FSSHTTPB]
- * field names verbatim (external-standard spellings), under the {@code onenote:} namespace.
+ * field names verbatim (external-standard spellings), under the {@code onenote:} namespace,
+ * except the GUID keys below, which are projected from the source object that carries the
+ * value (the section file identity, or a NotebookManagementEntityGuid keyed by the carrying
+ * object's JCID).
  * Previously these were minted per parse via the registering Property factories
  * (TIKA-4816 round-3 review: per-record global-lock interning); a bounded, spec-defined
  * vocabulary belongs in curated constants.
+ *
+ * <p>The GUID bags (pageGuids, pageSeriesGuids, pageNodeGuids, conflictPageGuids) are
+ * unordered, deduplicated, lexically sorted inventories: do not join them positionally
+ * to each other or to page content, and do not treat values as unique across files.
+ * Page order and page-to-content association are available only through the FSSHTTPB
+ * XHTML output, where each recognized page is wrapped in a div whose id is the page
+ * GUID when one was recovered (fallback content can be unwrapped).
  */
 public interface OneNote {
 
@@ -64,11 +74,14 @@ public interface OneNote {
      * FileIdentityGuid property found in a newer-format package.
      */
     Property SECTION_GUID = Property.externalText(PREFIX + "sectionGuid");
-    /** GUIDs of jcidPageMetadata (0x30) objects; version-history copies are excluded. */
+    /**
+     * GUIDs of jcidPageMetadata (0x30) objects. Classic parsing records only pages referenced
+     * via MetaDataObjectsAboveGraphSpace; FSSHTTPB fallback walks may still include older copies.
+     */
     Property PAGE_GUIDS = Property.externalTextBag(PREFIX + "pageGuids");
     /** GUIDs of jcidPageSeriesNode (0x08) objects. */
     Property PAGE_SERIES_GUIDS = Property.externalTextBag(PREFIX + "pageSeriesGuids");
-    /** GUIDs of jcidPageNode (0x0B) objects. */
+    /** GUIDs of jcidPageNode (0x0B) objects; source-object identifiers, not cross-file page keys. */
     Property PAGE_NODE_GUIDS = Property.externalTextBag(PREFIX + "pageNodeGuids");
     /** GUIDs of jcidConflictPageMetadata (0x38) objects. */
     Property CONFLICT_PAGE_GUIDS = Property.externalTextBag(PREFIX + "conflictPageGuids");
