@@ -414,6 +414,8 @@ public class TikaAsyncCLI {
         if (asyncConfig.getUnpackMode() != null) {
             config.setOutputMode(UnpackConfig.OUTPUT_MODE.valueOf(asyncConfig.getUnpackMode()));
         }
+        // REGULAR packages on zipEmbeddedFiles, not outputMode
+        config.setZipEmbeddedFiles(config.getOutputMode() == UnpackConfig.OUTPUT_MODE.ZIPPED);
         if (asyncConfig.isUnpackIncludeMetadata()) {
             config.setIncludeMetadata(true);
         }

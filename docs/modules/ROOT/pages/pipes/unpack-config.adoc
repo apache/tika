@@ -57,7 +57,8 @@ live inside that block:
 ----
 
 This extracts both metadata (like `RMETA` mode) and embedded document bytes. Since 4.2 the
-output is a <<_frictionless_data_package_output,Frictionless Data Package>> on every surface;
+output is a <<_frictionless_data_package_output,Frictionless Data Package>> on every surface,
+one `<key>-frictionless.zip` per container unless `outputMode` is `DIRECTORY`;
 `"outputFormat": "REGULAR"` restores the pre-4.2 flat layout.
 
 [NOTE]
