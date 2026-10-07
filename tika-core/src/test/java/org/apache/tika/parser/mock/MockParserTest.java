@@ -65,10 +65,29 @@ public class MockParserTest extends TikaTest {
         assertFalse(t.isAlive());
     }
 
+    /** Pins pulse_millis being read from its own attribute: if it fell back to millis, no check would run for 10 s. */
+    @Test
+    public void testHeavyHangInterruptible() throws Exception {
+        Thread t = startParser("<hang millis=\"10000\" pulse_millis=\"10\" heavy=\"true\" interruptible=\"true\"/>");
+        Thread.sleep(50);
+        t.interrupt();
+        t.join(2_000);
+        assertFalse(t.isAlive(), "heavy hang should notice the interrupt within a pulse");
+    }
+
     /** Returns once the parser thread is inside the hang's sleep. */
     private Thread startHang(String interruptible, long millis) throws Exception {
-        byte[] xml = ("<mock><hang millis=\"" + millis + "\" interruptible=\"" + interruptible
-                + "\"/></mock>").getBytes(UTF_8);
+        Thread t = startParser("<hang millis=\"" + millis + "\" interruptible=\"" + interruptible + "\"/>");
+        long deadline = System.currentTimeMillis() + 10_000;
+        while (t.getState() != Thread.State.TIMED_WAITING) {
+            assertTrue(System.currentTimeMillis() < deadline, "hang never started sleeping");
+            Thread.sleep(10);
+        }
+        return t;
+    }
+
+    private Thread startParser(String action) {
+        byte[] xml = ("<mock>" + action + "</mock>").getBytes(UTF_8);
         Thread t = new Thread(() -> {
             try (TikaInputStream tis = TikaInputStream.get(xml)) {
                 new MockParser().parse(tis, new DefaultHandler(), new Metadata(), new ParseContext());
@@ -77,11 +96,6 @@ public class MockParserTest extends TikaTest {
             }
         });
         t.start();
-        long deadline = System.currentTimeMillis() + 10_000;
-        while (t.getState() != Thread.State.TIMED_WAITING) {
-            assertTrue(System.currentTimeMillis() < deadline, "hang never started sleeping");
-            Thread.sleep(10);
-        }
         return t;
     }
 }

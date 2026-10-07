@@ -280,8 +280,8 @@ public class SharedServerModeTest {
     }
 
     @Test
-    public void testOomsRestartServerOnNewPort(@TempDir Path tmp) throws Exception {
-        // Each OOM must kill the shared JVM and restart it on a new port; reconnecting to the
+    public void testEachOomForksReplacementServer(@TempDir Path tmp) throws Exception {
+        // Each OOM must kill the shared JVM and fork a replacement; reconnecting to the
         // same (corrupted) server was a real bug when ConnectionHandler didn't System.exit().
         Path inputDir = setupInputDir(tmp);
         Files.writeString(inputDir.resolve("warmup.xml"), MOCK_OK, StandardCharsets.UTF_8);
@@ -298,8 +298,8 @@ public class SharedServerModeTest {
 
         try (PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             assertTrue(parse(pipesParser, "warmup.xml").isSuccess(), "warmup should succeed");
-            int port = pipesParser.getCurrentServerPort();
-            assertTrue(port > 0, "should have a port after warmup");
+            assertTrue(pipesParser.getCurrentServerPort() > 0, "should have a port after warmup");
+            long generation = pipesParser.getGeneration();
 
             for (int i = 0; i < 3; i++) {
                 assertEquals(PipesResult.RESULT_STATUS.OOM, parse(pipesParser, "oom" + i + ".xml").status(),
@@ -308,10 +308,10 @@ public class SharedServerModeTest {
                 assertTrue(okResult.isSuccess(), "after OOM " + i + ": " + okResult.status());
                 assertEquals("Test Author", okResult.emitData().getMetadataList().get(0).get("dc:creator"));
 
-                int newPort = pipesParser.getCurrentServerPort();
-                assertTrue(newPort > 0 && newPort != port,
-                        "server must restart on a new port after OOM " + i + ": " + port + " -> " + newPort);
-                port = newPort;
+                // generation, not the port: bind(0) may legitimately hand back the port just freed
+                assertEquals(generation + i + 1, pipesParser.getGeneration(),
+                        "exactly one fork per OOM, after OOM " + i);
+                assertTrue(pipesParser.getCurrentServerPort() > 0, "replacement must be listening");
             }
         }
     }
