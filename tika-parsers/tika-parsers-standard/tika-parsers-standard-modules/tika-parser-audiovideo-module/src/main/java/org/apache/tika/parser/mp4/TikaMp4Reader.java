@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.mp4;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -73,8 +74,10 @@ final class TikaMp4Reader {
             handler.addError("MP4 box nesting exceeds the maximum depth of " + MAX_BOX_DEPTH);
             return;
         }
+        long boxStart = reader.getPosition();
         try {
             while (atomEnd == -1 || reader.getPosition() < atomEnd) {
+                boxStart = reader.getPosition();
                 long boxSize = reader.getUInt32();
                 String boxType = reader.getString(4);
                 //4 bytes size + 4 bytes type, plus 8 more when a 64-bit largesize follows
@@ -121,6 +124,10 @@ final class TikaMp4Reader {
                 }
             }
         } catch (IOException e) {
+            if (atomEnd == -1 && e instanceof EOFException && reader.getPosition() == boxStart) {
+                //the top level ends at end of input: no bytes of a next box were read
+                return;
+            }
             //not handler.addError: the library's error strings bypass the reporting policy
             EmbeddedDocumentUtil.recordException(e, metadata, parseContext);
         }

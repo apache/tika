@@ -304,7 +304,7 @@ image/tiff	class org.apache.tika.parser.image.TiffParser
 image/vnd.adobe.photoshop	class org.apache.tika.parser.image.PSDParser
 image/vnd.dgn; version=8	class org.apache.tika.parser.dgn.DGN8Parser
 image/vnd.dwg	class org.apache.tika.parser.dwg.DWGParser
-image/vnd.microsoft.icon	class org.apache.tika.parser.image.ImageParser
+image/vnd.microsoft.icon	class org.apache.tika.parser.image.ICOParser
 image/vnd.wap.wbmp	class org.apache.tika.parser.image.ImageParser
 image/webp	class org.apache.tika.parser.image.WebPParser
 image/wmf	class org.apache.tika.parser.microsoft.WMFParser

@@ -24,6 +24,10 @@ import java.nio.channels.SeekableByteChannel;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
@@ -553,13 +557,20 @@ public class ImageMetadataExtractor {
 
     static class ExifHandler implements DirectoryHandler {
         // There's a new ExifHandler for each file processed, so this is thread safe
-        // EXIF dates have no zone: read and write in GMT (metadata-extractor >= 2.20 uses the JVM zone)
+        // EXIF dates have no zone: write them in GMT
         private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
         private final SimpleDateFormat dateUnspecifiedTz = getUnspecifiedTzDateFormat();
 
-        // metadata-extractor turns junk like "2" into year 1
-        private static Date inBounds(Date d) {
-            return d != null && TikaDates.inYearBounds(d.toInstant()) ? d : null;
+        // metadata-extractor parses with the default locale's calendar; TikaDates does not
+        private static Date exifDate(Directory directory, int tag) {
+            Object o = directory.getObject(tag);
+            if (o instanceof Date) {
+                return TikaDates.inYearBounds(((Date) o).toInstant()) ? (Date) o : null;
+            }
+            if (o == null) {
+                return null;
+            }
+            return TikaDates.parse(o.toString()).map(d -> Date.from(d.toInstant())).orElse(null);
         }
 
         private SimpleDateFormat getUnspecifiedTzDateFormat() {
@@ -734,7 +745,7 @@ public class ImageMetadataExtractor {
             // Date/Time Original overrides value from ExifDirectory.TAG_DATETIME
             Date original = null;
             if (directory.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)) {
-                original = inBounds(directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL, GMT));
+                original = exifDate(directory, ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
                 // Unless we have GPS time we don't know the time zone so date must be set
                 // as ISO 8601 datetime without timezone suffix (no Z or +/-)
                 if (original != null) {
@@ -744,7 +755,7 @@ public class ImageMetadataExtractor {
                 }
             }
             if (directory.containsTag(ExifIFD0Directory.TAG_DATETIME)) {
-                Date datetime = inBounds(directory.getDate(ExifIFD0Directory.TAG_DATETIME, GMT));
+                Date datetime = exifDate(directory, ExifIFD0Directory.TAG_DATETIME);
                 if (datetime != null) {
                     String datetimeNoTimeZone = dateUnspecifiedTz.format(datetime);
                     metadata.set(TikaCoreProperties.MODIFIED, datetimeNoTimeZone);
@@ -807,6 +818,25 @@ public class ImageMetadataExtractor {
      * Maps EXIF Geo Tags onto the Tika Geo metadata namespace.
      */
     static class GeotagHandler implements DirectoryHandler {
+        // GpsDirectory.getGpsDate parses with the default locale's calendar
+        static Date gpsDate(GpsDirectory directory) {
+            String stamp = directory.getString(GpsDirectory.TAG_DATE_STAMP);
+            Rational[] time = directory.getRationalArray(GpsDirectory.TAG_TIME_STAMP);
+            if (stamp == null || time == null || time.length != 3) {
+                return null;
+            }
+            try {
+                LocalDate day = TikaDates.parse(stamp).map(d -> d.getLocalDateTime().toLocalDate()).orElse(null);
+                if (day == null) {
+                    return null;
+                }
+                LocalTime t = LocalTime.of(time[0].intValue(), time[1].intValue(), (int) time[2].doubleValue());
+                return Date.from(day.atTime(t).toInstant(ZoneOffset.UTC));
+            } catch (DateTimeException e) {
+                return null;
+            }
+        }
+
         public boolean supports(Class<? extends Directory> directoryType) {
             return directoryType == GpsDirectory.class;
         }
@@ -821,7 +851,7 @@ public class ImageMetadataExtractor {
                 metadata.set(TikaCoreProperties.LONGITUDE,
                         geoDecimalFormat.format(geoLocation.getLongitude()));
             }
-            Date gpsDate = ((GpsDirectory)directory).getGpsDate();
+            Date gpsDate = gpsDate((GpsDirectory) directory);
             if (gpsDate != null) {
                 metadata.set(Geographic.TIMESTAMP, gpsDate);
             }

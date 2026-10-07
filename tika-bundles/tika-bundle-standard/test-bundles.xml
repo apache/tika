@@ -31,6 +31,7 @@
         <include>org.apache.tika:tika-bundle-standard</include>
         <!-- Dependencies that are OSGi bundles themselves (not embedded) -->
         <include>com.adobe.xmp:xmpcore</include>
+        <include>com.fasterxml.jackson.core:jackson-core</include>
         <include>com.googlecode.plist:dd-plist</include>
         <include>commons-codec:commons-codec</include>
         <include>commons-io:commons-io</include>
@@ -42,6 +43,7 @@
         <include>org.apache.commons:commons-lang3</include>
         <include>org.apache.commons:commons-math3</include>
         <include>org.apache.commons:commons-secure-xml</include>
+        <include>org.apache.logging.log4j:log4j-api</include>
         <include>org.apache.pdfbox:fontbox</include>
         <include>org.apache.pdfbox:pdfbox</include>
         <include>org.apache.pdfbox:pdfbox-io</include>
