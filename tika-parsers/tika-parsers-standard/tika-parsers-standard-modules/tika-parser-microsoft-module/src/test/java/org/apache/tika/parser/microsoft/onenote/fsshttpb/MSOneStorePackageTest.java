@@ -32,7 +32,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,6 +45,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.onenote.OneNoteGuidCollector;
 import org.apache.tika.parser.microsoft.onenote.OneNoteJcid;
 import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
@@ -88,6 +88,11 @@ public class MSOneStorePackageTest {
         String conflictPageGuid = "{20314253-6475-8697-A8B9-CADBECFD0E1F}";
         String entityGuid = "{40516273-8495-A6B7-C8D9-EAFB0C1D2E3F}";
         String sectionNodeGuid = "{50617283-94A5-B6C7-D8E9-FA0B1C2D3E4F}";
+        String pageNodeGuid = "{60718293-A4B5-C6D7-E8F9-0A1B2C3D4E5F}";
+        byte[] pageNodeGuidBytes = new byte[] {
+                (byte) 0x93, (byte) 0x82, 0x71, 0x60, (byte) 0xb5, (byte) 0xa4, (byte) 0xd7,
+                (byte) 0xc6, (byte) 0xe8, (byte) 0xf9, 0x0a, 0x1b, 0x2c, 0x3d, 0x4e, 0x5f
+        };
         byte[] guidBytes = new byte[] {
                 0x33, 0x22, 0x11, 0x00, 0x55, 0x44, 0x77, 0x66,
                 (byte) 0x88, (byte) 0x99, (byte) 0xaa, (byte) 0xbb,
@@ -162,11 +167,17 @@ public class MSOneStorePackageTest {
                         0x1C001C30, bytes(sectionNodeGuidBytes))), Collections.emptyList(),
                 Collections.emptyList());
         setJcid(sectionNode, OneNoteJcid.SECTION_NODE);
+        ExGuid pageNodeId = id(1207);
+        RevisionStoreObject pageNode = object(pageNodeId,
+                propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C001C30, bytes(pageNodeGuidBytes))), Collections.emptyList(),
+                Collections.emptyList());
+        setJcid(pageNode, OneNoteJcid.PAGE_NODE);
         RevisionStoreObject sectionRoot = object(sectionRootId,
                 propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
-                        arrayNumber(4)),
+                        arrayNumber(5)),
                         new PropertySpec(PropertyType.ObjectSpaceID, 0x20001D78, new NoData())),
-                Arrays.asList(pageSeriesId, conflictPageId, entityId, sectionNodeId),
+                Arrays.asList(pageSeriesId, conflictPageId, entityId, sectionNodeId, pageNodeId),
                 Collections.singletonList(pageCell.cellID));
         RevisionStoreObject sectionIdentity = object(id(1202),
                 propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
@@ -174,7 +185,7 @@ public class MSOneStorePackageTest {
                 Collections.emptyList());
         RevisionStoreCell sectionCell = new RevisionStoreCell();
         sectionCell.objectGroups.add(group(sectionRoot, sectionIdentity, pageSeries,
-                conflictPage, entity, sectionNode));
+                conflictPage, entity, sectionNode, pageNode));
         sectionCell.rootDeclares.add(rootDeclare(sectionRootId));
 
         MSOneStorePackage pkg = new MSOneStorePackage();
@@ -183,15 +194,17 @@ public class MSOneStorePackageTest {
         Metadata metadata = new Metadata();
         walk(pkg, metadata);
 
-        assertArrayEquals(new String[] {sectionGuid}, metadata.getValues(OneNote.SECTION_GUIDS));
+        assertArrayEquals(new String[] {sectionGuid}, metadata.getValues(OneNote.SECTION_GUID));
         assertArrayEquals(new String[] {pageGuid}, metadata.getValues(OneNote.PAGE_GUIDS));
-        assertFalse(Arrays.asList(metadata.getValues(OneNote.SECTION_GUIDS))
+        assertFalse(Arrays.asList(metadata.getValues(OneNote.SECTION_GUID))
                 .contains(sectionNodeGuid));
         assertArrayEquals(new String[] {pageSeriesGuid},
                 metadata.getValues(OneNote.PAGE_SERIES_GUIDS));
         assertArrayEquals(new String[] {conflictPageGuid},
                 metadata.getValues(OneNote.CONFLICT_PAGE_GUIDS));
         assertArrayEquals(new String[] {entityGuid}, metadata.getValues(OneNote.ENTITY_GUIDS));
+        assertArrayEquals(new String[] {pageNodeGuid},
+                metadata.getValues(OneNote.PAGE_NODE_GUIDS));
         assertFalse(Arrays.asList(metadata.getValues(OneNote.ENTITY_GUIDS))
                 .contains(sectionNodeGuid));
         String xml = walkXml(pkg);
@@ -256,19 +269,17 @@ public class MSOneStorePackageTest {
                 new PropertySpec(PropertyType.ArrayOfPropertyValues, 0x24000007, new NoData()),
                 new PropertySpec(PropertyType.PropertySet, 0x24000006, deep));
         MSOneStorePackage pkg = new MSOneStorePackage();
-        LinkedHashSet<String> found = new LinkedHashSet<>();
 
-        pkg.collectFileIdentityGuids(null, found, 0);
-        pkg.collectFileIdentityGuids(top, found, 0);
+        pkg.collectFileIdentityGuids(null, 0);
+        pkg.collectFileIdentityGuids(top, 0);
 
-        assertEquals(Arrays.asList("{00112233-4455-6677-8899-AABBCCDDEEFF}",
-                "{10213243-5465-7687-98A9-BACBDCEDFE0F}"), new ArrayList<>(found));
+        assertEquals(Collections.singletonList("{00112233-4455-6677-8899-AABBCCDDEEFF}"),
+                new ArrayList<>(sectionGuidValues(pkg)));
 
         MSOneStorePackage full = new MSOneStorePackage();
-        fillGuidBudget(full, MSOneStorePackage.MAX_GUID_COUNT);
-        LinkedHashSet<String> ignored = new LinkedHashSet<>();
-        full.collectFileIdentityGuids(fileIdentitySet(firstGuidBytes), ignored, 0);
-        assertTrue(ignored.isEmpty());
+        fillGuidBudget(full, OneNoteGuidCollector.MAX_GUID_COUNT);
+        full.collectFileIdentityGuids(fileIdentitySet(firstGuidBytes), 0);
+        assertTrue(sectionGuidValues(full).isEmpty());
     }
 
     @Test
@@ -291,12 +302,11 @@ public class MSOneStorePackageTest {
                 null, noObjects, group((RevisionStoreObject) null), group(noPropertySet),
                 group(noObjectSpace), group(valid)));
         MSOneStorePackage pkg = new MSOneStorePackage();
-        LinkedHashSet<String> found = new LinkedHashSet<>();
 
-        pkg.collectFileIdentityGuidsFromGroups(null, found);
-        pkg.collectFileIdentityGuidsFromGroups(groups, found);
+        pkg.collectFileIdentityGuidsFromGroups(null);
+        pkg.collectFileIdentityGuidsFromGroups(groups);
 
-        assertEquals(Collections.singletonList(sectionGuid), new ArrayList<>(found));
+        assertEquals(Collections.singletonList(sectionGuid), new ArrayList<>(sectionGuidValues(pkg)));
     }
 
     @Test
@@ -319,7 +329,7 @@ public class MSOneStorePackageTest {
             Metadata metadata = new Metadata();
             walk(pkg, metadata);
             assertArrayEquals(new String[] {sectionGuid},
-                    metadata.getValues(OneNote.SECTION_GUIDS));
+                    metadata.getValues(OneNote.SECTION_GUID));
         }
 
         HeaderCell header = new HeaderCell();
@@ -330,7 +340,7 @@ public class MSOneStorePackageTest {
         pkg.cells.add(new RevisionStoreCell());
         Metadata metadata = new Metadata();
         walk(pkg, metadata);
-        assertArrayEquals(new String[] {sectionGuid}, metadata.getValues(OneNote.SECTION_GUIDS));
+        assertArrayEquals(new String[] {sectionGuid}, metadata.getValues(OneNote.SECTION_GUID));
     }
 
     @Test
@@ -355,7 +365,7 @@ public class MSOneStorePackageTest {
         RevisionStoreObject afterLimit = object(id(1471), fileIdentitySet(secondGuidBytes),
                 Collections.emptyList(), Collections.emptyList());
         MSOneStorePackage pkg = new MSOneStorePackage();
-        fillGuidBudget(pkg, MSOneStorePackage.MAX_GUID_COUNT - 1);
+        fillGuidBudget(pkg, OneNoteGuidCollector.MAX_GUID_COUNT - 1);
         pkg.dataRootCell = new RevisionStoreCell();
         pkg.dataRootCell.objectGroups.add(group(withArray));
         pkg.dataRootCell.objectGroups.add(group(afterLimit));
@@ -364,7 +374,7 @@ public class MSOneStorePackageTest {
         walk(pkg, metadata);
 
         assertArrayEquals(new String[] {"{00112233-4455-6677-8899-AABBCCDDEEFF}"},
-                metadata.getValues(OneNote.SECTION_GUIDS));
+                metadata.getValues(OneNote.SECTION_GUID));
         assertEquals(1, Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
                 .filter(w -> w.contains("Capping OneNote GUID metadata")).count());
     }
@@ -390,7 +400,7 @@ public class MSOneStorePackageTest {
         RevisionStoreObject afterLimit = object(id(1473), fileIdentitySet(secondGuidBytes),
                 Collections.emptyList(), Collections.emptyList());
         MSOneStorePackage pkg = new MSOneStorePackage();
-        fillGuidBudget(pkg, MSOneStorePackage.MAX_GUID_COUNT - 1);
+        fillGuidBudget(pkg, OneNoteGuidCollector.MAX_GUID_COUNT - 1);
         pkg.dataRootCell = new RevisionStoreCell();
         pkg.dataRootCell.objectGroups.add(group(first, afterLimit));
         Metadata metadata = new Metadata();
@@ -398,7 +408,7 @@ public class MSOneStorePackageTest {
         walk(pkg, metadata);
 
         assertArrayEquals(new String[] {"{00112233-4455-6677-8899-AABBCCDDEEFF}"},
-                metadata.getValues(OneNote.SECTION_GUIDS));
+                metadata.getValues(OneNote.SECTION_GUID));
     }
 
     @Test
@@ -422,7 +432,7 @@ public class MSOneStorePackageTest {
         RevisionStoreObject afterLimit = object(id(1475), fileIdentitySet(secondGuidBytes),
                 Collections.emptyList(), Collections.emptyList());
         MSOneStorePackage pkg = new MSOneStorePackage();
-        fillGuidBudget(pkg, MSOneStorePackage.MAX_GUID_COUNT - 1);
+        fillGuidBudget(pkg, OneNoteGuidCollector.MAX_GUID_COUNT - 1);
         pkg.dataRootCell = new RevisionStoreCell();
         pkg.dataRootCell.objectGroups.add(group(first, afterLimit));
         Metadata metadata = new Metadata();
@@ -430,7 +440,7 @@ public class MSOneStorePackageTest {
         walk(pkg, metadata);
 
         assertArrayEquals(new String[] {"{00112233-4455-6677-8899-AABBCCDDEEFF}"},
-                metadata.getValues(OneNote.SECTION_GUIDS));
+                metadata.getValues(OneNote.SECTION_GUID));
     }
 
     @Test
@@ -604,21 +614,16 @@ public class MSOneStorePackageTest {
     }
 
     @Test
-    public void testGuidCollectionIsCappedAcrossCategories() throws Exception {
+    public void testGuidCapWarningIsPublishedAsParseWarning() throws Exception {
         MSOneStorePackage pkg = new MSOneStorePackage();
-        Set<String> sectionGuids = new LinkedHashSet<>();
-        Set<String> pageGuids = new LinkedHashSet<>();
-        for (int i = 0; i < MSOneStorePackage.MAX_GUID_COUNT; i++) {
-            pkg.addGuid(sectionGuids, "guid-" + i);
-        }
-        pkg.addGuid(sectionGuids, "guid-0");
-        pkg.addGuid(pageGuids, "overflow-1");
-        pkg.addGuid(pageGuids, "overflow-2");
+        fillGuidBudget(pkg, OneNoteGuidCollector.MAX_GUID_COUNT);
+        pkg.guidCollector().add(OneNoteGuidCollector.Category.PAGE, "overflow-1");
 
         Metadata metadata = new Metadata();
         walk(pkg, metadata);
-        assertEquals(MSOneStorePackage.MAX_GUID_COUNT, sectionGuids.size());
-        assertTrue(pageGuids.isEmpty());
+        assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT,
+                metadata.getValues(OneNote.ENTITY_GUIDS).length);
+        assertEquals(0, metadata.getValues(OneNote.PAGE_GUIDS).length);
         String[] warnings = metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
         assertEquals(1, Arrays.stream(warnings)
                 .filter(warning -> warning.contains("Capping OneNote GUID metadata")).count());
@@ -658,7 +663,7 @@ public class MSOneStorePackageTest {
         Metadata metadata = new Metadata();
 
         assertThrows(NullPointerException.class, () -> walk(pkg, metadata));
-        assertArrayEquals(new String[] {sectionGuid}, metadata.getValues(OneNote.SECTION_GUIDS));
+        assertArrayEquals(new String[] {sectionGuid}, metadata.getValues(OneNote.SECTION_GUID));
         assertArrayEquals(new String[] {pageGuid}, metadata.getValues(OneNote.PAGE_GUIDS));
     }
 
@@ -1306,10 +1311,13 @@ public class MSOneStorePackageTest {
     }
 
     private static void fillGuidBudget(MSOneStorePackage pkg, int count) {
-        Set<String> values = new HashSet<>();
         for (int i = 0; i < count; i++) {
-            pkg.addGuid(values, "budget-" + i);
+            pkg.guidCollector().add(OneNoteGuidCollector.Category.ENTITY, "budget-" + i);
         }
+    }
+
+    private static Set<String> sectionGuidValues(MSOneStorePackage pkg) {
+        return pkg.guidCollector().values(OneNoteGuidCollector.Category.SECTION);
     }
 
     private static String walk(MSOneStorePackage pkg) throws Exception {

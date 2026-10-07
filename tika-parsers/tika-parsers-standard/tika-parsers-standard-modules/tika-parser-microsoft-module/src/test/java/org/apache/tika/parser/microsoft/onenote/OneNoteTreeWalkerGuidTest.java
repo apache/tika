@@ -51,8 +51,9 @@ public class OneNoteTreeWalkerGuidTest {
         walker.addClassicEntityGuid(OneNoteJcid.PAGE_SERIES_NODE, "series-guid");
         walker.addClassicEntityGuid(OneNoteJcid.CONFLICT_PAGE_METADATA, "conflict-guid");
         walker.addClassicEntityGuid(OneNoteJcid.SECTION_NODE, "section-node-guid");
+        walker.addClassicEntityGuid(OneNoteJcid.PAGE_NODE, "page-node-guid");
         walker.addClassicEntityGuid(0x7fff, "entity-guid");
-        for (int i = 0; i < OneNoteGuidCollector.MAX_GUID_COUNT - 4; i++) {
+        for (int i = 0; i < OneNoteGuidCollector.MAX_GUID_COUNT - 5; i++) {
             walker.addClassicEntityGuid(0x7fff, "entity-" + i);
         }
         walker.addClassicEntityGuid(0x7fff, "overflow-guid");
@@ -64,7 +65,9 @@ public class OneNoteTreeWalkerGuidTest {
                 Arrays.asList(metadata.getValues(OneNote.PAGE_SERIES_GUIDS)));
         assertEquals(List.of("conflict-guid"),
                 Arrays.asList(metadata.getValues(OneNote.CONFLICT_PAGE_GUIDS)));
-        assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT - 3,
+        assertEquals(List.of("page-node-guid"),
+                Arrays.asList(metadata.getValues(OneNote.PAGE_NODE_GUIDS)));
+        assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT - 4,
                 metadata.getValues(OneNote.ENTITY_GUIDS).length);
         assertFalse(Arrays.asList(metadata.getValues(OneNote.ENTITY_GUIDS))
                 .contains("section-node-guid"));
@@ -118,19 +121,53 @@ public class OneNoteTreeWalkerGuidTest {
         try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(input.toFile())) {
             OneNoteTreeWalker walker = newWalker(metadata, false, dif);
             PropertyValue valid = notebookGuidProperty(guidBytes.length);
-            Map<String, Object> parsed = walker.processPropertyValue(valid, null,
+            Map<String, Object> parsed = walker.processPropertyValue(valid,
+                    parent(OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace),
                     OneNoteJcid.PAGE_METADATA);
             assertEquals("{00112233-4455-6677-8899-AABBCCDDEEFF}",
                     parsed.get("notebookManagementEntityGuid"));
 
             PropertyValue shortGuid = notebookGuidProperty(15);
-            Map<String, Object> malformed = walker.processPropertyValue(shortGuid, null,
+            Map<String, Object> malformed = walker.processPropertyValue(shortGuid,
+                    parent(OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace),
                     OneNoteJcid.PAGE_METADATA);
             assertFalse(malformed.containsKey("notebookManagementEntityGuid"));
             walker.walkTree();
         }
         assertEquals(List.of("{00112233-4455-6677-8899-AABBCCDDEEFF}"),
                 Arrays.asList(metadata.getValues(OneNote.PAGE_GUIDS)));
+    }
+
+    @Test
+    public void testClassicPageGuidRequiresCurrentPageReference(@TempDir Path tempDir)
+            throws Exception {
+        byte[] guidBytes = new byte[] {
+                0x33, 0x22, 0x11, 0x00, 0x55, 0x44, 0x77, 0x66,
+                (byte) 0x88, (byte) 0x99, (byte) 0xaa, (byte) 0xbb,
+                (byte) 0xcc, (byte) 0xdd, (byte) 0xee, (byte) 0xff
+        };
+        Path input = tempDir.resolve("guid-data.bin");
+        Files.write(input, guidBytes);
+        Metadata metadata = new Metadata();
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(input.toFile())) {
+            OneNoteTreeWalker walker = newWalker(metadata, false, dif);
+            // version-history copies are reached as object-space roots or via other properties
+            walker.processPropertyValue(notebookGuidProperty(16), null,
+                    OneNoteJcid.PAGE_METADATA);
+            walker.processPropertyValue(notebookGuidProperty(16),
+                    parent(OneNotePropertyEnum.ContentChildNodesOfPageManifest),
+                    OneNoteJcid.PAGE_METADATA);
+            walker.processPropertyValue(notebookGuidProperty(16), null,
+                    OneNoteJcid.PAGE_SERIES_NODE);
+            walker.walkTree();
+        }
+        assertEquals(0, metadata.getValues(OneNote.PAGE_GUIDS).length);
+        assertEquals(List.of("{00112233-4455-6677-8899-AABBCCDDEEFF}"),
+                Arrays.asList(metadata.getValues(OneNote.PAGE_SERIES_GUIDS)));
+    }
+
+    private static OneNotePropertyId parent(OneNotePropertyEnum propertyEnum) {
+        return new OneNotePropertyId().setPropertyEnum(propertyEnum);
     }
 
     private static PropertyValue notebookGuidProperty(int length) {

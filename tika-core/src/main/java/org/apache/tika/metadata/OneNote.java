@@ -58,9 +58,10 @@ public interface OneNote {
 
     Property MOST_RECENT_AUTHORS = Property.externalTextBag(PREFIX + "mostRecentAuthors");
     Property ORIGINAL_AUTHORS = Property.externalTextBag(PREFIX + "originalAuthors");
-    Property SECTION_GUIDS = Property.externalTextBag(PREFIX + "sectionGuids");
+    Property SECTION_GUID = Property.externalText(PREFIX + "sectionGuid");
     Property PAGE_GUIDS = Property.externalTextBag(PREFIX + "pageGuids");
     Property PAGE_SERIES_GUIDS = Property.externalTextBag(PREFIX + "pageSeriesGuids");
+    Property PAGE_NODE_GUIDS = Property.externalTextBag(PREFIX + "pageNodeGuids");
     Property CONFLICT_PAGE_GUIDS = Property.externalTextBag(PREFIX + "conflictPageGuids");
     Property ENTITY_GUIDS = Property.externalTextBag(PREFIX + "entityGuids");
     Property CREATION_TIMESTAMP = Property.externalText(PREFIX + "creationTimestamp");

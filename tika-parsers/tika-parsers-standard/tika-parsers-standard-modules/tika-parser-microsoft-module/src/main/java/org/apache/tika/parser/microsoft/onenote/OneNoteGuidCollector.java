@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashSet;
@@ -23,12 +24,31 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 
-final class OneNoteGuidCollector {
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OneNote;
+import org.apache.tika.metadata.Property;
 
-    static final int MAX_GUID_COUNT = 100_000;
+/**
+ * Collects the GUID metadata of one OneNote section for the classic and FSSHTTPB parsers.
+ * Values are deduplicated per key and capped at {@link #MAX_GUID_COUNT} in total.
+ */
+public final class OneNoteGuidCollector {
 
-    enum Category {
-        SECTION, PAGE, PAGE_SERIES, CONFLICT_PAGE, ENTITY
+    public static final int MAX_GUID_COUNT = 100_000;
+
+    public enum Category {
+        SECTION(OneNote.SECTION_GUID),
+        PAGE(OneNote.PAGE_GUIDS),
+        PAGE_SERIES(OneNote.PAGE_SERIES_GUIDS),
+        PAGE_NODE(OneNote.PAGE_NODE_GUIDS),
+        CONFLICT_PAGE(OneNote.CONFLICT_PAGE_GUIDS),
+        ENTITY(OneNote.ENTITY_GUIDS);
+
+        private final Property property;
+
+        Category(Property property) {
+            this.property = property;
+        }
     }
 
     private final Map<Category, LinkedHashSet<String>> values = new EnumMap<>(Category.class);
@@ -36,19 +56,20 @@ final class OneNoteGuidCollector {
     private int count;
     private boolean limitWarningReported;
 
-    OneNoteGuidCollector(Consumer<String> warningHandler) {
+    public OneNoteGuidCollector(Consumer<String> warningHandler) {
         this.warningHandler = warningHandler;
         for (Category category : Category.values()) {
             values.put(category, new LinkedHashSet<>());
         }
     }
 
-    void add(Category category, String guid) {
+    public void add(Category category, String guid) {
         if (guid == null) {
             return;
         }
         Set<String> categoryValues = values.get(category);
-        if (categoryValues.contains(guid)) {
+        if (categoryValues.contains(guid)
+                || (category == Category.SECTION && !categoryValues.isEmpty())) {
             return;
         }
         if (count >= MAX_GUID_COUNT) {
@@ -62,6 +83,34 @@ final class OneNoteGuidCollector {
         }
     }
 
+    /**
+     * Records a NotebookManagementEntityGuid under the key for the JCID of the object that
+     * carries it. Section-node GUIDs are skipped.
+     */
+    public void addForObjectType(int jcid, String guid) {
+        Category category = categoryFor(jcid);
+        if (category != null) {
+            add(category, guid);
+        }
+    }
+
+    static Category categoryFor(int jcid) {
+        switch (jcid) {
+            case OneNoteJcid.PAGE_METADATA:
+                return Category.PAGE;
+            case OneNoteJcid.PAGE_SERIES_NODE:
+                return Category.PAGE_SERIES;
+            case OneNoteJcid.PAGE_NODE:
+                return Category.PAGE_NODE;
+            case OneNoteJcid.CONFLICT_PAGE_METADATA:
+                return Category.CONFLICT_PAGE;
+            case OneNoteJcid.SECTION_NODE:
+                return null;
+            default:
+                return Category.ENTITY;
+        }
+    }
+
     private void reportLimitWarning() {
         if (!limitWarningReported) {
             limitWarningReported = true;
@@ -70,11 +119,26 @@ final class OneNoteGuidCollector {
         }
     }
 
-    Set<String> values(Category category) {
+    public Set<String> values(Category category) {
         return Collections.unmodifiableSet(values.get(category));
     }
 
-    boolean isFull() {
+    public boolean isFull() {
         return count >= MAX_GUID_COUNT;
+    }
+
+    /** Sets each non-empty key on {@code metadata}, with values sorted. */
+    public void publish(Metadata metadata) {
+        for (Map.Entry<Category, LinkedHashSet<String>> entry : values.entrySet()) {
+            if (!entry.getValue().isEmpty()) {
+                if (entry.getKey() == Category.SECTION) {
+                    metadata.set(entry.getKey().property, entry.getValue().iterator().next());
+                } else {
+                    String[] sorted = entry.getValue().toArray(new String[0]);
+                    Arrays.sort(sorted);
+                    metadata.set(entry.getKey().property, sorted);
+                }
+            }
+        }
     }
 }

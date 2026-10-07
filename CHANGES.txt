@@ -14,9 +14,10 @@ Release 4.2.0 - unreleased
      Every resolver Tika installs answers with an empty stream, never null (TIKA-4941).
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
-   * OneNote extracts section, page, page-series, conflict-page, and entity GUID
-     metadata from classic and FSSHTTPB files. Tree-collected GUID metadata is capped
-     at 100,000 values with a warning if the limit is reached (TIKA-4944).
+   * OneNote extracts a section GUID and page, page-series, page-node, conflict-page, and
+     entity GUID metadata from classic and FSSHTTPB files. Tree-collected GUID metadata is capped
+     at 100,000 values with a warning if the limit is reached. FSSHTTPB pages are now
+     wrapped in <div class="page" id="{page GUID}"> in the XHTML output (TIKA-4944).
 
 Release 4.1.0 - 9/26/2026
 

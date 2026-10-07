@@ -24,7 +24,6 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,8 +47,6 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.OneNote;
-import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -634,7 +631,13 @@ class OneNoteTreeWalker {
                     dif.read(guidBuffer);
                     String guid = GUID.fromMicrosoftBytes(guidBuffer.array()).toString();
                     propMap.put("notebookManagementEntityGuid", guid);
-                    addClassicEntityGuid(objectType, guid);
+                    // Version-history copies of a page are object-space roots; only the
+                    // current page's metadata is referenced via MetaDataObjectsAboveGraphSpace.
+                    if (objectType != OneNoteJcid.PAGE_METADATA || (parentPropertyId != null
+                            && parentPropertyId.propertyEnum ==
+                            OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace)) {
+                        addClassicEntityGuid(objectType, guid);
+                    }
                 } else {
                     //TODO -- these seem to be somewhat broken font files and other
                     //odds and ends...what are they and how should we process them?
@@ -725,22 +728,7 @@ class OneNoteTreeWalker {
     }
 
     void addClassicEntityGuid(int objectType, String guid) {
-        switch (objectType) {
-            case OneNoteJcid.PAGE_METADATA:
-                guidCollector.add(OneNoteGuidCollector.Category.PAGE, guid);
-                break;
-            case OneNoteJcid.PAGE_SERIES_NODE:
-                guidCollector.add(OneNoteGuidCollector.Category.PAGE_SERIES, guid);
-                break;
-            case OneNoteJcid.CONFLICT_PAGE_METADATA:
-                guidCollector.add(OneNoteGuidCollector.Category.CONFLICT_PAGE, guid);
-                break;
-            case OneNoteJcid.SECTION_NODE:
-                break;
-            default:
-                guidCollector.add(OneNoteGuidCollector.Category.ENTITY, guid);
-                break;
-        }
+        guidCollector.addForObjectType(objectType, guid);
     }
 
     private void recordGuidLimitWarning(String warning) {
@@ -751,24 +739,8 @@ class OneNoteTreeWalker {
     }
 
     private void publishGuidBags() {
-        if (parentMetadata == null) {
-            return;
-        }
-        setGuidBag(parentMetadata, OneNote.PAGE_GUIDS,
-                guidCollector.values(OneNoteGuidCollector.Category.PAGE));
-        setGuidBag(parentMetadata, OneNote.PAGE_SERIES_GUIDS,
-                guidCollector.values(OneNoteGuidCollector.Category.PAGE_SERIES));
-        setGuidBag(parentMetadata, OneNote.CONFLICT_PAGE_GUIDS,
-                guidCollector.values(OneNoteGuidCollector.Category.CONFLICT_PAGE));
-        setGuidBag(parentMetadata, OneNote.ENTITY_GUIDS,
-                guidCollector.values(OneNoteGuidCollector.Category.ENTITY));
-    }
-
-    private static void setGuidBag(Metadata metadata, Property property, Set<String> guids) {
-        if (!guids.isEmpty()) {
-            String[] values = guids.toArray(new String[0]);
-            Arrays.sort(values);
-            metadata.set(property, values);
+        if (parentMetadata != null) {
+            guidCollector.publish(parentMetadata);
         }
     }
 

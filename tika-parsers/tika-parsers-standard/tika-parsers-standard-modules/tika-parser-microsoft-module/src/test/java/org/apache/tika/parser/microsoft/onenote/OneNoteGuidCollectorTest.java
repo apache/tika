@@ -16,14 +16,19 @@
  */
 package org.apache.tika.parser.microsoft.onenote;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OneNote;
 
 public class OneNoteGuidCollectorTest {
 
@@ -34,16 +39,49 @@ public class OneNoteGuidCollectorTest {
         assertFalse(collector.isFull());
         collector.add(OneNoteGuidCollector.Category.PAGE, null);
         for (int i = 0; i < OneNoteGuidCollector.MAX_GUID_COUNT; i++) {
-            collector.add(OneNoteGuidCollector.Category.SECTION, "guid-" + i);
+            collector.add(OneNoteGuidCollector.Category.ENTITY, "guid-" + i);
         }
-        collector.add(OneNoteGuidCollector.Category.SECTION, "guid-0");
+        collector.add(OneNoteGuidCollector.Category.ENTITY, "guid-0");
         collector.add(OneNoteGuidCollector.Category.PAGE, "overflow-1");
         collector.add(OneNoteGuidCollector.Category.PAGE, "overflow-2");
 
         assertEquals(OneNoteGuidCollector.MAX_GUID_COUNT,
-                collector.values(OneNoteGuidCollector.Category.SECTION).size());
+                collector.values(OneNoteGuidCollector.Category.ENTITY).size());
         assertTrue(collector.values(OneNoteGuidCollector.Category.PAGE).isEmpty());
         assertEquals(1, warnings.size());
         assertTrue(collector.isFull());
+    }
+
+    @Test
+    public void testObjectTypesMapToKeys() {
+        assertEquals(OneNoteGuidCollector.Category.PAGE,
+                OneNoteGuidCollector.categoryFor(OneNoteJcid.PAGE_METADATA));
+        assertEquals(OneNoteGuidCollector.Category.PAGE_SERIES,
+                OneNoteGuidCollector.categoryFor(OneNoteJcid.PAGE_SERIES_NODE));
+        assertEquals(OneNoteGuidCollector.Category.PAGE_NODE,
+                OneNoteGuidCollector.categoryFor(OneNoteJcid.PAGE_NODE));
+        assertEquals(OneNoteGuidCollector.Category.CONFLICT_PAGE,
+                OneNoteGuidCollector.categoryFor(OneNoteJcid.CONFLICT_PAGE_METADATA));
+        assertNull(OneNoteGuidCollector.categoryFor(OneNoteJcid.SECTION_NODE));
+        assertEquals(OneNoteGuidCollector.Category.ENTITY,
+                OneNoteGuidCollector.categoryFor(0x7fff));
+    }
+
+    @Test
+    public void testPublishSortsValuesAndSkipsEmptyKeys() {
+        OneNoteGuidCollector collector = new OneNoteGuidCollector(w -> { });
+        collector.addForObjectType(OneNoteJcid.PAGE_NODE, "{B}");
+        collector.addForObjectType(OneNoteJcid.PAGE_NODE, "{A}");
+        collector.addForObjectType(OneNoteJcid.SECTION_NODE, "{section-node}");
+        collector.add(OneNoteGuidCollector.Category.SECTION, "{first}");
+        collector.add(OneNoteGuidCollector.Category.SECTION, "{second}");
+        Metadata metadata = new Metadata();
+
+        collector.publish(metadata);
+
+        assertArrayEquals(new String[] {"{A}", "{B}"},
+                metadata.getValues(OneNote.PAGE_NODE_GUIDS));
+        assertEquals("{first}", metadata.get(OneNote.SECTION_GUID));
+        assertEquals(2, metadata.names().length);
     }
 }
