@@ -16,11 +16,13 @@
  */
 package org.apache.tika.metadata.filter;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.DateTimeException;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.util.Date;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import org.slf4j.Logger;
@@ -31,13 +33,15 @@ import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.utils.TikaDates;
 
 /**
- * Some dates in some file formats do not have a timezone.
- * Tika correctly stores these without a timezone, e.g. 'yyyy-MM-dd'T'HH:mm:ss'
- * This can be a problem if end points expect a 'Z' timezone.
- * This filter makes the assumption that dates without timezones are UTC
- * and always modifies the date to: "yyyy-MM-dd'T'HH:mm:ss'Z'"
+ * Rewrites every value of every DATE property to canonical UTC, "yyyy-MM-dd'T'HH:mm:ss'Z'",
+ * for end points that require a 'Z' timezone. An explicit offset is honored; zone-less values
+ * are read in the default time zone (UTC unless set), and date-only values as midday there.
+ * Partial dates are coerced: missing fields take their minimum, so "2019" becomes
+ * 2019-01-01 and "2019-06" becomes 2019-06-01, both at midday in the default zone.
+ * Unparseable values are left as they are.
  *
  * Users can specify an alternate defaultTimeZone with
  * {@link DateNormalizingMetadataFilter#setDefaultTimeZone(String)} to apply
@@ -55,6 +59,9 @@ public class DateNormalizingMetadataFilter extends MetadataFilterBase {
     }
 
     private static TimeZone UTC = TimeZone.getTimeZone("UTC");
+
+    private static final DateTimeFormatter UTC_OUT =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT);
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DateNormalizingMetadataFilter.class);
 
@@ -83,34 +90,43 @@ public class DateNormalizingMetadataFilter extends MetadataFilterBase {
     }
 
     protected void filter(Metadata metadata) {
-        SimpleDateFormat dateFormatter = null;
-        SimpleDateFormat utcFormatter = null;
         for (String n : metadata.names()) {
-
             Property property = Property.get(n);
-            if (property != null) {
-                if (property.getValueType().equals(Property.ValueType.DATE)) {
-                    String dateString = metadata.get(property);
-                    if (dateString.endsWith("Z")) {
-                        continue;
-                    }
-                    if (dateFormatter == null) {
-                        dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-                        dateFormatter.setTimeZone(defaultTimeZone);
-                        utcFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
-                        utcFormatter.setTimeZone(UTC);
-                    }
-                    Date d = null;
-                    try {
-                        d = dateFormatter.parse(dateString);
-                        metadata.set(property, utcFormatter.format(d));
-                    } catch (ParseException e) {
-                        LOGGER.warn("Couldn't convert date to default time zone: >"
-                                + dateString + "<");
-                    }
+            if (property == null || !property.getValueType().equals(Property.ValueType.DATE)) {
+                continue;
+            }
+            String[] values = metadata.getValues(property);
+            for (int i = 0; i < values.length; i++) {
+                String utc = toUtc(values[i]);
+                if (utc != null) {
+                    values[i] = utc;
                 }
             }
+            metadata.set(property, values);
         }
+    }
+
+    /** @return canonical UTC, or null to leave the value as is (unparseable) */
+    private String toUtc(String value) {
+        Optional<TikaDates.ParsedDate> parsed = TikaDates.parse(value);
+        if (parsed.isEmpty()) {
+            LOGGER.warn("Couldn't convert date to UTC: >{}<", abbreviate(value));
+            return null;
+        }
+        // a partial's LocalDateTime is already day 1 at midday
+        TikaDates.ParsedDate d = parsed.get();
+        try {
+            OffsetDateTime odt = d.hasZone() ? d.getLocalDateTime().atOffset(d.getOffset())
+                    : d.getLocalDateTime().atZone(defaultTimeZone.toZoneId()).toOffsetDateTime();
+            return odt.withOffsetSameInstant(ZoneOffset.UTC).format(UTC_OUT);
+        } catch (DateTimeException e) {
+            LOGGER.warn("Couldn't convert date to UTC: >{}<", abbreviate(value));
+            return null;
+        }
+    }
+
+    private static String abbreviate(String value) {
+        return value.length() > 100 ? value.substring(0, 100) + "..." : value;
     }
 
     public void setDefaultTimeZone(String timeZoneId) {

@@ -30,19 +30,19 @@ public class CSVPipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting CSV Pipes Iterator Plugin");
+        LOG.debug("Starting CSV Pipes Iterator Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping CSV Pipes Iterator Plugin");
+        LOG.debug("Stopping CSV Pipes Iterator Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting CSV Pipes Iterator Plugin");
+        LOG.debug("Deleting CSV Pipes Iterator Plugin");
         super.delete();
     }
 }

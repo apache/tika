@@ -19,16 +19,16 @@ package org.apache.tika.pipes.core;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaExtras;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ProcessUtils;
 
@@ -53,12 +54,10 @@ import org.apache.tika.utils.ProcessUtils;
  * {@link #ensureRunning()} is synchronized to prevent multiple clients from attempting
  * to restart the server simultaneously.
  * <p>
- * <b>Security:</b> The server port and a 32-byte auth token are passed to the child
- * process via environment variables (not command-line args), so they are not visible
- * in {@code /proc/<pid>/cmdline}. Each client connection must present the token before
- * the server will accept it. This prevents CVE-style abuse from untrusted local
- * processes. Note: if a malicious actor has same-uid access to your host and can read
- * {@code /proc/<pid>/environ}, that is beyond Tika's security model.
+ * <b>Security:</b> A 32-byte auth token goes to the child with its config on stdin
+ * ({@link ForkBootstrap}), so it is not visible in {@code /proc/<pid>/cmdline} or
+ * {@code /proc/<pid>/environ}. Each client connection must present the token before
+ * the server will accept it.
  *
  * @see PipesConfig#setUseSharedServer(boolean)
  */
@@ -70,7 +69,7 @@ public class SharedServerManager implements ServerManager {
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
 
     private final PipesConfig pipesConfig;
-    private final Path tikaConfigPath;
+    private final byte[] tikaConfigJson;
     private final int numConnections;
 
     private final Object lock = new Object();
@@ -89,12 +88,12 @@ public class SharedServerManager implements ServerManager {
      * Creates a SharedServerManager.
      *
      * @param pipesConfig the pipes configuration
-     * @param tikaConfigPath path to the tika config file
+     * @param tikaConfigJson the parent's resolved config, from {@link ForkBootstrap#toBytes}
      * @param numConnections number of concurrent connections the server should support
      */
-    public SharedServerManager(PipesConfig pipesConfig, Path tikaConfigPath, int numConnections) {
+    public SharedServerManager(PipesConfig pipesConfig, byte[] tikaConfigJson, int numConnections) {
         this.pipesConfig = pipesConfig;
-        this.tikaConfigPath = tikaConfigPath;
+        this.tikaConfigJson = tikaConfigJson;
         this.numConnections = numConnections;
     }
 
@@ -302,9 +301,7 @@ public class SharedServerManager implements ServerManager {
             shutdownUnsafe();
         }
 
-        // Generate auth token for this server instance
-        byte[] token = new byte[PipesServer.AUTH_TOKEN_LENGTH_BYTES];
-        new SecureRandom().nextBytes(token);
+        byte[] token = ForkBootstrap.newToken();
         currentToken = token;
 
         LOG.info("\n\n" +
@@ -336,14 +333,10 @@ public class SharedServerManager implements ServerManager {
 
         tmpDir = pipesConfig.createTempDirectory(PipesServer.SHARED_TEMP_DIR_PREFIX);
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
-        // Pass port and auth token via environment variables so they are not
-        // visible in /proc/<pid>/cmdline. The token is only readable via
-        // /proc/<pid>/environ which requires same-uid access.
         // Pass port=0 so the server binds to any available ephemeral port.
         // The actual port is read back from the READY:{port} stdout signal,
         // eliminating the TOCTOU race between probing a free port and binding it.
         pb.environment().put("TIKA_PIPES_PORT", "0");
-        pb.environment().put("TIKA_PIPES_AUTH_TOKEN", HexFormat.of().formatHex(token));
         // Tell the child our PID so it can watch ProcessHandle.onExit() and
         // self-terminate promptly if we die. See PipesServer.watchParentProcess.
         pb.environment().put(PipesServer.PARENT_PID_ENV,
@@ -380,6 +373,13 @@ public class SharedServerManager implements ServerManager {
                 msg += ": " + e.getMessage();
             }
             throw new ServerInitializationException(msg, e);
+        }
+
+        try (OutputStream stdin = process.getOutputStream()) {
+            ForkBootstrap.write(stdin, token, tikaConfigJson);
+        } catch (IOException e) {
+            // The server died before reading it; waitForServerReady() reports the exit.
+            LOG.warn("Couldn't send the bootstrap to the shared server process", e);
         }
 
         // Wait for the server to signal it's ready and report the port it actually bound to
@@ -505,6 +505,7 @@ public class SharedServerManager implements ServerManager {
         boolean hasExitOnOOM = false;
         boolean hasLog4j = false;
         boolean hasErrorFile = false;
+        boolean hasLocale = false;
 
         for (String arg : configArgs) {
             if (arg.startsWith("-Djava.awt.headless")) {
@@ -521,6 +522,9 @@ public class SharedServerManager implements ServerManager {
             }
             if (arg.startsWith("-XX:ErrorFile=")) {
                 hasErrorFile = true;
+            }
+            if (arg.startsWith("-Duser.language")) {
+                hasLocale = true;
             }
         }
 
@@ -554,14 +558,17 @@ public class SharedServerManager implements ServerManager {
             commandLine.add("-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
         }
         commandLine.add("-DpipesClientId=shared");
+        // the fork parses like the parent would; a fresh JVM would take the OS locale instead
+        if (!hasLocale) {
+            commandLine.addAll(ProcessUtils.defaultLocaleJvmArgs(Locale.getDefault()));
+        }
         commandLine.addAll(configArgs);
         commandLine.add("-Djava.io.tmpdir=" + tmpDir.toAbsolutePath());
         commandLine.add("org.apache.tika.pipes.core.server.PipesServer");
 
-        // Shared mode arguments: port and auth token are passed via env vars
+        // Port is passed via env var; token and config via stdin
         commandLine.add("--shared");
         commandLine.add(Integer.toString(numConnections));
-        commandLine.add(tikaConfigPath.toAbsolutePath().toString());
 
         LOG.debug("Shared server commandline: {}", commandLine);
         return commandLine.toArray(new String[0]);

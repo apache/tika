@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.nio.file.Path;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -42,14 +44,24 @@ public class MetadataWriteLimiterTest {
     private static final String FETCHER_NAME = "fsf";
     private static final String TEST_DOC = "testOverlappingText.pdf";
 
-    private PipesClient initWithWriteLimiter(Path tmp, String testFileName) throws Exception {
+    @TempDir
+    static Path tmp;
+
+    private static PipesClient pipesClient;
+
+    @BeforeAll
+    public static void setUp() throws Exception {
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
                 "tika-config-write-limiter.json", tmp, tmp.resolve("input"), tmp.resolve("output"), false);
-        PluginsTestHelper.copyTestFilesToTmpInput(tmp, testFileName);
+        PluginsTestHelper.copyTestFilesToTmpInput(tmp, TEST_DOC);
+        pipesClient = new PipesClient(PipesConfig.load(TikaJsonConfig.load(tikaConfigPath)), tikaConfigPath);
+    }
 
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-        return new PipesClient(pipesConfig, tikaConfigPath);
+    @AfterAll
+    public static void tearDown() throws Exception {
+        if (pipesClient != null) {
+            pipesClient.close();
+        }
     }
 
     /**
@@ -58,16 +70,13 @@ public class MetadataWriteLimiterTest {
      * so other fields like "pdf:pdf-version" should be filtered out.
      */
     @Test
-    public void testWriteLimiterFromConfig(@TempDir Path tmp) throws Exception {
-        Metadata metadata;
-        try (PipesClient pipesClient = initWithWriteLimiter(tmp, TEST_DOC)) {
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(TEST_DOC, new FetchKey(FETCHER_NAME, TEST_DOC),
-                            new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            assertNotNull(pipesResult.emitData().getMetadataList());
-            assertEquals(1, pipesResult.emitData().getMetadataList().size());
-            metadata = pipesResult.emitData().getMetadataList().get(0);
-        }
+    public void testWriteLimiterFromConfig() throws Exception {
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(TEST_DOC, new FetchKey(FETCHER_NAME, TEST_DOC),
+                        new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+        assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
 
         // These fields should be present (in includeFields or "must add" fields)
         assertNotNull(metadata.get("Content-Type"), "Content-Type should be present");
@@ -86,30 +95,27 @@ public class MetadataWriteLimiterTest {
      * module is not a dependency of this test module, so PDF-specific metadata isn't extracted.
      */
     @Test
-    public void testWriteLimiterOverrideViaParseContext(@TempDir Path tmp) throws Exception {
-        Metadata metadata;
-        try (PipesClient pipesClient = initWithWriteLimiter(tmp, TEST_DOC)) {
-            // Create a ParseContext with an override that allows tk:parse-time-millis
-            // The default config's includeFields (dc:creator, Content-Type, tk:content)
-            // does NOT include tk:parse-time-millis, but this override does.
-            ParseContext parseContext = new ParseContext();
-            String overrideJson = """
-                    {
-                        "includeFields": ["Content-Type", "tk:parse-time-millis"],
-                        "maxKeySize": 100,
-                        "maxFieldSize": 1000,
-                        "maxTotalBytes": 10000,
-                        "maxValuesPerField": 5
-                    }
-                    """;
-            parseContext.setJsonConfig("standard-metadata-limiter-factory", () -> overrideJson);
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(TEST_DOC, new FetchKey(FETCHER_NAME, TEST_DOC),
-                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            assertNotNull(pipesResult.emitData().getMetadataList());
-            assertEquals(1, pipesResult.emitData().getMetadataList().size());
-            metadata = pipesResult.emitData().getMetadataList().get(0);
-        }
+    public void testWriteLimiterOverrideViaParseContext() throws Exception {
+        // Create a ParseContext with an override that allows tk:parse-time-millis
+        // The default config's includeFields (dc:creator, Content-Type, tk:content)
+        // does NOT include tk:parse-time-millis, but this override does.
+        ParseContext parseContext = new ParseContext();
+        String overrideJson = """
+                {
+                    "includeFields": ["Content-Type", "tk:parse-time-millis"],
+                    "maxKeySize": 100,
+                    "maxFieldSize": 1000,
+                    "maxTotalBytes": 10000,
+                    "maxValuesPerField": 5
+                }
+                """;
+        parseContext.setJsonConfig("standard-metadata-limiter-factory", () -> overrideJson);
+        PipesResult pipesResult = pipesClient.process(
+                new FetchEmitTuple(TEST_DOC, new FetchKey(FETCHER_NAME, TEST_DOC),
+                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+        assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
 
         // These fields should be present (in the override includeFields or ALWAYS_SET/ADD_FIELDS)
         assertNotNull(metadata.get("Content-Type"), "Content-Type should be present");

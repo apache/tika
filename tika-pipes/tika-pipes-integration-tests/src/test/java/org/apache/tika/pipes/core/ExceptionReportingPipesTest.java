@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -48,7 +50,25 @@ public class ExceptionReportingPipesTest {
     private static final String CLEAN_DOC = "mock_times.xml";
     private static final String MESSAGE = "secret null pointer message";
 
-    private PipesClient init(Path tmp, String template, String... testDocs) throws Exception {
+    @TempDir
+    static Path redactingDir;
+
+    // tika-config-exception-reporting.json, shared by the tests whose fork survives
+    private static PipesClient redactingClient;
+
+    @BeforeAll
+    public static void startRedactingClient() throws Exception {
+        redactingClient = init(redactingDir, "tika-config-exception-reporting.json", NPE_DOC);
+    }
+
+    @AfterAll
+    public static void closeRedactingClient() throws Exception {
+        if (redactingClient != null) {
+            redactingClient.close();
+        }
+    }
+
+    private static PipesClient init(Path tmp, String template, String... testDocs) throws Exception {
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
                 template, tmp, tmp.resolve("input"), tmp.resolve("output"), false);
         PluginsTestHelper.copyTestFilesToTmpInput(tmp, testDocs);
@@ -68,17 +88,15 @@ public class ExceptionReportingPipesTest {
     }
 
     @Test
-    public void containerExceptionRedacted(@TempDir Path tmp) throws Exception {
-        try (PipesClient client = init(tmp, "tika-config-exception-reporting.json", NPE_DOC)) {
-            PipesResult result = client.process(tuple(NPE_DOC));
-            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION, result.status());
-            String trace = result.emitData().getMetadataList().get(0)
-                    .get(TikaCoreProperties.CONTAINER_EXCEPTION);
-            assertTrue(trace.contains("java.lang.NullPointerException"), trace);
-            assertTrue(trace.contains("\tat "), trace);
-            assertFalse(trace.contains(MESSAGE), trace);
-            assertEquals(trace, result.emitData().getContainerStackTrace());
-        }
+    public void containerExceptionRedacted() throws Exception {
+        PipesResult result = redactingClient.process(tuple(NPE_DOC));
+        assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION, result.status());
+        String trace = result.emitData().getMetadataList().get(0)
+                .get(TikaCoreProperties.CONTAINER_EXCEPTION);
+        assertTrue(trace.contains("java.lang.NullPointerException"), trace);
+        assertTrue(trace.contains("\tat "), trace);
+        assertFalse(trace.contains(MESSAGE), trace);
+        assertEquals(trace, result.emitData().getContainerStackTrace());
     }
 
     @Test
@@ -93,16 +111,14 @@ public class ExceptionReportingPipesTest {
     }
 
     @Test
-    public void fetchExceptionRedacted(@TempDir Path tmp) throws Exception {
-        try (PipesClient client = init(tmp, "tika-config-exception-reporting.json", NPE_DOC)) {
-            PipesResult result = client.process(tuple("does-not-exist.xml"));
-            assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, result.status());
-            String msg = result.message();
-            assertTrue(msg.contains("java.io.FileNotFoundException"), msg);
-            assertTrue(msg.contains("\tat "), msg);
-            // the fetcher's message names the missing path; the policy must strip it
-            assertFalse(msg.contains("does-not-exist"), msg);
-        }
+    public void fetchExceptionRedacted() throws Exception {
+        PipesResult result = redactingClient.process(tuple("does-not-exist.xml"));
+        assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, result.status());
+        String msg = result.message();
+        assertTrue(msg.contains("java.io.FileNotFoundException"), msg);
+        assertTrue(msg.contains("\tat "), msg);
+        // the fetcher's message names the missing path; the policy must strip it
+        assertFalse(msg.contains("does-not-exist"), msg);
     }
 
     @Test

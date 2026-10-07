@@ -995,9 +995,8 @@ public class TikaCLI {
         out.println("    --content-only             Output only extracted content (no JSON wrapper); implies --concatenate");
         out.println("    --on-exists                Behavior when an output file exists: exception (default), replace, skip");
         out.println("    -Z                         Recursively unpack all the attachments, too");
-        out.println("    --unpack-format=<format>   Output format: REGULAR (default) or FRICTIONLESS");
-        out.println("    --unpack-mode=<mode>       Output mode: ZIPPED (default) or DIRECTORY;");
-        out.println("                               DIRECTORY when --unpack-format=FRICTIONLESS and no mode is given");
+        out.println("    --unpack-format=<format>   Output format: FRICTIONLESS (default) or REGULAR");
+        out.println("    --unpack-mode=<mode>       Output mode: DIRECTORY (default: loose files) or ZIPPED");
         out.println("    --unpack-include-metadata  Metadata for every extracted file. A Frictionless package");
         out.println("                               carries metadata.json by default; this adds per-file");
         out.println("                               sidecars to REGULAR zip output");

@@ -18,6 +18,7 @@ package org.apache.tika.server.standard;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -32,9 +33,14 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.FileUtils;
@@ -144,7 +150,7 @@ public class TikaPipesTest extends CXFTestBase {
             TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
             PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
-            pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath);
+            pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
             pipesResource = new PipesResource(pipesParser, pipesConfig);
             rCoreProviders.add(new SingletonResourceProvider(pipesResource));
         } catch (IOException | TikaConfigException e) {
@@ -320,9 +326,26 @@ public class TikaPipesTest extends CXFTestBase {
         assertContains("When in the Course", metadataList
                 .get(6)
                 .get(TikaCoreProperties.TIKA_CONTENT));
-        Map<String, Long> expected = loadExpected();
+        // TIKA-4681: the bytes emitter writes one Frictionless package, the embedded
+        // documents under unpacked/ in it
         Map<String, Long> byteFileNames = getFileNames(outputBytesDir);
-        assertEquals(expected, byteFileNames);
+        assertEquals(Set.of(TEST_RECURSIVE_DOC + "-frictionless.zip"), byteFileNames.keySet());
+        List<Long> unpackedSizes = new ArrayList<>();
+        try (ZipFile zip = new ZipFile(
+                outputBytesDir.resolve(TEST_RECURSIVE_DOC + "-frictionless.zip").toFile())) {
+            assertNotNull(zip.getEntry("datapackage.json"));
+            assertNotNull(zip.getEntry("metadata.json"));
+            for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements(); ) {
+                ZipEntry entry = e.nextElement();
+                if (entry.getName().startsWith("unpacked/")) {
+                    unpackedSizes.add(entry.getSize());
+                }
+            }
+        }
+        List<Long> expectedSizes = new ArrayList<>(loadExpected().values());
+        Collections.sort(expectedSizes);
+        Collections.sort(unpackedSizes);
+        assertEquals(expectedSizes, unpackedSizes);
     }
 
     private Map<String, Long> loadExpected() {

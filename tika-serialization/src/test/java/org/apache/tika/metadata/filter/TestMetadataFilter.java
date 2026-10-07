@@ -215,6 +215,59 @@ public class TestMetadataFilter extends TikaTest {
     }
 
     @Test
+    public void testDateNormalizingFilterKeepsOffset() throws Exception {
+        DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();
+        filter.setDefaultTimeZone("America/Los_Angeles");
+        String[][] cases = {
+                {"2010-05-09T21:34:38+0200", "2010-05-09T19:34:38Z"},
+                {"2010-05-09T21:34:38+02:00", "2010-05-09T19:34:38Z"},
+                {"2010-05-09T21:34:38-05:00", "2010-05-10T02:34:38Z"},
+                {"2010-05-09T21:34:38.123+02:00", "2010-05-09T19:34:38Z"},
+        };
+        for (String[] c : cases) {
+            Metadata m = new Metadata();
+            m.set(TikaCoreProperties.CREATED, c[0]);
+            filter.filter(m);
+            assertEquals(c[1], m.get(TikaCoreProperties.CREATED), c[0]);
+        }
+    }
+
+    @Test
+    public void testDateNormalizingFilterStoredForms() throws Exception {
+        DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();
+        filter.setDefaultTimeZone("America/New_York");
+        String[][] cases = {
+                // date-only reads as midday, like Metadata.getDate(), in the default zone
+                {"2015-06-12", "2015-06-12T16:00:00Z"},
+                {"2020-01-01T10:00:00Z00:00", "2020-01-01T10:00:00Z"},
+                // partials: missing fields take their minimum, midday in the default zone
+                {"2018", "2018-01-01T17:00:00Z"},
+                {"2018-06", "2018-06-01T16:00:00Z"},
+                // unparseable values are left as they are, without an exception
+                {"garbage", "garbage"},
+                {"+999999999-12-31T23:59:59-10:00", "+999999999-12-31T23:59:59-10:00"},
+        };
+        for (String[] c : cases) {
+            Metadata m = new Metadata();
+            m.set(TikaCoreProperties.CREATED, c[0]);
+            filter.filter(m);
+            assertEquals(c[1], m.get(TikaCoreProperties.CREATED), c[0]);
+        }
+    }
+
+    @Test
+    public void testDateNormalizingFilterMultiValued() throws Exception {
+        DateNormalizingMetadataFilter filter = new DateNormalizingMetadataFilter();
+        Metadata m = new Metadata();
+        m.add(TikaCoreProperties.SIGNATURE_DATE, "2010-05-09T21:34:38+02:00");
+        m.add(TikaCoreProperties.SIGNATURE_DATE, "2011-01-01T00:00:00Z");
+        m.add(TikaCoreProperties.SIGNATURE_DATE, "2012-06-01T08:00:00");
+        filter.filter(m);
+        assertArrayEquals(new String[]{"2010-05-09T19:34:38Z", "2011-01-01T00:00:00Z", "2012-06-01T08:00:00Z"},
+                m.getValues(TikaCoreProperties.SIGNATURE_DATE));
+    }
+
+    @Test
     public void testCaptureGroupBasic() throws Exception {
         TikaLoader loader = TikaLoader.load(getConfigPath(getClass(), "TIKA-4133-capture-group.json"));
 

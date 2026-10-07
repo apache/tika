@@ -151,11 +151,11 @@ embedded content in: email attachments (`.eml`, `.msg`), archive members
 (`.zip`), PDF attachments, embedded objects/images in any office format
 (an inline pasted picture counts), and so on.
 
-What lands on disk: a `<name>-embed/` directory of the embedded files
-**renumbered** (`00000001.jpg`, ...) — original names are not preserved on
-disk; they're in the rmeta output's `tk:resource-name` per entry, so keep
-the sibling `<name>.json` (an rmeta-shaped metadata dump `-z` also writes)
-if you need to map numbers back to names.
+What lands on disk: a `<name>/` Frictionless package — `datapackage.json`
+(SHA-256 per file), `metadata.json`, and the embedded files **renumbered**
+under `unpacked/` (`00000001.jpg`, ...). Original names are not preserved on
+disk; they are in each rmeta entry's `tk:resource-name`, so keep the sibling
+`<name>.json` (an rmeta-shaped dump `-z` also writes) to map numbers back.
 
 `-z`/`-Z` route through Tika Pipes mode rather than the fast synchronous
 path the other flags use — expect several seconds and a burst of

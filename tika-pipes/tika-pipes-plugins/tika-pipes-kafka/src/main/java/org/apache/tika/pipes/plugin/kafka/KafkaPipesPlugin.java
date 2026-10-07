@@ -30,19 +30,19 @@ public class KafkaPipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting Kafka Emitter Plugin");
+        LOG.debug("Starting Kafka Emitter Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping Kafka Emitter Plugin");
+        LOG.debug("Stopping Kafka Emitter Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting Kafka Emitter Plugin");
+        LOG.debug("Deleting Kafka Emitter Plugin");
         super.delete();
     }
 }
