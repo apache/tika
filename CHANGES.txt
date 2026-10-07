@@ -41,6 +41,8 @@ Release 4.2.0 - unreleased
      loader replace it, saving about 1.3s per AutoDetectParser build and per
      forked JVM; a fork that fails to start is recognized within 100ms instead
      of 1s (TIKA-4954).
+     DBFParser now honors the configured EncodingDetector instead of always
+     building its own default (TIKA-4954).
 
    * tika-core's OSGi manifest no longer requires a Service Loader Mediator or
      providers for Parser, Detector, EncodingDetector, LanguageDetector and
