@@ -27,10 +27,10 @@ import org.apache.tika.detect.EncodingDetector;
 public abstract class AbstractEncodingDetectorParser implements Parser {
 
 
-    private EncodingDetector encodingDetector;
+    // lazy: loaders replace it with the shared detector, and building one loads the models
+    private volatile EncodingDetector encodingDetector;
 
     public AbstractEncodingDetectorParser() {
-        encodingDetector = new DefaultEncodingDetector();
     }
 
     public AbstractEncodingDetectorParser(EncodingDetector encodingDetector) {
@@ -55,7 +55,17 @@ public abstract class AbstractEncodingDetectorParser implements Parser {
     }
 
     public EncodingDetector getEncodingDetector() {
-        return encodingDetector;
+        EncodingDetector detector = encodingDetector;
+        if (detector == null) {
+            synchronized (this) {
+                detector = encodingDetector;
+                if (detector == null) {
+                    detector = new DefaultEncodingDetector();
+                    encodingDetector = detector;
+                }
+            }
+        }
+        return detector;
     }
 
     public void setEncodingDetector(EncodingDetector encodingDetector) {

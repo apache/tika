@@ -88,6 +88,14 @@ Release 4.2.0 - unreleased
      exit, and the ilst length no longer counts its own header twice. Since
      4.0.0 (TIKA-4957).
 
+   * Faster parser loading and pipes fork startup: parsers no longer build a
+     default EncodingDetector (loading the charset models) only to have the
+     loader replace it, saving about 1.3s per AutoDetectParser build and per
+     forked JVM; a fork that fails to start is recognized within 100ms instead
+     of 1s (TIKA-4954).
+     DBFParser now honors the configured EncodingDetector instead of always
+     building its own default (TIKA-4954).
+
    * tika-core's OSGi manifest no longer requires a Service Loader Mediator or
      providers for Parser, Detector, EncodingDetector, LanguageDetector and
      MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
