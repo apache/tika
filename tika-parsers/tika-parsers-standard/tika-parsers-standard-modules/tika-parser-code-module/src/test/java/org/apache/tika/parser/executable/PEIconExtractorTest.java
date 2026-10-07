@@ -208,16 +208,21 @@ public class PEIconExtractorTest extends TikaTest {
 
     /**
      * A size no image can have - sides beyond what PNG allows, a negative
-     * width, no height at all - is not sorted by; the directory entry is.
+     * width, no height at all - is not sorted by, and neither is what follows
+     * a PNG signature without an IHDR chunk; the directory entry is. The
+     * entries rank the images the other way round than those sizes would.
      */
     @Test
     public void testImplausibleImageSizeFallsBackToTheDirectory() throws Exception {
-        byte[] pe = groupPe(new int[][]{{16, 32}, {24, 32}, {32, 32}, {48, 32}},
-                png(41, -1, -1), bitmap(42, -4096, 4096), bitmap(43, 4096, 0),
-                bitmap(44, 48, 48));
+        byte[] noIhdr = png(45, 1024, 1024);
+        noIhdr[12] = 'J';
+        byte[] pe = groupPe(new int[][]{{16, 32}, {8, 32}, {48, 32}, {32, 32}, {24, 32}},
+                bitmap(44, 16, 16), noIhdr, png(41, -1, -1), bitmap(42, -4096, 4096),
+                bitmap(43, 4096, 0));
         RecordingExtractor extractor = parse(pe);
         assertEquals(1, extractor.contents.size());
-        assertArrayEquals(new int[]{44, 43, 42, 41}, imageLengths(extractor.contents.get(0)));
+        assertArrayEquals(new int[]{41, 42, 43, 44, 45},
+                imageLengths(extractor.contents.get(0)));
     }
 
     /** The width of every directory entry of an .ico, in file order. */
