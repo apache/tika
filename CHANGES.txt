@@ -80,6 +80,11 @@ Release 4.2.0 - unreleased
      Metadata, InputStream, byte[]) is deprecated in favour of the overload
      that takes a ParseContext (TIKA-4936).
 
+   * The MP4 parser no longer records a spurious EOFException warning on every
+     well-formed file: end of input at a top-level box boundary is the normal
+     exit, and the ilst length no longer counts its own header twice. Since
+     4.0.0 (TIKA-4957).
+
    * tika-core's OSGi manifest no longer requires a Service Loader Mediator or
      providers for Parser, Detector, EncodingDetector, LanguageDetector and
      MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
