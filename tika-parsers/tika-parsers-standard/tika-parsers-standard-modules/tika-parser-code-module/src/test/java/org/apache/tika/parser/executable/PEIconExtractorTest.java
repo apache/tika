@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 import org.apache.commons.io.input.CountingInputStream;
 import org.junit.jupiter.api.Test;
@@ -111,11 +112,9 @@ public class PEIconExtractorTest extends TikaTest {
     private static final String DLL = "testWindows-x86-64-icons.dll";
     private static final String LANG_DLL = "testWindows-x86-64-icons-lang.dll";
     private static final int ICON_DIR_ENTRY_SIZE = 16;
-    private static final String APP_ICO = "testWindows-icons-app.ico";
-    private static final String DOC_ICO = "testWindows-icons-doc.ico";
-    /** The same images as the .ico files above, largest first - see the class comment. */
-    private static final String APP_ICO_REBUILT = "testWindows-icons-app-rebuilt.ico";
-    private static final String DOC_ICO_REBUILT = "testWindows-icons-doc-rebuilt.ico";
+    private static final String APP_ICO_SOURCE = "testWindows-icons-app.ico";
+    private static final String APP_ICO = "testWindows-icons-app-rebuilt.ico";
+    private static final String DOC_ICO = "testWindows-icons-doc-rebuilt.ico";
 
     private static final String THUMBNAIL =
             TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString();
@@ -170,11 +169,55 @@ public class PEIconExtractorTest extends TikaTest {
      */
     @Test
     public void testLargestIconComesFirst() throws Exception {
-        assertArrayEquals(new int[]{16, 32, 0}, widths(readTestResource(APP_ICO)),
+        assertArrayEquals(new int[]{16, 32, 0}, widths(readTestResource(APP_ICO_SOURCE)),
                 "the icon the resources were compiled from");
 
         RecordingExtractor extractor = parse(readTestResource(EXE));
         assertArrayEquals(new int[]{0, 32, 16}, widths(extractor.contents.get(1)));
+    }
+
+    /**
+     * A side of 0 stands for anything from 256 up, so only the images tell a
+     * 1024 pixel PNG from a 256 pixel bitmap, and an entry that claims 16
+     * pixels for a 48 pixel bitmap is not believed either. The images differ
+     * in length, which is how the result tells them apart.
+     */
+    @Test
+    public void testOrderFollowsTheImagesNotTheDirectory() throws Exception {
+        byte[] pe = groupPe(new int[][]{{0, 32}, {0, 32}, {16, 32}, {32, 32}},
+                bitmap(41, 256, 256), png(42, 1024, 1024), bitmap(43, 48, 48),
+                bitmap(44, 32, 32));
+        RecordingExtractor extractor = parse(pe);
+        assertEquals(1, extractor.contents.size());
+        assertArrayEquals(new int[]{42, 41, 43, 44}, imageLengths(extractor.contents.get(0)));
+    }
+
+    /**
+     * Among images of one size the deeper one comes first, and those that
+     * agree in both keep the order of the group.
+     */
+    @Test
+    public void testColourDepthBreaksTies() throws Exception {
+        byte[] pe = groupPe(new int[][]{{32, 4}, {32, 32}, {32, 8}, {32, 32}},
+                bitmap(41, 32, 32), bitmap(42, 32, 32), bitmap(43, 32, 32),
+                bitmap(44, 32, 32));
+        RecordingExtractor extractor = parse(pe);
+        assertEquals(1, extractor.contents.size());
+        assertArrayEquals(new int[]{42, 44, 43, 41}, imageLengths(extractor.contents.get(0)));
+    }
+
+    /**
+     * A size no image can have - sides beyond what PNG allows, a negative
+     * width, no height at all - is not sorted by; the directory entry is.
+     */
+    @Test
+    public void testImplausibleImageSizeFallsBackToTheDirectory() throws Exception {
+        byte[] pe = groupPe(new int[][]{{16, 32}, {24, 32}, {32, 32}, {48, 32}},
+                png(41, -1, -1), bitmap(42, -4096, 4096), bitmap(43, 4096, 0),
+                bitmap(44, 48, 48));
+        RecordingExtractor extractor = parse(pe);
+        assertEquals(1, extractor.contents.size());
+        assertArrayEquals(new int[]{44, 43, 42, 41}, imageLengths(extractor.contents.get(0)));
     }
 
     /** The width of every directory entry of an .ico, in file order. */
@@ -196,8 +239,8 @@ public class PEIconExtractorTest extends TikaTest {
         for (String file : new String[]{EXE, DLL}) {
             RecordingExtractor extractor = parse(readTestResource(file));
             assertEquals(2, extractor.contents.size(), file);
-            assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0), file);
-            assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(1), file);
+            assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0), file);
+            assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(1), file);
             assertIcon(extractor.metadata.get(0), "icon_DOCICON.ico", "14/DOCICON/1033", THUMBNAIL);
             assertIcon(extractor.metadata.get(1), "icon_1.ico", "14/1/1033", ATTACHMENT);
         }
@@ -217,8 +260,8 @@ public class PEIconExtractorTest extends TikaTest {
                     extractor.context());
         }
         assertEquals(2, extractor.contents.size());
-        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
-        assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(1));
+        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(1));
     }
 
     @Test
@@ -228,8 +271,8 @@ public class PEIconExtractorTest extends TikaTest {
         // 1031 sorts before 1033 in the language directory
         assertIcon(extractor.metadata.get(0), "icon_1_1031.ico", "14/1/1031", THUMBNAIL);
         assertIcon(extractor.metadata.get(1), "icon_1_1033.ico", "14/1/1033", ATTACHMENT);
-        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
-        assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(1));
+        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(1));
     }
 
     /**
@@ -246,7 +289,7 @@ public class PEIconExtractorTest extends TikaTest {
         RecordingExtractor extractor = parse(dll);
         assertEquals(2, extractor.contents.size());
         assertIcon(extractor.metadata.get(0), "icon_1_1031.ico", "14/1/1031", THUMBNAIL);
-        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
     }
 
     /**
@@ -260,7 +303,7 @@ public class PEIconExtractorTest extends TikaTest {
         putIntLE(exe, 0x7b26, 0x00ffffff);
         RecordingExtractor extractor = parse(exe);
         assertEquals(2, extractor.contents.size());
-        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
     }
 
     /**
@@ -276,7 +319,7 @@ public class PEIconExtractorTest extends TikaTest {
         RecordingExtractor extractor = parse(exe);
         assertEquals(1, extractor.contents.size());
         assertIcon(extractor.metadata.get(0), "icon_1.ico", "14/1/1033", THUMBNAIL);
-        assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(0));
     }
 
     /**
@@ -291,7 +334,7 @@ public class PEIconExtractorTest extends TikaTest {
         RecordingExtractor extractor = parse(exe);
         assertEquals(1, extractor.contents.size());
         assertIcon(extractor.metadata.get(0), "icon_1.ico", "14/1/1033", THUMBNAIL);
-        assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(0));
     }
 
     /**
@@ -450,7 +493,7 @@ public class PEIconExtractorTest extends TikaTest {
         RecordingExtractor extractor = parse(exe);
         assertEquals(1, extractor.contents.size());
         assertIcon(extractor.metadata.get(0), "icon_1.ico", "14/1/1033", THUMBNAIL);
-        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
     }
 
     /**
@@ -469,7 +512,7 @@ public class PEIconExtractorTest extends TikaTest {
                     Arrays.copyOf(exe, 4), context);
         }
         assertEquals(2, extractor.contents.size());
-        assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
+        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
     }
 
     /**
@@ -658,8 +701,8 @@ public class PEIconExtractorTest extends TikaTest {
             System.arraycopy(rsrc, 0, section, shift, rsrc.length);
             RecordingExtractor extractor = parse(SyntheticPE.build(section, shift));
             assertEquals(2, extractor.contents.size(), "shift " + shift);
-            assertArrayEquals(readTestResource(DOC_ICO_REBUILT), extractor.contents.get(0));
-            assertArrayEquals(readTestResource(APP_ICO_REBUILT), extractor.contents.get(1));
+            assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
+            assertArrayEquals(readTestResource(APP_ICO), extractor.contents.get(1));
         }
     }
 
@@ -840,7 +883,7 @@ public class PEIconExtractorTest extends TikaTest {
     @Test
     public void testTruncatedFile() throws Exception {
         byte[] full = readTestResource(EXE);
-        byte[] docIco = readTestResource(DOC_ICO_REBUILT);
+        byte[] docIco = readTestResource(DOC_ICO);
         // length -> expected number of icons
         int[][] cases = {
                 {0x200, 0},   // inside the section table
@@ -892,6 +935,58 @@ public class PEIconExtractorTest extends TikaTest {
             dir.putShort(6 + 14 * i + 12, (short) ids[i]);
         }
         return dir.array();
+    }
+
+    /**
+     * @param entries the side and the bit count each directory entry claims
+     * @return a file with one group of the given images, in the given order
+     */
+    private static byte[] groupPe(int[][] entries, byte[]... images) {
+        byte[] dir = grpIconDir(IntStream.rangeClosed(1, images.length).toArray());
+        int size = dir.length;
+        for (byte[] image : images) {
+            size += image.length;
+        }
+        ByteBuffer data = ByteBuffer.allocate(size).order(ByteOrder.LITTLE_ENDIAN);
+        SyntheticResources resources = new SyntheticResources(data.array());
+        resources.group(0, dir.length);
+        data.put(dir);
+        for (int i = 0; i < images.length; i++) {
+            data.put(6 + 14 * i, (byte) entries[i][0]).put(6 + 14 * i + 1, (byte) entries[i][0]);
+            data.putShort(6 + 14 * i + 6, (short) entries[i][1]);
+            resources.icon(data.position(), images[i].length);
+            data.put(images[i]);
+        }
+        return SyntheticPE.build(resources.build(), 0);
+    }
+
+    /**
+     * @return the start of a PNG of the given size, padded to the given length
+     */
+    private static byte[] png(int length, int width, int height) {
+        ByteBuffer png = ByteBuffer.allocate(length);
+        png.putLong(0x89504e470d0a1a0aL).putInt(13).putInt(0x49484452);
+        png.putInt(width).putInt(height);
+        return png.array();
+    }
+
+    /**
+     * @return the BITMAPINFOHEADER of an icon image of the given size, its
+     * height doubled for the mask, padded to the given length
+     */
+    private static byte[] bitmap(int length, int width, int height) {
+        ByteBuffer bitmap = ByteBuffer.allocate(length).order(ByteOrder.LITTLE_ENDIAN);
+        bitmap.putInt(40).putInt(width).putInt(2 * height);
+        return bitmap.array();
+    }
+
+    /** The length of every image of an .ico, in file order. */
+    private static int[] imageLengths(byte[] ico) {
+        int[] lengths = new int[ico[4] & 0xff];
+        for (int i = 0; i < lengths.length; i++) {
+            lengths[i] = EndianUtils.getIntLE(ico, 6 + i * ICON_DIR_ENTRY_SIZE + 8);
+        }
+        return lengths;
     }
 
     /**

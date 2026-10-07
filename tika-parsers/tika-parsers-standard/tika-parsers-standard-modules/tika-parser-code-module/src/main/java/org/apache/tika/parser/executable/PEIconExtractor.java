@@ -85,10 +85,11 @@ class PEIconExtractor {
     private static final int RESOURCE_DIRECTORY_SIZE = 16;
     private static final int RESOURCE_DIRECTORY_ENTRY_SIZE = 8;
     private static final int RESOURCE_DATA_ENTRY_SIZE = 16;
-    private static final byte[] PNG_HEADER_START =
+    private static final byte[] PNG_SIGNATURE =
             {(byte) 0x89, 'P', 'N', 'G', 0x0d, 0x0a, 0x1a, 0x0a};
-    /** signature, IHDR length and type, and the width and height it starts with */
-    private static final int PNG_IHDR_SIZE = 8 + 8 + 13;
+    private static final int PNG_IHDR = 0x49484452;
+    /** the signature, the IHDR chunk's length and type, then its width and height */
+    private static final int PNG_DIMENSIONS_END = 8 + 8 + 8;
     private static final int BITMAP_INFO_HEADER_SIZE = 40;
     private static final int GRP_ICON_DIR_SIZE = 6;
     private static final int GRP_ICON_DIR_ENTRY_SIZE = 14;
@@ -236,8 +237,7 @@ class PEIconExtractor {
         }
         List<Resource> images = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            int id = EndianUtils.getUShortLE(dir,
-                    GRP_ICON_DIR_SIZE + i * GRP_ICON_DIR_ENTRY_SIZE + 12);
+            int id = EndianUtils.getUShortLE(dir, groupEntry(i) + 12);
             Resource image = tree.findIcon(id, group.language);
             if (image == null) {
                 return null;
@@ -290,13 +290,13 @@ class PEIconExtractor {
         int imageOffset = GRP_ICON_DIR_SIZE + count * ICON_DIR_ENTRY_SIZE;
         ByteBuffer ico = ByteBuffer.allocate((int) icoSize(icon.images))
                 .order(ByteOrder.LITTLE_ENDIAN);
-        int[] order = byDescendingSize(icon, section);
+        List<Integer> order = largestFirst(icon, section);
         // ICONDIR: reserved, type, count - identical to the GRPICONDIR
         ico.put(icon.dir, 0, GRP_ICON_DIR_SIZE);
         for (int index : order) {
             int size = (int) icon.images.get(index).size;
             // width, height, colours, reserved, planes and bit count are shared
-            ico.put(icon.dir, GRP_ICON_DIR_SIZE + index * GRP_ICON_DIR_ENTRY_SIZE, 8);
+            ico.put(icon.dir, groupEntry(index), 8);
             // the group's BytesInRes may disagree with the actual resource; trust the resource
             ico.putInt(size);
             ico.putInt(imageOffset);
@@ -320,24 +320,18 @@ class PEIconExtractor {
      *
      * @return indices into the group, by descending pixel count and colour depth
      */
-    private static int[] byDescendingSize(Icon icon, Section section) throws IOException {
+    private static List<Integer> largestFirst(Icon icon, Section section) throws IOException {
         int count = icon.images.size();
         long[] pixels = new long[count];
+        List<Integer> order = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             pixels[i] = pixelCount(icon, i, section);
-        }
-        Integer[] order = new Integer[count];
-        for (int i = 0; i < count; i++) {
-            order[i] = i;
+            order.add(i);
         }
         // a stable sort, so images of one size keep the order the group has
-        Arrays.sort(order, Comparator.<Integer>comparingLong(index -> pixels[index])
-                .thenComparingInt(index -> directoryDepth(icon.dir, index)).reversed());
-        int[] indices = new int[count];
-        for (int i = 0; i < count; i++) {
-            indices[i] = order[i];
-        }
-        return indices;
+        order.sort(Comparator.<Integer>comparingLong(index -> pixels[index])
+                .thenComparingInt(icon::bitCount).reversed());
+        return order;
     }
 
     /**
@@ -349,38 +343,39 @@ class PEIconExtractor {
      */
     private static long pixelCount(Icon icon, int index, Section section) throws IOException {
         Resource image = icon.images.get(index);
-        byte[] head = section.read(image.offset, (int) Math.min(image.size, PNG_IHDR_SIZE));
-        if (head != null && head.length >= PNG_IHDR_SIZE && startsWithPngHeader(head)) {
-            return EndianUtils.getUIntBE(head, 16) * EndianUtils.getUIntBE(head, 20);
-        }
-        if (head != null && head.length >= BITMAP_INFO_HEADER_SIZE &&
+        byte[] head = section.read(image.offset,
+                (int) Math.min(image.size, BITMAP_INFO_HEADER_SIZE));
+        long width = 0;
+        long height = 0;
+        if (head != null && startsWithPngHeader(head)) {
+            width = EndianUtils.getUIntBE(head, 16);
+            height = EndianUtils.getUIntBE(head, 20);
+        } else if (head != null && head.length >= BITMAP_INFO_HEADER_SIZE &&
                 EndianUtils.getUIntLE(head, 0) == BITMAP_INFO_HEADER_SIZE) {
+            width = EndianUtils.getIntLE(head, 4);
             // the height covers the XOR bitmap and the AND mask below it; a
             // negative one means the rows are stored top-down
-            long height = Math.abs((long) EndianUtils.getIntLE(head, 8)) / 2;
-            return (long) EndianUtils.getIntLE(head, 4) * height;
+            height = Math.abs((long) EndianUtils.getIntLE(head, 8)) / 2;
         }
-        int entry = GRP_ICON_DIR_SIZE + index * GRP_ICON_DIR_ENTRY_SIZE;
-        return (long) directorySide(icon.dir[entry]) * directorySide(icon.dir[entry + 1]);
-    }
-
-    /** A side of 0 in a directory entry means 256 or above. */
-    private static int directorySide(byte side) {
-        int value = side & 0xff;
-        return value == 0 ? 256 : value;
-    }
-
-    private static int directoryDepth(byte[] dir, int index) {
-        return EndianUtils.getUShortLE(dir, GRP_ICON_DIR_SIZE + index * GRP_ICON_DIR_ENTRY_SIZE + 6);
+        if (width <= 0 || height <= 0 || width > Integer.MAX_VALUE ||
+                height > Integer.MAX_VALUE) {
+            return icon.claimedPixelCount(index);
+        }
+        return width * height;
     }
 
     private static boolean startsWithPngHeader(byte[] head) {
-        for (int i = 0; i < PNG_HEADER_START.length; i++) {
-            if (head[i] != PNG_HEADER_START[i]) {
-                return false;
-            }
-        }
-        return true;
+        return head.length >= PNG_DIMENSIONS_END &&
+                Arrays.equals(head, 0, PNG_SIGNATURE.length, PNG_SIGNATURE, 0,
+                        PNG_SIGNATURE.length) &&
+                EndianUtils.getIntBE(head, 12) == PNG_IHDR;
+    }
+
+    /**
+     * @return the offset of an entry in a {@code GRPICONDIR}
+     */
+    private static int groupEntry(int index) {
+        return GRP_ICON_DIR_SIZE + index * GRP_ICON_DIR_ENTRY_SIZE;
     }
 
     /**
@@ -663,6 +658,21 @@ class PEIconExtractor {
      * A usable icon group: its {@code GRPICONDIR} and the images it lists.
      */
     private record Icon(byte[] dir, List<Resource> images) {
+
+        int bitCount(int index) {
+            return EndianUtils.getUShortLE(dir, groupEntry(index) + 6);
+        }
+
+        long claimedPixelCount(int index) {
+            return (long) claimedSide(dir[groupEntry(index)]) *
+                    claimedSide(dir[groupEntry(index) + 1]);
+        }
+
+        /** A side of 0 in a directory entry means 256 or above. */
+        private static int claimedSide(byte side) {
+            int value = side & 0xff;
+            return value == 0 ? 256 : value;
+        }
     }
 
     /**
