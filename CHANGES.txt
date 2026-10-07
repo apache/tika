@@ -77,9 +77,11 @@ Release 4.2.0 - unreleased
      them to the icon parser (TIKA-4937).
 
    * TGA detection keys on the header's image type, colour map spec and
-     pixel depth. The old rules matched any file with the right two bytes
-     and a zero byte somewhere after them, at a priority that beat every
-     other type (TIKA-4937).
+     pixel depth, and now covers the RLE forms (types 9, 10, 11). The old
+     rules matched any file with the right two bytes and a zero byte
+     somewhere after them, at a priority that beat every other type.
+     Compat: files that only passed the old rules are no longer
+     image/x-tga by content; the *.tga glob still applies (TIKA-4937).
 
    * tika-core's OSGi manifest no longer requires a Service Loader Mediator or
      providers for Parser, Detector, EncodingDetector, LanguageDetector and

@@ -3392,43 +3392,70 @@
   <mime-type type="image/x-tga">
      <alias type="image/x-targa"/>
      <_comment>Targa image data</_comment>
-     <!-- No signature: colour map type and image type at 1, then the colour map spec
-          (all zero without a colour map) and the pixel depth at 16, or the colour map
-          entry size at 7. The optional TRUEVISION-XFILE footer is out of reach. -->
+     <!-- No signature: colour map type and image type at 1, colour map spec at 3-7,
+          pixel depth at 16. Without a colour map the first index and length (3-6) are
+          zero; the entry size at 7 is left free since some writers set it anyway.
+          The optional TRUEVISION-XFILE footer is out of reach. -->
      <magic priority="50">
         <!-- true colour, greyscale, and their RLE forms: 2, 3, 10, 11 -->
-        <match value="\000\002\000\000\000\000\000" type="string" offset="1">
+        <match value="\000\002\000\000\000\000" type="string" offset="1">
            <match value="\010" type="string" offset="16"/>
+           <match value="\017" type="string" offset="16"/>
            <match value="\020" type="string" offset="16"/>
            <match value="\030" type="string" offset="16"/>
            <match value="\040" type="string" offset="16"/>
         </match>
-        <match value="\000\003\000\000\000\000\000" type="string" offset="1">
+        <match value="\000\003\000\000\000\000" type="string" offset="1">
            <match value="\010" type="string" offset="16"/>
            <match value="\020" type="string" offset="16"/>
         </match>
-        <match value="\000\012\000\000\000\000\000" type="string" offset="1">
+        <match value="\000\012\000\000\000\000" type="string" offset="1">
            <match value="\010" type="string" offset="16"/>
+           <match value="\017" type="string" offset="16"/>
            <match value="\020" type="string" offset="16"/>
            <match value="\030" type="string" offset="16"/>
            <match value="\040" type="string" offset="16"/>
         </match>
-        <match value="\000\013\000\000\000\000\000" type="string" offset="1">
+        <match value="\000\013\000\000\000\000" type="string" offset="1">
            <match value="\010" type="string" offset="16"/>
            <match value="\020" type="string" offset="16"/>
         </match>
-        <!-- colour mapped and RLE colour mapped: 1, 9 -->
+        <!-- colour mapped and RLE colour mapped: 1, 9; entry size at 7, index depth at 16 -->
         <match value="\001\001" type="string" offset="1">
-           <match value="\017" type="string" offset="7"/>
-           <match value="\020" type="string" offset="7"/>
-           <match value="\030" type="string" offset="7"/>
-           <match value="\040" type="string" offset="7"/>
+           <match value="\017" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\020" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\030" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\040" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
         </match>
         <match value="\001\011" type="string" offset="1">
-           <match value="\017" type="string" offset="7"/>
-           <match value="\020" type="string" offset="7"/>
-           <match value="\030" type="string" offset="7"/>
-           <match value="\040" type="string" offset="7"/>
+           <match value="\017" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\020" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\030" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\040" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
         </match>
      </magic>
      <glob pattern="*.tga"/>
@@ -6927,9 +6954,9 @@
     <_comment>Windows Cursor</_comment>
     <tika:link>https://en.wikipedia.org/wiki/ICO_(file_format)</tika:link>
     <magic priority="50">
-      <!-- reserved 0, type 2, count below 256 -->
+      <!-- reserved 0, type 2, 1 to 255 images; a count of 0 would also match a TGA header -->
       <match value="\000\000\002\000" type="string" offset="0">
-        <match value="\000" type="string" offset="5"/>
+        <match value="[\\x01-\\xff]\\x00" type="regex" offset="4"/>
       </match>
     </magic>
     <glob pattern="*.cur"/>
