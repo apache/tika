@@ -16,6 +16,8 @@
  */
 package org.apache.tika.parser.pkg;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +30,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -110,8 +113,10 @@ public abstract class AbstractPkgTest extends TikaTest {
                           ParseContext context) throws IOException, SAXException, TikaException {
             filenames.add(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
             mediatypes.add(metadata.get(HttpHeaders.CONTENT_TYPE));
-            createdAts.add(metadata.get(TikaCoreProperties.CREATED));
-            modifiedAts.add(metadata.get(TikaCoreProperties.MODIFIED));
+            assertNull(metadata.get(TikaCoreProperties.CREATED));
+            assertNull(metadata.get(TikaCoreProperties.MODIFIED));
+            createdAts.add(metadata.get(FileSystem.CREATED));
+            modifiedAts.add(metadata.get(FileSystem.MODIFIED));
 
             lastSeenStart = new byte[32];
             stream.read(lastSeenStart);

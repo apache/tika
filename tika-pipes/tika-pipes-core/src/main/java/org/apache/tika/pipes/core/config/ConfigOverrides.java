@@ -51,6 +51,7 @@ public class ConfigOverrides {
     private final String pluginRoots;
     private final EmitStrategy emitStrategy;
     private final TimeoutLimits timeoutLimits;
+    private final boolean classpathPlugins;
 
     private ConfigOverrides(Builder builder) {
         this.fetchers = Collections.unmodifiableList(new ArrayList<>(builder.fetchers));
@@ -59,6 +60,7 @@ public class ConfigOverrides {
         this.pluginRoots = builder.pluginRoots;
         this.emitStrategy = builder.emitStrategy;
         this.timeoutLimits = builder.timeoutLimits;
+        this.classpathPlugins = builder.classpathPlugins;
     }
 
     public static Builder builder() {
@@ -87,6 +89,11 @@ public class ConfigOverrides {
 
     public TimeoutLimits getTimeoutLimits() {
         return timeoutLimits;
+    }
+
+    /** Whether the fork is told to load plugins from its classpath; see ConfigMerger. */
+    public boolean isClasspathPlugins() {
+        return classpathPlugins;
     }
 
     /**
@@ -207,8 +214,18 @@ public class ConfigOverrides {
         private String pluginRoots;
         private EmitStrategy emitStrategy;
         private TimeoutLimits timeoutLimits;
+        private boolean classpathPlugins;
 
         private Builder() {
+        }
+
+        /**
+         * Appends {@code -Dtika.plugins.classpath=true} to the fork's JVM args, keeping whatever
+         * forkedJvmArgs the existing config or {@link #setPipesConfig} already carry.
+         */
+        public Builder setClasspathPlugins(boolean classpathPlugins) {
+            this.classpathPlugins = classpathPlugins;
+            return this;
         }
 
         /**

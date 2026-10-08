@@ -18,9 +18,11 @@ package org.apache.tika.parser.microsoft.onenote;
 
 
 import static org.apache.tika.parser.microsoft.onenote.OneNoteParser.ONE_NOTE_PREFIX;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -51,6 +53,7 @@ import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.MSOneStorePackage;
@@ -77,6 +80,76 @@ public class OneNoteParserTest extends TikaTest {
             new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata, context);
         }
         return metadata;
+    }
+
+    @Test
+    public void testSectionGuidIsExtractedFromClassicHeader() throws Exception {
+        Metadata metadata = new Metadata();
+        try (InputStream input = getClass().getResourceAsStream("/test-documents/testOneNote1.one");
+             TikaInputStream tis = TikaInputStream.get(input)) {
+            new OneNoteParser().parse(tis, new ToTextContentHandler(), metadata,
+                    new ParseContext());
+        }
+        String guid = metadata.get(OneNote.SECTION_GUID);
+        assertNotNull(guid);
+        assertTrue(guid.matches("\\{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-"
+                + "[0-9A-F]{4}-[0-9A-F]{12}\\}"));
+    }
+
+    @Test
+    public void testClassicGuidValues() throws Exception {
+        Metadata metadata = new Metadata();
+        getText("testOneNote2.one", metadata);
+        assertEquals("{D03D94F3-AFB4-484F-A5ED-B93EBA2806B9}",
+                metadata.get(OneNote.SECTION_GUID));
+        assertArrayEquals(new String[] {"{0AD2F2F8-F7C0-4301-82DF-064544DD31E5}",
+                "{E1FDD004-97A6-49B8-A9C9-BB781D0C5423}"},
+                metadata.getValues(OneNote.PAGE_GUIDS));
+        assertArrayEquals(new String[] {"{135E9FB6-B9E5-42B9-B185-2A72495D0A05}",
+                "{815B61E9-5C57-43CF-BCDD-9D57A0FEDADB}"},
+                metadata.getValues(OneNote.PAGE_SERIES_GUIDS));
+        assertArrayEquals(new String[] {"{52ADC330-8420-4DDC-A381-C8C30ECD8739}",
+                "{EE2E0DFD-9B11-4E22-AB62-53C667EF58D1}"},
+                metadata.getValues(OneNote.PAGE_NODE_GUIDS));
+    }
+
+    @Test
+    public void testClassicGuidsSkipVersionHistoryPages() throws Exception {
+        Metadata metadata = new Metadata();
+        getText("test-tika-3970-dupetext.one", metadata);
+        assertArrayEquals(new String[] {"{70D3B6E3-B023-4A5E-AC96-6FCE9D66F63C}"},
+                metadata.getValues(OneNote.PAGE_GUIDS));
+        assertArrayEquals(new String[] {"{BB5DE1E3-25FB-4584-A37F-69D332F40BF7}"},
+                metadata.getValues(OneNote.PAGE_SERIES_GUIDS));
+    }
+
+    @Test
+    public void testFsshttpbGuidValuesAreSorted() throws Exception {
+        Metadata metadata = new Metadata();
+        getText("testOneNoteFromOffice365.one", metadata);
+        assertEquals("{54807CE9-568A-4883-B863-BF97F35C844F}",
+                metadata.get(OneNote.SECTION_GUID));
+        assertArrayEquals(new String[] {"{9376CA69-2A0D-440E-BFC9-A728C597ED93}",
+                "{D1962227-01A7-4F73-A1F5-410DA0C519CC}"},
+                metadata.getValues(OneNote.PAGE_GUIDS));
+        assertArrayEquals(new String[] {"{01B28DC5-49F4-4F05-8E10-131236FAAB82}",
+                "{429CB628-77C7-4600-BE0C-83166E392792}"},
+                metadata.getValues(OneNote.PAGE_SERIES_GUIDS));
+    }
+
+    @Test
+    public void testEmitSectionGuidSkipsNullAndNil() {
+        Metadata metadata = new Metadata();
+        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(null), metadata);
+        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(GUID.nil()), metadata);
+        assertNull(metadata.get(OneNote.SECTION_GUID));
+
+        GUID fileGuid = new GUID(new int[] {
+                0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x08,
+                0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff, 0x00
+        });
+        OneNoteParser.emitSectionFileGuid(new OneNoteHeader().setGuidFile(fileGuid), metadata);
+        assertEquals(fileGuid.toString(), metadata.get(OneNote.SECTION_GUID));
     }
 
     @Test
@@ -296,6 +369,14 @@ public class OneNoteParserTest extends TikaTest {
         assertNotContained("Microsoft\u0000", originalAuthors);
         assertContains("ndipiazza\u0000", mostRecentAuthors);
 
+        String[] pageGuids = metadata.getValues(OneNote.PAGE_GUIDS);
+        assertNotNull(pageGuids);
+        assertTrue(pageGuids.length > 0);
+        assertEquals(pageGuids.length, Arrays.stream(pageGuids).distinct().count());
+        String[] pageSeriesGuids = metadata.getValues(OneNote.PAGE_SERIES_GUIDS);
+        assertNotNull(pageSeriesGuids);
+        assertTrue(pageSeriesGuids.length > 0);
+
         assertEquals(Instant.ofEpochSecond(1574426385),
                 Instant.ofEpochSecond(Long.parseLong(metadata.get(ONE_NOTE_PREFIX + "creationTimestamp"))));
         assertEquals(Instant.ofEpochMilli(1574426548000L),
@@ -397,6 +478,19 @@ public class OneNoteParserTest extends TikaTest {
         Metadata embedded = metadataList.get(1);
         assertEquals("INLINE", embedded.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertNotNull(embedded.get(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID));
+    }
+
+    @Test
+    public void testHeaderGuidDeserializationRejectsTruncatedFile(@TempDir Path tempDir)
+            throws Exception {
+        // fewer bytes than one GUID: reading must fail, not silently decode 0xFF filler
+        Path shortFile = tempDir.resolve("short.one");
+        Files.write(shortFile, new byte[10]);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(shortFile.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            IOException exception = assertThrows(IOException.class, ptr::deserializeHeader);
+            assertTrue(exception.getMessage().contains("while reading a GUID"));
+        }
     }
 
     @Test

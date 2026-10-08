@@ -126,7 +126,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         tikaGrpcConfig = TikaGrpcConfig.load(tikaJsonConfig);
 
         // PipesClient is single-threaded; the pool admits pipes.numClients at a time.
-        pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, configPath);
+        pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
         
         try {
             if (pluginRootsOverride != null && !pluginRootsOverride.trim().isEmpty()) {

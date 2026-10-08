@@ -83,7 +83,7 @@ public class UnpackConfig implements Serializable {
      */
     public enum OUTPUT_FORMAT {
         /**
-         * Regular output - embedded files emitted individually or as simple zip
+         * The pre-4.2 layout: embedded files emitted individually or as a flat zip
          */
         REGULAR,
         /**
@@ -149,7 +149,7 @@ public class UnpackConfig implements Serializable {
     private long maxUnpackBytes = DEFAULT_MAX_UNPACK_BYTES;
 
     // Frictionless Data Package options
-    private OUTPUT_FORMAT outputFormat = OUTPUT_FORMAT.REGULAR;
+    private OUTPUT_FORMAT outputFormat = OUTPUT_FORMAT.FRICTIONLESS;
     private OUTPUT_MODE outputMode = OUTPUT_MODE.ZIPPED;
 
     /**
@@ -321,8 +321,8 @@ public class UnpackConfig implements Serializable {
 
     /**
      * Get the output format for UNPACK mode.
-     * REGULAR is the default (existing behavior).
-     * FRICTIONLESS creates a Frictionless Data Package with datapackage.json manifest.
+     * FRICTIONLESS (the default since 4.2) is a Frictionless Data Package with a datapackage.json manifest.
+     * REGULAR is the pre-4.2 flat layout.
      */
     public OUTPUT_FORMAT getOutputFormat() {
         return outputFormat;

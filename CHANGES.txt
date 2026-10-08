@@ -1,5 +1,59 @@
 Release 4.2.0 - unreleased
 
+   * OutlookExtractor now falls back to the "Date:" transport header for
+     dcterms:created/modified when a .msg has no MAPI date property; the
+     fallback previously could never match (TIKA-4959).
+
+   * Unpack output is a Frictionless Data Package by default on every surface: tika-server
+     /unpack, tika-app -z/-Z and pipes UNPACK mode, where it is one <key>-frictionless.zip per
+     container unless outputMode is DIRECTORY. Set unpack-config.outputFormat to REGULAR
+     (--unpack-format=REGULAR) for the pre-4.2 flat layout (TIKA-4681).
+
+   * Pipes plugins load only from the zips in plugin-roots; a plugin jar on the classpath
+     needs -Dtika.plugins.classpath=true, which PipesForkParser sets on its fork when it
+     has no plugins directory. Dev mode loads an exploded target/classes (TIKA-4918).
+
+   * GeoGebraParser reads structure.json and inline text content with jackson-core's
+     streaming parser; tika-parser-miscoffice-module and tika-parser-cad-module no
+     longer depend on jackson-databind, and OSGi deployments of tika-bundle-standard
+     need only jackson-core (TIKA-4956).
+     
+   * Forked pipes servers get their config and auth token over stdin; nothing is written
+     to the temp dir. Server-manager and PipesServer signatures change accordingly (TIKA-4952).
+     
+   * GeoGebraParser switched to stream parsing to drop jackson-databind as
+     a dependency (TIKA-4956).
+
+   * tika-bundle-standard no longer embeds dependencies that are OSGi bundles
+     themselves (commons-*, pdfbox, fontbox, bouncycastle, jsoup, asm, xz, xmpcore,
+     dd-plist); deploy them alongside it (TIKA-4934). Its imports of those packages,
+     plus log4j-api and jackson, are now mandatory, so a missing bundle fails
+     resolution instead of silently dropping parsers; tika-ml-core and jwarc are now
+     embedded, along with tika-ml-junkdetect. The bundle now registers its
+     EncodingDetector, LanguageDetector and MetadataFilter providers, so tika-core's
+     defaults match the classpath. Restores OOXMLParser, HttpParser, GeoGebraParser and
+     charset detection in OSGi, which had fallen back to BOM and declared charsets
+     only. The bundle now declares its real Java requirement (JavaSE 17, not 1.8)
+     and drops 67 imports of packages it never referenced (TIKA-4955).
+     
+   * PipesParser.start() and PipesForkParser.start() bring the forks up before the
+     first parse and fail fast if one can't start (TIKA-4953).
+
+   * Refactor date parsing for more consistent, accurate dates. File-system
+     times from archive entries and mail attachments move to fs:created/
+     fs:modified. MailDateParser is superseded by TikaDates and MailUtil
+     moved to org.apache.tika.parser.mail in tika-parser-mail-module;
+     tika-parser-mail-commons remains as a deprecated shim and will be
+     removed in 4.3.0. DateNormalizingMetadataFilter honors explicit
+     offsets, normalizes every value of a multi-valued key, and fills in
+     partial dates (2019 -> 2019-01-01T12:00:00Z) so date fields never
+     reject a document (TIKA-4917).
+
+   * Fix a StackOverflowError when parsing or detecting through the Parser and Detector
+     services tika-bundle-standard registers in OSGi: the registered DefaultParser and
+     DefaultDetector no longer consume dynamic services, and a dynamic DefaultParser or
+     DefaultDetector no longer nests another dynamic one (TIKA-4942).
+
    * XmlSecurityContractTest pins XMLReaderUtils' XXE and entity-expansion defenses
      forbidden-apis now rejects building JAXP or Commons Secure XML parsers anywhere but 
      XMLReaderUtils (TIKA-4939).
@@ -15,6 +69,52 @@ Release 4.2.0 - unreleased
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
    * OneNote preserves table and list structure in XHTML (TIKA-4943).
+
+   * OneNote extracts a section GUID and page, page-series, page-node, and conflict-page
+     GUID metadata from classic and FSSHTTPB files; the GUID bags are deduplicated and
+     sorted, not page-ordered. Tree-collected GUID metadata is capped at 100,000 values
+     with a warning if the limit is reached. FSSHTTPB page divs now carry
+     id="{page GUID}" when a page GUID was recovered (fallback content can be unwrapped).
+     FSSHTTPB root resolution is bounded at 10,000 roots per cell; when the bound
+     truncates the declared roots before a content root, the walk falls back to every
+     object in the cell so page content is not silently lost (TIKA-4944).
+     
+   * Raise the default maxFilesProcessedPerProcess from 10,000 to 100,000;
+     forked pipes JVMs restart a tenth as often (TIKA-4950).
+     
+   * Quiet default pipes logging: per-parse timing lines (WORKER/CLIENT/
+     SERVER/RESOURCE_TIMING) move from INFO to TRACE, and per-fork-start,
+     per-connection and plugin lifecycle lines move to DEBUG (TIKA-4949).
+
+   * New ICOParser for Windows icons and cursors (image/x-win-bitmap, *.cur).
+     Compat: image/vnd.microsoft.icon moves from ImageParser to ICOParser.
+     Tighter OS/2 bitmap array and TGA detection (TIKA-4937).
+
+   * ExecutableParser extracts the icon groups of PE files (EXE/DLL) as
+     embedded .ico documents, the first one typed THUMBNAIL. Compat: this is
+     on by default, so every EXE/DLL with icons now yields embedded documents
+     (extra RMETA entries, extra unpacked files); "extractIcons": false on
+     the executable-parser turns it off. parsePE(XHTMLContentHandler,
+     Metadata, InputStream, byte[]) is deprecated in favour of the overload
+     that takes a ParseContext (TIKA-4936).
+
+   * The MP4 parser no longer records a spurious EOFException warning on every
+     well-formed file: end of input at a top-level box boundary is the normal
+     exit, and the ilst length no longer counts its own header twice. Since
+     4.0.0 (TIKA-4957).
+
+   * Faster parser loading and pipes fork startup: parsers no longer build a
+     default EncodingDetector (loading the charset models) only to have the
+     loader replace it, saving about 1.3s per AutoDetectParser build and per
+     forked JVM; a fork that fails to start is recognized within 100ms instead
+     of 1s (TIKA-4954).
+     DBFParser now honors the configured EncodingDetector instead of always
+     building its own default (TIKA-4954).
+
+   * tika-core's OSGi manifest no longer requires a Service Loader Mediator or
+     providers for Parser, Detector, EncodingDetector, LanguageDetector and
+     MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
+     (TIKA-4945).
 
 Release 4.1.0 - 9/26/2026
 
@@ -170,6 +270,14 @@ Release 4.1.0 - 9/26/2026
 
    * The Ignite config store quotes its table name, so lookups work under any
      default locale (TIKA-4922).
+
+   * CI runs each test JVM under a random default locale (-Dtika.test.locale=random,
+     tika-test-support's RandomLocaleListener); a failure names the locale and
+     -Dtika.test.locale=<tag> reproduces it. Replaces the fixed tr_TR CI job (TIKA-4920).
+
+   * Pipes forks now start with the parent JVM's default locale (-Duser.*)
+     unless forkedJvmArgs set user.language; a fresh JVM took the OS locale,
+     so forked parsing could differ from in-process parsing (TIKA-4920).
 
    * tika-annotation-processor is no longer a transitive dependency of
      tika-pipes-core or the tika-langdetect modules (provided scope).

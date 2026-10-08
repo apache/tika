@@ -31,8 +31,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipFile;
 import org.xml.sax.ContentHandler;
@@ -166,8 +164,6 @@ public class GeoGebraParser implements Parser {
      */
     private static final long MAX_STRUCTURE_JSON_LENGTH = 1024 * 1024;
 
-    static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -259,15 +255,9 @@ public class GeoGebraParser implements Parser {
             Set<String> knownSlideIds = new HashSet<>(numericallySorted);
             try (InputStream is = new BoundedInputStream(MAX_STRUCTURE_JSON_LENGTH,
                     zipFile.getInputStream(structure))) {
-                JsonNode root = OBJECT_MAPPER.readTree(is);
-                for (JsonNode chapter : root.path("chapters")) {
-                    for (JsonNode page : chapter.path("pages")) {
-                        for (JsonNode element : page.path("elements")) {
-                            String id = element.path("id").asText("");
-                            if (knownSlideIds.contains(id)) {
-                                ordered.add(id);
-                            }
-                        }
+                for (String id : GeoGebraJson.elementIds(is)) {
+                    if (knownSlideIds.contains(id)) {
+                        ordered.add(id);
                     }
                 }
             } catch (IOException e) {

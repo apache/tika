@@ -25,7 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -38,14 +37,12 @@ import javax.imageio.ImageIO;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
-import org.apache.commons.io.FileUtils;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
 import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.config.loader.TikaLoader;
@@ -99,8 +96,7 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
 
     @Override
     protected InputStream getPipesConfigInputStream() throws IOException {
-        // Create temp directory for unpack emitter
-        unpackTempDir = Files.createTempDirectory("tika-unpack-test-");
+        unpackTempDir = sharedUnpackDir();
 
         Path pluginsDir = Paths.get("target/plugins").toAbsolutePath();
 
@@ -270,15 +266,6 @@ public class UnpackerResourceWithConfigTest extends CXFTestBase {
             assertTrue(averageColor.getRed() < 100 && averageColor.getRed() > 90);
             assertTrue(averageColor.getGreen() < 100 && averageColor.getGreen() > 90);
             assertTrue(averageColor.getBlue() < 100 && averageColor.getBlue() > 90);
-        }
-    }
-
-    @AfterAll
-    @Override
-    public void tearDown() throws Exception {
-        super.tearDown();
-        if (unpackTempDir != null && Files.exists(unpackTempDir)) {
-            FileUtils.deleteDirectory(unpackTempDir.toFile());
         }
     }
 }
