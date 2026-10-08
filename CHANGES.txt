@@ -68,7 +68,7 @@ Release 4.2.0 - unreleased
      Every resolver Tika installs answers with an empty stream, never null (TIKA-4941).
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
-   * OneNote preserves table and list structure in XHTML (TIKA-4943).
+   * OneNote preserves table and list structure in XHTML for FSSHTTPB files (TIKA-4943).
 
    * OneNote extracts a section GUID and page, page-series, page-node, and conflict-page
      GUID metadata from classic and FSSHTTPB files; the GUID bags are deduplicated and

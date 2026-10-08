@@ -26,6 +26,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -153,11 +154,15 @@ public class MSOneStorePackage {
     private boolean parseWarningsSuppressed;
     private boolean storageMappingsIndexed;
     private boolean contentEmitted;
+    private final Map<RevisionStoreObject, Map<AuthorRole, EmbeddedResourceInfo>> depthSkippedObjects =
+            new LinkedHashMap<>();
     // flattened property actions per object; objects can be re-flattened many times during
     // picture/resource-name resolution, which is quadratic without this cache
     private final Map<RevisionStoreObject, List<PropertyAction>> objectActionsCache =
             new IdentityHashMap<>();
     private final Map<RevisionStoreObject, NumberListInfo> numberListInfoCache =
+            new IdentityHashMap<>();
+    private final Map<byte[], Map<byte[], Boolean>> listStyleComparisonCache =
             new IdentityHashMap<>();
     private final Map<CellID, StorageIndexCellMapping> storageIndexCellMappingsById =
             new HashMap<>();
@@ -238,6 +243,7 @@ public class MSOneStorePackage {
     public void walkTree(OneNoteTreeWalkerOptions options, Metadata metadata,
                          XHTMLContentHandler xhtml, ParseContext parseContext)
             throws SAXException, TikaException, IOException {
+        depthSkippedObjects.clear();
         this.parseContext = parseContext;
         this.parentMetadata = metadata;
         this.embeddedDocumentExtractor =
@@ -406,6 +412,7 @@ public class MSOneStorePackage {
                           OneNoteTreeWalkerOptions options, Metadata metadata,
                           XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
+        depthSkippedObjects.clear();
         Set<ExGuid> visited = new HashSet<>();
         // Only objects reachable from the root objects of the current revision are part of
         // the current content. The object groups may also contain older, superseded versions
@@ -570,6 +577,14 @@ public class MSOneStorePackage {
         if (depth >= MAX_OBJECT_WALK_DEPTH) {
             recordParseWarning("OneNote object traversal exceeded depth limit " +
                     MAX_OBJECT_WALK_DEPTH);
+            if (object.objectID != null) {
+                Map<AuthorRole, EmbeddedResourceInfo> references = depthSkippedObjects.computeIfAbsent(
+                        object, key -> new EnumMap<>(AuthorRole.class));
+                AuthorRole role = authorRole == null ? AuthorRole.NONE : authorRole;
+                if (!references.containsKey(role)) {
+                    references.put(role, inheritedResourceInfo);
+                }
+            }
             return;
         }
         if (object.objectID != null && !visited.add(object.objectID)) {
@@ -694,37 +709,74 @@ public class MSOneStorePackage {
                                       Set<ExGuid> visited, OneNoteTreeWalkerOptions options,
                                       Metadata metadata, XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
-        Set<ExGuid> tableDescendantIds = collectTableDescendantIds(objectsById);
-        List<RevisionStoreObject> deferredTables = new ArrayList<>();
+        Set<ExGuid> structureDescendantIds = collectStructureDescendantIds(objectsById);
+        List<RevisionStoreObject> deferredObjects = new ArrayList<>();
         for (RevisionStoreObjectGroup objectGroup : objectGroups) {
             if (objectGroup == null || objectGroup.objects == null) {
                 continue;
             }
             for (RevisionStoreObject object : objectGroup.objects) {
                 if (object != null && object.objectID != null &&
-                        tableDescendantIds.contains(object.objectID)) {
-                    if (jcidIndex(object) == OneNoteStructureJcid.TABLE_NODE) {
-                        deferredTables.add(object);
-                    }
+                        structureDescendantIds.contains(object.objectID)) {
+                    deferredObjects.add(object);
                     continue;
                 }
                 walkRootObject(object, objectsById, visited, options, metadata, xhtml);
             }
         }
-        for (RevisionStoreObject table : deferredTables) {
-            if (!visited.contains(table.objectID)) {
-                walkRootObject(table, objectsById, visited, options, metadata, xhtml);
+        // Cyclic owners may have no independent root; start tables before list containers.
+        for (RevisionStoreObject object : deferredObjects) {
+            if (!visited.contains(object.objectID) &&
+                    jcidIndex(object) == OneNoteStructureJcid.TABLE_NODE) {
+                walkRootObject(object, objectsById, visited, options, metadata, xhtml);
+            }
+        }
+        for (RevisionStoreObject object : deferredObjects) {
+            if (!visited.contains(object.objectID) && isListContainer(object, objectsById)) {
+                walkRootObject(object, objectsById, visited, options, metadata, xhtml);
+            }
+        }
+        // Recover only depth-skipped objects, not intentionally suppressed renditions.
+        while (!depthSkippedObjects.isEmpty()) {
+            Map.Entry<RevisionStoreObject, Map<AuthorRole, EmbeddedResourceInfo>> skipped =
+                    depthSkippedObjects.entrySet().iterator().next();
+            depthSkippedObjects.remove(skipped.getKey());
+            for (Map.Entry<AuthorRole, EmbeddedResourceInfo> reference : skipped.getValue().entrySet()) {
+                walkRootObject(skipped.getKey(), objectsById, visited, reference.getKey(), options,
+                        metadata, xhtml, reference.getValue());
             }
         }
     }
 
-    private Set<ExGuid> collectTableDescendantIds(
+    private boolean isListContainer(RevisionStoreObject object,
+                                    Map<ExGuid, RevisionStoreObject> objectsById) {
+        int type = jcidIndex(object);
+        if (type == OneNoteStructureJcid.OUTLINE_NODE ||
+                type == OneNoteStructureJcid.OUTLINE_ELEMENT_NODE) {
+            return true;
+        }
+        if (object == null || object.propertySet == null ||
+                object.propertySet.objectSpaceObjectPropSet == null) {
+            return false;
+        }
+        for (PropertyAction action : collectObjectActions(object)) {
+            if (action.isChildReference &&
+                    jcidIndex(objectsById.get(action.childReference)) ==
+                            OneNoteStructureJcid.OUTLINE_ELEMENT_NODE) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Set<ExGuid> collectStructureDescendantIds(
             Map<ExGuid, RevisionStoreObject> objectsById) {
         Set<ExGuid> descendants = new HashSet<>();
         Set<ExGuid> traversed = new HashSet<>();
         List<RevisionStoreObject> pending = new ArrayList<>();
         for (RevisionStoreObject object : objectsById.values()) {
-            if (jcidIndex(object) == OneNoteStructureJcid.TABLE_NODE) {
+            if (jcidIndex(object) == OneNoteStructureJcid.TABLE_NODE ||
+                    isListContainer(object, objectsById)) {
                 traversed.add(object.objectID);
                 pending.add(object);
             }
@@ -755,7 +807,19 @@ public class MSOneStorePackage {
                                 OneNoteTreeWalkerOptions options, Metadata metadata,
                                 XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
-        List<PropertyAction> actions = object != null && object.propertySet != null
+        walkRootObject(object, objectsById, visited, AuthorRole.NONE, options, metadata, xhtml, null);
+    }
+
+    private void walkRootObject(RevisionStoreObject object,
+                                Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
+                                AuthorRole authorRole, OneNoteTreeWalkerOptions options, Metadata metadata,
+                                XHTMLContentHandler xhtml, EmbeddedResourceInfo resourceInfo)
+            throws SAXException, TikaException, IOException {
+        if (!canWalkObject(object, visited, 0)) {
+            walkObject(object, objectsById, visited, authorRole, options, metadata, xhtml, 0, resourceInfo);
+            return;
+        }
+        List<PropertyAction> actions = object.propertySet != null
                 && object.propertySet.objectSpaceObjectPropSet != null ?
                 collectObjectActions(object) : Collections.emptyList();
         ListStyle listStyle = listStyleForObject(object, actions, objectsById);
@@ -763,8 +827,8 @@ public class MSOneStorePackage {
             startList(listStyle, xhtml);
         }
         try {
-            walkObject(object, objectsById, visited, AuthorRole.NONE, options, metadata, xhtml,
-                    0);
+            walkObject(object, objectsById, visited, authorRole, options, metadata, xhtml,
+                    0, resourceInfo);
         } finally {
             if (listStyle != null) {
                 xhtml.endElement(listStyle.elementName);
@@ -782,7 +846,8 @@ public class MSOneStorePackage {
         int index = 0;
         while (index < actions.size()) {
             PropertyAction action = actions.get(index);
-            ListStyle style = listStyleForChild(action, objectsById);
+            ListStyle style = isSkippedChild(action, objectsById, visited, depth) ? null :
+                    listStyleForChild(action, objectsById);
             if (style == null) {
                 processAction(action, objectsById, visited, authorRole, options, metadata, xhtml,
                         depth, resourceInfo);
@@ -794,6 +859,12 @@ public class MSOneStorePackage {
             try {
                 while (next < actions.size()) {
                     PropertyAction sibling = actions.get(next);
+                    if (isSkippedChild(sibling, objectsById, visited, depth)) {
+                        processAction(sibling, objectsById, visited, authorRole, options, metadata,
+                                xhtml, depth, resourceInfo);
+                        next++;
+                        continue;
+                    }
                     ListStyle siblingStyle = listStyleForChild(sibling, objectsById);
                     if (siblingStyle == null || !style.matches(siblingStyle)) {
                         break;
@@ -807,6 +878,18 @@ public class MSOneStorePackage {
             }
             index = next;
         }
+    }
+
+    private boolean canWalkObject(RevisionStoreObject object, Set<ExGuid> visited, int depth) {
+        return object != null && depth < MAX_OBJECT_WALK_DEPTH &&
+                (object.objectID == null || !visited.contains(object.objectID));
+    }
+
+    private boolean isSkippedChild(PropertyAction action,
+                                    Map<ExGuid, RevisionStoreObject> objectsById,
+                                    Set<ExGuid> visited, int depth) {
+        return action.isChildReference &&
+                !canWalkObject(objectsById.get(action.childReference), visited, depth + 1);
     }
 
     private ListStyle listStyleForChild(PropertyAction action,
@@ -975,7 +1058,19 @@ public class MSOneStorePackage {
         }
     }
 
-    private static final class ListStyle {
+    private boolean listStyleBytesEqual(byte[] first, byte[] second) {
+        if (first == second) {
+            return true;
+        }
+        if (first == null || second == null) {
+            return false;
+        }
+        Map<byte[], Boolean> comparisons = listStyleComparisonCache.computeIfAbsent(first,
+                key -> new IdentityHashMap<>());
+        return comparisons.computeIfAbsent(second, key -> Arrays.equals(first, second));
+    }
+
+    private final class ListStyle {
         private final String elementName;
         private final String htmlType;
         private final byte[] format;
@@ -994,7 +1089,8 @@ public class MSOneStorePackage {
         private boolean matches(ListStyle other) {
             return elementName.equals(other.elementName) &&
                     (htmlType == null ? other.htmlType == null : htmlType.equals(other.htmlType)) &&
-                    Arrays.equals(format, other.format) && Arrays.equals(indent, other.indent);
+                    listStyleBytesEqual(format, other.format) &&
+                    listStyleBytesEqual(indent, other.indent);
         }
     }
 
