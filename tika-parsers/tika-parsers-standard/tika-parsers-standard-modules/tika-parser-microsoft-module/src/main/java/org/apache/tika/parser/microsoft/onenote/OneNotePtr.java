@@ -150,7 +150,12 @@ class OneNotePtr {
     private GUID deserializeGUID() throws IOException {
         byte[] guidBytes = new byte[16];
         for (int i = 0; i < 16; ++i) {
-            guidBytes[i] = (byte) dif.read();
+            int next = dif.read();
+            if (next < 0) {
+                // (byte) -1 would read as 0xFF and silently decode a wrong GUID
+                throw new IOException("End of stream reached while reading a GUID");
+            }
+            guidBytes[i] = (byte) next;
         }
         GUID guid = GUID.fromMicrosoftBytes(guidBytes);
         offset = dif.position();

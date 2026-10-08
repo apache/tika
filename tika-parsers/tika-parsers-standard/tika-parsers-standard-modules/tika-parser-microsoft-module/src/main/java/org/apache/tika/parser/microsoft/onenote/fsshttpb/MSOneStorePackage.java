@@ -266,6 +266,9 @@ public class MSOneStorePackage {
                 Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(OtherFileNodeList);
                 Set<ExGuid> visited = new HashSet<>();
                 for (RevisionStoreObjectGroup objectGroup : OtherFileNodeList) {
+                    if (objectGroup == null || objectGroup.objects == null) {
+                        continue;
+                    }
                     for (RevisionStoreObject object : objectGroup.objects) {
                         walkObject(object, objectsById, visited, AuthorRole.NONE, options, metadata,
                                 xhtml, 0);
@@ -544,8 +547,11 @@ public class MSOneStorePackage {
             List<RevisionStoreObjectGroup> objectGroups) {
         Map<ExGuid, RevisionStoreObject> objectsById = new HashMap<>();
         for (RevisionStoreObjectGroup objectGroup : objectGroups) {
+            if (objectGroup == null || objectGroup.objects == null) {
+                continue;
+            }
             for (RevisionStoreObject object : objectGroup.objects) {
-                if (object.objectID != null) {
+                if (object != null && object.objectID != null) {
                     objectsById.put(object.objectID, object);
                 }
             }

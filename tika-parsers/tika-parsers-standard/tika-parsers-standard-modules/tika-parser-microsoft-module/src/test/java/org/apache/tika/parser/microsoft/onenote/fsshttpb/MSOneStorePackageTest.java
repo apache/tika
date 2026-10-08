@@ -228,6 +228,35 @@ public class MSOneStorePackageTest {
     }
 
     @Test
+    public void testFallbackWalkSkipsMalformedGroups() throws Exception {
+        // a null group and a group without objects must be skipped, not crash the walk
+        MSOneStorePackage pkg = new MSOneStorePackage();
+        pkg.OtherFileNodeList.add(null);
+        RevisionStoreObjectGroup noObjects = group();
+        noObjects.objects = null;
+        pkg.OtherFileNodeList.add(noObjects);
+        RevisionStoreObjectGroup withNullObject = group();
+        withNullObject.objects.add(null);
+        RevisionStoreObject noId = object(id(2401),
+                propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C003498, text("no-id text"))), Collections.emptyList(),
+                Collections.emptyList());
+        noId.objectID = null;
+        withNullObject.objects.add(noId);
+        withNullObject.objects.add(object(id(2400),
+                propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C003498, text("fallback text"))), Collections.emptyList(),
+                Collections.emptyList()));
+        pkg.OtherFileNodeList.add(withNullObject);
+        Metadata metadata = new Metadata();
+
+        String text = walk(pkg, metadata);
+
+        assertTrue(text.contains("fallback text"));
+        assertTrue(text.contains("no-id text"));
+    }
+
+    @Test
     public void testFileIdentityScannerHandlesNestedSetsArraysAndMalformedValues() {
         byte[] firstGuidBytes = sectionGuidBytes();
         PropertySet noProperties = new PropertySet();

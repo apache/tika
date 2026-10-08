@@ -481,6 +481,19 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testHeaderGuidDeserializationRejectsTruncatedFile(@TempDir Path tempDir)
+            throws Exception {
+        // fewer bytes than one GUID: reading must fail, not silently decode 0xFF filler
+        Path shortFile = tempDir.resolve("short.one");
+        Files.write(shortFile, new byte[10]);
+        try (OneNoteDirectFileResource dif = new OneNoteDirectFileResource(shortFile.toFile())) {
+            OneNotePtr ptr = new OneNotePtr(new OneNoteDocument(), dif);
+            IOException exception = assertThrows(IOException.class, ptr::deserializeHeader);
+            assertTrue(exception.getMessage().contains("while reading a GUID"));
+        }
+    }
+
+    @Test
     public void testPropertyValueBudgetIsSharedAcrossCopiesAndResetsPerList(
             @TempDir Path tempDir) throws Exception {
         Path emptyFile = tempDir.resolve("empty");
