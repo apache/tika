@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.StringWriter;
@@ -56,9 +57,16 @@ public class OutlookParserTest extends TikaTest {
         //TIKA-4959: test-outlook.msg with the MAPI date properties removed;
         //only the "Date:" transport header remains
         Metadata metadata = getXML("testMSG_dateHeaderOnly.msg").metadata;
-        assertEquals(null, metadata.get("mapi:last-modification-time"));
+        assertNull(metadata.get("mapi:last-modification-time"));
         assertEquals("2007-04-05T16:26:06Z", metadata.get(TikaCoreProperties.CREATED));
         assertEquals("2007-04-05T16:26:06Z", metadata.get(TikaCoreProperties.MODIFIED));
+
+        //same file, Date: header replaced with a non-date: no fallback value at all
+        metadata = getXML("testMSG_dateHeaderUnparseable.msg").metadata;
+        assertEquals("not a date at all, sorry, nope",
+                metadata.get(Message.MESSAGE_RAW_HEADER_PREFIX + "Date"));
+        assertNull(metadata.get(TikaCoreProperties.CREATED));
+        assertNull(metadata.get(TikaCoreProperties.MODIFIED));
     }
 
     @Test
