@@ -52,6 +52,16 @@ import org.apache.tika.utils.XMLReaderUtils;
 public class OutlookParserTest extends TikaTest {
 
     @Test
+    public void testDateFromTransportHeader() throws Exception {
+        //TIKA-4959: test-outlook.msg with the MAPI date properties removed;
+        //only the "Date:" transport header remains
+        Metadata metadata = getXML("testMSG_dateHeaderOnly.msg").metadata;
+        assertEquals(null, metadata.get("mapi:last-modification-time"));
+        assertEquals("2007-04-05T16:26:06Z", metadata.get(TikaCoreProperties.CREATED));
+        assertEquals("2007-04-05T16:26:06Z", metadata.get(TikaCoreProperties.MODIFIED));
+    }
+
+    @Test
     public void testOutlookParsing() throws Exception {
 
         ContentHandler handler = new BodyContentHandler();
