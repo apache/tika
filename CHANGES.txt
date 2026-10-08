@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * OutlookExtractor now falls back to the "Date:" transport header for
+     dcterms:created/modified when a .msg has no MAPI date property; the
+     fallback previously could never match (TIKA-4959).
+
    * Unpack output is a Frictionless Data Package by default on every surface: tika-server
      /unpack, tika-app -z/-Z and pipes UNPACK mode, where it is one <key>-frictionless.zip per
      container unless outputMode is DIRECTORY. Set unpack-config.outputFormat to REGULAR
