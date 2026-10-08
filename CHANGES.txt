@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * JSoupParser emits the text of CDATA sections again. jsoup 1.23 tokenizes CDATA in
+     HTML content as a bogus comment, which silently dropped every CDATA value in XML
+     that reaches the HTML parser (TIKA-4963).
+
    * OutlookExtractor now falls back to the "Date:" transport header for
      dcterms:created/modified when a .msg has no MAPI date property; the
      fallback previously could never match (TIKA-4959).
