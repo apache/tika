@@ -287,12 +287,18 @@ public class MSOneStorePackage {
                 metadata.set(OneNote.ORIGINAL_AUTHORS, sortedValues(originalAuthors));
             }
         } finally {
+            numberListInfoCache.clear();
+            listFormatKeysByDigest.clear();
             guids.publish(metadata);
         }
     }
 
     OneNoteGuidCollector guidCollector() {
         return guids;
+    }
+
+    boolean hasCachedListStyles() {
+        return !numberListInfoCache.isEmpty() || !listFormatKeysByDigest.isEmpty();
     }
 
     void emitPage(RevisionStoreCell cell, OneNoteTreeWalkerOptions options,

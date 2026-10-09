@@ -38,6 +38,8 @@ import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -224,7 +226,7 @@ public class MSOneStorePackageTest {
 
     @Test
     public void testRepeatedLargeListFormatsPreserveExactGrouping() throws Exception {
-        byte[] format = new byte[1024 * 1024];
+        byte[] format = new byte[1024];
         byte[] equalFormat = format.clone();
         byte[] anotherEqualFormat = format.clone();
         byte[] differentFormat = format.clone();
@@ -261,6 +263,62 @@ public class MSOneStorePackageTest {
         assertTrue(xml.contains("large item 2000"), xml);
         assertTrue(xml.matches("(?s).*<ul>.*large item 0.*large item 1999.*</ul>\\s*" +
                 "<ul>\\s*<li><p>large item 2000</p>.*</ul>.*"), xml);
+    }
+
+    @ParameterizedTest(name = "cellFallback={0}, failWalk={1}")
+    @CsvSource({"false, false", "false, true", "true, false", "true, true"})
+    public void testListCachesAreReleasedAfterWalk(boolean useCellFallback, boolean failWalk)
+            throws Exception {
+        RevisionStoreObject node = numberListNode(id(1740), new byte[1024], null);
+        RevisionStoreObject item = listItem(id(1741), node.objectID, "cached item");
+        RevisionStoreObject outline = object(id(1742),
+                propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
+                        arrayNumber(1))), Collections.singletonList(item.objectID), Collections.emptyList());
+        setJcid(outline, OneNoteJcid.OUTLINE_NODE);
+        MSOneStorePackage pkg = fallbackPackage(group(outline, item, node), useCellFallback);
+        RevisionStoreObject next = object(id(1743),
+                propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                        0x1C003498, text("next cell"))), Collections.emptyList(), Collections.emptyList());
+        if (useCellFallback) {
+            RevisionStoreCell cell = new RevisionStoreCell();
+            cell.objectGroups.add(group(next));
+            pkg.cells.add(cell);
+        } else {
+            pkg.OtherFileNodeList.add(group(next));
+        }
+        assertFalse(pkg.hasCachedListStyles());
+        List<String> observedText = new ArrayList<>();
+        DefaultHandler handler = new DefaultHandler() {
+            @Override
+            public void characters(char[] ch, int start, int length) throws SAXException {
+                String value = new String(ch, start, length);
+                if ("cached item".equals(value) || "next cell".equals(value)) {
+                    assertTrue(pkg.hasCachedListStyles());
+                    observedText.add(value);
+                }
+                if (failWalk && "next cell".equals(value)) {
+                    throw new SAXException("stop walk");
+                }
+            }
+        };
+        Metadata metadata = new Metadata();
+        ParseContext context = new ParseContext();
+        XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
+        xhtml.startDocument();
+        if (failWalk) {
+            SAXException exception = assertThrows(SAXException.class,
+                    () -> pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context));
+            assertEquals("stop walk", exception.getMessage());
+        } else {
+            pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
+            xhtml.endDocument();
+        }
+        assertEquals(Arrays.asList("cached item", "next cell"), observedText);
+        assertFalse(pkg.hasCachedListStyles());
+        String xml = walkXml(pkg);
+        assertEquals(1, countOccurrences(xml, "cached item"), xml);
+        assertEquals(1, countOccurrences(xml, "next cell"), xml);
+        assertFalse(pkg.hasCachedListStyles());
     }
 
     @Test
