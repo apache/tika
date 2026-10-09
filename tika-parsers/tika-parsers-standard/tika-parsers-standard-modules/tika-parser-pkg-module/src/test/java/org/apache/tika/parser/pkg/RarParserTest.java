@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -33,6 +32,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.test.TestLocales;
 
 /**
  * Test case for parsing rar files.
@@ -44,8 +44,6 @@ public class RarParserTest extends AbstractPkgTest {
      * fired for all the embedded entries.
      */
     @Test
-    // junrar FileHeader.getDateDos uses Calendar.getInstance() (TIKA-4920)
-    @DisabledIf("org.apache.tika.test.TestLocales#nonGregorianDefault")
     public void testEmbedded() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -77,9 +75,12 @@ public class RarParserTest extends AbstractPkgTest {
         for (String crt : tracker.createdAts) {
             assertNull(crt);
         }
-        for (String mod : tracker.modifiedAts) {
-            assertNotNull(mod);
-            assertTrue(mod.startsWith("20"), "Modified at " + mod);
+        // junrar FileHeader.getDateDos uses Calendar.getInstance() (TIKA-4920)
+        if (!TestLocales.nonGregorianDefault()) {
+            for (String mod : tracker.modifiedAts) {
+                assertNotNull(mod);
+                assertTrue(mod.startsWith("20"), "Modified at " + mod);
+            }
         }
 
         // Should have filenames in the content string

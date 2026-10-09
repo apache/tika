@@ -29,9 +29,10 @@ public final class TestLocales {
     /**
      * True when the default locale's calendar is not Gregorian (th-TH and its legacy variant,
      * ja-JP-u-ca-japanese-x-lvariant-JP). Libraries that build dates from
-     * {@code Calendar.getInstance()} then set era-relative years. Use as
-     * {@code @DisabledIf("org.apache.tika.test.TestLocales#nonGregorianDefault")} on a test that
-     * reads such a date, with a comment naming the library.
+     * {@code Calendar.getInstance()} then set era-relative years. Guard only the date assertions,
+     * {@code if (!TestLocales.nonGregorianDefault()) { ... }}, with a comment naming the library;
+     * use {@code @DisabledIf("org.apache.tika.test.TestLocales#nonGregorianDefault")} only when
+     * every assertion is such a date.
      */
     public static boolean nonGregorianDefault() {
         return nonGregorian(Locale.getDefault());

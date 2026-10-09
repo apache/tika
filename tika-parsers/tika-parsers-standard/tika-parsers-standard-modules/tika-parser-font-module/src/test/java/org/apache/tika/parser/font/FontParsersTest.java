@@ -26,7 +26,6 @@ import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_PS_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -36,6 +35,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.test.TestLocales;
 
 /**
  * Test case for parsing various different font files.
@@ -73,8 +73,6 @@ public class FontParsersTest extends TikaTest {
     }
 
     @Test
-    // fontbox TTFDataStream.readInternationalDate builds its Calendar in the default locale (TIKA-4920)
-    @DisabledIf("org.apache.tika.test.TestLocales#nonGregorianDefault")
     public void testTTFParsing() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
@@ -91,8 +89,11 @@ public class FontParsersTest extends TikaTest {
         assertEquals("application/x-font-ttf", metadata.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Open Sans Bold", metadata.get(TikaCoreProperties.TITLE));
 
-        assertEquals("2010-12-30T11:04:00Z", metadata.get(TikaCoreProperties.CREATED));
-        assertEquals("2011-05-05T12:37:53Z", metadata.get(TikaCoreProperties.MODIFIED));
+        // fontbox TTFDataStream.readInternationalDate builds its Calendar in the default locale (TIKA-4920)
+        if (!TestLocales.nonGregorianDefault()) {
+            assertEquals("2010-12-30T11:04:00Z", metadata.get(TikaCoreProperties.CREATED));
+            assertEquals("2011-05-05T12:37:53Z", metadata.get(TikaCoreProperties.MODIFIED));
+        }
 
         assertEquals("Open Sans Bold", metadata.get(MET_FONT_NAME));
         assertEquals("Open Sans", metadata.get(MET_FONT_FAMILY_NAME));

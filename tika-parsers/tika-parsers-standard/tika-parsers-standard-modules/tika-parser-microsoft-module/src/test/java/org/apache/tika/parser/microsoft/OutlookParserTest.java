@@ -32,7 +32,6 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledIf;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -46,6 +45,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.test.TestLocales;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -201,8 +201,6 @@ public class OutlookParserTest extends TikaTest {
     }
 
     @Test
-    // POI LocaleUtil.getLocaleCalendar dates MAPI times in the default calendar (TIKA-4920)
-    @DisabledIf("org.apache.tika.test.TestLocales#nonGregorianDefault")
     public void testOutlookHTMLVersion() throws Exception {
         Metadata metadata = new Metadata();
 
@@ -244,11 +242,14 @@ public class OutlookParserTest extends TikaTest {
                 metadata.get(MAPI.SUBMISSION_ID));
         assertEquals("<EBB9951D34EA4B41B70AB946CF3FB6EC1A297D98@ftm02.FT.FTG.COM>",
                 metadata.get(MAPI.INTERNET_MESSAGE_ID));
-        assertTrue(metadata.get(MAPI.SUBMISSION_ACCEPTED_AT_TIME).startsWith("2011-03-29"));
-        assertTrue(metadata.get(MAPI.CLIENT_SUBMIT_TIME).startsWith("2011-03-29"));
-        assertTrue(metadata.get("mapi:message-delivery-time").startsWith("2011-03-29"));
-        assertTrue(metadata.get("mapi:last-modification-time").startsWith("2011-03-29"));
-        assertTrue(metadata.get("mapi:creation-time").startsWith("2011-03-29"));
+        // POI LocaleUtil.getLocaleCalendar dates MAPI times in the default calendar (TIKA-4920)
+        if (!TestLocales.nonGregorianDefault()) {
+            assertTrue(metadata.get(MAPI.SUBMISSION_ACCEPTED_AT_TIME).startsWith("2011-03-29"));
+            assertTrue(metadata.get(MAPI.CLIENT_SUBMIT_TIME).startsWith("2011-03-29"));
+            assertTrue(metadata.get("mapi:message-delivery-time").startsWith("2011-03-29"));
+            assertTrue(metadata.get("mapi:last-modification-time").startsWith("2011-03-29"));
+            assertTrue(metadata.get("mapi:creation-time").startsWith("2011-03-29"));
+        }
     }
 
     @Test
