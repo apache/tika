@@ -272,6 +272,16 @@ public class PDFParser implements Parser, RenderingParser, EnrichingParser {
     }
 
     private PDFParserConfig getConfig(ParseContext parseContext) throws TikaException, IOException {
+        if (parseContext.hasJsonConfig("pdf-parser")
+                && !parseContext.getJsonConfig("pdf-parser").trusted()) {
+            // resolved for its guards only: per-request JSON may not name an image graphics
+            // engine factory, operator JSON (config file, presets) still may
+            ParseContextConfig.getConfig(
+                    parseContext,
+                    "pdf-parser",
+                    PDFParserConfig.RuntimeConfig.class,
+                    new PDFParserConfig.RuntimeConfig());
+        }
         PDFParserConfig config = ParseContextConfig.getConfig(
                 parseContext,
                 "pdf-parser",
