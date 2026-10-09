@@ -32,6 +32,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.sax.BodyContentHandler;
+import org.apache.tika.test.TestLocales;
 
 /**
  * Test case for parsing rar files.
@@ -74,9 +75,12 @@ public class RarParserTest extends AbstractPkgTest {
         for (String crt : tracker.createdAts) {
             assertNull(crt);
         }
-        for (String mod : tracker.modifiedAts) {
-            assertNotNull(mod);
-            assertTrue(mod.startsWith("20"), "Modified at " + mod);
+        // junrar FileHeader.getDateDos uses Calendar.getInstance() (TIKA-4920)
+        if (!TestLocales.nonGregorianDefault()) {
+            for (String mod : tracker.modifiedAts) {
+                assertNotNull(mod);
+                assertTrue(mod.startsWith("20"), "Modified at " + mod);
+            }
         }
 
         // Should have filenames in the content string
