@@ -27,15 +27,17 @@ import org.apache.tika.TikaTest;
 import org.apache.tika.parser.ParseContext;
 
 /**
- * {@code imageGraphicsEngineFactoryClass} loads and constructs the class it names, so a
- * per-request {@code pdf-parser} block must not set it; operator JSON still may.
+ * {@code imageGraphicsEngineFactoryClass} instantiates the class it names, so it is operator
+ * configuration: a per-request {@code pdf-parser} block must not set it, an operator-authored
+ * one still may.
  */
-public class PDFParserOperatorOnlyConfigTest extends TikaTest {
+public class PDFParserRuntimeConfigTest extends TikaTest {
 
     private static final String PDF = "testPDF.pdf";
 
-    /** Any class on the server classpath; records that its constructor ran. */
+    /** Stands in for any class on the parse classpath; records that its constructor ran. */
     public static class ConstructorWitness {
+
         static volatile boolean constructed;
 
         public ConstructorWitness() {
@@ -50,8 +52,9 @@ public class PDFParserOperatorOnlyConfigTest extends TikaTest {
         context.setJsonConfig("pdf-parser", "{\"imageGraphicsEngineFactoryClass\": \""
                 + ConstructorWitness.class.getName() + "\"}");
         Exception e = assertThrows(Exception.class, () -> getXML(PDF, new PDFParser(), context));
-        assertFalse(ConstructorWitness.constructed, "a class named by per-request config was constructed");
-        assertTrue(rootMessage(e).contains("imageGraphicsEngineFactoryClass"), rootMessage(e));
+        assertFalse(ConstructorWitness.constructed,
+                "a class named by a per-request config was instantiated");
+        assertTrue(rootMessage(e).contains("imageGraphicsEngineFactory"), rootMessage(e));
     }
 
     @Test

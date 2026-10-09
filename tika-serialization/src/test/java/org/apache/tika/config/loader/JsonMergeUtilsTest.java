@@ -57,7 +57,7 @@ public class JsonMergeUtilsTest {
         }
     }
 
-    /** Stands in for a RuntimeConfig: {@code size} is locked, and a ceiling has no getter. */
+    /** A config with a locked setter and a ceiling that has no getter. */
     public static class LockedConfig extends Config {
         // no getter on purpose: init-time state a serialization round-trip would drop
         private int ceiling = 4096;
