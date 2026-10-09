@@ -101,9 +101,9 @@ public class MSOneStorePackageTest {
         RevisionStoreObject bulletList = numberListNode(bulletListId,
                 new byte[] {0x01, 0x00, 0x22, 0x20}, null);
         RevisionStoreObject listItem = listItem(listId, bulletListId, "list text");
-        setJcid(table, OneNoteStructureJcid.TABLE_NODE);
-        setJcid(row, OneNoteStructureJcid.TABLE_ROW_NODE);
-        setJcid(tableCell, OneNoteStructureJcid.TABLE_CELL_NODE);
+        setJcid(table, OneNoteJcid.TABLE_NODE);
+        setJcid(row, OneNoteJcid.TABLE_ROW_NODE);
+        setJcid(tableCell, OneNoteJcid.TABLE_CELL_NODE);
 
         RevisionStoreCell cell = new RevisionStoreCell();
         cell.objectGroups.add(group(table, row, tableCell, listItem, bulletList));
@@ -141,7 +141,7 @@ public class MSOneStorePackageTest {
                 propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
                         arrayNumber(2))), Arrays.asList(firstItemId, secondItemId),
                 Collections.emptyList());
-        setJcid(outline, OneNoteStructureJcid.OUTLINE_NODE);
+        setJcid(outline, OneNoteJcid.OUTLINE_NODE);
 
         RevisionStoreCell cell = new RevisionStoreCell();
         cell.objectGroups.add(group(outline, firstItem, secondItem, firstNumberList,
@@ -173,7 +173,7 @@ public class MSOneStorePackageTest {
                                     arrayNumber(2))), Arrays.asList(first.objectID, second.objectID),
                             Collections.emptyList());
                     if (typedParent) {
-                        setJcid(outline, OneNoteStructureJcid.OUTLINE_NODE);
+                        setJcid(outline, OneNoteJcid.OUTLINE_NODE);
                     }
                     RevisionStoreObjectGroup objects = parentFirst ?
                             group(outline, first, second, numberList) :
@@ -206,7 +206,7 @@ public class MSOneStorePackageTest {
                 propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
                         arrayNumber(5))), Arrays.asList(first.objectID, second.objectID,
                         first.objectID, second.objectID, third.objectID), Collections.emptyList());
-        setJcid(outline, OneNoteStructureJcid.OUTLINE_NODE);
+        setJcid(outline, OneNoteJcid.OUTLINE_NODE);
         RevisionStoreCell cell = new RevisionStoreCell();
         cell.objectGroups.add(group(outline, first, second, third, roman, decimal));
         cell.rootDeclares.add(rootDeclare(first.objectID));
@@ -223,14 +223,13 @@ public class MSOneStorePackageTest {
     }
 
     @Test
-    public void testRepeatedLargeListStylesReuseExactComparisons() throws Exception {
+    public void testRepeatedLargeListFormatsPreserveExactGrouping() throws Exception {
         byte[] format = new byte[1024 * 1024];
         byte[] equalFormat = format.clone();
         byte[] anotherEqualFormat = format.clone();
         byte[] differentFormat = format.clone();
         differentFormat[differentFormat.length - 1] = 1;
-        byte[] indent = new byte[16];
-        byte[] equalIndent = indent.clone();
+
         RevisionStoreObject[] nodes = {
                 numberListNode(id(1750), format, null),
                 numberListNode(id(1751), equalFormat, null),
@@ -242,14 +241,13 @@ public class MSOneStorePackageTest {
         for (int i = 0; i <= 2000; i++) {
             ExGuid itemId = id(1800 + i);
             RevisionStoreObject node = nodes[i == 2000 ? 3 : i % 3];
-            objects.add(listItem(itemId, node.objectID, "large item " + i,
-                    i == 0 ? indent : equalIndent));
+            objects.add(listItem(itemId, node.objectID, "large item " + i));
             itemIds.add(itemId);
         }
         RevisionStoreObject outline = object(id(1740),
                 propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
                         arrayNumber(itemIds.size()))), itemIds, Collections.emptyList());
-        setJcid(outline, OneNoteStructureJcid.OUTLINE_NODE);
+        setJcid(outline, OneNoteJcid.OUTLINE_NODE);
         objects.add(outline);
         RevisionStoreCell cell = new RevisionStoreCell();
         cell.objectGroups.add(group(objects.toArray(new RevisionStoreObject[0])));
@@ -261,18 +259,8 @@ public class MSOneStorePackageTest {
         assertEquals(2, countOccurrences(xml, "<ul"), xml);
         assertEquals(2001, countOccurrences(xml, "<li"), xml);
         assertTrue(xml.contains("large item 2000"), xml);
-        // Cache size, rather than wall-clock time, verifies repeated pair reuse.
-        java.lang.reflect.Field cacheField = MSOneStorePackage.class
-                .getDeclaredField("listStyleComparisonCache");
-        cacheField.setAccessible(true);
-        Map<?, ?> cache = (Map<?, ?>) cacheField.get(pkg);
-        assertEquals(2, cache.size());
-        Map<?, ?> formatComparisons = (Map<?, ?>) cache.get(format);
-        assertEquals(3, formatComparisons.size());
-        assertEquals(Boolean.TRUE, formatComparisons.get(equalFormat));
-        assertEquals(Boolean.TRUE, formatComparisons.get(anotherEqualFormat));
-        assertEquals(Boolean.FALSE, formatComparisons.get(differentFormat));
-        assertEquals(Collections.singletonMap(equalIndent, Boolean.TRUE), cache.get(indent));
+        assertTrue(xml.matches("(?s).*<ul>.*large item 0.*large item 1999.*</ul>\\s*" +
+                "<ul>\\s*<li><p>large item 2000</p>.*</ul>.*"), xml);
     }
 
     @Test
@@ -288,7 +276,7 @@ public class MSOneStorePackageTest {
                                     0x1C003498, text("multi-node item"))),
                     validFirst ? Arrays.asList(valid.objectID, malformed.objectID) :
                             Arrays.asList(malformed.objectID, valid.objectID), Collections.emptyList());
-            setJcid(item, OneNoteStructureJcid.OUTLINE_ELEMENT_NODE);
+            setJcid(item, OneNoteJcid.OUTLINE_ELEMENT_NODE);
             RevisionStoreCell cell = new RevisionStoreCell();
             cell.objectGroups.add(group(item, valid, malformed));
             cell.rootDeclares.add(rootDeclare(item.objectID));
@@ -373,7 +361,7 @@ public class MSOneStorePackageTest {
     }
 
     @Test
-    public void testListStylesSplitOnFormatAndIndentAndShareWhenEqual() throws Exception {
+    public void testListStylesSplitOnFormatAndShareWhenEqual() throws Exception {
         int seed = 1350;
         ExGuid outlineId = id(seed);
         RevisionStoreObject upperRoman = numberListNode(id(seed + 30), numberListFormat(1), null);
@@ -393,10 +381,7 @@ public class MSOneStorePackageTest {
                 unknown};
         for (int i = 0; i < listNodes.length; i++) {
             ExGuid itemId = id(seed + 1 + i);
-            byte[] indent = i == 3 ? new byte[] {1, 0, 0, 0} : null;
-            RevisionStoreObject item = i == 4 ?
-                    listItemWithWrongIndent(itemId, listNodes[i].objectID, "item " + i) :
-                    listItem(itemId, listNodes[i].objectID, "item " + i, indent);
+            RevisionStoreObject item = listItem(itemId, listNodes[i].objectID, "item " + i);
             items.add(item);
             itemIds.add(itemId);
         }
@@ -405,7 +390,7 @@ public class MSOneStorePackageTest {
                 propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
                         0x1C003498, text("plain outline text"))), Collections.emptyList(),
                 Collections.emptyList());
-        setJcid(plainOutline, OneNoteStructureJcid.OUTLINE_ELEMENT_NODE);
+        setJcid(plainOutline, OneNoteJcid.OUTLINE_ELEMENT_NODE);
         items.add(plainOutline);
         itemIds.add(plainOutlineId);
 
@@ -413,11 +398,60 @@ public class MSOneStorePackageTest {
                 lowerRomanSuffix, bullet, unknown, decimal);
         String xml = walkListItems(outlineId, itemIds, items, nodes, "outline caption");
 
-        assertEquals(8, countOccurrences(xml, "<ol"), xml);
+        assertEquals(6, countOccurrences(xml, "<ol"), xml);
         assertEquals(1, countOccurrences(xml, "<ul>"), xml);
         assertEquals(11, countOccurrences(xml, "<li"), xml);
         assertTrue(xml.contains("plain outline text"), xml);
         assertTrue(xml.contains("outline caption"), xml);
+    }
+
+    @Test
+    public void testOutlineIndentMetadataOnElementDoesNotSplitLists() throws Exception {
+        RevisionStoreObject node = numberListNode(id(1380), numberListFormat(0), null);
+        RevisionStoreObject first = listItem(id(1381), node.objectID, "first item",
+                new byte[] {1, 0, 0, 0});
+        RevisionStoreObject second = listItem(id(1382), node.objectID, "second item",
+                new byte[] {2, 0, 0, 0});
+        String xml = walkListItems(id(1383), Arrays.asList(first.objectID, second.objectID),
+                Arrays.asList(first, second), Collections.singletonList(node), "");
+        assertEquals(1, countOccurrences(xml, "<ol"), xml);
+        assertEquals(2, countOccurrences(xml, "<li"), xml);
+    }
+
+    @Test
+    public void testFallbackKeepsNestedTableInsideUnreachedListOwner() throws Exception {
+        for (boolean useCellFallback : new boolean[] {false, true}) {
+            for (boolean cyclic : new boolean[] {false, true}) {
+                for (boolean tableFirst : new boolean[] {false, true}) {
+                    RevisionStoreObject node = numberListNode(id(4202), numberListFormat(0), null);
+                    RevisionStoreObject item = listItem(id(4200), node.objectID, "owner text");
+                    RevisionStoreObject table = object(id(4201),
+                            propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
+                                    0x1C003498, text("nested table text"))),
+                            Collections.emptyList(), Collections.emptyList());
+                    setJcid(table, OneNoteJcid.TABLE_NODE);
+                    addChildReferences(item, cyclic ? Arrays.asList(item.objectID, table.objectID) :
+                            Collections.singletonList(table.objectID));
+                    List<RevisionStoreObject> objects = new ArrayList<>(tableFirst ?
+                            Arrays.asList(table, item, node) : Arrays.asList(item, table, node));
+                    if (!cyclic) {
+                        addPrefixChain(objects, item, 1000, 7000);
+                    }
+                    MSOneStorePackage pkg = fallbackPackage(
+                            group(objects.toArray(new RevisionStoreObject[0])), useCellFallback);
+                    Metadata metadata = new Metadata();
+                    String xml = walkXml(pkg, metadata);
+                    assertTrue(xml.matches("(?s).*<li><p>owner text</p>\\s*<table>" +
+                            ".*nested table text.*</table>\\s*</li>.*"), xml);
+                    assertEquals(1, countOccurrences(xml, "<table>"), xml);
+                    assertEquals(1, countOccurrences(xml, "owner text"), xml);
+                    if (!cyclic) {
+                        assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                                .anyMatch(w -> w.contains("depth limit 1000")));
+                    }
+                }
+            }
+        }
     }
 
     @Test
@@ -430,7 +464,7 @@ public class MSOneStorePackageTest {
         RevisionStoreObject noObjectSpace = numberListNode(id(seed + 31), numberListFormat(0), null);
         noObjectSpace.propertySet.objectSpaceObjectPropSet = null;
         RevisionStoreObject wrongJcid = numberListNode(id(seed + 32), numberListFormat(0), null);
-        setJcid(wrongJcid, OneNoteStructureJcid.OUTLINE_ELEMENT_NODE);
+        setJcid(wrongJcid, OneNoteJcid.OUTLINE_ELEMENT_NODE);
         RevisionStoreObject missingFormat = numberListNode(id(seed + 33), null, null);
         RevisionStoreObject wrongFormatType = numberListNodeWithProperties(id(seed + 34),
                 new PropertySpec(PropertyType.FourBytesOfData, 0x1C001C1A, fourBytes(1)));
@@ -467,7 +501,7 @@ public class MSOneStorePackageTest {
                 propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
                         0x1C003498, text("unstyled outline item"))), Collections.emptyList(),
                 Collections.emptyList());
-        setJcid(plainItem, OneNoteStructureJcid.OUTLINE_ELEMENT_NODE);
+        setJcid(plainItem, OneNoteJcid.OUTLINE_ELEMENT_NODE);
         items.add(plainItem);
         itemIds.add(plainItemId);
         itemIds.add(id(seed + 21));
@@ -519,61 +553,42 @@ public class MSOneStorePackageTest {
         RevisionStoreObject shallow = object(id(4004),
                 propertySet(new PropertySpec(PropertyType.FourBytesOfLengthFollowedByData,
                         0x1C003498, text("shallow text"))), Collections.emptyList(), Collections.emptyList());
-        setJcid(table, OneNoteStructureJcid.TABLE_NODE);
-        setJcid(row, OneNoteStructureJcid.TABLE_ROW_NODE);
-        setJcid(tableCell, OneNoteStructureJcid.TABLE_CELL_NODE);
-        List<RevisionStoreObjectGroup> groups = Collections.singletonList(group(shallow, table,
-                row, tableCell, leaf, author, picture));
-        MSOneStorePackage pkg = new MSOneStorePackage();
-        Map<ExGuid, RevisionStoreObject> objectsById = pkg.indexObjectsById(groups);
-        Set<ExGuid> visited = new HashSet<>();
-        Metadata metadata = new Metadata();
-        ToXMLContentHandler xml = new ToXMLContentHandler();
-        ParseContext context = new ParseContext();
-        List<String> recoveredResourceNames = new ArrayList<>();
-        context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
-            @Override
-            public boolean shouldParseEmbedded(Metadata embeddedMetadata, ParseContext parseContext) {
-                return true;
-            }
+        setJcid(table, OneNoteJcid.TABLE_NODE);
+        setJcid(row, OneNoteJcid.TABLE_ROW_NODE);
+        setJcid(tableCell, OneNoteJcid.TABLE_CELL_NODE);
+        List<RevisionStoreObject> objects = new ArrayList<>(Arrays.asList(shallow, table, row,
+                tableCell, leaf, author, picture));
+        addPrefixChain(objects, table, 998, 4300);
+        for (boolean useCellFallback : new boolean[] {false, true}) {
+            MSOneStorePackage pkg = fallbackPackage(group(objects.toArray(new RevisionStoreObject[0])),
+                    useCellFallback);
+            Metadata metadata = new Metadata();
+            ParseContext context = new ParseContext();
+            List<String> recoveredResourceNames = new ArrayList<>();
+            context.set(EmbeddedDocumentExtractor.class, new EmbeddedDocumentExtractor() {
+                @Override
+                public boolean shouldParseEmbedded(Metadata embeddedMetadata, ParseContext parseContext) {
+                    return true;
+                }
 
-            @Override
-            public void parseEmbedded(org.apache.tika.io.TikaInputStream stream,
-                                      org.xml.sax.ContentHandler handler, Metadata embeddedMetadata,
-                                      ParseContext parseContext, boolean outputHtml) {
-                recoveredResourceNames.add(embeddedMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-            }
-        });
-        XHTMLContentHandler xhtml = new XHTMLContentHandler(xml, metadata, context);
-        xhtml.startDocument();
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
-        Method walkObject = MSOneStorePackage.class.getDeclaredMethod("walkObject",
-                RevisionStoreObject.class, Map.class, Set.class,
-                Class.forName(MSOneStorePackage.class.getName() + "$AuthorRole"),
-                OneNoteTreeWalkerOptions.class, Metadata.class, XHTMLContentHandler.class, int.class);
-        walkObject.setAccessible(true);
-        // Begin near the cap to exercise the real cutoff without a thousand stack frames.
-        walkObject.invoke(pkg, table, objectsById, visited, null,
-                new OneNoteTreeWalkerOptions(), metadata, xhtml, 998);
-        assertTrue(visited.contains(row.objectID));
-        assertFalse(visited.contains(tableCell.objectID));
-        assertFalse(xml.toString().contains("recovered leaf"));
-        Method fallback = MSOneStorePackage.class.getDeclaredMethod("walkObjectGroupRoots",
-                List.class, Map.class, Set.class, OneNoteTreeWalkerOptions.class,
-                Metadata.class, XHTMLContentHandler.class);
-        fallback.setAccessible(true);
-        fallback.invoke(pkg, groups, objectsById, visited, new OneNoteTreeWalkerOptions(), metadata, xhtml);
-        pkg.walkTree(new OneNoteTreeWalkerOptions(), metadata, xhtml, context);
-        xhtml.endDocument();
-
-        assertTrue(xml.toString().contains("shallow text"));
-        assertEquals(1, countOccurrences(xml.toString(), "recovered leaf"));
-        assertTrue(visited.contains(leaf.objectID));
-        assertTrue(pkg.hasEmittedContent());
-        assertEquals(Collections.singletonList("depth-image.png"), recoveredResourceNames);
-        assertEquals("Depth Author", metadata.get(OneNote.MOST_RECENT_AUTHORS));
-        assertEquals("Depth Author", metadata.get(OneNote.ORIGINAL_AUTHORS));
-        assertEquals("Depth Author", metadata.get(TikaCoreProperties.CREATOR));
+                @Override
+                public void parseEmbedded(org.apache.tika.io.TikaInputStream stream,
+                                          org.xml.sax.ContentHandler handler, Metadata embeddedMetadata,
+                                          ParseContext parseContext, boolean outputHtml) {
+                    recoveredResourceNames.add(embeddedMetadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
+                }
+            });
+            String xml = walkXml(pkg, metadata, context);
+            assertTrue(xml.contains("shallow text"));
+            assertEquals(1, countOccurrences(xml, "recovered leaf"));
+            assertTrue(pkg.hasEmittedContent());
+            assertEquals(Collections.singletonList("depth-image.png"), recoveredResourceNames);
+            assertEquals("Depth Author", metadata.get(OneNote.MOST_RECENT_AUTHORS));
+            assertEquals("Depth Author", metadata.get(OneNote.ORIGINAL_AUTHORS));
+            assertEquals("Depth Author", metadata.get(TikaCoreProperties.CREATOR));
+            assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
+                    .anyMatch(w -> w.contains("depth limit 1000")));
+        }
     }
 
     @Test
@@ -590,7 +605,7 @@ public class MSOneStorePackageTest {
                     propertySet(new PropertySpec(PropertyType.ObjectID, 0x20001C3F, new NoData()),
                             new PropertySpec(PropertyType.ObjectID, 0x200034C8, new NoData())),
                     Arrays.asList(primary.objectID, derived.objectID), Collections.emptyList());
-            setJcid(table, OneNoteStructureJcid.TABLE_NODE);
+            setJcid(table, OneNoteJcid.TABLE_NODE);
             RevisionStoreObjectGroup objects = group(derived, primary, table);
             MSOneStorePackage pkg = fallbackPackage(objects, useCellFallback);
 
@@ -608,7 +623,7 @@ public class MSOneStorePackageTest {
             RevisionStoreObject table = object(id(4120),
                     propertySet(new PropertySpec(PropertyType.ObjectID, 0x20001D79, new NoData())),
                     Collections.singletonList(author.objectID), Collections.emptyList());
-            setJcid(table, OneNoteStructureJcid.TABLE_NODE);
+            setJcid(table, OneNoteJcid.TABLE_NODE);
             MSOneStorePackage pkg = fallbackPackage(group(author, table), useCellFallback);
             Metadata metadata = new Metadata();
             walkXml(pkg, metadata);
@@ -655,10 +670,10 @@ public class MSOneStorePackageTest {
         RevisionStoreObject rootNoObjectSpace = object(id(1507), propertySet(),
                 Collections.emptyList(), Collections.emptyList());
         rootNoObjectSpace.propertySet.objectSpaceObjectPropSet = null;
-        setJcid(outerTable, OneNoteStructureJcid.TABLE_NODE);
-        setJcid(nestedTable, OneNoteStructureJcid.TABLE_NODE);
-        setJcid(row, OneNoteStructureJcid.TABLE_ROW_NODE);
-        setJcid(cell, OneNoteStructureJcid.TABLE_CELL_NODE);
+        setJcid(outerTable, OneNoteJcid.TABLE_NODE);
+        setJcid(nestedTable, OneNoteJcid.TABLE_NODE);
+        setJcid(row, OneNoteJcid.TABLE_ROW_NODE);
+        setJcid(cell, OneNoteJcid.TABLE_CELL_NODE);
 
         MSOneStorePackage pkg = new MSOneStorePackage();
         pkg.OtherFileNodeList.add(null);
@@ -694,9 +709,9 @@ public class MSOneStorePackageTest {
                     propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
                             arrayNumber(1))), Collections.singletonList(rowId),
                     Collections.emptyList());
-            setJcid(tableCell, OneNoteStructureJcid.TABLE_CELL_NODE);
-            setJcid(row, OneNoteStructureJcid.TABLE_ROW_NODE);
-            setJcid(table, OneNoteStructureJcid.TABLE_NODE);
+            setJcid(tableCell, OneNoteJcid.TABLE_CELL_NODE);
+            setJcid(row, OneNoteJcid.TABLE_ROW_NODE);
+            setJcid(table, OneNoteJcid.TABLE_NODE);
 
             MSOneStorePackage pkg = new MSOneStorePackage();
             RevisionStoreObjectGroup outOfOrder = group(row, tableCell, table);
@@ -745,9 +760,9 @@ public class MSOneStorePackageTest {
                     propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
                             arrayNumber(1))), Collections.singletonList(rowId),
                     Collections.emptyList());
-            setJcid(table, OneNoteStructureJcid.TABLE_NODE);
-            setJcid(row, OneNoteStructureJcid.TABLE_ROW_NODE);
-            setJcid(tableCell, OneNoteStructureJcid.TABLE_CELL_NODE);
+            setJcid(table, OneNoteJcid.TABLE_NODE);
+            setJcid(row, OneNoteJcid.TABLE_ROW_NODE);
+            setJcid(tableCell, OneNoteJcid.TABLE_CELL_NODE);
             RevisionStoreObjectGroup objects = group(item, tableCell, row, numberList,
                     pageMetadata, table);
             MSOneStorePackage pkg = new MSOneStorePackage();
@@ -2372,7 +2387,11 @@ public class MSOneStorePackageTest {
     }
 
     private static String walkXml(MSOneStorePackage pkg, Metadata metadata) throws Exception {
-        ParseContext context = new ParseContext();
+        return walkXml(pkg, metadata, new ParseContext());
+    }
+
+    private static String walkXml(MSOneStorePackage pkg, Metadata metadata, ParseContext context)
+            throws Exception {
         ToXMLContentHandler xml = new ToXMLContentHandler();
         XHTMLContentHandler xhtml = new XHTMLContentHandler(xml, metadata, context);
         xhtml.startDocument();
@@ -2392,6 +2411,31 @@ public class MSOneStorePackageTest {
             pkg.OtherFileNodeList.add(objects);
         }
         return pkg;
+    }
+
+    private static void addChildReferences(RevisionStoreObject object, List<ExGuid> children) {
+        PropertySet body = object.propertySet.objectSpaceObjectPropSet.body;
+        body.rgPrids = Arrays.copyOf(body.rgPrids, body.rgPrids.length + 1);
+        body.rgPrids[body.rgPrids.length - 1] = propertyID(PropertyType.ArrayOfObjectIDs, 0x24001C20);
+        body.rgData.add(arrayNumber(children.size()));
+        body.cProperties++;
+        List<ExGuid> references = new ArrayList<>(object.referencedObjectID.content);
+        references.addAll(children);
+        object.referencedObjectID.content = references;
+    }
+
+    private static void addPrefixChain(List<RevisionStoreObject> objects, RevisionStoreObject child,
+                                        int depth, int seed) throws Exception {
+        RevisionStoreObject next = child;
+        for (int i = depth - 1; i >= 0; i--) {
+            next = object(id(seed + i),
+                    propertySet(new PropertySpec(PropertyType.ArrayOfObjectIDs, 0x24001C20,
+                            arrayNumber(1))), Collections.singletonList(next.objectID), Collections.emptyList());
+            if (i == 0) {
+                setJcid(next, OneNoteJcid.OUTLINE_NODE);
+            }
+            objects.add(next);
+        }
     }
 
     private static byte[] numberListFormat(int code) {
@@ -2430,7 +2474,7 @@ public class MSOneStorePackageTest {
         RevisionStoreObject outline = object(outlineId,
                 propertySet(properties.toArray(new PropertySpec[0])), itemIds,
                 Collections.emptyList());
-        setJcid(outline, OneNoteStructureJcid.OUTLINE_NODE);
+        setJcid(outline, OneNoteJcid.OUTLINE_NODE);
         List<RevisionStoreObject> objects = new ArrayList<>();
         objects.add(outline);
         objects.addAll(items);
@@ -2479,7 +2523,7 @@ public class MSOneStorePackageTest {
             throws Exception {
         RevisionStoreObject numberList = object(objectId, propertySet(properties),
                 Collections.emptyList(), Collections.emptyList());
-        setJcid(numberList, OneNoteStructureJcid.NUMBER_LIST_NODE);
+        setJcid(numberList, OneNoteJcid.NUMBER_LIST_NODE);
         return numberList;
     }
 
@@ -2502,20 +2546,7 @@ public class MSOneStorePackageTest {
         RevisionStoreObject listItem = object(objectId,
                 propertySet(properties.toArray(new PropertySpec[0])),
                 Collections.singletonList(numberListId), Collections.emptyList());
-        setJcid(listItem, OneNoteStructureJcid.OUTLINE_ELEMENT_NODE);
-        return listItem;
-    }
-
-    private static RevisionStoreObject listItemWithWrongIndent(ExGuid objectId,
-                                                               ExGuid numberListId, String text)
-            throws Exception {
-        RevisionStoreObject listItem = listItem(objectId, numberListId, text);
-        PropertySet body = listItem.propertySet.objectSpaceObjectPropSet.body;
-        body.rgPrids = Arrays.copyOf(body.rgPrids, body.rgPrids.length + 1);
-        body.rgPrids[body.rgPrids.length - 1] = propertyID(PropertyType.FourBytesOfData,
-                0x1C001C12);
-        body.rgData.add(fourBytes(1));
-        body.cProperties++;
+        setJcid(listItem, OneNoteJcid.OUTLINE_ELEMENT_NODE);
         return listItem;
     }
 

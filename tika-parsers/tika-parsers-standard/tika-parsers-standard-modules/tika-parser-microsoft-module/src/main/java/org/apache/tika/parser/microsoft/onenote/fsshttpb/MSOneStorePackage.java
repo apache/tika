@@ -38,6 +38,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -103,6 +104,7 @@ public class MSOneStorePackage {
     private static final int MAX_OBJECT_WALK_DEPTH = 1000;
     private static final int MAX_REFERENCE_COUNT = 100000;
     private static final int MAX_PARSE_WARNINGS = 100;
+    private static final int MIN_CANONICAL_LIST_FORMAT_LENGTH = 128;
 
     /** Defensive bound on root objects resolved per cell; real cells declare a handful. */
     static final int MAX_CELL_ROOTS = 10_000;
@@ -162,8 +164,7 @@ public class MSOneStorePackage {
             new IdentityHashMap<>();
     private final Map<RevisionStoreObject, NumberListInfo> numberListInfoCache =
             new IdentityHashMap<>();
-    private final Map<byte[], Map<byte[], Boolean>> listStyleComparisonCache =
-            new IdentityHashMap<>();
+    private final Map<String, List<byte[]>> listFormatKeysByDigest = new HashMap<>();
     private final Map<CellID, StorageIndexCellMapping> storageIndexCellMappingsById =
             new HashMap<>();
     private final Map<ExGuid, StorageIndexRevisionMapping> storageIndexRevisionMappingsById =
@@ -659,16 +660,16 @@ public class MSOneStorePackage {
     private void startObjectStructure(int objectType, ListStyle listStyle,
                                       XHTMLContentHandler xhtml) throws SAXException {
         switch (objectType) {
-            case OneNoteStructureJcid.TABLE_NODE:
+            case OneNoteJcid.TABLE_NODE:
                 xhtml.startElement("table");
                 break;
-            case OneNoteStructureJcid.TABLE_ROW_NODE:
+            case OneNoteJcid.TABLE_ROW_NODE:
                 xhtml.startElement("tr");
                 break;
-            case OneNoteStructureJcid.TABLE_CELL_NODE:
+            case OneNoteJcid.TABLE_CELL_NODE:
                 xhtml.startElement("td");
                 break;
-            case OneNoteStructureJcid.OUTLINE_ELEMENT_NODE:
+            case OneNoteJcid.OUTLINE_ELEMENT_NODE:
                 if (listStyle != null) {
                     if (listStyle.restartValue == null) {
                         xhtml.startElement("li");
@@ -685,16 +686,16 @@ public class MSOneStorePackage {
     private void endObjectStructure(int objectType, ListStyle listStyle,
                                     XHTMLContentHandler xhtml) throws SAXException {
         switch (objectType) {
-            case OneNoteStructureJcid.TABLE_NODE:
+            case OneNoteJcid.TABLE_NODE:
                 xhtml.endElement("table");
                 break;
-            case OneNoteStructureJcid.TABLE_ROW_NODE:
+            case OneNoteJcid.TABLE_ROW_NODE:
                 xhtml.endElement("tr");
                 break;
-            case OneNoteStructureJcid.TABLE_CELL_NODE:
+            case OneNoteJcid.TABLE_CELL_NODE:
                 xhtml.endElement("td");
                 break;
-            case OneNoteStructureJcid.OUTLINE_ELEMENT_NODE:
+            case OneNoteJcid.OUTLINE_ELEMENT_NODE:
                 if (listStyle != null) {
                     xhtml.endElement("li");
                 }
@@ -724,18 +725,22 @@ public class MSOneStorePackage {
                 walkRootObject(object, objectsById, visited, options, metadata, xhtml);
             }
         }
-        // Cyclic owners may have no independent root; start tables before list containers.
+        recoverDepthSkippedObjects(objectsById, visited, options, metadata, xhtml);
+        // Residual owners belong to cycles; keep their storage order, not type priority.
         for (RevisionStoreObject object : deferredObjects) {
             if (!visited.contains(object.objectID) &&
-                    jcidIndex(object) == OneNoteStructureJcid.TABLE_NODE) {
+                    (jcidIndex(object) == OneNoteJcid.TABLE_NODE ||
+                            isListContainer(object, objectsById))) {
                 walkRootObject(object, objectsById, visited, options, metadata, xhtml);
             }
         }
-        for (RevisionStoreObject object : deferredObjects) {
-            if (!visited.contains(object.objectID) && isListContainer(object, objectsById)) {
-                walkRootObject(object, objectsById, visited, options, metadata, xhtml);
-            }
-        }
+        recoverDepthSkippedObjects(objectsById, visited, options, metadata, xhtml);
+    }
+
+    private void recoverDepthSkippedObjects(Map<ExGuid, RevisionStoreObject> objectsById,
+                                            Set<ExGuid> visited, OneNoteTreeWalkerOptions options,
+                                            Metadata metadata, XHTMLContentHandler xhtml)
+            throws SAXException, TikaException, IOException {
         // Recover only depth-skipped objects, not intentionally suppressed renditions.
         while (!depthSkippedObjects.isEmpty()) {
             Map.Entry<RevisionStoreObject, Map<AuthorRole, EmbeddedResourceInfo>> skipped =
@@ -751,8 +756,8 @@ public class MSOneStorePackage {
     private boolean isListContainer(RevisionStoreObject object,
                                     Map<ExGuid, RevisionStoreObject> objectsById) {
         int type = jcidIndex(object);
-        if (type == OneNoteStructureJcid.OUTLINE_NODE ||
-                type == OneNoteStructureJcid.OUTLINE_ELEMENT_NODE) {
+        if (type == OneNoteJcid.OUTLINE_NODE ||
+                type == OneNoteJcid.OUTLINE_ELEMENT_NODE) {
             return true;
         }
         if (object == null || object.propertySet == null ||
@@ -762,7 +767,7 @@ public class MSOneStorePackage {
         for (PropertyAction action : collectObjectActions(object)) {
             if (action.isChildReference &&
                     jcidIndex(objectsById.get(action.childReference)) ==
-                            OneNoteStructureJcid.OUTLINE_ELEMENT_NODE) {
+                            OneNoteJcid.OUTLINE_ELEMENT_NODE) {
                 return true;
             }
         }
@@ -775,7 +780,7 @@ public class MSOneStorePackage {
         Set<ExGuid> traversed = new HashSet<>();
         List<RevisionStoreObject> pending = new ArrayList<>();
         for (RevisionStoreObject object : objectsById.values()) {
-            if (jcidIndex(object) == OneNoteStructureJcid.TABLE_NODE ||
+            if (jcidIndex(object) == OneNoteJcid.TABLE_NODE ||
                     isListContainer(object, objectsById)) {
                 traversed.add(object.objectID);
                 pending.add(object);
@@ -792,6 +797,9 @@ public class MSOneStorePackage {
                     continue;
                 }
                 ExGuid childId = action.childReference;
+                if (childId.equals(object.objectID)) {
+                    continue;
+                }
                 descendants.add(childId);
                 RevisionStoreObject child = objectsById.get(childId);
                 if (child != null && traversed.add(childId)) {
@@ -900,7 +908,7 @@ public class MSOneStorePackage {
         RevisionStoreObject child = objectsById.get(action.childReference);
         if (child == null || child.propertySet == null
                 || child.propertySet.objectSpaceObjectPropSet == null
-                || jcidIndex(child) != OneNoteStructureJcid.OUTLINE_ELEMENT_NODE) {
+                || jcidIndex(child) != OneNoteJcid.OUTLINE_ELEMENT_NODE) {
             return null;
         }
         return listStyleForObject(child, collectObjectActions(child), objectsById);
@@ -908,13 +916,12 @@ public class MSOneStorePackage {
 
     private ListStyle listStyleForObject(RevisionStoreObject object, List<PropertyAction> actions,
                                          Map<ExGuid, RevisionStoreObject> objectsById) {
-        if (object == null || jcidIndex(object) != OneNoteStructureJcid.OUTLINE_ELEMENT_NODE) {
+        if (object == null || jcidIndex(object) != OneNoteJcid.OUTLINE_ELEMENT_NODE) {
             return null;
         }
         boolean isListItem = false;
         NumberListInfo numberListInfo = null;
         NumberListInfo malformedNumberListInfo = null;
-        byte[] indent = null;
         for (PropertyAction action : actions) {
             if (action.oneNotePropertyEnum == OneNotePropertyEnum.ListNodes) {
                 isListItem = true;
@@ -926,9 +933,6 @@ public class MSOneStorePackage {
                 } else if (candidate != null) {
                     malformedNumberListInfo = candidate;
                 }
-            } else if (action.oneNotePropertyEnum == OneNotePropertyEnum.RgOutlineIndentDistance
-                    && action.property instanceof PrtFourBytesOfLengthFollowedByData) {
-                indent = ((PrtFourBytesOfLengthFollowedByData) action.property).data;
             }
         }
         if (!isListItem) {
@@ -940,7 +944,7 @@ public class MSOneStorePackage {
         boolean numbered = numberListInfo != null && numberListInfo.numbered;
         ListStyle style = new ListStyle(numbered ? "ol" : "ul",
                 numberListInfo == null ? null : numberListInfo.htmlType,
-                numberListInfo == null ? null : numberListInfo.format, indent,
+                numberListInfo == null ? null : numberListInfo.format,
                 numbered ? numberListInfo.restartValue : null);
         return style;
     }
@@ -948,7 +952,7 @@ public class MSOneStorePackage {
     private NumberListInfo numberListInfo(RevisionStoreObject listNode) {
         if (listNode == null || listNode.propertySet == null
                 || listNode.propertySet.objectSpaceObjectPropSet == null
-                || jcidIndex(listNode) != OneNoteStructureJcid.NUMBER_LIST_NODE) {
+                || jcidIndex(listNode) != OneNoteJcid.NUMBER_LIST_NODE) {
             return null;
         }
         if (numberListInfoCache.containsKey(listNode)) {
@@ -966,7 +970,7 @@ public class MSOneStorePackage {
             }
         }
         ParsedListFormat parsedFormat = parseListFormat(format);
-        NumberListInfo info = new NumberListInfo(format, parsedFormat != null,
+        NumberListInfo info = new NumberListInfo(canonicalListFormat(format), parsedFormat != null,
                 parsedFormat != null && parsedFormat.numbered,
                 parsedFormat == null ? null : parsedFormat.htmlType,
                 parsedFormat != null && parsedFormat.numbered ? restartValue : null);
@@ -1058,39 +1062,39 @@ public class MSOneStorePackage {
         }
     }
 
-    private boolean listStyleBytesEqual(byte[] first, byte[] second) {
-        if (first == second) {
-            return true;
+    private byte[] canonicalListFormat(byte[] format) {
+        if (format == null || format.length < MIN_CANONICAL_LIST_FORMAT_LENGTH) {
+            return format;
         }
-        if (first == null || second == null) {
-            return false;
+        List<byte[]> candidates = listFormatKeysByDigest.computeIfAbsent(
+                DigestUtils.sha256Hex(format), key -> new ArrayList<>());
+        for (byte[] candidate : candidates) {
+            // Keep grouping exact even if digests collide.
+            if (Arrays.equals(candidate, format)) {
+                return candidate;
+            }
         }
-        Map<byte[], Boolean> comparisons = listStyleComparisonCache.computeIfAbsent(first,
-                key -> new IdentityHashMap<>());
-        return comparisons.computeIfAbsent(second, key -> Arrays.equals(first, second));
+        candidates.add(format);
+        return format;
     }
 
-    private final class ListStyle {
+    private static final class ListStyle {
         private final String elementName;
         private final String htmlType;
         private final byte[] format;
-        private final byte[] indent;
         private final Long restartValue;
 
-        private ListStyle(String elementName, String htmlType, byte[] format, byte[] indent,
-                          Long restartValue) {
+        private ListStyle(String elementName, String htmlType, byte[] format, Long restartValue) {
             this.elementName = elementName;
             this.htmlType = htmlType;
             this.format = format;
-            this.indent = indent;
             this.restartValue = restartValue;
         }
 
         private boolean matches(ListStyle other) {
             return elementName.equals(other.elementName) &&
                     (htmlType == null ? other.htmlType == null : htmlType.equals(other.htmlType)) &&
-                    listStyleBytesEqual(format, other.format) &&
-                    listStyleBytesEqual(indent, other.indent);
+                    Arrays.equals(format, other.format);
         }
     }
 

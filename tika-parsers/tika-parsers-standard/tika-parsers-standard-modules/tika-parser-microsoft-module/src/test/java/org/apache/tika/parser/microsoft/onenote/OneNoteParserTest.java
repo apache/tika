@@ -433,6 +433,31 @@ public class OneNoteParserTest extends TikaTest {
     }
 
     @Test
+    public void testFsshttpbTablesAndListsRetainXhtmlStructure() throws Exception {
+        String xml = getXML("testOneNoteTablesLists.one", new OneNoteParser()).xml;
+        assertEquals(1, StringUtils.countMatches(xml, "<table>"), xml);
+        assertEquals(2, StringUtils.countMatches(xml, "<tr>"), xml);
+        assertEquals(8, StringUtils.countMatches(xml, "<td"), xml);
+        assertTrue(xml.matches("(?s).*<table>.*<td><p>Table cell 1a</p>.*" +
+                "<td><p>Table cell 4b</p>.*</table>.*"), xml);
+        assertEquals(3, StringUtils.countMatches(xml, "<ul>"), xml);
+        assertTrue(xml.matches("(?s).*<li><p>Bullet 2</p>\\s*<ul>\\s*<li>" +
+                "<p>Indented bullet</p>\\s*<ul>\\s*<li><p>Indented square</p>.*"), xml);
+        assertEquals(2, StringUtils.countMatches(xml, "<ol type=\"1\">"), xml);
+        assertTrue(xml.matches("(?s).*<li><p>Number 2</p>\\s*<ol type=\"a\">\\s*<li>" +
+                "<p>Letter a</p>\\s*<ol type=\"i\">\\s*<li><p>Numeral I</p>.*"), xml);
+        assertTrue(xml.matches("(?s).*<ol type=\"1\">\\s*<li><p>Outdented number</p>.*"), xml);
+        assertEquals(9, StringUtils.countMatches(xml, "<li>"), xml);
+    }
+
+    @Test
+    public void testOneNote2007ListStructure() throws Exception {
+        String xml = getXML("testOneNote2007OrEarlier.one", new OneNoteParser()).xml;
+        assertEquals(2, StringUtils.countMatches(xml, "<ul>"), xml);
+        assertEquals(6, StringUtils.countMatches(xml, "<li>"), xml);
+    }
+
+    @Test
     public void testOneNoteEmbeddedWordDoc() throws Exception {
         List<Metadata> metadataList = getRecursiveMetadata("testOneNoteEmbeddedWordDoc.one");
 
