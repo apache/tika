@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>3.3.3</version>
+    <version>3.3.4-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -33,7 +33,7 @@
     <dependency>
       <groupId>org.apache.tika</groupId>
       <artifactId>tika-core</artifactId>
-      <version>3.3.3</version>
+      <version>3.3.4-SNAPSHOT</version>
     </dependency>
     <!-- TIKA-4797 follow-up: add tika-parsers-standard-package (type=pom) to widen the scan to the
          standard parser keys (csv:, tess:, ...). Core holds every rename-relevant key already. -->
