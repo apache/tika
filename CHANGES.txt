@@ -122,6 +122,12 @@ Release 4.2.0 - unreleased
      MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
      (TIKA-4945).
 
+   * tika-grpc: experimental TikaV2 service on the same port as the existing
+     one. Its FetchAndParse replies carry a typed Document with the content
+     type, metadata, parse status and source origin, but not the extracted
+     text. Protos in the new tika-grpc-api module, metadata mapping in
+     tika-grpc-mapper (TIKA-4766).
+
 Release 4.1.0 - 9/26/2026
 
   HIGHLIGHTS

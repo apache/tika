@@ -1,0 +1,124 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+// The Document: one message for a parsed Tika document, whatever the source format.
+//
+// Metadata: typed fields for the common Dublin Core properties, plus `extra` for every
+// other key. A value in `extra` is typed when Tika declares a type for its key, and a
+// string otherwise. The extracted text and embedded documents are not included.
+//
+// Format-specific mapping lives in DocumentTransformer code in tika-grpc-mapper, so
+// supporting a new parser does not change this file.
+
+syntax = "proto3";
+
+package org.apache.tika.grpc.v2;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+option java_package = "org.apache.tika.grpc.v2";
+
+message Document {
+  // envelope
+  string id = 1;
+  string content_type = 2;             // Tika-detected MIME type
+  google.protobuf.Timestamp parsed_at = 4;
+  ParseStatus status = 5;
+  SourceOrigin origin = 6;
+
+  // metadata
+  DocumentMetadata metadata = 20;      // typed common fields
+  repeated MetadataField extra = 21;   // tagged tail: everything not already typed
+
+  // Field numbers 3, 10-19 and 30+ are left unassigned for later fields.
+}
+
+message SourceOrigin {
+  string filename = 1;
+  int64 byte_size = 2;
+  string parser = 3;
+  // Hex-encoded SHA-256 of the source bytes, taken from the digest the parse pipeline
+  // recorded (the tk:digest:SHA-256 metadata value). Empty when the pipeline has no
+  // digester configured. Downstream consumers use it to tie derived artifacts
+  // (annotations, index entries) back to the exact bytes that were parsed.
+  string sha256 = 4;
+}
+
+// =========================================================================
+// Metadata: typed common fields from the Dublin Core element set (title, creator,
+// description, subject, language, publisher, identifier, date, rights), the same
+// vocabulary Tika's property model and XMP use. Narrower keys (page counts,
+// dimensions, format-specific keys) go to `extra` with their declared type.
+// =========================================================================
+message DocumentMetadata {
+  string title = 1;
+  repeated string authors = 2;
+  string description = 3;
+  repeated string keywords = 4;
+  repeated string languages = 5;
+  repeated string publishers = 6;
+  // Unambiguous references to the resource as declared by the document itself
+  // (DOI, ISBN, ...), from dc:identifier.
+  repeated string identifiers = 7;
+
+  google.protobuf.Timestamp created = 10;
+  google.protobuf.Timestamp modified = 11;
+
+  string rights = 20;         // free-text rights/license statement, from dc:rights
+}
+
+// =========================================================================
+// A metadata key with its values. Tika stores every metadata value as an array of
+// strings under one key: a single value is a one-element array, and declared
+// sequences such as pdf:charsPerPage or tiff:BitsPerSample have one element per page
+// or sample. The oneof gives the element type of the whole array, so integers stay
+// int64 and dates stay Timestamps however many there are. Consumers of a single value
+// read values[0].
+// =========================================================================
+message MetadataField { string key = 1; MetadataValue value = 2; }
+message MetadataValue {
+  oneof values {
+    StringValues strings = 1;           // keys without a declared type
+    IntegerValues integers = 2;
+    NumberValues numbers = 3;
+    BooleanValues booleans = 4;
+    TimestampValues timestamps = 5;
+  }
+}
+message StringValues { repeated string values = 1; }
+message IntegerValues { repeated int64 values = 1; }
+message NumberValues { repeated double values = 1; }
+message BooleanValues { repeated bool values = 1; }
+message TimestampValues { repeated google.protobuf.Timestamp values = 1; }
+
+message ParseStatus {
+  enum Status { UNSPECIFIED = 0; SUCCESS = 1; PARTIAL = 2; FAILED = 3; }
+  Status status = 1;
+  // Milliseconds for the whole fetch and parse, measured by the server. Both happen
+  // in the forked pipes worker, so the parse time alone is not available.
+  int64 fetch_parse_time_ms = 2;
+  repeated string parsers_used = 3;
+  repeated string errors = 4;
+  // Version string of the Tika that produced this document (e.g. "Apache Tika 4.0.0"),
+  // so long-lived stores can tell which producer wrote an entry.
+  string tika_version = 5;
+  // The raw pipes result `status` was derived from (e.g. "PARSE_SUCCESS", "TIMEOUT";
+  // see org.apache.tika.pipes.api.PipesResult.RESULT_STATUS). Its values can change
+  // between Tika versions: branch on `status` and use this for logs.
+  string pipes_status = 6;
+}
