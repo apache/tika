@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * The text/html magic now requires the html tag to end, so an XML file with an
+     element such as <htmlPath> in its first 8K is no longer detected as HTML and sent
+     to the HTML parser (TIKA-4962).
+
    * OutlookExtractor now falls back to the "Date:" transport header for
      dcterms:created/modified when a .msg has no MAPI date property; the
      fallback previously could never match (TIKA-4959).
