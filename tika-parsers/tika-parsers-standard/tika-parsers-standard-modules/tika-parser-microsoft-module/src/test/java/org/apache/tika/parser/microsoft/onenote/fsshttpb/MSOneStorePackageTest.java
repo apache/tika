@@ -493,7 +493,7 @@ public class MSOneStorePackageTest {
                     List<RevisionStoreObject> objects = new ArrayList<>(tableFirst ?
                             Arrays.asList(table, item, node) : Arrays.asList(item, table, node));
                     if (!cyclic) {
-                        addPrefixChain(objects, item, 1000, 7000);
+                        addPrefixChain(objects, item, MSOneStorePackage.MAX_OBJECT_WALK_DEPTH, 7000);
                     }
                     MSOneStorePackage pkg = fallbackPackage(
                             group(objects.toArray(new RevisionStoreObject[0])), useCellFallback);
@@ -505,7 +505,7 @@ public class MSOneStorePackageTest {
                     assertEquals(1, countOccurrences(xml, "owner text"), xml);
                     if (!cyclic) {
                         assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
-                                .anyMatch(w -> w.contains("depth limit 1000")));
+                                .anyMatch(w -> w.contains("depth limit " + MSOneStorePackage.MAX_OBJECT_WALK_DEPTH)));
                     }
                 }
             }
@@ -616,7 +616,7 @@ public class MSOneStorePackageTest {
         setJcid(tableCell, OneNoteJcid.TABLE_CELL_NODE);
         List<RevisionStoreObject> objects = new ArrayList<>(Arrays.asList(shallow, table, row,
                 tableCell, leaf, author, picture));
-        addPrefixChain(objects, table, 998, 4300);
+        addPrefixChain(objects, table, MSOneStorePackage.MAX_OBJECT_WALK_DEPTH - 2, 4300);
         for (boolean useCellFallback : new boolean[] {false, true}) {
             MSOneStorePackage pkg = fallbackPackage(group(objects.toArray(new RevisionStoreObject[0])),
                     useCellFallback);
@@ -645,7 +645,7 @@ public class MSOneStorePackageTest {
             assertEquals("Depth Author", metadata.get(OneNote.ORIGINAL_AUTHORS));
             assertEquals("Depth Author", metadata.get(TikaCoreProperties.CREATOR));
             assertTrue(Arrays.stream(metadata.getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING))
-                    .anyMatch(w -> w.contains("depth limit 1000")));
+                    .anyMatch(w -> w.contains("depth limit " + MSOneStorePackage.MAX_OBJECT_WALK_DEPTH)));
         }
     }
 

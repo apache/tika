@@ -101,7 +101,8 @@ public class MSOneStorePackage {
             Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
     private static final Logger LOG = LoggerFactory.getLogger(MSOneStorePackage.class);
     private static final String P = "p";
-    private static final int MAX_OBJECT_WALK_DEPTH = 1000;
+    // 3 frames/level; 1000 overflowed a 1 MB stack. Real nesting is tens of levels.
+    static final int MAX_OBJECT_WALK_DEPTH = 256;
     private static final int MAX_REFERENCE_COUNT = 100000;
     private static final int MAX_PARSE_WARNINGS = 100;
     private static final int MIN_CANONICAL_LIST_FORMAT_LENGTH = 128;
