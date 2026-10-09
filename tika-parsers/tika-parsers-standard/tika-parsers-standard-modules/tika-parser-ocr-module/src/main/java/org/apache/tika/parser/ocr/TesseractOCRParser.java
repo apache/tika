@@ -306,18 +306,7 @@ public class TesseractOCRParser extends AbstractExternalProcessParser
 
     TesseractOCRConfig getConfig(ParseContext parseContext) throws TikaConfigException, IOException {
         if (parseContext.hasJsonConfig("tesseract-ocr-parser")) {
-            // per-request JSON is screened by RuntimeConfig (no paths, no otherTesseractConfig);
-            // operator JSON (config file, presets) is not
-            if (!parseContext.getJsonConfig("tesseract-ocr-parser").trusted()) {
-                TesseractOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
-                        parseContext,
-                        "tesseract-ocr-parser",
-                        TesseractOCRConfig.RuntimeConfig.class,
-                        new TesseractOCRConfig.RuntimeConfig());
-                if (runtimeConfig.isSkipOcr()) {
-                    return runtimeConfig;
-                }
-            }
+            // per-request JSON may not set the @OperatorOnly paths or otherTesseractConfig
             return ParseContextConfig.getConfig(
                     parseContext,
                     "tesseract-ocr-parser",

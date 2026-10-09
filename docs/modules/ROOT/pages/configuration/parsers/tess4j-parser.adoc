@@ -280,9 +280,8 @@ context.set(Tess4JConfig.class, override);
 ----
 
 NOTE: In caller-supplied JSON config — the tika-server `/config` endpoints, tika-grpc's
-`parse_context_json` — `dataPath` and `nativeLibPath` are locked at parser initialization, and
-setting either throws `TikaConfigException`. They point at native code, so a caller must not be
-able to move them. `poolSize` and `maxImagePixels` are locked in the same way but throw
-`IllegalStateException` -- for different reasons. The OCR pool is sized at initialization and
-cannot be resized per parse. `maxImagePixels` *is* read per parse, but it is the guard that
-bounds image decode against OOM, so a caller must not be able to raise it.
+`parse_context_json` — `dataPath`, `nativeLibPath`, `poolSize` and `maxImagePixels` are
+operator-only: a per-request block that names one is rejected before the parser sees it. The
+paths point at native code, so a caller must not be able to move them. The OCR pool is sized at
+initialization and cannot be resized per parse. `maxImagePixels` *is* read per parse, but it is
+the guard that bounds image decode against OOM, so a caller must not be able to raise it.

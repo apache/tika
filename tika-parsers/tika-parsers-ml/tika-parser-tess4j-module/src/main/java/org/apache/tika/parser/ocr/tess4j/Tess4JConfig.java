@@ -20,6 +20,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.StringUtils;
 
@@ -146,6 +147,7 @@ public class Tess4JConfig implements Serializable {
     /**
      * Set the path to the tessdata directory.
      */
+    @OperatorOnly
     public void setDataPath(String dataPath) throws TikaConfigException {
         this.dataPath = dataPath;
     }
@@ -208,6 +210,7 @@ public class Tess4JConfig implements Serializable {
      * Set the number of Tesseract instances to keep in the pool.
      * Default is 2. Must be at least 1.
      */
+    @OperatorOnly
     public void setPoolSize(int poolSize) {
         if (poolSize < 1) {
             throw new IllegalArgumentException("Pool size must be at least 1, got: " + poolSize);
@@ -258,6 +261,7 @@ public class Tess4JConfig implements Serializable {
      * an image before OCR is skipped. Default is 100,000,000
      * (100 megapixels). Set to {@code -1} for no limit (not recommended).
      */
+    @OperatorOnly
     public void setMaxImagePixels(long maxImagePixels) {
         if (maxImagePixels < 1 && maxImagePixels != -1) {
             throw new IllegalArgumentException(
@@ -275,6 +279,7 @@ public class Tess4JConfig implements Serializable {
      * Set the path to the directory containing native Tesseract/Leptonica shared libraries.
      * On macOS with Homebrew this is typically {@code /opt/homebrew/lib}.
      */
+    @OperatorOnly
     public void setNativeLibPath(String nativeLibPath) throws TikaConfigException {
         this.nativeLibPath = nativeLibPath;
     }
@@ -299,59 +304,6 @@ public class Tess4JConfig implements Serializable {
             } else {
                 validLangs.add(lang);
             }
-        }
-    }
-
-    /**
-     * Runtime-only Tess4JConfig that prevents modification of paths and
-     * pool settings during parse-time configuration.
-     * <p>
-     * <b>Always blocked:</b> {@code dataPath}, {@code nativeLibPath},
-     * {@code poolSize}, {@code maxImagePixels}.
-     * <p>
-     * Paths are blocked to prevent file-system access attacks.
-     * Pool size is blocked because the pool is built at init time and cannot
-     * be resized.  {@code maxImagePixels} is read per parse, but it is the
-     * OOM guard on image decode, so a caller must not be able to raise it.
-     */
-    public static class RuntimeConfig extends Tess4JConfig {
-
-        public RuntimeConfig() {
-            super();
-        }
-
-        @Override
-        public void setDataPath(String dataPath) throws TikaConfigException {
-            if (!StringUtils.isBlank(dataPath)) {
-                throw new TikaConfigException(
-                        "Cannot modify dataPath at runtime. " +
-                                "Paths must be configured at parser initialization time.");
-            }
-        }
-
-        @Override
-        public void setNativeLibPath(String nativeLibPath) throws TikaConfigException {
-            if (!StringUtils.isBlank(nativeLibPath)) {
-                throw new TikaConfigException(
-                        "Cannot modify nativeLibPath at runtime. " +
-                                "Paths must be configured at parser initialization time.");
-            }
-        }
-
-        @Override
-        public void setPoolSize(int poolSize) {
-            throw new IllegalStateException(
-                    "Cannot modify poolSize at runtime. " +
-                            "The pool is created at initialization time " +
-                            "and cannot be resized.");
-        }
-
-        @Override
-        public void setMaxImagePixels(long maxImagePixels) {
-            throw new IllegalStateException(
-                    "Cannot modify maxImagePixels at runtime. " +
-                            "Image size limits must be configured at " +
-                            "initialization time.");
         }
     }
 }

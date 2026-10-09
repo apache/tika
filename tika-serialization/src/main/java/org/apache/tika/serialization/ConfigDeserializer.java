@@ -95,6 +95,10 @@ public class ConfigDeserializer {
             return defaultConfig;
         }
 
+        if (!jsonConfig.trusted()) {
+            OperatorOnlyGuard.check(MAPPER, configKey, jsonConfig.json(), configClass);
+        }
+
         // Deserialize and merge with default
         T config = JsonMergeUtils.mergeWithDefaults(MAPPER, jsonConfig.json(), configClass, defaultConfig);
 

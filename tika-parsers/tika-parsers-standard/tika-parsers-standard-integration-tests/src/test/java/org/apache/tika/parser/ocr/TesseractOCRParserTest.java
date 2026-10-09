@@ -308,9 +308,9 @@ public class TesseractOCRParserTest extends TikaTest {
         otherConfig.put("k2", "b2");
         runtimeUpdates.put("otherTesseractConfig", otherConfig);
 
-        // Store runtime config in ParseContext
+        // Operator JSON (a preset): otherTesseractConfig is refused in per-request JSON
         ParseContext context = new ParseContext();
-        context.setJsonConfig("tesseract-ocr-parser", mapper.writeValueAsString(runtimeUpdates));
+        context.setJsonConfig("tesseract-ocr-parser", mapper.writeValueAsString(runtimeUpdates), true);
 
         // Merge configs using ParseContextConfig
         TesseractOCRConfig mergedConfig = ParseContextConfig.getConfig(
@@ -331,70 +331,38 @@ public class TesseractOCRParserTest extends TikaTest {
         assertEquals("a2", defaultConfig.getOtherTesseractConfig().get("k2"));
     }
 
+    /**
+     * Paths name binaries the parser runs and otherTesseractConfig names files the binary
+     * opens, so per-request JSON may not set them; operator JSON may.
+     */
     @Test
-    public void testRuntimeConfigPathValidation() throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
-
-        // Test that setting tesseractPath at runtime throws exception
-        Map<String, Object> configWithTesseractPath = new HashMap<>();
-        configWithTesseractPath.put("tesseractPath", "/some/path");
+    public void testPerRequestConfigCannotSetOperatorOnlyFields() throws Exception {
+        for (String json : new String[]{
+                "{\"tesseractPath\": \"/some/path\"}",
+                "{\"tessdataPath\": \"/some/path\"}",
+                "{\"imageMagickPath\": \"/some/path\"}",
+                "{\"trustedPageSeparator\": \"<p/>\"}",
+                "{\"otherTesseractConfig\": {\"debug_file\": \"/tmp/anywhere\"}}"}) {
+            ParseContext context = new ParseContext();
+            context.setJsonConfig("tesseract-ocr-parser", json);
+            IOException e = assertThrows(IOException.class, () -> ParseContextConfig.getConfig(
+                    context, "tesseract-ocr-parser", TesseractOCRConfig.class, new TesseractOCRConfig()),
+                    json);
+            assertTrue(e.getMessage().contains("at runtime"), e.getMessage());
+        }
 
         ParseContext context = new ParseContext();
-        context.setJsonConfig("tesseract-ocr-parser", mapper.writeValueAsString(configWithTesseractPath));
+        context.setJsonConfig("tesseract-ocr-parser", "{\"language\": \"fra\", \"skipOcr\": true}");
+        TesseractOCRConfig perRequest = ParseContextConfig.getConfig(
+                context, "tesseract-ocr-parser", TesseractOCRConfig.class, new TesseractOCRConfig());
+        assertEquals("fra", perRequest.getLanguage());
+        assertTrue(perRequest.isSkipOcr());
 
-        IOException exception = assertThrows(IOException.class, () -> {
-            ParseContextConfig.getConfig(
-                    context,
-                    "tesseract-ocr-parser",
-                    TesseractOCRConfig.RuntimeConfig.class,
-                    new TesseractOCRConfig.RuntimeConfig());
-        });
-        assertTrue(exception.getMessage().contains("Cannot modify tesseractPath at runtime"));
-
-        // Test that setting tessdataPath at runtime throws exception
-        Map<String, Object> configWithTessdataPath = new HashMap<>();
-        configWithTessdataPath.put("tessdataPath", "/some/path");
-
-        context.setJsonConfig("tesseract-ocr-parser", mapper.writeValueAsString(configWithTessdataPath));
-
-        exception = assertThrows(IOException.class, () -> {
-            ParseContextConfig.getConfig(
-                    context,
-                    "tesseract-ocr-parser",
-                    TesseractOCRConfig.RuntimeConfig.class,
-                    new TesseractOCRConfig.RuntimeConfig());
-        });
-        assertTrue(exception.getMessage().contains("Cannot modify tessdataPath at runtime"));
-
-        // Test that setting imageMagickPath at runtime throws exception
-        Map<String, Object> configWithImageMagickPath = new HashMap<>();
-        configWithImageMagickPath.put("imageMagickPath", "/some/path");
-
-        context.setJsonConfig("tesseract-ocr-parser", mapper.writeValueAsString(configWithImageMagickPath));
-
-        exception = assertThrows(IOException.class, () -> {
-            ParseContextConfig.getConfig(
-                    context,
-                    "tesseract-ocr-parser",
-                    TesseractOCRConfig.RuntimeConfig.class,
-                    new TesseractOCRConfig.RuntimeConfig());
-        });
-        assertTrue(exception.getMessage().contains("Cannot modify imageMagickPath at runtime"));
-
-        // Test that setting non-path fields works fine
-        Map<String, Object> validRuntimeConfig = new HashMap<>();
-        validRuntimeConfig.put("language", "fra");
-        validRuntimeConfig.put("skipOcr", true);
-
-        context.setJsonConfig("tesseract-ocr-parser", mapper.writeValueAsString(validRuntimeConfig));
-
-        // This should not throw
-        TesseractOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
-                context,
-                "tesseract-ocr-parser",
-                TesseractOCRConfig.RuntimeConfig.class,
-                new TesseractOCRConfig.RuntimeConfig());
-        assertEquals("fra", runtimeConfig.getLanguage());
-        assertTrue(runtimeConfig.isSkipOcr());
+        context = new ParseContext();
+        context.setJsonConfig("tesseract-ocr-parser",
+                "{\"otherTesseractConfig\": {\"tessedit_char_whitelist\": \"0123456789\"}}", true);
+        TesseractOCRConfig operator = ParseContextConfig.getConfig(
+                context, "tesseract-ocr-parser", TesseractOCRConfig.class, new TesseractOCRConfig());
+        assertEquals("0123456789", operator.getOtherTesseractConfig().get("tessedit_char_whitelist"));
     }
 }
