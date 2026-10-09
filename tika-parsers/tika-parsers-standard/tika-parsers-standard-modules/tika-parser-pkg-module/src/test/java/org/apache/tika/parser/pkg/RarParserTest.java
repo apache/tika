@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.exception.EncryptedDocumentException;
@@ -43,6 +44,8 @@ public class RarParserTest extends AbstractPkgTest {
      * fired for all the embedded entries.
      */
     @Test
+    // junrar FileHeader.getDateDos uses Calendar.getInstance() (TIKA-4920)
+    @DisabledIf("org.apache.tika.test.TestLocales#nonGregorianDefault")
     public void testEmbedded() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();

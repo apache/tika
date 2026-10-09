@@ -35,6 +35,7 @@ import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.jupiter.api.parallel.ResourceLock;
@@ -65,6 +66,8 @@ public class ZipEntryTimesTest extends TikaTest {
     }
 
     @Test
+    // commons-compress ZipUtil.dosToJavaDate uses Calendar.getInstance() (TIKA-4920)
+    @DisabledIf("org.apache.tika.test.TestLocales#nonGregorianDefault")
     public void testEntryTimesAreFileSystemTimes(@TempDir Path tempDir) throws Exception {
         Path zip = tempDir.resolve("times.zip");
         try (ZipArchiveOutputStream zos = new ZipArchiveOutputStream(Files.newOutputStream(zip))) {

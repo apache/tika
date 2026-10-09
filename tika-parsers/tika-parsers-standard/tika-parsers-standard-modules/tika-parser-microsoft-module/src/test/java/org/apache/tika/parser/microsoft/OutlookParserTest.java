@@ -32,6 +32,7 @@ import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -200,6 +201,8 @@ public class OutlookParserTest extends TikaTest {
     }
 
     @Test
+    // POI LocaleUtil.getLocaleCalendar dates MAPI times in the default calendar (TIKA-4920)
+    @DisabledIf("org.apache.tika.test.TestLocales#nonGregorianDefault")
     public void testOutlookHTMLVersion() throws Exception {
         Metadata metadata = new Metadata();
 

@@ -26,6 +26,7 @@ import static org.apache.tika.parser.font.AdobeFontMetricParser.MET_PS_NAME;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -72,6 +73,8 @@ public class FontParsersTest extends TikaTest {
     }
 
     @Test
+    // fontbox TTFDataStream.readInternationalDate builds its Calendar in the default locale (TIKA-4920)
+    @DisabledIf("org.apache.tika.test.TestLocales#nonGregorianDefault")
     public void testTTFParsing() throws Exception {
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
