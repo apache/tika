@@ -22,6 +22,7 @@ import org.apache.pdfbox.text.PDFTextStripper;
 
 import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Config for PDFParser.
@@ -738,6 +739,39 @@ public class PDFParserConfig implements Serializable {
 
     public boolean isThrowOnEncryptedPayload() {
         return throwOnEncryptedPayload;
+    }
+
+    /**
+     * Runtime-only PDFParserConfig that refuses the image graphics engine factory, which
+     * {@link PDFParserConfig#setImageGraphicsEngineFactoryClass(String)} loads and
+     * instantiates by name.
+     * <p>
+     * This class is deserialized by ConfigDeserializer (in tika-serialization), which populates
+     * fields via setters, so a per-request {@code pdf-parser} block naming a factory throws
+     * here. The factory is operator configuration.
+     */
+    public static class RuntimeConfig extends PDFParserConfig {
+
+        private static final long serialVersionUID = 6492570218190936987L;
+
+        @Override
+        public void setImageGraphicsEngineFactoryClass(String className) {
+            if (!StringUtils.isBlank(className)) {
+                throw new IllegalArgumentException("Cannot modify imageGraphicsEngineFactoryClass"
+                        + " at runtime. The image graphics engine factory must be configured at"
+                        + " parser initialization time.");
+            }
+        }
+
+        @Override
+        public void setImageGraphicsEngineFactory(
+                ImageGraphicsEngineFactory imageGraphicsEngineFactory) {
+            if (imageGraphicsEngineFactory != null) {
+                throw new IllegalArgumentException("Cannot modify imageGraphicsEngineFactory at"
+                        + " runtime. The image graphics engine factory must be configured at"
+                        + " parser initialization time.");
+            }
+        }
     }
 
     /** @deprecated since 4.1.0; see {@link #setImageStrategy}. */
