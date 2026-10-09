@@ -1,4 +1,4 @@
-Release 3.3.3 - ???
+Release 3.3.3 - 10/09/2026
 
   * XFAExtractor now parses XFA with SAX instead of StAX;
     XMLReaderUtils.getXMLInputFactory() is deprecated (TIKA-4938).
