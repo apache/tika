@@ -20,6 +20,7 @@ import java.io.Serializable;
 
 import org.apache.pdfbox.text.PDFTextStripper;
 
+import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
 
@@ -657,6 +658,7 @@ public class PDFParserConfig implements Serializable {
      *
      * @param imageGraphicsEngineFactory
      */
+    @OperatorOnly
     public void setImageGraphicsEngineFactory(ImageGraphicsEngineFactory imageGraphicsEngineFactory) {
         this.imageGraphicsEngineFactory = imageGraphicsEngineFactory;
     }
@@ -667,6 +669,7 @@ public class PDFParserConfig implements Serializable {
      *
      * @param className fully qualified class name of an ImageGraphicsEngineFactory implementation
      */
+    @OperatorOnly
     public void setImageGraphicsEngineFactoryClass(String className) {
         try {
             Class<?> clazz = Class.forName(className);

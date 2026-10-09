@@ -506,17 +506,6 @@ public class Tess4JParser implements Parser, Initializable, TextRecognizer {
             throws TikaConfigException, IOException {
 
         if (parseContext.hasJsonConfig("tess4j-parser")) {
-            // Validate no paths in runtime config
-            Tess4JConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
-                    parseContext,
-                    "tess4j-parser",
-                    Tess4JConfig.RuntimeConfig.class,
-                    new Tess4JConfig.RuntimeConfig());
-
-            if (runtimeConfig.isSkipOcr()) {
-                return runtimeConfig;
-            }
-
             return ParseContextConfig.getConfig(
                     parseContext,
                     "tess4j-parser",

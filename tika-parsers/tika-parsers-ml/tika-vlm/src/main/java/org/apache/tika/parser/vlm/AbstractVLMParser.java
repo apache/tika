@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -288,22 +289,44 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
             throws TikaConfigException, IOException {
         String key = configKey();
         if (parseContext.hasJsonConfig(key)) {
-            VLMOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
-                    parseContext, key, VLMOCRConfig.RuntimeConfig.class,
-                    new VLMOCRConfig.RuntimeConfig(defaultConfig));
-
-            if (runtimeConfig.isSkipOcr()) {
-                return runtimeConfig;
-            }
-
-            return ParseContextConfig.getConfig(
+            VLMOCRConfig config = ParseContextConfig.getConfig(
                     parseContext, key, VLMOCRConfig.class, defaultConfig);
+            if (!parseContext.getJsonConfig(key).trusted()) {
+                checkRuntimeOverrides(config);
+            }
+            return config;
         }
         VLMOCRConfig userConfig = parseContext.get(VLMOCRConfig.class);
         if (userConfig != null) {
             return userConfig;
         }
         return defaultConfig;
+    }
+
+    /**
+     * The per-request rules {@code @OperatorOnly} cannot express: maxTokens may be lowered
+     * but never raised (the ceiling bounds cost on a paid endpoint), and the prompt, with
+     * textRecognizer which describes it, changes only when the operator allowed that.
+     */
+    private void checkRuntimeOverrides(VLMOCRConfig config) throws TikaConfigException {
+        if (config.getMaxTokens() > defaultConfig.getMaxTokens()) {
+            throw new TikaConfigException("Cannot increase maxTokens beyond the init-time value ("
+                    + defaultConfig.getMaxTokens() + ") at runtime. Requested: "
+                    + config.getMaxTokens());
+        }
+        if (defaultConfig.isAllowRuntimePrompt()) {
+            return;
+        }
+        if (!Objects.equals(config.getPrompt(), defaultConfig.getPrompt())) {
+            throw new TikaConfigException("Cannot modify prompt at runtime. Set "
+                    + "allowRuntimePrompt=true at initialization time to permit per-request "
+                    + "prompt overrides.");
+        }
+        if (config.isTextRecognizer() != defaultConfig.isTextRecognizer()) {
+            throw new TikaConfigException("Cannot modify textRecognizer at runtime. Set "
+                    + "allowRuntimePrompt=true at initialization time to permit per-request "
+                    + "prompt overrides.");
+        }
     }
 
     protected static String stripTrailingSlash(String url) {

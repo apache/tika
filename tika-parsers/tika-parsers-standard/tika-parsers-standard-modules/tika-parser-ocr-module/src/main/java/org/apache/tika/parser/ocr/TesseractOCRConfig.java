@@ -30,6 +30,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.StringUtils;
 
@@ -213,6 +214,7 @@ public class TesseractOCRConfig implements Serializable {
      *
      * @param pageSeparator
      */
+    @OperatorOnly
     public void setTrustedPageSeparator(String pageSeparator) {
         this.pageSeparator = pageSeparator;
     }
@@ -504,6 +506,7 @@ public class TesseractOCRConfig implements Serializable {
      *
      * @param otherTesseractConfig map of key-value pairs
      */
+    @OperatorOnly
     public void setOtherTesseractConfig(Map<String, String> otherTesseractConfig) {
         if (otherTesseractConfig != null) {
             for (Map.Entry<String, String> entry : otherTesseractConfig.entrySet()) {
@@ -542,6 +545,7 @@ public class TesseractOCRConfig implements Serializable {
         return tesseractPath;
     }
 
+    @OperatorOnly
     public void setTesseractPath(String tesseractPath) throws TikaConfigException {
         tesseractPath = FilenameUtils.normalize(tesseractPath);
         if (!tesseractPath.isEmpty() && !tesseractPath.endsWith(File.separator)) {
@@ -554,6 +558,7 @@ public class TesseractOCRConfig implements Serializable {
         return tessdataPath;
     }
 
+    @OperatorOnly
     public void setTessdataPath(String tessdataPath) throws TikaConfigException {
         tessdataPath = FilenameUtils.normalize(tessdataPath);
         if (!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator)) {
@@ -566,62 +571,13 @@ public class TesseractOCRConfig implements Serializable {
         return imageMagickPath;
     }
 
+    @OperatorOnly
     public void setImageMagickPath(String imageMagickPath) throws TikaConfigException {
         imageMagickPath = FilenameUtils.normalize(imageMagickPath);
         if (!imageMagickPath.isEmpty() && !imageMagickPath.endsWith(File.separator)) {
             imageMagickPath += File.separator;
         }
         this.imageMagickPath = imageMagickPath;
-    }
-
-    /**
-     * Runtime-only TesseractOCRConfig that prevents modification of paths and of the
-     * {@code -c} pass-through map. Used to enforce immutability of parser-level paths
-     * during parse-time configuration.
-     * <p>
-     * This class is deserialized by ConfigDeserializer (in tika-serialization) which uses
-     * Jackson to populate fields via setters. If the JSON contains any path fields, the
-     * overridden setters will throw TikaConfigException. {@code otherTesseractConfig} is
-     * refused as well: tesseract variables such as {@code debug_file} name files the
-     * binary opens, so the map is operator configuration only.
-     */
-    public static class RuntimeConfig extends TesseractOCRConfig {
-
-        public RuntimeConfig() {
-            super();
-        }
-
-        @Override
-        public void setTesseractPath(String tesseractPath) throws TikaConfigException {
-            if (! StringUtils.isBlank(tesseractPath)) {
-                throw new TikaConfigException("Cannot modify tesseractPath at runtime. Paths must be configured at parser initialization time.");
-            }
-        }
-
-        @Override
-        public void setTessdataPath(String tessdataPath) throws TikaConfigException {
-            if (! StringUtils.isBlank(tessdataPath)) {
-                throw new TikaConfigException("Cannot modify tessdataPath at runtime. " + "Paths must be configured at parser initialization time.");
-            }
-        }
-
-        @Override
-        public void setImageMagickPath(String imageMagickPath) throws TikaConfigException {
-            if (! StringUtils.isBlank(imageMagickPath)) {
-                throw new TikaConfigException("Cannot modify imageMagickPath at runtime. " + "Paths must be configured at parser initialization time.");
-            }
-        }
-
-        @Override
-        public void setTrustedPageSeparator(String pageSeparator) {
-            throw new IllegalArgumentException("Cannot use setTrustedPageSeparator at runtime. " + "Use setPageSeparator instead.");
-        }
-
-        @Override
-        public void addOtherTesseractConfig(String key, String value) {
-            throw new IllegalArgumentException("Cannot set otherTesseractConfig at runtime. " +
-                    "Tesseract variables must be configured at parser initialization time.");
-        }
     }
 
     public enum OUTPUT_TYPE {

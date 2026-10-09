@@ -279,14 +279,14 @@ context.set(VLMOCRConfig.class, override);
 ----
 
 *Caller-supplied JSON* — the tika-server `/config` endpoints and tika-grpc's `parse_context_json`,
-each gated by its own `allowPerRequestConfig`. Here the parser applies a restricted config that
-rejects cost- and security-sensitive changes with an exception:
+each gated by its own `allowPerRequestConfig`. Here cost- and security-sensitive changes are
+rejected with an exception:
 
 [cols="1,3"]
 |===
 |Field |Runtime rule
 
-|`baseUrl`, `apiKey`
+|`baseUrl`, `completionsPath`, `apiKey`
 |Always blocked; configure at initialization time.
 
 |`model`

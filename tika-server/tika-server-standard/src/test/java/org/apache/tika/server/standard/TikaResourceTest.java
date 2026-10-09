@@ -568,6 +568,39 @@ public class TikaResourceTest extends CXFTestBase {
         assertEquals(422, response.getStatus());
     }
 
+    /** The factory class name loads and constructs the class it names: operator-only. */
+    @Test
+    public void testOperatorOnlyPdfConfigRefused() throws Exception {
+        String configJson = """
+                {
+                  "pdf-parser": {
+                    "imageGraphicsEngineFactoryClass": "org.apache.tika.server.standard.TikaResourceTest$ConstructorWitness"
+                  }
+                }
+                """;
+        ConstructorWitness.constructed = false;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/config")
+                .type("multipart/form-data")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+        assertEquals(422, response.getStatus());
+        assertFalse(ConstructorWitness.constructed, "a class named by per-request config was constructed");
+    }
+
+    public static class ConstructorWitness {
+        static volatile boolean constructed;
+
+        public ConstructorWitness() {
+            constructed = true;
+        }
+    }
+
     @Test
     public void testFloatInConfig() throws Exception {
         String configJson = """

@@ -18,8 +18,8 @@ package org.apache.tika.parser.vlm;
 
 import java.io.Serializable;
 
+import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.utils.StringUtils;
 
 /**
  * Configuration for {@link AbstractVLMParser} and its subclasses.
@@ -122,6 +122,7 @@ public class VLMOCRConfig implements Serializable {
         return baseUrl;
     }
 
+    @OperatorOnly
     public void setBaseUrl(String baseUrl) throws TikaConfigException {
         this.baseUrl = baseUrl;
     }
@@ -130,6 +131,7 @@ public class VLMOCRConfig implements Serializable {
         return completionsPath;
     }
 
+    @OperatorOnly
     public void setCompletionsPath(String completionsPath) {
         this.completionsPath = completionsPath;
     }
@@ -138,6 +140,7 @@ public class VLMOCRConfig implements Serializable {
         return model;
     }
 
+    @OperatorOnly
     public void setModel(String model) {
         this.model = model;
     }
@@ -170,6 +173,7 @@ public class VLMOCRConfig implements Serializable {
         return maxRetries;
     }
 
+    @OperatorOnly
     public void setMaxRetries(int maxRetries) {
         this.maxRetries = maxRetries;
     }
@@ -178,6 +182,7 @@ public class VLMOCRConfig implements Serializable {
         return apiKey;
     }
 
+    @OperatorOnly
     public void setApiKey(String apiKey) throws TikaConfigException {
         this.apiKey = apiKey;
     }
@@ -230,6 +235,7 @@ public class VLMOCRConfig implements Serializable {
      * Set the maximum total pixels (width &times; height) for an image.
      * Default is 100,000,000. Set to {@code -1} for no limit (not recommended).
      */
+    @OperatorOnly
     public void setMaxImagePixels(long maxImagePixels) {
         if (maxImagePixels < 1 && maxImagePixels != -1) {
             throw new IllegalArgumentException(
@@ -243,126 +249,8 @@ public class VLMOCRConfig implements Serializable {
         return allowRuntimePrompt;
     }
 
+    @OperatorOnly
     public void setAllowRuntimePrompt(boolean allowRuntimePrompt) {
         this.allowRuntimePrompt = allowRuntimePrompt;
-    }
-
-    /**
-     * Runtime-only config that prevents modification of security-sensitive
-     * and cost-sensitive fields at parse time.
-     * <p>
-     * <b>Always blocked:</b> {@code baseUrl}, {@code apiKey}, {@code model},
-     * {@code maxTokens}, {@code maxRetries}, {@code allowRuntimePrompt}.
-     * <p>
-     * <b>Blocked by default (opt-in):</b> {@code prompt} — set
-     * {@code allowRuntimePrompt=true} at initialization time to permit
-     * per-request prompt overrides.
-     * <p>
-     * The {@code model} field is unconditionally blocked because there is
-     * no legitimate reason to swap models per-request; if a different model
-     * is needed, configure a separate parser instance.
-     * <p>
-     * The {@code maxTokens} field cannot be raised above the init-time
-     * value at runtime to prevent cost attacks on paid API endpoints.
-     */
-    public static class RuntimeConfig extends VLMOCRConfig {
-
-        /** Init-time maxTokens ceiling — runtime requests cannot exceed this. */
-        private int initMaxTokens = 4096;
-
-        public RuntimeConfig() {
-        }
-
-        /**
-         * Creates a RuntimeConfig that inherits the init-time
-         * {@code allowRuntimePrompt} setting and the {@code maxTokens}
-         * ceiling from the given parent config.
-         */
-        public RuntimeConfig(VLMOCRConfig initConfig) {
-            super.setAllowRuntimePrompt(initConfig.isAllowRuntimePrompt());
-            this.initMaxTokens = initConfig.getMaxTokens();
-        }
-
-        @Override
-        public void setBaseUrl(String baseUrl) throws TikaConfigException {
-            if (!StringUtils.isBlank(baseUrl)) {
-                throw new TikaConfigException(
-                        "Cannot modify baseUrl at runtime. "
-                                + "URLs must be configured at initialization time.");
-            }
-        }
-
-        @Override
-        public void setApiKey(String apiKey) throws TikaConfigException {
-            if (!StringUtils.isBlank(apiKey)) {
-                throw new TikaConfigException(
-                        "Cannot modify apiKey at runtime. "
-                                + "API keys must be configured at initialization time.");
-            }
-        }
-
-        @Override
-        public void setModel(String model) {
-            throw new IllegalStateException(
-                    "Cannot modify model at runtime. "
-                            + "Models must be configured at initialization time. "
-                            + "If you need a different model, configure a "
-                            + "separate parser instance.");
-        }
-
-        @Override
-        public void setMaxRetries(int maxRetries) {
-            throw new IllegalStateException("Cannot modify maxRetries at runtime. "
-                    + "Retries are configured at initialization time.");
-        }
-
-        @Override
-        public void setPrompt(String prompt) {
-            if (!isAllowRuntimePrompt()) {
-                throw new IllegalStateException(
-                        "Cannot modify prompt at runtime. "
-                                + "Set allowRuntimePrompt=true at initialization time "
-                                + "to permit per-request prompt overrides.");
-            }
-            super.setPrompt(prompt);
-        }
-
-        // describes the prompt, so it is locked with it
-        @Override
-        public void setTextRecognizer(boolean textRecognizer) {
-            if (!isAllowRuntimePrompt()) {
-                throw new IllegalStateException(
-                        "Cannot modify textRecognizer at runtime. "
-                                + "Set allowRuntimePrompt=true at initialization time "
-                                + "to permit per-request prompt overrides.");
-            }
-            super.setTextRecognizer(textRecognizer);
-        }
-
-        @Override
-        public void setMaxTokens(int maxTokens) {
-            if (maxTokens > initMaxTokens) {
-                throw new IllegalStateException(
-                        "Cannot increase maxTokens beyond the init-time value ("
-                                + initMaxTokens + ") at runtime. "
-                                + "Requested: " + maxTokens);
-            }
-            super.setMaxTokens(maxTokens);
-        }
-
-        @Override
-        public void setAllowRuntimePrompt(boolean allowRuntimePrompt) {
-            throw new IllegalStateException(
-                    "Cannot modify allowRuntimePrompt at runtime. "
-                            + "This must be configured at initialization time.");
-        }
-
-        @Override
-        public void setMaxImagePixels(long maxImagePixels) {
-            throw new IllegalStateException(
-                    "Cannot modify maxImagePixels at runtime. "
-                            + "Image size limits must be configured at "
-                            + "initialization time.");
-        }
     }
 }

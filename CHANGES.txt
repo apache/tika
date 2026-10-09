@@ -1,5 +1,11 @@
 Release 4.2.0 - unreleased
 
+   * Config properties whose value reaches the host (paths, executables, class names,
+     URLs, credentials, operator-sized limits) are marked @OperatorOnly and refused in
+     per-request JSON before any setter runs. Newly locked: pdf-parser's
+     imageGraphicsEngineFactoryClass and the VLM parsers' completionsPath. The per-parser
+     RuntimeConfig subclasses are removed (TIKA-4965).
+
    * OutlookExtractor now falls back to the "Date:" transport header for
      dcterms:created/modified when a .msg has no MAPI date property; the
      fallback previously could never match (TIKA-4959).
