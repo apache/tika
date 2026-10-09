@@ -7893,8 +7893,8 @@
       <match value="&lt;head" type="string" offset="0:64"/>
       <match value="&lt;TITLE" type="string" offset="0:64"/>
       <match value="&lt;title" type="string" offset="0:64"/>
-      <match value="&lt;HTML" type="string" offset="0:64"/>
-      <match value="&lt;html" type="string" offset="0:128"/>
+      <!-- the tag must end: <htmlPath> in an XML file is not HTML -->
+      <match value="(?i)&lt;html[\\s>]" type="regex" offset="0:128"/>
     </magic>
     <magic priority="20">
       <!-- Lower priority match for <html anywhere near the top of the file -->
@@ -7904,7 +7904,7 @@
            MimeTypes#getMinLength() bytes. It should also only start after
            the higher priority "start of file" one above
        -->
-      <match value="&lt;html" type="string" offset="128:8192"/>
+      <match value="(?i)&lt;html[\\s>]" type="regex" offset="128:8192"/>
     </magic>
     <glob pattern="*.html"/>
     <glob pattern="*.htm"/>

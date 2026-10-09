@@ -93,6 +93,34 @@ public class MimeDetectionTest {
         testFile("application/vnd.android.axml", "test-android-binary.xml");
     }
 
+    /** The html magic needs the tag to end: an XML element such as htmlPath is not html. */
+    @Test
+    public void testHtmlMagicNeedsTagEnd() throws Exception {
+        String pad = " ".repeat(200);
+        String[] notHtml = {
+                "<htmlPath><![CDATA[TmplData\\tmpl.html]]></htmlPath>",
+                "<flashTemplate><info>" + pad + "<htmlPath>x</htmlPath></info></flashTemplate>",
+                "<root>" + pad + "<htmlContent>x</htmlContent></root>"
+        };
+        for (String xml : notHtml) {
+            assertDetected(MediaType.TEXT_PLAIN, xml.getBytes(UTF_8));
+            Metadata metadata = new Metadata();
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "flashTemplate.xml");
+            try (TikaInputStream tis = TikaInputStream.get(xml.getBytes(UTF_8))) {
+                assertEquals(MediaType.APPLICATION_XML, MIME_TYPES.detect(tis, metadata, new ParseContext()), xml);
+            }
+        }
+        String[] html = {
+                "<html><body>x</body></html>",
+                "<HTML>\n<body>x</body></HTML>",
+                "<html\nlang=\"en\"><body>x</body></html>",
+                "garbage\n".repeat(30) + "<html><body>x</body></html>"
+        };
+        for (String h : html) {
+            assertDetected(MediaType.TEXT_HTML, h.getBytes(UTF_8));
+        }
+    }
+
     /** An OS/2 bitmap array's first entry header (size 40, next at 46) is not an icon. */
     @Test
     public void testOs2BitmapArrayIsNotAnIcon() throws Exception {

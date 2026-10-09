@@ -3,6 +3,10 @@ Release 4.2.0 - unreleased
    * JSoupParser emits the text of CDATA sections again. jsoup 1.23 tokenizes CDATA in
      HTML content as a bogus comment, which silently dropped every CDATA value in XML
      that reaches the HTML parser (TIKA-4963).
+     
+   * The text/html magic now requires the html tag to end, so an XML file with an
+     element such as <htmlPath> in its first 8K is no longer detected as HTML and sent
+     to the HTML parser (TIKA-4962).
 
    * OutlookExtractor now falls back to the "Date:" transport header for
      dcterms:created/modified when a .msg has no MAPI date property; the
@@ -72,6 +76,15 @@ Release 4.2.0 - unreleased
      Every resolver Tika installs answers with an empty stream, never null (TIKA-4941).
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
+   * OneNote extracts a section GUID and page, page-series, page-node, and conflict-page
+     GUID metadata from classic and FSSHTTPB files; the GUID bags are deduplicated and
+     sorted, not page-ordered. Tree-collected GUID metadata is capped at 100,000 values
+     with a warning if the limit is reached. FSSHTTPB page divs now carry
+     id="{page GUID}" when a page GUID was recovered (fallback content can be unwrapped).
+     FSSHTTPB root resolution is bounded at 10,000 roots per cell; when the bound
+     truncates the declared roots before a content root, the walk falls back to every
+     object in the cell so page content is not silently lost (TIKA-4944).
+     
    * Raise the default maxFilesProcessedPerProcess from 10,000 to 100,000;
      forked pipes JVMs restart a tenth as often (TIKA-4950).
      

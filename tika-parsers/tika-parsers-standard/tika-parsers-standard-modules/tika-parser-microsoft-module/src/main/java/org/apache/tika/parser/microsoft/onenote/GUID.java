@@ -35,6 +35,30 @@ public class GUID implements Comparable<GUID> {
     }
 
     /**
+     * Decodes a 16-byte GUID stored in the mixed-endian layout used by MS-DTYP.
+     *
+     * @return the GUID, or {@code null} if {@code data} is not exactly 16 bytes
+     */
+    public static GUID fromMicrosoftBytes(byte[] data) {
+        if (data == null || data.length != 16) {
+            return null;
+        }
+        int[] guid = new int[16];
+        guid[0] = data[3] & 0xff;
+        guid[1] = data[2] & 0xff;
+        guid[2] = data[1] & 0xff;
+        guid[3] = data[0] & 0xff;
+        guid[4] = data[5] & 0xff;
+        guid[5] = data[4] & 0xff;
+        guid[6] = data[7] & 0xff;
+        guid[7] = data[6] & 0xff;
+        for (int i = 8; i < 16; i++) {
+            guid[i] = data[i] & 0xff;
+        }
+        return new GUID(guid);
+    }
+
+    /**
      * Converts a GUID of format: {AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE} (in bytes) to a GUID
      * object.
      *
