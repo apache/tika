@@ -1,5 +1,8 @@
 Release 4.2.0 - unreleased
 
+   * The docx parser wraps OMML equations (m:oMath) in <span class="math">; their
+     text was previously emitted as unmarked body text (TIKA-4968).
+
    * Config properties whose value reaches the host (paths, executables, class names,
      URLs, credentials, operator-sized limits) are marked @OperatorOnly and refused in
      per-request JSON before any setter runs. Newly locked: pdf-parser's
