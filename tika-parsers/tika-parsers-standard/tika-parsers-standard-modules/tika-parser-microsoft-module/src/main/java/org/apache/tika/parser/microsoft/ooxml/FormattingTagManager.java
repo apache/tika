@@ -44,8 +44,9 @@ class FormattingTagManager {
 
     private final XHTMLContentHandler xhtml;
 
-    // Outermost to innermost: hyperlink > bold > italic > strike > underline
+    // Outermost to innermost: hyperlink > math > bold > italic > strike > underline
     private String currentHyperlink = null;
+    private boolean isMath = false;
     private boolean wrapperHyperlinkActive = false;
     private boolean isBold = false;
     private boolean isItalics = false;
@@ -65,7 +66,7 @@ class FormattingTagManager {
         if (url == null) {
             return;
         }
-        closeFormattingTags();
+        closeInlineTags();
         if (currentHyperlink != null) {
             xhtml.endElement("a");
         }
@@ -79,7 +80,7 @@ class FormattingTagManager {
      */
     void closeHyperlink() throws SAXException {
         if (currentHyperlink != null && wrapperHyperlinkActive) {
-            closeFormattingTags();
+            closeInlineTags();
             xhtml.endElement("a");
             currentHyperlink = null;
             wrapperHyperlinkActive = false;
@@ -102,7 +103,7 @@ class FormattingTagManager {
         if (!wrapperHyperlinkActive) {
             String newHyperlink = runProperties.getHlinkClickUrl();
             if (!Objects.equals(newHyperlink, currentHyperlink)) {
-                closeFormattingTags();
+                closeInlineTags();
                 if (currentHyperlink != null) {
                     xhtml.endElement("a");
                 }
@@ -179,15 +180,41 @@ class FormattingTagManager {
     }
 
     /**
+     * Opens {@code <span class="math">} for an OMML equation. A hyperlink change inside
+     * the equation closes it.
+     */
+    void openMath() throws SAXException {
+        if (isMath) {
+            return;
+        }
+        closeFormattingTags();
+        xhtml.startElement("span", "class", "math");
+        isMath = true;
+    }
+
+    void closeMath() throws SAXException {
+        if (isMath) {
+            closeFormattingTags();
+            xhtml.endElement("span");
+            isMath = false;
+        }
+    }
+
+    /**
      * Closes all currently open tags in proper nesting order.
      */
     void closeAll() throws SAXException {
-        closeFormattingTags();
+        closeInlineTags();
         if (currentHyperlink != null) {
             xhtml.endElement("a");
             currentHyperlink = null;
             wrapperHyperlinkActive = false;
         }
+    }
+
+    private void closeInlineTags() throws SAXException {
+        closeFormattingTags();
+        closeMath();
     }
 
     private void closeFormattingTags() throws SAXException {
