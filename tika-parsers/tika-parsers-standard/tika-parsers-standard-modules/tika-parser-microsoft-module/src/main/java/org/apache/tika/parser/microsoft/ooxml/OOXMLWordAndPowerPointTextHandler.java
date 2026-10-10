@@ -17,7 +17,9 @@
 package org.apache.tika.parser.microsoft.ooxml;
 
 
+import java.util.ArrayDeque;
 import java.util.Date;
+import java.util.Deque;
 import java.util.Map;
 
 import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
@@ -115,6 +117,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private static final String TXBX = "txbx"; // DrawingML text box (wps:txbx in mc:Choice)
     private final static String FLD_CHAR = "fldChar";
     private final static String INSTR_TEXT = "instrText";
+    private final static String FLD_SIMPLE = "fldSimple";
+    private final static String INSTR = "instr";
+    // bounds the field stack against hostile nesting
+    private final static int MAX_FIELD_DEPTH = 64;
     private final static String FLD_CHAR_TYPE = "fldCharType";
     // DrawingML hyperlinks on shapes/pictures
     private final static String HLINK_HOVER = "hlinkHover";
@@ -167,11 +173,11 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     // pPr elements nested inside other elements (e.g., <a:pPr> inside <a:fld>)
     // must not be treated as paragraph-level properties.
     private boolean inParagraphLevelPPr = false;
-    // Field code tracking for instrText-based hyperlinks
-    private boolean inField = false;
+    // Open fields, innermost last; fields nest, e.g. PAGEREF inside a TOC's HYPERLINK
+    private final Deque<FieldFrame> fieldStack = new ArrayDeque<>();
+    private int overflowFieldDepth = 0;
+    private int hyperlinkElementDepth = 0;
     private boolean inInstrText = false;
-    private boolean inFieldHyperlink = false;
-    private final StringBuilder instrTextBuffer = new StringBuilder();
     private EditType editType =
             EditType.NONE;
 
@@ -331,6 +337,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             String id = atts.getValue(W_NS, "id");
             bodyContentsHandler.endBookmark(id);
         } else if (HYPERLINK.equals(localName)) { //docx hyperlink
+            hyperlinkElementDepth++;
             String hyperlinkId = atts.getValue(OFFICE_DOC_RELATIONSHIP_NS, "id");
             String hyperlink = null;
             if (hyperlinkId != null) {
@@ -426,31 +433,22 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (FLD_CHAR.equals(localName)) {
             String fldCharType = atts.getValue(W_NS, FLD_CHAR_TYPE);
             if ("begin".equals(fldCharType)) {
-                inField = true;
-                instrTextBuffer.setLength(0);
+                beginField();
             } else if ("separate".equals(fldCharType)) {
-                // Parse instrText for HYPERLINK
-                String url = FieldCodeParser.parseHyperlinkFromInstrText(instrTextBuffer.toString());
-                if (url != null) {
-                    bodyContentsHandler.fieldCodeHyperlinkStart(url);
-                    inFieldHyperlink = true;
-                } else {
-                    // Check for external reference fields (INCLUDEPICTURE, INCLUDETEXT, etc.)
-                    StringBuilder fieldType = new StringBuilder();
-                    String extUrl = FieldCodeParser.parseExternalRefFromInstrText(
-                            instrTextBuffer.toString(), fieldType);
-                    if (extUrl != null) {
-                        bodyContentsHandler.externalRef(fieldType.toString(), extUrl);
-                    }
-                }
+                separateField();
             } else if ("end".equals(fldCharType)) {
-                if (inFieldHyperlink) {
-                    bodyContentsHandler.hyperlinkEnd();
-                    inFieldHyperlink = false;
-                }
-                inField = false;
-                instrTextBuffer.setLength(0);
+                endField();
             }
+        } else if (FLD_SIMPLE.equals(localName) && W_NS.equals(uri)) {
+            beginField();
+            FieldFrame frame = fieldStack.peekLast();
+            if (frame != null && overflowFieldDepth == 0) {
+                String instr = atts.getValue(W_NS, INSTR);
+                if (instr != null) {
+                    frame.instr.append(instr);
+                }
+            }
+            separateField();
         } else if (INSTR_TEXT.equals(localName)) {
             inInstrText = true;
         } else if (HLINK_HOVER.equals(localName)) {
@@ -602,7 +600,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
                 MOVE_FROM.equals(localName)) {
             editType = EditType.NONE;
         } else if (HYPERLINK.equals(localName)) {
+            hyperlinkElementDepth--;
             bodyContentsHandler.hyperlinkEnd();
+        } else if (FLD_SIMPLE.equals(localName) && W_NS.equals(uri)) {
+            endField();
         } else if (PICT.equals(localName)) {
             pictureTracker.endPicture();
         } else if (V.equals(localName) && C_NS.equals(uri)) { // in value in a chart
@@ -657,10 +658,73 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (inV) {
             appendToBuffer(ch, start, length);
             appendToBuffer(TAB_CHAR, 0, 1);
-        } else if (inInstrText && inField) {
-            // Accumulate instrText content for field code parsing (e.g., HYPERLINK)
-            instrTextBuffer.append(ch, start, length);
+        } else if (inInstrText && overflowFieldDepth == 0 && !fieldStack.isEmpty()) {
+            fieldStack.peekLast().instr.append(ch, start, length);
         }
+    }
+
+    private void beginField() {
+        if (overflowFieldDepth > 0 || fieldStack.size() >= MAX_FIELD_DEPTH) {
+            overflowFieldDepth++;
+        } else {
+            fieldStack.addLast(new FieldFrame());
+        }
+    }
+
+    private void separateField() throws SAXException {
+        FieldFrame frame = fieldStack.peekLast();
+        if (overflowFieldDepth > 0 || frame == null || frame.separated) {
+            return;
+        }
+        frame.separated = true;
+        String instr = frame.instr.toString();
+        String url = FieldCodeParser.parseHyperlinkFromInstrText(instr);
+        if (url != null) {
+            bodyContentsHandler.fieldCodeHyperlinkStart(url);
+            frame.linkOpened = true;
+            return;
+        }
+        String bookmark = FieldCodeParser.parseBookmarkRefFromInstrText(instr);
+        if (bookmark != null) {
+            // a reference inside a link keeps the enclosing link
+            if (hyperlinkElementDepth == 0 && !isFieldLinkOpen()) {
+                bodyContentsHandler.hyperlinkStart("#" + bookmark);
+                frame.linkOpened = true;
+            }
+            return;
+        }
+        // external reference fields (INCLUDEPICTURE, INCLUDETEXT, etc.)
+        StringBuilder fieldType = new StringBuilder();
+        String extUrl = FieldCodeParser.parseExternalRefFromInstrText(instr, fieldType);
+        if (extUrl != null) {
+            bodyContentsHandler.externalRef(fieldType.toString(), extUrl);
+        }
+    }
+
+    private void endField() throws SAXException {
+        if (overflowFieldDepth > 0) {
+            overflowFieldDepth--;
+            return;
+        }
+        FieldFrame frame = fieldStack.pollLast();
+        if (frame != null && frame.linkOpened) {
+            bodyContentsHandler.hyperlinkEnd();
+        }
+    }
+
+    private boolean isFieldLinkOpen() {
+        for (FieldFrame f : fieldStack) {
+            if (f.linkOpened) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static class FieldFrame {
+        final StringBuilder instr = new StringBuilder();
+        boolean separated = false;
+        boolean linkOpened = false;
     }
 
     @Override
