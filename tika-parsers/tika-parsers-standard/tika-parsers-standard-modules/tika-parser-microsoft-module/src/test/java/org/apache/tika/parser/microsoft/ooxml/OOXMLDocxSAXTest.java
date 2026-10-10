@@ -184,6 +184,9 @@ public class OOXMLDocxSAXTest extends TikaTest {
         // adjacent runs sharing a style share one span
         assertContains("<span class=\"plain\">ab</span><span class=\"strong\"><b>c</b></span>",
                 xml);
+        // a tab in a style name must not split into a second, forged class token
+        assertContains("<p><span class=\"x_omml\">forged</span></p>", xml);
+        assertContains("<p><span class=\"l" + "L".repeat(127) + "\">longName</span></p>", xml);
     }
 
     @Test

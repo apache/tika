@@ -4,7 +4,9 @@ Release 4.2.0 - unreleased
      (e.g. Word's built-in Strong and Emphasis), following basedOn chains; previously
      only direct formatting was emitted. The new OfficeParserConfig option
      includeCharacterStyleClasses wraps such runs in <span class="..."> named after
-     the style (TIKA-4966).
+     the style. Style-derived classes (paragraph and character) now replace every
+     character other than letters, digits, '_' and '-' with '_' and are capped at 128
+     characters, so a style name can no longer yield extra class tokens (TIKA-4966).
 
    * Config properties whose value reaches the host (paths, executables, class names,
      URLs, credentials, operator-sized limits) are marked @OperatorOnly and refused in

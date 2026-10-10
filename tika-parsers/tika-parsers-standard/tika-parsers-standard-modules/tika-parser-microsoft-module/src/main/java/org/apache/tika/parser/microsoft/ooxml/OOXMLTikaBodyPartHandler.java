@@ -155,9 +155,7 @@ public class OOXMLTikaBodyPartHandler
         if (!includeCharacterStyleClasses) {
             return null;
         }
-        String styleName = styles.getStyleName(styleId);
-        return styleName == null || styleName.isEmpty() ? null
-                : WordExtractor.toStyleClass(styleName);
+        return WordExtractor.toStyleClass(styles.getStyleName(styleId));
     }
 
     @Override

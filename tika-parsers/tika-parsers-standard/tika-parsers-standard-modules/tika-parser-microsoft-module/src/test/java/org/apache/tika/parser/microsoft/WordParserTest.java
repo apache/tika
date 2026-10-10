@@ -52,6 +52,17 @@ import org.apache.tika.sax.BodyContentHandler;
 public class WordParserTest extends TikaTest {
 
     @Test
+    public void testToStyleClass() {
+        assertEquals("list_Bullet", WordExtractor.toStyleClass("List Bullet"));
+        assertEquals("x_omml", WordExtractor.toStyleClass("x\tomml"));
+        assertEquals("table_Text___3__", WordExtractor.toStyleClass("Table Text (.3\")"));
+        assertEquals("überschrift_1", WordExtractor.toStyleClass("Überschrift 1"));
+        assertEquals(128, WordExtractor.toStyleClass("a".repeat(10_000)).length());
+        assertNull(WordExtractor.toStyleClass(""));
+        assertNull(WordExtractor.toStyleClass(null));
+    }
+
+    @Test
     public void testWordParser() throws Exception {
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testWORD.doc")) {
             ContentHandler handler = new BodyContentHandler();

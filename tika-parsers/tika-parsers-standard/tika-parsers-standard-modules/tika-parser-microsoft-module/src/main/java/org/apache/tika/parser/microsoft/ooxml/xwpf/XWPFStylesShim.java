@@ -44,6 +44,8 @@ public class XWPFStylesShim {
 
     // bounds basedOn chains, including cyclic ones
     private static final int MAX_BASED_ON_DEPTH = 32;
+    // Word itself caps style names at 253 characters
+    private static final int MAX_STYLE_NAME_LENGTH = 255;
 
     private final Map<String, StyleInfo> styles = new HashMap<>();
 
@@ -159,7 +161,9 @@ public class XWPFStylesShim {
             } else if (current == null) {
                 return;
             } else if (depth == 1 && "name".equals(localName)) {
-                current.name = getVal(atts);
+                String name = getVal(atts);
+                current.name = name != null && name.length() > MAX_STYLE_NAME_LENGTH
+                        ? name.substring(0, MAX_STYLE_NAME_LENGTH) : name;
             } else if (depth == 1 && "basedOn".equals(localName)) {
                 current.basedOn = getVal(atts);
             } else if (depth == 1 && "rPr".equals(localName)) {
