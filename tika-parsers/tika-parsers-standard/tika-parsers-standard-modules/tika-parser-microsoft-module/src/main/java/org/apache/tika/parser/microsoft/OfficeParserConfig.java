@@ -46,6 +46,7 @@ public class OfficeParserConfig implements Serializable {
     private int rtfEmbeddedMaxBytesInKb = 2 * 1024 * 1024; // 2 GB
 
     private boolean includeGlossary = true;
+    private boolean includeCharacterStyleClasses = false;
     private String dateOverrideFormat = null;
     private int maxOverride = 0;//ignore
 
@@ -201,6 +202,23 @@ public class OfficeParserConfig implements Serializable {
      */
     public void setIncludeGlossary(boolean includeGlossary) {
         this.includeGlossary = includeGlossary;
+    }
+
+    public boolean isIncludeCharacterStyleClasses() {
+        return includeCharacterStyleClasses;
+    }
+
+    /**
+     * Whether to wrap docx runs that carry a character style in
+     * <code>&lt;span class="..."&gt;</code>, named after the style the same way
+     * paragraph styles are.
+     * <p/>
+     * Default: <code>false</code>
+     *
+     * @param includeCharacterStyleClasses whether to emit character style classes
+     */
+    public void setIncludeCharacterStyleClasses(boolean includeCharacterStyleClasses) {
+        this.includeCharacterStyleClasses = includeCharacterStyleClasses;
     }
 
     public boolean isIncludeMissingRows() {

@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.apache.poi.hwpf.HWPFDocument;
 import org.apache.poi.hwpf.HWPFOldDocument;
@@ -78,6 +79,8 @@ public class WordExtractor extends AbstractPOIFSExtractor {
     private static final String LIST_DELIMITER = " ";
     private static final Map<String, TagAndStyle> fixedParagraphStyles = new HashMap<>();
     private static final TagAndStyle defaultParagraphStyle = new TagAndStyle("p", null);
+    private static final int MAX_STYLE_CLASS_LENGTH = 128;
+    private static final Pattern NON_STYLE_CLASS_CHARS = Pattern.compile("[^\\p{L}\\p{N}_-]");
     private static final Logger LOG = LoggerFactory.getLogger(WordExtractor.class);
 
     static {
@@ -170,12 +173,25 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             // Turn it into a H1 - H6 (H7+ isn't valid!)
             tag = "h" + Math.min(num, 6);
         } else {
-            styleClass = styleName.replace(' ', '_');
-            styleClass =
-                    styleClass.substring(0, 1).toLowerCase(Locale.ROOT) + styleClass.substring(1);
+            styleClass = toStyleClass(styleName);
         }
 
         return new TagAndStyle(tag, styleClass);
+    }
+
+    /**
+     * @return the XHTML class for a style name, e.g. "List Bullet" -&gt; "list_Bullet",
+     * or null for an empty name. Anything but letters, digits, '_' and '-' becomes '_',
+     * so a style name can never yield more than one class token.
+     */
+    public static String toStyleClass(String styleName) {
+        if (styleName == null || styleName.isEmpty()) {
+            return null;
+        }
+        String styleClass = styleName.length() > MAX_STYLE_CLASS_LENGTH
+                ? styleName.substring(0, MAX_STYLE_CLASS_LENGTH) : styleName;
+        styleClass = NON_STYLE_CLASS_CHARS.matcher(styleClass).replaceAll("_");
+        return styleClass.substring(0, 1).toLowerCase(Locale.ROOT) + styleClass.substring(1);
     }
 
     protected void parse(POIFSFileSystem filesystem, XHTMLContentHandler xhtml)

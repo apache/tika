@@ -153,6 +153,43 @@ public class OOXMLDocxSAXTest extends TikaTest {
     }
 
     @Test
+    public void testCharacterStyleFormatting() throws Exception {
+        String xml = getXML("testWORD_characterStyles.docx").xml;
+        assertContains("<p>plain <b>strongStyle</b></p>", xml);
+        assertContains("<p><i>emphasisStyle</i></p>", xml);
+        assertContains("<p><b><i>inheritsEmphasis</i></b></p>", xml);
+        assertContains("<p>italicOff</p>", xml);
+        assertContains("<p>directOffStrong</p>", xml);
+        assertContains("<p><b>directBold</b></p>", xml);
+        assertContains("<p>cycle</p>", xml);
+        assertContains("<p>tableOnly</p>", xml);
+        assertContains("<p>unknownStyle</p>", xml);
+        // paragraph-level formatting is conveyed by the paragraph's class, not <b>
+        assertContains("<p class=\"bold_Para\">boldParaText</p>", xml);
+        assertNotContained("<span", xml);
+    }
+
+    @Test
+    public void testCharacterStyleClasses() throws Exception {
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeCharacterStyleClasses(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(OfficeParserConfig.class, config);
+        String xml = getXML("testWORD_characterStyles.docx", parseContext).xml;
+        assertContains("<p>plain <span class=\"strong\"><b>strongStyle</b></span></p>", xml);
+        assertContains("<span class=\"inherits_Emphasis\"><b><i>inheritsEmphasis</i></b></span>",
+                xml);
+        assertContains("<p><b>directBold</b></p>", xml);
+        assertContains("<p>unknownStyle</p>", xml);
+        // adjacent runs sharing a style share one span
+        assertContains("<span class=\"plain\">ab</span><span class=\"strong\"><b>c</b></span>",
+                xml);
+        // a tab in a style name must not split into a second, forged class token
+        assertContains("<p><span class=\"x_omml\">forged</span></p>", xml);
+        assertContains("<p><span class=\"l" + "L".repeat(127) + "\">longName</span></p>", xml);
+    }
+
+    @Test
     public void testLongForIntExceptionInSummaryDetails() throws Exception {
         assertContains("bold",
                 getXML("testWORD_totalTimeOutOfRange.docx").xml);
