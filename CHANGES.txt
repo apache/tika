@@ -1,5 +1,11 @@
 Release 4.2.0 - unreleased
 
+   * The docx parser now applies bold and italics set by a run's character style
+     (e.g. Word's built-in Strong and Emphasis), following basedOn chains; previously
+     only direct formatting was emitted. The new OfficeParserConfig option
+     includeCharacterStyleClasses wraps such runs in <span class="..."> named after
+     the style (TIKA-4966).
+
    * Config properties whose value reaches the host (paths, executables, class names,
      URLs, credentials, operator-sized limits) are marked @OperatorOnly and refused in
      per-request JSON before any setter runs. Newly locked: pdf-parser's

@@ -170,12 +170,18 @@ public class WordExtractor extends AbstractPOIFSExtractor {
             // Turn it into a H1 - H6 (H7+ isn't valid!)
             tag = "h" + Math.min(num, 6);
         } else {
-            styleClass = styleName.replace(' ', '_');
-            styleClass =
-                    styleClass.substring(0, 1).toLowerCase(Locale.ROOT) + styleClass.substring(1);
+            styleClass = toStyleClass(styleName);
         }
 
         return new TagAndStyle(tag, styleClass);
+    }
+
+    /**
+     * @return the XHTML class for a style name, e.g. "List Bullet" -&gt; "list_Bullet"
+     */
+    public static String toStyleClass(String styleName) {
+        String styleClass = styleName.replace(' ', '_');
+        return styleClass.substring(0, 1).toLowerCase(Locale.ROOT) + styleClass.substring(1);
     }
 
     protected void parse(POIFSFileSystem filesystem, XHTMLContentHandler xhtml)

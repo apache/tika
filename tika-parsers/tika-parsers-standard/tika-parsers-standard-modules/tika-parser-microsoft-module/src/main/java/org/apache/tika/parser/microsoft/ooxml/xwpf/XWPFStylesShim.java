@@ -32,10 +32,8 @@ import org.apache.tika.parser.microsoft.ooxml.OOXMLWordAndPowerPointTextHandler;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
- * For Tika, all we need (so far) is a mapping between styleId and a style's name.
- * <p>
- * This class uses SAX to scrape that info out of the styles.xml file.  If
- * either the styleId or the style's name is null, no information is recorded.
+ * Scrapes from styles.xml each style's name, its basedOn parent and whether
+ * its own run properties set bold or italics.
  */
 public class XWPFStylesShim {
 
@@ -44,7 +42,10 @@ public class XWPFStylesShim {
      */
     public static final XWPFStylesShim EMPTY_STYLES = new EmptyXWPFStyles();
 
-    private final Map<String, String> styles = new HashMap<>();
+    // bounds basedOn chains, including cyclic ones
+    private static final int MAX_BASED_ON_DEPTH = 32;
+
+    private final Map<String, StyleInfo> styles = new HashMap<>();
 
     private XWPFStylesShim() {
 
@@ -72,7 +73,45 @@ public class XWPFStylesShim {
         if (styleId == null) {
             return null;
         }
-        return styles.get(styleId);
+        StyleInfo info = styles.get(styleId);
+        return info == null ? null : info.name;
+    }
+
+    /**
+     * @return whether the style, or the nearest style it is based on that says
+     * either way, sets bold; false if none does
+     */
+    public boolean isBold(String styleId) {
+        StyleInfo info = styles.get(styleId);
+        for (int i = 0; info != null && i < MAX_BASED_ON_DEPTH; i++) {
+            if (info.bold != null) {
+                return info.bold;
+            }
+            info = info.basedOn == null ? null : styles.get(info.basedOn);
+        }
+        return false;
+    }
+
+    /**
+     * @return whether the style, or the nearest style it is based on that says
+     * either way, sets italics; false if none does
+     */
+    public boolean isItalics(String styleId) {
+        StyleInfo info = styles.get(styleId);
+        for (int i = 0; info != null && i < MAX_BASED_ON_DEPTH; i++) {
+            if (info.italics != null) {
+                return info.italics;
+            }
+            info = info.basedOn == null ? null : styles.get(info.basedOn);
+        }
+        return false;
+    }
+
+    private static class StyleInfo {
+        String name;
+        String basedOn;
+        Boolean bold;
+        Boolean italics;
     }
 
     private static class EmptyXWPFStyles extends XWPFStylesShim {
@@ -81,35 +120,79 @@ public class XWPFStylesShim {
         public String getStyleName(String styleId) {
             return null;
         }
+
+        @Override
+        public boolean isBold(String styleId) {
+            return false;
+        }
+
+        @Override
+        public boolean isItalics(String styleId) {
+            return false;
+        }
     }
 
     private class StylesStripper extends DefaultHandler {
 
-        String currentStyleId = null;
+        StyleInfo current = null;
+        // depth below the current <w:style>; its own rPr is at 1, toggles at 2
+        int depth = 0;
+        boolean inStyleRPr = false;
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes atts)
                 throws SAXException {
-            if (uri == null || OOXMLWordAndPowerPointTextHandler.W_NS.equals(uri)) {
-                if ("style".equals(localName)) {
-                    currentStyleId =
-                            atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "styleId");
-                } else if ("name".equals(localName)) {
-                    String name = atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "val");
-                    if (currentStyleId != null && name != null) {
-                        styles.put(currentStyleId, name);
-                    }
+            if (current != null) {
+                depth++;
+            }
+            if (uri != null && !OOXMLWordAndPowerPointTextHandler.W_NS.equals(uri)) {
+                return;
+            }
+            if ("style".equals(localName)) {
+                String styleId =
+                        atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "styleId");
+                if (styleId != null) {
+                    current = new StyleInfo();
+                    styles.put(styleId, current);
+                    depth = 0;
                 }
+            } else if (current == null) {
+                return;
+            } else if (depth == 1 && "name".equals(localName)) {
+                current.name = getVal(atts);
+            } else if (depth == 1 && "basedOn".equals(localName)) {
+                current.basedOn = getVal(atts);
+            } else if (depth == 1 && "rPr".equals(localName)) {
+                inStyleRPr = true;
+            } else if (depth == 2 && inStyleRPr && "b".equals(localName)) {
+                current.bold = getOnOff(atts);
+            } else if (depth == 2 && inStyleRPr && "i".equals(localName)) {
+                current.italics = getOnOff(atts);
             }
         }
 
         @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
-            if (uri == null || OOXMLWordAndPowerPointTextHandler.W_NS.equals(uri)) {
-                if ("style".equals(localName)) {
-                    currentStyleId = null;
-                }
+            if (current == null) {
+                return;
             }
+            if (depth == 0) {
+                current = null;
+                return;
+            }
+            if (depth == 1) {
+                inStyleRPr = false;
+            }
+            depth--;
+        }
+
+        private String getVal(Attributes atts) {
+            return atts.getValue(OOXMLWordAndPowerPointTextHandler.W_NS, "val");
+        }
+
+        private boolean getOnOff(Attributes atts) {
+            String v = getVal(atts);
+            return v == null || !("0".equals(v) || "false".equals(v) || "off".equals(v));
         }
     }
 
