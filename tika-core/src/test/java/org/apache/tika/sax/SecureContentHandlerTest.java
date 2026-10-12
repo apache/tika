@@ -182,7 +182,7 @@ public class SecureContentHandlerTest {
     public void testNestedEntries() throws SAXException {
         AttributesImpl atts = new AttributesImpl();
         atts.addAttribute("", "class", "class", "CDATA", "package-entry");
-        for (int i = 1; i < handler.getMaximumPackageEntryDepth(); i++) {
+        for (int i = 1; i <= handler.getMaximumPackageEntryDepth(); i++) {
             handler.startElement("", "div", "div", atts);
         }
         try {

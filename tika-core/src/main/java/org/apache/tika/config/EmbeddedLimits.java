@@ -25,7 +25,7 @@ import org.apache.tika.parser.ParseContext;
  * <p>
  * This controls how deep and how many embedded documents are processed:
  * <ul>
- *   <li>{@code maxDepth} - maximum nesting depth for embedded documents (-1 = unlimited)</li>
+ *   <li>{@code maxDepth} - maximum nesting depth for embedded documents (default: 20, -1 = unlimited)</li>
  *   <li>{@code throwOnMaxDepth} - whether to throw an exception when maxDepth is reached</li>
  *   <li>{@code maxCount} - maximum number of embedded documents to process (-1 = unlimited)</li>
  *   <li>{@code throwOnMaxCount} - whether to throw an exception when maxCount is reached</li>
@@ -74,7 +74,9 @@ public class EmbeddedLimits implements Serializable {
 
     public static final int UNLIMITED = -1;
 
-    private int maxDepth = UNLIMITED;
+    public static final int DEFAULT_MAX_DEPTH = 20;
+
+    private int maxDepth = DEFAULT_MAX_DEPTH;
     private boolean throwOnMaxDepth = false;
     private int maxCount = UNLIMITED;
     private boolean throwOnMaxCount = false;

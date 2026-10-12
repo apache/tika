@@ -41,7 +41,6 @@ import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.detect.zip.CompressorConstants;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -109,9 +108,8 @@ public class CompressorParserTest extends TikaTest {
                 CompressorParserTest.class.getResourceAsStream("/test-documents/quine.gz") != null);
 
         //https://blog.matthewbarber.io/2019/07/22/how-to-make-compressed-file-quines
-        assertThrows(TikaException.class, () -> {
-            getXML("quine.gz");
-        });
+        assertEquals("true",
+                getXML("quine.gz").metadata.get(TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED));
     }
 
     @Test
