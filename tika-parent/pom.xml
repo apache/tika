@@ -382,7 +382,7 @@
     -->
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
-    <jackrabbit.version>2.22.4</jackrabbit.version>
+    <jackrabbit.version>2.22.5</jackrabbit.version>
     <jackson.version>2.22.3</jackson.version>
     <!-- TIKA-4880: 5.0.1 fails some catalogs 5.0.0 reads ("Did not find required parent table id") -->
     <jackcess.version>5.0.2</jackcess.version>
