@@ -349,7 +349,7 @@
     <brotli.version>0.1.2</brotli.version>
     <commonmark.version>0.30.0</commonmark.version>
     <commons.cli.version>1.11.0</commons.cli.version>
-    <commons.codec.version>1.22.1</commons.codec.version>
+    <commons.codec.version>1.23.0</commons.codec.version>
     <commons.collections4.version>4.6.0</commons.collections4.version>
     <commons.compress.version>1.28.0</commons.compress.version>
     <commons.csv.version>1.14.1</commons.csv.version>
