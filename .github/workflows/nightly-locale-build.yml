@@ -64,5 +64,16 @@ jobs:
             !~/.m2/repository/org/apache/tika
           key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
           restore-keys: maven-${{ runner.os }}-
+      # Test failures do not stop the reactor, so every module runs and one night shows every
+      # failure for the locale; the next step fails the job from the reports.
       - name: Build with Maven under ${{ matrix.locale }}
-        run: mvn install -Pfast -pl :tika-annotation-processor -am -B -q && mvn clean test install -Pci -T1C -Dtika.test.locale=${{ matrix.locale }} -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        run: mvn install -Pfast -pl :tika-annotation-processor -am -B -q && mvn clean test install -Pci -T1C -Dmaven.test.failure.ignore=true -Dtika.test.locale=${{ matrix.locale }} -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+      - name: Fail on any test failure
+        run: |
+          reports=$(find . -path '*/target/surefire-reports/TEST-*.xml' -o -path '*/target/failsafe-reports/TEST-*.xml')
+          failed=$(awk '/<testcase /{tc=$0} /<(failure|error)[ >]/{match(tc, /name="[^"]*"/); n=substr(tc, RSTART+6, RLENGTH-7); match(tc, /classname="[^"]*"/); c=substr(tc, RSTART+11, RLENGTH-12); print "  " c "." n}' $reports | sort -u)
+          if [ -n "$failed" ]; then
+            echo "Test failures under ${{ matrix.locale }}:"
+            echo "$failed"
+            exit 1
+          fi
