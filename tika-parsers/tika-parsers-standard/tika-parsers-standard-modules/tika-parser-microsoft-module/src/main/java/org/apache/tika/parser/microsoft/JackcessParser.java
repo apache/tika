@@ -107,9 +107,10 @@ public class JackcessParser implements Parser {
             JackcessExtractor ex = new JackcessExtractor(metadata, context, locale);
             ex.parse(db, xhtml);
         } catch (IOException e) {
-            if (e.getMessage().startsWith("invalid page number ") ||
-                e.getMessage().startsWith("Invalid usage map row ")) {
-                throw new TikaException("Corrupt Access database: " + e.getMessage(), e);
+            String message = e.getMessage();
+            if (message != null && (message.startsWith("invalid page number ") ||
+                    message.startsWith("Invalid usage map row "))) {
+                throw new TikaException("Corrupt Access database: " + message, e);
             }
             throw e;
         } catch (IndexOutOfBoundsException e) {
