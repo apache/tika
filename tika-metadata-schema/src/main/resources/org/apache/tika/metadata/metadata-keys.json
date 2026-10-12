@@ -544,7 +544,7 @@
   {"key":"tiff:Software","namespace":"tiff","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tiff:XResolution","namespace":"tiff","valueType":"RATIONAL","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tiff:YResolution","namespace":"tiff","valueType":"RATIONAL","cardinality":"SIMPLE","module":"tika-core"},
-  {"key":"tk:chunks","namespace":"tk","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
+  {"key":"tk:chunks","namespace":"tk","valueType":"JSON","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:content","namespace":"tk","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:content-handler-type","namespace":"tk","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},
   {"key":"tk:content-type-hint","namespace":"tk","valueType":"TEXT","cardinality":"SIMPLE","module":"tika-core"},

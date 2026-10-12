@@ -9,6 +9,12 @@ Release 4.2.0 - unreleased
    
    * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
 
+   * Opt-in "metadata-list": {"typedValues": true} writes INTEGER, REAL and
+     BOOLEAN metadata as JSON numbers and booleans, and tk:chunks as nested
+     JSON rather than an escaped string, in -J, /rmeta and the JSON emitters.
+     New Property.ValueType.JSON; tk:chunks is now JSON-typed. Readers accept
+     both forms (TIKA-4969).
+
 Release 4.1.0 - 9/26/2026
 
   HIGHLIGHTS

@@ -151,7 +151,7 @@ public interface TikaCoreProperties {
      * Used by inference parsers and metadata filters to attach chunked representations
      * of document content for downstream indexing and semantic search.
      */
-    Property TIKA_CHUNKS = Property.reservedInternalText("tk:chunks");
+    Property TIKA_CHUNKS = Property.reservedInternalJson("tk:chunks");
 
     /**
      * The inference inputs a parser released for this document (TEXT, PAGES, ...), written

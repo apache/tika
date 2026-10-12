@@ -57,7 +57,7 @@ optional; anything you omit uses its defaults.
   "pipes-iterator": { /* iterator (one per pipeline) */ },
   "pipes-reporters": { /* per-document status reporters */ },
   "plugin-roots": "/path/to/plugins",
-  "metadata-list": { /* Jackson read limits for metadata JSON */ },
+  "metadata-list": { /* metadata JSON: Jackson read limits, typedValues */ },
   "service-loader": { /* SPI load-failure policy */ },
   "xml-reader-utils": { /* XML parser pool size */ }
 }
@@ -80,8 +80,8 @@ Unknown keys are rejected almost everywhere: at the top level, inside a componen
 and inside a `FetchEmitTuple`. Four places swallow them silently instead, so a misspelling there
 produces no error and no effect:
 
-* the `metadata-list` body — only `maxStringLength`, `maxNestingDepth` and `maxNumberLength` are
-  read;
+* the `metadata-list` body — only `maxStringLength`, `maxNestingDepth`, `maxNumberLength` and
+  `typedValues` are read;
 * the body of a self-configuring component under `parse-context` — it is handed to the component
   untouched;
 * `_mime-include` / `_mime-exclude` when the value is neither a JSON array nor a string — a bare
@@ -93,6 +93,39 @@ produces no error and no effect:
   both fatal.)
 
 If a setting appears to do nothing, check its spelling against one of those four first.
+
+[#typed-values]
+=== Typed values in metadata JSON (`typedValues`)
+
+By default every metadata value in JSON output (`tika-app -J`, tika-server `/rmeta`, and the
+file-system, S3, GCS and Azure emitters) is a string, so `tk:chunks` arrives as an escaped
+string that consumers must parse a second time. Opt in to native types:
+
+[source,json]
+----
+{ "metadata-list": { "typedValues": true } }
+----
+
+Values of keys registered as `INTEGER` or `REAL` are then written as JSON numbers, `BOOLEAN`
+as `true`/`false`, and `JSON` keys such as `tk:chunks` as nested JSON:
+
+[source,json]
+----
+{ "audio:channels": 2, "audio:has-drm": false, "tk:chunks": [ { "text": "...", ... } ] }
+----
+
+The key's type comes from its `Property` declaration; `tika-metadata-schema`'s
+`metadata-keys.json` lists it as `valueType`. A value that does not fit its type (`"abc"` on an
+`INTEGER` key, a JSON value with more than one value on the key) stays a string, as does a JSON
+value nested deeper than `maxNestingDepth` allows, so the output always reads back. Only a
+single-valued object, or an array holding an object or array, is written as JSON: a JSON scalar
+or an array of scalars would be indistinguishable from an ordinary value or values. Tika's own
+readers accept either form; it is off by default because the change in types breaks consumers
+that expect strings, and an index that maps a key from its first value (as Elasticsearch does)
+rejects a later document whose value for that key is malformed and stays a string.
+
+The Elasticsearch and OpenSearch emitters always write `JSON` keys as JSON, whatever this
+setting.
 
 [#component-names]
 == Component names

@@ -29,7 +29,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 import com.fasterxml.jackson.core.JsonFactory;
@@ -49,6 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.TikaClientException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.utils.StringUtils;
 
@@ -468,13 +468,13 @@ public class OpenSearchClient {
     }
 
     /**
-     * Metadata fields whose values are serialized JSON from the
-     * tika-inference pipeline. These must be written as raw JSON
-     * (arrays/objects) rather than escaped strings so that
-     * OpenSearch can index vectors, locators, etc. natively.
+     * Keys declared {@link Property.ValueType#JSON}, e.g. {@code tk:chunks}: written as JSON
+     * rather than escaped strings so that OpenSearch can index vectors, locators, etc. natively.
      */
-    static final Set<String> INFERENCE_JSON_FIELDS = Set.of(
-            "tk:chunks");
+    static boolean isJsonField(String name) {
+        Property property = Property.get(name);
+        return property != null && property.getValueType() == Property.ValueType.JSON;
+    }
 
     private static void writeMetadata(Metadata metadata, JsonGenerator jsonGenerator) throws IOException {
         //writes the metadata without the start { or the end }
@@ -482,7 +482,7 @@ public class OpenSearchClient {
         for (String n : metadata.names()) {
             String[] vals = metadata.getValues(n);
             if (vals.length == 1) {
-                if (INFERENCE_JSON_FIELDS.contains(n)
+                if (isJsonField(n)
                         && isValidJson(vals[0])) {
                     jsonGenerator.writeFieldName(n);
                     jsonGenerator.writeRawValue(vals[0]);
