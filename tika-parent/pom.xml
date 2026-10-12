@@ -401,7 +401,7 @@
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
     <jetty.version>12.1.13</jetty.version>
-    <jetty.http2.version>12.1.13</jetty.http2.version>
+    <jetty.http2.version>12.1.14</jetty.http2.version>
     <jhighlight.version>2.0.0</jhighlight.version>
     <jna.version>5.19.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
