@@ -186,7 +186,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
         }
     }
 
-    private long getByteCount() throws SAXException {
+    private static long getByteCount(TikaInputStream stream) throws SAXException {
         try {
             if (stream.hasLength()) {
                 return stream.getLength();
@@ -208,8 +208,21 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      */
     protected void advance(int length) throws SAXException {
         characterCount += length;
+        checkCompressionRatio(characterCount, stream);
+    }
+
+    /**
+     * Throws if {@code characterCount} exceeds the output threshold and the maximum
+     * compression ratio against the bytes of {@code source}.
+     *
+     * @param characterCount output characters to check
+     * @param source         input stream whose bytes produced them
+     * @throws SAXException if a zip bomb is detected
+     */
+    protected void checkCompressionRatio(long characterCount, TikaInputStream source)
+            throws SAXException {
         if (characterCount > threshold) {
-            long byteCount = getByteCount();
+            long byteCount = getByteCount(source);
             if (characterCount > byteCount * ratio) {
                 throw new SecureSAXException("Suspected zip bomb: " + byteCount + " input bytes produced " + characterCount + " output characters");
             }
