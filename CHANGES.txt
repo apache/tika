@@ -130,6 +130,10 @@ Release 4.2.0 - unreleased
      MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
      (TIKA-4945).
 
+   * The embed task writes a document's image and page embeddings to
+     tk:chunks once per binding instead of once per image or page, which
+     re-serialized the whole array each time (TIKA-4970).
+
 Release 4.1.0 - 9/26/2026
 
   HIGHLIGHTS
