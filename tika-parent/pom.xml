@@ -412,7 +412,7 @@
     <junrar.version>8.1.1</junrar.version>
     <jwarc.version>0.37.0</jwarc.version>
     <kafka.version>4.3.1</kafka.version>
-    <kotlin-stdlib.version>2.4.20</kotlin-stdlib.version>
+    <kotlin-stdlib.version>2.4.21</kotlin-stdlib.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.26.1</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
