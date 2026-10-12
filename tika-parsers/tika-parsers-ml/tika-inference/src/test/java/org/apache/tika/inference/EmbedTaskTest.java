@@ -24,7 +24,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,6 +40,7 @@ import org.apache.tika.http.TikaTestHttpServer;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.TikaPagedText;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiter;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.inference.Engine;
@@ -124,6 +127,56 @@ public class EmbedTaskTest {
         for (InferenceUnit unit : units) {
             assertNull(unit.getTarget().get(TikaCoreProperties.TIKA_CHUNKS), "moved to the parent");
         }
+    }
+
+    /** Each write re-serializes the field, so a destination is written once, not once per unit. */
+    @Test
+    public void testOneWritePerDestination() throws Exception {
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, response(0, 1)));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, response(0, 1)));
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, response(0)));
+        int[] parentWrites = new int[1];
+        int[] otherWrites = new int[1];
+        Metadata parent = new Metadata(countingChunkWrites(parentWrites));
+        Metadata other = new Metadata(countingChunkWrites(otherWrites));
+        List<InferenceUnit> units = List.of(unit(parent, "a", null), unit(other, "b", null),
+                unit(parent, "c", null), unit(parent, "d", null), unit(other, "e", null));
+
+        new EmbedTask().run(binding(), units, engine, new ParseContext());
+
+        assertEquals(3, server.getRequestCount());
+        assertEquals(1, parentWrites[0]);
+        assertEquals(1, otherWrites[0]);
+        List<Chunk> chunks = ChunkSerializer.fromJson(parent.get(TikaCoreProperties.TIKA_CHUNKS));
+        assertEquals(3, chunks.size());
+        assertEquals("/a", chunks.get(0).getLocators().getEmbedded().get(0).getIdPath());
+        assertEquals("/c", chunks.get(1).getLocators().getEmbedded().get(0).getIdPath());
+        assertEquals("/d", chunks.get(2).getLocators().getEmbedded().get(0).getIdPath());
+        assertEquals(2, ChunkSerializer.fromJson(other.get(TikaCoreProperties.TIKA_CHUNKS)).size());
+    }
+
+    private static MetadataWriteLimiter countingChunkWrites(int[] count) {
+        return new MetadataWriteLimiter() {
+            @Override
+            public void add(String field, String value, Map<String, String[]> data) {
+                String[] values = data.get(field);
+                if (values == null) {
+                    set(field, value, data);
+                    return;
+                }
+                String[] appended = Arrays.copyOf(values, values.length + 1);
+                appended[values.length] = value;
+                data.put(field, appended);
+            }
+
+            @Override
+            public void set(String field, String value, Map<String, String[]> data) {
+                if (TikaCoreProperties.TIKA_CHUNKS.getName().equals(field)) {
+                    count[0]++;
+                }
+                data.put(field, new String[]{value});
+            }
+        };
     }
 
     @Test
