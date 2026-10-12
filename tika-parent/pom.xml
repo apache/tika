@@ -433,7 +433,7 @@
     <scm.version>2.2.1</scm.version>
     <slf4j.version>2.0.20</slf4j.version>
     <sis.version>1.6</sis.version>
-    <snappy.version>1.1.10.8</snappy.version>
+    <snappy.version>1.1.10.11</snappy.version>
     <solrj.version>8.11.4</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17  -->
     <!-- remove from ossindex when bumping from 5.3.39 -->
