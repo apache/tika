@@ -998,7 +998,7 @@ public class TikaCLI {
         out.println("    --unpack-format=<format>   Output format: FRICTIONLESS (default) or REGULAR");
         out.println("    --unpack-mode=<mode>       Output mode: DIRECTORY (default: loose files) or ZIPPED");
         out.println("    --unpack-include-metadata  Metadata for every extracted file. A Frictionless package");
-        out.println("                               carries metadata.json by default; this adds per-file");
+        out.println("                               carries rmeta.json by default; this adds per-file");
         out.println("                               sidecars to REGULAR zip output");
         out.println();
         out.println();
