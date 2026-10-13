@@ -113,7 +113,7 @@ public class UnpackRegularConfigTest extends CXFTestBase {
     public void testServerConfigRestoresTheFlatLayout() throws Exception {
         Map<String, byte[]> entries = unpack("/unpack");
         assertFalse(entries.containsKey("datapackage.json"), entries.keySet().toString());
-        assertFalse(entries.containsKey("metadata.json"), entries.keySet().toString());
+        assertFalse(entries.containsKey("rmeta.json"), entries.keySet().toString());
         assertTrue(entries.keySet().stream().noneMatch(k -> k.contains("/")),
                 "REGULAR puts every file at the zip root: " + entries.keySet());
         assertFalse(entries.isEmpty());

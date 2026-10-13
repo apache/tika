@@ -151,11 +151,13 @@ embedded content in: email attachments (`.eml`, `.msg`), archive members
 (`.zip`), PDF attachments, embedded objects/images in any office format
 (an inline pasted picture counts), and so on.
 
-What lands on disk: a `<name>/` Frictionless package — `datapackage.json`
-(SHA-256 per file), `metadata.json`, and the embedded files **renumbered**
-under `unpacked/` (`00000001.jpg`, ...). Original names are not preserved on
-disk; they are in each rmeta entry's `tk:resource-name`, so keep the sibling
-`<name>.json` (an rmeta-shaped dump `-z` also writes) to map numbers back.
+What lands on disk: the extract dir (default `<name>-unpacked/`) is a
+Frictionless package — `datapackage.json` (SHA-256 per file),
+`rmeta.json` (the rmeta list), and the embedded files **renumbered**
+under `unpacked/` (`1.jpg`, ...). Original names are not preserved on disk;
+each `datapackage.json` resource has `tk:resource-name` and `tk:embedded-id`
+(its row in `rmeta.json`). An input
+directory gets one such package per file, under its relative path.
 
 `-z`/`-Z` route through Tika Pipes mode rather than the fast synchronous
 path the other flags use — expect several seconds and a burst of

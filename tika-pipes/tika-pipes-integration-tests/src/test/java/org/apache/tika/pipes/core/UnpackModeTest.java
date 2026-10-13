@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -352,7 +353,7 @@ public class UnpackModeTest {
 
         Path outputDir = outputDir("zipNoEmbedded");
         assertTrue(zips(outputDir).isEmpty(), "no embedded files, no zip: " + zips(outputDir));
-        assertEquals(1, readMetadataList(outputDir, simpleDoc).size());
+        assertEquals(1, readSidecar(outputDir, simpleDoc).size());
     }
 
     @Test
@@ -462,9 +463,21 @@ public class UnpackModeTest {
         return names;
     }
 
-    private static List<Metadata> readMetadataList(Path outputDir, String emitKey) throws IOException {
+    /** REGULAR: the metadata list is the {@code <emitKey>.json} beside the bytes. */
+    private static List<Metadata> readSidecar(Path outputDir, String emitKey) throws IOException {
         try (Reader reader = Files.newBufferedReader(outputDir.resolve(emitKey + ".json"),
                 StandardCharsets.UTF_8)) {
+            return JsonMetadataList.fromJson(reader);
+        }
+    }
+
+    /** The package's rmeta.json: same emitter, so no separate {@code <emitKey>.json} (TIKA-4971). */
+    private static List<Metadata> readMetadataList(Path outputDir, String emitKey) throws IOException {
+        assertFalse(Files.exists(outputDir.resolve(emitKey + ".json")),
+                "the package already carries the metadata list");
+        try (ZipFile zip = new ZipFile(outputDir.resolve(emitKey + "-frictionless.zip").toFile());
+                Reader reader = new java.io.InputStreamReader(
+                        zip.getInputStream(zip.getEntry("rmeta.json")), StandardCharsets.UTF_8)) {
             return JsonMetadataList.fromJson(reader);
         }
     }

@@ -1,5 +1,19 @@
 Release 4.2.0 - unreleased
 
+   * Frictionless unpack: the package's metadata.json is renamed rmeta.json, is listed in
+     datapackage.json as a resource (size, sha256), and now gets the metadata filters and
+     user metadata the emitted list gets; resources are in embedded-id order. A document
+     with no attachments is a package of datapackage.json and rmeta.json: tika-server
+     /unpack returns it with 200 instead of 204 (unpack-config.emptyPackage=SKIP, which the
+     thumbnail preset sets, restores the 204). The package name is the caller's filename
+     on tika-server, never the server's spool file. tika-app -z/-Z on a single file makes
+     the output dir the package (default <name>-unpacked/), names files unpacked/1.<ext>
+     as tika-server /unpack does, and no longer writes a <name>.json next to it. New
+     unpack-config.packageRoot and packageName set where a DIRECTORY-mode package goes
+     and its name. Packages pass frictionless validate: each resource's name is derived
+     from its path, the original filename moves to tk:resource-name, and tk:embedded-id
+     keys it to its rmeta.json row (TIKA-4971).
+
    * Image checks (byte-size, min-image-size, blank-image-check; new tika-image-processing
      module) make it less likely that blank or tiny images reach text recognizers. VLM
      output gets tk:ocr-warnings (truncated, repetition, empty); VLM parsers take

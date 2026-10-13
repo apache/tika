@@ -89,7 +89,7 @@ public class TikaAsyncCLI {
         options.addOption(null, "unpack-mode", true,
                 "output mode for unpacking: DIRECTORY (default: loose files) or ZIPPED");
         options.addOption(null, "unpack-include-metadata", false,
-                "metadata for every extracted file: a Frictionless package carries metadata.json "
+                "metadata for every extracted file: a Frictionless package carries rmeta.json "
                         + "by default; this adds per-file sidecars to REGULAR zip output");
         options.addOption(null, "on-exists", true,
                 "behavior when an output file already exists: exception (default), replace or skip");
@@ -290,7 +290,13 @@ public class TikaAsyncCLI {
             inputDir = inString;
             // Only set default outputDir if not already specified via -o
             if (outputDir == null) {
-                if (Files.isRegularFile(inputPath)) {
+                if (Files.isRegularFile(inputPath)
+                        && extractBytesMode != SimpleAsyncConfig.ExtractBytesMode.NONE
+                        && isPackageDirectory(unpackFormat, unpackMode)) {
+                    // the output dir is the package: keep it out of cwd
+                    outputDir = Paths.get(inputPath.getFileName() + "-unpacked")
+                            .toAbsolutePath().toString();
+                } else if (Files.isRegularFile(inputPath)) {
                     outputDir = Paths.get(".").toAbsolutePath().toString();
                 } else {
                     outputDir = Paths.get("output").toAbsolutePath().toString();
@@ -309,6 +315,12 @@ public class TikaAsyncCLI {
                 unpackFormat, unpackMode, unpackIncludeMetadata);
         config.setOnExists(onExists);
         return config;
+    }
+
+    /** Unpack output is a Frictionless package written as loose files. */
+    private static boolean isPackageDirectory(String unpackFormat, String unpackMode) {
+        return (unpackFormat == null || UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS.name().equals(unpackFormat))
+                && (unpackMode == null || UnpackConfig.OUTPUT_MODE.DIRECTORY.name().equals(unpackMode));
     }
 
     private static BasicContentHandlerFactory.HANDLER_TYPE getHandlerType(String t) throws TikaConfigException {
@@ -402,7 +414,6 @@ public class TikaAsyncCLI {
         config.setEmitter(TikaConfigAsyncWriter.EMITTER_NAME);
         config.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
         config.setEmbeddedIdPrefix("-");
-        config.setZeroPadName(8);
         config.setKeyBaseStrategy(UnpackConfig.KEY_BASE_STRATEGY.DEFAULT);
 
         // Packaging is the CLI's too: loose files unless --unpack-mode asks for a zip
@@ -418,6 +429,13 @@ public class TikaAsyncCLI {
         config.setZipEmbeddedFiles(config.getOutputMode() == UnpackConfig.OUTPUT_MODE.ZIPPED);
         if (asyncConfig.isUnpackIncludeMetadata()) {
             config.setIncludeMetadata(true);
+        }
+        // Single input file: the output dir is the package; one per input file otherwise
+        if (config.getOutputFormat() == UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS
+                && config.getOutputMode() == UnpackConfig.OUTPUT_MODE.DIRECTORY
+                && asyncConfig.getInputDir() != null
+                && Files.isRegularFile(Paths.get(asyncConfig.getInputDir()))) {
+            config.setPackageRoot("");
         }
 
         parseContext.set(UnpackConfig.class, config);

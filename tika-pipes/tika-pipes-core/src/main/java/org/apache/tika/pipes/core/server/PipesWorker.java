@@ -22,6 +22,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -60,12 +62,15 @@ import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.extractor.UnpackExtractor;
 import org.apache.tika.pipes.core.extractor.UnpackedByteCount;
 import org.apache.tika.pipes.core.extractor.frictionless.DataPackage;
+import org.apache.tika.pipes.core.extractor.frictionless.FrictionlessResource;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
 class PipesWorker implements Callable<PipesResult> {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesWorker.class);
+
+    static final String METADATA_FILE_NAME = "rmeta.json";
 
     private final FetchEmitTuple fetchEmitTuple;
     private final ParseContext parseContext;
@@ -143,6 +148,9 @@ class PipesWorker implements Callable<PipesResult> {
                 return PipesResults.EMPTY_OUTPUT;
             }
 
+            // before the unpack package: it carries the same metadata list as the emit
+            EmitHandler.Prepared prepared = emitHandler.prepare(fetchEmitTuple, parseData, parseContext);
+
             // Check if we need to zip and emit embedded files
             UnpackHandler handler = parseContext.get(UnpackHandler.class);
             if (handler instanceof FrictionlessUnpackHandler) {
@@ -163,7 +171,7 @@ class PipesWorker implements Callable<PipesResult> {
 
             long emitStart = System.nanoTime();
             try {
-                return emitHandler.emitParseData(fetchEmitTuple, parseData, parseContext);
+                return emitHandler.emitParseData(fetchEmitTuple, parseData, prepared, parseContext);
             } finally {
                 emitNanos = System.nanoTime() - emitStart;
             }
@@ -265,11 +273,10 @@ class PipesWorker implements Callable<PipesResult> {
      */
     private PipesResult emitFrictionlessOutput(FrictionlessUnpackHandler frictionlessHandler,
                                                MetadataListAndEmbeddedBytes parseData) {
+        // Written even with no embedded files, same shape on every surface, unless asked not to
         UnpackConfig unpackConfig = frictionlessHandler.getUnpackConfig();
-
-        // Skip if no embedded files (unless includeOriginal is set)
-        if (!frictionlessHandler.hasEmbeddedFiles() && !unpackConfig.isIncludeOriginal()) {
-            LOG.debug("No embedded files for Frictionless output");
+        if (!frictionlessHandler.hasEmbeddedFiles() &&
+                unpackConfig.getEmptyPackage() == UnpackConfig.EMPTY_PACKAGE.SKIP) {
             return null;
         }
 
@@ -293,20 +300,62 @@ class PipesWorker implements Callable<PipesResult> {
         StreamEmitter streamEmitter = (StreamEmitter) emitter;
         EmitKey containerEmitKey = fetchEmitTuple.getEmitKey();
 
-        // Get container name from fetch key
-        String fetchKey = fetchEmitTuple.getFetchKey().getFetchKey();
-        String containerName = fetchKey;
-        int lastSlash = Math.max(fetchKey.lastIndexOf('/'), fetchKey.lastIndexOf('\\'));
-        if (lastSlash >= 0 && lastSlash < fetchKey.length() - 1) {
-            containerName = fetchKey.substring(lastSlash + 1);
+        // Package name: the host's, else the fetch key's file name
+        String containerName = unpackConfig.getPackageName();
+        if (containerName == null) {
+            String fetchKey = fetchEmitTuple.getFetchKey().getFetchKey();
+            containerName = fetchKey;
+            int lastSlash = Math.max(fetchKey.lastIndexOf('/'), fetchKey.lastIndexOf('\\'));
+            if (lastSlash >= 0 && lastSlash < fetchKey.length() - 1) {
+                containerName = fetchKey.substring(lastSlash + 1);
+            }
         }
 
+        DataPackage dataPackage = frictionlessHandler.buildDataPackage(containerName);
+        byte[] metadataJson = null;
+        if (unpackConfig.writesMetadata() && parseData != null &&
+                parseData.getMetadataList() != null) {
+            try {
+                metadataJson = writeMetadataListAsJson(parseData.getMetadataList());
+            } catch (IOException e) {
+                LOG.warn("Failed to serialize metadata for Frictionless output", e);
+                return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
+                        "Failed to serialize metadata for Frictionless output: " +
+                                ExceptionUtils.format(e, parseContext));
+            }
+            dataPackage.getResources().add(0, FrictionlessResource.create(METADATA_FILE_NAME,
+                    "application/json", metadataJson.length,
+                    FrictionlessResource.formatHash(sha256(metadataJson))));
+        }
+
+        PipesResult result;
         if (unpackConfig.getOutputMode() == UnpackConfig.OUTPUT_MODE.ZIPPED) {
-            return emitFrictionlessZipped(frictionlessHandler, streamEmitter, containerEmitKey,
-                    containerName, parseData, unpackConfig);
+            result = emitFrictionlessZipped(frictionlessHandler, streamEmitter, containerEmitKey,
+                    dataPackage, metadataJson);
         } else {
-            return emitFrictionlessDirectory(frictionlessHandler, streamEmitter, containerEmitKey,
-                    containerName, parseData, unpackConfig);
+            result = emitFrictionlessDirectory(frictionlessHandler, streamEmitter,
+                    packageRoot(containerEmitKey, unpackConfig), dataPackage, metadataJson);
+        }
+        // Same emitter: the package already carries the metadata list
+        if (result == null && metadataJson != null &&
+                emitterName.equals(containerEmitKey.getEmitterId())) {
+            parseData.setMetadataInPackage(true);
+        }
+        return result;
+    }
+
+    /** Emit key prefix of a directory-mode package; see {@link UnpackConfig#getPackageRoot()}. */
+    private static String packageRoot(EmitKey containerEmitKey, UnpackConfig unpackConfig) {
+        String root = unpackConfig.getPackageRoot() != null ?
+                unpackConfig.getPackageRoot() : containerEmitKey.getEmitKey();
+        return root.isEmpty() ? "" : root + "/";
+    }
+
+    private static byte[] sha256(byte[] bytes) {
+        try {
+            return MessageDigest.getInstance("SHA-256").digest(bytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm not available", e);
         }
     }
 
@@ -316,16 +365,12 @@ class PipesWorker implements Callable<PipesResult> {
     private PipesResult emitFrictionlessZipped(FrictionlessUnpackHandler frictionlessHandler,
                                                StreamEmitter streamEmitter,
                                                EmitKey containerEmitKey,
-                                               String containerName,
-                                               MetadataListAndEmbeddedBytes parseData,
-                                               UnpackConfig unpackConfig) {
-        // Build the data package manifest
-        DataPackage dataPackage = frictionlessHandler.buildDataPackage(containerName);
-
+                                               DataPackage dataPackage,
+                                               byte[] metadataJson) {
         // Create zip file in temp directory
         Path zipFile = frictionlessHandler.getTempDirectory().resolve("frictionless-package.zip");
         try {
-            createFrictionlessZipFile(zipFile, frictionlessHandler, dataPackage, parseData, unpackConfig);
+            createFrictionlessZipFile(zipFile, frictionlessHandler, dataPackage, metadataJson);
         } catch (IOException e) {
             LOG.warn("Failed to create Frictionless zip file", e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
@@ -352,40 +397,31 @@ class PipesWorker implements Callable<PipesResult> {
      */
     private PipesResult emitFrictionlessDirectory(FrictionlessUnpackHandler frictionlessHandler,
                                                   StreamEmitter streamEmitter,
-                                                  EmitKey containerEmitKey,
-                                                  String containerName,
-                                                  MetadataListAndEmbeddedBytes parseData,
-                                                  UnpackConfig unpackConfig) {
-        String baseEmitKey = containerEmitKey.getEmitKey();
-
-        // Build the data package manifest
-        DataPackage dataPackage = frictionlessHandler.buildDataPackage(containerName);
-
+                                                  String packageRoot,
+                                                  DataPackage dataPackage,
+                                                  byte[] metadataJson) {
         try {
             // Emit each embedded file under unpacked/.
             // When includeOriginal=true the container itself is added as id 0 by
             // ParseHandler._preParse, so it appears here as one of the embedded entries.
             for (FrictionlessUnpackHandler.FrictionlessFileInfo fileInfo : frictionlessHandler.getEmbeddedFiles()) {
-                String fileEmitKey = baseEmitKey + "/unpacked/" + fileInfo.fileName();
+                String fileEmitKey = packageRoot + "unpacked/" + fileInfo.fileName();
                 try (InputStream is = Files.newInputStream(fileInfo.filePath())) {
                     streamEmitter.emit(fileEmitKey, is, fileInfo.metadata(), parseContext);
                 }
             }
 
             // Emit datapackage.json
-            String dpEmitKey = baseEmitKey + "/datapackage.json";
+            String dpEmitKey = packageRoot + "datapackage.json";
             byte[] dpBytes = dataPackage.toJson().getBytes(java.nio.charset.StandardCharsets.UTF_8);
             try (InputStream dpStream = new java.io.ByteArrayInputStream(dpBytes)) {
                 streamEmitter.emit(dpEmitKey, dpStream, new Metadata(), parseContext);
             }
 
-            // Emit metadata.json if requested
-            if (unpackConfig.writesMetadata() && parseData != null &&
-                    parseData.getMetadataList() != null) {
-                String metadataEmitKey = baseEmitKey + "/metadata.json";
-                byte[] metadataBytes = writeMetadataListAsJson(parseData.getMetadataList());
-                try (InputStream metadataStream = new java.io.ByteArrayInputStream(metadataBytes)) {
-                    streamEmitter.emit(metadataEmitKey, metadataStream, new Metadata(), parseContext);
+            if (metadataJson != null) {
+                try (InputStream metadataStream = new java.io.ByteArrayInputStream(metadataJson)) {
+                    streamEmitter.emit(packageRoot + METADATA_FILE_NAME, metadataStream,
+                            new Metadata(), parseContext);
                 }
             }
         } catch (IOException e) {
@@ -395,7 +431,7 @@ class PipesWorker implements Callable<PipesResult> {
         }
 
         LOG.debug("Successfully emitted Frictionless package with {} resources (directory mode) to {}",
-                dataPackage.resourceCount(), baseEmitKey);
+                dataPackage.resourceCount(), packageRoot);
         return null;
     }
 
@@ -403,8 +439,7 @@ class PipesWorker implements Callable<PipesResult> {
      * Creates a Frictionless Data Package zip file.
      */
     private void createFrictionlessZipFile(Path zipFile, FrictionlessUnpackHandler frictionlessHandler,
-                                           DataPackage dataPackage, MetadataListAndEmbeddedBytes parseData,
-                                           UnpackConfig unpackConfig) throws IOException {
+                                           DataPackage dataPackage, byte[] metadataJson) throws IOException {
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFile))) {
             // Add datapackage.json at root
             ZipEntry dpEntry = new ZipEntry("datapackage.json");
@@ -412,12 +447,9 @@ class PipesWorker implements Callable<PipesResult> {
             dataPackage.writeTo(zos);
             zos.closeEntry();
 
-            // Add metadata.json if requested
-            if (unpackConfig.writesMetadata() && parseData != null &&
-                    parseData.getMetadataList() != null) {
-                ZipEntry metadataEntry = new ZipEntry("metadata.json");
-                zos.putNextEntry(metadataEntry);
-                writeMetadataListAsJson(zos, parseData.getMetadataList());
+            if (metadataJson != null) {
+                zos.putNextEntry(new ZipEntry(METADATA_FILE_NAME));
+                zos.write(metadataJson);
                 zos.closeEntry();
             }
 

@@ -334,7 +334,7 @@ public class TikaPipesTest extends CXFTestBase {
         try (ZipFile zip = new ZipFile(
                 outputBytesDir.resolve(TEST_RECURSIVE_DOC + "-frictionless.zip").toFile())) {
             assertNotNull(zip.getEntry("datapackage.json"));
-            assertNotNull(zip.getEntry("metadata.json"));
+            assertNotNull(zip.getEntry("rmeta.json"));
             for (Enumeration<? extends ZipEntry> e = zip.entries(); e.hasMoreElements(); ) {
                 ZipEntry entry = e.nextElement();
                 if (entry.getName().startsWith("unpacked/")) {

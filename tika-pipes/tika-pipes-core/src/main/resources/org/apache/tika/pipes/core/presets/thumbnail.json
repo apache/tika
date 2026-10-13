@@ -1,6 +1,8 @@
 {
   // at most one raster thumbnail per parse, nothing else; the rule is in ThumbnailUnpackSelector
   "thumbnail-unpack-selector": {},
+  // no thumbnail is no package: /unpack answers 204
+  "unpack-config": {"emptyPackage": "SKIP"},
   // every rendering parser: the top-level document's first page only, fitted into 256 x 256 in
   // colour, and text comes from the document itself, never OCR
   "pages": {
