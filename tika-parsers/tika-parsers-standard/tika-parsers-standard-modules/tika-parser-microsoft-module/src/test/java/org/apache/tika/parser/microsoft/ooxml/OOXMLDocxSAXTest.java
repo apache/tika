@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -428,6 +429,20 @@ public class OOXMLDocxSAXTest extends TikaTest {
         String xml = getXML("testInstrLink.docx").xml;
         assertContains("<a href=\"https://exmaple.com/file\">", xml);
         assertContains("Access Document(s)", xml);
+    }
+
+    @Test
+    public void testBookmarkRefFieldLinks() throws Exception {
+        XMLResult r = getXML("testWORD_refFields.docx");
+        String xml = r.xml;
+        assertContains("<a name=\"_Ref100\" />Target heading", xml);
+        assertContains("<p>see <a href=\"#_Ref100\">Target heading</a> above</p>", xml);
+        // PAGEREF nested in an in-document HYPERLINK keeps the one enclosing link
+        assertContains("<p>toc <a href=\"#_Ref100\">Target heading 7</a> end</p>", xml);
+        assertContains("<p>simple <a href=\"#_Ref100\">1</a> done</p>", xml);
+        assertContains("<p>wrapped <a href=\"#_Ref100\">inner tail</a></p>", xml);
+        assertContains("<p>noref 5</p>", xml);
+        assertNull(r.metadata.get(Office.HAS_FIELD_HYPERLINKS));
     }
 
     @Test

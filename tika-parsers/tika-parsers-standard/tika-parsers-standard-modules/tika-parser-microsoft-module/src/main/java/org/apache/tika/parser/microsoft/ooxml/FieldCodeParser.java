@@ -44,7 +44,39 @@ public class FieldCodeParser {
                     "LINK\\s{1,100}[\\w.]{1,50}\\s{1,100}\"([^\"]{1,10000})\"",
                     Pattern.CASE_INSENSITIVE);
 
+    // REF/PAGEREF/NOTEREF <bookmark>; Word bookmark names are at most 40 characters
+    private static final Pattern BOOKMARK_REF_PATTERN =
+            Pattern.compile("^(?:REF|PAGEREF|NOTEREF)\\s{1,100}([\\p{L}\\p{N}_]{1,40})(?:\\s|$)",
+                    Pattern.CASE_INSENSITIVE);
+    // HYPERLINK \l "<bookmark>": a link within the document
+    private static final Pattern HYPERLINK_ANCHOR_PATTERN =
+            Pattern.compile("^HYPERLINK\\s{1,100}\\\\l\\s{1,100}\"([^\"]{1,255})\"",
+                    Pattern.CASE_INSENSITIVE);
+
     private FieldCodeParser() {
+    }
+
+    /**
+     * Parses the target bookmark from a REF, PAGEREF or NOTEREF field code,
+     * e.g. {@code REF _Ref12345 \h}, or from an in-document {@code HYPERLINK \l "_Toc1"}.
+     *
+     * @param instrText the accumulated instrText content
+     * @return the bookmark name if found, or null
+     */
+    public static String parseBookmarkRefFromInstrText(String instrText) {
+        if (instrText == null || instrText.isEmpty()) {
+            return null;
+        }
+        String trimmed = instrText.trim();
+        Matcher m = BOOKMARK_REF_PATTERN.matcher(trimmed);
+        if (m.find()) {
+            return m.group(1);
+        }
+        m = HYPERLINK_ANCHOR_PATTERN.matcher(trimmed);
+        if (m.find()) {
+            return m.group(1);
+        }
+        return null;
     }
 
     /**
