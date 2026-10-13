@@ -106,4 +106,9 @@ public class VLMConfigExamplesTest {
     public void testVLMForPdfParsing() throws Exception {
         loadAndValidate("vlm-pdf-parsing.json");
     }
+
+    @Test
+    public void testJinaOCRBasic() throws Exception {
+        loadAndValidate("jina-ocr-basic.json");
+    }
 }

@@ -151,6 +151,10 @@ public class OpenAIVLMParser extends AbstractVLMParser {
                 throw new TikaException("VLM response contains no choices: " + responseBody);
             }
 
+            if ("length".equals(choices.get(0).path("finish_reason").asText())) {
+                warn(metadata, WARN_TRUNCATED);
+            }
+
             JsonNode message = choices.get(0).get("message");
             if (message == null) {
                 throw new TikaException("VLM response choice has no message: " + responseBody);
@@ -235,6 +239,9 @@ public class OpenAIVLMParser extends AbstractVLMParser {
         ObjectNode root = MAPPER.createObjectNode();
         root.put("model", config.getModel());
         root.put("max_tokens", config.getMaxTokens());
+        if (config.getTemperature() != null) {
+            root.put("temperature", config.getTemperature());
+        }
 
         ArrayNode messages = root.putArray("messages");
         ObjectNode userMessage = messages.addObject();

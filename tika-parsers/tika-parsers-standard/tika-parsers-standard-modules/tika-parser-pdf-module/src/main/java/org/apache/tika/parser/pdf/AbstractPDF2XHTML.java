@@ -771,6 +771,7 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             // Propagate enrichment metadata added by the OCR parser (e.g. tk:chunks
             // from image embedding parsers) back to the parent document so it isn't
             // silently discarded when the renderMetadata goes out of scope.
+            carryOcrWarnings(renderMetadata);
             String renderChunks = renderMetadata.get(TikaCoreProperties.TIKA_CHUNKS);
             if (renderChunks != null) {
                 metadata.set(TikaCoreProperties.TIKA_CHUNKS,
@@ -788,6 +789,16 @@ class AbstractPDF2XHTML extends PDFTextStripper {
             throw new IOException("error writing OCR content from PDF", e);
         }
         return false;
+    }
+
+    /** The recognizer's doubts about a page become the document's, each code once. */
+    private void carryOcrWarnings(Metadata renderMetadata) {
+        for (String warning : renderMetadata.getValues(TikaCoreProperties.OCR_WARNINGS)) {
+            if (!Arrays.asList(metadata.getValues(TikaCoreProperties.OCR_WARNINGS))
+                    .contains(warning)) {
+                metadata.add(TikaCoreProperties.OCR_WARNINGS, warning);
+            }
+        }
     }
 
     /** The page's render, made on first use and closed at page end; a failure is not retried. */
