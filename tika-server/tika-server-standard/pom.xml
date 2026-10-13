@@ -62,6 +62,12 @@
       <artifactId>tika-vlm</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- keep blank and tiny images away from any text recognizer (JDK only) -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-image-processing</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-handler-boilerpipe</artifactId>

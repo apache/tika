@@ -60,7 +60,7 @@ public class VLMOperatorOnlyConfigTest {
     @ValueSource(strings = {"{\"model\": \"evil\"}", "{\"baseUrl\": \"http://evil\"}",
             "{\"completionsPath\": \"/evil\"}", "{\"apiKey\": \"evil\"}",
             "{\"allowRuntimePrompt\": true}", "{\"maxRetries\": 99}",
-            "{\"maxImagePixels\": 1}"})
+            "{\"maxImagePixels\": 1}", "{\"temperature\": 1.5}"})
     public void testPerRequestCannotSetOperatorOnlyFields(String json) {
         Exception e = assertThrows(Exception.class, () -> perRequest(json));
         assertTrue(e.getMessage().contains("at runtime"), e.getMessage());

@@ -2512,6 +2512,42 @@ public class PDFParserTest extends TikaTest {
         assertContains("chunk-page-2", chunks);
     }
 
+    /** The recognizer's doubts about each rendered page reach the document, each code once. */
+    @Test
+    public void testOcrWarningsFromAllPagesReachDocument() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.pages().setText(TextPolicy.OCR);
+
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new MockEngine() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(ocrMediaType(config));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws IOException, SAXException, TikaException {
+                metadata.add(TikaCoreProperties.OCR_WARNINGS, "repetition");
+                if (context.get(OCRPageCounter.class).getCount() == 2) {
+                    metadata.add(TikaCoreProperties.OCR_WARNINGS, "truncated");
+                }
+                XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
+                xhtml.startDocument();
+                xhtml.endDocument();
+            }
+        });
+
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPDF_bookmarks.pdf")) {
+            new PDFParser().parse(tis, new ToXMLContentHandler(), metadata, context);
+        }
+
+        assertEquals(java.util.List.of("repetition", "truncated"),
+                java.util.Arrays.asList(metadata.getValues(TikaCoreProperties.OCR_WARNINGS)));
+    }
+
     /**
      * A named enricher advertising real image types, with no composite registration at all,
      * receives every rendered page when OCR runs (TIKA-4872).

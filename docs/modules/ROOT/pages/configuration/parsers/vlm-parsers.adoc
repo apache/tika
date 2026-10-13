@@ -38,7 +38,7 @@ xref:configuration/index.adoc[Configuration]. Naming it under `parsers` is depre
 |Parser |Endpoint |Config key
 
 |`OpenAIVLMParser`
-|Any OpenAI-compatible chat completions endpoint (vLLM, Ollama, local FastAPI, OpenAI)
+|Any OpenAI-compatible chat completions endpoint (vLLM, Ollama, local FastAPI, OpenAI, Jina AI)
 |`openai-vlm-parser`
 
 |`ClaudeVLMParser`
@@ -143,6 +143,30 @@ endpoint. The API key is passed as a `key` query parameter.
 
 Change `baseUrl` if you are using Vertex AI or a proxy.
 
+== Jina OCR
+
+https://jina.ai[Jina AI]'s `jina-ocr-v1` model is a document-OCR model that outputs
+clean Markdown. Its API is OpenAI-compatible, so `OpenAIVLMParser` drives it with no
+extra dependencies.
+
+=== Basic Configuration
+
+[source,json]
+----
+include::example$jina-ocr-basic.json[]
+----
+
+Set the `JINA_API_KEY` environment variable to your key.
+`${env:NAME}` syntax is supported everywhere in Tika JSON config
+(xref:configuration/index.adoc#env[Secrets from the environment]).
+
+Jina OCR accepts images only (PNG, JPEG, GIF, TIFF, WebP, BMP). It does not accept
+PDFs or video. The MIME type declared in the `data:` URI is informational — Jina
+auto-detects the format from the bytes, so a mismatched label does not cause an error.
+
+NOTE: `jina-ocr-v1` tables are emitted as raw HTML inside the model's Markdown output.
+Tika's Markdown-to-XHTML converter handles this correctly — see <<_markdown_to_xhtml_conversion>>.
+
 == Using a VLM parser for PDF parsing (deprecated)
 
 Claude and Gemini can process entire PDFs with their vision capabilities.
@@ -197,7 +221,8 @@ All three parsers share the same configuration POJO (`VLMOCRConfig`):
 
 |`maxRetries`
 |`4`
-|Retries of a 429, 502, 503 or 504 answer, with a jittered backoff inside the parse budget;
+|Retries of a 429, 502, 503 or 504 answer, or of a connection that dropped before a full
+response arrived, with a jittered backoff inside the parse budget;
 `0` fails at once. A hosted service caps requests in flight per key, so see
 xref:configuration/inference.adoc#concurrency[Hosted engines and concurrency].
 
@@ -223,6 +248,12 @@ text into the parent document's content stream. Mirrors
 captioning or tagging prompt: the parser still runs, but the PDF parser's `AUTO` OCR never replaces
 a page's extracted text with its output.
 
+|`temperature`
+|unset
+|Sampling temperature sent with each request (0 to 2; Claude accepts 0 to 1). Unset sends none and the
+service's default applies. `0` makes repeated requests for the same image return the same text on
+services that honor it, which makes a wrong answer reproducible; it does not make the answer correct.
+
 |`minFileSizeToOcr`
 |`0`
 |Minimum input file size in bytes.
@@ -246,6 +277,28 @@ trusted callers. See <<_per_request_configuration,Per-request configuration>>.
 |`/v1/chat/completions` (OpenAI/vLLM only)
 |HTTP path appended to `baseUrl` for the chat-completions endpoint. Used by the OpenAI-compatible parser only. Claude and Gemini hardcode their own API paths (`/v1/messages` and `/v1beta/models/\{model}:generateContent` respectively) and ignore this field.
 |===
+
+When a file is not sent because of `minFileSizeToOcr`, `maxFileSizeToOcr` or
+`maxImagePixels`, the parser sets `vlm:skipped-reason` to `file-too-small`, `file-too-large` or
+`image-too-large`; the last also sets `vlm:image-pixels`.
+xref:configuration/index.adoc#image-checks[Image checks] can screen out images too small or
+blank to be worth sending, before any text recognizer sees them.
+
+The returned text is never changed or dropped. When it looks doubtful, `tk:ocr-warnings` (multi-valued)
+gets one of: `truncated` (the model stopped at `maxTokens`), `repetition` (a repeated line or sentence;
+output of at least 1,000 bytes that deflates to under 12% of its size), or `empty`. For an
+`INLINE` image, whose text goes into the parent document, the same
+codes are added to the parent's `tk:ocr-warnings`, and a skip appears there as `skipped:<reason>`. That
+needs the recursive parser wrapper, which supplies the parent's metadata.
+
+[#fluent-hallucinations]
+=== Limits of the checks and warnings
+
+The image checks screen what is sent, and `tk:ocr-warnings` describes the shape of what comes
+back: a loop, a cut-off answer or no answer. Neither judges accuracy, so neither identifies fluent
+hallucinations, text that reads well but is not what the image says. Like any OCR engine, a VLM
+can misread an image, and output with no warning has not been verified. Where accuracy matters,
+spot-check a sample against the source.
 
 == Markdown-to-XHTML conversion
 
@@ -296,7 +349,7 @@ rejected with an exception:
 |May be lowered, never raised above the initialization-time value — that ceiling is what bounds
 cost on a paid endpoint.
 
-|`maxImagePixels`, `maxRetries`, `allowRuntimePrompt`
+|`maxImagePixels`, `temperature`, `maxRetries`, `allowRuntimePrompt`
 |Always blocked.
 
 |`prompt`, `textRecognizer`

@@ -1,5 +1,10 @@
 Release 4.2.0 - unreleased
 
+   * Image checks (byte-size, min-image-size, blank-image-check; new tika-image-processing
+     module) make it less likely that blank or tiny images reach text recognizers. VLM
+     output gets tk:ocr-warnings (truncated, repetition, empty); VLM parsers take
+     temperature; dropped HTTP connections are retried (TIKA-4972).
+
    * Config properties whose value reaches the host (paths, executables, class names,
      URLs, credentials, operator-sized limits) are marked @OperatorOnly and refused in
      per-request JSON before any setter runs. Newly locked: pdf-parser's

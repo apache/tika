@@ -150,6 +150,10 @@ public class GeminiVLMParser extends AbstractVLMParser {
                 throw new TikaException("Gemini response contains no candidates: " + responseBody);
             }
 
+            if ("MAX_TOKENS".equals(candidates.get(0).path("finishReason").asText())) {
+                warn(metadata, WARN_TRUNCATED);
+            }
+
             JsonNode content = candidates.get(0).get("content");
             if (content == null) {
                 throw new TikaException("Gemini candidate has no content: " + responseBody);
@@ -221,6 +225,9 @@ public class GeminiVLMParser extends AbstractVLMParser {
         // generation config
         ObjectNode generationConfig = root.putObject("generationConfig");
         generationConfig.put("maxOutputTokens", config.getMaxTokens());
+        if (config.getTemperature() != null) {
+            generationConfig.put("temperature", config.getTemperature());
+        }
 
         return root.toString();
     }
