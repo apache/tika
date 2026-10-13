@@ -143,6 +143,16 @@ public class OOXMLTikaBodyPartHandler
     }
 
     @Override
+    public void startMath() throws SAXException {
+        formattingTags.openMath();
+    }
+
+    @Override
+    public void endMath() throws SAXException {
+        formattingTags.closeMath();
+    }
+
+    @Override
     public void startParagraph(ParagraphProperties paragraphProperties) throws SAXException {
 
         //if you're in a table cell and your after the first paragraph

@@ -145,6 +145,14 @@ public class OOXMLDocxSAXTest extends TikaTest {
     }
 
     @Test
+    public void testOmmlMath() throws Exception {
+        String xml = getXML("testWORD_omml.docx").xml;
+        assertContains("<p>area <span class=\"math\">A=<b>π</b>rr2</span> done</p>", xml);
+        assertContains("<p><span class=\"math\">x+y</span></p>", xml);
+        assertContains("<p><b>bold </b><span class=\"math\">z</span><b> after</b></p>", xml);
+    }
+
+    @Test
     public void testBoldHyperlink() throws Exception {
         String xml = getXML("testWORD_boldHyperlink.docx").xml;
         xml = xml.replaceAll("\\s+", " ");
