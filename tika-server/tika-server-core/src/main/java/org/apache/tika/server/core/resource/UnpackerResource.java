@@ -18,6 +18,7 @@ package org.apache.tika.server.core.resource;
 
 import static org.apache.tika.server.core.resource.TikaResource.fillMetadata;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -96,7 +97,7 @@ import org.apache.tika.pipes.core.extractor.UnpackConfig;
  * <pre>
  * output.zip
  * ├── datapackage.json      # Manifest with file list, SHA256 hashes, mimetypes
- * ├── metadata.json         # Full RMETA metadata (unless includeMetadata=false)
+ * ├── rmeta.json         # Full RMETA metadata (unless includeMetadata=false)
  * └── unpacked/
  *     ├── 00000001.pdf
  *     ├── 00000002.png
@@ -291,6 +292,7 @@ public class UnpackerResource {
                                      @jakarta.ws.rs.PathParam("presetName") String presetName)
             throws Exception {
         ParseContext pc = tikaResource.createPresetContext(presetName);
+        seedPresetUnpackConfig(pc, presetName);
         rejectDirectoryMode(pc);
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
@@ -310,12 +312,20 @@ public class UnpackerResource {
                                         @jakarta.ws.rs.PathParam("presetName") String presetName)
             throws Exception {
         ParseContext pc = tikaResource.createPresetContext(presetName);
+        seedPresetUnpackConfig(pc, presetName);
         rejectDirectoryMode(pc);
         Metadata metadata = tikaResource.newRequestMetadata();
         try (TikaInputStream tis = TikaInputStream.get(is)) {
             fillMetadata(null, metadata, httpHeaders.getRequestHeaders());
             TikaResource.logRequest(LOG, "/unpack/all", metadata);
             return doUnpack(tis, metadata, pc, true);
+        }
+    }
+
+    private void seedPresetUnpackConfig(ParseContext pc, String presetName) throws IOException {
+        UnpackConfig unpackConfig = tikaResource.newPresetUnpackConfig(presetName);
+        if (unpackConfig != null) {
+            pc.set(UnpackConfig.class, unpackConfig);
         }
     }
 

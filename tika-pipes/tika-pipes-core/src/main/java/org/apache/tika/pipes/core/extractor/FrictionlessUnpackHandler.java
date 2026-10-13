@@ -160,7 +160,7 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
         DataPackage dataPackage = new DataPackage(containerName);
 
         // Add all embedded files with unpacked/ prefix
-        for (FrictionlessFileInfo fileInfo : embeddedFiles) {
+        for (FrictionlessFileInfo fileInfo : getEmbeddedFiles()) {
             String path = UNPACKED_DIR + "/" + fileInfo.fileName();
             String originalName = fileInfo.metadata().get(TikaCoreProperties.RESOURCE_NAME_KEY);
             dataPackage.addResource(FrictionlessResource.create(
@@ -168,6 +168,7 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
                     fileInfo.mediatype(),
                     fileInfo.bytes(),
                     fileInfo.sha256Hash(),
+                    fileInfo.id(),
                     originalName
             ));
         }
@@ -192,8 +193,11 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
     /**
      * Returns information about all embedded files.
      */
+    /** In embedded-id order, not parse-completion order. */
     public List<FrictionlessFileInfo> getEmbeddedFiles() {
-        return embeddedFiles;
+        return embeddedFiles.stream()
+                .sorted(java.util.Comparator.comparingInt(FrictionlessFileInfo::id))
+                .toList();
     }
 
     /**
