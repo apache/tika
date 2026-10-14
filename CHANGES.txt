@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * An email that starts with MIME-Version and nests a multipart/related part (a Gmail
+     export, for one) is detected as message/rfc822, not as MHTML: the
+     multipart/related magic now reads only the message's own header block (TIKA-4973).
+
    * Config properties whose value reaches the host (paths, executables, class names,
      URLs, credentials, operator-sized limits) are marked @OperatorOnly and refused in
      per-request JSON before any setter runs. Newly locked: pdf-parser's
