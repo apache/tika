@@ -23,6 +23,7 @@ import java.util.Locale;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.SelfConfiguring;
 import org.apache.tika.exception.TikaConfigException;
@@ -61,6 +62,8 @@ import org.apache.tika.parser.ParseContext;
  * the whole document tree in batched requests.
  */
 @Deprecated
+// posts document text to its endpoint, which a MetadataFilter from a request must not do
+@OperatorOnly
 public abstract class AbstractEmbeddingFilter extends MetadataFilter implements SelfConfiguring {
 
 

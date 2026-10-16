@@ -299,6 +299,9 @@ fail-closed gate on top of the registry:
 * The check is fail-closed: a newly added context-key interface is blocked until
   it is consciously allow-listed
 * The whole tree is scanned *before* any component is constructed
+* `ComponentInstantiator` enforces the same rule for every component a request builds,
+  however it is named — a `metadata-filters` entry, a top-level entry, a nested property,
+  or a bare-string reference — before calling its constructor
 
 The allowlist/blocklist lives in `ComponentNameResolver`
 (`WIRE_INSTANTIABLE_CONTEXT_KEYS` / `WIRE_BLOCKED_CONTEXT_KEYS`); an
@@ -328,6 +331,19 @@ is by JSON key, before any setter runs, and surfaces as an `IOException` that na
 property. Operator JSON — tika-config.json, including its presets — is trusted and unaffected.
 A nested config object is checked against its own type, and an override that drops the
 annotation does not unlock the property.
+
+The same check covers every component a request builds, not only self-configuring ones: a
+`metadata-filters` entry, a top-level entry, and any component nested in their config, whether
+configured through setters or a `JsonConfig` constructor (`ConfigDeserializer.buildConfig`
+refuses untrusted JSON the same way, and throws if tika-serialization is not on the classpath).
+
+On a class, `@OperatorOnly` keeps a request from building the component at all. Use it for an
+implementation of a request-allowed type that breaks the type's promise, such as a
+`MetadataFilter` that sends document text over the network. Subclasses inherit it.
+
+Java code that builds a component from a `JsonConfig` it wrote itself is operator code, and
+says so with `JsonConfig.trusted(json)`; a plain lambda is untrusted, so it cannot set an
+operator-only property.
 
 Writing a config class: annotate the setter of anything a caller must not be able to point
 elsewhere. A rule the annotation cannot express — a ceiling a request may lower but not raise,

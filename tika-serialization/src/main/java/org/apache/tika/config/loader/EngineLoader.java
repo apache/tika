@@ -66,7 +66,7 @@ class EngineLoader implements ComponentLoader<EngineRegistry> {
             try {
                 engine = ComponentInstantiator.instantiateComponent(type.getKey(),
                         type.getValue(), context.getObjectMapper(), context.getClassLoader(),
-                        Engine.class);
+                        Engine.class, true);
             } catch (TikaConfigException ex) {
                 throw new TikaConfigException("engine \"" + name + "\": " + ex.getMessage(), ex);
             }

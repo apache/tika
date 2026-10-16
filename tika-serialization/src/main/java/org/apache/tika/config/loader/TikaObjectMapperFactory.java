@@ -32,6 +32,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.serialization.ComponentNameResolver;
+import org.apache.tika.serialization.OperatorOnlyGuard;
 import org.apache.tika.serialization.TikaModule;
 
 /**
@@ -99,6 +100,19 @@ public class TikaObjectMapperFactory {
      *
      * @return the shared plain ObjectMapper
      */
+    /**
+     * Reads a component's JSON config; called by tika-core's ConfigDeserializer by reflection.
+     * Untrusted JSON may not set an {@link org.apache.tika.config.OperatorOnly} property.
+     */
+    public static <T> T readConfig(String json, Class<T> configClass, boolean trusted)
+            throws Exception {
+        ObjectMapper mapper = getMapper();
+        if (!trusted) {
+            OperatorOnlyGuard.check(mapper, configClass.getSimpleName(), json, configClass);
+        }
+        return ComponentInstantiator.withTrust(mapper.readerFor(configClass), trusted).readValue(json);
+    }
+
     public static ObjectMapper getPlainMapper() {
         return PLAIN_MAPPER;
     }

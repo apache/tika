@@ -58,7 +58,10 @@ public final class OperatorOnlyGuard {
         check(mapper, configKey, mapper.readTree(json), mapper.constructType(configClass));
     }
 
-    static void check(ObjectMapper mapper, String configKey, JsonNode node, JavaType type)
+    /**
+     * @throws IOException if {@code node} names an operator-only property of {@code type}
+     */
+    public static void check(ObjectMapper mapper, String configKey, JsonNode node, JavaType type)
             throws IOException {
         if (node == null || !node.isObject()) {
             return;

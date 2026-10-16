@@ -36,8 +36,26 @@ public interface JsonConfig {
      */
     String json();
 
-    /** Operator-authored (config file, presets), as opposed to per-request input. */
+    /**
+     * Operator-authored (config file, presets), as opposed to per-request input. Untrusted
+     * config may not set an {@link OperatorOnly} property.
+     */
     default boolean trusted() {
         return false;
+    }
+
+    /** Operator-authored JSON, e.g. built by the caller's own code rather than a request. */
+    static JsonConfig trusted(String json) {
+        return new JsonConfig() {
+            @Override
+            public String json() {
+                return json;
+            }
+
+            @Override
+            public boolean trusted() {
+                return true;
+            }
+        };
     }
 }

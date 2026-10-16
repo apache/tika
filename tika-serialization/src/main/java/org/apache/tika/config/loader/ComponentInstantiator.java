@@ -16,12 +16,15 @@
  */
 package org.apache.tika.config.loader;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.config.Initializable;
@@ -35,12 +38,15 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.serialization.ComponentNameResolver;
+import org.apache.tika.serialization.OperatorOnlyGuard;
 
 /**
  * Utility class for instantiating Tika components from JSON configuration.
  * Provides common logic for all component loaders to avoid code duplication.
  */
 public class ComponentInstantiator {
+
+    private static final String UNTRUSTED = ComponentInstantiator.class.getName() + ".untrusted";
 
     /**
      * Instantiates a component from a JsonNode configuration.
@@ -69,7 +75,7 @@ public class ComponentInstantiator {
             try {
                 Constructor<?> constructor = componentClass.getConstructor(JsonConfig.class);
                 String jsonString = configNode != null ? configNode.toString() : "{}";
-                JsonConfig jsonConfig = () -> jsonString;
+                JsonConfig jsonConfig = JsonConfig.trusted(jsonString);
                 T component = (T) constructor.newInstance(jsonConfig);
                 initializeIfNeeded(component);
                 return component;
@@ -145,13 +151,16 @@ public class ComponentInstantiator {
      * @param mapper the ObjectMapper for deserialization
      * @param classLoader the class loader for name resolution
      * @param expectedType the expected interface/base type (for validation), or null to skip
+     * @param trusted false for per-request JSON: a request-blocked or {@code @OperatorOnly}
+     *                class, or an {@code @OperatorOnly} property, is refused before construction,
+     *                here and in every component the config nests
      * @return the instantiated component
      * @throws TikaConfigException if instantiation fails
      */
     @SuppressWarnings("unchecked")
     public static <T> T instantiateComponent(String typeName, JsonNode configNode,
                                               ObjectMapper mapper, ClassLoader classLoader,
-                                              Class<?> expectedType)
+                                              Class<?> expectedType, boolean trusted)
             throws TikaConfigException {
         // Resolve the class using ComponentNameResolver
         Class<?> clazz;
@@ -183,6 +192,10 @@ public class ComponentInstantiator {
         // Strip decorator fields before passing to component
         JsonNode cleanedConfig = stripDecoratorFields(configNode);
 
+        if (!trusted) {
+            assertRequestMayConfigure(typeName, clazz, cleanedConfig, mapper);
+        }
+
         try {
             Object instance;
 
@@ -199,11 +212,11 @@ public class ComponentInstantiator {
                     // Use plain JSON mapper since the main mapper may be binary (Smile)
                     String json = TikaObjectMapperFactory.getPlainMapper()
                             .writeValueAsString(cleanedConfig);
-                    instance = jsonConfigCtor.newInstance((JsonConfig) () -> json);
+                    instance = jsonConfigCtor.newInstance(jsonConfig(json, trusted));
                 } else {
                     // Fall back to no-arg constructor + Jackson bean deserialization
                     instance = clazz.getDeclaredConstructor().newInstance();
-                    mapper.readerForUpdating(instance).readValue(cleanedConfig);
+                    withTrust(mapper.readerForUpdating(instance), trusted).readValue(cleanedConfig);
                 }
             }
 
@@ -223,6 +236,43 @@ public class ComponentInstantiator {
         } catch (Exception e) {
             throw new TikaConfigException("Failed to instantiate: " + typeName, e);
         }
+    }
+
+    /**
+     * Refuses what per-request JSON may not build: a class of a request-blocked type, a class
+     * marked {@link OperatorOnly}, or config naming an {@code @OperatorOnly} property. Runs
+     * before construction, since constructing a component can have side effects.
+     */
+    public static void assertRequestMayConfigure(String typeName, Class<?> clazz,
+                                                 JsonNode config, ObjectMapper mapper)
+            throws TikaConfigException {
+        if (ComponentNameResolver.isWireBlockedClass(clazz)) {
+            throw new TikaConfigException("Component '" + typeName + "' (" + clazz.getName()
+                    + ") may not be supplied via a request parseContext. It must be configured "
+                    + "server-side in the Tika config, not at request time.");
+        }
+        try {
+            OperatorOnlyGuard.check(mapper, typeName, config, mapper.constructType(clazz));
+        } catch (IOException e) {
+            throw new TikaConfigException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Carries the request's trust into the components a config nests: Jackson builds them
+     * through {@code TikaModule}, which reads {@link #UNTRUSTED} back.
+     */
+    public static ObjectReader withTrust(ObjectReader reader, boolean trusted) {
+        return trusted ? reader : reader.withAttribute(UNTRUSTED, Boolean.TRUE);
+    }
+
+    /** True if {@code ctxt} is reading per-request JSON (see {@link #withTrust}). */
+    public static boolean isTrusted(DeserializationContext ctxt) {
+        return ctxt.getAttribute(UNTRUSTED) == null;
+    }
+
+    private static JsonConfig jsonConfig(String json, boolean trusted) {
+        return trusted ? JsonConfig.trusted(json) : () -> json;
     }
 
     /** The parser behind the entry's {@code _mime-include}/{@code _mime-exclude}, if any. */
