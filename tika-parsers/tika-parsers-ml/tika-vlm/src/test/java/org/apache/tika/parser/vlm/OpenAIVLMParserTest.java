@@ -261,6 +261,14 @@ public class OpenAIVLMParserTest {
     }
 
     @Test
+    void testMaxCompletionTokens() throws Exception {
+        config.setUseMaxCompletionTokens(true);
+        JsonNode body = MAPPER.readTree(parser.buildRequestJson(config, "AAAA", "image/png"));
+        assertEquals(1024, body.get("max_completion_tokens").asInt());
+        assertNull(body.get("max_tokens"));
+    }
+
+    @Test
     void testBuildRequestJson() {
         String json = parser.buildRequestJson(config, "AAAA", "image/png");
         assertTrue(json.contains("\"model\":\"test-model\""));

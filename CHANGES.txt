@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * OpenAI-compatible VLM parser can send the output token limit as
+     max_completion_tokens for models that reject max_tokens. The new
+     useMaxCompletionTokens setting is opt-in; max_tokens remains the default.
+
    * Config properties whose value reaches the host (paths, executables, class names,
      URLs, credentials, operator-sized limits) are marked @OperatorOnly and refused in
      per-request JSON before any setter runs. Newly locked: pdf-parser's

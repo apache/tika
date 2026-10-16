@@ -245,6 +245,10 @@ trusted callers. See <<_per_request_configuration,Per-request configuration>>.
 |`completionsPath`
 |`/v1/chat/completions` (OpenAI/vLLM only)
 |HTTP path appended to `baseUrl` for the chat-completions endpoint. Used by the OpenAI-compatible parser only. Claude and Gemini hardcode their own API paths (`/v1/messages` and `/v1beta/models/\{model}:generateContent` respectively) and ignore this field.
+
+|`useMaxCompletionTokens`
+|`false` (OpenAI/vLLM only)
+|Send the output limit as `max_completion_tokens` instead of `max_tokens`. Required for OpenAI / Azure OpenAI models that reject `max_tokens` (o-series, GPT-5 and later); leave `false` for servers that only accept `max_tokens`.
 |===
 
 == Markdown-to-XHTML conversion
@@ -296,7 +300,7 @@ rejected with an exception:
 |May be lowered, never raised above the initialization-time value — that ceiling is what bounds
 cost on a paid endpoint.
 
-|`maxImagePixels`, `maxRetries`, `allowRuntimePrompt`
+|`maxImagePixels`, `maxRetries`, `allowRuntimePrompt`, `useMaxCompletionTokens`
 |Always blocked.
 
 |`prompt`, `textRecognizer`
