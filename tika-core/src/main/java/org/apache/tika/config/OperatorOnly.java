@@ -18,6 +18,7 @@ package org.apache.tika.config;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -27,6 +28,10 @@ import java.lang.annotation.Target;
  * file, presets) may set. Per-request JSON ({@link JsonConfig#trusted()} false, which is
  * what a tika-server {@code /config} part or a pipes {@code FetchEmitTuple} carries) that
  * names the property is refused before any setter runs.
+ * <p>
+ * On a class (inherited by subclasses), per-request JSON may not name the component at all:
+ * for an implementation of a request-allowed type that sends data off the host or otherwise
+ * breaks that type's promise.
  * <p>
  * Put it on the setter (or field, or getter) of anything whose value reaches the host
  * rather than the document: a path or executable the parser runs, a class name it loads,
@@ -42,7 +47,8 @@ import java.lang.annotation.Target;
  * @since Apache Tika 4.2
  */
 @Documented
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.FIELD})
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
 public @interface OperatorOnly {
 }

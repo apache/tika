@@ -1,5 +1,12 @@
 Release 4.2.0 - unreleased
 
+   * @OperatorOnly is now enforced on every component a request builds, not just
+     self-configuring ones. On a class, it blocks request construction entirely,
+     replacing the list of request-blocked names. Java code that builds a JsonConfig
+     setting an operator-only property must use JsonConfig.trusted(json). Building a
+     component from JSON config now requires tika-serialization on the classpath
+     (TIKA-4974).
+
    * OpenAI-compatible VLM parser can send the output token limit as
      max_completion_tokens for models that reject max_tokens. The new
      useMaxCompletionTokens setting is opt-in; max_tokens remains the default.
