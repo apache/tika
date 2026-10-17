@@ -20,7 +20,6 @@ package org.apache.tika.parser.microsoft.ooxml;
 import java.util.Date;
 import java.util.Map;
 
-import org.apache.poi.xwpf.usermodel.UnderlinePatterns;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -56,6 +55,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String RPR = "rPr";
     private final static String P = "p";
     private final static String P_STYLE = "pStyle";
+    private final static String R_STYLE = "rStyle";
     private final static String PPR = "pPr";
     private final static String T = "t";
     private final static String TAB = "tab";
@@ -290,6 +290,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (P_STYLE.equals(localName)) {
             String styleId = atts.getValue(W_NS, "val");
             currPProperties.setStyleID(styleId);
+        } else if (R_STYLE.equals(localName)) {
+            if (inR && inRPr) {
+                currRunProperties.setStyleID(atts.getValue(W_NS, "val"));
+            }
         } else if (I.equals(localName)) { //TODO: add iCs
             //rprs don't have to be inR; ignore those that aren't
             if (inR && inRPr) {
@@ -630,11 +634,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         bodyContentsHandler.run(currRunProperties, runBuffer.toString());
         inR = false;
         runBuffer.setLength(0);
-        currRunProperties.setBold(false);
-        currRunProperties.setItalics(false);
-        currRunProperties.setStrike(false);
-        currRunProperties.setUnderline(UnderlinePatterns.NONE.name());
-        currRunProperties.setHlinkClickUrl(null);
+        currRunProperties.reset();
     }
 
     @Override

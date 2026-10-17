@@ -1,5 +1,13 @@
 Release 4.2.0 - unreleased
 
+   * The docx parser now applies bold and italics set by a run's character style
+     (e.g. Word's built-in Strong and Emphasis), following basedOn chains; previously
+     only direct formatting was emitted. The new OfficeParserConfig option
+     includeCharacterStyleClasses wraps such runs in <span class="..."> named after
+     the style. Style-derived classes (paragraph and character) now replace every
+     character other than letters, digits, '_' and '-' with '_' and are capped at 128
+     characters, so a style name can no longer yield extra class tokens (TIKA-4966).
+
    * OpenAI-compatible VLM parser can send the output token limit as
      max_completion_tokens for models that reject max_tokens. The new
      useMaxCompletionTokens setting is opt-in; max_tokens remains the default.

@@ -44,8 +44,9 @@ class FormattingTagManager {
 
     private final XHTMLContentHandler xhtml;
 
-    // Outermost to innermost: hyperlink > bold > italic > strike > underline
+    // Outermost to innermost: hyperlink > span > bold > italic > strike > underline
     private String currentHyperlink = null;
+    private String currentSpanClass = null;
     private boolean wrapperHyperlinkActive = false;
     private boolean isBold = false;
     private boolean isItalics = false;
@@ -65,7 +66,7 @@ class FormattingTagManager {
         if (url == null) {
             return;
         }
-        closeFormattingTags();
+        closeInlineTags();
         if (currentHyperlink != null) {
             xhtml.endElement("a");
         }
@@ -79,7 +80,7 @@ class FormattingTagManager {
      */
     void closeHyperlink() throws SAXException {
         if (currentHyperlink != null && wrapperHyperlinkActive) {
-            closeFormattingTags();
+            closeInlineTags();
             xhtml.endElement("a");
             currentHyperlink = null;
             wrapperHyperlinkActive = false;
@@ -98,11 +99,19 @@ class FormattingTagManager {
      * opening and closing XHTML tags as needed to maintain proper nesting.
      */
     void applyFormatting(RunProperties runProperties) throws SAXException {
+        applyFormatting(runProperties, null);
+    }
+
+    /**
+     * As {@link #applyFormatting(RunProperties)}, additionally wrapping the run in
+     * {@code <span class="spanClass">} when spanClass is non-null.
+     */
+    void applyFormatting(RunProperties runProperties, String spanClass) throws SAXException {
         // Run-property hyperlinks only when no wrapper is active
         if (!wrapperHyperlinkActive) {
             String newHyperlink = runProperties.getHlinkClickUrl();
             if (!Objects.equals(newHyperlink, currentHyperlink)) {
-                closeFormattingTags();
+                closeInlineTags();
                 if (currentHyperlink != null) {
                     xhtml.endElement("a");
                 }
@@ -111,6 +120,14 @@ class FormattingTagManager {
                 }
                 currentHyperlink = newHyperlink;
             }
+        }
+
+        if (!Objects.equals(spanClass, currentSpanClass)) {
+            closeInlineTags();
+            if (spanClass != null) {
+                xhtml.startElement("span", "class", spanClass);
+            }
+            currentSpanClass = spanClass;
         }
 
         if (runProperties.isBold() != isBold) {
@@ -182,11 +199,19 @@ class FormattingTagManager {
      * Closes all currently open tags in proper nesting order.
      */
     void closeAll() throws SAXException {
-        closeFormattingTags();
+        closeInlineTags();
         if (currentHyperlink != null) {
             xhtml.endElement("a");
             currentHyperlink = null;
             wrapperHyperlinkActive = false;
+        }
+    }
+
+    private void closeInlineTags() throws SAXException {
+        closeFormattingTags();
+        if (currentSpanClass != null) {
+            xhtml.endElement("span");
+            currentSpanClass = null;
         }
     }
 
