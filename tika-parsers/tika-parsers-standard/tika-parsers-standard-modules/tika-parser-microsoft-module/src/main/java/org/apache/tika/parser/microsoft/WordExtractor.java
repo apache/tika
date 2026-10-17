@@ -188,10 +188,13 @@ public class WordExtractor extends AbstractPOIFSExtractor {
         if (styleName == null || styleName.isEmpty()) {
             return null;
         }
-        String styleClass = styleName.length() > MAX_STYLE_CLASS_LENGTH
-                ? styleName.substring(0, MAX_STYLE_CLASS_LENGTH) : styleName;
-        styleClass = NON_STYLE_CLASS_CHARS.matcher(styleClass).replaceAll("_");
-        return styleClass.substring(0, 1).toLowerCase(Locale.ROOT) + styleClass.substring(1);
+        // sanitize last: lowercasing can expand a letter into a disallowed combining mark
+        String styleClass =
+                styleName.substring(0, 1).toLowerCase(Locale.ROOT) + styleName.substring(1);
+        if (styleClass.length() > MAX_STYLE_CLASS_LENGTH) {
+            styleClass = styleClass.substring(0, MAX_STYLE_CLASS_LENGTH);
+        }
+        return NON_STYLE_CLASS_CHARS.matcher(styleClass).replaceAll("_");
     }
 
     protected void parse(POIFSFileSystem filesystem, XHTMLContentHandler xhtml)

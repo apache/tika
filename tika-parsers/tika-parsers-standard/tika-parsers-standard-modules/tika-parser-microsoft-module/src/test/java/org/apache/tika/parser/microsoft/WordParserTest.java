@@ -58,6 +58,9 @@ public class WordParserTest extends TikaTest {
         assertEquals("table_Text___3__", WordExtractor.toStyleClass("Table Text (.3\")"));
         assertEquals("überschrift_1", WordExtractor.toStyleClass("Überschrift 1"));
         assertEquals(128, WordExtractor.toStyleClass("a".repeat(10_000)).length());
+        // lowercasing U+0130 yields "i" + U+0307; sanitizing must still have the last word
+        assertEquals("i_stanbul", WordExtractor.toStyleClass("İstanbul"));
+        assertEquals(128, WordExtractor.toStyleClass("İ".repeat(200)).length());
         assertNull(WordExtractor.toStyleClass(""));
         assertNull(WordExtractor.toStyleClass(null));
     }
