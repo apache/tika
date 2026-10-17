@@ -58,7 +58,7 @@ public class EmbeddedLimitsTest extends TikaTest {
     @Test
     public void testDefaults() {
         EmbeddedLimits limits = new EmbeddedLimits();
-        assertEquals(EmbeddedLimits.UNLIMITED, limits.getMaxDepth());
+        assertEquals(EmbeddedLimits.DEFAULT_MAX_DEPTH, limits.getMaxDepth());
         assertFalse(limits.isThrowOnMaxDepth());
         assertEquals(EmbeddedLimits.UNLIMITED, limits.getMaxCount());
         assertFalse(limits.isThrowOnMaxCount());
@@ -69,13 +69,13 @@ public class EmbeddedLimitsTest extends TikaTest {
         // Test with null context
         EmbeddedLimits limits = EmbeddedLimits.get(null);
         assertNotNull(limits);
-        assertEquals(EmbeddedLimits.UNLIMITED, limits.getMaxDepth());
+        assertEquals(EmbeddedLimits.DEFAULT_MAX_DEPTH, limits.getMaxDepth());
 
         // Test with context that doesn't have EmbeddedLimits
         ParseContext context = new ParseContext();
         limits = EmbeddedLimits.get(context);
         assertNotNull(limits);
-        assertEquals(EmbeddedLimits.UNLIMITED, limits.getMaxDepth());
+        assertEquals(EmbeddedLimits.DEFAULT_MAX_DEPTH, limits.getMaxDepth());
 
         // Test with context that has EmbeddedLimits
         EmbeddedLimits customLimits = new EmbeddedLimits(10, true, 500, false);
