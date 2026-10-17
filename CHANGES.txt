@@ -1,5 +1,14 @@
 Release 4.2.0 - unreleased
 
+   * Component configuration JSON is read only through tika-serialization; forbidden-apis
+     rejects building a Jackson ObjectMapper anywhere else in Tika's main code (data uses
+     call TikaObjectMapperFactory.createPlainMapper()). Projects that inherit tika-parent
+     inherit the ban; set json.forbiddenapis.signaturesFile to forbidden-apis-none.txt to
+     opt out. A request's http-fetcher config may now set only httpRequestHeaders; other
+     keys, previously ignored, are an error. A file-system emitter's runtime config that
+     names basePath fails as an unknown key. A duplicate key in configuration JSON,
+     previously last-wins, is now an error (TIKA-4975).
+
    * @OperatorOnly is now enforced on every component a request builds, not just
      self-configuring ones. On a class, it blocks request construction entirely,
      replacing the list of request-blocked names. Java code that builds a JsonConfig

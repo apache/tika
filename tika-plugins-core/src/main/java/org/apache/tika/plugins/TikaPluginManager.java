@@ -44,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 
 /**
@@ -69,7 +70,7 @@ public class TikaPluginManager extends DefaultPluginManager {
 
     //we're only using this to convert a single path or a list of paths to a list
     //we don't need all the functionality of the polymorphic objectmapper in tika-serialization
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = TikaObjectMapperFactory.createPlainMapper();
 
     static {
         OBJECT_MAPPER.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);

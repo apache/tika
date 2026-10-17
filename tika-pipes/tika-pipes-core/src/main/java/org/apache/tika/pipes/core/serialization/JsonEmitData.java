@@ -22,6 +22,7 @@ import java.io.Writer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -30,7 +31,7 @@ import org.apache.tika.serialization.serdes.MetadataSerializer;
 import org.apache.tika.serialization.serdes.ParseContextSerializer;
 
 public class JsonEmitData {
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = TikaObjectMapperFactory.createPlainMapper();
 
     static {
         SimpleModule module = new SimpleModule();

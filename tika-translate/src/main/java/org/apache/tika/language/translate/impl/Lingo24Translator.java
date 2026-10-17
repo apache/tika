@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaException;
 
 /**
@@ -93,7 +94,7 @@ public class Lingo24Translator extends AbstractTranslator {
             }
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
         JsonNode jsonResp = mapper.readTree(responseText.toString());
         if (jsonResp.findValuesAsText("errors").isEmpty()) {
             return jsonResp.findValuesAsText("translation").get(0);

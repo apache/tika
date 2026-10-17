@@ -25,12 +25,12 @@ import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Response;
 import org.apache.cxf.jaxrs.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
@@ -70,7 +70,7 @@ public class TextLangDetector extends LanguageDetector {
         try {
             Response response = WebClient.create(TEXT_REST_HOST + TEXT_LID_PATH).get();
             String json = response.readEntity(String.class);
-            JsonNode jsonArray = new ObjectMapper().readTree(json).get("all_languages");
+            JsonNode jsonArray = TikaObjectMapperFactory.createPlainMapper().readTree(json).get("all_languages");
             return jsonArray.size() != 0;
         } catch (Exception e) {
             LOG.warn("Can't run", e);
@@ -126,7 +126,7 @@ public class TextLangDetector extends LanguageDetector {
         try {
             Response response = WebClient.create(restHostUrlStr + TEXT_LID_PATH).get();
             String json = response.readEntity(String.class);
-            JsonNode jsonArray = new ObjectMapper().readTree(json).get("all_languages");
+            JsonNode jsonArray = TikaObjectMapperFactory.createPlainMapper().readTree(json).get("all_languages");
             for (JsonNode jsonElement : jsonArray) {
                 languages.add(jsonElement.asText());
             }
@@ -141,7 +141,7 @@ public class TextLangDetector extends LanguageDetector {
         try {
             Response response = WebClient.create(restHostUrlStr + TEXT_LID_PATH).put(content);
             String json = response.readEntity(String.class);
-            language = new ObjectMapper().readTree(json).get("language").asText();
+            language = TikaObjectMapperFactory.createPlainMapper().readTree(json).get("language").asText();
         } catch (Exception e) {
             LOG.warn("problem detecting", e);
         }

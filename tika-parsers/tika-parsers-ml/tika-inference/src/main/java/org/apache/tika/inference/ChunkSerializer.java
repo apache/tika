@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.inference.locator.EmbeddedLocator;
 import org.apache.tika.inference.locator.Locators;
 import org.apache.tika.inference.locator.PaginatedLocator;
@@ -44,7 +45,7 @@ import org.apache.tika.parser.inference.Modality;
  */
 public final class ChunkSerializer {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.createPlainMapper();
 
     private ChunkSerializer() {
     }

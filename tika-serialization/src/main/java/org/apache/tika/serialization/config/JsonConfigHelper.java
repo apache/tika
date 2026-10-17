@@ -31,6 +31,8 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
+
 /**
  * Helper class for loading JSON config templates with placeholder replacement.
  * <p>
@@ -67,7 +69,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
  */
 public class JsonConfigHelper {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.createPlainMapper();
 
     /**
      * Loads a JSON config template from a resource path and applies replacements.

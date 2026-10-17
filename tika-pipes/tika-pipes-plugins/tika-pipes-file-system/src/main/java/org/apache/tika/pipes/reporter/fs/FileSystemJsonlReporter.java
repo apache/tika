@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.ExceptionReporting;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
@@ -69,7 +70,7 @@ public class FileSystemJsonlReporter extends PipesReporterBase {
     }
 
     private final FileSystemJsonlReporterConfig config;
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
     private final BufferedWriter writer;
     private IOException writerFailure;
     private boolean closed;

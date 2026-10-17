@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.Path;
@@ -33,6 +32,7 @@ import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MediaTypeRegistry;
@@ -264,7 +264,7 @@ public class TikaMimeTypes {
             details.put(type.type.toString(), typeDets);
         }
 
-        return new ObjectMapper()
+        return TikaObjectMapperFactory.createPlainMapper()
                 .writerWithDefaultPrettyPrinter()
                 .writeValueAsString(details);
     }
@@ -317,7 +317,7 @@ public class TikaMimeTypes {
             }
         }
 
-        return new ObjectMapper()
+        return TikaObjectMapperFactory.createPlainMapper()
                 .writerWithDefaultPrettyPrinter()
                 .writeValueAsString(details);
     }

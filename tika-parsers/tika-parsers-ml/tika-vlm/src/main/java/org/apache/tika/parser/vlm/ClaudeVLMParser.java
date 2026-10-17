@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
@@ -75,7 +76,7 @@ public class ClaudeVLMParser extends AbstractVLMParser {
         SUPPORTED_TYPES = Collections.unmodifiableSet(types);
     }
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.createPlainMapper();
 
     public ClaudeVLMParser() {
         super(claudeDefaults());

@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.TikaClientException;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.utils.StringUtils;
 
@@ -99,7 +100,7 @@ public class OpenSearchClient {
                 try (Reader reader = new BufferedReader(
                         new InputStreamReader(response.getEntity().getContent(),
                                 StandardCharsets.UTF_8))) {
-                    ObjectMapper mapper = new ObjectMapper();
+                    ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
                     JsonNode node = mapper.readTree(reader);
                     if (LOG.isTraceEnabled()) {
                         LOG.trace("node: {}", node);

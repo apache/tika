@@ -29,6 +29,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.OperatorOnly;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ExternalProcess;
@@ -85,7 +86,7 @@ public class SiegfriedDetector implements Detector {
     private static final long DEFAULT_TIMEOUT_MILLIS = 60000;
     private static final String DEFAULT_SIEGFRIED_PATH = "sf";
 
-    private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static ObjectMapper OBJECT_MAPPER = TikaObjectMapperFactory.createPlainMapper();
     private static boolean HAS_WARNED = false;
     private Boolean hasSiegfriedCommand = null;
 

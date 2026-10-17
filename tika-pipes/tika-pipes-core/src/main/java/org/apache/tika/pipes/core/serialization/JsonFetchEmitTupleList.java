@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.FetchEmitTuple;
@@ -40,7 +41,7 @@ public class JsonFetchEmitTupleList {
     /** Envelope key: the body must be {"tuples":[...]}; a bare array is rejected. */
     public static final String TUPLES = "tuples";
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = TikaObjectMapperFactory.createPlainMapper();
 
     static {
         SimpleModule module = new SimpleModule();

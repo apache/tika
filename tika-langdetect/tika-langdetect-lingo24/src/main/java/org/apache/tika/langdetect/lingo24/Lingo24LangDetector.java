@@ -27,7 +27,6 @@ import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -35,6 +34,7 @@ import org.apache.cxf.jaxrs.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.language.detect.LanguageConfidence;
 import org.apache.tika.language.detect.LanguageDetector;
 import org.apache.tika.language.detect.LanguageResult;
@@ -156,7 +156,7 @@ public class Lingo24LangDetector extends LanguageDetector {
         String json = response.readEntity(String.class);
         JsonNode element = null;
         try {
-            element = new ObjectMapper().readTree(json);
+            element = TikaObjectMapperFactory.createPlainMapper().readTree(json);
         } catch (JsonProcessingException e) {
             LOG.warn("problem detecting ", e);
         }
@@ -186,7 +186,7 @@ public class Lingo24LangDetector extends LanguageDetector {
                     _client.accept(MediaType.APPLICATION_JSON).query("user_key", userKey).get();
 
             String json = response.readEntity(String.class);
-            JsonNode jsonArray = new ObjectMapper().readTree(json).get("source_langs");
+            JsonNode jsonArray = TikaObjectMapperFactory.createPlainMapper().readTree(json).get("source_langs");
             for (JsonNode jsonElement : jsonArray) {
                 languages.add(jsonElement.get(0).asText());
             }

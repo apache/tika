@@ -42,6 +42,7 @@ import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.ParseTimeout;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaHttpClient;
@@ -109,7 +110,7 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
                     MediaType.image("webp")
             )));
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.createPlainMapper();
 
     private ImageEmbeddingConfig defaultConfig;
     private transient TikaHttpClient httpClient;

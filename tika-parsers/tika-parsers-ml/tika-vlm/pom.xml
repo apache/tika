@@ -81,7 +81,7 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-serialization</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
+      <scope>provided</scope>
     </dependency>
     <!-- vlm-pdf-parsing.json excludes 'pdf-parser', which must resolve (TIKA-3268) -->
     <dependency>

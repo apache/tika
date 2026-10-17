@@ -31,6 +31,7 @@ import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -59,7 +60,7 @@ import org.apache.tika.plugins.ExtensionConfig;
 public class KafkaEmitter extends AbstractEmitter {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaEmitter.class);
-    private static final ObjectMapper OM = new ObjectMapper();
+    private static final ObjectMapper OM = TikaObjectMapperFactory.createPlainMapper();
 
     private final KafkaEmitterConfig config;
     private final Producer<String, String> producer;

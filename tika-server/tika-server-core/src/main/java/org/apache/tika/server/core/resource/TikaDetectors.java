@@ -22,11 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaConfigException;
@@ -88,7 +88,7 @@ public class TikaDetectors {
         detectorAsMap(tikaResource
                 .getTikaLoader()
                 .loadDetectors(), details);
-        return new ObjectMapper().writeValueAsString(details);
+        return TikaObjectMapperFactory.createPlainMapper().writeValueAsString(details);
     }
 
     private void detectorAsMap(Detector d, Map<String, Object> details) {

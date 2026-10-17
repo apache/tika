@@ -33,6 +33,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
+
 /**
  * The per-tuple ledger written by tika-pipes' {@code file-system-jsonl-reporter} during a
  * batch run, keyed by {@code FetchEmitTuple.id}. For the filesystem iterator the id is the
@@ -58,7 +60,7 @@ public class PipesReport {
     }
 
     public static PipesReport load(Path path) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
         Map<String, Row> rows = new HashMap<>();
         List<String> errors = new ArrayList<>();
         int lineNo = 0;

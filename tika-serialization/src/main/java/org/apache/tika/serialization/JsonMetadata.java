@@ -26,6 +26,7 @@ import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.serialization.serdes.MetadataSerializer;
 
@@ -56,12 +57,12 @@ public class JsonMetadata {
         factory.setStreamReadConstraints(streamReadConstraints);
 
         // Use TikaModule which includes Metadata serializers
-        ObjectMapper mapper = new ObjectMapper(factory);
+        ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper(factory);
         mapper.registerModule(new TikaModule());
         OBJECT_MAPPER = mapper;
 
         // Pretty printer needs custom serializer with sort flag
-        ObjectMapper prettyMapper = new ObjectMapper(factory);
+        ObjectMapper prettyMapper = TikaObjectMapperFactory.createPlainMapper(factory);
         SimpleModule prettySerializerModule = new SimpleModule();
         prettySerializerModule.addSerializer(Metadata.class, new MetadataSerializer(true));
         prettyMapper.registerModule(prettySerializerModule);

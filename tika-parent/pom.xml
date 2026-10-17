@@ -326,6 +326,8 @@
     <!-- TIKA-4848: default-on in every module's main sources (see forbiddenapis-check below) -->
     <exception.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
     <xml.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
+    <!-- TIKA-4975: default-on; configuration JSON only through tika-serialization -->
+    <json.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-json-reader-bans.txt</json.forbiddenapis.signaturesFile>
     <!-- Per-module extra main-source bans; a module overrides this (e.g. to
          ${metadata.forbiddenapis.signaturesFile}) instead of overriding the
          forbiddenapis-check execution, whose child list would REPLACE the parent's
@@ -1486,6 +1488,7 @@
               <signaturesFiles>
                 <signaturesFile>${exception.forbiddenapis.signaturesFile}</signaturesFile>
                 <signaturesFile>${xml.forbiddenapis.signaturesFile}</signaturesFile>
+                <signaturesFile>${json.forbiddenapis.signaturesFile}</signaturesFile>
                 <signaturesFile>${forbiddenapis.module.signaturesFile}</signaturesFile>
               </signaturesFiles>
             </configuration>

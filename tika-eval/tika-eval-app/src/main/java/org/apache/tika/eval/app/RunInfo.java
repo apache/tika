@@ -42,11 +42,11 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.Tika;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
@@ -134,7 +134,7 @@ public class RunInfo {
 
     /** Flattens the batch script's run-info json into dotted keys under {@code batch.}. */
     public static Map<String, String> loadBatch(Path json) throws IOException {
-        JsonNode root = new ObjectMapper().readTree(Files.readString(json, StandardCharsets.UTF_8));
+        JsonNode root = TikaObjectMapperFactory.createPlainMapper().readTree(Files.readString(json, StandardCharsets.UTF_8));
         Map<String, String> m = new LinkedHashMap<>();
         flatten(BATCH_PREFIX, root, m);
         m.put(BATCH_PREFIX + "run_info.path", json.toAbsolutePath().toString());

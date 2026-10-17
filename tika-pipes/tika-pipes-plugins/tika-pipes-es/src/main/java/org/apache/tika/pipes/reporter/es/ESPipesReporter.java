@@ -26,7 +26,6 @@ import java.nio.charset.StandardCharsets;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -38,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.client.TikaClientException;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.ExternalProcess;
 import org.apache.tika.metadata.Metadata;
@@ -208,7 +208,7 @@ public class ESPipesReporter extends PipesReporterBase {
                         new InputStreamReader(
                                 response.getEntity().getContent(),
                                 StandardCharsets.UTF_8))) {
-                    JsonNode node = new ObjectMapper().readTree(reader);
+                    JsonNode node = TikaObjectMapperFactory.createPlainMapper().readTree(reader);
                     return new JsonResponse(200, node);
                 }
             } else {

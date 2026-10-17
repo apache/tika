@@ -345,6 +345,12 @@ Java code that builds a component from a `JsonConfig` it wrote itself is operato
 says so with `JsonConfig.trusted(json)`; a plain lambda is untrusted, so it cannot set an
 operator-only property.
 
+Every configuration read goes through tika-serialization; forbidden-apis rejects constructing
+an `ObjectMapper` anywhere else in Tika's main code. Data that is not configuration (an API
+response, emitter output, a JSON document) is read with
+`TikaObjectMapperFactory.createPlainMapper()`. A plugin reads its per-request config with
+`PluginJson.read(JsonConfig, Class)`, into a class holding only the keys a request may set.
+
 Writing a config class: annotate the setter of anything a caller must not be able to point
 elsewhere. A rule the annotation cannot express — a ceiling a request may lower but not raise,
 a field that unlocks when the operator opts in — belongs in the component after the merge, as

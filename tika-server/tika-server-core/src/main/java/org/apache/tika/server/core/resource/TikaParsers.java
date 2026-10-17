@@ -31,6 +31,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.CompositeParser;
@@ -139,7 +140,7 @@ public class TikaParsers {
         parserAsMap(new ParserDetails(tikaResource
                 .getTikaLoader()
                 .loadParsers()), withMimeTypes, details);
-        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectMapper objectMapper = TikaObjectMapperFactory.createPlainMapper();
         return objectMapper
                 .writerWithDefaultPrettyPrinter()
                 .writeValueAsString(details);

@@ -23,6 +23,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -47,7 +48,7 @@ public class JinaEmbeddingFilter extends OpenAIEmbeddingFilter {
 
     private static final long serialVersionUID = 1L;
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.createPlainMapper();
 
     /**
      * Jina task type.  Default: {@code retrieval.passage} (for indexing).
