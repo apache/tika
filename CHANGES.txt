@@ -3,7 +3,13 @@ Release 4.2.0 - unreleased
    * The docx parser links REF, PAGEREF and NOTEREF fields, and in-document
      HYPERLINK \l fields, to their bookmarks (<a href="#bookmark">). Fields are now
      tracked as a stack, so a field nested in a HYPERLINK field no longer ends the
-     enclosing link early (TIKA-4967).
+     enclosing link early. Simple fields (w:fldSimple) are now parsed as well, so
+     HYPERLINK, INCLUDEPICTURE and similar fields written that way are linked or
+     reported like their complex-field equivalents (TIKA-4967).
+
+   * OpenAI-compatible VLM parser can send the output token limit as
+     max_completion_tokens for models that reject max_tokens. The new
+     useMaxCompletionTokens setting is opt-in; max_tokens remains the default.
 
    * Config properties whose value reaches the host (paths, executables, class names,
      URLs, credentials, operator-sized limits) are marked @OperatorOnly and refused in

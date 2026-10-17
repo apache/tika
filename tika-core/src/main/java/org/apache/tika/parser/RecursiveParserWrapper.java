@@ -24,6 +24,7 @@ import org.xml.sax.Attributes;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.OutputLimits;
 import org.apache.tika.exception.CorruptedFileException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
@@ -162,9 +163,10 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 throwOnWriteLimitReached = ((WriteLimiter)factory).isThrowOnWriteLimitReached();
             }
         }
+        SecureHandlerCounter handlerCounter = new SecureHandlerCounter(writeLimit, tis);
         try {
             RecursivelySecureContentHandler secureContentHandler =
-                    new RecursivelySecureContentHandler(localHandler, tis, new SecureHandlerCounter(writeLimit),
+                    new RecursivelySecureContentHandler(localHandler, tis, handlerCounter,
                             throwOnWriteLimitReached, context);
             context.set(RecursivelySecureContentHandler.class, secureContentHandler);
             getWrappedParser().parse(tis, secureContentHandler, metadata, context);
@@ -177,6 +179,9 @@ public class RecursiveParserWrapper extends ParserDecorator {
             } else {
                 metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION,
                         ExceptionUtils.format(e, context));
+                if (handlerCounter.zipBombDetected) {
+                    throw new TikaException("Zip bomb detected!", e);
+                }
                 throw e;
             }
         } finally {
@@ -281,6 +286,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 if (WriteLimitReachedException.isWriteLimitReached(e)) {
                     metadata.add(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
                     throw e;
+                } else if (preParseHandler.handlerCounter.zipBombDetected) {
+                    throw e;
                 } else {
                     if (catchEmbeddedExceptions) {
                         ParserUtils.recordParserFailure(this, e, metadata, context);
@@ -334,9 +341,15 @@ public class RecursiveParserWrapper extends ParserDecorator {
         private boolean writeLimitReached = false;
         //total chars written to all handlers
         private int totalChars = 0;
+        //the container's stream: the denominator for the compression ratio across the tree
+        private final TikaInputStream rootStream;
+        //total chars produced by all handlers, whether or not written
+        private long ratioChars = 0;
+        private boolean zipBombDetected = false;
 
-        private SecureHandlerCounter(int totalWriteLimit) {
+        private SecureHandlerCounter(int totalWriteLimit, TikaInputStream rootStream) {
             this.totalWriteLimit = totalWriteLimit;
+            this.rootStream = rootStream;
         }
         /**
          * Given the requested length, how many characters are actually available
@@ -372,6 +385,26 @@ public class RecursiveParserWrapper extends ParserDecorator {
             this.handlerCounter = handlerCounter;
             this.throwOnWriteLimitReached = throwOnWriteLimitReached;
             this.parseContext = parseContext;
+            OutputLimits limits = OutputLimits.get(parseContext);
+            setOutputThreshold(limits.getZipBombThreshold());
+            setMaximumCompressionRatio(limits.getZipBombRatio());
+        }
+
+        /**
+         * Each embedded document's stream is decompressed, so the per-entry ratio
+         * can't see archive compression. Also check the whole tree's output
+         * against the container's bytes, as the concatenated path does.
+         */
+        @Override
+        protected void advance(int length) throws SAXException {
+            super.advance(length);
+            handlerCounter.ratioChars += length;
+            try {
+                checkCompressionRatio(handlerCounter.ratioChars, handlerCounter.rootStream);
+            } catch (SAXException e) {
+                handlerCounter.zipBombDetected = true;
+                throw e;
+            }
         }
 
         /**

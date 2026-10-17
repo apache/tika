@@ -372,7 +372,7 @@ public class TikaLoaderTest {
 
         // Create defaults - some values will be overridden by JSON, others kept
         EmbeddedLimits defaults = new EmbeddedLimits();
-        // Default values from EmbeddedLimits: maxDepth=UNLIMITED, maxCount=UNLIMITED, throwOnMax*=false
+        // Default values from EmbeddedLimits: maxDepth=DEFAULT_MAX_DEPTH, maxCount=UNLIMITED, throwOnMax*=false
 
         // Load with defaults - JSON has: maxDepth=5, throwOnMaxDepth=true, maxCount=100, throwOnMaxCount=false
         EmbeddedLimits config = loader.loadConfig(EmbeddedLimits.class, defaults);
@@ -384,7 +384,7 @@ public class TikaLoaderTest {
         assertFalse(config.isThrowOnMaxCount(), "throwOnMaxCount should be from JSON");
 
         // Verify original defaults object was NOT modified
-        assertEquals(EmbeddedLimits.UNLIMITED, defaults.getMaxDepth(), "Original defaults should be unchanged");
+        assertEquals(EmbeddedLimits.DEFAULT_MAX_DEPTH, defaults.getMaxDepth(), "Original defaults should be unchanged");
     }
 
     @Test

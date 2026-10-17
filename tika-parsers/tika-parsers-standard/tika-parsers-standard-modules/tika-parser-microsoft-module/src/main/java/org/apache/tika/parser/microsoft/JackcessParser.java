@@ -32,7 +32,6 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.exception.UnsupportedFormatException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.KeyPrefix;
 import org.apache.tika.metadata.Metadata;
@@ -108,10 +107,10 @@ public class JackcessParser implements Parser {
             JackcessExtractor ex = new JackcessExtractor(metadata, context, locale);
             ex.parse(db, xhtml);
         } catch (IOException e) {
-            //TIKA-3849
-            if (e.getMessage() != null && e.getMessage().contains("Unrecognized map type: 75")) {
-                throw new UnsupportedFormatException(
-                        "Jackcess doesn't process mdb versions before v97");
+            String message = e.getMessage();
+            if (message != null && (message.startsWith("invalid page number ") ||
+                    message.startsWith("Invalid usage map row "))) {
+                throw new TikaException("Corrupt Access database: " + message, e);
             }
             throw e;
         } catch (IndexOutOfBoundsException e) {
@@ -122,10 +121,6 @@ public class JackcessParser implements Parser {
             if (e.getMessage() != null) {
                 if (e.getMessage().contains("Incorrect password")) {
                     throw new EncryptedDocumentException(e);
-                }
-                if (e.getMessage().startsWith("invalid page number ")) {
-                    // TIKA-4830, as above
-                    throw new TikaException("Corrupt Access database: " + e.getMessage(), e);
                 }
             }
             throw e;

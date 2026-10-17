@@ -442,7 +442,18 @@ public class OOXMLDocxSAXTest extends TikaTest {
         assertContains("<p>simple <a href=\"#_Ref100\">1</a> done</p>", xml);
         assertContains("<p>wrapped <a href=\"#_Ref100\">inner tail</a></p>", xml);
         assertContains("<p>noref 5</p>", xml);
+        assertContains("<p>quoted <a href=\"#_Ref100\">qref</a></p>", xml);
         assertNull(r.metadata.get(Office.HAS_FIELD_HYPERLINKS));
+    }
+
+    @Test
+    public void testUnclosedFieldsDoNotHideLaterFields() throws Exception {
+        // 70 fields that begin and never end, then a HYPERLINK and an INCLUDEPICTURE
+        XMLResult r = getXML("testWORD_unclosedFields.docx");
+        assertContains("<a href=\"http://example.com/after\">afterLink</a>", r.xml);
+        assertContains("<a class=\"external-ref-INCLUDEPICTURE\" "
+                + "href=\"http://example.com/pic.png\" />", r.xml);
+        assertEquals("true", r.metadata.get(Office.HAS_FIELD_HYPERLINKS));
     }
 
     @Test

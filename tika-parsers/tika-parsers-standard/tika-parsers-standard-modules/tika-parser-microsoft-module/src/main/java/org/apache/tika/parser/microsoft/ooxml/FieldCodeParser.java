@@ -44,9 +44,11 @@ public class FieldCodeParser {
                     "LINK\\s{1,100}[\\w.]{1,50}\\s{1,100}\"([^\"]{1,10000})\"",
                     Pattern.CASE_INSENSITIVE);
 
-    // REF/PAGEREF/NOTEREF <bookmark>; Word bookmark names are at most 40 characters
+    // REF/PAGEREF/NOTEREF <bookmark>, optionally quoted; Word bookmark names are at most
+    // 40 characters
     private static final Pattern BOOKMARK_REF_PATTERN =
-            Pattern.compile("^(?:REF|PAGEREF|NOTEREF)\\s{1,100}([\\p{L}\\p{N}_]{1,40})(?:\\s|$)",
+            Pattern.compile("^(?:REF|PAGEREF|NOTEREF)\\s{1,100}"
+                            + "(?:\"([\\p{L}\\p{N}_]{1,40})\"|([\\p{L}\\p{N}_]{1,40}))(?:\\s|$)",
                     Pattern.CASE_INSENSITIVE);
     // HYPERLINK \l "<bookmark>": a link within the document
     private static final Pattern HYPERLINK_ANCHOR_PATTERN =
@@ -70,7 +72,7 @@ public class FieldCodeParser {
         String trimmed = instrText.trim();
         Matcher m = BOOKMARK_REF_PATTERN.matcher(trimmed);
         if (m.find()) {
-            return m.group(1);
+            return m.group(1) != null ? m.group(1) : m.group(2);
         }
         m = HYPERLINK_ANCHOR_PATTERN.matcher(trimmed);
         if (m.find()) {

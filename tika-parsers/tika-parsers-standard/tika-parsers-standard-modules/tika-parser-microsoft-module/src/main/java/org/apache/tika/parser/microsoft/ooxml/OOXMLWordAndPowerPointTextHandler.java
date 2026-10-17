@@ -119,7 +119,8 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final static String INSTR_TEXT = "instrText";
     private final static String FLD_SIMPLE = "fldSimple";
     private final static String INSTR = "instr";
-    // bounds the field stack against hostile nesting
+    // bounds the field stack; past it the outermost frame is dropped so that
+    // unclosed fields cannot hide later ones
     private final static int MAX_FIELD_DEPTH = 64;
     private final static String FLD_CHAR_TYPE = "fldCharType";
     // DrawingML hyperlinks on shapes/pictures
@@ -175,7 +176,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private boolean inParagraphLevelPPr = false;
     // Open fields, innermost last; fields nest, e.g. PAGEREF inside a TOC's HYPERLINK
     private final Deque<FieldFrame> fieldStack = new ArrayDeque<>();
-    private int overflowFieldDepth = 0;
     private int hyperlinkElementDepth = 0;
     private boolean inInstrText = false;
     private EditType editType =
@@ -441,12 +441,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             }
         } else if (FLD_SIMPLE.equals(localName) && W_NS.equals(uri)) {
             beginField();
-            FieldFrame frame = fieldStack.peekLast();
-            if (frame != null && overflowFieldDepth == 0) {
-                String instr = atts.getValue(W_NS, INSTR);
-                if (instr != null) {
-                    frame.instr.append(instr);
-                }
+            String instr = atts.getValue(W_NS, INSTR);
+            if (instr != null) {
+                fieldStack.peekLast().instr.append(instr);
             }
             separateField();
         } else if (INSTR_TEXT.equals(localName)) {
@@ -658,22 +655,21 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         } else if (inV) {
             appendToBuffer(ch, start, length);
             appendToBuffer(TAB_CHAR, 0, 1);
-        } else if (inInstrText && overflowFieldDepth == 0 && !fieldStack.isEmpty()) {
+        } else if (inInstrText && !fieldStack.isEmpty()) {
             fieldStack.peekLast().instr.append(ch, start, length);
         }
     }
 
     private void beginField() {
-        if (overflowFieldDepth > 0 || fieldStack.size() >= MAX_FIELD_DEPTH) {
-            overflowFieldDepth++;
-        } else {
-            fieldStack.addLast(new FieldFrame());
+        if (fieldStack.size() >= MAX_FIELD_DEPTH) {
+            fieldStack.pollFirst();
         }
+        fieldStack.addLast(new FieldFrame());
     }
 
     private void separateField() throws SAXException {
         FieldFrame frame = fieldStack.peekLast();
-        if (overflowFieldDepth > 0 || frame == null || frame.separated) {
+        if (frame == null || frame.separated) {
             return;
         }
         frame.separated = true;
@@ -702,10 +698,6 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     }
 
     private void endField() throws SAXException {
-        if (overflowFieldDepth > 0) {
-            overflowFieldDepth--;
-            return;
-        }
         FieldFrame frame = fieldStack.pollLast();
         if (frame != null && frame.linkOpened) {
             bodyContentsHandler.hyperlinkEnd();

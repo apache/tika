@@ -30,7 +30,7 @@ throughout the parse.
 
 |`embedded-limits`
 |`EmbeddedLimits`
-|Depth and count of embedded documents. Unlimited by default.
+|Depth and count of embedded documents. Depth 20, count unlimited by default.
 
 |`output-limits`
 |`OutputLimits`
@@ -74,7 +74,6 @@ these but `exception-reporting`, which has its own test:
       "writeLimit": 100000,
       "throwOnWriteLimit": false,
       "maxXmlDepth": 100,
-      "maxPackageEntryDepth": 10,
       "zipBombThreshold": 1000000,
       "zipBombRatio": 100
     },
@@ -131,7 +130,7 @@ Tests: `AllLimitsTest`, `EmbeddedLimitsTest`, `OutputLimitsTest`, `TimeoutLimits
 |Setting |Default |Description
 
 |`maxDepth`
-|-1 (unlimited)
+|20
 |Maximum nesting depth. Recursion stops at the limit; siblings at the current
 level still parse.
 
@@ -184,8 +183,10 @@ container.zip (depth 0)
 |Maximum XML element nesting depth. Guards against XML bombs.
 
 |`maxPackageEntryDepth`
-|10
-|Maximum depth of nested package entries (zip within zip).
+|20
+|Deprecated in 4.2, removed in 4.3; use `embedded-limits` `maxDepth`, which
+bounds nesting on every path. Counts nested package entries only when embedded
+content is inlined into its container's XHTML.
 
 |`zipBombThreshold`
 |1,000,000
