@@ -537,7 +537,8 @@ public class TikaServerProcess {
         }
 
         if (addAsyncResource) {
-            final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath());
+            final AsyncResource localAsyncResource = new AsyncResource(tikaServerConfig.getConfigPath(),
+                    tikaServerConfig.isAllowPerRequestConfig());
             localAsyncResource.setMaxQueuePauseMillis(tikaServerConfig.getMaxQueuePauseMillis());
             Runtime
                     .getRuntime()
@@ -557,7 +558,8 @@ public class TikaServerProcess {
             // not by PipesResource.
             PipesParsingHelper helper = tikaResource.getPipesParsingHelper();
             resourceProviders.add(new SingletonResourceProvider(
-                    new PipesResource(helper.getPipesParser(), helper.getPipesConfig())));
+                    new PipesResource(helper.getPipesParser(), helper.getPipesConfig(),
+                            tikaServerConfig.isAllowPerRequestConfig())));
         }
         Set<String> enabledEndpoints = new HashSet<>();
         if (tikaServerConfig

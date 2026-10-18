@@ -56,16 +56,20 @@ public class PipesResource {
 
     private final PipesParser pipesParser;
     private final PipesConfig pipesConfig;
+    private final boolean allowPerRequestConfig;
 
     /**
      * @param pipesParser shared parser, also used by /tika, /rmeta, and /unpack.
      *                     Lifecycle (construction, shutdown) is owned by whoever
      *                     built it, not by this class.
      * @param pipesConfig the parser's config; read here for the {@code Retry-After} value.
+     * @param allowPerRequestConfig whether a tuple may carry a parseContext; see
+     *                              {@link PipesParsingHelper#rejectPerRequestConfig}
      */
-    public PipesResource(PipesParser pipesParser, PipesConfig pipesConfig) {
+    public PipesResource(PipesParser pipesParser, PipesConfig pipesConfig, boolean allowPerRequestConfig) {
         this.pipesParser = pipesParser;
         this.pipesConfig = pipesConfig;
+        this.allowPerRequestConfig = allowPerRequestConfig;
     }
 
 
@@ -93,6 +97,8 @@ public class PipesResource {
             // A malformed body is the caller's error, not a server fault -- 400 with the reason.
             throw new BadRequestException("Could not parse the /pipes request body: " + e.getMessage(), e);
         }
+        // Same gate as the multipart config part, before anything in the context is resolved.
+        PipesParsingHelper.rejectPerRequestConfig(t, allowPerRequestConfig);
         // Resolve friendly-named configs in ParseContext to actual objects
         try {
             ParseContextUtils.resolveAll(t.getParseContext(), getClass().getClassLoader());

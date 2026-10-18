@@ -63,10 +63,17 @@ public class AsyncResource {
     private final AsyncProcessor asyncProcessor;
     private final EmitterManager emitterManager;
     private final FetcherManager fetcherManager;
+    private final boolean allowPerRequestConfig;
     long maxQueuePauseMillis = TikaServerConfig.DEFAULT_MAX_QUEUE_PAUSE_MILLIS;
     private ArrayBlockingQueue<FetchEmitTuple> queue;
 
-    public AsyncResource(java.nio.file.Path tikaConfigPath) throws TikaException, IOException, SAXException {
+    /**
+     * @param allowPerRequestConfig whether a tuple may carry a parseContext; see
+     *                              {@link PipesParsingHelper#rejectPerRequestConfig}
+     */
+    public AsyncResource(java.nio.file.Path tikaConfigPath, boolean allowPerRequestConfig)
+            throws TikaException, IOException, SAXException {
+        this.allowPerRequestConfig = allowPerRequestConfig;
         this.asyncProcessor = AsyncProcessor.load(tikaConfigPath);
         // One bad tuple must not halt the shared workers and brick /async until restart.
         this.asyncProcessor.setStopOnlyOnFatal(true);
@@ -136,6 +143,8 @@ public class AsyncResource {
                         .getEmitterId());
             }
             ParseContext parseContext = t.getParseContext();
+            // Same gate as the multipart config part, before anything in the context is resolved.
+            PipesParsingHelper.rejectPerRequestConfig(t, allowPerRequestConfig);
             // Configs are lazy; resolve before reading UnpackConfig for the bytes-emitter check.
             try {
                 ParseContextUtils.resolveAll(parseContext, getClass().getClassLoader());

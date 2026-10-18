@@ -151,12 +151,18 @@ public class TikaPipesTest extends CXFTestBase {
             PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
             pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.EMIT_ALL));
             pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
-            pipesResource = new PipesResource(pipesParser, pipesConfig);
+            pipesResource = new PipesResource(pipesParser, pipesConfig, isAllowPerRequestConfig());
             rCoreProviders.add(new SingletonResourceProvider(pipesResource));
         } catch (IOException | TikaConfigException e) {
             throw new RuntimeException(e);
         }
         sf.setResourceProviders(rCoreProviders);
+    }
+
+    /** The tuples here carry a parseContext, which /pipes gates behind allowPerRequestConfig. */
+    @Override
+    protected boolean isAllowPerRequestConfig() {
+        return true;
     }
 
     @Override

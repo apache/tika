@@ -591,6 +591,36 @@ public class PipesParsingHelper {
     }
 
     /**
+     * The 403 every route answers when a request carries per-request configuration and
+     * allowPerRequestConfig is off: the multipart config part on the parse endpoints, and
+     * a parseContext on a /pipes or /async tuple.
+     */
+    public static WebApplicationException perRequestConfigDisabled() {
+        return new WebApplicationException(Response.status(Response.Status.FORBIDDEN)
+                .entity("Per-request configuration is disabled. Set allowPerRequestConfig=true in server config.")
+                .type(MediaType.TEXT_PLAIN)
+                .build());
+    }
+
+    /**
+     * Refuses a tuple whose parseContext carries anything when per-request config is off.
+     * A tuple's parseContext is the batch surfaces' form of the config part, and the wire
+     * allowlist leaves self-configuring entries (parser options, timeout and memory limits)
+     * unscanned, so the gate is the only thing between a caller and them. Runs before
+     * resolveAll, so nothing in a refused context is constructed. The tuple's preset
+     * selects operator config and is not affected.
+     */
+    public static void rejectPerRequestConfig(FetchEmitTuple t, boolean allowPerRequestConfig) {
+        if (allowPerRequestConfig) {
+            return;
+        }
+        ParseContext parseContext = t.getParseContext();
+        if (parseContext != null && !parseContext.isEmpty()) {
+            throw perRequestConfigDisabled();
+        }
+    }
+
+    /**
      * Parses content using UNPACK mode and returns a path to the zip file containing
      * extracted embedded documents.
      * <p>

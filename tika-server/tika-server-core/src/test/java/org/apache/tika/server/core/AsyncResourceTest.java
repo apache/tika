@@ -109,7 +109,7 @@ public class AsyncResourceTest extends CXFTestBase {
     protected void setUpResources(JAXRSServerFactoryBean sf) {
         List<ResourceProvider> providers = new ArrayList<>();
         try {
-            asyncResource = new AsyncResource(tikaConfigPath);
+            asyncResource = new AsyncResource(tikaConfigPath, isAllowPerRequestConfig());
             providers.add(new SingletonResourceProvider(asyncResource));
         } catch (Exception e) {
             throw new RuntimeException(e);

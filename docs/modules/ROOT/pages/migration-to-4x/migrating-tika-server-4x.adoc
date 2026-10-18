@@ -298,7 +298,7 @@ granting per-request parser configuration are separate decisions:
 The capabilities are two default-`false` flags in the `server` section:
 
 * `allowPipes` gates the `/pipes` and `/async` endpoints, which drive process-isolated batch parsing through your fetchers and emitters. Selecting either without `allowPipes` causes the server to refuse to start with a clear error.
-* `allowPerRequestConfig` gates per-request parser configuration: the `/config` family of endpoints and the multipart `config` part. When off, such requests are rejected with 403.
+* `allowPerRequestConfig` gates per-request parser configuration: the `/config` family of endpoints, the multipart `config` part, and the `parse-context` of a `/pipes` or `/async` tuple. When off, such requests are rejected with 403.
 
 `/status` is no longer gated: it exposes only aggregate counters, so it is enabled simply by listing `status` under `endpoints`.
 

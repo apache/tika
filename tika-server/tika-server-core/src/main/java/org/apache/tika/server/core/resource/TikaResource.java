@@ -37,10 +37,8 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
@@ -354,10 +352,7 @@ public class TikaResource {
         // consumed, so every endpoint that accepts a config part honors
         // allowPerRequestConfig uniformly.
         if (configAtt != null && !allowPerRequestConfig) {
-            throw new WebApplicationException(Response.status(Response.Status.FORBIDDEN)
-                    .entity("Per-request configuration is disabled. Set allowPerRequestConfig=true in server config.")
-                    .type(MediaType.TEXT_PLAIN)
-                    .build());
+            throw PipesParsingHelper.perRequestConfigDisabled();
         }
 
         if (fileAtt == null) {

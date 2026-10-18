@@ -74,8 +74,9 @@ callers — that requirement stands regardless of how the flags are set. All def
 
 * `allowPipes` gates the `/pipes` and `/async` endpoints (process-isolated fetching and parsing
   through your fetchers/emitters). Selecting either without it causes the server to refuse to start.
-* `allowPerRequestConfig` gates per-request parser configuration — the `/config` endpoints and the
-  multipart `config` part; when off, such requests are rejected with HTTP 403. A caller who
+* `allowPerRequestConfig` gates per-request parser configuration — the `/config` endpoints, the
+  multipart `config` part, and the `parse-context` of a `/pipes` or `/async` tuple; when off,
+  such requests are rejected with HTTP 403. A caller who
   reaches it can choose how documents parse, including options that spawn external processes
   such as OCR, and can defeat memory and timeout limits.
 
