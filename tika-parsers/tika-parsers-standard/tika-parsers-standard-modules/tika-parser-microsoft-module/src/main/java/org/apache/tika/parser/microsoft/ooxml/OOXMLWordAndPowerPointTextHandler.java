@@ -99,6 +99,9 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             "http://schemas.openxmlformats.org/drawingml/2006/main";
     private final static String V_NS = "urn:schemas-microsoft-com:vml";
     private final static String C_NS = "http://schemas.openxmlformats.org/drawingml/2006/chart";
+    private final static String M_NS =
+            "http://schemas.openxmlformats.org/officeDocument/2006/math";
+    private final static String O_MATH = "oMath";
     private final static String OFFICE_DOC_RELATIONSHIP_NS =
             "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
     private final static char[] TAB_CHAR = new char[]{'\t'};
@@ -178,6 +181,7 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
     private final Deque<FieldFrame> fieldStack = new ArrayDeque<>();
     private int hyperlinkElementDepth = 0;
     private boolean inInstrText = false;
+    private int mathDepth = 0;
     private EditType editType =
             EditType.NONE;
 
@@ -273,6 +277,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
         //yes, I know, likely premature optimization...
         if (RPR.equals(localName)) {
             inRPr = true;
+        } else if (O_MATH.equals(localName) && M_NS.equals(uri)) {
+            if (mathDepth++ == 0) {
+                bodyContentsHandler.startMath();
+            }
         } else if (R.equals(localName)) {
             inR = true;
         } else if (T.equals(localName)) {
@@ -554,6 +562,10 @@ public class OOXMLWordAndPowerPointTextHandler extends DefaultHandler {
             return;
         } else if (RPR.equals(localName)) {
             inRPr = false;
+        } else if (O_MATH.equals(localName) && M_NS.equals(uri)) {
+            if (mathDepth > 0 && --mathDepth == 0) {
+                bodyContentsHandler.endMath();
+            }
         } else if (R.equals(localName)) {
             handleEndOfRun();
         } else if (T.equals(localName)) {

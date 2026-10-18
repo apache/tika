@@ -44,8 +44,9 @@ class FormattingTagManager {
 
     private final XHTMLContentHandler xhtml;
 
-    // Outermost to innermost: hyperlink > span > bold > italic > strike > underline
+    // Outermost to innermost: hyperlink > math > span > bold > italic > strike > underline
     private String currentHyperlink = null;
+    private boolean isMath = false;
     private String currentSpanClass = null;
     private boolean wrapperHyperlinkActive = false;
     private boolean isBold = false;
@@ -123,7 +124,7 @@ class FormattingTagManager {
         }
 
         if (!Objects.equals(spanClass, currentSpanClass)) {
-            closeInlineTags();
+            closeStyledTags();
             if (spanClass != null) {
                 xhtml.startElement("span", "class", spanClass);
             }
@@ -196,6 +197,27 @@ class FormattingTagManager {
     }
 
     /**
+     * Opens {@code <span class="math">} for an OMML equation. A hyperlink change inside
+     * the equation closes it.
+     */
+    void openMath() throws SAXException {
+        if (isMath) {
+            return;
+        }
+        closeStyledTags();
+        xhtml.startElement("span", "class", "math");
+        isMath = true;
+    }
+
+    void closeMath() throws SAXException {
+        if (isMath) {
+            closeStyledTags();
+            xhtml.endElement("span");
+            isMath = false;
+        }
+    }
+
+    /**
      * Closes all currently open tags in proper nesting order.
      */
     void closeAll() throws SAXException {
@@ -208,6 +230,11 @@ class FormattingTagManager {
     }
 
     private void closeInlineTags() throws SAXException {
+        closeStyledTags();
+        closeMath();
+    }
+
+    private void closeStyledTags() throws SAXException {
         closeFormattingTags();
         if (currentSpanClass != null) {
             xhtml.endElement("span");

@@ -46,6 +46,15 @@ public interface XWPFBodyContentsHandler {
 
     void hyperlinkEnd() throws SAXException;
 
+    /**
+     * Called at the start of an OMML equation ({@code m:oMath}); its runs follow.
+     */
+    default void startMath() throws SAXException {
+    }
+
+    default void endMath() throws SAXException {
+    }
+
     void startParagraph(ParagraphProperties paragraphProperties) throws SAXException;
 
     void endParagraph() throws SAXException;
