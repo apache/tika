@@ -268,6 +268,16 @@ Configure the engine under `engines` and name it in `text-recognizers` (or bind 
 excluding `pdf-parser` goes with it: the 4.2 shape is `"pages": {"text": "OCR"}` with the
 VLM as recognizer, which sends rendered pages rather than the file.
 
+=== Embedded depth defaults and `maxPackageEntryDepth` deprecated (4.2.0+)
+
+`embedded-limits` `maxDepth` defaults to 20 (was unlimited) on every path. `output-limits`
+`maxPackageEntryDepth` is deprecated and removed in 4.3.0, after which a config that sets it
+fails to load; it logs a WARN when set. Until then it defaults to 20 (was 10, which allowed
+only 9 levels). A concatenated parse of a deeply nested archive now stops at depth 20 and sets
+`tk:exception:embedded-depth-limit-reached` instead of throwing. The zip-bomb ratio now
+applies across the whole document tree on the `/rmeta` path, as it already did on the
+concatenated path, and fails the parse with `Zip bomb detected!`.
+
 === Embedding filters and the image embedding parser deprecated (4.1.0+)
 
 `openai-embedding-filter`, `jina-embedding-filter` and `openai-image-embedding-parser` are
