@@ -44,8 +44,10 @@ class FormattingTagManager {
 
     private final XHTMLContentHandler xhtml;
 
-    // Outermost to innermost: hyperlink > bold > italic > strike > underline
+    // Outermost to innermost: hyperlink > math > span > bold > italic > strike > underline
     private String currentHyperlink = null;
+    private boolean isMath = false;
+    private String currentSpanClass = null;
     private boolean wrapperHyperlinkActive = false;
     private boolean isBold = false;
     private boolean isItalics = false;
@@ -65,7 +67,7 @@ class FormattingTagManager {
         if (url == null) {
             return;
         }
-        closeFormattingTags();
+        closeInlineTags();
         if (currentHyperlink != null) {
             xhtml.endElement("a");
         }
@@ -79,7 +81,7 @@ class FormattingTagManager {
      */
     void closeHyperlink() throws SAXException {
         if (currentHyperlink != null && wrapperHyperlinkActive) {
-            closeFormattingTags();
+            closeInlineTags();
             xhtml.endElement("a");
             currentHyperlink = null;
             wrapperHyperlinkActive = false;
@@ -98,11 +100,19 @@ class FormattingTagManager {
      * opening and closing XHTML tags as needed to maintain proper nesting.
      */
     void applyFormatting(RunProperties runProperties) throws SAXException {
+        applyFormatting(runProperties, null);
+    }
+
+    /**
+     * As {@link #applyFormatting(RunProperties)}, additionally wrapping the run in
+     * {@code <span class="spanClass">} when spanClass is non-null.
+     */
+    void applyFormatting(RunProperties runProperties, String spanClass) throws SAXException {
         // Run-property hyperlinks only when no wrapper is active
         if (!wrapperHyperlinkActive) {
             String newHyperlink = runProperties.getHlinkClickUrl();
             if (!Objects.equals(newHyperlink, currentHyperlink)) {
-                closeFormattingTags();
+                closeInlineTags();
                 if (currentHyperlink != null) {
                     xhtml.endElement("a");
                 }
@@ -111,6 +121,14 @@ class FormattingTagManager {
                 }
                 currentHyperlink = newHyperlink;
             }
+        }
+
+        if (!Objects.equals(spanClass, currentSpanClass)) {
+            closeStyledTags();
+            if (spanClass != null) {
+                xhtml.startElement("span", "class", spanClass);
+            }
+            currentSpanClass = spanClass;
         }
 
         if (runProperties.isBold() != isBold) {
@@ -179,14 +197,48 @@ class FormattingTagManager {
     }
 
     /**
+     * Opens {@code <span class="math">} for an OMML equation. A hyperlink change inside
+     * the equation closes it.
+     */
+    void openMath() throws SAXException {
+        if (isMath) {
+            return;
+        }
+        closeStyledTags();
+        xhtml.startElement("span", "class", "math");
+        isMath = true;
+    }
+
+    void closeMath() throws SAXException {
+        if (isMath) {
+            closeStyledTags();
+            xhtml.endElement("span");
+            isMath = false;
+        }
+    }
+
+    /**
      * Closes all currently open tags in proper nesting order.
      */
     void closeAll() throws SAXException {
-        closeFormattingTags();
+        closeInlineTags();
         if (currentHyperlink != null) {
             xhtml.endElement("a");
             currentHyperlink = null;
             wrapperHyperlinkActive = false;
+        }
+    }
+
+    private void closeInlineTags() throws SAXException {
+        closeStyledTags();
+        closeMath();
+    }
+
+    private void closeStyledTags() throws SAXException {
+        closeFormattingTags();
+        if (currentSpanClass != null) {
+            xhtml.endElement("span");
+            currentSpanClass = null;
         }
     }
 
