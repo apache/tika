@@ -63,10 +63,11 @@ public final class ImageProbe {
     }
 
     /**
-     * The image's length in bytes without reading it, or -1 when the stream does not know it.
+     * The image's length in bytes without reading it, or -1 when the stream does not know it
+     * or knows only a declared length (a container's or a header's), which may lie.
      */
     public long length() throws IOException {
-        return tis.hasLength() ? tis.getLength() : -1;
+        return tis.hasReliableLength() ? tis.getLength() : -1;
     }
 
     /**
@@ -106,7 +107,7 @@ public final class ImageProbe {
     }
 
     private byte[] readBytes() throws IOException {
-        if (tis.hasLength() && tis.getLength() > MAX_BYTES) {
+        if (length() > MAX_BYTES) {
             return null;
         }
         if (headerIsComplete()) {

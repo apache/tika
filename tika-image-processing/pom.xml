@@ -122,7 +122,7 @@
         <configuration>
           <archive>
             <manifestEntries>
-              <Automatic-Module-Name>org.apache.tika.imagecheck</Automatic-Module-Name>
+              <Automatic-Module-Name>org.apache.tika.imageprocessing</Automatic-Module-Name>
             </manifestEntries>
           </archive>
         </configuration>

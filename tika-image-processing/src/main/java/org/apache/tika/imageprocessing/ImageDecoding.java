@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.imagecheck;
+package org.apache.tika.imageprocessing;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.IndexColorModel;
@@ -38,6 +38,12 @@ final class ImageDecoding {
     /** Images with more pixels than this are not decoded: a check cannot judge them. */
     static final long MAX_DECODE_PIXELS = 100_000_000L;
 
+    /**
+     * ImageIO buffers a progressive JPEG whole, about 3 bytes of native memory a pixel,
+     * whatever the subsampling: a blank one of 587 KB at 10000 x 10000 took 290 MB.
+     */
+    static final long MAX_PROGRESSIVE_JPEG_PIXELS = 16_000_000L;
+
     private static final long[] UNKNOWN = {-1, -1};
 
     private ImageDecoding() {
@@ -56,8 +62,12 @@ final class ImageDecoding {
         });
     }
 
-    /** Gray levels 0..255 of a decoded copy, row by row. */
-    record Gray(byte[] levels, int width, int height) {
+    /**
+     * Gray levels 0..255 of a decoded copy, row by row. An image with transparency has two
+     * copies, over white and over black: transparent pixels hide dark text in one and light
+     * text in the other. {@code overBlack} is null for an opaque image.
+     */
+    record Gray(byte[] levels, byte[] overBlack, int width, int height) {
     }
 
     /**
@@ -67,11 +77,54 @@ final class ImageDecoding {
     static Gray gray(ImageProbe image) throws IOException {
         return image.memo("imagecheck:gray", () -> {
             long[] size = size(image);
-            if (size[0] <= 0 || size[1] <= 0 || size[0] * size[1] > MAX_DECODE_PIXELS) {
+            if (size[0] <= 0 || size[1] <= 0) {
+                return null;
+            }
+            long pixels = size[0] * size[1];
+            if (pixels > MAX_DECODE_PIXELS || (pixels > MAX_PROGRESSIVE_JPEG_PIXELS
+                    && mayBeProgressiveJpeg(image.header()))) {
                 return null;
             }
             return decode(image.bytes());
         });
+    }
+
+    /** A JPEG whose frame is progressive, or whose frame header is not in {@code bytes}. */
+    static boolean mayBeProgressiveJpeg(byte[] bytes) {
+        if (bytes.length < 2 || (bytes[0] & 255) != 0xFF || (bytes[1] & 255) != 0xD8) {
+            return false;
+        }
+        int i = 2;
+        while (i + 1 < bytes.length) {
+            if ((bytes[i] & 255) != 0xFF) {
+                return true;
+            }
+            int marker = bytes[i + 1] & 255;
+            if (marker == 0xFF) {
+                i++;
+                continue;
+            }
+            if (marker == 0xC2 || marker == 0xC6 || marker == 0xCA || marker == 0xCE) {
+                return true;
+            }
+            if (marker >= 0xC0 && marker <= 0xCF && marker != 0xC4 && marker != 0xC8
+                    && marker != 0xCC) {
+                return false;
+            }
+            if (marker == 0x01 || (marker >= 0xD0 && marker <= 0xD7)) {
+                i += 2;
+                continue;
+            }
+            if (marker == 0xDA || marker == 0xD9 || i + 3 >= bytes.length) {
+                return true;
+            }
+            int length = ((bytes[i + 2] & 255) << 8) | (bytes[i + 3] & 255);
+            if (length < 2) {
+                return true;
+            }
+            i += 2 + length;
+        }
+        return true;
     }
 
     private static long[] tryReadSize(byte[] bytes) throws IOException {
@@ -130,30 +183,50 @@ final class ImageDecoding {
     static Gray toGray(BufferedImage image) {
         int width = image.getWidth();
         int height = image.getHeight();
+        boolean alpha = image.getColorModel().hasAlpha();
         byte[] levels = new byte[width * height];
+        byte[] overBlack = alpha ? new byte[width * height] : null;
         if (image.getColorModel() instanceof IndexColorModel) {
             for (int y = 0; y < height; y++) {
                 for (int x = 0; x < width; x++) {
                     int argb = image.getRGB(x, y);
-                    levels[y * width + x] = (byte) ((((argb >> 16) & 255) * 299
-                            + ((argb >> 8) & 255) * 587 + (argb & 255) * 114) / 1000);
+                    set(levels, overBlack, y * width + x, luma((argb >> 16) & 255,
+                            (argb >> 8) & 255, argb & 255), (argb >>> 24), false);
                 }
             }
-            return new Gray(levels, width, height);
+            return new Gray(levels, overBlack, width, height);
         }
         Raster raster = image.getRaster();
         int bands = raster.getNumBands();
-        boolean sixteenBit = raster.getSampleModel().getSampleSize(0) > 8;
+        int colorBands = alpha ? bands - 1 : bands;
+        int colorShift = Math.max(0, raster.getSampleModel().getSampleSize(0) - 8);
+        int alphaShift = alpha
+                ? Math.max(0, raster.getSampleModel().getSampleSize(bands - 1) - 8) : 0;
+        boolean premultiplied = image.isAlphaPremultiplied();
         int[] sample = new int[bands];
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 raster.getPixel(x, y, sample);
-                int gray = bands >= 3
-                        ? (sample[0] * 299 + sample[1] * 587 + sample[2] * 114) / 1000
-                        : sample[0];
-                levels[y * width + x] = (byte) (sixteenBit ? gray >> 8 : gray);
+                int gray = colorBands >= 3 ? luma(sample[0], sample[1], sample[2]) : sample[0];
+                set(levels, overBlack, y * width + x, gray >> colorShift,
+                        alpha ? sample[bands - 1] >> alphaShift : 255, premultiplied);
             }
         }
-        return new Gray(levels, width, height);
+        return new Gray(levels, overBlack, width, height);
+    }
+
+    private static int luma(int r, int g, int b) {
+        return (r * 299 + g * 587 + b * 114) / 1000;
+    }
+
+    private static void set(byte[] levels, byte[] overBlack, int i, int gray, int alpha,
+                            boolean premultiplied) {
+        int black = premultiplied ? gray : gray * alpha / 255;
+        if (overBlack == null) {
+            levels[i] = (byte) gray;
+            return;
+        }
+        levels[i] = (byte) Math.min(255, black + 255 - alpha);
+        overBlack[i] = (byte) black;
     }
 }

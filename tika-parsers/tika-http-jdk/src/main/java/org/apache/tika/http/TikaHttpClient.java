@@ -70,7 +70,8 @@ import org.apache.tika.parser.ParseContext;
  * same way: the JDK client does not resend a POST on a keep-alive connection the service
  * has already closed, and the failure surfaces as an {@link IOException} such as
  * {@code HTTP/1.1 header parser received no bytes}. It shares the {@code maxRetries} count
- * and the budget with the status retries. Failures a retry cannot fix (unknown host,
+ * and the budget with the status retries; a service that had already read the request may
+ * bill the call twice. Failures a retry cannot fix (unknown host,
  * refused connection, TLS errors) and interruption fail at once.
  * @since Apache Tika 4.0
  */

@@ -14,13 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.imagecheck;
+package org.apache.tika.imageprocessing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.awt.Color;
+import java.awt.image.BufferedImage;
+import java.awt.image.IndexColorModel;
 
 import org.junit.jupiter.api.Test;
 
@@ -156,5 +158,41 @@ public class BlankImageCheckTest {
         assertThrows(IllegalArgumentException.class, () -> check.setMaxInk(-0.1));
         assertThrows(IllegalArgumentException.class, () -> check.setMaxInk(1));
         assertThrows(IllegalArgumentException.class, () -> check.setTolerance(256));
+    }
+
+    @Test
+    public void testDarkTextOnATransparentBackgroundIsAdmitted() throws Exception {
+        // transparent pixels stored as RGB 0, the same as the text
+        byte[] image = ImageFixtures.encode(ImageFixtures.image(BufferedImage.TYPE_INT_ARGB,
+                300, 400, 0x00000000, 0xFF000000, 0.1), "png");
+        assertTrue(check(new BlankImageCheck(), image).admitted());
+    }
+
+    @Test
+    public void testLightTextOnATransparentBackgroundIsAdmitted() throws Exception {
+        byte[] image = ImageFixtures.encode(ImageFixtures.image(BufferedImage.TYPE_INT_ARGB,
+                300, 400, 0x00FFFFFF, 0xFFFFFFFF, 0.1), "png");
+        assertTrue(check(new BlankImageCheck(), image).admitted());
+    }
+
+    @Test
+    public void testIndexedTextOnATransparentBackgroundIsAdmitted() throws Exception {
+        IndexColorModel palette = new IndexColorModel(8, 2, new byte[] {0, 0},
+                new byte[] {0, 0}, new byte[] {0, 0}, new byte[] {0, (byte) 255});
+        BufferedImage indexed = new BufferedImage(300, 400, BufferedImage.TYPE_BYTE_INDEXED,
+                palette);
+        for (int y = 0; y < 400; y++) {
+            for (int x = 0; x < 30; x++) {
+                indexed.getRaster().setSample(x, y, 0, 1);
+            }
+        }
+        assertTrue(check(new BlankImageCheck(), ImageFixtures.encode(indexed, "png")).admitted());
+    }
+
+    @Test
+    public void testAFullyTransparentImageIsBlank() throws Exception {
+        byte[] image = ImageFixtures.encode(ImageFixtures.image(BufferedImage.TYPE_INT_ARGB,
+                300, 400, 0x00000000, 0x00000000, 0), "png");
+        assertEquals(false, check(new BlankImageCheck(), image).admitted());
     }
 }

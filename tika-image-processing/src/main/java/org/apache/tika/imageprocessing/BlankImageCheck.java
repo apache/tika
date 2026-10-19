@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.imagecheck;
+package org.apache.tika.imageprocessing;
 
 import java.io.IOException;
 
@@ -32,7 +32,8 @@ import org.apache.tika.parser.enricher.ImageProbe;
  * no ink at all and 3 with a single line. With {@code despeckle} (the default) a pixel counts as
  * ink only if most of its 3 x 3 neighbourhood does, so scattered specks (a noisy scan) do not
  * hide a blank page: salt-and-pepper noise of 0.1 % to 5 % comes out blank, and none of 600 text
- * pages did. An image it cannot read or decode is admitted.
+ * pages did. An image with transparency is blank only if it is blank over white and over black.
+ * An image it cannot read or decode is admitted.
  *
  * @since Apache Tika 4.2
  */
@@ -52,14 +53,14 @@ public class BlankImageCheck implements ImageCheck {
         if (gray == null || gray.levels().length == 0) {
             return Verdict.admit();
         }
-        return ink(gray) <= maxInk ? Verdict.skip("blank") : Verdict.admit();
+        boolean blank = ink(gray.levels(), gray.width(), gray.height()) <= maxInk
+                && (gray.overBlack() == null
+                || ink(gray.overBlack(), gray.width(), gray.height()) <= maxInk);
+        return blank ? Verdict.skip("blank") : Verdict.admit();
     }
 
     /** The share of pixels that differ from the background, after the specks are removed. */
-    private double ink(ImageDecoding.Gray gray) {
-        int width = gray.width();
-        int height = gray.height();
-        byte[] levels = gray.levels();
+    private double ink(byte[] levels, int width, int height) {
         int[] histogram = new int[256];
         for (byte level : levels) {
             histogram[level & 255]++;

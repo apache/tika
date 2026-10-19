@@ -242,6 +242,15 @@ public class ClaudeVLMParserTest {
     }
 
     @Test
+    void testAnEmptyAnswerIsEmptyText() throws Exception {
+        // the token budget can run out before any block is written
+        String json = "{\"content\":[],\"stop_reason\":\"max_tokens\"}";
+        Metadata metadata = new Metadata();
+        assertEquals("", parser.extractResponseText(json, metadata));
+        assertEquals("truncated", metadata.get(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS));
+    }
+
+    @Test
     void testBuildRequestJsonImage() {
         String json = parser.buildRequestJson(config, "AAAA", "image/png");
         assertFalse(json.contains("\"document\""));

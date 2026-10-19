@@ -17,6 +17,7 @@
 package org.apache.tika.parser.enricher;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.parser.ParseContext;
 
 /**
@@ -46,9 +47,16 @@ public class RecordedSizeCheck implements ImageCheck {
         return minHeight;
     }
 
+    /** True when the metadata records a width or height below the minimum. */
+    public static boolean tooSmall(Metadata metadata, int minWidth, int minHeight) {
+        Integer width = metadata.getInt(TIFF.IMAGE_WIDTH);
+        Integer height = metadata.getInt(TIFF.IMAGE_LENGTH);
+        return (width != null && width < minWidth) || (height != null && height < minHeight);
+    }
+
     @Override
     public Verdict check(ImageProbe image, Metadata metadata, ParseContext context) {
-        return SizeGatedEnricher.tooSmall(metadata, minWidth, minHeight)
+        return tooSmall(metadata, minWidth, minHeight)
                 ? Verdict.skip("image-too-small") : Verdict.admit();
     }
 }

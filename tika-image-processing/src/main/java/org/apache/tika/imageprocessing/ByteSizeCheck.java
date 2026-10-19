@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.imagecheck;
+package org.apache.tika.imageprocessing;
 
 import java.io.IOException;
 
@@ -25,9 +25,9 @@ import org.apache.tika.parser.enricher.ImageCheck;
 import org.apache.tika.parser.enricher.ImageProbe;
 
 /**
- * Refuses an image shorter than {@code minBytes} or longer than {@code maxBytes}, by the length
- * the stream already knows: the image is not read, so this is the cheapest check to run first.
- * A setting of 0 turns that limit off, and an image of unknown length is admitted. The reasons
+ * Refuses an image shorter than {@code minBytes} or longer than {@code maxBytes}, by its
+ * measured length: the image is not read, so this is the cheapest check to run first. A setting
+ * of 0 turns that limit off, and an image whose length is unknown or only declared is admitted. The reasons
  * are {@code file-too-small} and {@code file-too-large}, as the VLM parsers' own byte limits
  * report them; those limits stay, this one is for any engine.
  *

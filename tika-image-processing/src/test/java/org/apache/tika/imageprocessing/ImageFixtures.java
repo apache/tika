@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.imagecheck;
+package org.apache.tika.imageprocessing;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -49,6 +49,25 @@ final class ImageFixtures {
         g.dispose();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ImageIO.write(image, "png", out);
+        return out.toByteArray();
+    }
+
+    /** An image of {@code type} filled with {@code background}, a block of {@code ink} on it. */
+    static BufferedImage image(int type, int width, int height, int backgroundArgb,
+                               int inkArgb, double inkFraction) {
+        BufferedImage image = new BufferedImage(width, height, type);
+        int inkWidth = (int) Math.round(width * inkFraction);
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                image.setRGB(x, y, x < inkWidth ? inkArgb : backgroundArgb);
+            }
+        }
+        return image;
+    }
+
+    static byte[] encode(BufferedImage image, String format) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ImageIO.write(image, format, out);
         return out.toByteArray();
     }
 

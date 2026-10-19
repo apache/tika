@@ -57,7 +57,7 @@ optional; anything you omit uses its defaults.
   "pipes-iterator": { /* iterator (one per pipeline) */ },
   "pipes-reporters": { /* per-document status reporters */ },
   "plugin-roots": "/path/to/plugins",
-  "metadata-list": { /* Jackson read limits for metadata JSON */ },
+  "metadata-list": { /* metadata JSON: Jackson read limits, typedValues */ },
   "service-loader": { /* SPI load-failure policy */ },
   "xml-reader-utils": { /* XML parser pool size */ }
 }
@@ -80,8 +80,8 @@ Unknown keys are rejected almost everywhere: at the top level, inside a componen
 and inside a `FetchEmitTuple`. Four places swallow them silently instead, so a misspelling there
 produces no error and no effect:
 
-* the `metadata-list` body — only `maxStringLength`, `maxNestingDepth` and `maxNumberLength` are
-  read;
+* the `metadata-list` body — only `maxStringLength`, `maxNestingDepth`, `maxNumberLength` and
+  `typedValues` are read;
 * the body of a self-configuring component under `parse-context` — it is handed to the component
   untouched;
 * `_mime-include` / `_mime-exclude` when the value is neither a JSON array nor a string — a bare
@@ -93,6 +93,39 @@ produces no error and no effect:
   both fatal.)
 
 If a setting appears to do nothing, check its spelling against one of those four first.
+
+[#typed-values]
+=== Typed values in metadata JSON (`typedValues`)
+
+By default every metadata value in JSON output (`tika-app -J`, tika-server `/rmeta`, and the
+file-system, S3, GCS and Azure emitters) is a string, so `tk:chunks` arrives as an escaped
+string that consumers must parse a second time. Opt in to native types:
+
+[source,json]
+----
+{ "metadata-list": { "typedValues": true } }
+----
+
+Values of keys registered as `INTEGER` or `REAL` are then written as JSON numbers, `BOOLEAN`
+as `true`/`false`, and `JSON` keys such as `tk:chunks` as nested JSON:
+
+[source,json]
+----
+{ "audio:channels": 2, "audio:has-drm": false, "tk:chunks": [ { "text": "...", ... } ] }
+----
+
+The key's type comes from its `Property` declaration; `tika-metadata-schema`'s
+`metadata-keys.json` lists it as `valueType`. A value that does not fit its type (`"abc"` on an
+`INTEGER` key, a JSON value with more than one value on the key) stays a string, as does a JSON
+value nested deeper than `maxNestingDepth` allows, so the output always reads back. Only a
+single-valued object, or an array holding an object or array, is written as JSON: a JSON scalar
+or an array of scalars would be indistinguishable from an ordinary value or values. Tika's own
+readers accept either form; it is off by default because the change in types breaks consumers
+that expect strings, and an index that maps a key from its first value (as Elasticsearch does)
+rejects a later document whose value for that key is malformed and stays a string.
+
+The Elasticsearch and OpenSearch emitters always write `JSON` keys as JSON, whatever this
+setting.
 
 [#component-names]
 == Component names
@@ -177,7 +210,8 @@ unchanged.
 *Send the engine fewer images that hold no text.* An entry's `checks` lists
 image checks by name, run in order, cheapest first; the first to refuse keeps the image from the
 engine, whatever the engine is (Tesseract, a VLM, ...), and records `skipped:<reason>` in
-`tk:ocr-warnings` (on the parent document too, for an inline image). A check that cannot read the
+`tk:ocr-warnings`. For an inline image it is recorded on the parent document too, when the
+output is one metadata object per document (`-J`, `/rmeta`, Pipes). A check that cannot read the
 image admits it. The checks live in the `tika-image-processing` module (JDK only, no native code):
 
 [source,json]
@@ -195,9 +229,9 @@ image admits it. The checks live in the `tika-image-processing` module (JDK only
 }
 ----
 
-`byte-size` refuses an image shorter than `minBytes` or longer than `maxBytes` by the length the
-stream already knows, without reading it, so it belongs first; 0 turns a limit off and an image of
-unknown length is admitted. `min-image-size` refuses an image under `minTotalPixels` in area or whose
+`byte-size` refuses an image shorter than `minBytes` or longer than `maxBytes` by its measured
+length, without reading it, so it belongs first; 0 turns a limit off, and an image whose length is
+unknown or only declared (by a container or a header) is admitted. `min-image-size` refuses an image under `minTotalPixels` in area or whose
 shorter side is under `minShortSidePixels`, by the dimensions in its header (it reads only the start of a
 large file, and the whole file only when the dimensions are not there); `minWidthPixels` and `minHeightPixels`
 ask for more of one dimension on top of `minShortSidePixels`, and 0 turns a test off. The `min-image-size`
@@ -208,7 +242,10 @@ share of pixels differing from its most common gray level by more than `toleranc
 `maxInk` (0.0001 is 0.01 %, below a page with a line of text), measured on a copy of at most 1,000
 pixels a side. With `despeckle` (on by default) a pixel counts only if most of its 3 x 3 neighbourhood
 differs from the background, so scattered specks, as on a noisy scan, do not hide a blank page: 0.1 % to 5 %
-salt-and-pepper noise comes out blank, and a stroke of text does not.
+salt-and-pepper noise comes out blank, and a stroke of text does not. An image with transparency
+is blank only if it is blank over both white and black, so dark or light text on a transparent
+background is kept. A progressive JPEG over 16 million pixels is not decoded (it is admitted):
+decoding one takes about 3 bytes of memory a pixel outside the Java heap.
 
 A check's settings need no underscore. `min-width` and `min-height` on the entry are a separate,
 metadata-only size minimum that runs before any check. The checks do not tell a photo from a page of

@@ -29,6 +29,7 @@ import java.util.Random;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 
 public class ImageProbeTest {
@@ -49,6 +50,16 @@ public class ImageProbeTest {
     public void testLengthOfAStreamThatDoesNotKnowItIsNegative() throws Exception {
         TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(bytes(10)));
         assertEquals(-1, new ImageProbe(tis, new Metadata()).length());
+    }
+
+    @Test
+    public void testADeclaredLengthIsNotTrusted() throws Exception {
+        Metadata declared = new Metadata();
+        declared.set(HttpHeaders.CONTENT_LENGTH, "10");
+        TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(bytes(5000)), declared);
+        ImageProbe probe = new ImageProbe(tis, new Metadata());
+        assertEquals(-1, probe.length());
+        assertEquals(5000, probe.bytes().length);
     }
 
     @Test

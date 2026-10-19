@@ -82,6 +82,11 @@ public final class ChunkTarget {
 
     /** Tags the chunks with the locator, if any, and appends them to the field. */
     public void write(List<Chunk> chunks, String field) throws IOException {
+        ChunkSerializer.mergeInto(metadata, tag(chunks), field);
+    }
+
+    /** Tags the chunks with the locator, if any, for a caller that writes them itself. */
+    List<Chunk> tag(List<Chunk> chunks) {
         if (locator != null) {
             for (Chunk chunk : chunks) {
                 if (chunk.getLocators() != null) {
@@ -89,6 +94,6 @@ public final class ChunkTarget {
                 }
             }
         }
-        ChunkSerializer.mergeInto(metadata, chunks, field);
+        return chunks;
     }
 }

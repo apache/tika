@@ -94,16 +94,16 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
     static final String WARN_REPETITION = "repetition";
     static final String WARN_EMPTY = "empty";
 
-    /** Output of at least this many bytes that deflates below this ratio is a loop. */
+    /**
+     * Output of at least this many bytes that deflates below this ratio is a loop. A loop
+     * deflates to about 1.5 %; an HTML table of numbers to 12 %, dot leaders to 8 %.
+     */
     private static final int REPETITION_MIN_BYTES = 1000;
-    private static final double REPETITION_MAX_DEFLATE_RATIO = 0.12;
-
-    private static final long[] UNKNOWN_SIZE = {-1, 1};
+    private static final double REPETITION_MAX_DEFLATE_RATIO = 0.05;
 
     static final String SKIP_FILE_TOO_SMALL = "file-too-small";
     static final String SKIP_FILE_TOO_LARGE = "file-too-large";
     static final String SKIP_IMAGE_TOO_LARGE = "image-too-large";
-
 
     /**
      * Encapsulates a fully built HTTP request for a VLM API call.
@@ -235,8 +235,8 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
             tis.mark((int) Math.min(tis.getLength() + 1, 1024 * 1024));
             try {
                 long[] dims = getImageSize(tis);
-                long pixels = dims[0] * dims[1];
-                if (maxPixels > 0 && pixels > maxPixels) {
+                long pixels = dims == null ? -1 : dims[0] * dims[1];
+                if (pixels > maxPixels) {
                     LOG.warn("Image has {} pixels, exceeding maxImagePixels={}. "
                             + "Skipping VLM OCR.", pixels, maxPixels);
                     metadata.set(VLM_IMAGE_PIXELS, (int) Math.min(pixels, Integer.MAX_VALUE));
@@ -453,19 +453,19 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
 
     /**
      * Reads only the image header to determine width &times; height
-     * without decoding the full raster. Returns {@link #UNKNOWN_SIZE} if dimensions
+     * without decoding the full raster. Returns null if dimensions
      * cannot be determined.
      */
     private long[] getImageSize(InputStream is) throws IOException {
         try (javax.imageio.stream.ImageInputStream iis =
                      javax.imageio.ImageIO.createImageInputStream(is)) {
             if (iis == null) {
-                return UNKNOWN_SIZE;
+                return null;
             }
             java.util.Iterator<javax.imageio.ImageReader> readers =
                     javax.imageio.ImageIO.getImageReaders(iis);
             if (!readers.hasNext()) {
-                return UNKNOWN_SIZE;
+                return null;
             }
             javax.imageio.ImageReader reader = readers.next();
             try {

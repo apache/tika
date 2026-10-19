@@ -2548,6 +2548,38 @@ public class PDFParserTest extends TikaTest {
                 java.util.Arrays.asList(metadata.getValues(TikaCoreProperties.OCR_WARNINGS)));
     }
 
+    @Test
+    public void testOcrWarningsSurviveAFailedPage() throws Exception {
+        PDFParserConfig config = new PDFParserConfig();
+        config.pages().setText(TextPolicy.OCR);
+
+        ParseContext context = new ParseContext();
+        context.set(PDFParserConfig.class, config);
+        context.set(Parser.class, new MockEngine() {
+            @Override
+            public Set<MediaType> getSupportedTypes(ParseContext context) {
+                return Collections.singleton(ocrMediaType(config));
+            }
+
+            @Override
+            public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
+                              ParseContext context) throws TikaException {
+                metadata.add(TikaCoreProperties.OCR_WARNINGS, "truncated");
+                throw new TikaException("the answer could not be read");
+            }
+        });
+
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testPDF_bookmarks.pdf")) {
+            // the page failures are reported once the document is done
+            assertThrows(TikaException.class, () ->
+                    new PDFParser().parse(tis, new ToXMLContentHandler(), metadata, context));
+        }
+
+        assertEquals(java.util.List.of("truncated"),
+                java.util.Arrays.asList(metadata.getValues(TikaCoreProperties.OCR_WARNINGS)));
+    }
+
     /**
      * A named enricher advertising real image types, with no composite registration at all,
      * receives every rendered page when OCR runs (TIKA-4872).

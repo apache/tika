@@ -581,7 +581,7 @@ public class TikaLoader {
      *
      * <p>Settings include:
      * <ul>
-     *   <li>metadata-list - Jackson StreamReadConstraints for JsonMetadata/JsonMetadataList serialization</li>
+     *   <li>metadata-list - Jackson StreamReadConstraints and typedValues for JsonMetadata/JsonMetadataList serialization</li>
      *   <li>service-loader - Service loader configuration</li>
      *   <li>xml-reader-utils - XML parser security settings</li>
      * </ul>
@@ -636,20 +636,37 @@ public class TikaLoader {
      * Loads the metadata-list configuration section and applies it to
      * JsonMetadata and JsonMetadataList serializers.
      * <p>
-     * Configuration uses Jackson's StreamReadConstraints property names:
+     * Read limits use Jackson's StreamReadConstraints property names; {@code typedValues}
+     * opts in to native numbers, booleans and JSON values (see
+     * {@link JsonMetadataList#setTypedValues(boolean)}):
      * <pre>
      * {
      *   "metadata-list": {
      *     "maxStringLength": 20000000,
      *     "maxNestingDepth": 10,
-     *     "maxNumberLength": 500
+     *     "maxNumberLength": 500,
+     *     "typedValues": true
      *   }
      * }
      * </pre>
      */
-    private void loadMetadataListConfig() {
+    private void loadMetadataListConfig() throws TikaConfigException {
         JsonNode metadataListNode = config.getRootNode().get("metadata-list");
         if (metadataListNode == null) {
+            return;
+        }
+        if (metadataListNode.has("typedValues")) {
+            JsonNode typedNode = metadataListNode.get("typedValues");
+            if (!typedNode.isBoolean()) {
+                throw new TikaConfigException(
+                        "metadata-list.typedValues must be true or false, not " + typedNode);
+            }
+            boolean typed = typedNode.booleanValue();
+            JsonMetadata.setTypedValues(typed);
+            JsonMetadataList.setTypedValues(typed);
+        }
+        if (!metadataListNode.has("maxStringLength") && !metadataListNode.has("maxNestingDepth")
+                && !metadataListNode.has("maxNumberLength")) {
             return;
         }
 

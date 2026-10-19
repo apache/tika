@@ -148,7 +148,7 @@ public class ClaudeVLMParser extends AbstractVLMParser {
 
             // Content blocks
             JsonNode content = root.get("content");
-            if (content == null || !content.isArray() || content.isEmpty()) {
+            if (content == null || !content.isArray()) {
                 throw new TikaException(
                         "Claude response contains no content: " + responseBody);
             }

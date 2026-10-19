@@ -69,6 +69,13 @@ public class VLMOCRConfig implements Serializable {
     private Double temperature = null;
 
     /**
+     * OpenAI-compatible parser only: send the limit as {@code max_completion_tokens}
+     * instead of {@code max_tokens}. Newer OpenAI models (o-series, GPT-5 and later)
+     * reject {@code max_tokens}; many other compatible servers only accept it.
+     */
+    private boolean useMaxCompletionTokens = false;
+
+    /**
      * HTTP timeout in millis for the chat completions request.
      * VLM inference can be slow; default is generous.
      */
@@ -179,6 +186,15 @@ public class VLMOCRConfig implements Serializable {
                     "temperature must be between 0 and 2, got: " + temperature);
         }
         this.temperature = temperature;
+    }
+
+    public boolean isUseMaxCompletionTokens() {
+        return useMaxCompletionTokens;
+    }
+
+    @OperatorOnly
+    public void setUseMaxCompletionTokens(boolean useMaxCompletionTokens) {
+        this.useMaxCompletionTokens = useMaxCompletionTokens;
     }
 
     public long getTimeoutMillis() {

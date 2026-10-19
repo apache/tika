@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.tika.imagecheck;
+package org.apache.tika.imageprocessing;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -143,5 +143,19 @@ public class ImageChecksConfigTest {
         TikaConfigException e = assertThrows(TikaConfigException.class, () -> engine(
                 "{ \"engine\": \"png\", \"checks\": \"blank-image-check\" }"));
         assertTrue(e.getMessage().contains("must be an array"), e.getMessage());
+    }
+
+    @Test
+    public void testACheckWithTwoNamesFailsLoad() {
+        TikaConfigException e = assertThrows(TikaConfigException.class, () -> engine(
+                "{ \"engine\": \"png\", \"checks\": ["
+                        + " {\"min-image-size\": {}, \"blank-image-check\": {}} ] }"));
+        assertTrue(e.getMessage().contains("a \"checks\" member"), e.getMessage());
+    }
+
+    @Test
+    public void testAComponentThatIsNotACheckFailsLoad() {
+        assertThrows(TikaConfigException.class, () -> engine("{ \"engine\": \"png\","
+                + " \"checks\": [ \"mock-enricher\" ] }"));
     }
 }

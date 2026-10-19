@@ -220,7 +220,7 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
         if (item.isTextual()) {
             return Map.entry(item.asText(), (JsonNode) context.getObjectMapper().createObjectNode());
         }
-        if (item.isObject() && !item.isEmpty()) {
+        if (item.isObject() && item.size() == 1) {
             Map.Entry<String, JsonNode> first = item.fields().next();
             return Map.entry(first.getKey(), first.getValue());
         }

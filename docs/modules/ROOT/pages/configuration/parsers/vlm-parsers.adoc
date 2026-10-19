@@ -276,6 +276,10 @@ trusted callers. See <<_per_request_configuration,Per-request configuration>>.
 |`completionsPath`
 |`/v1/chat/completions` (OpenAI/vLLM only)
 |HTTP path appended to `baseUrl` for the chat-completions endpoint. Used by the OpenAI-compatible parser only. Claude and Gemini hardcode their own API paths (`/v1/messages` and `/v1beta/models/\{model}:generateContent` respectively) and ignore this field.
+
+|`useMaxCompletionTokens`
+|`false` (OpenAI/vLLM only)
+|Send the output limit as `max_completion_tokens` instead of `max_tokens`. Required for OpenAI / Azure OpenAI models that reject `max_tokens` (o-series, GPT-5 and later); leave `false` for servers that only accept `max_tokens`.
 |===
 
 When a file is not sent because of `minFileSizeToOcr`, `maxFileSizeToOcr` or
@@ -286,7 +290,7 @@ blank to be worth sending, before any text recognizer sees them.
 
 The returned text is never changed or dropped. When it looks doubtful, `tk:ocr-warnings` (multi-valued)
 gets one of: `truncated` (the model stopped at `maxTokens`), `repetition` (a repeated line or sentence;
-output of at least 1,000 bytes that deflates to under 12% of its size), or `empty`. For an
+output of at least 1,000 bytes that deflates to under 5% of its size), or `empty`. For an
 `INLINE` image, whose text goes into the parent document, the same
 codes are added to the parent's `tk:ocr-warnings`, and a skip appears there as `skipped:<reason>`. That
 needs the recursive parser wrapper, which supplies the parent's metadata.
@@ -349,7 +353,7 @@ rejected with an exception:
 |May be lowered, never raised above the initialization-time value — that ceiling is what bounds
 cost on a paid endpoint.
 
-|`maxImagePixels`, `temperature`, `maxRetries`, `allowRuntimePrompt`
+|`maxImagePixels`, `temperature`, `maxRetries`, `allowRuntimePrompt`, `useMaxCompletionTokens`
 |Always blocked.
 
 |`prompt`, `textRecognizer`

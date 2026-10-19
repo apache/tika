@@ -325,6 +325,14 @@ public class OpenAIVLMParserTest {
     }
 
     @Test
+    void testMaxCompletionTokens() throws Exception {
+        config.setUseMaxCompletionTokens(true);
+        JsonNode body = MAPPER.readTree(parser.buildRequestJson(config, "AAAA", "image/png"));
+        assertEquals(1024, body.get("max_completion_tokens").asInt());
+        assertNull(body.get("max_tokens"));
+    }
+
+    @Test
     void testBuildRequestJson() {
         String json = parser.buildRequestJson(config, "AAAA", "image/png");
         assertTrue(json.contains("\"model\":\"test-model\""));
@@ -467,6 +475,26 @@ public class OpenAIVLMParserTest {
         assertFalse(AbstractVLMParser.looksLikeLoop("short ".repeat(10)));
         // 1,000 to 2,000 bytes of ordinary varied text
         assertFalse(AbstractVLMParser.looksLikeLoop(sb.substring(0, 1500)));
+    }
+
+    @Test
+    void testTablesAndLeadersAreNotARepetition() {
+        java.util.Random random = new java.util.Random(1);
+        String[] items = {"alpha", "beta", "gamma", "delta"};
+        StringBuilder table = new StringBuilder("<table>\n");
+        for (int i = 0; i < 200; i++) {
+            table.append("<tr><td>").append(random.nextInt(9999)).append("</td><td>Item ")
+                    .append(items[random.nextInt(4)]).append("</td><td>")
+                    .append(random.nextInt(99)).append('.').append(random.nextInt(99))
+                    .append("</td><td></td><td></td></tr>\n");
+        }
+        assertFalse(AbstractVLMParser.looksLikeLoop(table.append("</table>").toString()));
+        StringBuilder contents = new StringBuilder();
+        for (int i = 1; i < 40; i++) {
+            contents.append("Chapter ").append(i).append(' ').append(".".repeat(60)).append(' ')
+                    .append(i * 7).append('\n');
+        }
+        assertFalse(AbstractVLMParser.looksLikeLoop(contents.toString()));
     }
 
     @Test

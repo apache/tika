@@ -51,6 +51,8 @@ import org.apache.tika.utils.StringUtils;
  *       {@code /openai/deployments/{deployment}/chat/completions?api-version=2024-02-01}</li>
  *   <li>{@code apiKeyHeaderName} — {@code api-key}</li>
  *   <li>{@code apiKeyPrefix} — {@code ""} (empty string)</li>
+ *   <li>{@code useMaxCompletionTokens} — {@code true} for models that reject
+ *       {@code max_tokens} (o-series, GPT-5 and later)</li>
  * </ul>
  * <p>
  * Configuration key: {@code "openai-vlm-parser"}
@@ -238,7 +240,8 @@ public class OpenAIVLMParser extends AbstractVLMParser {
     String buildRequestJson(VLMOCRConfig config, String base64Data, String mimeType) {
         ObjectNode root = MAPPER.createObjectNode();
         root.put("model", config.getModel());
-        root.put("max_tokens", config.getMaxTokens());
+        root.put(config.isUseMaxCompletionTokens() ? "max_completion_tokens" : "max_tokens",
+                config.getMaxTokens());
         if (config.getTemperature() != null) {
             root.put("temperature", config.getTemperature());
         }
