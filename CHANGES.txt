@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * The docx parser wraps OMML equations (m:oMath) in <span class="omml">, their
+     text flattened to plain characters; it was previously emitted as unmarked body
+     text (TIKA-4968).
+     
    * Files named *.rs are now detected as text/x-rust (Rust source) instead of
      application/rls-services+xml. RLS services XML is still detected from its
      root element, whatever the file name (TIKA-4977).

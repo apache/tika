@@ -148,9 +148,12 @@ public class OOXMLDocxSAXTest extends TikaTest {
     @Test
     public void testOmmlMath() throws Exception {
         String xml = getXML("testWORD_omml.docx").xml;
-        assertContains("<p>area <span class=\"math\">A=<b>π</b>rr2</span> done</p>", xml);
-        assertContains("<p><span class=\"math\">x+y</span></p>", xml);
-        assertContains("<p><b>bold </b><span class=\"math\">z</span><b> after</b></p>", xml);
+        assertContains("<p>area <span class=\"omml\">A=<b>π</b>rr2</span> done</p>", xml);
+        assertContains("<p><span class=\"omml\">x+y</span></p>", xml);
+        assertContains("<p><b>bold </b><span class=\"omml\">z</span><b> after</b></p>", xml);
+        assertContains("<p><span class=\"omml\">a</span><a href=\"#eq\"><span class=\"omml\">b</span></a>"
+                + "<span class=\"omml\">c</span></p>", xml);
+        assertContains("<p>empty</p>", xml);
     }
 
     @Test
