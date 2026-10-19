@@ -7,6 +7,10 @@ Release 4.2.0 - unreleased
      text-recognizers entries take min-width/min-height (_min-width/_min-height still
      work) (TIKA-4972).
 
+   * An email that starts with MIME-Version and nests a multipart/related part (a Gmail
+     export, for one) is detected as message/rfc822, not as MHTML: the
+     multipart/related magic now reads only the message's own header block (TIKA-4973).
+     
    * The docx parser wraps OMML equations (m:oMath) in <span class="omml">, their
      text flattened to plain characters; it was previously emitted as unmarked body
      text (TIKA-4968).

@@ -7622,9 +7622,9 @@
     <magic priority="60">
       <match value="From: \x3cSaved by Windows Internet Explorer 8\x3e" type="stringignorecase" offset="0"/>
       <match value="From: \x22Saved by Internet Explorer 11\x22" type="stringignorecase" offset="0"/>
-      <match value="MIME-Version: 1.0" type="string" offset="0">
-        <match value="\nContent-Type: multipart/related" type="string" offset="16:512"/>
-      </match>
+      <!-- the message's own Content-Type: non-empty lines only, so the match stops at the
+           blank line that ends the header block and never reaches a nested part's header -->
+      <match value="MIME-Version: 1[.]0(?: [^\r\n]{0,100})?\r?\n(?:[^\r\n]+\r?\n)*?Content-Type: multipart/related" type="regex" offset="0"/>
     </magic>
     <glob pattern="*.mht"/>
     <glob pattern="*.mhtml"/>
