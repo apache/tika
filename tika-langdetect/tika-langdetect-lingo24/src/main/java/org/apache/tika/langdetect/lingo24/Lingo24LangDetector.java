@@ -16,8 +16,16 @@
  */
 package org.apache.tika.langdetect.lingo24;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.CharArrayWriter;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -25,13 +33,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.Form;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.apache.cxf.jaxrs.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,8 +58,8 @@ public class Lingo24LangDetector extends LanguageDetector {
     private static final String LINGO24_LANGID_ACTION = "langid";
     private static final String LINGO24_SOURCELANG_ACTION = "sourcelangs";
     private static final String DEFAULT_KEY = "dummy-key";
+    private static final Duration TIMEOUT = Duration.ofSeconds(60);
 
-    private WebClient client;
     private String userKey;
     private Set<String> languages;
     private boolean isAvailable;
@@ -71,7 +74,6 @@ public class Lingo24LangDetector extends LanguageDetector {
      * the languages supported by the detector.
      */
     public Lingo24LangDetector() {
-        this.client = WebClient.create(LINGO24_TRANSLATE_URL_BASE + LINGO24_LANGID_ACTION);
         this.isAvailable = true;
         Properties config = new Properties();
         try {
@@ -147,21 +149,20 @@ public class Lingo24LangDetector extends LanguageDetector {
             return language;
         }
 
-        Form form = new Form();
-        form.param("user_key", userKey);
-        form.param("q", content);
-
-        Response response = client.accept(MediaType.APPLICATION_JSON).form(form);
-
-        String json = response.readEntity(String.class);
-        JsonNode element = null;
+        String form = "user_key=" + URLEncoder.encode(userKey, UTF_8) + "&q=" +
+                URLEncoder.encode(content, UTF_8);
+        HttpRequest request =
+                HttpRequest.newBuilder(URI.create(LINGO24_TRANSLATE_URL_BASE + LINGO24_LANGID_ACTION))
+                        .timeout(TIMEOUT).header("Accept", "application/json")
+                        .header("Content-Type", "application/x-www-form-urlencoded")
+                        .POST(HttpRequest.BodyPublishers.ofString(form, UTF_8)).build();
         try {
-            element = new ObjectMapper().readTree(json);
-        } catch (JsonProcessingException e) {
+            JsonNode element = new ObjectMapper().readTree(send(request));
+            if (element.has("success") && element.get("success").asText().equals("true")) {
+                language = element.get("lang").asText();
+            }
+        } catch (IOException e) {
             LOG.warn("problem detecting ", e);
-        }
-        if (element.has("success") && element.get("success").asText().equals("true")) {
-            language = element.get("lang").asText();
         }
         return language;
     }
@@ -179,13 +180,12 @@ public class Lingo24LangDetector extends LanguageDetector {
             return languages;
         }
 
-        WebClient _client = null;
         try {
-            _client = WebClient.create(LINGO24_TRANSLATE_URL_BASE + LINGO24_SOURCELANG_ACTION);
-            Response response =
-                    _client.accept(MediaType.APPLICATION_JSON).query("user_key", userKey).get();
-
-            String json = response.readEntity(String.class);
+            HttpRequest request = HttpRequest.newBuilder(URI.create(
+                            LINGO24_TRANSLATE_URL_BASE + LINGO24_SOURCELANG_ACTION + "?user_key=" +
+                                    URLEncoder.encode(userKey, UTF_8)))
+                    .timeout(TIMEOUT).header("Accept", "application/json").GET().build();
+            String json = send(request);
             JsonNode jsonArray = new ObjectMapper().readTree(json).get("source_langs");
             for (JsonNode jsonElement : jsonArray) {
                 languages.add(jsonElement.get(0).asText());
@@ -194,12 +194,23 @@ public class Lingo24LangDetector extends LanguageDetector {
             throw e;
         } catch (Exception e) {
             LOG.warn("problem detecting", e);
-        } finally {
-            if (_client != null) {
-                _client.close();
-            }
         }
         return languages;
+    }
+
+    private String send(HttpRequest request) throws IOException {
+        try {
+            return ClientHolder.CLIENT.send(request, HttpResponse.BodyHandlers.ofString(UTF_8)).body();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        }
+    }
+
+    private static class ClientHolder {
+        private static final HttpClient CLIENT =
+                HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
+                        .connectTimeout(Duration.ofSeconds(30)).build();
     }
 
     /**

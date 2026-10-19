@@ -37,5 +37,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
+      # tika-server-core, -standard and -eval require jdk17; they're covered by the jdk17+ builds
       - name: Build with Maven
-        run: mvn clean test install javadoc:aggregate -Pci
+        run: mvn clean test install -Pci -pl '!tika-server/tika-server-core,!tika-server/tika-server-standard,!tika-server/tika-server-eval'

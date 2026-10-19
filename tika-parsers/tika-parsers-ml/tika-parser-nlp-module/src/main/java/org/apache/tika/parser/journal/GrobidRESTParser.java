@@ -16,18 +16,21 @@
  */
 package org.apache.tika.parser.journal;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.time.Duration;
 import java.util.Properties;
+import java.util.UUID;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.apache.cxf.jaxrs.client.WebClient;
-import org.apache.cxf.jaxrs.ext.multipart.Attachment;
-import org.apache.cxf.jaxrs.ext.multipart.ContentDisposition;
-import org.apache.cxf.jaxrs.ext.multipart.MultipartBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.ContentHandler;
@@ -72,10 +75,8 @@ public class GrobidRESTParser {
     }
 
     protected static boolean canRun() {
-        Response response = null;
         try {
-            response = WebClient.create(readRestUrl() + GROBID_ISALIVE_PATH).get();
-            String resp = response.readEntity(String.class);
+            String resp = send(request(readRestUrl() + GROBID_ISALIVE_PATH).GET()).body();
             return resp != null && !resp.equals("") && resp.startsWith("true");
         } catch (Exception e) {
             //swallow...can't run
@@ -87,21 +88,27 @@ public class GrobidRESTParser {
                       ParseContext context) throws FileNotFoundException {
 
         File pdfFile = new File(filePath);
-        ContentDisposition cd = new ContentDisposition(
-                "form-data; name=\"input\"; filename=\"" + pdfFile.getName() + "\"");
-        Attachment att = new Attachment("input", new FileInputStream(pdfFile), cd);
-        MultipartBody body = new MultipartBody(att);
+        if (!pdfFile.isFile()) {
+            throw new FileNotFoundException(filePath);
+        }
 
         try {
             checkMode();
-            Response response = WebClient.create(restHostUrlStr +
-                            (legacyMode ? GROBID_LEGACY_PROCESSHEADER_PATH : GROBID_PROCESSHEADER_PATH))
-                    .accept(MediaType.APPLICATION_XML)
-                    .type(MediaType.MULTIPART_FORM_DATA)
-                    .post(body);
+            String boundary = UUID.randomUUID().toString();
+            ByteArrayOutputStream body = new ByteArrayOutputStream();
+            body.write(("--" + boundary + "\r\n" +
+                    "Content-Disposition: form-data; name=\"input\"; filename=\"" +
+                    pdfFile.getName() + "\"\r\n" +
+                    "Content-Type: application/octet-stream\r\n\r\n").getBytes(UTF_8));
+            Files.copy(pdfFile.toPath(), body);
+            body.write(("\r\n--" + boundary + "--\r\n").getBytes(UTF_8));
+            HttpRequest.Builder request = request(restHostUrlStr +
+                    (legacyMode ? GROBID_LEGACY_PROCESSHEADER_PATH : GROBID_PROCESSHEADER_PATH))
+                    .header("Accept", "application/xml")
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()));
 
-
-            String resp = response.readEntity(String.class);
+            String resp = send(request).body();
             Metadata teiMet = new TEIDOMParser().parse(resp, context);
             for (String key : teiMet.names()) {
                 metadata.add("grobid:header_" + key, teiMet.get(key));
@@ -115,17 +122,44 @@ public class GrobidRESTParser {
         if (legacyMode != null) {
             return;
         }
-        Response response = WebClient.create(restHostUrlStr + GROBID_ISALIVE_PATH).head();
-        if (response.getStatus() == 200) {
+        if (head(restHostUrlStr + GROBID_ISALIVE_PATH) == 200) {
             legacyMode = false;
             return;
         }
-        response = WebClient.create(restHostUrlStr + GROBID_LEGACY_ISALIVE_PATH).head();
-        if (response.getStatus() == 200) {
+        if (head(restHostUrlStr + GROBID_LEGACY_ISALIVE_PATH) == 200) {
             legacyMode = true;
             return;
         }
         throw new TikaException("Cannot connect to Grobid Service");
+    }
+
+    private static int head(String url) throws TikaException {
+        try {
+            return send(request(url).method("HEAD", HttpRequest.BodyPublishers.noBody()))
+                    .statusCode();
+        } catch (IOException e) {
+            throw new TikaException("Cannot connect to Grobid Service", e);
+        }
+    }
+
+    private static HttpRequest.Builder request(String url) {
+        return HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(60));
+    }
+
+    private static HttpResponse<String> send(HttpRequest.Builder request) throws IOException {
+        try {
+            return ClientHolder.CLIENT.send(request.build(),
+                    HttpResponse.BodyHandlers.ofString(UTF_8));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        }
+    }
+
+    private static class ClientHolder {
+        private static final HttpClient CLIENT =
+                HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
+                        .connectTimeout(Duration.ofSeconds(30)).build();
     }
 
 }

@@ -16,8 +16,15 @@
  */
 package org.apache.tika.langdetect.mitll;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.CharArrayWriter;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -26,8 +33,6 @@ import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.Response;
-import org.apache.cxf.jaxrs.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,8 +73,7 @@ public class TextLangDetector extends LanguageDetector {
 
     protected static boolean canRun() {
         try {
-            Response response = WebClient.create(TEXT_REST_HOST + TEXT_LID_PATH).get();
-            String json = response.readEntity(String.class);
+            String json = send(request(TEXT_REST_HOST + TEXT_LID_PATH).GET());
             JsonNode jsonArray = new ObjectMapper().readTree(json).get("all_languages");
             return jsonArray.size() != 0;
         } catch (Exception e) {
@@ -124,8 +128,7 @@ public class TextLangDetector extends LanguageDetector {
     private Set<String> getAllLanguages() {
         Set<String> languages = new HashSet<>();
         try {
-            Response response = WebClient.create(restHostUrlStr + TEXT_LID_PATH).get();
-            String json = response.readEntity(String.class);
+            String json = send(request(restHostUrlStr + TEXT_LID_PATH).GET());
             JsonNode jsonArray = new ObjectMapper().readTree(json).get("all_languages");
             for (JsonNode jsonElement : jsonArray) {
                 languages.add(jsonElement.asText());
@@ -139,12 +142,32 @@ public class TextLangDetector extends LanguageDetector {
     private String detect(String content) {
         String language = null;
         try {
-            Response response = WebClient.create(restHostUrlStr + TEXT_LID_PATH).put(content);
-            String json = response.readEntity(String.class);
+            String json = send(request(restHostUrlStr + TEXT_LID_PATH)
+                    .PUT(HttpRequest.BodyPublishers.ofString(content, UTF_8)));
             language = new ObjectMapper().readTree(json).get("language").asText();
         } catch (Exception e) {
             LOG.warn("problem detecting", e);
         }
         return language;
+    }
+
+    private static HttpRequest.Builder request(String url) {
+        return HttpRequest.newBuilder(URI.create(url)).timeout(Duration.ofSeconds(60));
+    }
+
+    private static String send(HttpRequest.Builder request) throws IOException {
+        try {
+            return ClientHolder.CLIENT.send(request.build(), HttpResponse.BodyHandlers.ofString(UTF_8))
+                    .body();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        }
+    }
+
+    private static class ClientHolder {
+        private static final HttpClient CLIENT =
+                HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
+                        .connectTimeout(Duration.ofSeconds(30)).build();
     }
 }

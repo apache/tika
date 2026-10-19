@@ -16,27 +16,17 @@
  */
 package org.apache.tika.language.translate.impl;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Properties;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.apache.cxf.jaxrs.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,34 +128,18 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
         }
 
         String inputText = sb.toString();
-        WebClient client;
-        final List<Object> providers = new ArrayList<>();
-        JacksonJsonProvider jacksonJsonProvider = new JacksonJsonProvider();
-        providers.add(jacksonJsonProvider);
-
-        client = WebClient.create(networkURI, providers);
 
         ObjectMapper requestMapper = new ObjectMapper();
         ObjectNode jsonNode = requestMapper.createObjectNode();
         jsonNode.put("inputLanguage", sourceLanguage);
         jsonNode.put("inputText", inputText);
         //make the request
-        Response response =
-                client.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-                        .post(jsonNode);
-        StringBuilder responseText = new StringBuilder();
-        try (InputStreamReader inputStreamReader = new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8);
-                BufferedReader reader = new BufferedReader(inputStreamReader)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                responseText.append(line);
-            }
-        }
+        String responseText =
+                HttpUtils.postJson(networkURI, requestMapper.writeValueAsString(jsonNode));
 
         try {
             ObjectMapper responseMapper = new ObjectMapper();
-            JsonNode jsonResp = responseMapper.readTree(responseText.toString());
+            JsonNode jsonResp = responseMapper.readTree(responseText);
 
             if (jsonResp.findValuesAsText("outputText") != null) {
                 return jsonResp.findValuesAsText("outputText").get(0);
@@ -177,7 +151,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
                     "Error requesting translation from '" + sourceLanguage + "' to '" +
                             targetLanguage + "', JSON response " +
                             "from Joshua REST Server is not well formatted: " +
-                            responseText.toString());
+                            responseText);
         }
     }
 

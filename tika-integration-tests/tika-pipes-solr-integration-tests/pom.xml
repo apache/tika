@@ -21,7 +21,7 @@
   <parent>
     <artifactId>tika-integration-tests</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>3.3.4-SNAPSHOT</version>
+    <version>3.4.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -62,6 +62,17 @@
       <artifactId>solr-solrj</artifactId>
       <version>${solrj.version}</version>
       <scope>test</scope>
+      <!-- we only use the Apache HttpClient-based clients; keep jetty out of tika-pipes -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.http2</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
 

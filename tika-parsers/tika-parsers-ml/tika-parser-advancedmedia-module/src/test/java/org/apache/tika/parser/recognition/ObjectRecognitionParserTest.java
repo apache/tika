@@ -22,11 +22,12 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.List;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.cxf.jaxrs.client.WebClient;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,7 +95,7 @@ public class ObjectRecognitionParserTest {
         boolean available = false;
         int status = 500;
         try {
-            status = WebClient.create(apiUrl).get().getStatus();
+            status = getStatus(apiUrl);
             available = status == 200;
         } catch (Exception ignore) {
         }
@@ -110,7 +111,7 @@ public class ObjectRecognitionParserTest {
         boolean available = false;
         int status = 500;
         try {
-            status = WebClient.create(apiUrl).get().getStatus();
+            status = getStatus(apiUrl);
             available = status == 200;
         } catch (Exception ignore) {
         }
@@ -126,7 +127,7 @@ public class ObjectRecognitionParserTest {
         boolean available = false;
         int status = 500;
         try {
-            status = WebClient.create(apiUrl).get().getStatus();
+            status = getStatus(apiUrl);
             available = status == 200;
         } catch (Exception ignore) {
         }
@@ -142,7 +143,7 @@ public class ObjectRecognitionParserTest {
         boolean available = false;
         int status = 500;
         try {
-            status = WebClient.create(apiUrl).get().getStatus();
+            status = getStatus(apiUrl);
             available = status == 200;
         } catch (Exception ignore) {
         }
@@ -158,7 +159,7 @@ public class ObjectRecognitionParserTest {
         boolean available = false;
         int status = 500;
         try {
-            status = WebClient.create(apiUrl).get().getStatus();
+            status = getStatus(apiUrl);
             available = status == 200;
         } catch (Exception ignore) {
         }
@@ -174,7 +175,7 @@ public class ObjectRecognitionParserTest {
         boolean available = false;
         int status = 500;
         try {
-            status = WebClient.create(apiUrl).get().getStatus();
+            status = getStatus(apiUrl);
             available = status == 200;
         } catch (Exception ignore) {
         }
@@ -201,6 +202,15 @@ public class ObjectRecognitionParserTest {
                     assertTrue(metaValues.contains(expectedObject), message);
                 }
             }
+        }
+    }
+
+    private static int getStatus(String url) throws IOException {
+        HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
+        try {
+            return connection.getResponseCode();
+        } finally {
+            connection.disconnect();
         }
     }
 }

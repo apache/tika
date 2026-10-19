@@ -21,6 +21,9 @@ Tika jars can be fetched from Maven Central or your favourite Maven mirror.
 **Tika 1.X reached End of Life (EOL) on September 30, 2022.**  
 
 Tika is based on **Java 11** and uses the [Maven 3](https://maven.apache.org) build system.
+tika-server (tika-server-core, tika-server-standard and tika-server-eval) requires **Java 17**; building the full
+reactor therefore requires JDK 17+. To build everything else on JDK 11, add
+`-pl '!tika-server/tika-server-core,!tika-server/tika-server-standard,!tika-server/tika-server-eval'`.
 **N.B.** [Docker](https://www.docker.com/products/personal) is used for tests in tika-integration-tests. If Docker is not installed, those tests are skipped.
 
 To build Tika from source, use the following command in the main directory:
