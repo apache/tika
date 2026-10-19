@@ -307,6 +307,7 @@
     <!-- can't update to 11, needs jdk17 -->
     <puppycrawl.version>10.26.1</puppycrawl.version>
     <!-- can't update to 11, needs jdk17 -->
+    <!-- 0.18 requires jdk17 -->
     <rat.version>0.17</rat.version>
     <spotless.goal>apply</spotless.goal>
     <!-- needs to be 2.x for Java 11 -->
@@ -456,8 +457,8 @@
     <zookeeper.version>3.8.7</zookeeper.version>
     <zstd.version>1.5.7-23</zstd.version>
     <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
-    <logback.version>1.6.4</logback.version>
-    <javacpp.version>1.5.13</javacpp.version>
+    <logback.version>1.6.5</logback.version>
+    <javacpp.version>1.5.14</javacpp.version>
     <maven.site.version>3.22.0</maven.site.version>
     <maven.exec.version>3.6.4</maven.exec.version>
   </properties>

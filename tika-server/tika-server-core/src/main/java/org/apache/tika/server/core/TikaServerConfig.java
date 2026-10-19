@@ -105,6 +105,8 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
  */
     private int maxRestarts = -1;
     private long maxFiles = 100000;
+    /** CXF attachment-max-size for the multipart endpoints; -1 is unlimited. */
+    private long maxAttachmentBytes = 50L * 1024 * 1024;
     private long taskTimeoutMillis = DEFAULT_TASK_TIMEOUT_MILLIS;
     private long minimumTimeoutMillis = DEFAULT_MINIMUM_TIMEOUT_MILLIS;
     private long taskPulseMillis = DEFAULT_TASK_PULSE_MILLIS;
@@ -574,6 +576,18 @@ private long forkedProcessShutdownMillis = DEFAULT_FORKED_PROCESS_SHUTDOWN_MILLI
 
     public void setMaxFiles(long maxFiles) {
         this.maxFiles = maxFiles;
+    }
+
+    public long getMaxAttachmentBytes() {
+        return maxAttachmentBytes;
+    }
+
+    /**
+     * @param maxAttachmentBytes largest attachment accepted on the multipart/form-data
+     *                           endpoints, in bytes; -1 for no limit
+     */
+    public void setMaxAttachmentBytes(long maxAttachmentBytes) {
+        this.maxAttachmentBytes = maxAttachmentBytes;
     }
 
     public boolean isReturnStackTrace() {

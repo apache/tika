@@ -131,6 +131,7 @@ public abstract class CXFTestBase {
 
         setUpResources(sf);
         setUpProviders(sf);
+        TikaServerProcess.setRequestLimits(sf, tikaServerConfig);
         sf.setAddress(endPoint + "/");
         sf.setResourceComparator(new ProduceTypeResourceComparator());
 

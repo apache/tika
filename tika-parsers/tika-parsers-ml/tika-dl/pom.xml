@@ -37,12 +37,12 @@
           <dependency>
               <groupId>org.bytedeco</groupId>
               <artifactId>openblas-platform</artifactId>
-              <version>0.3.31-1.5.13</version>
+              <version>0.3.34-1.5.14</version>
           </dependency>
           <dependency>
               <groupId>org.bytedeco</groupId>
               <artifactId>openblas</artifactId>
-              <version>0.3.31-1.5.13</version>
+              <version>0.3.34-1.5.14</version>
           </dependency>
           <!-- can't update above 4.5.5-1.5.7, UnsatisfiedLinkError: no jniopencv_core in java.library.path -->
           <dependency>

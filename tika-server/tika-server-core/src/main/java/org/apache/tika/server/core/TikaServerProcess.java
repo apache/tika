@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
@@ -43,6 +44,7 @@ import org.apache.cxf.configuration.security.KeyStoreType;
 import org.apache.cxf.configuration.security.TrustManagersType;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
+import org.apache.cxf.attachment.AttachmentDeserializer;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
 import org.apache.cxf.jaxrs.lifecycle.ResourceProvider;
 import org.apache.cxf.jaxrs.lifecycle.SingletonResourceProvider;
@@ -236,6 +238,7 @@ public class TikaServerProcess {
         sf.setResourceProviders(resourceProviders);
 
         sf.setProviders(providers);
+        setRequestLimits(sf, tikaServerConfig);
 
         //set compression interceptors
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));
@@ -500,6 +503,16 @@ public class TikaServerProcess {
             providers.add(new SingletonResourceProvider(r));
         }
         return providers;
+    }
+
+    /**
+     * CXF 4.0.x has no default limits on attachment size (CVE-2026-54225) or form parameter
+     * count (CVE-2026-57819) and will not get them; these are the limits its fixed lines apply.
+     */
+    static void setRequestLimits(JAXRSServerFactoryBean sf, TikaServerConfig tikaServerConfig) {
+        Map<String, Object> properties = sf.getProperties(true);
+        properties.put(AttachmentDeserializer.ATTACHMENT_MAX_SIZE, Long.toString(tikaServerConfig.getMaxAttachmentBytes()));
+        properties.put("maxFormParameterCount", "500");
     }
 
     private static Collection<?> loadWriterServices() {
