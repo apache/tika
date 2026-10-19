@@ -153,7 +153,10 @@ public class RawTiffParserTest extends TikaTest {
 
     /**
      * An ERF reaches this parser because the detector reads Epson's
-     * compression code and the registry makes image/x-raw-epson a TIFF.
+     * compression code and the registry makes image/x-raw-epson a TIFF. Its
+     * preview hangs in the MakerNote under 0x0280, at an offset counted from
+     * the start of the file, and begins with a byte the camera wrote over
+     * the SOI: it only parses as a JPEG once that byte is put back.
      */
     @Test
     public void testERF() throws Exception {
@@ -222,8 +225,9 @@ public class RawTiffParserTest extends TikaTest {
     }
 
     /**
-     * The Epson R-D1 writes no JPEG at all: such a file is typed and read,
-     * and carries no thumbnail, which is an answer and not a failure.
+     * A raw with nothing to hand on is typed and read all the same: this one
+     * carries a MakerNote that names no preview, and no thumbnail is an
+     * answer, not a failure.
      */
     @Test
     public void testERFWithoutPreview() throws Exception {

@@ -16,8 +16,11 @@
  */
 package org.apache.tika.parser.image;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.io.SequenceInputStream;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
@@ -64,12 +67,16 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * {@link EmbeddedDocumentExtractor}. Previews are referenced from the IFD
  * chain or from SubIFDs, either via the JPEGInterchangeFormat/
  * JPEGInterchangeFormatLength tags or as a single JPEG-compressed strip
- * (DNG, CR2). Two formats keep theirs elsewhere and are read where they
- * put them: Panasonic RW2 in the private JpgFromRaw tag, Olympus ORF in
- * its MakerNote, whose own IFD is read for the camera thumbnail and the
- * preview the CameraSettings sub-IFD points at. Both have a TIFF layout
- * behind a magic number of their own.
- * <p> Strips holding raw sensor data are also JPEG-encoded in some
+ * (DNG, CR2). Three formats keep theirs elsewhere and are read where they
+ * put them: Panasonic RW2 in the private JpgFromRaw tag, Olympus ORF in its
+ * MakerNote, whose own IFD is read for the camera thumbnail and the preview
+ * the CameraSettings sub-IFD points at, and Epson ERF in its MakerNote under
+ * a tag of its own, at an offset counted from the start of the file and
+ * behind a byte the camera writes over the JPEG's first one, which is put
+ * back on the way out. ORF and RW2 also carry a magic number of their own,
+ * where an ERF is a plain TIFF.
+ * <p>
+ * Strips holding raw sensor data are also JPEG-encoded in some
  * formats (lossless JPEG in CR2 and DNG), so strip candidates are only
  * accepted for displayable images: PhotometricInterpretation RGB or YCbCr,
  * or 8 bits per sample when PhotometricInterpretation is absent (CR2).
@@ -104,6 +111,7 @@ public class RawTiffParser extends TiffParser {
                     MediaType.image("x-canon-cr2"))));
 
     private static final String JPEG_MIME = "image/jpeg";
+    private static final byte[] JPEG_SOI_FIRST_BYTE = {(byte) 0xFF};
 
     private static final int TAG_BITS_PER_SAMPLE = 0x0102;
     private static final int TAG_COMPRESSION = 0x0103;
@@ -123,6 +131,8 @@ public class RawTiffParser extends TiffParser {
     private static final int TAG_OLYMPUS_CAMERA_SETTINGS = 0x2020;
     private static final int TAG_OLYMPUS_PREVIEW_START = 0x0101;
     private static final int TAG_OLYMPUS_PREVIEW_LENGTH = 0x0102;
+    //ExifTool knows it as PreviewImage, in ERFs and in JPEGs from some Epsons
+    private static final int TAG_EPSON_PREVIEW = 0x0280;
 
     private static final int MAGIC_TIFF = 42;
     private static final int MAGIC_BIG_TIFF = 43;
@@ -134,6 +144,11 @@ public class RawTiffParser extends TiffParser {
 
     private static final byte[] OLYMPUS_MAKER_NOTE_NAME =
             "OLYMPUS\u0000".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] EPSON_MAKER_NOTE_NAME =
+            "EPSON\u0000".getBytes(StandardCharsets.US_ASCII);
+    //the name and two bytes of version, then the IFD, whose offsets count
+    //from the start of the file and not from the MakerNote
+    private static final int EPSON_MAKER_NOTE_HEADER_LENGTH = 8;
     //the name, the MakerNote's own byte order marker and its version, then
     //its IFD starts
     private static final int OLYMPUS_MAKER_NOTE_HEADER_LENGTH = 12;
@@ -265,12 +280,16 @@ public class RawTiffParser extends TiffParser {
                 }
                 //stream the preview region instead of loading it onto the heap;
                 //close-shield the shared channel so parseEmbedded cannot close it
-                channel.position(preview.offset());
+                channel.position(preview.streamOffset());
                 BoundedInputStream bounded = BoundedInputStream.builder()
                         .setInputStream(CloseShieldInputStream.wrap(Channels.newInputStream(channel)))
-                        .setMaxCount(preview.length())
+                        .setMaxCount(preview.streamLength())
                         .get();
-                try (TikaInputStream previewStream = TikaInputStream.get(bounded)) {
+                InputStream bytes = preview.soiPatched()
+                        ? new SequenceInputStream(new ByteArrayInputStream(JPEG_SOI_FIRST_BYTE),
+                        bounded)
+                        : bounded;
+                try (TikaInputStream previewStream = TikaInputStream.get(bytes)) {
                     extractor.parseEmbedded(previewStream, xhtml, previewMetadata, context, true);
                 }
             }
@@ -388,11 +407,11 @@ public class RawTiffParser extends TiffParser {
                         && isBlob(type, valueCount, inlineSize)) {
                     panasonicOffset = getUInt32(table, valueField, bigEndian);
                     panasonicLength = valueCount;
-                } else if (olympus && tag == TAG_EXIF_IFD && valueCount == 1
+                } else if (tag == TAG_EXIF_IFD && valueCount == 1 && !bigTiff
                         && makerNotes.size() < MAX_MAKER_NOTES) {
                     for (long exifIfd :
                             readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount)) {
-                        long makerNote = readOlympusMakerNoteOffset(raf, fileLength, exifIfd, bigEndian);
+                        long makerNote = readMakerNoteOffset(raf, fileLength, exifIfd, bigEndian);
                         if (makerNote > 0) {
                             makerNotes.add(makerNote);
                         }
@@ -414,8 +433,9 @@ public class RawTiffParser extends TiffParser {
                 jpegOffset = stripOffsets[0];
                 jpegLength = stripByteCounts[0];
             }
-            if (isPreviewAt(raf, fileLength, jpegOffset, jpegLength, config)) {
-                collector.add(jpegOffset, jpegLength);
+            Preview candidate = new Preview(jpegOffset, jpegLength);
+            if (isPreviewAt(raf, fileLength, candidate, config)) {
+                collector.add(candidate);
             }
             if (collector.isFull()) {
                 break;
@@ -426,9 +446,9 @@ public class RawTiffParser extends TiffParser {
             if (collector.isFull()) {
                 break;
             }
-            for (Preview candidate : readOlympusMakerNotePreviews(raf, fileLength, makerNote)) {
-                if (isPreviewAt(raf, fileLength, candidate.offset(), candidate.length(), config)) {
-                    collector.add(candidate.offset(), candidate.length());
+            for (Preview candidate : readMakerNotePreviews(raf, fileLength, makerNote, bigEndian)) {
+                if (isPreviewAt(raf, fileLength, candidate, config)) {
+                    collector.add(candidate);
                 }
                 if (collector.isFull()) {
                     break;
@@ -442,15 +462,18 @@ public class RawTiffParser extends TiffParser {
      * Whether a preview really lies at the offset: inside the file, within the
      * per-preview limit, and starting with the JPEG SOI marker.
      */
-    private boolean isPreviewAt(RandomAccessFile raf, long fileLength, long offset, long length,
+    private boolean isPreviewAt(RandomAccessFile raf, long fileLength, Preview preview,
                                 RawTiffParserConfig config) throws IOException {
-        if (offset <= 0 || length <= 4 || length > config.getMaxPreviewLengthBytes()
-                || offset > fileLength - length) {
+        if (preview.offset() <= 0 || preview.length() <= 4
+                || preview.length() > config.getMaxPreviewLengthBytes()
+                || preview.offset() > fileLength - preview.length()) {
             return false;
         }
-        raf.seek(offset);
+        raf.seek(preview.offset());
+        int first = raf.read();
+        int second = raf.read();
 
-        return raf.read() == 0xFF && raf.read() == 0xD8;
+        return (preview.soiPatched() || first == 0xFF) && second == 0xD8;
     }
 
     /**
@@ -473,16 +496,16 @@ public class RawTiffParser extends TiffParser {
          * could otherwise sum to many times the file's own size, and reaching
          * it ends the walk.
          */
-        void add(long offset, long length) {
-            if (!offsets.add(offset)) {
+        void add(Preview preview) {
+            if (!offsets.add(preview.offset())) {
                 return;
             }
-            if (length > maxTotalBytes - totalBytes) {
+            if (preview.length() > maxTotalBytes - totalBytes) {
                 full = true;
                 return;
             }
-            totalBytes += length;
-            previews.add(new Preview(offset, length));
+            totalBytes += preview.length();
+            previews.add(preview);
         }
 
         boolean isFull() {
@@ -495,15 +518,10 @@ public class RawTiffParser extends TiffParser {
     }
 
     /**
-     * The JPEGs an Olympus MakerNote points at: the camera's thumbnail
-     * (0x0100) and the preview that the CameraSettings sub-IFD (0x2020)
-     * names with PreviewImageStart and PreviewImageLength. Every offset
-     * inside the MakerNote is relative to its first byte. Only the
-     * "OLYMPUS\0" header is read, the older "OLYMP\0" one counts from
-     * elsewhere and is left to the next reader.
+     * Where the MakerNote of an Exif IFD begins, or -1 when it has none.
      */
-    private long readOlympusMakerNoteOffset(RandomAccessFile raf, long fileLength, long exifIfd,
-                                            boolean bigEndian) throws IOException {
+    private long readMakerNoteOffset(RandomAccessFile raf, long fileLength, long exifIfd,
+                                     boolean bigEndian) throws IOException {
         byte[] table = readIfdEntries(raf, fileLength, exifIfd, bigEndian);
         if (table == null) {
             return -1;
@@ -518,19 +536,70 @@ public class RawTiffParser extends TiffParser {
         return -1;
     }
 
-    private List<Preview> readOlympusMakerNotePreviews(RandomAccessFile raf, long fileLength,
-                                                       long makerNote) throws IOException {
-        List<Preview> candidates = new ArrayList<>();
+    /**
+     * The previews a MakerNote points at, by the name it begins with.
+     */
+    private List<Preview> readMakerNotePreviews(RandomAccessFile raf, long fileLength,
+                                                long makerNote, boolean bigEndian)
+            throws IOException {
         if (makerNote <= 0 || makerNote > fileLength - OLYMPUS_MAKER_NOTE_HEADER_LENGTH) {
-            return candidates;
+            return new ArrayList<>();
         }
         byte[] header = new byte[OLYMPUS_MAKER_NOTE_HEADER_LENGTH];
         raf.seek(makerNote);
         raf.readFully(header);
-        if (!Arrays.equals(Arrays.copyOf(header, OLYMPUS_MAKER_NOTE_NAME.length),
-                OLYMPUS_MAKER_NOTE_NAME)) {
+        if (startsWith(header, OLYMPUS_MAKER_NOTE_NAME)) {
+            return readOlympusMakerNotePreviews(raf, fileLength, makerNote, header);
+        }
+        if (startsWith(header, EPSON_MAKER_NOTE_NAME)) {
+            return readEpsonMakerNotePreviews(raf, fileLength, makerNote, bigEndian);
+        }
+
+        return new ArrayList<>();
+    }
+
+    private static boolean startsWith(byte[] header, byte[] name) {
+        return Arrays.equals(header, 0, name.length, name, 0, name.length);
+    }
+
+    /**
+     * The preview an Epson ERF keeps in its MakerNote (0x0280). Its offset
+     * counts from the start of the file, and the camera writes a byte of its
+     * own where the JPEG's first one belongs, so the preview is marked for
+     * the SOI to be put back when its bytes are handed on.
+     */
+    private List<Preview> readEpsonMakerNotePreviews(RandomAccessFile raf, long fileLength,
+                                                     long makerNote, boolean bigEndian)
+            throws IOException {
+        List<Preview> candidates = new ArrayList<>();
+        byte[] table = readIfdEntries(raf, fileLength,
+                makerNote + EPSON_MAKER_NOTE_HEADER_LENGTH, bigEndian);
+        if (table == null) {
             return candidates;
         }
+        for (int e = 0; e + CLASSIC_ENTRY_SIZE <= table.length; e += CLASSIC_ENTRY_SIZE) {
+            long count = entryCount(table, e, bigEndian);
+            if (entryTag(table, e, bigEndian) == TAG_EPSON_PREVIEW
+                    && isBlob(entryType(table, e, bigEndian), count, CLASSIC_INLINE_SIZE)) {
+                candidates.add(new Preview(entryValue(table, e, bigEndian), count, true));
+            }
+        }
+
+        return candidates;
+    }
+
+    /**
+     * The JPEGs an Olympus MakerNote points at: the camera's thumbnail
+     * (0x0100) and the preview that the CameraSettings sub-IFD (0x2020)
+     * names with PreviewImageStart and PreviewImageLength. Every offset
+     * inside the MakerNote is relative to its first byte. Only the
+     * "OLYMPUS\0" header is read, the older "OLYMP\0" one counts from
+     * elsewhere and is left to the next reader.
+     */
+    private List<Preview> readOlympusMakerNotePreviews(RandomAccessFile raf, long fileLength,
+                                                       long makerNote, byte[] header)
+            throws IOException {
+        List<Preview> candidates = new ArrayList<>();
         //the MakerNote carries its own byte order marker, which a big endian
         //file does not have to share
         boolean bigEndian;
@@ -786,7 +855,27 @@ public class RawTiffParser extends TiffParser {
         return bigEndian ? (high << 32) | low : (low << 32) | high;
     }
 
-    private record Preview(long offset, long length) {
+    /**
+     * A JPEG inside the file. A patched one begins with a byte the camera
+     * wrote over the SOI, which is restored when it is handed on.
+     */
+    private record Preview(long offset, long length, boolean soiPatched) {
+        Preview(long offset, long length) {
+            this(offset, length, false);
+        }
+
+        /**
+         * Where its bytes begin: past the byte the camera wrote over the SOI,
+         * which the stream puts back in front of them.
+         */
+        long streamOffset() {
+            return soiPatched ? offset + 1 : offset;
+        }
+
+        long streamLength() {
+            return soiPatched ? length - 1 : length;
+        }
+
     }
 
     private static class TiffStructureException extends TikaException {

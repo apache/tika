@@ -1,11 +1,13 @@
 Release 4.2.0 - unreleased
 
-   * Olympus ORF and Panasonic RW2 previews are extracted. Both are TIFF layouts behind
-     a magic number of their own, and they keep their previews where only they put them:
-     the MakerNote, and the private JpgFromRaw tag. Epson ERF is recognized as a raw by
-     its compression code and its Make, and image/x-raw-epson is a sub-class of
-     image/tiff, so a declared type can refine to it and the parser lookup has something
-     to fall back on (TIKA-4980).
+   * Olympus ORF, Panasonic RW2 and Epson ERF previews are extracted. All three are TIFF
+     layouts, two of them behind a magic number of their own, and they keep their previews
+     where only they put them: the MakerNote, and Panasonic's private JpgFromRaw tag. An
+     ERF names its preview in the MakerNote with an offset counted from the start of the
+     file, and writes a byte of its own where the JPEG's first one belongs, which is put
+     back. Epson ERF is also recognized as a raw by its compression code and its Make, and
+     image/x-raw-epson is a sub-class of image/tiff, so a declared type can refine to it
+     and the parser lookup has something to fall back on (TIKA-4980).
 
    * Frictionless unpack: the package's metadata.json is renamed rmeta.json, is listed in
      datapackage.json as a resource (size, sha256), and now gets the metadata filters and
