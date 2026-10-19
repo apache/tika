@@ -131,6 +131,25 @@ public class RawTiffDetectorTest {
     }
 
     /**
+     * The ERF layout: an uncompressed RGB thumbnail in IFD0 carrying the
+     * Make, the CFA image in a SubIFD. Epson's compression code is a
+     * published TIFF value other writers use, so the Make decides, whether
+     * the sensor image is compressed or not.
+     */
+    @Test
+    public void testEpsonRaw() {
+        byte[] tiff = new TiffBuilder(false)
+                .ifd(entry(0x0103, 3, 1), entry(0x010F, "SEIKO EPSON CORP."), subIfds(1))
+                .ifd(entry(0x0103, 3, 32769), entry(0x0106, 3, 32803))
+                .build();
+        assertEquals(RawTiffDetector.EPSON, RawTiffDetector.detect(tiff, tiff.length));
+
+        byte[] uncompressed = tiff("SEIKO EPSON CORP.", 1, 32803, false);
+        assertEquals(RawTiffDetector.EPSON,
+                RawTiffDetector.detect(uncompressed, uncompressed.length));
+    }
+
+    /**
      * BigTIFF: 8-byte counts, offsets and inline values, a LONG8 SubIFDs
      * entry, and the vendor code inside the SubIFD.
      */

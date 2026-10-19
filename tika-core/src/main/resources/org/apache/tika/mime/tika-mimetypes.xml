@@ -7364,6 +7364,7 @@
 
   <mime-type type="image/x-raw-epson">
     <_comment>Epson raw image</_comment>
+    <sub-class-of type="image/tiff" />
     <glob pattern="*.erf"/>
   </mime-type>
 
