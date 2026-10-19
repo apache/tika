@@ -16,55 +16,55 @@
  */
 package org.apache.tika.pipes.core.extractor.frictionless;
 
+import java.util.Locale;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 /**
  * Represents a resource entry in a Frictionless Data Package.
  * See: https://specs.frictionlessdata.io/data-resource/
  *
- * @param path      The relative path to the file within the package (e.g., "unpacked/00000001.pdf")
- * @param mediatype The MIME type of the file (e.g., "application/pdf")
- * @param bytes     The file size in bytes
- * @param hash      The SHA256 hash in format "sha256:hexstring"
- * @param name      Optional original filename if available
+ * @param name         Frictionless resource name, derived from {@code path}: required,
+ *                     unique, lowercase {@code [a-z0-9._-]}
+ * @param path         The relative path to the file within the package (e.g., "unpacked/1.pdf")
+ * @param mediatype    The MIME type of the file (e.g., "application/pdf")
+ * @param bytes        The file size in bytes
+ * @param hash         The SHA256 hash in format "sha256:hexstring"
+ * @param embeddedId   the file's {@code tk:embedded-id}, 0 for the container; matches its
+ *                     row in rmeta.json, if present
+ * @param resourceName {@code tk:resource-name}, the original filename, if there was one
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonPropertyOrder({"name", "path", "mediatype", "bytes", "hash", "tk:embedded-id", "tk:resource-name"})
 public record FrictionlessResource(
+        @JsonProperty("name") String name,
         @JsonProperty("path") String path,
         @JsonProperty("mediatype") String mediatype,
         @JsonProperty("bytes") long bytes,
         @JsonProperty("hash") String hash,
-        @JsonProperty("name") String name
+        @JsonProperty("tk:embedded-id") Integer embeddedId,
+        @JsonProperty("tk:resource-name") String resourceName
 ) {
 
-    /**
-     * Creates a FrictionlessResource with all fields.
-     *
-     * @param path      relative path within package
-     * @param mediatype MIME type
-     * @param bytes     file size
-     * @param hash      SHA256 hash with "sha256:" prefix
-     * @param name      optional original filename
-     * @return new FrictionlessResource
-     */
-    public static FrictionlessResource create(String path, String mediatype, long bytes,
-                                              String hash, String name) {
-        return new FrictionlessResource(path, mediatype, bytes, hash, name);
-    }
-
-    /**
-     * Creates a FrictionlessResource without the optional name field.
-     *
-     * @param path      relative path within package
-     * @param mediatype MIME type
-     * @param bytes     file size
-     * @param hash      SHA256 hash with "sha256:" prefix
-     * @return new FrictionlessResource
-     */
+    /** A package file that is not an embedded document, e.g. rmeta.json. */
     public static FrictionlessResource create(String path, String mediatype, long bytes,
                                               String hash) {
-        return new FrictionlessResource(path, mediatype, bytes, hash, null);
+        return new FrictionlessResource(nameFromPath(path), path, mediatype, bytes, hash,
+                null, null);
+    }
+
+    /** An embedded document under unpacked/. */
+    public static FrictionlessResource create(String path, String mediatype, long bytes,
+                                              String hash, int embeddedId, String resourceName) {
+        return new FrictionlessResource(nameFromPath(path), path, mediatype, bytes, hash,
+                embeddedId, resourceName);
+    }
+
+    /** Paths are unique within a package, so the names derived from them are too. */
+    static String nameFromPath(String path) {
+        return path.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9._-]", "-");
     }
 
     /**

@@ -166,7 +166,7 @@ public class ThumbnailPresetTest extends CXFTestBase {
 
     /**
      * @return the embedded documents of the Frictionless package, without its
-     *         datapackage.json and metadata.json
+     *         datapackage.json and rmeta.json
      */
     private Map<String, byte[]> unpack(String path, String file) throws IOException {
         Response response = put(path, fixture(file));

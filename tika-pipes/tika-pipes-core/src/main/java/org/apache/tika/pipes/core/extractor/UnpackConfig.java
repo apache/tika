@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core.extractor;
 
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -124,6 +125,13 @@ public class UnpackConfig implements Serializable {
             throw new IllegalArgumentException("can't parse OUTPUT_MODE: " + s);
         }
     }
+    /** FRICTIONLESS: a document with nothing to unpack still gets a package, or none. */
+    public enum EMPTY_PACKAGE {
+        WRITE,
+        /** No package; tika-server's /unpack answers 204 */
+        SKIP
+    }
+
     private int zeroPadName = 0;
 
     private SUFFIX_STRATEGY suffixStrategy = SUFFIX_STRATEGY.NONE;
@@ -151,6 +159,11 @@ public class UnpackConfig implements Serializable {
     // Frictionless Data Package options
     private OUTPUT_FORMAT outputFormat = OUTPUT_FORMAT.FRICTIONLESS;
     private OUTPUT_MODE outputMode = OUTPUT_MODE.ZIPPED;
+    // DIRECTORY-mode package root; null: the container's emit key
+    private String packageRoot = null;
+    // datapackage.json name; null: the fetch key's file name
+    private String packageName = null;
+    private EMPTY_PACKAGE emptyPackage = EMPTY_PACKAGE.WRITE;
 
     /**
      * Create an UnpackConfig with default settings.
@@ -173,6 +186,9 @@ public class UnpackConfig implements Serializable {
         c.maxUnpackBytes = maxUnpackBytes;
         c.outputFormat = outputFormat;
         c.outputMode = outputMode;
+        c.packageRoot = packageRoot;
+        c.packageName = packageName;
+        c.emptyPackage = emptyPackage;
         return c;
     }
 
@@ -264,7 +280,7 @@ public class UnpackConfig implements Serializable {
     }
 
     /**
-     * Metadata for every extracted file: {@code metadata.json} under FRICTIONLESS, a sidecar
+     * Metadata for every extracted file: {@code rmeta.json} under FRICTIONLESS, a sidecar
      * per file under REGULAR zip output, nothing under REGULAR loose output. Unset means on
      * for FRICTIONLESS, off for REGULAR. Not a bean getter: the class is introspected.
      */
@@ -368,6 +384,46 @@ public class UnpackConfig implements Serializable {
         setIncludeMetadata(includeFullMetadata);
     }
 
+    /**
+     * Emit key prefix of a FRICTIONLESS package in DIRECTORY mode. Unset: the container's
+     * emit key, one package per container. Empty: the emitter's root.
+     */
+    public String getPackageRoot() {
+        return packageRoot;
+    }
+
+    public void setPackageRoot(String packageRoot) {
+        this.packageRoot = packageRoot;
+    }
+
+    /**
+     * {@code name} of a FRICTIONLESS package. Unset: the fetch key's file name. Blank: no
+     * {@code name} (tika-server sets the caller's filename, or blank when there is none).
+     */
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
+
+    /**
+     * FRICTIONLESS: whether a document with nothing to unpack gets a package (its
+     * datapackage.json and rmeta.json) or none, which tika-server's /unpack answers with 204.
+     */
+    public EMPTY_PACKAGE getEmptyPackage() {
+        return emptyPackage;
+    }
+
+    public void setEmptyPackage(EMPTY_PACKAGE emptyPackage) {
+        this.emptyPackage = emptyPackage;
+    }
+
+    public void setEmptyPackage(String emptyPackage) {
+        setEmptyPackage(EMPTY_PACKAGE.valueOf(emptyPackage.toUpperCase(Locale.ROOT)));
+    }
+
     @Override
     public String toString() {
         return "UnpackConfig{" + "zeroPadName=" + zeroPadName + ", suffixStrategy=" +
@@ -376,7 +432,8 @@ public class UnpackConfig implements Serializable {
                 ", keyBaseStrategy=" + keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' +
                 ", zipEmbeddedFiles=" + zipEmbeddedFiles + ", includeMetadata=" + includeMetadata +
                 ", maxUnpackBytes=" + maxUnpackBytes + ", outputFormat=" + outputFormat +
-                ", outputMode=" + outputMode + '}';
+                ", outputMode=" + outputMode + ", packageRoot='" + packageRoot + '\'' +
+                ", packageName='" + packageName + '\'' + ", emptyPackage=" + emptyPackage + '}';
     }
 
     @Override
@@ -395,7 +452,10 @@ public class UnpackConfig implements Serializable {
                 Objects.equals(includeMetadata, config.includeMetadata) &&
                 maxUnpackBytes == config.maxUnpackBytes &&
                 outputFormat == config.outputFormat &&
-                outputMode == config.outputMode;
+                outputMode == config.outputMode &&
+                Objects.equals(packageRoot, config.packageRoot) &&
+                Objects.equals(packageName, config.packageName) &&
+                emptyPackage == config.emptyPackage;
     }
 
     @Override
@@ -412,6 +472,9 @@ public class UnpackConfig implements Serializable {
         result = 31 * result + Long.hashCode(maxUnpackBytes);
         result = 31 * result + Objects.hashCode(outputFormat);
         result = 31 * result + Objects.hashCode(outputMode);
+        result = 31 * result + Objects.hashCode(packageRoot);
+        result = 31 * result + Objects.hashCode(packageName);
+        result = 31 * result + Objects.hashCode(emptyPackage);
         return result;
     }
 }

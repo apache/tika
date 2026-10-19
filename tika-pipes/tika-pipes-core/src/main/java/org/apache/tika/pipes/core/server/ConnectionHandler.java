@@ -160,11 +160,12 @@ public class ConnectionHandler implements Runnable, Closeable {
         }
         PipesWorker w = tLastWorker;
         TIMING_LOG.trace("WORKER_TIMING handler={} id={} req_deser_us={} ctx_merge_us={}"
-                        + " handoff_us={} fetch_us={} parse_us={} emit_us={} worker_wall_us={}"
+                        + " handoff_us={} fetch_us={} parse_us={} prepare_us={} emit_us={} worker_wall_us={}"
                         + " intermediate_us={} resp_ser_us={} resp_write_us={} resp_ack_us={}"
                         + " resp_bytes={}",
                 handlerId, id, us(tReqDeserNanos), us(tCtxMergeNanos), us(tHandoffNanos),
                 us(w == null ? -1 : w.getFetchNanos()), us(w == null ? -1 : w.getParseNanos()),
+                us(w == null ? -1 : w.getPrepareNanos()),
                 us(w == null ? -1 : w.getEmitNanos()), us(w == null ? -1 : w.getWallNanos()),
                 us(protocolIO.getLastIntermediateNanos()), us(protocolIO.getLastRespSerNanos()),
                 us(protocolIO.getLastRespWriteNanos()), us(protocolIO.getLastRespAckNanos()),
