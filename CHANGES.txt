@@ -1,5 +1,18 @@
 Release 4.2.0 - unreleased
 
+   * Per-request limits may tighten the server's but no longer loosen them. The pipes
+     worker clamps a request's embedded-limits, output-limits, content-handler
+     writeLimit, standard-metadata-limiter-factory and unpack-config maxUnpackBytes to
+     the server's config, preset or class default, with a warning; a request may not
+     replace a configured metadata limiter with another kind. Render limits in a
+     request's pages block (dpi, maxImagePixels, maxWidth, maxHeight) are bounded the
+     same way, by the operator's pages layers for that parser. pdf-parser
+     maxMainMemoryBytes and raw-tiff-parser maxTotalPreviewBytes are now
+     @OperatorOnly. A caller that relied on loosening one of these needs the operator
+     to raise it in config or a preset. PipesForkParser writes its configured limits
+     into its fork's config, so they are unaffected; tika-async-cli's per-tuple
+     handler now honours a writeLimit in its config (TIKA-4978).
+
    * The docx parser wraps OMML equations (m:oMath) in <span class="math">; their
      text was previously emitted as unmarked body text (TIKA-4968).
 

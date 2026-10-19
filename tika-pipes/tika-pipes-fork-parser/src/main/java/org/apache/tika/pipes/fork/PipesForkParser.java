@@ -52,6 +52,7 @@ import org.apache.tika.pipes.core.fetcher.BytesFetcher;
 import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.pipes.core.fetcher.PayloadRouter;
 import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.WriteLimiter;
 
 /**
  * A ForkParser implementation backed by {@link PipesParser}.
@@ -462,6 +463,11 @@ public class PipesForkParser implements Closeable {
         // Set timeout limits if configured
         if (config.getTimeoutLimits() != null) {
             builder.setTimeoutLimits(config.getTimeoutLimits());
+        }
+        // The fork clamps per-request limits to its config's; these are ours, so seed them there.
+        builder.setEmbeddedLimits(config.getEmbeddedLimits());
+        if (config.getContentHandlerFactory() instanceof WriteLimiter limiter) {
+            builder.setWriteLimit(limiter.getWriteLimit());
         }
 
         ConfigOverrides overrides = builder.build();

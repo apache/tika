@@ -228,7 +228,10 @@ top-level `"preset": "name"` field, resolved the same way beneath the tuple's ow
 `/pipes` and `/async` drive process-isolated batch parsing through your configured fetchers and
 emitters, so whoever can reach them gains the read access of your fetchers and the write access
 of your emitters (again
-https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271[CVE-2015-3271]). Listing them under
+https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271[CVE-2015-3271]). A tuple's
+`parse-context` is per-request configuration, so `allowPipes` also lets callers configure how
+each document parses, with the same bounds as `allowPerRequestConfig`: no `@OperatorOnly`
+properties, and limits that may tighten yours but not loosen them. Listing them under
 `endpoints` is not enough — without `allowPipes` the server refuses to start, deliberately making
 this an explicit choice:
 

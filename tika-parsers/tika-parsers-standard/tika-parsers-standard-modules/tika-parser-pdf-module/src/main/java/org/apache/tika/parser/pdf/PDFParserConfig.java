@@ -590,6 +590,7 @@ public class PDFParserConfig implements Serializable {
         return maxMainMemoryBytes;
     }
 
+    @OperatorOnly
     public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         this.maxMainMemoryBytes = maxMainMemoryBytes;
     }
