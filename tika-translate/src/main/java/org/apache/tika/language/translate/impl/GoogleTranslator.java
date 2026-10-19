@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaException;
 
 /**
@@ -96,7 +95,7 @@ public class GoogleTranslator extends AbstractTranslator {
             }
         }
 
-        ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
+        ObjectMapper mapper = new ObjectMapper();
         JsonNode jsonResp = mapper.readTree(responseText.toString());
         return jsonResp.findValuesAsText("translatedText").get(0);
     }

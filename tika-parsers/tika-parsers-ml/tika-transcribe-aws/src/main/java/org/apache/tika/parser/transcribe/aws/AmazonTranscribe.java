@@ -65,7 +65,6 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -261,7 +260,7 @@ public class AmazonTranscribe implements Parser, Initializable {
             ResponseInputStream<GetObjectResponse> s3Object = amazonS3.getObject(GetObjectRequest.builder().bucket(bucketName).key(fileNameS3 + ".json")
                     .build());
             try (s3Object) {
-                ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
+                ObjectMapper mapper = new ObjectMapper();
                 JsonNode root = mapper.readTree(s3Object);
                 text = root
                         .path("results")

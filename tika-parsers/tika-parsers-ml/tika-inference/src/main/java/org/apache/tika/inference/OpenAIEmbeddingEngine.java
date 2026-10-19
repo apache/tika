@@ -33,7 +33,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.Initializable;
 import org.apache.tika.config.ParseTimeout;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaHttpClient;
@@ -55,7 +54,7 @@ import org.apache.tika.utils.StringUtils;
 @TikaComponent(name = "openai-embedding-engine", spi = false)
 public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
 
-    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.createPlainMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private String baseUrl = "http://localhost:8000";
     private String model = "";

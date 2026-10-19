@@ -45,7 +45,7 @@ public class FrameworkConfig {
     // Plain JSON mapper for converting JsonNodes to JSON strings.
     // This is needed because the main mapper may use a binary format (e.g., Smile)
     // which doesn't support writeValueAsString().
-    private static final ObjectMapper JSON_MAPPER = TikaObjectMapperFactory.createPlainMapper();
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private final ParserDecoration decoration;
     private final JsonConfig componentConfigJson;

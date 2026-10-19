@@ -44,7 +44,6 @@ import org.w3c.dom.NodeList;
 import org.apache.tika.config.loader.ComponentInfo;
 import org.apache.tika.config.loader.ComponentRegistry;
 import org.apache.tika.config.loader.KebabCaseConverter;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -137,7 +136,7 @@ public class XmlToJsonConfigConverter {
     private static final Logger LOG = LoggerFactory.getLogger(XmlToJsonConfigConverter.class);
 
     // Use a plain ObjectMapper for clean JSON output without @class annotations
-    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.createPlainMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private XmlToJsonConfigConverter() {
         // Utility class

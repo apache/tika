@@ -31,12 +31,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pf4j.PluginClassLoader;
 import org.pf4j.PluginManager;
 
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 
 public class PluginComponentLoader {
 
-    private static final ObjectMapper OBJECT_MAPPER = TikaObjectMapperFactory.createPlainMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
      * Builds an extension with the thread-context classloader set to the classloader of the

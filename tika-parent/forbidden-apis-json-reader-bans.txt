@@ -13,19 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# TIKA-4975: component configuration JSON is read only through tika-serialization
-# (TikaObjectMapperFactory and the readers built on it), which apply the request
-# restrictions and @OperatorOnly. A mapper built anywhere else bypasses them.
-# Data uses get their mapper from TikaObjectMapperFactory.createPlainMapper(). Streaming
-# JsonParsers are not banned: binding JSON to a config class needs a mapper.
+# TIKA-4975: a JsonConfig may be per-request input. Its raw text is read only by the
+# readers that apply the request restrictions and @OperatorOnly (tika-serialization,
+# ConfigDeserializer, PluginJson); reading it with any other mapper bypasses them.
 
-@defaultMessage read configuration JSON through tika-serialization (TikaObjectMapperFactory)
+@defaultMessage read a JsonConfig through ConfigDeserializer or PluginJson.read(JsonConfig, Class)
 
-com.fasterxml.jackson.databind.ObjectMapper#<init>()
-com.fasterxml.jackson.databind.ObjectMapper#<init>(com.fasterxml.jackson.core.JsonFactory)
-com.fasterxml.jackson.databind.ObjectMapper#<init>(com.fasterxml.jackson.core.JsonFactory,com.fasterxml.jackson.databind.ser.DefaultSerializerProvider,com.fasterxml.jackson.databind.deser.DefaultDeserializationContext)
-com.fasterxml.jackson.databind.json.JsonMapper#<init>()
-com.fasterxml.jackson.databind.json.JsonMapper#<init>(com.fasterxml.jackson.core.JsonFactory)
-com.fasterxml.jackson.databind.json.JsonMapper#builder()
-com.fasterxml.jackson.databind.json.JsonMapper#builder(com.fasterxml.jackson.core.JsonFactory)
-com.fasterxml.jackson.databind.MappingJsonFactory#<init>()
+org.apache.tika.config.JsonConfig#json()

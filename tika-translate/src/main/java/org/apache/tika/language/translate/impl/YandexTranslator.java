@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.language.translate.Translator;
 
@@ -114,7 +113,7 @@ public class YandexTranslator implements Translator {
         }
 
         try {
-            ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
+            ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonResp = mapper.readTree(responseText.toString());
 
             if (!jsonResp.findValuesAsText("code").isEmpty()) {

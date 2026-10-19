@@ -18,6 +18,8 @@ package org.apache.tika.config;
 
 import java.lang.reflect.Method;
 
+import org.apache.tika.utils.SuppressForbidden;
+
 /**
  * Deserializes JSON configuration without a compile-time dependency on Jackson.
  * <p>
@@ -78,6 +80,7 @@ public class ConfigDeserializer {
      * @throws RuntimeException if tika-serialization is not on the classpath, deserialization
      *         fails, or untrusted JSON sets an operator-only property
      */
+    @SuppressForbidden
     public static <T> T buildConfig(JsonConfig jsonConfig, Class<T> configClass) {
         if (READ_CONFIG_METHOD == null) {
             throw new RuntimeException("Cannot parse JSON configuration for " +

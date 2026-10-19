@@ -25,6 +25,7 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.serialization.OperatorOnlyGuard;
+import org.apache.tika.utils.SuppressForbidden;
 
 /**
  * Reads plugin configuration JSON ({@link ExtensionConfig#json()}) with
@@ -55,6 +56,7 @@ public final class PluginJson {
      * {@link JsonConfig#trusted()}) may not set an {@link org.apache.tika.config.OperatorOnly}
      * property of {@code type}.
      */
+    @SuppressForbidden
     public static <T> T read(JsonConfig config, Class<T> type) throws TikaConfigException {
         if (!config.trusted()) {
             try {

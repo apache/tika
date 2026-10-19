@@ -18,15 +18,14 @@ package org.apache.tika.plugins;
 
 import java.io.Serializable;
 
-import org.apache.tika.config.JsonConfig;
-
 /**
- * Configuration for a plugin extension.
+ * Configuration for a plugin extension. Not a {@link org.apache.tika.config.JsonConfig}: that
+ * type may carry per-request input, and its raw text is read only under the request checks.
  *
  * @param id         unique instance identifier
  * @param name       the plugin type name
  * @param json       the raw JSON configuration string for the plugin to parse
  */
-public record ExtensionConfig(String id, String name, String json) implements JsonConfig, Serializable {
+public record ExtensionConfig(String id, String name, String json) implements Serializable {
 
 }

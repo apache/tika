@@ -34,7 +34,6 @@ import jakarta.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -397,7 +396,7 @@ public class PipesParsingHelper {
      * without parsing plain-text bodies or inspecting custom headers.
      */
     private Response buildProcessFailureResponse(PipesResult result) {
-        ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
+        ObjectMapper mapper = new ObjectMapper();
         ObjectNode node = mapper.createObjectNode();
         node.put("status", result.status().name());
         if (result.message() != null && !result.message().isBlank()) {

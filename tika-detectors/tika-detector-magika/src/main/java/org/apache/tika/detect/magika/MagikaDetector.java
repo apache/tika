@@ -31,7 +31,6 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.OperatorOnly;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ExternalProcess;
@@ -87,7 +86,7 @@ public class MagikaDetector implements Detector {
     //we assume that a new version is not installed during the lifecycle of the MagikaDetector
     private static String MAGIKA_VERSION_STRING = "";
 
-    private static ObjectMapper OBJECT_MAPPER = TikaObjectMapperFactory.createPlainMapper();
+    private static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     private static boolean HAS_WARNED = false;
     private Boolean hasMagika = null;
 

@@ -18,7 +18,7 @@ package org.apache.tika.eval.app;
 
 import java.nio.file.Path;
 
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class EvalConfig {
 
@@ -36,7 +36,7 @@ public class EvalConfig {
 
 
     public static EvalConfig load(Path path) throws Exception {
-        return TikaObjectMapperFactory.createPlainMapper().readValue(path.toFile(), EvalConfig.class);
+        return new ObjectMapper().readValue(path.toFile(), EvalConfig.class);
     }
 
     public long getMinExtractLength() {

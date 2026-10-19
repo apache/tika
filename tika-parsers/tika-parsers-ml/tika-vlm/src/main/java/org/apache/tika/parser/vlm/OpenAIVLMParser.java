@@ -32,7 +32,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -79,7 +78,7 @@ public class OpenAIVLMParser extends AbstractVLMParser {
                     MediaType.image("webp")
             )));
 
-    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.createPlainMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     /**
      * URL path appended to {@code baseUrl} for chat completions requests.

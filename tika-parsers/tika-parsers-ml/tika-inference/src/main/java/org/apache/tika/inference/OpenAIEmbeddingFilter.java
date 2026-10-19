@@ -28,7 +28,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ParseTimeout;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.http.TikaHttpClient;
 import org.apache.tika.parser.ParseContext;
@@ -54,7 +53,7 @@ public class OpenAIEmbeddingFilter extends AbstractEmbeddingFilter {
 
     private static final long serialVersionUID = 1L;
 
-    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.createPlainMapper();
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private transient TikaHttpClient httpClient;
 

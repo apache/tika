@@ -33,7 +33,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -438,7 +437,7 @@ class PipesWorker implements Callable<PipesResult> {
      * Writes a list of metadata objects as JSON array to output stream.
      */
     private void writeMetadataListAsJson(OutputStream os, List<Metadata> metadataList) throws IOException {
-        ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
+        ObjectMapper mapper = new ObjectMapper();
         mapper.configure(com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
         mapper.enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT);
 
@@ -490,7 +489,7 @@ class PipesWorker implements Callable<PipesResult> {
      * Note: Does not close the output stream.
      */
     private void writeMetadataAsJson(OutputStream os, Metadata metadata) throws IOException {
-        ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
+        ObjectMapper mapper = new ObjectMapper();
         // Disable auto-close so we don't close the zip output stream
         mapper.configure(com.fasterxml.jackson.core.JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
         mapper.writeValue(os, metadataMap(metadata));

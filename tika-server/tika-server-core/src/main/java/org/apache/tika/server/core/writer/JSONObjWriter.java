@@ -34,7 +34,6 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.ext.MessageBodyWriter;
 import jakarta.ws.rs.ext.Provider;
 
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.metadata.Metadata;
 
 @Provider
@@ -54,7 +53,7 @@ public class JSONObjWriter implements MessageBodyWriter<Map<String, Object>> {
     public void writeTo(Map<String, Object> map, Class<?> type, Type genericType, Annotation[] annotations, MediaType mediaType, MultivaluedMap<String, Object> httpHeaders,
                         OutputStream entityStream) throws IOException, WebApplicationException {
         try (Writer writer = new OutputStreamWriter(entityStream, UTF_8)) {
-            ObjectMapper objectMapper = TikaObjectMapperFactory.createPlainMapper();
+            ObjectMapper objectMapper = new ObjectMapper();
             objectMapper
                     .writerWithDefaultPrettyPrinter()
                     .writeValue(writer, map);

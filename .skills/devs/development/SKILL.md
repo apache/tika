@@ -156,12 +156,10 @@ personal configuration does not override it.
   invariant, workaround, spec quirk).  Never restate the code, narrate the
   next line, justify the change to a reviewer, or describe past states of
   the code.
-- **Configuration JSON is read only through tika-serialization** (`TikaObjectMapperFactory`,
-  `ConfigDeserializer`, `PluginJson`), which apply request restrictions and `@OperatorOnly`.
-  forbidden-apis rejects constructing an `ObjectMapper`/`JsonMapper` in main code; a data
-  use (API response, emitter output, document) takes `TikaObjectMapperFactory.createPlainMapper()`.
-  Per-request plugin config goes through `PluginJson.read(JsonConfig, Class)` into a class
-  holding only what a request may set.
+- **A `JsonConfig` is read only through `ConfigDeserializer` or `PluginJson.read(JsonConfig, Class)`**,
+  which apply request restrictions and `@OperatorOnly`; forbidden-apis rejects
+  `JsonConfig.json()` in main code outside tika-serialization. Per-request plugin config is
+  read into a class holding only what a request may set.
 - **XML is parsed only through `XMLReaderUtils.parseSAX` / `buildDOM`** (forbidden-apis
   rejects the JAXP and Commons Secure XML factories and the raw `getSAXParser` /
   `getXMLReader` / `getDocumentBuilder` in main code). Never install an `EntityResolver`;

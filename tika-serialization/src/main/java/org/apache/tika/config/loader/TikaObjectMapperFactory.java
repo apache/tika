@@ -34,7 +34,6 @@ import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.serialization.ComponentNameResolver;
 import org.apache.tika.serialization.OperatorOnlyGuard;
 import org.apache.tika.serialization.TikaModule;
-import org.apache.tika.utils.SuppressForbidden;
 
 /**
  * Factory for creating ObjectMappers configured for Tika serialization.
@@ -42,7 +41,6 @@ import org.apache.tika.utils.SuppressForbidden;
  * Configures strict validation settings and loads component registries
  * for friendly name resolution.
  */
-@SuppressForbidden
 public class TikaObjectMapperFactory {
 
     private static final Logger LOG = LoggerFactory.getLogger(TikaObjectMapperFactory.class);
@@ -104,21 +102,6 @@ public class TikaObjectMapperFactory {
      */
     public static ObjectMapper getPlainMapper() {
         return PLAIN_MAPPER;
-    }
-
-    /**
-     * A new Jackson-default ObjectMapper, for reading or writing data (API responses, emitter
-     * output, documents) and for callers that must customize their own instance. Never use it
-     * to read component configuration; use {@link #readConfig} or the parse-context readers.
-     * Every mapper in Tika's main code comes from this class (forbidden-apis, TIKA-4975).
-     */
-    public static ObjectMapper createPlainMapper() {
-        return new ObjectMapper();
-    }
-
-    /** As {@link #createPlainMapper()}, over the given factory. */
-    public static ObjectMapper createPlainMapper(JsonFactory factory) {
-        return new ObjectMapper(factory);
     }
 
     /**

@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pf4j.Extension;
 
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.ExtensionConfig;
 
@@ -34,7 +33,7 @@ import org.apache.tika.plugins.ExtensionConfig;
 @Extension
 public class FileBasedConfigStoreFactory implements ConfigStoreFactory {
     
-    private static final ObjectMapper OBJECT_MAPPER = TikaObjectMapperFactory.createPlainMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     
     @Override
     public String getName() {

@@ -31,8 +31,6 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
-
 /**
  * Represents a Frictionless Data Package manifest (datapackage.json).
  * See: https://specs.frictionlessdata.io/data-package/
@@ -47,7 +45,7 @@ import org.apache.tika.config.loader.TikaObjectMapperFactory;
 @JsonPropertyOrder({"name", "created", "title", "description", "resources"})
 public class DataPackage {
 
-    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.createPlainMapper()
+    private static final ObjectMapper MAPPER = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT)
             .configure(JsonGenerator.Feature.AUTO_CLOSE_TARGET, false);
 

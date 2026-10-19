@@ -41,7 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaException;
 
 /**
@@ -148,7 +147,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
 
         client = WebClient.create(networkURI, providers);
 
-        ObjectMapper requestMapper = TikaObjectMapperFactory.createPlainMapper();
+        ObjectMapper requestMapper = new ObjectMapper();
         ObjectNode jsonNode = requestMapper.createObjectNode();
         jsonNode.put("inputLanguage", sourceLanguage);
         jsonNode.put("inputText", inputText);
@@ -167,7 +166,7 @@ public class JoshuaNetworkTranslator extends AbstractTranslator {
         }
 
         try {
-            ObjectMapper responseMapper = TikaObjectMapperFactory.createPlainMapper();
+            ObjectMapper responseMapper = new ObjectMapper();
             JsonNode jsonResp = responseMapper.readTree(responseText.toString());
 
             if (jsonResp.findValuesAsText("outputText") != null) {

@@ -19,7 +19,6 @@ package org.apache.tika.pipes.ignite.config;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 
 /**
@@ -37,7 +36,7 @@ import org.apache.tika.exception.TikaConfigException;
  */
 public class IgniteConfigStoreConfig {
 
-    private static final ObjectMapper OBJECT_MAPPER = TikaObjectMapperFactory.createPlainMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     public static IgniteConfigStoreConfig load(final String json) throws TikaConfigException {
         try {

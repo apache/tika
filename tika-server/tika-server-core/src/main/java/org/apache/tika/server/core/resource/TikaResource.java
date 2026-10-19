@@ -55,7 +55,6 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.OutputLimits;
 import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.config.loader.TikaLoader;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -247,7 +246,7 @@ public class TikaResource {
      * @throws IOException if parsing fails
      */
     public static void mergeParseContextFromConfig(String configJson, ParseContext context) throws IOException, TikaConfigException {
-        ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
+        ObjectMapper mapper = new ObjectMapper();
         JsonNode root = mapper.readTree(configJson);
         // Request-supplied config: restrict so it cannot bind wire-blocked components.
         ParseContext configuredContext = ParseContextDeserializer.readParseContext(root, true);

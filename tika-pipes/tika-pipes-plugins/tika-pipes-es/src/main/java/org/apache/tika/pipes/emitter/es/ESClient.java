@@ -49,7 +49,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.client.TikaClientException;
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.utils.StringUtils;
@@ -148,7 +147,7 @@ public class ESClient {
     }
 
     static final String CHUNKS_FIELD = "tk:chunks";
-    private static final ObjectMapper CHUNK_MAPPER = TikaObjectMapperFactory.createPlainMapper();
+    private static final ObjectMapper CHUNK_MAPPER = new ObjectMapper();
 
     /**
      * Chunks as their own documents, one per unit: chunks sharing a correlator (a segment's
@@ -313,7 +312,7 @@ public class ESClient {
                         new InputStreamReader(
                                 response.getEntity().getContent(),
                                 StandardCharsets.UTF_8))) {
-                    ObjectMapper mapper = TikaObjectMapperFactory.createPlainMapper();
+                    ObjectMapper mapper = new ObjectMapper();
                     JsonNode node = mapper.readTree(reader);
                     if (LOG.isTraceEnabled()) {
                         LOG.trace("node: {}", node);

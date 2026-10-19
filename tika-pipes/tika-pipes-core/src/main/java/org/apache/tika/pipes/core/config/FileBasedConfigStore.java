@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.plugins.ExtensionConfig;
 
 /**
@@ -41,7 +40,7 @@ import org.apache.tika.plugins.ExtensionConfig;
 public class FileBasedConfigStore implements ConfigStore {
     
     private static final Logger LOG = LoggerFactory.getLogger(FileBasedConfigStore.class);
-    private static final ObjectMapper OBJECT_MAPPER = TikaObjectMapperFactory.createPlainMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
     
     private final Path configFile;
     private final ConcurrentHashMap<String, ExtensionConfig> cache = new ConcurrentHashMap<>();
