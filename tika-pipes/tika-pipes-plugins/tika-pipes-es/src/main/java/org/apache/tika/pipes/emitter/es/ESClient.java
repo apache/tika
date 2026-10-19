@@ -51,6 +51,7 @@ import org.apache.tika.client.TikaClientException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.pipes.api.emitter.EmitData;
+import org.apache.tika.serialization.MetadataValueTypes;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -490,8 +491,7 @@ public class ESClient {
      * rather than escaped strings so that ES can index vectors, locators, etc. natively.
      */
     static boolean isJsonField(String name) {
-        Property property = Property.get(name);
-        return property != null && property.getValueType() == Property.ValueType.JSON;
+        return MetadataValueTypes.get(name) == Property.ValueType.JSON;
     }
 
     private static void writeMetadata(Metadata metadata, JsonGenerator jsonGenerator)

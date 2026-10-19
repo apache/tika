@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.util.TokenBuffer;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.serialization.MetadataValueTypes;
 
 public class MetadataSerializer extends JsonSerializer<Metadata> {
     private static final String TIKA_CONTENT_KEY = TikaCoreProperties.TIKA_CONTENT.getName();
@@ -119,8 +120,7 @@ public class MetadataSerializer extends JsonSerializer<Metadata> {
         if (typedValueFactory == null) {
             return null;
         }
-        Property property = Property.get(name);
-        return property == null ? null : property.getValueType();
+        return MetadataValueTypes.get(name);
     }
 
     private void writeValue(Property.ValueType type, String value, JsonGenerator jsonGenerator)
