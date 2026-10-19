@@ -395,9 +395,17 @@ public class ImageMetadataExtractor {
                     if (!includeIccCurvesAndLuts && isIccCurveOrLut(iccType)) {
                         continue;
                     }
-                    String description = iccType == ICC_TYPE_CURV ?
-                            formatIccCurve(directory.getByteArray(tag.getTagType())) :
-                            tag.getDescription();
+                    String description;
+                    try {
+                        description = iccType == ICC_TYPE_CURV ?
+                                formatIccCurve(directory.getByteArray(tag.getTagType())) :
+                                tag.getDescription();
+                    } catch (RuntimeException e) {
+                        //a descriptor reads its tag as the type it expects, and throws
+                        //when the file stored another: one tag nobody can describe is no
+                        //reason to drop the rest of the directory
+                        continue;
+                    }
                     if (description != null) {
                         String value = description.trim();
                         if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
