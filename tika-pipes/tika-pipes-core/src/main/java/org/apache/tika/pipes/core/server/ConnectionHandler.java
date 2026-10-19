@@ -53,7 +53,6 @@ import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
 import org.apache.tika.pipes.core.serialization.PipesRequest;
-import org.apache.tika.serialization.ParseContextUtils;
 
 /**
  * Handles a single client connection in shared server mode.
@@ -218,11 +217,6 @@ public class ConnectionHandler implements Runnable, Closeable {
                             long ctxStart = System.nanoTime();
                             mergedContext = resources.createMergedParseContext(
                                     fetchEmitTuple.getParseContext(), fetchEmitTuple.getPresetName());
-                            ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
-                            ServerProtocolIO.validateParseContext(mergedContext);
-                            ServerProtocolIO.clampRequestTimeoutLimits(
-                                    fetchEmitTuple.getParseContext(), mergedContext,
-                                    pipesConfig.getMaxTotalTaskTimeoutMillis());
                             // After resolveAll: the payload is typed runtime state for
                             // BytesFetcher, never a resolvable config entry.
                             pipesRequest.applyTo(mergedContext);

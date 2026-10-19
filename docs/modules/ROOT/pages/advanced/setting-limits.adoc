@@ -121,6 +121,25 @@ Tests: `AllLimitsTest`, `EmbeddedLimitsTest`, `OutputLimitsTest`, `TimeoutLimits
 `ExceptionReportingConfigLoadTest` under `tika-serialization/src/test/java/org/apache/tika/config/`;
 `ExceptionReportingParseTest` (tika-core) drives the policy through a real parse.
 
+== Per-request limits
+
+A request to the pipes worker -- tika-server `/pipes`, `/async` and the multipart `config`
+part, tika-grpc, `PipesParser` callers -- may carry its own `embedded-limits`,
+`output-limits`, `standard-metadata-limiter-factory` and content-handler `writeLimit`. Each is
+clamped field by field to the operator's value (the server's `parse-context` plus any preset,
+or the class default when neither sets one), so a request can tighten a limit but not loosen
+it. A clamp is logged as a warning in the worker. A request may not replace a configured
+metadata limiter with a different kind. The same holds for the render limits in a `pages` block
+(`render` and `emit.render`: `dpi`, `maxImagePixels`, `maxWidth`, `maxHeight`, including the
+deprecated `ocr` aliases), at the top level or under a parser; the ceiling is what the
+operator's own `pages` layers resolve to for that parser. Timeouts follow their own rule: a request may raise
+them up to `pipes.maxTotalTaskTimeoutMillis`
+(xref:pipes/timeouts.adoc#_per_request_overrides[details]).
+
+To let callers go further, raise the limit in the server's config or in a preset.
+`PipesForkParser` writes the limits set on its `PipesForkParserConfig` into its fork's config,
+so they are the ceiling rather than a request.
+
 == Embedded document limits
 
 `EmbeddedLimits` bounds how deep and how many embedded documents are parsed.

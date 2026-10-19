@@ -188,6 +188,32 @@ public class EmbeddedLimits implements Serializable {
         return limits != null ? limits : new EmbeddedLimits();
     }
 
+    /**
+     * Returns this instance if neither limit is looser than {@code ceiling}'s, otherwise a
+     * copy with each looser limit reduced to the ceiling's. Used at trust boundaries so a
+     * request may tighten operator limits but not loosen them.
+     *
+     * @param ceiling the operator's limits
+     * @return this, or a tightened copy
+     * @since Apache Tika 4.2
+     */
+    public EmbeddedLimits tightenedTo(EmbeddedLimits ceiling) {
+        int depth = tighter(maxDepth, ceiling.maxDepth);
+        int count = tighter(maxCount, ceiling.maxCount);
+        if (depth == maxDepth && count == maxCount) {
+            return this;
+        }
+        return new EmbeddedLimits(depth, throwOnMaxDepth, count, throwOnMaxCount);
+    }
+
+    /** The tighter of two limits where a negative value means unlimited. */
+    static int tighter(int requested, int ceiling) {
+        if (ceiling < 0) {
+            return requested;
+        }
+        return requested < 0 ? ceiling : Math.min(requested, ceiling);
+    }
+
     @Override
     public String toString() {
         return "EmbeddedLimits{" +

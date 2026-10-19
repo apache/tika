@@ -169,4 +169,58 @@ public class PagesConfigTest {
         PagesConfig.Ocr ocr = new PagesConfig.Ocr();
         assertThrows(IllegalArgumentException.class, () -> ocr.setMaxPages(-3));
     }
+
+    private static ParseContext requestFor(String componentName, PagesConfig operatorTop) {
+        ParseContext context = new ParseContext();
+        // the parser's block came over the wire
+        context.setJsonConfig(componentName, "{}", false);
+        context.set(PagesConfig.OperatorPages.class, new PagesConfig.OperatorPages(operatorTop));
+        return context;
+    }
+
+    @Test
+    public void testRequestMayNotRaiseRenderLimits() throws Exception {
+        PagesConfig request = new PagesConfig();
+        request.render().setDpi(1200);
+        request.render().setMaxImagePixels((long) RenderSettings.NO_LIMIT);
+        request.emit().render().setDpi(2400);
+
+        PagesConfig pages = PagesConfig.resolve(requestFor("x-parser", null), "x-parser",
+                null, request);
+
+        assertEquals(300, pages.getRender().getDpi());
+        assertEquals(100_000_000L, pages.getRender().getMaxImagePixels());
+        assertEquals(300, pages.emittedRender().getDpi());
+    }
+
+    @Test
+    public void testOperatorLayersAreTheCeiling() throws Exception {
+        PagesConfig operatorTop = new PagesConfig();
+        operatorTop.render().setDpi(150);
+        // this parser's operator overlay allows more than the top-level block
+        PagesConfig operatorOverlay = new PagesConfig();
+        operatorOverlay.render().setDpi(600);
+        PagesConfig request = new PagesConfig();
+        request.render().setDpi(1200);
+
+        PagesConfig pages = PagesConfig.resolve(requestFor("x-parser", operatorTop), "x-parser",
+                operatorOverlay, request);
+        assertEquals(600, pages.getRender().getDpi());
+
+        request.render().setDpi(96);
+        pages = PagesConfig.resolve(requestFor("x-parser", operatorTop), "x-parser",
+                operatorOverlay, request);
+        assertEquals(96, pages.getRender().getDpi());
+    }
+
+    @Test
+    public void testNoClampOutsideTheWorker() throws Exception {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("x-parser", "{}", false);
+        PagesConfig request = new PagesConfig();
+        request.render().setDpi(1200);
+
+        assertEquals(1200, PagesConfig.resolve(context, "x-parser", null, request)
+                .getRender().getDpi());
+    }
 }

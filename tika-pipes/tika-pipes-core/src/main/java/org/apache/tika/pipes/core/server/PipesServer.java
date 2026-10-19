@@ -460,11 +460,6 @@ public class PipesServer implements AutoCloseable {
                         try {
                             mergedContext = createMergedParseContext(
                                     fetchEmitTuple.getParseContext(), fetchEmitTuple.getPresetName());
-                            ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
-                            ServerProtocolIO.validateParseContext(mergedContext);
-                            ServerProtocolIO.clampRequestTimeoutLimits(
-                                    fetchEmitTuple.getParseContext(), mergedContext,
-                                    pipesConfig.getMaxTotalTaskTimeoutMillis());
                             // After resolveAll: the payload is typed runtime state for
                             // BytesFetcher, never a resolvable config entry.
                             pipesRequest.applyTo(mergedContext);
@@ -831,7 +826,7 @@ public class PipesServer implements AutoCloseable {
      *
      * @param requestContext the ParseContext from FetchEmitTuple
      * @param presetName name of the preset to overlay at config-tier trust, or null
-     * @return a new ParseContext with defaults + preset + request overrides
+     * @return a new, resolved ParseContext with defaults + preset + clamped request overrides
      */
     private ParseContext createMergedParseContext(ParseContext requestContext, String presetName)
             throws TikaConfigException {
@@ -844,10 +839,33 @@ public class PipesServer implements AutoCloseable {
         // extraction for every non-UNPACK parse mode. UNPACK mode sets its own
         // EmbeddedDocumentExtractor + UnpackedByteCount in PipesWorker's UNPACK-mode setup.
         mergePreset(presetRegistry, presetName, mergedContext);
-        // Request-level values override config defaults and the preset
-        mergedContext.copyFrom(requestContext);
+        overlayRequest(requestContext, mergedContext, pipesConfig, defaultContentHandlerFactory);
         seedCacheMemoryBudget(mergedContext);
         return mergedContext;
+    }
+
+    /**
+     * Overlays the request's values on the operator's (config plus preset), resolves the
+     * result, and clamps what the request supplied: limits may be tightened, not loosened,
+     * and timeouts are capped at {@code pipes.maxTotalTaskTimeoutMillis}.
+     * {@code defaultContentHandlerFactory} is the operator's when the context sets none.
+     */
+    static void overlayRequest(ParseContext requestContext, ParseContext mergedContext,
+                               PipesConfig pipesConfig,
+                               ContentHandlerFactory defaultContentHandlerFactory)
+            throws TikaConfigException {
+        ParseContext operatorContext = new ParseContext();
+        operatorContext.copyFrom(mergedContext);
+        if (operatorContext.get(ContentHandlerFactory.class) == null
+                && defaultContentHandlerFactory != null) {
+            operatorContext.set(ContentHandlerFactory.class, defaultContentHandlerFactory);
+        }
+        mergedContext.copyFrom(requestContext);
+        ParseContextUtils.resolveAll(mergedContext, PipesServer.class.getClassLoader());
+        ServerProtocolIO.validateParseContext(mergedContext);
+        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, mergedContext,
+                pipesConfig.getMaxTotalTaskTimeoutMillis());
+        ServerProtocolIO.clampRequestLimits(operatorContext, mergedContext);
     }
 
     /**

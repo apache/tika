@@ -73,7 +73,11 @@ So "PDFs render at 200 dpi, previews in colour", kept across requests, is
 
 and a request that sends `{"pages": {"text": "OCR"}}` OCRs every page at 200 dpi, since the PDF's
 overlay still holds. Had the 200 dpi been under `parse-context.pages` instead, that request would
-have replaced it and OCR'd at 300: a request's `pages` is the whole block. The same overlay also
+have replaced the block (a request's `pages` is the whole block), but it would still render at
+200: in tika-server, tika-grpc and other pipes workers a request may lower the render limits
+(`dpi`, `maxImagePixels`, `maxWidth`, `maxHeight`, in `render` and `emit.render`) but not raise
+them above what the operator's layers resolve to
+(xref:advanced/setting-limits.adoc#_per_request_limits[details]). The same overlay also
 means a request cannot undo a parser's own `pages` with the general block; it sends
 `{"pdf-parser": {"pages": {...}}}`. In code, `context.set(PagesConfig.class, overlay)` is the
 request layer and `PDFParserConfig.pages()` the parser's.
