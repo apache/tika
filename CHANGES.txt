@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * PipesForkParser: a ParseMode, ContentHandlerFactory or EmbeddedLimits set in the
+     ParseContext passed to parse() now overrides PipesForkParserConfig instead of being
+     overwritten by it, and the caller's ParseContext is no longer modified (TIKA-4981).
+
    * Frictionless unpack: the package's metadata.json is renamed rmeta.json, is listed in
      datapackage.json as a resource (size, sha256), and now gets the metadata filters and
      user metadata the emitted list gets; resources are in embedded-id order. A document
