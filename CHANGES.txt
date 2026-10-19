@@ -1,11 +1,20 @@
 Release 4.2.0 - unreleased
 
-   * @OperatorOnly is now enforced on every component a request builds, not just
-     self-configuring ones. On a class, it blocks request construction entirely,
-     replacing the list of request-blocked names. Java code that builds a JsonConfig
-     setting an operator-only property must use JsonConfig.trusted(json). Building a
-     component from JSON config now requires tika-serialization on the classpath
+   * @OperatorOnly is now enforced on every component a request builds, wherever
+     it is named -- a metadata-filters entry, a nested property, or a bare
+     string -- not just on self-configuring parsers. On a class, it keeps a
+     request from building the component at all (TIKA-4974).
+
+   * All JSON config now flows through tika-serialization, so every component
+     gets the same operator-only checks, whether it comes from tika-config.json,
+     a request, or a JsonConfig constructor (e.g. new PDFParser(jsonConfig)).
+     Constructing a component with a JsonConfig therefore needs tika-serialization
+     on the classpath; tika-app, tika-server and tika-grpc already include it
      (TIKA-4974).
+
+   * Config is untrusted unless the operator says so: Java code that writes its
+     own config and sets an operator-only property wraps it with
+     JsonConfig.trusted(json) (TIKA-4974).
 
    * The docx parser wraps OMML equations (m:oMath) in <span class="math">; their
      text was previously emitted as unmarked body text (TIKA-4968).

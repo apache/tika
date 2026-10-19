@@ -56,15 +56,20 @@ public class ConfigDeserializer {
 
     private static final Method READ_CONFIG_METHOD;
 
+    /** Why {@link #READ_CONFIG_METHOD} is null: absent, or present but failed to load. */
+    private static final Throwable LOAD_FAILURE;
+
     static {
         Method method = null;
+        Throwable failure = null;
         try {
             method = Class.forName(READER_CLASS)
                     .getMethod("readConfig", String.class, Class.class, boolean.class);
         } catch (ReflectiveOperationException | LinkageError e) {
-            // not on the classpath; buildConfig throws
+            failure = e;
         }
         READ_CONFIG_METHOD = method;
+        LOAD_FAILURE = failure;
     }
 
     /**
@@ -80,16 +85,16 @@ public class ConfigDeserializer {
      */
     public static <T> T buildConfig(JsonConfig jsonConfig, Class<T> configClass) {
         if (READ_CONFIG_METHOD == null) {
-            throw new RuntimeException("Cannot parse JSON configuration for " +
-                    configClass.getSimpleName() + ": tika-serialization is not on the classpath. " +
-                    "Add org.apache.tika:tika-serialization as a dependency.");
+            throw new RuntimeException("Cannot parse JSON configuration for " + configClass.getName() +
+                    ": tika-serialization is missing or failed to load. " +
+                    "Add org.apache.tika:tika-serialization as a dependency.", LOAD_FAILURE);
         }
         try {
             return configClass.cast(READ_CONFIG_METHOD.invoke(null, jsonConfig.json(), configClass,
                     jsonConfig.trusted()));
         } catch (Exception e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
-            throw new RuntimeException("Failed to parse " + configClass.getSimpleName() +
+            throw new RuntimeException("Failed to parse " + configClass.getName() +
                 " configuration: " + cause.getMessage(), cause);
         }
     }

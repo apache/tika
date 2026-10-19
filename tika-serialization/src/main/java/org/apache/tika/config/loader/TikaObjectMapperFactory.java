@@ -100,6 +100,10 @@ public class TikaObjectMapperFactory {
      *
      * @return the shared plain ObjectMapper
      */
+    public static ObjectMapper getPlainMapper() {
+        return PLAIN_MAPPER;
+    }
+
     /**
      * Reads a component's JSON config; called by tika-core's ConfigDeserializer by reflection.
      * Untrusted JSON may not set an {@link org.apache.tika.config.OperatorOnly} property.
@@ -108,13 +112,14 @@ public class TikaObjectMapperFactory {
             throws Exception {
         ObjectMapper mapper = getMapper();
         if (!trusted) {
-            OperatorOnlyGuard.check(mapper, configClass.getSimpleName(), json, configClass);
+            OperatorOnlyGuard.check(mapper, nestedName(configClass), json, configClass);
         }
         return ComponentInstantiator.withTrust(mapper.readerFor(configClass), trusted).readValue(json);
     }
 
-    public static ObjectMapper getPlainMapper() {
-        return PLAIN_MAPPER;
+    /** {@code PDFParser$Config}, not {@code Config}: names the component that owns the config. */
+    private static String nestedName(Class<?> configClass) {
+        return configClass.getName().substring(configClass.getPackageName().length() + 1);
     }
 
     public static synchronized ObjectMapper getMapper() {

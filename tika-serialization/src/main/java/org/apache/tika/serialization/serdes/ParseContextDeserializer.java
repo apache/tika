@@ -220,9 +220,13 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             return;
         }
         Class<?> contextKey = ComponentNameResolver.determineContextKey(infoOpt.get());
-        if (ComponentNameResolver.isWireBlocked(contextKey)
-                || ComponentNameResolver.isWireBlockedClass(infoOpt.get().componentClass())) {
+        if (ComponentNameResolver.isWireBlocked(contextKey)) {
             throw new IOException(wireBlockedMessage(name, contextKey));
+        }
+        Class<?> componentClass = infoOpt.get().componentClass();
+        if (ComponentNameResolver.isWireBlockedClass(componentClass)) {
+            // the type is allowed; this implementation is not
+            throw new IOException(ComponentNameResolver.wireBlockedClassMessage(name, componentClass));
         }
     }
 

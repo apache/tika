@@ -298,16 +298,17 @@ fail-closed gate on top of the registry:
   `EmbeddedDocumentExtractor`
 * The check is fail-closed: a newly added context-key interface is blocked until
   it is consciously allow-listed
-* The whole tree is scanned *before* any component is constructed
-* `ComponentInstantiator` enforces the same rule for every component a request builds,
-  however it is named — a `metadata-filters` entry, a top-level entry, a nested property,
-  or a bare-string reference — before calling its constructor
+* Every object key in the tree is scanned *before* any component is constructed, for an
+  early, readable refusal
+* `ComponentInstantiator` is the enforcement point: it applies the same rule to every
+  component a request builds, however it is named — a `metadata-filters` entry, a top-level
+  entry, a nested property, or a bare-string reference — before calling its constructor
 
 The allowlist/blocklist lives in `ComponentNameResolver`
 (`WIRE_INSTANTIABLE_CONTEXT_KEYS` / `WIRE_BLOCKED_CONTEXT_KEYS`); an
 exhaustiveness test asserts every context-key interface is classified as
-exactly one of the two. Plain config DTOs (non-component keys) are never
-blocked.
+exactly one of the two. Plain config DTOs (non-component keys) are allowed, except
+operator policy such as `exception-reporting`.
 
 [#_operator_only_properties]
 === Operator-only properties
@@ -339,7 +340,10 @@ refuses untrusted JSON the same way, and throws if tika-serialization is not on 
 
 On a class, `@OperatorOnly` keeps a request from building the component at all. Use it for an
 implementation of a request-allowed type that breaks the type's promise, such as a
-`MetadataFilter` that sends document text over the network. Subclasses inherit it.
+`MetadataFilter` that sends document text over the network. Subclasses inherit it; an
+interface does not pass it on. A self-configuring component marked this way still takes its
+flat per-request config (e.g. `{"openai-embedding-filter":{"skipEmbedding":true}}`), which
+tunes the operator's instance; its operator-only properties stay refused.
 
 Java code that builds a component from a `JsonConfig` it wrote itself is operator code, and
 says so with `JsonConfig.trusted(json)`; a plain lambda is untrusted, so it cannot set an
