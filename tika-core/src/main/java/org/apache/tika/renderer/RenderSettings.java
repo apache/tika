@@ -101,6 +101,44 @@ public class RenderSettings implements Serializable {
         return result;
     }
 
+    /**
+     * This with {@code dpi}, {@code maxImagePixels}, {@code maxWidth} and {@code maxHeight}
+     * reduced to {@code ceiling}'s where they are looser; this instance if none is. A null
+     * field on either side is left alone. Used at trust boundaries so a request may tighten
+     * the operator's render limits but not loosen them.
+     *
+     * @since Apache Tika 4.2
+     */
+    public RenderSettings tightenedTo(RenderSettings ceiling) {
+        Integer tDpi = dpi == null || ceiling.dpi == null ? dpi : Math.min(dpi, ceiling.dpi);
+        Long tPixels = tighter(maxImagePixels, ceiling.maxImagePixels);
+        Long tWidth = tighter(toLong(maxWidth), toLong(ceiling.maxWidth));
+        Long tHeight = tighter(toLong(maxHeight), toLong(ceiling.maxHeight));
+        if (Objects.equals(tDpi, dpi) && Objects.equals(tPixels, maxImagePixels)
+                && Objects.equals(tWidth, toLong(maxWidth))
+                && Objects.equals(tHeight, toLong(maxHeight))) {
+            return this;
+        }
+        RenderSettings result = copy();
+        result.dpi = tDpi;
+        result.maxImagePixels = tPixels;
+        result.maxWidth = tWidth == null ? null : tWidth.intValue();
+        result.maxHeight = tHeight == null ? null : tHeight.intValue();
+        return result;
+    }
+
+    /** The tighter of two limits where {@link #NO_LIMIT} means unlimited. */
+    private static Long tighter(Long requested, Long ceiling) {
+        if (requested == null || ceiling == null || ceiling == NO_LIMIT) {
+            return requested;
+        }
+        return requested == NO_LIMIT ? ceiling : Math.min(requested, ceiling);
+    }
+
+    private static Long toLong(Integer value) {
+        return value == null ? null : value.longValue();
+    }
+
     public RenderSettings copy() {
         RenderSettings result = new RenderSettings();
         result.dpi = dpi;

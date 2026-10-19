@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.pipes.core.EmitStrategy;
 
@@ -51,6 +52,8 @@ public class ConfigOverrides {
     private final String pluginRoots;
     private final EmitStrategy emitStrategy;
     private final TimeoutLimits timeoutLimits;
+    private final EmbeddedLimits embeddedLimits;
+    private final Integer writeLimit;
     private final boolean classpathPlugins;
 
     private ConfigOverrides(Builder builder) {
@@ -60,6 +63,8 @@ public class ConfigOverrides {
         this.pluginRoots = builder.pluginRoots;
         this.emitStrategy = builder.emitStrategy;
         this.timeoutLimits = builder.timeoutLimits;
+        this.embeddedLimits = builder.embeddedLimits;
+        this.writeLimit = builder.writeLimit;
         this.classpathPlugins = builder.classpathPlugins;
     }
 
@@ -89,6 +94,14 @@ public class ConfigOverrides {
 
     public TimeoutLimits getTimeoutLimits() {
         return timeoutLimits;
+    }
+
+    public EmbeddedLimits getEmbeddedLimits() {
+        return embeddedLimits;
+    }
+
+    public Integer getWriteLimit() {
+        return writeLimit;
     }
 
     /** Whether the fork is told to load plugins from its classpath; see ConfigMerger. */
@@ -214,6 +227,8 @@ public class ConfigOverrides {
         private String pluginRoots;
         private EmitStrategy emitStrategy;
         private TimeoutLimits timeoutLimits;
+        private EmbeddedLimits embeddedLimits;
+        private Integer writeLimit;
         private boolean classpathPlugins;
 
         private Builder() {
@@ -310,6 +325,29 @@ public class ConfigOverrides {
          */
         public Builder setTimeoutLimits(TimeoutLimits timeoutLimits) {
             this.timeoutLimits = timeoutLimits;
+            return this;
+        }
+
+        /**
+         * Set the embedded limits to write to the parse-context section. Config-tier limits
+         * are the ceiling a request's own limits are clamped to.
+         *
+         * @param embeddedLimits the embedded limits (may be null to use defaults)
+         * @return this builder
+         */
+        public Builder setEmbeddedLimits(EmbeddedLimits embeddedLimits) {
+            this.embeddedLimits = embeddedLimits;
+            return this;
+        }
+
+        /**
+         * Set {@code output-limits.writeLimit} in the parse-context section.
+         *
+         * @param writeLimit the write limit, negative for unlimited (may be null to leave unset)
+         * @return this builder
+         */
+        public Builder setWriteLimit(Integer writeLimit) {
+            this.writeLimit = writeLimit;
             return this;
         }
 

@@ -297,8 +297,10 @@ granting per-request parser configuration are separate decisions:
 
 The capabilities are two default-`false` flags in the `server` section:
 
-* `allowPipes` gates the `/pipes` and `/async` endpoints, which drive process-isolated batch parsing through your fetchers and emitters. Selecting either without `allowPipes` causes the server to refuse to start with a clear error.
-* `allowPerRequestConfig` gates per-request parser configuration: the `/config` family of endpoints and the multipart `config` part. When off, such requests are rejected with 403.
+* `allowPipes` gates the `/pipes` and `/async` endpoints, which drive process-isolated batch parsing through your fetchers and emitters. Selecting either without `allowPipes` causes the server to refuse to start with a clear error. It includes each tuple's `parse-context`, which is per-request configuration in its own right; `allowPerRequestConfig` is not needed for it.
+* `allowPerRequestConfig` gates per-request parser configuration on the parse endpoints: the `/config` family of endpoints and the multipart `config` part. When off, such requests are rejected with 403.
+
+Per-request configuration that either flag admits is still bounded: `@OperatorOnly` properties are refused, and limits may tighten the server's but not loosen them (xref:advanced/setting-limits.adoc#_per_request_limits[details]).
 
 `/status` is no longer gated: it exposes only aggregate counters, so it is enabled simply by listing `status` under `endpoints`.
 

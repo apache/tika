@@ -74,16 +74,27 @@ callers — that requirement stands regardless of how the flags are set. All def
 
 * `allowPipes` gates the `/pipes` and `/async` endpoints (process-isolated fetching and parsing
   through your fetchers/emitters). Selecting either without it causes the server to refuse to start.
+  A caller who reaches these endpoints can do whatever your configured fetchers, emitters and
+  parsers can do, with your credentials and network position, including configuring how each
+  document parses through the tuple's `parse-context`. Enable it only for trusted callers; see
+  xref:using-tika/server/index.adoc#_allowpipes_the_pipes_and_async_endpoints[what it grants]
+  (an illustration, not a complete list).
 * `allowPerRequestConfig` gates per-request parser configuration — the `/config` endpoints and the
   multipart `config` part; when off, such requests are rejected with HTTP 403. A caller who
   reaches it can choose how documents parse, including options that spawn external processes
-  such as OCR, and can defeat memory and timeout limits.
+  such as OCR.
 
-*tika-grpc* is *more exposed by default* than tika-server: it ships with no transport security and
+Either way, per-request configuration stays bounded: a request may not set an `@OperatorOnly`
+property (a path, executable, class name, URL or credential), and it may tighten the server's
+output, embedded-document, metadata and timeout limits but not loosen them
+(xref:advanced/setting-limits.adoc#_per_request_limits[details]).
+
+*tika-grpc* ships unlocked; securing it is the deployer's job. It has no transport security and
 no per-caller authorization, and its `FetchAndParse` surface is always on. `allowPerRequestConfig`
 and `allowComponentManagement` — the latter lets clients add, modify, and delete fetchers/iterators
-and read back stored configs, which can contain secrets — are off by default. Run it only behind
-network controls and, ideally, mutual TLS. See xref:using-tika/grpc/index.adoc[Tika gRPC].
+and read back stored configs, which can contain secrets — are off by default, but they are
+conveniences, not guarantees. Run it only behind network controls and, ideally, mutual TLS. See
+xref:using-tika/grpc/index.adoc[Tika gRPC].
 
 For the upgrade from the former `enableUnsecureFeatures` flag, which is now split into
 `allowPipes` and `allowPerRequestConfig`, see

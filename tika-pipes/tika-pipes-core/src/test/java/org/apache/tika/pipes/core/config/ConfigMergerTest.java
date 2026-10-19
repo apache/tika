@@ -34,6 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.pipes.core.EmitStrategy;
 
 public class ConfigMergerTest {
@@ -80,6 +81,30 @@ public class ConfigMergerTest {
 
         // Clean up
         Files.deleteIfExists(result.configPath());
+    }
+
+    /** Limits set in code land in the config, where they are the ceiling for a request's. */
+    @Test
+    public void testEmbeddedAndWriteLimitsGoToParseContext() throws IOException {
+        Path existing = tempDir.resolve("existing.json");
+        Files.writeString(existing,
+                "{\"parse-context\": {\"output-limits\": {\"maxXmlDepth\": 50}}}");
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .setEmbeddedLimits(new EmbeddedLimits(50, true, 1000, false))
+                .setWriteLimit(5000)
+                .build();
+
+        JsonNode parseContext = new ObjectMapper()
+                .readTree(ConfigMerger.merge(existing, overrides).json())
+                .get("parse-context");
+
+        JsonNode embedded = parseContext.get("embedded-limits");
+        assertEquals(50, embedded.get("maxDepth").asInt());
+        assertTrue(embedded.get("throwOnMaxDepth").asBoolean());
+        assertEquals(1000, embedded.get("maxCount").asInt());
+        assertEquals(5000, parseContext.get("output-limits").get("writeLimit").asInt());
+        // merged into the user's block, not replacing it
+        assertEquals(50, parseContext.get("output-limits").get("maxXmlDepth").asInt());
     }
 
     /** TIKA-4834: the config docs permit comments; the merge step must not reject them. */

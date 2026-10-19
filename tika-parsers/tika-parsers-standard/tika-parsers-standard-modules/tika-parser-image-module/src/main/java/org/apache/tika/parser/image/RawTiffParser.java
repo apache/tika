@@ -39,6 +39,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
@@ -566,6 +567,7 @@ public class RawTiffParser extends TiffParser {
             return maxTotalPreviewBytes;
         }
 
+        @OperatorOnly
         public void setMaxTotalPreviewBytes(long maxTotalPreviewBytes) {
             this.maxTotalPreviewBytes = maxTotalPreviewBytes;
         }

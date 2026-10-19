@@ -84,7 +84,8 @@ readable file, when `--client-auth-required` is set.
 The primary rule is *trusted callers only*. tika-grpc is *even more exposed by default than
 tika-server*: no transport security, no per-caller authorization, and its core `FetchAndParse`
 surface always on. Anyone who can reach the gRPC port can fetch and parse whatever the server's
-configured fetchers can reach. Run it only behind strict network controls.
+configured fetchers can reach. tika-grpc ships unlocked; securing it is the deployer's job.
+Run it only behind strict network controls.
 
 Its most dangerous capabilities — runtime mutation of the fetcher/iterator store (for example
 `SaveFetcher`, which can read files and load code on the server host) and per-request parse

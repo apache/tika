@@ -175,7 +175,7 @@ public class SharedServerResources implements Closeable {
      *
      * @param requestContext the ParseContext from FetchEmitTuple
      * @param presetName name of the preset to overlay at config-tier trust, or null
-     * @return a new ParseContext with defaults + preset + request overrides
+     * @return a new, resolved ParseContext with defaults + preset + clamped request overrides
      */
     public ParseContext createMergedParseContext(ParseContext requestContext, String presetName)
             throws TikaConfigException {
@@ -184,8 +184,8 @@ public class SharedServerResources implements Closeable {
         // createMergedParseContext for why defaulting it would silently disable embedded
         // content extraction for every non-UNPACK parse mode.
         PipesServer.mergePreset(presetRegistry, presetName, mergedContext);
-        // Request-level values override config defaults and the preset
-        mergedContext.copyFrom(requestContext);
+        PipesServer.overlayRequest(requestContext, mergedContext, pipesConfig,
+                defaultContentHandlerFactory);
         PipesServer.seedCacheMemoryBudget(mergedContext);
         return mergedContext;
     }

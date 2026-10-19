@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -130,5 +131,27 @@ public class RenderSettingsTest {
         s.setMaxWidth(-1);
         s.setMinWidth(0);
         assertEquals(-1, s.getMaxWidth());
+    }
+
+    @Test
+    public void testTightenedTo() {
+        RenderSettings ceiling = RenderSettings.defaults();
+        ceiling.setDpi(150);
+        ceiling.setMaxWidth(2000);
+
+        RenderSettings looser = RenderSettings.defaults();
+        looser.setDpi(1200);
+        looser.setMaxImagePixels((long) RenderSettings.NO_LIMIT);
+        RenderSettings tight = looser.tightenedTo(ceiling);
+        assertEquals(150, tight.getDpi());
+        assertEquals(100_000_000L, tight.getMaxImagePixels());
+        // no box asked for, but the operator's box stands
+        assertEquals(2000, tight.getMaxWidth());
+        assertEquals(RenderSettings.NO_LIMIT, tight.getMaxHeight());
+
+        RenderSettings tighter = RenderSettings.defaults();
+        tighter.setDpi(72);
+        tighter.setMaxWidth(500);
+        assertSame(tighter, tighter.tightenedTo(ceiling));
     }
 }

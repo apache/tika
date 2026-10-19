@@ -133,6 +133,27 @@ personal configuration does not override it.
   -Dmaven.repo.local=$(pwd)/.local_m2_repo
 ```
 
+## Building the Docs
+
+`docs/` is not in the default reactor; build it from its own pom. Antora
+renders the checked-out branch from the worktree, so uncommitted `.adoc`
+edits are included.
+
+```bash
+./mvnw -f docs/pom.xml clean package     # site in docs/target/site/tika/<version>/
+```
+
+- **Broken links don't fail the build** (`--log-failure-level=fatal`). Check
+  the log for `ERROR (asciidoctor)` lines such as `target of xref not found`.
+- **Parent-directory npm leaks in.** The Antora plugin runs `npx` in `docs/`,
+  which has no `package.json` or `node_modules`, so npm and Node search
+  upward. A `package.json` or `node_modules` in any parent directory, often
+  `$HOME` after an `npm install` run there, becomes the npm project root and
+  supplies packages. The plugin warns `Detected the existence of
+  $HOME/node_modules`. `npm prefix` in `docs/` should print `docs/`; if it
+  prints a parent, move that install elsewhere (e.g. `npm install -g`).
+- For a release build, use `update-site-for-release`.
+
 ## Common Module Paths
 
 | Module | Path |
