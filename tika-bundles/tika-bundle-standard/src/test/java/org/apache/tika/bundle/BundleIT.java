@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
@@ -127,11 +128,15 @@ public abstract class BundleIT {
 
         // Install all bundles first, then start. The test-bundles directory also holds the
         // dependencies of both that are OSGi bundles themselves.
+        // Sorted: tika-core resolves before tika-serialization starts (TIKA-4982 regression order)
+        List<Path> jars = new ArrayList<>();
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(TEST_BUNDLES, "*.jar")) {
+            stream.forEach(jars::add);
+        }
+        Collections.sort(jars);
         List<Bundle> bundles = new ArrayList<>();
-        try (DirectoryStream<Path> jars = Files.newDirectoryStream(TEST_BUNDLES, "*.jar")) {
-            for (Path jar : jars) {
-                bundles.add(ctx.installBundle(jar.toUri().toString()));
-            }
+        for (Path jar : jars) {
+            bundles.add(ctx.installBundle(jar.toUri().toString()));
         }
         assertNotNull(findBundle("org.apache.tika.core"), "tika-core bundle not installed");
         assertNotNull(findBundle("org.apache.tika.bundle-standard"),

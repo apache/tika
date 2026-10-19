@@ -75,9 +75,9 @@ A constructor that takes a `JsonConfig`, such as `new PDFParser(JsonConfig.trust
 reads the JSON through `tika-serialization`. To use one, also deploy
 `org.apache.tika:tika-serialization`, `com.fasterxml.jackson.core:jackson-databind` and
 `com.fasterxml.jackson.core:jackson-annotations`. Without them, the bundles still resolve
-and parse with their defaults, but those constructors throw. `tika-core` wires to
-`tika-serialization` when it resolves, so install it before `tika-core` resolves, or refresh
-`tika-core` after adding it.
+and parse with their defaults, but those constructors throw. `tika-core` looks for
+`tika-serialization` the first time one of those constructors runs, so install it before then,
+or refresh `tika-core` after adding it.
 
 == Services
 
