@@ -16,7 +16,14 @@
  */
 package org.apache.tika.parser.ner.nltk;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,9 +32,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.apache.cxf.jaxrs.client.WebClient;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
@@ -74,8 +78,8 @@ public class NLTKNERecogniser implements NERecogniser {
                 this.restHostUrlStr = restHostUrlStr;
             }
 
-            Response response = WebClient.create(restHostUrlStr).accept(MediaType.TEXT_HTML).get();
-            int responseCode = response.getStatus();
+            int responseCode = send(HttpRequest.newBuilder(URI.create(restHostUrlStr))
+                    .header("Accept", "text/html").GET()).statusCode();
             if (responseCode == 200) {
                 available = true;
             } else {
@@ -121,10 +125,12 @@ public class NLTKNERecogniser implements NERecogniser {
         Map<String, Set<String>> entities = new HashMap<>();
         try {
             String url = restHostUrlStr + "/nltk";
-            Response response = WebClient.create(url).accept(MediaType.TEXT_HTML).post(text);
-            int responseCode = response.getStatus();
+            HttpResponse<String> response = send(HttpRequest.newBuilder(URI.create(url))
+                    .header("Accept", "text/html").header("Content-Type", "text/plain")
+                    .POST(HttpRequest.BodyPublishers.ofString(text, UTF_8)));
+            int responseCode = response.statusCode();
             if (responseCode == 200) {
-                String result = response.readEntity(String.class);
+                String result = response.body();
                 JSONParser parser = new JSONParser();
                 JSONObject j = (JSONObject) parser.parse(result);
                 for (Object o : j.keySet()) {
@@ -143,5 +149,19 @@ public class NLTKNERecogniser implements NERecogniser {
         return entities;
     }
 
+    private static HttpResponse<String> send(HttpRequest.Builder request) throws IOException {
+        try {
+            return ClientHolder.CLIENT.send(request.timeout(Duration.ofSeconds(60)).build(),
+                    HttpResponse.BodyHandlers.ofString(UTF_8));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException(e);
+        }
+    }
 
+    private static class ClientHolder {
+        private static final HttpClient CLIENT =
+                HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1)
+                        .connectTimeout(Duration.ofSeconds(30)).build();
+    }
 }

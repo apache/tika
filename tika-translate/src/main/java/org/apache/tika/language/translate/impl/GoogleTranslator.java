@@ -16,19 +16,11 @@
  */
 package org.apache.tika.language.translate.impl;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.Properties;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.apache.cxf.jaxrs.client.WebClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,14 +43,11 @@ public class GoogleTranslator extends AbstractTranslator {
 
     private static final String DEFAULT_KEY = "dummy-secret";
 
-    private WebClient client;
-
     private String apiKey;
 
     private boolean isAvailable;
 
     public GoogleTranslator() {
-        this.client = WebClient.create(GOOGLE_TRANSLATE_URL_BASE);
         this.isAvailable = true;
         Properties config = new Properties();
         try {
@@ -79,22 +68,11 @@ public class GoogleTranslator extends AbstractTranslator {
         if (!this.isAvailable) {
             return text;
         }
-        Response response = client.accept(MediaType.APPLICATION_JSON).query("key", apiKey)
-                .query("source", sourceLanguage).query("target", targetLanguage).query("q", text)
-                .get();
-
-        StringBuilder responseText = new StringBuilder();
-        try (InputStreamReader inputStreamReader = new InputStreamReader(
-                (InputStream) response.getEntity(), UTF_8);
-                BufferedReader reader = new BufferedReader(inputStreamReader)) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                responseText.append(line);
-            }
-        }
+        String responseText = HttpUtils.get(GOOGLE_TRANSLATE_URL_BASE, "key", apiKey,
+                "source", sourceLanguage, "target", targetLanguage, "q", text);
 
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode jsonResp = mapper.readTree(responseText.toString());
+        JsonNode jsonResp = mapper.readTree(responseText);
         return jsonResp.findValuesAsText("translatedText").get(0);
     }
 

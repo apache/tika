@@ -26,7 +26,7 @@
   <parent>
     <groupId>org.apache.tika</groupId>
     <artifactId>tika-parent</artifactId>
-    <version>3.3.4-SNAPSHOT</version>
+    <version>3.4.0-SNAPSHOT</version>
     <relativePath>../tika-parent/pom.xml</relativePath>
   </parent>
 
@@ -34,6 +34,29 @@
   <name>Apache Tika server module</name>
   <url>https://tika.apache.org/</url>
   <packaging>pom</packaging>
+
+  <!-- the server modules require jdk17; tika-server-client stays on 11 -->
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
+    <cxf.version>4.2.4</cxf.version>
+    <jetty.version>12.1.14</jetty.version>
+    <jakarta.ws.rs.version>4.0.0</jakarta.ws.rs.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- cxf's jetty transport uses ee11 modules, which the core jetty-bom doesn't cover -->
+      <dependency>
+        <groupId>org.eclipse.jetty.ee11</groupId>
+        <artifactId>jetty-ee11-bom</artifactId>
+        <version>${jetty.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <build>
     <plugins>
       <plugin>

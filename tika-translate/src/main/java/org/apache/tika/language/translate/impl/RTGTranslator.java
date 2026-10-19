@@ -18,19 +18,13 @@ package org.apache.tika.language.translate.impl;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import com.fasterxml.jackson.jakarta.rs.json.JacksonJsonProvider;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import org.apache.cxf.jaxrs.client.WebClient;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -75,7 +69,7 @@ public class RTGTranslator extends AbstractTranslator {
     public static final String RTG_TRANSLATE_URL_BASE = "http://localhost:6060";
     public static final String RTG_PROPS = "translator.rtg.properties";
     private static final Logger LOG = LoggerFactory.getLogger(RTGTranslator.class);
-    private WebClient client;
+    private String translateUrl;
     private boolean isAvailable = false;
 
     public RTGTranslator() {
@@ -90,11 +84,10 @@ public class RTGTranslator extends AbstractTranslator {
             LOG.warn(e.getMessage(), e);
         }
         LOG.info("RTG base URL: " + rtgBaseUrl);
-        List<Object> providers = new ArrayList<>();
-        providers.add(new JacksonJsonProvider());
+        this.translateUrl = rtgBaseUrl.endsWith("/") ? rtgBaseUrl + "translate" :
+                rtgBaseUrl + "/translate";
         try {
-            this.client = WebClient.create(rtgBaseUrl, providers);
-            this.isAvailable = client.head().getStatus() == 200;
+            this.isAvailable = HttpUtils.head(rtgBaseUrl) == 200;
         } catch (Exception e) {
             LOG.warn(e.getMessage(), e);
             isAvailable = false;
@@ -119,12 +112,11 @@ public class RTGTranslator extends AbstractTranslator {
         }
         Map<String, List<Object>> input = new HashMap<>();
         input.put("source", Arrays.asList(text.split("(?<=(?<![A-Z])\\. )|\\n")));
-        Response response = client.path("translate").type(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON).post(input);
-        try (InputStreamReader reader = new InputStreamReader((InputStream) response.getEntity(),
-                Charset.defaultCharset())) {
+        String response =
+                HttpUtils.postJson(translateUrl, new ObjectMapper().writeValueAsString(input));
+        try {
             JSONParser parser = new JSONParser();
-            JSONObject obj = (JSONObject) parser.parse(reader);
+            JSONObject obj = (JSONObject) parser.parse(response);
             List<String> sentences = (List<String>) obj.get("translation");
             return String.join("\n", sentences);
         } catch (ParseException e) {

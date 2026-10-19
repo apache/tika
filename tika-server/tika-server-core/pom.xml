@@ -19,7 +19,7 @@
   <parent>
     <artifactId>tika-server</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>3.3.4-SNAPSHOT</version>
+    <version>3.4.0-SNAPSHOT</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
@@ -134,6 +134,26 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>require-jdk17</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[17,)</version>
+                  <message>tika-server requires JDK 17+; build the rest of Tika on JDK 11 with -pl '!tika-server/tika-server-core,!tika-server/tika-server-standard,!tika-server/tika-server-eval'</message>
+                </requireJavaVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>

@@ -506,8 +506,8 @@ public class TikaServerProcess {
     }
 
     /**
-     * CXF 4.0.x has no default limits on attachment size (CVE-2026-54225) or form parameter
-     * count (CVE-2026-57819) and will not get them; these are the limits its fixed lines apply.
+     * Attachment size (CVE-2026-54225) and form parameter count (CVE-2026-57819) limits, set
+     * explicitly so they don't depend on the CXF line's defaults and the size stays configurable.
      */
     static void setRequestLimits(JAXRSServerFactoryBean sf, TikaServerConfig tikaServerConfig) {
         Map<String, Object> properties = sf.getProperties(true);

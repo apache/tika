@@ -19,12 +19,19 @@
   <parent>
     <artifactId>tika-server</artifactId>
     <groupId>org.apache.tika</groupId>
-    <version>3.3.4-SNAPSHOT</version>
+    <version>3.4.0-SNAPSHOT</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>tika-server-client</artifactId>
   <name>Apache Tika server client</name>
+
+  <!-- unlike the server modules, the client stays on jdk11 -->
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <maven.compiler.release>11</maven.compiler.release>
+  </properties>
 
   <dependencies>
     <dependency>
