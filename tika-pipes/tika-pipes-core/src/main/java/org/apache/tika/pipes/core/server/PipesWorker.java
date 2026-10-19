@@ -24,7 +24,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -101,6 +105,8 @@ class PipesWorker implements Callable<PipesResult> {
     // worker completes. -1 means the stage never ran.
     private volatile long fetchNanos = -1;
     private volatile long parseNanos = -1;
+    // text inference, metadata filters, user metadata
+    private volatile long prepareNanos = -1;
     private volatile long emitNanos = -1;
     private volatile long wallNanos = -1;
 
@@ -110,6 +116,10 @@ class PipesWorker implements Callable<PipesResult> {
 
     long getParseNanos() {
         return parseNanos;
+    }
+
+    long getPrepareNanos() {
+        return prepareNanos;
     }
 
     long getEmitNanos() {
@@ -148,29 +158,33 @@ class PipesWorker implements Callable<PipesResult> {
                 return PipesResults.EMPTY_OUTPUT;
             }
 
+            // before prepare: a filter may strip tk:embedded-id
+            Map<Integer, Metadata> rowsById = rowsById(parseData.getMetadataList());
             // before the unpack package: it carries the same metadata list as the emit
+            long prepareStart = System.nanoTime();
             EmitHandler.Prepared prepared = emitHandler.prepare(fetchEmitTuple, parseData, parseContext);
+            prepareNanos = System.nanoTime() - prepareStart;
 
-            // Check if we need to zip and emit embedded files
-            UnpackHandler handler = parseContext.get(UnpackHandler.class);
-            if (handler instanceof FrictionlessUnpackHandler) {
-                frictionlessHandler = (FrictionlessUnpackHandler) handler;
-                PipesResult frictionlessResult = emitFrictionlessOutput(frictionlessHandler, parseData);
-                if (frictionlessResult != null) {
-                    // Frictionless emit failed - return the error
-                    return frictionlessResult;
-                }
-            } else if (handler instanceof TempFileUnpackHandler) {
-                tempHandler = (TempFileUnpackHandler) handler;
-                PipesResult zipResult = zipAndEmitEmbeddedFiles(tempHandler);
-                if (zipResult != null) {
-                    // Zipping/emitting failed - return the error
-                    return zipResult;
-                }
-            }
-
+            // the unpack output is part of the emit
             long emitStart = System.nanoTime();
             try {
+                // Check if we need to zip and emit embedded files
+                UnpackHandler handler = parseContext.get(UnpackHandler.class);
+                if (handler instanceof FrictionlessUnpackHandler) {
+                    frictionlessHandler = (FrictionlessUnpackHandler) handler;
+                    PipesResult frictionlessResult = emitFrictionlessOutput(frictionlessHandler, parseData);
+                    if (frictionlessResult != null) {
+                        // Frictionless emit failed - return the error
+                        return frictionlessResult;
+                    }
+                } else if (handler instanceof TempFileUnpackHandler) {
+                    tempHandler = (TempFileUnpackHandler) handler;
+                    PipesResult zipResult = zipAndEmitEmbeddedFiles(tempHandler, parseData, rowsById);
+                    if (zipResult != null) {
+                        // Zipping/emitting failed - return the error
+                        return zipResult;
+                    }
+                }
                 return emitHandler.emitParseData(fetchEmitTuple, parseData, prepared, parseContext);
             } finally {
                 emitNanos = System.nanoTime() - emitStart;
@@ -211,7 +225,9 @@ class PipesWorker implements Callable<PipesResult> {
      * @param tempHandler the handler containing embedded files in temp directory
      * @return PipesResult if there was an error, null if successful
      */
-    private PipesResult zipAndEmitEmbeddedFiles(TempFileUnpackHandler tempHandler) {
+    private PipesResult zipAndEmitEmbeddedFiles(TempFileUnpackHandler tempHandler,
+                                                MetadataListAndEmbeddedBytes parseData,
+                                                Map<Integer, Metadata> rowsById) {
         // Skip if no embedded files
         if (!tempHandler.hasEmbeddedFiles()) {
             LOG.debug("No embedded files to zip");
@@ -242,7 +258,7 @@ class PipesWorker implements Callable<PipesResult> {
         // Create zip file in temp directory
         Path zipFile = tempHandler.getTempDirectory().resolve("embedded-files.zip");
         try {
-            createZipFile(zipFile, tempHandler, unpackConfig);
+            createZipFile(zipFile, tempHandler, unpackConfig, parseData.getMetadataList(), rowsById);
         } catch (IOException e) {
             LOG.warn("Failed to create zip file", e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMIT_EXCEPTION,
@@ -273,14 +289,18 @@ class PipesWorker implements Callable<PipesResult> {
      */
     private PipesResult emitFrictionlessOutput(FrictionlessUnpackHandler frictionlessHandler,
                                                MetadataListAndEmbeddedBytes parseData) {
-        // Written even with no embedded files, same shape on every surface, unless asked not to
         UnpackConfig unpackConfig = frictionlessHandler.getUnpackConfig();
+        String emitterName = unpackConfig.getEmitter();
+        // Same emitter: no separate <emitKey>.json, the package carries the metadata list
+        boolean replacesEmit = emitterName != null &&
+                emitterName.equals(fetchEmitTuple.getEmitKey().getEmitterId());
+        // Written even with no embedded files, same shape on every surface, unless asked not to
         if (!frictionlessHandler.hasEmbeddedFiles() &&
                 unpackConfig.getEmptyPackage() == UnpackConfig.EMPTY_PACKAGE.SKIP) {
+            parseData.setPackageReplacesEmit(replacesEmit);
             return null;
         }
 
-        String emitterName = unpackConfig.getEmitter();
         Emitter emitter;
         try {
             emitter = emitterManager.getEmitter(emitterName);
@@ -336,10 +356,8 @@ class PipesWorker implements Callable<PipesResult> {
             result = emitFrictionlessDirectory(frictionlessHandler, streamEmitter,
                     packageRoot(containerEmitKey, unpackConfig), dataPackage, metadataJson);
         }
-        // Same emitter: the package already carries the metadata list
-        if (result == null && metadataJson != null &&
-                emitterName.equals(containerEmitKey.getEmitterId())) {
-            parseData.setMetadataInPackage(true);
+        if (result == null) {
+            parseData.setPackageReplacesEmit(replacesEmit);
         }
         return result;
     }
@@ -493,7 +511,11 @@ class PipesWorker implements Callable<PipesResult> {
      * Creates a zip file containing all embedded files.
      */
     private void createZipFile(Path zipFile, TempFileUnpackHandler tempHandler,
-                               UnpackConfig unpackConfig) throws IOException {
+                               UnpackConfig unpackConfig, List<Metadata> metadataList,
+                               Map<Integer, Metadata> rowsById) throws IOException {
+        // Sidecars are the list's rows, so they get what rmeta.json gets: inference, filters
+        Set<Metadata> kept = Collections.newSetFromMap(new IdentityHashMap<>());
+        kept.addAll(metadataList);
         try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(zipFile))) {
             // When includeOriginal=true the container itself is added as id 0 by
             // ParseHandler._preParse, so it appears here as one of the embedded entries.
@@ -504,16 +526,30 @@ class PipesWorker implements Callable<PipesResult> {
                 Files.copy(fileInfo.filePath(), zos);
                 zos.closeEntry();
 
-                // Add metadata JSON if requested
-                if (unpackConfig.writesMetadata()) {
+                // Add metadata JSON if requested; a row a filter removed gets no sidecar
+                Metadata row = rowsById.get(fileInfo.id());
+                if (unpackConfig.writesMetadata() && row != null && kept.contains(row)) {
                     String metadataFileName = fileInfo.fileName() + ".metadata.json";
                     ZipEntry metadataEntry = new ZipEntry(metadataFileName);
                     zos.putNextEntry(metadataEntry);
-                    writeMetadataAsJson(zos, fileInfo.metadata());
+                    writeMetadataAsJson(zos, row);
                     zos.closeEntry();
                 }
             }
         }
+    }
+
+    /** Rows by {@code tk:embedded-id}; the container, which has none, is 0. */
+    private static Map<Integer, Metadata> rowsById(List<Metadata> metadataList) {
+        Map<Integer, Metadata> rows = new HashMap<>();
+        for (int i = 0; i < metadataList.size(); i++) {
+            Metadata row = metadataList.get(i);
+            Integer id = i == 0 ? Integer.valueOf(0) : row.getInt(TikaCoreProperties.EMBEDDED_ID);
+            if (id != null) {
+                rows.put(id, row);
+            }
+        }
+        return rows;
     }
 
     /**

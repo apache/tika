@@ -31,7 +31,7 @@ class MetadataListAndEmbeddedBytes {
 
         List<Metadata> metadataList;
         final UnpackHandler unpackHandler;
-        private boolean metadataInPackage = false;
+        private boolean packageReplacesEmit = false;
 
         public MetadataListAndEmbeddedBytes(List<Metadata> metadataList,
                                             UnpackHandler unpackHandler) {
@@ -62,15 +62,15 @@ class MetadataListAndEmbeddedBytes {
         }
 
         /**
-         * True once a Frictionless package carrying this metadata list was emitted
-         * through the container's own emitter, so it must not be emitted again.
+         * True when the Frictionless output went to the container's own emitter: the
+         * package's rmeta.json (or its absence) stands in for the metadata emit.
          */
-        public boolean isMetadataInPackage() {
-            return metadataInPackage;
+        public boolean isPackageReplacesEmit() {
+            return packageReplacesEmit;
         }
 
-        public void setMetadataInPackage(boolean metadataInPackage) {
-            this.metadataInPackage = metadataInPackage;
+        public void setPackageReplacesEmit(boolean packageReplacesEmit) {
+            this.packageReplacesEmit = packageReplacesEmit;
         }
 
         /**

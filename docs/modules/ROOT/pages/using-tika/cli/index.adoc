@@ -380,7 +380,8 @@ activate it. `-a` and `--async` both work.
 === Unpacking attachments
 
 `-z` and `-Z` differ only in depth: `-z` extracts direct attachments (depth 1), `-Z` recurses
-through every level. Both accept a single file or a directory as input.
+through every level. Both accept a single file or a directory as input. With a single file
+and no output directory, output goes to `<input>-unpacked/`, in either format.
 
 [cols="1,3"]
 |===
@@ -400,8 +401,7 @@ through every level. Both accept a single file or a directory as input.
 
 |`--unpack-mode=<mode>`
 |Output mode: `DIRECTORY` (default) or `ZIPPED`. `DIRECTORY` with a single input file makes
-`<out>` the package (`datapackage.json`, `rmeta.json`, `unpacked/...`; `<out>` defaults
-to `<input>-unpacked`); with an input directory each file gets `<out>/<input>/`. `ZIPPED`
+`<out>` the package (`datapackage.json`, `rmeta.json`, `unpacked/...`); with an input directory each file gets `<out>/<input>/`. `ZIPPED`
 writes `<out>/<input>-frictionless.zip`.
 
 |`--unpack-include-metadata`

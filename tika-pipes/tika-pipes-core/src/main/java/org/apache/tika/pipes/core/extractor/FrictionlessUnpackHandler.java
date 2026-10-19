@@ -26,6 +26,7 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -190,13 +191,10 @@ public class FrictionlessUnpackHandler extends AbstractUnpackHandler implements 
         return unpackedDirectory;
     }
 
-    /**
-     * Returns information about all embedded files.
-     */
-    /** In embedded-id order, not parse-completion order. */
+    /** All embedded files, in embedded-id order, not parse-completion order. */
     public List<FrictionlessFileInfo> getEmbeddedFiles() {
         return embeddedFiles.stream()
-                .sorted(java.util.Comparator.comparingInt(FrictionlessFileInfo::id))
+                .sorted(Comparator.comparingInt(FrictionlessFileInfo::id))
                 .toList();
     }
 

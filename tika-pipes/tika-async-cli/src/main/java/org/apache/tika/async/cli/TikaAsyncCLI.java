@@ -291,9 +291,8 @@ public class TikaAsyncCLI {
             // Only set default outputDir if not already specified via -o
             if (outputDir == null) {
                 if (Files.isRegularFile(inputPath)
-                        && extractBytesMode != SimpleAsyncConfig.ExtractBytesMode.NONE
-                        && isPackageDirectory(unpackFormat, unpackMode)) {
-                    // the output dir is the package: keep it out of cwd
+                        && extractBytesMode != SimpleAsyncConfig.ExtractBytesMode.NONE) {
+                    // any format: a -c file may set it, and it isn't loaded yet
                     outputDir = Paths.get(inputPath.getFileName() + "-unpacked")
                             .toAbsolutePath().toString();
                 } else if (Files.isRegularFile(inputPath)) {
@@ -315,12 +314,6 @@ public class TikaAsyncCLI {
                 unpackFormat, unpackMode, unpackIncludeMetadata);
         config.setOnExists(onExists);
         return config;
-    }
-
-    /** Unpack output is a Frictionless package written as loose files. */
-    private static boolean isPackageDirectory(String unpackFormat, String unpackMode) {
-        return (unpackFormat == null || UnpackConfig.OUTPUT_FORMAT.FRICTIONLESS.name().equals(unpackFormat))
-                && (unpackMode == null || UnpackConfig.OUTPUT_MODE.DIRECTORY.name().equals(unpackMode));
     }
 
     private static BasicContentHandlerFactory.HANDLER_TYPE getHandlerType(String t) throws TikaConfigException {

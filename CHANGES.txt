@@ -6,13 +6,22 @@ Release 4.2.0 - unreleased
      with no attachments is a package of datapackage.json and rmeta.json: tika-server
      /unpack returns it with 200 instead of 204 (unpack-config.emptyPackage=SKIP, which the
      thumbnail preset sets, restores the 204). The package name is the caller's filename
-     on tika-server, never the server's spool file. tika-app -z/-Z on a single file makes
-     the output dir the package (default <name>-unpacked/), names files unpacked/1.<ext>
-     as tika-server /unpack does, and no longer writes a <name>.json next to it. New
+     on tika-server, never the server's spool file. When the package goes to the container's
+     own emitter it replaces the metadata emit on every surface: no <emitKey>.json next to
+     it, and with includeMetadata=false no metadata at all. tika-app -z/-Z on a single file
+     makes the output dir the package, defaulting to <name>-unpacked/ in either format, and
+     names files unpacked/1.<ext> as tika-server /unpack does. REGULAR .metadata.json
+     sidecars are now the file's row from the metadata list: they get the metadata filters
+     and text inference, and a row a filter removes gets no sidecar. New
      unpack-config.packageRoot and packageName set where a DIRECTORY-mode package goes
      and its name. Packages pass frictionless validate: each resource's name is derived
      from its path, the original filename moves to tk:resource-name, and tk:embedded-id
-     keys it to its rmeta.json row (TIKA-4971).
+     matches its rmeta.json row, if present (TIKA-4971).
+
+   * API: FrictionlessResource.name() is now the Frictionless resource name derived from
+     the path; the original filename moved to resourceName(), and embeddedId() is new.
+     FrictionlessResource.create(path, mediatype, bytes, hash, name) and
+     DataPackage.addResource(...) are removed (TIKA-4971).
 
    * Config properties whose value reaches the host (paths, executables, class names,
      URLs, credentials, operator-sized limits) are marked @OperatorOnly and refused in

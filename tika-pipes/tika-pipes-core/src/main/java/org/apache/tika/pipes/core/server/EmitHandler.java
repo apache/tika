@@ -225,8 +225,8 @@ class EmitHandler {
             ParseMode parseMode = parseContext.get(ParseMode.class);
             if (parseMode == ParseMode.CONTENT_ONLY && emitter instanceof StreamEmitter) {
                 emitContentOnly((StreamEmitter) emitter, emitKey, parseData, parseContext);
-            } else if (parseData.isMetadataInPackage()) {
-                LOG.debug("metadata already emitted in the Frictionless package for {}",
+            } else if (parseData.isPackageReplacesEmit()) {
+                LOG.debug("Frictionless package replaces the metadata emit for {}",
                         emitKey.getEmitKey());
             } else if (isExtractEmbeddedBytes &&
                     parseData.toBePackagedForStreamEmitter()) {

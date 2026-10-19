@@ -32,7 +32,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
  * @param mediatype    The MIME type of the file (e.g., "application/pdf")
  * @param bytes        The file size in bytes
  * @param hash         The SHA256 hash in format "sha256:hexstring"
- * @param embeddedId   {@code tk:embedded-id} of the file's row in rmeta.json; 0 is the container
+ * @param embeddedId   the file's {@code tk:embedded-id}, 0 for the container; matches its
+ *                     row in rmeta.json, if present
  * @param resourceName {@code tk:resource-name}, the original filename, if there was one
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)

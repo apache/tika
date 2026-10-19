@@ -914,7 +914,7 @@ public class TikaCLI {
         out.println("                               sha256, sha384, sha512)");
         out.println("    --encoding=X           Use output encoding X");
         out.println("    --password=X           Use document password X");
-        out.println("    -z  or --extract       Extract all attachements into current directory");
+        out.println("    -z  or --extract       Extract attachments (a single file: into <input>-unpacked/)");
         out.println("    --extract-dir=<dir>    Specify target directory for -z");
         out.println("    --maxEmbeddedDepth=X   Maximum depth for embedded document extraction");
         out.println("    --maxEmbeddedCount=X   Maximum number of embedded documents to extract");

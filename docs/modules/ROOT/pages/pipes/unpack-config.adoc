@@ -287,7 +287,7 @@ A zipped package contains:
 ----
 output.zip
 ├── datapackage.json      # Manifest with file list, SHA256 hashes, mimetypes
-├── rmeta.json         # Full RMETA metadata (unless includeMetadata=false)
+├── rmeta.json            # Full RMETA metadata (unless includeMetadata=false)
 └── unpacked/
     ├── 1.pdf
     ├── 2.png
@@ -338,7 +338,9 @@ Naming the handler in both the path and a `config` part is a `400`, as on `/tika
 The five knobs interact differently per surface. Two defaults changed since 4.0.0: a
 Frictionless package carries `rmeta.json` unless `includeMetadata` is `false` (4.0.0 left
 it out unless `includeFullMetadata` was `true`), and since 4.2 Frictionless is the format
-on every surface. REGULAR output is as it was. Before 4.2 the package's `rmeta.json` was
+on every surface. REGULAR's layout is as it was; since 4.2 each `.metadata.json` sidecar is
+the file's row from the metadata list, so it gets the metadata filters and text inference as
+`rmeta.json` does, and a row a filter removes gets no sidecar. Before 4.2 the package's `rmeta.json` was
 named `metadata.json`, was not listed in `datapackage.json`, and did not get the metadata
 filters.
 
@@ -395,7 +397,7 @@ Output trees for `doc.docx` with three attachments:
 ----
 tika-server (one zip)                 tika-app -Z doc.docx out (loose)
   datapackage.json                      out/datapackage.json
-  rmeta.json                         out/rmeta.json
+  rmeta.json                            out/rmeta.json
   unpacked/1.emf ...                    out/unpacked/1.emf ...
   + with /all: unpacked/0.docx
                                       tika-app -Z <dir> out (loose)
@@ -412,10 +414,15 @@ REGULAR, tika-server (one zip)        REGULAR, tika-app -Z --unpack-format=REGUL
 ----
 
 For a single input file the output directory is the package; with no output directory
-tika-app writes it to `doc.docx-unpacked/`. For a directory of inputs each gets its own
-package under its relative path. The package's `rmeta.json` is the parse's metadata list,
-so no separate `doc.docx.json` is written; with `includeMetadata: false` (in a `-c` file)
-the list goes back to `doc.docx.json` next to the package.
+tika-app writes to `doc.docx-unpacked/` (REGULAR output too). For a directory of inputs each
+gets its own package under its relative path.
+
+The package's `rmeta.json` is the parse's metadata list. On any surface, when the package
+goes to the container's own emitter no separate `<emitKey>.json` is written; with
+`includeMetadata: false` the package is the bytes and the manifest, and no metadata is
+written at all. With `emptyPackage: SKIP`, a document with nothing to unpack writes nothing.
+A package sent to a different emitter than the container's leaves the container's metadata
+emit as it was.
 
 The `datapackage.json` file contains:
 
@@ -425,9 +432,9 @@ The `datapackage.json` file contains:
 * File size in bytes
 * `name`: the Frictionless resource name, derived from the path (`unpacked/3.pdf` ->
   `unpacked-3.pdf`)
-* `tk:embedded-id`: for an extracted file, the `tk:embedded-id` of its row in `rmeta.json`
-  (`0` is the source document, under `includeOriginal`). The rows are not in id order; match
-  on the id.
+* `tk:embedded-id`: the extracted file's `tk:embedded-id` (`0` is the source document, under
+  `includeOriginal`); it matches the file's row in `rmeta.json` if there is one. The rows are
+  not in id order; match on the id.
 * `tk:resource-name`: the file's original name, when it had one
 
 The package passes `frictionless validate`:

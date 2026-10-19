@@ -97,7 +97,7 @@ import org.apache.tika.pipes.core.extractor.UnpackConfig;
  * <pre>
  * output.zip
  * ├── datapackage.json      # Manifest with file list, SHA256 hashes, mimetypes
- * ├── rmeta.json         # Full RMETA metadata (unless includeMetadata=false)
+ * ├── rmeta.json            # Full RMETA metadata (unless includeMetadata=false)
  * └── unpacked/
  *     ├── 00000001.pdf
  *     ├── 00000002.png

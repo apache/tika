@@ -36,6 +36,7 @@ import java.util.zip.ZipFile;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -63,7 +64,7 @@ import org.apache.tika.pipes.core.extractor.UnpackConfig;
  * <pre>
  * output/
  * ├── datapackage.json      # Frictionless manifest with file list, hashes, mimetypes
- * ├── rmeta.json         # Full RMETA-style metadata (optional)
+ * ├── rmeta.json            # Full RMETA-style metadata (optional)
  * └── unpacked/
  *     ├── 00000001.xml
  *     ├── 00000002.xml
@@ -411,6 +412,109 @@ public class FrictionlessUnpackTest {
                     assertTrue(allowed.contains(k), "filter should have removed " + k + ": " + row));
         }
         assertEquals("my-value", rows.get(0).get("my:key").asText(), rows.get(0).toString());
+    }
+
+    /** TIKA-4971: includeMetadata=false is the bytes and the manifest, and no metadata anywhere. */
+    @Test
+    public void testNoMetadataMeansNoMetadataAnywhere() throws Exception {
+        ParseContext parseContext = frictionless(UnpackConfig.OUTPUT_MODE.ZIPPED, false);
+        parseContext.get(UnpackConfig.class).setIncludeMetadata(false);
+        PipesResult pipesResult = process("noMetadata", TEST_DOC_WITH_EMBEDDED, parseContext);
+        assertTrue(pipesResult.isSuccess(), "Status: " + pipesResult.status());
+
+        Set<String> entries = zipEntries(onlyFrictionlessZip(outputDir("noMetadata")));
+        assertTrue(entries.contains("datapackage.json"), entries.toString());
+        assertFalse(entries.contains("rmeta.json"), entries.toString());
+        assertFalse(Files.exists(outputDir("noMetadata").resolve(TEST_DOC_WITH_EMBEDDED + ".json")),
+                "the package replaces the metadata emit");
+    }
+
+    /** TIKA-4971: emptyPackage=SKIP with nothing to unpack writes nothing at all. */
+    @Test
+    public void testSkippedEmptyPackageWritesNothing() throws Exception {
+        ParseContext parseContext = frictionless(UnpackConfig.OUTPUT_MODE.ZIPPED, false);
+        parseContext.get(UnpackConfig.class).setEmptyPackage(UnpackConfig.EMPTY_PACKAGE.SKIP);
+        PipesResult pipesResult = process("skipEmpty", SIMPLE_DOC, parseContext);
+        assertTrue(pipesResult.isSuccess(), "Status: " + pipesResult.status());
+
+        Path outputDir = outputDir("skipEmpty");
+        if (Files.isDirectory(outputDir)) {
+            try (Stream<Path> files = Files.list(outputDir)) {
+                assertEquals(List.of(), files.toList());
+            }
+        }
+    }
+
+    /** TIKA-4971: a package sent to another emitter leaves the container's metadata emit alone. */
+    @Test
+    public void testPackageToOtherEmitterKeepsMetadataEmit() throws Exception {
+        Path configPath = tmp.resolve("pipes-config-two-emitters.json");
+        Path otherOutput = tmp.resolve("output-other");
+        ObjectNode config = (ObjectNode) OBJECT_MAPPER.readTree(tmp.resolve("pipes-config.json").toFile());
+        ObjectNode other = ((ObjectNode) config.get("emitters").get(EMITTER_NAME)).deepCopy();
+        ((ObjectNode) other.get("file-system-emitter")).put("basePath", otherOutput.toString());
+        ((ObjectNode) config.get("emitters")).set("fse-other", other);
+        OBJECT_MAPPER.writeValue(configPath.toFile(), config);
+
+        ParseContext parseContext = frictionless(UnpackConfig.OUTPUT_MODE.ZIPPED, false);
+        parseContext.get(UnpackConfig.class).setEmitter("fse-other");
+        try (PipesClient client = new PipesClient(
+                PipesConfig.load(TikaJsonConfig.load(configPath)), configPath)) {
+            PipesResult pipesResult = client.process(
+                    new FetchEmitTuple(TEST_DOC_WITH_EMBEDDED,
+                            new FetchKey(FETCHER_NAME, TEST_DOC_WITH_EMBEDDED),
+                            new EmitKey(EMITTER_NAME, "otherEmitter/" + TEST_DOC_WITH_EMBEDDED),
+                            new Metadata(), parseContext,
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
+            assertTrue(pipesResult.isSuccess(), "Status: " + pipesResult.status());
+        }
+        assertTrue(zipEntries(onlyFrictionlessZip(otherOutput.resolve("otherEmitter")))
+                .contains("rmeta.json"));
+        assertTrue(Files.isRegularFile(
+                outputDir("otherEmitter").resolve(TEST_DOC_WITH_EMBEDDED + ".json")));
+    }
+
+    /** TIKA-4971: REGULAR sidecars are the list's rows, so they get the metadata filters. */
+    @Test
+    public void testRegularSidecarsAreFiltered() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.UNPACK);
+        UnpackConfig unpackConfig = new UnpackConfig();
+        unpackConfig.setEmitter(EMITTER_NAME);
+        unpackConfig.setOutputFormat(UnpackConfig.OUTPUT_FORMAT.REGULAR);
+        unpackConfig.setZipEmbeddedFiles(true);
+        unpackConfig.setIncludeMetadata(true);
+        parseContext.set(UnpackConfig.class, unpackConfig);
+        parseContext.setJsonConfig("metadata-filters", """
+            [{"include-field-metadata-filter": {"include": ["tk:content", "Content-Type"]}}]
+        """);
+        PipesResult pipesResult = process("regularFiltered", TEST_DOC_WITH_EMBEDDED, parseContext);
+        assertTrue(pipesResult.isSuccess(), "Status: " + pipesResult.status());
+
+        Path zipFile = outputDir("regularFiltered").resolve(TEST_DOC_WITH_EMBEDDED + "-embedded.zip");
+        Set<String> allowed = Set.of("tk:content", "Content-Type");
+        int files = 0;
+        int sidecars = 0;
+        try (ZipFile zip = new ZipFile(zipFile.toFile())) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (!entry.getName().endsWith(".metadata.json")) {
+                    files++;
+                    continue;
+                }
+                sidecars++;
+                JsonNode sidecar;
+                try (InputStream is = zip.getInputStream(entry)) {
+                    sidecar = OBJECT_MAPPER.readTree(is);
+                }
+                assertTrue(sidecar.has("Content-Type"), entry.getName() + ": " + sidecar);
+                sidecar.fieldNames().forEachRemaining(k -> assertTrue(allowed.contains(k),
+                        "filter should have removed " + k + " from " + entry.getName()));
+            }
+        }
+        assertTrue(files > 0, "no files in " + zipFile);
+        assertEquals(files, sidecars, "one sidecar per embedded file in " + zipFile);
     }
 
     private static Path onlyFrictionlessZip(Path outputDir) throws IOException {
