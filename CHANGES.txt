@@ -16,6 +16,20 @@ Release 4.2.0 - unreleased
      own config and sets an operator-only property wraps it with
      JsonConfig.trusted(json) (TIKA-4974).
 
+   * The docx parser wraps OMML equations (m:oMath) in <span class="omml">, their
+     text flattened to plain characters; it was previously emitted as unmarked body
+     text (TIKA-4968).
+     
+   * Files named *.rs are now detected as text/x-rust (Rust source) instead of
+     application/rls-services+xml. RLS services XML is still detected from its
+     root element, whatever the file name (TIKA-4977).
+     
+   * Opt-in "metadata-list": {"typedValues": true} writes INTEGER, REAL and
+     BOOLEAN metadata as JSON numbers and booleans, and tk:chunks as nested
+     JSON rather than an escaped string, in -J, /rmeta and the JSON emitters.
+     New Property.ValueType.JSON; tk:chunks is now JSON-typed. Readers accept
+     both forms (TIKA-4969).
+
    * The docx parser wraps OMML equations (m:oMath) in <span class="math">; their
      text was previously emitted as unmarked body text (TIKA-4968).
 
@@ -167,6 +181,10 @@ Release 4.2.0 - unreleased
      providers for Parser, Detector, EncodingDetector, LanguageDetector and
      MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
      (TIKA-4945).
+
+   * The embed task writes a document's image and page embeddings to
+     tk:chunks once per binding instead of once per image or page, which
+     re-serialized the whole array each time (TIKA-4970).
 
 Release 4.1.0 - 9/26/2026
 

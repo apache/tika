@@ -22,7 +22,9 @@ import static org.apache.tika.pipes.core.serialization.EmitDataSerializer.METADA
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -32,6 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
+import org.apache.tika.serialization.MetadataValueTypes;
 import org.apache.tika.utils.StringUtils;
 
 public class EmitDataDeserializer extends JsonDeserializer<EmitDataImpl> {
@@ -42,6 +45,7 @@ public class EmitDataDeserializer extends JsonDeserializer<EmitDataImpl> {
         ObjectMapper mapper = (ObjectMapper) jsonParser.getCodec();
 
         String emitKey = readString(EMIT_KEY, root, null, true);
+        learnValueTypes(root);
         List<Metadata> metadataList = readMetadataList(root, mapper);
         String containerStackTrace = readString(CONTAINER_STACK_TRACE, root, StringUtils.EMPTY, false);
 
@@ -52,6 +56,20 @@ public class EmitDataDeserializer extends JsonDeserializer<EmitDataImpl> {
             emitData.setContentBytes(contentBytesNode.binaryValue());
         }
         return emitData;
+    }
+
+    private static void learnValueTypes(JsonNode root) {
+        JsonNode types = root.get(EmitDataSerializer.VALUE_TYPES);
+        if (types == null || !types.isObject()) {
+            return;
+        }
+        Iterator<Map.Entry<String, JsonNode>> fields = types.fields();
+        while (fields.hasNext()) {
+            Map.Entry<String, JsonNode> e = fields.next();
+            if (e.getValue().isTextual()) {
+                MetadataValueTypes.learn(e.getKey(), e.getValue().textValue());
+            }
+        }
     }
 
     private static List<Metadata> readMetadataList(JsonNode root, ObjectMapper mapper) throws IOException {
