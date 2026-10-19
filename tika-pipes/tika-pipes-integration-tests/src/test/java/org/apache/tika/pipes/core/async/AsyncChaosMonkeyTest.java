@@ -24,11 +24,15 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -54,8 +58,8 @@ public class AsyncChaosMonkeyTest {
             "<write element=\"p\">main_content</write>" +
             "</mock>";
 
-    // hangs 60s and the expected timeout count is asserted exactly, so the default config's
-    // (tika-config-basic.json) short progressTimeoutMillis is what detects it: keep it short
+    // hangs 60s and the expected timeout count is asserted exactly, so setUp's short
+    // progressTimeoutMillis is what detects it
     private final String TIMEOUT = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
             "<metadata action=\"add\" name=\"dc:creator\">Nikolai Lobachevsky</metadata>" +
             "<write element=\"p\">main_content</write>" +
@@ -69,7 +73,7 @@ public class AsyncChaosMonkeyTest {
     private final String STACK_OVERFLOW = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
             "<throw class=\"java.lang.StackOverflowError\">stack overflow message</throw>\n</mock>";
 
-    private final int totalFiles = 100;
+    private final int totalFiles = 20;
 
     private Path inputDir;
     private Path outputDir;
@@ -81,62 +85,45 @@ public class AsyncChaosMonkeyTest {
     private int stackOverflow = 0;
 
 
-    public Path setUp(Path tmpDir, boolean emitIntermediateResults) throws Exception {
+    public Path setUp(Path tmpDir, boolean emitIntermediateResults, int crashesPerType) throws Exception {
         Path configDir = tmpDir.resolve("config");
         inputDir = tmpDir.resolve("input");
         outputDir = tmpDir.resolve("output");
         Files.createDirectories(configDir);
         Files.createDirectories(inputDir);
         Files.createDirectories(outputDir);
-        ok = 0;
-        oom = 0;
-        timeouts = 0;
-        systemExit = 0;
-        stackOverflow = 0;
 
-
-        Random r = new Random();
+        // fixed mix, shuffled deterministically; every crash costs a fork restart
+        oom = crashesPerType;
+        systemExit = crashesPerType;
+        timeouts = 1;
+        stackOverflow = crashesPerType;
+        ok = totalFiles - oom - systemExit - timeouts - stackOverflow;
+        List<String> contents = new ArrayList<>();
+        contents.addAll(Collections.nCopies(oom, OOM));
+        contents.addAll(Collections.nCopies(systemExit, SYSTEM_EXIT));
+        contents.addAll(Collections.nCopies(timeouts, TIMEOUT));
+        contents.addAll(Collections.nCopies(stackOverflow, STACK_OVERFLOW));
+        contents.addAll(Collections.nCopies(ok, OK));
+        Collections.shuffle(contents, new Random(42));
         for (int i = 0; i < totalFiles; i++) {
-            float f = r.nextFloat();
-            if (f < 0.05) {
-                Files.write(inputDir.resolve(i + ".xml"), OOM.getBytes(StandardCharsets.UTF_8));
-                oom++;
-            } else if (f < 0.10) {
-                Files.write(inputDir.resolve(i + ".xml"), SYSTEM_EXIT.getBytes(StandardCharsets.UTF_8));
-                systemExit++;
-            } else if (f < 0.13) {
-                Files.write(inputDir.resolve(i + ".xml"), TIMEOUT.getBytes(StandardCharsets.UTF_8));
-                timeouts++;
-            } else if (f < 0.16) {
-                Files.write(inputDir.resolve(i + ".xml"), STACK_OVERFLOW.getBytes(StandardCharsets.UTF_8));
-                stackOverflow++;
-            } else {
-                Files.write(inputDir.resolve(i + ".xml"), OK.getBytes(StandardCharsets.UTF_8));
-                ok++;
-            }
-
+            Files.writeString(inputDir.resolve(i + ".xml"), contents.get(i), StandardCharsets.UTF_8);
         }
         MockReporter.RESULTS.clear();
-        return PluginsTestHelper.getFileSystemFetcherConfig(configDir, inputDir, outputDir, emitIntermediateResults);
+        Path config = PluginsTestHelper.getFileSystemFetcherConfig(configDir, inputDir, outputDir, emitIntermediateResults);
+        // two workers: enough to show a crash in one leaves the other alone
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode root = (ObjectNode) mapper.readTree(config.toFile());
+        ((ObjectNode) root.get("pipes")).put("numClients", 2);
+        ((ObjectNode) root.get("parse-context").get("timeout-limits")).put("progressTimeoutMillis", 2000);
+        mapper.writeValue(config.toFile(), root);
+        return config;
     }
-
-/*
-    private void writeLarge(Path resolve) throws IOException {
-        try (BufferedWriter writer = Files.newBufferedWriter(resolve, StandardCharsets.UTF_8)) {
-            writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
-            writer.write("<mock>");
-            for (int i = 0; i < 10000000; i++) {
-                writer.write("<write element=\"p\">hello hello hello hello hello</write>");
-            }
-            writer.write("</mock>");
-        }
-    }
-*/
-
 
     @Test
     public void testBasic(@TempDir Path tmpDir) throws Exception {
-        AsyncProcessor processor = AsyncProcessor.load(setUp(tmpDir, false));
+        // one crash of each type; testEmitIntermediate asserts exact per-type counts on a fuller mix
+        AsyncProcessor processor = AsyncProcessor.load(setUp(tmpDir, false, 1));
         for (int i = 0; i < totalFiles; i++) {
             FetchEmitTuple t = new FetchEmitTuple("myId-" + i,
                     new FetchKey(fetcherPluginId, i + ".xml"),
@@ -159,16 +146,12 @@ public class AsyncChaosMonkeyTest {
         // When emitIntermediateResults = false, only successful files are emitted
         assertEquals(ok, emitKeys.size());
 
-        // Verify we got the expected distribution of file types
-        int expectedCrashes = oom + timeouts + systemExit + stackOverflow;
-        assertEquals(totalFiles, ok + expectedCrashes,
-                "Total files should equal sum of ok and crashes");
 
     }
 
     @Test
     public void testEmitIntermediate(@TempDir Path tmpDir) throws Exception {
-        AsyncProcessor processor = AsyncProcessor.load(setUp(tmpDir, true));
+        AsyncProcessor processor = AsyncProcessor.load(setUp(tmpDir, true, 2));
         for (int i = 0; i < totalFiles; i++) {
             FetchEmitTuple t = new FetchEmitTuple("myId-" + i, new FetchKey(fetcherPluginId, i + ".xml"),
                     new EmitKey(emitterPluginId, "emit-" + i), new Metadata());

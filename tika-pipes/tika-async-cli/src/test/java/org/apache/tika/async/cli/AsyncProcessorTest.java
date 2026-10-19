@@ -125,6 +125,7 @@ public class AsyncProcessorTest extends TikaTest {
         unpackConfig.setEmitter("fse-bytes");
         unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.NONE);
         unpackConfig.setEmbeddedIdPrefix("-");
+        unpackConfig.setOutputMode(UnpackConfig.OUTPUT_MODE.DIRECTORY);
         ParseContext parseContext = new ParseContext();
         parseContext.set(ParseMode.class, ParseMode.UNPACK);
         parseContext.set(UnpackConfig.class, unpackConfig);
@@ -144,10 +145,10 @@ public class AsyncProcessorTest extends TikaTest {
         }
         processor.close();
 
-        String container = Files.readString(bytesOutputDir.resolve("emit-1-embed/0"));
+        String container = Files.readString(bytesOutputDir.resolve("emit-1/unpacked/0"));
         assertContains("\"dc:creator\">Nikolai Lobachevsky", container);
 
-        String xmlEmbedded = Files.readString(bytesOutputDir.resolve("emit-1-embed/1"));
+        String xmlEmbedded = Files.readString(bytesOutputDir.resolve("emit-1/unpacked/1"));
         assertContains("name=\"dc:creator\"", xmlEmbedded);
         assertContains(">embeddedAuthor</metadata>", xmlEmbedded);
 

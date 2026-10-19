@@ -66,7 +66,7 @@
     "emitMaxEstimatedBytes": 100000,
     "emitWithinMillis": 60000,
     "numEmitters": 1,
-    "numClients": 3,
+    "numClients": 1,
     "forkedJvmArgs": [
       "-Xmx512m",
       "-XX:ParallelGCThreads=2",

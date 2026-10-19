@@ -30,19 +30,19 @@ public class JDBCPipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting JDBC Emitter Plugin");
+        LOG.debug("Starting JDBC Emitter Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping JDBC Emitter Plugin");
+        LOG.debug("Stopping JDBC Emitter Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting JDBC Emitter Plugin");
+        LOG.debug("Deleting JDBC Emitter Plugin");
         super.delete();
     }
 }

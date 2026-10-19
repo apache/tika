@@ -49,6 +49,7 @@ prioritize the gap.
 == Parsing internals
 
 * xref:advanced/embedded-documents.adoc[Embedded Document Metadata] — how Tika tracks embedded documents and their paths
+* xref:advanced/date-handling.adoc[Date Handling] — how dates are parsed, stored, and read back since 4.2.0
 * xref:advanced/local-vlm-server.adoc[Running a Local VLM Server] — an OpenAI-compatible endpoint for air-gapped OCR
 
 == Integration testing

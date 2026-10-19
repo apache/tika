@@ -307,10 +307,10 @@ public class PipesParsingHelper {
      */
     private static void logTiming(String id, String route, long routeNanos, long pipesNanos,
                                   long postNanos, long totalNanos) {
-        if (!TIMING_LOG.isInfoEnabled()) {
+        if (!TIMING_LOG.isTraceEnabled()) {
             return;
         }
-        TIMING_LOG.info("SERVER_TIMING id={} route={} route_us={} pipes_us={} post_us={} total_us={}",
+        TIMING_LOG.trace("SERVER_TIMING id={} route={} route_us={} pipes_us={} post_us={} total_us={}",
                 id, route, us(routeNanos), us(pipesNanos), us(postNanos), us(totalNanos));
     }
 

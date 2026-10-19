@@ -18,6 +18,7 @@ package org.apache.tika.pipes.core.config;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,15 +62,26 @@ public final class DefaultPluginsDir {
      * none exists yet
      */
     public static String resolve(Class<?> anchor) {
-        Path codeSourceDir = null;
+        return resolve(codeSourceDir(anchor), Path.of("")).toString();
+    }
+
+    /**
+     * The same probe as {@link #resolve(Class)}, but empty rather than a warning and a
+     * fallback path when no {@code plugins} directory exists.
+     */
+    public static Optional<Path> find(Class<?> anchor) {
+        return find(codeSourceDir(anchor), Path.of(""));
+    }
+
+    private static Path codeSourceDir(Class<?> anchor) {
         try {
-            codeSourceDir = Path.of(anchor.getProtectionDomain().getCodeSource().getLocation()
+            return Path.of(anchor.getProtectionDomain().getCodeSource().getLocation()
                     .toURI()).getParent();
         } catch (Exception e) {
             //no code source (e.g. a repacked classloader): probe the working
             //directory only
+            return null;
         }
-        return resolve(codeSourceDir, Path.of("")).toString();
     }
 
     /**
@@ -80,24 +92,33 @@ public final class DefaultPluginsDir {
      * @return the absolute path of the resolved directory
      */
     public static Path resolve(Path codeSourceDir, Path cwd) {
+        Path fallback = cwd.resolve(PLUGINS_DIR_NAME).toAbsolutePath();
+        return find(codeSourceDir, cwd).orElseGet(() -> {
+            LOG.warn("no plugins directory found in the install layout or at {}; "
+                    + "pipes plugins will not load unless plugin-roots is configured", fallback);
+            return fallback;
+        });
+    }
+
+    /**
+     * @return the first existing {@code plugins} directory: beside the code source, beside its
+     * parent, or in {@code cwd}; empty when there is none
+     */
+    public static Optional<Path> find(Path codeSourceDir, Path cwd) {
         if (codeSourceDir != null) {
             Path nextToJar = codeSourceDir.resolve(PLUGINS_DIR_NAME);
             if (Files.isDirectory(nextToJar)) {
-                return nextToJar.toAbsolutePath();
+                return Optional.of(nextToJar.toAbsolutePath());
             }
             Path parent = codeSourceDir.getParent();
             if (parent != null) {
                 Path nextToParent = parent.resolve(PLUGINS_DIR_NAME);
                 if (Files.isDirectory(nextToParent)) {
-                    return nextToParent.toAbsolutePath();
+                    return Optional.of(nextToParent.toAbsolutePath());
                 }
             }
         }
-        Path fallback = cwd.resolve(PLUGINS_DIR_NAME).toAbsolutePath();
-        if (!Files.isDirectory(fallback)) {
-            LOG.warn("no plugins directory found in the install layout or at {}; "
-                    + "pipes plugins will not load unless plugin-roots is configured", fallback);
-        }
-        return fallback;
+        Path inCwd = cwd.resolve(PLUGINS_DIR_NAME).toAbsolutePath();
+        return Files.isDirectory(inCwd) ? Optional.of(inCwd) : Optional.empty();
     }
 }

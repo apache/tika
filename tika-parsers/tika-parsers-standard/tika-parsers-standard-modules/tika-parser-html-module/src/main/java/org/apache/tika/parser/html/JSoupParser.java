@@ -32,6 +32,7 @@ import javax.xml.XMLConstants;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Attribute;
+import org.jsoup.nodes.Comment;
 import org.jsoup.nodes.DataNode;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Node;
@@ -277,6 +278,23 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
                     }
                 }
                 return FilterResult.CONTINUE;
+            } else if (node instanceof Comment) {
+                // jsoup >= 1.23 tokenizes <![CDATA[...]]> in HTML content as a bogus comment, as the
+                // HTML spec says. XML routed here as HTML keeps its CDATA text through this branch;
+                // a bogus comment ends at the first '>', so a section containing one is cut there.
+                String data = ((Comment) node).getData();
+                if (data != null && data.startsWith("[CDATA[")) {
+                    int end = data.endsWith("]]") ? data.length() - 2 : data.length();
+                    char[] chars = data.substring(7, end).toCharArray();
+                    try {
+                        if (chars.length > 0) {
+                            handler.characters(chars, 0, chars.length);
+                        }
+                    } catch (SAXException e) {
+                        throw new RuntimeSAXException(e);
+                    }
+                    return FilterResult.SKIP_ENTIRELY;
+                }
             }
             AttributesImpl attributes = new AttributesImpl();
             Iterator<Attribute> jsoupAttrs = node.attributes().iterator();

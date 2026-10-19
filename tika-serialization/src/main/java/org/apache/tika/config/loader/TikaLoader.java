@@ -235,7 +235,20 @@ public class TikaLoader {
      */
     public static TikaLoader load(Path configPath, ClassLoader classLoader)
             throws TikaConfigException, IOException {
-        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        return load(TikaJsonConfig.load(configPath), classLoader);
+    }
+
+    /**
+     * Creates a Tika loader from an already-loaded configuration.
+     * Global settings are automatically loaded and applied during initialization.
+     *
+     * @param config the configuration
+     * @param classLoader the class loader to use for loading components
+     * @return the Tika loader
+     * @throws TikaConfigException if loading global settings fails
+     */
+    public static TikaLoader load(TikaJsonConfig config, ClassLoader classLoader)
+            throws TikaConfigException, IOException {
         TikaLoader loader = new TikaLoader(config, classLoader);
         loader.init();
         return loader;

@@ -354,7 +354,7 @@ public class CompositeParser implements Parser {
             String parserClassname = ParserUtils.getParserClassname(parser);
             parserRecord.addParserClass(parserClassname);
             ParserUtils.recordParserDetails(parserClassname, metadata);
-            parserRecord.beforeParse();
+            parserRecord.beforeParse(metadata);
             try {
                 parser.parse(tis, taggedHandler, metadata, context);
             } catch (SecurityException e) {
@@ -409,6 +409,9 @@ public class CompositeParser implements Parser {
         }
         if (record.isTaskDeadlineReached()) {
             metadata.set(TikaCoreProperties.TASK_DEADLINE_REACHED, true);
+        }
+        if (record.isExternalReferenceInEmbedded()) {
+            metadata.set(TikaCoreProperties.XML_EXTERNAL_REFERENCE_EMBEDDED, true);
         }
 
         for (Metadata m : record.getMetadataList()) {

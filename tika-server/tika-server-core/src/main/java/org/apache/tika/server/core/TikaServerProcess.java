@@ -700,9 +700,8 @@ public class TikaServerProcess {
         // Create or merge config with server components using ConfigMerger
         Path existingConfigPath = tikaServerConfig.hasConfigFile() ?
                 tikaServerConfig.getConfigPath() : null;
-        Path configPath = createServerConfig(existingConfigPath,
+        TikaJsonConfig tikaJsonConfig = createServerConfig(existingConfigPath,
                 inputTempDirectory, unpackTempDirectory);
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(configPath);
 
         // Load or create PipesConfig with defaults
         PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
@@ -714,7 +713,7 @@ public class TikaServerProcess {
         pipesConfig.setEmitStrategy(new EmitStrategyConfig(EmitStrategy.PASSBACK_ALL));
 
         // Create PipesParser
-        PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, configPath);
+        PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
 
         // Create and return the helper
         PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig,
@@ -740,11 +739,12 @@ public class TikaServerProcess {
      * @param existingConfigPath the existing config file path (may be null)
      * @param inputTempDirectory the temp directory for input files
      * @param unpackTempDirectory the temp directory for unpack output files (may be null)
-     * @return the config path to use
+     * @return the merged config
      */
-    private static Path createServerConfig(Path existingConfigPath,
-                                           Path inputTempDirectory,
-                                           Path unpackTempDirectory) throws IOException {
+    private static TikaJsonConfig createServerConfig(Path existingConfigPath,
+                                                     Path inputTempDirectory,
+                                                     Path unpackTempDirectory)
+            throws IOException, TikaConfigException {
         LOG.info("Configuring {} with basePath={}", PipesParsingHelper.DEFAULT_FETCHER_ID, inputTempDirectory);
 
         // Build configuration overrides
@@ -779,10 +779,7 @@ public class TikaServerProcess {
         ConfigOverrides overrides = builder.build();
 
         // Merge with existing config or create new
-        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(existingConfigPath, overrides);
-
-        LOG.debug("Created server config: {}", result.configPath());
-        return result.configPath();
+        return ConfigMerger.merge(existingConfigPath, overrides).load();
     }
 
     private static class ServerDetails {

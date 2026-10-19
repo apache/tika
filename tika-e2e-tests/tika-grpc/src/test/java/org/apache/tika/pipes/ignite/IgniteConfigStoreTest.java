@@ -131,7 +131,7 @@ class IgniteConfigStoreTest {
         }
         
         String configFileName = "tika-config-ignite-local.json";
-        Path configFile = Path.of("src/test/resources/" + configFileName).toAbsolutePath();
+        Path configFile = ExternalTestBase.localConfig(configFileName);
         
         if (!Files.exists(configFile)) {
             throw new IllegalStateException("Config file not found: " + configFile);

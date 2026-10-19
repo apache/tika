@@ -43,12 +43,10 @@ public final class JsonMergeUtils {
      * mapper they were derived from ({@code copy()} is expensive and the set of source
      * mappers is tiny and long-lived).
      * <p>
-     * The clone must not run through setters. Runtime-config subclasses override their
-     * setters to reject caller input -- often as "any non-empty value is a modification"
-     * -- so re-applying the default's own values through them throws, and the caller's
-     * JSON is never even reached. Copying by field also preserves init-time state that
-     * has no getter (e.g. VLMOCRConfig.RuntimeConfig's initMaxTokens baseline), which a
-     * serialization round-trip silently reset to the class default.
+     * The clone must not run through setters: a validating setter would re-check the
+     * default's own values, and a setter that rejects caller input would throw before the
+     * caller's JSON is even reached. Copying by field also preserves init-time state that
+     * has no getter, which a serialization round-trip silently reset to the class default.
      */
     private static final Map<ObjectMapper, ObjectMapper> COPY_MAPPERS = new ConcurrentHashMap<>();
 

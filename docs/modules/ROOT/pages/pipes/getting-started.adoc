@@ -117,7 +117,7 @@ The `pipes` section controls the pipeline. The four settings worth knowing first
 |Output mode: `RMETA`, `CONCATENATE`, `CONTENT_ONLY`, `NO_PARSE`, `UNPACK`.
 
 |`maxFilesProcessedPerProcess`
-|`10000`
+|`100000`
 |Restart forked processes after this many files, bounding slow memory leaks.
 
 |`onParseException`

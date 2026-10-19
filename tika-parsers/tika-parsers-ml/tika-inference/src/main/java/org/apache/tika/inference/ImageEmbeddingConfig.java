@@ -18,9 +18,9 @@ package org.apache.tika.inference;
 
 import java.io.Serializable;
 
+import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.utils.StringUtils;
 
 /**
  * Configuration for image embedding parsers that call a CLIP-like
@@ -59,6 +59,7 @@ public class ImageEmbeddingConfig implements Serializable {
         return baseUrl;
     }
 
+    @OperatorOnly
     public void setBaseUrl(String baseUrl) throws TikaConfigException {
         this.baseUrl = baseUrl;
     }
@@ -67,6 +68,7 @@ public class ImageEmbeddingConfig implements Serializable {
         return model;
     }
 
+    @OperatorOnly
     public void setModel(String model) {
         this.model = model;
     }
@@ -75,6 +77,7 @@ public class ImageEmbeddingConfig implements Serializable {
         return apiKey;
     }
 
+    @OperatorOnly
     public void setApiKey(String apiKey) throws TikaConfigException {
         this.apiKey = apiKey;
     }
@@ -125,44 +128,5 @@ public class ImageEmbeddingConfig implements Serializable {
 
     public void setLiftToParent(boolean liftToParent) {
         this.liftToParent = liftToParent;
-    }
-
-    /**
-     * Runtime-only config that prevents modification of security-sensitive
-     * and cost-sensitive fields ({@code baseUrl}, {@code apiKey},
-     * {@code model}) at parse time.
-     * <p>
-     * These fields must be set at initialization via the config file.
-     * If a runtime {@code ParseContext} JSON config attempts to set them,
-     * the overridden setters throw {@link TikaConfigException}.
-     */
-    public static class RuntimeConfig extends ImageEmbeddingConfig {
-
-        @Override
-        public void setBaseUrl(String baseUrl) throws TikaConfigException {
-            if (!StringUtils.isBlank(baseUrl)) {
-                throw new TikaConfigException(
-                        "Cannot modify baseUrl at runtime. "
-                                + "URLs must be configured at initialization time.");
-            }
-        }
-
-        @Override
-        public void setApiKey(String apiKey) throws TikaConfigException {
-            if (!StringUtils.isBlank(apiKey)) {
-                throw new TikaConfigException(
-                        "Cannot modify apiKey at runtime. "
-                                + "API keys must be configured at initialization time.");
-            }
-        }
-
-        @Override
-        public void setModel(String model) {
-            throw new IllegalStateException(
-                    "Cannot modify model at runtime. "
-                            + "Models must be configured at initialization time. "
-                            + "If you need a different model, configure a "
-                            + "separate parser instance.");
-        }
     }
 }

@@ -21,9 +21,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.config.EmbeddedLimits;
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -39,6 +44,7 @@ import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
+import org.apache.tika.pipes.core.ServerInitializationException;
 import org.apache.tika.pipes.core.config.ConfigMerger;
 import org.apache.tika.pipes.core.config.ConfigOverrides;
 import org.apache.tika.pipes.core.config.DefaultPluginsDir;
@@ -118,15 +124,16 @@ public class PipesForkParser implements Closeable {
 
     public static final String DEFAULT_FETCHER_NAME = "fs";
 
+    private static final Logger LOG = LoggerFactory.getLogger(PipesForkParser.class);
+
     private final PipesForkParserConfig config;
     private final PipesParser pipesParser;
-    private final Path tikaConfigPath;
     private final String internalFetcherId;
 
     /**
      * Creates a new PipesForkParser with default configuration.
      *
-     * @throws IOException if the temporary config file cannot be created
+     * @throws IOException if the user config cannot be read
      * @throws TikaConfigException if configuration is invalid
      */
     public PipesForkParser() throws IOException, TikaConfigException {
@@ -137,17 +144,34 @@ public class PipesForkParser implements Closeable {
      * Creates a new PipesForkParser with the specified configuration.
      *
      * @param config the configuration for this parser
-     * @throws IOException if the temporary config file cannot be created
+     * @throws IOException if the user config cannot be read
      * @throws TikaConfigException if configuration is invalid
      */
     public PipesForkParser(PipesForkParserConfig config) throws IOException, TikaConfigException {
         this.config = config;
         // Jackson-deserialized configs are checked on binding; setter-built ones are checked here.
         config.getPipesConfig().checkPayloadLimits();
-        ConfigMerger.MergeResult mergeResult = createTikaConfigFile();
-        this.tikaConfigPath = mergeResult.configPath();
-        this.internalFetcherId = mergeResult.fetcherId();
-        this.pipesParser = PipesParser.load(tikaConfigPath);
+        ConfigMerger.MergedConfig merged = createTikaConfig();
+        this.internalFetcherId = merged.fetcherId();
+        TikaJsonConfig tikaJsonConfig = merged.load();
+        this.pipesParser = PipesParser.load(tikaJsonConfig, PipesConfig.load(tikaJsonConfig));
+    }
+
+    /**
+     * Starts the forked processes now and waits until each is ready, instead of on the first
+     * {@link #parse}. Optional: call it to find out that the forks can't start (bad config,
+     * missing plugins, bad JVM args) before any work is queued.
+     *
+     * @throws PipesForkParserException with status {@code FAILED_TO_INITIALIZE} if a forked
+     *         process fails to start
+     */
+    public void start() throws InterruptedException, PipesForkParserException {
+        try {
+            pipesParser.start();
+        } catch (ServerInitializationException e) {
+            throw new PipesForkParserException(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
+                    "Failed to start forked process: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -384,24 +408,37 @@ public class PipesForkParser implements Closeable {
     @Override
     public void close() throws IOException {
         pipesParser.close();
-        // Clean up temp config file
-        if (tikaConfigPath != null) {
-            Files.deleteIfExists(tikaConfigPath);
-        }
     }
 
     /**
-     * Creates a temporary tika-config.json file for the forked process.
+     * Builds the tika-config for the forked processes, in memory.
      * <p>
      * Uses ConfigMerger to:
      * - Add a FileSystemFetcher with UUID-based name for absolute path access
      * - Set PASSBACK_ALL emit strategy (no emitter, return results to client)
      * - Merge with user config if provided
      *
-     * @return MergeResult containing the config path and generated fetcher ID
+     * @return the merged config and generated fetcher ID
      */
-    private ConfigMerger.MergeResult createTikaConfigFile() throws IOException {
+    private ConfigMerger.MergedConfig createTikaConfig() throws IOException {
         PipesConfig pc = config.getPipesConfig();
+
+        String pluginRoots;
+        boolean classpathPlugins = false;
+        if (config.getPluginsDir() != null) {
+            pluginRoots = config.getPluginsDir().toAbsolutePath().toString();
+        } else {
+            Optional<Path> found = DefaultPluginsDir.find(PipesForkParser.class);
+            if (found.isPresent()) {
+                pluginRoots = found.get().toString();
+            } else {
+                // No install layout, so this is a Maven consumer: the file-system plugin this
+                // parser needs is on the classpath, and only the fork is told to look there.
+                pluginRoots = Path.of(DefaultPluginsDir.PLUGINS_DIR_NAME).toAbsolutePath().toString();
+                classpathPlugins = true;
+                LOG.info("no plugins directory found; the fork loads plugins from its classpath");
+            }
+        }
 
         // Build configuration overrides
         ConfigOverrides.Builder builder = ConfigOverrides.builder()
@@ -417,26 +454,20 @@ public class PipesForkParser implements Closeable {
                         pc.getForkedJvmArgs(),
                         pc.getSocketTimeoutMillis(),
                         pc.getJavaPath())
+                .setClasspathPlugins(classpathPlugins)
                 // Use PASSBACK_ALL strategy - results returned through socket
-                .setEmitStrategy(EmitStrategy.PASSBACK_ALL);
+                .setEmitStrategy(EmitStrategy.PASSBACK_ALL)
+                .setPluginRoots(pluginRoots);
 
         // Set timeout limits if configured
         if (config.getTimeoutLimits() != null) {
             builder.setTimeoutLimits(config.getTimeoutLimits());
         }
 
-        // plugin-roots is mandatory downstream (TikaPluginManager.load throws without it), so an
-        // unset pluginsDir has to resolve to something rather than fail construction.
-        if (config.getPluginsDir() != null) {
-            builder.setPluginRoots(config.getPluginsDir().toAbsolutePath().toString());
-        } else {
-            builder.setPluginRoots(DefaultPluginsDir.resolve(PipesForkParser.class));
-        }
-
         ConfigOverrides overrides = builder.build();
 
         // Merge with user config if provided, otherwise create new
-        return ConfigMerger.mergeOrCreate(config.getUserConfigPath(), overrides);
+        return ConfigMerger.merge(config.getUserConfigPath(), overrides);
     }
 
 

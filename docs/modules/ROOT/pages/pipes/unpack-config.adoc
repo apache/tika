@@ -50,13 +50,16 @@ live inside that block:
   "parse-context": {
     "unpack-config": {
       "maxUnpackBytes": 104857600,
-      "zipEmbeddedFiles": true
+      "outputMode": "ZIPPED"
     }
   }
 }
 ----
 
-This extracts both metadata (like `RMETA` mode) and embedded document bytes.
+This extracts both metadata (like `RMETA` mode) and embedded document bytes. Since 4.2 the
+output is a <<_frictionless_data_package_output,Frictionless Data Package>> on every surface,
+one `<key>-frictionless.zip` per container unless `outputMode` is `DIRECTORY`;
+`"outputFormat": "REGULAR"` restores the pre-4.2 flat layout.
 
 [NOTE]
 ====
@@ -95,7 +98,7 @@ immediately capped.
 |`zipEmbeddedFiles`
 |boolean
 |`false`
-|Collect all embedded files into a single ZIP archive, emitted at the container's emit key plus `-embedded.zip`.
+|`REGULAR` only: collect all embedded files into a single ZIP archive, emitted at the container's emit key plus `-embedded.zip`. Frictionless packaging is `outputMode`.
 
 |`includeMetadata`
 |boolean
@@ -133,9 +136,9 @@ immediately capped.
 |Custom base path when `keyBaseStrategy=CUSTOM`.
 
 |`outputFormat`
-|REGULAR, FRICTIONLESS
-|`REGULAR`
-|Output format for the ZIP archive. See <<_frictionless_data_package_output,Frictionless Data Package Output>>.
+|FRICTIONLESS, REGULAR
+|`FRICTIONLESS`
+|`FRICTIONLESS` is a <<_frictionless_data_package_output,Frictionless Data Package>>; `REGULAR` is the pre-4.2 flat layout (files at the root, no manifest).
 
 |`outputMode`
 |ZIPPED, DIRECTORY
@@ -150,9 +153,7 @@ immediately capped.
 
 == Examples
 
-=== ZIP Output with Metadata
-
-Collect all embedded files into a ZIP with metadata:
+=== One package per container, with the original
 
 [source,json]
 ----
@@ -162,6 +163,24 @@ Collect all embedded files into a ZIP with metadata:
   },
   "parse-context": {
     "unpack-config": {
+      "outputMode": "ZIPPED",
+      "includeOriginal": true
+    }
+  }
+}
+----
+
+=== The pre-4.2 flat ZIP with sidecars
+
+[source,json]
+----
+{
+  "pipes": {
+    "parseMode": "UNPACK"
+  },
+  "parse-context": {
+    "unpack-config": {
+      "outputFormat": "REGULAR",
       "zipEmbeddedFiles": true,
       "includeMetadata": true,
       "includeOriginal": true
@@ -194,6 +213,9 @@ Collect all embedded files into a ZIP with metadata:
 
 Produces names like `document-embed-00000001.pdf`. Under the `DEFAULT` strategy the same
 `zeroPadName`/`suffixStrategy` settings would produce `<containerKey>-embed/00000001.pdf`.
+These keys are REGULAR output's; a Frictionless package sits at `<containerKey>/` (or
+`<containerKey>-frictionless.zip`) and names its files `unpacked/<id><suffix>`, so only
+`zeroPadName` and `suffixStrategy` show there.
 
 == Suffix Strategies
 
@@ -225,9 +247,8 @@ The UNPACK mode can output files in https://frictionlessdata.io/[Frictionless Da
 a standard for packaging data files with their metadata. This format includes a `datapackage.json`
 manifest with file checksums and MIME types, making it easy to verify and process extracted files.
 
-=== Enabling Frictionless Output
-
-Set `outputFormat` to `FRICTIONLESS` in your `unpack-config`:
+It is the default since 4.2 (TIKA-4681); 4.0 and 4.1 emitted the flat `REGULAR` layout
+unless `outputFormat` said otherwise. To get that layout back:
 
 [source,json]
 ----
@@ -237,8 +258,7 @@ Set `outputFormat` to `FRICTIONLESS` in your `unpack-config`:
   },
   "parse-context": {
     "unpack-config": {
-      "outputFormat": "FRICTIONLESS",
-      "includeMetadata": true
+      "outputFormat": "REGULAR"
     }
   }
 }
@@ -246,7 +266,7 @@ Set `outputFormat` to `FRICTIONLESS` in your `unpack-config`:
 
 === Output Structure
 
-When using Frictionless output format, the ZIP archive contains:
+A zipped package contains:
 
 [source]
 ----
@@ -300,22 +320,23 @@ Naming the handler in both the path and a `config` part is a `400`, as on `/tika
 
 == What each surface produces
 
-The five knobs interact differently per surface. One default changes from 4.0.0: a
+The five knobs interact differently per surface. Two defaults changed since 4.0.0: a
 Frictionless package carries `metadata.json` unless `includeMetadata` is `false` (4.0.0 left
-it out unless `includeFullMetadata` was `true`). REGULAR output is as it was.
+it out unless `includeFullMetadata` was `true`), and since 4.2 Frictionless is the format
+on every surface. REGULAR output is as it was.
 
 [cols="1,2,2,2"]
 |===
 | |tika-server `/unpack` |tika-app `-z` / `-Z` |pipes JSON config
 
 |format
-|REGULAR; set `outputFormat` in the server config for Frictionless
-|REGULAR; `--unpack-format=FRICTIONLESS`
+|Frictionless; `outputFormat: REGULAR` in the server config for the flat zip
+|Frictionless; `--unpack-format=REGULAR`
 |`outputFormat`
 
 |packaging
 |always one zip (`ZIPPED` is pinned; an HTTP response is one body)
-|loose files; `DIRECTORY` when Frictionless is asked for without `--unpack-mode`
+|loose files (`DIRECTORY`); `--unpack-mode=ZIPPED` for one zip
 |`outputMode` governs Frictionless, `zipEmbeddedFiles` governs REGULAR
 
 |depth
@@ -350,18 +371,18 @@ Output trees for `doc.docx` with three attachments:
 
 [source]
 ----
-REGULAR, tika-server (one zip)        REGULAR, tika-app -Z (loose)
+tika-server (one zip)                 tika-app -Z (loose)
+  datapackage.json                      out/doc.docx.json
+  metadata.json                         out/doc.docx/datapackage.json
+  unpacked/1.emf ...                    out/doc.docx/metadata.json
+  + with /all: unpacked/0.docx          out/doc.docx/unpacked/1.emf ...
+
+REGULAR, tika-server (one zip)        REGULAR, tika-app -Z --unpack-format=REGULAR
   1.emf                                 out/doc.docx.json
   2.zip                                 out/doc.docx-embed/1.emf
   3.bin                                 out/doc.docx-embed/2.zip
   + with /all: 0.docx and one           out/doc.docx-embed/3.bin
     <name>.metadata.json per file
-
-FRICTIONLESS, tika-server (one zip)   FRICTIONLESS, tika-app -Z --unpack-format=FRICTIONLESS
-  datapackage.json                      out/doc.docx.json
-  metadata.json                         out/doc.docx/datapackage.json
-  unpacked/1.emf ...                    out/doc.docx/metadata.json
-  + with /all: unpacked/0.docx          out/doc.docx/unpacked/1.emf ...
 ----
 
 The top-level `doc.docx.json` on the command line is the normal pipes output for the parse;
@@ -377,13 +398,12 @@ The `datapackage.json` file contains:
 
 === CLI Usage
 
-Extract files in Frictionless format using the CLI. The `-Z` flag turns on recursive
-unpack (the Pipes-mode counterpart of standard-mode `-z`), and `-i`/`-o` are the
-Pipes input/output directories:
+The `-Z` flag turns on recursive unpack (the Pipes-mode counterpart of standard-mode `-z`),
+and `-i`/`-o` are the Pipes input/output directories:
 
 [source,bash]
 ----
-java -jar tika-app.jar -Z --unpack-format=FRICTIONLESS -i /path/to/input -o /path/to/output
+java -jar tika-app.jar -Z -i /path/to/input -o /path/to/output
 ----
 
 NOTE: `-i` expects a directory of containers to unpack, not a single file. For

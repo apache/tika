@@ -20,11 +20,16 @@ import static org.apache.tika.detect.zip.PackageConstants.JAR;
 import static org.apache.tika.detect.zip.PackageConstants.ZIP;
 
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.attribute.FileTime;
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -35,6 +40,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.compress.archivers.ArchiveEntry;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException;
 import org.apache.commons.compress.archivers.zip.UnsupportedZipFeatureException.Feature;
+import org.apache.commons.compress.archivers.zip.X000A_NTFS;
+import org.apache.commons.compress.archivers.zip.X5455_ExtendedTimestamp;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
 import org.apache.commons.compress.archivers.zip.ZipFile;
@@ -55,6 +62,7 @@ import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -97,6 +105,8 @@ import org.apache.tika.zip.utils.ZipFileHelper;
  */
 @TikaComponent()
 public class ZipParser extends AbstractArchiveParser {
+
+    private static final int LOCAL_FILE_HEADER_SIG = 0x04034b50;
 
     /**
      * Set of media types that are specializations of ZIP (e.g., Office documents, EPUB, APK).
@@ -278,7 +288,8 @@ public class ZipParser extends AbstractArchiveParser {
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
 
-        try {
+        // a channel of our own for raw header reads, so the ZipFile's position is never disturbed
+        try (SeekableByteChannel headers = openHeaderChannel(tis)) {
             Enumeration<ZipArchiveEntry> entries = zipFile.getEntries();
             while (entries.hasMoreElements()) {
                 ZipArchiveEntry entry = entries.nextElement();
@@ -286,7 +297,7 @@ public class ZipParser extends AbstractArchiveParser {
                     centralDirectoryEntries.add(entry.getName());
                 }
                 if (!entry.isDirectory()) {
-                    parseZipFileEntry(zipFile, entry, extractor, metadata, xhtml, context, config);
+                    parseZipFileEntry(zipFile, headers, entry, extractor, metadata, xhtml, context, config);
                 }
             }
         } finally {
@@ -464,7 +475,7 @@ public class ZipParser extends AbstractArchiveParser {
         }
     }
 
-    private void parseZipFileEntry(ZipFile zipFile, ZipArchiveEntry entry,
+    private void parseZipFileEntry(ZipFile zipFile, SeekableByteChannel headers, ZipArchiveEntry entry,
                                     EmbeddedDocumentExtractor extractor, Metadata parentMetadata,
                                     XHTMLContentHandler xhtml, ParseContext context,
                                     ZipParserConfig config)
@@ -492,7 +503,7 @@ public class ZipParser extends AbstractArchiveParser {
             return;
         }
 
-        Metadata entryMetadata = buildEntryMetadata(entry, name, context);
+        Metadata entryMetadata = buildEntryMetadata(entry, name, context, readDosTime(headers, entry));
 
         writeEntryXhtml(name, xhtml);
 
@@ -615,7 +626,87 @@ public class ZipParser extends AbstractArchiveParser {
         }
     }
 
+    /** 0x5455/0x000A extra fields are UTC; otherwise only the DOS field: local time, stored zone-less. */
+    static void setEntryTimes(ZipArchiveEntry entry, Metadata md) {
+        setEntryTimes(entry, md, null);
+    }
+
+    private static SeekableByteChannel openHeaderChannel(TikaInputStream tis) {
+        try {
+            return tis.getSeekableByteChannel();
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /** @param rawDosTime the local header's DOS time, when it could be read; see {@link #readDosTime} */
+    static void setEntryTimes(ZipArchiveEntry entry, Metadata md, LocalDateTime rawDosTime) {
+        X5455_ExtendedTimestamp ts = entry.getExtraField(X5455_ExtendedTimestamp.HEADER_ID)
+                instanceof X5455_ExtendedTimestamp x ? x : null;
+        X000A_NTFS ntfs = entry.getExtraField(X000A_NTFS.HEADER_ID) instanceof X000A_NTFS n ? n : null;
+        Date modified = ts != null && ts.isBit0_modifyTimePresent() ? ts.getModifyJavaTime()
+                : ntfs != null ? ntfs.getModifyJavaTime() : null;
+        if (modified != null) {
+            AbstractArchiveParser.setInstant(md, FileSystem.MODIFIED, modified);
+        } else if (rawDosTime != null) {
+            AbstractArchiveParser.setLocalTime(md, FileSystem.MODIFIED, rawDosTime);
+        } else if (entry.getTime() != -1) {
+            AbstractArchiveParser.setLocalTime(md, FileSystem.MODIFIED, new Date(entry.getTime()));
+        }
+        Date created = ts != null && ts.isBit2_createTimePresent() ? ts.getCreateJavaTime()
+                : ntfs != null ? ntfs.getCreateJavaTime() : null;
+        AbstractArchiveParser.setInstant(md, FileSystem.CREATED, created);
+        Date accessed = ts != null && ts.isBit1_accessTimePresent() ? ts.getAccessJavaTime()
+                : ntfs != null ? ntfs.getAccessJavaTime() : null;
+        AbstractArchiveParser.setInstant(md, FileSystem.ACCESSED, accessed);
+    }
+
+    /**
+     * The DOS wall clock straight from the entry's local file header. commons-compress resolves
+     * it in the JVM zone, which moves a time inside a DST spring-forward gap by an hour.
+     *
+     * @return null if the header can't be read or holds no valid date
+     */
+    static LocalDateTime readDosTime(SeekableByteChannel channel, ZipArchiveEntry entry) {
+        long offset = entry.getLocalHeaderOffset();
+        if (channel == null || offset < 0) {
+            return null;
+        }
+        ByteBuffer header = ByteBuffer.allocate(14).order(ByteOrder.LITTLE_ENDIAN);
+        try {
+            if (offset > channel.size() - header.capacity()) {
+                return null;
+            }
+            channel.position(offset);
+            while (header.hasRemaining()) {
+                if (channel.read(header) < 0) {
+                    return null;
+                }
+            }
+        } catch (IOException e) {
+            return null;
+        }
+        if (header.getInt(0) != LOCAL_FILE_HEADER_SIG) {
+            return null;
+        }
+        // time at 10, date at 12: sec/2 min hour | day month year-1980
+        int time = header.getShort(10) & 0xffff;
+        int date = header.getShort(12) & 0xffff;
+        try {
+            return LocalDateTime.of(((date >> 9) & 0x7f) + 1980, (date >> 5) & 0x0f, date & 0x1f,
+                    (time >> 11) & 0x1f, (time >> 5) & 0x3f, (time & 0x1f) * 2);
+        } catch (DateTimeException e) {
+            return null;
+        }
+    }
+
     private Metadata buildEntryMetadata(ZipArchiveEntry entry, String name, ParseContext context)
+            throws IOException, TikaException, SAXException {
+        return buildEntryMetadata(entry, name, context, null);
+    }
+
+    private Metadata buildEntryMetadata(ZipArchiveEntry entry, String name, ParseContext context,
+                                        LocalDateTime rawDosTime)
             throws IOException, TikaException, SAXException {
         Metadata entryMetadata = Metadata.newInstance(context);
 
@@ -625,14 +716,7 @@ public class ZipParser extends AbstractArchiveParser {
             entryMetadata.set(TikaCoreProperties.INTERNAL_PATH, name);
         }
 
-        FileTime creationTime = entry.getCreationTime();
-        if (creationTime != null) {
-            entryMetadata.set(TikaCoreProperties.CREATED, creationTime.toInstant().toString());
-        }
-        FileTime modifiedTime = entry.getLastModifiedTime();
-        if (modifiedTime != null) {
-            entryMetadata.set(TikaCoreProperties.MODIFIED, modifiedTime.toInstant().toString());
-        }
+        setEntryTimes(entry, entryMetadata, rawDosTime);
 
         long size = entry.getSize();
         if (size >= 0) {

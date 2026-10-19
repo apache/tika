@@ -577,7 +577,7 @@ before the exception are discarded. Known gap.
 By default exception detail is returned in full. Stack traces and their messages can contain the
 spooled file's path, the source filename, and fragments of the document. That detail appears in
 `tk:exception:*` metadata on **successful** parses as well as in error bodies — including inside
-the `*.metadata.json` entries of an `/unpack` zip.
+the `metadata.json` of an `/unpack` zip.
 
 One config setting governs every one of those channels — the metadata values, every error body
 built from an exception (`422`, `500`; a `400` echoes the caller's own request problem, `415` and

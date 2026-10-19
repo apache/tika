@@ -52,6 +52,9 @@ processing and works with all four.
 To run the server or gRPC service from a published image rather than a distribution zip, see
 xref:using-tika/docker.adoc[Running Tika in Docker].
 
+To run Tika inside an OSGi container such as Apache Felix or Eclipse Equinox, see
+xref:using-tika/osgi.adoc[Using Tika in OSGi].
+
 == Resources
 
 * https://tika.apache.org/download.html[Downloads] — jars, the `tika-app` and `tika-server` zips

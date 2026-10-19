@@ -123,6 +123,13 @@ contain passwords, access keys and tokens. When `false`, the mutating RPCs are r
 config.
 |===
 
+Fetches run in the forked pipes workers, and each worker builds its own config store from the
+same settings. With the default in-memory `configStoreType`, a fetcher saved through
+`SaveFetcher` exists only in the gRPC JVM and every `FetchAndParse` that names it fails with
+`FETCHER_NOT_FOUND`. When `allowComponentManagement` is `true`, set `configStoreType` to `file`
+or `ignite` (see xref:pipes/configuration.adoc#_distributed_config_store[Distributed Config
+Store]) so the workers see the same store.
+
 Enable these only for trusted callers over a secured channel:
 
 [source,json]

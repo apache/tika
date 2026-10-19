@@ -89,23 +89,10 @@ import org.apache.tika.pipes.core.extractor.UnpackConfig;
  * }
  * </pre>
  * <p>
- * <b>Frictionless Data Package Format:</b>
+ * <b>Output format:</b>
  * <p>
- * To receive output in Frictionless Data Package format (with datapackage.json manifest,
- * SHA256 hashes, and files in unpacked/ subdirectory), use:
- * <pre>
- * {
- *   "parse-context": {
- *     "unpack-config": {
- *       "outputFormat": "FRICTIONLESS",
- *       "outputMode": "ZIPPED",
- *       "includeMetadata": true
- *     }
- *   }
- * }
- * </pre>
- * <p>
- * The Frictionless zip structure:
+ * The response is a Frictionless Data Package (datapackage.json manifest with SHA256 hashes,
+ * files under unpacked/):
  * <pre>
  * output.zip
  * ├── datapackage.json      # Manifest with file list, SHA256 hashes, mimetypes
@@ -114,6 +101,14 @@ import org.apache.tika.pipes.core.extractor.UnpackConfig;
  *     ├── 00000001.pdf
  *     ├── 00000002.png
  *     └── ...
+ * </pre>
+ * The pre-4.2 flat zip (files at the root, no manifest) is still available:
+ * <pre>
+ * {
+ *   "parse-context": {
+ *     "unpack-config": { "outputFormat": "REGULAR" }
+ *   }
+ * }
  * </pre>
  * <p>
  * <b>Breaking Changes from Pre-4.0:</b>

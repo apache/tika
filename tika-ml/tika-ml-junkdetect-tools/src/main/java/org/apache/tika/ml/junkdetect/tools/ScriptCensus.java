@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
 
@@ -116,8 +117,8 @@ public final class ScriptCensus {
             }
         }
 
-        System.out.printf("File: %s%n", file);
-        System.out.printf("  lines sampled: %,d   total codepoints (excl. COMMON/INHERITED): %,d%n%n",
+        System.out.printf(Locale.ROOT, "File: %s%n", file);
+        System.out.printf(Locale.ROOT, "  lines sampled: %,d   total codepoints (excl. COMMON/INHERITED): %,d%n%n",
                 lines, total);
 
         if (total == 0) {
@@ -135,7 +136,7 @@ public final class ScriptCensus {
             double pct = 100.0 * c / total;
             double cumPct = 100.0 * cumulative / total;
             if (pct < 0.01 && c < 100) continue;
-            System.out.printf("    %-22s %,14d  %6.2f%%  (cum %6.2f%%)%n",
+            System.out.printf(Locale.ROOT, "    %-22s %,14d  %6.2f%%  (cum %6.2f%%)%n",
                     e.getKey(), c, pct, cumPct);
         }
 
@@ -149,7 +150,7 @@ public final class ScriptCensus {
             long c = e.getValue()[0];
             double pct = 100.0 * c / domTotal;
             if (pct < 0.05) continue;
-            System.out.printf("    %-22s %,12d  %6.2f%% of lines%n",
+            System.out.printf(Locale.ROOT, "    %-22s %,12d  %6.2f%% of lines%n",
                     e.getKey(), c, pct);
         }
     }

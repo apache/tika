@@ -230,6 +230,8 @@ Your file overrides the bundled one entirely. Start from a copy of the bundled c
 
 Forked PipesServer JVMs get their own config, not the parent's: unless `forkedJvmArgs` already carries a `-Dlog4j.configurationFile` / `-Dlog4j2.configurationFile`, the parent adds `-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml`. What reaches your terminal is separately governed by `tika.pipes.server.stdio` — set it to `discard` and all fork stdout/stderr is suppressed at the OS level (see <<_configuration_knobs_reference,Configuration knobs reference>>).
 
+Per-parse timing lines log at `TRACE` on `org.apache.tika.pipes.timing`: `CLIENT_TIMING` (and, in tika-server, `SERVER_TIMING`/`RESOURCE_TIMING`) from the parent, `WORKER_TIMING` from the fork. Enabling the logger in the parent's config does not reach the fork; for worker lines, copy `pipes-fork-server-default-log4j2.xml`, uncomment its timing logger, and pass it via `forkedJvmArgs`.
+
 To debug a specific fork, leave stdio on `inherit` (the default) and grep parent log output for the `pipesClientId=<n>` marker that each fork includes.
 
 == Configuration knobs reference

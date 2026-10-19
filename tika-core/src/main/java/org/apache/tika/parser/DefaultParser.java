@@ -165,7 +165,7 @@ public class DefaultParser extends CompositeParser {
     public Map<MediaType, Parser> getParsers(ParseContext context) {
         List<Parser> all = new ArrayList<>(super.getAllComponentParsers());
         if (loader != null) {
-            List<Parser> dynamic = loader.loadDynamicServiceProviders(Parser.class);
+            List<Parser> dynamic = dynamicParsers();
             Collections.reverse(dynamic); // best parser last
             all.addAll(dynamic);
         }
@@ -178,9 +178,21 @@ public class DefaultParser extends CompositeParser {
         List<Parser> parsers = super.getAllComponentParsers();
         if (loader != null) {
             parsers = new ArrayList<>(parsers);
-            parsers.addAll(loader.loadDynamicServiceProviders(Parser.class));
+            parsers.addAll(dynamicParsers());
         }
         return parsers;
+    }
+
+    //a dynamic DefaultParser already merges every dynamic provider; nesting one (this
+    //parser included) delegates back into itself
+    private List<Parser> dynamicParsers() {
+        List<Parser> dynamic = loader.loadDynamicServiceProviders(Parser.class);
+        dynamic.removeIf(p -> p instanceof DefaultParser && isDynamic((DefaultParser) p));
+        return dynamic;
+    }
+
+    private static boolean isDynamic(DefaultParser parser) {
+        return parser.loader != null && parser.loader.isDynamic();
     }
 
     /**

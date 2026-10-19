@@ -336,28 +336,7 @@ public class TikaResourceTest extends CXFTestBase {
         // With skipOcr=true, the OCR text should not be present
         assertNotFound("Happy New Year 2003!", responseMsg);
 
-        // Test ocr_only strategy
-        configJson = """
-                {
-                  "pdf-parser": {
-                    "ocr": {
-                      "strategy": "OCR_ONLY"
-                    }
-                  }
-                }
-                """;
-        fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
-        fileAtt = new Attachment("file",
-                ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
-        configAtt = new Attachment("config", "application/json",
-                new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
-
-        response = WebClient
-                .create(endPoint + TIKA_PATH + "/config")
-                .type("multipart/form-data")
-                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
-        responseMsg = getStringFromInputStream((InputStream) response.getEntity());
-        assertContains("Happy New Year 2003!", responseMsg);
+        // the positive control (OCR_ONLY finds the text) is testOCRLanguageConfig
 
         // Test bad value - should return error
         configJson = """
@@ -461,6 +440,12 @@ public class TikaResourceTest extends CXFTestBase {
                     + "\":{\"baseUrl\":\"http://127.0.0.1:1/\"}}]}";
             Exception e = assertThrows(Exception.class,
                     () -> TikaResource.mergeParseContextFromConfig(configJson, new ParseContext()),
+                    name);
+            assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
+                    name + ": expected wire-blocked rejection, got: " + rootMessage(e));
+            String bareJson = "{\"metadata-filters\":[\"" + name + "\"]}";
+            e = assertThrows(Exception.class,
+                    () -> TikaResource.mergeParseContextFromConfig(bareJson, new ParseContext()),
                     name);
             assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
                     name + ": expected wire-blocked rejection, got: " + rootMessage(e));
@@ -587,6 +572,39 @@ public class TikaResourceTest extends CXFTestBase {
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         assertEquals(422, response.getStatus());
+    }
+
+    /** The factory class name loads and constructs the class it names: operator-only. */
+    @Test
+    public void testOperatorOnlyPdfConfigRefused() throws Exception {
+        String configJson = """
+                {
+                  "pdf-parser": {
+                    "imageGraphicsEngineFactoryClass": "org.apache.tika.server.standard.TikaResourceTest$ConstructorWitness"
+                  }
+                }
+                """;
+        ConstructorWitness.constructed = false;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/config")
+                .type("multipart/form-data")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+        assertEquals(422, response.getStatus());
+        assertFalse(ConstructorWitness.constructed, "a class named by per-request config was constructed");
+    }
+
+    public static class ConstructorWitness {
+        static volatile boolean constructed;
+
+        public ConstructorWitness() {
+            constructed = true;
+        }
     }
 
     @Test

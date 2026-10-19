@@ -36,10 +36,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import org.apache.tika.TikaTest;
-import org.apache.tika.utils.ProcessUtils;
-
-public class TikaEvalCLITest extends TikaTest {
+public class TikaEvalCLITest {
     //TODO: these barely reach the minimal acceptable stage for unit tests
 
     private final static String dbName = "testdb";
@@ -64,102 +61,75 @@ public class TikaEvalCLITest extends TikaTest {
         reportProfile();
     }
 
-    private static void compare() throws IOException {
+    private static void compare() throws Exception {
         List<String> args = new ArrayList<>();
         args.add("Compare");
         args.add("-a");
-        args.add(ProcessUtils.escapeCommandLine(extractsDir
+        args.add(extractsDir
                 .resolve("extractsA")
                 .toAbsolutePath()
-                .toString()));
+                .toString());
         args.add("-b");
-        args.add(ProcessUtils.escapeCommandLine(extractsDir
+        args.add(extractsDir
                 .resolve("extractsB")
                 .toAbsolutePath()
-                .toString()));
+                .toString());
 
         args.add("-d");
-        args.add(ProcessUtils.escapeCommandLine(compareDBDir
+        args.add(compareDBDir
                 .toAbsolutePath()
-                .toString() + "/" + dbName));
+                .toString() + "/" + dbName);
 
-        execute(args, 60000);
+        execute(args);
 
     }
 
-    private static void profile() throws IOException {
+    private static void profile() throws Exception {
         List<String> args = new ArrayList<>();
         args.add("Profile");
         args.add("-e");
-        args.add(ProcessUtils.escapeCommandLine(extractsDir
+        args.add(extractsDir
                 .resolve("extractsA")
                 .toAbsolutePath()
-                .toString()));
+                .toString());
 
         args.add("-d");
-        args.add(ProcessUtils.escapeCommandLine(profileDBDir
+        args.add(profileDBDir
                 .toAbsolutePath()
-                .toString() + "/" + dbName));
-        execute(args, 60000);
+                .toString() + "/" + dbName);
+        execute(args);
     }
 
-    private static void reportProfile() throws IOException {
+    private static void reportProfile() throws Exception {
         List<String> args = new ArrayList<>();
         args.add("Report");
         args.add("-db");
-        args.add(ProcessUtils.escapeCommandLine(profileDBDir
+        args.add(profileDBDir
                 .toAbsolutePath()
-                .toString() + "/" + dbName));
+                .toString() + "/" + dbName);
         args.add("-rd");
-        args.add(ProcessUtils.escapeCommandLine(profileReportsDir
+        args.add(profileReportsDir
                 .toAbsolutePath()
-                .toString()));
-        execute(args, 60000);
+                .toString());
+        execute(args);
     }
 
-    private static void reportCompare() throws IOException {
+    private static void reportCompare() throws Exception {
         List<String> args = new ArrayList<>();
         args.add("Report");
         args.add("-db");
-        args.add(ProcessUtils.escapeCommandLine(compareDBDir
+        args.add(compareDBDir
                 .toAbsolutePath()
-                .toString() + "/" + dbName));
+                .toString() + "/" + dbName);
         args.add("-rd");
-        args.add(ProcessUtils.escapeCommandLine(compareReportsDir
+        args.add(compareReportsDir
                 .toAbsolutePath()
-                .toString()));
-        execute(args, 60000);
+                .toString());
+        execute(args);
     }
 
-    private static void execute(List<String> incomingArgs, long maxMillis) throws IOException {
-        List<String> args = new ArrayList<>();
-        String cp = System.getProperty("java.class.path");
-        args.add("java");
-        args.add("-Djava.awt.headless=true");
-        args.add("-cp");
-        args.add(cp);
-        args.add("org.apache.tika.eval.app.TikaEvalCLI");
-        args.addAll(incomingArgs);
-
-        ProcessBuilder pb = new ProcessBuilder(args);
-        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
-        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
-        Process process = pb.start();
-        long started = System.currentTimeMillis();
-        long elapsed = System.currentTimeMillis() - started;
-        int exitValue = Integer.MIN_VALUE;
-        while (elapsed < maxMillis && exitValue == Integer.MIN_VALUE) {
-            try {
-                exitValue = process.exitValue();
-            } catch (IllegalThreadStateException e) {
-                //swallow
-            }
-            elapsed = System.currentTimeMillis() - started;
-        }
-        if (exitValue == Integer.MIN_VALUE) {
-            process.destroy();
-            throw new RuntimeException("Process never exited within the allowed amount of time.\n" + "I needed to destroy it");
-        }
+    private static void execute(List<String> args) throws Exception {
+        TikaEvalCLI.main(args.toArray(new String[0]));
     }
 
     @Test
@@ -170,7 +140,7 @@ public class TikaEvalCLITest extends TikaTest {
                 .listFiles()) {
             fNames.add(f.getName());
         }
-        assertContains(dbName + ".mv.db", fNames);
+        assertTrue(fNames.contains(dbName + ".mv.db"), fNames.toString());
     }
 
     @Test
@@ -181,7 +151,7 @@ public class TikaEvalCLITest extends TikaTest {
                 .listFiles()) {
             fNames.add(f.getName());
         }
-        assertContains(dbName + ".mv.db", fNames);
+        assertTrue(fNames.contains(dbName + ".mv.db"), fNames.toString());
     }
 
     @Test
@@ -231,21 +201,21 @@ public class TikaEvalCLITest extends TikaTest {
         List<String> args = new ArrayList<>();
         args.add("Compare");
         args.add("-extractsA");
-        args.add(ProcessUtils.escapeCommandLine(extractsDir
+        args.add(extractsDir
                 .resolve("extractsA")
                 .toAbsolutePath()
-                .toString()));
+                .toString());
         args.add("-extractsB");
-        args.add(ProcessUtils.escapeCommandLine(extractsDir
+        args.add(extractsDir
                 .resolve("extractsB")
                 .toAbsolutePath()
-                .toString()));
+                .toString());
         args.add("-db");
-        args.add(ProcessUtils.escapeCommandLine(compareDBDir
+        args.add(compareDBDir
                 .toAbsolutePath()
-                .toString() + "/" + dbName));
+                .toString() + "/" + dbName);
 
-        execute(args, 60000);
+        execute(args);
         //      args.add("-drop");
 //        args.add("-jdbc");
 //        args.add("jdbc:postgresql:tika_eval?user=user&password=password");

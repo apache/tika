@@ -1,0 +1,1 @@
+../../../../tika-bundles/tika-bundle-standard/src/test/java/org/apache/tika/bundle/example/OsgiParseExample.java

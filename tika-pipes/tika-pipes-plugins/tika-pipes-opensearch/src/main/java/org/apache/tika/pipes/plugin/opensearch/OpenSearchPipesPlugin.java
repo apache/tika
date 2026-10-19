@@ -30,19 +30,19 @@ public class OpenSearchPipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting");
+        LOG.debug("Starting");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping");
+        LOG.debug("Stopping");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting");
+        LOG.debug("Deleting");
         super.delete();
     }
 

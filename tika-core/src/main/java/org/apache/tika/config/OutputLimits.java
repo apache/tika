@@ -17,6 +17,9 @@
 package org.apache.tika.config;
 import java.io.Serializable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.parser.ParseContext;
 
@@ -28,7 +31,7 @@ import org.apache.tika.parser.ParseContext;
  *   <li>{@code writeLimit} - maximum characters to write (-1 = unlimited)</li>
  *   <li>{@code throwOnWriteLimit} - whether to throw an exception when writeLimit is reached</li>
  *   <li>{@code maxXmlDepth} - maximum XML element nesting depth (default: 100)</li>
- *   <li>{@code maxPackageEntryDepth} - maximum package entry nesting depth (default: 10)</li>
+ *   <li>{@code maxPackageEntryDepth} - deprecated; use {@link EmbeddedLimits#setMaxDepth(int)}</li>
  *   <li>{@code zipBombThreshold} - characters before zip bomb check activates (default: 1,000,000)</li>
  *   <li>{@code zipBombRatio} - maximum output:input ratio for zip bomb detection (default: 100)</li>
  * </ul>
@@ -40,7 +43,7 @@ import org.apache.tika.parser.ParseContext;
  *   <li>If {@code throwOnWriteLimit=true}: {@code WriteLimitReachedException} is thrown</li>
  * </ul>
  * <p>
- * <b>Security limits:</b> maxXmlDepth, maxPackageEntryDepth, and zipBomb
+ * <b>Security limits:</b> maxXmlDepth and zipBomb
  * limits always throw exceptions when exceeded (no silent truncation option).
  * <p>
  * Example configuration:
@@ -51,8 +54,7 @@ import org.apache.tika.parser.ParseContext;
  *       "writeLimit": 100000,
  *       "throwOnWriteLimit": false,
  *       "maxXmlDepth": 100,
- *       "maxPackageEntryDepth": 10,
- *       "zipBombThreshold": 1000000,
+ * *       "zipBombThreshold": 1000000,
  *       "zipBombRatio": 100
  *     }
  *   }
@@ -66,6 +68,8 @@ public class OutputLimits implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    private static final Logger LOG = LoggerFactory.getLogger(OutputLimits.class);
+
     public static final int UNLIMITED = -1;
 
     // Output limits
@@ -74,7 +78,7 @@ public class OutputLimits implements Serializable {
 
     // XML/Security limits
     private int maxXmlDepth = 100;
-    private int maxPackageEntryDepth = 10;
+    private int maxPackageEntryDepth = 20;
     private long zipBombThreshold = 1_000_000;
     private long zipBombRatio = 100;
 
@@ -90,19 +94,29 @@ public class OutputLimits implements Serializable {
      * @param writeLimit maximum characters to write (-1 = unlimited)
      * @param throwOnWriteLimit whether to throw when write limit is reached
      * @param maxXmlDepth maximum XML element nesting depth
-     * @param maxPackageEntryDepth maximum package entry nesting depth
      * @param zipBombThreshold characters before zip bomb check activates
      * @param zipBombRatio maximum output:input ratio
      */
-    public OutputLimits(int writeLimit, boolean throwOnWriteLimit,
-                        int maxXmlDepth, int maxPackageEntryDepth,
+    public OutputLimits(int writeLimit, boolean throwOnWriteLimit, int maxXmlDepth,
                         long zipBombThreshold, long zipBombRatio) {
         this.writeLimit = writeLimit;
         this.throwOnWriteLimit = throwOnWriteLimit;
         this.maxXmlDepth = maxXmlDepth;
-        this.maxPackageEntryDepth = maxPackageEntryDepth;
         this.zipBombThreshold = zipBombThreshold;
         this.zipBombRatio = zipBombRatio;
+    }
+
+    /**
+     * @deprecated package-entry depth only bounds nesting when embedded content is
+     * inlined into its container's XHTML; use {@link EmbeddedLimits#setMaxDepth(int)},
+     * which bounds nesting on every path. To be removed in 4.3.
+     */
+    @Deprecated(since = "4.2", forRemoval = true)
+    public OutputLimits(int writeLimit, boolean throwOnWriteLimit,
+                        int maxXmlDepth, int maxPackageEntryDepth,
+                        long zipBombThreshold, long zipBombRatio) {
+        this(writeLimit, throwOnWriteLimit, maxXmlDepth, zipBombThreshold, zipBombRatio);
+        setMaxPackageEntryDepth(maxPackageEntryDepth);
     }
 
     /**
@@ -160,20 +174,22 @@ public class OutputLimits implements Serializable {
     }
 
     /**
-     * Gets the maximum package entry nesting depth.
-     *
-     * @return maximum package entry depth
+     * @deprecated use {@link EmbeddedLimits#getMaxDepth()}. To be removed in 4.3.
      */
+    @Deprecated(since = "4.2", forRemoval = true)
     public int getMaxPackageEntryDepth() {
         return maxPackageEntryDepth;
     }
 
     /**
-     * Sets the maximum package entry nesting depth.
-     *
-     * @param maxPackageEntryDepth maximum package entry depth
+     * @deprecated package-entry depth only bounds nesting when embedded content is
+     * inlined into its container's XHTML; use {@link EmbeddedLimits#setMaxDepth(int)},
+     * which bounds nesting on every path. To be removed in 4.3.
      */
+    @Deprecated(since = "4.2", forRemoval = true)
     public void setMaxPackageEntryDepth(int maxPackageEntryDepth) {
+        LOG.warn("maxPackageEntryDepth is deprecated and will be removed in 4.3; " +
+                "use embedded-limits maxDepth");
         this.maxPackageEntryDepth = maxPackageEntryDepth;
     }
 

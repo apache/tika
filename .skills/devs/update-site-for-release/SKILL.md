@@ -35,6 +35,11 @@ Step 17 ("Update Tika site") of the Release Process
 Assumes the release (tag, artifacts, VOTE, dist promotion) is done; covers the
 **website** only.
 
+**First: `cd $SITE && svn update`.** The checkout is usually behind (docs
+republishes, logo/security edits land between releases); a stale base only
+surfaces at the very end, after the 67 MB commit has uploaded, as
+`E155011 ... is out of date`, and the whole transaction rolls back.
+
 Set these first:
 - **`$SITE`** — `tika-site` **SVN** checkout (not git): `src/site/` (sources) +
   `publish/` (generated, SVN-tracked, served; `mvn install` regenerates it and
@@ -71,6 +76,13 @@ process; both tracks are "stable" — there is no preview slot unless a future
 Confirm current values in `pom.xml` (repo root — `tika.stable.version` = 4.x
 line, `tika.maintenance.version` = 3.x line).
 
+**Before starting, check the final git tag exists** (`git ls-remote --tags
+https://github.com/apache/tika | grep <NEW>`). The vote passes on an `-rcN` tag
+and nothing creates the plain `<NEW>` tag; 4.1.0 shipped with only `4.1.0-rc3`.
+Ask the RM to tag the rc commit (`git tag <NEW> <NEW>-rcN^{}` + push) — the
+contributor query, the docs branch and the next release's `PREV_TAG` all want it.
+Until then use the rc tag for `--tag`.
+
 | Step | 4.x track | 3.x maintenance track |
 |---|---|---|
 | `pom.xml` `<parent><version>` | leave at newest 3.x | → `<NEW>` (must stay a 3.x parent — Java 11 build) |
@@ -91,7 +103,7 @@ javadocs are exact-version artifacts.
 
 ---
 
-## 1. `src/site/pom.xml` versions  [AGENT]
+## 1. `pom.xml` versions (repo root)  [AGENT]
 
 - **4.x:** bump `<tika.stable.version>` to `<NEW>`.
 - **3.x:** bump `<tika.maintenance.version>` **and** `<parent><version>` to `<NEW>`.
@@ -99,7 +111,9 @@ javadocs are exact-version artifacts.
   4.0.0). It must stay on the newest **3.x** parent: the 4.x parent enforces
   Java 17, but maven-site-plugin 3.4 needs the Java 11 build (step 8).
 
-Download page auto-reads these — no manual edit.
+Download page auto-reads these — no manual edit. (`download.apt.vm` also derives
+`$docsLine` = `4.1.x` from `tika.stable.version` for its Antora links; check the
+artifact list against `dist/release/tika/<NEW>/` if the distribution set changed.)
 
 ---
 
@@ -177,8 +191,12 @@ bullets; "The following people have contributed…" bullets; "See
 ```bash
 ./scripts/extract-tika-issues.py CHANGES-3.3.2.txt out-3.3.2.apt 3.3.2
 ```
-Mirrors CHANGES verbatim; TIKA-####/Github-#### auto-linked; ALL-CAPS headers →
-apt sections.
+Mirrors CHANGES verbatim; TIKA-####/Github-#### auto-linked; ALL-CAPS headers
+(incl. `SERVER, PIPES AND OPERATIONS`, `INFERENCE (EXPERIMENTAL)`) → apt sections;
+apt markup chars in prose (`<= 0`, `type->parser`, `{x}`, `[]`, `~35%`) are
+backslash-escaped — an unescaped `<` fails the site build with
+`Error parsing '.../index.apt': line [N] missing '>'`; output is wrapped at 78
+cols without splitting hyphenated words or links.
 
 **Contributors** — candidate list, RM curates:
 ```bash
@@ -245,7 +263,10 @@ mv target/reports/apidocs $SITE/publish/3.3.2/api
 ```
 Both steps matter: without `install` javadoc dies on `package org.slf4j does not
 exist`; the forking `aggregate` (@aggregator) runs once on the root, `-no-fork`
-breaks per-`pom`-module. Any modern JDK (11 and 25 verified). (`tika-server`
+breaks per-`pom`-module. 3.x: any modern JDK (11 and 25 verified); 4.x: Java 17+
+(21 verified on 4.1.0, ~3,900 html / 67 MB). A `-Pfast` install that prints a
+Felix/OSGi stack trace still succeeds — check the `<NEW>` artifacts landed in the
+local repo, not the tail of the log. (`tika-server`
 miredot docs discontinued — skip.)
 
 **4.x — Antora docs [AGENT].** Built from the tika git repo (main checkout),
@@ -253,13 +274,26 @@ not the src zip — the playbook pulls every `docs/{0..9}*` branch as a content
 source. New minor: create `docs/<X.Y>.x` from the tag (or main), set
 `version: '<X.Y>.x'` + `tika-version` and `tika-javadoc-url` attributes in that
 branch's `docs/antora.yml`, and make sure main's antora.yml has `prerelease: true`
-[HUMAN commits]. Patch: commit doc changes + `tika-version` bump to the
+**and its `version`/`tika-version` match main's new `<revision>`** (the release
+plugin bumps the poms, not antora.yml — after 4.1.0 main was `4.1.1-SNAPSHOT` in
+`tika-parent/pom.xml` but still `4.1.0-SNAPSHOT` in antora.yml) [HUMAN commits].
+Cut the branch from the release tag, not main: main's docs may already describe
+post-release changes. Patch: commit doc changes + `tika-version` bump to the
 existing branch (bump `tika-javadoc-url` too). Then:
 ```bash
 cd tika-main
+rm -rf docs/target/site            # Antora never prunes: a stale <old>-SNAPSHOT dir from an earlier build gets published
 ./mvnw package -Papache-release -pl :tika-docs -DskipTests
 ./docs/publish-docs.sh $SITE/publish
 ```
+**Antora reads only LOCAL branches of the clone** (a remote-only
+`origin/docs/4.0.x` is ignored — verified on 4.1.0): before building, `git
+branch docs/4.0.x origin/docs/4.0.x` for every released line, and have `main`
+checked out so HEAD supplies the SNAPSHOT. Run a trial build with the new
+`docs/<X.Y>.x` checked out (its worktree = HEAD, so uncommitted antora.yml edits
+are exercised) to validate before the human commits; do NOT publish that trial
+output — it lacks the other versions, so the version dropdown, sitemap and
+`/docs` redirect would be wrong.
 `publish-docs.sh` copies target/site into `publish/docs/`, flattens URLs, rewrites
 the search index (has its own guards). First 4.x publish after the SNAPSHOT era:
 `svn rm publish/docs/<old>-SNAPSHOT` (nothing prunes it) and verify
@@ -349,6 +383,7 @@ commit outside `publish/` won't trigger. Still stuck ~30 min → ping `#asfinfra
 
 ## Checklist
 
+- [ ] `svn update` done before any edits
 - [ ] 4.x vs 3.x track decided
 - [ ] `pom.xml` versions (stable for 4.x; maintenance+parent for 3.x)
 - [ ] `site.xml`: new entry added, previous same-track entry collapsed
@@ -357,7 +392,8 @@ commit outside `publish/` won't trigger. Still stuck ~30 min → ping `#asfinfra
 - [ ] `index.apt`: notable changes + curated contributors + shortlink
 - [ ] `doap.rdf` entry
 - [ ] `index.apt.vm`: news block + superseded CHANGES link → archive
-- [ ] javadoc → `publish/<NEW>/api` (both tracks); Antora branch published (4.x)
+- [ ] final `<NEW>` git tag exists (not just `-rcN`)
+- [ ] javadoc → `publish/<NEW>/api` (both tracks); Antora branch published (4.x); main antora.yml bumped to the next SNAPSHOT
 - [ ] `mvn clean install` (never bare `install`); pages styled (CSS + sidebar)
 - [ ] `svn status`/`svn add` done, commit handed to RM (chunk `api/` if it resets)
 - [ ] live site 200: `https://tika.apache.org/<NEW>/index.html?cb=…` — else re-kick
@@ -370,6 +406,7 @@ commit outside `publish/` won't trigger. Still stuck ~30 min → ping `#asfinfra
 |---|---|---|
 | `aggregate-no-fork` → `No source files for package org.apache.tika` | runs against `tika-parent`; relative `<sourcepath>` can't resolve | use forking `javadoc:aggregate` after `clean install -Pfast` (step 7) |
 | javadoc → `package org.slf4j does not exist` etc. | aggregate without a prior build → empty classpath | `mvn clean install -Pfast` first |
+| site build: `Error parsing '.../index.apt': line [N] missing '>'` | unescaped `<`/`>` (e.g. `<= 0`, `->`) in apt prose | backslash-escape (`\<`); bundled script does this |
 | pages unstyled (no CSS/sidebar) | incremental `install` left `publish/css/` stale | `mvn clean install` (never bare `install`) |
 | site-plugin / Doxia error on `mvn install` | maven-site-plugin 3.4 on too-new a JDK | build with **Java 11** |
 | notable-changes bullet split on a version number | old numeric heuristic (removed) | use the bundled script; re-run |
@@ -377,5 +414,6 @@ commit outside `publish/` won't trigger. Still stuck ~30 min → ping `#asfinfra
 | commit `E175012 timed out` / `E000104 Connection reset` | ~55 MB api tree too big for one transaction | `http-timeout=1800`; chunk the `api/` (step 9). Size, not auth. |
 | commit `Authentication failed` / 403 | genuinely bad/expired credential | `svn commit --username <you>` to re-cache |
 | `svn: E155004 working copy locked` | prior commit died mid-transaction | `svn cleanup`, retry |
+| commit `E155011 Directory ... is out of date` | working copy behind HEAD | `svn revert -R publish && svn update`, re-run publish-docs.sh + `mvn clean install`, retry (fixed base only) |
 | committed, site still old even with `?cb=` (origin 404s/old) | web-node `svn up` choked on the big commit | re-kick: whitespace commit under `publish/` (step 10); stuck ~30 min → `#asfinfra` |
 | home-page CHANGES link 404s for the previous release | it was `svn rm`'d from the live dist mirror | repoint to `archive.apache.org/dist/tika/<prev>/CHANGES-<prev>.txt` (step 6) |

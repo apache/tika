@@ -156,11 +156,11 @@ public class ConnectionHandler implements Runnable, Closeable {
      * client-ACK wait that follows it.
      */
     private void logTiming(String id) {
-        if (!TIMING_LOG.isInfoEnabled()) {
+        if (!TIMING_LOG.isTraceEnabled()) {
             return;
         }
         PipesWorker w = tLastWorker;
-        TIMING_LOG.info("WORKER_TIMING handler={} id={} req_deser_us={} ctx_merge_us={}"
+        TIMING_LOG.trace("WORKER_TIMING handler={} id={} req_deser_us={} ctx_merge_us={}"
                         + " handoff_us={} fetch_us={} parse_us={} emit_us={} worker_wall_us={}"
                         + " intermediate_us={} resp_ser_us={} resp_write_us={} resp_ack_us={}"
                         + " resp_bytes={}",
@@ -186,7 +186,7 @@ public class ConnectionHandler implements Runnable, Closeable {
                     msg = PipesMessage.read(input, pipesConfig.getMaxIpcPayloadBytes());
                 } catch (SocketTimeoutException e) {
                     // Socket timeout while idle is the normal inactivity shutdown path.
-                    LOG.info("handlerId={}: socket timeout while waiting for task, closing connection",
+                    LOG.debug("handlerId={}: socket timeout while waiting for task, closing connection",
                             handlerId);
                     return;
                 }
@@ -281,7 +281,7 @@ public class ConnectionHandler implements Runnable, Closeable {
                         }
                         break;
                     case SHUT_DOWN:
-                        LOG.info("handlerId={}: received SHUT_DOWN, closing connection", handlerId);
+                        LOG.debug("handlerId={}: received SHUT_DOWN, closing connection", handlerId);
                         return;
                     default:
                         String errorMsg = String.format(Locale.ROOT,

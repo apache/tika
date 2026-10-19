@@ -158,8 +158,8 @@ curl -s -X PUT -T test_recursive_embedded.docx http://localhost:9998/unpack/all 
 unzip -l /tmp/unpack.zip
 ----
 
-*Expected:* ZIP file containing the extracted embedded files, a `*.metadata.json` entry
-per file, and the original container document.
+*Expected:* A Frictionless package: `datapackage.json`, `metadata.json`, and the embedded
+files plus the original container (`0.docx`) under `unpacked/`.
 
 === Test 13: GET /parsers
 

@@ -294,16 +294,6 @@ public class OpenAIImageEmbeddingParser implements Parser, Initializable, Closea
             throws TikaConfigException, IOException {
         String key = "openai-image-embedding-parser";
         if (parseContext.hasJsonConfig(key)) {
-            ImageEmbeddingConfig.RuntimeConfig runtimeConfig =
-                    ParseContextConfig.getConfig(
-                            parseContext, key,
-                            ImageEmbeddingConfig.RuntimeConfig.class,
-                            new ImageEmbeddingConfig.RuntimeConfig());
-
-            if (runtimeConfig.isSkipEmbedding()) {
-                return runtimeConfig;
-            }
-
             return ParseContextConfig.getConfig(
                     parseContext, key, ImageEmbeddingConfig.class,
                     defaultConfig);

@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import org.slf4j.Logger;
@@ -40,8 +41,8 @@ import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiter;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.utils.DateUtils;
 import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * A multi-valued metadata container.
@@ -113,7 +114,6 @@ public class Metadata implements Serializable {
      * Some parsers will have the date as a ISO-8601 string
      * already, and will set that into the Metadata object.
      */
-    private static final DateUtils DATE_UTILS = new DateUtils();
     /**
      * A map of all metadata attributes.
      */
@@ -174,16 +174,10 @@ public class Metadata implements Serializable {
         return sdf;
     }
 
-    /**
-     * Parses the given date string. This method is synchronized to prevent
-     * concurrent access to the thread-unsafe date formats.
-     *
-     * @param date date string
-     * @return parsed date, or <code>null</code> if the date can't be parsed
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
-     */
-    private static synchronized Date parseDate(String date) {
-        return DATE_UTILS.tryToParse(date);
+    /** Zone-less values read as UTC. */
+    private static Date parseDate(String date) {
+        Optional<TikaDates.ParsedDate> parsed = TikaDates.parse(date);
+        return parsed.isPresent() && parsed.get().isFullPrecision() ? Date.from(parsed.get().toInstant()) : null;
     }
 
     /**
@@ -275,6 +269,12 @@ public class Metadata implements Serializable {
     /**
      * Returns the value of the identified Date based metadata property. If many values are
      * associated to the specified property, then the first one is returned.
+     * <p>
+     * The value is read with {@link org.apache.tika.utils.TikaDates}: a zone-less value is read
+     * as UTC (never the JVM default zone), a date-only {@code yyyy-MM-dd} value as midday UTC.
+     * Partial dates ({@code yyyy}, {@code yyyy-MM}) and years outside
+     * {@value org.apache.tika.utils.TikaDates#MIN_YEAR}..{@value org.apache.tika.utils.TikaDates#MAX_YEAR}
+     * return null.
      *
      * @param property simple date property definition
      * @return property value as a Date, or <code>null</code> if the property is not set, or not

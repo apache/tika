@@ -81,8 +81,12 @@ matches. Use it to keep, say, embedded images out of the output entirely.
 `RENDERING`, `VERSION`, `ALTERNATE_FORMAT_CHUNK` (empty). An unrecognized name is a config error.
 
 |`date-normalizing-metadata-filter`
-|Rewrites every `DATE`-typed field that has no timezone to `yyyy-MM-dd'T'HH:mm:ss'Z'`, assuming
-the configured zone. Values that already end in `Z` are left alone.
+|Rewrites every `DATE`-typed value to `yyyy-MM-dd'T'HH:mm:ss'Z'` so that date fields in
+Solr, Elasticsearch, and OpenSearch never reject a document. A zone-less value is resolved in
+the configured zone, a date-only value as midday there, and an explicit offset is converted.
+*Partial dates are invented, not dropped*: `2019` becomes `2019-01-01T12:00:00Z` and
+`2019-06` becomes `2019-06-01T12:00:00Z` (in the configured zone). Unparseable values pass
+through with a warning. See xref:advanced/date-handling.adoc[Date Handling].
 |`defaultTimeZone` — zone id, e.g. `America/New_York` (`UTC`)
 
 |`capture-group-metadata-filter`

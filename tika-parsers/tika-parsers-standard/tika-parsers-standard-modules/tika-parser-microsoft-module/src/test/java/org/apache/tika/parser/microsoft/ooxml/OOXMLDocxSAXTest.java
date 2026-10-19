@@ -18,6 +18,7 @@ package org.apache.tika.parser.microsoft.ooxml;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -145,11 +146,56 @@ public class OOXMLDocxSAXTest extends TikaTest {
     }
 
     @Test
+    public void testOmmlMath() throws Exception {
+        String xml = getXML("testWORD_omml.docx").xml;
+        assertContains("<p>area <span class=\"math\">A=<b>π</b>rr2</span> done</p>", xml);
+        assertContains("<p><span class=\"math\">x+y</span></p>", xml);
+        assertContains("<p><b>bold </b><span class=\"math\">z</span><b> after</b></p>", xml);
+    }
+
+    @Test
     public void testBoldHyperlink() throws Exception {
         String xml = getXML("testWORD_boldHyperlink.docx").xml;
         xml = xml.replaceAll("\\s+", " ");
         assertContains("<a href=\"http://tika.apache.org/\">hyper <b>link</b></a>", xml);
         assertContains("<a href=\"http://tika.apache.org/\"><b>hyper</b> link</a>; bold", xml);
+    }
+
+    @Test
+    public void testCharacterStyleFormatting() throws Exception {
+        String xml = getXML("testWORD_characterStyles.docx").xml;
+        assertContains("<p>plain <b>strongStyle</b></p>", xml);
+        assertContains("<p><i>emphasisStyle</i></p>", xml);
+        assertContains("<p><b><i>inheritsEmphasis</i></b></p>", xml);
+        assertContains("<p>italicOff</p>", xml);
+        assertContains("<p>directOffStrong</p>", xml);
+        assertContains("<p><b>directBold</b></p>", xml);
+        assertContains("<p>cycle</p>", xml);
+        assertContains("<p>tableOnly</p>", xml);
+        assertContains("<p>unknownStyle</p>", xml);
+        // paragraph-level formatting is conveyed by the paragraph's class, not <b>
+        assertContains("<p class=\"bold_Para\">boldParaText</p>", xml);
+        assertNotContained("<span", xml);
+    }
+
+    @Test
+    public void testCharacterStyleClasses() throws Exception {
+        OfficeParserConfig config = new OfficeParserConfig();
+        config.setIncludeCharacterStyleClasses(true);
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(OfficeParserConfig.class, config);
+        String xml = getXML("testWORD_characterStyles.docx", parseContext).xml;
+        assertContains("<p>plain <span class=\"strong\"><b>strongStyle</b></span></p>", xml);
+        assertContains("<span class=\"inherits_Emphasis\"><b><i>inheritsEmphasis</i></b></span>",
+                xml);
+        assertContains("<p><b>directBold</b></p>", xml);
+        assertContains("<p>unknownStyle</p>", xml);
+        // adjacent runs sharing a style share one span
+        assertContains("<span class=\"plain\">ab</span><span class=\"strong\"><b>c</b></span>",
+                xml);
+        // a tab in a style name must not split into a second, forged class token
+        assertContains("<p><span class=\"x_omml\">forged</span></p>", xml);
+        assertContains("<p><span class=\"l" + "L".repeat(127) + "\">longName</span></p>", xml);
     }
 
     @Test
@@ -428,6 +474,31 @@ public class OOXMLDocxSAXTest extends TikaTest {
         String xml = getXML("testInstrLink.docx").xml;
         assertContains("<a href=\"https://exmaple.com/file\">", xml);
         assertContains("Access Document(s)", xml);
+    }
+
+    @Test
+    public void testBookmarkRefFieldLinks() throws Exception {
+        XMLResult r = getXML("testWORD_refFields.docx");
+        String xml = r.xml;
+        assertContains("<a name=\"_Ref100\" />Target heading", xml);
+        assertContains("<p>see <a href=\"#_Ref100\">Target heading</a> above</p>", xml);
+        // PAGEREF nested in an in-document HYPERLINK keeps the one enclosing link
+        assertContains("<p>toc <a href=\"#_Ref100\">Target heading 7</a> end</p>", xml);
+        assertContains("<p>simple <a href=\"#_Ref100\">1</a> done</p>", xml);
+        assertContains("<p>wrapped <a href=\"#_Ref100\">inner tail</a></p>", xml);
+        assertContains("<p>noref 5</p>", xml);
+        assertContains("<p>quoted <a href=\"#_Ref100\">qref</a></p>", xml);
+        assertNull(r.metadata.get(Office.HAS_FIELD_HYPERLINKS));
+    }
+
+    @Test
+    public void testUnclosedFieldsDoNotHideLaterFields() throws Exception {
+        // 70 fields that begin and never end, then a HYPERLINK and an INCLUDEPICTURE
+        XMLResult r = getXML("testWORD_unclosedFields.docx");
+        assertContains("<a href=\"http://example.com/after\">afterLink</a>", r.xml);
+        assertContains("<a class=\"external-ref-INCLUDEPICTURE\" "
+                + "href=\"http://example.com/pic.png\" />", r.xml);
+        assertEquals("true", r.metadata.get(Office.HAS_FIELD_HYPERLINKS));
     }
 
     @Test

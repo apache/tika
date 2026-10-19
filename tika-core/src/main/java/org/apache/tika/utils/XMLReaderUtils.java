@@ -61,6 +61,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
+import org.apache.tika.sax.OfflineEntityResolver;
 
 
 /**
@@ -373,8 +374,8 @@ public class XMLReaderUtils implements Serializable {
             }
         }
 
-        //a supplied builder never brings its own resolver along
-        builder.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
+        //never the builder's own resolver, and record what was refused
+        builder.setEntityResolver(new OfflineEntityResolver(context));
         try {
             return builder.parse(is);
         } finally {
@@ -411,8 +412,8 @@ public class XMLReaderUtils implements Serializable {
             }
         }
 
-        //a supplied builder never brings its own resolver along
-        builder.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
+        //never the builder's own resolver, and record what was refused
+        builder.setEntityResolver(new OfflineEntityResolver(context));
         try {
             return builder.parse(new InputSource(reader));
         } finally {
@@ -535,7 +536,7 @@ public class XMLReaderUtils implements Serializable {
             }
         }
         try {
-            saxParser.parse(is, new OfflineContentHandler(contentHandler));
+            saxParser.parse(is, new OfflineContentHandler(contentHandler, context));
         } finally {
             releaseParser(poolSAXParser);
         }
@@ -573,7 +574,7 @@ public class XMLReaderUtils implements Serializable {
             }
         }
         try {
-            saxParser.parse(new InputSource(reader), new OfflineContentHandler(contentHandler));
+            saxParser.parse(new InputSource(reader), new OfflineContentHandler(contentHandler, context));
         } finally {
             releaseParser(poolSAXParser);
         }

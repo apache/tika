@@ -18,9 +18,9 @@ package org.apache.tika.inference;
 
 import java.io.Serializable;
 
+import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.TikaCoreProperties;
-import org.apache.tika.utils.StringUtils;
 
 /**
  * Configuration for the inference metadata filters.
@@ -116,6 +116,7 @@ public class InferenceConfig implements Serializable {
         return baseUrl;
     }
 
+    @OperatorOnly
     public void setBaseUrl(String baseUrl) throws TikaConfigException {
         this.baseUrl = baseUrl;
     }
@@ -124,6 +125,7 @@ public class InferenceConfig implements Serializable {
         return model;
     }
 
+    @OperatorOnly
     public void setModel(String model) {
         this.model = model;
     }
@@ -132,6 +134,7 @@ public class InferenceConfig implements Serializable {
         return apiKey;
     }
 
+    @OperatorOnly
     public void setApiKey(String apiKey) throws TikaConfigException {
         this.apiKey = apiKey;
     }
@@ -200,6 +203,7 @@ public class InferenceConfig implements Serializable {
      * Set the maximum number of chunks per embeddings API request.
      * Must be at least 1.
      */
+    @OperatorOnly
     public void setMaxBatchSize(int maxBatchSize) {
         if (maxBatchSize < 1) {
             throw new IllegalArgumentException(
@@ -216,64 +220,12 @@ public class InferenceConfig implements Serializable {
      * Set the maximum number of chunks per document.
      * Set to {@code -1} for no limit. Must be {@code -1} or at least {@code 1}.
      */
+    @OperatorOnly
     public void setMaxChunks(int maxChunks) {
         if (maxChunks < 1 && maxChunks != -1) {
             throw new IllegalArgumentException(
                     "maxChunks must be -1 (no limit) or at least 1, got: " + maxChunks);
         }
         this.maxChunks = maxChunks;
-    }
-
-    /**
-     * Runtime-only config that prevents modification of security-sensitive
-     * and cost-sensitive fields ({@code baseUrl}, {@code apiKey},
-     * {@code model}) at parse time.
-     * <p>
-     * These fields must be set at initialization via the config file.
-     * If a runtime {@code ParseContext} JSON config attempts to set them,
-     * the overridden setters throw {@link TikaConfigException}.
-     */
-    public static class RuntimeConfig extends InferenceConfig {
-
-        @Override
-        public void setBaseUrl(String baseUrl) throws TikaConfigException {
-            if (!StringUtils.isBlank(baseUrl)) {
-                throw new TikaConfigException(
-                        "Cannot modify baseUrl at runtime. "
-                                + "URLs must be configured at initialization time.");
-            }
-        }
-
-        @Override
-        public void setApiKey(String apiKey) throws TikaConfigException {
-            if (!StringUtils.isBlank(apiKey)) {
-                throw new TikaConfigException(
-                        "Cannot modify apiKey at runtime. "
-                                + "API keys must be configured at initialization time.");
-            }
-        }
-
-        @Override
-        public void setModel(String model) {
-            throw new IllegalStateException(
-                    "Cannot modify model at runtime. "
-                            + "Models must be configured at initialization time. "
-                            + "If you need a different model, configure a "
-                            + "separate filter instance.");
-        }
-
-        @Override
-        public void setMaxBatchSize(int maxBatchSize) {
-            throw new IllegalStateException(
-                    "Cannot modify maxBatchSize at runtime. "
-                            + "Batch size must be configured at initialization time.");
-        }
-
-        @Override
-        public void setMaxChunks(int maxChunks) {
-            throw new IllegalStateException(
-                    "Cannot modify maxChunks at runtime. "
-                            + "Chunk limits must be configured at initialization time.");
-        }
     }
 }

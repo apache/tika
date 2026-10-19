@@ -48,6 +48,8 @@
       <artifactId>tika-pipes-core</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- On the classpath on purpose: a Maven consumer has no plugins directory, and the fork is
+         told to load this one plugin from the classpath (tika.plugins.classpath). -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>tika-pipes-file-system</artifactId>

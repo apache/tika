@@ -30,19 +30,19 @@ public class ESPipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting ES pipes plugin");
+        LOG.debug("Starting ES pipes plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping ES pipes plugin");
+        LOG.debug("Stopping ES pipes plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting ES pipes plugin");
+        LOG.debug("Deleting ES pipes plugin");
         super.delete();
     }
 }

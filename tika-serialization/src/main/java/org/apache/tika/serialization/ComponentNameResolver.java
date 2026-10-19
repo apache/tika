@@ -100,8 +100,8 @@ public final class ComponentNameResolver {
      * Implementations of a wire-allowed type that break its promise: a wire request may name
      * them nowhere it could instantiate one. The embedding filters POST document text to a
      * configured endpoint, so a request must not supply the endpoint. Their flat per-request
-     * config ({@code skipEmbedding}) is unaffected: it tunes the loaded instance and is
-     * guarded by the filter's RuntimeConfig.
+     * config ({@code skipEmbedding}) is unaffected: it tunes the loaded instance, whose
+     * endpoint fields are {@code @OperatorOnly}.
      */
     private static final Set<String> WIRE_BLOCKED_COMPONENT_NAMES = new HashSet<>();
 

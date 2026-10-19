@@ -263,7 +263,10 @@ That is why per-request configuration is gated separately by
 `allowPerRequestConfig`, which is off by default. Treat "the caller may supply
 per-request config" as equivalent to "the caller may set any parser option,
 including options that spawn external processes such as OCR" — not as something
-the allowlist constrains.
+the allowlist constrains. The one exception is a property marked `@OperatorOnly`
+(a path, executable, class name, URL, credential or operator-sized limit; see
+<<_operator_only_properties,Operator-only properties>>): a per-request block
+that names one is refused.
 ====
 
 [source,json]
@@ -302,6 +305,36 @@ The allowlist/blocklist lives in `ComponentNameResolver`
 exhaustiveness test asserts every context-key interface is classified as
 exactly one of the two. Plain config DTOs (non-component keys) are never
 blocked.
+
+[#_operator_only_properties]
+=== Operator-only properties
+
+Restricted mode decides which components a request may bind. It cannot see inside a
+self-configuring component's config: every `Parser` is self-configuring, so a per-request
+`pdf-parser` block reaches `PDFParserConfig` unexamined. A property whose value reaches the
+host rather than the document — a path or executable the parser runs, a class name it loads,
+a URL or credential it sends data to, a pool size or memory ceiling the operator sized — is
+therefore marked on the config class:
+
+[source,java]
+----
+@OperatorOnly
+public void setTesseractPath(String tesseractPath) throws TikaConfigException { ... }
+----
+
+`ConfigDeserializer` refuses per-request JSON (`JsonConfig.trusted()` false: a tika-server
+`/config` part, a pipes `FetchEmitTuple` parse context) that names such a property. The check
+is by JSON key, before any setter runs, and surfaces as an `IOException` that names the
+property. Operator JSON — tika-config.json, including its presets — is trusted and unaffected.
+A nested config object is checked against its own type, and an override that drops the
+annotation does not unlock the property.
+
+Writing a config class: annotate the setter of anything a caller must not be able to point
+elsewhere. A rule the annotation cannot express — a ceiling a request may lower but not raise,
+a field that unlocks when the operator opts in — belongs in the component after the merge, as
+`AbstractVLMParser` does for `maxTokens` and `prompt`. tika-app's `OperatorOnlyAuditTest` fails
+on any `*Config` setter on its classpath whose name says path, executable, class, URL,
+credential or model but carries no annotation.
 
 == Framework Directives
 

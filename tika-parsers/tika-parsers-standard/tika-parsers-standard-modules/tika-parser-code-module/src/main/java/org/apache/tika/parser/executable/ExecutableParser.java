@@ -18,6 +18,7 @@ package org.apache.tika.parser.executable;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.sql.Date;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,6 +30,9 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.EndianUtils;
 import org.apache.tika.io.TikaInputStream;
@@ -79,13 +83,32 @@ public class ExecutableParser implements Parser, MachineMetadata {
                             MACH_O_DYLINKER, MACH_O_BUNDLE, MACH_O_DYLIB_STUB, MACH_O_DSYM,
                             MACH_O_KEXT_BUNDLE)));
 
+    private static final String CONFIG_KEY = "executable-parser";
+
+    private ExecutableParserConfig defaultConfig = new ExecutableParserConfig();
+
+    public ExecutableParser() {
+    }
+
+    public ExecutableParser(ExecutableParserConfig config) {
+        this.defaultConfig = config;
+    }
+
+    public ExecutableParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, ExecutableParserConfig.class));
+    }
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
 
+    public ExecutableParserConfig getDefaultConfig() {
+        return defaultConfig;
+    }
+
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        // We only do metadata, for now
+        // We only do metadata (plus icons for PE files), for now
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
         // What kind is it?
@@ -93,7 +116,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
         IOUtils.readFully(tis, first4);
 
         if (first4[0] == (byte) 'M' && first4[1] == (byte) 'Z') {
-            parsePE(xhtml, metadata, tis, first4);
+            parsePE(xhtml, metadata, tis, first4, context);
         } else if (first4[0] == (byte) 0x7f && first4[1] == (byte) 'E' && first4[2] == (byte) 'L' &&
                 first4[3] == (byte) 'F') {
             parseELF(xhtml, metadata, tis, first4);
@@ -112,10 +135,46 @@ public class ExecutableParser implements Parser, MachineMetadata {
     }
 
     /**
-     * Parses a DOS or Windows PE file
+     * Parses a DOS or Windows PE file, extracting metadata only.
+     *
+     * @deprecated since 4.2.0, use
+     * {@link #parsePE(XHTMLContentHandler, Metadata, TikaInputStream, byte[], ParseContext)},
+     * which also extracts the icons as embedded documents. That is the one
+     * {@link #parse} calls, so overriding this method no longer changes what
+     * a parse does.
      */
+    @Deprecated
     public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, InputStream tis,
                         byte[] first4) throws TikaException, IOException {
+        parsePEHeader(metadata, tis);
+    }
+
+    /**
+     * Parses a DOS or Windows PE file, extracting metadata and, unless
+     * {@link ExecutableParserConfig#isExtractIcons()} says otherwise, the icon
+     * resources as embedded documents. A configuration in the context, an
+     * {@link ExecutableParserConfig} or JSON under "executable-parser", takes
+     * precedence over the parser's own.
+     */
+    public void parsePE(XHTMLContentHandler xhtml, Metadata metadata, TikaInputStream tis,
+                        byte[] first4, ParseContext context)
+            throws TikaException, IOException, SAXException {
+        CoffHeader header = parsePEHeader(metadata, tis);
+        ExecutableParserConfig config = ParseContextConfig.getConfig(context, CONFIG_KEY,
+                ExecutableParserConfig.class, defaultConfig);
+        if (header != null && config.isExtractIcons()) {
+            PEIconExtractor.extract(tis, header, xhtml, metadata, context);
+        }
+    }
+
+    /**
+     * Reads the MS-DOS stub and the COFF header into metadata.
+     *
+     * @return the header fields the resource walk needs, or null if this is
+     * not a PE file
+     */
+    private CoffHeader parsePEHeader(Metadata metadata, InputStream tis)
+            throws TikaException, IOException {
         metadata.set(HttpHeaders.CONTENT_TYPE, PE_EXE.toString());
         metadata.set(PLATFORM, PLATFORM_WINDOWS);
 
@@ -127,13 +186,13 @@ public class ExecutableParser implements Parser, MachineMetadata {
         int peOffset = EndianUtils.readIntLE(tis);
 
         // Reasonability check - while it may go anywhere, it's normally in the first few kb
-        if (peOffset > 4096 || peOffset < 0x3f) {
-            return;
+        if (peOffset > 4096 || peOffset < 0x40) {
+            return null;
         }
 
         // Skip the rest of the MS-DOS stub (if PE), until we reach what should
         //  be the PE header (if this is a PE executable)
-        tis.skip(peOffset - 0x40);
+        IOUtils.skipFully(tis, peOffset - 0x40);
 
         // Read the PE header
         byte[] pe = new byte[24];
@@ -144,7 +203,7 @@ public class ExecutableParser implements Parser, MachineMetadata {
             // Good, has a valid PE signature
         } else {
             // Old style MS-DOS
-            return;
+            return null;
         }
 
         // Read the header values
@@ -254,6 +313,37 @@ public class ExecutableParser implements Parser, MachineMetadata {
             default:
                 metadata.set(MACHINE_TYPE, MACHINE_UNKNOWN);
                 break;
+        }
+        return new CoffHeader(peOffset + pe.length, sizeOptHdrs, numSectors);
+    }
+
+    /**
+     * @param end the file offset right after the COFF header
+     */
+    record CoffHeader(long end, int sizeOptHdrs, int numSections) {
+    }
+
+    /**
+     * Configuration of {@link ExecutableParser}. One set on the
+     * {@link ParseContext}, as an object or as JSON under "executable-parser",
+     * takes the parser's place for that parse.
+     */
+    public static class ExecutableParserConfig implements Serializable {
+
+        private static final long serialVersionUID = 5210478935624115573L;
+
+        private boolean extractIcons = true;
+
+        /**
+         * Whether icons of PE files (EXE/DLL) are extracted as embedded
+         * <code>.ico</code> documents. Defaults to true.
+         */
+        public boolean isExtractIcons() {
+            return extractIcons;
+        }
+
+        public void setExtractIcons(boolean extractIcons) {
+            this.extractIcons = extractIcons;
         }
     }
 

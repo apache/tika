@@ -201,6 +201,10 @@ public class DefaultDetector extends CompositeDetector {
     public List<Detector> getDetectors() {
         if (loader != null && loader.isDynamic()) {
             List<Detector> detectors = loader.loadDynamicServiceProviders(Detector.class);
+            //a dynamic DefaultDetector already merges every dynamic provider; nesting one
+            //(this detector included) delegates back into itself
+            detectors.removeIf(d -> d instanceof DefaultDetector &&
+                    ((DefaultDetector) d).loader != null && ((DefaultDetector) d).loader.isDynamic());
             if (!detectors.isEmpty()) {
                 detectors.addAll(super.getDetectors());
                 return detectors;

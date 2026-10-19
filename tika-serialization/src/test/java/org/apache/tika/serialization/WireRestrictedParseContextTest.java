@@ -158,6 +158,18 @@ public class WireRestrictedParseContextTest {
     }
 
     @Test
+    public void restrictedRejectsBareStringWireBlockedName() {
+        // the bare-string form still binds a working defaults instance of an allowed type
+        for (String name : new String[]{"openai-embedding-filter", "jina-embedding-filter"}) {
+            String json = "{\"metadata-filters\":[\"" + name + "\"]}";
+            Exception e = assertThrows(Exception.class,
+                    () -> restrictedMapper().readValue(json, ParseContext.class), name);
+            assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
+                    name + ": expected wire-blocked rejection, got: " + rootMessage(e));
+        }
+    }
+
+    @Test
     public void restrictedRejectsParserSmuggledInArrayConfig() {
         // Nesting a parser inside an array config (e.g. metadata-filters) must also be refused.
         String json = "{\"metadata-filters\":[{\"external-parser\":{}}]}";

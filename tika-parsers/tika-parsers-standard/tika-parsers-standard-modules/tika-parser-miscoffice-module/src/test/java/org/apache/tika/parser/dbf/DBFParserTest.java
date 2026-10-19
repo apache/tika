@@ -21,16 +21,20 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.detect.OverrideEncodingDetector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 
 public class DBFParserTest extends TikaTest {
@@ -59,6 +63,19 @@ public class DBFParserTest extends TikaTest {
         assertContains("<td>10.0</td>", xml);
         assertContains("<td>11.0</td>", xml);
         assertContains("<td>licour</td>", xml);
+    }
+
+    @Test
+    public void testConfiguredEncodingDetector() throws Exception {
+        Parser p = new DBFParser(new OverrideEncodingDetector(StandardCharsets.ISO_8859_1));
+        XMLResult r = getXML("testDBF.dbf", p, new Metadata());
+        assertEquals("ISO-8859-1", r.metadata.get(HttpHeaders.CONTENT_ENCODING));
+
+        ParseContext context = new ParseContext();
+        context.set(EncodingDetector.class,
+                new OverrideEncodingDetector(StandardCharsets.UTF_16LE));
+        r = getXML("testDBF.dbf", p, new Metadata(), context);
+        assertEquals("UTF-16LE", r.metadata.get(HttpHeaders.CONTENT_ENCODING));
     }
 
     @Test

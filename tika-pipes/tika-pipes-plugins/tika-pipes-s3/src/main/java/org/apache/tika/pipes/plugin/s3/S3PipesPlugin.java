@@ -30,19 +30,19 @@ public class S3PipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting S3 Emitter Plugin");
+        LOG.debug("Starting S3 Emitter Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping S3 Emitter Plugin");
+        LOG.debug("Stopping S3 Emitter Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting S3 Emitter Plugin");
+        LOG.debug("Deleting S3 Emitter Plugin");
         super.delete();
     }
 }

@@ -25,11 +25,8 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 
 import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
@@ -44,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 public class ImageMetadataExtractorTest {
@@ -79,11 +77,7 @@ public class ImageMetadataExtractorTest {
     public void testExifHandlerParseDate() throws MetadataException {
         ExifSubIFDDirectory exif = Mockito.mock(ExifSubIFDDirectory.class);
         Mockito.when(exif.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
-        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"), Locale.ROOT);
-        calendar.setTimeInMillis(0);
-        calendar.set(2000, 0, 1, 0, 0, 0);
-        Mockito.when(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL))
-                .thenReturn(calendar.getTime()); // UTC timezone as in Metadata Extractor
+        Mockito.when(exif.getObject(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn("2000:01:01 00:00:00");
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
@@ -117,11 +111,7 @@ public class ImageMetadataExtractorTest {
     public void testExifHandlerParseDateFallback() throws MetadataException {
         ExifIFD0Directory exif = Mockito.mock(ExifIFD0Directory.class);
         Mockito.when(exif.containsTag(ExifIFD0Directory.TAG_DATETIME)).thenReturn(true);
-        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"), Locale.ROOT);
-        calendar.setTimeInMillis(0);
-        calendar.set(1999, 0, 1, 0, 0, 0);
-        Mockito.when(exif.getDate(ExifIFD0Directory.TAG_DATETIME))
-                .thenReturn(calendar.getTime()); // UTC timezone as in Metadata Extractor
+        Mockito.when(exif.getObject(ExifIFD0Directory.TAG_DATETIME)).thenReturn("1999:01:01 00:00:00");
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
@@ -130,10 +120,21 @@ public class ImageMetadataExtractorTest {
     }
 
     @Test
+    public void testExifHandlerParseDateOutOfBounds() throws MetadataException {
+        ExifSubIFDDirectory exif = Mockito.mock(ExifSubIFDDirectory.class);
+        Mockito.when(exif.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
+        Mockito.when(exif.getObject(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn("0004:12:31 23:00:00");
+        Metadata metadata = new Metadata();
+        new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
+        assertNull(metadata.get(TikaCoreProperties.CREATED));
+        assertNull(metadata.get(TIFF.ORIGINAL_DATE));
+    }
+
+    @Test
     public void testExifHandlerParseDateError() throws MetadataException {
         ExifIFD0Directory exif = Mockito.mock(ExifIFD0Directory.class);
         Mockito.when(exif.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
-        Mockito.when(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(null);
+        Mockito.when(exif.getObject(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn("    :  :     :  :  ");
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);

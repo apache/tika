@@ -37,8 +37,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -60,7 +63,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,6 +150,8 @@ public class TikaGrpcServerTest {
     }
 
     private final List<TikaGrpcServerImpl> services = new ArrayList<>();
+    // owned by SharedUnlockedService; its pipes-server temp dir is checked when it closes
+    private static TikaGrpcServerImpl sharedService;
 
     /**
      * Every service built here is closed by {@link #closeServices()}. Only the manager that
@@ -165,7 +172,9 @@ public class TikaGrpcServerTest {
             service.postShutdown();
         }
         services.clear();
-        assertNoOrphanedServerTempDirs();
+        if (sharedService == null) {
+            assertNoOrphanedServerTempDirs();
+        }
     }
 
     /**
@@ -315,97 +324,6 @@ public class TikaGrpcServerTest {
     }
 
     @Test
-    public void testWireBlockedParseContextIsRejected(Resources resources) throws Exception {
-        // exception-reporting is operator policy, not a request knob. Ungated, the fork refuses it
-        // at deserialization time and exits: UNSPECIFIED_CRASH with no reason, plus a restart.
-        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfigUnlocked);
-
-        StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
-                blockingStub.fetchAndParse(FetchAndParseRequest
-                        .newBuilder()
-                        .setFetcherId(createFetcherId(1))
-                        .setFetchKey("no-such-file")
-                        .setParseContextJson("{\"exception-reporting\":{\"level\":\"FULL\"}}")
-                        .build()));
-        assertEquals(Status.Code.INVALID_ARGUMENT, ex.getStatus().getCode());
-        assertTrue(String.valueOf(ex.getStatus().getDescription())
-                        .contains("may not be supplied via a request parseContext"),
-                "the caller must be told why: " + ex.getStatus().getDescription());
-
-        // ...and the server must still serve the next request.
-        String fetchKey = "wire-blocked-" + UUID.randomUUID() + ".html";
-        File testFile = new File("target", fetchKey);
-        FileUtils.writeStringToFile(testFile,
-                "<html><body>still serving</body></html>", StandardCharsets.UTF_8);
-        try {
-            FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest
-                    .newBuilder()
-                    .setFetcherId(createFetcherId(1))
-                    .setFetchKey(fetchKey)
-                    .build());
-            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(), reply.getStatus());
-        } finally {
-            FileUtils.deleteQuietly(testFile);
-        }
-    }
-
-    @Test
-    public void testPerRequestParseContextStillReachesTheFork(Resources resources)
-            throws Exception {
-        // The gate resolves the request context in this JVM; a legal entry must still round-trip
-        // to the worker. Both shapes: one resolved here, one (self-configuring) left as JSON.
-        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfigUnlocked);
-        String fetchKey = "per-request-" + UUID.randomUUID() + ".html";
-        File testFile = new File("target", fetchKey);
-        FileUtils.writeStringToFile(testFile,
-                "<html><body>per request</body></html>", StandardCharsets.UTF_8);
-        try {
-            FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest
-                    .newBuilder()
-                    .setFetcherId(createFetcherId(1))
-                    .setFetchKey(fetchKey)
-                    .setParseContextJson("{\"basic-content-handler-factory\":{\"type\":\"IGNORE\"},"
-                            + "\"pdf-parser\":{\"sortByPosition\":true}}")
-                    .build());
-            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(), reply.getStatus());
-            String contentKey = TikaCoreProperties.TIKA_CONTENT.getName();
-            String ignored = reply.getFieldsMap().get(contentKey);
-            assertTrue(ignored == null || ignored.isBlank(),
-                    "type=IGNORE must reach the worker: " + reply.getFieldsMap());
-
-            FetchAndParseReply withContent = blockingStub.fetchAndParse(FetchAndParseRequest
-                    .newBuilder()
-                    .setFetcherId(createFetcherId(1))
-                    .setFetchKey(fetchKey)
-                    .build());
-            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(), withContent.getStatus());
-            String content = withContent.getFieldsMap().get(contentKey);
-            assertTrue(content != null && !content.isBlank(),
-                    "without the override there must be content, or the check above proves "
-                            + "nothing: " + withContent.getFieldsMap());
-        } finally {
-            FileUtils.deleteQuietly(testFile);
-        }
-    }
-
-    @Test
-    public void testUnrecognizedParseContextEntryIsRejected(Resources resources) throws Exception {
-        // Same boundary, other trigger: an unregistered name fails resolveAll in the fork.
-        TikaGrpc.TikaBlockingStub blockingStub = startServer(resources, tikaConfigUnlocked);
-
-        StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
-                blockingStub.fetchAndParse(FetchAndParseRequest
-                        .newBuilder()
-                        .setFetcherId(createFetcherId(1))
-                        .setFetchKey("no-such-file")
-                        .setParseContextJson("{\"no-such-component\":{}}")
-                        .build()));
-        assertEquals(Status.Code.INVALID_ARGUMENT, ex.getStatus().getCode());
-        assertTrue(String.valueOf(ex.getStatus().getDescription()).contains("no-such-component"),
-                "the caller must be told which entry: " + ex.getStatus().getDescription());
-    }
-
-    @Test
     public void testComponentManagementHidesConfigByDefault(Resources resources) throws Exception {
         // With component management off (the default), the read RPCs must return component identity
         // only -- never the stored config, which can carry secrets (passwords, access keys, ...).
@@ -516,72 +434,192 @@ public class TikaGrpcServerTest {
     }
 
     /**
-     * TIKA-4804: the server-streaming variant must close the call. With the in-process
-     * transport and a direct executor the whole handler runs inside the stub call, so
-     * the observer counts are final when it returns and nothing here needs to wait.
+     * Fetch-and-parse tests on the unlocked config that neither save components nor change
+     * server state share one service, so the pipes fork starts once rather than per test.
      */
-    @Test
-    public void testServerSideStreamingSendsTerminalSignal(Resources resources) throws Exception {
-        String serverName = InProcessServerBuilder.generateName();
-        Server server = InProcessServerBuilder
-                .forName(serverName)
-                .directExecutor()
-                .addService(newService(tikaConfigUnlocked))
-                .build()
-                .start();
-        resources.register(server, Duration.ofSeconds(10));
+    @Nested
+    @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+    class SharedUnlockedService {
+        private Server server;
+        private ManagedChannel channel;
+        private TikaGrpc.TikaBlockingStub blockingStub;
+        private TikaGrpc.TikaStub tikaStub;
 
-        ManagedChannel channel = InProcessChannelBuilder
-                .forName(serverName)
-                .directExecutor()
-                .build();
-        resources.register(channel, Duration.ofSeconds(10));
-        TikaGrpc.TikaStub tikaStub = TikaGrpc.newStub(channel);
+        @BeforeAll
+        void start() throws Exception {
+            sharedService = new TikaGrpcServerImpl(tikaConfigUnlocked.toAbsolutePath().toString());
+            String serverName = InProcessServerBuilder.generateName();
+            server = InProcessServerBuilder
+                    .forName(serverName)
+                    .directExecutor()
+                    .addService(sharedService)
+                    .build()
+                    .start();
+            channel = InProcessChannelBuilder
+                    .forName(serverName)
+                    .directExecutor()
+                    .build();
+            blockingStub = TikaGrpc.newBlockingStub(channel);
+            tikaStub = TikaGrpc.newStub(channel);
+        }
 
-        // The fetcher must come from the config file: one saved at runtime through
-        // saveFetcher is not visible to the forked worker, and the fetch would fail.
-        String fetcherId = createFetcherId(1);
-        String fetchKey = "tika4804-" + UUID.randomUUID() + ".html";
-        File testFile = new File("target", fetchKey);
-        FileUtils.writeStringToFile(testFile,
-                "<html><body>terminal signal</body></html>", StandardCharsets.UTF_8);
-
-        List<FetchAndParseReply> replies = Collections.synchronizedList(new ArrayList<>());
-        AtomicInteger errors = new AtomicInteger();
-        AtomicInteger completions = new AtomicInteger();
-        StreamObserver<FetchAndParseReply> observer = new StreamObserver<>() {
-            @Override
-            public void onNext(FetchAndParseReply reply) {
-                replies.add(reply);
+        @AfterAll
+        void stop() throws Exception {
+            try {
+                if (channel != null) {
+                    channel.shutdownNow().awaitTermination(10, TimeUnit.SECONDS);
+                }
+                if (server != null) {
+                    server.shutdownNow().awaitTermination(10, TimeUnit.SECONDS);
+                }
+                if (sharedService != null) {
+                    sharedService.shutdown();
+                    sharedService.postShutdown();
+                }
+            } finally {
+                sharedService = null;
             }
+            assertNoOrphanedServerTempDirs();
+        }
 
-            @Override
-            public void onError(Throwable throwable) {
-                errors.incrementAndGet();
+        @Test
+        public void testWireBlockedParseContextIsRejected() throws Exception {
+            // exception-reporting is operator policy, not a request knob. Ungated, the fork refuses it
+            // at deserialization time and exits: UNSPECIFIED_CRASH with no reason, plus a restart.
+            StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
+                    blockingStub.fetchAndParse(FetchAndParseRequest
+                            .newBuilder()
+                            .setFetcherId(createFetcherId(1))
+                            .setFetchKey("no-such-file")
+                            .setParseContextJson("{\"exception-reporting\":{\"level\":\"FULL\"}}")
+                            .build()));
+            assertEquals(Status.Code.INVALID_ARGUMENT, ex.getStatus().getCode());
+            assertTrue(String.valueOf(ex.getStatus().getDescription())
+                            .contains("may not be supplied via a request parseContext"),
+                    "the caller must be told why: " + ex.getStatus().getDescription());
+
+            // ...and the server must still serve the next request.
+            String fetchKey = "wire-blocked-" + UUID.randomUUID() + ".html";
+            File testFile = new File("target", fetchKey);
+            FileUtils.writeStringToFile(testFile,
+                    "<html><body>still serving</body></html>", StandardCharsets.UTF_8);
+            try {
+                FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest
+                        .newBuilder()
+                        .setFetcherId(createFetcherId(1))
+                        .setFetchKey(fetchKey)
+                        .build());
+                assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(), reply.getStatus());
+            } finally {
+                FileUtils.deleteQuietly(testFile);
             }
+        }
 
-            @Override
-            public void onCompleted() {
-                completions.incrementAndGet();
+        @Test
+        public void testPerRequestParseContextStillReachesTheFork() throws Exception {
+            // The gate resolves the request context in this JVM; a legal entry must still round-trip
+            // to the worker. Both shapes: one resolved here, one (self-configuring) left as JSON.
+            String fetchKey = "per-request-" + UUID.randomUUID() + ".html";
+            File testFile = new File("target", fetchKey);
+            FileUtils.writeStringToFile(testFile,
+                    "<html><body>per request</body></html>", StandardCharsets.UTF_8);
+            try {
+                FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest
+                        .newBuilder()
+                        .setFetcherId(createFetcherId(1))
+                        .setFetchKey(fetchKey)
+                        .setParseContextJson("{\"basic-content-handler-factory\":{\"type\":\"IGNORE\"},"
+                                + "\"pdf-parser\":{\"sortByPosition\":true}}")
+                        .build());
+                assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(), reply.getStatus());
+                String contentKey = TikaCoreProperties.TIKA_CONTENT.getName();
+                String ignored = reply.getFieldsMap().get(contentKey);
+                assertTrue(ignored == null || ignored.isBlank(),
+                        "type=IGNORE must reach the worker: " + reply.getFieldsMap());
+
+                FetchAndParseReply withContent = blockingStub.fetchAndParse(FetchAndParseRequest
+                        .newBuilder()
+                        .setFetcherId(createFetcherId(1))
+                        .setFetchKey(fetchKey)
+                        .build());
+                assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(), withContent.getStatus());
+                String content = withContent.getFieldsMap().get(contentKey);
+                assertTrue(content != null && !content.isBlank(),
+                        "without the override there must be content, or the check above proves "
+                                + "nothing: " + withContent.getFieldsMap());
+            } finally {
+                FileUtils.deleteQuietly(testFile);
             }
-        };
+        }
 
-        try {
-            tikaStub.fetchAndParseServerSideStreaming(FetchAndParseRequest
-                    .newBuilder()
-                    .setFetcherId(fetcherId)
-                    .setFetchKey(fetchKey)
-                    .build(), observer);
+        @Test
+        public void testUnrecognizedParseContextEntryIsRejected() throws Exception {
+            // Same boundary, other trigger: an unregistered name fails resolveAll in the fork.
 
-            assertEquals(1, replies.size(), "one reply for one fetch key");
-            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(),
-                    replies.get(0).getStatus(),
-                    "the fixture must actually parse, or this test proves nothing");
-            assertEquals(0, errors.get(), "no error on the happy path");
-            assertEquals(1, completions.get(),
-                    "server streaming must send a terminal signal");
-        } finally {
-            FileUtils.deleteQuietly(testFile);
+            StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
+                    blockingStub.fetchAndParse(FetchAndParseRequest
+                            .newBuilder()
+                            .setFetcherId(createFetcherId(1))
+                            .setFetchKey("no-such-file")
+                            .setParseContextJson("{\"no-such-component\":{}}")
+                            .build()));
+            assertEquals(Status.Code.INVALID_ARGUMENT, ex.getStatus().getCode());
+            assertTrue(String.valueOf(ex.getStatus().getDescription()).contains("no-such-component"),
+                    "the caller must be told which entry: " + ex.getStatus().getDescription());
+        }
+
+        /**
+         * TIKA-4804: the server-streaming variant must close the call. With the in-process
+         * transport and a direct executor the whole handler runs inside the stub call, so
+         * the observer counts are final when it returns and nothing here needs to wait.
+         */
+        @Test
+        public void testServerSideStreamingSendsTerminalSignal() throws Exception {
+            // The fetcher must come from the config file: one saved at runtime through
+            // saveFetcher is not visible to the forked worker, and the fetch would fail.
+            String fetcherId = createFetcherId(1);
+            String fetchKey = "tika4804-" + UUID.randomUUID() + ".html";
+            File testFile = new File("target", fetchKey);
+            FileUtils.writeStringToFile(testFile,
+                    "<html><body>terminal signal</body></html>", StandardCharsets.UTF_8);
+
+            List<FetchAndParseReply> replies = Collections.synchronizedList(new ArrayList<>());
+            AtomicInteger errors = new AtomicInteger();
+            AtomicInteger completions = new AtomicInteger();
+            StreamObserver<FetchAndParseReply> observer = new StreamObserver<>() {
+                @Override
+                public void onNext(FetchAndParseReply reply) {
+                    replies.add(reply);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    errors.incrementAndGet();
+                }
+
+                @Override
+                public void onCompleted() {
+                    completions.incrementAndGet();
+                }
+            };
+
+            try {
+                tikaStub.fetchAndParseServerSideStreaming(FetchAndParseRequest
+                        .newBuilder()
+                        .setFetcherId(fetcherId)
+                        .setFetchKey(fetchKey)
+                        .build(), observer);
+
+                assertEquals(1, replies.size(), "one reply for one fetch key");
+                assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(),
+                        replies.get(0).getStatus(),
+                        "the fixture must actually parse, or this test proves nothing");
+                assertEquals(0, errors.get(), "no error on the happy path");
+                assertEquals(1, completions.get(),
+                        "server streaming must send a terminal signal");
+            } finally {
+                FileUtils.deleteQuietly(testFile);
+            }
         }
     }
 
@@ -624,6 +662,8 @@ public class TikaGrpcServerTest {
         List<FetchAndParseReply> successes = Collections.synchronizedList(new ArrayList<>());
         List<FetchAndParseReply> errors = Collections.synchronizedList(new ArrayList<>());
         AtomicBoolean finished = new AtomicBoolean(false);
+        AtomicReference<Throwable> streamError = new AtomicReference<>();
+        CountDownLatch done = new CountDownLatch(1);
 
         StreamObserver<FetchAndParseReply> replyStreamObserver = new StreamObserver<>() {
             @Override
@@ -638,13 +678,15 @@ public class TikaGrpcServerTest {
 
             @Override
             public void onError(Throwable throwable) {
-                fail(throwable);
+                streamError.set(throwable);
+                done.countDown();
             }
 
             @Override
             public void onCompleted() {
                 LOG.info("Stream completed");
                 finished.set(true);
+                done.countDown();
             }
         };
 
@@ -675,9 +717,10 @@ public class TikaGrpcServerTest {
                     .setFetchKey("does not exist")
                     .build());
             requestStreamObserver.onCompleted();
-            
-            // Wait a bit for async processing to complete
-            Thread.sleep(1000);
+            assertTrue(done.await(60, TimeUnit.SECONDS), "stream never terminated");
+            if (streamError.get() != null) {
+                fail(streamError.get());
+            }
             
             // Log what we got for debugging
             LOG.info("Successes: {}, Errors: {}", successes.size(), errors.size());

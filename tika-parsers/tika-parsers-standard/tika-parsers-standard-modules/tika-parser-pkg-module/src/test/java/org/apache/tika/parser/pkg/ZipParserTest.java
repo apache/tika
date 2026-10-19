@@ -18,7 +18,6 @@ package org.apache.tika.parser.pkg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -35,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.Tika;
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -157,13 +155,12 @@ public class ZipParserTest extends AbstractPkgTest {
     }
 
     @Test
-    public void testQuine() {
+    public void testQuine() throws Exception {
         //Anti-virus can surreptitiously remove this file
         assumeTrue(
                 ZipParserTest.class.getResourceAsStream("/test-documents/droste.zip") != null);
-        assertThrows(TikaException.class, () -> {
-            getXML("droste.zip");
-        });
+        assertEquals("true",
+                getXML("droste.zip").metadata.get(TikaCoreProperties.EMBEDDED_DEPTH_LIMIT_REACHED));
     }
 
     @Test

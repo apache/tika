@@ -202,6 +202,24 @@ public interface TikaCoreProperties {
     Property EMBEDDED_DEPTH_LIMIT_REACHED =
             Property.reservedInternalBoolean(TIKA_META_EXCEPTION_PREFIX + "embedded-depth-limit-reached");
 
+    /**
+     * External DTDs and entities this document's XML referenced, by system id (public id
+     * when there is none). Tika never resolves them; this records what the document would
+     * have fetched. At most {@link org.apache.tika.parser.ParseRecord#MAX_EXTERNAL_REFERENCES}
+     * are listed; {@link #XML_EXTERNAL_REFERENCE_COUNT} is the full count. XML that a
+     * third-party library parses with its own parser (OOXML package parts, plists, feeds) is
+     * not seen.
+     */
+    Property XML_EXTERNAL_REFERENCE =
+            Property.reservedInternalTextBag(TIKA_META_PREFIX + "xml-external-reference");
+
+    Property XML_EXTERNAL_REFERENCE_COUNT =
+            Property.reservedInternalInteger(TIKA_META_PREFIX + "xml-external-reference-count");
+
+    //on the container: an embedded document recorded an XML_EXTERNAL_REFERENCE
+    Property XML_EXTERNAL_REFERENCE_EMBEDDED =
+            Property.reservedInternalBoolean(TIKA_META_PREFIX + "xml-external-reference-embedded");
+
     //total timeout exhausted mid-parse; remaining embedded docs were skipped, not attempted
     Property TASK_DEADLINE_REACHED =
             Property.reservedInternalBoolean(TIKA_META_EXCEPTION_PREFIX + "task-deadline-reached");

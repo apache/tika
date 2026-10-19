@@ -170,10 +170,27 @@ public class TikaJsonConfig {
      * @throws TikaConfigException if loading or parsing fails
      */
     public static TikaJsonConfig load(InputStream inputStream) throws TikaConfigException {
+        return load(inputStream, true);
+    }
+
+    /**
+     * Loads configuration from an input stream, resolving {@code ${env:NAME}} references only
+     * when {@code resolveEnv} is true. Pass false for JSON whose references were already
+     * resolved, so that a resolved value containing {@code ${env:...}} is not expanded again.
+     *
+     * @param inputStream the input stream containing JSON configuration
+     * @param resolveEnv whether to resolve environment variable references
+     * @return the parsed configuration
+     * @throws TikaConfigException if loading or parsing fails
+     */
+    public static TikaJsonConfig load(InputStream inputStream, boolean resolveEnv)
+            throws TikaConfigException {
         try {
             JsonNode rootNode = OBJECT_MAPPER.readTree(inputStream);
-            // startup config only: a request's JSON never reaches this method
-            EnvInterpolator.resolve(rootNode, System::getenv);
+            if (resolveEnv) {
+                // startup config only: a request's JSON never reaches this method
+                EnvInterpolator.resolve(rootNode, System::getenv);
+            }
             TikaJsonConfig tikaJsonConfig = new TikaJsonConfig(rootNode);
             tikaJsonConfig.validateKeys();
             return tikaJsonConfig;

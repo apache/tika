@@ -33,7 +33,11 @@ import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hssf.record.crypto.Biff8EncryptionKey;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.util.LocaleUtil;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.TikaTest;
@@ -55,7 +59,30 @@ import org.apache.tika.parser.PasswordProvider;
 import org.apache.tika.parser.microsoft.ooxml.OOXMLParser;
 import org.apache.tika.sax.BodyContentHandler;
 
+//pins the JVM default locale, which is global: no other class may run alongside
+@Isolated
 public class ExcelParserTest extends TikaTest {
+
+    //POI formats dates with the JVM default locale's digits whatever locale it is given;
+    //pin the default until that is fixed upstream (see TIKA-4920)
+    private static Locale USER_LOCALE = null;
+
+    @BeforeAll
+    public static void setUpLocale() {
+        USER_LOCALE = LocaleUtil.getUserLocale();
+    }
+
+    @AfterAll
+    public static void tearDownLocale() {
+        LocaleUtil.setUserLocale(USER_LOCALE);
+        Locale.setDefault(USER_LOCALE);
+    }
+
+    @BeforeEach
+    public void pinLocale() {
+        LocaleUtil.setUserLocale(Locale.US);
+        Locale.setDefault(Locale.US);
+    }
     @Test
     @SuppressWarnings("deprecation") // Checks legacy Tika-1.0 style metadata keys
     public void testExcelParser() throws Exception {

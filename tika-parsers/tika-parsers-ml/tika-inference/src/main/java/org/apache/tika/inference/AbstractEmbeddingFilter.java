@@ -122,20 +122,14 @@ public abstract class AbstractEmbeddingFilter extends MetadataFilter implements 
     }
 
     /**
-     * Per-request JSON config, validated through {@link InferenceConfig.RuntimeConfig}
-     * (which rejects baseUrl/apiKey/model changes) and merged over the init-time defaults.
+     * Per-request JSON config merged over the init-time defaults; the deserializer refuses
+     * the {@code @OperatorOnly} fields (baseUrl, apiKey, model, batch and chunk limits).
      * With no JSON, a class-keyed programmatic {@link InferenceConfig} is honored for
      * skipEmbedding only, preserving the pre-4.1 contract.
      */
     private InferenceConfig resolveConfig(ParseContext parseContext) throws TikaException {
         try {
             if (ParseContextConfig.hasConfig(parseContext, getComponentName())) {
-                InferenceConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
-                        parseContext, getComponentName(),
-                        InferenceConfig.RuntimeConfig.class, new InferenceConfig.RuntimeConfig());
-                if (runtimeConfig.isSkipEmbedding()) {
-                    return runtimeConfig;
-                }
                 return ParseContextConfig.getConfig(parseContext, getComponentName(),
                         InferenceConfig.class, defaultConfig);
             }
