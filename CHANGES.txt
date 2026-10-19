@@ -1,7 +1,8 @@
 Release 4.2.0 - unreleased
 
-   * The docx parser wraps OMML equations (m:oMath) in <span class="math">; their
-     text was previously emitted as unmarked body text (TIKA-4968).
+   * The docx parser wraps OMML equations (m:oMath) in <span class="omml">, their
+     text flattened to plain characters; it was previously emitted as unmarked body
+     text (TIKA-4968).
 
    * The docx parser links REF, PAGEREF and NOTEREF fields, and in-document
      HYPERLINK \l fields, to their bookmarks (<a href="#bookmark">). Fields are now
