@@ -3,6 +3,12 @@ Release 4.2.0 - unreleased
    * Files named *.rs are now detected as text/x-rust (Rust source) instead of
      application/rls-services+xml. RLS services XML is still detected from its
      root element, whatever the file name (TIKA-4977).
+     
+   * Opt-in "metadata-list": {"typedValues": true} writes INTEGER, REAL and
+     BOOLEAN metadata as JSON numbers and booleans, and tk:chunks as nested
+     JSON rather than an escaped string, in -J, /rmeta and the JSON emitters.
+     New Property.ValueType.JSON; tk:chunks is now JSON-typed. Readers accept
+     both forms (TIKA-4969).
 
    * The docx parser wraps OMML equations (m:oMath) in <span class="math">; their
      text was previously emitted as unmarked body text (TIKA-4968).
