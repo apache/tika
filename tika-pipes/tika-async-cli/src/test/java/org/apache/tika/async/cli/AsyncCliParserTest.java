@@ -119,6 +119,18 @@ public class AsyncCliParserTest {
                 new String[]{"-i", "input", "-o", "output", "--on-exists", "bogus"}));
     }
 
+    /** TIKA-4971: a single file's default unpack dir doesn't depend on the format. */
+    @Test
+    public void testSingleFileUnpackDefaultsOutputDir(@TempDir Path tmp) throws Exception {
+        Path input = Files.writeString(tmp.resolve("doc.pdf"), "x");
+        for (String format : new String[]{"FRICTIONLESS", "REGULAR"}) {
+            SimpleAsyncConfig config = TikaAsyncCLI.parseCommandLine(
+                    new String[]{"-z", "--unpack-format=" + format, input.toString()});
+            assertEquals(Path.of("doc.pdf-unpacked").toAbsolutePath().toString(),
+                    config.getOutputDir(), format);
+        }
+    }
+
     @Test
     public void testFileListWithInputDir(@TempDir Path tmp) throws Exception {
         Path fileList = tmp.resolve("files.txt");

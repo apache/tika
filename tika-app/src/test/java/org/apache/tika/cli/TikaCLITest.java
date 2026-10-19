@@ -36,10 +36,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -367,33 +371,34 @@ public class TikaCLITest {
     public void testRUnpack() throws Exception {
         //TODO -- rework this to use two separate emitters
         //one for bytes and one for json
-        // TODO: 00000001.bin extension may be wrong - see ~/Desktop/unpack-discussion/mime-todo.txt
+        // TODO: 1.bin extension may be wrong - see ~/Desktop/unpack-discussion/mime-todo.txt
+        // a single input file: the output dir is the package
         String[] expectedChildren = new String[]{
-                "testPDFPackage.pdf.json",
-                //the first two test that the default single file config is working
-                "testPDFPackage.pdf/unpacked/00000001.bin",
-                "testPDFPackage.pdf/unpacked/00000002.jpg",
-                "testPDFPackage.pdf/unpacked/00000003.pdf",
-                "testPDFPackage.pdf/unpacked/00000004.pdf"};
-        testRecursiveUnpack("testPDFPackage.pdf", expectedChildren, 2);
+                "datapackage.json",
+                "rmeta.json",
+                "unpacked/1.bin",
+                "unpacked/2.jpg",
+                "unpacked/3.pdf",
+                "unpacked/4.pdf"};
+        testRecursiveUnpack("testPDFPackage.pdf", expectedChildren, 3);
     }
 
     @Test
     public void testPSTRUnpack() throws Exception {
         // TODO: The .bin extensions for embedded .msg files are wrong - they should be .msg
         // CONTENT_TYPE is not being set for embedded documents - see ~/Desktop/unpack-discussion/mime-todo.txt
-        String[] expectedChildren = new String[]{"testPST.pst.json",
-                "testPST.pst/unpacked/00000007.bin",
-                "testPST.pst/unpacked/00000001.bin",
-                "testPST.pst/unpacked/00000008.bin",
-                "testPST.pst/unpacked/00000004.bin",
-                "testPST.pst/unpacked/00000003.bin",
-                "testPST.pst/unpacked/00000002.bin",
-                "testPST.pst/unpacked/00000005.bin",
-                "testPST.pst/unpacked/00000009.docx",
-                "testPST.pst/unpacked/00000006.bin"};
-        testRecursiveUnpack("testPST.pst", expectedChildren, 2);
-        try (Reader reader = Files.newBufferedReader(extractDir.resolve("testPST.pst.json"))) {
+        String[] expectedChildren = new String[]{"rmeta.json",
+                "unpacked/7.bin",
+                "unpacked/1.bin",
+                "unpacked/8.bin",
+                "unpacked/4.bin",
+                "unpacked/3.bin",
+                "unpacked/2.bin",
+                "unpacked/5.bin",
+                "unpacked/9.docx",
+                "unpacked/6.bin"};
+        testRecursiveUnpack("testPST.pst", expectedChildren, 3);
+        try (Reader reader = Files.newBufferedReader(extractDir.resolve("rmeta.json"))) {
             List<Metadata> metadataList = JsonMetadataList.fromJson(reader);
             for (Metadata m : metadataList) {
                 String content = m.get(TikaCoreProperties.TIKA_CONTENT);
@@ -449,30 +454,30 @@ public class TikaCLITest {
 
     @Test
     public void testExtractSimple() throws Exception {
-        assertShallow("coffee.xls", 11, "coffee.xls.json", "coffee.xls/unpacked/00000001.emf",
-                "coffee.xls/unpacked/00000006.cdx", "coffee.xls/unpacked/00000005.png");
+        assertShallow("coffee.xls", 10, "coffee.xls/rmeta.json", "coffee.xls/unpacked/1.emf",
+                "coffee.xls/unpacked/6.cdx", "coffee.xls/unpacked/5.png");
     }
 
     @Test
     public void testExtractAbsolute() throws Exception {
-        assertShallow("testZip_absolutePath.zip", 5, "testZip_absolutePath.zip.json",
-                "testZip_absolutePath.zip/unpacked/00000001.bin");
+        assertShallow("testZip_absolutePath.zip", 4, "testZip_absolutePath.zip/rmeta.json",
+                "testZip_absolutePath.zip/unpacked/1.bin");
     }
 
     @Test
     public void testExtractRelative() throws Exception {
-        assertShallow("testZip_relative.zip", 4, "testZip_relative.zip.json");
+        assertShallow("testZip_relative.zip", 3, "testZip_relative.zip/rmeta.json");
     }
 
     @Test
     public void testExtractOverlapping() throws Exception {
         // overlapping names are handled by numbering
-        assertShallow("testZip_overlappingNames.zip", 5, "testZip_overlappingNames.zip.json");
+        assertShallow("testZip_overlappingNames.zip", 4, "testZip_overlappingNames.zip/rmeta.json");
     }
 
     @Test
     public void testExtract0x00() throws Exception {
-        assertShallow("testZip_zeroByte.zip", 4, "testZip_zeroByte.zip.json");
+        assertShallow("testZip_zeroByte.zip", 3, "testZip_zeroByte.zip/rmeta.json");
     }
 
     private void testRecursiveUnpack(String targetFile, String[] expectedChildrenFileNames) throws Exception {
@@ -624,23 +629,84 @@ public class TikaCLITest {
         Set<String> fileNames = getFileNames(extractDir);
 
         // Should have extracted files in the specified directory, not current dir
-        assertTrue(fileNames.stream().anyMatch(f -> f.endsWith(".json")),
-                "Should have a .json metadata file in extractDir, got: " + fileNames);
-        assertTrue(fileNames.stream().anyMatch(f -> f.contains("/unpacked/")),
+        assertTrue(fileNames.contains("rmeta.json"),
+                "Should have rmeta.json in extractDir, got: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.startsWith("unpacked/")),
                 "Should have extracted embedded files in extractDir, got: " + fileNames);
     }
 
-    /** TIKA-4681: the default is a Frictionless package laid out as loose files. */
+    /**
+     * TIKA-4681: the default is a Frictionless package laid out as loose files; for a single
+     * input file the output dir is the package (TIKA-4971).
+     */
     @Test
     public void testDefaultIsALooseFrictionlessPackage() throws Exception {
         Set<String> fileNames = unpack("-Z");
-        assertTrue(fileNames.stream().anyMatch(f -> f.endsWith("/datapackage.json")),
-                "package should be laid out as a directory, got: " + fileNames);
-        assertTrue(fileNames.stream().anyMatch(f -> f.contains("/unpacked/")), fileNames.toString());
-        assertFalse(fileNames.stream().anyMatch(f -> f.endsWith(".zip") && !f.contains("/unpacked/")),
+        assertTrue(fileNames.contains("datapackage.json"),
+                "package should be laid out at the output dir's root, got: " + fileNames);
+        assertTrue(fileNames.contains("rmeta.json"),
+                "a Frictionless package carries rmeta.json by default: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches("unpacked/1\\.[^/]+")),
+                "embedded files are unpadded and under unpacked/: " + fileNames);
+        assertFalse(fileNames.stream().anyMatch(f -> f.endsWith(".zip") && !f.startsWith("unpacked/")),
                 "no zip when no mode was asked for: " + fileNames);
-        assertTrue(fileNames.stream().anyMatch(f -> f.endsWith("/metadata.json")),
-                "a Frictionless package carries metadata.json by default: " + fileNames);
+        assertFalse(fileNames.contains("test_recursive_embedded.docx.json"),
+                "rmeta.json already carries the metadata list: " + fileNames);
+    }
+
+    /** TIKA-4971: rmeta.json is a resource of the package, with its size and hash. */
+    @Test
+    public void testManifestListsRmetaJson() throws Exception {
+        unpack("-Z");
+        byte[] metadataJson = Files.readAllBytes(extractDir.resolve("rmeta.json"));
+        JsonNode resources = new ObjectMapper().readTree(
+                extractDir.resolve("datapackage.json").toFile()).get("resources");
+        JsonNode resource = null;
+        for (JsonNode r : resources) {
+            if ("rmeta.json".equals(r.get("path").asText())) {
+                resource = r;
+            }
+        }
+        assertNotNull(resource, "rmeta.json not in " + resources);
+        assertEquals("application/json", resource.get("mediatype").asText());
+        assertEquals(metadataJson.length, resource.get("bytes").asLong());
+        assertEquals("sha256:" + HexFormat.of().formatHex(
+                MessageDigest.getInstance("SHA-256").digest(metadataJson)), resource.get("hash").asText());
+    }
+
+    /**
+     * TIKA-4971: the rules frictionless validate enforces on resource names -- present, unique,
+     * lowercase [a-z0-9._-] -- and tk:embedded-id resolves to the file's row in rmeta.json.
+     */
+    @Test
+    public void testManifestIsValidFrictionless() throws Exception {
+        unpack("-Z");
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode resources = mapper.readTree(extractDir.resolve("datapackage.json").toFile())
+                .get("resources");
+        Map<String, JsonNode> rowsById = new HashMap<>();
+        for (JsonNode row : mapper.readTree(extractDir.resolve("rmeta.json").toFile())) {
+            if (row.has("tk:embedded-id")) {
+                rowsById.put(row.get("tk:embedded-id").asText(), row);
+            }
+        }
+        Set<String> names = new HashSet<>();
+        int unpacked = 0;
+        for (JsonNode r : resources) {
+            String name = r.path("name").asText(null);
+            assertNotNull(name, "every resource needs a name: " + r);
+            assertTrue(name.matches("[a-z0-9._-]+"), "invalid Frictionless name: " + r);
+            assertTrue(names.add(name), "duplicate name: " + r);
+            if (!r.get("path").asText().startsWith("unpacked/")) {
+                continue;
+            }
+            unpacked++;
+            JsonNode row = rowsById.get(r.get("tk:embedded-id").asText());
+            assertNotNull(row, "tk:embedded-id has no rmeta.json row: " + r);
+            assertEquals(row.path("tk:resource-name").asText(null),
+                    r.path("tk:resource-name").asText(null), r.toString());
+        }
+        assertTrue(unpacked > 0, resources.toString());
     }
 
     @Test
@@ -654,7 +720,7 @@ public class TikaCLITest {
     @Test
     public void testRegularFormatIsTheFlatLayout() throws Exception {
         Set<String> fileNames = unpack("-Z", "--unpack-format=REGULAR");
-        assertTrue(fileNames.stream().anyMatch(f -> f.matches("test_recursive_embedded\\.docx-embed/0+1\\.[^/]+")),
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches("test_recursive_embedded\\.docx-embed/1\\.[^/]+")),
                 fileNames.toString());
         assertFalse(fileNames.stream().anyMatch(f -> f.endsWith("datapackage.json") || f.contains("/unpacked/")),
                 "REGULAR has no manifest and no unpacked/: " + fileNames);
@@ -672,11 +738,10 @@ public class TikaCLITest {
     @Test
     public void testFrictionlessIncludeMetadata() throws Exception {
         Set<String> fileNames = unpack("-Z", "--unpack-include-metadata");
-        String metadataJson = fileNames.stream().filter(f -> f.endsWith("/metadata.json")).findFirst()
-                .orElseThrow(() -> new AssertionError("no metadata.json in " + fileNames));
-        String content = Files.readString(extractDir.resolve(metadataJson));
+        assertTrue(fileNames.contains("rmeta.json"), "no rmeta.json in " + fileNames);
+        String content = Files.readString(extractDir.resolve("rmeta.json"));
         assertTrue(content.contains("\"tk:embedded-depth\" : \"0\""),
-                "metadata.json should carry the container row: " + content);
+                "rmeta.json should carry the container row: " + content);
         assertTrue(content.contains("\"tk:content\""), content);
     }
 
@@ -684,9 +749,9 @@ public class TikaCLITest {
     @Test
     public void testConfigFileUnpackConfigIsHonoured() throws Exception {
         Set<String> fileNames = unpack("-Z", "--config=" + CONFIGS_DIR + "/tika-config-unpack-original.json");
-        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*/unpacked/0+\\.[^/]+")),
-                "includeOriginal from -c should add the container as 00000000.<ext>: " + fileNames);
-        assertTrue(fileNames.stream().anyMatch(f -> f.matches(".*/unpacked/0+1\\.[^/]+")),
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches("unpacked/0\\.[^/]+")),
+                "includeOriginal from -c should add the container as 0.<ext>: " + fileNames);
+        assertTrue(fileNames.stream().anyMatch(f -> f.matches("unpacked/1\\.[^/]+")),
                 "-c must not change the CLI's file naming or packaging: " + fileNames);
     }
 

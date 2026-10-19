@@ -191,17 +191,66 @@ stays loaded, and `image-parser` and `pdf-parser` call it:
 }
 ----
 
-An entry naming an engine takes only `engine`, `_mime-include`, `_mime-exclude`, `_min-width` and
-`_min-height`; the engine's own settings live under `engines`, where an
+An entry naming an engine takes only `engine`, `_mime-include`, `_mime-exclude`, `min-width`,
+`min-height` and `checks`; the engine's own settings live under `engines`, where an
 xref:configuration/inference.adoc[inference binding] can name the same engine. The 4.0 form,
 the engine inline, still works: `{ "tesseract-ocr-parser": { "language": "eng" } }`, and takes
-the same underscore keys.
+the same keys. `_mime-include`/`_mime-exclude` keep their underscore because every component list
+uses the one spelling; `min-width`, `min-height` and `checks` belong to this list alone, so they
+need none, and the older `_min-width`/`_min-height` still mean the same (setting both spellings of
+one key fails the load). In the inline form these three are removed from the engine's settings.
 
-`_min-width`/`_min-height` keep an image whose recorded size (`tiff:ImageWidth`,
+`min-width`/`min-height` keep an image whose recorded size (`tiff:ImageWidth`,
 `tiff:ImageLength`) falls short in either dimension away from the engine, in pixels; an image of
 unknown size is sent. Whatever the entry says, an image under 2 x 2 (a spacer in an email
 signature) never reaches any engine; the engines' own byte gates (`minFileSizeToOcr`) are
 unchanged.
+
+[#image-checks]
+*Send the engine fewer images that hold no text.* An entry's `checks` lists
+image checks by name, run in order, cheapest first; the first to refuse keeps the image from the
+engine, whatever the engine is (Tesseract, a VLM, ...), and records `skipped:<reason>` in
+`tk:ocr-warnings`. For an inline image it is recorded on the parent document too, when the
+output is one metadata object per document (`-J`, `/rmeta`, Pipes). A check that cannot read the
+image admits it. The checks live in the `tika-image-processing` module (JDK only, no native code):
+
+[source,json]
+----
+{
+  "engines": { "jina": { "openai-vlm-parser": { "baseUrl": "https://api.jina.ai", "model": "jina-ocr-v1" } } },
+  "text-recognizers": [
+    { "engine": "jina",
+      "checks": [
+        { "byte-size": { "minBytes": 100, "maxBytes": 52428800 } },
+        { "min-image-size": { "minTotalPixels": 10000, "minShortSidePixels": 16 } },
+        { "blank-image-check": { "maxInk": 0.0001, "tolerance": 40 } }
+      ] }
+  ]
+}
+----
+
+`byte-size` refuses an image shorter than `minBytes` or longer than `maxBytes` by its measured
+length, without reading it, so it belongs first; 0 turns a limit off, and an image whose length is
+unknown or only declared (by a container or a header) is admitted. `min-image-size` refuses an image under `minTotalPixels` in area or whose
+shorter side is under `minShortSidePixels`, by the dimensions in its header (it reads only the start of a
+large file, and the whole file only when the dimensions are not there); `minWidthPixels` and `minHeightPixels`
+ask for more of one dimension on top of `minShortSidePixels`, and 0 turns a test off. The `min-image-size`
+values shown are its defaults, and `byte-size` has no limit until set: below 100 x 100 an image holds a few
+characters at most, and a strip such as 11 x 1000 passes the area test but holds no line of text.
+`blank-image-check` refuses an image whose
+share of pixels differing from its most common gray level by more than `tolerance` is at most
+`maxInk` (0.0001 is 0.01 %, below a page with a line of text), measured on a copy of at most 1,000
+pixels a side. With `despeckle` (on by default) a pixel counts only if most of its 3 x 3 neighbourhood
+differs from the background, so scattered specks, as on a noisy scan, do not hide a blank page: 0.1 % to 5 %
+salt-and-pepper noise comes out blank, and a stroke of text does not. An image with transparency
+is blank only if it is blank over both white and black, so dark or light text on a transparent
+background is kept. A progressive JPEG over 16 million pixels is not decoded (it is admitted):
+decoding one takes about 3 bytes of memory a pixel outside the Java heap.
+
+A check's settings need no underscore. `min-width` and `min-height` on the entry are a separate,
+metadata-only size minimum that runs before any check. The checks do not tell a photo from a page of
+text, and do not detect rotation. Nor do they, or the `tk:ocr-warnings` codes, catch fluent hallucinations
+(xref:configuration/parsers/vlm-parsers.adoc#fluent-hallucinations[what they do not catch]).
 
 *Turn OCR off.* An empty list is authoritative:
 

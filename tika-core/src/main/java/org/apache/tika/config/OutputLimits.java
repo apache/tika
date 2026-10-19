@@ -230,6 +230,30 @@ public class OutputLimits implements Serializable {
     }
 
     /**
+     * Returns this instance if no limit is looser than {@code ceiling}'s, otherwise a copy
+     * with each looser limit reduced to the ceiling's. A negative write limit is unlimited.
+     * Used at trust boundaries so a request may tighten operator limits but not loosen them.
+     *
+     * @param ceiling the operator's limits
+     * @return this, or a tightened copy
+     * @since Apache Tika 4.2
+     */
+    public OutputLimits tightenedTo(OutputLimits ceiling) {
+        int wl = EmbeddedLimits.tighter(writeLimit, ceiling.writeLimit);
+        int xmlDepth = Math.min(maxXmlDepth, ceiling.maxXmlDepth);
+        int pkgDepth = Math.min(maxPackageEntryDepth, ceiling.maxPackageEntryDepth);
+        long threshold = Math.min(zipBombThreshold, ceiling.zipBombThreshold);
+        long ratio = Math.min(zipBombRatio, ceiling.zipBombRatio);
+        if (wl == writeLimit && xmlDepth == maxXmlDepth && pkgDepth == maxPackageEntryDepth
+                && threshold == zipBombThreshold && ratio == zipBombRatio) {
+            return this;
+        }
+        OutputLimits tightened = new OutputLimits(wl, throwOnWriteLimit, xmlDepth, threshold, ratio);
+        tightened.maxPackageEntryDepth = pkgDepth;
+        return tightened;
+    }
+
+    /**
      * Helper method to get OutputLimits from ParseContext with defaults.
      *
      * @param context the ParseContext (may be null)

@@ -172,8 +172,8 @@ public class UnpackerResourceTest extends CXFTestBase {
                 .toList();
         assertEquals(2, wavFiles.size(), "Should have 2 WAV files");
 
-        assertTrue(data.containsKey("metadata.json"),
-                "/all carries the parse as metadata.json. Entries: " + data.keySet());
+        assertTrue(data.containsKey("rmeta.json"),
+                "/all carries the parse as rmeta.json. Entries: " + data.keySet());
     }
 
     @Test
@@ -221,10 +221,41 @@ public class UnpackerResourceTest extends CXFTestBase {
         assertTrue(data.containsValue(DOCX_IMAGE2_MD5), "Should contain second DOCX image");
     }
 
+    /** TIKA-4971: a request can ask for no package when there is nothing to unpack -- a 204. */
     @Test
-    @org.junit.jupiter.api.Disabled("Behavior changed in Tika 4.0 pipes-based implementation")
-    public void test204() throws Exception {
-        // This test verified 204 behavior which changed in 4.0
+    public void testEmptyPackageSkipIs204() throws Exception {
+        String configJson = """
+                {"parse-context": {"unpack-config": {"emptyPackage": "SKIP"}}}
+                """;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"foo.csv\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream("test-documents/foo.csv"), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+        Response response = WebClient
+                .create(endPoint + UNPACKER_PATH)
+                .type("multipart/form-data")
+                .accept("application/zip")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+        assertEquals(204, response.getStatus());
+    }
+
+    /** TIKA-4971: no attachments is still a package -- the manifest and rmeta.json, not a 204. */
+    @Test
+    public void testNoAttachmentsIsAMetadataOnlyPackage() throws Exception {
+        Response response = WebClient
+                .create(endPoint + UNPACKER_PATH)
+                .header("Content-Disposition", "attachment; filename=\"foo.csv\"")
+                .accept("application/zip")
+                .put(ClassLoader.getSystemResourceAsStream("test-documents/foo.csv"));
+
+        assertEquals(200, response.getStatus());
+        Map<String, byte[]> data = readZipArchiveBytes((InputStream) response.getEntity());
+        assertEquals(Set.of("datapackage.json", "rmeta.json"), data.keySet());
+        JsonNode dataPackage = MAPPER.readTree(data.get("datapackage.json"));
+        assertEquals("foo.csv", dataPackage.get("name").asText());
+        assertEquals(1, dataPackage.get("resources").size(), dataPackage.toString());
+        assertEquals("rmeta.json", dataPackage.get("resources").get(0).get("path").asText());
     }
 
     @Test
@@ -276,8 +307,8 @@ public class UnpackerResourceTest extends CXFTestBase {
 
         Map<String, byte[]> data = readZipArchiveBytes((InputStream) response.getEntity());
 
-        byte[] metadata = data.get("metadata.json");
-        assertNotNull(metadata, "Should have metadata.json. Entries: " + data.keySet());
+        byte[] metadata = data.get("rmeta.json");
+        assertNotNull(metadata, "Should have rmeta.json. Entries: " + data.keySet());
         String metadataJson = new String(metadata, StandardCharsets.UTF_8);
         assertTrue(metadataJson.contains("Content-Type"), "Metadata JSON should contain Content-Type");
     }
@@ -458,9 +489,8 @@ public class UnpackerResourceTest extends CXFTestBase {
     /**
      * The datapackage.json "resources" array is the manifest for the Frictionless
      * package. Verifies it lists exactly the data files present in the zip, with
-     * no missing or extraneous entries. The package envelope (datapackage.json
-     * and the optional metadata.json) is not itself a "resource" and is excluded
-     * from the comparison.
+     * no missing or extraneous entries. Only datapackage.json, the manifest itself,
+     * is not a resource; rmeta.json is (TIKA-4971).
      */
     @Test
     public void testFrictionlessDataPackageMatchesArchiveContents() throws Exception {
@@ -507,7 +537,6 @@ public class UnpackerResourceTest extends CXFTestBase {
 
         Set<String> archiveDataFiles = new HashSet<>(data.keySet());
         archiveDataFiles.remove("datapackage.json");
-        archiveDataFiles.remove("metadata.json");
 
         assertEquals(archiveDataFiles, manifestPaths,
                 "datapackage.json 'resources' must list exactly the data files in the zip. " +
@@ -516,9 +545,9 @@ public class UnpackerResourceTest extends CXFTestBase {
     }
 
     /**
-     * The Frictionless manifest's "name" field is supposed to carry the
-     * original filename of each resource. For the container (unpacked/0.<ext>),
-     * that name should be the filename the user supplied on the multipart
+     * The manifest's "tk:resource-name" carries the original filename of each resource
+     * ("name" is the Frictionless identifier, derived from the path). For the container
+     * (unpacked/0.<ext>), it should be the filename the user supplied on the multipart
      * upload -- not the server's internal spool filename.
      */
     @Test
@@ -566,9 +595,10 @@ public class UnpackerResourceTest extends CXFTestBase {
                 "Manifest should list the container at unpacked/0. Resources: " +
                         dataPackage.get("resources"));
 
-        JsonNode nameNode = containerResource.get("name");
+        assertEquals(0, containerResource.get("tk:embedded-id").asInt(), containerResource.toString());
+        JsonNode nameNode = containerResource.get("tk:resource-name");
         assertNotNull(nameNode,
-                "Container resource should carry a 'name' field. Resource: " + containerResource);
+                "Container resource should carry 'tk:resource-name'. Resource: " + containerResource);
         assertEquals(uploadFilename, nameNode.asText(),
                 "Container's manifest name should be the user-supplied upload filename, " +
                         "not the server's internal spool filename. Resource: " + containerResource);
@@ -616,7 +646,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     /**
      * Documents the shape of /unpack output in FRICTIONLESS mode (no /all,
-     * default config): a datapackage.json manifest, the metadata.json envelope
+     * default config): a datapackage.json manifest, the rmeta.json envelope
      * a Frictionless package carries by default, and the unpacked/&lt;id&gt; children.
      */
     @Test
@@ -648,8 +678,8 @@ public class UnpackerResourceTest extends CXFTestBase {
 
         assertTrue(data.containsKey("datapackage.json"),
                 "Should contain datapackage.json manifest. Entries: " + data.keySet());
-        assertTrue(data.containsKey("metadata.json"),
-                "A Frictionless package carries metadata.json by default. Entries: " + data.keySet());
+        assertTrue(data.containsKey("rmeta.json"),
+                "A Frictionless package carries rmeta.json by default. Entries: " + data.keySet());
         boolean hasUnpacked = data.keySet().stream().anyMatch(k -> k.startsWith("unpacked/"));
         assertTrue(hasUnpacked, "Should contain unpacked/ entries. Entries: " + data.keySet());
     }
@@ -716,7 +746,7 @@ public class UnpackerResourceTest extends CXFTestBase {
 
     /**
      * Documents that includeFullMetadata=true in FRICTIONLESS adds a
-     * metadata.json envelope whose entries carry tk:content (the extracted
+     * rmeta.json envelope whose entries carry tk:content (the extracted
      * text) and Content-Type alongside the per-document metadata.
      */
     @Test
@@ -746,13 +776,13 @@ public class UnpackerResourceTest extends CXFTestBase {
         assertEquals(200, response.getStatus());
 
         Map<String, byte[]> data = readZipArchiveBytes((InputStream) response.getEntity());
-        byte[] metadataBytes = data.get("metadata.json");
-        assertNotNull(metadataBytes, "metadata.json should be present when includeFullMetadata=true. " +
+        byte[] metadataBytes = data.get("rmeta.json");
+        assertNotNull(metadataBytes, "rmeta.json should be present when includeFullMetadata=true. " +
                 "Entries: " + data.keySet());
 
         JsonNode metadata = MAPPER.readTree(metadataBytes);
         assertTrue(metadata.isArray() && metadata.size() > 0,
-                "metadata.json should be a non-empty array");
+                "rmeta.json should be a non-empty array");
 
         JsonNode container = metadata.get(0);
         assertTrue(container.has("Content-Type"),

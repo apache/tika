@@ -142,9 +142,13 @@ public class ClaudeVLMParser extends AbstractVLMParser {
                 }
             }
 
+            if ("max_tokens".equals(root.path("stop_reason").asText())) {
+                warn(metadata, WARN_TRUNCATED);
+            }
+
             // Content blocks
             JsonNode content = root.get("content");
-            if (content == null || !content.isArray() || content.isEmpty()) {
+            if (content == null || !content.isArray()) {
                 throw new TikaException(
                         "Claude response contains no content: " + responseBody);
             }
@@ -191,6 +195,9 @@ public class ClaudeVLMParser extends AbstractVLMParser {
         ObjectNode root = MAPPER.createObjectNode();
         root.put("model", config.getModel());
         root.put("max_tokens", config.getMaxTokens());
+        if (config.getTemperature() != null) {
+            root.put("temperature", config.getTemperature());
+        }
 
         ArrayNode messages = root.putArray("messages");
         ObjectNode userMessage = messages.addObject();

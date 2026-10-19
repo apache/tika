@@ -19,6 +19,42 @@ Release 4.2.0 - unreleased
      own config and sets an operator-only property wraps it with
      JsonConfig.trusted(json) (TIKA-4974).
 
+   * Frictionless unpack: the package's metadata.json is renamed rmeta.json, is listed in
+     datapackage.json as a resource (size, sha256), and now gets the metadata filters and
+     user metadata the emitted list gets; resources are in embedded-id order. A document
+     with no attachments is a package of datapackage.json and rmeta.json: tika-server
+     /unpack returns it with 200 instead of 204 (unpack-config.emptyPackage=SKIP, which the
+     thumbnail preset sets, restores the 204). The package name is the caller's filename
+     on tika-server, never the server's spool file. When the package goes to the container's
+     own emitter it replaces the metadata emit on every surface: no <emitKey>.json next to
+     it, and with includeMetadata=false no metadata at all. tika-app -z/-Z on a single file
+     makes the output dir the package, defaulting to <name>-unpacked/ in either format, and
+     names files unpacked/1.<ext> as tika-server /unpack does. REGULAR .metadata.json
+     sidecars are now the file's row from the metadata list: they get the metadata filters
+     and text inference, and a row a filter removes gets no sidecar. New
+     unpack-config.packageRoot and packageName set where a DIRECTORY-mode package goes
+     and its name. Packages pass frictionless validate: each resource's name is derived
+     from its path, the original filename moves to tk:resource-name, and tk:embedded-id
+     matches its rmeta.json row, if present (TIKA-4971).
+
+   * API: FrictionlessResource.name() is now the Frictionless resource name derived from
+     the path; the original filename moved to resourceName(), and embeddedId() is new.
+     FrictionlessResource.create(path, mediatype, bytes, hash, name) and
+     DataPackage.addResource(...) are removed (TIKA-4971).
+     
+   * Per-request limits may tighten the server's but no longer loosen them (TIKA-4978).
+     
+   * Image checks (byte-size, min-image-size, blank-image-check; new tika-image-processing
+     module) make it less likely that blank or tiny images reach text recognizers. VLM
+     output gets tk:ocr-warnings (truncated, repetition, empty); VLM parsers take
+     temperature; dropped HTTP connections are retried. SizeGatedEnricher is deprecated;
+     text-recognizers entries take min-width/min-height (_min-width/_min-height still
+     work) (TIKA-4972).
+
+   * An email that starts with MIME-Version and nests a multipart/related part (a Gmail
+     export, for one) is detected as message/rfc822, not as MHTML: the
+     multipart/related magic now reads only the message's own header block (TIKA-4973).
+     
    * The docx parser wraps OMML equations (m:oMath) in <span class="omml">, their
      text flattened to plain characters; it was previously emitted as unmarked body
      text (TIKA-4968).

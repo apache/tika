@@ -210,6 +210,24 @@ public class GeminiVLMParserTest {
     }
 
     @Test
+    void testTemperatureSentOnlyWhenSet() {
+        assertTrue(!parser.buildRequestJson(config, "AAAA", "application/pdf")
+                .contains("temperature"));
+        config.setTemperature(0.0);
+        assertTrue(parser.buildRequestJson(config, "AAAA", "application/pdf")
+                .contains("\"temperature\":0.0"));
+    }
+
+    @Test
+    void testTruncatedWarning() throws Exception {
+        String json = "{\"candidates\":[{\"finishReason\":\"MAX_TOKENS\","
+                + "\"content\":{\"parts\":[{\"text\":\"cut\"}]}}]}";
+        Metadata metadata = new Metadata();
+        parser.extractResponseText(json, metadata);
+        assertEquals("truncated", metadata.get(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS));
+    }
+
+    @Test
     void testBuildRequestJson() {
         String json = parser.buildRequestJson(config, "AAAA", "application/pdf");
         assertTrue(json.contains("\"mime_type\":\"application/pdf\""));

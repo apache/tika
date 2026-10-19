@@ -77,6 +77,15 @@ public class TikaTestHttpServer implements Closeable {
         public MockResponse(int status, String body, Map<String, String> headers) {
             this(status, body, 0, 0, headers);
         }
+
+        /**
+         * Reads the whole request, then closes the connection without writing a byte --
+         * the client sees {@code HTTP/1.1 header parser received no bytes}, as when a
+         * service closes a keep-alive connection the client is about to reuse.
+         */
+        public static MockResponse dropConnection() {
+            return new MockResponse(0, "");
+        }
     }
 
     /** A captured incoming HTTP request. */
@@ -186,6 +195,9 @@ public class TikaTestHttpServer implements Closeable {
             MockResponse resp = responses.poll();
             if (resp == null) {
                 resp = new MockResponse(500, "{\"error\":\"no response queued\"}");
+            }
+            if (resp.status() == 0) {
+                return;
             }
 
             if (resp.delayMillis() > 0) {
