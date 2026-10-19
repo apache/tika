@@ -58,8 +58,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for TIFF-based camera raw images: Nikon NEF/NRW, Sony ARW/SRF/SR2,
- * Pentax PEF/PTX, Samsung SRW, Epson ERF, Adobe DNG, Canon CR2, Olympus ORF
- * and Panasonic RW2.
+ * Pentax PEF/PTX, Samsung SRW, Epson ERF, Kodak KDC, Leaf MOS, Adobe DNG,
+ * Canon CR2, Olympus ORF and Panasonic RW2.
  * <p>
  * These formats are TIFF containers: metadata extraction is inherited from
  * {@link TiffParser}. In addition, this parser extracts the camera-generated
@@ -67,14 +67,15 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * {@link EmbeddedDocumentExtractor}. Previews are referenced from the IFD
  * chain or from SubIFDs, either via the JPEGInterchangeFormat/
  * JPEGInterchangeFormatLength tags or as a single JPEG-compressed strip
- * (DNG, CR2). Three formats keep theirs elsewhere and are read where they
- * put them: Panasonic RW2 in the private JpgFromRaw tag, Olympus ORF in its
- * MakerNote, whose own IFD is read for the camera thumbnail and the preview
- * the CameraSettings sub-IFD points at, and Epson ERF in its MakerNote under
- * a tag of its own, at an offset counted from the start of the file and
- * behind a byte the camera writes over the JPEG's first one, which is put
- * back on the way out. ORF and RW2 also carry a magic number of their own,
- * where an ERF is a plain TIFF.
+ * (DNG, CR2). Four formats keep theirs elsewhere. A Panasonic RW2 uses the
+ * private JpgFromRaw tag. An Olympus ORF uses its MakerNote, whose own IFD
+ * holds the camera thumbnail and the CameraSettings sub-IFD that points at
+ * the preview. An Epson ERF uses its MakerNote too, under a tag of its own,
+ * at an offset counted from the start of the file and behind a byte the
+ * camera writes over the JPEG's first one, which is put back on the way out.
+ * A Leaf MOS uses a vendor block of named sections, one of which holds the
+ * JPEG. ORF and RW2 carry a magic number of their own; ERF, KDC and MOS are
+ * plain TIFFs, and a KDC names its preview the way a TIFF does.
  * <p>
  * Strips holding raw sensor data are also JPEG-encoded in some
  * formats (lossless JPEG in CR2 and DNG), so strip candidates are only
@@ -105,6 +106,8 @@ public class RawTiffParser extends TiffParser {
                     MediaType.image("x-raw-pentax"),
                     MediaType.image("x-raw-samsung"),
                     MediaType.image("x-raw-epson"),
+                    MediaType.image("x-raw-kodak"),
+                    MediaType.image("x-raw-leaf"),
                     MediaType.image("x-raw-adobe"),
                     MediaType.image("x-raw-olympus"),
                     MediaType.image("x-raw-panasonic"),
@@ -133,6 +136,19 @@ public class RawTiffParser extends TiffParser {
     private static final int TAG_OLYMPUS_PREVIEW_LENGTH = 0x0102;
     //ExifTool knows it as PreviewImage, in ERFs and in JPEGs from some Epsons
     private static final int TAG_EPSON_PREVIEW = 0x0280;
+    //Leaf keeps its own data in one tag, a chain of named blocks
+    private static final int TAG_LEAF_DATA = 0x8606;
+    private static final byte[] LEAF_BLOCK_MAGIC =
+            "PKTS".getBytes(StandardCharsets.US_ASCII);
+    private static final byte[] LEAF_PREVIEW_NAME =
+            "JPEG_preview_data".getBytes(StandardCharsets.US_ASCII);
+    //magic and version, then a padded name, then the payload's length
+    private static final int LEAF_BLOCK_NAME_OFFSET = 8;
+    private static final int LEAF_BLOCK_NAME_LENGTH = 40;
+    private static final int LEAF_BLOCK_HEADER_LENGTH =
+            LEAF_BLOCK_NAME_OFFSET + LEAF_BLOCK_NAME_LENGTH + 4;
+    //a file holds a dozen of them; a crafted one must not be walked forever
+    private static final int MAX_LEAF_BLOCKS = 64;
 
     private static final int MAGIC_TIFF = 42;
     private static final int MAGIC_BIG_TIFF = 43;
@@ -163,10 +179,12 @@ public class RawTiffParser extends TiffParser {
     private static final int CLASSIC_INLINE_SIZE = 4;
     private static final int BIG_TIFF_INLINE_SIZE = 8;
     private static final int TYPE_BYTE = 1;
+    private static final int TYPE_ASCII = 2;
     private static final int TYPE_UNDEFINED = 7;
     private static final int BIG_TIFF_ENTRY_SIZE = 20;
-    //a crafted file must not send the reader chasing dozens of MakerNotes
-    private static final int MAX_MAKER_NOTES = 4;
+    //a crafted file must not send the reader chasing dozens of MakerNotes,
+    //so the looking is what is counted, not the finding
+    private static final int MAX_MAKER_NOTE_LOOKUPS = 4;
     private static final int MAX_ENTRIES_PER_IFD = 1024;
     // at most MAX_IFDS are ever processed; cap the pending queue so a crafted
     // file packed with SubIFD pointers cannot grow it without bound
@@ -340,6 +358,9 @@ public class RawTiffParser extends TiffParser {
         Set<Long> visited = new HashSet<>();
         Deque<Long> toVisit = new ArrayDeque<>();
         List<Long> makerNotes = new ArrayList<>();
+        int makerNoteLookups = 0;
+        long leafData = -1;
+        long leafDataLength = -1;
         toVisit.add(readOffset(raf, bigEndian, bigTiff));
 
         while (!toVisit.isEmpty() && visited.size() < MAX_IFDS) {
@@ -407,10 +428,16 @@ public class RawTiffParser extends TiffParser {
                         && isBlob(type, valueCount, inlineSize)) {
                     panasonicOffset = getUInt32(table, valueField, bigEndian);
                     panasonicLength = valueCount;
+                } else if (tag == TAG_LEAF_DATA && leafData < 0 && valueCount > inlineSize
+                        && (type == TYPE_ASCII || isBlob(type, valueCount, inlineSize))) {
+                    //Leaf types the block as ASCII, which it is not
+                    leafData = getUInt32(table, valueField, bigEndian);
+                    leafDataLength = valueCount;
                 } else if (tag == TAG_EXIF_IFD && valueCount == 1 && !bigTiff
-                        && makerNotes.size() < MAX_MAKER_NOTES) {
+                        && makerNoteLookups < MAX_MAKER_NOTE_LOOKUPS) {
                     for (long exifIfd :
                             readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount)) {
+                        makerNoteLookups++;
                         long makerNote = readMakerNoteOffset(raf, fileLength, exifIfd, bigEndian);
                         if (makerNote > 0) {
                             makerNotes.add(makerNote);
@@ -434,6 +461,16 @@ public class RawTiffParser extends TiffParser {
                 jpegLength = stripByteCounts[0];
             }
             Preview candidate = new Preview(jpegOffset, jpegLength);
+            if (isPreviewAt(raf, fileLength, candidate, config)) {
+                collector.add(candidate);
+            }
+            if (collector.isFull()) {
+                break;
+            }
+        }
+
+        for (Preview candidate : readLeafPreviews(raf, fileLength, leafData, leafDataLength,
+                bigEndian)) {
             if (isPreviewAt(raf, fileLength, candidate, config)) {
                 collector.add(candidate);
             }
@@ -528,12 +565,49 @@ public class RawTiffParser extends TiffParser {
         }
         for (int e = 0; e + CLASSIC_ENTRY_SIZE <= table.length; e += CLASSIC_ENTRY_SIZE) {
             if (entryTag(table, e, bigEndian) == TAG_MAKER_NOTE
-                    && isBlob(entryType(table, e, bigEndian), entryCount(table, e, bigEndian),
+                    && isBlob(entryType(table, e, bigEndian), classicEntryCount(table, e, bigEndian),
                     CLASSIC_INLINE_SIZE)) {
-                return entryValue(table, e, bigEndian);
+                return classicEntryValue(table, e, bigEndian);
             }
         }
         return -1;
+    }
+
+    /**
+     * The JPEG a Leaf MOS keeps in its data block: a chain of blocks, each a
+     * magic and a version, a padded name and the length of what follows. The
+     * one named JPEG_preview_data holds the preview, stored as it is.
+     */
+    private List<Preview> readLeafPreviews(RandomAccessFile raf, long fileLength, long block,
+                                           long blockLength, boolean bigEndian)
+            throws IOException {
+        List<Preview> candidates = new ArrayList<>();
+        if (block <= 0 || blockLength <= 0 || block > fileLength - blockLength) {
+            return candidates;
+        }
+        long end = block + blockLength;
+        long at = block;
+        byte[] header = new byte[LEAF_BLOCK_HEADER_LENGTH];
+        for (int n = 0; n < MAX_LEAF_BLOCKS && at <= end - LEAF_BLOCK_HEADER_LENGTH; n++) {
+            raf.seek(at);
+            raf.readFully(header);
+            if (!startsWith(header, LEAF_BLOCK_MAGIC)) {
+                break;
+            }
+            long length = getUInt32(header, LEAF_BLOCK_HEADER_LENGTH - 4, bigEndian);
+            long payload = at + LEAF_BLOCK_HEADER_LENGTH;
+            if (length > end - payload) {
+                break;
+            }
+            if (Arrays.equals(header, LEAF_BLOCK_NAME_OFFSET,
+                    LEAF_BLOCK_NAME_OFFSET + LEAF_PREVIEW_NAME.length,
+                    LEAF_PREVIEW_NAME, 0, LEAF_PREVIEW_NAME.length)) {
+                candidates.add(new Preview(payload, length));
+            }
+            at = payload + length;
+        }
+
+        return candidates;
     }
 
     /**
@@ -542,12 +616,13 @@ public class RawTiffParser extends TiffParser {
     private List<Preview> readMakerNotePreviews(RandomAccessFile raf, long fileLength,
                                                 long makerNote, boolean bigEndian)
             throws IOException {
-        if (makerNote <= 0 || makerNote > fileLength - OLYMPUS_MAKER_NOTE_HEADER_LENGTH) {
+        if (makerNote <= 0 || makerNote > fileLength - EPSON_MAKER_NOTE_HEADER_LENGTH) {
             return new ArrayList<>();
         }
+        //as much of a header as the file holds: the two vendors need 8 and 12
         byte[] header = new byte[OLYMPUS_MAKER_NOTE_HEADER_LENGTH];
         raf.seek(makerNote);
-        raf.readFully(header);
+        raf.readFully(header, 0, (int) Math.min(header.length, fileLength - makerNote));
         if (startsWith(header, OLYMPUS_MAKER_NOTE_NAME)) {
             return readOlympusMakerNotePreviews(raf, fileLength, makerNote, header);
         }
@@ -578,10 +653,10 @@ public class RawTiffParser extends TiffParser {
             return candidates;
         }
         for (int e = 0; e + CLASSIC_ENTRY_SIZE <= table.length; e += CLASSIC_ENTRY_SIZE) {
-            long count = entryCount(table, e, bigEndian);
+            long count = classicEntryCount(table, e, bigEndian);
             if (entryTag(table, e, bigEndian) == TAG_EPSON_PREVIEW
                     && isBlob(entryType(table, e, bigEndian), count, CLASSIC_INLINE_SIZE)) {
-                candidates.add(new Preview(entryValue(table, e, bigEndian), count, true));
+                candidates.add(new Preview(classicEntryValue(table, e, bigEndian), count, true));
             }
         }
 
@@ -619,8 +694,8 @@ public class RawTiffParser extends TiffParser {
         long settings = -1;
         for (int e = 0; e + CLASSIC_ENTRY_SIZE <= table.length; e += CLASSIC_ENTRY_SIZE) {
             int tag = entryTag(table, e, bigEndian);
-            long count = entryCount(table, e, bigEndian);
-            long value = entryValue(table, e, bigEndian);
+            long count = classicEntryCount(table, e, bigEndian);
+            long value = classicEntryValue(table, e, bigEndian);
             if (tag == TAG_OLYMPUS_THUMBNAIL
                     && isBlob(entryType(table, e, bigEndian), count, CLASSIC_INLINE_SIZE)) {
                 candidates.add(new Preview(makerNote + value, count));
@@ -636,13 +711,13 @@ public class RawTiffParser extends TiffParser {
         long length = -1;
         for (int e = 0; e + CLASSIC_ENTRY_SIZE <= settingsTable.length; e += CLASSIC_ENTRY_SIZE) {
             int tag = entryTag(settingsTable, e, bigEndian);
-            if (entryCount(settingsTable, e, bigEndian) != 1) {
+            if (classicEntryCount(settingsTable, e, bigEndian) != 1) {
                 continue;
             }
             if (tag == TAG_OLYMPUS_PREVIEW_START) {
-                start = entryValue(settingsTable, e, bigEndian);
+                start = classicEntryValue(settingsTable, e, bigEndian);
             } else if (tag == TAG_OLYMPUS_PREVIEW_LENGTH) {
-                length = entryValue(settingsTable, e, bigEndian);
+                length = classicEntryValue(settingsTable, e, bigEndian);
             }
         }
         if (start >= 0 && length > 0) {
@@ -652,8 +727,8 @@ public class RawTiffParser extends TiffParser {
     }
 
     /**
-     * The fields of an IFD entry. The tag and the type sit where they do in
-     * a BigTIFF too; the count and the value field are the classic layout's.
+     * The fields of an IFD entry. The tag and the type sit where they do in a
+     * BigTIFF too; the other two are the classic layout's, as their names say.
      */
     private static int entryTag(byte[] entries, int e, boolean bigEndian) {
         return getUInt16(entries, e, bigEndian);
@@ -663,11 +738,11 @@ public class RawTiffParser extends TiffParser {
         return getUInt16(entries, e + 2, bigEndian);
     }
 
-    private static long entryCount(byte[] entries, int e, boolean bigEndian) {
+    private static long classicEntryCount(byte[] entries, int e, boolean bigEndian) {
         return getUInt32(entries, e + 4, bigEndian);
     }
 
-    private static long entryValue(byte[] entries, int e, boolean bigEndian) {
+    private static long classicEntryValue(byte[] entries, int e, boolean bigEndian) {
         return getUInt32(entries, e + 8, bigEndian);
     }
 
@@ -864,10 +939,6 @@ public class RawTiffParser extends TiffParser {
             this(offset, length, false);
         }
 
-        /**
-         * Where its bytes begin: past the byte the camera wrote over the SOI,
-         * which the stream puts back in front of them.
-         */
         long streamOffset() {
             return soiPatched ? offset + 1 : offset;
         }

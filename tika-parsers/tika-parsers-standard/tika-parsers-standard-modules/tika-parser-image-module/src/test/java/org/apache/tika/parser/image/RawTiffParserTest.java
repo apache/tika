@@ -225,6 +225,40 @@ public class RawTiffParserTest extends TikaTest {
     }
 
     /**
+     * A KDC points at its preview with the standard tags, so it only had to
+     * reach this parser. Its name is what types it: nothing in the file says
+     * raw to the detector.
+     */
+    @Test
+    public void testKDC() throws Exception {
+        List<Metadata> metadataList = parseByName("testKDC.kdc");
+        assertEquals(2, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-kodak", container.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("EASTMAN KODAK COMPANY", container.get(TIFF.EQUIPMENT_MAKE));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        assertThumbnail(metadataList.get(1), 64, 48);
+    }
+
+    /**
+     * A MOS keeps its preview in the Leaf data block, in the section named
+     * JPEG_preview_data. The tag is typed ASCII, which the block is not.
+     */
+    @Test
+    public void testMOS() throws Exception {
+        List<Metadata> metadataList = parseByName("testMOS.mos");
+        assertEquals(2, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-leaf", container.get(HttpHeaders.CONTENT_TYPE));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        assertThumbnail(metadataList.get(1), 64, 48);
+    }
+
+    /**
      * A raw with nothing to hand on is typed and read all the same: this one
      * carries a MakerNote that names no preview, and no thumbnail is an
      * answer, not a failure.
