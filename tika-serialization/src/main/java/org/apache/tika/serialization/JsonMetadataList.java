@@ -45,6 +45,7 @@ public class JsonMetadataList {
             .build();
 
     private static volatile StreamReadConstraints streamReadConstraints = DEFAULT_CONSTRAINTS;
+    private static volatile boolean typedValues = false;
     private static volatile ObjectMapper OBJECT_MAPPER;
     private static volatile ObjectMapper PRETTY_SERIALIZER;
 
@@ -59,12 +60,18 @@ public class JsonMetadataList {
         // Use TikaModule which includes Metadata serializers
         ObjectMapper mapper = new ObjectMapper(factory);
         mapper.registerModule(new TikaModule());
+        StreamReadConstraints valueConstraints = typedValueConstraints();
+        if (valueConstraints != null) {
+            // registered after TikaModule, so this serializer wins
+            mapper.registerModule(new SimpleModule("TypedMetadata")
+                    .addSerializer(Metadata.class, new MetadataSerializer(false, valueConstraints)));
+        }
         OBJECT_MAPPER = mapper;
 
         // Pretty printer needs custom serializer with sort flag
         ObjectMapper prettyMapper = new ObjectMapper(factory);
         SimpleModule prettySerializerModule = new SimpleModule();
-        prettySerializerModule.addSerializer(Metadata.class, new MetadataSerializer(true));
+        prettySerializerModule.addSerializer(Metadata.class, new MetadataSerializer(true, valueConstraints));
         prettyMapper.registerModule(prettySerializerModule);
         PRETTY_SERIALIZER = prettyMapper;
     }
@@ -81,6 +88,35 @@ public class JsonMetadataList {
     public static synchronized void setStreamReadConstraints(StreamReadConstraints constraints) {
         streamReadConstraints = constraints;
         rebuildObjectMappers();
+    }
+
+    /**
+     * The constraints a value nested in a list of metadata must meet so that {@link #fromJson(Reader)}
+     * can read the whole back; null when values are written as strings.
+     */
+    private static StreamReadConstraints typedValueConstraints() {
+        if (!typedValues) {
+            return null;
+        }
+        return streamReadConstraints.rebuild()
+                .maxNestingDepth(Math.max(0, streamReadConstraints.getMaxNestingDepth() - 2))
+                .build();
+    }
+
+    /**
+     * Opt-in: write values of registered INTEGER, REAL and BOOLEAN keys as JSON numbers and
+     * booleans, and of JSON keys (e.g. {@code tk:chunks}) as JSON rather than an escaped string.
+     * Off by default for backwards compatibility. {@link #fromJson(Reader)} reads either form.
+     * <p>
+     * Typically called by TikaLoader from the "metadata-list" configuration section.
+     */
+    public static synchronized void setTypedValues(boolean typed) {
+        typedValues = typed;
+        rebuildObjectMappers();
+    }
+
+    public static boolean isTypedValues() {
+        return typedValues;
     }
 
     /**
