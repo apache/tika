@@ -12,6 +12,9 @@ Release 4.2.0 - unreleased
      on the classpath; tika-app, tika-server and tika-grpc already include it
      (TIKA-4974).
 
+   * tika-serialization is now an OSGi bundle, so JsonConfig constructors work in
+     OSGi: deploy it with jackson-databind and jackson-annotations (TIKA-4982).
+
    * Config is untrusted unless the operator says so: Java code that writes its
      own config and sets an operator-only property wraps it with
      JsonConfig.trusted(json) (TIKA-4974).

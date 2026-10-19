@@ -69,6 +69,16 @@ Use the versions that Tika release depends on (`mvn dependency:list` on
 If one of these bundles is missing, `tika-bundle-standard` does not resolve, and the
 container's error names the missing package.
 
+=== Configuring components from JSON
+
+A constructor that takes a `JsonConfig`, such as `new PDFParser(JsonConfig.trusted(json))`,
+reads the JSON through `tika-serialization`. To use one, also deploy
+`org.apache.tika:tika-serialization`, `com.fasterxml.jackson.core:jackson-databind` and
+`com.fasterxml.jackson.core:jackson-annotations`. Without them, the bundles still resolve
+and parse with their defaults, but those constructors throw. `tika-core` wires to
+`tika-serialization` when it resolves, so install it before `tika-core` resolves, or refresh
+`tika-core` after adding it.
+
 == Services
 
 When it starts, `tika-bundle-standard` registers:

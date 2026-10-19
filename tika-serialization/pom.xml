@@ -30,6 +30,7 @@
   </parent>
 
   <artifactId>tika-serialization</artifactId>
+  <packaging>bundle</packaging>
   <name>Apache Tika serialization</name>
   <url>https://tika.apache.org</url>
 
@@ -109,6 +110,25 @@
               <version>${project.version}</version>
             </path>
           </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>${maven.bundle.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Bundle-DocURL>${project.url}</Bundle-DocURL>
+            <Export-Package>
+              org.apache.tika.config.loader,
+              org.apache.tika.serialization.*
+            </Export-Package>
+            <Import-Package>
+              org.osgi.*;resolution:=optional,
+              *
+            </Import-Package>
+          </instructions>
         </configuration>
       </plugin>
       <plugin>

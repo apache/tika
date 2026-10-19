@@ -20,11 +20,13 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.DirectoryStream;
@@ -262,6 +264,32 @@ public abstract class BundleIT {
             names.add(o.getClass().getName());
         }
         return names;
+    }
+
+    // TIKA-4982: JsonConfig constructors read through tika-serialization, a separate bundle
+    @Test
+    public void testJsonConfigConstructor() throws Exception {
+        Bundle core = findBundle("org.apache.tika.core");
+        Class<?> jsonConfig = core.loadClass("org.apache.tika.config.JsonConfig");
+        Class<?> pdfParser = findBundle("org.apache.tika.bundle-standard")
+                .loadClass("org.apache.tika.parser.pdf.PDFParser");
+
+        Object trusted = jsonConfig.getMethod("trusted", String.class)
+                .invoke(null, "{\"sortByPosition\": true}");
+        Object parser = pdfParser.getConstructor(jsonConfig).newInstance(trusted);
+        Object config = pdfParser.getMethod("getPDFParserConfig").invoke(parser);
+        assertEquals(true, config.getClass().getMethod("isSortByPosition").invoke(config));
+
+        Object untrusted = Proxy.newProxyInstance(jsonConfig.getClassLoader(),
+                new Class<?>[]{jsonConfig}, (proxy, method, args) -> switch (method.getName()) {
+                    case "json" -> "{\"imageGraphicsEngineFactoryClass\": \"java.lang.Object\"}";
+                    case "trusted" -> false;
+                    default -> throw new UnsupportedOperationException(method.getName());
+                });
+        InvocationTargetException e = assertThrows(InvocationTargetException.class,
+                () -> pdfParser.getConstructor(jsonConfig).newInstance(untrusted));
+        assertTrue(String.valueOf(e.getCause().getMessage()).contains("imageGraphicsEngineFactoryClass"),
+                String.valueOf(e.getCause()));
     }
 
     // runs the docs page's example as a consumer bundle would
