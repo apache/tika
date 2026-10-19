@@ -46,7 +46,9 @@ class FormattingTagManager {
 
     // Outermost to innermost: hyperlink > math > span > bold > italic > strike > underline
     private String currentHyperlink = null;
-    private boolean isMath = false;
+    // inMath spans the equation; mathSpanOpen tracks the span, which a hyperlink change closes
+    private boolean inMath = false;
+    private boolean mathSpanOpen = false;
     private String currentSpanClass = null;
     private boolean wrapperHyperlinkActive = false;
     private boolean isBold = false;
@@ -123,6 +125,12 @@ class FormattingTagManager {
             }
         }
 
+        if (inMath && !mathSpanOpen) {
+            closeStyledTags();
+            xhtml.startElement("span", "class", "omml");
+            mathSpanOpen = true;
+        }
+
         if (!Objects.equals(spanClass, currentSpanClass)) {
             closeStyledTags();
             if (spanClass != null) {
@@ -197,24 +205,17 @@ class FormattingTagManager {
     }
 
     /**
-     * Opens {@code <span class="math">} for an OMML equation. A hyperlink change inside
-     * the equation closes it.
+     * Starts an OMML equation, whose text is flattened to plain characters: each of its
+     * runs is wrapped in {@code <span class="omml">}, reopened inside any hyperlink that
+     * starts or ends mid-equation.
      */
     void openMath() throws SAXException {
-        if (isMath) {
-            return;
-        }
-        closeStyledTags();
-        xhtml.startElement("span", "class", "math");
-        isMath = true;
+        inMath = true;
     }
 
     void closeMath() throws SAXException {
-        if (isMath) {
-            closeStyledTags();
-            xhtml.endElement("span");
-            isMath = false;
-        }
+        closeMathSpan();
+        inMath = false;
     }
 
     /**
@@ -231,7 +232,15 @@ class FormattingTagManager {
 
     private void closeInlineTags() throws SAXException {
         closeStyledTags();
-        closeMath();
+        closeMathSpan();
+    }
+
+    private void closeMathSpan() throws SAXException {
+        if (mathSpanOpen) {
+            closeStyledTags();
+            xhtml.endElement("span");
+            mathSpanOpen = false;
+        }
     }
 
     private void closeStyledTags() throws SAXException {

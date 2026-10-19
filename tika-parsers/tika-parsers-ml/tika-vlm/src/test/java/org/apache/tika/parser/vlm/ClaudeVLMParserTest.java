@@ -225,6 +225,32 @@ public class ClaudeVLMParserTest {
     }
 
     @Test
+    void testTemperatureSentOnlyWhenSet() {
+        assertFalse(parser.buildRequestJson(config, "AAAA", "image/png").contains("temperature"));
+        config.setTemperature(0.0);
+        assertTrue(parser.buildRequestJson(config, "AAAA", "image/png")
+                .contains("\"temperature\":0.0"));
+    }
+
+    @Test
+    void testTruncatedWarning() throws Exception {
+        String json = "{\"content\":[{\"type\":\"text\",\"text\":\"cut\"}],"
+                + "\"stop_reason\":\"max_tokens\"}";
+        Metadata metadata = new Metadata();
+        parser.extractResponseText(json, metadata);
+        assertEquals("truncated", metadata.get(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS));
+    }
+
+    @Test
+    void testAnEmptyAnswerIsEmptyText() throws Exception {
+        // the token budget can run out before any block is written
+        String json = "{\"content\":[],\"stop_reason\":\"max_tokens\"}";
+        Metadata metadata = new Metadata();
+        assertEquals("", parser.extractResponseText(json, metadata));
+        assertEquals("truncated", metadata.get(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS));
+    }
+
+    @Test
     void testBuildRequestJsonImage() {
         String json = parser.buildRequestJson(config, "AAAA", "image/png");
         assertFalse(json.contains("\"document\""));

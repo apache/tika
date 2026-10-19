@@ -52,6 +52,7 @@ public class TikaObjectMapperFactory {
             "detectors",
             "encoding-detectors",
             "metadata-filters",
+            "image-checks",
             "renderers",
             "translators",
             "digester-factories",

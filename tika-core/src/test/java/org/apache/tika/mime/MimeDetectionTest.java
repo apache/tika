@@ -214,6 +214,34 @@ public class MimeDetectionTest {
         }
     }
 
+    private static MediaType detect(byte[] bytes, String name) throws IOException {
+        Metadata metadata = new Metadata();
+        if (name != null) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+        }
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            return MIME_TYPES.detect(tis, metadata, new ParseContext());
+        }
+    }
+
+    @Test
+    public void testRustVersusRlsServices() throws IOException {
+        MediaType rust = MediaType.text("x-rust");
+        MediaType rls = MediaType.application("rls-services+xml");
+        assertEquals(rust, detect("fn main() {}\n".getBytes(UTF_8), "main.rs"));
+        assertEquals(rust, detect("// Licensed to the ASF\nfn main() {}\n".getBytes(UTF_8),
+                "main.rs"));
+
+        byte[] rlsXml = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<rls-services xmlns=\"urn:ietf:params:xml:ns:rls-services\">"
+                + "<service uri=\"sip:friends@example.com\"/></rls-services>").getBytes(UTF_8);
+        assertEquals(rls, detect(rlsXml, "services.rs"));
+        assertEquals(rls, detect(rlsXml, null));
+
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n', 0, 0, 0, 0};
+        assertEquals(MediaType.image("png"), detect(png, "main.rs"));
+    }
+
     @Test
     public void testDetectionWithoutContent() throws IOException {
         testUrlWithoutContent("text/html", "test.html");

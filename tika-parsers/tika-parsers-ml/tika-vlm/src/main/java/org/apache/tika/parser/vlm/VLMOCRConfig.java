@@ -62,6 +62,13 @@ public class VLMOCRConfig implements Serializable {
     private int maxTokens = 4096;
 
     /**
+     * Sampling temperature sent with each request; {@code null} (the default) sends none, so the
+     * service's own default applies. {@code 0} makes repeated requests for the same image
+     * return the same text on services that honor it. Claude accepts 0 to 1.
+     */
+    private Double temperature = null;
+
+    /**
      * OpenAI-compatible parser only: send the limit as {@code max_completion_tokens}
      * instead of {@code max_tokens}. Newer OpenAI models (o-series, GPT-5 and later)
      * reject {@code max_tokens}; many other compatible servers only accept it.
@@ -74,7 +81,7 @@ public class VLMOCRConfig implements Serializable {
      */
     private long timeoutMillis = 120_000;
 
-    /** Retries of a 429/502/503/504 answer from the service; 0 fails at once. */
+    /** Retries of a 429/502/503/504 answer or a dropped connection; 0 fails at once. */
     private int maxRetries = 4;
 
     /** Optional API key for authenticated endpoints. Empty means no auth. */
@@ -166,6 +173,19 @@ public class VLMOCRConfig implements Serializable {
 
     public void setMaxTokens(int maxTokens) {
         this.maxTokens = maxTokens;
+    }
+
+    public Double getTemperature() {
+        return temperature;
+    }
+
+    @OperatorOnly
+    public void setTemperature(Double temperature) {
+        if (temperature != null && (temperature < 0 || temperature > 2)) {
+            throw new IllegalArgumentException(
+                    "temperature must be between 0 and 2, got: " + temperature);
+        }
+        this.temperature = temperature;
     }
 
     public boolean isUseMaxCompletionTokens() {

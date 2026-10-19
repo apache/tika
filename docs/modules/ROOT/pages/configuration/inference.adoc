@@ -60,7 +60,10 @@ A hosted engine caps the requests in flight per key and answers the excess with 
 usually with no `Retry-After`; a saturated one answers 502, 503 or 504. Those four answers are
 retried, `maxRetries` times (4 unless set, 0 to fail at once), with a short jittered backoff
 from 250 ms doubling to 4 s, or the `Retry-After` the server sends, and never past the budget
-the parse granted the call. Any other answer, a 401 or a 400, fails at once. The retries cover
+the parse granted the call. A connection that drops before a full response arrives is retried
+the same way, sharing the `maxRetries` count; if the service had already read the
+request, a paid call may be billed twice. Any other answer, a 401 or a 400, fails at once,
+as do an unknown host, a refused connection and a TLS failure. The retries cover
 collisions between a few parse workers; they do not turn more workers than the key allows
 into throughput. Keep `numClients` (tika-server, Pipes) at or below the key's concurrency,
 counting every engine the workers call, and raise the key's tier before raising the workers.
