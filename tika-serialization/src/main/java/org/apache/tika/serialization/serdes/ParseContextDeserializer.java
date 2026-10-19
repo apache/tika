@@ -167,9 +167,10 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
      * position-aware: a top-level flat key for a self-configuring component (e.g.
      * {@code {"pdf-parser":{...}}}) is an inert per-request config that resolveAll skips, so it is
      * allowed and its opaque config subtree is not scanned; every other key is checked and its
-     * subtree scanned, refusing any blocked object key at any depth. Bare-string references are not
-     * scanned -- they name a defaults instance with no config. Running before resolution matters
-     * because merely constructing a blocked component can have side effects.
+     * subtree scanned, refusing any blocked object key at any depth. Bare-string references are
+     * checked only against the wire-blocked names -- they name a defaults instance with no config.
+     * Running before resolution matters because merely constructing a blocked component can have
+     * side effects.
      */
     private static void assertNoBlockedComponents(JsonNode contextNode) throws IOException {
         if (contextNode == null || !contextNode.isObject()) {
@@ -189,8 +190,9 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
     }
 
     /**
-     * Recursively refuses blocked-component object keys within a scanned subtree. Only object keys
-     * are checked; bare strings are inert defaults (see {@link #assertNoBlockedComponents}).
+     * Recursively refuses blocked-component object keys within a scanned subtree, and bare strings
+     * naming a wire-blocked component: its type is allowed, so the defaults instance is bound and
+     * run like the object form.
      */
     private static void scanForBlocked(JsonNode node) throws IOException {
         if (node == null) {
@@ -207,6 +209,10 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             for (JsonNode child : node) {
                 scanForBlocked(child);
             }
+        } else if (node.isTextual() && ComponentNameResolver.isWireBlockedName(node.asText())) {
+            throw new IOException("Component '" + node.asText() + "' may not be supplied via a "
+                    + "request parseContext. It must be configured server-side in the Tika config, "
+                    + "not at request time.");
         }
     }
 

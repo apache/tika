@@ -443,6 +443,12 @@ public class TikaResourceTest extends CXFTestBase {
                     name);
             assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
                     name + ": expected wire-blocked rejection, got: " + rootMessage(e));
+            String bareJson = "{\"metadata-filters\":[\"" + name + "\"]}";
+            e = assertThrows(Exception.class,
+                    () -> TikaResource.mergeParseContextFromConfig(bareJson, new ParseContext()),
+                    name);
+            assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
+                    name + ": expected wire-blocked rejection, got: " + rootMessage(e));
         }
         // the flat per-request config tunes the loaded filter and stays allowed
         assertDoesNotThrow(() -> TikaResource.mergeParseContextFromConfig(

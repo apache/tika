@@ -3,6 +3,42 @@ Release 4.2.0 - unreleased
    * An email that starts with MIME-Version and nests a multipart/related part (a Gmail
      export, for one) is detected as message/rfc822, not as MHTML: the
      multipart/related magic now reads only the message's own header block (TIKA-4973).
+     
+   * The docx parser wraps OMML equations (m:oMath) in <span class="omml">, their
+     text flattened to plain characters; it was previously emitted as unmarked body
+     text (TIKA-4968).
+     
+   * Files named *.rs are now detected as text/x-rust (Rust source) instead of
+     application/rls-services+xml. RLS services XML is still detected from its
+     root element, whatever the file name (TIKA-4977).
+     
+   * Opt-in "metadata-list": {"typedValues": true} writes INTEGER, REAL and
+     BOOLEAN metadata as JSON numbers and booleans, and tk:chunks as nested
+     JSON rather than an escaped string, in -J, /rmeta and the JSON emitters.
+     New Property.ValueType.JSON; tk:chunks is now JSON-typed. Readers accept
+     both forms (TIKA-4969).
+
+   * The docx parser wraps OMML equations (m:oMath) in <span class="math">; their
+     text was previously emitted as unmarked body text (TIKA-4968).
+
+   * The docx parser links REF, PAGEREF and NOTEREF fields, and in-document
+     HYPERLINK \l fields, to their bookmarks (<a href="#bookmark">). Fields are now
+     tracked as a stack, so a field nested in a HYPERLINK field no longer ends the
+     enclosing link early. Simple fields (w:fldSimple) are now parsed as well, so
+     HYPERLINK, INCLUDEPICTURE and similar fields written that way are linked or
+     reported like their complex-field equivalents (TIKA-4967).
+
+   * The docx parser now applies bold and italics set by a run's character style
+     (e.g. Word's built-in Strong and Emphasis), following basedOn chains; previously
+     only direct formatting was emitted. The new OfficeParserConfig option
+     includeCharacterStyleClasses wraps such runs in <span class="..."> named after
+     the style. Style-derived classes (paragraph and character) now replace every
+     character other than letters, digits, '_' and '-' with '_' and are capped at 128
+     characters, so a style name can no longer yield extra class tokens (TIKA-4966).
+
+   * OpenAI-compatible VLM parser can send the output token limit as
+     max_completion_tokens for models that reject max_tokens. The new
+     useMaxCompletionTokens setting is opt-in; max_tokens remains the default.
 
    * Config properties whose value reaches the host (paths, executables, class names,
      URLs, credentials, operator-sized limits) are marked @OperatorOnly and refused in
@@ -133,6 +169,10 @@ Release 4.2.0 - unreleased
      providers for Parser, Detector, EncodingDetector, LanguageDetector and
      MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
      (TIKA-4945).
+
+   * The embed task writes a document's image and page embeddings to
+     tk:chunks once per binding instead of once per image or page, which
+     re-serialized the whole array each time (TIKA-4970).
 
 Release 4.1.0 - 9/26/2026
 
