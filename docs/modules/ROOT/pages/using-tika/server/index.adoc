@@ -43,6 +43,10 @@ xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing] before deploying; the
 example configs is not safe boilerplate.
 ====
 
+The server starts every fork before it opens its port, so a fork that can't start (bad
+`forkedJvmArgs` or `javaPath`, a missing plugin) fails startup instead of the first request.
+Forks still exit after `socketTimeoutMillis` idle and restart on the next request that needs one.
+
 == Backpressure: the server can tell you it is busy
 
 A saturated `tika-server` says so. When every fork in a pool is in use and none frees up within

@@ -25,6 +25,10 @@ Release 4.2.0 - unreleased
      
    * Per-request limits may tighten the server's but no longer loosen them (TIKA-4978).
      
+   * tika-server starts its forks before opening its port, so a fork that can't start
+     (bad forkedJvmArgs or javaPath, a missing plugin) fails startup instead of the first
+     request (TIKA-4983).
+     
    * Image checks (byte-size, min-image-size, blank-image-check; new tika-image-processing
      module) make it less likely that blank or tiny images reach text recognizers. VLM
      output gets tk:ocr-warnings (truncated, repetition, empty); VLM parsers take
