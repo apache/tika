@@ -270,7 +270,7 @@ public class ComponentInstantiator {
         return trusted ? reader : reader.withAttribute(UNTRUSTED, Boolean.TRUE);
     }
 
-    /** True if {@code ctxt} is reading per-request JSON (see {@link #withTrust}). */
+    /** False if {@code ctxt} is reading per-request JSON (see {@link #withTrust}); true otherwise. */
     public static boolean isTrusted(DeserializationContext ctxt) {
         return ctxt.getAttribute(UNTRUSTED) == null;
     }
