@@ -159,10 +159,12 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 throwOnWriteLimitReached = ((WriteLimiter)factory).isThrowOnWriteLimitReached();
             }
         }
+        SecureHandlerCounter handlerCounter = null;
         try {
             TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
+            handlerCounter = new SecureHandlerCounter(writeLimit, tis, getAutoDetectParserConfig());
             RecursivelySecureContentHandler secureContentHandler =
-                    new RecursivelySecureContentHandler(localHandler, tis, new SecureHandlerCounter(writeLimit),
+                    new RecursivelySecureContentHandler(localHandler, tis, handlerCounter,
                             throwOnWriteLimitReached, context);
             context.set(RecursivelySecureContentHandler.class, secureContentHandler);
             getWrappedParser().parse(tis, secureContentHandler, metadata, context);
@@ -175,6 +177,9 @@ public class RecursiveParserWrapper extends ParserDecorator {
             } else {
                 String stackTrace = ExceptionUtils.getFilteredStackTrace(e);
                 metadata.add(TikaCoreProperties.CONTAINER_EXCEPTION, stackTrace);
+                if (handlerCounter != null && handlerCounter.zipBombDetected) {
+                    throw new TikaException("Zip bomb detected!", e);
+                }
                 throw e;
             }
         } finally {
@@ -185,6 +190,12 @@ public class RecursiveParserWrapper extends ParserDecorator {
             parserState.recursiveParserWrapperHandler.endDocument();
             context.set(RecursivelySecureContentHandler.class, null);
         }
+    }
+
+    private AutoDetectParserConfig getAutoDetectParserConfig() {
+        Parser wrapped = getWrappedParser();
+        return wrapped instanceof AutoDetectParser ?
+                ((AutoDetectParser) wrapped).getAutoDetectParserConfig() : null;
     }
 
     public static String getResourceName(Metadata metadata, AtomicInteger counter) {
@@ -277,6 +288,8 @@ public class RecursiveParserWrapper extends ParserDecorator {
                 if (WriteLimitReachedException.isWriteLimitReached(e)) {
                     metadata.add(TikaCoreProperties.WRITE_LIMIT_REACHED, "true");
                     throw e;
+                } else if (preParseHandler.handlerCounter.zipBombDetected) {
+                    throw e;
                 } else {
                     if (catchEmbeddedExceptions) {
                         ParserUtils.recordParserFailure(this, e, metadata);
@@ -331,9 +344,18 @@ public class RecursiveParserWrapper extends ParserDecorator {
         private boolean writeLimitReached = false;
         //total chars written to all handlers
         private int totalChars = 0;
+        //the container's stream: the denominator for the compression ratio across the tree
+        private final TikaInputStream rootStream;
+        private final AutoDetectParserConfig config;
+        //total chars produced by all handlers, whether or not written
+        private long ratioChars = 0;
+        private boolean zipBombDetected = false;
 
-        private SecureHandlerCounter(int totalWriteLimit) {
+        private SecureHandlerCounter(int totalWriteLimit, TikaInputStream rootStream,
+                                     AutoDetectParserConfig config) {
             this.totalWriteLimit = totalWriteLimit;
+            this.rootStream = rootStream;
+            this.config = config;
         }
         /**
          * Given the requested length, how many characters are actually available
@@ -369,6 +391,32 @@ public class RecursiveParserWrapper extends ParserDecorator {
             this.handlerCounter = handlerCounter;
             this.throwOnWriteLimitReached = throwOnWriteLimitReached;
             this.parseContext = parseContext;
+            AutoDetectParserConfig config = handlerCounter.config;
+            if (config != null) {
+                if (config.getOutputThreshold() != null) {
+                    setOutputThreshold(config.getOutputThreshold());
+                }
+                if (config.getMaximumCompressionRatio() != null) {
+                    setMaximumCompressionRatio(config.getMaximumCompressionRatio());
+                }
+            }
+        }
+
+        /**
+         * Each embedded document's stream is decompressed, so the per-entry ratio
+         * can't see archive compression. Also check the whole tree's output
+         * against the container's bytes, as the concatenated path does.
+         */
+        @Override
+        protected void advance(int length) throws SAXException {
+            super.advance(length);
+            handlerCounter.ratioChars += length;
+            try {
+                checkCompressionRatio(handlerCounter.ratioChars, handlerCounter.rootStream);
+            } catch (SAXException e) {
+                handlerCounter.zipBombDetected = true;
+                throw e;
+            }
         }
 
         /**

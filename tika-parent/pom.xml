@@ -31,7 +31,7 @@
 
   <groupId>org.apache.tika</groupId>
   <artifactId>tika-parent</artifactId>
-  <version>3.3.3-SNAPSHOT</version>
+  <version>3.3.4-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Apache Tika parent</name>
@@ -286,7 +286,7 @@
     <maven.compiler.release>11</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <project.build.outputTimestamp>2026-07-16T17:25:31Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-10-09T20:10:45Z</project.build.outputTimestamp>
     <!-- plugin versions -->
     <checkstyle.plugin.version>3.6.0</checkstyle.plugin.version>
     <forbiddenapis.version>3.11</forbiddenapis.version>
@@ -316,13 +316,13 @@
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.75.0</google.cloud.version>
-    <aws2.version>2.55.12</aws2.version>
+    <aws2.version>2.56.0</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <asm.version>9.10.1</asm.version>
-    <azure.version>1.3.8</azure.version>
+    <asm.version>9.11</asm.version>
+    <azure.version>1.3.9</azure.version>
     <!-- 7.0.0 needs java 17 -->
     <biz.aqute.version>6.4.1</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -331,7 +331,7 @@
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
     <commons.cli.version>1.11.0</commons.cli.version>
-    <commons.codec.version>1.22.1</commons.codec.version>
+    <commons.codec.version>1.23.0</commons.codec.version>
     <commons.collections4.version>4.6.0</commons.collections4.version>
     <commons.compress.version>1.28.0</commons.compress.version>
     <commons.csv.version>1.14.1</commons.csv.version>
@@ -354,7 +354,7 @@
     <freemarker.version>2.3.35</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.14.0</gson.version>
-    <grpc.version>1.84.1</grpc.version>
+    <grpc.version>1.85.0</grpc.version>
     <guava.version>33.7.2-jre</guava.version>
     <h2.version>2.5.252</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
@@ -365,10 +365,10 @@
     -->
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
-    <jackrabbit.version>2.22.4</jackrabbit.version>
+    <jackrabbit.version>2.22.5</jackrabbit.version>
     <jackson.version>2.22.3</jackson.version>
     <!-- TIKA-4880: 5.0.1 fails some catalogs 5.0.0 reads ("Did not find required parent table id"); fixed in 5.0.2 -->
-    <jackcess.version>5.0.3</jackcess.version>
+    <jackcess.version>5.0.4</jackcess.version>
     <jackcess.encrypt.version>5.0.2</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
     <jakarta.activation.version>2.1.4</jakarta.activation.version>
@@ -394,11 +394,12 @@
     <jsr305.version>3.0.2</jsr305.version>
     <!-- junit 6.x requires jdk 17 -->
     <junit5.version>5.14.4</junit5.version>
+    <!-- TODO 2.5.0 fails in  Apache Tika text parser module -->
     <juniversalchardet.version>2.5.0</juniversalchardet.version>
-    <junrar.version>8.1.1</junrar.version>
+    <junrar.version>8.1.2</junrar.version>
     <jwarc.version>0.37.0</jwarc.version>
-    <kafka.version>4.3.1</kafka.version>
-    <kotlin-stdlib.version>2.4.20</kotlin-stdlib.version>
+    <kafka.version>4.4.0</kafka.version>
+    <kotlin-stdlib.version>2.4.21</kotlin-stdlib.version>
     <libpst.version>0.9.3</libpst.version>
     <!-- 3.x requires jdk17 -->
     <log4j2.version>2.26.1</log4j2.version>
@@ -433,8 +434,8 @@
     <rome.version>2.1.0</rome.version>
     <scm.version>2.2.1</scm.version>
     <slf4j.version>2.0.20</slf4j.version>
-    <sis.version>1.6</sis.version>
-    <snappy.version>1.1.10.11</snappy.version>
+    <sis.version>1.7</sis.version>
+    <snappy.version>1.1.10.12</snappy.version>
     <solrj.version>8.11.4</solrj.version>
     <!-- NOTE: Spring 6 requires jdk17  -->
     <!-- remove from ossindex when bumping from 5.3.39 -->
@@ -455,7 +456,7 @@
     <xmpcore.version>6.1.11</xmpcore.version>
     <!-- This has to be < 3.9 to work with Solr 8's integration tests (doesn't fail on windows) -->
     <zookeeper.version>3.8.7</zookeeper.version>
-    <zstd.version>1.5.7-22</zstd.version>
+    <zstd.version>1.5.7-23</zstd.version>
     <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
     <logback.version>1.6.5</logback.version>
     <javacpp.version>1.5.14</javacpp.version>
@@ -1152,7 +1153,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.22.0</version>
+        <version>2.23.0</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>

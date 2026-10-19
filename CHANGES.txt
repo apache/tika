@@ -1,4 +1,4 @@
-Release 3.3.3 - ???
+Release 3.3.3 - 10/09/2026
 
   * tika-server caps attachments on the multipart/form-data endpoints at 50 MB by
     default; set <maxAttachmentBytes> in the server config to raise it or -1 to
