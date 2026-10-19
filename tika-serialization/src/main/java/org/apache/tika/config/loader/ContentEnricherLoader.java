@@ -189,7 +189,7 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
             }
             checks.add(ComponentInstantiator.instantiateComponent(check.getKey(),
                     check.getValue(), context.getObjectMapper(), context.getClassLoader(),
-                    ImageCheck.class));
+                    ImageCheck.class, true));
         }
         return checks;
     }
