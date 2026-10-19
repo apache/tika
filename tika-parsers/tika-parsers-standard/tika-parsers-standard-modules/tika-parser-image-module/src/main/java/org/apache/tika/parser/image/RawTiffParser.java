@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,7 +55,8 @@ import org.apache.tika.sax.XHTMLContentHandler;
 
 /**
  * Parser for TIFF-based camera raw images: Nikon NEF/NRW, Sony ARW/SRF/SR2,
- * Pentax PEF/PTX, Samsung SRW, Epson ERF, Adobe DNG and Canon CR2.
+ * Pentax PEF/PTX, Samsung SRW, Epson ERF, Adobe DNG, Canon CR2, Olympus ORF
+ * and Panasonic RW2.
  * <p>
  * These formats are TIFF containers: metadata extraction is inherited from
  * {@link TiffParser}. In addition, this parser extracts the camera-generated
@@ -62,7 +64,12 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * {@link EmbeddedDocumentExtractor}. Previews are referenced from the IFD
  * chain or from SubIFDs, either via the JPEGInterchangeFormat/
  * JPEGInterchangeFormatLength tags or as a single JPEG-compressed strip
- * (DNG, CR2). Strips holding raw sensor data are also JPEG-encoded in some
+ * (DNG, CR2). Two formats keep theirs elsewhere and are read where they
+ * put them: Panasonic RW2 in the private JpgFromRaw tag, Olympus ORF in
+ * its MakerNote, whose own IFD is read for the camera thumbnail and the
+ * preview the CameraSettings sub-IFD points at. Both have a TIFF layout
+ * behind a magic number of their own.
+ * <p> Strips holding raw sensor data are also JPEG-encoded in some
  * formats (lossless JPEG in CR2 and DNG), so strip candidates are only
  * accepted for displayable images: PhotometricInterpretation RGB or YCbCr,
  * or 8 bits per sample when PhotometricInterpretation is absent (CR2).
@@ -92,6 +99,8 @@ public class RawTiffParser extends TiffParser {
                     MediaType.image("x-raw-samsung"),
                     MediaType.image("x-raw-epson"),
                     MediaType.image("x-raw-adobe"),
+                    MediaType.image("x-raw-olympus"),
+                    MediaType.image("x-raw-panasonic"),
                     MediaType.image("x-canon-cr2"))));
 
     private static final String JPEG_MIME = "image/jpeg";
@@ -104,6 +113,30 @@ public class RawTiffParser extends TiffParser {
     private static final int TAG_SUB_IFDS = 0x014A;
     private static final int TAG_JPEG_INTERCHANGE_FORMAT = 0x0201;
     private static final int TAG_JPEG_INTERCHANGE_FORMAT_LENGTH = 0x0202;
+    private static final int TAG_EXIF_IFD = 0x8769;
+    private static final int TAG_MAKER_NOTE = 0x927C;
+    //Panasonic keeps the whole preview JPEG in a private tag of IFD0
+    private static final int TAG_PANASONIC_JPG_FROM_RAW = 0x002E;
+    //inside an Olympus MakerNote: the camera thumbnail, and the sub-IFD
+    //that points at the preview
+    private static final int TAG_OLYMPUS_THUMBNAIL = 0x0100;
+    private static final int TAG_OLYMPUS_CAMERA_SETTINGS = 0x2020;
+    private static final int TAG_OLYMPUS_PREVIEW_START = 0x0101;
+    private static final int TAG_OLYMPUS_PREVIEW_LENGTH = 0x0102;
+
+    private static final int MAGIC_TIFF = 42;
+    private static final int MAGIC_BIG_TIFF = 43;
+    //tika-mimetypes.xml matches the same signatures: "IIRO" and "MMOR" read
+    //as 0x4F52, "IIRS" as 0x5352, and an RW2 starts with "IIU\0"
+    private static final int MAGIC_OLYMPUS_RO = 0x4F52;
+    private static final int MAGIC_OLYMPUS_RS = 0x5352;
+    private static final int MAGIC_PANASONIC = 0x0055;
+
+    private static final byte[] OLYMPUS_MAKER_NOTE_NAME =
+            "OLYMPUS\u0000".getBytes(StandardCharsets.US_ASCII);
+    //the name, the MakerNote's own byte order marker and its version, then
+    //its IFD starts
+    private static final int OLYMPUS_MAKER_NOTE_HEADER_LENGTH = 12;
 
     private static final int COMPRESSION_OLD_JPEG = 6;
     private static final int COMPRESSION_JPEG = 7;
@@ -111,6 +144,14 @@ public class RawTiffParser extends TiffParser {
     private static final int PHOTOMETRIC_YCBCR = 6;
 
     private static final int MAX_IFDS = 32;
+    private static final int CLASSIC_ENTRY_SIZE = 12;
+    private static final int CLASSIC_INLINE_SIZE = 4;
+    private static final int BIG_TIFF_INLINE_SIZE = 8;
+    private static final int TYPE_BYTE = 1;
+    private static final int TYPE_UNDEFINED = 7;
+    private static final int BIG_TIFF_ENTRY_SIZE = 20;
+    //a crafted file must not send the reader chasing dozens of MakerNotes
+    private static final int MAX_MAKER_NOTES = 4;
     private static final int MAX_ENTRIES_PER_IFD = 1024;
     // at most MAX_IFDS are ever processed; cap the pending queue so a crafted
     // file packed with SubIFD pointers cannot grow it without bound
@@ -258,29 +299,28 @@ public class RawTiffParser extends TiffParser {
             throw new TiffStructureException("not a TIFF byte order marker");
         }
         int magic = readUInt16(raf, bigEndian);
-        boolean bigTiff;
-        if (magic == 42) {
-            bigTiff = false;
-        } else if (magic == 43) {
+        boolean bigTiff = false;
+        //ORF and RW2 are classic TIFF layouts behind their own magic number,
+        //and keep their previews in places only they use
+        boolean olympus = magic == MAGIC_OLYMPUS_RO || magic == MAGIC_OLYMPUS_RS;
+        boolean panasonic = magic == MAGIC_PANASONIC;
+        if (magic == MAGIC_BIG_TIFF) {
             //BigTIFF: 8-byte offset size, then a constant 0
             bigTiff = true;
             if (readUInt16(raf, bigEndian) != 8 || readUInt16(raf, bigEndian) != 0) {
                 throw new TiffStructureException("unsupported BigTIFF header");
             }
-        } else {
+        } else if (magic != MAGIC_TIFF && !olympus && !panasonic) {
             throw new TiffStructureException("bad TIFF magic number");
         }
         int countSize = bigTiff ? 8 : 2;
-        int entrySize = bigTiff ? 20 : 12;
+        int entrySize = bigTiff ? BIG_TIFF_ENTRY_SIZE : CLASSIC_ENTRY_SIZE;
         int offsetSize = bigTiff ? 8 : 4;
 
-        List<Preview> previews = new ArrayList<>();
-        //distinct IFDs can reference the same JPEG region; extract each region once
-        Set<Long> previewOffsets = new HashSet<>();
-        long totalPreviewBytes = 0;
-        long maxTotalPreviewBytes = config.getMaxTotalPreviewBytes();
+        PreviewCollector collector = new PreviewCollector(config.getMaxTotalPreviewBytes());
         Set<Long> visited = new HashSet<>();
         Deque<Long> toVisit = new ArrayDeque<>();
+        List<Long> makerNotes = new ArrayList<>();
         toVisit.add(readOffset(raf, bigEndian, bigTiff));
 
         while (!toVisit.isEmpty() && visited.size() < MAX_IFDS) {
@@ -304,9 +344,11 @@ public class RawTiffParser extends TiffParser {
             byte[] table = new byte[(int) (numEntries * entrySize + offsetSize)];
             raf.seek(ifdOffset + countSize);
             raf.readFully(table);
-            int inlineSize = bigTiff ? 8 : 4;
+            int inlineSize = bigTiff ? BIG_TIFF_INLINE_SIZE : CLASSIC_INLINE_SIZE;
             long jpegOffset = -1;
             long jpegLength = -1;
+            long panasonicOffset = -1;
+            long panasonicLength = -1;
             long compression = -1;
             long photometric = -1;
             long[] bitsPerSample = new long[0];
@@ -314,8 +356,8 @@ public class RawTiffParser extends TiffParser {
             long[] stripByteCounts = new long[0];
             for (int i = 0; i < numEntries; i++) {
                 int e = i * entrySize;
-                int tag = getUInt16(table, e, bigEndian);
-                int type = getUInt16(table, e + 2, bigEndian);
+                int tag = entryTag(table, e, bigEndian);
+                int type = entryType(table, e, bigEndian);
                 long valueCount = bigTiff
                         ? getUInt64(table, e + 4, bigEndian) : getUInt32(table, e + 4, bigEndian);
                 int valueField = e + 4 + inlineSize;
@@ -342,34 +384,250 @@ public class RawTiffParser extends TiffParser {
                     stripOffsets = readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount);
                 } else if (tag == TAG_STRIP_BYTE_COUNTS) {
                     stripByteCounts = readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount);
+                } else if (panasonic && tag == TAG_PANASONIC_JPG_FROM_RAW
+                        && isBlob(type, valueCount, inlineSize)) {
+                    panasonicOffset = getUInt32(table, valueField, bigEndian);
+                    panasonicLength = valueCount;
+                } else if (olympus && tag == TAG_EXIF_IFD && valueCount == 1
+                        && makerNotes.size() < MAX_MAKER_NOTES) {
+                    for (long exifIfd :
+                            readLongValues(raf, table, valueField, bigEndian, bigTiff, type, valueCount)) {
+                        long makerNote = readOlympusMakerNoteOffset(raf, fileLength, exifIfd, bigEndian);
+                        if (makerNote > 0) {
+                            makerNotes.add(makerNote);
+                        }
+                    }
                 }
             }
             int followerField = (int) (numEntries * entrySize);
             enqueue(toVisit, bigTiff
                     ? getUInt64(table, followerField, bigEndian) : getUInt32(table, followerField, bigEndian));
 
+            if (panasonicOffset > 0) {
+                //an RW2 keeps its preview here and writes placeholders into the
+                //strip tags, so its own tag answers before either of them
+                jpegOffset = panasonicOffset;
+                jpegLength = panasonicLength;
+            }
             if (jpegOffset < 0 && isDisplayableJpegStrip(compression, photometric, bitsPerSample,
                     stripOffsets, stripByteCounts)) {
                 jpegOffset = stripOffsets[0];
                 jpegLength = stripByteCounts[0];
             }
-            if (jpegOffset > 0 && jpegLength > 4 &&
-                    jpegLength <= config.getMaxPreviewLengthBytes() &&
-                    jpegOffset <= fileLength - jpegLength) {
-                raf.seek(jpegOffset);
-                //require the JPEG SOI marker
-                if (raf.read() == 0xFF && raf.read() == 0xD8 && previewOffsets.add(jpegOffset)) {
-                    //bound the aggregate extraction work; overlapping offsets
-                    //could otherwise sum to many times the file's own size
-                    if (totalPreviewBytes > maxTotalPreviewBytes - jpegLength) {
-                        break;
-                    }
-                    totalPreviewBytes += jpegLength;
-                    previews.add(new Preview(jpegOffset, jpegLength));
+            if (isPreviewAt(raf, fileLength, jpegOffset, jpegLength, config)) {
+                collector.add(jpegOffset, jpegLength);
+            }
+            if (collector.isFull()) {
+                break;
+            }
+        }
+
+        for (long makerNote : makerNotes) {
+            if (collector.isFull()) {
+                break;
+            }
+            for (Preview candidate : readOlympusMakerNotePreviews(raf, fileLength, makerNote)) {
+                if (isPreviewAt(raf, fileLength, candidate.offset(), candidate.length(), config)) {
+                    collector.add(candidate.offset(), candidate.length());
+                }
+                if (collector.isFull()) {
+                    break;
                 }
             }
         }
-        return previews;
+        return collector.previews();
+    }
+
+    /**
+     * Whether a preview really lies at the offset: inside the file, within the
+     * per-preview limit, and starting with the JPEG SOI marker.
+     */
+    private boolean isPreviewAt(RandomAccessFile raf, long fileLength, long offset, long length,
+                                RawTiffParserConfig config) throws IOException {
+        if (offset <= 0 || length <= 4 || length > config.getMaxPreviewLengthBytes()
+                || offset > fileLength - length) {
+            return false;
+        }
+        raf.seek(offset);
+
+        return raf.read() == 0xFF && raf.read() == 0xD8;
+    }
+
+    /**
+     * The previews found so far, and the budget they share.
+     */
+    private static final class PreviewCollector {
+        private final List<Preview> previews = new ArrayList<>();
+        //distinct IFDs can reference the same JPEG region; extract each region once
+        private final Set<Long> offsets = new HashSet<>();
+        private final long maxTotalBytes;
+        private long totalBytes;
+        private boolean full;
+
+        PreviewCollector(long maxTotalBytes) {
+            this.maxTotalBytes = maxTotalBytes;
+        }
+
+        /**
+         * The aggregate limit bounds the extraction work: overlapping offsets
+         * could otherwise sum to many times the file's own size, and reaching
+         * it ends the walk.
+         */
+        void add(long offset, long length) {
+            if (!offsets.add(offset)) {
+                return;
+            }
+            if (length > maxTotalBytes - totalBytes) {
+                full = true;
+                return;
+            }
+            totalBytes += length;
+            previews.add(new Preview(offset, length));
+        }
+
+        boolean isFull() {
+            return full;
+        }
+
+        List<Preview> previews() {
+            return previews;
+        }
+    }
+
+    /**
+     * The JPEGs an Olympus MakerNote points at: the camera's thumbnail
+     * (0x0100) and the preview that the CameraSettings sub-IFD (0x2020)
+     * names with PreviewImageStart and PreviewImageLength. Every offset
+     * inside the MakerNote is relative to its first byte. Only the
+     * "OLYMPUS\0" header is read, the older "OLYMP\0" one counts from
+     * elsewhere and is left to the next reader.
+     */
+    private long readOlympusMakerNoteOffset(RandomAccessFile raf, long fileLength, long exifIfd,
+                                            boolean bigEndian) throws IOException {
+        byte[] table = readIfdEntries(raf, fileLength, exifIfd, bigEndian);
+        if (table == null) {
+            return -1;
+        }
+        for (int e = 0; e + CLASSIC_ENTRY_SIZE <= table.length; e += CLASSIC_ENTRY_SIZE) {
+            if (entryTag(table, e, bigEndian) == TAG_MAKER_NOTE
+                    && isBlob(entryType(table, e, bigEndian), entryCount(table, e, bigEndian),
+                    CLASSIC_INLINE_SIZE)) {
+                return entryValue(table, e, bigEndian);
+            }
+        }
+        return -1;
+    }
+
+    private List<Preview> readOlympusMakerNotePreviews(RandomAccessFile raf, long fileLength,
+                                                       long makerNote) throws IOException {
+        List<Preview> candidates = new ArrayList<>();
+        if (makerNote <= 0 || makerNote > fileLength - OLYMPUS_MAKER_NOTE_HEADER_LENGTH) {
+            return candidates;
+        }
+        byte[] header = new byte[OLYMPUS_MAKER_NOTE_HEADER_LENGTH];
+        raf.seek(makerNote);
+        raf.readFully(header);
+        if (!Arrays.equals(Arrays.copyOf(header, OLYMPUS_MAKER_NOTE_NAME.length),
+                OLYMPUS_MAKER_NOTE_NAME)) {
+            return candidates;
+        }
+        //the MakerNote carries its own byte order marker, which a big endian
+        //file does not have to share
+        boolean bigEndian;
+        int name = OLYMPUS_MAKER_NOTE_NAME.length;
+        if (header[name] == 'I' && header[name + 1] == 'I') {
+            bigEndian = false;
+        } else if (header[name] == 'M' && header[name + 1] == 'M') {
+            bigEndian = true;
+        } else {
+            return candidates;
+        }
+        byte[] table = readIfdEntries(raf, fileLength,
+                makerNote + OLYMPUS_MAKER_NOTE_HEADER_LENGTH, bigEndian);
+        if (table == null) {
+            return candidates;
+        }
+        long settings = -1;
+        for (int e = 0; e + CLASSIC_ENTRY_SIZE <= table.length; e += CLASSIC_ENTRY_SIZE) {
+            int tag = entryTag(table, e, bigEndian);
+            long count = entryCount(table, e, bigEndian);
+            long value = entryValue(table, e, bigEndian);
+            if (tag == TAG_OLYMPUS_THUMBNAIL
+                    && isBlob(entryType(table, e, bigEndian), count, CLASSIC_INLINE_SIZE)) {
+                candidates.add(new Preview(makerNote + value, count));
+            } else if (tag == TAG_OLYMPUS_CAMERA_SETTINGS && count == 1) {
+                settings = makerNote + value;
+            }
+        }
+        byte[] settingsTable = readIfdEntries(raf, fileLength, settings, bigEndian);
+        if (settingsTable == null) {
+            return candidates;
+        }
+        long start = -1;
+        long length = -1;
+        for (int e = 0; e + CLASSIC_ENTRY_SIZE <= settingsTable.length; e += CLASSIC_ENTRY_SIZE) {
+            int tag = entryTag(settingsTable, e, bigEndian);
+            if (entryCount(settingsTable, e, bigEndian) != 1) {
+                continue;
+            }
+            if (tag == TAG_OLYMPUS_PREVIEW_START) {
+                start = entryValue(settingsTable, e, bigEndian);
+            } else if (tag == TAG_OLYMPUS_PREVIEW_LENGTH) {
+                length = entryValue(settingsTable, e, bigEndian);
+            }
+        }
+        if (start >= 0 && length > 0) {
+            candidates.add(new Preview(makerNote + start, length));
+        }
+        return candidates;
+    }
+
+    /**
+     * The fields of an IFD entry. The tag and the type sit where they do in
+     * a BigTIFF too; the count and the value field are the classic layout's.
+     */
+    private static int entryTag(byte[] entries, int e, boolean bigEndian) {
+        return getUInt16(entries, e, bigEndian);
+    }
+
+    private static int entryType(byte[] entries, int e, boolean bigEndian) {
+        return getUInt16(entries, e + 2, bigEndian);
+    }
+
+    private static long entryCount(byte[] entries, int e, boolean bigEndian) {
+        return getUInt32(entries, e + 4, bigEndian);
+    }
+
+    private static long entryValue(byte[] entries, int e, boolean bigEndian) {
+        return getUInt32(entries, e + 8, bigEndian);
+    }
+
+    /**
+     * Whether the entry holds its bytes elsewhere, which is what a tag naming
+     * an image is: BYTE or UNDEFINED, and too long for the value field.
+     */
+    private static boolean isBlob(int type, long valueCount, int inlineSize) {
+        return (type == TYPE_BYTE || type == TYPE_UNDEFINED) && valueCount > inlineSize;
+    }
+
+    /**
+     * The entries of a classic IFD at the offset, without the pointer that
+     * follows them; null when the file holds no such table there.
+     */
+    private byte[] readIfdEntries(RandomAccessFile raf, long fileLength, long offset,
+                                  boolean bigEndian) throws IOException {
+        if (offset <= 0 || offset > fileLength - 2) {
+            return null;
+        }
+        raf.seek(offset);
+        int numEntries = readUInt16(raf, bigEndian);
+        if (numEntries < 1 || numEntries > MAX_ENTRIES_PER_IFD
+                || offset + 2 + (long) numEntries * CLASSIC_ENTRY_SIZE > fileLength) {
+            return null;
+        }
+        byte[] table = new byte[numEntries * CLASSIC_ENTRY_SIZE];
+        raf.readFully(table);
+        return table;
     }
 
     /**

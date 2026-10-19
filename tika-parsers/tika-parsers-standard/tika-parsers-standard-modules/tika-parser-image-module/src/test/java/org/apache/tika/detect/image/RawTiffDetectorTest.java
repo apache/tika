@@ -17,6 +17,7 @@
 package org.apache.tika.detect.image;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -55,6 +56,11 @@ public class RawTiffDetectorTest {
             "testDNG.dng, image/x-raw-adobe",
             "testDNG_bigtiff.dng, image/x-raw-adobe",
             "testCR2.cr2, image/x-canon-cr2",
+            "testERF.erf, image/x-raw-epson",
+            "testERF_nopreview.erf, image/x-raw-epson",
+            "testORF.orf, image/x-raw-olympus",
+            "testORF_bigendian.orf, image/x-raw-olympus",
+            "testRW2.rw2, image/x-raw-panasonic",
             "testTIFF.tif, image/tiff",
             "testJPEG.jpg, image/jpeg"})
     public void testDetectionWithoutName(String file, String expected) throws Exception {
@@ -98,6 +104,16 @@ public class RawTiffDetectorTest {
         assertEquals(RawTiffDetector.PENTAX, RawTiffDetector.detect(tiff, tiff.length));
         tiff = tiff("Unknown Maker", 1, 32803, false);
         assertEquals(MediaType.OCTET_STREAM, RawTiffDetector.detect(tiff, tiff.length));
+    }
+
+    /**
+     * A declared type can only refine what was detected, so the registry has
+     * to know an ERF for a TIFF.
+     */
+    @Test
+    public void testEpsonIsATiff() throws Exception {
+        assertTrue(MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry()
+                .isSpecializationOf(RawTiffDetector.EPSON, MediaType.image("tiff")));
     }
 
     @Test
