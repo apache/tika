@@ -1,5 +1,12 @@
 Release 4.2.0 - unreleased
 
+   * Image checks (byte-size, min-image-size, blank-image-check; new tika-image-processing
+     module) make it less likely that blank or tiny images reach text recognizers. VLM
+     output gets tk:ocr-warnings (truncated, repetition, empty); VLM parsers take
+     temperature; dropped HTTP connections are retried. SizeGatedEnricher is deprecated;
+     text-recognizers entries take min-width/min-height (_min-width/_min-height still
+     work) (TIKA-4972).
+
    * An email that starts with MIME-Version and nests a multipart/related part (a Gmail
      export, for one) is detected as message/rfc822, not as MHTML: the
      multipart/related magic now reads only the message's own header block (TIKA-4973).

@@ -141,7 +141,7 @@ public class ContentEnrichersTest {
                 context), "the gate is dispatch, not capability");
 
         // an entry's own threshold, above the floor
-        SizeGatedEnricher gated = new SizeGatedEnricher(engine, 100, 50);
+        GatedEnricher gated = new GatedEnricher(engine, List.of(new RecordedSizeCheck(100, 50)));
         Metadata icon = target(PNG);
         icon.set(TIFF.IMAGE_WIDTH, 64);
         icon.set(TIFF.IMAGE_LENGTH, 64);
@@ -154,7 +154,8 @@ public class ContentEnrichersTest {
         }
         assertEquals(1, engine.calls, "unknown size passes");
         assertNotNull(ContentEnrichers.asTextRecognizer(
-                new SizeGatedEnricher(new RecognizingParser(Set.of(PNG), true), 1, 1)),
+                new GatedEnricher(new RecognizingParser(Set.of(PNG), true),
+                        List.of(new RecordedSizeCheck(1, 1)))),
                 "the recognizer is seen through the decorator");
     }
 

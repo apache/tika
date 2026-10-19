@@ -98,7 +98,7 @@ public final class ContentEnrichers {
     public static Parser get(CompositeContentEnricher enrichers, MediaType mediaType,
                              Metadata target, ParseContext context) {
         Objects.requireNonNull(target, "target");
-        if (SizeGatedEnricher.tooSmall(target, MIN_PIXELS, MIN_PIXELS)) {
+        if (RecordedSizeCheck.tooSmall(target, MIN_PIXELS, MIN_PIXELS)) {
             return null;
         }
         return select(enrichers, mediaType, context);
@@ -564,7 +564,7 @@ public final class ContentEnrichers {
                 context.set(ActiveEnrichment.class, active);
             }
             // the image parser learns the size after dispatch: gate again with it known
-            if (SizeGatedEnricher.tooSmall(metadata, MIN_PIXELS, MIN_PIXELS)) {
+            if (RecordedSizeCheck.tooSmall(metadata, MIN_PIXELS, MIN_PIXELS)) {
                 return;
             }
             String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);

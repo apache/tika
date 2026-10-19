@@ -18,7 +18,9 @@ package org.apache.tika.http;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -36,6 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLException;
 
 import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaException;
@@ -62,13 +65,21 @@ import org.apache.tika.parser.ParseContext;
  * budget the parse granted the call. Any other status fails at once. The retries cover
  * collisions between a few parse workers, not a sustained excess of workers over the key's
  * concurrency.
+ * <p>
+ * A connection that drops, or is cut short before a full response arrives, is retried the
+ * same way: the JDK client does not resend a POST on a keep-alive connection the service
+ * has already closed, and the failure surfaces as an {@link IOException} such as
+ * {@code HTTP/1.1 header parser received no bytes}. It shares the {@code maxRetries} count
+ * and the budget with the status retries; a service that had already read the request may
+ * bill the call twice. Failures a retry cannot fix (unknown host,
+ * refused connection, TLS errors) and interruption fail at once.
  * @since Apache Tika 4.0
  */
 public class TikaHttpClient implements Closeable {
 
     private static final String JSON_CONTENT_TYPE = "application/json; charset=utf-8";
 
-    /** Retries of a 429/502/503/504 answer unless {@link #build(int, int)} says otherwise. */
+    /** Retries of a 429/502/503/504 answer or a dropped connection unless {@link #build(int, int)} says otherwise. */
     public static final int DEFAULT_MAX_RETRIES = 4;
     private static final Set<Integer> RETRYABLE = Set.of(429, 502, 503, 504);
     private static final long INITIAL_BACKOFF_MILLIS = 250;
@@ -106,8 +117,8 @@ public class TikaHttpClient implements Closeable {
      * Create a new {@code TikaHttpClient} with a daemon-thread executor.
      *
      * @param connectTimeoutSeconds TCP connection timeout in seconds
-     * @param maxRetries            how many times a 429, 502, 503 or 504 answer is retried;
-     *                              0 fails on the first one
+     * @param maxRetries            how many times a 429, 502, 503 or 504 answer, or a dropped
+     *                              connection, is retried; 0 fails on the first one
      */
     public static TikaHttpClient build(int connectTimeoutSeconds, int maxRetries) {
         if (maxRetries < 0) {
@@ -281,7 +292,21 @@ public class TikaHttpClient implements Closeable {
             HttpRequest attemptRequest = attempt == 0 ? request
                     : HttpRequest.newBuilder(request, (name, value) -> true)
                             .timeout(Duration.ofMillis(remaining)).build();
-            HttpResponse<String> response = sendOnce(attemptRequest, context, requestedMillis, remaining);
+            HttpResponse<String> response;
+            try {
+                response = sendOnce(attemptRequest, context, requestedMillis, remaining);
+            } catch (IOException e) {
+                if (attempt >= maxRetries || !isRetryableTransportFailure(e)) {
+                    throw e;
+                }
+                long delay = backoffMillis(attempt);
+                long left = grantedMillis - (System.nanoTime() - startNanos) / 1_000_000L;
+                if (delay >= left) {
+                    throw e;
+                }
+                sleepWithHeartbeat(delay, context);
+                continue;
+            }
             int status = response.statusCode();
             if (status >= 200 && status < 300) {
                 return response.body();
@@ -324,6 +349,17 @@ public class TikaHttpClient implements Closeable {
             future.cancel(true);
             throw new IOException("HTTP request interrupted: " + request.uri(), e);
         }
+    }
+
+    /**
+     * A dropped or truncated exchange is worth resending; a server that is not there, a TLS
+     * failure, or an interrupted thread will not be fixed by waiting. {@code sendOnce} sets the
+     * interrupt flag when it reports an interruption.
+     */
+    static boolean isRetryableTransportFailure(IOException e) {
+        return !Thread.currentThread().isInterrupted()
+                && !(e instanceof UnknownHostException || e instanceof ConnectException
+                || e instanceof SSLException);
     }
 
     /** The server's Retry-After (delta seconds or an HTTP date) when usable, else backoff. */
