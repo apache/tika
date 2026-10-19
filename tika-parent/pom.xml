@@ -367,7 +367,6 @@
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.5</jackrabbit.version>
     <jackson.version>2.22.3</jackson.version>
-    <!-- TIKA-4880: 5.0.1 fails some catalogs 5.0.0 reads ("Did not find required parent table id"); fixed in 5.0.2 -->
     <jackcess.version>5.0.4</jackcess.version>
     <jackcess.encrypt.version>5.0.2</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
