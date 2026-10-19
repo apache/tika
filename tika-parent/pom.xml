@@ -448,7 +448,7 @@
     <reactor.netty.version>1.3.7</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <slf4j.version>2.0.20</slf4j.version>
-    <sis.version>1.6</sis.version>
+    <sis.version>1.7</sis.version>
     <snappy.version>1.1.10.12</snappy.version>
     <!-- SolrJ 10 splits the Jetty client/ZK code into solr-solrj-jetty / solr-solrj-zookeeper -->
     <solrj.version>10.0.0</solrj.version>
