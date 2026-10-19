@@ -28,7 +28,9 @@ are kept for earlier shapes.
 
 == The `tk:chunks` Field
 
-All chunk data lands in one metadata field, `tk:chunks`, as a JSON array. There is no
+All chunk data lands in one metadata field, `tk:chunks`, as a JSON array (in JSON output, an
+escaped string unless
+xref:configuration/index.adoc#typed-values[`metadata-list.typedValues`] is on). There is no
 separate field for image embeddings versus text embeddings — a chunk is a chunk, identified
 by which locators it carries:
 
