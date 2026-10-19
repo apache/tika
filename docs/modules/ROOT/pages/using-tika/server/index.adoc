@@ -226,14 +226,37 @@ top-level `"preset": "name"` field, resolved the same way beneath the tuple's ow
 === `allowPipes` — the `/pipes` and `/async` endpoints
 
 `/pipes` and `/async` drive process-isolated batch parsing through your configured fetchers and
-emitters, so whoever can reach them gains the read access of your fetchers and the write access
-of your emitters (again
-https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271[CVE-2015-3271]). A tuple's
-`parse-context` is per-request configuration, so `allowPipes` also lets callers configure how
-each document parses, with the same bounds as `allowPerRequestConfig`: no `@OperatorOnly`
-properties, and limits that may tighten yours but not loosen them. Listing them under
-`endpoints` is not enough — without `allowPipes` the server refuses to start, deliberately making
-this an explicit choice:
+emitters. Enable them only for callers you trust as you trust your own configuration: whoever can
+reach them can do whatever your fetchers, emitters and parsers can do, with your configuration,
+your credentials and your server's network position (again
+https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2015-3271[CVE-2015-3271]).
+
+What that includes depends on the plugins you configure. The following illustrates it; it is
+*not* a complete list, and anything not listed here is not thereby safe:
+
+* *Reading* anything a configured fetcher can reach, at a key the caller chooses: files under a
+  file-system fetcher's `basePath` (or anywhere, with `allowAbsolutePaths`), and any object the
+  credentials of an S3, GCS, Azure or other cloud fetcher can read.
+* *Server-side request forgery* through the HTTP fetcher: the fetch key is the URL, so a caller
+  can make the server request loopback, private-network and cloud metadata addresses, and a
+  tuple's `parse-context` can add request headers
+  (xref:pipes/plugins/http.adoc#security-notes[details]).
+* *Writing* through any configured emitter, at a key the caller chooses: overwriting anything
+  under a file-system emitter's `basePath` (or anywhere, with `allowAbsolutePaths`), including
+  other callers' output, and writing to any store an emitter's credentials allow. A fetcher and
+  an emitter together can copy data to wherever the caller can read it back.
+* *Configuring how each document parses*: a tuple's `parse-context` is per-request
+  configuration, with the same bounds as `allowPerRequestConfig` (no `@OperatorOnly` properties,
+  and limits that may tighten yours but not loosen them). Those bounds limit what a request can
+  change; they do not make the endpoints safe for untrusted callers.
+* *Consuming resources*: every tuple runs a fetch, a parse and an emit in your forked workers.
+
+`allowPipes` and the bounds above are defense in depth, not a security boundary. Restrict
+`/pipes` and `/async` to trusted callers with your own authentication, authorization and network
+controls, and configure only the fetchers and emitters you would hand to every one of them.
+
+Listing them under `endpoints` is not enough — without `allowPipes` the server refuses to start,
+deliberately making this an explicit choice:
 
 [source,json]
 ----
@@ -632,8 +655,8 @@ Server behavior beyond host/port comes from the `server` section of the JSON con
 
 |`allowPipes`
 |`false`
-|Opt-in for `/pipes` and `/async`. The server refuses to start if either is selected without it.
-See <<_security,Security>>.
+|Opt-in for `/pipes` and `/async`, including each tuple's `parse-context`. The server refuses to
+start if either is selected without it. See <<_security,Security>>.
 
 |`allowPerRequestConfig`
 |`false`

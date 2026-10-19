@@ -74,8 +74,11 @@ callers — that requirement stands regardless of how the flags are set. All def
 
 * `allowPipes` gates the `/pipes` and `/async` endpoints (process-isolated fetching and parsing
   through your fetchers/emitters). Selecting either without it causes the server to refuse to start.
-  It includes the tuple's `parse-context`: a caller who reaches these endpoints can configure how
-  each document parses, as with `allowPerRequestConfig`.
+  A caller who reaches these endpoints can do whatever your configured fetchers, emitters and
+  parsers can do, with your credentials and network position, including configuring how each
+  document parses through the tuple's `parse-context`. Enable it only for trusted callers; see
+  xref:using-tika/server/index.adoc#_allowpipes_the_pipes_and_async_endpoints[what it grants]
+  (an illustration, not a complete list).
 * `allowPerRequestConfig` gates per-request parser configuration — the `/config` endpoints and the
   multipart `config` part; when off, such requests are rejected with HTTP 403. A caller who
   reaches it can choose how documents parse, including options that spawn external processes

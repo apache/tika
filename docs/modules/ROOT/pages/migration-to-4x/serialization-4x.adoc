@@ -134,6 +134,10 @@ context-key types: only metadata/output-shaping components (e.g. `MetadataFilter
 Note the boundary: the allowlist blocks *binding a component* from the wire, not *configuring
 one that is already loaded*. Self-configuring components — every `Parser` among them — have
 their config subtree passed through unscanned, so a per-request config can still set parser
-options (including ones that spawn external processes, such as OCR). This is why
-`allowPerRequestConfig` is a separate gate and is off by default; the allowlist alone does
-not make per-request configuration safe to expose.
+options (including ones that spawn external processes, such as OCR). This is why accepting
+per-request configuration is an operator decision: in tika-server, `allowPerRequestConfig`
+for the `config` part and `allowPipes` for `/pipes` and `/async`, whose tuples carry a
+`parse-context`. Either way the configuration stays bounded: `@OperatorOnly` properties are
+refused, and limits may tighten the operator's but not loosen them
+(xref:advanced/setting-limits.adoc#_per_request_limits[details]). The allowlist alone does not
+make per-request configuration safe to expose.
