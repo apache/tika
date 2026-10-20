@@ -18,6 +18,8 @@ package org.apache.tika.server.core;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
@@ -29,6 +31,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import jakarta.ws.rs.core.Response;
 import org.apache.commons.io.IOUtils;
@@ -95,6 +98,13 @@ public class TikaServerIntegrationTest extends IntegrationTestBase {
             throw new RuntimeException(e);
         }
 
+    }
+
+    @Test
+    public void testForkThatCannotStartFailsStartup() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-bad-fork.json")});
+        assertTrue(process.waitFor(MAX_WAIT_MS, TimeUnit.MILLISECONDS), "server should exit");
+        assertNotEquals(0, process.exitValue());
     }
 
     @Test

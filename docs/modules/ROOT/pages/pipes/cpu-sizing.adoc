@@ -94,7 +94,8 @@ starts hurting throughput.
 `numClients` is a *ceiling* on concurrent forks, not a resident count:
 
 * **Lazy start.** No fork is started at construction; each starts on the
-  first request that needs it.
+  first request that needs it. `tika-server` calls `start()` at startup so a
+  bad fork config fails the server; idle shutdown then trims the pool.
 * **Warm reuse (LIFO).** The client pool hands out the most-recently-used
   client first. Sequential or lightly-concurrent traffic stays on the same
   warm fork (or forks) instead of round-robining every fork awake; a cold

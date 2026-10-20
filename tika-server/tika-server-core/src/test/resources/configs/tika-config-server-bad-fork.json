@@ -1,0 +1,15 @@
+{
+  "server": {
+    "port": 9999,
+    "endpoints": [
+      "rmeta"
+    ]
+  },
+  "pipes": {
+    "numClients": 2,
+    "forkedJvmArgs": [
+      "-XX:+NoSuchTikaFlag"
+    ]
+  },
+  "plugin-roots": "target/plugins"
+}
