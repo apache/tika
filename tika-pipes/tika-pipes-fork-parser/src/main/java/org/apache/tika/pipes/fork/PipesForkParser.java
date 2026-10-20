@@ -213,7 +213,8 @@ public class PipesForkParser implements Closeable {
      *
      * @param path the path to the file to parse
      * @param metadata initial metadata (e.g., content type hint)
-     * @param parseContext the parse context
+     * @param parseContext the parse context; a ContentHandlerFactory, ParseMode or EmbeddedLimits
+     *                     set here overrides the config's. It is not modified.
      * @return the parse result containing metadata and content
      * @throws IOException if an I/O error occurs
      * @throws InterruptedException if the parsing is interrupted
@@ -223,7 +224,7 @@ public class PipesForkParser implements Closeable {
      */
     public PipesForkResult parse(Path path, Metadata metadata, ParseContext parseContext)
             throws IOException, InterruptedException, PipesException, TikaException {
-        return parseInternal(path, metadata, parseContext);
+        return parseInternal(path, metadata, withDefaults(parseContext));
     }
 
     /**
@@ -270,7 +271,8 @@ public class PipesForkParser implements Closeable {
      *            file, it will be spooled to a temporary file. The caller must keep
      *            the TikaInputStream open until this method returns.
      * @param metadata initial metadata (e.g., content type hint)
-     * @param parseContext the parse context
+     * @param parseContext the parse context; a ContentHandlerFactory, ParseMode or EmbeddedLimits
+     *                     set here overrides the config's. It is not modified.
      * @return the parse result containing metadata and content
      * @throws IOException if an I/O error occurs
      * @throws InterruptedException if the parsing is interrupted
@@ -280,24 +282,35 @@ public class PipesForkParser implements Closeable {
      */
     public PipesForkResult parse(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException, InterruptedException, PipesException, TikaException {
+        ParseContext context = withDefaults(parseContext);
         // A stream already backed by a file keeps it; otherwise small content rides inline and
         // only large content is written out. Shared with tika-server so both use one threshold.
         try (PayloadRouter.Routed routed = PayloadRouter.route(tis,
                 config.getPipesConfig().getMaxInlineBytes(),
                 () -> Files.createTempFile("tika-fork-", ".tmp"))) {
             if (routed.isInline()) {
-                parseContext.set(InlineBytes.class, routed.inlineBytes());
-                try {
-                    String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
-                    return parseWithKey(new FetchKey(BytesFetcher.FETCHER_ID, name == null ? "" : name),
-                            UUID.randomUUID().toString(), metadata, parseContext);
-                } finally {
-                    // The payload is request-owned; a caller reusing this context must not
-                    // retain (and re-serialize) this document's bytes on later parses.
-                    parseContext.set(InlineBytes.class, null);
-                }
+                context.set(InlineBytes.class, routed.inlineBytes());
+                String name = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+                return parseWithKey(new FetchKey(BytesFetcher.FETCHER_ID, name == null ? "" : name),
+                        UUID.randomUUID().toString(), metadata, context);
             }
-            return parseInternal(routed.path(), metadata, parseContext);
+            return parseInternal(routed.path(), metadata, context);
+        }
+    }
+
+    /** A copy of the caller's context, never written back; the config fills only what it leaves unset. */
+    private ParseContext withDefaults(ParseContext parseContext) {
+        ParseContext context = new ParseContext();
+        context.copyFrom(parseContext);
+        setIfAbsent(context, ContentHandlerFactory.class, config.getContentHandlerFactory());
+        setIfAbsent(context, ParseMode.class, config.getParseMode());
+        setIfAbsent(context, EmbeddedLimits.class, config.getEmbeddedLimits());
+        return context;
+    }
+
+    private static <T> void setIfAbsent(ParseContext context, Class<T> key, T value) {
+        if (value != null && context.get(key) == null) {
+            context.set(key, value);
         }
     }
 
@@ -316,15 +329,6 @@ public class PipesForkParser implements Closeable {
                                          ParseContext parseContext)
             throws IOException, InterruptedException, PipesException, TikaException {
         EmitKey emitKey = new EmitKey("", id); // Empty emitter name since we're using PASSBACK_ALL
-
-        // Add content handler factory and parse mode to parse context
-        parseContext.set(ContentHandlerFactory.class, config.getContentHandlerFactory());
-        parseContext.set(ParseMode.class, config.getParseMode());
-
-        // Add embedded limits if configured
-        if (config.getEmbeddedLimits() != null) {
-            parseContext.set(EmbeddedLimits.class, config.getEmbeddedLimits());
-        }
 
         FetchEmitTuple tuple = new FetchEmitTuple(id, fetchKey, emitKey, metadata, parseContext);
 
