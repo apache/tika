@@ -136,7 +136,12 @@
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/RawTiffParser.html[RawTiffParser]
 ** `image/x-canon-cr2`
 ** `image/x-raw-adobe`
+** `image/x-raw-epson`
+** `image/x-raw-kodak`
+** `image/x-raw-leaf`
 ** `image/x-raw-nikon`
+** `image/x-raw-olympus`
+** `image/x-raw-panasonic`
 ** `image/x-raw-pentax`
 ** `image/x-raw-samsung`
 ** `image/x-raw-sony`

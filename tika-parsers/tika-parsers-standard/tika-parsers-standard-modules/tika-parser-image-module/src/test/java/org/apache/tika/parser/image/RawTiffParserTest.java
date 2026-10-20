@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
@@ -293,6 +294,27 @@ public class RawTiffParserTest extends TikaTest {
         assertEquals("image/x-raw-epson", container.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("SEIKO EPSON CORP.", container.get(TIFF.EQUIPMENT_MAKE));
         assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    /**
+     * *.raw is also a disk image, PCM audio and more: when only the name
+     * says Panasonic, the parser reads nothing instead of failing.
+     */
+    @Test
+    public void testNonTiffByNameOnly() throws Exception {
+        byte[] bytes = new byte[4096];
+        new Random(42).nextBytes(bytes);
+        bytes[0] = 0;
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "disk.raw");
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            List<Metadata> metadataList =
+                    getRecursiveMetadata(tis, metadata, new ParseContext(), false);
+            assertEquals(1, metadataList.size());
+            assertEquals("image/x-raw-panasonic",
+                    metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+            assertNull(metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        }
     }
 
     @Test

@@ -224,7 +224,16 @@ public class RawTiffParser extends TiffParser {
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
-        if (isBigTiff(tis)) {
+        int magic = readMagic(tis);
+        if (!isKnownMagic(magic)) {
+            //only a file name sent it here (*.raw is shared with other
+            //formats): nothing to read, as when no parser claimed the type
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
+            xhtml.startDocument();
+            xhtml.endDocument();
+            return;
+        }
+        if (magic == MAGIC_BIG_TIFF) {
             //metadata-extractor cannot read BigTIFF containers yet:
             //scan for XMP, but skip EXIF metadata extraction
             tis.getFile();
@@ -818,23 +827,32 @@ public class RawTiffParser extends TiffParser {
         return true;
     }
 
-    private boolean isBigTiff(TikaInputStream tis) throws IOException {
+    /**
+     * The magic number after the byte order marker, or -1 when the stream
+     * does not start with one.
+     */
+    private static int readMagic(TikaInputStream tis) throws IOException {
         tis.mark(4);
         try {
             byte[] header = new byte[4];
             if (IOUtils.read(tis, header) < 4) {
-                return false;
+                return -1;
             }
             if (header[0] == 'I' && header[1] == 'I') {
-                return header[2] == 0x2B && header[3] == 0;
+                return getUInt16(header, 2, false);
             }
             if (header[0] == 'M' && header[1] == 'M') {
-                return header[2] == 0 && header[3] == 0x2B;
+                return getUInt16(header, 2, true);
             }
-            return false;
+            return -1;
         } finally {
             tis.reset();
         }
+    }
+
+    private static boolean isKnownMagic(int magic) {
+        return magic == MAGIC_TIFF || magic == MAGIC_BIG_TIFF || magic == MAGIC_OLYMPUS_RO
+                || magic == MAGIC_OLYMPUS_RS || magic == MAGIC_PANASONIC;
     }
 
     private static void enqueue(Deque<Long> toVisit, long offset) {
