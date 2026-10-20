@@ -175,8 +175,9 @@ public class ParseContextUtils {
                 LOG.debug("Resolved '{}' -> {} with key {}",
                         friendlyName, info.componentClass().getName(), contextKey.getName());
             } catch (IOException e) {
-                throw new TikaConfigException("Failed to deserialize component '" +
-                        friendlyName + "' of type " + info.componentClass().getName(), e);
+                throw new TikaConfigException("Failed to deserialize component '" + friendlyName
+                        + "' of type " + info.componentClass().getName() + ": "
+                        + ComponentInstantiator.reason(e), e);
             }
         }
     }

@@ -139,7 +139,7 @@ public class WireRestrictedParseContextTest {
     }
 
     @Test
-    public void keysOnlyScanLetsInertBareStringReferencesThrough() {
+    public void keyScanIgnoresBareStrings() {
         // The key scan leaves string values alone (no false positives on ordinary values);
         // ComponentInstantiator refuses a blocked class named by a bare string at resolution.
         String json = "{\"metadata-filters\":[\"external-parser\"]}";

@@ -152,8 +152,9 @@ public class ComponentInstantiator {
      * @param classLoader the class loader for name resolution
      * @param expectedType the expected interface/base type (for validation), or null to skip
      * @param trusted false for per-request JSON: a request-blocked or {@code @OperatorOnly}
-     *                class, or an {@code @OperatorOnly} property, is refused before construction,
-     *                here and in every component the config nests
+     *                class, or an {@code @OperatorOnly} property, is refused (see
+     *                {@link #assertRequestMayConfigure}), here and in every component the config
+     *                nests
      * @return the instantiated component
      * @throws TikaConfigException if instantiation fails
      */
@@ -234,22 +235,25 @@ public class ComponentInstantiator {
         } catch (TikaConfigException e) {
             throw e;
         } catch (Exception e) {
-            throw new TikaConfigException("Failed to instantiate: " + typeName, e);
+            throw new TikaConfigException("Failed to instantiate '" + typeName + "': " + reason(e), e);
         }
     }
 
     /**
      * Refuses what per-request JSON may not build: a class of a request-blocked type, a class
-     * marked {@link OperatorOnly}, or config naming an {@code @OperatorOnly} property. Runs
-     * before construction, since constructing a component can have side effects.
+     * marked {@link OperatorOnly}, or config naming an {@code @OperatorOnly} property. The class
+     * check runs before construction, since constructing a component can have side effects. A
+     * {@code JsonConfig}-constructor component's properties belong to its config class, so they
+     * are checked when the constructor reads its config, before that config object exists.
      */
     public static void assertRequestMayConfigure(String typeName, Class<?> clazz,
                                                  JsonNode config, ObjectMapper mapper)
             throws TikaConfigException {
         if (ComponentNameResolver.isWireBlockedClass(clazz)) {
-            throw new TikaConfigException("Component '" + typeName + "' (" + clazz.getName()
-                    + ") may not be supplied via a request parseContext. It must be configured "
-                    + "server-side in the Tika config, not at request time.");
+            throw new TikaConfigException(ComponentNameResolver.wireBlockedClassMessage(typeName, clazz));
+        }
+        if (findJsonConfigConstructor(clazz) != null) {
+            return;
         }
         try {
             OperatorOnlyGuard.check(mapper, typeName, config, mapper.constructType(clazz));
@@ -266,9 +270,18 @@ public class ComponentInstantiator {
         return trusted ? reader : reader.withAttribute(UNTRUSTED, Boolean.TRUE);
     }
 
-    /** True if {@code ctxt} is reading per-request JSON (see {@link #withTrust}). */
+    /** False if {@code ctxt} is reading per-request JSON (see {@link #withTrust}); true otherwise. */
     public static boolean isTrusted(DeserializationContext ctxt) {
         return ctxt.getAttribute(UNTRUSTED) == null;
+    }
+
+    /** The innermost message, which carries a refusal's reason through the wrapping layers. */
+    public static String reason(Throwable t) {
+        Throwable root = t;
+        while (root.getCause() != null && root.getCause() != root) {
+            root = root.getCause();
+        }
+        return root.getMessage() != null ? root.getMessage() : root.toString();
     }
 
     private static JsonConfig jsonConfig(String json, boolean trusted) {

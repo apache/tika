@@ -76,8 +76,8 @@ public final class OperatorOnlyGuard {
             }
             if (property.operatorOnly()) {
                 throw new IOException("Cannot modify " + e.getKey() + " at runtime: per-request config for '"
-                        + configKey + "' may not set it. Configure it at initialization time "
-                        + "(tika-config.json or a preset).");
+                        + configKey + "' may not set it. Set it in tika-config.json or a preset; "
+                        + "Java code that writes its own config wraps it with JsonConfig.trusted(json).");
             }
             if (e.getValue().isObject() && !property.type().isContainerType()) {
                 check(mapper, configKey, e.getValue(), property.type());

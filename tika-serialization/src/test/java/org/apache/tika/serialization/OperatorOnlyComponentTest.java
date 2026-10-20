@@ -21,6 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,6 +32,7 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.metadata.filter.CompositeMetadataFilter;
 import org.apache.tika.metadata.filter.MetadataFilter;
 import org.apache.tika.metadata.filter.NestingTestFilter;
+import org.apache.tika.metadata.filter.OperatorOnlyClassTestFilter;
 import org.apache.tika.metadata.filter.OperatorOnlyJsonConfigTestFilter;
 import org.apache.tika.metadata.filter.OperatorOnlySetterTestFilter;
 import org.apache.tika.parser.ParseContext;
@@ -50,11 +53,12 @@ public class OperatorOnlyComponentTest {
         return context;
     }
 
+    /** The reason must reach the top-level message: that is all a server client sees. */
     private static void assertRefused(String json) {
         Exception e = assertThrows(Exception.class, () -> resolve(json, false), json);
-        String messages = messages(e);
-        assertTrue(messages.contains("Cannot modify") || messages.contains("may not be supplied via a request"),
-                json + ": expected an operator-only refusal, got: " + messages);
+        String message = e.getMessage();
+        assertTrue(message.contains("Cannot modify") || message.contains("may not be supplied via a request"),
+                json + ": expected an operator-only refusal, got: " + messages(e));
     }
 
     private static String messages(Throwable t) {
@@ -93,6 +97,42 @@ public class OperatorOnlyComponentTest {
         assertRefused(json);
     }
 
+    /** A self-configuring component's runtime config with a component-typed property. */
+    public static class ComponentHoldingConfig {
+        private MetadataFilter delegate;
+
+        public MetadataFilter getDelegate() {
+            return delegate;
+        }
+
+        public void setDelegate(MetadataFilter delegate) {
+            this.delegate = delegate;
+        }
+    }
+
+    private static ComponentHoldingConfig runtimeConfig(String json, boolean trusted,
+                                                        ComponentHoldingConfig defaults) throws IOException {
+        ParseContext context = new ParseContext();
+        context.setJsonConfig("holding-parser", json, trusted);
+        return ConfigDeserializer.getConfig(context, "holding-parser", ComponentHoldingConfig.class, defaults);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "{\"delegate\":\"operator-only-class-test-filter\"}",
+            "{\"delegate\":{\"operator-only-setter-test-filter\":{\"endpoint\":\"http://x\"}}}"
+    })
+    public void runtimeConfigCarriesTrustIntoNestedComponents(String json) throws Exception {
+        for (ComponentHoldingConfig defaults : new ComponentHoldingConfig[]{null, new ComponentHoldingConfig()}) {
+            IOException e = assertThrows(IOException.class, () -> runtimeConfig(json, false, defaults), json);
+            assertTrue(messages(e).contains("Cannot modify") || messages(e).contains("may not be supplied"),
+                    messages(e));
+            assertDoesNotThrow(() -> runtimeConfig(json, true, defaults), json);
+        }
+        assertTrue(runtimeConfig("{\"delegate\":\"operator-only-class-test-filter\"}", true, null)
+                .getDelegate() instanceof OperatorOnlyClassTestFilter);
+    }
+
     @Test
     public void untrustedMaySetOrdinaryProperties() throws Exception {
         ParseContext context = resolve(
@@ -105,7 +145,10 @@ public class OperatorOnlyComponentTest {
     @Test
     public void javaCodeDeclaresTrust() throws Exception {
         String json = "{\"endpoint\":\"http://x\"}";
-        assertThrows(RuntimeException.class, () -> new OperatorOnlyJsonConfigTestFilter(() -> json));
+        RuntimeException e = assertThrows(RuntimeException.class,
+                () -> new OperatorOnlyJsonConfigTestFilter(() -> json));
+        assertTrue(e.getMessage().contains("OperatorOnlyJsonConfigTestFilter$Config"), e.getMessage());
+        assertTrue(e.getMessage().contains("JsonConfig.trusted(json)"), e.getMessage());
         assertEquals("http://x", new OperatorOnlyJsonConfigTestFilter(JsonConfig.trusted(json)).getEndpoint());
     }
 

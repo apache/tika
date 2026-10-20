@@ -334,6 +334,13 @@ public final class ComponentNameResolver {
         return false;
     }
 
+    /** The refusal for a class {@link #isWireBlockedClass} blocks. */
+    public static String wireBlockedClassMessage(String name, Class<?> clazz) {
+        return "Component '" + name + "' (" + clazz.getName() + ") may not be supplied via a "
+                + "request parseContext. It must be configured server-side in the Tika config, "
+                + "not at request time.";
+    }
+
     /** True if a wire ParseContext may bind this context-key type (default-deny). */
     public static boolean isWireInstantiable(Class<?> contextKey) {
         return WIRE_INSTANTIABLE_CONTEXT_KEYS.contains(contextKey);

@@ -62,8 +62,7 @@ import org.apache.tika.parser.ParseContext;
  * the whole document tree in batched requests.
  */
 @Deprecated
-// posts document text to its endpoint, which a MetadataFilter from a request must not do
-@OperatorOnly
+@OperatorOnly // posts document text to its endpoint, which a request-built MetadataFilter must not do
 public abstract class AbstractEmbeddingFilter extends MetadataFilter implements SelfConfiguring {
 
 
