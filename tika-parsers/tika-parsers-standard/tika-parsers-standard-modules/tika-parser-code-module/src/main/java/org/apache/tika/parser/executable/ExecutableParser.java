@@ -163,7 +163,8 @@ public class ExecutableParser implements Parser, MachineMetadata {
         ExecutableParserConfig config = ParseContextConfig.getConfig(context, CONFIG_KEY,
                 ExecutableParserConfig.class, defaultConfig);
         if (header != null && config.isExtractIcons()) {
-            PEIconExtractor.extract(tis, header, xhtml, metadata, context);
+            PEIconExtractor.extract(tis, header, xhtml, metadata, context,
+                    config.isExtractAllIcons());
         }
     }
 
@@ -334,9 +335,12 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         private boolean extractIcons = true;
 
+        private boolean extractAllIcons = false;
+
         /**
          * Whether icons of PE files (EXE/DLL) are extracted as embedded
-         * <code>.ico</code> documents. Defaults to true.
+         * <code>.ico</code> documents. Defaults to true; see
+         * {@link #isExtractAllIcons()} for how many.
          */
         public boolean isExtractIcons() {
             return extractIcons;
@@ -344,6 +348,19 @@ public class ExecutableParser implements Parser, MachineMetadata {
 
         public void setExtractIcons(boolean extractIcons) {
             this.extractIcons = extractIcons;
+        }
+
+        /**
+         * Whether every icon group is extracted, or only the first, the icon
+         * Windows shows for the file (a DLL can carry thousands). Defaults to
+         * false; ignored unless {@link #isExtractIcons()}.
+         */
+        public boolean isExtractAllIcons() {
+            return extractAllIcons;
+        }
+
+        public void setExtractAllIcons(boolean extractAllIcons) {
+            this.extractAllIcons = extractAllIcons;
         }
     }
 

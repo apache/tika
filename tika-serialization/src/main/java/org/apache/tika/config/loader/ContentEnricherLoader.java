@@ -93,7 +93,7 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
             if ((recognizer == null || !recognizer.recognizesText(empty))
                     && !advertisesLegacyOcr(enricher)) {
                 LOG.warn("\"text-recognizers\" entry {} recognizes no text; it runs as an "
-                        + "annotator on the images and pages it is offered (4.2 gives annotators "
+                        + "annotator on the images and pages it is offered (4.3 gives annotators "
                         + "a list of their own)", label);
             }
             enrichers.add(enricher);

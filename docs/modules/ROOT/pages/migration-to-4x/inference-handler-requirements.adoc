@@ -17,10 +17,9 @@
 
 = Content Handler Requirements for Inference
 
-The `tika-inference` module's text embedding pipeline (`AbstractEmbeddingFilter` and
-subclasses such as `OpenAIEmbeddingFilter`) reads extracted text from the `tk:content`
-metadata field, splits it with the `MarkdownChunker`, and sends the resulting chunks to an
-embeddings endpoint. The chunker splits on markdown structure, so the content handler that
+A `TEXT` xref:configuration/inference.adoc[inference binding] reads extracted text from the
+`tk:content` metadata field, splits it with the `markdown-chunker`, and sends the resulting
+chunks to an embeddings engine. The chunker splits on markdown structure, so the content handler that
 produced `tk:content` has to be `MARKDOWN` for it to do its job.
 
 NOTE: `tika-inference` is experimental. Its classes, configuration keys and the `tk:chunks`
@@ -54,33 +53,26 @@ Nothing fails when the content is plain text — the chunks are simply worse.
 [#default-enforcement]
 == How the Default Is Enforced
 
-Two mechanisms, one preventive and one diagnostic:
-
 * **The default handler type is `MARKDOWN`.** `BasicContentHandlerFactory` defaults to
   `HANDLER_TYPE.MARKDOWN`, so a config that does not mention `content-handler-factory` is
   already correct for inference. Markdown is close enough to a superset of plain text for
   search and indexing; a consumer that genuinely needs plain text sets `"type": "TEXT"`.
-* **A runtime warning when it is overridden.** The content handler factory records its type
-  in `tk:content-handler-type` (written on both the pipes CONCATENATE path and the RMETA
-  path). `AbstractEmbeddingFilter` reads that field and logs a `WARN` if it is not
-  `MARKDOWN`. This is a deterministic check on a recorded value, not a heuristic inspection
-  of the content, and it works even when the filter runs outside pipes — for example from
-  the Java API.
+* The content handler factory records its type in `tk:content-handler-type`, so a consumer
+  can tell which handler produced `tk:content`.
 
 == Configuration Example
 
-The minimum for an inference run is the embedding filter itself:
+The minimum for an inference run is an engine and a `TEXT` binding:
 
 [source,json]
 ----
 {
-  "metadata-filters": [
-    {
-      "openai-embedding-filter": {
-        "baseUrl": "http://localhost:8000",
-        "model": "text-embedding-3-small"
-      }
-    }
+  "engines": {
+    "embedder": { "openai-embedding-engine": { "baseUrl": "http://localhost:8000",
+                                               "model": "text-embedding-3-small" } }
+  },
+  "inference": [
+    { "id": "text-vectors", "engine": "embedder", "input": "TEXT", "tasks": ["embed"] }
   ]
 }
 ----
@@ -96,16 +88,18 @@ A full pipeline, with the handler type stated explicitly and chunks emitted to E
       "writeLimit": -1
     }
   },
-  "metadata-filters": [
-    {
-      "openai-embedding-filter": {
+  "engines": {
+    "embedder": {
+      "openai-embedding-engine": {
         "baseUrl": "https://api.openai.com",
         "model": "text-embedding-3-small",
-        "apiKey": "${env:OPENAI_API_KEY}",
-        "maxChunkChars": 1500,
-        "overlapChars": 200
+        "apiKey": "${env:OPENAI_API_KEY}"
       }
     }
+  },
+  "inference": [
+    { "id": "text-vectors", "engine": "embedder", "input": "TEXT", "tasks": ["embed"],
+      "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } } }
   ],
   "fetchers": {
     "fs": {
@@ -137,33 +131,5 @@ A full pipeline, with the handler type stated explicitly and chunks emitted to E
 ----
 
 NOTE: Use `CONCATENATE` or `RMETA` for inference. `CONTENT_ONLY` parses the same way but
-emits only the raw `tk:content` string, so the chunks and vectors the embedding filter
-produces are discarded at emit time.
-
-== Alternatives Considered
-
-[cols="1,2,3"]
-|===
-|Option |Approach |Why not
-
-|A
-|`TikaLoader` validates at load time that an embedding filter implies a `MARKDOWN` handler,
-and throws `TikaConfigException` otherwise.
-|Would be the first cross-component validation in `TikaLoader`, which loads components
-independently, and would make deliberate chunking of plain text impossible.
-
-|C
-|`TikaLoader` silently upgrades the handler to `MARKDOWN` when it sees an embedding filter.
-|Implicit behavior. Would change `tk:content` under downstream consumers that asked for
-`TEXT` and do not expect markdown.
-
-|E
-|`AbstractEmbeddingFilter` implements `Initializable` and validates the handler type in
-`checkInitialization()`.
-|Not viable as it stands: a `MetadataFilter` runs post-parse and has no access to the
-`ContentHandlerFactory` or `ParseContext` at initialization time. Would require passing the
-handler type through first.
-|===
-
-Options B (warn at runtime) and D (change the global default) are what shipped; see
-<<default-enforcement,How the Default Is Enforced>>.
+emits only the raw `tk:content` string, so the chunks and vectors the binding produces are
+discarded at emit time.

@@ -123,11 +123,12 @@ public class PipesConfig {
     public static final long DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS = 3_600_000L;
 
     /**
-     * Ceiling for request-supplied {@code TimeoutLimits}, so a client cannot disable the
-     * forked server's self-termination. Limits in the server's own tika-config
-     * {@code parse-context} are trusted and not capped.
+     * Ceiling for request-supplied {@code TimeoutLimits}, on top of the operator's own limits.
+     * Limits in the server's own tika-config {@code parse-context} are trusted and not capped.
      */
     private long maxTotalTaskTimeoutMillis = DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS;
+
+    private boolean trustedRequests = false;
 
     private int numClients = defaultNumClients();
 
@@ -282,6 +283,32 @@ public class PipesConfig {
                     maxTotalTaskTimeoutMillis + "; use Long.MAX_VALUE for no cap");
         }
         this.maxTotalTaskTimeoutMillis = maxTotalTaskTimeoutMillis;
+    }
+
+    /**
+     * Whether requests are the operator's own: their parseContext is read as trusted config
+     * (it may set {@code @OperatorOnly} properties) and their limits and timeouts are used as
+     * given rather than clamped to the operator's. Default {@code false}. {@code PipesForkParser}
+     * turns it on: its caller is the operator. tika-server and tika-grpc refuse to start with it.
+     */
+    public boolean isTrustedRequests() {
+        return trustedRequests;
+    }
+
+    public void setTrustedRequests(boolean trustedRequests) {
+        this.trustedRequests = trustedRequests;
+    }
+
+    /**
+     * For hosts whose requests come from callers other than the operator.
+     *
+     * @throws TikaConfigException if {@code trustedRequests} is on
+     */
+    public void refuseTrustedRequests(String host) throws TikaConfigException {
+        if (trustedRequests) {
+            throw new TikaConfigException(host + " refuses pipes.trustedRequests: its requests "
+                    + "come from callers, not the operator");
+        }
     }
 
     public long getStartupTimeoutMillis() {

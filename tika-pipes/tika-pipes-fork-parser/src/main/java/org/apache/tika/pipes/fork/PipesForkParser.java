@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,6 @@ import org.apache.tika.pipes.core.fetcher.BytesFetcher;
 import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.pipes.core.fetcher.PayloadRouter;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.sax.WriteLimiter;
 
 /**
  * A ForkParser implementation backed by {@link PipesParser}.
@@ -126,6 +126,8 @@ public class PipesForkParser implements Closeable {
     public static final String DEFAULT_FETCHER_NAME = "fs";
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesForkParser.class);
+
+    private static final String FILE_SYSTEM_PLUGIN = "tika-pipes-file-system";
 
     private final PipesForkParserConfig config;
     private final PipesParser pipesParser;
@@ -425,6 +427,13 @@ public class PipesForkParser implements Closeable {
      *
      * @return the merged config and generated fetcher ID
      */
+    static boolean hasFileSystemPlugin(Path pluginsDir) throws IOException {
+        try (Stream<Path> entries = Files.list(pluginsDir)) {
+            return entries.anyMatch(
+                    p -> p.getFileName().toString().startsWith(FILE_SYSTEM_PLUGIN));
+        }
+    }
+
     private ConfigMerger.MergedConfig createTikaConfig() throws IOException {
         PipesConfig pc = config.getPipesConfig();
 
@@ -436,6 +445,12 @@ public class PipesForkParser implements Closeable {
             Optional<Path> found = DefaultPluginsDir.find(PipesForkParser.class);
             if (found.isPresent()) {
                 pluginRoots = found.get().toString();
+                // any directory named plugins is found, e.g. an unrelated one in the cwd
+                if (!hasFileSystemPlugin(found.get())) {
+                    classpathPlugins = true;
+                    LOG.info("{} has no {} plugin; the fork also loads plugins from its classpath",
+                            found.get(), FILE_SYSTEM_PLUGIN);
+                }
             } else {
                 // No install layout, so this is a Maven consumer: the file-system plugin this
                 // parser needs is on the classpath, and only the fork is told to look there.
@@ -460,6 +475,8 @@ public class PipesForkParser implements Closeable {
                         pc.getSocketTimeoutMillis(),
                         pc.getJavaPath())
                 .setClasspathPlugins(classpathPlugins)
+                // the caller is the operator: per-call config is trusted and unclamped
+                .setTrustedRequests(true)
                 // Use PASSBACK_ALL strategy - results returned through socket
                 .setEmitStrategy(EmitStrategy.PASSBACK_ALL)
                 .setPluginRoots(pluginRoots);
@@ -467,11 +484,6 @@ public class PipesForkParser implements Closeable {
         // Set timeout limits if configured
         if (config.getTimeoutLimits() != null) {
             builder.setTimeoutLimits(config.getTimeoutLimits());
-        }
-        // The fork clamps per-request limits to its config's; these are ours, so seed them there.
-        builder.setEmbeddedLimits(config.getEmbeddedLimits());
-        if (config.getContentHandlerFactory() instanceof WriteLimiter limiter) {
-            builder.setWriteLimit(limiter.getWriteLimit());
         }
 
         ConfigOverrides overrides = builder.build();

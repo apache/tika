@@ -44,7 +44,8 @@ import org.apache.tika.utils.StringUtils;
  * vision, understanding layout, charts, tables, and diagrams — not just
  * extracting text).
  * <p>
- * The API key is sent as a {@code key} query parameter (not a Bearer header).
+ * The API key is sent in the {@code x-goog-api-key} header, never in the URL, which
+ * error messages and logs quote.
  * <p>
  * Default base URL points to the public Gemini API; change it for Vertex AI
  * or a proxy.
@@ -57,6 +58,8 @@ import org.apache.tika.utils.StringUtils;
 public class GeminiVLMParser extends AbstractVLMParser {
 
     private static final long serialVersionUID = 1L;
+
+    static final String API_KEY_HEADER = "x-goog-api-key";
 
     private static final Set<MediaType> SUPPORTED_TYPES;
 
@@ -114,12 +117,7 @@ public class GeminiVLMParser extends AbstractVLMParser {
 
         String baseUrl = stripTrailingSlash(config.getBaseUrl());
         String url = baseUrl + "/v1beta/models/" + config.getModel() + ":generateContent";
-
-        if (!StringUtils.isBlank(config.getApiKey())) {
-            url += "?key=" + config.getApiKey();
-        }
-
-        return new HttpCall(url, json, Map.of());
+        return new HttpCall(url, json, apiKeyHeader(config));
     }
 
     @Override
@@ -194,12 +192,17 @@ public class GeminiVLMParser extends AbstractVLMParser {
 
     @Override
     protected String getHealthCheckUrl(VLMOCRConfig config) {
-        String baseUrl = stripTrailingSlash(config.getBaseUrl());
-        String url = baseUrl + "/v1beta/models";
-        if (!StringUtils.isBlank(config.getApiKey())) {
-            url += "?key=" + config.getApiKey();
-        }
-        return url;
+        return stripTrailingSlash(config.getBaseUrl()) + "/v1beta/models";
+    }
+
+    @Override
+    protected Map<String, String> getHealthCheckHeaders(VLMOCRConfig config) {
+        return apiKeyHeader(config);
+    }
+
+    private static Map<String, String> apiKeyHeader(VLMOCRConfig config) {
+        return StringUtils.isBlank(config.getApiKey())
+                ? Map.of() : Map.of(API_KEY_HEADER, config.getApiKey());
     }
 
     // -- package-visible for tests --

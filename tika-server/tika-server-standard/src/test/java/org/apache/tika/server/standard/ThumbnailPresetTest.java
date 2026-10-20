@@ -115,6 +115,22 @@ public class ThumbnailPresetTest extends CXFTestBase {
         assertEquals(format, imageFormat(entry.getValue()), entry.getKey());
     }
 
+    /**
+     * A PE file's thumbnail is its own icon as the parser extracts it: the .ico of the first
+     * icon group, all sizes, largest first; not a PNG.
+     */
+    @Test
+    public void testPeIconIsTheThumbnail() throws Exception {
+        Map<String, byte[]> entries = unpack(PRESET_PATH, "testWindows-x86-32-icons.exe");
+        assertEquals(1, entries.size(), entries.keySet().toString());
+        Map.Entry<String, byte[]> entry = entries.entrySet().iterator().next();
+        assertTrue(entry.getKey().endsWith(".ico"), entry.getKey());
+        byte[] ico = entry.getValue();
+        // ICONDIR: reserved 0, type 1 (icon)
+        assertTrue(ico.length > 6 && ico[0] == 0 && ico[1] == 0 && ico[2] == 1 && ico[3] == 0,
+                entry.getKey());
+    }
+
     @Test
     public void testPdfPageIsFittedInColour() throws Exception {
         Map<String, byte[]> entries = unpack(PRESET_PATH, "testPDFTwoTextBoxes.pdf");

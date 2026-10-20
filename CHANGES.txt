@@ -1,247 +1,160 @@
 Release 4.2.0 - unreleased
 
-   * A JsonConfig's raw text is read only through ConfigDeserializer or
-     PluginJson.read(JsonConfig, Class), which apply the request restrictions and
-     @OperatorOnly; forbidden-apis rejects JsonConfig.json() elsewhere in Tika's main code.
-     Projects that inherit tika-parent inherit the ban; set json.forbiddenapis.signaturesFile
-     to forbidden-apis-none.txt to opt out. ExtensionConfig no longer implements
-     JsonConfig. A request's http-fetcher config may now set only httpRequestHeaders; other
-     keys, previously ignored, are an error. A file-system emitter's runtime config that
-     names basePath fails as an unknown key. A duplicate key in configuration JSON,
-     previously last-wins, is now an error (TIKA-4975).
+  BREAKING CHANGES AND DEPRECATIONS
 
-   * @OperatorOnly is now enforced on every component a request builds, wherever
-     it is named -- a metadata-filters entry, a nested property, or a bare
-     string -- not just on self-configuring parsers. On a class, it keeps a
-     request from building the component at all (TIKA-4974).
+   * Unpack output is a Frictionless Data Package by default on tika-server /unpack,
+     tika-app -z/-Z and pipes UNPACK; unpack-config.outputFormat=REGULAR
+     (--unpack-format=REGULAR) restores the old layout (TIKA-4681). A document without
+     attachments is still a package, so /unpack returns 200, not 204;
+     unpack-config.emptyPackage=SKIP restores the 204. The package's metadata.json is now
+     rmeta.json. FrictionlessResource.name() is the resource name (the filename moved to
+     resourceName()); FrictionlessResource.create and DataPackage.addResource are
+     removed (TIKA-4971).
 
-   * All JSON config now flows through tika-serialization, so every component
-     gets the same operator-only checks, whether it comes from tika-config.json,
-     a request, or a JsonConfig constructor (e.g. new PDFParser(jsonConfig)).
-     Constructing a component with a JsonConfig therefore needs tika-serialization
-     on the classpath; tika-app, tika-server and tika-grpc already include it
-     (TIKA-4974).
+   * Config is untrusted unless the operator says so. @OperatorOnly properties (paths,
+     executables, class names, URLs, credentials, operator-sized limits) are refused
+     wherever a request builds a component; on a class, the request can't build it at
+     all. Java code that sets one through a JsonConfig wraps it in
+     JsonConfig.trusted(json), and JsonConfig constructors now need tika-serialization.
+     Newly locked: pdf-parser imageGraphicsEngineFactoryClass and maxMainMemoryBytes,
+     raw-tiff maxTotalPreviewBytes, VLM completionsPath. The RuntimeConfig subclasses
+     are removed (TIKA-4965, TIKA-4974).
 
-   * tika-serialization is now an OSGi bundle, so JsonConfig constructors work in
-     OSGi: deploy it with jackson-databind and jackson-annotations (TIKA-4982).
+   * Per-request limits and timeouts may tighten the operator's but not loosen them.
+     pipes.trustedRequests=true marks requests as the operator's own: no clamp, and they
+     may set @OperatorOnly properties. PipesForkParser sets it; tika-server and tika-grpc
+     refuse to start with it (TIKA-4978, TIKA-4985).
 
-   * Config is untrusted unless the operator says so: Java code that writes its
-     own config and sets an operator-only property wraps it with
-     JsonConfig.trusted(json) (TIKA-4974).
-     
-   * PipesForkParser: a ParseMode, ContentHandlerFactory or EmbeddedLimits set in the
-     ParseContext passed to parse() now overrides PipesForkParserConfig instead of being
-     overwritten by it, and the caller's ParseContext is no longer modified (TIKA-4981).
+   * A duplicate key in configuration JSON is an error, not last-wins. A request's
+     http-fetcher config may set only httpRequestHeaders. forbidden-apis bans
+     JsonConfig.json() outside ConfigDeserializer and PluginJson, and projects that
+     inherit tika-parent inherit the ban (point json.forbiddenapis.signaturesFile at an
+     empty file to opt out). ExtensionConfig no longer implements JsonConfig (TIKA-4975).
 
-   * Frictionless unpack: the package's metadata.json is renamed rmeta.json, is listed in
-     datapackage.json as a resource (size, sha256), and now gets the metadata filters and
-     user metadata the emitted list gets; resources are in embedded-id order. A document
-     with no attachments is a package of datapackage.json and rmeta.json: tika-server
-     /unpack returns it with 200 instead of 204 (unpack-config.emptyPackage=SKIP, which the
-     thumbnail preset sets, restores the 204). The package name is the caller's filename
-     on tika-server, never the server's spool file. When the package goes to the container's
-     own emitter it replaces the metadata emit on every surface: no <emitKey>.json next to
-     it, and with includeMetadata=false no metadata at all. tika-app -z/-Z on a single file
-     makes the output dir the package, defaulting to <name>-unpacked/ in either format, and
-     names files unpacked/1.<ext> as tika-server /unpack does. REGULAR .metadata.json
-     sidecars are now the file's row from the metadata list: they get the metadata filters
-     and text inference, and a row a filter removes gets no sidecar. New
-     unpack-config.packageRoot and packageName set where a DIRECTORY-mode package goes
-     and its name. Packages pass frictionless validate: each resource's name is derived
-     from its path, the original filename moves to tk:resource-name, and tk:embedded-id
-     matches its rmeta.json row, if present (TIKA-4971).
+   * Dates: Metadata.getDate() reads zone-less values as UTC, not the JVM's zone.
+     Archive-entry and mail-attachment file times move from dcterms:* to
+     fs:created/fs:modified. DateNormalizingMetadataFilter honors offsets, normalizes
+     every value and completes partial dates (2019 -> 2019-01-01T12:00:00Z).
+     MailDateParser is replaced by TikaDates; MailUtil moved to tika-parser-mail-module,
+     leaving tika-parser-mail-commons a deprecated shim (TIKA-4917).
 
-   * API: FrictionlessResource.name() is now the Frictionless resource name derived from
-     the path; the original filename moved to resourceName(), and embeddedId() is new.
-     FrictionlessResource.create(path, mediatype, bytes, hash, name) and
-     DataPackage.addResource(...) are removed (TIKA-4971).
-     
-   * Per-request limits may tighten the server's but no longer loosen them (TIKA-4978).
-     
-   * tika-server starts its forks before opening its port, so a fork that can't start
-     (bad forkedJvmArgs or javaPath, a missing plugin) fails startup instead of the first
-     request (TIKA-4983).
-     
-   * Image checks (byte-size, min-image-size, blank-image-check; new tika-image-processing
-     module) make it less likely that blank or tiny images reach text recognizers. VLM
-     output gets tk:ocr-warnings (truncated, repetition, empty); VLM parsers take
-     temperature; dropped HTTP connections are retried. SizeGatedEnricher is deprecated;
-     text-recognizers entries take min-width/min-height (_min-width/_min-height still
-     work) (TIKA-4972).
+   * An OCR engine (tesseract-ocr-parser, tess4j-parser) under "parsers", deprecated in
+     4.1.0, fails config load: configure it under "engines" and name it in
+     "text-recognizers". A VLM parser may stay under "parsers" as a document parser
+     (ContentEnricher.parsesDocuments()). openai-embedding-filter, jina-embedding-filter
+     and openai-image-embedding-parser, deprecated in 4.1.0, are removed; use an engine
+     and an inference binding (TIKA-4985).
 
-   * An email that starts with MIME-Version and nests a multipart/related part (a Gmail
-     export, for one) is detected as message/rfc822, not as MHTML: the
-     multipart/related magic now reads only the message's own header block (TIKA-4973).
-     
-   * The docx parser wraps OMML equations (m:oMath) in <span class="omml">, their
-     text flattened to plain characters; it was previously emitted as unmarked body
-     text (TIKA-4968).
-     
-   * Files named *.rs are now detected as text/x-rust (Rust source) instead of
-     application/rls-services+xml. RLS services XML is still detected from its
-     root element, whatever the file name (TIKA-4977).
-     
-   * Opt-in "metadata-list": {"typedValues": true} writes INTEGER, REAL and
-     BOOLEAN metadata as JSON numbers and booleans, and tk:chunks as nested
-     JSON rather than an escaped string, in -J, /rmeta and the JSON emitters.
-     New Property.ValueType.JSON; tk:chunks is now JSON-typed. Readers accept
-     both forms (TIKA-4969).
+   * embedded-limits maxDepth defaults to 20, was unlimited, and replaces
+     output-limits maxPackageEntryDepth.
 
-   * The docx parser wraps OMML equations (m:oMath) in <span class="math">; their
-     text was previously emitted as unmarked body text (TIKA-4968).
+   * To be removed in 4.3.0: output-limits maxPackageEntryDepth and its accessors on
+     OutputLimits and SecureContentHandler; tika-parser-mail-commons (MailUtil and
+     MailDateParser moved, see TIKA-4917).
 
-   * The docx parser links REF, PAGEREF and NOTEREF fields, and in-document
-     HYPERLINK \l fields, to their bookmarks (<a href="#bookmark">). Fields are now
-     tracked as a stack, so a field nested in a HYPERLINK field no longer ends the
-     enclosing link early. Simple fields (w:fldSimple) are now parsed as well, so
-     HYPERLINK, INCLUDEPICTURE and similar fields written that way are linked or
-     reported like their complex-field equivalents (TIKA-4967).
+   * text-recognizers: an inline entry must have exactly one key, setting both
+     _min-width and min-width is an error, and gated entries load as GatedEnricher,
+     not SizeGatedEnricher (TIKA-4972).
 
-   * The docx parser now applies bold and italics set by a run's character style
-     (e.g. Word's built-in Strong and Emphasis), following basedOn chains; previously
-     only direct formatting was emitted. The new OfficeParserConfig option
-     includeCharacterStyleClasses wraps such runs in <span class="..."> named after
-     the style. Style-derived classes (paragraph and character) now replace every
-     character other than letters, digits, '_' and '-' with '_' and are capped at 128
-     characters, so a style name can no longer yield extra class tokens (TIKA-4966).
+   * Pipes plugins load only from the zips in plugin-roots; a plugin on the classpath
+     needs -Dtika.plugins.classpath=true, which PipesForkParser sets when it finds no
+     plugins directory holding tika-pipes-file-system (TIKA-4918, TIKA-4985).
 
-   * OpenAI-compatible VLM parser can send the output token limit as
-     max_completion_tokens for models that reject max_tokens. The new
-     useMaxCompletionTokens setting is opt-in; max_tokens remains the default.
+   * ExecutableParser emits a PE file's icon (its first icon group) as an embedded
+     THUMBNAIL .ico; extractAllIcons=true emits every group, extractIcons=false none
+     (TIKA-4936).
 
-   * Config properties whose value reaches the host (paths, executables, class names,
-     URLs, credentials, operator-sized limits) are marked @OperatorOnly and refused in
-     per-request JSON before any setter runs. Newly locked: pdf-parser's
-     imageGraphicsEngineFactoryClass and the VLM parsers' completionsPath. The per-parser
-     RuntimeConfig subclasses are removed (TIKA-4965).
-
-   * JSoupParser emits the text of CDATA sections again. jsoup 1.23 tokenizes CDATA in
-     HTML content as a bogus comment, which silently dropped every CDATA value in XML
-     that reaches the HTML parser (TIKA-4963).
-     
-   * The text/html magic now requires the html tag to end, so an XML file with an
-     element such as <htmlPath> in its first 8K is no longer detected as HTML and sent
-     to the HTML parser (TIKA-4962).
-
-   * OutlookExtractor now falls back to the "Date:" transport header for
-     dcterms:created/modified when a .msg has no MAPI date property; the
-     fallback previously could never match (TIKA-4959).
-
-   * Unpack output is a Frictionless Data Package by default on every surface: tika-server
-     /unpack, tika-app -z/-Z and pipes UNPACK mode, where it is one <key>-frictionless.zip per
-     container unless outputMode is DIRECTORY. Set unpack-config.outputFormat to REGULAR
-     (--unpack-format=REGULAR) for the pre-4.2 flat layout (TIKA-4681).
-
-   * Pipes plugins load only from the zips in plugin-roots; a plugin jar on the classpath
-     needs -Dtika.plugins.classpath=true, which PipesForkParser sets on its fork when it
-     has no plugins directory. Dev mode loads an exploded target/classes (TIKA-4918).
-
-   * GeoGebraParser reads structure.json and inline text content with jackson-core's
-     streaming parser; tika-parser-miscoffice-module and tika-parser-cad-module no
-     longer depend on jackson-databind, and OSGi deployments of tika-bundle-standard
-     need only jackson-core (TIKA-4956).
-
-   * Forked pipes servers get their config and auth token over stdin; nothing is written
-     to the temp dir. Server-manager and PipesServer signatures change accordingly (TIKA-4952).
-
-   * GeoGebraParser switched to stream parsing to drop jackson-databind as
-     a dependency (TIKA-4956).
+   * New ICOParser for icons and cursors; image/vnd.microsoft.icon moves to it from
+     ImageParser. Tighter OS/2 bitmap array and TGA detection (TIKA-4937).
 
    * tika-bundle-standard no longer embeds dependencies that are OSGi bundles
      themselves (commons-*, pdfbox, fontbox, bouncycastle, jsoup, asm, xz, xmpcore,
-     dd-plist); deploy them alongside it (TIKA-4934). Its imports of those packages,
-     plus log4j-api and jackson, are now mandatory, so a missing bundle fails
-     resolution instead of silently dropping parsers; tika-ml-core and jwarc are now
-     embedded, along with tika-ml-junkdetect. The bundle now registers its
-     EncodingDetector, LanguageDetector and MetadataFilter providers, so tika-core's
-     defaults match the classpath. Restores OOXMLParser, HttpParser, GeoGebraParser and
-     charset detection in OSGi, which had fallen back to BOM and declared charsets
-     only. The bundle now declares its real Java requirement (JavaSE 17, not 1.8)
-     and drops 67 imports of packages it never referenced (TIKA-4955).
+     dd-plist); deploy them alongside it (TIKA-4934). Its imports are now mandatory, it
+     registers its encoding detector, language detector and metadata filter providers,
+     and it requires Java 17; OOXML, HTTP and GeoGebra parsing and charset detection
+     work in OSGi again (TIKA-4955).
+
+   * Forked pipes servers get their config and auth token over stdin, never through the
+     temp dir; server-manager and PipesServer signatures change (TIKA-4952).
+
+  SECURITY
+
+   * The Gemini VLM parser sends its API key in x-goog-api-key instead of the URL,
+     which error messages and logs quote (TIKA-4985).
+
+   * Tika's own entity-expansion limit is retired in favor of the JDK's settings
+     (TIKA-4940), and forbidden-apis rejects building XML parsers outside XMLReaderUtils
+     (TIKA-4939). New tk:xml-external-reference and -count list the external DTDs and
+     entities a document referenced, which Tika never resolves (TIKA-4941). XFA is read
+     with SAX; XMLReaderUtils.getXMLInputFactory() is deprecated (TIKA-4938).
+
+  SERVER, PIPES AND OPERATIONS
 
    * PipesParser.start() and PipesForkParser.start() bring the forks up before the
-     first parse and fail fast if one can't start (TIKA-4953).
+     first parse (TIKA-4953), and tika-server starts its forks before opening its port,
+     so a fork that can't start fails startup, not the first request (TIKA-4983).
 
-   * Refactor date parsing for more consistent, accurate dates. File-system
-     times from archive entries and mail attachments move to fs:created/
-     fs:modified. MailDateParser is superseded by TikaDates and MailUtil
-     moved to org.apache.tika.parser.mail in tika-parser-mail-module;
-     tika-parser-mail-commons remains as a deprecated shim and will be
-     removed in 4.3.0. DateNormalizingMetadataFilter honors explicit
-     offsets, normalizes every value of a multi-valued key, and fills in
-     partial dates (2019 -> 2019-01-01T12:00:00Z) so date fields never
-     reject a document (TIKA-4917).
+   * PipesForkParser: a ParseMode, ContentHandlerFactory or EmbeddedLimits in the
+     per-call ParseContext overrides PipesForkParserConfig, and the caller's context is
+     no longer modified (TIKA-4981).
 
-   * Fix a StackOverflowError when parsing or detecting through the Parser and Detector
-     services tika-bundle-standard registers in OSGi: the registered DefaultParser and
-     DefaultDetector no longer consume dynamic services, and a dynamic DefaultParser or
-     DefaultDetector no longer nests another dynamic one (TIKA-4942).
+   * maxFilesProcessedPerProcess defaults to 100,000, up from 10,000 (TIKA-4950).
 
-   * XmlSecurityContractTest pins XMLReaderUtils' XXE and entity-expansion defenses
-     forbidden-apis now rejects building JAXP or Commons Secure XML parsers anywhere but
-     XMLReaderUtils (TIKA-4939).
+   * Pipes forks inherit the parent's default locale unless forkedJvmArgs set
+     user.language (TIKA-4920).
 
-   * Retire Tika's entity expansion limit (default 20) in SAX, DOM and StAX
-     parsing in favor of standard Java configuration methods (TIKA-4940).
+   * Pipes UNPACK deletes its temp dir when the fetch or parse fails (TIKA-4985).
 
-   * Report the external DTDs and entities a document's XML referenced, which Tika never
-     resolves: tk:xml-external-reference (up to 20 system ids) and
-     tk:xml-external-reference-count on that document's metadata, and
-     tk:xml-external-reference-embedded on a container whose embedded document had any.
-     Every resolver Tika installs answers with an empty stream, never null (TIKA-4941).
-   * Deprecate XMLReaderUtils.getXMLInputFactory() and use SAX for XFA (TIKA-4938).
+   * Parser loading and fork startup are about 1.3s faster: parsers no longer build a
+     default EncodingDetector the loader then replaces (TIKA-4954).
 
-   * OneNote preserves table and list structure in XHTML for FSSHTTPB files (TIKA-4943).
+   * Quieter pipes logging: per-parse timing lines move to TRACE, lifecycle lines to
+     DEBUG (TIKA-4949).
 
-   * OneNote extracts a section GUID and page, page-series, page-node, and conflict-page
-     GUID metadata from classic and FSSHTTPB files; the GUID bags are deduplicated and
-     sorted, not page-ordered. Tree-collected GUID metadata is capped at 100,000 values
-     with a warning if the limit is reached. FSSHTTPB page divs now carry
-     id="{page GUID}" when a page GUID was recovered (fallback content can be unwrapped).
-     FSSHTTPB root resolution is bounded at 10,000 roots per cell; when the bound
-     truncates the declared roots before a content root, the walk falls back to every
-     object in the cell so page content is not silently lost (TIKA-4944).
+   * OSGi: tika-serialization is a bundle, so JsonConfig constructors work (TIKA-4982);
+     tika-core installs without a Service Loader Mediator (TIKA-4945); the
+     DefaultParser and DefaultDetector services no longer recurse into a
+     StackOverflowError (TIKA-4942).
 
-   * Raise the default maxFilesProcessedPerProcess from 10,000 to 100,000;
-     forked pipes JVMs restart a tenth as often (TIKA-4950).
+  EXTRACTION AND FORMATS
 
-   * Quiet default pipes logging: per-parse timing lines (WORKER/CLIENT/
-     SERVER/RESOURCE_TIMING) move from INFO to TRACE, and per-fork-start,
-     per-connection and plugin lifecycle lines move to DEBUG (TIKA-4949).
+   * docx: OMML equations are wrapped in <span class="omml"> (TIKA-4968); REF, PAGEREF,
+     NOTEREF, HYPERLINK \l and simple fields link to their bookmarks (TIKA-4967);
+     bold and italics from character styles are applied, with opt-in
+     includeCharacterStyleClasses (TIKA-4966).
 
-   * New ICOParser for Windows icons and cursors (image/x-win-bitmap, *.cur).
-     Compat: image/vnd.microsoft.icon moves from ImageParser to ICOParser.
-     Tighter OS/2 bitmap array and TGA detection (TIKA-4937).
+   * OneNote: table and list structure in FSSHTTPB files (TIKA-4943); section and page
+     GUID metadata (TIKA-4944).
 
-   * ExecutableParser extracts the icon groups of PE files (EXE/DLL) as
-     embedded .ico documents, the first one typed THUMBNAIL. Compat: this is
-     on by default, so every EXE/DLL with icons now yields embedded documents
-     (extra RMETA entries, extra unpacked files); "extractIcons": false on
-     the executable-parser turns it off. parsePE(XHTMLContentHandler,
-     Metadata, InputStream, byte[]) is deprecated in favour of the overload
-     that takes a ParseContext (TIKA-4936).
+   * Detection: *.rs is text/x-rust (TIKA-4977); a MIME email nesting
+     multipart/related is message/rfc822, not MHTML (TIKA-4973); XML with an element
+     like <htmlPath> is no longer HTML (TIKA-4962).
 
-   * The MP4 parser no longer records a spurious EOFException warning on every
-     well-formed file: end of input at a top-level box boundary is the normal
-     exit, and the ilst length no longer counts its own header twice. Since
-     4.0.0 (TIKA-4957).
+   * Image checks (byte-size, min-image-size, blank-image-check; new
+     tika-image-processing module) keep blank and tiny images from text recognizers.
+     VLM output gets tk:ocr-warnings (an empty Claude response is a warning, not an
+     exception), vlm:skipped-reason and vlm:image-pixels; dropped HTTP connections are
+     retried; SizeGatedEnricher is deprecated (TIKA-4972).
 
-   * Faster parser loading and pipes fork startup: parsers no longer build a
-     default EncodingDetector (loading the charset models) only to have the
-     loader replace it, saving about 1.3s per AutoDetectParser build and per
-     forked JVM; a fork that fails to start is recognized within 100ms instead
-     of 1s (TIKA-4954).
-     DBFParser now honors the configured EncodingDetector instead of always
-     building its own default (TIKA-4954).
+   * Opt-in "metadata-list": {"typedValues": true} writes numbers, booleans and
+     tk:chunks as JSON values rather than strings (TIKA-4969).
 
-   * tika-core's OSGi manifest no longer requires a Service Loader Mediator or
-     providers for Parser, Detector, EncodingDetector, LanguageDetector and
-     MetadataFilter; 4.1.0 failed to install on its own in Equinox/p2
-     (TIKA-4945).
+  OTHER CHANGES
 
-   * The embed task writes a document's image and page embeddings to
-     tk:chunks once per binding instead of once per image or page, which
-     re-serialized the whole array each time (TIKA-4970).
+   * JSoupParser emits CDATA text again (TIKA-4963).
+
+   * OutlookExtractor falls back to the Date: header when a .msg has no MAPI date
+     (TIKA-4959).
+
+   * The MP4 parser no longer warns of an EOFException on every file (TIKA-4957).
+
+   * GeoGebraParser no longer needs jackson-databind (TIKA-4956).
+
+   * The embed task writes tk:chunks once per binding, not once per image or page
+     (TIKA-4970).
+
+   * OpenAI-compatible VLM parser: opt-in useMaxCompletionTokens for models that reject
+     max_tokens.
 
 Release 4.1.0 - 9/26/2026
 
@@ -397,14 +310,6 @@ Release 4.1.0 - 9/26/2026
 
    * The Ignite config store quotes its table name, so lookups work under any
      default locale (TIKA-4922).
-
-   * CI runs each test JVM under a random default locale (-Dtika.test.locale=random,
-     tika-test-support's RandomLocaleListener); a failure names the locale and
-     -Dtika.test.locale=<tag> reproduces it. Replaces the fixed tr_TR CI job (TIKA-4920).
-
-   * Pipes forks now start with the parent JVM's default locale (-Duser.*)
-     unless forkedJvmArgs set user.language; a fresh JVM took the OS locale,
-     so forked parsing could differ from in-process parsing (TIKA-4920).
 
    * tika-annotation-processor is no longer a transitive dependency of
      tika-pipes-core or the tika-langdetect modules (provided scope).

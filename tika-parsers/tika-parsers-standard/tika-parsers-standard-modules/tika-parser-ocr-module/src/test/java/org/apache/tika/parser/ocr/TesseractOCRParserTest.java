@@ -37,6 +37,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.inference.EngineRegistry;
 
 public class TesseractOCRParserTest extends TikaTest {
 
@@ -141,9 +142,7 @@ public class TesseractOCRParserTest extends TikaTest {
     public void testConfig() throws Exception {
         TikaLoader loader = TikaLoader.load(
                 getConfigPath(TesseractOCRParserTest.class, "tika-config-tesseract-full.json"));
-        Parser p = loader.loadParsers();
-        Parser tesseractOCRParser =
-                findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
+        Parser tesseractOCRParser = (Parser) loader.get(EngineRegistry.class).get("tesseract");
         assertNotNull(tesseractOCRParser);
 
         TesseractOCRConfig tesseractOCRConfig =
@@ -199,9 +198,7 @@ public class TesseractOCRParserTest extends TikaTest {
         assumeTrue(canRun());
         TikaLoader loader = TikaLoader.load(
                 getConfigPath(TesseractOCRParserTest.class, "tika-config-tesseract-load-langs.json"));
-        Parser p = loader.loadParsers();
-        Parser tesseractOCRParser =
-                findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
+        Parser tesseractOCRParser = (Parser) loader.get(EngineRegistry.class).get("tesseract");
         assertNotNull(tesseractOCRParser);
         Set<String> langs = ((TesseractOCRParser) tesseractOCRParser).getLangs();
         assertTrue(langs.size() > 0);
@@ -224,9 +221,7 @@ public class TesseractOCRParserTest extends TikaTest {
     public void testArbitraryParams() throws Exception {
         TikaLoader loader = TikaLoader.load(
                 getConfigPath(TesseractOCRParserTest.class, "tika-config-tesseract-arbitrary.json"));
-        Parser p = loader.loadParsers();
-        Parser tesseractOCRParser =
-                findParser(p, org.apache.tika.parser.ocr.TesseractOCRParser.class);
+        Parser tesseractOCRParser = (Parser) loader.get(EngineRegistry.class).get("tesseract");
         assertNotNull(tesseractOCRParser);
         TesseractOCRConfig tesseractOCRConfig =
                 ((TesseractOCRParser) tesseractOCRParser).getDefaultConfig();

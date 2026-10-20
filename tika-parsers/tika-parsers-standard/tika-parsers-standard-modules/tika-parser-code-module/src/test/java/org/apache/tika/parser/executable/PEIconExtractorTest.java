@@ -123,7 +123,7 @@ public class PEIconExtractorTest extends TikaTest {
 
     @Test
     public void testIconsFromExe() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata(EXE);
+        List<Metadata> metadataList = getRecursiveMetadata(EXE, allIcons());
         assertEquals(3, metadataList.size());
 
         Metadata exe = metadataList.get(0);
@@ -139,9 +139,36 @@ public class PEIconExtractorTest extends TikaTest {
         assertIcon(metadataList.get(2), "icon_1.ico", "14/1/1033", ATTACHMENT);
     }
 
+    /**
+     * By default only the file's own icon comes out: a DLL can carry thousands of groups.
+     */
+    @Test
+    public void testFirstGroupOnlyByDefault() throws Exception {
+        List<Metadata> metadataList = getRecursiveMetadata(EXE);
+        assertEquals(2, metadataList.size());
+        assertIcon(metadataList.get(1), "icon_DOCICON.ico", "14/DOCICON/1033", THUMBNAIL);
+
+        RecordingExtractor extractor = new RecordingExtractor();
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/" + EXE)) {
+            new ExecutableParser().parse(tis, new BodyContentHandler(), new Metadata(),
+                    extractor.context());
+        }
+        assertEquals(1, extractor.metadata.size(), "asked about the first group only");
+        assertArrayEquals(readTestResource(DOC_ICO), extractor.contents.get(0));
+
+        // all groups for one request
+        extractor = new RecordingExtractor();
+        ParseContext context = extractor.context();
+        context.setJsonConfig("executable-parser", "{\"extractAllIcons\": true}");
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/" + EXE)) {
+            new ExecutableParser().parse(tis, new BodyContentHandler(), new Metadata(), context);
+        }
+        assertEquals(2, extractor.contents.size());
+    }
+
     @Test
     public void testIconsFromDll() throws Exception {
-        List<Metadata> metadataList = getRecursiveMetadata(DLL);
+        List<Metadata> metadataList = getRecursiveMetadata(DLL, allIcons());
         assertEquals(3, metadataList.size());
 
         Metadata dll = metadataList.get(0);
@@ -261,7 +288,7 @@ public class PEIconExtractorTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(getResourceAsFile("/test-documents/" + EXE)
                 .toPath())) {
             assertTrue(tis.hasFile());
-            new ExecutableParser().parse(tis, new BodyContentHandler(), new Metadata(),
+            allIcons().parse(tis, new BodyContentHandler(), new Metadata(),
                     extractor.context());
         }
         assertEquals(2, extractor.contents.size());
@@ -513,7 +540,7 @@ public class PEIconExtractorTest extends TikaTest {
         try (TikaInputStream tis = TikaInputStream.get(Arrays.copyOfRange(exe, 4, exe.length))) {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(new BodyContentHandler(),
                     extractor.parentMetadata, context);
-            new ExecutableParser().parsePE(xhtml, extractor.parentMetadata, tis,
+            allIcons().parsePE(xhtml, extractor.parentMetadata, tis,
                     Arrays.copyOf(exe, 4), context);
         }
         assertEquals(2, extractor.contents.size());
@@ -658,7 +685,7 @@ public class PEIconExtractorTest extends TikaTest {
         };
         RecordingExtractor extractor = new RecordingExtractor();
         try (TikaInputStream tis = TikaInputStream.get(failing)) {
-            assertThrows(IOException.class, () -> new ExecutableParser().parse(tis,
+            assertThrows(IOException.class, () -> allIcons().parse(tis,
                     new BodyContentHandler(), extractor.parentMetadata, extractor.context()));
         }
         assertNull(extractor.parentMetadata.get(
@@ -769,7 +796,7 @@ public class PEIconExtractorTest extends TikaTest {
         CountingInputStream counting = new CountingInputStream(new ByteArrayInputStream(pe));
         RecordingExtractor extractor = new RecordingExtractor();
         try (TikaInputStream tis = TikaInputStream.get(counting)) {
-            new ExecutableParser().parse(tis, new BodyContentHandler(), new Metadata(),
+            allIcons().parse(tis, new BodyContentHandler(), new Metadata(),
                     extractor.context());
         }
         assertEquals(0, extractor.contents.size());
@@ -797,6 +824,7 @@ public class PEIconExtractorTest extends TikaTest {
         context.set(EmbeddedLimits.class, new EmbeddedLimits(-1, false, 1, true));
         context.set(ParseRecord.class, ParseRecord.newInstance(context));
         context.set(ParseTimeout.class, ParseTimeout.start(new TimeoutLimits(60_000, 60_000)));
+        context.setJsonConfig("executable-parser", "{\"extractAllIcons\": true}");
         try (TikaInputStream tis = getResourceAsStream("/test-documents/" + EXE)) {
             assertThrows(EmbeddedLimitReachedException.class, () -> AUTO_DETECT_PARSER
                     .parse(tis, new BodyContentHandler(), new Metadata(), context));
@@ -834,7 +862,7 @@ public class PEIconExtractorTest extends TikaTest {
         Parser loaded = TikaLoader.load(getConfigPath(PEIconExtractorTest.class,
                 "tika-config-executable-no-icons.json")).loadParsers();
         assertEquals(1, getRecursiveMetadata(EXE, loaded).size());
-        assertEquals(3, getRecursiveMetadata(EXE).size());
+        assertEquals(2, getRecursiveMetadata(EXE).size());
     }
 
     /**
@@ -862,7 +890,7 @@ public class PEIconExtractorTest extends TikaTest {
             new ExecutableParser(noIcons).parse(tis, new BodyContentHandler(), new Metadata(),
                     context);
         }
-        assertEquals(2, extractor.contents.size());
+        assertEquals(1, extractor.contents.size());
     }
 
     /**
@@ -1060,6 +1088,13 @@ public class PEIconExtractorTest extends TikaTest {
         }
     }
 
+    private static ExecutableParser allIcons() {
+        ExecutableParser.ExecutableParserConfig config =
+                new ExecutableParser.ExecutableParserConfig();
+        config.setExtractAllIcons(true);
+        return new ExecutableParser(config);
+    }
+
     private static RecordingExtractor parse(byte[] pe) throws Exception {
         return parse(pe, new RecordingExtractor());
     }
@@ -1067,7 +1102,7 @@ public class PEIconExtractorTest extends TikaTest {
     private static RecordingExtractor parse(byte[] pe, RecordingExtractor extractor)
             throws Exception {
         try (TikaInputStream tis = TikaInputStream.get(pe)) {
-            new ExecutableParser().parse(tis, new BodyContentHandler(), extractor.parentMetadata,
+            allIcons().parse(tis, new BodyContentHandler(), extractor.parentMetadata,
                     extractor.context());
         }
         return extractor;
@@ -1076,7 +1111,7 @@ public class PEIconExtractorTest extends TikaTest {
     private static RecordingExtractor parseFile(Path file) throws Exception {
         RecordingExtractor extractor = new RecordingExtractor();
         try (TikaInputStream tis = TikaInputStream.get(file)) {
-            new ExecutableParser().parse(tis, new BodyContentHandler(), extractor.parentMetadata,
+            allIcons().parse(tis, new BodyContentHandler(), extractor.parentMetadata,
                     extractor.context());
         }
         return extractor;

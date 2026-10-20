@@ -1,6 +1,6 @@
 {
-  "parsers": [
-    {
+  "engines": {
+    "tesseract": {
       "tesseract-ocr-parser": {
         "density": 200,
         "depth": 8,
@@ -15,6 +15,11 @@
         "enableImagePreprocessing": false,
         "language": "ceb"
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "tesseract"
     }
   ]
 }

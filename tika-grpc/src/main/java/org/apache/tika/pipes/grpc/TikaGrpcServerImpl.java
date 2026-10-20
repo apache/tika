@@ -122,6 +122,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         if (pipesConfig == null) {
             pipesConfig = new PipesConfig();
         }
+        pipesConfig.refuseTrustedRequests("tika-grpc");
 
         // Security-sensitive grpc features (per-request config, runtime component
         // modifications) are off unless explicitly enabled in the "grpc" section.

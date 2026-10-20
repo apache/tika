@@ -112,6 +112,13 @@ import org.apache.tika.utils.XMLReaderUtils;
  *       }
  *     },
  *     {
+ *       "default-parser": {
+ *         "exclude": ["pdf-parser"]
+ *       }
+ *     }
+ *   ],
+ *   "engines": {
+ *     "tesseract": {
  *       "tesseract-ocr-parser": {
  *         "otherTesseractConfig": {
  *           "textord_initialx_ile": "0.75",
@@ -121,13 +128,9 @@ import org.apache.tika.utils.XMLReaderUtils;
  *           "TESSDATA_PREFIX": "/usr/share/tesseract"
  *         }
  *       }
- *     },
- *     {
- *       "default-parser": {
- *         "exclude": ["pdf-parser"]
- *       }
  *     }
- *   ]
+ *   },
+ *   "text-recognizers": [ { "engine": "tesseract" } ]
  * }
  * </pre>
  */
@@ -137,6 +140,8 @@ public class XmlToJsonConfigConverter {
 
     // Use a plain ObjectMapper for clean JSON output without @class annotations
     private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    private static final String TESSERACT = "tesseract-ocr-parser";
 
     private XmlToJsonConfigConverter() {
         // Utility class
@@ -221,12 +226,42 @@ public class XmlToJsonConfigConverter {
             String sectionName = element.getNodeName();
 
             if ("parsers".equals(sectionName)) {
-                result.put("parsers", convertParsersSection(element, parserRegistry));
+                List<Map<String, Object>> parsers = convertParsersSection(element, parserRegistry);
+                Map<String, Object> engines = moveEngines(parsers);
+                if (!parsers.isEmpty()) {
+                    result.put("parsers", parsers);
+                }
+                if (!engines.isEmpty()) {
+                    result.put("engines", engines);
+                    List<Map<String, Object>> recognizers = new ArrayList<>();
+                    for (String name : engines.keySet()) {
+                        recognizers.add(Map.of("engine", name));
+                    }
+                    result.put("text-recognizers", recognizers);
+                }
             }
             // Future: add support for detectors, translators, etc.
         }
 
         return result;
+    }
+
+    /**
+     * Takes the OCR engines out of the parsers list, keyed by engine name: since 4.2.0 an OCR
+     * engine is configured under "engines" and named in "text-recognizers", never in "parsers".
+     */
+    private static Map<String, Object> moveEngines(List<Map<String, Object>> parsers) {
+        Map<String, Object> engines = new LinkedHashMap<>();
+        Iterator<Map<String, Object>> it = parsers.iterator();
+        while (it.hasNext()) {
+            Map<String, Object> entry = it.next();
+            Object config = entry.get(TESSERACT);
+            if (config != null) {
+                engines.put("tesseract", Map.of(TESSERACT, config));
+                it.remove();
+            }
+        }
+        return engines;
     }
 
     /**

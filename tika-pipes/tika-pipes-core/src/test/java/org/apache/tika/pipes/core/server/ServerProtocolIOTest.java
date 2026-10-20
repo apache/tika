@@ -66,14 +66,61 @@ class ServerProtocolIOTest {
     public void testRequestLimitsOverCapAreClamped() {
         ParseContext request = new ParseContext();
         request.set(TimeoutLimits.class, new TimeoutLimits(Long.MAX_VALUE, Long.MAX_VALUE));
-        ParseContext merged = new ParseContext();
-        merged.copyFrom(request);
+        ParseContext operator = new ParseContext();
+        operator.set(TimeoutLimits.class, new TimeoutLimits(Long.MAX_VALUE, Long.MAX_VALUE));
+        ParseContext merged = overlay(operator, request);
 
-        ServerProtocolIO.clampRequestTimeoutLimits(request, merged, MAX);
+        ServerProtocolIO.clampRequestTimeoutLimits(request, operator, merged, MAX);
 
         TimeoutLimits limits = merged.get(TimeoutLimits.class);
         assertEquals(MAX, limits.getTotalTaskTimeoutMillis());
         assertEquals(MAX, limits.getProgressTimeoutMillis());
+    }
+
+    @Test
+    public void testRequestTimeoutsCannotExceedTheOperators() {
+        ParseContext operator = new ParseContext();
+        operator.set(TimeoutLimits.class, new TimeoutLimits(30_000, 10_000));
+        ParseContext request = new ParseContext();
+        TimeoutLimits requested = new TimeoutLimits(MAX, 120_000);
+        requested.setThrowOnDeadline(true);
+        request.set(TimeoutLimits.class, requested);
+        ParseContext merged = overlay(operator, request);
+
+        ServerProtocolIO.clampRequestTimeoutLimits(request, operator, merged, MAX);
+
+        TimeoutLimits limits = merged.get(TimeoutLimits.class);
+        assertEquals(30_000, limits.getTotalTaskTimeoutMillis());
+        assertEquals(10_000, limits.getProgressTimeoutMillis());
+        assertTrue(limits.isThrowOnDeadline());
+    }
+
+    @Test
+    public void testRequestTimeoutsMayShorten() {
+        ParseContext operator = new ParseContext();
+        operator.set(TimeoutLimits.class, new TimeoutLimits(30_000, 10_000));
+        ParseContext request = new ParseContext();
+        request.set(TimeoutLimits.class, new TimeoutLimits(5_000, 20_000));
+        ParseContext merged = overlay(operator, request);
+
+        ServerProtocolIO.clampRequestTimeoutLimits(request, operator, merged, MAX);
+
+        TimeoutLimits limits = merged.get(TimeoutLimits.class);
+        assertEquals(5_000, limits.getTotalTaskTimeoutMillis());
+        assertEquals(10_000, limits.getProgressTimeoutMillis());
+    }
+
+    @Test
+    public void testRequestTimeoutsCappedAtClassDefaultsWhenOperatorSetsNone() {
+        ParseContext request = new ParseContext();
+        request.set(TimeoutLimits.class, new TimeoutLimits(MAX, MAX));
+        ParseContext merged = overlay(new ParseContext(), request);
+
+        ServerProtocolIO.clampRequestTimeoutLimits(request, new ParseContext(), merged,
+                Long.MAX_VALUE);
+
+        assertEquals(TimeoutLimits.DEFAULT_PROGRESS_TIMEOUT_MILLIS,
+                merged.get(TimeoutLimits.class).getProgressTimeoutMillis());
     }
 
     @Test
@@ -83,7 +130,7 @@ class ServerProtocolIOTest {
         ParseContext merged = new ParseContext();
         merged.set(TimeoutLimits.class, new TimeoutLimits(9_999_999_999L, 120_000));
 
-        ServerProtocolIO.clampRequestTimeoutLimits(request, merged, MAX);
+        ServerProtocolIO.clampRequestTimeoutLimits(request, new ParseContext(), merged, MAX);
 
         assertEquals(MAX, merged.get(TimeoutLimits.class).getTotalTaskTimeoutMillis());
     }
@@ -94,7 +141,7 @@ class ServerProtocolIOTest {
         ParseContext merged = new ParseContext();
         merged.set(TimeoutLimits.class, new TimeoutLimits(7_200_000L, 120_000));
 
-        ServerProtocolIO.clampRequestTimeoutLimits(request, merged, MAX);
+        ServerProtocolIO.clampRequestTimeoutLimits(request, merged, merged, MAX);
 
         assertEquals(7_200_000L, merged.get(TimeoutLimits.class).getTotalTaskTimeoutMillis());
     }

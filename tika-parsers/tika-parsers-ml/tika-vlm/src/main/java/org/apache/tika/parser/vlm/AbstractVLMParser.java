@@ -173,6 +173,20 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
      */
     protected abstract String getHealthCheckUrl(VLMOCRConfig config);
 
+    @Override
+    public boolean parsesDocuments() {
+        return true;
+    }
+
+    /**
+     * @return the headers for the health-check probe; Bearer auth by default
+     */
+    protected Map<String, String> getHealthCheckHeaders(VLMOCRConfig config) {
+        return config.getApiKey() != null
+                ? Map.of("Authorization", "Bearer " + config.getApiKey())
+                : Map.of();
+    }
+
     // ---- Parser interface -------------------------------------------------
 
     @Override
@@ -290,10 +304,8 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
             return;
         }
         try {
-            Map<String, String> healthHeaders = defaultConfig.getApiKey() != null
-                    ? Map.of("Authorization", "Bearer " + defaultConfig.getApiKey())
-                    : Map.of();
-            httpClient().get(healthUrl, healthHeaders, defaultConfig.getTimeoutMillis());
+            httpClient().get(healthUrl, getHealthCheckHeaders(defaultConfig),
+                    defaultConfig.getTimeoutMillis());
             serverAvailable = true;
             LOG.info("VLM server is available at {}", defaultConfig.getBaseUrl());
         } catch (TikaException e) {

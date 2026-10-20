@@ -1,10 +1,14 @@
 {
-  "parsers": [
-    "default-parser",
-    {
+  "engines": {
+    "tesseract": {
       "tesseract-ocr-parser": {
         "preloadLangs": true
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "tesseract"
     }
   ]
 }
