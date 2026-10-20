@@ -50,26 +50,6 @@ public class ISArchiveParser implements Parser {
     private static String studyAssayFileNameField = ISATabUtils.ISATAB.key("Study Assay File Name");
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-isatab"));
-    private final String location;
-
-    /**
-     * Default constructor.
-     */
-    public ISArchiveParser() {
-        this(null);
-    }
-
-    /**
-     * Constructor that accepts the pathname of ISArchive folder.
-     *
-     * @param location pathname of ISArchive folder including ISA-Tab files
-     */
-    public ISArchiveParser(String location) {
-        if (location != null && !location.endsWith(File.separator)) {
-            location += File.separator;
-        }
-        this.location = location;
-    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -83,11 +63,7 @@ public class ISArchiveParser implements Parser {
         TemporaryResources tmp = null;
 
         try {
-            // the parser is shared across parses: resolve the directory per document
-            String location = this.location;
-            if (location == null) {
-                location = tis.getFile().getParent() + File.separator;
-            }
+            String location = tis.getFile().getParent() + File.separator;
             // Use resource name from metadata if available, fall back to file name
             String resourceName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
             String studyFileName = resourceName != null ? resourceName : tis.getFile().getName();

@@ -1,5 +1,13 @@
 Release 4.2.0 - unreleased
 
+   * ISArchiveParser no longer reads every ISA-Tab document's investigation and assay files
+     from the directory of the first document it parsed; concurrent parses no longer share
+     the study file name (TIKA-4986).
+
+   * ISArchiveParser(String location) is removed: the ISA-Tab directory is always the
+     parent directory of the study file, so pass a file-backed TikaInputStream
+     (TikaInputStream.get(Path)) (TIKA-4986).
+
    * Previews are extracted from Olympus ORF (also with the OM SYSTEM MakerNote), Panasonic
      RW2, Epson ERF, Kodak KDC and Leaf MOS. Epson ERF is detected by content, and
      image/x-raw-epson, image/x-raw-kodak and image/x-raw-leaf are sub-classes of
