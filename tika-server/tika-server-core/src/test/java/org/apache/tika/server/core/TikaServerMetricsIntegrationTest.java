@@ -108,19 +108,32 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
                 .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD)).getStatus());
     }
 
-    /** Routine restarts (max files, idle exit 24) must not be counted as crashes. */
+    /** A routine max-files recycle is counted as such, not as a crash. */
     @Test
     @Timeout(240)
-    public void testRoutineRestartReasons() throws Exception {
-        startProcess(new String[]{"-config", getConfig("tika-config-server-metrics-restarts.json"),
+    public void testMaxFilesRestartReason() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-metrics-max-files.json"),
                 "--metricsPort", String.valueOf(metricsPort)});
         awaitServerStartup();
+        // max 2 files per fork: the third request restarts it
         for (int i = 0; i < 3; i++) {
             assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
         }
-        // Past the idle socket timeout the fork exits 24 and is restarted by the next request.
-        String body = awaitSample("tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"idle\"", 1.0);
+        String body = get(metricsEndPoint + MetricsServer.PATH).body();
         assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"max_files\"", 1.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"idle\"", 0.0);
+        assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 0.0);
+    }
+
+    /** A fork that exits 24 after sitting idle is counted as idle, not as a crash. */
+    @Test
+    @Timeout(240)
+    public void testIdleRestartReason() throws Exception {
+        startProcess(new String[]{"-config", getConfig("tika-config-server-metrics-idle.json"),
+                "--metricsPort", String.valueOf(metricsPort)});
+        awaitServerStartup();
+        // a floor: how many idle exits precede the first poll depends on how fast the server started
+        String body = awaitIdleRestart();
         assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 0.0);
     }
 
@@ -139,21 +152,23 @@ public class TikaServerMetricsIntegrationTest extends IntegrationTestBase {
         assertSample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"crash\"", 0.0);
     }
 
-    /** Polls (parse + scrape) until the sample reaches {@code expected}; returns the last body. */
-    private String awaitSample(String name, String labels, double expected) throws Exception {
-        long deadline = System.currentTimeMillis() + 30_000;
+    /**
+     * Idles past the config's 2s socketTimeoutMillis, then parses so the exited fork is restarted
+     * and counted; repeats until an idle restart shows up. Returns the last scrape.
+     */
+    private String awaitIdleRestart() throws Exception {
+        long deadline = System.currentTimeMillis() + 60_000;
         String body;
         do {
-            // Each parse resets the fork's idle clock, so sleep past the config's socketTimeoutMillis.
-            Thread.sleep(3000);
+            // well past the timeout, so the fork has finished exiting before the next parse
+            Thread.sleep(5000);
             assertEquals(200, rmeta(TEST_HELLO_WORLD).getStatus());
             body = get(metricsEndPoint + MetricsServer.PATH).body();
-            if (sample(body, name, labels) == expected) {
+            if (sample(body, "tika_pipes_worker_restarts_total", "pool=\"sync\",reason=\"idle\"") >= 1.0) {
                 return body;
             }
         } while (System.currentTimeMillis() < deadline);
-        throw new AssertionError("timed out waiting for " + name + "{" + labels + "}=" + expected
-                + " in:\n" + body);
+        throw new AssertionError("no idle restart counted in:\n" + body);
     }
 
     private Response rmeta(String resource) {
