@@ -63,6 +63,7 @@ import org.mockito.Mockito;
 import org.apache.tika.TikaTest;
 import org.apache.tika.client.HttpClientFactory;
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.metadata.Metadata;
@@ -71,6 +72,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
+import org.apache.tika.pipes.fetcher.http.config.HttpFetcherRequestConfig;
 import org.apache.tika.pipes.fetcher.http.config.HttpHeaders;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 import org.apache.tika.plugins.ExtensionConfig;
@@ -170,6 +172,15 @@ class HttpFetcherTest extends TikaTest {
     }
 
     @Test
+    public void testRequestConfigMaySetOnlyHeaders() {
+        ParseContext parseContext = new ParseContext();
+        parseContext.setJsonConfig("http-fetcher", "{\"userName\":\"x\",\"password\":\"y\"}");
+        TikaConfigException e = Assertions.assertThrows(TikaConfigException.class,
+                () -> httpFetcher.fetch("http://localhost", new Metadata(), parseContext));
+        Assertions.assertTrue(e.getMessage().contains("userName"), e.getMessage());
+    }
+
+    @Test
     public void testHttpRequestHeaders() throws Exception {
         HttpClient httpClient = Mockito.mock(HttpClient.class);
         httpFetcher.setHttpClient(httpClient);
@@ -201,7 +212,7 @@ class HttpFetcherTest extends TikaTest {
         Metadata metadata = new Metadata();
         ParseContext parseContext = new ParseContext();
 
-        HttpFetcherConfig additionalHttpFetcherConfig = new HttpFetcherConfig();
+        HttpFetcherRequestConfig additionalHttpFetcherConfig = new HttpFetcherRequestConfig();
         additionalHttpFetcherConfig.setHttpRequestHeaders(new HttpHeaders());
         HashMap<String, Collection<String>> headersMap = new HashMap<>();
         headersMap.put("fromFetchRequestHeader1", List.of("fromFetchRequestValue1"));

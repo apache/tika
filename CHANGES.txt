@@ -1,5 +1,15 @@
 Release 4.2.0 - unreleased
 
+   * A JsonConfig's raw text is read only through ConfigDeserializer or
+     PluginJson.read(JsonConfig, Class), which apply the request restrictions and
+     @OperatorOnly; forbidden-apis rejects JsonConfig.json() elsewhere in Tika's main code.
+     Projects that inherit tika-parent inherit the ban; set json.forbiddenapis.signaturesFile
+     to forbidden-apis-none.txt to opt out. ExtensionConfig no longer implements
+     JsonConfig. A request's http-fetcher config may now set only httpRequestHeaders; other
+     keys, previously ignored, are an error. A file-system emitter's runtime config that
+     names basePath fails as an unknown key. A duplicate key in configuration JSON,
+     previously last-wins, is now an error (TIKA-4975).
+
    * @OperatorOnly is now enforced on every component a request builds, wherever
      it is named -- a metadata-filters entry, a nested property, or a bare
      string -- not just on self-configuring parsers. On a class, it keeps a

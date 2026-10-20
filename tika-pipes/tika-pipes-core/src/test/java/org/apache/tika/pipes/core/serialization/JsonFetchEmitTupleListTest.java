@@ -65,6 +65,16 @@ public class JsonFetchEmitTupleListTest {
         assertTrue(e.getMessage().contains(JsonFetchEmitTupleList.TUPLES), e.getMessage());
     }
 
+    @Test
+    public void testDuplicateKeyIsRejected() {
+        // single-tuple /pipes rejects this; a batch must too, not keep the last value
+        String body = "{\"tuples\":[{\"id\":\"x\",\"fetcher\":\"f\",\"fetchKey\":\"a\"," +
+                "\"fetchKey\":\"b\",\"emitter\":\"e\"}]}";
+        IOException e = assertThrows(IOException.class,
+                () -> JsonFetchEmitTupleList.fromJson(new StringReader(body)));
+        assertTrue(e.getMessage().contains("fetchKey"), e.getMessage());
+    }
+
     /** Unknown tuple fields must surface as IOException, not Jackson's IllegalArgumentException. */
     @Test
     public void testUnknownTupleFieldIsRejectedAsIOException() {

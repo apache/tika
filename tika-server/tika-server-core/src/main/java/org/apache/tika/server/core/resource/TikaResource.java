@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.BadRequestException;
@@ -264,7 +265,7 @@ public class TikaResource {
      * @throws IOException if parsing fails
      */
     public static void mergeParseContextFromConfig(String configJson, ParseContext context) throws IOException, TikaConfigException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
         JsonNode root = mapper.readTree(configJson);
         // Request-supplied config: restrict so it cannot bind wire-blocked components.
         ParseContext configuredContext = ParseContextDeserializer.readParseContext(root, true);

@@ -177,6 +177,10 @@ edits are included.
   invariant, workaround, spec quirk).  Never restate the code, narrate the
   next line, justify the change to a reviewer, or describe past states of
   the code.
+- **A `JsonConfig` is read only through `ConfigDeserializer` or `PluginJson.read(JsonConfig, Class)`**,
+  which apply request restrictions and `@OperatorOnly`; forbidden-apis rejects
+  `JsonConfig.json()` in main code outside tika-serialization. Per-request plugin config is
+  read into a class holding only what a request may set.
 - **XML is parsed only through `XMLReaderUtils.parseSAX` / `buildDOM`** (forbidden-apis
   rejects the JAXP and Commons Secure XML factories and the raw `getSAXParser` /
   `getXMLReader` / `getDocumentBuilder` in main code). Never install an `EntityResolver`;
