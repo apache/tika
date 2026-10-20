@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -295,6 +296,56 @@ public abstract class BundleIT {
                 () -> pdfParser.getConstructor(jsonConfig).newInstance(untrusted));
         assertTrue(String.valueOf(e.getCause().getMessage()).contains("imageGraphicsEngineFactoryClass"),
                 String.valueOf(e.getCause()));
+    }
+
+    // tika-serialization started after everything else, with no refresh of tika-core
+    @Test
+    public void testSerializationInstalledLast() throws Exception {
+        Framework fw = newFramework("serialization-last");
+        try {
+            BundleContext context = fw.getBundleContext();
+            List<Path> jars = new ArrayList<>();
+            Path serialization = null;
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(TEST_BUNDLES, "*.jar")) {
+                for (Path jar : stream) {
+                    if (jar.getFileName().toString().equals("tika-serialization.jar")) {
+                        serialization = jar;
+                    } else {
+                        jars.add(jar);
+                    }
+                }
+            }
+            assertNotNull(serialization, "tika-serialization.jar not in " + TEST_BUNDLES);
+            List<Bundle> bundles = new ArrayList<>();
+            for (Path jar : jars) {
+                bundles.add(context.installBundle(jar.toUri().toString()));
+            }
+            Bundle pdf = null;
+            for (Bundle bundle : bundles) {
+                bundle.start();
+                if ("org.apache.tika.bundle-standard".equals(bundle.getSymbolicName())) {
+                    pdf = bundle;
+                }
+            }
+            assertNotNull(pdf, "tika-bundle-standard not installed");
+            Class<?> jsonConfig = pdf.loadClass("org.apache.tika.config.JsonConfig");
+            Constructor<?> constructor = pdf.loadClass("org.apache.tika.parser.pdf.PDFParser")
+                    .getConstructor(jsonConfig);
+            Object trusted = jsonConfig.getMethod("trusted", String.class)
+                    .invoke(null, "{\"sortByPosition\": true}");
+
+            InvocationTargetException e = assertThrows(InvocationTargetException.class,
+                    () -> constructor.newInstance(trusted));
+            assertTrue(String.valueOf(e.getCause().getMessage()).contains("tika-serialization"),
+                    String.valueOf(e.getCause()));
+
+            context.installBundle(serialization.toUri().toString()).start();
+            Object parser = constructor.newInstance(trusted);
+            Object config = parser.getClass().getMethod("getPDFParserConfig").invoke(parser);
+            assertEquals(true, config.getClass().getMethod("isSortByPosition").invoke(config));
+        } finally {
+            stop(fw);
+        }
     }
 
     // runs the docs page's example as a consumer bundle would

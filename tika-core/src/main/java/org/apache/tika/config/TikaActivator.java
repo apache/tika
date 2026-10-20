@@ -57,6 +57,7 @@ public class TikaActivator implements BundleActivator, ServiceTrackerCustomizer 
         trackService(context, EncodingDetector.class);
         trackService(context, LanguageDetector.class);
         trackService(context, MetadataFilter.class);
+        trackService(context, ConfigReader.class);
     }
 
     private void trackService(BundleContext context, Class<?> iface) {

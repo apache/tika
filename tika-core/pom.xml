@@ -185,11 +185,6 @@
               org.apache.commons.io.*;version="[2,3)",
               *
             </Import-Package>
-            <!-- tika-serialization, found by reflection; a resolve-time optional import may stay unwired -->
-            <DynamicImport-Package>
-              org.apache.tika.config.loader,
-              org.apache.tika.serialization
-            </DynamicImport-Package>
             <Export-Package>
               org.apache.tika.*
             </Export-Package>

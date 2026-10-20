@@ -120,6 +120,7 @@
         <configuration>
           <instructions>
             <Bundle-DocURL>${project.url}</Bundle-DocURL>
+            <Bundle-Activator>org.apache.tika.serialization.SerializationActivator</Bundle-Activator>
             <Export-Package>
               org.apache.tika.config.loader,
               org.apache.tika.serialization.*
