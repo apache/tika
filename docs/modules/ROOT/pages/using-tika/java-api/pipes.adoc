@@ -146,6 +146,10 @@ try (PipesForkParser parser = new PipesForkParser(config)) {
 Prefer `parse(Path)` when you already have a file. `result.getContent()` is the container's text
 only; iterate `getMetadataList()` for embedded documents.
 
+The config's parse mode, handler type and embedded limits are defaults. To change one for a
+single call, set it in the `ParseContext` you pass to `parse`; Tika works on a copy and leaves
+your context unchanged.
+
 See xref:using-tika/java-api/getting-started.adoc[Getting Started with the Java API] and
 https://github.com/apache/tika/blob/main/tika-example/src/main/java/org/apache/tika/example/PipesForkParserExample.java[PipesForkParserExample.java]
 for parse modes, handler types, content-type hints and error handling.

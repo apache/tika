@@ -58,7 +58,10 @@ public final class OperatorOnlyGuard {
         check(mapper, configKey, mapper.readTree(json), mapper.constructType(configClass));
     }
 
-    static void check(ObjectMapper mapper, String configKey, JsonNode node, JavaType type)
+    /**
+     * @throws IOException if {@code node} names an operator-only property of {@code type}
+     */
+    public static void check(ObjectMapper mapper, String configKey, JsonNode node, JavaType type)
             throws IOException {
         if (node == null || !node.isObject()) {
             return;
@@ -73,8 +76,8 @@ public final class OperatorOnlyGuard {
             }
             if (property.operatorOnly()) {
                 throw new IOException("Cannot modify " + e.getKey() + " at runtime: per-request config for '"
-                        + configKey + "' may not set it. Configure it at initialization time "
-                        + "(tika-config.json or a preset).");
+                        + configKey + "' may not set it. Set it in tika-config.json or a preset; "
+                        + "Java code that writes its own config wraps it with JsonConfig.trusted(json).");
             }
             if (e.getValue().isObject() && !property.type().isContainerType()) {
                 check(mapper, configKey, e.getValue(), property.type());

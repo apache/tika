@@ -182,8 +182,6 @@
             <Import-Package>
               org.apache.xerces.util;resolution:=optional,
               com.fasterxml.jackson.*;resolution:=optional,
-              org.apache.tika.config.loader;resolution:=optional,
-              org.apache.tika.serialization;resolution:=optional,
               org.apache.commons.io.*;version="[2,3)",
               *
             </Import-Package>

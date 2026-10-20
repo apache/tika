@@ -714,6 +714,13 @@ public class TikaServerProcess {
 
         // Create PipesParser
         PipesParser pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
+        // a fork that can't start fails the server here, not its first request
+        try {
+            pipesParser.start();
+        } catch (Exception e) {
+            pipesParser.close();
+            throw e;
+        }
 
         // Create and return the helper
         PipesParsingHelper helper = new PipesParsingHelper(pipesParser, pipesConfig,

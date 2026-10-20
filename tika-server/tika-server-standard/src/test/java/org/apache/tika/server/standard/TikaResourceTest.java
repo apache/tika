@@ -51,6 +51,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.serialization.JsonMetadata;
+import org.apache.tika.server.core.BadRequestExceptionMapper;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.TikaResource;
@@ -79,6 +80,7 @@ public class TikaResourceTest extends CXFTestBase {
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper());
+        providers.add(new BadRequestExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }
@@ -430,7 +432,7 @@ public class TikaResourceTest extends CXFTestBase {
 
     /**
      * MetadataFilter is wire-instantiable on the promise that no implementation does IO; the
-     * embedding filters POST document text to their baseUrl, so they are blocked by name.
+     * embedding filters POST document text to their baseUrl, so their class is @OperatorOnly.
      */
     @Test
     public void testConfigRejectsEmbeddingFilterFromTheWire() {
@@ -453,6 +455,24 @@ public class TikaResourceTest extends CXFTestBase {
         // the flat per-request config tunes the loaded filter and stays allowed
         assertDoesNotThrow(() -> TikaResource.mergeParseContextFromConfig(
                 "{\"openai-embedding-filter\":{\"skipEmbedding\":true}}", new ParseContext()));
+    }
+
+    /** Over HTTP: a bare-string name is refused when the component is built, with the reason. */
+    @Test
+    public void testConfigPartRefusesOperatorOnlyClassOverHttp() throws Exception {
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"a.txt\"");
+        Attachment fileAtt = new Attachment("file",
+                new java.io.ByteArrayInputStream("hello".getBytes(StandardCharsets.UTF_8)), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new java.io.ByteArrayInputStream("{\"metadata-filters\":[\"openai-embedding-filter\"]}"
+                        .getBytes(StandardCharsets.UTF_8)));
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/config")
+                .type("multipart/form-data")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+        assertEquals(400, response.getStatus());
+        String body = getStringFromInputStream((InputStream) response.getEntity());
+        assertTrue(body.contains("may not be supplied via a request parseContext"), body);
     }
 
     private static String rootMessage(Throwable t) {

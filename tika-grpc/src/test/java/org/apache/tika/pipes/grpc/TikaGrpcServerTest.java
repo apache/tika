@@ -568,6 +568,21 @@ public class TikaGrpcServerTest {
                     "the caller must be told which entry: " + ex.getStatus().getDescription());
         }
 
+        @Test
+        public void testDuplicateParseContextKeyIsRejected() throws Exception {
+            StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
+                    blockingStub.fetchAndParse(FetchAndParseRequest
+                            .newBuilder()
+                            .setFetcherId(createFetcherId(1))
+                            .setFetchKey("no-such-file")
+                            .setParseContextJson("{\"basic-content-handler-factory\":{\"type\":\"XML\"},"
+                                    + "\"basic-content-handler-factory\":{\"type\":\"TEXT\"}}")
+                            .build()));
+            assertEquals(Status.Code.INVALID_ARGUMENT, ex.getStatus().getCode());
+            assertTrue(String.valueOf(ex.getStatus().getDescription()).contains("Duplicate field"),
+                    String.valueOf(ex.getStatus().getDescription()));
+        }
+
         /**
          * TIKA-4804: the server-streaming variant must close the call. With the in-process
          * transport and a direct executor the whole handler runs inside the stub call, so

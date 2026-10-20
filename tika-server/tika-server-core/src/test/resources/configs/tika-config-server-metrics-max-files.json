@@ -9,7 +9,6 @@
   "pipes": {
     "numClients": 1,
     "maxFilesProcessedPerProcess": 2,
-    "socketTimeoutMillis": 2000,
     "forkedJvmArgs": [
       "-Xmx256m"
     ]

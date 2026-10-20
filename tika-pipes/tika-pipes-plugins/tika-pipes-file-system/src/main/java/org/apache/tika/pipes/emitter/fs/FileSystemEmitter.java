@@ -40,6 +40,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.AbstractStreamEmitter;
 import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.PluginJson;
 import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.utils.StringUtils;
 
@@ -274,13 +275,9 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         if (parseContext.hasJsonConfig(configKey)) {
             JsonConfig configJson = parseContext.getJsonConfig(configKey);
             if (configJson != null) {
-                // Check if basePath is present in runtime config - this is not allowed for security
-                if (configJson.json().contains("\"basePath\"")) {
-                    throw new TikaConfigException("Cannot change 'basePath' at runtime for security reasons. " + "basePath can only be set during initialization.");
-                }
-
-                // Load runtime config (excludes basePath for security)
-                FileSystemEmitterRuntimeConfig runtimeConfig = FileSystemEmitterRuntimeConfig.load(configJson.json());
+                // basePath, allowAbsolutePaths and atomicWrites are not runtime keys; naming one fails
+                FileSystemEmitterRuntimeConfig runtimeConfig =
+                        PluginJson.read(configJson, FileSystemEmitterRuntimeConfig.class);
 
                 // Merge runtime config into default config while preserving basePath and the
                 // init-time allowAbsolutePaths -- neither may be changed at runtime.

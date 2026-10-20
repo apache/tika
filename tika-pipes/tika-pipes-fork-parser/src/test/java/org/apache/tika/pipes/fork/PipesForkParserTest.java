@@ -42,12 +42,14 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.fetcher.InlineBytes;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
 
 public class PipesForkParserTest {
 
@@ -311,6 +313,44 @@ public class PipesForkParserTest {
             assertNull(parseContext.get(InlineBytes.class),
                     "inline payload must not outlive its request in the caller's context");
         }
+    }
+
+    // TIKA-4981: per-call values beat the config's defaults, and the caller's context is not written
+    @Test
+    public void testPerCallParseModeOverridesConfig() throws Exception {
+        Path testZip = createZipWithEmbeddedFiles("per_call_mode.zip",
+                "embedded1.txt", "Content from first embedded file",
+                "embedded2.txt", "Content from second embedded file");
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.CONCATENATE);
+
+        PipesForkResult result = defaultParser.parse(testZip, new Metadata(), parseContext);
+
+        assertTrue(result.isSuccess(), "Parse should succeed. Status: " + result.getStatus());
+        assertEquals(1, result.getMetadataList().size(), "per-call CONCATENATE was ignored");
+        assertTrue(result.getContent().contains("second embedded"), result.getContent());
+        assertNull(parseContext.get(ContentHandlerFactory.class),
+                "the config's handler factory was written into the caller's context");
+    }
+
+    @Test
+    public void testPerCallHandlerFactoryOverridesConfig() throws Exception {
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ContentHandlerFactory.class,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.XML, -1));
+        byte[] html = "<html><body><p>per call</p></body></html>".getBytes(StandardCharsets.UTF_8);
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "per_call.html");
+
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(html))) {
+            PipesForkResult result = defaultParser.parse(tis, metadata, parseContext);
+
+            assertTrue(result.isSuccess(), "Parse should succeed. Status: " + result.getStatus());
+            assertTrue(result.getContent().contains("<p>per call</p>"),
+                    "per-call XML handler was ignored; content: " + result.getContent());
+        }
+        assertNull(parseContext.get(ParseMode.class),
+                "the config's parse mode was written into the caller's context");
     }
 
     @Test

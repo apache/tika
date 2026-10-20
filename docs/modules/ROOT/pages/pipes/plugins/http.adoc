@@ -128,6 +128,17 @@ include::example$pipes-http-fetcher.json[]
 |Base64-encoded private key for asymmetric (RSA/ECDSA) JWT signing. Mutually exclusive with `jwtSecret`.
 |===
 
+==== Per-request headers
+
+A request can add headers to one fetch through an `http-fetcher` entry in its parse context
+(gRPC: `additional_fetch_config_json`). Only `httpRequestHeaders` may be set there; any other
+key is an error, since credentials, proxy, TLS and JWT settings belong to the operator.
+
+[source,json]
+----
+{ "httpRequestHeaders": { "map": { "X-Request-Id": ["abc123"] } } }
+----
+
 [#security-notes]
 == Security Notes
 

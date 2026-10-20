@@ -10,6 +10,39 @@ Release 4.2.0 - unreleased
      its compression code and its Make, and image/x-raw-epson, image/x-raw-kodak and
      image/x-raw-leaf are sub-classes of image/tiff, so a declared type can refine to them
      and the parser lookup has something to fall back on (TIKA-4980).
+     
+   * A JsonConfig's raw text is read only through ConfigDeserializer or
+     PluginJson.read(JsonConfig, Class), which apply the request restrictions and
+     @OperatorOnly; forbidden-apis rejects JsonConfig.json() elsewhere in Tika's main code.
+     Projects that inherit tika-parent inherit the ban; set json.forbiddenapis.signaturesFile
+     to forbidden-apis-none.txt to opt out. ExtensionConfig no longer implements
+     JsonConfig. A request's http-fetcher config may now set only httpRequestHeaders; other
+     keys, previously ignored, are an error. A file-system emitter's runtime config that
+     names basePath fails as an unknown key. A duplicate key in configuration JSON,
+     previously last-wins, is now an error (TIKA-4975).
+
+   * @OperatorOnly is now enforced on every component a request builds, wherever
+     it is named -- a metadata-filters entry, a nested property, or a bare
+     string -- not just on self-configuring parsers. On a class, it keeps a
+     request from building the component at all (TIKA-4974).
+
+   * All JSON config now flows through tika-serialization, so every component
+     gets the same operator-only checks, whether it comes from tika-config.json,
+     a request, or a JsonConfig constructor (e.g. new PDFParser(jsonConfig)).
+     Constructing a component with a JsonConfig therefore needs tika-serialization
+     on the classpath; tika-app, tika-server and tika-grpc already include it
+     (TIKA-4974).
+
+   * tika-serialization is now an OSGi bundle, so JsonConfig constructors work in
+     OSGi: deploy it with jackson-databind and jackson-annotations (TIKA-4982).
+
+   * Config is untrusted unless the operator says so: Java code that writes its
+     own config and sets an operator-only property wraps it with
+     JsonConfig.trusted(json) (TIKA-4974).
+     
+   * PipesForkParser: a ParseMode, ContentHandlerFactory or EmbeddedLimits set in the
+     ParseContext passed to parse() now overrides PipesForkParserConfig instead of being
+     overwritten by it, and the caller's ParseContext is no longer modified (TIKA-4981).
 
    * Frictionless unpack: the package's metadata.json is renamed rmeta.json, is listed in
      datapackage.json as a resource (size, sha256), and now gets the metadata filters and
@@ -35,6 +68,10 @@ Release 4.2.0 - unreleased
      DataPackage.addResource(...) are removed (TIKA-4971).
      
    * Per-request limits may tighten the server's but no longer loosen them (TIKA-4978).
+     
+   * tika-server starts its forks before opening its port, so a fork that can't start
+     (bad forkedJvmArgs or javaPath, a missing plugin) fails startup instead of the first
+     request (TIKA-4983).
      
    * Image checks (byte-size, min-image-size, blank-image-check; new tika-image-processing
      module) make it less likely that blank or tiny images reach text recognizers. VLM

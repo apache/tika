@@ -78,14 +78,24 @@ public final class JsonMergeUtils {
      */
     public static <T> T mergeWithDefaults(ObjectMapper mapper, String json,
                                           Class<T> configClass, T defaultConfig) throws IOException {
+        return mergeWithDefaults(mapper, json, configClass, defaultConfig, true);
+    }
+
+    /**
+     * As {@link #mergeWithDefaults(ObjectMapper, String, Class, Object)}; when {@code trusted} is
+     * false, components nested in the config are built as per-request input (see
+     * {@link ComponentInstantiator#withTrust}).
+     */
+    public static <T> T mergeWithDefaults(ObjectMapper mapper, String json, Class<T> configClass,
+                                          T defaultConfig, boolean trusted) throws IOException {
         if (defaultConfig == null) {
-            return mapper.readValue(json, configClass);
+            return ComponentInstantiator.withTrust(mapper.readerFor(configClass), trusted).readValue(json);
         }
 
         T copy = copyDefaults(mapper, configClass, defaultConfig);
 
         // Only the caller's JSON goes through setters -- that is what validation guards are for
-        return mapper.readerForUpdating(copy).readValue(json);
+        return ComponentInstantiator.withTrust(mapper.readerForUpdating(copy), trusted).readValue(json);
     }
 
     /**

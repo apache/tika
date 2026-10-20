@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.BadRequestException;
@@ -264,7 +265,7 @@ public class TikaResource {
      * @throws IOException if parsing fails
      */
     public static void mergeParseContextFromConfig(String configJson, ParseContext context) throws IOException, TikaConfigException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
         JsonNode root = mapper.readTree(configJson);
         // Request-supplied config: restrict so it cannot bind wire-blocked components.
         ParseContext configuredContext = ParseContextDeserializer.readParseContext(root, true);
@@ -281,7 +282,7 @@ public class TikaResource {
         }
         // Copy jsonConfigs for lazy resolution by parsers (e.g., pdf-parser config)
         for (Map.Entry<String, JsonConfig> entry : configuredContext.getJsonConfigs().entrySet()) {
-            context.setJsonConfig(entry.getKey(), entry.getValue().json());
+            context.setJsonConfig(entry.getKey(), entry.getValue());
             // Keep the jsonConfig->instance association: serialization uses it to send the
             // original JSON rather than re-serializing the resolved instance.
             Object resolved = configuredContext.getResolvedConfig(entry.getKey());

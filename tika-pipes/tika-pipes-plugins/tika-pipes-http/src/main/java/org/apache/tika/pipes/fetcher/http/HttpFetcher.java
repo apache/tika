@@ -39,8 +39,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nimbusds.jose.JOSEException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.UnsynchronizedByteArrayOutputStream;
@@ -74,11 +72,13 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.RangeFetcher;
 import org.apache.tika.pipes.fetcher.http.config.HttpFetcherConfig;
+import org.apache.tika.pipes.fetcher.http.config.HttpFetcherRequestConfig;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtGenerator;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtPrivateKeyCreds;
 import org.apache.tika.pipes.fetcher.http.jwt.JwtSecretCreds;
 import org.apache.tika.plugins.AbstractTikaExtension;
 import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.plugins.PluginJson;
 import org.apache.tika.utils.StringUtils;
 
 /**
@@ -94,7 +94,6 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
     }
 
 
-    private static final ObjectMapper OM = new ObjectMapper();
     private HttpFetcherConfig httpFetcherConfig = new HttpFetcherConfig();
     private HttpClientFactory httpClientFactory = new HttpClientFactory();
 
@@ -160,7 +159,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
 
     @Override
     public TikaInputStream fetch(String fetchKey, Metadata metadata, ParseContext parseContext) throws IOException, TikaException {
-        HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
+        HttpFetcherRequestConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
         get.setConfig(buildRequestConfig());
         setHttpRequestHeaders(metadata, get);
@@ -205,12 +204,12 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         }
     }
 
-    private HttpFetcherConfig getAdditionalHttpFetcherConfig(ParseContext parseContext) throws JsonProcessingException {
-        // Check for JSON config in ParseContext (new pattern)
+    private HttpFetcherRequestConfig getAdditionalHttpFetcherConfig(ParseContext parseContext)
+            throws TikaConfigException {
         if (parseContext.hasJsonConfig("http-fetcher")) {
             JsonConfig jsonConfig = parseContext.getJsonConfig("http-fetcher");
             if (jsonConfig != null) {
-                return OM.readValue(jsonConfig.json(), HttpFetcherConfig.class);
+                return PluginJson.read(jsonConfig, HttpFetcherRequestConfig.class);
             }
         }
         return null;
@@ -219,7 +218,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
     @Override
     public TikaInputStream fetch(String fetchKey, long startRange, long endRange, Metadata metadata,
                              ParseContext parseContext) throws IOException, TikaException {
-        HttpFetcherConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
+        HttpFetcherRequestConfig additionalHttpFetcherConfig = getAdditionalHttpFetcherConfig(parseContext);
         HttpGet get = new HttpGet(fetchKey);
         // Same RequestConfig as the whole-document fetch: maxRedirects must bind range fetches too.
         get.setConfig(buildRequestConfig());
@@ -230,7 +229,7 @@ public class HttpFetcher extends AbstractTikaExtension implements Fetcher, Range
         return execute(get, metadata, httpClient, true);
     }
 
-    private void putAdditionalHeadersOnRequest(HttpFetcherConfig additionalFetcherConfig, HttpGet httpGet) throws TikaException {
+    private void putAdditionalHeadersOnRequest(HttpFetcherRequestConfig additionalFetcherConfig, HttpGet httpGet) throws TikaException {
         if (!StringUtils.isBlank(httpFetcherConfig.getUserAgent())) {
             httpGet.setHeader(USER_AGENT, httpFetcherConfig.getUserAgent());
         }

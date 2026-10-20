@@ -16,20 +16,12 @@
  */
 package org.apache.tika.pipes.emitter.fs;
 
-import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.plugins.PluginJson;
-
 /**
  * Runtime configuration for FileSystemEmitter.
  * Only includes fields that are safe to update at runtime.
  * basePath is intentionally excluded for security reasons.
  */
 public class FileSystemEmitterRuntimeConfig {
-
-    public static FileSystemEmitterRuntimeConfig load(final String json)
-            throws TikaConfigException {
-        return PluginJson.read(json, FileSystemEmitterRuntimeConfig.class);
-    }
 
     private String fileExtension;
     private FileSystemEmitterConfig.ON_EXISTS onExists;

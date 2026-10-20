@@ -71,16 +71,6 @@ public class WireRestrictedParseContextTest {
         }
     }
 
-    /** Names blocked although their type is allowed: the embedding filters, which do network IO. */
-    @Test
-    public void embeddingFiltersAreBlockedByName() {
-        Set<String> names = ComponentNameResolver.getWireBlockedComponentNames();
-        assertTrue(names.contains("openai-embedding-filter"));
-        assertTrue(names.contains("jina-embedding-filter"));
-        assertTrue(ComponentNameResolver.isWireBlockedName("openai-embedding-filter"));
-        assertFalse(ComponentNameResolver.isWireBlockedName("include-field-metadata-filter"));
-    }
-
     @Test
     public void restrictedRejectsTypedParserInjection() {
         // A blocked component nested under a wrapper key must be refused regardless of the wrapper.
@@ -149,24 +139,11 @@ public class WireRestrictedParseContextTest {
     }
 
     @Test
-    public void keysOnlyScanLetsInertBareStringReferencesThrough() {
-        // A bare-string reference (compact "defaults" form, no config) is deliberately NOT scanned:
-        // it cannot carry a commandLine and is never bound-and-invoked. Pins that decision so we
-        // don't regress to scanning arbitrary string values (false positives).
+    public void keyScanIgnoresBareStrings() {
+        // The key scan leaves string values alone (no false positives on ordinary values);
+        // ComponentInstantiator refuses a blocked class named by a bare string at resolution.
         String json = "{\"metadata-filters\":[\"external-parser\"]}";
         assertDoesNotThrow(() -> restrictedMapper().readValue(json, ParseContext.class));
-    }
-
-    @Test
-    public void restrictedRejectsBareStringWireBlockedName() {
-        // the bare-string form still binds a working defaults instance of an allowed type
-        for (String name : new String[]{"openai-embedding-filter", "jina-embedding-filter"}) {
-            String json = "{\"metadata-filters\":[\"" + name + "\"]}";
-            Exception e = assertThrows(Exception.class,
-                    () -> restrictedMapper().readValue(json, ParseContext.class), name);
-            assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
-                    name + ": expected wire-blocked rejection, got: " + rootMessage(e));
-        }
     }
 
     @Test

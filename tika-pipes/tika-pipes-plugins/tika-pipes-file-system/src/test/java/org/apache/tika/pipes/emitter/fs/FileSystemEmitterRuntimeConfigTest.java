@@ -71,8 +71,7 @@ public class FileSystemEmitterRuntimeConfigTest {
         Path output1 = dir1.resolve("test1.json");
         assertTrue(Files.exists(output1), "File should be created in dir1");
 
-        // Try to override basePath at runtime to point to dir2
-        // This should throw an exception for security reasons
+        // basePath is not a runtime key, so naming it fails
         String runtimeConfig = String.format(Locale.ROOT,
                 "{\"basePath\":\"%s\", \"onExists\":\"REPLACE\"}",
                 dir2.toString().replace("\\", "\\\\"));
@@ -90,7 +89,7 @@ public class FileSystemEmitterRuntimeConfigTest {
             emitter.emit("test2.json", metadataList2, context2);
         });
         assertTrue(exception.getCause() != null &&
-                exception.getCause().getMessage().contains("Cannot change 'basePath' at runtime"),
+                exception.getCause().getMessage().contains("basePath"),
                 "Should throw exception when attempting to change basePath at runtime");
     }
 

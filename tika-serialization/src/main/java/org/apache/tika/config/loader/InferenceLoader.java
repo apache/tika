@@ -162,7 +162,7 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
                     task = ComponentInstantiator.instantiateComponent(taskName,
                             context.getObjectMapper().createObjectNode(),
                             context.getObjectMapper(), context.getClassLoader(),
-                            InferenceTask.class);
+                            InferenceTask.class, true);
                 } catch (TikaConfigException e) {
                     throw new TikaConfigException("binding \"" + id + "\" task \"" + taskName
                             + "\": " + e.getMessage(), e);
@@ -194,7 +194,7 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
         Map.Entry<String, JsonNode> type = node.fields().next();
         try {
             return ComponentInstantiator.instantiateComponent(type.getKey(), type.getValue(),
-                    context.getObjectMapper(), context.getClassLoader(), TextChunker.class);
+                    context.getObjectMapper(), context.getClassLoader(), TextChunker.class, true);
         } catch (TikaConfigException e) {
             throw new TikaConfigException("binding \"" + id + "\" chunker \"" + type.getKey()
                     + "\": " + e.getMessage(), e);
