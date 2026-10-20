@@ -338,7 +338,7 @@ ls -R /tmp/tika-app-test/frictionless-out
 ----
 
 *Expected:* `test_recursive_embedded.docx.json` plus a `test_recursive_embedded.docx/`
-directory holding `datapackage.json`, `metadata.json` and `unpacked/`.
+directory holding `datapackage.json`, `rmeta.json` and `unpacked/`.
 
 === Test 24: Unpack zipped, and the pre-4.2 flat layout
 

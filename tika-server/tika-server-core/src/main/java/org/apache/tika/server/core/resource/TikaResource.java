@@ -56,6 +56,7 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.OutputLimits;
 import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -214,6 +215,23 @@ public class TikaResource {
      */
     public UnpackConfig newConfigUnpackConfig() {
         return loadConfigDefaults().get(UnpackConfig.class);
+    }
+
+    /**
+     * The config's unpack-config with the preset's unpack-config fields over it, field by
+     * field: the worker's preset merge replaces whole components, and the request's
+     * UnpackConfig (which the server always sends) would replace the preset's. Null when
+     * neither has one.
+     */
+    public UnpackConfig newPresetUnpackConfig(String presetName) throws IOException {
+        UnpackConfig base = newConfigUnpackConfig();
+        String presetJson = presetRegistry.parseContextJson(presetName);
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
+        JsonNode presetUnpack = presetJson == null ? null : mapper.readTree(presetJson).get("unpack-config");
+        if (presetUnpack == null) {
+            return base;
+        }
+        return mapper.readerForUpdating(base != null ? base : new UnpackConfig()).readValue(presetUnpack);
     }
 
 

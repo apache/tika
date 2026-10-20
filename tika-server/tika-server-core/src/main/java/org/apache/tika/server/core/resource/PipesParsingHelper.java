@@ -666,6 +666,9 @@ public class PipesParsingHelper {
             // Set emitter to our file-system emitter
             unpackConfig.setEmitter(UNPACK_EMITTER_ID);
 
+            // The fetch key may be the spool file; name the package for the caller's file
+            unpackConfig.setPackageName(callerSuppliedName == null ? "" : callerSuppliedName);
+
             // /all = the original document plus metadata, in either output format.
             if (saveAll) {
                 unpackConfig.setIncludeOriginal(true);

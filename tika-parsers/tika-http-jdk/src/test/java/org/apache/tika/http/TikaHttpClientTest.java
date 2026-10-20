@@ -17,11 +17,16 @@
 package org.apache.tika.http;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.net.ConnectException;
+import java.net.UnknownHostException;
 import java.util.Map;
+import javax.net.ssl.SSLHandshakeException;
 
 import org.junit.jupiter.api.Test;
 
@@ -269,6 +274,87 @@ public class TikaHttpClientTest {
             assertTrue(e.getMessage().contains("HTTP 429"), e.getMessage());
             assertTrue(elapsed < 800, "failed without waiting out the budget: " + elapsed);
             assertEquals(1, server.getRequestCount());
+        }
+    }
+
+    /** A service that closes the connection without answering is retried, as a 503 is. */
+    @Test
+    public void testRetriesADroppedConnectionThenSucceeds() throws Exception {
+        try (TikaTestHttpServer server = new TikaTestHttpServer();
+             TikaHttpClient client = TikaHttpClient.build(30, 4)) {
+            server.enqueue(MockResponse.dropConnection());
+            server.enqueue(MockResponse.dropConnection());
+            server.enqueue(new MockResponse(200, "{\"ok\":true}"));
+            long start = System.currentTimeMillis();
+            String body = client.postJson(server.url(), "{}", Map.of(), 10_000, new ParseContext());
+            long elapsed = System.currentTimeMillis() - start;
+            assertEquals("{\"ok\":true}", body);
+            assertEquals(3, server.getRequestCount());
+            assertTrue(elapsed >= 187 + 375, "two backoffs, 250 and 500 ms less jitter: " + elapsed);
+        }
+    }
+
+    @Test
+    public void testGivesUpOnADroppedConnectionAfterMaxRetries() throws Exception {
+        try (TikaTestHttpServer server = new TikaTestHttpServer();
+             TikaHttpClient client = TikaHttpClient.build(30, 2)) {
+            for (int i = 0; i < 4; i++) {
+                server.enqueue(MockResponse.dropConnection());
+            }
+            assertThrows(IOException.class,
+                    () -> client.postJson(server.url(), "{}", Map.of(), 10_000, new ParseContext()));
+            assertEquals(3, server.getRequestCount(), "one attempt plus two retries");
+        }
+    }
+
+    @Test
+    public void testZeroRetriesFailsOnTheFirstDroppedConnection() throws Exception {
+        try (TikaTestHttpServer server = new TikaTestHttpServer();
+             TikaHttpClient client = TikaHttpClient.build(30, 0)) {
+            server.enqueue(MockResponse.dropConnection());
+            server.enqueue(new MockResponse(200, "{}"));
+            assertThrows(IOException.class,
+                    () -> client.postJson(server.url(), "{}", Map.of(), 10_000, new ParseContext()));
+            assertEquals(1, server.getRequestCount());
+        }
+    }
+
+    /**
+     * Backoffs of 250 ms doubling to 4 s cannot all fit in a 3 s budget: the call ends with the
+     * transport failure itself, not a timeout, before the budget is spent.
+     */
+    @Test
+    public void testDroppedConnectionBackoffNeverSleepsPastTheBudget() throws Exception {
+        try (TikaTestHttpServer server = new TikaTestHttpServer();
+             TikaHttpClient client = TikaHttpClient.build(30, 10)) {
+            for (int i = 0; i < 12; i++) {
+                server.enqueue(MockResponse.dropConnection());
+            }
+            long start = System.currentTimeMillis();
+            assertThrows(IOException.class,
+                    () -> client.postJson(server.url(), "{}", Map.of(), 3000, new ParseContext()));
+            long elapsed = System.currentTimeMillis() - start;
+            assertTrue(elapsed < 3000, "gave up before the budget ran out: " + elapsed);
+            assertTrue(server.getRequestCount() > 1, "it did retry: " + server.getRequestCount());
+            assertTrue(server.getRequestCount() < 11, "not every retry was taken: " + server.getRequestCount());
+        }
+    }
+
+    /** Waiting cannot bring back a host that is not there, a failed handshake, or an interrupted thread. */
+    @Test
+    public void testOnlyTransientTransportFailuresAreRetryable() {
+        assertTrue(TikaHttpClient.isRetryableTransportFailure(
+                new IOException("HTTP/1.1 header parser received no bytes")));
+        assertTrue(TikaHttpClient.isRetryableTransportFailure(
+                new IOException("chunked transfer encoding, state: READING_LENGTH")));
+        assertFalse(TikaHttpClient.isRetryableTransportFailure(new UnknownHostException("no.such.host")));
+        assertFalse(TikaHttpClient.isRetryableTransportFailure(new ConnectException("Connection refused")));
+        assertFalse(TikaHttpClient.isRetryableTransportFailure(new SSLHandshakeException("bad certificate")));
+        Thread.currentThread().interrupt();
+        try {
+            assertFalse(TikaHttpClient.isRetryableTransportFailure(new IOException("HTTP request interrupted")));
+        } finally {
+            Thread.interrupted();
         }
     }
 

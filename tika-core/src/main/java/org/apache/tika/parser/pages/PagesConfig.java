@@ -26,6 +26,7 @@ import java.util.Locale;
 import java.util.Set;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
@@ -87,6 +88,61 @@ public class PagesConfig implements Serializable {
             effective = effective.over(overlay);
         }
         return effective;
+    }
+
+    /**
+     * The operator's top-level {@code "pages"} (config plus preset; null when neither sets one),
+     * which a request's own block replaces. The pipes worker records it so that
+     * {@link #resolve(ParseContext, String, PagesConfig, PagesConfig)} can bound a request by it.
+     *
+     * @since Apache Tika 4.2
+     */
+    public record OperatorPages(PagesConfig pages) implements Serializable {
+    }
+
+    /**
+     * The effective block for a rendering parser: as {@link #resolve(ParseContext, PagesConfig...)}
+     * with the parser's {@code operatorOverlay} and its per-parse {@code localOverlay}. In the
+     * pipes worker (where {@link OperatorPages} is set), when the context's {@code "pages"} or
+     * the parser's {@code componentName} config is untrusted request JSON, the render limits
+     * ({@link RenderSettings#tightenedTo}) may tighten the operator's but not loosen them.
+     *
+     * @since Apache Tika 4.2
+     */
+    public static PagesConfig resolve(ParseContext context, String componentName,
+                                      PagesConfig operatorOverlay, PagesConfig localOverlay)
+            throws TikaConfigException, IOException {
+        PagesConfig effective = resolve(context, operatorOverlay, localOverlay);
+        OperatorPages operator = context == null ? null : context.get(OperatorPages.class);
+        if (operator == null || !(fromRequest(context, KEY) || fromRequest(context, componentName))) {
+            return effective;
+        }
+        return effective.tightenedTo(defaults().over(operator.pages()).over(operatorOverlay));
+    }
+
+    private static boolean fromRequest(ParseContext context, String key) {
+        JsonConfig json = context.getJsonConfig(key);
+        return json != null && !json.trusted();
+    }
+
+    /**
+     * This effective block with its render and emitted-render limits reduced to
+     * {@code ceiling}'s where they are looser; this instance if none is.
+     */
+    PagesConfig tightenedTo(PagesConfig ceiling) {
+        RenderSettings tightRender = render.tightenedTo(ceiling.render);
+        RenderSettings emitted = tightRender.over(emit == null ? null : emit.render);
+        RenderSettings tightEmitted = emitted.tightenedTo(ceiling.emittedRender());
+        if (tightRender == render && tightEmitted == emitted) {
+            return this;
+        }
+        PagesConfig result = over(null);
+        result.render = tightRender;
+        if (tightEmitted != emitted) {
+            result.emit = emit == null ? new Emit() : emit.copy();
+            result.emit.render = tightEmitted;
+        }
+        return result;
     }
 
     /** A copy of this with every set field of {@code overlay} applied; null overlay is this. */

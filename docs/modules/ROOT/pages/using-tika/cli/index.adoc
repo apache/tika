@@ -380,7 +380,8 @@ activate it. `-a` and `--async` both work.
 === Unpacking attachments
 
 `-z` and `-Z` differ only in depth: `-z` extracts direct attachments (depth 1), `-Z` recurses
-through every level. Both accept a single file or a directory as input.
+through every level. Both accept a single file or a directory as input. With a single file
+and no output directory, output goes to `<input>-unpacked/`, in either format.
 
 [cols="1,3"]
 |===
@@ -399,19 +400,19 @@ through every level. Both accept a single file or a directory as input.
 |Output format: `FRICTIONLESS` (default) or `REGULAR`, the pre-4.2 flat layout.
 
 |`--unpack-mode=<mode>`
-|Output mode: `DIRECTORY` (default) or `ZIPPED`. `DIRECTORY` lays the package out under
-`<out>/<input>/` (`datapackage.json`, `metadata.json`, `unpacked/...`); `ZIPPED` writes
-`<out>/<input>-frictionless.zip`.
+|Output mode: `DIRECTORY` (default) or `ZIPPED`. `DIRECTORY` with a single input file makes
+`<out>` the package (`datapackage.json`, `rmeta.json`, `unpacked/...`); with an input directory each file gets `<out>/<input>/`. `ZIPPED`
+writes `<out>/<input>-frictionless.zip`.
 
 |`--unpack-include-metadata`
-|Metadata for every extracted file. A Frictionless package carries `metadata.json` by default;
+|Metadata for every extracted file. A Frictionless package carries `rmeta.json` by default;
 this adds a `.metadata.json` sidecar per file to REGULAR zip output.
 |===
 
 A `-c`/`--config` file's `unpack-config` is honoured and the flags above are applied on top
 of it. That is the only way to get the source document itself into the output
 (`"unpack-config": {"includeOriginal": true}`); no flag does it. File naming stays the
-CLI's own (`<input>/unpacked/00000001.<ext>`, or `<input>-embed/00000001.<ext>` under
+CLI's own (`unpacked/1.<ext>`, or `<input>-embed/1.<ext>` under
 `REGULAR`, detected suffixes, loose files unless `--unpack-mode=ZIPPED`) regardless of the
 file's `suffixStrategy`, `zeroPadName`, `embeddedIdPrefix`, `keyBaseStrategy` or `outputMode`. See
 xref:pipes/unpack-config.adoc#_what_each_surface_produces[what each surface produces].

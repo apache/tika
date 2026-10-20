@@ -151,7 +151,15 @@ public interface TikaCoreProperties {
      * Used by inference parsers and metadata filters to attach chunked representations
      * of document content for downstream indexing and semantic search.
      */
-    Property TIKA_CHUNKS = Property.reservedInternalText("tk:chunks");
+    Property TIKA_CHUNKS = Property.reservedInternalJson("tk:chunks");
+
+    /**
+     * Doubts a text recognizer has about the text it returned, which is never altered or dropped.
+     * Codes are short and tool-neutral: {@code truncated}, {@code repetition}, {@code empty},
+     * and {@code skipped:<reason>} for an input it did not read. On a
+     * document, the union over the pages or images it had recognized.
+     */
+    Property OCR_WARNINGS = Property.reservedInternalTextBag(TIKA_META_PREFIX + "ocr-warnings");
 
     /**
      * The inference inputs a parser released for this document (TEXT, PAGES, ...), written

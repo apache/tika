@@ -33,6 +33,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
@@ -249,6 +250,24 @@ public class ConfigMerger {
             LOG.debug("Applied timeout limits: totalTaskTimeoutMillis={}, " +
                     "progressTimeoutMillis={}", tl.getTotalTaskTimeoutMillis(),
                     tl.getProgressTimeoutMillis());
+        }
+
+        if (overrides.getEmbeddedLimits() != null) {
+            EmbeddedLimits el = overrides.getEmbeddedLimits();
+            ObjectNode parseContextNode = getOrCreateObject(mapper, root, "parse-context");
+            ObjectNode node = getOrCreateObject(mapper, parseContextNode, "embedded-limits");
+            node.put("maxDepth", el.getMaxDepth());
+            node.put("throwOnMaxDepth", el.isThrowOnMaxDepth());
+            node.put("maxCount", el.getMaxCount());
+            node.put("throwOnMaxCount", el.isThrowOnMaxCount());
+            LOG.debug("Applied embedded limits: {}", el);
+        }
+
+        if (overrides.getWriteLimit() != null) {
+            ObjectNode parseContextNode = getOrCreateObject(mapper, root, "parse-context");
+            getOrCreateObject(mapper, parseContextNode, "output-limits")
+                    .put("writeLimit", overrides.getWriteLimit());
+            LOG.debug("Applied writeLimit: {}", overrides.getWriteLimit());
         }
 
         byte[] json = mapper.writerWithDefaultPrettyPrinter().writeValueAsBytes(root);

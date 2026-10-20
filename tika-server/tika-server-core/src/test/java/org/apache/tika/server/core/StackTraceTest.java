@@ -183,13 +183,9 @@ public class StackTraceTest extends CXFTestBase {
             Response response = WebClient
                     .create(endPoint + actualPath)
                     .put(ClassLoader.getSystemResourceAsStream("test-documents/testDigilite.fdf"));
-            if (path.equals("/unpack")) {
-                //"NO CONTENT"
-                assertEquals(204, response.getStatus(), "bad type: " + actualPath);
-            } else {
-                assertEquals(200, response.getStatus(), "bad type: " + actualPath);
-                assertNotNull(response, "null response: " + actualPath);
-            }
+            // /unpack too: nothing to unpack is still a package (TIKA-4971)
+            assertEquals(200, response.getStatus(), "bad type: " + actualPath);
+            assertNotNull(response, "null response: " + actualPath);
         }
     }
 

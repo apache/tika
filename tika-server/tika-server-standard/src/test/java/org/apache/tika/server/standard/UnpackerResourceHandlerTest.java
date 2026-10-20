@@ -53,9 +53,9 @@ import org.apache.tika.server.core.writer.ZipWriter;
 
 /**
  * /unpack has no format segment, so the config part is the only place a handler is named --
- * and it reaches the RMETA list written to metadata.json.
+ * and it reaches the RMETA list written to rmeta.json.
  * Per-file sidecars exist only in the REGULAR layout, so the server config pins it; the
- * metadata.json probes ask for FRICTIONLESS explicitly.
+ * rmeta.json probes ask for FRICTIONLESS explicitly.
  */
 public class UnpackerResourceHandlerTest extends CXFTestBase {
 
@@ -131,7 +131,7 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
         String json = metadataJson("{" + FRICTIONLESS
                 + ", \"basic-content-handler-factory\": {\"type\": \"XML\"}}");
         assertTrue(json.contains("<html xmlns="),
-                "config part should select the handler for metadata.json");
+                "config part should select the handler for rmeta.json");
     }
 
     /** /unpack/all/<handler> used to 200 and silently ignore the segment. */
@@ -155,11 +155,11 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
     public void testAllConfigSpellingIsNotAHandlerNamedConfig() throws Exception {
         Response response = post("/unpack/all/config", "{" + FRICTIONLESS + "}");
         assertEquals(200, response.getStatus());
-        assertNotNull(readZipArchiveBytes((InputStream) response.getEntity()).get("metadata.json"));
+        assertNotNull(readZipArchiveBytes((InputStream) response.getEntity()).get("rmeta.json"));
         response = post("/unpack/all/config/ignore", "{" + FRICTIONLESS + "}");
         assertEquals(200, response.getStatus());
         String json = new String(readZipArchiveBytes((InputStream) response.getEntity())
-                .get("metadata.json"), StandardCharsets.UTF_8);
+                .get("rmeta.json"), StandardCharsets.UTF_8);
         assertFalse(json.contains("\"tk:content\""), "ignore after /config must suppress tk:content");
     }
 
@@ -256,8 +256,8 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
         Response response = post("/unpack", configJson);
         assertEquals(200, response.getStatus());
         Map<String, byte[]> entries = readZipArchiveBytes((InputStream) response.getEntity());
-        byte[] md = entries.get("metadata.json");
-        assertNotNull(md, "includeFullMetadata should write metadata.json");
+        byte[] md = entries.get("rmeta.json");
+        assertNotNull(md, "includeFullMetadata should write rmeta.json");
         return new String(md, StandardCharsets.UTF_8);
     }
 

@@ -106,7 +106,7 @@ java -jar tika-app.jar --config=file-forensics-config.json -Z --extract-dir=evid
 # mkdir -p evidence/suspect-embedded && unzip -q suspect-embedded.zip -d evidence/suspect-embedded
 
 jq 'map(del(."tk:content"))' suspect.rmeta.json > suspect.meta.json
-ls -lR evidence/suspect-embedded && sha256sum evidence/suspect-embedded/*/unpacked/* 2>/dev/null || sha256sum evidence/suspect-embedded/unpacked/*
+ls -lR evidence/suspect-embedded && sha256sum evidence/suspect-embedded/unpacked/*
 ```
 
 `suspect.rmeta.json` is the full evidence record — a JSON array where entry
@@ -339,20 +339,18 @@ files is incomplete.
   back visually corrupted (`VB\_Name`). The `-z`/`-Z` extracted files are
   pristine bytes. (Alternative: capture with `-J -t` for unescaped plain
   text per entry.)
-- Extracted files are **renumbered** (`00000001.jpg`, ...); original names
-  live in each rmeta entry's `tk:resource-name`, and `-z`/`-Z` writes a
-  sidecar `<name>.json` metadata dump for mapping numbers back to names.
-- The output is a Frictionless data package (Tika 4.2+): the files sit under
-  `<container>/unpacked/`, and `<container>/datapackage.json` already carries a
-  SHA-256 per file. Digest what you extracted
-  (`sha256sum evidence/suspect-embedded/*/unpacked/*`) and check it against the
+- Extracted files are **renumbered** (`1.jpg`, `2.pdf`, ...); each
+  `datapackage.json` resource carries the original name (`tk:resource-name`)
+  and `tk:embedded-id`, the key to the file's row in `rmeta.json`.
+- The output is a Frictionless data package (Tika 4.2+): for a single input
+  file the extract dir is the package — files under `unpacked/`, and
+  `datapackage.json` already carries a SHA-256 per file (and for
+  `rmeta.json`). Digest what you extracted
+  (`sha256sum evidence/suspect-embedded/unpacked/*`) and check it against the
   manifest, so each artifact is pinned the same way the container file is.
 - Mechanics and gotchas (Pipes-mode delay, chatty stderr) are in
   `file-to-markdown`; the server-side equivalent is `/unpack`, which returns
-  the same package as one zip over HTTP. **`/unpack` names differ from
-  `-z`/`-Z`:** plain sequential names (`unpacked/1.jpg`, `unpacked/2.pdf`, ...)
-  and the rmeta rows live in the package's `metadata.json` rather than a
-  sidecar — map names back via each row's `tk:resource-name`. Against the
+  the same package as one zip over HTTP, laid out the same way. Against the
   server started above (forensics config loaded):
 
   ```bash

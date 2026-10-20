@@ -99,31 +99,58 @@ public class EmbedTask implements InferenceTask {
         }
         int batchSize = Math.max(1, embedder.getMaxBatchSize());
         TikaException first = null;
-        for (int start = 0; start < units.size(); start += batchSize) {
-            List<InferenceUnit> batch = units.subList(start, Math.min(start + batchSize, units.size()));
-            try {
-                embed(binding, batch, embedder, context);
-            } catch (TikaException e) {
-                if (batch.size() == 1) {
-                    first = first == null ? e : first;
-                    continue;
-                }
-                // one bad image fails a whole batch; retry singly so the rest keep their vectors
-                for (InferenceUnit unit : batch) {
-                    try {
-                        embed(binding, List.of(unit), embedder, context);
-                    } catch (TikaException single) {
-                        first = first == null ? single : first;
+        // written once per destination at the end: each write re-serializes the whole field
+        List<Owned> embedded = new ArrayList<>();
+        try {
+            for (int start = 0; start < units.size(); start += batchSize) {
+                List<InferenceUnit> batch = units.subList(start, Math.min(start + batchSize, units.size()));
+                try {
+                    embed(binding, batch, embedder, context, embedded);
+                } catch (TikaException e) {
+                    if (batch.size() == 1) {
+                        first = first == null ? e : first;
+                        continue;
+                    }
+                    // one bad image fails a whole batch; retry singly so the rest keep their vectors
+                    for (InferenceUnit unit : batch) {
+                        try {
+                            embed(binding, List.of(unit), embedder, context, embedded);
+                        } catch (TikaException single) {
+                            first = first == null ? single : first;
+                        }
                     }
                 }
             }
+        } catch (IOException | RuntimeException e) {
+            write(embedded, e);
+            throw e;
         }
+        write(embedded, null);
         if (first != null) {
             throw first;
         }
     }
 
-    /** A chunk of text and the document it belongs to. */
+    /** Writes each destination's chunks at once; a write failure rides on the failure already in flight. */
+    private static void write(List<Owned> embedded, Exception inFlight) throws IOException {
+        for (List<Owned> byOwner : byOwner(embedded)) {
+            List<Chunk> chunks = new ArrayList<>(byOwner.size());
+            for (Owned o : byOwner) {
+                chunks.add(o.chunk());
+            }
+            try {
+                ChunkTarget.self(byOwner.get(0).owner())
+                        .write(chunks, TikaCoreProperties.TIKA_CHUNKS.getName());
+            } catch (IOException e) {
+                if (inFlight == null) {
+                    throw e;
+                }
+                inFlight.addSuppressed(e);
+            }
+        }
+    }
+
+    /** A chunk and the document it is written to. */
     private record Owned(Chunk chunk, Metadata owner) {
     }
 
@@ -174,14 +201,7 @@ public class EmbedTask implements InferenceTask {
                 }
             }
         }
-        for (List<Owned> byOwner : byOwner(embedded)) {
-            List<Chunk> chunks = new ArrayList<>(byOwner.size());
-            for (Owned o : byOwner) {
-                chunks.add(o.chunk());
-            }
-            ChunkTarget.self(byOwner.get(0).owner())
-                    .write(chunks, TikaCoreProperties.TIKA_CHUNKS.getName());
-        }
+        write(embedded, null);
         if (first != null) {
             throw first;
         }
@@ -382,8 +402,9 @@ public class EmbedTask implements InferenceTask {
         return chunks;
     }
 
+    /** Embeds the batch and adds each unit's chunk, tagged for its destination, to {@code embedded}. */
     private static void embed(InferenceBinding binding, List<InferenceUnit> batch,
-                              EmbeddingEngine embedder, ParseContext context)
+                              EmbeddingEngine embedder, ParseContext context, List<Owned> embedded)
             throws IOException, TikaException {
         List<byte[]> images = new ArrayList<>(batch.size());
         List<String> mimeTypes = new ArrayList<>(batch.size());
@@ -405,7 +426,9 @@ public class EmbedTask implements InferenceTask {
             chunk.setVector(vectors.get(i));
             chunk.setProducer(binding.getId());
             chunk.setModality(binding.getModality());
-            ChunkTarget.of(unit).write(List.of(chunk), TikaCoreProperties.TIKA_CHUNKS.getName());
+            ChunkTarget target = ChunkTarget.of(unit);
+            target.tag(List.of(chunk));
+            embedded.add(new Owned(chunk, target.getMetadata()));
         }
     }
 }

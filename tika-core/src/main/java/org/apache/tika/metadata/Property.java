@@ -255,6 +255,12 @@ public final class Property implements Comparable<Property> {
         return new Property(name, true, ValueType.RATIONAL);
     }
 
+    /** A single value holding one JSON document; see {@link ValueType#JSON}. */
+    public static Property internalJson(String name) {
+        requireNotReserved(name);
+        return new Property(name, true, ValueType.JSON);
+    }
+
     public static Property internalOpenChoice(String name, String... choices) {
         requireNotReserved(name);
         return new Property(name, true, ValueType.OPEN_CHOICE, choices);
@@ -375,6 +381,11 @@ public final class Property implements Comparable<Property> {
     static Property reservedInternalRational(String name) {
         requireReserved(name);
         return new Property(name, true, ValueType.RATIONAL);
+    }
+
+    static Property reservedInternalJson(String name) {
+        requireReserved(name);
+        return new Property(name, true, ValueType.JSON);
     }
 
     static Property reservedInternalText(String name) {
@@ -563,7 +574,12 @@ public final class Property implements Comparable<Property> {
 
     public enum ValueType {
         BOOLEAN, OPEN_CHOICE, CLOSED_CHOICE, DATE, INTEGER,
-        RATIONAL, REAL, TEXT, URI, PROPERTY
+        RATIONAL, REAL, TEXT, URI, PROPERTY,
+        /**
+         * A serialized JSON document. Not an XMP type: Tika's own, for structured values
+         * such as chunks. Stored as a String like any other value.
+         */
+        JSON
     }
 
 }

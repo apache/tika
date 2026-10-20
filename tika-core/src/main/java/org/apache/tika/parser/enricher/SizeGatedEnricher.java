@@ -24,7 +24,6 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TIFF;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
@@ -36,7 +35,10 @@ import org.apache.tika.parser.ParserDecorator;
  * ({@code minFileSizeToOcr}) are unchanged.
  *
  * @since Apache Tika 4.1
+ * @deprecated since 4.2: the loader puts an entry's minimum in a {@link GatedEnricher} as a
+ * {@link RecordedSizeCheck}. To be removed in 5.0.
  */
+@Deprecated
 public class SizeGatedEnricher extends ParserDecorator {
 
     private static final long serialVersionUID = 1L;
@@ -50,11 +52,14 @@ public class SizeGatedEnricher extends ParserDecorator {
         this.minHeight = minHeight;
     }
 
-    /** True when the metadata records a width or height below the minimum. */
+    /**
+     * True when the metadata records a width or height below the minimum.
+     *
+     * @deprecated use {@link RecordedSizeCheck#tooSmall}
+     */
+    @Deprecated
     public static boolean tooSmall(Metadata metadata, int minWidth, int minHeight) {
-        Integer width = metadata.getInt(TIFF.IMAGE_WIDTH);
-        Integer height = metadata.getInt(TIFF.IMAGE_LENGTH);
-        return (width != null && width < minWidth) || (height != null && height < minHeight);
+        return RecordedSizeCheck.tooSmall(metadata, minWidth, minHeight);
     }
 
     public int getMinWidth() {

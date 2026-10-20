@@ -19,6 +19,7 @@ package org.apache.tika.pipes.core.server;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.DataInputStream;
@@ -30,20 +31,30 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.ExceptionReporting;
+import org.apache.tika.config.OutputLimits;
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
+import org.apache.tika.metadata.writelimiter.StandardMetadataLimiterFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
+import org.apache.tika.pipes.core.extractor.UnpackConfig;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.serialization.ParseContextUtils;
 
 /**
  * Unit tests for payload-size protection in {@link ServerProtocolIO#writeFinished}
- * and timeout-limit clamping in {@link ServerProtocolIO#clampRequestTimeoutLimits}.
+ * and request-limit clamping in {@link ServerProtocolIO#clampRequestTimeoutLimits} and
+ * {@link ServerProtocolIO#clampRequestLimits}.
  */
 class ServerProtocolIOTest {
 
@@ -86,6 +97,141 @@ class ServerProtocolIOTest {
         ServerProtocolIO.clampRequestTimeoutLimits(request, merged, MAX);
 
         assertEquals(7_200_000L, merged.get(TimeoutLimits.class).getTotalTaskTimeoutMillis());
+    }
+
+    // ---- output/embedded/write limit clamping tests ----
+
+    private static ParseContext overlay(ParseContext operator, ParseContext request) {
+        ParseContext merged = new ParseContext();
+        merged.copyFrom(operator);
+        merged.copyFrom(request);
+        return merged;
+    }
+
+    @Test
+    public void testRequestMayNotLoosenOperatorLimits() throws Exception {
+        ParseContext operator = new ParseContext();
+        operator.set(OutputLimits.class, new OutputLimits(1000, false, 50, 1_000_000, 100));
+        operator.set(EmbeddedLimits.class, new EmbeddedLimits(5, false, 100, false));
+        ParseContext request = new ParseContext();
+        request.set(OutputLimits.class, new OutputLimits(-1, false, 10_000, Long.MAX_VALUE, 100));
+        request.set(EmbeddedLimits.class, new EmbeddedLimits(-1, false, -1, false));
+        ParseContext merged = overlay(operator, request);
+
+        ServerProtocolIO.clampRequestLimits(operator, merged);
+
+        OutputLimits output = merged.get(OutputLimits.class);
+        assertEquals(1000, output.getWriteLimit());
+        assertEquals(50, output.getMaxXmlDepth());
+        assertEquals(1_000_000, output.getZipBombThreshold());
+        assertEquals(5, merged.get(EmbeddedLimits.class).getMaxDepth());
+        assertEquals(100, merged.get(EmbeddedLimits.class).getMaxCount());
+    }
+
+    @Test
+    public void testRequestMayTightenOperatorLimits() throws Exception {
+        ParseContext request = new ParseContext();
+        OutputLimits tighter = new OutputLimits(10, true, 20, 1000, 10);
+        request.set(OutputLimits.class, tighter);
+        ParseContext operator = new ParseContext();
+        ParseContext merged = overlay(operator, request);
+
+        ServerProtocolIO.clampRequestLimits(operator, merged);
+
+        assertEquals(tighter, merged.get(OutputLimits.class));
+    }
+
+    @Test
+    public void testOperatorLimitsAreNotClamped() throws Exception {
+        ParseContext operator = new ParseContext();
+        // looser than the class defaults, which are the ceiling when nothing is configured
+        OutputLimits loose = new OutputLimits(-1, false, 10_000, Long.MAX_VALUE, Long.MAX_VALUE);
+        operator.set(OutputLimits.class, loose);
+        ParseContext merged = overlay(operator, new ParseContext());
+
+        ServerProtocolIO.clampRequestLimits(operator, merged);
+
+        assertEquals(10_000, merged.get(OutputLimits.class).getMaxXmlDepth());
+    }
+
+    @Test
+    public void testDefaultsAreTheCeilingWhenNothingIsConfigured() throws Exception {
+        ParseContext request = new ParseContext();
+        request.setJsonConfig("output-limits", "{\"maxXmlDepth\": 100000}");
+        ParseContext operator = new ParseContext();
+        ParseContext merged = overlay(operator, request);
+        ParseContextUtils.resolveAll(merged,
+                getClass().getClassLoader());
+
+        ServerProtocolIO.clampRequestLimits(operator, merged);
+
+        assertEquals(new OutputLimits().getMaxXmlDepth(),
+                merged.get(OutputLimits.class).getMaxXmlDepth());
+    }
+
+    @Test
+    public void testRequestHandlerFactoryWriteLimitIsClamped() throws Exception {
+        ParseContext operator = new ParseContext();
+        OutputLimits operatorLimits = new OutputLimits();
+        operatorLimits.setWriteLimit(1000);
+        operator.set(OutputLimits.class, operatorLimits);
+        ParseContext request = new ParseContext();
+        request.set(ContentHandlerFactory.class,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+        ParseContext merged = overlay(operator, request);
+
+        ServerProtocolIO.clampRequestLimits(operator, merged);
+
+        assertEquals(1000,
+                ((BasicContentHandlerFactory) merged.get(ContentHandlerFactory.class)).getWriteLimit());
+    }
+
+    @Test
+    public void testRequestMetadataLimiterIsClamped() throws Exception {
+        ParseContext operator = new ParseContext();
+        StandardMetadataLimiterFactory operatorLimiter = new StandardMetadataLimiterFactory();
+        operatorLimiter.setMaxTotalBytes(1000);
+        operator.set(MetadataWriteLimiterFactory.class, operatorLimiter);
+        ParseContext request = new ParseContext();
+        StandardMetadataLimiterFactory requestLimiter = new StandardMetadataLimiterFactory();
+        requestLimiter.setMaxTotalBytes(Integer.MAX_VALUE);
+        requestLimiter.setMaxValuesPerField(2);
+        request.set(MetadataWriteLimiterFactory.class, requestLimiter);
+        ParseContext merged = overlay(operator, request);
+
+        ServerProtocolIO.clampRequestLimits(operator, merged);
+
+        StandardMetadataLimiterFactory clamped =
+                (StandardMetadataLimiterFactory) merged.get(MetadataWriteLimiterFactory.class);
+        assertEquals(1000, clamped.getMaxTotalBytes());
+        assertEquals(2, clamped.getMaxValuesPerField());
+    }
+
+    @Test
+    public void testRequestMayNotReplaceMetadataLimiterWithAnotherKind() {
+        ParseContext operator = new ParseContext();
+        operator.set(MetadataWriteLimiterFactory.class, new StandardMetadataLimiterFactory());
+        ParseContext request = new ParseContext();
+        request.set(MetadataWriteLimiterFactory.class, () -> null);
+        ParseContext merged = overlay(operator, request);
+
+        assertThrows(TikaConfigException.class,
+                () -> ServerProtocolIO.clampRequestLimits(operator, merged));
+    }
+
+    @Test
+    public void testRequestMaxUnpackBytesIsClamped() throws Exception {
+        ParseContext request = new ParseContext();
+        UnpackConfig unpack = new UnpackConfig();
+        unpack.setMaxUnpackBytes(-1);
+        request.set(UnpackConfig.class, unpack);
+        ParseContext operator = new ParseContext();
+        ParseContext merged = overlay(operator, request);
+
+        ServerProtocolIO.clampRequestLimits(operator, merged);
+
+        assertEquals(UnpackConfig.DEFAULT_MAX_UNPACK_BYTES,
+                merged.get(UnpackConfig.class).getMaxUnpackBytes());
     }
 
     // ---- payload guard tests ----

@@ -73,8 +73,32 @@ class EmitHandler {
         this.directEmitThresholdBytes = directEmitThresholdBytes;
     }
 
-    public PipesResult emitParseData(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
-        PipesResult result = emitParseDataInternal(t, parseData, parseContext);
+    /** Outcome of {@link #prepare}: the container stack trace and whether the tuple emits. */
+    record Prepared(String stack, boolean emit) {
+    }
+
+    /**
+     * Text inference, then the metadata filters, then user metadata, in place. Runs once per
+     * parse, before anything that writes the metadata list (the unpack package, the emit).
+     */
+    Prepared prepare(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
+        String stack = getContainerStacktrace(t, parseData.getMetadataList());
+        boolean emit = StringUtils.isBlank(stack) ||
+                t.getOnParseException() == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
+        if (emit) {
+            runTextInference(parseData, parseContext);
+        }
+        //we need to apply the metadata filter after we pull out the stacktrace
+        filterMetadata(parseData, parseContext);
+        if (emit) {
+            injectUserMetadata(t.getMetadata(), parseData.getMetadataList());
+        }
+        return new Prepared(stack, emit);
+    }
+
+    public PipesResult emitParseData(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData,
+                                     Prepared prepared, ParseContext parseContext) {
+        PipesResult result = emitParseDataInternal(t, parseData, prepared, parseContext);
         // Deadline exhaustion is a document-level fact, independent of which SUCCESS
         // variant (parsed-only, emitted, passed back...) the rest of this class chose --
         // relabel any of them uniformly rather than special-casing every return site
@@ -112,19 +136,10 @@ class EmitHandler {
         return parseRecord.isTaskDeadlineReached();
     }
 
-    private PipesResult emitParseDataInternal(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData, ParseContext parseContext) {
-        long start = System.currentTimeMillis();
-        String stack = getContainerStacktrace(t, parseData.getMetadataList());
-        FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = t.getOnParseException();
-        boolean emit = StringUtils.isBlank(stack) ||
-                onParseException == FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT;
-        if (emit) {
-            runTextInference(parseData, parseContext);
-        }
-        //we need to apply the metadata filter after we pull out the stacktrace
-        filterMetadata(parseData, parseContext);
-        if (emit) {
-            injectUserMetadata(t.getMetadata(), parseData.getMetadataList());
+    private PipesResult emitParseDataInternal(FetchEmitTuple t, MetadataListAndEmbeddedBytes parseData,
+                                              Prepared prepared, ParseContext parseContext) {
+        String stack = prepared.stack();
+        if (prepared.emit()) {
             EmitKey emitKey = t.getEmitKey();
             if (StringUtils.isBlank(emitKey.getEmitKey())) {
                 emitKey = new EmitKey(emitKey.getEmitterId(), t.getFetchKey().getFetchKey());
@@ -210,6 +225,9 @@ class EmitHandler {
             ParseMode parseMode = parseContext.get(ParseMode.class);
             if (parseMode == ParseMode.CONTENT_ONLY && emitter instanceof StreamEmitter) {
                 emitContentOnly((StreamEmitter) emitter, emitKey, parseData, parseContext);
+            } else if (parseData.isPackageReplacesEmit()) {
+                LOG.debug("Frictionless package replaces the metadata emit for {}",
+                        emitKey.getEmitKey());
             } else if (isExtractEmbeddedBytes &&
                     parseData.toBePackagedForStreamEmitter()) {
                 emitContentsAndBytes(emitter, emitKey, parseData);

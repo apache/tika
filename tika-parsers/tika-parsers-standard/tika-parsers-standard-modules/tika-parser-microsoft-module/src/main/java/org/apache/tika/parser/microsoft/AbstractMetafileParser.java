@@ -55,7 +55,8 @@ abstract class AbstractMetafileParser implements Parser, RenderingParser {
     /** The effective {@code "pages"} block for this parse; the default's overlay first, as in PDFParser. */
     PagesConfig pages(ParseContext context, MetafileParserConfig config)
             throws TikaException, IOException {
-        return PagesConfig.resolve(context, defaultConfig.getPages(), config.getPages());
+        return PagesConfig.resolve(context, componentName(), defaultConfig.getPages(),
+                config.getPages());
     }
 
     /**

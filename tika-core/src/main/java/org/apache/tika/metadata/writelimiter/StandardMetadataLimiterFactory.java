@@ -81,6 +81,33 @@ public class StandardMetadataLimiterFactory implements MetadataWriteLimiterFacto
                 excludeFields, includeEmpty);
     }
 
+    /**
+     * Returns this instance if no size limit is looser than {@code ceiling}'s, otherwise a
+     * copy with each looser size limit reduced to the ceiling's. Field selection is the
+     * request's. Used at trust boundaries so a request may tighten operator limits but not
+     * loosen them.
+     *
+     * @param ceiling the operator's limiter
+     * @return this, or a tightened copy
+     * @since Apache Tika 4.2
+     */
+    public StandardMetadataLimiterFactory tightenedTo(StandardMetadataLimiterFactory ceiling) {
+        if (maxKeySize <= ceiling.maxKeySize && maxFieldSize <= ceiling.maxFieldSize
+                && maxTotalBytes <= ceiling.maxTotalBytes
+                && maxValuesPerField <= ceiling.maxValuesPerField) {
+            return this;
+        }
+        StandardMetadataLimiterFactory tightened = new StandardMetadataLimiterFactory();
+        tightened.setIncludeFields(includeFields);
+        tightened.setExcludeFields(excludeFields);
+        tightened.includeEmpty = includeEmpty;
+        tightened.maxKeySize = Math.min(maxKeySize, ceiling.maxKeySize);
+        tightened.maxFieldSize = Math.min(maxFieldSize, ceiling.maxFieldSize);
+        tightened.maxTotalBytes = Math.min(maxTotalBytes, ceiling.maxTotalBytes);
+        tightened.maxValuesPerField = Math.min(maxValuesPerField, ceiling.maxValuesPerField);
+        return tightened;
+    }
+
     public void setIncludeFields(Set<String> includeFields) {
         this.includeFields = includeFields != null ? new HashSet<>(includeFields) : new HashSet<>();
     }
