@@ -16,17 +16,11 @@
  */
 package org.apache.tika.config;
 
-import java.lang.reflect.Method;
-
 /**
- * Utility for deserializing JSON configuration without compile-time dependency on Jackson.
+ * Deserializes JSON configuration without a compile-time dependency on Jackson.
  * <p>
- * This class uses reflection to call Jackson's ObjectMapper when available on the classpath.
- * If tika-serialization is available, it uses the configured ObjectMapper from
- * {@code TikaObjectMapperFactory} to ensure consistent behavior with ParseContext
- * serialization. Otherwise, it falls back to a plain ObjectMapper.
- * <p>
- * If Jackson is not available and JSON deserialization is attempted, it throws a clear error message.
+ * Reads through tika-serialization (see {@link ConfigReader}), which also refuses untrusted JSON
+ * that sets an {@link OperatorOnly} property. Throws if tika-serialization is not available.
  * <p>
  * Usage pattern in parsers, detectors, and other Tika components:
  * <pre>
@@ -56,73 +50,29 @@ import java.lang.reflect.Method;
  */
 public class ConfigDeserializer {
 
-    private static final Class<?> OBJECT_MAPPER_CLASS;
-    private static final Object OBJECT_MAPPER_INSTANCE;
-    private static final Method READ_VALUE_METHOD;
-
-    static {
-        Class<?> clazz = null;
-        Object instance = null;
-        Method method = null;
-        try {
-            clazz = Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
-
-            // Try to use TikaObjectMapperFactory from tika-serialization if available.
-            // This ensures we use the same configured ObjectMapper as ParseContext serialization.
-            try {
-                Class<?> factoryClass = Class.forName(
-                        "org.apache.tika.config.loader.TikaObjectMapperFactory");
-                Method getMapperMethod = factoryClass.getMethod("getMapper");
-                instance = getMapperMethod.invoke(null);
-            } catch (Exception e) {
-                // tika-serialization not on classpath, fall back to plain ObjectMapper
-                instance = clazz.getDeclaredConstructor().newInstance();
-            }
-
-            method = clazz.getMethod("readValue", String.class, Class.class);
-        } catch (Exception e) {
-            // Jackson not on classpath - will fail at runtime if JSON deserialization is attempted
-        }
-        OBJECT_MAPPER_CLASS = clazz;
-        OBJECT_MAPPER_INSTANCE = instance;
-        READ_VALUE_METHOD = method;
-    }
-
     /**
-     * Deserializes a JSON configuration to a configuration object.
-     * Requires Jackson on the classpath.
+     * Deserializes a JSON configuration to a configuration object. Untrusted JSON (see
+     * {@link JsonConfig#trusted()}) may not set an {@link OperatorOnly} property.
      *
      * @param jsonConfig the JSON configuration
      * @param configClass the configuration class
      * @param <T> the configuration type
      * @return the deserialized configuration object
-     * @throws RuntimeException if Jackson is not on the classpath or deserialization fails
+     * @throws RuntimeException if tika-serialization is not on the classpath, deserialization
+     *         fails, or untrusted JSON sets an operator-only property
      */
     public static <T> T buildConfig(JsonConfig jsonConfig, Class<T> configClass) {
-        if (OBJECT_MAPPER_CLASS == null) {
-            throw new RuntimeException(
-                "Cannot parse JSON configuration for " + configClass.getSimpleName() +
-                ": Jackson is not on the classpath. " +
-                "Add com.fasterxml.jackson.core:jackson-databind as a dependency.");
+        ConfigReader reader = ConfigReader.find();
+        if (reader == null) {
+            throw new RuntimeException("Cannot parse JSON configuration for " + configClass.getName() +
+                    ": tika-serialization is missing or failed to load. " +
+                    "Add org.apache.tika:tika-serialization as a dependency.");
         }
-
         try {
-            @SuppressWarnings("unchecked")
-            T config = (T) READ_VALUE_METHOD.invoke(OBJECT_MAPPER_INSTANCE, jsonConfig.json(), configClass);
-            return config;
+            return reader.readConfig(jsonConfig.json(), configClass, jsonConfig.trusted());
         } catch (Exception e) {
-            Throwable cause = e.getCause() != null ? e.getCause() : e;
-            throw new RuntimeException("Failed to parse " + configClass.getSimpleName() +
-                " configuration: " + cause.getMessage(), cause);
+            throw new RuntimeException("Failed to parse " + configClass.getName() +
+                " configuration: " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * Checks if Jackson ObjectMapper is available on the classpath.
-     *
-     * @return true if Jackson is available for JSON deserialization
-     */
-    public static boolean isJacksonAvailable() {
-        return OBJECT_MAPPER_CLASS != null;
     }
 }

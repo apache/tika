@@ -18,6 +18,7 @@ package org.apache.tika.config;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -28,6 +29,12 @@ import java.lang.annotation.Target;
  * what a tika-server {@code /config} part or a pipes {@code FetchEmitTuple} carries) that
  * names the property is refused before any setter runs.
  * <p>
+ * On a component class (inherited by subclasses), a request may not build the component:
+ * for an implementation of a request-allowed type that sends data off the host or otherwise
+ * breaks that type's promise. A self-configuring component's flat per-request config still
+ * tunes the operator's instance, minus its operator-only properties. Not honored on an
+ * interface, which does not pass annotations to its implementations.
+ * <p>
  * Put it on the setter (or field, or getter) of anything whose value reaches the host
  * rather than the document: a path or executable the parser runs, a class name it loads,
  * a URL or credential it sends data to, a pool size or memory ceiling an operator sized.
@@ -35,14 +42,17 @@ import java.lang.annotation.Target;
  * {@literal @}OperatorOnly
  * public void setTesseractPath(String tesseractPath) { ... }
  * </pre>
- * Enforced by {@code ConfigDeserializer} (tika-serialization) for every component that
- * resolves its config through {@link ParseContextConfig#getConfig}. The check is by JSON
- * key, so a nested object's properties are checked against the nested type too.
+ * Enforced in tika-serialization wherever untrusted JSON configures something: a component
+ * a request builds ({@code ComponentInstantiator}), a {@code JsonConfig} constructor
+ * ({@link ConfigDeserializer#buildConfig}), and a self-configuring component's runtime
+ * config ({@link ParseContextConfig#getConfig}). The check is by JSON key, so a nested
+ * object's properties are checked against the nested type too.
  *
  * @since Apache Tika 4.2
  */
 @Documented
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD, ElementType.FIELD})
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
 public @interface OperatorOnly {
 }
