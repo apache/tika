@@ -34,14 +34,16 @@ import org.apache.tika.parser.ParseContext;
 
 /**
  * Tells the TIFF-based raw camera formats (Nikon NEF/NRW, Pentax PEF/PTX,
- * Sony ARW/SRF/SR2, Samsung SRW, Adobe DNG) from a plain TIFF by content,
+ * Sony ARW/SRF/SR2, Samsung SRW, Epson ERF, Adobe DNG) from a plain TIFF by content,
  * so they are recognized without a file name (TIKA-4861). They share the
  * TIFF magic; what differs is the image directory:
  * <ol>
  *   <li>a {@code DNGVersion} tag (0xC612) makes a DNG, whoever wrote it;</li>
  *   <li>a vendor-specific {@code Compression} value (0x0103) in any IFD
  *       names the format: 34713 Nikon, 32767 Sony, 65535 Pentax,
- *       32770 and 32772 Samsung (this is how ExifTool identifies them);</li>
+ *       32770 and 32772 Samsung (this is how ExifTool identifies
+ *       them). Epson's own 32769 is not among them: it is a published TIFF
+ *       value other writers use, so an ERF is told by its Make;</li>
  *   <li>otherwise sensor data in any IFD marks a raw, and the {@code Make}
  *       tag (0x010F) picks the vendor: an image with
  *       {@code PhotometricInterpretation} 32803 (CFA) or 34892 (LinearRaw),
@@ -109,6 +111,7 @@ public class RawTiffDetector implements Detector {
     static final MediaType PENTAX = MediaType.image("x-raw-pentax");
     static final MediaType SONY = MediaType.image("x-raw-sony");
     static final MediaType SAMSUNG = MediaType.image("x-raw-samsung");
+    static final MediaType EPSON = MediaType.image("x-raw-epson");
     static final MediaType ADOBE = MediaType.image("x-raw-adobe");
 
     @Override
@@ -368,6 +371,8 @@ public class RawTiffDetector implements Detector {
             return SONY;
         } else if (m.startsWith("SAMSUNG")) {
             return SAMSUNG;
+        } else if (m.startsWith("SEIKO EPSON") || m.startsWith("EPSON")) {
+            return EPSON;
         }
         return null;
     }

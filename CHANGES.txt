@@ -1,5 +1,13 @@
 Release 4.2.0 - unreleased
 
+   * Previews are extracted from Olympus ORF (also with the OM SYSTEM MakerNote), Panasonic
+     RW2, Epson ERF, Kodak KDC and Leaf MOS. Epson ERF is detected by content, and
+     image/x-raw-epson, image/x-raw-kodak and image/x-raw-leaf are sub-classes of
+     image/tiff (TIKA-4980).
+
+   * ImageMetadataExtractor skips a tag whose metadata-extractor descriptor throws instead of
+     failing the parse; this applies to every image format metadata-extractor reads (TIKA-4980).
+
    * A JsonConfig's raw text is read only through ConfigDeserializer or
      PluginJson.read(JsonConfig, Class), which apply the request restrictions and
      @OperatorOnly; forbidden-apis rejects JsonConfig.json() elsewhere in Tika's main code.

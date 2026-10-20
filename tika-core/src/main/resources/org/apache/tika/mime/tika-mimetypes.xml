@@ -7304,6 +7304,7 @@
 
   <mime-type type="image/x-raw-kodak">
     <_comment>Kodak raw image</_comment>
+    <sub-class-of type="image/tiff" />
     <glob pattern="*.k25"/>
     <glob pattern="*.kdc"/>
     <glob pattern="*.dcs"/>
@@ -7364,6 +7365,7 @@
 
   <mime-type type="image/x-raw-epson">
     <_comment>Epson raw image</_comment>
+    <sub-class-of type="image/tiff" />
     <glob pattern="*.erf"/>
   </mime-type>
 
@@ -7374,6 +7376,7 @@
 
   <mime-type type="image/x-raw-leaf">
     <_comment>Leaf raw image</_comment>
+    <sub-class-of type="image/tiff" />
     <glob pattern="*.mos"/>
   </mime-type>
 
