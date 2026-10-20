@@ -160,6 +160,10 @@ public class RawTiffParser extends TiffParser {
 
     private static final byte[] OLYMPUS_MAKER_NOTE_NAME =
             "OLYMPUS\u0000".getBytes(StandardCharsets.US_ASCII);
+    //OM Digital Solutions bodies (OM-1, OM-3, OM-5, TG-7) write a longer name
+    //and the same layout behind it, what ExifTool calls MakerNoteOlympus3
+    private static final byte[] OM_SYSTEM_MAKER_NOTE_NAME =
+            "OM SYSTEM\u0000\u0000\u0000".getBytes(StandardCharsets.US_ASCII);
     private static final byte[] EPSON_MAKER_NOTE_NAME =
             "EPSON\u0000".getBytes(StandardCharsets.US_ASCII);
     //the name and two bytes of version, then the IFD, whose offsets count
@@ -168,6 +172,7 @@ public class RawTiffParser extends TiffParser {
     //the name, the MakerNote's own byte order marker and its version, then
     //its IFD starts
     private static final int OLYMPUS_MAKER_NOTE_HEADER_LENGTH = 12;
+    private static final int OM_SYSTEM_MAKER_NOTE_HEADER_LENGTH = 16;
 
     private static final int COMPRESSION_OLD_JPEG = 6;
     private static final int COMPRESSION_JPEG = 7;
@@ -619,12 +624,17 @@ public class RawTiffParser extends TiffParser {
         if (makerNote <= 0 || makerNote > fileLength - EPSON_MAKER_NOTE_HEADER_LENGTH) {
             return new ArrayList<>();
         }
-        //as much of a header as the file holds: the two vendors need 8 and 12
-        byte[] header = new byte[OLYMPUS_MAKER_NOTE_HEADER_LENGTH];
+        //as much of a header as the file holds: the three names need 8, 12 and 16
+        byte[] header = new byte[OM_SYSTEM_MAKER_NOTE_HEADER_LENGTH];
         raf.seek(makerNote);
         raf.readFully(header, 0, (int) Math.min(header.length, fileLength - makerNote));
         if (startsWith(header, OLYMPUS_MAKER_NOTE_NAME)) {
-            return readOlympusMakerNotePreviews(raf, fileLength, makerNote, header);
+            return readOlympusMakerNotePreviews(raf, fileLength, makerNote, header,
+                    OLYMPUS_MAKER_NOTE_NAME, OLYMPUS_MAKER_NOTE_HEADER_LENGTH);
+        }
+        if (startsWith(header, OM_SYSTEM_MAKER_NOTE_NAME)) {
+            return readOlympusMakerNotePreviews(raf, fileLength, makerNote, header,
+                    OM_SYSTEM_MAKER_NOTE_NAME, OM_SYSTEM_MAKER_NOTE_HEADER_LENGTH);
         }
         if (startsWith(header, EPSON_MAKER_NOTE_NAME)) {
             return readEpsonMakerNotePreviews(raf, fileLength, makerNote, bigEndian);
@@ -667,27 +677,28 @@ public class RawTiffParser extends TiffParser {
      * The JPEGs an Olympus MakerNote points at: the camera's thumbnail
      * (0x0100) and the preview that the CameraSettings sub-IFD (0x2020)
      * names with PreviewImageStart and PreviewImageLength. Every offset
-     * inside the MakerNote is relative to its first byte. Only the
-     * "OLYMPUS\0" header is read, the older "OLYMP\0" one counts from
-     * elsewhere and is left to the next reader.
+     * inside the MakerNote is relative to its first byte. The "OLYMPUS\0"
+     * and "OM SYSTEM\0\0\0" headers are read, which differ in the name's
+     * length only; the older "OLYMP\0" one counts from elsewhere and is left
+     * to the next reader.
      */
     private List<Preview> readOlympusMakerNotePreviews(RandomAccessFile raf, long fileLength,
-                                                       long makerNote, byte[] header)
+                                                       long makerNote, byte[] header,
+                                                       byte[] name, int headerLength)
             throws IOException {
         List<Preview> candidates = new ArrayList<>();
         //the MakerNote carries its own byte order marker, which a big endian
         //file does not have to share
         boolean bigEndian;
-        int name = OLYMPUS_MAKER_NOTE_NAME.length;
-        if (header[name] == 'I' && header[name + 1] == 'I') {
+        int order = name.length;
+        if (header[order] == 'I' && header[order + 1] == 'I') {
             bigEndian = false;
-        } else if (header[name] == 'M' && header[name + 1] == 'M') {
+        } else if (header[order] == 'M' && header[order + 1] == 'M') {
             bigEndian = true;
         } else {
             return candidates;
         }
-        byte[] table = readIfdEntries(raf, fileLength,
-                makerNote + OLYMPUS_MAKER_NOTE_HEADER_LENGTH, bigEndian);
+        byte[] table = readIfdEntries(raf, fileLength, makerNote + headerLength, bigEndian);
         if (table == null) {
             return candidates;
         }

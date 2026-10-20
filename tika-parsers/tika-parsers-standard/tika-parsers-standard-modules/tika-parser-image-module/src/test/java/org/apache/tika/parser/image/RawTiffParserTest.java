@@ -152,8 +152,9 @@ public class RawTiffParserTest extends TikaTest {
     }
 
     /**
-     * An ERF reaches this parser because the detector reads Epson's
-     * compression code and the registry makes image/x-raw-epson a TIFF. Its
+     * An ERF reaches this parser because the detector tells it by its Make
+     * (Epson's compression code is a published TIFF value other writers use)
+     * and the registry makes image/x-raw-epson a TIFF. Its
      * preview hangs in the MakerNote under 0x0280, at an offset counted from
      * the start of the file, and begins with a byte the camera wrote over
      * the SOI: it only parses as a JPEG once that byte is put back.
@@ -201,6 +202,26 @@ public class RawTiffParserTest extends TikaTest {
 
         Metadata container = metadataList.get(0);
         assertEquals("image/x-raw-olympus", container.get(HttpHeaders.CONTENT_TYPE));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        assertThumbnail(metadataList.get(1), 64, 48);
+        assertInlinePreview(metadataList.get(2), 0, 32, 24);
+    }
+
+    /**
+     * OM Digital Solutions bodies keep the Olympus layout behind a longer
+     * name: "OM SYSTEM\0\0\0", then the byte order marker and the version,
+     * and the IFD at 16, with every offset still counted from the MakerNote.
+     */
+    @Test
+    public void testORFOMSystem() throws Exception {
+        List<Metadata> metadataList = parseByName("testORF_omsystem.orf");
+        assertEquals(3, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-olympus", container.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("OM Digital Solutions", container.get(TIFF.EQUIPMENT_MAKE));
+        assertEquals("OM-3", container.get(TIFF.EQUIPMENT_MODEL));
         assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
 
         assertThumbnail(metadataList.get(1), 64, 48);

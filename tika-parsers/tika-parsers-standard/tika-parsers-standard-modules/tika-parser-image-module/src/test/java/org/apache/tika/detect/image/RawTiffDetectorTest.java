@@ -60,6 +60,7 @@ public class RawTiffDetectorTest {
             "testERF_nopreview.erf, image/x-raw-epson",
             "testORF.orf, image/x-raw-olympus",
             "testORF_bigendian.orf, image/x-raw-olympus",
+            "testORF_omsystem.orf, image/x-raw-olympus",
             "testRW2.rw2, image/x-raw-panasonic",
             "testTIFF.tif, image/tiff",
             "testJPEG.jpg, image/jpeg"})
