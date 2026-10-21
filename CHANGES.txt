@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * Extract stored line and paragraph counts from legacy Microsoft Word
+     (.doc) documents. The existing metadata properties are now populated
+     when these values are available in the document (TIKA-4694).
+
    * Previews are extracted from Olympus ORF (also with the OM SYSTEM MakerNote), Panasonic
      RW2, Epson ERF, Kodak KDC and Leaf MOS. Epson ERF is detected by content, and
      image/x-raw-epson, image/x-raw-kodak and image/x-raw-leaf are sub-classes of

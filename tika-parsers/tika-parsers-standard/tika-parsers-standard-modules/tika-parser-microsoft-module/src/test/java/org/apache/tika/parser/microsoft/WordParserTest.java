@@ -80,6 +80,14 @@ public class WordParserTest extends TikaTest {
     }
 
     @Test
+    public void testLineAndParagraphCount() throws Exception {
+        XMLResult result = getXML("testWORD_2006ml.doc");
+
+        assertEquals("12", result.metadata.get(Office.LINE_COUNT));
+        assertEquals("3", result.metadata.get(Office.PARAGRAPH_COUNT));
+    }
+
+    @Test
     public void testWordWithWAV() throws Exception {
         try (TikaInputStream tis = getResourceAsStream("/test-documents/Doc1_ole.doc")) {
             ContentHandler handler = new BodyContentHandler();
