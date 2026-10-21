@@ -247,6 +247,11 @@ Release 4.2.0 - unreleased
 
   SECURITY
 
+   * The default zip-bomb ratio (output-limits.zipBombRatio) is 1000, up from 100. The
+     ratio is measured across the whole embedded tree against the container's bytes, so
+     nested compression is still caught; at 100, ordinary compressed logs and text
+     tripped it. Set zipBombRatio to 100 to restore the old limit (TIKA-4985).
+
    * The Gemini VLM parser sends its API key in x-goog-api-key instead of the URL,
      which error messages and logs quote (TIKA-4985).
 

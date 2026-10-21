@@ -33,7 +33,7 @@ import org.apache.tika.parser.ParseContext;
  *   <li>{@code maxXmlDepth} - maximum XML element nesting depth (default: 100)</li>
  *   <li>{@code maxPackageEntryDepth} - deprecated; use {@link EmbeddedLimits#setMaxDepth(int)}</li>
  *   <li>{@code zipBombThreshold} - characters before zip bomb check activates (default: 1,000,000)</li>
- *   <li>{@code zipBombRatio} - maximum output:input ratio for zip bomb detection (default: 100)</li>
+ *   <li>{@code zipBombRatio} - maximum output:input ratio for zip bomb detection (default: 1,000)</li>
  * </ul>
  * <p>
  * <b>writeLimit behavior:</b> The writeLimit is the TOTAL characters across all documents
@@ -55,7 +55,7 @@ import org.apache.tika.parser.ParseContext;
  *       "throwOnWriteLimit": false,
  *       "maxXmlDepth": 100,
  * *       "zipBombThreshold": 1000000,
- *       "zipBombRatio": 100
+ *       "zipBombRatio": 1000
  *     }
  *   }
  * }
@@ -80,7 +80,7 @@ public class OutputLimits implements Serializable {
     private int maxXmlDepth = 100;
     private int maxPackageEntryDepth = 20;
     private long zipBombThreshold = 1_000_000;
-    private long zipBombRatio = 100;
+    private long zipBombRatio = 1000;
 
     /**
      * No-arg constructor for Jackson deserialization.

@@ -66,7 +66,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     /**
      * Maximum compression ratio.
      */
-    private long ratio = 100;
+    private long ratio = 1000;
 
     /**
      * Maximum XML element nesting level.
