@@ -1,5 +1,6 @@
 Release 4.2.0 - unreleased
 
+  BREAKING CHANGES AND DEPRECATIONS
    * Extract stored line and paragraph counts from legacy Microsoft Word
      (.doc) documents. The existing metadata properties are now populated
      when these values are available in the document (TIKA-4694).
@@ -11,8 +12,6 @@ Release 4.2.0 - unreleased
    * ISArchiveParser(String location) is removed: the ISA-Tab directory is always the
      parent directory of the study file, so pass a file-backed TikaInputStream
      (TikaInputStream.get(Path)) (TIKA-4986).
-
-  BREAKING CHANGES AND DEPRECATIONS
 
    * Unpack output is a Frictionless Data Package by default on tika-server /unpack,
      tika-app -z/-Z and pipes UNPACK; unpack-config.outputFormat=REGULAR
@@ -317,6 +316,15 @@ Release 4.2.0 - unreleased
      tk:chunks as JSON values rather than strings (TIKA-4969).
 
   OTHER CHANGES
+
+   * A RAR entry junrar fails to extract (truncated archive, bad CRC, missing password)
+     is now recorded as tk:exception:embedded-stream-exception on the container; the
+     entry still yields what was extracted before the failure, and the rest of the
+     archive is still parsed (junrar 8.1.2, TIKA-4985).
+
+   * ISArchiveParser no longer reads every ISA-Tab document's investigation and assay files
+     from the directory of the first document it parsed; concurrent parses no longer share
+     the study file name (TIKA-4986).
 
    * JSoupParser emits CDATA text again (TIKA-4963).
 
