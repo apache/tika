@@ -128,6 +128,16 @@ public class ConfigMergerTest {
     }
 
     @Test
+    public void testPresetsRefuseAMalformedPresetsValue() throws IOException {
+        Path existing = tempDir.resolve("existing.json");
+        Files.writeString(existing, "{\"presets\": \"thumbnail\"}");
+        ConfigOverrides overrides = ConfigOverrides.builder().addPreset("thumbnail").build();
+        assertThrows(IOException.class, () -> ConfigMerger.merge(existing, overrides));
+        // without presets to fold in, the value is left for the loader to refuse
+        assertNotNull(ConfigMerger.merge(existing, ConfigOverrides.builder().build()));
+    }
+
+    @Test
     public void testPresetsWithoutExistingConfig() throws IOException {
         ConfigOverrides overrides = ConfigOverrides.builder().addPreset("thumbnail").build();
         JsonNode root = new ObjectMapper().readTree(ConfigMerger.merge(null, overrides).json());

@@ -22,11 +22,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,8 @@ import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.pipes.core.PipesConfig;
+import org.apache.tika.pipes.core.config.ConfigMerger;
+import org.apache.tika.pipes.core.config.ConfigOverrides;
 
 public class TikaServerConfig {
 
@@ -97,14 +101,31 @@ public class TikaServerConfig {
     static TikaServerConfig load(CommandLine commandLine, String presetsEnv)
             throws IOException, TikaException {
 
+        Map<String, String> presets = new LinkedHashMap<>();
+        if (commandLine.hasOption("preset")) {
+            for (String name : commandLine.getOptionValues("preset")) {
+                presets.putIfAbsent(name.trim(), "--preset");
+            }
+        }
+        if (presetsEnv != null) {
+            for (String name : presetsEnv.split(",")) {
+                if (!name.isBlank()) {
+                    presets.putIfAbsent(name.trim(), PRESETS_ENV);
+                }
+            }
+        }
+
         TikaServerConfig config = null;
         Set<String> settings = new HashSet<>();
 
         if (commandLine.hasOption("c")) {
-            config = load(Paths.get(commandLine.getOptionValue("c")), commandLine, settings);
+            config = load(Paths.get(commandLine.getOptionValue("c")), commandLine, settings,
+                    presets);
         } else {
             config = new TikaServerConfig();
+            presets.forEach((name, source) -> LOG.info("preset '{}' activated by {}", name, source));
         }
+        config.presets = new ArrayList<>(presets.keySet());
 
         //port, host and id can be overwritten on the commandline at runtime
         if (commandLine.hasOption("p")) {
@@ -132,29 +153,31 @@ public class TikaServerConfig {
             settings.add("metricsPort");
         }
 
-        Set<String> presets = new LinkedHashSet<>();
-        if (commandLine.hasOption("preset")) {
-            for (String name : commandLine.getOptionValues("preset")) {
-                if (presets.add(name.trim())) {
-                    LOG.info("preset '{}' activated by --preset", name.trim());
-                }
-            }
-        }
-        if (presetsEnv != null) {
-            for (String name : presetsEnv.split(",")) {
-                if (!name.isBlank() && presets.add(name.trim())) {
-                    LOG.info("preset '{}' activated by {}", name.trim(), PRESETS_ENV);
-                }
-            }
-        }
-        config.presets = new ArrayList<>(presets);
-
         config.validateConsistency(settings);
         return config;
     }
 
     static TikaServerConfig load(Path tikaConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
+        return load(tikaConfigPath, commandLine, settings, Map.of());
+    }
+
+    private static TikaServerConfig load(Path tikaConfigPath, CommandLine commandLine,
+                                         Set<String> settings, Map<String, String> presets)
+            throws IOException, TikaException {
         TikaJsonConfig tikaJsonConfig = TikaLoader.load(tikaConfigPath).getConfig();
+        JsonNode filePresets = tikaJsonConfig.getRootNode().get("presets");
+        presets.forEach((name, source) -> {
+            JsonNode entry = filePresets == null ? null : filePresets.get(name);
+            if (entry == null) {
+                LOG.info("preset '{}' activated by {}", name, source);
+            } else if (entry.isObject()) {
+                LOG.warn("preset '{}' activated by {}: the catalog preset replaces the inline "
+                        + "definition in {}", name, source, tikaConfigPath);
+            } else {
+                LOG.warn("preset '{}' activated by {}: overrides \"{}\": {} in {}", name, source,
+                        name, entry, tikaConfigPath);
+            }
+        });
         TikaServerConfig tikaServerConfig = tikaJsonConfig.deserialize("server", TikaServerConfig.class);
         if (tikaServerConfig == null) {
             throw new TikaConfigException("Couldn't find 'server' element");
@@ -285,6 +308,20 @@ public class TikaServerConfig {
     @com.fasterxml.jackson.annotation.JsonIgnore
     public List<String> getPresets() {
         return presets;
+    }
+
+    /**
+     * The config file with {@link #getPresets()} folded in: the file itself when there are
+     * none, else a temp copy, for components that load their configuration from a path.
+     */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public Path getConfigPathWithPresets() throws IOException {
+        if (presets.isEmpty()) {
+            return configPath;
+        }
+        ConfigOverrides.Builder overrides = ConfigOverrides.builder();
+        presets.forEach(overrides::addPreset);
+        return ConfigMerger.mergeOrCreate(configPath, overrides.build()).configPath();
     }
 
     @com.fasterxml.jackson.annotation.JsonIgnore

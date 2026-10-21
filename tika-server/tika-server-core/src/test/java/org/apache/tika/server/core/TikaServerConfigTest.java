@@ -18,6 +18,7 @@ package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +28,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -96,6 +99,25 @@ public class TikaServerConfigTest extends TikaTest {
 
         config = TikaServerConfig.load(new DefaultParser().parse(options, new String[]{}), null);
         assertTrue(config.getPresets().isEmpty());
+    }
+
+    @Test
+    public void testConfigPathWithPresets() throws Exception {
+        Path path = getConfigPath(getClass(), "tika-config-server.json");
+        Options options = new Options()
+                .addOption(Option.builder().longOpt("preset").hasArg().get())
+                .addOption(Option.builder("c").longOpt("config").hasArg().get());
+        String[] args = {"-c", ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
+
+        TikaServerConfig config = TikaServerConfig.load(new DefaultParser().parse(options, args), null);
+        assertEquals(path.toAbsolutePath(), config.getConfigPathWithPresets());
+
+        config = TikaServerConfig.load(new DefaultParser().parse(options, args), "thumbnail");
+        Path merged = config.getConfigPathWithPresets();
+        assertNotEquals(path.toAbsolutePath(), merged);
+        JsonNode root = new ObjectMapper().readTree(merged.toFile());
+        assertTrue(root.get("presets").get("thumbnail").asBoolean());
+        assertTrue(root.has("server"));
     }
 
     @Test
