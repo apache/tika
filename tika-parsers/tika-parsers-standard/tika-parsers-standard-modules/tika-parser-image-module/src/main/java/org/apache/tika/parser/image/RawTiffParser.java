@@ -82,8 +82,7 @@ import org.apache.tika.sax.XHTMLContentHandler;
  * accepted for displayable images: PhotometricInterpretation RGB or YCbCr,
  * or 8 bits per sample when PhotometricInterpretation is absent (CR2).
  * Both classic TIFF and BigTIFF containers (allowed for DNG since spec
- * version 1.7) are supported for preview extraction; for BigTIFF, EXIF
- * metadata extraction is skipped until metadata-extractor supports it.
+ * version 1.7) are supported.
  * <p>
  * Of the previews that are extracted (see the length limits in
  * {@link RawTiffParserConfig}), the largest by JPEG byte length is marked
@@ -233,14 +232,7 @@ public class RawTiffParser extends TiffParser {
             xhtml.endDocument();
             return;
         }
-        if (magic == MAGIC_BIG_TIFF) {
-            //metadata-extractor cannot read BigTIFF containers yet:
-            //scan for XMP, but skip EXIF metadata extraction
-            tis.getFile();
-            ImageXmp.scanAndExtract(tis, metadata, context);
-        } else {
-            extractMetadata(tis, handler, metadata, context);
-        }
+        extractMetadata(tis, handler, metadata, context);
         RawTiffParserConfig config = getConfig(context);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
