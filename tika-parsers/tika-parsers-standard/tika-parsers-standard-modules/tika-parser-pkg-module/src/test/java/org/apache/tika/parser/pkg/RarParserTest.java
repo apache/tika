@@ -22,12 +22,19 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.xml.sax.ContentHandler;
 
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.PasswordProvider;
@@ -90,6 +97,25 @@ public class RarParserTest extends AbstractPkgTest {
         assertContains("test-documents/testTXT.txt", content);
         assertContains("test-documents/testWORD.doc", content);
         assertContains("test-documents/testXML.xml", content);
+    }
+
+    @Test
+    public void testCorruptEntryKeepsLaterEntries(@TempDir Path tmp) throws Exception {
+        byte[] rar;
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/test-documents.rar")) {
+            rar = IOUtils.toByteArray(tis);
+        }
+        // testEXCEL.xls, the first entry, has its packed data at 80..2885
+        rar[1500] ^= 0x5A;
+        Path corrupt = tmp.resolve("corrupt.rar");
+        Files.write(corrupt, rar);
+
+        List<Metadata> metadataList = getRecursiveMetadata(corrupt, new ParseContext(), false);
+        assertNotNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
+        assertContains("test-documents/testXML.xml",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertEquals("/testXML.xml",
+                metadataList.get(metadataList.size() - 1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
     }
 
     /**

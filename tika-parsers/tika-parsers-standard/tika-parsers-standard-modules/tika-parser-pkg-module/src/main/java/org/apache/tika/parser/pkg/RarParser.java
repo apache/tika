@@ -17,12 +17,14 @@
 package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
 import com.github.junrar.Archive;
 import com.github.junrar.exception.RarException;
 import com.github.junrar.rarfile.FileHeader;
+import org.apache.commons.io.input.ProxyInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -91,10 +93,15 @@ public class RarParser implements Parser {
                     AbstractArchiveParser.setLocalTime(entrydata, FileSystem.CREATED, header.getCTime());
                     AbstractArchiveParser.setLocalTime(entrydata, FileSystem.MODIFIED, header.getMTime());
                     AbstractArchiveParser.setLocalTime(entrydata, FileSystem.ACCESSED, header.getATime());
-                    try (TikaInputStream rarTis = TikaInputStream.get(rar.getInputStream(header))) {
+                    EntryStream entryStream = new EntryStream(rar.getInputStream(header));
+                    try (TikaInputStream rarTis = TikaInputStream.get(entryStream)) {
                         if (extractor.shouldParseEmbedded(entrydata, context)) {
                             extractor.parseEmbedded(rarTis, handler, entrydata, context, true);
                         }
+                    }
+                    if (entryStream.failure != null) {
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(
+                                entryStream.failure, metadata, context);
                     }
                 }
 
@@ -111,5 +118,25 @@ public class RarParser implements Parser {
         }
 
         xhtml.endDocument();
+    }
+
+    /**
+     * junrar 8.1.2+ reports a failed entry (truncated archive, bad CRC, missing password) as an
+     * IOException on the entry's stream. End the entry there instead, as junrar 8.1.1 did, so
+     * the bytes it delivered are still parsed and the rest of the archive is reached.
+     */
+    private static class EntryStream extends ProxyInputStream {
+        private IOException failure;
+
+        EntryStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        protected void handleIOException(IOException e) {
+            if (failure == null) {
+                failure = e;
+            }
+        }
     }
 }
