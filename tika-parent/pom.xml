@@ -316,23 +316,26 @@
          Created by the create-test-tmpdir antrun execution below, because the JVM will
          not create a missing java.io.tmpdir; it throws NoSuchFileException. -->
     <tika.test.tmpdir>${project.build.directory}/test-tmp</tika.test.tmpdir>
-    <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
+    <!-- tika-parent's own files; the ci profile re-points this one property, because Jenkins'
+         Maven job type doesn't set maven.multiModuleProjectDirectory -->
+    <tika.parent.dir>${maven.multiModuleProjectDirectory}/tika-parent</tika.parent.dir>
+    <checkstyle.configLocation>${tika.parent.dir}/checkstyle.xml</checkstyle.configLocation>
     <spotless.goal>apply</spotless.goal>
-    <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
+    <spotless.header.file>${tika.parent.dir}/license-header.txt</spotless.header.file>
     <!-- TIKA-4816: Metadata#set/add(String,String) etc. ban for migrated parser modules;
          opted into per-module by overriding forbiddenapis.module.signaturesFile (main
          sources only). -->
-    <metadata.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
+    <metadata.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
     <!-- TIKA-4848: default-on in every module's main sources (see forbiddenapis-check below) -->
-    <exception.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
-    <xml.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
+    <exception.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
+    <xml.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
     <!-- TIKA-4975: default-on; configuration JSON only through tika-serialization -->
-    <json.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-json-reader-bans.txt</json.forbiddenapis.signaturesFile>
+    <json.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-json-reader-bans.txt</json.forbiddenapis.signaturesFile>
     <!-- Per-module extra main-source bans; a module overrides this (e.g. to
          ${metadata.forbiddenapis.signaturesFile}) instead of overriding the
          forbiddenapis-check execution, whose child list would REPLACE the parent's
          and silently drop the default-on file. -->
-    <forbiddenapis.module.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
+    <forbiddenapis.module.signaturesFile>${tika.parent.dir}/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.75.0</google.cloud.version>
@@ -1862,13 +1865,7 @@
       <properties>
         <!-- Override the Spotless goal when this profile is active -->
         <spotless.goal>check</spotless.goal>
-        <!-- use session.executionRootDirectory in ci -->
-        <spotless.header.file>${session.executionRootDirectory}/tika-parent/license-header.txt</spotless.header.file>
-        <checkstyle.configLocation>${session.executionRootDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
-        <metadata.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
-        <exception.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
-        <xml.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
-        <forbiddenapis.module.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
+        <tika.parent.dir>${session.executionRootDirectory}/tika-parent</tika.parent.dir>
       </properties>
     </profile>
     <!-- Fast profile: ./mvnw install -Pfast -T1C -->
