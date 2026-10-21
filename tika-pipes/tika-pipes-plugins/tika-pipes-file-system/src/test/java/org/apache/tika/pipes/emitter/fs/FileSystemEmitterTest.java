@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -276,5 +277,29 @@ public class FileSystemEmitterTest {
             assertEquals(3, Files.size(basePath.resolve("unpacked/image.png")));
             assertEquals(0, tmpFiles(basePath));
         }
+    }
+
+    @Test
+    public void testGzipClosesFileWhenFinishFails() throws Exception {
+        boolean[] closed = {false};
+        // room for the 10-byte header only, so finish() hits the full disk
+        OutputStream full = new OutputStream() {
+            int written;
+
+            @Override
+            public void write(int b) throws IOException {
+                if (++written > 10) {
+                    throw new IOException("No space left on device");
+                }
+            }
+
+            @Override
+            public void close() {
+                closed[0] = true;
+            }
+        };
+        OutputStream gz = FileSystemEmitter.gzip(full);
+        assertThrows(IOException.class, gz::close);
+        assertTrue(closed[0]);
     }
 }

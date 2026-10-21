@@ -1,8 +1,8 @@
 Release 4.2.0 - unreleased
 
    * The file-system emitter can gzip its output ("compression": "GZIP"), and tika-eval
-     finds gzipped extracts (.json.gz) when comparing against a plain extract set
-     (TIKA-4989).
+     finds gzipped extracts (.json.gz) when comparing against a plain extract set, measuring
+     their extract lengths and -m/-n limits on uncompressed size (TIKA-4989).
 
    * tika-server activates catalog presets from the command line (--preset <name>, repeatable)
      and the environment (TIKA_PRESETS, comma-separated), the equivalent of "<name>": true in

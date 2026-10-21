@@ -41,7 +41,8 @@ import org.apache.tika.eval.app.db.H2Util;
 public class ComparerGzipExtractsTest {
 
     private static final String[] QUERIES = {
-            "select file_path from containers order by file_path",
+            "select file_path || ' ' || extract_file_length_a || ' ' || extract_file_length_b"
+                    + " from containers order by file_path",
             "select count(1) from profiles_a",
             "select count(1) from profiles_b",
             "select count(1) from extract_exceptions_a",

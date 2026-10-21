@@ -184,11 +184,20 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
     private static OutputStream newOutputStream(Path path, boolean gzip, OpenOption... options)
             throws IOException {
         OutputStream os = Files.newOutputStream(path, options);
-        if (!gzip) {
-            return os;
-        }
+        return gzip ? gzip(os) : os;
+    }
+
+    static OutputStream gzip(OutputStream os) throws IOException {
         try {
-            return new GZIPOutputStream(os, GZIP_BUFFER_SIZE);
+            return new GZIPOutputStream(os, GZIP_BUFFER_SIZE) {
+                // JDK 17's close() skips closing os when finish() throws (e.g. disk full)
+                @Override
+                public void close() throws IOException {
+                    try (os) {
+                        super.close();
+                    }
+                }
+            };
         } catch (IOException e) {
             os.close();
             throw e;

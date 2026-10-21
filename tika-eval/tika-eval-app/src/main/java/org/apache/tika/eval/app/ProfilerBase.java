@@ -43,6 +43,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
+import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
 import org.apache.tika.eval.app.io.PipesReport;
@@ -867,7 +868,7 @@ public abstract class ProfilerBase {
     protected long getFileLength(Path p) {
         if (p != null && Files.isRegularFile(p)) {
             try {
-                return Files.size(p);
+                return ExtractReader.extractLength(p);
             } catch (IOException e) {
                 //swallow
             }
