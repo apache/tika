@@ -322,6 +322,11 @@ Release 4.2.0 - unreleased
 
   OTHER CHANGES
 
+   * tika-app -J writes the metadata list when the container throws (a zip-bomb trip, a
+     corrupt or encrypted file), with the exception in tk:exception:container-exception on
+     the first record, as /rmeta does; it used to print nothing. The exit status still
+     reports the failure (TIKA-4985).
+     
    * A RAR entry junrar fails to extract (truncated archive, bad CRC, missing password)
      is now recorded as tk:exception:embedded-stream-exception on the container; the
      entry still yields what was extracted before the failure, and the rest of the

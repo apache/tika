@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.net.URI;
@@ -45,6 +46,7 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.GZIPOutputStream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -342,6 +344,26 @@ public class TikaCLITest {
         int title = json.indexOf("\"dc:title\"");
         assertTrue(enc > -1 && fb > -1 && enc < fb);
         assertTrue(fb > -1 && title > -1 && fb > title);
+    }
+
+    @Test
+    public void testJsonRecursiveWritesOnContainerException(@TempDir Path tmp) throws Exception {
+        // 2.6M chars from a few KB of gzip trips a 100:1 zip-bomb ratio
+        Path config = tmp.resolve("ratio-100.json");
+        Files.writeString(config, "{\"parse-context\":{\"output-limits\":{\"zipBombRatio\":100}}}");
+        Path gz = tmp.resolve("repetitive.txt.gz");
+        try (OutputStream os = new GZIPOutputStream(Files.newOutputStream(gz))) {
+            byte[] line = "the same log line, over and over\n".getBytes(UTF_8);
+            for (int i = 0; i < 80_000; i++) {
+                os.write(line);
+            }
+        }
+        resetContent();
+        assertThrows(TikaException.class, () -> TikaCLI.main(new String[]{"--config=" + config, "-J", gz.toString()}));
+        String json = outContent.toString(UTF_8);
+        assertTrue(json.contains("tk:exception:container-exception"), json);
+        assertTrue(json.contains("Suspected zip bomb"), json);
+        assertTrue(json.contains("the same log line"), json);
     }
 
     @Test
