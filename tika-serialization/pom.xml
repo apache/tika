@@ -36,7 +36,7 @@
 
   <properties>
     <!-- TIKA-4975: this module reads JsonConfigs under the request restrictions -->
-    <json.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-none.txt</json.forbiddenapis.signaturesFile>
+    <json.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-none.txt</json.forbiddenapis.signaturesFile>
   </properties>
 
   <dependencies>

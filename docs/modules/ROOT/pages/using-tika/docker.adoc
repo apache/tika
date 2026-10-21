@@ -105,6 +105,17 @@ For example, to keep the full image's parsers but turn OCR off:
 
 See xref:configuration/index.adoc[Configuration] for the file format.
 
+A catalog preset needs no file: name it in `TIKA_PRESETS` (comma-separated) or with `--preset`,
+and its route is live:
+
+[source,bash]
+----
+docker run -d -p 127.0.0.1:9998:9998 -e TIKA_PRESETS=thumbnail apache/tika:X.Y.Z-full
+curl -T document.pdf http://localhost:9998/unpack/preset/thumbnail
+----
+
+See xref:using-tika/server/index.adoc#_presets_named_configuration_without_config[Presets].
+
 == Extra jars
 
 Mount a directory of jars at `/tika-extras` — it is already on the container's classpath, and the

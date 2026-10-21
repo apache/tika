@@ -41,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import org.apache.tika.TikaLoaderHelper;
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.EmbeddedLimits;
+import org.apache.tika.config.OutputLimits;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
@@ -495,9 +496,12 @@ public class RecursiveParserWrapperTest extends TikaTest {
         RecursiveParserWrapper wrapper = new RecursiveParserWrapper(AUTO_DETECT_PARSER);
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(
                 new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+        // one deflate layer stays under the default ratio; the check across the tree is what's under test
+        ParseContext context = new ParseContext();
+        context.set(OutputLimits.class, new OutputLimits(-1, false, 100, 1_000_000, 100));
         try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
             TikaException e = assertThrows(TikaException.class,
-                    () -> wrapper.parse(tis, handler, new Metadata(), new ParseContext()));
+                    () -> wrapper.parse(tis, handler, new Metadata(), context));
             assertTrue(e.getMessage().contains("Zip bomb"));
         }
     }

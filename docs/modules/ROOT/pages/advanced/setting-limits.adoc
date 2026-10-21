@@ -75,7 +75,7 @@ these but `exception-reporting`, which has its own test:
       "throwOnWriteLimit": false,
       "maxXmlDepth": 100,
       "zipBombThreshold": 1000000,
-      "zipBombRatio": 100
+      "zipBombRatio": 1000
     },
     "timeout-limits": {
       "totalTaskTimeoutMillis": 3600000,
@@ -215,8 +215,10 @@ content is inlined into its container's XHTML.
 |Extracted characters before the zip-bomb ratio check activates.
 
 |`zipBombRatio`
-|100
+|1,000
 |Maximum ratio of extracted characters to input bytes read before flagging a zip bomb.
+Measured against the container's bytes across the whole embedded tree, so nested
+compression multiplies; one deflate layer alone stays under about 1,032.
 |===
 
 == Timeout limits

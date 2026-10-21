@@ -230,6 +230,17 @@ public class ConfigMerger {
             getOrCreateObject(mapper, root, "pipes").put("trustedRequests", true);
         }
 
+        if (!overrides.getPresets().isEmpty()) {
+            if (root.has("presets") && !root.get("presets").isObject()) {
+                throw new IOException("'presets' must be an object of preset definitions"
+                        + (existingConfig == null ? "" : " in " + existingConfig));
+            }
+            ObjectNode presetsNode = getOrCreateObject(mapper, root, "presets");
+            for (String preset : overrides.getPresets()) {
+                presetsNode.put(preset, true);
+            }
+        }
+
         // Apply emit strategy
         if (overrides.getEmitStrategy() != null) {
             ObjectNode pipesNode = getOrCreateObject(mapper, root, "pipes");

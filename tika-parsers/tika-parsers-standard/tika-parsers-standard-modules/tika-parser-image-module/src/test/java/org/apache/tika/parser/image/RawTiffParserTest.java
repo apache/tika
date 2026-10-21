@@ -349,6 +349,13 @@ public class RawTiffParserTest extends TikaTest {
         Metadata container = metadataList.get(0);
         assertEquals("image/x-raw-adobe", container.get(HttpHeaders.CONTENT_TYPE));
         assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertEquals("PENTAX", container.get(TIFF.EQUIPMENT_MAKE));
+        assertEquals("PENTAX K-x", container.get(TIFF.EQUIPMENT_MODEL));
+        assertEquals("0.004", container.get(TIFF.EXPOSURE_TIME));
+        assertEquals("5.6", container.get(TIFF.F_NUMBER));
+        assertEquals("200", container.get(TIFF.ISO_SPEED_RATINGS));
+        assertEquals("50.0", container.get(TIFF.FOCAL_LENGTH));
+        assertEquals("2010-01-01T12:00:00", container.get(TIFF.ORIGINAL_DATE));
 
         assertThumbnail(metadataList.get(1), 64, 48);
     }

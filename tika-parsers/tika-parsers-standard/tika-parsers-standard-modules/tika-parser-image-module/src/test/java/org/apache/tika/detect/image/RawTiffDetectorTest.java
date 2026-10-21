@@ -63,6 +63,7 @@ public class RawTiffDetectorTest {
             "testORF_omsystem.orf, image/x-raw-olympus",
             "testRW2.rw2, image/x-raw-panasonic",
             "testTIFF.tif, image/tiff",
+            "testBigTIFF.tif, image/tiff",
             "testJPEG.jpg, image/jpeg"})
     public void testDetectionWithoutName(String file, String expected) throws Exception {
         try (InputStream is = getClass().getResourceAsStream("/test-documents/" + file);

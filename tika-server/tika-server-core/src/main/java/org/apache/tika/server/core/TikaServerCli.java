@@ -42,6 +42,9 @@ public class TikaServerCli {
         options.addOption(null, "metricsPort", true,
                 "serve Prometheus metrics on this port (9404 by convention); "
                         + "unset means metrics are off\n");
+        options.addOption(null, "preset", true,
+                "activate a catalog preset, as \"presets\": {\"<name>\": true} in the config "
+                        + "would; repeatable, and TIKA_PRESETS takes a comma-separated list");
         return options;
     }
 

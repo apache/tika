@@ -107,6 +107,43 @@ public class ConfigMergerTest {
         assertEquals(50, parseContext.get("output-limits").get("maxXmlDepth").asInt());
     }
 
+    @Test
+    public void testPresetsOverrideTheConfigsOwnEntries() throws IOException {
+        Path existing = tempDir.resolve("existing.json");
+        Files.writeString(existing, "{\"presets\": {\"off\": false, \"inline\": {\"pages\": {}}}}");
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .addPreset("thumbnail")
+                .addPreset("off")
+                .addPreset("inline")
+                .build();
+
+        JsonNode presets = new ObjectMapper()
+                .readTree(ConfigMerger.merge(existing, overrides).json())
+                .get("presets");
+
+        assertTrue(presets.get("thumbnail").asBoolean());
+        assertTrue(presets.get("off").asBoolean());
+        assertTrue(presets.get("inline").asBoolean());
+        assertEquals(3, presets.size());
+    }
+
+    @Test
+    public void testPresetsRefuseAMalformedPresetsValue() throws IOException {
+        Path existing = tempDir.resolve("existing.json");
+        Files.writeString(existing, "{\"presets\": \"thumbnail\"}");
+        ConfigOverrides overrides = ConfigOverrides.builder().addPreset("thumbnail").build();
+        assertThrows(IOException.class, () -> ConfigMerger.merge(existing, overrides));
+        // without presets to fold in, the value is left for the loader to refuse
+        assertNotNull(ConfigMerger.merge(existing, ConfigOverrides.builder().build()));
+    }
+
+    @Test
+    public void testPresetsWithoutExistingConfig() throws IOException {
+        ConfigOverrides overrides = ConfigOverrides.builder().addPreset("thumbnail").build();
+        JsonNode root = new ObjectMapper().readTree(ConfigMerger.merge(null, overrides).json());
+        assertTrue(root.get("presets").get("thumbnail").asBoolean());
+    }
+
     /** TIKA-4834: the config docs permit comments; the merge step must not reject them. */
     @Test
     public void testMergeWithCommentedConfig() throws IOException {

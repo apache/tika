@@ -1,5 +1,15 @@
 Release 4.2.0 - unreleased
 
+   * tika-server activates catalog presets from the command line (--preset <name>, repeatable)
+     and the environment (TIKA_PRESETS, comma-separated), the equivalent of "<name>": true in
+     the config's presets, overriding the file's own entry for the name; a config file needs
+     no longer be mounted for that (TIKA-4988).
+
+  BREAKING CHANGES AND DEPRECATIONS
+   * Extract stored line and paragraph counts from legacy Microsoft Word
+     (.doc) documents. The existing metadata properties are now populated
+     when these values are available in the document (TIKA-4694).
+
    * ISArchiveParser no longer reads every ISA-Tab document's investigation and assay files
      from the directory of the first document it parsed; concurrent parses no longer share
      the study file name (TIKA-4986).
@@ -7,8 +17,6 @@ Release 4.2.0 - unreleased
    * ISArchiveParser(String location) is removed: the ISA-Tab directory is always the
      parent directory of the study file, so pass a file-backed TikaInputStream
      (TikaInputStream.get(Path)) (TIKA-4986).
-
-  BREAKING CHANGES AND DEPRECATIONS
 
    * Unpack output is a Frictionless Data Package by default on tika-server /unpack,
      tika-app -z/-Z and pipes UNPACK; unpack-config.outputFormat=REGULAR
@@ -74,6 +82,12 @@ Release 4.2.0 - unreleased
 
    * New ICOParser for icons and cursors; image/vnd.microsoft.icon moves to it from
      ImageParser. Tighter OS/2 bitmap array and TGA detection (TIKA-4937).
+
+   * BigTIFF is read through metadata-extractor 2.22.0: EXIF and DNG tags are extracted from
+     BigTIFF DNGs, which previously yielded only XMP and previews, and a plain BigTIFF file no
+     longer fails in TiffParser. Little-endian BigTIFF is detected as image/tiff by content
+     (TIKA-4987).
+
    * Previews are extracted from Olympus ORF (also with the OM SYSTEM MakerNote), Panasonic
      RW2, Epson ERF, Kodak KDC and Leaf MOS. Epson ERF is detected by content, and
      image/x-raw-epson, image/x-raw-kodak and image/x-raw-leaf are sub-classes of
@@ -241,6 +255,11 @@ Release 4.2.0 - unreleased
 
   SECURITY
 
+   * The default zip-bomb ratio (output-limits.zipBombRatio) is 1000, up from 100. The
+     ratio is measured across the whole embedded tree against the container's bytes, so
+     nested compression is still caught; at 100, ordinary compressed logs and text
+     tripped it. Set zipBombRatio to 100 to restore the old limit (TIKA-4985).
+
    * The Gemini VLM parser sends its API key in x-goog-api-key instead of the URL,
      which error messages and logs quote (TIKA-4985).
 
@@ -307,6 +326,15 @@ Release 4.2.0 - unreleased
      corrupt or encrypted file), with the exception in tk:exception:container-exception on
      the first record, as /rmeta does; it used to print nothing. The exit status still
      reports the failure (TIKA-4985).
+     
+   * A RAR entry junrar fails to extract (truncated archive, bad CRC, missing password)
+     is now recorded as tk:exception:embedded-stream-exception on the container; the
+     entry still yields what was extracted before the failure, and the rest of the
+     archive is still parsed (junrar 8.1.2, TIKA-4985).
+
+   * ISArchiveParser no longer reads every ISA-Tab document's investigation and assay files
+     from the directory of the first document it parsed; concurrent parses no longer share
+     the study file name (TIKA-4986).
 
    * JSoupParser emits CDATA text again (TIKA-4963).
 
