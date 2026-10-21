@@ -303,6 +303,11 @@ Release 4.2.0 - unreleased
 
   OTHER CHANGES
 
+   * tika-app -J writes the metadata list when the container throws (a zip-bomb trip, a
+     corrupt or encrypted file), with the exception in tk:exception:container-exception on
+     the first record, as /rmeta does; it used to print nothing. The exit status still
+     reports the failure (TIKA-4985).
+
    * JSoupParser emits CDATA text again (TIKA-4963).
 
    * OutlookExtractor falls back to the Date: header when a .msg has no MAPI date

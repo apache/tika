@@ -737,7 +737,16 @@ public class TikaCLI {
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(getContentHandlerFactory(type));
         try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
             wrapper.parse(tis, handler, metadata, context);
+        } finally {
+            // a container exception is already on the first record: write what was parsed, as /rmeta does
+            if (!handler.getMetadataList().isEmpty()) {
+                writeRecursiveJson(handler, output);
+            }
         }
+    }
+
+    private void writeRecursiveJson(RecursiveParserWrapperHandler handler, OutputStream output)
+            throws IOException, TikaException {
         JsonMetadataList.setPrettyPrinting(prettyPrint);
         try (Writer writer = getOutputWriter(output, encoding)) {
             List<Metadata> metadataList = handler.getMetadataList();
