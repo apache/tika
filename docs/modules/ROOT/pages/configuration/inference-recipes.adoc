@@ -25,7 +25,7 @@ how pages are rendered). Every default parser stays loaded in all of them.
 
 NOTE: `engines`, `text-recognizers` and `pages` are stable; `inference` (and
 `pages.inference`) is experimental in 4.1.0 and may change in a minor release without a
-deprecation cycle as 4.2 adds batched recognition, media inputs and document-level tasks. The
+deprecation cycle as 4.3 adds batched recognition, media inputs and document-level tasks. The
 recipes are correct for the release they ship with; check the release notes before moving.
 
 == Scanned pages only
@@ -228,5 +228,5 @@ for one request with `"pages": { "inference": ["PAGES"] }` in the same block.
 == Not yet
 
 A caption or tag per picture (a chat task on a chat engine), OCR configured but promoted per
-request, and separate render settings for OCR and for an image model are 4.2 work; the
+request, and separate render settings for OCR and for an image model are later work; the
 xref:configuration/inference.adoc[Inference] page says what each binding can do today.

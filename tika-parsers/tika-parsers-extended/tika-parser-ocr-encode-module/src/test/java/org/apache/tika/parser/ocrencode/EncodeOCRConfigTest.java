@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
-import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.inference.EngineRegistry;
 
 public class EncodeOCRConfigTest extends TikaTest {
 
@@ -64,8 +64,7 @@ public class EncodeOCRConfigTest extends TikaTest {
                 getConfigPath(EncodeOCRConfigTest.class,
                         "tika-config-encodeocr-full.json"));
         EncodeOCRParser parser =
-                (EncodeOCRParser) ((CompositeParser) loader.loadParsers())
-                        .getAllComponentParsers().get(0);
+                (EncodeOCRParser) loader.get(EngineRegistry.class).get("encode-ocr");
         EncodeOCRConfig config = parser.getDefaultConfig();
         assertEquals(1, config.getMinFileSizeToOcr(),
                 "Invalid overridden minFileSizeToOcr value");
@@ -83,8 +82,7 @@ public class EncodeOCRConfigTest extends TikaTest {
                 getConfigPath(EncodeOCRConfigTest.class,
                         "tika-config-encodeocr-partial.json"));
         EncodeOCRParser parser =
-                (EncodeOCRParser) ((CompositeParser) loader.loadParsers())
-                        .getAllComponentParsers().get(0);
+                (EncodeOCRParser) loader.get(EngineRegistry.class).get("encode-ocr");
         EncodeOCRConfig config = parser.getDefaultConfig();
         assertEquals(1, config.getMinFileSizeToOcr(),
                 "Invalid overridden minFileSizeToOcr value");
@@ -103,8 +101,7 @@ public class EncodeOCRConfigTest extends TikaTest {
                 getConfigPath(EncodeOCRConfigTest.class,
                         "tika-config-encodeocr-skip.json"));
         EncodeOCRParser parser =
-                (EncodeOCRParser) ((CompositeParser) loader.loadParsers())
-                        .getAllComponentParsers().get(0);
+                (EncodeOCRParser) loader.get(EngineRegistry.class).get("encode-ocr");
         EncodeOCRConfig config = parser.getDefaultConfig();
         assertTrue(config.isSkipOcr(),
                 "skipOcr should be true when set in config");

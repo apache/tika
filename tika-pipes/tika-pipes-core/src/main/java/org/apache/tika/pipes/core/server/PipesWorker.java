@@ -141,9 +141,6 @@ class PipesWorker implements Callable<PipesResult> {
     }
 
     private PipesResult doCall() throws Exception {
-        MetadataListAndEmbeddedBytes parseData = null;
-        TempFileUnpackHandler tempHandler = null;
-        FrictionlessUnpackHandler frictionlessHandler = null;
         try {
             //this can be null if there is a fetch exception
             ParseDataOrPipesResult parseDataResult = parseFromTuple();
@@ -152,7 +149,7 @@ class PipesWorker implements Callable<PipesResult> {
                 return parseDataResult.pipesResult;
             }
 
-            parseData = parseDataResult.parseDataResult;
+            MetadataListAndEmbeddedBytes parseData = parseDataResult.parseDataResult;
 
             if (parseData == null || metadataIsEmpty(parseData.getMetadataList())) {
                 return PipesResults.EMPTY_OUTPUT;
@@ -171,15 +168,15 @@ class PipesWorker implements Callable<PipesResult> {
                 // Check if we need to zip and emit embedded files
                 UnpackHandler handler = parseContext.get(UnpackHandler.class);
                 if (handler instanceof FrictionlessUnpackHandler) {
-                    frictionlessHandler = (FrictionlessUnpackHandler) handler;
-                    PipesResult frictionlessResult = emitFrictionlessOutput(frictionlessHandler, parseData);
+                    PipesResult frictionlessResult =
+                            emitFrictionlessOutput((FrictionlessUnpackHandler) handler, parseData);
                     if (frictionlessResult != null) {
                         // Frictionless emit failed - return the error
                         return frictionlessResult;
                     }
                 } else if (handler instanceof TempFileUnpackHandler) {
-                    tempHandler = (TempFileUnpackHandler) handler;
-                    PipesResult zipResult = zipAndEmitEmbeddedFiles(tempHandler, parseData, rowsById);
+                    PipesResult zipResult = zipAndEmitEmbeddedFiles((TempFileUnpackHandler) handler,
+                            parseData, rowsById);
                     if (zipResult != null) {
                         // Zipping/emitting failed - return the error
                         return zipResult;
@@ -190,23 +187,11 @@ class PipesWorker implements Callable<PipesResult> {
                 emitNanos = System.nanoTime() - emitStart;
             }
         } finally {
-            // Clean up handlers if used
-            if (frictionlessHandler != null) {
+            // the handler exists from setup on, so fetch and parse failures must close it too
+            UnpackHandler handler = parseContext.get(UnpackHandler.class);
+            if (handler instanceof Closeable) {
                 try {
-                    frictionlessHandler.close();
-                } catch (IOException e) {
-                    LOG.warn("problem closing frictionless handler", e);
-                }
-            } else if (tempHandler != null) {
-                try {
-                    tempHandler.close();
-                } catch (IOException e) {
-                    LOG.warn("problem closing temp file handler", e);
-                }
-            } else if (parseData != null && parseData.hasUnpackHandler() &&
-                    parseData.getUnpackHandler() instanceof Closeable) {
-                try {
-                    ((Closeable) parseData.getUnpackHandler()).close();
+                    ((Closeable) handler).close();
                 } catch (IOException e) {
                     LOG.warn("problem closing unpack handler", e);
                 }

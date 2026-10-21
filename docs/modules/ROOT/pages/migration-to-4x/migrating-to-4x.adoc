@@ -251,22 +251,19 @@ What changes for you:
   `TextRecognizer` to silence it.
 * Put the engine under `engines` and name it in the top-level `text-recognizers` list rather
   than under `parsers`; every default parser stays loaded. `"text-recognizers": []` turns
-  enrichment off everywhere. An engine left under `parsers` keeps working in 4.1.x with a
-  deprecation WARN at startup that says what the entry does (see below). Startup also logs one
-  line per effective engine.
+  enrichment off everywhere. An OCR engine left under `parsers` fails config load since 4.2.0
+  (see below). Startup also logs one line per effective engine.
 * VLM parsers gain `textRecognizer` (default `true`); set it to `false` for a captioning or tagging
   prompt so the PDF parser's `AUTO` OCR never replaces extracted text with the VLM's output.
 
-=== Engines under `parsers` deprecated (4.1.0+)
+=== OCR engines under `parsers` (4.2.0+)
 
-An inference engine named as a `parsers` entry, an OCR engine, a VLM parser or the image
-embedding parser, is deprecated since 4.1.0 and fails config load in 4.2.0, when `parsers`
-holds parsers only. Startup logs one WARN per such entry saying what it does today: it parses
-the types no other parser claims, it acts only as the text recognizer, or it never runs.
-Configure the engine under `engines` and name it in `text-recognizers` (or bind it with
-`inference`); every default parser stays loaded. Sending a whole PDF to Claude or Gemini by
-excluding `pdf-parser` goes with it: the 4.2 shape is `"pages": {"text": "OCR"}` with the
-VLM as recognizer, which sends rendered pages rather than the file.
+An OCR engine named as a `parsers` entry (`tesseract-ocr-parser`, `tess4j-parser`) was
+deprecated in 4.1.0 and fails config load since 4.2.0. Configure it under `engines` and name it
+in `text-recognizers`; every default parser stays loaded. A VLM parser may still be named under
+`parsers`, as a document parser: excluding `pdf-parser` and naming Claude or Gemini there still
+sends whole PDFs to the model. The 4.1 `openai-image-embedding-parser` and the embedding
+metadata filters are removed; bind an engine with `inference` instead.
 
 === Embedded depth defaults and `maxPackageEntryDepth` deprecated (4.2.0+)
 
@@ -278,16 +275,13 @@ only 9 levels). A concatenated parse of a deeply nested archive now stops at dep
 applies across the whole document tree on the `/rmeta` path, as it already did on the
 concatenated path, and fails the parse with `Zip bomb detected!`.
 
-=== Embedding filters and the image embedding parser deprecated (4.1.0+)
+=== Embedding filters and the image embedding parser removed (4.2.0)
 
-`openai-embedding-filter`, `jina-embedding-filter` and `openai-image-embedding-parser` are
-deprecated and will be removed in 4.2.0. Configure the endpoint once under `engines` and bind
-it with a `TEXT` or `IMAGES` xref:configuration/inference.adoc[inference binding]; it embeds
-the whole document tree in batched requests and puts a picture's vector on the document it is
-part of. Until then they keep working from the server-side config, with a WARN at startup. A
-request can no longer name the filters in a per-request `metadata-filters` list (4.0.x
-accepted a caller-supplied `baseUrl` there); the flat per-request
-`{"openai-embedding-filter": {"skipEmbedding": true}}` form is unchanged.
+`openai-embedding-filter`, `jina-embedding-filter` and `openai-image-embedding-parser`,
+deprecated in 4.1.0, are removed in 4.2.0; a config naming them fails to load. Configure the
+endpoint once under `engines` and bind it with a `TEXT` or `IMAGES`
+xref:configuration/inference.adoc[inference binding]; it embeds the whole document tree in
+batched requests and puts a picture's vector on the document it is part of.
 
 === PDF page settings become the `pages` block (4.1.0+)
 

@@ -30,9 +30,11 @@ import org.apache.commons.cli.CommandLine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.pipes.core.PipesConfig;
 
 public class TikaServerConfig {
 
@@ -125,9 +127,14 @@ public class TikaServerConfig {
     }
 
     static TikaServerConfig load(Path tikaConfigPath, CommandLine commandLine, Set<String> settings) throws IOException, TikaException {
-        TikaServerConfig tikaServerConfig = TikaLoader.load(tikaConfigPath).getConfig().deserialize("server", TikaServerConfig.class);
+        TikaJsonConfig tikaJsonConfig = TikaLoader.load(tikaConfigPath).getConfig();
+        TikaServerConfig tikaServerConfig = tikaJsonConfig.deserialize("server", TikaServerConfig.class);
         if (tikaServerConfig == null) {
             throw new TikaConfigException("Couldn't find 'server' element");
+        }
+        PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
+        if (pipesConfig != null) {
+            pipesConfig.refuseTrustedRequests("tika-server");
         }
         tikaServerConfig.setConfigPath(tikaConfigPath.toAbsolutePath().toString());
         return tikaServerConfig;

@@ -19,6 +19,7 @@ package org.apache.tika.pipes.fork;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +51,17 @@ public class ClasspathPluginsTest {
         manager.startPlugins();
         assertTrue(manager.getExtensions(TikaExtensionFactory.class).isEmpty(),
                 "a factory on the application classpath must not be discovered");
+    }
+
+    // any directory named plugins is found, e.g. an unrelated one in the cwd
+    @Test
+    public void unrelatedPluginsDirIsNotTheFileSystemPlugin(@TempDir Path pluginsDir)
+            throws Exception {
+        assertFalse(PipesForkParser.hasFileSystemPlugin(pluginsDir));
+        Files.createFile(pluginsDir.resolve("my-app-plugin.zip"));
+        assertFalse(PipesForkParser.hasFileSystemPlugin(pluginsDir));
+        Files.createFile(pluginsDir.resolve("tika-pipes-file-system-4.2.0.zip"));
+        assertTrue(PipesForkParser.hasFileSystemPlugin(pluginsDir));
     }
 
     @Test

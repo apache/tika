@@ -420,7 +420,7 @@ with `allowPerRequestConfig: true`):
 ----
 ParseContext parseContext = new ParseContext();
 parseContext.setJsonConfig("timeout-limits",
-    "{\"progressTimeoutMillis\": 300000}");
+    "{\"totalTaskTimeoutMillis\": 60000}");
 
 FetchEmitTuple t = new FetchEmitTuple("id",
     new FetchKey("my-fetcher", "large-document.pdf"),
@@ -432,12 +432,14 @@ FetchEmitTuple t = new FetchEmitTuple("id",
 Enforcement happens in the fork against the merged configuration (server config
 with per-request values applied on top).
 
-A per-request override can lower timeouts freely, but raising them is capped at
-`pipes.maxTotalTaskTimeoutMillis` (default 1 hour): request values above the cap are
-clamped to it, with a warning in the fork's log. This keeps a client from
-disabling the server's self-termination with an enormous requested timeout. Operators
-who need longer per-request budgets raise the cap; limits set in the server's own
-`parse-context` are trusted and never clamped.
+A per-request override can shorten a timeout but not extend it: each of
+`totalTaskTimeoutMillis` and `progressTimeoutMillis` is clamped to the operator's own value
+(the server's `parse-context` plus any preset, or the class default when neither sets one)
+and to `pipes.maxTotalTaskTimeoutMillis` (default 1 hour), with a warning in the fork's log.
+Operators who need longer per-request budgets raise their own limits or offer a preset; limits
+set in the server's own `parse-context` are trusted and never clamped. `PipesForkParser`
+callers are the operator and are not clamped
+(xref:advanced/setting-limits.adoc#_per_request_limits[`pipes.trustedRequests`]).
 
 == CLI Usage
 

@@ -55,6 +55,7 @@ public class ConfigOverrides {
     private final EmbeddedLimits embeddedLimits;
     private final Integer writeLimit;
     private final boolean classpathPlugins;
+    private final boolean trustedRequests;
 
     private ConfigOverrides(Builder builder) {
         this.fetchers = Collections.unmodifiableList(new ArrayList<>(builder.fetchers));
@@ -66,6 +67,7 @@ public class ConfigOverrides {
         this.embeddedLimits = builder.embeddedLimits;
         this.writeLimit = builder.writeLimit;
         this.classpathPlugins = builder.classpathPlugins;
+        this.trustedRequests = builder.trustedRequests;
     }
 
     public static Builder builder() {
@@ -107,6 +109,11 @@ public class ConfigOverrides {
     /** Whether the fork is told to load plugins from its classpath; see ConfigMerger. */
     public boolean isClasspathPlugins() {
         return classpathPlugins;
+    }
+
+    /** Whether the fork is told its requests are the operator's own; see ConfigMerger. */
+    public boolean isTrustedRequests() {
+        return trustedRequests;
     }
 
     /**
@@ -230,8 +237,18 @@ public class ConfigOverrides {
         private EmbeddedLimits embeddedLimits;
         private Integer writeLimit;
         private boolean classpathPlugins;
+        private boolean trustedRequests;
 
         private Builder() {
+        }
+
+        /**
+         * Sets {@code pipes.trustedRequests}: the requests come from the operator, so their
+         * parseContext is trusted and their limits and timeouts are used as given.
+         */
+        public Builder setTrustedRequests(boolean trustedRequests) {
+            this.trustedRequests = trustedRequests;
+            return this;
         }
 
         /**

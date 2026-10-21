@@ -60,17 +60,19 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
             METADATA_KEY, PARSE_CONTEXT, ON_PARSE_EXCEPTION, PRESET);
 
     private final boolean restricted;
+    private final boolean trustedParseContext;
 
     /**
      * Deserializer for untrusted input: refuses system component ids. This is the default
      * because forgetting to restrict a new caller must not be the thing that opens the gate.
      */
     public FetchEmitTupleDeserializer() {
-        this(true);
+        this(true, false);
     }
 
-    private FetchEmitTupleDeserializer(boolean restricted) {
+    private FetchEmitTupleDeserializer(boolean restricted, boolean trustedParseContext) {
         this.restricted = restricted;
+        this.trustedParseContext = trustedParseContext;
     }
 
     /**
@@ -80,7 +82,15 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
      * component here.
      */
     public static FetchEmitTupleDeserializer internal() {
-        return new FetchEmitTupleDeserializer(false);
+        return new FetchEmitTupleDeserializer(false, false);
+    }
+
+    /**
+     * As {@link #internal()}, for a fork whose requests are the operator's own
+     * ({@code pipes.trustedRequests}): the parseContext is read as trusted config.
+     */
+    public static FetchEmitTupleDeserializer internalTrusted() {
+        return new FetchEmitTupleDeserializer(false, true);
     }
 
     @Override
@@ -111,10 +121,12 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         long fetchRangeEnd = readLong(FETCH_RANGE_END, root, -1l, false);
         Metadata metadata = readMetadata(root);
         JsonNode parseContextNode = root.get(PARSE_CONTEXT);
-        // A FetchEmitTuple is always untrusted wire input (request body, pipes iterator): restrict
-        // its parseContext so it cannot introduce wire-blocked components (parsers, detectors, ...).
+        // Untrusted wire input (request body, pipes iterator) unless the fork's requests are the
+        // operator's own: restricted, it cannot introduce wire-blocked components or set
+        // @OperatorOnly properties.
         ParseContext parseContext = parseContextNode == null ? new ParseContext()
-                : ParseContextDeserializer.readParseContext(parseContextNode, true);
+                : ParseContextDeserializer.readParseContext(parseContextNode,
+                        !trustedParseContext);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
         String presetName = readPresetName(root);
 
