@@ -348,7 +348,9 @@ public class TikaCLITest {
 
     @Test
     public void testJsonRecursiveWritesOnContainerException(@TempDir Path tmp) throws Exception {
-        // 2.6M chars from a few KB of gzip trips the 100:1 zip-bomb ratio
+        // 2.6M chars from a few KB of gzip trips a 100:1 zip-bomb ratio
+        Path config = tmp.resolve("ratio-100.json");
+        Files.writeString(config, "{\"parse-context\":{\"output-limits\":{\"zipBombRatio\":100}}}");
         Path gz = tmp.resolve("repetitive.txt.gz");
         try (OutputStream os = new GZIPOutputStream(Files.newOutputStream(gz))) {
             byte[] line = "the same log line, over and over\n".getBytes(UTF_8);
@@ -357,7 +359,7 @@ public class TikaCLITest {
             }
         }
         resetContent();
-        assertThrows(TikaException.class, () -> TikaCLI.main(new String[]{"-J", gz.toString()}));
+        assertThrows(TikaException.class, () -> TikaCLI.main(new String[]{"--config=" + config, "-J", gz.toString()}));
         String json = outContent.toString(UTF_8);
         assertTrue(json.contains("tk:exception:container-exception"), json);
         assertTrue(json.contains("Suspected zip bomb"), json);
