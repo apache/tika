@@ -1,12 +1,7 @@
 {
   "parsers": [
     {
-      "default-parser" : {}
-    },
-    {
-      "tesseract-ocr-parser": {
-       "maxFileSizeToOcr": 100
-      }
+      "default-parser": {}
     },
     {
       "pdf-parser": {
@@ -15,6 +10,18 @@
           "strategy": "OCR_ONLY"
         }
       }
+    }
+  ],
+  "engines": {
+    "tesseract": {
+      "tesseract-ocr-parser": {
+        "maxFileSizeToOcr": 100
+      }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "tesseract"
     }
   ]
 }

@@ -1,9 +1,14 @@
 {
-  "parsers": [
-    {
+  "engines": {
+    "encode-ocr": {
       "encode-ocr-parser": {
         "skipOcr": true
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "encode-ocr"
     }
   ]
 }

@@ -16,10 +16,10 @@
  */
 /**
  * Engines a container parser invokes on bytes it has already parsed: text recognizers (OCR,
- * transcription) and annotators. Experimental in 4.1: the contract is one image per call,
- * written into the caller's body as it runs; 4.2 batches recognition per document. The intent
+ * transcription) and annotators. Experimental in 4.1 and 4.2: the contract is one image per call,
+ * written into the caller's body as it runs; 4.3 batches recognition per document. The intent
  * is additive: an engine that takes one image at a time keeps working unchanged, and one whose
- * service batches opts in by declaring a batch size and implementing the list call 4.2 adds.
+ * service batches opts in by declaring a batch size and implementing the list call 4.3 adds.
  * Until then these interfaces may change in a minor release without a deprecation cycle. The
  * {@code "engines"} and {@code "text-recognizers"} configuration that names an engine is stable.
  */

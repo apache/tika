@@ -17,7 +17,6 @@
 package org.apache.tika.server.standard;
 
 import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -428,51 +427,6 @@ public class TikaResourceTest extends CXFTestBase {
                 () -> TikaResource.mergeParseContextFromConfig(configJson, new ParseContext()));
         assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
                 "expected wire-blocked rejection, got: " + rootMessage(e));
-    }
-
-    /**
-     * MetadataFilter is wire-instantiable on the promise that no implementation does IO; the
-     * embedding filters POST document text to their baseUrl, so their class is @OperatorOnly.
-     */
-    @Test
-    public void testConfigRejectsEmbeddingFilterFromTheWire() {
-        TikaObjectMapperFactory.getMapper();
-        for (String name : new String[]{"openai-embedding-filter", "jina-embedding-filter"}) {
-            String configJson = "{\"metadata-filters\":[{\"" + name
-                    + "\":{\"baseUrl\":\"http://127.0.0.1:1/\"}}]}";
-            Exception e = assertThrows(Exception.class,
-                    () -> TikaResource.mergeParseContextFromConfig(configJson, new ParseContext()),
-                    name);
-            assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
-                    name + ": expected wire-blocked rejection, got: " + rootMessage(e));
-            String bareJson = "{\"metadata-filters\":[\"" + name + "\"]}";
-            e = assertThrows(Exception.class,
-                    () -> TikaResource.mergeParseContextFromConfig(bareJson, new ParseContext()),
-                    name);
-            assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
-                    name + ": expected wire-blocked rejection, got: " + rootMessage(e));
-        }
-        // the flat per-request config tunes the loaded filter and stays allowed
-        assertDoesNotThrow(() -> TikaResource.mergeParseContextFromConfig(
-                "{\"openai-embedding-filter\":{\"skipEmbedding\":true}}", new ParseContext()));
-    }
-
-    /** Over HTTP: a bare-string name is refused when the component is built, with the reason. */
-    @Test
-    public void testConfigPartRefusesOperatorOnlyClassOverHttp() throws Exception {
-        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"a.txt\"");
-        Attachment fileAtt = new Attachment("file",
-                new java.io.ByteArrayInputStream("hello".getBytes(StandardCharsets.UTF_8)), fileCd);
-        Attachment configAtt = new Attachment("config", "application/json",
-                new java.io.ByteArrayInputStream("{\"metadata-filters\":[\"openai-embedding-filter\"]}"
-                        .getBytes(StandardCharsets.UTF_8)));
-        Response response = WebClient
-                .create(endPoint + TIKA_PATH + "/config")
-                .type("multipart/form-data")
-                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
-        assertEquals(400, response.getStatus());
-        String body = getStringFromInputStream((InputStream) response.getEntity());
-        assertTrue(body.contains("may not be supplied via a request parseContext"), body);
     }
 
     private static String rootMessage(Throwable t) {

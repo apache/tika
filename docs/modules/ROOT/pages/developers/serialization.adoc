@@ -345,8 +345,8 @@ On a class, `@OperatorOnly` keeps a request from building the component at all. 
 implementation of a request-allowed type that breaks the type's promise, such as a
 `MetadataFilter` that sends document text over the network. Subclasses inherit it; an
 interface does not pass it on. A self-configuring component marked this way still takes its
-flat per-request config (e.g. `{"openai-embedding-filter":{"skipEmbedding":true}}`), which
-tunes the operator's instance; its operator-only properties stay refused.
+flat per-request config, which tunes the operator's instance; its operator-only properties stay
+refused.
 
 Java code that builds a component from a `JsonConfig` it wrote itself is operator code, and
 says so with `JsonConfig.trusted(json)`; a plain lambda is untrusted, so it cannot set an

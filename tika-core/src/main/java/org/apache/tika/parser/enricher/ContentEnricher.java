@@ -22,8 +22,9 @@ import org.apache.tika.parser.inference.Engine;
  * A {@link org.apache.tika.parser.Parser} a container parser <em>invokes</em> on bytes it
  * has already parsed (OCR on an image, an embedding of a rendered page) rather than one the
  * composite dispatches to; its supported types are the types it can enrich. An enricher the
- * classpath supplied is never dispatched to; named under {@code "parsers"} it also parses
- * the types no other parser there claims. See {@link ContentEnrichers#get}.
+ * classpath supplied is never dispatched to. Only one that {@link #parsesDocuments()} may be
+ * named under {@code "parsers"}, where it also parses the types no other parser there claims.
+ * See {@link ContentEnrichers#get}.
  * <p>
  * An enricher is an {@link Engine}: configured once under {@code "engines"}, a
  * {@code "text-recognizers"} entry names it.
@@ -31,4 +32,14 @@ import org.apache.tika.parser.inference.Engine;
  * @since Apache Tika 4.1
  */
 public interface ContentEnricher extends Engine {
+
+    /**
+     * Whether this engine is also a document parser in its own right (a VLM that reads a
+     * whole PDF), and so may be named under {@code "parsers"}. An OCR engine is not.
+     *
+     * @since Apache Tika 4.2
+     */
+    default boolean parsesDocuments() {
+        return false;
+    }
 }

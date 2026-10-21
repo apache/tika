@@ -1,10 +1,15 @@
 {
-  "parsers": [
-    {
+  "engines": {
+    "encode-ocr": {
       "encode-ocr-parser": {
         "minFileSizeToOcr": 1,
         "maxImagesToOcr": 10
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "encode-ocr"
     }
   ]
 }

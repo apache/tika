@@ -387,13 +387,15 @@ public class ServerProtocolIO {
     }
 
     /**
-     * Trust boundary: caps request-supplied {@link TimeoutLimits} (typed or unresolved
-     * {@code timeout-limits} JSON) at {@code pipes.maxTotalTaskTimeoutMillis}; the
-     * server's own tika-config limits are never clamped. Must run after
+     * Caps request-supplied {@link TimeoutLimits} (typed or unresolved {@code timeout-limits}
+     * JSON) field by field at the operator's own limits ({@code operatorContext}: the server's
+     * config plus any preset, or the class defaults) and at
+     * {@code pipes.maxTotalTaskTimeoutMillis}: a request may shorten a timeout but not extend
+     * it. The operator's limits are never clamped. Must run after
      * {@code ParseContextUtils.resolveAll} and before {@code ParseTimeout} is armed.
      */
     public static void clampRequestTimeoutLimits(ParseContext requestContext,
-            ParseContext mergedContext, long maxMillis) {
+            ParseContext operatorContext, ParseContext mergedContext, long maxMillis) {
         if (requestContext == null) {
             return;
         }
@@ -403,19 +405,26 @@ public class ServerProtocolIO {
             return;
         }
         TimeoutLimits merged = mergedContext.get(TimeoutLimits.class);
-        if (merged == null) {
+        if (merged == null || merged == operatorContext.get(TimeoutLimits.class)) {
             return;
         }
-        TimeoutLimits clamped = merged.clampedTo(maxMillis);
-        if (clamped != merged) {
-            LOG.warn("request-supplied {} exceeds pipes.maxTotalTaskTimeoutMillis ({}); clamping",
-                    merged, maxMillis);
+        TimeoutLimits operator = TimeoutLimits.get(operatorContext);
+        long total = Math.min(merged.getTotalTaskTimeoutMillis(),
+                Math.min(operator.getTotalTaskTimeoutMillis(), maxMillis));
+        long progress = Math.min(merged.getProgressTimeoutMillis(),
+                Math.min(operator.getProgressTimeoutMillis(), maxMillis));
+        if (total != merged.getTotalTaskTimeoutMillis()
+                || progress != merged.getProgressTimeoutMillis()) {
+            LOG.warn("request-supplied {} exceeds the server's {} (pipes.maxTotalTaskTimeoutMillis"
+                    + " {}); clamping", merged, operator, maxMillis);
+            TimeoutLimits clamped = new TimeoutLimits(total, progress);
+            clamped.setThrowOnDeadline(merged.isThrowOnDeadline());
             mergedContext.set(TimeoutLimits.class, clamped);
         }
     }
 
     /**
-     * Trust boundary: a request may tighten the operator's {@link OutputLimits},
+     * A request may tighten the operator's {@link OutputLimits},
      * {@link EmbeddedLimits}, content-handler write limit, metadata limiter and
      * {@code maxUnpackBytes} but not loosen them. Render limits in {@code "pages"} are bounded
      * where the parser resolves them, by the {@link PagesConfig.OperatorPages} recorded here.

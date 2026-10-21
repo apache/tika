@@ -112,15 +112,16 @@ class PEIconExtractor {
 
     /**
      * Continues reading the PE file directly after the COFF file header and
-     * emits every icon group as an embedded document.
+     * emits its icon groups as embedded documents.
      *
-     * @param stream   the input positioned right after the COFF header
+     * @param stream    the input positioned right after the COFF header
      * @param metadata the PE file's own metadata, receives a note if the
      *                 resource section is cut or broken and a warning if not
      *                 all of the tree or of the icons could be handled
      */
     static void extract(TikaInputStream stream, CoffHeader header, XHTMLContentHandler xhtml,
-                        Metadata metadata, ParseContext context) throws IOException, SAXException {
+                        Metadata metadata, ParseContext context, boolean allGroups)
+            throws IOException, SAXException {
         ResourceTree tree;
         try {
             tree = ResourceTree.read(stream, header);
@@ -140,7 +141,7 @@ class PEIconExtractor {
                     "PE resource directory has more than " + MAX_DIRECTORY_ENTRIES +
                             " entries; icon extraction stopped early"), metadata, context);
         }
-        emitIcons(tree, xhtml, metadata, context);
+        emitIcons(tree, xhtml, metadata, context, allGroups);
         if (tree.section.beyondLimit()) {
             EmbeddedDocumentUtil.recordException(new TikaException(
                     "PE resource section is larger than " + MAX_BUFFERED_SECTION_MB +
@@ -150,14 +151,15 @@ class PEIconExtractor {
     }
 
     /**
-     * Rebuilds an <code>.ico</code> file for every icon group and passes it on
-     * as an embedded document. The first usable group in resource order is the
-     * one Windows shows for the file itself. The icon adds nothing to the text
+     * Rebuilds an <code>.ico</code> file for the first usable icon group, or
+     * every group if {@code allGroups}, and passes it on as an embedded
+     * document. The first usable group in resource order is the one Windows
+     * shows for the file itself. The icon adds nothing to the text
      * output; its name is Tika's invention, not content of the file.
      */
     private static void emitIcons(ResourceTree tree, XHTMLContentHandler xhtml,
-                                  Metadata parentMetadata, ParseContext context)
-            throws IOException, SAXException {
+                                  Metadata parentMetadata, ParseContext context,
+                                  boolean allGroups) throws IOException, SAXException {
         if (tree.groups.isEmpty()) {
             return;
         }
@@ -173,6 +175,9 @@ class PEIconExtractor {
         long emitted = 0;
         boolean first = true;
         for (Resource group : tree.groups) {
+            if (!first && !allGroups) {
+                return;
+            }
             Icon icon = resolveGroup(group, tree);
             String relationshipId =
                     RT_GROUP_ICON + "/" + group.displayName() + "/" + group.language;

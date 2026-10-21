@@ -1,6 +1,6 @@
 {
-  "parsers": [
-    {
+  "engines": {
+    "tesseract": {
       "tesseract-ocr-parser": {
         "timeoutMillis": 240000,
         "density": 200,
@@ -13,6 +13,11 @@
         "enableImagePreprocessing": false,
         "language": "fra+deu"
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "tesseract"
     }
   ]
 }

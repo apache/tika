@@ -17,6 +17,7 @@
 package org.apache.tika.parser.vlm;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -92,7 +93,6 @@ public class GeminiVLMParserTest {
 
         TikaTestHttpServer.RecordedRequest request = server.takeRequest();
         assertTrue(request.path().contains("/v1beta/models/gemini-2.5-flash:generateContent"));
-        assertTrue(request.path().contains("key=test-gemini-key"));
         assertEquals("POST", request.method());
 
         JsonNode body = MAPPER.readTree(request.body());
@@ -152,7 +152,7 @@ public class GeminiVLMParserTest {
     }
 
     @Test
-    void testApiKeyAsQueryParam() throws Exception {
+    void testApiKeyInHeaderNotUrl() throws Exception {
         server.enqueue(new TikaTestHttpServer.MockResponse(200,
                 buildGeminiResponse("ok", 10, 5)));
 
@@ -165,8 +165,9 @@ public class GeminiVLMParserTest {
         }
 
         TikaTestHttpServer.RecordedRequest request = server.takeRequest();
-        assertTrue(request.path().contains("key=test-gemini-key"),
-                "API key should be in query params, not header");
+        assertEquals("test-gemini-key", request.header("x-goog-api-key"));
+        // error messages and logs quote the URL
+        assertFalse(request.path().contains("test-gemini-key"), request.path());
         // Gemini does NOT use Bearer auth
         assertEquals(null, request.header("authorization"));
     }
@@ -179,12 +180,13 @@ public class GeminiVLMParserTest {
         Metadata metadata = new Metadata();
         metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
 
-        assertThrows(TikaException.class, () -> {
+        TikaException e = assertThrows(TikaException.class, () -> {
             try (TikaInputStream tis = TikaInputStream.get(
                     new ByteArrayInputStream(new byte[]{1, 2, 3}))) {
                 parser.parse(tis, new DefaultHandler(), metadata, new ParseContext());
             }
         });
+        assertFalse(e.getMessage().contains("test-gemini-key"), e.getMessage());
     }
 
     @Test

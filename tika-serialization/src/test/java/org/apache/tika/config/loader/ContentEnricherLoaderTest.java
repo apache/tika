@@ -359,42 +359,24 @@ public class ContentEnricherLoaderTest {
                 context), "the SPI enricher in default-parser is not consulted");
     }
 
-    /**
-     * An engine under "parsers" is the deprecated shape; the loader finds it whether it is
-     * dispatched to as a parser or only ever runs as an enricher, and tells them apart.
-     */
+    /** An engine under "parsers", the 4.0 shape, fails the load, alone or beside a parser. */
     @Test
-    public void testEngineUnderParsersIsFound() throws Exception {
+    public void testEngineUnderParsersFailsLoad() throws Exception {
+        for (String json : new String[]{
+                "{\"parsers\": [ {\"minimal-test-parser\": {}}, {\"test-spi-enricher\": {}} ]}",
+                "{\"parsers\": [ {\"test-spi-enricher\": {}} ]}"}) {
+            TikaLoader loader = load(json);
+            TikaConfigException e = assertThrows(TikaConfigException.class, loader::loadParsers,
+                    json);
+            assertTrue(e.getMessage().contains("\"engines\""), e.getMessage());
+        }
         TikaLoader loader = load("""
-                {
-                  "parsers": [ {"minimal-test-parser": {}}, {"test-spi-enricher": {}} ]
-                }
-                """);
-        Parser root = loader.loadParsers();
-        java.util.List<Parser> engines = ParserLoader.enginesUnderParsers(root);
-        assertEquals(1, engines.size());
-        assertTrue(engines.get(0) instanceof TestSpiEnricher);
-        assertTrue(ParserLoader.parsedTypes(root, engines.get(0)).isEmpty(),
-                "the parser claims its type: never dispatched to");
-
-        loader = load("""
-                {
-                  "parsers": [ {"test-spi-enricher": {}} ]
-                }
-                """);
-        root = loader.loadParsers();
-        engines = ParserLoader.enginesUnderParsers(root);
-        assertEquals(1, engines.size());
-        assertEquals(java.util.Set.of(MediaType.parse("application/test+minimal")),
-                ParserLoader.parsedTypes(root, engines.get(0)), "alone it is the parser for its type");
-
-        loader = load("""
                 {
                   "parsers": [ {"default-parser": {}} ]
                 }
                 """);
         assertTrue(ParserLoader.enginesUnderParsers(loader.loadParsers()).isEmpty(),
-                "an engine the classpath supplies is not the deprecated shape");
+                "an engine the classpath supplies is not the 4.0 shape");
     }
 
     /** Two text recognizers on one type both run; the loader names them at startup. */

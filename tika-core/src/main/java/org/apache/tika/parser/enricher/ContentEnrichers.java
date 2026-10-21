@@ -234,6 +234,11 @@ public final class ContentEnrichers {
         return unwrap(parser) instanceof ContentEnricher;
     }
 
+    /** The {@link ContentEnricher} under any decorators; null if the parser is not one. */
+    public static ContentEnricher asEnricher(Parser parser) {
+        return unwrap(parser) instanceof ContentEnricher enricher ? enricher : null;
+    }
+
     /** The {@link TextRecognizer} under any decorators; null if the parser is not one. */
     public static TextRecognizer asTextRecognizer(Parser parser) {
         return unwrap(parser) instanceof TextRecognizer recognizer ? recognizer : null;
