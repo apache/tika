@@ -314,8 +314,8 @@ Release 4.2.0 - unreleased
    * Detection: *.rs is text/x-rust (TIKA-4977); a MIME email nesting
      multipart/related is message/rfc822, not MHTML (TIKA-4973); XML with an element
      like <htmlPath> is no longer HTML (TIKA-4962), so XUL with <html:...> elements is
-     now XUL; the HTML parser still parses it, as XMLParser fails on its DTD entities
-     (TIKA-4985).
+     now XUL; XUL is detected by content, not just *.xul, and the HTML parser still
+     parses it, as XMLParser fails on its DTD entities (TIKA-4985).
 
    * Image checks (byte-size, min-image-size, blank-image-check; new
      tika-image-processing module) keep blank and tiny images from text recognizers.
