@@ -93,7 +93,7 @@ public abstract class ProfilerBase {
     private static final String CONTAINER_EXCEPTION_1X = "X-TIKA" + ":EXCEPTION:runtime";
     private static final Logger LOG = LoggerFactory.getLogger(ProfilerBase.class);
     private static final String[] EXTRACT_EXTENSIONS = {".json", ".txt", ""};
-    private static final String[] COMPRESSION_EXTENSIONS = {"", ".bz2", ".gzip", ".zip",};
+    private static final String[] COMPRESSION_EXTENSIONS = {"", ".gz", ".bz2", ".gzip", ".zip",};
     private static final String ZERO = "0";
     private static final String UNKNOWN_EXTENSION = "unk";
     //make this configurable
@@ -111,7 +111,7 @@ public abstract class ProfilerBase {
             new ColInfo(Cols.BASE_MIME, Types.VARCHAR, 256),
             new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12));
     private static CommonTokenCountManager COMMON_TOKEN_COUNT_MANAGER;
-    private static Pattern FILE_NAME_CLEANER = Pattern.compile("\\.(json|txt)(\\.(bz2|gz|zip))?$");
+    private static Pattern FILE_NAME_CLEANER = Pattern.compile("\\.(json|txt)(\\.(bz2|gz|gzip|zip))?$");
     private static LanguageIDWrapper LANG_ID = new LanguageIDWrapper();
     protected IDBWriter writer;
     AnalyzerManager analyzerManager;
