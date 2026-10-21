@@ -86,6 +86,8 @@ Release 4.2.0 - unreleased
 
    * New ICOParser for icons and cursors; image/vnd.microsoft.icon moves to it from
      ImageParser. Tighter OS/2 bitmap array and TGA detection (TIKA-4937).
+     Animated cursors (RIFF ACON) are application/x-navi-animation, even when named
+     *.cur (TIKA-4985).
 
    * BigTIFF is read through metadata-extractor 2.22.0: EXIF and DNG tags are extracted from
      BigTIFF DNGs, which previously yielded only XMP and previews, and a plain BigTIFF file no
