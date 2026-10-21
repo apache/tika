@@ -326,6 +326,10 @@ Release 4.2.0 - unreleased
 
   OTHER CHANGES
 
+   * The pipes getting-started and shared-server JSON examples no longer include the
+     test-only mock-digester-factory, which made the forked server fail at startup
+     (TIKA-4984).
+
    * tika-app -J writes the metadata list when the container throws (a zip-bomb trip, a
      corrupt or encrypted file), with the exception in tk:exception:container-exception on
      the first record, as /rmeta does; it used to print nothing. The exit status still
