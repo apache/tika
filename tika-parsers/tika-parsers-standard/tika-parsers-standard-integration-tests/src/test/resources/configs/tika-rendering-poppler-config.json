@@ -1,12 +1,14 @@
 {
-  "parsers": [
-    {
-      "default-parser":{}
-    },
-    {
+  "engines": {
+    "tesseract": {
       "tesseract-ocr-parser": {
         "pageSegMode": 3
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "tesseract"
     }
   ],
   "renderers": [

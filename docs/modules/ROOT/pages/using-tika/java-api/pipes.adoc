@@ -66,8 +66,9 @@ distributions carry them in `plugins/`.
 `PipesParser` and `AsyncProcessor` require `plugin-roots` in the JSON config. `PipesForkParser`
 resolves it: an explicit `PipesForkParserConfig.setPluginsDir(Path)`, else a `plugins` directory
 beside the jar or in the working directory. When there is neither, which is the plain Maven case,
-it starts its fork with `-Dtika.plugins.classpath=true` so the file-system plugin it needs comes
-from the classpath, where the `tika-pipes-fork-parser` dependency put it.
+or the directory it finds has no `tika-pipes-file-system` plugin, it starts its fork with
+`-Dtika.plugins.classpath=true` so the file-system plugin it needs comes from the classpath, where
+the `tika-pipes-fork-parser` dependency put it.
 
 That property is the one deliberate exception. Set on any Tika process, it makes pf4j also
 accept factories found through `META-INF/extensions.idx` on the classpath, running in the

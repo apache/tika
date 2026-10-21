@@ -132,13 +132,16 @@ it. A clamp is logged as a warning in the worker. A request may not replace a co
 metadata limiter with a different kind. The same holds for the render limits in a `pages` block
 (`render` and `emit.render`: `dpi`, `maxImagePixels`, `maxWidth`, `maxHeight`, including the
 deprecated `ocr` aliases), at the top level or under a parser; the ceiling is what the
-operator's own `pages` layers resolve to for that parser. Timeouts follow their own rule: a request may raise
-them up to `pipes.maxTotalTaskTimeoutMillis`
+operator's own `pages` layers resolve to for that parser. Timeouts follow the same rule
 (xref:pipes/timeouts.adoc#_per_request_overrides[details]).
 
 To let callers go further, raise the limit in the server's config or in a preset.
-`PipesForkParser` writes the limits set on its `PipesForkParserConfig` into its fork's config,
-so they are the ceiling rather than a request.
+
+`pipes.trustedRequests` (default `false`) marks requests as the operator's own: no clamp, and
+their `parse-context` may set `@OperatorOnly` properties. `PipesForkParser` sets it for its own
+fork, since its caller is the operator: per-call config is used as given, looser than its
+`PipesForkParserConfig` or not. A `PipesParser` caller whose requests are its own can set it too.
+tika-server and tika-grpc refuse to start with it on.
 
 == Embedded document limits
 

@@ -34,11 +34,14 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.config.OutputLimits;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -525,6 +528,53 @@ public class PipesForkParserTest {
             assertTrue(content.contains("line 0 "), content);
             assertFalse(content.contains("line 999 "), "write limit ignored: " + content.length() + " chars");
         }
+    }
+
+    // the caller is the operator: a per-call limit may loosen the config's
+    @Test
+    public void testPerCallWriteLimitMayLoosenConfig() throws Exception {
+        Path testFile = tempDir.resolve("longfile_loosened.txt");
+        StringBuilder longContent = new StringBuilder();
+        for (int i = 0; i < 1000; i++) {
+            longContent.append("This is line ").append(i).append(" of the test document.\n");
+        }
+        Files.writeString(testFile, longContent.toString());
+        Path userConfig = tempDir.resolve("tight-config.json");
+        Files.writeString(userConfig,
+                "{\"parse-context\": {\"output-limits\": {\"writeLimit\": 100}}}");
+        ParseContext parseContext = new ParseContext();
+        OutputLimits outputLimits = new OutputLimits();
+        outputLimits.setWriteLimit(-1);
+        parseContext.set(OutputLimits.class, outputLimits);
+        parseContext.set(ContentHandlerFactory.class,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.TEXT, -1));
+
+        try (PipesForkParser parser = new PipesForkParser(new PipesForkParserConfig()
+                .setPluginsDir(PLUGINS_DIR)
+                .setUserConfigPath(userConfig))) {
+            PipesForkResult result = parser.parse(testFile, new Metadata(), parseContext);
+            assertTrue(result.isSuccess(), "status: " + result.getStatus());
+            assertTrue(result.getContent().contains("line 999 "),
+                    "per-call write limit was clamped: " + result.getContent().length() + " chars");
+        }
+    }
+
+    // the caller is the operator: per-call config may set @OperatorOnly properties
+    @Test
+    public void testPerCallOperatorOnlyPropertyIsAllowed() throws Exception {
+        Path pdf = tempDir.resolve("operator-only.pdf");
+        try (PDDocument doc = new PDDocument()) {
+            doc.addPage(new PDPage());
+            doc.save(pdf.toFile());
+        }
+        ParseContext parseContext = new ParseContext();
+        parseContext.setJsonConfig("pdf-parser", "{\"maxMainMemoryBytes\": 100000000}");
+
+        PipesForkResult result = defaultParser.parse(pdf, new Metadata(), parseContext);
+
+        assertTrue(result.isSuccess(), "status: " + result.getStatus());
+        assertNull(result.getMetadata().get(TikaCoreProperties.CONTAINER_EXCEPTION),
+                result.getMetadata().get(TikaCoreProperties.CONTAINER_EXCEPTION));
     }
 
     @Test

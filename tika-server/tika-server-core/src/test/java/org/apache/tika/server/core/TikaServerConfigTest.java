@@ -53,6 +53,15 @@ public class TikaServerConfigTest extends TikaTest {
     }
 
     @Test
+    public void testTrustedRequestsRefuseToLoad() throws Exception {
+        CommandLine emptyCommandLine = new DefaultParser().parse(new Options(), new String[]{});
+        Path path = getConfigPath(getClass(), "tika-config-server-trusted-requests.json");
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(path, emptyCommandLine, new HashSet<>()));
+        assertContains("trustedRequests", ex.getMessage());
+    }
+
+    @Test
     public void testSupportedFetchersEmitters() throws Exception {
         Set<String> settings = new HashSet<>();
         CommandLineParser parser = new DefaultParser();

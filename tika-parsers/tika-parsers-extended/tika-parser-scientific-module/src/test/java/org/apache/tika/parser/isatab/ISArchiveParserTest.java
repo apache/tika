@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -41,18 +42,16 @@ public class ISArchiveParserTest extends TikaTest {
 
     @Test
     public void testParseArchive() throws Exception {
-        String path = "/test-documents/testISATab_BII-I-1/s_BII-S-1.txt";
-
-        Parser parser = new ISArchiveParser(
-                ISArchiveParserTest.class.getResource("/test-documents/testISATab_BII-I-1/").toURI()
-                        .getPath());
-        //Parser parser = new AutoDetectParser();
+        // the parser reads the investigation file next to the study, so open the file itself
+        Path study = Paths.get(ISArchiveParserTest.class
+                .getResource("/test-documents/testISATab_BII-I-1/s_BII-S-1.txt").toURI());
+        Parser parser = new ISArchiveParser();
 
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "s_BII-S-1.txt");
         ParseContext context = new ParseContext();
-        try (TikaInputStream tis = getResourceAsStream(path)) {
+        try (TikaInputStream tis = TikaInputStream.get(study)) {
             parser.parse(tis, handler, metadata, context);
         }
 
@@ -95,7 +94,7 @@ public class ISArchiveParserTest extends TikaTest {
         Path study = isaDir.resolve("s_test.txt");
         Files.write(study, "\"Source Name\"\n\"culture1\"\n".getBytes(StandardCharsets.UTF_8));
 
-        Parser parser = new ISArchiveParser(isaDir.toString());
+        Parser parser = new ISArchiveParser();
         ContentHandler handler = new BodyContentHandler();
         Metadata metadata = new Metadata();
         metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "s_test.txt");

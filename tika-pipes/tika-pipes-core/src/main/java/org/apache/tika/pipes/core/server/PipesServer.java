@@ -446,7 +446,8 @@ public class PipesServer implements AutoCloseable {
                         resetTimings();
                         long reqDeserStart = System.nanoTime();
                         try {
-                            pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class);
+                            pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class,
+                                    pipesConfig.isTrustedRequests());
                             fetchEmitTuple = pipesRequest.getTuple();
                             tReqDeserNanos = System.nanoTime() - reqDeserStart;
                         } catch (IOException e) {
@@ -847,8 +848,8 @@ public class PipesServer implements AutoCloseable {
 
     /**
      * Overlays the request's values on the operator's (config plus preset), resolves the
-     * result, and clamps what the request supplied: limits may be tightened, not loosened,
-     * and timeouts are capped at {@code pipes.maxTotalTaskTimeoutMillis}.
+     * result, and, unless {@code pipes.trustedRequests} is on, clamps what the request
+     * supplied: limits and timeouts may be tightened, not loosened.
      * {@code defaultContentHandlerFactory} is the operator's when the context sets none.
      */
     static void overlayRequest(ParseContext requestContext, ParseContext mergedContext,
@@ -864,9 +865,11 @@ public class PipesServer implements AutoCloseable {
         mergedContext.copyFrom(requestContext);
         ParseContextUtils.resolveAll(mergedContext, PipesServer.class.getClassLoader());
         ServerProtocolIO.validateParseContext(mergedContext);
-        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, mergedContext,
-                pipesConfig.getMaxTotalTaskTimeoutMillis());
-        ServerProtocolIO.clampRequestLimits(operatorContext, mergedContext);
+        if (!pipesConfig.isTrustedRequests()) {
+            ServerProtocolIO.clampRequestTimeoutLimits(requestContext, operatorContext,
+                    mergedContext, pipesConfig.getMaxTotalTaskTimeoutMillis());
+            ServerProtocolIO.clampRequestLimits(operatorContext, mergedContext);
+        }
     }
 
     /**

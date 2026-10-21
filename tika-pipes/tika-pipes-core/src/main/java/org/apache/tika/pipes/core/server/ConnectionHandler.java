@@ -205,7 +205,8 @@ public class ConnectionHandler implements Runnable, Closeable {
                         resetTimings();
                         long reqDeserStart = System.nanoTime();
                         try {
-                            pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class);
+                            pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class,
+                                    pipesConfig.isTrustedRequests());
                             fetchEmitTuple = pipesRequest.getTuple();
                             tReqDeserNanos = System.nanoTime() - reqDeserStart;
                         } catch (IOException e) {

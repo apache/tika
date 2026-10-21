@@ -1,0 +1,11 @@
+{
+  "server": {
+    "port": 9999,
+    "endpoints": [
+      "rmeta"
+    ]
+  },
+  "pipes": {
+    "trustedRequests": true
+  }
+}

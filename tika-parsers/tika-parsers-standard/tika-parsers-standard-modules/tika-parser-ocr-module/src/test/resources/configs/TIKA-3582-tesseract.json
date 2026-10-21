@@ -1,10 +1,14 @@
 {
-  "parsers": [
-    "default-parser",
-    {
+  "engines": {
+    "tesseract": {
       "tesseract-ocr-parser": {
         "timeoutMillis": 360000
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "tesseract"
     }
   ]
 }

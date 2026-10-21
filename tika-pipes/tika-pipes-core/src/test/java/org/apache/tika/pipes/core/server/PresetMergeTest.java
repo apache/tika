@@ -58,12 +58,14 @@ public class PresetMergeTest {
                 """);
         ParseContext merged = new ParseContext();
         PipesServer.mergePreset(registry, "slow-ocr", merged);
+        ParseContext operator = new ParseContext();
+        operator.copyFrom(merged);
         ParseContext requestContext = new ParseContext();
         merged.copyFrom(requestContext);
         ParseContextUtils.resolveAll(merged, getClass().getClassLoader());
 
         // the clamp fires only on request-supplied limits; the preset's ride at config tier
-        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, merged, 60_000);
+        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, operator, merged, 60_000);
         assertEquals(3600000, TimeoutLimits.get(merged).getTotalTaskTimeoutMillis());
     }
 
@@ -74,14 +76,26 @@ public class PresetMergeTest {
                 """);
         ParseContext merged = new ParseContext();
         PipesServer.mergePreset(registry, "slow-ocr", merged);
+        ParseContext operator = new ParseContext();
+        operator.copyFrom(merged);
         ParseContext requestContext = new ParseContext();
         requestContext.setJsonConfig("timeout-limits",
                 "{\"totalTaskTimeoutMillis\": 7200000}");
         merged.copyFrom(requestContext);
         ParseContextUtils.resolveAll(merged, getClass().getClassLoader());
 
-        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, merged, 60_000);
+        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, operator, merged, 60_000);
         assertEquals(60_000, TimeoutLimits.get(merged).getTotalTaskTimeoutMillis());
+
+        // the preset's own limit is the ceiling below pipes.maxTotalTaskTimeoutMillis
+        merged = new ParseContext();
+        PipesServer.mergePreset(registry, "slow-ocr", merged);
+        operator = new ParseContext();
+        operator.copyFrom(merged);
+        merged.copyFrom(requestContext);
+        ParseContextUtils.resolveAll(merged, getClass().getClassLoader());
+        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, operator, merged, 10_800_000);
+        assertEquals(3_600_000, TimeoutLimits.get(merged).getTotalTaskTimeoutMillis());
     }
 
     @Test

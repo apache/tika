@@ -226,6 +226,10 @@ public class ConfigMerger {
             }
         }
 
+        if (overrides.isTrustedRequests()) {
+            getOrCreateObject(mapper, root, "pipes").put("trustedRequests", true);
+        }
+
         // Apply emit strategy
         if (overrides.getEmitStrategy() != null) {
             ObjectNode pipesNode = getOrCreateObject(mapper, root, "pipes");
