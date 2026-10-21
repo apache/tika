@@ -125,6 +125,9 @@ public class TikaServerProcess {
         options.addOption(null, "metricsPort", true,
                 "serve Prometheus metrics on this port (9404 by convention); "
                         + "unset means metrics are off\n");
+        options.addOption(null, "preset", true,
+                "activate a catalog preset, as \"presets\": {\"<name>\": true} in the config "
+                        + "would; repeatable, and TIKA_PRESETS takes a comma-separated list");
         options.addOption("?", "help", false, "this help message");
         return options;
     }
@@ -262,6 +265,15 @@ public class TikaServerProcess {
 
         if (tikaServerConfig.hasConfigFile()) {
             LOG.info("Using custom config: {}", tikaServerConfig.getConfigPath());
+        }
+        if (!tikaServerConfig.getPresets().isEmpty()) {
+            // the front end's copy; createServerConfig gives the forks theirs
+            ConfigOverrides.Builder presets = ConfigOverrides.builder();
+            tikaServerConfig.getPresets().forEach(presets::addPreset);
+            Path existing = tikaServerConfig.hasConfigFile() ? tikaServerConfig.getConfigPath() : null;
+            tikaLoader = TikaLoader.load(ConfigMerger.merge(existing, presets.build()).load(),
+                    Thread.currentThread().getContextClassLoader());
+        } else if (tikaServerConfig.hasConfigFile()) {
             tikaLoader = TikaLoader.load(tikaServerConfig.getConfigPath());
         } else {
             tikaLoader = TikaLoader.loadDefault();
@@ -701,7 +713,7 @@ public class TikaServerProcess {
         Path existingConfigPath = tikaServerConfig.hasConfigFile() ?
                 tikaServerConfig.getConfigPath() : null;
         TikaJsonConfig tikaJsonConfig = createServerConfig(existingConfigPath,
-                inputTempDirectory, unpackTempDirectory);
+                inputTempDirectory, unpackTempDirectory, tikaServerConfig.getPresets());
 
         // Load or create PipesConfig with defaults
         PipesConfig pipesConfig = tikaJsonConfig.deserialize("pipes", PipesConfig.class);
@@ -746,11 +758,13 @@ public class TikaServerProcess {
      * @param existingConfigPath the existing config file path (may be null)
      * @param inputTempDirectory the temp directory for input files
      * @param unpackTempDirectory the temp directory for unpack output files (may be null)
+     * @param presets catalog presets activated on the command line or in TIKA_PRESETS
      * @return the merged config
      */
     private static TikaJsonConfig createServerConfig(Path existingConfigPath,
                                                      Path inputTempDirectory,
-                                                     Path unpackTempDirectory)
+                                                     Path unpackTempDirectory,
+                                                     List<String> presets)
             throws IOException, TikaConfigException {
         LOG.info("Configuring {} with basePath={}", PipesParsingHelper.DEFAULT_FETCHER_ID, inputTempDirectory);
 
@@ -765,6 +779,7 @@ public class TikaServerProcess {
                 .setEmitStrategy(EmitStrategy.PASSBACK_ALL)
                 // Set plugin roots
                 .setPluginRoots(DefaultPluginsDir.resolve(TikaServerProcess.class));
+        presets.forEach(builder::addPreset);
 
         // Only set default pipes config if there's no existing config
         // This allows user-provided config to specify their own numClients, etc.

@@ -56,6 +56,7 @@ public class ConfigOverrides {
     private final Integer writeLimit;
     private final boolean classpathPlugins;
     private final boolean trustedRequests;
+    private final List<String> presets;
 
     private ConfigOverrides(Builder builder) {
         this.fetchers = Collections.unmodifiableList(new ArrayList<>(builder.fetchers));
@@ -68,6 +69,7 @@ public class ConfigOverrides {
         this.writeLimit = builder.writeLimit;
         this.classpathPlugins = builder.classpathPlugins;
         this.trustedRequests = builder.trustedRequests;
+        this.presets = Collections.unmodifiableList(new ArrayList<>(builder.presets));
     }
 
     public static Builder builder() {
@@ -114,6 +116,11 @@ public class ConfigOverrides {
     /** Whether the fork is told its requests are the operator's own; see ConfigMerger. */
     public boolean isTrustedRequests() {
         return trustedRequests;
+    }
+
+    /** Catalog presets to activate, as {@code "name": true} would; see ConfigMerger. */
+    public List<String> getPresets() {
+        return presets;
     }
 
     /**
@@ -238,8 +245,19 @@ public class ConfigOverrides {
         private Integer writeLimit;
         private boolean classpathPlugins;
         private boolean trustedRequests;
+        private final List<String> presets = new ArrayList<>();
 
         private Builder() {
+        }
+
+        /**
+         * Activates a catalog preset, as {@code "presets": {"name": true}} in the config would.
+         * A preset the existing config already names, with any value, is left as the config
+         * has it.
+         */
+        public Builder addPreset(String name) {
+            this.presets.add(name);
+            return this;
         }
 
         /**

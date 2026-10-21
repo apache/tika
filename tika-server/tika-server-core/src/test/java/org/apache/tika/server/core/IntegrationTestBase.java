@@ -32,6 +32,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -171,7 +172,17 @@ public class IntegrationTestBase extends TikaTest {
         process = start(extraArgs, TEMP_WORKING_DIR);
     }
 
+    public void startProcess(String[] extraArgs, Map<String, String> environment)
+            throws IOException {
+        process = start(extraArgs, TEMP_WORKING_DIR, environment);
+    }
+
     private Process start(String[] extraArgs, Path workingDir) throws IOException {
+        return start(extraArgs, workingDir, Map.of());
+    }
+
+    private Process start(String[] extraArgs, Path workingDir, Map<String, String> environment)
+            throws IOException {
         String[] base = new String[]{"java",
                 "-Djava.io.tmpdir=" + workingDir.toAbsolutePath(), // make sure we're using subdir cleaned up by JUnit
                 "-cp", System.getProperty("java.class.path"), "org.apache.tika.server.core.TikaServerCli",
@@ -179,6 +190,7 @@ public class IntegrationTestBase extends TikaTest {
         List<String> args = new ArrayList<>(Arrays.asList(base));
         args.addAll(Arrays.asList(extraArgs));
         ProcessBuilder pb = new ProcessBuilder(args);
+        pb.environment().putAll(environment);
         pb.inheritIO();
 //        pb.redirectInput(Files.createTempFile(STREAMS_DIR, "tika-stream-out", ".log").toFile());
         //      pb.redirectError(Files.createTempFile(STREAMS_DIR,

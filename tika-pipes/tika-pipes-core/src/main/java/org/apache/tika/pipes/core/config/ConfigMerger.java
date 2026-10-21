@@ -230,6 +230,13 @@ public class ConfigMerger {
             getOrCreateObject(mapper, root, "pipes").put("trustedRequests", true);
         }
 
+        for (String preset : overrides.getPresets()) {
+            ObjectNode presetsNode = getOrCreateObject(mapper, root, "presets");
+            if (!presetsNode.has(preset)) {
+                presetsNode.put(preset, true);
+            }
+        }
+
         // Apply emit strategy
         if (overrides.getEmitStrategy() != null) {
             ObjectNode pipesNode = getOrCreateObject(mapper, root, "pipes");

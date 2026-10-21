@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -41,6 +42,9 @@ public class TikaServerConfig {
     public static final int DEFAULT_PORT = 9998;
     public static final String DEFAULT_HOST = "localhost";
     private static final Logger LOG = LoggerFactory.getLogger(TikaServerConfig.class);
+
+    /** Comma-separated catalog presets to activate, read at startup like {@code --preset}. */
+    public static final String PRESETS_ENV = "TIKA_PRESETS";
     /**
      * Endpoints that expose the pipes/fetch machinery (process-isolated pipes
      * parsing and async batch processing). Selecting any of these requires
@@ -73,6 +77,7 @@ public class TikaServerConfig {
     private String host = DEFAULT_HOST;
     private String requestLogLevel = "";
     private Path configPath;
+    private List<String> presets = new ArrayList<>();
     private ArrayList<String> endpoints = new ArrayList<>();
 
     private TlsConfig tlsConfig = new TlsConfig();
@@ -86,6 +91,11 @@ public class TikaServerConfig {
     }
 
     public static TikaServerConfig load(CommandLine commandLine) throws IOException, TikaException {
+        return load(commandLine, System.getenv(PRESETS_ENV));
+    }
+
+    static TikaServerConfig load(CommandLine commandLine, String presetsEnv)
+            throws IOException, TikaException {
 
         TikaServerConfig config = null;
         Set<String> settings = new HashSet<>();
@@ -121,6 +131,23 @@ public class TikaServerConfig {
             }
             settings.add("metricsPort");
         }
+
+        Set<String> presets = new LinkedHashSet<>();
+        if (commandLine.hasOption("preset")) {
+            for (String name : commandLine.getOptionValues("preset")) {
+                if (presets.add(name.trim())) {
+                    LOG.info("preset '{}' activated by --preset", name.trim());
+                }
+            }
+        }
+        if (presetsEnv != null) {
+            for (String name : presetsEnv.split(",")) {
+                if (!name.isBlank() && presets.add(name.trim())) {
+                    LOG.info("preset '{}' activated by {}", name.trim(), PRESETS_ENV);
+                }
+            }
+        }
+        config.presets = new ArrayList<>(presets);
 
         config.validateConsistency(settings);
         return config;
@@ -249,6 +276,15 @@ public class TikaServerConfig {
 
     public boolean hasConfigFile() {
         return configPath != null;
+    }
+
+    /**
+     * Catalog presets named with {@code --preset} or in {@value #PRESETS_ENV}, activated like
+     * {@code "presets": {"name": true}} in the config; the config's own entry for a name wins.
+     */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    public List<String> getPresets() {
+        return presets;
     }
 
     @com.fasterxml.jackson.annotation.JsonIgnore

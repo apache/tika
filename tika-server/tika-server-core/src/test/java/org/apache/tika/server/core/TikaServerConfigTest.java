@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.commons.cli.CommandLine;
@@ -79,6 +80,22 @@ public class TikaServerConfigTest extends TikaTest {
         assertEquals(1024L * 1024 * 1024, config.getMaxRequestSizeBytes());
         assertEquals(TikaServerConfig.DEFAULT_MAX_QUEUE_PAUSE_MILLIS, config.getMaxQueuePauseMillis());
         assertEquals(60000L, TikaServerConfig.DEFAULT_MAX_QUEUE_PAUSE_MILLIS);
+    }
+
+    @Test
+    public void testPresetsFromCommandLineAndEnvironment() throws Exception {
+        Options options = new Options().addOption(Option.builder().longOpt("preset").hasArg().get());
+        CommandLine commandLine = new DefaultParser().parse(options,
+                new String[]{"--preset", "thumbnail", "--preset", "render-thumbnail"});
+
+        TikaServerConfig config = TikaServerConfig.load(commandLine, " render-thumbnail, ,no-ocr ");
+        assertEquals(List.of("thumbnail", "render-thumbnail", "no-ocr"), config.getPresets());
+
+        config = TikaServerConfig.load(commandLine, null);
+        assertEquals(List.of("thumbnail", "render-thumbnail"), config.getPresets());
+
+        config = TikaServerConfig.load(new DefaultParser().parse(options, new String[]{}), null);
+        assertTrue(config.getPresets().isEmpty());
     }
 
     @Test
