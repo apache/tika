@@ -129,8 +129,8 @@ Nothing is active unless the top-level `presets` key names it. `true` activates 
 the classpath *catalog* (definitions shipped with Tika, so their content tracks the Tika
 version); an object defines a preset in place, replacing any same-named catalog definition
 wholesale; `false`/`null` is an explicit no-op. Catalog jars can never activate themselves —
-every active preset is a visible line in the operator's config, and `true` naming nothing in
-the catalog fails startup:
+every active preset is a visible line in the operator's config, command line or environment,
+and `true` naming nothing in the catalog fails startup:
 
 [source,json]
 ----
@@ -141,6 +141,18 @@ the catalog fails startup:
     "no-enrichment": { "text-recognizers": { "enabled": false }, "inference": { "enabled": false } }
   }
 }
+----
+
+A catalog preset can also be activated without touching the config file: `--preset <name>`
+(repeatable) or the environment variable `TIKA_PRESETS` with a comma-separated list. Either is
+the same as `"<name>": true` in `presets`, so it needs no `-c` at all, and the catalog must know
+the name. Both win over the config file: a name listed there is active with the catalog's
+content even if the file sets it to `false` or defines it inline.
+
+[source,bash]
+----
+java -jar tika-server-standard-X.Y.Z.jar --preset thumbnail --preset render-thumbnail
+TIKA_PRESETS=thumbnail,render-thumbnail java -jar tika-server-standard-X.Y.Z.jar
 ----
 
 Presets are deliberately narrow: a request selects exactly one, the preset routes take no
@@ -361,12 +373,17 @@ The server starts on `localhost:9998` by default.
 |Enable Prometheus metrics on this port. See
 xref:using-tika/server/monitoring.adoc[Monitoring with Prometheus].
 
+|`--preset <name>`
+|Activate a catalog preset, as `"presets": {"<name>": true}` in the config would. Repeatable.
+The environment variable `TIKA_PRESETS` takes a comma-separated list. See <<_presets_named_configuration_without_config,Presets>>.
+
 |`-?`, `--help`
 |Print the usage message.
 |===
 
-NOTE: `-h`, `-p`, `-i` and `--metricsPort` override the JSON config. Everything else — `allowPipes`,
-`allowPerRequestConfig`, CORS, TLS, timeouts — is JSON-only.
+NOTE: `-h`, `-p`, `-i` and `--metricsPort` override the JSON config; `--preset` and `TIKA_PRESETS`
+add to its `presets`. Everything else — `allowPipes`, `allowPerRequestConfig`, CORS, TLS,
+timeouts — is JSON-only.
 
 == Endpoints
 

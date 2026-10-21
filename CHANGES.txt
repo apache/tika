@@ -1,5 +1,10 @@
 Release 4.2.0 - unreleased
 
+   * tika-server activates catalog presets from the command line (--preset <name>, repeatable)
+     and the environment (TIKA_PRESETS, comma-separated), the equivalent of "<name>": true in
+     the config's presets, overriding the file's own entry for the name; a config file needs
+     no longer be mounted for that (TIKA-4988).
+
   BREAKING CHANGES AND DEPRECATIONS
    * Extract stored line and paragraph counts from legacy Microsoft Word
      (.doc) documents. The existing metadata properties are now populated
