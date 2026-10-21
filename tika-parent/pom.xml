@@ -316,32 +316,35 @@
          Created by the create-test-tmpdir antrun execution below, because the JVM will
          not create a missing java.io.tmpdir; it throws NoSuchFileException. -->
     <tika.test.tmpdir>${project.build.directory}/test-tmp</tika.test.tmpdir>
-    <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
+    <!-- tika-parent's own files; the ci profile re-points this one property, because Jenkins'
+         Maven job type doesn't set maven.multiModuleProjectDirectory -->
+    <tika.parent.dir>${maven.multiModuleProjectDirectory}/tika-parent</tika.parent.dir>
+    <checkstyle.configLocation>${tika.parent.dir}/checkstyle.xml</checkstyle.configLocation>
     <spotless.goal>apply</spotless.goal>
-    <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
+    <spotless.header.file>${tika.parent.dir}/license-header.txt</spotless.header.file>
     <!-- TIKA-4816: Metadata#set/add(String,String) etc. ban for migrated parser modules;
          opted into per-module by overriding forbiddenapis.module.signaturesFile (main
          sources only). -->
-    <metadata.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
+    <metadata.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
     <!-- TIKA-4848: default-on in every module's main sources (see forbiddenapis-check below) -->
-    <exception.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
-    <xml.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
+    <exception.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
+    <xml.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
     <!-- TIKA-4975: default-on; configuration JSON only through tika-serialization -->
-    <json.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-json-reader-bans.txt</json.forbiddenapis.signaturesFile>
+    <json.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-json-reader-bans.txt</json.forbiddenapis.signaturesFile>
     <!-- Per-module extra main-source bans; a module overrides this (e.g. to
          ${metadata.forbiddenapis.signaturesFile}) instead of overriding the
          forbiddenapis-check execution, whose child list would REPLACE the parent's
          and silently drop the default-on file. -->
-    <forbiddenapis.module.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
+    <forbiddenapis.module.signaturesFile>${tika.parent.dir}/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.75.0</google.cloud.version>
-    <aws2.version>2.56.0</aws2.version>
+    <aws2.version>2.57.1</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <asm.version>9.11</asm.version>
+    <asm.version>9.11.1</asm.version>
     <azure.version>1.3.9</azure.version>
     <biz.aqute.version>7.4.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
@@ -361,9 +364,8 @@
     <commons.lang3.version>3.21.0</commons.lang3.version>
     <commons.logging.version>1.4.0</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
-    <commons.net.version>3.12.0</commons.net.version>
     <ctakes.version>6.0.0</ctakes.version>
-    <cxf.version>4.2.3</cxf.version>
+    <cxf.version>4.2.4</cxf.version>
     <ddplist.version>1.30</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
@@ -372,7 +374,7 @@
     <freemarker.version>2.3.35</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.14.0</gson.version>
-    <grpc.version>1.85.0</grpc.version>
+    <grpc.version>1.85.1</grpc.version>
     <guava.version>33.7.2-jre</guava.version>
     <h2.version>2.5.252</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
@@ -385,7 +387,7 @@
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
     <jackrabbit.version>2.22.5</jackrabbit.version>
-    <jackson.version>2.22.3</jackson.version>
+    <jackson.version>2.22.4</jackson.version>
     <!-- TIKA-4880: 5.0.1 fails some catalogs 5.0.0 reads ("Did not find required parent table id") -->
     <jackcess.version>5.0.4</jackcess.version>
     <jackcess.encrypt.version>5.0.2</jackcess.encrypt.version>
@@ -402,7 +404,7 @@
     <jbig2.version>3.0.5</jbig2.version>
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
-    <jetty.version>12.1.13</jetty.version>
+    <jetty.version>12.1.14</jetty.version>
     <jetty.http2.version>12.1.14</jetty.http2.version>
     <jhighlight.version>2.0.0</jhighlight.version>
     <jna.version>5.19.1</jna.version>
@@ -420,18 +422,18 @@
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
     <maven.plugin.annotations.version>3.16.0</maven.plugin.annotations.version>
-    <metadata.extractor.version>2.21.0</metadata.extractor.version>
+    <metadata.extractor.version>2.22.0</metadata.extractor.version>
     <micrometer.version>1.17.1</micrometer.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- can't update to 4 because Apache Ignite needs io.micronaut.core.convert.DefaultConversionService
          which no longer exists in 4.0: https://stackoverflow.com/questions/79937141/    -->
-    <micronaut.version>3.10.15</micronaut.version>
+    <micronaut.version>3.10.17</micronaut.version>
     <mime4j.version>0.8.15</mime4j.version>
     <mockito.version>5.24.0</mockito.version>
     <mockito-junit-jupiter.version>5.24.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
     <netty.version>4.2.19.Final</netty.version>
-    <oak.jackrabbit.version>2.6.0</oak.jackrabbit.version>
+    <oak.jackrabbit.version>2.8.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.12</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
@@ -469,7 +471,7 @@
     <woodstox.core.version>7.3.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.6</zookeeper.version>
-    <zstd.version>1.5.7-23</zstd.version>
+    <zstd.version>1.5.7-24</zstd.version>
     <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
     <javacpp.version>1.5.13</javacpp.version>
     <maven.exec.version>3.6.4</maven.exec.version>
@@ -1862,13 +1864,7 @@
       <properties>
         <!-- Override the Spotless goal when this profile is active -->
         <spotless.goal>check</spotless.goal>
-        <!-- use session.executionRootDirectory in ci -->
-        <spotless.header.file>${session.executionRootDirectory}/tika-parent/license-header.txt</spotless.header.file>
-        <checkstyle.configLocation>${session.executionRootDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
-        <metadata.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
-        <exception.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
-        <xml.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
-        <forbiddenapis.module.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
+        <tika.parent.dir>${session.executionRootDirectory}/tika-parent</tika.parent.dir>
       </properties>
     </profile>
     <!-- Fast profile: ./mvnw install -Pfast -T1C -->

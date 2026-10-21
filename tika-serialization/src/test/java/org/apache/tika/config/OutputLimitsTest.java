@@ -67,7 +67,7 @@ public class OutputLimitsTest extends TikaTest {
         assertEquals(100, limits.getMaxXmlDepth());
         assertEquals(20, limits.getMaxPackageEntryDepth());
         assertEquals(1_000_000, limits.getZipBombThreshold());
-        assertEquals(100, limits.getZipBombRatio());
+        assertEquals(1000, limits.getZipBombRatio());
     }
 
     @Test
