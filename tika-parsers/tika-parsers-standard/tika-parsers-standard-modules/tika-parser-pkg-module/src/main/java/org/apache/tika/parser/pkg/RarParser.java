@@ -101,7 +101,8 @@ public class RarParser implements Parser {
                     }
                     if (entryStream.failure != null) {
                         EmbeddedDocumentUtil.recordEmbeddedStreamException(
-                                entryStream.failure, metadata, context);
+                                new IOException("RAR entry " + header.getFileName(),
+                                        entryStream.failure), metadata, context);
                     }
                 }
 

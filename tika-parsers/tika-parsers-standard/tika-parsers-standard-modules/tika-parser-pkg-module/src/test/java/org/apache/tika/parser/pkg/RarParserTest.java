@@ -111,11 +111,17 @@ public class RarParserTest extends AbstractPkgTest {
         Files.write(corrupt, rar);
 
         List<Metadata> metadataList = getRecursiveMetadata(corrupt, new ParseContext(), false);
-        assertNotNull(metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
+        assertContains("testEXCEL.xls",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
         assertContains("test-documents/testXML.xml",
                 metadataList.get(0).get(TikaCoreProperties.TIKA_CONTENT));
-        assertEquals("/testXML.xml",
-                metadataList.get(metadataList.size() - 1).get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH));
+        assertTrue(hasEmbeddedPath(metadataList, "/testEXCEL.xls"));
+        assertTrue(hasEmbeddedPath(metadataList, "/testXML.xml"));
+    }
+
+    private static boolean hasEmbeddedPath(List<Metadata> metadataList, String path) {
+        return metadataList.stream()
+                .anyMatch(m -> path.equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH)));
     }
 
     /**
