@@ -74,6 +74,12 @@ Release 4.2.0 - unreleased
 
    * New ICOParser for icons and cursors; image/vnd.microsoft.icon moves to it from
      ImageParser. Tighter OS/2 bitmap array and TGA detection (TIKA-4937).
+
+   * BigTIFF is read through metadata-extractor 2.22.0: EXIF and DNG tags are extracted from
+     BigTIFF DNGs, which previously yielded only XMP and previews, and a plain BigTIFF file no
+     longer fails in TiffParser. Little-endian BigTIFF is detected as image/tiff by content
+     (TIKA-4987).
+
    * Previews are extracted from Olympus ORF (also with the OM SYSTEM MakerNote), Panasonic
      RW2, Epson ERF, Kodak KDC and Leaf MOS. Epson ERF is detected by content, and
      image/x-raw-epson, image/x-raw-kodak and image/x-raw-leaf are sub-classes of
