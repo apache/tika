@@ -1,5 +1,9 @@
 Release 4.2.0 - unreleased
 
+   * Extract stored line and paragraph counts from legacy Microsoft Word
+     (.doc) documents. The existing metadata properties are now populated
+     when these values are available in the document (TIKA-4694).
+
    * ISArchiveParser no longer reads every ISA-Tab document's investigation and assay files
      from the directory of the first document it parsed; concurrent parses no longer share
      the study file name (TIKA-4986).
