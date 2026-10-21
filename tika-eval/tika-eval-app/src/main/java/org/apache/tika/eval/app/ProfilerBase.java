@@ -43,6 +43,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
+import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
 import org.apache.tika.eval.app.io.PipesReport;
@@ -93,7 +94,7 @@ public abstract class ProfilerBase {
     private static final String CONTAINER_EXCEPTION_1X = "X-TIKA" + ":EXCEPTION:runtime";
     private static final Logger LOG = LoggerFactory.getLogger(ProfilerBase.class);
     private static final String[] EXTRACT_EXTENSIONS = {".json", ".txt", ""};
-    private static final String[] COMPRESSION_EXTENSIONS = {"", ".bz2", ".gzip", ".zip",};
+    private static final String[] COMPRESSION_EXTENSIONS = {"", ".gz", ".bz2", ".gzip", ".zip",};
     private static final String ZERO = "0";
     private static final String UNKNOWN_EXTENSION = "unk";
     //make this configurable
@@ -111,7 +112,7 @@ public abstract class ProfilerBase {
             new ColInfo(Cols.BASE_MIME, Types.VARCHAR, 256),
             new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12));
     private static CommonTokenCountManager COMMON_TOKEN_COUNT_MANAGER;
-    private static Pattern FILE_NAME_CLEANER = Pattern.compile("\\.(json|txt)(\\.(bz2|gz|zip))?$");
+    private static Pattern FILE_NAME_CLEANER = Pattern.compile("\\.(json|txt)(\\.(bz2|gz|gzip|zip))?$");
     private static LanguageIDWrapper LANG_ID = new LanguageIDWrapper();
     protected IDBWriter writer;
     AnalyzerManager analyzerManager;
@@ -867,7 +868,7 @@ public abstract class ProfilerBase {
     protected long getFileLength(Path p) {
         if (p != null && Files.isRegularFile(p)) {
             try {
-                return Files.size(p);
+                return ExtractReader.extractLength(p);
             } catch (IOException e) {
                 //swallow
             }

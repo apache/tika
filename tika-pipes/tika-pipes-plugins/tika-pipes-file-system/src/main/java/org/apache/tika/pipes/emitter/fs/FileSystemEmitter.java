@@ -16,18 +16,23 @@
  */
 package org.apache.tika.pipes.emitter.fs;
 
+import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.UUID;
+import java.util.zip.GZIPOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,6 +62,10 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
 
     // in-progress writes; crawlers of the output dir should ignore these
     static final String TMP_SUFFIX = ".tmp";
+
+    static final String GZIP_SUFFIX = ".gz";
+
+    private static final int GZIP_BUFFER_SIZE = 64 * 1024;
 
     private static final Logger LOG = LoggerFactory.getLogger(FileSystemEmitter.class);
 
@@ -109,6 +118,9 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         if (!StringUtils.isBlank(config.fileExtension())) {
             emitKey += "." + config.fileExtension();
         }
+        if (config.gzip()) {
+            emitKey += GZIP_SUFFIX;
+        }
 
         if (config.basePath() != null) {
             Path basePath = Paths.get(config.basePath());
@@ -138,8 +150,7 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         }
         Path tmp = tmpFor(output);
         try {
-            try (Writer writer = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE_NEW)) {
+            try (Writer writer = newWriter(tmp, config.gzip(), StandardOpenOption.CREATE_NEW)) {
                 JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
             }
             publish(tmp, output, config.onExists());
@@ -152,16 +163,44 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
     private static void writeInPlace(List<Metadata> metadataList, Path output,
                                      FileSystemEmitterConfig config) throws IOException {
         if (config.onExists() == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
-            try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8,
-                    StandardOpenOption.CREATE_NEW)) {
+            try (Writer writer = newWriter(output, config.gzip(), StandardOpenOption.CREATE_NEW)) {
                 JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
             } catch (FileAlreadyExistsException e) {
                 throw alreadyExistsException(output);
             }
         } else {
-            try (Writer writer = Files.newBufferedWriter(output, StandardCharsets.UTF_8)) {
+            try (Writer writer = newWriter(output, config.gzip())) {
                 JsonMetadataList.toJson(metadataList, writer, config.prettyPrint());
             }
+        }
+    }
+
+    private static Writer newWriter(Path path, boolean gzip, OpenOption... options)
+            throws IOException {
+        return new BufferedWriter(new OutputStreamWriter(newOutputStream(path, gzip, options),
+                StandardCharsets.UTF_8));
+    }
+
+    private static OutputStream newOutputStream(Path path, boolean gzip, OpenOption... options)
+            throws IOException {
+        OutputStream os = Files.newOutputStream(path, options);
+        return gzip ? gzip(os) : os;
+    }
+
+    static OutputStream gzip(OutputStream os) throws IOException {
+        try {
+            return new GZIPOutputStream(os, GZIP_BUFFER_SIZE) {
+                // JDK 17's close() skips closing os when finish() throws (e.g. disk full)
+                @Override
+                public void close() throws IOException {
+                    try (os) {
+                        super.close();
+                    }
+                }
+            };
+        } catch (IOException e) {
+            os.close();
+            throw e;
         }
     }
 
@@ -209,9 +248,16 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         // CONTENT_ONLY emit keys are the input's own name, so without the extension the output
         // collides with the input. UNPACK keys already carry the embedded file's own name and
         // extension, so appending there would rename every unpacked file.
-        if (parseContext.get(ParseMode.class) == ParseMode.CONTENT_ONLY
-                && !StringUtils.isBlank(config.fileExtension())) {
-            emitKey += "." + config.fileExtension();
+        // compression follows the same rule: never gzip an unpacked file under its own name
+        boolean gzip = false;
+        if (parseContext.get(ParseMode.class) == ParseMode.CONTENT_ONLY) {
+            if (!StringUtils.isBlank(config.fileExtension())) {
+                emitKey += "." + config.fileExtension();
+            }
+            if (config.gzip()) {
+                emitKey += GZIP_SUFFIX;
+                gzip = true;
+            }
         }
 
         if (config.basePath() != null) {
@@ -232,12 +278,18 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
             return;
         }
         if (!config.atomicWrites()) {
-            copyInPlace(inputStream, output, config.onExists());
+            copyInPlace(inputStream, output, config.onExists(), gzip);
             return;
         }
         Path tmp = tmpFor(output);
         try {
-            Files.copy(inputStream, tmp);
+            if (gzip) {
+                try (OutputStream os = newOutputStream(tmp, true, StandardOpenOption.CREATE_NEW)) {
+                    inputStream.transferTo(os);
+                }
+            } else {
+                Files.copy(inputStream, tmp);
+            }
             publish(tmp, output, config.onExists());
         } finally {
             Files.deleteIfExists(tmp);
@@ -245,7 +297,20 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
     }
 
     private static void copyInPlace(InputStream inputStream, Path output,
-                                    FileSystemEmitterConfig.ON_EXISTS onExists) throws IOException {
+                                    FileSystemEmitterConfig.ON_EXISTS onExists, boolean gzip)
+            throws IOException {
+        if (gzip) {
+            OpenOption[] options = onExists == FileSystemEmitterConfig.ON_EXISTS.REPLACE
+                    ? new OpenOption[0] : new OpenOption[]{StandardOpenOption.CREATE_NEW};
+            try (OutputStream os = newOutputStream(output, true, options)) {
+                inputStream.transferTo(os);
+            } catch (FileAlreadyExistsException e) {
+                if (onExists == FileSystemEmitterConfig.ON_EXISTS.EXCEPTION) {
+                    throw alreadyExistsException(output);
+                }
+            }
+            return;
+        }
         if (onExists == FileSystemEmitterConfig.ON_EXISTS.REPLACE) {
             Files.copy(inputStream, output, StandardCopyOption.REPLACE_EXISTING);
             return;
@@ -275,7 +340,8 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
         if (parseContext.hasJsonConfig(configKey)) {
             JsonConfig configJson = parseContext.getJsonConfig(configKey);
             if (configJson != null) {
-                // basePath, allowAbsolutePaths and atomicWrites are not runtime keys; naming one fails
+                // basePath, allowAbsolutePaths, atomicWrites and compression are not runtime keys;
+                // naming one fails
                 FileSystemEmitterRuntimeConfig runtimeConfig =
                         PluginJson.read(configJson, FileSystemEmitterRuntimeConfig.class);
 
@@ -283,7 +349,7 @@ public class FileSystemEmitter extends AbstractStreamEmitter {
                 // init-time allowAbsolutePaths -- neither may be changed at runtime.
                 config = new FileSystemEmitterConfig(fileSystemEmitterConfig.basePath(), runtimeConfig.getFileExtension(), runtimeConfig.getOnExists(),
                         runtimeConfig.isPrettyPrint(), fileSystemEmitterConfig.allowAbsolutePaths(),
-                        fileSystemEmitterConfig.atomicWrites());
+                        fileSystemEmitterConfig.atomicWrites(), fileSystemEmitterConfig.compression());
                 checkConfig(config);
             }
         }
