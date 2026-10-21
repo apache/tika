@@ -280,7 +280,7 @@ public class TikaServerConfig {
 
     /**
      * Catalog presets named with {@code --preset} or in {@value #PRESETS_ENV}, activated like
-     * {@code "presets": {"name": true}} in the config; the config's own entry for a name wins.
+     * {@code "presets": {"name": true}} in the config, over the config's own entry for the name.
      */
     @com.fasterxml.jackson.annotation.JsonIgnore
     public List<String> getPresets() {

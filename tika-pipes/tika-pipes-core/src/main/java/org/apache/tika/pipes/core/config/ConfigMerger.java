@@ -231,10 +231,7 @@ public class ConfigMerger {
         }
 
         for (String preset : overrides.getPresets()) {
-            ObjectNode presetsNode = getOrCreateObject(mapper, root, "presets");
-            if (!presetsNode.has(preset)) {
-                presetsNode.put(preset, true);
-            }
+            getOrCreateObject(mapper, root, "presets").put(preset, true);
         }
 
         // Apply emit strategy

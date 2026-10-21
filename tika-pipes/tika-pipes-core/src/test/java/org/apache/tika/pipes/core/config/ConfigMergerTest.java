@@ -108,7 +108,7 @@ public class ConfigMergerTest {
     }
 
     @Test
-    public void testPresetsActivateCatalogEntriesTheConfigDoesNotName() throws IOException {
+    public void testPresetsOverrideTheConfigsOwnEntries() throws IOException {
         Path existing = tempDir.resolve("existing.json");
         Files.writeString(existing, "{\"presets\": {\"off\": false, \"inline\": {\"pages\": {}}}}");
         ConfigOverrides overrides = ConfigOverrides.builder()
@@ -122,8 +122,8 @@ public class ConfigMergerTest {
                 .get("presets");
 
         assertTrue(presets.get("thumbnail").asBoolean());
-        assertFalse(presets.get("off").asBoolean());
-        assertTrue(presets.get("inline").isObject());
+        assertTrue(presets.get("off").asBoolean());
+        assertTrue(presets.get("inline").asBoolean());
         assertEquals(3, presets.size());
     }
 

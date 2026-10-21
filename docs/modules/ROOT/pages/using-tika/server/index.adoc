@@ -146,7 +146,8 @@ and `true` naming nothing in the catalog fails startup:
 A catalog preset can also be activated without touching the config file: `--preset <name>`
 (repeatable) or the environment variable `TIKA_PRESETS` with a comma-separated list. Either is
 the same as `"<name>": true` in `presets`, so it needs no `-c` at all, and the catalog must know
-the name. Where the config file names the same preset, with whatever value, the file wins.
+the name. Both win over the config file: a name listed there is active with the catalog's
+content even if the file sets it to `false` or defines it inline.
 
 [source,bash]
 ----

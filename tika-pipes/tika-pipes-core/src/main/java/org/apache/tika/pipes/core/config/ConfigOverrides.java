@@ -251,9 +251,8 @@ public class ConfigOverrides {
         }
 
         /**
-         * Activates a catalog preset, as {@code "presets": {"name": true}} in the config would.
-         * A preset the existing config already names, with any value, is left as the config
-         * has it.
+         * Activates a catalog preset, as {@code "presets": {"name": true}} in the config would,
+         * replacing whatever value the existing config has for the name.
          */
         public Builder addPreset(String name) {
             this.presets.add(name);
