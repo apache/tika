@@ -105,7 +105,8 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
     //maximum length to allow for mark for reparse to get JSON
     private static final int MAX_MARK = 20 * 1024 * 1024;//20MB
 
-    // Swing's html view instantiates the class an <object> names and fetches <link> stylesheets
+    // Swing's html view constructs the Component an <object classid> names and fetches
+    // <link> stylesheets and remote <img> sources
     private static final Set<String> HTML_VIEW_DROPPED = Set.of("head", "link", "object", "param");
 
     /**
@@ -532,13 +533,13 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
                 if (XHTMLContentHandler.XHTML.equals(uri)) {
                     uri = null;
                 }
-                if (!HTML_VIEW_DROPPED.contains(localName)) {
-                    if ("img".equals(localName)) {
+                if (!isDropped(localName, name)) {
+                    if (isNamed("img", localName, name)) {
                         // a copy: the other tee'd handlers see the same attributes
                         AttributesImpl newAttrs = new AttributesImpl(atts);
 
                         for (int i = 0; i < newAttrs.getLength(); i++) {
-                            if ("src".equals(newAttrs.getLocalName(i))) {
+                            if (isNamed("src", newAttrs.getLocalName(i), newAttrs.getQName(i))) {
                                 String src = newAttrs.getValue(i);
                                 if (src.startsWith("embedded:")) {
                                     String filename = src.substring(src.indexOf(':') + 1);
@@ -571,7 +572,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
                 if (XHTMLContentHandler.XHTML.equals(uri)) {
                     uri = null;
                 }
-                if (!HTML_VIEW_DROPPED.contains(localName)) {
+                if (!isDropped(localName, name)) {
                     super.endElement(uri, localName, name);
                 }
             }
@@ -584,6 +585,20 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
             public void endPrefixMapping(String prefix) {
             }
         };
+    }
+
+    // the serializer writes the qName and Swing ignores case, so match either name
+    private static boolean isNamed(String expected, String localName, String qName) {
+        return expected.equalsIgnoreCase(localName) || expected.equalsIgnoreCase(qName);
+    }
+
+    private static boolean isDropped(String localName, String qName) {
+        for (String dropped : HTML_VIEW_DROPPED) {
+            if (isNamed(dropped, localName, qName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private ContentHandler getTextContentHandler(Writer writer) {
