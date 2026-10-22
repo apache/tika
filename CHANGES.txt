@@ -6,12 +6,14 @@ Release 4.2.0 - 10/22/2026
      tika-app -z/-Z and pipes UNPACK; unpack-config.outputFormat=REGULAR
      (--unpack-format=REGULAR) restores the old layout (TIKA-4681). A document without
      attachments is still a package, so /unpack returns 200, not 204;
-     unpack-config.emptyPackage=SKIP restores the 204. The package's metadata.json is now
-     rmeta.json and gets the metadata filters; a package sent to the container's emitter
-     replaces its <emitKey>.json. REGULAR .metadata.json sidecars are the file's row from
-     the metadata list. FrictionlessResource.name() is the resource name (the filename
-     moved to resourceName()); FrictionlessResource.create and DataPackage.addResource are
-     removed (TIKA-4971).
+     unpack-config.emptyPackage=SKIP restores the 204 (TIKA-4971).
+
+   * The package's metadata.json is now rmeta.json and gets the metadata filters; a
+     package sent to the container's emitter replaces its <emitKey>.json. REGULAR
+     .metadata.json sidecars are the file's row from the metadata list.
+     FrictionlessResource.name() is the resource name (the filename moved to
+     resourceName()); FrictionlessResource.create and DataPackage.addResource are removed
+     (TIKA-4971).
 
    * Config is untrusted unless the operator says so. @OperatorOnly properties (paths,
      executables, class names, URLs, credentials, operator-sized limits) are refused
@@ -52,21 +54,18 @@ Release 4.2.0 - 10/22/2026
      _min-width and min-width is an error, and gated entries load as GatedEnricher,
      not SizeGatedEnricher (TIKA-4972).
 
-   * embedded-limits maxDepth defaults to 20, was unlimited, and replaces
-     output-limits maxPackageEntryDepth.
-
-   * To be removed in 4.3.0: output-limits maxPackageEntryDepth and its accessors on
-     OutputLimits and SecureContentHandler; tika-parser-mail-commons (MailUtil and
-     MailDateParser moved, see TIKA-4917).
+   * embedded-limits maxDepth defaults to 20 (was unlimited) and replaces output-limits
+     maxPackageEntryDepth (#3319). To be removed in 4.3.0: maxPackageEntryDepth and its
+     accessors on OutputLimits and SecureContentHandler, and tika-parser-mail-commons
+     (TIKA-4917).
 
    * Pipes plugins load only from the zips in plugin-roots; a plugin on the classpath
      needs -Dtika.plugins.classpath=true, which PipesForkParser sets when it finds no
      plugins directory holding tika-pipes-file-system (TIKA-4918, TIKA-4985).
 
    * image/vnd.microsoft.icon moves from ImageParser to the new ICOParser, which also
-     parses cursors. Tighter OS/2 bitmap array and TGA detection (TIKA-4937). Animated
-     cursors (RIFF ACON) are application/x-navi-animation, even when named *.cur
-     (TIKA-4985).
+     parses cursors (TIKA-4937). Animated cursors (RIFF ACON) are
+     application/x-navi-animation, even when named *.cur (TIKA-4985).
 
    * ISArchiveParser(String location) is removed; pass a file-backed TikaInputStream
      (TikaInputStream.get(Path)) (TIKA-4986).
@@ -75,8 +74,7 @@ Release 4.2.0 - 10/22/2026
      themselves (commons-*, pdfbox, fontbox, bouncycastle, jsoup, asm, xz, xmpcore,
      dd-plist); deploy them alongside it (TIKA-4934). Its imports are now mandatory, it
      registers its encoding detector, language detector and metadata filter providers,
-     and it requires Java 17; OOXML, HTTP and GeoGebra parsing and charset detection
-     work in OSGi again (TIKA-4955).
+     and it requires Java 17 (TIKA-4955).
 
   SECURITY
 
@@ -130,7 +128,8 @@ Release 4.2.0 - 10/22/2026
    * OSGi: tika-serialization is a bundle, so JsonConfig constructors work (TIKA-4982);
      tika-core installs without a Service Loader Mediator (TIKA-4945); the
      DefaultParser and DefaultDetector services no longer recurse into a
-     StackOverflowError (TIKA-4942).
+     StackOverflowError (TIKA-4942); OOXML, HTTP and GeoGebra parsing and charset
+     detection work in tika-bundle-standard again (TIKA-4955).
 
   EXTRACTION AND FORMATS
 
@@ -159,13 +158,20 @@ Release 4.2.0 - 10/22/2026
    * Detection: *.rs is text/x-rust (TIKA-4977); a MIME email nesting
      multipart/related is message/rfc822, not MHTML (TIKA-4973); XML with an element
      like <htmlPath> is no longer HTML (TIKA-4962); XUL is detected by content and
-     parsed by the HTML parser, as XMLParser fails on its DTD entities (TIKA-4985).
+     parsed by the HTML parser, as XMLParser fails on its DTD entities (TIKA-4985);
+     OS/2 bitmap array and TGA detection is tighter (TIKA-4937).
 
    * Image checks (byte-size, min-image-size, blank-image-check; new
-     tika-image-processing module) keep blank and tiny images from text recognizers.
-     VLM output gets tk:ocr-warnings (an empty Claude response is a warning, not an
-     exception), vlm:skipped-reason and vlm:image-pixels; VLM parsers take temperature;
-     dropped HTTP connections are retried; SizeGatedEnricher is deprecated (TIKA-4972).
+     tika-image-processing module) keep blank and tiny images from text recognizers;
+     SizeGatedEnricher is deprecated (TIKA-4972).
+
+   * VLM parsers: output gets tk:ocr-warnings (an empty Claude response is a warning, not
+     an exception), vlm:skipped-reason and vlm:image-pixels; they take temperature and
+     retry dropped HTTP connections (TIKA-4972). The OpenAI-compatible parser has opt-in
+     useMaxCompletionTokens for models that reject max_tokens (#3350).
+
+   * The embed task writes tk:chunks once per binding, not once per image or page
+     (TIKA-4970).
 
    * Opt-in "metadata-list": {"typedValues": true} writes numbers, booleans and
      tk:chunks as JSON values rather than strings; new Property.ValueType.JSON
@@ -173,23 +179,17 @@ Release 4.2.0 - 10/22/2026
 
   OTHER CHANGES
 
-   * The pipes getting-started and shared-server JSON examples no longer include the
-     test-only mock-digester-factory, which made the forked server fail at startup
-     (TIKA-4984).
+   * tika-app -J writes the metadata list when the container throws, with the exception
+     in tk:exception:container-exception on the first record, as /rmeta does; it used to
+     print nothing. The exit status still reports the failure (TIKA-4985).
 
-   * tika-app -J writes the metadata list when the container throws (a zip-bomb trip, a
-     corrupt or encrypted file), with the exception in tk:exception:container-exception on
-     the first record, as /rmeta does; it used to print nothing. The exit status still
-     reports the failure (TIKA-4985).
+   * A RAR entry junrar fails to extract is recorded as
+     tk:exception:embedded-stream-exception on the container; what was extracted before
+     the failure is kept and the rest of the archive is parsed (junrar 8.1.2, TIKA-4985).
 
-   * A RAR entry junrar fails to extract (truncated archive, bad CRC, missing password)
-     is now recorded as tk:exception:embedded-stream-exception on the container; the
-     entry still yields what was extracted before the failure, and the rest of the
-     archive is still parsed (junrar 8.1.2, TIKA-4985).
-
-   * ISArchiveParser no longer reads every ISA-Tab document's investigation and assay files
-     from the directory of the first document it parsed; concurrent parses no longer share
-     the study file name (TIKA-4986).
+   * ISArchiveParser resolves the ISA-Tab directory on each parse instead of reading every
+     later document's investigation and assay files from the first document's directory,
+     and concurrent parses no longer share the study file name (TIKA-4986).
 
    * JSoupParser emits CDATA text again (TIKA-4963).
 
@@ -200,11 +200,6 @@ Release 4.2.0 - 10/22/2026
 
    * GeoGebraParser no longer needs jackson-databind (TIKA-4956).
 
-   * The embed task writes tk:chunks once per binding, not once per image or page
-     (TIKA-4970).
-
-   * OpenAI-compatible VLM parser: opt-in useMaxCompletionTokens for models that reject
-     max_tokens.
 
 Release 4.1.0 - 9/26/2026
 
