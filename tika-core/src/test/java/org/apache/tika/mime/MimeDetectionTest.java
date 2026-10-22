@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -189,6 +190,18 @@ public class MimeDetectionTest {
         lotus[4] = 4;
         lotus[5] = 4;
         assertDetected(MediaType.parse("application/vnd.lotus-1-2-3;version=1"), lotus);
+    }
+
+    @Test
+    public void testAnimatedCursorDetection() throws Exception {
+        MediaType ani = MediaType.application("x-navi-animation");
+        byte[] acon = new byte[64];
+        System.arraycopy("RIFF".getBytes(US_ASCII), 0, acon, 0, 4);
+        acon[4] = 56;
+        System.arraycopy("ACONanih".getBytes(US_ASCII), 0, acon, 8, 8);
+        assertDetected(ani, acon);
+        // the content beats a *.cur name
+        assertEquals(ani, detect(acon, "pointer.cur"));
     }
 
     private static byte[] tgaHeader(int idLength, int colourMapType, int imageType,
