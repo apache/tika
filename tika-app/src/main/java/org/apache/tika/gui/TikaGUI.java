@@ -337,7 +337,8 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
         StringBuilder metadataBuffer = new StringBuilder();
 
         ContentHandler handler =
-                new TeeContentHandler(getHtmlHandler(htmlBuffer), getTextContentHandler(textBuffer), getTextMainContentHandler(textMainBuffer), getXmlContentHandler(xmlBuffer));
+                new TeeContentHandler(getHtmlHandler(htmlBuffer, imageParser), getTextContentHandler(textBuffer),
+                        getTextMainContentHandler(textMainBuffer), getXmlContentHandler(xmlBuffer));
 
         context.set(DocumentSelector.class, new ImageDocumentSelector());
 
@@ -514,10 +515,11 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
      * image links to be file:///(temporary file) so that they can be loaded.
      *
      * @param writer output writer
+     * @param imageParser saves the embedded images the view references
      * @return HTML content handler
      * @throws TransformerConfigurationException if an error occurs
      */
-    private ContentHandler getHtmlHandler(Writer writer) throws TransformerConfigurationException, TikaException {
+    static ContentHandler getHtmlHandler(Writer writer, ImageSavingParser imageParser) throws TransformerConfigurationException, TikaException {
         SAXTransformerFactory factory = XMLReaderUtils.getSAXTransformerFactory();
         TransformerHandler handler = factory.newTransformerHandler();
         handler
@@ -617,12 +619,12 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
      * directory, and delegates everything else to another downstream
      * parser.
      */
-    private static class ImageSavingParser implements Parser {
+    static class ImageSavingParser implements Parser {
         private Map<String, File> wanted = new HashMap<>();
         private Parser downstreamParser;
         private File tmpDir;
 
-        private ImageSavingParser(Parser downstreamParser) {
+        ImageSavingParser(Parser downstreamParser) {
             this.downstreamParser = downstreamParser;
 
             try {
