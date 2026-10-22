@@ -45,9 +45,7 @@ public class ISArchiveParser implements Parser {
     private static String studyAssayFileNameField = "Study Assay File Name";
     private final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("x-isatab"));
-    private String location = null;
-
-    private String studyFileName = null;
+    private final String location;
 
     /**
      * Default constructor.
@@ -60,7 +58,11 @@ public class ISArchiveParser implements Parser {
      * Constructor that accepts the pathname of ISArchive folder.
      *
      * @param location pathname of ISArchive folder including ISA-Tab files
+     * @deprecated the ISA-Tab directory is the study file's parent directory; use the
+     * default constructor and pass a file-backed TikaInputStream (TikaInputStream.get(Path)).
+     * This constructor is removed in 4.x.
      */
+    @Deprecated
     public ISArchiveParser(String location) {
         if (location != null && !location.endsWith(File.separator)) {
             location += File.separator;
@@ -82,10 +84,12 @@ public class ISArchiveParser implements Parser {
 
         TikaInputStream tis = TikaInputStream.get(stream, tmp, metadata);
         try {
-            if (this.location == null) {
-                this.location = tis.getFile().getParent() + File.separator;
+            // the parser is shared across parses: resolve the directory per document
+            String location = this.location;
+            if (location == null) {
+                location = tis.getFile().getParent() + File.separator;
             }
-            this.studyFileName = tis.getFile().getName();
+            String studyFileName = tis.getFile().getName();
 
             File locationFile = new File(location);
             String[] investigationList = locationFile.list((dir, name) -> name.matches("i_.+\\.txt"));
@@ -93,9 +97,9 @@ public class ISArchiveParser implements Parser {
             XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata);
             xhtml.startDocument();
 
-            parseInvestigation(investigationList, xhtml, metadata, context);
+            parseInvestigation(location, studyFileName, investigationList, xhtml, metadata, context);
             parseStudy(stream, xhtml, metadata, context);
-            parseAssay(xhtml, metadata, context);
+            parseAssay(location, xhtml, metadata, context);
 
             xhtml.endDocument();
         } finally {
@@ -105,7 +109,8 @@ public class ISArchiveParser implements Parser {
         }
     }
 
-    private void parseInvestigation(String[] investigationList, XHTMLContentHandler xhtml,
+    private void parseInvestigation(String location, String studyFileName,
+                                    String[] investigationList, XHTMLContentHandler xhtml,
                                     Metadata metadata, ParseContext context)
             throws IOException, SAXException, TikaException {
         if ((investigationList == null) || (investigationList.length == 0)) {
@@ -118,8 +123,8 @@ public class ISArchiveParser implements Parser {
         }
 
         String investigation = investigationList[0]; // TODO add to metadata?
-        try (InputStream stream = TikaInputStream.get(new File(this.location + investigation).toPath())) {
-            ISATabUtils.parseInvestigation(stream, xhtml, metadata, context, this.studyFileName);
+        try (InputStream stream = TikaInputStream.get(new File(location + investigation).toPath())) {
+            ISATabUtils.parseInvestigation(stream, xhtml, metadata, context, studyFileName);
         }
         xhtml.element("h1", "INVESTIGATION " + metadata.get("Investigation Identifier"));
     }
@@ -131,12 +136,13 @@ public class ISArchiveParser implements Parser {
         ISATabUtils.parseStudy(stream, xhtml, metadata, context);
     }
 
-    private void parseAssay(XHTMLContentHandler xhtml, Metadata metadata, ParseContext context)
+    private void parseAssay(String location, XHTMLContentHandler xhtml, Metadata metadata,
+                            ParseContext context)
             throws IOException, SAXException, TikaException {
         // location starts with "/C:" on windows, so build the directory Path from a File
         // rather than Paths.get(). The assay file names come from the investigation file and
         // are resolved within this directory.
-        Path locationDir = new File(this.location).toPath();
+        Path locationDir = new File(location).toPath();
         for (String assayFileName : metadata.getValues(studyAssayFileNameField)) {
             xhtml.startElement("div");
             xhtml.element("h3", "ASSAY " + assayFileName);
