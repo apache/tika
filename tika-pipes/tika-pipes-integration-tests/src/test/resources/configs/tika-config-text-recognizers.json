@@ -47,7 +47,9 @@
     "throwOnZeroBytes": false
   },
   "parse-context": {
-    "mock-digester-factory": {},
+    "commons-digester-factory": {
+      "digests": [{ "algorithm": "SHA256" }]
+    },
     "timeout-limits": {
       "progressTimeoutMillis": 5000
     }
