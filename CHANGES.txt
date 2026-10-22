@@ -93,6 +93,10 @@ Release 4.2.0 - 10/22/2026
      document referenced, which Tika never resolves (TIKA-4941). XFA is read with SAX;
      XMLReaderUtils.getXMLInputFactory() is deprecated (TIKA-4938).
 
+   * The tika-app GUI's Formatted Text view no longer lets a document make Swing
+     construct classes or fetch URLs: only plain elements and attributes reach it, and
+     remote images are not loaded (TIKA-4992).
+
   SERVER, PIPES AND OPERATIONS
 
    * The file-system emitter can gzip its output ("compression": "GZIP"); tika-eval reads
