@@ -1,5 +1,10 @@
 Release 3.4.0 - ???
 
+  * A RAR entry junrar fails to extract is recorded as
+    X-TIKA:EXCEPTION:embedded_stream_exception on the container; what was extracted
+    before the failure is kept and the rest of the archive is parsed (junrar 8.1.2,
+    TIKA-4985).
+
   * tika-server caps attachments on the multipart/form-data endpoints at 50 MB by
     default; set <maxAttachmentBytes> in the server config to raise it or -1 to
     remove it (CVE-2026-54225). The form-parameter cap from CVE-2026-57819

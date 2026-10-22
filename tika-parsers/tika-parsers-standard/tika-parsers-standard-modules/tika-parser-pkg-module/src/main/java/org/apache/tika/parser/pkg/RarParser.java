@@ -24,6 +24,7 @@ import java.util.Set;
 import com.github.junrar.Archive;
 import com.github.junrar.exception.RarException;
 import com.github.junrar.rarfile.FileHeader;
+import org.apache.commons.io.input.ProxyInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -86,10 +87,15 @@ public class RarParser implements Parser {
                     Metadata entrydata = PackageParser.handleEntryMetadata(header.getFileName(),
                             header.getCTime(), header.getMTime(), header.getFullUnpackSize(),
                             xhtml);
-                    try (InputStream subFile = rar.getInputStream(header)) {
+                    EntryStream entryStream = new EntryStream(rar.getInputStream(header));
+                    try (InputStream subFile = entryStream) {
                         if (extractor.shouldParseEmbedded(entrydata)) {
                             extractor.parseEmbedded(subFile, handler, entrydata, true);
                         }
+                    }
+                    if (entryStream.failure != null) {
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(
+                                entryStream.failure, metadata);
                     }
                 }
 
@@ -106,5 +112,25 @@ public class RarParser implements Parser {
         }
 
         xhtml.endDocument();
+    }
+
+    /**
+     * junrar 8.1.2+ reports a failed entry (truncated archive, bad CRC, missing password) as an
+     * IOException on the entry's stream. End the entry there instead, as junrar 8.1.1 did, so
+     * the bytes it delivered are still parsed and the rest of the archive is reached.
+     */
+    private static class EntryStream extends ProxyInputStream {
+        private IOException failure;
+
+        EntryStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        protected void handleIOException(IOException e) {
+            if (failure == null) {
+                failure = e;
+            }
+        }
     }
 }
