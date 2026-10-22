@@ -2048,6 +2048,20 @@
   <mime-type type="application/vnd.motorola.flexsuite.wem"/>
   <mime-type type="application/vnd.motorola.iprm"/>
   <mime-type type="application/vnd.mozilla.xul+xml">
+    <sub-class-of type="application/xml"/>
+    <acronym>XUL</acronym>
+    <_comment>XML User Interface Language</_comment>
+    <!-- root-XML misses roots whose attributes use DTD entities; above application/xml -->
+    <magic priority="51">
+      <match value="&lt;(?:window|dialog|wizard|overlay|prefwindow|page)\\s[^&gt;]*xmlns\\s*=\\s*[&quot;']http://www\\.mozilla\\.org/keymaster/gatekeeper/there\\.is\\.only\\.xul[&quot;']"
+             type="regex" offset="0:8192"/>
+    </magic>
+    <root-XML localName="window" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
+    <root-XML localName="dialog" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
+    <root-XML localName="wizard" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
+    <root-XML localName="overlay" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
+    <root-XML localName="prefwindow" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
+    <root-XML localName="page" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
     <glob pattern="*.xul"/>
   </mime-type>
   <mime-type type="application/vnd.ms-artgalry">

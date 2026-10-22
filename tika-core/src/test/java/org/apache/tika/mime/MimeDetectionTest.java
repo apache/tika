@@ -225,6 +225,28 @@ public class MimeDetectionTest {
     }
 
     @Test
+    public void testXulByContent() throws IOException {
+        MediaType xul = MediaType.application("vnd.mozilla.xul+xml");
+        String ns = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+        byte[] plain = ("<?xml version=\"1.0\"?><window xmlns=\"" + ns + "\"/>").getBytes(UTF_8);
+        // the root's attribute entity stops the root-element sniff
+        byte[] entityInRoot = ("<?xml version=\"1.0\"?>\n<!DOCTYPE wizard [<!ENTITY % d SYSTEM"
+                + " \"chrome://a/b.dtd\"> %d;]>\n<wizard title=\"&wizard.title;\" xmlns=\"" + ns
+                + "\"/>").getBytes(UTF_8);
+        byte[] noDeclaration = ("<window title=\"t\" xmlns=\"" + ns + "\"/>").getBytes(UTF_8);
+        for (byte[] doc : new byte[][]{plain, entityInRoot, noDeclaration}) {
+            assertEquals(xul, detect(doc, null));
+            assertEquals(xul, detect(doc, "attachment.xml"));
+        }
+        // mentioning the namespace is not enough
+        assertEquals(MediaType.TEXT_PLAIN,
+                detect(("document.createElementNS(\"" + ns + "\", \"label\");").getBytes(UTF_8), null));
+        assertEquals(MediaType.APPLICATION_XML,
+                detect(("<?xml version=\"1.0\"?><bindings xmlns=\"http://www.mozilla.org/xbl\""
+                        + " xmlns:xul=\"" + ns + "\"/>").getBytes(UTF_8), null));
+    }
+
+    @Test
     public void testRustVersusRlsServices() throws IOException {
         MediaType rust = MediaType.text("x-rust");
         MediaType rls = MediaType.application("rls-services+xml");

@@ -86,9 +86,11 @@ public class JSoupParser extends AbstractEncodingDetectorParser {
     private static final MediaType XHTML = MediaType.application("xhtml+xml");
     private static final MediaType WAP_XHTML = MediaType.application("vnd.wap.xhtml+xml");
     private static final MediaType X_ASP = MediaType.application("x-asp");
+    // XUL leans on entities from chrome:// DTDs, which strict XML parsing rejects
+    private static final MediaType XUL = MediaType.application("vnd.mozilla.xul+xml");
 
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
-            new HashSet<MediaType>(Arrays.asList(MediaType.text("html"), XHTML, WAP_XHTML, X_ASP)));
+            new HashSet<MediaType>(Arrays.asList(MediaType.text("html"), XHTML, WAP_XHTML, X_ASP, XUL)));
 
     private static final TagSet SELF_CLOSEABLE_TAGS = TagSet.Html();
 
