@@ -17,15 +17,27 @@
 package org.apache.tika.gui;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.swing.JEditorPane;
+import javax.swing.SwingUtilities;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.ContentHandler;
@@ -35,6 +47,8 @@ import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.html.HtmlMapper;
+import org.apache.tika.parser.html.IdentityHtmlMapper;
 import org.apache.tika.sax.TeeContentHandler;
 import org.apache.tika.sax.ToXMLContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -49,6 +63,16 @@ public class TikaGUIHtmlViewTest {
             + "<img src=\"http://attacker.invalid/remote.png\" alt=\"remote\">"
             + "<img src=\"embedded:image1.png\" alt=\"local\">"
             + "<p>after</p></body></html>";
+
+    // every construct here makes Swing's html view request BASE or build a Component
+    private static final String ACTIVE = "<html><head><link rel=\"stylesheet\" href=\"BASE/link.css\"></head>"
+            + "<body background=\"BASE/body-bg\"><p style=\"background-image:url(BASE/style)\">styled</p>"
+            + "<table background=\"BASE/table-bg\"><tr><td background=\"BASE/td-bg\">cell</td></tr></table>"
+            + "<input type=\"image\" src=\"BASE/input\">"
+            + "<img src=\"BASE/img.png\" alt=\"remote\">"
+            + "<object classid=\"javax.swing.JLabel\"><param name=\"text\" value=\"evil\"></object>"
+            + "<frameset rows=\"50%,50%\"><frame src=\"BASE/frame\"></frameset>"
+            + "<p>visible</p></body></html>";
 
     @Test
     public void testHtmlViewDropsActiveContent() throws Exception {
@@ -76,10 +100,7 @@ public class TikaGUIHtmlViewTest {
             assertTrue(xml.contains("src=\"http://attacker.invalid/remote.png\""), xml);
             assertTrue(xml.contains("src=\"embedded:image1.png\""), xml);
         } finally {
-            Matcher m = Pattern.compile("src=\"(file:[^\"]+)\"").matcher(html);
-            while (m.find()) {
-                Files.deleteIfExists(Path.of(java.net.URI.create(m.group(1))));
-            }
+            deleteSavedImages(html);
         }
     }
 
@@ -97,11 +118,100 @@ public class TikaGUIHtmlViewTest {
         handler.endElement("", "", "OBJECT");
         handler.startElement("", "", "IMG", imgAtts);
         handler.endElement("", "", "IMG");
+        handler.processingInstruction("x", "a><object classid=\"javax.swing.JLabel\"></object><x ");
+        char[] text = "<object classid=\"javax.swing.JLabel\">".toCharArray();
+        handler.characters(text, 0, text.length);
         handler.endElement(XHTMLContentHandler.XHTML, "body", "body");
         handler.endDocument();
         String html = view.toString();
-        assertFalse(html.toLowerCase(Locale.ROOT).contains("object"), html);
+        assertFalse(html.toLowerCase(Locale.ROOT).contains("<object"), html);
+        assertTrue(html.contains("&lt;object"), html);
         assertFalse(html.contains("attacker.invalid"), html);
         assertTrue(html.contains("<IMG"), html);
+    }
+
+    @Test
+    public void testSwingRendersNothingActive() throws Exception {
+        // calibration: the unfiltered markup does reach the listener and build a Component
+        try (Listener raw = new Listener()) {
+            JEditorPane pane = render(ACTIVE.replace("BASE", raw.base()));
+            raw.awaitAtLeast(5);
+            assertTrue(pane.getComponentCount() > 0);
+        }
+
+        // IdentityHtmlMapper passes through whatever the document has, as a custom parser could
+        ParseContext context = new ParseContext();
+        context.set(HtmlMapper.class, IdentityHtmlMapper.INSTANCE);
+        try (Listener filtered = new Listener()) {
+            StringWriter view = new StringWriter();
+            try (TikaInputStream tis = TikaInputStream.get(ACTIVE.replace("BASE", filtered.base()).getBytes(UTF_8))) {
+                new AutoDetectParser().parse(tis, TikaGUI.getHtmlHandler(view, new TikaGUI.ImageSavingParser(null)),
+                        new Metadata(), context);
+            }
+            String html = view.toString();
+            assertTrue(html.contains("visible"), html);
+            JEditorPane pane = render(html);
+            Thread.sleep(1000);
+            assertEquals(List.of(), filtered.requests, html);
+            assertEquals(0, pane.getComponentCount(), html);
+        }
+    }
+
+    private static JEditorPane render(String html) throws Exception {
+        JEditorPane[] pane = new JEditorPane[1];
+        SwingUtilities.invokeAndWait(() -> {
+            pane[0] = new JEditorPane();
+            pane[0].setContentType("text/html");
+            pane[0].setText(html);
+            pane[0].setSize(800, 600);
+            pane[0].getPreferredSize();
+        });
+        return pane[0];
+    }
+
+    private static void deleteSavedImages(String html) throws Exception {
+        Matcher m = Pattern.compile("src=\"(file:[^\"]+)\"").matcher(html);
+        while (m.find()) {
+            Files.deleteIfExists(Path.of(URI.create(m.group(1))));
+        }
+    }
+
+    private static class Listener implements AutoCloseable {
+        private final ServerSocket server = new ServerSocket(0, 50, InetAddress.getLoopbackAddress());
+        private final List<String> requests = new CopyOnWriteArrayList<>();
+
+        Listener() throws Exception {
+            Thread t = new Thread(() -> {
+                while (true) {
+                    try (Socket s = server.accept()) {
+                        requests.add(new BufferedReader(new InputStreamReader(s.getInputStream(), UTF_8)).readLine());
+                        s.getOutputStream().write("HTTP/1.0 404 Not Found\r\nContent-Length: 0\r\n\r\n".getBytes(UTF_8));
+                    } catch (SocketException e) {
+                        return;
+                    } catch (Exception e) {
+                        //swallow
+                    }
+                }
+            });
+            t.setDaemon(true);
+            t.start();
+        }
+
+        String base() {
+            return "http://127.0.0.1:" + server.getLocalPort();
+        }
+
+        void awaitAtLeast(int n) throws InterruptedException {
+            long deadline = System.currentTimeMillis() + 10_000;
+            while (requests.size() < n && System.currentTimeMillis() < deadline) {
+                Thread.sleep(50);
+            }
+            assertTrue(requests.size() >= n, requests.toString());
+        }
+
+        @Override
+        public void close() throws Exception {
+            server.close();
+        }
     }
 }

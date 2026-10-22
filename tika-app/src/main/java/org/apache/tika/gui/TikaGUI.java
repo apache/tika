@@ -41,6 +41,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.swing.Box;
@@ -105,9 +106,14 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
     //maximum length to allow for mark for reparse to get JSON
     private static final int MAX_MARK = 20 * 1024 * 1024;//20MB
 
-    // Swing's html view constructs the Component an <object classid> names and fetches
-    // <link> stylesheets and remote <img> sources
-    private static final Set<String> HTML_VIEW_DROPPED = Set.of("head", "link", "object", "param");
+    // Swing's html view builds Components from <object> and fetches frame, stylesheet, image
+    // and background URLs, so only plain markup and attributes reach it
+    private static final Set<String> HTML_VIEW_ELEMENTS = Set.of("html", "body", "p", "div", "span", "br",
+            "hr", "h1", "h2", "h3", "h4", "h5", "h6", "pre", "blockquote", "q", "address", "ul", "ol", "li",
+            "dl", "dt", "dd", "table", "caption", "thead", "tbody", "tfoot", "tr", "th", "td", "a", "img", "b",
+            "i", "u", "em", "strong", "sub", "sup", "code", "ins", "del");
+    private static final Set<String> HTML_VIEW_ATTRIBUTES = Set.of("alt", "title", "href", "name", "id",
+            "colspan", "rowspan");
 
     /**
      * Serial version UID.
@@ -507,8 +513,10 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
      * to the given writer. The XHTML namespace is removed from the output
      * to prevent the serializer from using the &lt;tag/&gt; empty element
      * syntax that causes extra "&gt;" characters to be displayed.
-     * The &lt;head&gt; tags are dropped to prevent the serializer from
-     * generating a &lt;META&gt; content type tag that makes
+     * Elements and attributes outside a small allowlist are dropped (element
+     * text is kept), so {@link JEditorPane} has nothing to fetch or
+     * instantiate. This also drops &lt;head&gt;, which would make the
+     * serializer generate a &lt;META&gt; content type tag that makes
      * {@link JEditorPane} fail thinking that the document character set
      * is inconsistent.
      * <p>
@@ -533,38 +541,33 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
                 if (XHTMLContentHandler.XHTML.equals(uri)) {
                     uri = null;
                 }
-                if (!isDropped(localName, name)) {
-                    if (isNamed("img", localName, name)) {
-                        // a copy: the other tee'd handlers see the same attributes
-                        AttributesImpl newAttrs = new AttributesImpl(atts);
-
-                        for (int i = 0; i < newAttrs.getLength(); i++) {
-                            if (isNamed("src", newAttrs.getLocalName(i), newAttrs.getQName(i))) {
-                                String src = newAttrs.getValue(i);
-                                if (src.startsWith("embedded:")) {
-                                    String filename = src.substring(src.indexOf(':') + 1);
-                                    try {
-                                        File img = imageParser.requestSave(filename);
-                                        String newSrc = img
-                                                .toURI()
-                                                .toString();
-                                        newAttrs.setValue(i, newSrc);
-                                    } catch (IOException e) {
-                                        System.err.println("Error creating temp image file " + filename);
-                                        // The html viewer will show a broken image too to alert them
-                                    }
-                                } else {
-                                    // the view would fetch it on display
-                                    newAttrs.removeAttribute(i);
-                                    i--;
-                                }
+                if (!isAllowed(HTML_VIEW_ELEMENTS, localName, name)) {
+                    return;
+                }
+                boolean img = isAllowed(Set.of("img"), localName, name);
+                // a copy: the other tee'd handlers see the same attributes
+                AttributesImpl newAttrs = new AttributesImpl();
+                for (int i = 0; i < atts.getLength(); i++) {
+                    String attrLocal = atts.getLocalName(i);
+                    String attrQName = atts.getQName(i);
+                    if (img && isAllowed(Set.of("src"), attrLocal, attrQName)) {
+                        String src = atts.getValue(i);
+                        if (src.startsWith("embedded:")) {
+                            String filename = src.substring(src.indexOf(':') + 1);
+                            try {
+                                File imgFile = imageParser.requestSave(filename);
+                                newAttrs.addAttribute(atts.getURI(i), attrLocal, attrQName, atts.getType(i),
+                                        imgFile.toURI().toString());
+                            } catch (IOException e) {
+                                System.err.println("Error creating temp image file " + filename);
+                                // The html viewer will show a broken image too to alert them
                             }
                         }
-                        super.startElement(uri, localName, name, newAttrs);
-                    } else {
-                        super.startElement(uri, localName, name, atts);
+                    } else if (isAllowed(HTML_VIEW_ATTRIBUTES, attrLocal, attrQName)) {
+                        newAttrs.addAttribute(atts.getURI(i), attrLocal, attrQName, atts.getType(i), atts.getValue(i));
                     }
                 }
+                super.startElement(uri, localName, name, newAttrs);
             }
 
             @Override
@@ -572,9 +575,18 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
                 if (XHTMLContentHandler.XHTML.equals(uri)) {
                     uri = null;
                 }
-                if (!isDropped(localName, name)) {
+                if (isAllowed(HTML_VIEW_ELEMENTS, localName, name)) {
                     super.endElement(uri, localName, name);
                 }
+            }
+
+            // the serializer writes the data raw and Swing ends a PI at the first '>'
+            @Override
+            public void processingInstruction(String target, String data) {
+            }
+
+            @Override
+            public void skippedEntity(String name) {
             }
 
             @Override
@@ -587,18 +599,18 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
         };
     }
 
-    // the serializer writes the qName and Swing ignores case, so match either name
-    private static boolean isNamed(String expected, String localName, String qName) {
-        return expected.equalsIgnoreCase(localName) || expected.equalsIgnoreCase(qName);
-    }
-
-    private static boolean isDropped(String localName, String qName) {
-        for (String dropped : HTML_VIEW_DROPPED) {
-            if (isNamed(dropped, localName, qName)) {
-                return true;
+    // the serializer writes the qName and Swing ignores case, so both names must pass
+    private static boolean isAllowed(Set<String> allowed, String localName, String qName) {
+        boolean named = false;
+        for (String n : new String[]{localName, qName}) {
+            if (n != null && !n.isEmpty()) {
+                if (!allowed.contains(n.toLowerCase(Locale.ROOT))) {
+                    return false;
+                }
+                named = true;
             }
         }
-        return false;
+        return named;
     }
 
     private ContentHandler getTextContentHandler(Writer writer) {
