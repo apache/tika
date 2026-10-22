@@ -352,7 +352,7 @@
     <bouncycastle.version>1.86.2</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <commonmark.version>0.30.1</commonmark.version>
+    <commonmark.version>0.31.0</commonmark.version>
     <commons.cli.version>1.11.0</commons.cli.version>
     <commons.codec.version>1.23.0</commons.codec.version>
     <commons.collections4.version>4.6.0</commons.collections4.version>
