@@ -47,6 +47,7 @@ import org.apache.tika.batch.fs.FSProperties;
 import org.apache.tika.eval.app.db.ColInfo;
 import org.apache.tika.eval.app.db.Cols;
 import org.apache.tika.eval.app.db.TableInfo;
+import org.apache.tika.eval.app.io.ExtractReader;
 import org.apache.tika.eval.app.io.ExtractReaderException;
 import org.apache.tika.eval.app.io.IDBWriter;
 import org.apache.tika.eval.core.langid.LanguageIDWrapper;
@@ -88,7 +89,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     private static final Property CONTAINER_EXCEPTION_1X = Property.externalText("X-TIKA" + ":EXCEPTION:runtime");
     private static final Logger LOG = LoggerFactory.getLogger(AbstractProfiler.class);
     private static final String[] EXTRACT_EXTENSIONS = {".json", ".txt", ""};
-    private static final String[] COMPRESSION_EXTENSIONS = {"", ".bz2", ".gzip", ".zip",};
+    private static final String[] COMPRESSION_EXTENSIONS = {"", ".gz", ".bz2", ".gzip", ".zip",};
     private static final String ZERO = "0";
     private static final String UNKNOWN_EXTENSION = "unk";
     //make this configurable
@@ -105,7 +106,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     public static TableInfo MIME_TABLE = new TableInfo("mimes", new ColInfo(Cols.MIME_ID, Types.INTEGER, "PRIMARY KEY"), new ColInfo(Cols.MIME_STRING, Types.VARCHAR, 256),
             new ColInfo(Cols.FILE_EXTENSION, Types.VARCHAR, 12));
     private static CommonTokenCountManager COMMON_TOKEN_COUNT_MANAGER;
-    private static Pattern FILE_NAME_CLEANER = Pattern.compile("\\.(json|txt)(\\.(bz2|gz|zip))?$");
+    private static Pattern FILE_NAME_CLEANER = Pattern.compile("\\.(json|txt)(\\.(bz2|gz|gzip|zip))?$");
     private static LanguageIDWrapper LANG_ID = new LanguageIDWrapper();
     protected IDBWriter writer;
     AnalyzerManager analyzerManager;
@@ -795,7 +796,7 @@ public abstract class AbstractProfiler extends FileResourceConsumer {
     protected long getFileLength(Path p) {
         if (p != null && Files.isRegularFile(p)) {
             try {
-                return Files.size(p);
+                return ExtractReader.extractLength(p);
             } catch (IOException e) {
                 //swallow
             }

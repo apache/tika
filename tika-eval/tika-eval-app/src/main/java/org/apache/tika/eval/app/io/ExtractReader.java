@@ -21,9 +21,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -90,6 +94,32 @@ public class ExtractReader {
         return fileSuffixes;
     }
 
+    /**
+     * Uncompressed length for gzip (from the ISIZE trailer), so plain and gzipped extract sets
+     * agree on lengths and min/max filtering; on-disk length for everything else.
+     */
+    public static long extractLength(Path extractFile) throws IOException {
+        long onDisk = Files.size(extractFile);
+        String name = extractFile.getFileName().toString().toLowerCase(Locale.ROOT);
+        if (onDisk < 18 || !(name.endsWith(".gz") || name.endsWith(".gzip"))) {
+            return onDisk;
+        }
+        ByteBuffer trailer = ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN);
+        try (FileChannel ch = FileChannel.open(extractFile, StandardOpenOption.READ)) {
+            while (trailer.hasRemaining()) {
+                if (ch.read(trailer, onDisk - 4 + trailer.position()) < 0) {
+                    return onDisk;
+                }
+            }
+        }
+        long isize = trailer.getInt(0) & 0xFFFFFFFFL;
+        // smaller than even stored blocks could yield: wrapped past 4 GiB or multi-member
+        if (isize + (onDisk >> 10) + 64 < onDisk) {
+            return onDisk;
+        }
+        return isize;
+    }
+
     public List<Metadata> loadExtract(Path extractFile) throws ExtractReaderException {
 
         List<Metadata> metadataList = null;
@@ -109,7 +139,7 @@ public class ExtractReader {
 
         long length = -1L;
         try {
-            length = Files.size(extractFile);
+            length = extractLength(extractFile);
         } catch (IOException e) {
             throw new ExtractReaderException(ExtractReaderException.TYPE.IO_EXCEPTION, e);
         }

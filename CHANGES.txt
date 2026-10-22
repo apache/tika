@@ -1,5 +1,9 @@
 Release 3.4.0 - ???
 
+  * The file-system emitter can gzip its output (param "compression": "gzip"), and tika-eval
+    finds gzipped extracts (.json.gz) when comparing against a plain extract set, measuring
+    their extract lengths and min/max length limits on uncompressed size (TIKA-4989).
+
   * tika-server caps attachments on the multipart/form-data endpoints at 50 MB by
     default; set <maxAttachmentBytes> in the server config to raise it or -1 to
     remove it (CVE-2026-54225). The form-parameter cap from CVE-2026-57819
