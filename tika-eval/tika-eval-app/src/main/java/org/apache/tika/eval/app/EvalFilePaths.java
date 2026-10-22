@@ -23,6 +23,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
 
+import org.apache.tika.eval.app.io.ExtractReader;
+
 /**
  * Simple struct to keep track of relative path of source file (
  * original binary file, e.g. /subdir/document1.doc)
@@ -45,7 +47,7 @@ class EvalFilePaths {
     public EvalFilePaths(Path relativeSourceFilePath, Path extractFile) {
         if (extractFile != null && Files.isRegularFile(extractFile)) {
             try {
-                extractFileLength = Files.size(extractFile);
+                extractFileLength = ExtractReader.extractLength(extractFile);
             } catch (IOException e) {
                 //swallow ?
             }
