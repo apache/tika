@@ -18,6 +18,7 @@ package org.apache.tika.pipes.grpc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -71,7 +72,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.MetadataValue;
 import org.apache.tika.grpc.v2.TikaV2Grpc;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherReply;
@@ -524,6 +527,42 @@ public class TikaGrpcServerTest {
                     "typed/envelope keys must not duplicate into the tail");
         } finally {
             FileUtils.deleteDirectory(testDocumentFolder);
+        }
+    }
+
+    /**
+     * The CSV parser declares csv:num-rows as an integer but never loads in this JVM, so the
+     * key is typed only from the value types the fork reports.
+     */
+    @Test
+    public void testFetchAndParseTypesKeysDeclaredOnlyInTheFork(Resources resources)
+            throws Exception {
+        assertNull(Property.get("csv:num-rows"),
+                "the CSV parser must not be loaded in the server JVM");
+        ManagedChannel channel = startChannel(resources, tikaConfig);
+        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+
+        String fetchKey = "typed-csv-" + UUID.randomUUID() + ".csv";
+        File testFile = new File("target", fetchKey);
+        StringBuilder csv = new StringBuilder("id,name,score\n");
+        for (int i = 1; i <= 11; i++) {
+            csv.append(i).append(",name").append(i).append(',').append(i * 10).append('\n');
+        }
+        FileUtils.writeStringToFile(testFile, csv.toString(), StandardCharsets.UTF_8);
+        try {
+            Document document = v2.fetchAndParse(
+                    org.apache.tika.grpc.v2.FetchAndParseRequest.newBuilder()
+                            .setFetcherId(createFetcherId(1))
+                            .setFetchKey(fetchKey)
+                            .build()).getDocument();
+            MetadataValue rows = document.getExtraList().stream()
+                    .filter(f -> f.getKey().equals("csv:num-rows"))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("no csv:num-rows in " + document))
+                    .getValue();
+            assertEquals(List.of(12L), rows.getIntegers().getValuesList(), rows.toString());
+        } finally {
+            FileUtils.deleteQuietly(testFile);
         }
     }
 

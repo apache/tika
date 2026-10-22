@@ -35,6 +35,7 @@ import org.apache.tika.grpc.v2.StringValues;
 import org.apache.tika.grpc.v2.TimestampValues;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
+import org.apache.tika.serialization.MetadataValueTypes;
 import org.apache.tika.utils.DateUtils;
 
 /**
@@ -133,8 +134,9 @@ public final class MetadataTagger {
     }
 
     /**
-     * Tag one key's value array by its declared Property element type; fall back to
-     * strings for undeclared keys or elements the declared type cannot parse.
+     * Tag one key's value array by its declared Property element type, or by the type a pipes
+     * fork reported for a key declared only there; fall back to strings for keys of unknown
+     * type or elements the type cannot parse.
      */
     public static MetadataValue tag(Metadata tika, String key) {
         String[] raw = tika.getValues(key);
@@ -151,8 +153,12 @@ public final class MetadataTagger {
             return null;
         }
         Property property = Property.get(key);
-        if (property != null) {
-            MetadataValue typed = tagByDeclaredType(property, values);
+        // a composite's own type is PROPERTY; tag by its primary's type
+        Property.ValueType type = property != null
+                ? property.getPrimaryProperty().getValueType()
+                : MetadataValueTypes.get(key);
+        if (type != null) {
+            MetadataValue typed = tagByDeclaredType(type, values);
             if (typed != null) {
                 return typed;
             }
@@ -162,8 +168,8 @@ public final class MetadataTagger {
         return MetadataValue.newBuilder().setStrings(strings).build();
     }
 
-    private static MetadataValue tagByDeclaredType(Property property, List<String> values) {
-        switch (property.getPrimaryProperty().getValueType()) {
+    private static MetadataValue tagByDeclaredType(Property.ValueType type, List<String> values) {
+        switch (type) {
             case INTEGER: {
                 IntegerValues.Builder integers = IntegerValues.newBuilder();
                 for (String v : values) {

@@ -38,7 +38,10 @@ metadata as a `fields` map of strings, is defined in the `tika-grpc` module.
   Tika metadata key can hold several values. The value type follows the `Property`
   type Tika declares for the key (integer, number, boolean or timestamp); keys
   without a declared type are strings. For example, `pdf:charsPerPage` arrives as
-  one int64 per page. New or renamed keys need no change to the proto.
+  one int64 per page. Keys declared only in a parser module, such as `csv:num-rows`,
+  get integer, number and boolean types only when the configuration sets
+  `"metadata-list": {"typedValues": true}`, which also types the JSON that emitters
+  write; their timestamps stay strings. New or renamed keys need no change to the proto.
 - **`ParseStatus`**: the outcome (`SUCCESS`, `PARTIAL` or `FAILED`), the raw Tika
   Pipes status, the parse time and the Tika version.
 
