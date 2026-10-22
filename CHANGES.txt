@@ -54,19 +54,13 @@ Release 4.2.0 - 10/22/2026
      _min-width and min-width is an error, and gated entries load as GatedEnricher,
      not SizeGatedEnricher (TIKA-4972).
 
-   * tika-server bounds each connection in time and request bodies in total: a request
-     body must arrive within maxRequestReadMillis (408) and a response be read within
-     maxResponseWriteMillis (cut off), both 5 minutes, so the default 1 GiB
-     maxRequestSizeBytes now needs about 29 Mbit/s; a connection idle for
-     idleTimeoutMillis (120s, was CXF's 200s) is closed; and a request whose body would
-     take the bytes all requests hold past maxInFlightRequestBytes (maxRequestSizeBytes
-     x 2 x pipes.numClients) gets 429. Raise the deadlines for very large or very slow
-     transfers. Each request cut off by these limits is logged once, at INFO, by
-     org.apache.tika.server.core.TransferLimitLog (TIKA-4991).
+   * tika-server adds transfer limits: maxRequestReadMillis (408) and
+     maxResponseWriteMillis, both 5 min; idleTimeoutMillis (120s); and
+     maxInFlightRequestBytes (429). Raise the deadlines for very large or very slow
+     transfers; cut-offs are logged at INFO by the TransferLimitLog logger (TIKA-4991).
 
-   * tika-server accepts cleartext HTTP/2 (h2c) only when "allowHttp2" is true; it was on
-     by default since 4.0.0 (TIKA-4679). Set it for deployments that need h2c, such as
-     Google Cloud Run uploads over 32 MB (TIKA-4991).
+   * tika-server accepts cleartext HTTP/2 (h2c) only when allowHttp2 is set; it had
+     been on by default since 4.0.0 (TIKA-4991).
 
    * embedded-limits maxDepth defaults to 20 (was unlimited) and replaces output-limits
      maxPackageEntryDepth (#3319). To be removed in 4.3.0: maxPackageEntryDepth and its
@@ -109,8 +103,8 @@ Release 4.2.0 - 10/22/2026
 
   SERVER, PIPES AND OPERATIONS
 
-   * tika-server's welcome page lists endpoints inherited from a resource's superclass
-     (XMP on /meta) under their real paths (TIKA-4991).
+   * tika-server's welcome page lists endpoints inherited from superclasses (XMP on
+     /meta) under their real paths (TIKA-4991).
 
    * The file-system emitter can gzip its output ("compression": "GZIP"); tika-eval reads
      .json.gz extracts and measures them uncompressed (TIKA-4989).
