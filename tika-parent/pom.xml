@@ -281,14 +281,14 @@
   </contributors>
 
   <properties>
-    <revision>4.2.0-SNAPSHOT</revision>
+    <revision>4.2.1-SNAPSHOT</revision>
     <javaVersion>17</javaVersion>
     <maven.compiler.source>17</maven.compiler.source>
     <maven.compiler.target>17</maven.compiler.target>
     <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>${project.build.sourceEncoding}</project.reporting.outputEncoding>
-    <project.build.outputTimestamp>2026-09-26T15:31:38Z</project.build.outputTimestamp>
+    <project.build.outputTimestamp>2026-10-22T12:22:18Z</project.build.outputTimestamp>
     <!-- plugin versions -->
     <!-- updates may not be detected by the maven versions plugin:
          https://github.com/mojohaus/versions/issues/1070 -->
@@ -352,7 +352,7 @@
     <bouncycastle.version>1.86.2</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <commonmark.version>0.30.1</commonmark.version>
+    <commonmark.version>0.31.0</commonmark.version>
     <commons.cli.version>1.11.0</commons.cli.version>
     <commons.codec.version>1.23.0</commons.codec.version>
     <commons.collections4.version>4.6.0</commons.collections4.version>
