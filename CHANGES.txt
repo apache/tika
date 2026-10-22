@@ -1,5 +1,10 @@
 Release 3.4.0 - ???
 
+  * A RAR entry junrar fails to extract is recorded as
+    X-TIKA:EXCEPTION:embedded_stream_exception on the container; what was extracted
+    before the failure is kept and the rest of the archive is parsed (junrar 8.1.2,
+    TIKA-4985).
+
   * ISArchiveParser resolves the ISA-Tab directory on each parse instead of reading every
     later document's investigation and assay files from the first document's directory,
     and concurrent parses no longer share the study file name (TIKA-4986).
