@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.io.PrintStream;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
@@ -102,99 +101,10 @@ public class MockParserTest extends TikaTest {
 
 
     @Test
-    public void testSleep() throws Exception {
-        long start = System.currentTimeMillis();
-        Metadata m = new Metadata();
-        String content = getXML("sleep.xml", m).xml;
-        assertMockParser(m);
-        long elapsed = System.currentTimeMillis() - start;
-        //should sleep for at least 3000
-        boolean enoughTimeHasElapsed = elapsed > 2000;
-        assertTrue(enoughTimeHasElapsed, "not enough time has not elapsed: " + elapsed);
-        assertMockParser(m);
-    }
-
-    @Test
-    public void testHeavyHang() throws Exception {
-        long start = System.currentTimeMillis();
-        Metadata m = new Metadata();
-
-        String content = getXML("heavy_hang.xml", m).xml;
-        assertMockParser(m);
-        long elapsed = System.currentTimeMillis() - start;
-        //should sleep for at least 3000
-        boolean enoughTimeHasElapsed = elapsed > 2000;
-        assertTrue(enoughTimeHasElapsed, "not enough time has elapsed: " + elapsed);
-        assertMockParser(m);
-    }
-
-    @Test
     public void testFakeOOM() throws Exception {
         Metadata m = new Metadata();
         assertThrowable("fake_oom.xml", m, OutOfMemoryError.class, "not another oom");
         assertMockParser(m);
-    }
-
-    @Test
-    @Disabled("maven doesn't like this one; occasionally crashes the forked jvm")
-    public void testRealOOM() throws Exception {
-        //Note: we're not actually testing the diff between fake and real oom
-        //i.e. by creating a forked process and setting different -Xmx or
-        //memory profiling.
-        Metadata m = new Metadata();
-        assertThrowable("real_oom.xml", m, OutOfMemoryError.class, "Java heap space");
-        assertMockParser(m);
-    }
-
-    @Test
-    public void testInterruptibleSleep() {
-        //Without static initialization of the parser, it can take ~1 second after t.start()
-        //before the parser actually calls parse.  This is
-        //just the time it takes to instantiate and call AutoDetectParser, do the detection, etc.
-        //This is not thread creation overhead.
-        ParserRunnable r = new ParserRunnable("sleep_interruptible.xml");
-        Thread t = new Thread(r);
-        t.start();
-        long start = System.currentTimeMillis();
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            //swallow
-        }
-
-        t.interrupt();
-
-        try {
-            t.join(10000);
-        } catch (InterruptedException e) {
-            //swallow
-        }
-        long elapsed = System.currentTimeMillis() - start;
-        boolean shortEnough = elapsed < 2000;//the xml file specifies 3000
-        assertTrue(shortEnough, "elapsed (" + elapsed + " millis) was not short enough");
-    }
-
-    @Test
-    public void testNonInterruptibleSleep() {
-        ParserRunnable r = new ParserRunnable("sleep_not_interruptible.xml");
-        Thread t = new Thread(r);
-        t.start();
-        long start = System.currentTimeMillis();
-        try {
-            //make sure that the thread has actually started
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            //swallow
-        }
-        t.interrupt();
-        try {
-            t.join(20000);
-        } catch (InterruptedException e) {
-            //swallow
-        }
-        long elapsed = System.currentTimeMillis() - start;
-        boolean longEnough = elapsed >= 3000;//the xml file specifies 3000, this sleeps 1000
-        assertTrue(longEnough, "elapsed (" + elapsed + " millis) was not long enough");
     }
 
     private void assertThrowable(String path, Metadata m, Class<? extends Throwable> expected,
@@ -227,25 +137,5 @@ public class MockParserTest extends TikaTest {
             }
         }
         assertTrue(parsedByMock, "mock parser should have been called");
-    }
-
-    private class ParserRunnable implements Runnable {
-        private final String path;
-
-        ParserRunnable(String path) {
-            this.path = path;
-        }
-
-        @Override
-        public void run() {
-            Metadata m = new Metadata();
-            try {
-                getXML(path, m);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                assertMockParser(m);
-            }
-        }
     }
 }

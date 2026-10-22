@@ -316,40 +316,45 @@
          Created by the create-test-tmpdir antrun execution below, because the JVM will
          not create a missing java.io.tmpdir; it throws NoSuchFileException. -->
     <tika.test.tmpdir>${project.build.directory}/test-tmp</tika.test.tmpdir>
-    <checkstyle.configLocation>${maven.multiModuleProjectDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
+    <!-- tika-parent's own files; the ci profile re-points this one property, because Jenkins'
+         Maven job type doesn't set maven.multiModuleProjectDirectory -->
+    <tika.parent.dir>${maven.multiModuleProjectDirectory}/tika-parent</tika.parent.dir>
+    <checkstyle.configLocation>${tika.parent.dir}/checkstyle.xml</checkstyle.configLocation>
     <spotless.goal>apply</spotless.goal>
-    <spotless.header.file>${maven.multiModuleProjectDirectory}/tika-parent/license-header.txt</spotless.header.file>
+    <spotless.header.file>${tika.parent.dir}/license-header.txt</spotless.header.file>
     <!-- TIKA-4816: Metadata#set/add(String,String) etc. ban for migrated parser modules;
          opted into per-module by overriding forbiddenapis.module.signaturesFile (main
          sources only). -->
-    <metadata.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
+    <metadata.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
     <!-- TIKA-4848: default-on in every module's main sources (see forbiddenapis-check below) -->
-    <exception.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
-    <xml.forbiddenapis.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
+    <exception.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
+    <xml.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
+    <!-- TIKA-4975: default-on; configuration JSON only through tika-serialization -->
+    <json.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-json-reader-bans.txt</json.forbiddenapis.signaturesFile>
     <!-- Per-module extra main-source bans; a module overrides this (e.g. to
          ${metadata.forbiddenapis.signaturesFile}) instead of overriding the
          forbiddenapis-check execution, whose child list would REPLACE the parent's
          and silently drop the default-on file. -->
-    <forbiddenapis.module.signaturesFile>${maven.multiModuleProjectDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
+    <forbiddenapis.module.signaturesFile>${tika.parent.dir}/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
     <!-- dependency versions -->
     <!-- change threetenbp exclusion version -->
     <google.cloud.version>2.75.0</google.cloud.version>
-    <aws2.version>2.55.10</aws2.version>
+    <aws2.version>2.57.1</aws2.version>
     <!-- WARNING: when you upgrade asm make sure that you update the
         OpCode in the initializer in org.apache.tika.parser.asm.XHTMLClassVisitor
         See TIKA-2992.
     -->
-    <asm.version>9.10.1</asm.version>
-    <azure.version>1.3.8</azure.version>
+    <asm.version>9.11.1</asm.version>
+    <azure.version>1.3.9</azure.version>
     <biz.aqute.version>7.4.0</biz.aqute.version>
     <boilerpipe.version>1.1.0</boilerpipe.version>
     <!--  used by POI, PDFBox and Jackcess encrypt ...try to sync -->
-    <bouncycastle.version>1.86.1</bouncycastle.version>
+    <bouncycastle.version>1.86.2</bouncycastle.version>
     <!-- NOTE: sync brotli version with commons-compress-->
     <brotli.version>0.1.2</brotli.version>
-    <commonmark.version>0.30.0</commonmark.version>
+    <commonmark.version>0.30.1</commonmark.version>
     <commons.cli.version>1.11.0</commons.cli.version>
-    <commons.codec.version>1.22.1</commons.codec.version>
+    <commons.codec.version>1.23.0</commons.codec.version>
     <commons.collections4.version>4.6.0</commons.collections4.version>
     <commons.compress.version>1.28.0</commons.compress.version>
     <commons.csv.version>1.14.1</commons.csv.version>
@@ -359,9 +364,8 @@
     <commons.lang3.version>3.21.0</commons.lang3.version>
     <commons.logging.version>1.4.0</commons.logging.version>
     <commons.math3.version>3.6.1</commons.math3.version>
-    <commons.net.version>3.12.0</commons.net.version>
     <ctakes.version>6.0.0</ctakes.version>
-    <cxf.version>4.2.3</cxf.version>
+    <cxf.version>4.2.4</cxf.version>
     <ddplist.version>1.30</ddplist.version>
     <dl4j.version>1.0.0-M2.1</dl4j.version>
     <fakeload.version>0.7.0</fakeload.version>
@@ -370,7 +374,7 @@
     <freemarker.version>2.3.35</freemarker.version>
     <geoapi.version>3.0.2</geoapi.version>
     <gson.version>2.14.0</gson.version>
-    <grpc.version>1.84.0</grpc.version>
+    <grpc.version>1.85.1</grpc.version>
     <guava.version>33.7.2-jre</guava.version>
     <h2.version>2.5.252</h2.version>
     <hdf5.version>1.14.3-1.5.10</hdf5.version>
@@ -382,11 +386,11 @@
     -->
     <icu4j.version>75.1</icu4j.version>
     <imageio.version>1.4.0</imageio.version>
-    <jackrabbit.version>2.22.4</jackrabbit.version>
-    <jackson.version>2.22.3</jackson.version>
+    <jackrabbit.version>2.22.5</jackrabbit.version>
+    <jackson.version>2.22.4</jackson.version>
     <!-- TIKA-4880: 5.0.1 fails some catalogs 5.0.0 reads ("Did not find required parent table id") -->
-    <jackcess.version>5.0.2</jackcess.version>
-    <jackcess.encrypt.version>5.0.1</jackcess.encrypt.version>
+    <jackcess.version>5.0.4</jackcess.version>
+    <jackcess.encrypt.version>5.0.2</jackcess.encrypt.version>
     <jai.imageio.core.version>1.4.0</jai.imageio.core.version>
     <jakarta.activation.version>2.1.4</jakarta.activation.version>
     <jakarta.annotation.version>3.0.0</jakarta.annotation.version>
@@ -400,36 +404,36 @@
     <jbig2.version>3.0.5</jbig2.version>
     <jcommander.version>1.82</jcommander.version>
     <jdom2.version>2.0.6.1</jdom2.version>
-    <jetty.version>12.1.13</jetty.version>
-    <jetty.http2.version>12.1.13</jetty.http2.version>
+    <jetty.version>12.1.14</jetty.version>
+    <jetty.http2.version>12.1.14</jetty.http2.version>
     <jhighlight.version>2.0.0</jhighlight.version>
     <jna.version>5.19.1</jna.version>
     <json.simple.version>1.1.1</json.simple.version>
     <jsoup.version>1.23.2</jsoup.version>
     <jsr305.version>3.0.2</jsr305.version>
     <junit6.version>6.1.3</junit6.version>
-    <juniversalchardet.version>2.5.0</juniversalchardet.version>
-    <junrar.version>8.1.1</junrar.version>
+    <juniversalchardet.version>2.5.1</juniversalchardet.version>
+    <junrar.version>8.1.2</junrar.version>
     <jwarc.version>0.37.0</jwarc.version>
-    <kafka.version>4.3.1</kafka.version>
-    <kotlin-stdlib.version>2.4.20</kotlin-stdlib.version>
+    <kafka.version>4.4.0</kafka.version>
+    <kotlin-stdlib.version>2.4.21</kotlin-stdlib.version>
     <libpst.version>0.9.3</libpst.version>
     <log4j2.version>2.26.1</log4j2.version>
     <!-- can't update to 10, needs jdk21 -->
     <lucene.version>9.12.3</lucene.version>
     <maven.plugin.annotations.version>3.16.0</maven.plugin.annotations.version>
-    <metadata.extractor.version>2.21.0</metadata.extractor.version>
+    <metadata.extractor.version>2.22.0</metadata.extractor.version>
     <micrometer.version>1.17.1</micrometer.version>
     <microsoft.translator.version>0.6.2</microsoft.translator.version>
     <!-- can't update to 4 because Apache Ignite needs io.micronaut.core.convert.DefaultConversionService
          which no longer exists in 4.0: https://stackoverflow.com/questions/79937141/    -->
-    <micronaut.version>3.10.13</micronaut.version>
+    <micronaut.version>3.10.17</micronaut.version>
     <mime4j.version>0.8.15</mime4j.version>
     <mockito.version>5.24.0</mockito.version>
     <mockito-junit-jupiter.version>5.24.0</mockito-junit-jupiter.version>
     <netcdf-java.version>4.5.5</netcdf-java.version>
-    <netty.version>4.2.18.Final</netty.version>
-    <oak.jackrabbit.version>2.6.0</oak.jackrabbit.version>
+    <netty.version>4.2.19.Final</netty.version>
+    <oak.jackrabbit.version>2.8.0</oak.jackrabbit.version>
     <openjson.version>1.0.13</openjson.version>
     <opennlp.version>2.5.12</opennlp.version>
     <ops4j.version>1.5.1</ops4j.version>
@@ -448,8 +452,8 @@
     <reactor.netty.version>1.3.7</reactor.netty.version>
     <rome.version>2.1.0</rome.version>
     <slf4j.version>2.0.20</slf4j.version>
-    <sis.version>1.6</sis.version>
-    <snappy.version>1.1.10.8</snappy.version>
+    <sis.version>1.7</sis.version>
+    <snappy.version>1.1.10.12</snappy.version>
     <!-- SolrJ 10 splits the Jetty client/ZK code into solr-solrj-jetty / solr-solrj-zookeeper -->
     <solrj.version>10.0.0</solrj.version>
     <spring.version>7.0.9</spring.version>
@@ -458,7 +462,7 @@
     <testcontainers.version>2.0.5</testcontainers.version>
     <!-- NOTE: sync tukaani version with commons-compress in tika-parent -->
     <tukaani.version>1.12</tukaani.version>
-    <twelvemonkeys.version>3.15.2</twelvemonkeys.version>
+    <twelvemonkeys.version>3.15.3</twelvemonkeys.version>
     <uimafit.version>3.6.1</uimafit.version>
     <uimaj.core.version>3.6.1</uimaj.core.version>
     <uimaj.cpe.version>3.6.1</uimaj.cpe.version>
@@ -467,7 +471,7 @@
     <woodstox.core.version>7.3.0</woodstox.core.version>
     <xmpcore.version>6.1.11</xmpcore.version>
     <zookeeper.version>3.9.6</zookeeper.version>
-    <zstd.version>1.5.7-20</zstd.version>
+    <zstd.version>1.5.7-24</zstd.version>
     <nimbus-jose-jwt.version>10.10</nimbus-jose-jwt.version>
     <javacpp.version>1.5.13</javacpp.version>
     <maven.exec.version>3.6.4</maven.exec.version>
@@ -1264,7 +1268,7 @@
       <dependency>
         <groupId>org.apache.commons</groupId>
         <artifactId>commons-secure-xml</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -1383,7 +1387,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>versions-maven-plugin</artifactId>
-        <version>2.22.0</version>
+        <version>2.23.0</version>
         <configuration>
           <generateBackupPoms>false</generateBackupPoms>
         </configuration>
@@ -1486,6 +1490,7 @@
               <signaturesFiles>
                 <signaturesFile>${exception.forbiddenapis.signaturesFile}</signaturesFile>
                 <signaturesFile>${xml.forbiddenapis.signaturesFile}</signaturesFile>
+                <signaturesFile>${json.forbiddenapis.signaturesFile}</signaturesFile>
                 <signaturesFile>${forbiddenapis.module.signaturesFile}</signaturesFile>
               </signaturesFiles>
             </configuration>
@@ -1522,8 +1527,9 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>${maven.surefire.version}</version>
         <configuration>
-          <!-- for manual testing of i18n, try for example: -Duser.language=zh -Duser.region=CN or
-          -Duser.language=de -Duser.country=DE -->
+          <!-- -Dtika.test.locale=random or =tr-TR runs the tests under that default locale
+               (RandomLocaleListener). -Duser.language here would not work: surefire sets
+               it in the fork only after the default Locale is fixed. -->
           <!-- java.io.tmpdir MUST be quoted: argLine is split on whitespace, and the Windows
                job deliberately checks out into a path containing a space. It must also be a
                real -D on the command line, not <systemPropertyVariables>: Files.createTempFile
@@ -1657,7 +1663,7 @@
       <plugin>
         <groupId>com.diffplug.spotless</groupId>
         <artifactId>spotless-maven-plugin</artifactId>
-        <version>3.10.3</version>
+        <version>3.10.4</version>
         <configuration>
           <lineEndings>UNIX</lineEndings>
           <java>
@@ -1734,6 +1740,28 @@
   </build>
 
   <profiles>
+    <profile>
+      <!-- Puts RandomLocaleListener on the test classpath of every module that has tests:
+           each test JVM then runs under a random default locale. A profile, not a plain
+           dependency: aggregator poms and tika-test-support itself (which keeps its test
+           in tika-core for this reason) must not depend on it, or the reactor cycles. -->
+      <id>test-support</id>
+      <activation>
+        <file>
+          <exists>${basedir}/src/test/java</exists>
+        </file>
+      </activation>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.tika</groupId>
+          <artifactId>tika-test-support</artifactId>
+          <!-- revision, not project.version: flatten writes the literal Tika version
+               into the published tika-parent, so a foreign child of it resolves the right jar -->
+          <version>${revision}</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
     <profile>
       <id>pedantic</id>
       <build>
@@ -1836,13 +1864,7 @@
       <properties>
         <!-- Override the Spotless goal when this profile is active -->
         <spotless.goal>check</spotless.goal>
-        <!-- use session.executionRootDirectory in ci -->
-        <spotless.header.file>${session.executionRootDirectory}/tika-parent/license-header.txt</spotless.header.file>
-        <checkstyle.configLocation>${session.executionRootDirectory}/tika-parent/checkstyle.xml</checkstyle.configLocation>
-        <metadata.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-metadata-string-key-bans.txt</metadata.forbiddenapis.signaturesFile>
-        <exception.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-exception-reporting-bans.txt</exception.forbiddenapis.signaturesFile>
-        <xml.forbiddenapis.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-xml-factory-bans.txt</xml.forbiddenapis.signaturesFile>
-        <forbiddenapis.module.signaturesFile>${session.executionRootDirectory}/tika-parent/forbidden-apis-none.txt</forbiddenapis.module.signaturesFile>
+        <tika.parent.dir>${session.executionRootDirectory}/tika-parent</tika.parent.dir>
       </properties>
     </profile>
     <!-- Fast profile: ./mvnw install -Pfast -T1C -->

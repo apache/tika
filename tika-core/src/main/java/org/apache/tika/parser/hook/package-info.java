@@ -16,7 +16,7 @@
  */
 /**
  * The seam that sees every document a parse touches, after its own parser has run.
- * Experimental in 4.1: 4.2 routes batched recognition through the same seam and may change
+ * Experimental in 4.1 and 4.2: 4.3 routes batched recognition through the same seam and may change
  * these types in a minor release without a deprecation cycle.
  */
 package org.apache.tika.parser.hook;

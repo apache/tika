@@ -31,6 +31,8 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
+import org.apache.tika.utils.StringUtils;
+
 /**
  * Represents a Frictionless Data Package manifest (datapackage.json).
  * See: https://specs.frictionlessdata.io/data-package/
@@ -94,8 +96,9 @@ public class DataPackage {
      * @return sanitized name
      */
     private static String sanitizeName(String name) {
-        if (name == null) {
-            return "unknown";
+        // name is optional; an empty one is invalid
+        if (StringUtils.isBlank(name)) {
+            return null;
         }
         // Replace spaces, keep alphanumeric, dots, hyphens, underscores
         return name.toLowerCase(java.util.Locale.ROOT)
@@ -150,19 +153,6 @@ public class DataPackage {
      */
     public void addResource(FrictionlessResource resource) {
         this.resources.add(resource);
-    }
-
-    /**
-     * Adds a resource to this data package with all parameters.
-     *
-     * @param path      relative path within package
-     * @param mediatype MIME type
-     * @param bytes     file size
-     * @param hash      SHA256 hash with "sha256:" prefix
-     * @param name      optional original filename
-     */
-    public void addResource(String path, String mediatype, long bytes, String hash, String name) {
-        this.resources.add(FrictionlessResource.create(path, mediatype, bytes, hash, name));
     }
 
     /**

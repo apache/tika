@@ -28,7 +28,9 @@ are kept for earlier shapes.
 
 == The `tk:chunks` Field
 
-All chunk data lands in one metadata field, `tk:chunks`, as a JSON array. There is no
+All chunk data lands in one metadata field, `tk:chunks`, as a JSON array (in JSON output, an
+escaped string unless
+xref:configuration/index.adoc#typed-values[`metadata-list.typedValues`] is on). There is no
 separate field for image embeddings versus text embeddings — a chunk is a chunk, identified
 by which locators it carries:
 
@@ -37,7 +39,7 @@ by which locators it carries:
 |Chunk kind |Produced by, and what it carries
 
 |Text
-|A `TEXT` binding (or the 4.0 `AbstractEmbeddingFilter` subclasses) splits `tk:content` with
+|A `TEXT` binding splits `tk:content` with
 the `MarkdownChunker` and sends each piece to a text embeddings endpoint. Carries `text`, a
 vector, and a `TextLocator` (character offsets).
 
@@ -147,9 +149,6 @@ pictures. Nothing to configure:
 }
 ----
 
-(The 4.0 `openai-image-embedding-parser` and `openai-embedding-filter`, deprecated since 4.1.0,
-place chunks by the same rule.)
-
 The rules:
 
 * `INLINE` and `RENDERING` children hand their chunks to the parent. Attachments keep their
@@ -159,9 +158,6 @@ The rules:
 * Every chunk written to a parent carries an `embedded` locator,
   `{"id_path": "/1", "name": "image1.png"}`, naming the child it came from, beside any
   locator it already had.
-* `"liftToParent": false` on the deprecated `openai-image-embedding-parser` keeps every
-  picture's vector on the picture, for an index where each picture is a hit of its own; the
-  `IMAGES` binding has no such switch.
 * In the recursive (`/rmeta`, `-J`, pipes `RMETA`) parse the wrapper keeps every document's
   metadata, so a chunk lands on its parent's. In the single-object parse (`/tika` as JSON,
   `-j`, pipes `CONCATENATE`) only the top-level document's metadata is handed back, so every

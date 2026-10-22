@@ -737,7 +737,16 @@ public class TikaCLI {
         RecursiveParserWrapperHandler handler = new RecursiveParserWrapperHandler(getContentHandlerFactory(type));
         try (TikaInputStream tis = TikaInputStream.get(url, metadata)) {
             wrapper.parse(tis, handler, metadata, context);
+        } finally {
+            // a container exception is already on the first record: write what was parsed, as /rmeta does
+            if (!handler.getMetadataList().isEmpty()) {
+                writeRecursiveJson(handler, output);
+            }
         }
+    }
+
+    private void writeRecursiveJson(RecursiveParserWrapperHandler handler, OutputStream output)
+            throws IOException, TikaException {
         JsonMetadataList.setPrettyPrinting(prettyPrint);
         try (Writer writer = getOutputWriter(output, encoding)) {
             List<Metadata> metadataList = handler.getMetadataList();
@@ -914,7 +923,7 @@ public class TikaCLI {
         out.println("                               sha256, sha384, sha512)");
         out.println("    --encoding=X           Use output encoding X");
         out.println("    --password=X           Use document password X");
-        out.println("    -z  or --extract       Extract all attachements into current directory");
+        out.println("    -z  or --extract       Extract attachments (a single file: into <input>-unpacked/)");
         out.println("    --extract-dir=<dir>    Specify target directory for -z");
         out.println("    --maxEmbeddedDepth=X   Maximum depth for embedded document extraction");
         out.println("    --maxEmbeddedCount=X   Maximum number of embedded documents to extract");
@@ -995,11 +1004,10 @@ public class TikaCLI {
         out.println("    --content-only             Output only extracted content (no JSON wrapper); implies --concatenate");
         out.println("    --on-exists                Behavior when an output file exists: exception (default), replace, skip");
         out.println("    -Z                         Recursively unpack all the attachments, too");
-        out.println("    --unpack-format=<format>   Output format: REGULAR (default) or FRICTIONLESS");
-        out.println("    --unpack-mode=<mode>       Output mode: ZIPPED (default) or DIRECTORY;");
-        out.println("                               DIRECTORY when --unpack-format=FRICTIONLESS and no mode is given");
+        out.println("    --unpack-format=<format>   Output format: FRICTIONLESS (default) or REGULAR");
+        out.println("    --unpack-mode=<mode>       Output mode: DIRECTORY (default: loose files) or ZIPPED");
         out.println("    --unpack-include-metadata  Metadata for every extracted file. A Frictionless package");
-        out.println("                               carries metadata.json by default; this adds per-file");
+        out.println("                               carries rmeta.json by default; this adds per-file");
         out.println("                               sidecars to REGULAR zip output");
         out.println();
         out.println();

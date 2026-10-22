@@ -30,7 +30,7 @@ throughout the parse.
 
 |`embedded-limits`
 |`EmbeddedLimits`
-|Depth and count of embedded documents. Unlimited by default.
+|Depth and count of embedded documents. Depth 20, count unlimited by default.
 
 |`output-limits`
 |`OutputLimits`
@@ -74,9 +74,8 @@ these but `exception-reporting`, which has its own test:
       "writeLimit": 100000,
       "throwOnWriteLimit": false,
       "maxXmlDepth": 100,
-      "maxPackageEntryDepth": 10,
       "zipBombThreshold": 1000000,
-      "zipBombRatio": 100
+      "zipBombRatio": 1000
     },
     "timeout-limits": {
       "totalTaskTimeoutMillis": 3600000,
@@ -122,6 +121,28 @@ Tests: `AllLimitsTest`, `EmbeddedLimitsTest`, `OutputLimitsTest`, `TimeoutLimits
 `ExceptionReportingConfigLoadTest` under `tika-serialization/src/test/java/org/apache/tika/config/`;
 `ExceptionReportingParseTest` (tika-core) drives the policy through a real parse.
 
+== Per-request limits
+
+A request to the pipes worker -- tika-server `/pipes`, `/async` and the multipart `config`
+part, tika-grpc, `PipesParser` callers -- may carry its own `embedded-limits`,
+`output-limits`, `standard-metadata-limiter-factory` and content-handler `writeLimit`. Each is
+clamped field by field to the operator's value (the server's `parse-context` plus any preset,
+or the class default when neither sets one), so a request can tighten a limit but not loosen
+it. A clamp is logged as a warning in the worker. A request may not replace a configured
+metadata limiter with a different kind. The same holds for the render limits in a `pages` block
+(`render` and `emit.render`: `dpi`, `maxImagePixels`, `maxWidth`, `maxHeight`, including the
+deprecated `ocr` aliases), at the top level or under a parser; the ceiling is what the
+operator's own `pages` layers resolve to for that parser. Timeouts follow the same rule
+(xref:pipes/timeouts.adoc#_per_request_overrides[details]).
+
+To let callers go further, raise the limit in the server's config or in a preset.
+
+`pipes.trustedRequests` (default `false`) marks requests as the operator's own: no clamp, and
+their `parse-context` may set `@OperatorOnly` properties. `PipesForkParser` sets it for its own
+fork, since its caller is the operator: per-call config is used as given, looser than its
+`PipesForkParserConfig` or not. A `PipesParser` caller whose requests are its own can set it too.
+tika-server and tika-grpc refuse to start with it on.
+
 == Embedded document limits
 
 `EmbeddedLimits` bounds how deep and how many embedded documents are parsed.
@@ -131,7 +152,7 @@ Tests: `AllLimitsTest`, `EmbeddedLimitsTest`, `OutputLimitsTest`, `TimeoutLimits
 |Setting |Default |Description
 
 |`maxDepth`
-|-1 (unlimited)
+|20
 |Maximum nesting depth. Recursion stops at the limit; siblings at the current
 level still parse.
 
@@ -184,16 +205,20 @@ container.zip (depth 0)
 |Maximum XML element nesting depth. Guards against XML bombs.
 
 |`maxPackageEntryDepth`
-|10
-|Maximum depth of nested package entries (zip within zip).
+|20
+|Deprecated in 4.2, removed in 4.3; use `embedded-limits` `maxDepth`, which
+bounds nesting on every path. Counts nested package entries only when embedded
+content is inlined into its container's XHTML.
 
 |`zipBombThreshold`
 |1,000,000
 |Extracted characters before the zip-bomb ratio check activates.
 
 |`zipBombRatio`
-|100
+|1,000
 |Maximum ratio of extracted characters to input bytes read before flagging a zip bomb.
+Measured against the container's bytes across the whole embedded tree, so nested
+compression multiplies; one deflate layer alone stays under about 1,032.
 |===
 
 == Timeout limits

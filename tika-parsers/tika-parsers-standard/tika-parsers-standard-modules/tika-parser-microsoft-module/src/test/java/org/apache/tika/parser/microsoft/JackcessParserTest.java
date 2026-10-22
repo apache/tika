@@ -80,8 +80,8 @@ public class JackcessParserTest extends TikaTest {
         }
     }
 
-    // TODO TIKA-4924: jackcess-encrypt uppercases cipher params in the default locale
-    @DisabledIfSystemProperty(named = "user.language", matches = "tr")
+    // TODO TIKA-4924: jackcess-encrypt uppercases cipher params in the default locale (tr/az dotless i)
+    @DisabledIfSystemProperty(named = "tika.test.locale", matches = "(tr|az)(-.*)?")
     @Test
     public void testPassword() throws Exception {
         ParseContext c = new ParseContext();

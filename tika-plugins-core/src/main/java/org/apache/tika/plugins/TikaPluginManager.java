@@ -20,15 +20,25 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.pf4j.BasePluginLoader;
+import org.pf4j.ClassLoadingStrategy;
 import org.pf4j.DefaultExtensionFinder;
 import org.pf4j.DefaultPluginManager;
 import org.pf4j.ExtensionFinder;
+import org.pf4j.IndexedExtensionFinder;
+import org.pf4j.PluginClassLoader;
+import org.pf4j.PluginClasspath;
+import org.pf4j.PluginDescriptor;
+import org.pf4j.PluginLoader;
 import org.pf4j.RuntimeMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +57,14 @@ public class TikaPluginManager extends DefaultPluginManager {
     private static final Logger LOG = LoggerFactory.getLogger(TikaPluginManager.class);
     
     private static final String DEV_MODE_PROPERTY = "tika.plugin.dev.mode";
+
+    /**
+     * System property: {@code true} also accepts extension factories found through
+     * {@code META-INF/extensions.idx} on the application classpath. Those run in the application
+     * classloader with none of the plugin isolation; whoever sets it owns the consequences.
+     * {@code PipesForkParser} sets it on its fork when there is no plugins directory.
+     */
+    public static final String CLASSPATH_PLUGINS_PROPERTY = "tika.plugins.classpath";
     private static final String DEV_MODE_ENV = "TIKA_PLUGIN_DEV_MODE";
 
     //we're only using this to convert a single path or a list of paths to a list
@@ -231,20 +249,27 @@ public class TikaPluginManager extends DefaultPluginManager {
     }
 
     /**
-     * Override to disable classpath scanning for extensions.
-     * By default, PF4J's DefaultExtensionFinder scans both plugins AND the classpath:
-     * - LegacyExtensionFinder scans for extensions.idx files (causes errors for unpackaged JARs)
-     * - ServiceProviderExtensionFinder scans META-INF/services (finds Lombok and other libs)
-     *
-     * We only want to discover extensions from the configured plugin directories,
-     * not from the application classpath. The DefaultExtensionFinder without any
-     * additional finders will only scan the loaded plugins.
+     * Extensions come from the loaded plugins only, unless {@link #CLASSPATH_PLUGINS_PROPERTY}
+     * opts in to pf4j's stock finder, which also reads every {@code META-INF/extensions.idx} on
+     * the application classpath.
      */
     @Override
     protected ExtensionFinder createExtensionFinder() {
-        // Return a DefaultExtensionFinder without any classpath-scanning finders.
-        // This will only discover extensions within the loaded plugin JARs.
-        return new DefaultExtensionFinder(this);
+        if (Boolean.getBoolean(CLASSPATH_PLUGINS_PROPERTY)) {
+            return new DefaultExtensionFinder(this);
+        }
+        return new DefaultExtensionFinder(this) {
+            {
+                // the constructor registers the classpath-scanning finder; replace it
+                finders.clear();
+                finders.add(new IndexedExtensionFinder(TikaPluginManager.this) {
+                    @Override
+                    public Map<String, Set<String>> readClasspathStorages() {
+                        return Collections.emptyMap();
+                    }
+                });
+            }
+        };
     }
     
     /**
@@ -267,6 +292,26 @@ public class TikaPluginManager extends DefaultPluginManager {
         return super.createPluginRepository();
     }
     
+    /**
+     * In development mode each root is an exploded classes directory (e.g. {@code target/classes}),
+     * so the plugin's classpath is the root itself rather than pf4j's Maven module layout, and
+     * classes resolve application-first so a test in the same JVM shares the plugin's types.
+     */
+    @Override
+    protected PluginLoader createPluginLoader() {
+        if (getRuntimeMode() == RuntimeMode.DEVELOPMENT) {
+            return new BasePluginLoader(this, new PluginClasspath().addClassesDirectories("")) {
+                @Override
+                protected PluginClassLoader createPluginClassLoader(Path pluginPath,
+                                                                    PluginDescriptor descriptor) {
+                    return new PluginClassLoader(pluginManager, descriptor,
+                            getClass().getClassLoader(), ClassLoadingStrategy.APD);
+                }
+            };
+        }
+        return super.createPluginLoader();
+    }
+
     /**
      * Override to use PropertiesPluginDescriptorFinder in development mode.
      * In development mode, plugins are in target/classes with plugin.properties,

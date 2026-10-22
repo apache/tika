@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.regex.Matcher;
@@ -139,7 +140,7 @@ public class DebugScriptRuns {
         System.out.println("Script roll-up (script: cps, utf8_bytes, runs, modeled):");
         for (Map.Entry<String, int[]> e : totals.entrySet()) {
             int[] v = e.getValue();
-            System.out.printf("  %-15s cps=%-5d bytes=%-6d runs=%-4d modeled=%s%n",
+            System.out.printf(Locale.ROOT, "  %-15s cps=%-5d bytes=%-6d runs=%-4d modeled=%s%n",
                     e.getKey(), v[0], v[1], v[2], v[3] == 1 ? "Y" : "N");
         }
         System.out.println();
@@ -166,7 +167,7 @@ public class DebugScriptRuns {
         TextQualityScore score = detector.score(decoded);
         System.out.println("  detector.score() z:    "
                 + (score.isUnknown() ? "UNKNOWN(" + score.getDominantScript() + ")"
-                : String.format("%.3f (script=%s)", score.getZScore(), score.getDominantScript())));
+                : String.format(Locale.ROOT, "%.3f (script=%s)", score.getZScore(), score.getDominantScript())));
 
         // Print the longest 10 runs so we can see what's actually in there.
         System.out.println();
@@ -178,7 +179,7 @@ public class DebugScriptRuns {
             String preview = r.text.length() > 30
                     ? r.text.substring(0, 30) + "…" : r.text;
             preview = preview.replace("\n", "\\n").replace("\r", "\\r");
-            System.out.printf("  %-15s cps=%-4d bytes=%-4d preview=%s%n",
+            System.out.printf(Locale.ROOT, "  %-15s cps=%-4d bytes=%-4d preview=%s%n",
                     r.script, r.text.codePointCount(0, r.text.length()), u.length, preview);
         }
     }

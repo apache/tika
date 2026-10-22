@@ -1,0 +1,16 @@
+{
+  "engines": {
+    "vlm": {
+      "openai-vlm-parser": {
+        "baseUrl": "https://api.jina.ai",
+        "model": "jina-ocr-v1",
+        "apiKey": "${env:JINA_API_KEY}"
+      }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "vlm"
+    }
+  ]
+}

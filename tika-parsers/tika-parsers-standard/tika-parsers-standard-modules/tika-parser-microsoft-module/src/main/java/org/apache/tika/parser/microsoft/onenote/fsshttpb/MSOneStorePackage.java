@@ -26,6 +26,7 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
@@ -33,9 +34,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
@@ -49,6 +52,9 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.OneNote;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.onenote.GUID;
+import org.apache.tika.parser.microsoft.onenote.OneNoteGuidCollector;
+import org.apache.tika.parser.microsoft.onenote.OneNoteJcid;
 import org.apache.tika.parser.microsoft.onenote.OneNotePropertyEnum;
 import org.apache.tika.parser.microsoft.onenote.OneNoteTreeWalkerOptions;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.property.ArrayNumber;
@@ -95,9 +101,15 @@ public class MSOneStorePackage {
             Pattern.compile("\uFDDFHYPERLINK\\s+\"([^\"]+)\"([^\"]+)$");
     private static final Logger LOG = LoggerFactory.getLogger(MSOneStorePackage.class);
     private static final String P = "p";
-    private static final int MAX_OBJECT_WALK_DEPTH = 1000;
+    // 3 frames/level; 1000 overflowed a 1 MB stack. Real nesting is tens of levels.
+    static final int MAX_OBJECT_WALK_DEPTH = 256;
     private static final int MAX_REFERENCE_COUNT = 100000;
     private static final int MAX_PARSE_WARNINGS = 100;
+    private static final int MIN_CANONICAL_LIST_FORMAT_LENGTH = 128;
+
+    /** Defensive bound on root objects resolved per cell; real cells declare a handful. */
+    static final int MAX_CELL_ROOTS = 10_000;
+    private static final int FILE_IDENTITY_GUID_PROPERTY_ID = 0x1C001D94;
 
     static {
         LocalDateTime time32Epoch1980 = LocalDateTime.of(1980, Month.JANUARY, 1, 0, 0);
@@ -114,6 +126,7 @@ public class MSOneStorePackage {
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
+    private final OneNoteGuidCollector guids = new OneNoteGuidCollector(this::recordGuidCapWarning);
     /**
      * The fully populated storage index. Set this before performing storage-index lookups; its
      * mapping lists are indexed once and must not be mutated afterward.
@@ -144,10 +157,15 @@ public class MSOneStorePackage {
     private boolean parseWarningsSuppressed;
     private boolean storageMappingsIndexed;
     private boolean contentEmitted;
+    private final Map<RevisionStoreObject, Map<AuthorRole, EmbeddedResourceInfo>> depthSkippedObjects =
+            new LinkedHashMap<>();
     // flattened property actions per object; objects can be re-flattened many times during
     // picture/resource-name resolution, which is quadratic without this cache
     private final Map<RevisionStoreObject, List<PropertyAction>> objectActionsCache =
             new IdentityHashMap<>();
+    private final Map<RevisionStoreObject, NumberListInfo> numberListInfoCache =
+            new IdentityHashMap<>();
+    private final Map<String, List<byte[]>> listFormatKeysByDigest = new HashMap<>();
     private final Map<CellID, StorageIndexCellMapping> storageIndexCellMappingsById =
             new HashMap<>();
     private final Map<ExGuid, StorageIndexRevisionMapping> storageIndexRevisionMappingsById =
@@ -227,6 +245,7 @@ public class MSOneStorePackage {
     public void walkTree(OneNoteTreeWalkerOptions options, Metadata metadata,
                          XHTMLContentHandler xhtml, ParseContext parseContext)
             throws SAXException, TikaException, IOException {
+        depthSkippedObjects.clear();
         this.parseContext = parseContext;
         this.parentMetadata = metadata;
         this.embeddedDocumentExtractor =
@@ -235,45 +254,70 @@ public class MSOneStorePackage {
             metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
         }
         parseWarnings.clear();
-        if (!cells.isEmpty()) {
-            // Walk each page cell (object space) as a tree, starting from the root objects of
-            // its current revision and following the object references in property order. This
-            // emits the text in document order. The pages are walked in the order in which the
-            // section object space references them; cells that hold older versions of a page
-            // (the same object space in a different revision context) are skipped.
-            List<RevisionStoreCell> pageCells = new ArrayList<>();
-            List<RevisionStoreCell> otherCells = new ArrayList<>();
-            splitCells(pageCells, otherCells);
-            for (RevisionStoreCell cell : pageCells) {
-                xhtml.startElement("div", "class", "page");
-                try {
-                    walkCell(cell, options, metadata, xhtml);
-                } finally {
-                    xhtml.endElement("div");
+        try {
+            collectSectionFileIdentityGuids();
+            if (!cells.isEmpty()) {
+                // Walk each page cell (object space) as a tree, starting from the root objects of
+                // its current revision and following the object references in property order. This
+                // emits the text in document order. The pages are walked in the order in which the
+                // section object space references them; cells that hold older versions of a page
+                // (the same object space in a different revision context) are skipped.
+                List<RevisionStoreCell> pageCells = new ArrayList<>();
+                List<RevisionStoreCell> otherCells = new ArrayList<>();
+                splitCells(pageCells, otherCells);
+                for (RevisionStoreCell cell : pageCells) {
+                    emitPage(cell, options, metadata, xhtml);
                 }
-            }
-            for (RevisionStoreCell cell : otherCells) {
-                walkCell(cell, options, metadata, xhtml);
-            }
-        } else {
-            // no cell information available - walk the object groups in revision order
-            Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(OtherFileNodeList);
-            Set<ExGuid> visited = new HashSet<>();
-            for (RevisionStoreObjectGroup objectGroup : OtherFileNodeList) {
-                for (RevisionStoreObject object : objectGroup.objects) {
-                    walkObject(object, objectsById, visited, AuthorRole.NONE, options, metadata,
-                            xhtml, 0);
+                for (RevisionStoreCell cell : otherCells) {
+                    walkCell(cell, indexObjectsById(cell.objectGroups), options, metadata, xhtml);
                 }
+            } else {
+                // no cell information available - walk the object groups in revision order
+                Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(OtherFileNodeList);
+                Set<ExGuid> visited = new HashSet<>();
+                walkObjectGroupRoots(OtherFileNodeList, objectsById, visited, options, metadata,
+                        xhtml);
             }
+            if (!authors.isEmpty()) {
+                metadata.set(TikaCoreProperties.CREATOR, sortedValues(authors));
+            }
+            if (!mostRecentAuthors.isEmpty()) {
+                metadata.set(OneNote.MOST_RECENT_AUTHORS, sortedValues(mostRecentAuthors));
+            }
+            if (!originalAuthors.isEmpty()) {
+                metadata.set(OneNote.ORIGINAL_AUTHORS, sortedValues(originalAuthors));
+            }
+        } finally {
+            numberListInfoCache.clear();
+            listFormatKeysByDigest.clear();
+            guids.publish(metadata);
         }
-        if (!authors.isEmpty()) {
-            metadata.set(TikaCoreProperties.CREATOR, sortedValues(authors));
+    }
+
+    OneNoteGuidCollector guidCollector() {
+        return guids;
+    }
+
+    boolean hasCachedListStyles() {
+        return !numberListInfoCache.isEmpty() || !listFormatKeysByDigest.isEmpty();
+    }
+
+    void emitPage(RevisionStoreCell cell, OneNoteTreeWalkerOptions options,
+                          Metadata metadata, XHTMLContentHandler xhtml)
+            throws SAXException, TikaException, IOException {
+        Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(cell.objectGroups);
+        String pageGuid = findPageGuid(cell, objectsById);
+        guids.add(OneNoteGuidCollector.Category.PAGE, pageGuid);
+        AttributesImpl attributes = new AttributesImpl();
+        attributes.addAttribute("", "class", "class", "CDATA", "page");
+        if (pageGuid != null) {
+            attributes.addAttribute("", "id", "id", "CDATA", pageGuid);
         }
-        if (!mostRecentAuthors.isEmpty()) {
-            metadata.set(OneNote.MOST_RECENT_AUTHORS, sortedValues(mostRecentAuthors));
-        }
-        if (!originalAuthors.isEmpty()) {
-            metadata.set(OneNote.ORIGINAL_AUTHORS, sortedValues(originalAuthors));
+        xhtml.startElement("div", attributes);
+        try {
+            walkCell(cell, objectsById, options, metadata, xhtml);
+        } finally {
+            xhtml.endElement("div");
         }
     }
 
@@ -355,6 +399,7 @@ public class MSOneStorePackage {
         if (object.objectID != null && !visited.add(object.objectID)) {
             return;
         }
+        recordEntityGuid(object, jcidIndex(object));
         List<PropertyAction> actions = collectObjectActions(object);
         for (PropertyAction action : actions) {
             if (action.spaceReference != null) {
@@ -370,46 +415,85 @@ public class MSOneStorePackage {
         }
     }
 
-    private void walkCell(RevisionStoreCell cell, OneNoteTreeWalkerOptions options,
-                          Metadata metadata, XHTMLContentHandler xhtml)
+    private void walkCell(RevisionStoreCell cell,
+                          Map<ExGuid, RevisionStoreObject> objectsById,
+                          OneNoteTreeWalkerOptions options, Metadata metadata,
+                          XHTMLContentHandler xhtml)
             throws SAXException, TikaException, IOException {
-        Map<ExGuid, RevisionStoreObject> objectsById = indexObjectsById(cell.objectGroups);
+        depthSkippedObjects.clear();
         Set<ExGuid> visited = new HashSet<>();
         // Only objects reachable from the root objects of the current revision are part of
         // the current content. The object groups may also contain older, superseded versions
         // of objects (under a different object ID); those are intentionally not walked.
-        // A blob-only root (no property set) cannot reach the page body, so it does not
-        // count as a resolved content root: if the content root declare dangles next to it,
-        // the walk-everything fallback must still fire or the page body is silently lost.
-        boolean resolvedContentRoot = false;
-        boolean unresolvedRoot = false;
-        for (RevisionManifestRootDeclare rootDeclare : cell.rootDeclares) {
-            RevisionStoreObject rootObject = objectsById.get(rootDeclare.objectExGuid);
-            if (rootObject == null) {
-                recordParseWarning("OneNote cell root object " + rootDeclare.objectExGuid +
-                        " could not be resolved");
-                unresolvedRoot = true;
-            } else {
-                if (rootObject.propertySet != null) {
-                    resolvedContentRoot = true;
-                }
-                walkObject(rootObject, objectsById, visited, AuthorRole.NONE, options,
-                        metadata, xhtml, 0);
-            }
+        CellRoots roots = cellRoots(cell, objectsById, this::recordParseWarning);
+        for (RevisionStoreObject rootObject : roots.declared) {
+            walkRootObject(rootObject, objectsById, visited, options, metadata, xhtml);
         }
-        if (cell.rootDeclares.isEmpty() || (unresolvedRoot && !resolvedContentRoot)) {
-            if (cell.rootDeclares.isEmpty()) {
+        if (roots.walkAll) {
+            if (cell.rootDeclares != null && cell.rootDeclares.isEmpty()) {
                 recordParseWarning("OneNote cell has no declared root objects; walking all objects");
+            } else if (roots.truncated) {
+                // reachable only when no content root survived the cap, so the plain
+                // check is enough here
+                recordParseWarning("OneNote cell has more than " + MAX_CELL_ROOTS
+                        + " root objects; walking all objects");
             } else {
                 recordParseWarning("OneNote cell root objects could not be resolved; walking all objects");
             }
-            for (RevisionStoreObjectGroup objectGroup : cell.objectGroups) {
-                for (RevisionStoreObject object : objectGroup.objects) {
-                    walkObject(object, objectsById, visited, AuthorRole.NONE, options, metadata,
-                            xhtml, 0);
+            walkObjectGroupRoots(cell.objectGroups, objectsById, visited, options, metadata,
+                    xhtml);
+        }
+    }
+
+    /**
+     * Resolves the objects a cell walk starts from: the root objects declared by the current
+     * revision, then, when the declares are empty or dangle without a property-set root, every
+     * object in the groups. A blob-only root (no property set) cannot reach the page body, so
+     * it does not count as a resolved content root: if the content root declare dangles next
+     * to it, the walk-everything fallback must still fire or the page body is silently lost.
+     * The same holds when the root cap truncates the declares before reaching a content root.
+     */
+    private CellRoots cellRoots(RevisionStoreCell cell,
+                                Map<ExGuid, RevisionStoreObject> objectsById,
+                                Consumer<String> unresolvedRootWarning) {
+        CellRoots roots = new CellRoots();
+        if (cell.rootDeclares != null) {
+            Set<RevisionStoreObject> seenRoots = new HashSet<>();
+            for (RevisionManifestRootDeclare rootDeclare : cell.rootDeclares) {
+                RevisionStoreObject rootObject = objectsById.get(rootDeclare.objectExGuid);
+                if (rootObject == null) {
+                    unresolvedRootWarning.accept("OneNote cell root object " +
+                            rootDeclare.objectExGuid + " could not be resolved");
+                    roots.unresolvedRoot = true;
+                } else if (seenRoots.add(rootObject)) {
+                    if (roots.declared.size() < MAX_CELL_ROOTS) {
+                        if (rootObject.propertySet != null) {
+                            roots.resolvedContentRoot = true;
+                        }
+                        roots.declared.add(rootObject);
+                    } else if (!roots.truncated) {
+                        roots.truncated = true;
+                        unresolvedRootWarning.accept("OneNote cell has more than " + MAX_CELL_ROOTS
+                                + " root objects; ignoring the rest");
+                    }
                 }
             }
         }
+        roots.walkAll = cell.rootDeclares == null || cell.rootDeclares.isEmpty()
+                || ((roots.unresolvedRoot || roots.truncated) && !roots.resolvedContentRoot);
+        return roots;
+    }
+
+    /**
+     * Root resolution shared by {@link #walkCell} and
+     * {@link #findPageGuid(RevisionStoreCell, Map)}.
+     */
+    private static final class CellRoots {
+        final List<RevisionStoreObject> declared = new ArrayList<>();
+        boolean resolvedContentRoot;
+        boolean unresolvedRoot;
+        boolean truncated;
+        boolean walkAll;
     }
 
     private String[] sortedValues(Set<String> values) {
@@ -453,15 +537,26 @@ public class MSOneStorePackage {
     }
 
     /**
+     * Exempt from the parse-warning budget: capped GUID metadata must always carry its own
+     * incompleteness signal, even when generic warnings were suppressed.
+     */
+    private void recordGuidCapWarning(String warning) {
+        emitParseWarning(warning);
+    }
+
+    /**
      * Builds a map of object ID to object. The object groups are ordered from the oldest
      * revision to the newest, so a newer version of an object wins over an older one.
      */
-    private Map<ExGuid, RevisionStoreObject> indexObjectsById(
+    Map<ExGuid, RevisionStoreObject> indexObjectsById(
             List<RevisionStoreObjectGroup> objectGroups) {
         Map<ExGuid, RevisionStoreObject> objectsById = new HashMap<>();
         for (RevisionStoreObjectGroup objectGroup : objectGroups) {
+            if (objectGroup == null || objectGroup.objects == null) {
+                continue;
+            }
             for (RevisionStoreObject object : objectGroup.objects) {
-                if (object.objectID != null) {
+                if (object != null && object.objectID != null) {
                     objectsById.put(object.objectID, object);
                 }
             }
@@ -490,6 +585,14 @@ public class MSOneStorePackage {
         if (depth >= MAX_OBJECT_WALK_DEPTH) {
             recordParseWarning("OneNote object traversal exceeded depth limit " +
                     MAX_OBJECT_WALK_DEPTH);
+            if (object.objectID != null) {
+                Map<AuthorRole, EmbeddedResourceInfo> references = depthSkippedObjects.computeIfAbsent(
+                        object, key -> new EnumMap<>(AuthorRole.class));
+                AuthorRole role = authorRole == null ? AuthorRole.NONE : authorRole;
+                if (!references.containsKey(role)) {
+                    references.put(role, inheritedResourceInfo);
+                }
+            }
             return;
         }
         if (object.objectID != null && !visited.add(object.objectID)) {
@@ -530,24 +633,475 @@ public class MSOneStorePackage {
                 break;
             }
         }
-        // The title structure of a page (StructureElementChildNodes) appears above the page
-        // body on screen, but is declared after the body child nodes. Emit it first so the
-        // text comes out in visual order.
-        for (PropertyAction action : actions) {
-            if (action.oneNotePropertyEnum == OneNotePropertyEnum.StructureElementChildNodes) {
-                processAction(action, objectsById, visited, authorRole, options, metadata, xhtml,
-                        depth, resourceInfo);
+        int objectType = jcidIndex(object);
+        recordEntityGuid(object, objectType);
+        ListStyle listStyle = listStyleForObject(object, actions, objectsById);
+        startObjectStructure(objectType, listStyle, xhtml);
+        try {
+            // Emit the title structure before page body nodes to preserve visual order.
+            List<PropertyAction> structureActions = new ArrayList<>();
+            for (PropertyAction action : actions) {
+                if (action.oneNotePropertyEnum == OneNotePropertyEnum.StructureElementChildNodes) {
+                    structureActions.add(action);
+                }
             }
+            processStructureChildActions(structureActions, objectsById, visited, authorRole,
+                    options, metadata, xhtml, depth, resourceInfo);
+            List<PropertyAction> remainingActions = new ArrayList<>();
+            for (PropertyAction action : actions) {
+                if (hasPrimaryPicture &&
+                        action.oneNotePropertyEnum == OneNotePropertyEnum.WebPictureContainer14) {
+                    continue;
+                }
+                if (action.oneNotePropertyEnum != OneNotePropertyEnum.StructureElementChildNodes) {
+                    remainingActions.add(action);
+                }
+            }
+            processStructureChildActions(remainingActions, objectsById, visited, authorRole,
+                    options, metadata, xhtml, depth, resourceInfo);
+        } finally {
+            endObjectStructure(objectType, listStyle, xhtml);
         }
-        for (PropertyAction action : actions) {
-            if (hasPrimaryPicture &&
-                    action.oneNotePropertyEnum == OneNotePropertyEnum.WebPictureContainer14) {
+    }
+
+    private void startObjectStructure(int objectType, ListStyle listStyle,
+                                      XHTMLContentHandler xhtml) throws SAXException {
+        switch (objectType) {
+            case OneNoteJcid.TABLE_NODE:
+                xhtml.startElement("table");
+                break;
+            case OneNoteJcid.TABLE_ROW_NODE:
+                xhtml.startElement("tr");
+                break;
+            case OneNoteJcid.TABLE_CELL_NODE:
+                xhtml.startElement("td");
+                break;
+            case OneNoteJcid.OUTLINE_ELEMENT_NODE:
+                if (listStyle != null) {
+                    if (listStyle.restartValue == null) {
+                        xhtml.startElement("li");
+                    } else {
+                        xhtml.startElement("li", "value", listStyle.restartValue.toString());
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void endObjectStructure(int objectType, ListStyle listStyle,
+                                    XHTMLContentHandler xhtml) throws SAXException {
+        switch (objectType) {
+            case OneNoteJcid.TABLE_NODE:
+                xhtml.endElement("table");
+                break;
+            case OneNoteJcid.TABLE_ROW_NODE:
+                xhtml.endElement("tr");
+                break;
+            case OneNoteJcid.TABLE_CELL_NODE:
+                xhtml.endElement("td");
+                break;
+            case OneNoteJcid.OUTLINE_ELEMENT_NODE:
+                if (listStyle != null) {
+                    xhtml.endElement("li");
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void walkObjectGroupRoots(List<RevisionStoreObjectGroup> objectGroups,
+                                      Map<ExGuid, RevisionStoreObject> objectsById,
+                                      Set<ExGuid> visited, OneNoteTreeWalkerOptions options,
+                                      Metadata metadata, XHTMLContentHandler xhtml)
+            throws SAXException, TikaException, IOException {
+        Set<ExGuid> structureDescendantIds = collectStructureDescendantIds(objectsById);
+        List<RevisionStoreObject> deferredObjects = new ArrayList<>();
+        for (RevisionStoreObjectGroup objectGroup : objectGroups) {
+            if (objectGroup == null || objectGroup.objects == null) {
                 continue;
             }
-            if (action.oneNotePropertyEnum != OneNotePropertyEnum.StructureElementChildNodes) {
+            for (RevisionStoreObject object : objectGroup.objects) {
+                if (object != null && object.objectID != null &&
+                        structureDescendantIds.contains(object.objectID)) {
+                    deferredObjects.add(object);
+                    continue;
+                }
+                walkRootObject(object, objectsById, visited, options, metadata, xhtml);
+            }
+        }
+        recoverDepthSkippedObjects(objectsById, visited, options, metadata, xhtml);
+        // Residual owners belong to cycles; keep their storage order, not type priority.
+        for (RevisionStoreObject object : deferredObjects) {
+            if (!visited.contains(object.objectID) &&
+                    (jcidIndex(object) == OneNoteJcid.TABLE_NODE ||
+                            isListContainer(object, objectsById))) {
+                walkRootObject(object, objectsById, visited, options, metadata, xhtml);
+            }
+        }
+        recoverDepthSkippedObjects(objectsById, visited, options, metadata, xhtml);
+    }
+
+    private void recoverDepthSkippedObjects(Map<ExGuid, RevisionStoreObject> objectsById,
+                                            Set<ExGuid> visited, OneNoteTreeWalkerOptions options,
+                                            Metadata metadata, XHTMLContentHandler xhtml)
+            throws SAXException, TikaException, IOException {
+        // Recover only depth-skipped objects, not intentionally suppressed renditions.
+        while (!depthSkippedObjects.isEmpty()) {
+            Map.Entry<RevisionStoreObject, Map<AuthorRole, EmbeddedResourceInfo>> skipped =
+                    depthSkippedObjects.entrySet().iterator().next();
+            depthSkippedObjects.remove(skipped.getKey());
+            for (Map.Entry<AuthorRole, EmbeddedResourceInfo> reference : skipped.getValue().entrySet()) {
+                walkRootObject(skipped.getKey(), objectsById, visited, reference.getKey(), options,
+                        metadata, xhtml, reference.getValue());
+            }
+        }
+    }
+
+    private boolean isListContainer(RevisionStoreObject object,
+                                    Map<ExGuid, RevisionStoreObject> objectsById) {
+        int type = jcidIndex(object);
+        if (type == OneNoteJcid.OUTLINE_NODE ||
+                type == OneNoteJcid.OUTLINE_ELEMENT_NODE) {
+            return true;
+        }
+        if (object == null || object.propertySet == null ||
+                object.propertySet.objectSpaceObjectPropSet == null) {
+            return false;
+        }
+        for (PropertyAction action : collectObjectActions(object)) {
+            if (action.isChildReference &&
+                    jcidIndex(objectsById.get(action.childReference)) ==
+                            OneNoteJcid.OUTLINE_ELEMENT_NODE) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Set<ExGuid> collectStructureDescendantIds(
+            Map<ExGuid, RevisionStoreObject> objectsById) {
+        Set<ExGuid> descendants = new HashSet<>();
+        Set<ExGuid> traversed = new HashSet<>();
+        List<RevisionStoreObject> pending = new ArrayList<>();
+        for (RevisionStoreObject object : objectsById.values()) {
+            if (jcidIndex(object) == OneNoteJcid.TABLE_NODE ||
+                    isListContainer(object, objectsById)) {
+                traversed.add(object.objectID);
+                pending.add(object);
+            }
+        }
+        for (int index = 0; index < pending.size(); index++) {
+            RevisionStoreObject object = pending.get(index);
+            if (object.propertySet == null ||
+                    object.propertySet.objectSpaceObjectPropSet == null) {
+                continue;
+            }
+            for (PropertyAction action : collectObjectActions(object)) {
+                if (!action.isChildReference || action.childReference == null) {
+                    continue;
+                }
+                ExGuid childId = action.childReference;
+                if (childId.equals(object.objectID)) {
+                    continue;
+                }
+                descendants.add(childId);
+                RevisionStoreObject child = objectsById.get(childId);
+                if (child != null && traversed.add(childId)) {
+                    pending.add(child);
+                }
+            }
+        }
+        return descendants;
+    }
+
+    private void walkRootObject(RevisionStoreObject object,
+                                Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
+                                OneNoteTreeWalkerOptions options, Metadata metadata,
+                                XHTMLContentHandler xhtml)
+            throws SAXException, TikaException, IOException {
+        walkRootObject(object, objectsById, visited, AuthorRole.NONE, options, metadata, xhtml, null);
+    }
+
+    private void walkRootObject(RevisionStoreObject object,
+                                Map<ExGuid, RevisionStoreObject> objectsById, Set<ExGuid> visited,
+                                AuthorRole authorRole, OneNoteTreeWalkerOptions options, Metadata metadata,
+                                XHTMLContentHandler xhtml, EmbeddedResourceInfo resourceInfo)
+            throws SAXException, TikaException, IOException {
+        if (!canWalkObject(object, visited, 0)) {
+            walkObject(object, objectsById, visited, authorRole, options, metadata, xhtml, 0, resourceInfo);
+            return;
+        }
+        List<PropertyAction> actions = object.propertySet != null
+                && object.propertySet.objectSpaceObjectPropSet != null ?
+                collectObjectActions(object) : Collections.emptyList();
+        ListStyle listStyle = listStyleForObject(object, actions, objectsById);
+        if (listStyle != null) {
+            startList(listStyle, xhtml);
+        }
+        try {
+            walkObject(object, objectsById, visited, authorRole, options, metadata, xhtml,
+                    0, resourceInfo);
+        } finally {
+            if (listStyle != null) {
+                xhtml.endElement(listStyle.elementName);
+            }
+        }
+    }
+
+    private void processStructureChildActions(List<PropertyAction> actions,
+                                              Map<ExGuid, RevisionStoreObject> objectsById,
+                                              Set<ExGuid> visited, AuthorRole authorRole,
+                                              OneNoteTreeWalkerOptions options, Metadata metadata,
+                                              XHTMLContentHandler xhtml, int depth,
+                                              EmbeddedResourceInfo resourceInfo)
+            throws SAXException, TikaException, IOException {
+        int index = 0;
+        while (index < actions.size()) {
+            PropertyAction action = actions.get(index);
+            ListStyle style = isSkippedChild(action, objectsById, visited, depth) ? null :
+                    listStyleForChild(action, objectsById);
+            if (style == null) {
                 processAction(action, objectsById, visited, authorRole, options, metadata, xhtml,
                         depth, resourceInfo);
+                index++;
+                continue;
             }
+            startList(style, xhtml);
+            int next = index;
+            try {
+                while (next < actions.size()) {
+                    PropertyAction sibling = actions.get(next);
+                    if (isSkippedChild(sibling, objectsById, visited, depth)) {
+                        processAction(sibling, objectsById, visited, authorRole, options, metadata,
+                                xhtml, depth, resourceInfo);
+                        next++;
+                        continue;
+                    }
+                    ListStyle siblingStyle = listStyleForChild(sibling, objectsById);
+                    if (siblingStyle == null || !style.matches(siblingStyle)) {
+                        break;
+                    }
+                    processAction(sibling, objectsById, visited, authorRole, options, metadata,
+                            xhtml, depth, resourceInfo);
+                    next++;
+                }
+            } finally {
+                xhtml.endElement(style.elementName);
+            }
+            index = next;
+        }
+    }
+
+    private boolean canWalkObject(RevisionStoreObject object, Set<ExGuid> visited, int depth) {
+        return object != null && depth < MAX_OBJECT_WALK_DEPTH &&
+                (object.objectID == null || !visited.contains(object.objectID));
+    }
+
+    private boolean isSkippedChild(PropertyAction action,
+                                    Map<ExGuid, RevisionStoreObject> objectsById,
+                                    Set<ExGuid> visited, int depth) {
+        return action.isChildReference &&
+                !canWalkObject(objectsById.get(action.childReference), visited, depth + 1);
+    }
+
+    private ListStyle listStyleForChild(PropertyAction action,
+                                        Map<ExGuid, RevisionStoreObject> objectsById) {
+        if (!action.isChildReference || action.childReference == null) {
+            return null;
+        }
+        RevisionStoreObject child = objectsById.get(action.childReference);
+        if (child == null || child.propertySet == null
+                || child.propertySet.objectSpaceObjectPropSet == null
+                || jcidIndex(child) != OneNoteJcid.OUTLINE_ELEMENT_NODE) {
+            return null;
+        }
+        return listStyleForObject(child, collectObjectActions(child), objectsById);
+    }
+
+    private ListStyle listStyleForObject(RevisionStoreObject object, List<PropertyAction> actions,
+                                         Map<ExGuid, RevisionStoreObject> objectsById) {
+        if (object == null || jcidIndex(object) != OneNoteJcid.OUTLINE_ELEMENT_NODE) {
+            return null;
+        }
+        boolean isListItem = false;
+        NumberListInfo numberListInfo = null;
+        NumberListInfo malformedNumberListInfo = null;
+        for (PropertyAction action : actions) {
+            if (action.oneNotePropertyEnum == OneNotePropertyEnum.ListNodes) {
+                isListItem = true;
+                RevisionStoreObject listNode = action.childReference == null ? null :
+                        objectsById.get(action.childReference);
+                NumberListInfo candidate = numberListInfo(listNode);
+                if (candidate != null && candidate.formatValid) {
+                    numberListInfo = candidate;
+                } else if (candidate != null) {
+                    malformedNumberListInfo = candidate;
+                }
+            }
+        }
+        if (!isListItem) {
+            return null;
+        }
+        if (numberListInfo == null) {
+            numberListInfo = malformedNumberListInfo;
+        }
+        boolean numbered = numberListInfo != null && numberListInfo.numbered;
+        ListStyle style = new ListStyle(numbered ? "ol" : "ul",
+                numberListInfo == null ? null : numberListInfo.htmlType,
+                numberListInfo == null ? null : numberListInfo.format,
+                numbered ? numberListInfo.restartValue : null);
+        return style;
+    }
+
+    private NumberListInfo numberListInfo(RevisionStoreObject listNode) {
+        if (listNode == null || listNode.propertySet == null
+                || listNode.propertySet.objectSpaceObjectPropSet == null
+                || jcidIndex(listNode) != OneNoteJcid.NUMBER_LIST_NODE) {
+            return null;
+        }
+        if (numberListInfoCache.containsKey(listNode)) {
+            return numberListInfoCache.get(listNode);
+        }
+        byte[] format = null;
+        Long restartValue = null;
+        for (PropertyAction action : collectObjectActions(listNode)) {
+            if (action.oneNotePropertyEnum == OneNotePropertyEnum.NumberListFormat
+                    && action.property instanceof PrtFourBytesOfLengthFollowedByData) {
+                format = ((PrtFourBytesOfLengthFollowedByData) action.property).data;
+            } else if (action.oneNotePropertyEnum == OneNotePropertyEnum.ListRestart
+                    && action.property instanceof FourBytesOfData) {
+                restartValue = unsignedInt32(((FourBytesOfData) action.property).data);
+            }
+        }
+        ParsedListFormat parsedFormat = parseListFormat(format);
+        NumberListInfo info = new NumberListInfo(canonicalListFormat(format), parsedFormat != null,
+                parsedFormat != null && parsedFormat.numbered,
+                parsedFormat == null ? null : parsedFormat.htmlType,
+                parsedFormat != null && parsedFormat.numbered ? restartValue : null);
+        numberListInfoCache.put(listNode, info);
+        return info;
+    }
+
+    private static ParsedListFormat parseListFormat(byte[] format) {
+        if (format == null || format.length < 2 || (format.length & 1) != 0) {
+            return null;
+        }
+        int characterCount = unsignedInt16(format, 0);
+        if (characterCount != format.length / 2 - 1) {
+            return null;
+        }
+        for (int i = 2; i + 1 < format.length; i += 2) {
+            if (unsignedInt16(format, i) == 0xfffd) {
+                if (i + 3 >= format.length) {
+                    return null;
+                }
+                return new ParsedListFormat(true,
+                        htmlListType(unsignedInt16(format, i + 2)));
+            }
+        }
+        return new ParsedListFormat(false, null);
+    }
+
+    private static int unsignedInt16(byte[] data, int index) {
+        return (data[index] & 0xff) | ((data[index + 1] & 0xff) << 8);
+    }
+
+    private static Long unsignedInt32(byte[] data) {
+        if (data == null || data.length != 4) {
+            return null;
+        }
+        return (data[0] & 0xffL) | ((data[1] & 0xffL) << 8) |
+                ((data[2] & 0xffL) << 16) | ((data[3] & 0xffL) << 24);
+    }
+
+    private static String htmlListType(int formatCode) {
+        switch (formatCode) {
+            case 0x00:
+                return "1";
+            case 0x01:
+                return "I";
+            case 0x02:
+                return "i";
+            case 0x03:
+                return "A";
+            case 0x04:
+                return "a";
+            default:
+                return null;
+        }
+    }
+
+    private void startList(ListStyle style, XHTMLContentHandler xhtml) throws SAXException {
+        if (style.htmlType == null) {
+            xhtml.startElement(style.elementName);
+        } else {
+            xhtml.startElement(style.elementName, "type", style.htmlType);
+        }
+    }
+
+    private static final class ParsedListFormat {
+        private final boolean numbered;
+        private final String htmlType;
+
+        private ParsedListFormat(boolean numbered, String htmlType) {
+            this.numbered = numbered;
+            this.htmlType = htmlType;
+        }
+    }
+
+    private static final class NumberListInfo {
+        private final byte[] format;
+        private final boolean formatValid;
+        private final boolean numbered;
+        private final String htmlType;
+        private final Long restartValue;
+
+        private NumberListInfo(byte[] format, boolean formatValid, boolean numbered,
+                               String htmlType, Long restartValue) {
+            this.format = format;
+            this.formatValid = formatValid;
+            this.numbered = numbered;
+            this.htmlType = htmlType;
+            this.restartValue = restartValue;
+        }
+    }
+
+    private byte[] canonicalListFormat(byte[] format) {
+        if (format == null || format.length < MIN_CANONICAL_LIST_FORMAT_LENGTH) {
+            return format;
+        }
+        List<byte[]> candidates = listFormatKeysByDigest.computeIfAbsent(
+                DigestUtils.sha256Hex(format), key -> new ArrayList<>());
+        for (byte[] candidate : candidates) {
+            // Keep grouping exact even if digests collide.
+            if (Arrays.equals(candidate, format)) {
+                return candidate;
+            }
+        }
+        candidates.add(format);
+        return format;
+    }
+
+    private static final class ListStyle {
+        private final String elementName;
+        private final String htmlType;
+        private final byte[] format;
+        private final Long restartValue;
+
+        private ListStyle(String elementName, String htmlType, byte[] format, Long restartValue) {
+            this.elementName = elementName;
+            this.htmlType = htmlType;
+            this.format = format;
+            this.restartValue = restartValue;
+        }
+
+        private boolean matches(ListStyle other) {
+            return elementName.equals(other.elementName) &&
+                    (htmlType == null ? other.htmlType == null : htmlType.equals(other.htmlType)) &&
+                    Arrays.equals(format, other.format);
         }
     }
 
@@ -872,7 +1426,8 @@ public class MSOneStorePackage {
                 lastModified = lastMod;
             }
             metadata.set(TikaCoreProperties.MODIFIED, String.valueOf(lastModified));
-        } else if (oneNotePropertyEnum == OneNotePropertyEnum.Author) {
+        } else if (oneNotePropertyEnum == OneNotePropertyEnum.Author
+                && property instanceof PrtFourBytesOfLengthFollowedByData) {
             recordAuthor(decodeOneNoteText(
                     ((PrtFourBytesOfLengthFollowedByData) property).data), authorRole);
         } else if (propertyType == PropertyType.FourBytesOfLengthFollowedByData) {
@@ -937,6 +1492,169 @@ public class MSOneStorePackage {
                         ((PrtFourBytesOfLengthFollowedByData) action.property).data), role);
             }
         }
+    }
+
+    private void collectSectionFileIdentityGuids() {
+        if (headerCell != null && headerCell.objectData != null
+                && headerCell.objectData.body != null) {
+            collectFileIdentityGuids(headerCell.objectData.body, 0);
+        }
+        if (!sectionGuidCollected() && dataRootCell != null) {
+            collectFileIdentityGuidsFromGroups(dataRootCell.objectGroups);
+        }
+        if (!sectionGuidCollected()) {
+            collectFileIdentityGuidsFromGroups(OtherFileNodeList);
+        }
+    }
+
+    // sectionGuid is a scalar: past the first candidate, further scanning cannot change
+    // the output, only burn work on values the collector will refuse
+    private boolean sectionGuidCollected() {
+        return !guids.values(OneNoteGuidCollector.Category.SECTION).isEmpty();
+    }
+
+    void collectFileIdentityGuidsFromGroups(List<RevisionStoreObjectGroup> groups) {
+        if (groups == null || guids.isFull()) {
+            return;
+        }
+        for (RevisionStoreObjectGroup group : groups) {
+            if (guids.isFull() || sectionGuidCollected()) {
+                return;
+            }
+            if (group == null || group.objects == null) {
+                continue;
+            }
+            for (RevisionStoreObject object : group.objects) {
+                if (guids.isFull()) {
+                    return;
+                }
+                if (object == null || object.propertySet == null
+                        || object.propertySet.objectSpaceObjectPropSet == null) {
+                    continue;
+                }
+                collectFileIdentityGuids(object.propertySet.objectSpaceObjectPropSet.body, 0);
+            }
+        }
+    }
+
+    void collectFileIdentityGuids(PropertySet propertySet, int depth) {
+        if (propertySet == null || propertySet.rgPrids == null || propertySet.rgData == null
+                || depth >= PropertySet.MAX_PROPERTY_NESTING || guids.isFull()) {
+            return;
+        }
+        int count = Math.min(propertySet.rgPrids.length, propertySet.rgData.size());
+        for (int i = 0; i < count && !guids.isFull() && !sectionGuidCollected(); i++) {
+            PropertyID propertyID = propertySet.rgPrids[i];
+            IProperty property = propertySet.rgData.get(i);
+            long propertyIdValue = Unsigned.uint(propertyID.value).longValue();
+            PropertyType propertyType = PropertyType.fromIntVal(propertyID.type);
+            if (propertyIdValue == FILE_IDENTITY_GUID_PROPERTY_ID
+                    && property instanceof PrtFourBytesOfLengthFollowedByData) {
+                GUID guid = GUID.fromMicrosoftBytes(
+                        ((PrtFourBytesOfLengthFollowedByData) property).data);
+                if (guid != null) {
+                    guids.add(OneNoteGuidCollector.Category.SECTION, guid.toString());
+                }
+            } else if (propertyType == PropertyType.PropertySet && property instanceof PropertySet) {
+                collectFileIdentityGuids((PropertySet) property, depth + 1);
+            } else if (propertyType == PropertyType.ArrayOfPropertyValues
+                    && property instanceof PrtArrayOfPropertyValues
+                    && ((PrtArrayOfPropertyValues) property).data != null) {
+                for (PropertySet nested : ((PrtArrayOfPropertyValues) property).data) {
+                    if (guids.isFull() || sectionGuidCollected()) {
+                        return;
+                    }
+                    collectFileIdentityGuids(nested, depth + 1);
+                }
+            }
+        }
+    }
+
+    void recordEntityGuid(RevisionStoreObject object, int objectType) {
+        guids.addForObjectType(objectType, notebookManagementEntityGuid(object));
+    }
+
+    String findPageGuid(RevisionStoreCell cell,
+                                Map<ExGuid, RevisionStoreObject> objectsById) {
+        if (cell == null || cell.objectGroups == null) {
+            return null;
+        }
+        Set<ExGuid> visited = new HashSet<>();
+        CellRoots roots = cellRoots(cell, objectsById, warning -> { });
+        for (RevisionStoreObject rootObject : roots.declared) {
+            String guid = findPageGuid(rootObject, objectsById, visited, 0);
+            if (guid != null) {
+                return guid;
+            }
+        }
+        if (roots.walkAll) {
+            for (RevisionStoreObjectGroup group : cell.objectGroups) {
+                if (group == null || group.objects == null) {
+                    continue;
+                }
+                for (RevisionStoreObject object : group.objects) {
+                    String guid = findPageGuid(object, objectsById, visited, 0);
+                    if (guid != null) {
+                        return guid;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    String findPageGuid(RevisionStoreObject object,
+                                Map<ExGuid, RevisionStoreObject> objectsById,
+                                Set<ExGuid> visited, int depth) {
+        if (object == null || depth >= MAX_OBJECT_WALK_DEPTH
+                || object.propertySet == null
+                || object.propertySet.objectSpaceObjectPropSet == null) {
+            return null;
+        }
+        if (object.objectID != null && !visited.add(object.objectID)) {
+            return null;
+        }
+        if (jcidIndex(object) == OneNoteJcid.PAGE_METADATA) {
+            String guid = notebookManagementEntityGuid(object);
+            if (guid != null) {
+                return guid;
+            }
+        }
+        for (PropertyAction action : collectObjectActions(object)) {
+            if (action.isChildReference && action.childReference != null) {
+                String guid = findPageGuid(objectsById.get(action.childReference), objectsById,
+                        visited, depth + 1);
+                if (guid != null) {
+                    return guid;
+                }
+            }
+        }
+        return null;
+    }
+
+    String notebookManagementEntityGuid(RevisionStoreObject object) {
+        if (object == null || object.propertySet == null
+                || object.propertySet.objectSpaceObjectPropSet == null) {
+            return null;
+        }
+        for (PropertyAction action : collectObjectActions(object)) {
+            if (action.oneNotePropertyEnum == OneNotePropertyEnum.NotebookManagementEntityGuid
+                    && action.property instanceof PrtFourBytesOfLengthFollowedByData) {
+                GUID guid = GUID.fromMicrosoftBytes(
+                        ((PrtFourBytesOfLengthFollowedByData) action.property).data);
+                if (guid != null) {
+                    return guid.toString();
+                }
+            }
+        }
+        return null;
+    }
+
+    static int jcidIndex(RevisionStoreObject object) {
+        if (object == null || object.jcid == null || object.jcid.jcid == null) {
+            return -1;
+        }
+        return object.jcid.jcid.index;
     }
 
     private EmbeddedResourceInfo embeddedResourceInfo(List<PropertyAction> actions) {

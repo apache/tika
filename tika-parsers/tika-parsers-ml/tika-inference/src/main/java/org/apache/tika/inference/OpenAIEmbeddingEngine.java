@@ -275,7 +275,7 @@ public class OpenAIEmbeddingEngine implements EmbeddingEngine, Initializable {
         return maxRetries;
     }
 
-    /** Retries of a 429/502/503/504 answer, with backoff inside the parse budget; 0 fails at once. */
+    /** Retries of a 429/502/503/504 answer or a dropped connection, with backoff inside the parse budget; 0 fails at once. */
     public void setMaxRetries(int maxRetries) {
         this.maxRetries = maxRetries;
     }

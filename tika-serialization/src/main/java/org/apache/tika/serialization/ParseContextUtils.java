@@ -151,12 +151,18 @@ public class ParseContextUtils {
                 // array configs; everything else keeps vanilla Jackson (enums like
                 // parse-mode and @JsonCreator beans have no no-arg constructor).
                 Object instance;
+                boolean trusted = jsonConfig.trusted();
                 if (ComponentInstantiator.hasJsonConfigConstructor(info.componentClass())) {
                     instance = ComponentInstantiator.instantiateComponent(
                             friendlyName, MAPPER.readTree(jsonConfig.json()),
-                            MAPPER, classLoader, null);
+                            MAPPER, classLoader, null, trusted);
                 } else {
-                    instance = MAPPER.readValue(jsonConfig.json(), info.componentClass());
+                    if (!trusted) {
+                        ComponentInstantiator.assertRequestMayConfigure(friendlyName,
+                                info.componentClass(), MAPPER.readTree(jsonConfig.json()), MAPPER);
+                    }
+                    instance = ComponentInstantiator.withTrust(MAPPER.readerFor(info.componentClass()),
+                            trusted).readValue(jsonConfig.json());
                     // Cross-field validation hook; the ComponentInstantiator paths call
                     // initialize() themselves, this path deserializes directly.
                     if (instance instanceof Initializable initializable) {
@@ -169,8 +175,9 @@ public class ParseContextUtils {
                 LOG.debug("Resolved '{}' -> {} with key {}",
                         friendlyName, info.componentClass().getName(), contextKey.getName());
             } catch (IOException e) {
-                throw new TikaConfigException("Failed to deserialize component '" +
-                        friendlyName + "' of type " + info.componentClass().getName(), e);
+                throw new TikaConfigException("Failed to deserialize component '" + friendlyName
+                        + "' of type " + info.componentClass().getName() + ": "
+                        + ComponentInstantiator.reason(e), e);
             }
         }
     }
@@ -227,8 +234,8 @@ public class ParseContextUtils {
 
                 // Check assignability before constructing, so an element of the wrong type is
                 // rejected up front rather than instantiated and later discarded.
-                Object component = ComponentInstantiator.instantiateComponent(
-                        typeName, configNode, MAPPER, classLoader, configInfo.componentInterface());
+                Object component = ComponentInstantiator.instantiateComponent(typeName, configNode,
+                        MAPPER, classLoader, configInfo.componentInterface(), jsonConfig.trusted());
                 components.add(component);
                 LOG.debug("Instantiated '{}' for '{}'", typeName, configName);
             }

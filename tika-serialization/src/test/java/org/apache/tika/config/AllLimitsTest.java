@@ -143,7 +143,7 @@ public class AllLimitsTest extends TikaTest {
         // Helper methods should return defaults when context is null
         EmbeddedLimits embeddedLimits = EmbeddedLimits.get(null);
         assertNotNull(embeddedLimits);
-        assertEquals(EmbeddedLimits.UNLIMITED, embeddedLimits.getMaxDepth());
+        assertEquals(EmbeddedLimits.DEFAULT_MAX_DEPTH, embeddedLimits.getMaxDepth());
 
         OutputLimits outputLimits = OutputLimits.get(null);
         assertNotNull(outputLimits);

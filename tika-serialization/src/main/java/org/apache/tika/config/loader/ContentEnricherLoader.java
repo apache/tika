@@ -33,7 +33,9 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnrichers;
-import org.apache.tika.parser.enricher.SizeGatedEnricher;
+import org.apache.tika.parser.enricher.GatedEnricher;
+import org.apache.tika.parser.enricher.ImageCheck;
+import org.apache.tika.parser.enricher.RecordedSizeCheck;
 import org.apache.tika.parser.enricher.TextRecognizer;
 import org.apache.tika.parser.inference.Engine;
 import org.apache.tika.parser.inference.EngineRegistry;
@@ -49,7 +51,10 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
     static final String KEY = "text-recognizers";
     private static final Logger LOG = LoggerFactory.getLogger(ContentEnricherLoader.class);
     private static final Set<String> REFERENCE_KEYS = Set.of("engine", "_mime-include",
-            "_mime-exclude", "_min-width", "_min-height");
+            "_mime-exclude", "min-width", "min-height", "_min-width", "_min-height", "checks");
+    /** Directives of this list only: removed from an inline entry's engine settings. */
+    private static final List<String> ENTRY_DIRECTIVES = List.of("min-width", "min-height",
+            "checks");
 
     @Override
     public CompositeContentEnricher load(TikaJsonConfig config, LoaderContext context)
@@ -68,13 +73,12 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
             Parser enricher;
             if (item.isObject() && item.has("engine")) {
                 label = "engine \"" + item.get("engine").asText() + "\"";
-                int[] gate = sizeGate(item, label);
-                enricher = sizeGated(referenced(item, context), gate);
+                enricher = gated(referenced(item, context), item, label, context);
             } else {
                 Map.Entry<String, JsonNode> entry = inline(item, context);
                 label = "\"" + entry.getKey() + "\"";
-                int[] gate = sizeGate(entry.getValue(), label);
-                enricher = sizeGated(instantiate(entry, context), gate);
+                enricher = gated(instantiate(withoutDirectives(entry), context), entry.getValue(), label,
+                        context);
             }
             // lifetime snapshot: an empty engine must fail load, not go inert; ask the
             // engine itself, since a _mime-include answers for the decorator
@@ -89,7 +93,7 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
             if ((recognizer == null || !recognizer.recognizesText(empty))
                     && !advertisesLegacyOcr(enricher)) {
                 LOG.warn("\"text-recognizers\" entry {} recognizes no text; it runs as an "
-                        + "annotator on the images and pages it is offered (4.2 gives annotators "
+                        + "annotator on the images and pages it is offered (4.3 gives annotators "
                         + "a list of their own)", label);
             }
             enrichers.add(enricher);
@@ -130,7 +134,8 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
     }
 
     /**
-     * The entry's {@code _min-width}/{@code _min-height}; null when neither is set. An image of
+     * The entry's {@code min-width}/{@code min-height} (or the older {@code _min-width}/{@code
+     * _min-height}, same meaning); null when neither is set. An image of
      * unknown size passes the gate, and one below {@link ContentEnrichers#MIN_PIXELS} never
      * reaches dispatch anyway.
      */
@@ -138,26 +143,72 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
         if (!settings.isObject()) {
             return null;
         }
-        Integer minWidth = minimum(settings, "_min-width", label);
-        Integer minHeight = minimum(settings, "_min-height", label);
+        Integer minWidth = minimum(settings, "min-width", label);
+        Integer minHeight = minimum(settings, "min-height", label);
         if (minWidth == null && minHeight == null) {
             return null;
         }
         return new int[] {minWidth == null ? 0 : minWidth, minHeight == null ? 0 : minHeight};
     }
 
-    private static Parser sizeGated(Parser enricher, int[] gate) {
-        return gate == null ? enricher : new SizeGatedEnricher(enricher, gate[0], gate[1]);
+    /**
+     * The engine behind its entry's checks: the recorded-size minimum, then the {@code checks},
+     * in order, in one decorator; the engine itself when the entry has none.
+     */
+    private static Parser gated(Parser enricher, JsonNode settings, String label,
+                                LoaderContext context) throws TikaConfigException {
+        List<ImageCheck> checks = new ArrayList<>();
+        int[] gate = sizeGate(settings, label);
+        if (gate != null) {
+            checks.add(new RecordedSizeCheck(gate[0], gate[1]));
+        }
+        checks.addAll(namedChecks(settings, label, context));
+        return checks.isEmpty() ? enricher : new GatedEnricher(enricher, checks);
     }
 
+    /** The entry's {@code checks}: component names, or {@code {"name": {settings}}}. */
+    private static List<ImageCheck> namedChecks(JsonNode settings, String label,
+                                                LoaderContext context)
+            throws TikaConfigException {
+        List<ImageCheck> checks = new ArrayList<>();
+        JsonNode list = settings.isObject() ? settings.get("checks") : null;
+        if (list == null) {
+            return checks;
+        }
+        if (!list.isArray()) {
+            throw new TikaConfigException("\"" + KEY + "\" entry " + label
+                    + ": \"checks\" must be an array");
+        }
+        for (JsonNode item : list) {
+            Map.Entry<String, JsonNode> check;
+            try {
+                check = inline(item, context);
+            } catch (TikaConfigException e) {
+                throw new TikaConfigException("\"" + KEY + "\" entry " + label
+                        + ": a \"checks\" member is a name or {\"name\": {...}}; got " + item);
+            }
+            checks.add(ComponentInstantiator.instantiateComponent(check.getKey(),
+                    check.getValue(), context.getObjectMapper(), context.getClassLoader(),
+                    ImageCheck.class, true));
+        }
+        return checks;
+    }
+
+    /** The value of {@code field} or its older {@code _field} spelling; both is an error. */
     private static Integer minimum(JsonNode settings, String field, String label)
             throws TikaConfigException {
-        JsonNode v = settings.get(field);
+        String alias = "_" + field;
+        if (settings.has(field) && settings.has(alias)) {
+            throw new TikaConfigException("\"" + KEY + "\" entry " + label + " sets both \""
+                    + field + "\" and its older spelling \"" + alias + "\"; use one");
+        }
+        String name = settings.has(field) ? field : alias;
+        JsonNode v = settings.get(name);
         if (v == null) {
             return null;
         }
         if (!v.isIntegralNumber() || v.asInt() < 0) {
-            throw new TikaConfigException("\"" + KEY + "\" entry " + label + ": \"" + field
+            throw new TikaConfigException("\"" + KEY + "\" entry " + label + ": \"" + name
                     + "\" must be a non-negative integer");
         }
         return v.asInt();
@@ -169,12 +220,28 @@ class ContentEnricherLoader implements ComponentLoader<CompositeContentEnricher>
         if (item.isTextual()) {
             return Map.entry(item.asText(), (JsonNode) context.getObjectMapper().createObjectNode());
         }
-        if (item.isObject() && !item.isEmpty()) {
+        if (item.isObject() && item.size() == 1) {
             Map.Entry<String, JsonNode> first = item.fields().next();
             return Map.entry(first.getKey(), first.getValue());
         }
         throw new TikaConfigException("\"" + KEY + "\" entries are {\"engine\": \"<name>\"} "
                 + "or {\"<recognizer>\": {...}}; got " + item);
+    }
+
+    /**
+     * The inline entry without this list's own directives ({@code min-width}, {@code
+     * min-height}, {@code checks}): they are directives here only, so they are removed for this
+     * entry's engine and no other component loses a setting of that name.
+     */
+    private static Map.Entry<String, JsonNode> withoutDirectives(
+            Map.Entry<String, JsonNode> entry) {
+        if (!(entry.getValue() instanceof ObjectNode settings)
+                || ENTRY_DIRECTIVES.stream().noneMatch(settings::has)) {
+            return entry;
+        }
+        ObjectNode copy = settings.deepCopy();
+        ENTRY_DIRECTIVES.forEach(copy::remove);
+        return Map.entry(entry.getKey(), copy);
     }
 
     private static Parser instantiate(Map.Entry<String, JsonNode> entry, LoaderContext context)

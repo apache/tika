@@ -121,7 +121,8 @@ public class TikaDetectionTest {
         assertEquals("application/relax-ng-compact-syntax", tika.detect("x.rnc"));
         assertEquals("application/resource-lists+xml", tika.detect("x.rl"));
         assertEquals("application/resource-lists-diff+xml", tika.detect("x.rld"));
-        assertEquals("application/rls-services+xml", tika.detect("x.rs"));
+        // httpd maps .rs to application/rls-services+xml; Rust source wins (TIKA-4977)
+        assertEquals("text/x-rust", tika.detect("x.rs"));
         assertEquals("application/rsd+xml", tika.detect("x.rsd"));
         assertEquals("application/rss+xml", tika.detect("x.rss"));
         assertEquals("application/rtf", tika.detect("x.rtf"));

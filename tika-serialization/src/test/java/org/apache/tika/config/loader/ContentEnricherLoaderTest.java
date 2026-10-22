@@ -45,7 +45,8 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnrichers;
-import org.apache.tika.parser.enricher.SizeGatedEnricher;
+import org.apache.tika.parser.enricher.GatedEnricher;
+import org.apache.tika.parser.enricher.RecordedSizeCheck;
 import org.apache.tika.parser.inference.EngineRegistry;
 import org.apache.tika.utils.ParserUtils;
 
@@ -123,16 +124,52 @@ public class ContentEnricherLoaderTest {
         List<Parser> matched = loader.get(CompositeContentEnricher.class)
                 .getEnrichers(MediaType.image("png"));
         assertEquals(2, matched.size());
-        SizeGatedEnricher referenced = (SizeGatedEnricher) matched.get(0);
-        assertEquals(100, referenced.getMinWidth());
-        assertEquals(0, referenced.getMinHeight());
+        GatedEnricher referenced = (GatedEnricher) matched.get(0);
+        RecordedSizeCheck size = (RecordedSizeCheck) referenced.getChecks().get(0);
+        assertEquals(100, size.getMinWidth());
+        assertEquals(0, size.getMinHeight());
         assertSame(loader.get(EngineRegistry.class).get("png"), unwrap(referenced));
-        assertEquals(50, ((SizeGatedEnricher) unwrapTo(matched.get(1), SizeGatedEnricher.class))
-                .getMinHeight());
+        GatedEnricher inline = (GatedEnricher) unwrapTo(matched.get(1), GatedEnricher.class);
+        assertEquals(50, ((RecordedSizeCheck) inline.getChecks().get(0)).getMinHeight());
         assertTrue(ContentEnrichers.isEnricher(matched.get(1)));
         // the gate is config, not a load-time side effect: a dump keeps it
         assertTrue(loader.toJson().contains("\"_min-width\" : 100"), loader.toJson());
         assertTrue(loader.toJson().contains("\"_min-height\" : 50"), loader.toJson());
+    }
+
+    /** The unprefixed spellings mean the same as the older underscored ones, in both forms. */
+    @Test
+    public void testSizeGateWithoutUnderscores() throws Exception {
+        TikaLoader loader = load("""
+                {
+                  "engines": { "png": { "mock-enricher": {} } },
+                  "text-recognizers": [
+                    { "engine": "png", "min-width": 100, "min-height": 40 },
+                    { "mock-enricher": { "min-height": 50, "_mime-include": ["image/png"] } }
+                  ]
+                }
+                """);
+        List<Parser> matched = loader.get(CompositeContentEnricher.class)
+                .getEnrichers(MediaType.image("png"));
+        assertEquals(2, matched.size());
+        RecordedSizeCheck size = (RecordedSizeCheck) ((GatedEnricher) matched.get(0))
+                .getChecks().get(0);
+        assertEquals(100, size.getMinWidth());
+        assertEquals(40, size.getMinHeight());
+        // the inline engine was built without the directive, which it would have rejected
+        GatedEnricher inline = (GatedEnricher) unwrapTo(matched.get(1), GatedEnricher.class);
+        assertEquals(50, ((RecordedSizeCheck) inline.getChecks().get(0)).getMinHeight());
+    }
+
+    @Test
+    public void testBothSpellingsOfOneKeyFailLoad() {
+        TikaConfigException e = assertThrows(TikaConfigException.class, () -> load("""
+                {
+                  "engines": { "png": { "mock-enricher": {} } },
+                  "text-recognizers": [ { "engine": "png", "min-width": 10, "_min-width": 20 } ]
+                }
+                """).get(CompositeContentEnricher.class));
+        assertTrue(e.getMessage().contains("older spelling"), e.getMessage());
     }
 
     private static Parser unwrapTo(Parser parser, Class<? extends Parser> type) {
@@ -322,42 +359,24 @@ public class ContentEnricherLoaderTest {
                 context), "the SPI enricher in default-parser is not consulted");
     }
 
-    /**
-     * An engine under "parsers" is the deprecated shape; the loader finds it whether it is
-     * dispatched to as a parser or only ever runs as an enricher, and tells them apart.
-     */
+    /** An engine under "parsers", the 4.0 shape, fails the load, alone or beside a parser. */
     @Test
-    public void testEngineUnderParsersIsFound() throws Exception {
+    public void testEngineUnderParsersFailsLoad() throws Exception {
+        for (String json : new String[]{
+                "{\"parsers\": [ {\"minimal-test-parser\": {}}, {\"test-spi-enricher\": {}} ]}",
+                "{\"parsers\": [ {\"test-spi-enricher\": {}} ]}"}) {
+            TikaLoader loader = load(json);
+            TikaConfigException e = assertThrows(TikaConfigException.class, loader::loadParsers,
+                    json);
+            assertTrue(e.getMessage().contains("\"engines\""), e.getMessage());
+        }
         TikaLoader loader = load("""
-                {
-                  "parsers": [ {"minimal-test-parser": {}}, {"test-spi-enricher": {}} ]
-                }
-                """);
-        Parser root = loader.loadParsers();
-        java.util.List<Parser> engines = ParserLoader.enginesUnderParsers(root);
-        assertEquals(1, engines.size());
-        assertTrue(engines.get(0) instanceof TestSpiEnricher);
-        assertTrue(ParserLoader.parsedTypes(root, engines.get(0)).isEmpty(),
-                "the parser claims its type: never dispatched to");
-
-        loader = load("""
-                {
-                  "parsers": [ {"test-spi-enricher": {}} ]
-                }
-                """);
-        root = loader.loadParsers();
-        engines = ParserLoader.enginesUnderParsers(root);
-        assertEquals(1, engines.size());
-        assertEquals(java.util.Set.of(MediaType.parse("application/test+minimal")),
-                ParserLoader.parsedTypes(root, engines.get(0)), "alone it is the parser for its type");
-
-        loader = load("""
                 {
                   "parsers": [ {"default-parser": {}} ]
                 }
                 """);
         assertTrue(ParserLoader.enginesUnderParsers(loader.loadParsers()).isEmpty(),
-                "an engine the classpath supplies is not the deprecated shape");
+                "an engine the classpath supplies is not the 4.0 shape");
     }
 
     /** Two text recognizers on one type both run; the loader names them at startup. */

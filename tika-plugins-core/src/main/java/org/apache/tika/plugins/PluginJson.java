@@ -16,34 +16,27 @@
  */
 package org.apache.tika.plugins;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import java.io.IOException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.serialization.OperatorOnlyGuard;
+import org.apache.tika.utils.SuppressForbidden;
 
 /**
- * The one {@link ObjectMapper} for plugin configuration JSON ({@link ExtensionConfig#json()}).
- * <p>
- * Fails fast on what a hand-written config gets wrong: unknown keys, a number where an
- * enum name belongs, duplicate keys. Comments are
- * accepted, as in the main config loader. Plain JSON only -- no Tika component serializers
- * -- so it is safe to share across the plugin classloader boundary, provided the plugin
- * does not bundle its own Jackson (the plugins parent pom enforces that).
+ * Reads plugin configuration JSON ({@link ExtensionConfig#json()}) with
+ * {@link TikaObjectMapperFactory#createStrictPlainMapper()}: the main config loader's checks,
+ * without Tika component serializers, so it is safe to share across the plugin classloader
+ * boundary, provided the plugin does not bundle its own Jackson (the plugins parent pom
+ * enforces that).
  */
 public final class PluginJson {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper()
-            .enable(JsonParser.Feature.ALLOW_COMMENTS)
-            // parser-level: FAIL_ON_READING_DUP_TREE_KEY only covers readTree, not readValue
-            .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
-            .enable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-            // Not FAIL_ON_NULL_FOR_PRIMITIVES: it also fires for a primitive record component
-            // that is simply absent, and optional primitives with defaults are the norm here.
-            .enable(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS)
-            .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+    private static final ObjectMapper MAPPER = TikaObjectMapperFactory.createStrictPlainMapper();
 
     private PluginJson() {
     }
@@ -56,5 +49,22 @@ public final class PluginJson {
             throw new TikaConfigException(
                     "Failed to parse " + type.getSimpleName() + ": " + e.getOriginalMessage(), e);
         }
+    }
+
+    /**
+     * As {@link #read(String, Class)}, but untrusted JSON (per-request config, see
+     * {@link JsonConfig#trusted()}) may not set an {@link org.apache.tika.config.OperatorOnly}
+     * property of {@code type}.
+     */
+    @SuppressForbidden
+    public static <T> T read(JsonConfig config, Class<T> type) throws TikaConfigException {
+        if (!config.trusted()) {
+            try {
+                OperatorOnlyGuard.check(MAPPER, type.getSimpleName(), config.json(), type);
+            } catch (IOException e) {
+                throw new TikaConfigException(e.getMessage(), e);
+            }
+        }
+        return read(config.json(), type);
     }
 }

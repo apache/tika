@@ -27,7 +27,7 @@ NOTE: Inference is experimental in 4.1.0. The `inference` section, `pages.infere
 rendering parser releases), the keys of an embedding or VLM engine's entry, the `tika-inference`
 and `tika-vlm` classes, and the chunk and vector output (`tk:chunks`, `tk:inference-released`)
 may change in a minor release without a deprecation cycle, and no compatibility shims are kept
-for earlier shapes; 4.2 adds batched recognition and document-level tasks. The `engines` map
+for earlier shapes; 4.3 adds batched recognition and document-level tasks. The `engines` map
 itself, and the
 `text-recognizers` list, are stable. Pin the Tika version you validated against and read the
 release notes before moving.
@@ -60,7 +60,10 @@ A hosted engine caps the requests in flight per key and answers the excess with 
 usually with no `Retry-After`; a saturated one answers 502, 503 or 504. Those four answers are
 retried, `maxRetries` times (4 unless set, 0 to fail at once), with a short jittered backoff
 from 250 ms doubling to 4 s, or the `Retry-After` the server sends, and never past the budget
-the parse granted the call. Any other answer, a 401 or a 400, fails at once. The retries cover
+the parse granted the call. A connection that drops before a full response arrives is retried
+the same way, sharing the `maxRetries` count; if the service had already read the
+request, a paid call may be billed twice. Any other answer, a 401 or a 400, fails at once,
+as do an unknown host, a refused connection and a TLS failure. The retries cover
 collisions between a few parse workers; they do not turn more workers than the key allows
 into throughput. Keep `numClients` (tika-server, Pipes) at or below the key's concurrency,
 counting every engine the workers call, and raise the key's tier before raising the workers.
@@ -321,9 +324,8 @@ concatenated text; the plain-text `/tika` output carries no metadata and so no v
 not a metadata filter: a per-request `metadata-filters` list does not touch it, and the
 per-request `inference` block below is the way to switch it off.
 
-The 4.0 `openai-embedding-filter` and `jina-embedding-filter` keep working and embed one
-document per request; the binding batches the tree and shares the engine with the other
-bindings.
+The 4.0 `openai-embedding-filter` and `jina-embedding-filter` were removed in 4.2.0; this
+binding replaces them.
 
 [[media]]
 == Media
@@ -485,10 +487,9 @@ request" (see xref:configuration/inference-recipes.adoc[Recipes]). Names only, s
 xref:using-tika/server/index.adoc[preset]. A name not in the configured list fails the request.
 Engines cannot be defined or changed per request.
 
-== From `openai-image-embedding-parser` (deprecated)
+== From `openai-image-embedding-parser` (removed)
 
-The 4.0 `openai-image-embedding-parser` is deprecated since 4.1.0 and removed in 4.2.0. It
-still works as a text-recognizers entry, with a WARN at startup, and embeds one image per
-request. The same endpoint as an engine plus a binding on `IMAGES` embeds a document's images
-in requests of the engine's batch size and puts the vectors where they belong; move the
-`baseUrl`, `model` and `apiKey` to the engine and drop the parser entry.
+The 4.0 `openai-image-embedding-parser` was removed in 4.2.0. The same endpoint as an engine
+plus a binding on `IMAGES` embeds a document's images in requests of the engine's batch size
+and puts the vectors where they belong; move the `baseUrl`, `model` and `apiKey` to the engine
+and drop the parser entry.

@@ -370,11 +370,11 @@ public class MockParser implements Parser {
                 throw new RuntimeException(
                         "Must specify attribute \"pulse_millis\" if the hang is \"heavy\"");
             }
-            String pulseMillisString = mNode.getNodeValue();
+            String pulseMillisString = pNode.getNodeValue();
             try {
                 pulseMillis = Long.parseLong(pulseMillisString);
             } catch (NumberFormatException e) {
-                throw new RuntimeException("Value for \"millis\" attribute must be a long.");
+                throw new RuntimeException("Value for \"pulse_millis\" attribute must be a long.");
             }
         }
         if (heavy) {

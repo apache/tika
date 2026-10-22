@@ -21,6 +21,7 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -28,8 +29,6 @@ import java.net.SocketTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
-import java.util.HexFormat;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -74,6 +73,7 @@ import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.protocol.ShutDownReceivedException;
@@ -88,6 +88,9 @@ import org.apache.tika.utils.ExceptionUtils;
 /**
  * This server is forked from the PipesClient.  This class isolates
  * parsing from the client to protect the primary JVM.
+ * <p>
+ * The config and auth token arrive on stdin as a {@link ForkBootstrap}; nothing is
+ * read from disk.
  * <p>
  * When configuring logging for this class, make absolutely certain
  * not to write to STDOUT.  This class uses STDOUT to communicate with
@@ -156,8 +159,6 @@ public class PipesServer implements AutoCloseable {
         }
     }
 
-    public static final int AUTH_TOKEN_LENGTH_BYTES = 32;
-
     /** Env var the parent manager sets so the child can watch the parent's
      *  process handle and exit promptly if the parent dies. */
     public static final String PARENT_PID_ENV = "TIKA_PIPES_PARENT_PID";
@@ -214,7 +215,7 @@ public class PipesServer implements AutoCloseable {
     private long tIntermediateWaitNanos = -1;
     private PipesWorker tLastWorker;
 
-    public static PipesServer load(int port, Path tikaConfigPath) throws Exception {
+    public static PipesServer load(int port, ForkBootstrap bootstrap) throws Exception {
             String pipesClientId = System.getProperty("pipesClientId", "unknown");
             LOG.debug("connecting to client on port={}", port);
             Socket socket = new Socket();
@@ -223,9 +224,12 @@ public class PipesServer implements AutoCloseable {
 
             DataInputStream dis = new DataInputStream(new BufferedInputStream(socket.getInputStream()));
             DataOutputStream dos = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
+            dos.write(bootstrap.getToken());
+            dos.flush();
         ParseContext configContext = null;
         try {
-            TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
+            TikaLoader tikaLoader = TikaLoader.load(bootstrap.loadConfig(),
+                    Thread.currentThread().getContextClassLoader());
             //load before constructing so the catch block below can redact per config
             configContext = tikaLoader.loadParseContext();
             PipesServer pipesServer =
@@ -281,29 +285,26 @@ public class PipesServer implements AutoCloseable {
         // below don't strand us if the parent has already died.
         watchParentProcess();
 
-        // Check for shared mode: --shared <numConnections> <tikaConfigPath>
+        ForkBootstrap bootstrap;
+        try (InputStream stdin = System.in) {
+            bootstrap = ForkBootstrap.read(stdin);
+        }
+
+        // Check for shared mode: --shared <numConnections>
         if (args.length > 0 && "--shared".equals(args[0])) {
             String portEnv = System.getenv("TIKA_PIPES_PORT");
             if (portEnv == null || portEnv.isEmpty()) {
                 throw new IllegalStateException("TIKA_PIPES_PORT environment variable is not set");
             }
             int port = Integer.parseInt(portEnv);
-            String tokenHex = System.getenv("TIKA_PIPES_AUTH_TOKEN");
-            if (tokenHex == null || tokenHex.isEmpty()) {
-                throw new IllegalStateException("TIKA_PIPES_AUTH_TOKEN environment variable is not set");
-            }
-            byte[] expectedToken = HexFormat.of().parseHex(tokenHex);
             int numConnections = Integer.parseInt(args[1]);
-            Path tikaConfig = Paths.get(args[2]);
             LOG.info("Starting shared PipesServer with {} connections", numConnections);
-            runSharedMode(port, numConnections, tikaConfig, expectedToken);
+            runSharedMode(port, numConnections, bootstrap);
         } else {
-            // Per-client mode: <port> <tikaConfigPath>
+            // Per-client mode: <port>
             int port = Integer.parseInt(args[0]);
-            Path tikaConfig = Paths.get(args[1]);
-            String pipesClientId = System.getProperty("pipesClientId", "unknown");
             LOG.debug("starting pipes server on port={}", port);
-            try (PipesServer server = PipesServer.load(port, tikaConfig)) {
+            try (PipesServer server = PipesServer.load(port, bootstrap)) {
                 server.mainLoop();
             } catch (Throwable t) {
                 LOG.error("crashed", t);
@@ -339,16 +340,13 @@ public class PipesServer implements AutoCloseable {
     /**
      * Runs the server in shared mode, accepting multiple client connections.
      * <p>
-     * Each incoming connection must present a valid auth token (32 bytes) before
-     * being accepted. This prevents unauthorized local processes from connecting.
-     * Note: if a malicious actor has access to your localhost and can read
-     * /proc/&lt;pid&gt;/environ, that is beyond Tika's security model. This auth
-     * token exists to prevent CVE-style abuse from untrusted local processes that
-     * cannot read the server process's environment.
+     * Each incoming connection must present the bootstrap's auth token before being
+     * accepted, so a stray local process that finds the port is turned away.
      */
-    private static void runSharedMode(int port, int numConnections, Path tikaConfigPath,
-                                      byte[] expectedToken) throws Exception {
-        TikaLoader tikaLoader = TikaLoader.load(tikaConfigPath);
+    private static void runSharedMode(int port, int numConnections, ForkBootstrap bootstrap)
+            throws Exception {
+        TikaLoader tikaLoader = TikaLoader.load(bootstrap.loadConfig(),
+                Thread.currentThread().getContextClassLoader());
         PipesConfig pipesConfig = PipesConfig.load(tikaLoader.getConfig());
         validateHeartbeatInterval(pipesConfig);
 
@@ -377,18 +375,7 @@ public class PipesServer implements AutoCloseable {
                     clientSocket.setTcpNoDelay(true);
 
                     // Validate auth token before creating handler
-                    byte[] clientToken = new byte[AUTH_TOKEN_LENGTH_BYTES];
-                    int bytesRead = 0;
-                    while (bytesRead < AUTH_TOKEN_LENGTH_BYTES) {
-                        int r = clientSocket.getInputStream().read(
-                                clientToken, bytesRead, AUTH_TOKEN_LENGTH_BYTES - bytesRead);
-                        if (r == -1) {
-                            break;
-                        }
-                        bytesRead += r;
-                    }
-                    if (bytesRead < AUTH_TOKEN_LENGTH_BYTES ||
-                            !MessageDigest.isEqual(expectedToken, clientToken)) {
+                    if (!ForkBootstrap.checkToken(clientSocket.getInputStream(), bootstrap.getToken())) {
                         LOG.warn("Rejected connection with invalid auth token");
                         try {
                             clientSocket.close();
@@ -459,7 +446,8 @@ public class PipesServer implements AutoCloseable {
                         resetTimings();
                         long reqDeserStart = System.nanoTime();
                         try {
-                            pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class);
+                            pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class,
+                                    pipesConfig.isTrustedRequests());
                             fetchEmitTuple = pipesRequest.getTuple();
                             tReqDeserNanos = System.nanoTime() - reqDeserStart;
                         } catch (IOException e) {
@@ -473,11 +461,6 @@ public class PipesServer implements AutoCloseable {
                         try {
                             mergedContext = createMergedParseContext(
                                     fetchEmitTuple.getParseContext(), fetchEmitTuple.getPresetName());
-                            ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
-                            ServerProtocolIO.validateParseContext(mergedContext);
-                            ServerProtocolIO.clampRequestTimeoutLimits(
-                                    fetchEmitTuple.getParseContext(), mergedContext,
-                                    pipesConfig.getMaxTotalTaskTimeoutMillis());
                             // After resolveAll: the payload is typed runtime state for
                             // BytesFetcher, never a resolvable config entry.
                             pipesRequest.applyTo(mergedContext);
@@ -585,12 +568,13 @@ public class PipesServer implements AutoCloseable {
         }
         PipesWorker w = tLastWorker;
         TIMING_LOG.trace("WORKER_TIMING id={} req_deser_us={} ctx_merge_us={} intermediate_wait_us={}"
-                        + " handoff_us={} fetch_us={} parse_us={} emit_us={} worker_wall_us={}"
+                        + " handoff_us={} fetch_us={} parse_us={} prepare_us={} emit_us={} worker_wall_us={}"
                         + " intermediate_us={} resp_ser_us={} resp_write_us={} resp_ack_us={}"
                         + " resp_bytes={}",
                 id, us(tReqDeserNanos), us(tCtxMergeNanos), us(tIntermediateWaitNanos),
                 us(tHandoffNanos), us(w == null ? -1 : w.getFetchNanos()),
-                us(w == null ? -1 : w.getParseNanos()), us(w == null ? -1 : w.getEmitNanos()),
+                us(w == null ? -1 : w.getParseNanos()), us(w == null ? -1 : w.getPrepareNanos()),
+                us(w == null ? -1 : w.getEmitNanos()),
                 us(w == null ? -1 : w.getWallNanos()), us(protocolIO.getLastIntermediateNanos()),
                 us(protocolIO.getLastRespSerNanos()), us(protocolIO.getLastRespWriteNanos()),
                 us(protocolIO.getLastRespAckNanos()), protocolIO.getLastRespBytes());
@@ -844,7 +828,7 @@ public class PipesServer implements AutoCloseable {
      *
      * @param requestContext the ParseContext from FetchEmitTuple
      * @param presetName name of the preset to overlay at config-tier trust, or null
-     * @return a new ParseContext with defaults + preset + request overrides
+     * @return a new, resolved ParseContext with defaults + preset + clamped request overrides
      */
     private ParseContext createMergedParseContext(ParseContext requestContext, String presetName)
             throws TikaConfigException {
@@ -857,10 +841,35 @@ public class PipesServer implements AutoCloseable {
         // extraction for every non-UNPACK parse mode. UNPACK mode sets its own
         // EmbeddedDocumentExtractor + UnpackedByteCount in PipesWorker's UNPACK-mode setup.
         mergePreset(presetRegistry, presetName, mergedContext);
-        // Request-level values override config defaults and the preset
-        mergedContext.copyFrom(requestContext);
+        overlayRequest(requestContext, mergedContext, pipesConfig, defaultContentHandlerFactory);
         seedCacheMemoryBudget(mergedContext);
         return mergedContext;
+    }
+
+    /**
+     * Overlays the request's values on the operator's (config plus preset), resolves the
+     * result, and, unless {@code pipes.trustedRequests} is on, clamps what the request
+     * supplied: limits and timeouts may be tightened, not loosened.
+     * {@code defaultContentHandlerFactory} is the operator's when the context sets none.
+     */
+    static void overlayRequest(ParseContext requestContext, ParseContext mergedContext,
+                               PipesConfig pipesConfig,
+                               ContentHandlerFactory defaultContentHandlerFactory)
+            throws TikaConfigException {
+        ParseContext operatorContext = new ParseContext();
+        operatorContext.copyFrom(mergedContext);
+        if (operatorContext.get(ContentHandlerFactory.class) == null
+                && defaultContentHandlerFactory != null) {
+            operatorContext.set(ContentHandlerFactory.class, defaultContentHandlerFactory);
+        }
+        mergedContext.copyFrom(requestContext);
+        ParseContextUtils.resolveAll(mergedContext, PipesServer.class.getClassLoader());
+        ServerProtocolIO.validateParseContext(mergedContext);
+        if (!pipesConfig.isTrustedRequests()) {
+            ServerProtocolIO.clampRequestTimeoutLimits(requestContext, operatorContext,
+                    mergedContext, pipesConfig.getMaxTotalTaskTimeoutMillis());
+            ServerProtocolIO.clampRequestLimits(operatorContext, mergedContext);
+        }
     }
 
     /**

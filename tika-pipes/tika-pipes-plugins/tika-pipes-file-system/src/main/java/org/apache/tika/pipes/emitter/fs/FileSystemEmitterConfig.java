@@ -20,13 +20,20 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.plugins.PluginJson;
 
 public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_EXISTS onExists, boolean prettyPrint, boolean allowAbsolutePaths,
-        Boolean atomicWrites) {
+        Boolean atomicWrites, COMPRESSION compression) {
 
     enum ON_EXISTS {
         SKIP, EXCEPTION, REPLACE
     }
 
-    /** onExists absent means EXCEPTION, atomicWrites absent means true -- the documented defaults. */
+    enum COMPRESSION {
+        NONE, GZIP
+    }
+
+    /**
+     * onExists absent means EXCEPTION, atomicWrites absent means true, compression absent means
+     * NONE -- the documented defaults.
+     */
     public FileSystemEmitterConfig {
         if (onExists == null) {
             onExists = ON_EXISTS.EXCEPTION;
@@ -34,6 +41,13 @@ public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_
         if (atomicWrites == null) {
             atomicWrites = Boolean.TRUE;
         }
+        if (compression == null) {
+            compression = COMPRESSION.NONE;
+        }
+    }
+
+    boolean gzip() {
+        return compression == COMPRESSION.GZIP;
     }
 
     public static FileSystemEmitterConfig load(final String json)

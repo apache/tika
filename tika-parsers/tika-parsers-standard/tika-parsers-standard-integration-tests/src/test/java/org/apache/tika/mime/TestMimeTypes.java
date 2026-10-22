@@ -534,6 +534,16 @@ public class TestMimeTypes {
     }
 
     @Test
+    public void testWindowsIconDetection() throws Exception {
+        assertType("image/vnd.microsoft.icon", "testICO.ico");
+        assertTypeByData("image/vnd.microsoft.icon", "testICO.ico");
+        assertTypeByName("image/vnd.microsoft.icon", "x.ico");
+        assertType("image/x-win-bitmap", "testCUR.cur");
+        assertTypeByData("image/x-win-bitmap", "testCUR.cur");
+        assertTypeByName("image/x-win-bitmap", "x.cur");
+    }
+
+    @Test
     public void testTiffDetection() throws Exception {
         assertType("image/tiff", "testTIFF.tif");
         assertTypeByData("image/tiff", "testTIFF.tif");
@@ -913,8 +923,7 @@ public class TestMimeTypes {
         assertTypeByNameAndData("image/x-raw-pentax", "testPEF.pef");
         assertTypeByData("image/tiff", "testDNG.dng");
         assertTypeByNameAndData("image/x-raw-adobe", "testDNG.dng");
-        //BigTIFF has no image/tiff data magic here (TiffParser can't read BigTIFF yet),
-        //so a BigTIFF DNG resolves by name+data via the glob, not by data alone
+        assertTypeByData("image/tiff", "testDNG_bigtiff.dng");
         assertTypeByNameAndData("image/x-raw-adobe", "testDNG_bigtiff.dng");
         assertTypeByData("image/x-canon-cr2", "testCR2.cr2");
         assertTypeByNameAndData("image/x-canon-cr2", "testCR2.cr2");
@@ -1069,6 +1078,45 @@ public class TestMimeTypes {
         //embedded xhtml and img
         assertTypeDetection("testEML_embedded_xhtml_and_img.eml", "message/rfc822");
 
+    }
+
+    /**
+     * TIKA-4973: the MHTML magic keys on the message's own Content-Type, not a nested part's.
+     * A Gmail export starts with MIME-Version and nests multipart/related in multipart/mixed.
+     */
+    @Test
+    public void testNestedMultipartRelatedIsNotMhtml() throws Exception {
+        String gmail = "MIME-Version: 1.0\n" +
+                "Date: Fri, 11 Sep 2026 11:18:43 -0400\n" +
+                "Subject: a subject\n" +
+                "From: someone <someone@example.com>\n" +
+                "Content-Type: multipart/mixed; boundary=\"outer\"\n" +
+                "\n" +
+                "--outer\n" +
+                "Content-Type: multipart/related; boundary=\"inner\"\n" +
+                "\n" +
+                "--inner\n" +
+                "Content-Type: text/plain; charset=\"UTF-8\"\n" +
+                "\n" +
+                "body\n";
+        String mhtml = "MIME-Version: 1.0\n" +
+                "Subject: a saved page\n" +
+                "\tfolded onto a second line\n" +
+                "Content-Type: multipart/related;\n" +
+                "\tboundary=\"page\";\n" +
+                "\ttype=\"text/html\"\n" +
+                "\n" +
+                "--page\n" +
+                "Content-Type: text/html\n" +
+                "\n" +
+                "<html></html>\n";
+        for (String eol : new String[]{"\n", "\r\n"}) {
+            assertTypeByData("message/rfc822", gmail.replace("\n", eol).getBytes(US_ASCII));
+            assertTypeByData("multipart/related", mhtml.replace("\n", eol).getBytes(US_ASCII));
+            // RFC 2045 allows a comment after the version
+            assertTypeByData("multipart/related", mhtml.replace("1.0", "1.0 (Produced by a tool)")
+                    .replace("\n", eol).getBytes(US_ASCII));
+        }
     }
 
     @Test

@@ -92,6 +92,11 @@ public class InferenceLoaderTest {
         assertTrue(second.binding().accepts(InputKind.IMAGES, MediaType.image("png")));
         assertFalse(second.binding().accepts(InputKind.IMAGES, MediaType.image("svg+xml")),
                 "without an include list, non-raster image types are excluded by default");
+        assertFalse(second.binding().accepts(InputKind.IMAGES, MediaType.image("x-win-bitmap")),
+                "a cursor holds images, it is not one");
+        assertFalse(second.binding().accepts(InputKind.IMAGES,
+                        MediaType.parse("image/x-os2-graphics; charset=binary")),
+                "an OS/2 bitmap array holds images, it is not one");
 
         AutoDetectParser parser = (AutoDetectParser) loader.loadAutoDetectParser();
         assertEquals(List.of(dispatcher), parser.getParseHooks().getHooks(),

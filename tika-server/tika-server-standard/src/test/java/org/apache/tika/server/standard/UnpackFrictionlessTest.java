@@ -24,7 +24,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -51,7 +50,7 @@ import org.apache.tika.server.core.resource.UnpackerResource;
 import org.apache.tika.server.core.writer.TarWriter;
 import org.apache.tika.server.core.writer.ZipWriter;
 
-/** /unpack under a server-level Frictionless config, with no per-request config. */
+/** /unpack with no unpack-config anywhere: a Frictionless package since 4.2 (TIKA-4681). */
 public class UnpackFrictionlessTest extends CXFTestBase {
 
     private static final String TEST_DOC = "test-documents/test_recursive_embedded.docx";
@@ -59,10 +58,7 @@ public class UnpackFrictionlessTest extends CXFTestBase {
 
     private static final String SERVER_CONFIG = """
             {
-              "parsers": [ { "default-parser": {} } ],
-              "parse-context": {
-                "unpack-config": { "outputFormat": "FRICTIONLESS", "outputMode": "ZIPPED" }
-              }
+              "parsers": [ { "default-parser": {} } ]
             }
             """;
 
@@ -96,7 +92,7 @@ public class UnpackFrictionlessTest extends CXFTestBase {
 
     @Override
     protected InputStream getPipesConfigInputStream() throws IOException {
-        unpackTempDir = Files.createTempDirectory("tika-unpack-fd-");
+        unpackTempDir = sharedUnpackDir();
         Map<String, Object> replacements = new HashMap<>();
         replacements.put("UNPACK_EMITTER_BASE_PATH", unpackTempDir.toAbsolutePath().toString());
         replacements.put("PLUGINS_PATHS",
@@ -114,18 +110,21 @@ public class UnpackFrictionlessTest extends CXFTestBase {
     }
 
     @Test
-    public void testServerConfigMakesUnpackFrictionless() throws Exception {
+    public void testDefaultIsAFrictionlessPackage() throws Exception {
         Map<String, byte[]> entries = unpack("/unpack");
         assertTrue(entries.containsKey("datapackage.json"), entries.keySet().toString());
         assertTrue(entries.keySet().stream().anyMatch(k -> k.startsWith("unpacked/")),
                 entries.keySet().toString());
+        assertTrue(entries.keySet().stream().allMatch(k -> k.startsWith("unpacked/")
+                        || k.equals("datapackage.json") || k.equals("rmeta.json")),
+                "nothing but the package at the root: " + entries.keySet());
     }
 
-    /** A Frictionless package carries metadata.json by default; /all adds only the original. */
+    /** A Frictionless package carries rmeta.json by default; /all adds only the original. */
     @Test
     public void testPlainUnpackHasMetadataJsonByDefault() throws Exception {
         Map<String, byte[]> entries = unpack("/unpack");
-        assertTrue(entries.containsKey("metadata.json"), entries.keySet().toString());
+        assertTrue(entries.containsKey("rmeta.json"), entries.keySet().toString());
         assertFalse(entries.keySet().stream().anyMatch(k -> k.startsWith("unpacked/0.")),
                 "plain /unpack must not pack the container's bytes: " + entries.keySet());
     }
@@ -148,7 +147,7 @@ public class UnpackFrictionlessTest extends CXFTestBase {
     @Test
     public void testUnpackAllCarriesMetadataAndTheOriginal() throws Exception {
         Map<String, byte[]> entries = unpack("/unpack/all");
-        assertTrue(entries.containsKey("metadata.json"), entries.keySet().toString());
+        assertTrue(entries.containsKey("rmeta.json"), entries.keySet().toString());
         assertTrue(entries.keySet().stream().anyMatch(k -> k.startsWith("unpacked/0.")),
                 "includeOriginal should add the container: " + entries.keySet());
     }
@@ -157,7 +156,7 @@ public class UnpackFrictionlessTest extends CXFTestBase {
     @Test
     public void testMetadataJsonCarriesTheContainerRow() throws Exception {
         Map<String, byte[]> entries = unpack("/unpack");
-        JsonNode rows = MAPPER.readTree(entries.get("metadata.json"));
+        JsonNode rows = MAPPER.readTree(entries.get("rmeta.json"));
         assertTrue(rows.isArray() && rows.size() > 1, "expected an RMETA list, got: " + rows);
 
         JsonNode container = rows.get(0);
@@ -173,7 +172,7 @@ public class UnpackFrictionlessTest extends CXFTestBase {
     @Test
     public void testRowsCarryEmbeddedPathData() throws Exception {
         Map<String, byte[]> entries = unpack("/unpack/all");
-        JsonNode rows = MAPPER.readTree(entries.get("metadata.json"));
+        JsonNode rows = MAPPER.readTree(entries.get("rmeta.json"));
         JsonNode embedded = rows.get(1);
         for (String key : new String[]{"tk:embedded-id", "tk:embedded-id-path",
                 "tk:embedded-resource-path", "tk:resource-name"}) {

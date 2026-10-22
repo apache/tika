@@ -59,7 +59,7 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
     private static final List<String> NON_RASTER = List.of("image/svg+xml", "image/vnd.dwg",
             "image/vnd.dxf", "image/x-emf", "image/x-wmf", "image/wmf", "image/emf",
             "image/vnd.adobe.photoshop", "image/x-photoshop", "image/vnd.microsoft.icon",
-            "image/x-icon");
+            "image/x-icon", "image/x-win-bitmap", "image/x-os2-graphics");
 
     @Override
     public InferenceDispatcher load(TikaJsonConfig config, LoaderContext context)
@@ -162,7 +162,7 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
                     task = ComponentInstantiator.instantiateComponent(taskName,
                             context.getObjectMapper().createObjectNode(),
                             context.getObjectMapper(), context.getClassLoader(),
-                            InferenceTask.class);
+                            InferenceTask.class, true);
                 } catch (TikaConfigException e) {
                     throw new TikaConfigException("binding \"" + id + "\" task \"" + taskName
                             + "\": " + e.getMessage(), e);
@@ -194,7 +194,7 @@ class InferenceLoader implements ComponentLoader<InferenceDispatcher> {
         Map.Entry<String, JsonNode> type = node.fields().next();
         try {
             return ComponentInstantiator.instantiateComponent(type.getKey(), type.getValue(),
-                    context.getObjectMapper(), context.getClassLoader(), TextChunker.class);
+                    context.getObjectMapper(), context.getClassLoader(), TextChunker.class, true);
         } catch (TikaConfigException e) {
             throw new TikaConfigException("binding \"" + id + "\" chunker \"" + type.getKey()
                     + "\": " + e.getMessage(), e);

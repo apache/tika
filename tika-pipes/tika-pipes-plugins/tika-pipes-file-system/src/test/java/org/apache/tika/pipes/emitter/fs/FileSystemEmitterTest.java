@@ -23,11 +23,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.Reader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Stream;
+import java.util.zip.GZIPInputStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -37,9 +42,11 @@ import org.junit.jupiter.api.io.TempDir;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.StreamEmitter;
 import org.apache.tika.plugins.ExtensionConfig;
+import org.apache.tika.serialization.JsonMetadataList;
 
 public class FileSystemEmitterTest {
 
@@ -211,5 +218,88 @@ public class FileSystemEmitterTest {
         replace.emit("b.json", List.of(new Metadata()), new ParseContext());
         assertTrue(Files.isRegularFile(basePath.resolve("b.json")));
         assertEquals(0, tmpFiles(basePath));
+    }
+
+    private StreamEmitter createGzipEmitter(Path basePath, String onExists, boolean atomicWrites)
+            throws TikaConfigException, IOException {
+        ObjectNode config = MAPPER.createObjectNode();
+        config.put("basePath", basePath.toAbsolutePath().toString());
+        config.put("fileExtension", "json");
+        config.put("onExists", onExists);
+        config.put("atomicWrites", atomicWrites);
+        config.put("compression", "GZIP");
+        ExtensionConfig pluginConfig = new ExtensionConfig("test", "test", config.toString());
+        return (StreamEmitter) new FileSystemEmitterFactory().buildExtension(pluginConfig);
+    }
+
+    private static String gunzip(Path p) throws IOException {
+        try (InputStream is = new GZIPInputStream(Files.newInputStream(p))) {
+            return new String(is.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    @Test
+    public void testGzipMetadataList() throws Exception {
+        for (boolean atomic : new boolean[]{true, false}) {
+            Path basePath = tempDir.resolve("gz-" + atomic);
+            StreamEmitter emitter = createGzipEmitter(basePath, "EXCEPTION", atomic);
+            Metadata m = new Metadata();
+            m.set("k", "v");
+            emitter.emit("dir/a.pdf", List.of(m), new ParseContext());
+            Path out = basePath.resolve("dir/a.pdf.json.gz");
+            assertTrue(Files.isRegularFile(out), "atomicWrites=" + atomic);
+            assertFalse(Files.exists(basePath.resolve("dir/a.pdf.json")));
+            try (Reader r = new InputStreamReader(new GZIPInputStream(Files.newInputStream(out)),
+                    StandardCharsets.UTF_8)) {
+                assertEquals("v", JsonMetadataList.fromJson(r).get(0).get("k"));
+            }
+            // onExists checks the name actually written, .gz included
+            assertThrows(IOException.class,
+                    () -> emitter.emit("dir/a.pdf", List.of(m), new ParseContext()));
+            assertEquals(0, tmpFiles(basePath.resolve("dir")));
+        }
+    }
+
+    @Test
+    public void testGzipContentOnlyButNotUnpack() throws Exception {
+        for (boolean atomic : new boolean[]{true, false}) {
+            Path basePath = tempDir.resolve("gz-stream-" + atomic);
+            StreamEmitter emitter = createGzipEmitter(basePath, "REPLACE", atomic);
+            ParseContext contentOnly = new ParseContext();
+            contentOnly.set(ParseMode.class, ParseMode.CONTENT_ONLY);
+            emitter.emit("a.pdf", new ByteArrayInputStream("text".getBytes(StandardCharsets.UTF_8)),
+                    new Metadata(), contentOnly);
+            assertEquals("text", gunzip(basePath.resolve("a.pdf.json.gz")), "atomicWrites=" + atomic);
+
+            // an unpacked file keeps its own name and bytes
+            emitter.emit("unpacked/image.png", new ByteArrayInputStream(new byte[]{1, 2, 3}),
+                    new Metadata(), new ParseContext());
+            assertEquals(3, Files.size(basePath.resolve("unpacked/image.png")));
+            assertEquals(0, tmpFiles(basePath));
+        }
+    }
+
+    @Test
+    public void testGzipClosesFileWhenFinishFails() throws Exception {
+        boolean[] closed = {false};
+        // room for the 10-byte header only, so finish() hits the full disk
+        OutputStream full = new OutputStream() {
+            int written;
+
+            @Override
+            public void write(int b) throws IOException {
+                if (++written > 10) {
+                    throw new IOException("No space left on device");
+                }
+            }
+
+            @Override
+            public void close() {
+                closed[0] = true;
+            }
+        };
+        OutputStream gz = FileSystemEmitter.gzip(full);
+        assertThrows(IOException.class, gz::close);
+        assertTrue(closed[0]);
     }
 }

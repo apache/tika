@@ -316,6 +316,12 @@ all fill it in when you do not: a `plugins` directory beside the running jar, el
 working directory. Loading through `TikaPluginManager` directly with no `plugin-roots` fails with
 `plugin-roots must be specified`.
 
+Zips in `plugin-roots` are the only source of plugins. A plugin jar on the application classpath
+is not scanned, even though it carries the same `META-INF/extensions.idx`, unless the JVM runs
+with `-Dtika.plugins.classpath=true`. That switch exists so `PipesForkParser` can embed without a
+plugins directory; it drops the classloader isolation for every plugin found that way, and a
+process started with it owns whatever its classpath does.
+
 === tika-config.json
 
 The JSON never names a class. It names your factory's `getName()`.

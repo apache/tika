@@ -25,6 +25,7 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.json.JsonMapper;
@@ -86,6 +87,7 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     private static final Logger LOG = LoggerFactory.getLogger(TikaGrpcServerImpl.class);
     private static final ObjectMapper OBJECT_MAPPER = JsonMapper.builder()
             .defaultPropertyInclusion(JsonInclude.Value.construct(JsonInclude.Include.NON_NULL, JsonInclude.Include.NON_NULL))
+            .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
             .build();
     public static final JsonSchemaGenerator JSON_SCHEMA_GENERATOR = new JsonSchemaGenerator(OBJECT_MAPPER);
 
@@ -121,13 +123,14 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         if (pipesConfig == null) {
             pipesConfig = new PipesConfig();
         }
+        pipesConfig.refuseTrustedRequests("tika-grpc");
 
         // Security-sensitive grpc features (per-request config, runtime component
         // modifications) are off unless explicitly enabled in the "grpc" section.
         tikaGrpcConfig = TikaGrpcConfig.load(tikaJsonConfig);
 
         // PipesClient is single-threaded; the pool admits pipes.numClients at a time.
-        pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig, configPath);
+        pipesParser = PipesParser.load(tikaJsonConfig, pipesConfig);
         
         try {
             if (pluginRootsOverride != null && !pluginRootsOverride.trim().isEmpty()) {

@@ -64,11 +64,7 @@ public class ConfigDeserializerTest {
         }
     }
 
-    /**
-     * Stands in for the validation-only RuntimeConfig subclasses (TesseractOCRConfig,
-     * Tess4JConfig, VLMOCRConfig) that a component deserializes a key into before
-     * deserializing the same key into the real config class.
-     */
+    /** A second class resolved from the same key: each class gets its own cached instance. */
     public static class RuntimeTestConfig extends TestConfig {
     }
 

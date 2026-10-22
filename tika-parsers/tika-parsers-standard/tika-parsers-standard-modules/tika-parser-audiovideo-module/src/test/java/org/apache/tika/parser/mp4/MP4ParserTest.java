@@ -253,6 +253,23 @@ public class MP4ParserTest extends TikaTest {
         assertEquals("mp4a", r.metadata.get(Audio.FOURCC));
     }
 
+    /**
+     * End of input at a top-level box boundary is the normal exit, not a warning, and
+     * the ilst length includes its own header, which must not be read again as a
+     * record. Both used to put an EOFException warning on every well-formed file.
+     */
+    @Test
+    public void testWellFormedFilesHaveNoWarning() throws Exception {
+        for (String name : new String[]{"testMP4.m4a", "testMP4AudioOnly.mp4",
+                "testMP4VideoAudio.mp4", "testMP4_coverArt.m4a", "testMP4_twoCovers.m4a",
+                "testMP4_encv.mp4", "testMP4_drm.m4a", "testMP4_drm_frma.m4a",
+                "testMP4_esdsFlags.m4a", "testMP4_twoSampleEntries.m4a"}) {
+            String[] warnings = getXML(name).metadata
+                    .getValues(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING);
+            assertEquals(0, warnings.length, name + ": " + Arrays.toString(warnings));
+        }
+    }
+
     @Test
     @Timeout(30000)
     public void testInfiniteLoop() throws Exception {

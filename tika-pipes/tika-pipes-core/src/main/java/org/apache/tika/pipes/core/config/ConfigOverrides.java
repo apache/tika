@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.pipes.core.EmitStrategy;
 
@@ -51,6 +52,11 @@ public class ConfigOverrides {
     private final String pluginRoots;
     private final EmitStrategy emitStrategy;
     private final TimeoutLimits timeoutLimits;
+    private final EmbeddedLimits embeddedLimits;
+    private final Integer writeLimit;
+    private final boolean classpathPlugins;
+    private final boolean trustedRequests;
+    private final List<String> presets;
 
     private ConfigOverrides(Builder builder) {
         this.fetchers = Collections.unmodifiableList(new ArrayList<>(builder.fetchers));
@@ -59,6 +65,11 @@ public class ConfigOverrides {
         this.pluginRoots = builder.pluginRoots;
         this.emitStrategy = builder.emitStrategy;
         this.timeoutLimits = builder.timeoutLimits;
+        this.embeddedLimits = builder.embeddedLimits;
+        this.writeLimit = builder.writeLimit;
+        this.classpathPlugins = builder.classpathPlugins;
+        this.trustedRequests = builder.trustedRequests;
+        this.presets = Collections.unmodifiableList(new ArrayList<>(builder.presets));
     }
 
     public static Builder builder() {
@@ -87,6 +98,29 @@ public class ConfigOverrides {
 
     public TimeoutLimits getTimeoutLimits() {
         return timeoutLimits;
+    }
+
+    public EmbeddedLimits getEmbeddedLimits() {
+        return embeddedLimits;
+    }
+
+    public Integer getWriteLimit() {
+        return writeLimit;
+    }
+
+    /** Whether the fork is told to load plugins from its classpath; see ConfigMerger. */
+    public boolean isClasspathPlugins() {
+        return classpathPlugins;
+    }
+
+    /** Whether the fork is told its requests are the operator's own; see ConfigMerger. */
+    public boolean isTrustedRequests() {
+        return trustedRequests;
+    }
+
+    /** Catalog presets to activate, as {@code "name": true} would; see ConfigMerger. */
+    public List<String> getPresets() {
+        return presets;
     }
 
     /**
@@ -207,8 +241,40 @@ public class ConfigOverrides {
         private String pluginRoots;
         private EmitStrategy emitStrategy;
         private TimeoutLimits timeoutLimits;
+        private EmbeddedLimits embeddedLimits;
+        private Integer writeLimit;
+        private boolean classpathPlugins;
+        private boolean trustedRequests;
+        private final List<String> presets = new ArrayList<>();
 
         private Builder() {
+        }
+
+        /**
+         * Activates a catalog preset, as {@code "presets": {"name": true}} in the config would,
+         * replacing whatever value the existing config has for the name.
+         */
+        public Builder addPreset(String name) {
+            this.presets.add(name);
+            return this;
+        }
+
+        /**
+         * Sets {@code pipes.trustedRequests}: the requests come from the operator, so their
+         * parseContext is trusted and their limits and timeouts are used as given.
+         */
+        public Builder setTrustedRequests(boolean trustedRequests) {
+            this.trustedRequests = trustedRequests;
+            return this;
+        }
+
+        /**
+         * Appends {@code -Dtika.plugins.classpath=true} to the fork's JVM args, keeping whatever
+         * forkedJvmArgs the existing config or {@link #setPipesConfig} already carry.
+         */
+        public Builder setClasspathPlugins(boolean classpathPlugins) {
+            this.classpathPlugins = classpathPlugins;
+            return this;
         }
 
         /**
@@ -293,6 +359,29 @@ public class ConfigOverrides {
          */
         public Builder setTimeoutLimits(TimeoutLimits timeoutLimits) {
             this.timeoutLimits = timeoutLimits;
+            return this;
+        }
+
+        /**
+         * Set the embedded limits to write to the parse-context section. Config-tier limits
+         * are the ceiling a request's own limits are clamped to.
+         *
+         * @param embeddedLimits the embedded limits (may be null to use defaults)
+         * @return this builder
+         */
+        public Builder setEmbeddedLimits(EmbeddedLimits embeddedLimits) {
+            this.embeddedLimits = embeddedLimits;
+            return this;
+        }
+
+        /**
+         * Set {@code output-limits.writeLimit} in the parse-context section.
+         *
+         * @param writeLimit the write limit, negative for unlimited (may be null to leave unset)
+         * @return this builder
+         */
+        public Builder setWriteLimit(Integer writeLimit) {
+            this.writeLimit = writeLimit;
             return this;
         }
 

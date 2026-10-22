@@ -197,6 +197,8 @@ public class SummaryExtractor {
         set(OfficeOpenXMLCore.CATEGORY, summary.getCategory());
 
         // New style counts
+        set(Office.LINE_COUNT, summary.getLineCount());
+        set(Office.PARAGRAPH_COUNT, summary.getParCount());
         set(Office.SLIDE_COUNT, summary.getSlideCount());
         if (summary.getSlideCount() > 0) {
             metadata.set(PagedText.N_PAGES, summary.getSlideCount());

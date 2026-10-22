@@ -43,12 +43,10 @@ public final class JsonMergeUtils {
      * mapper they were derived from ({@code copy()} is expensive and the set of source
      * mappers is tiny and long-lived).
      * <p>
-     * The clone must not run through setters. Runtime-config subclasses override their
-     * setters to reject caller input -- often as "any non-empty value is a modification"
-     * -- so re-applying the default's own values through them throws, and the caller's
-     * JSON is never even reached. Copying by field also preserves init-time state that
-     * has no getter (e.g. VLMOCRConfig.RuntimeConfig's initMaxTokens baseline), which a
-     * serialization round-trip silently reset to the class default.
+     * The clone must not run through setters: a validating setter would re-check the
+     * default's own values, and a setter that rejects caller input would throw before the
+     * caller's JSON is even reached. Copying by field also preserves init-time state that
+     * has no getter, which a serialization round-trip silently reset to the class default.
      */
     private static final Map<ObjectMapper, ObjectMapper> COPY_MAPPERS = new ConcurrentHashMap<>();
 
@@ -80,14 +78,24 @@ public final class JsonMergeUtils {
      */
     public static <T> T mergeWithDefaults(ObjectMapper mapper, String json,
                                           Class<T> configClass, T defaultConfig) throws IOException {
+        return mergeWithDefaults(mapper, json, configClass, defaultConfig, true);
+    }
+
+    /**
+     * As {@link #mergeWithDefaults(ObjectMapper, String, Class, Object)}; when {@code trusted} is
+     * false, components nested in the config are built as per-request input (see
+     * {@link ComponentInstantiator#withTrust}).
+     */
+    public static <T> T mergeWithDefaults(ObjectMapper mapper, String json, Class<T> configClass,
+                                          T defaultConfig, boolean trusted) throws IOException {
         if (defaultConfig == null) {
-            return mapper.readValue(json, configClass);
+            return ComponentInstantiator.withTrust(mapper.readerFor(configClass), trusted).readValue(json);
         }
 
         T copy = copyDefaults(mapper, configClass, defaultConfig);
 
         // Only the caller's JSON goes through setters -- that is what validation guards are for
-        return mapper.readerForUpdating(copy).readValue(json);
+        return ComponentInstantiator.withTrust(mapper.readerForUpdating(copy), trusted).readValue(json);
     }
 
     /**

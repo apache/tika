@@ -84,7 +84,8 @@ readable file, when `--client-auth-required` is set.
 The primary rule is *trusted callers only*. tika-grpc is *even more exposed by default than
 tika-server*: no transport security, no per-caller authorization, and its core `FetchAndParse`
 surface always on. Anyone who can reach the gRPC port can fetch and parse whatever the server's
-configured fetchers can reach. Run it only behind strict network controls.
+configured fetchers can reach. tika-grpc ships unlocked; securing it is the deployer's job.
+Run it only behind strict network controls.
 
 Its most dangerous capabilities — runtime mutation of the fetcher/iterator store (for example
 `SaveFetcher`, which can read files and load code on the server host) and per-request parse
@@ -122,6 +123,13 @@ contain passwords, access keys and tokens. When `false`, the mutating RPCs are r
 `PERMISSION_DENIED`, and the read RPCs return only component identity — id and class — never the
 config.
 |===
+
+Fetches run in the forked pipes workers, and each worker builds its own config store from the
+same settings. With the default in-memory `configStoreType`, a fetcher saved through
+`SaveFetcher` exists only in the gRPC JVM and every `FetchAndParse` that names it fails with
+`FETCHER_NOT_FOUND`. When `allowComponentManagement` is `true`, set `configStoreType` to `file`
+or `ignite` (see xref:pipes/configuration.adoc#_distributed_config_store[Distributed Config
+Store]) so the workers see the same store.
 
 Enable these only for trusted callers over a secured channel:
 

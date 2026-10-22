@@ -148,33 +148,18 @@ class OneNotePtr {
     }
 
     private GUID deserializeGUID() throws IOException {
-        int[] guid = new int[16];
+        byte[] guidBytes = new byte[16];
         for (int i = 0; i < 16; ++i) {
-            guid[i] = dif.read();
+            int next = dif.read();
+            if (next < 0) {
+                // (byte) -1 would read as 0xFF and silently decode a wrong GUID
+                throw new IOException("End of stream reached while reading a GUID");
+            }
+            guidBytes[i] = (byte) next;
         }
-        int[] guid2 = new int[16];
-        // re-order [0,1,2,3] to little endian
-        guid2[0] = guid[3];
-        guid2[1] = guid[2];
-        guid2[2] = guid[1];
-        guid2[3] = guid[0];
-        // re-order [4,5,6,7] to little endian
-        guid2[4] = guid[5];
-        guid2[5] = guid[4];
-        guid2[6] = guid[7];
-        guid2[7] = guid[6];
-        // the rest is already in right order.
-        guid2[8] = guid[8];
-        guid2[9] = guid[9];
-        guid2[10] = guid[10];
-        guid2[11] = guid[11];
-        guid2[12] = guid[12];
-        guid2[13] = guid[13];
-        guid2[14] = guid[14];
-        guid2[15] = guid[15];
-
+        GUID guid = GUID.fromMicrosoftBytes(guidBytes);
         offset = dif.position();
-        return new GUID(guid2);
+        return guid;
     }
 
     private byte[] deserializedReservedHeader() throws IOException {

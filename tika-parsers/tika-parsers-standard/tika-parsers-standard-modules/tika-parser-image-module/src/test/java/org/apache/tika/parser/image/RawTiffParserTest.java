@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import org.junit.jupiter.api.Test;
 import org.xml.sax.helpers.DefaultHandler;
@@ -151,6 +152,171 @@ public class RawTiffParserTest extends TikaTest {
         assertThumbnail(metadataList.get(1), 64, 48);
     }
 
+    /**
+     * An ERF reaches this parser because the detector tells it by its Make
+     * (Epson's compression code is a published TIFF value other writers use)
+     * and the registry makes image/x-raw-epson a TIFF. Its
+     * preview hangs in the MakerNote under 0x0280, at an offset counted from
+     * the start of the file, and begins with a byte the camera wrote over
+     * the SOI: it only parses as a JPEG once that byte is put back.
+     */
+    @Test
+    public void testERF() throws Exception {
+        List<Metadata> metadataList = parseByName("testERF.erf");
+        assertEquals(2, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-epson", container.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("SEIKO EPSON CORP.", container.get(TIFF.EQUIPMENT_MAKE));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        assertThumbnail(metadataList.get(1), 64, 48);
+    }
+
+    /**
+     * ORF keeps its previews in the MakerNote: the preview the CameraSettings
+     * sub-IFD points at, and the camera's own thumbnail.
+     */
+    @Test
+    public void testORF() throws Exception {
+        List<Metadata> metadataList = parseByName("testORF.orf");
+        assertEquals(3, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-olympus", container.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("OLYMPUS CORPORATION", container.get(TIFF.EQUIPMENT_MAKE));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        assertThumbnail(metadataList.get(1), 64, 48);
+        assertInlinePreview(metadataList.get(2), 0, 32, 24);
+    }
+
+    /**
+     * A MakerNote carries its own byte order marker and does not have to
+     * share the file's: this one is a big endian "MMOR" whose note says
+     * "OLYMPUS\0II".
+     */
+    @Test
+    public void testORFBigEndian() throws Exception {
+        List<Metadata> metadataList = parseByName("testORF_bigendian.orf");
+        assertEquals(3, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-olympus", container.get(HttpHeaders.CONTENT_TYPE));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        assertThumbnail(metadataList.get(1), 64, 48);
+        assertInlinePreview(metadataList.get(2), 0, 32, 24);
+    }
+
+    /**
+     * OM Digital Solutions bodies keep the Olympus layout behind a longer
+     * name: "OM SYSTEM\0\0\0", then the byte order marker and the version,
+     * and the IFD at 16, with every offset still counted from the MakerNote.
+     */
+    @Test
+    public void testORFOMSystem() throws Exception {
+        List<Metadata> metadataList = parseByName("testORF_omsystem.orf");
+        assertEquals(3, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-olympus", container.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("OM Digital Solutions", container.get(TIFF.EQUIPMENT_MAKE));
+        assertEquals("OM-3", container.get(TIFF.EQUIPMENT_MODEL));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        assertThumbnail(metadataList.get(1), 64, 48);
+        assertInlinePreview(metadataList.get(2), 0, 32, 24);
+    }
+
+    /**
+     * RW2 keeps its preview in the private JpgFromRaw tag and writes
+     * placeholders into the strip tags, which otherwise read as a JPEG strip
+     * of no length: the private tag has to answer first.
+     */
+    @Test
+    public void testRW2() throws Exception {
+        List<Metadata> metadataList = parseByName("testRW2.rw2");
+        assertEquals(2, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-panasonic", container.get(HttpHeaders.CONTENT_TYPE));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        assertThumbnail(metadataList.get(1), 64, 48);
+    }
+
+    /**
+     * A KDC points at its preview with the standard tags, so it only had to
+     * reach this parser. Its name is what types it: nothing in the file says
+     * raw to the detector.
+     */
+    @Test
+    public void testKDC() throws Exception {
+        List<Metadata> metadataList = parseByName("testKDC.kdc");
+        assertEquals(2, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-kodak", container.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("EASTMAN KODAK COMPANY", container.get(TIFF.EQUIPMENT_MAKE));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        assertThumbnail(metadataList.get(1), 64, 48);
+    }
+
+    /**
+     * A MOS keeps its preview in the Leaf data block, in the section named
+     * JPEG_preview_data. The tag is typed ASCII, which the block is not.
+     */
+    @Test
+    public void testMOS() throws Exception {
+        List<Metadata> metadataList = parseByName("testMOS.mos");
+        assertEquals(2, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-leaf", container.get(HttpHeaders.CONTENT_TYPE));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+
+        assertThumbnail(metadataList.get(1), 64, 48);
+    }
+
+    /**
+     * A raw with nothing to hand on is typed and read all the same: this one
+     * carries a MakerNote that names no preview, and no thumbnail is an
+     * answer, not a failure.
+     */
+    @Test
+    public void testERFWithoutPreview() throws Exception {
+        List<Metadata> metadataList = parseByName("testERF_nopreview.erf");
+        assertEquals(1, metadataList.size());
+
+        Metadata container = metadataList.get(0);
+        assertEquals("image/x-raw-epson", container.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals("SEIKO EPSON CORP.", container.get(TIFF.EQUIPMENT_MAKE));
+        assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    /**
+     * *.raw is also a disk image, PCM audio and more: when only the name
+     * says Panasonic, the parser reads nothing instead of failing.
+     */
+    @Test
+    public void testNonTiffByNameOnly() throws Exception {
+        byte[] bytes = new byte[4096];
+        new Random(42).nextBytes(bytes);
+        bytes[0] = 0;
+        Metadata metadata = new Metadata();
+        metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "disk.raw");
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            List<Metadata> metadataList =
+                    getRecursiveMetadata(tis, metadata, new ParseContext(), false);
+            assertEquals(1, metadataList.size());
+            assertEquals("image/x-raw-panasonic",
+                    metadataList.get(0).get(HttpHeaders.CONTENT_TYPE));
+            assertNull(metadataList.get(0).get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        }
+    }
+
     @Test
     public void testCR2() throws Exception {
         List<Metadata> metadataList = parseByName("testCR2.cr2");
@@ -183,6 +349,13 @@ public class RawTiffParserTest extends TikaTest {
         Metadata container = metadataList.get(0);
         assertEquals("image/x-raw-adobe", container.get(HttpHeaders.CONTENT_TYPE));
         assertNull(container.get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+        assertEquals("PENTAX", container.get(TIFF.EQUIPMENT_MAKE));
+        assertEquals("PENTAX K-x", container.get(TIFF.EQUIPMENT_MODEL));
+        assertEquals("0.004", container.get(TIFF.EXPOSURE_TIME));
+        assertEquals("5.6", container.get(TIFF.F_NUMBER));
+        assertEquals("200", container.get(TIFF.ISO_SPEED_RATINGS));
+        assertEquals("50.0", container.get(TIFF.FOCAL_LENGTH));
+        assertEquals("2010-01-01T12:00:00", container.get(TIFF.ORIGINAL_DATE));
 
         assertThumbnail(metadataList.get(1), 64, 48);
     }

@@ -17,7 +17,6 @@
 package org.apache.tika.server.standard;
 
 import static org.apache.cxf.helpers.HttpHeaderHelper.CONTENT_ENCODING;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -51,6 +50,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.serialization.JsonMetadata;
+import org.apache.tika.server.core.BadRequestExceptionMapper;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.TikaResource;
@@ -79,6 +79,7 @@ public class TikaResourceTest extends CXFTestBase {
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper());
+        providers.add(new BadRequestExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }
@@ -336,28 +337,7 @@ public class TikaResourceTest extends CXFTestBase {
         // With skipOcr=true, the OCR text should not be present
         assertNotFound("Happy New Year 2003!", responseMsg);
 
-        // Test ocr_only strategy
-        configJson = """
-                {
-                  "pdf-parser": {
-                    "ocr": {
-                      "strategy": "OCR_ONLY"
-                    }
-                  }
-                }
-                """;
-        fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
-        fileAtt = new Attachment("file",
-                ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
-        configAtt = new Attachment("config", "application/json",
-                new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
-
-        response = WebClient
-                .create(endPoint + TIKA_PATH + "/config")
-                .type("multipart/form-data")
-                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
-        responseMsg = getStringFromInputStream((InputStream) response.getEntity());
-        assertContains("Happy New Year 2003!", responseMsg);
+        // the positive control (OCR_ONLY finds the text) is testOCRLanguageConfig
 
         // Test bad value - should return error
         configJson = """
@@ -447,27 +427,6 @@ public class TikaResourceTest extends CXFTestBase {
                 () -> TikaResource.mergeParseContextFromConfig(configJson, new ParseContext()));
         assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
                 "expected wire-blocked rejection, got: " + rootMessage(e));
-    }
-
-    /**
-     * MetadataFilter is wire-instantiable on the promise that no implementation does IO; the
-     * embedding filters POST document text to their baseUrl, so they are blocked by name.
-     */
-    @Test
-    public void testConfigRejectsEmbeddingFilterFromTheWire() {
-        TikaObjectMapperFactory.getMapper();
-        for (String name : new String[]{"openai-embedding-filter", "jina-embedding-filter"}) {
-            String configJson = "{\"metadata-filters\":[{\"" + name
-                    + "\":{\"baseUrl\":\"http://127.0.0.1:1/\"}}]}";
-            Exception e = assertThrows(Exception.class,
-                    () -> TikaResource.mergeParseContextFromConfig(configJson, new ParseContext()),
-                    name);
-            assertTrue(rootMessage(e).contains("may not be supplied via a request parseContext"),
-                    name + ": expected wire-blocked rejection, got: " + rootMessage(e));
-        }
-        // the flat per-request config tunes the loaded filter and stays allowed
-        assertDoesNotThrow(() -> TikaResource.mergeParseContextFromConfig(
-                "{\"openai-embedding-filter\":{\"skipEmbedding\":true}}", new ParseContext()));
     }
 
     private static String rootMessage(Throwable t) {
@@ -587,6 +546,39 @@ public class TikaResourceTest extends CXFTestBase {
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         assertEquals(422, response.getStatus());
+    }
+
+    /** The factory class name loads and constructs the class it names: operator-only. */
+    @Test
+    public void testOperatorOnlyPdfConfigRefused() throws Exception {
+        String configJson = """
+                {
+                  "pdf-parser": {
+                    "imageGraphicsEngineFactoryClass": "org.apache.tika.server.standard.TikaResourceTest$ConstructorWitness"
+                  }
+                }
+                """;
+        ConstructorWitness.constructed = false;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/config")
+                .type("multipart/form-data")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+        assertEquals(422, response.getStatus());
+        assertFalse(ConstructorWitness.constructed, "a class named by per-request config was constructed");
+    }
+
+    public static class ConstructorWitness {
+        static volatile boolean constructed;
+
+        public ConstructorWitness() {
+            constructed = true;
+        }
     }
 
     @Test

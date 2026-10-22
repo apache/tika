@@ -207,24 +207,17 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
 
         Map<String, F> factories = new HashMap<>();
         for (F factory : pluginManager.getExtensions(getFactoryClass())) {
-            String name = factory.getName();
-            ClassLoader cl = factory.getClass().getClassLoader();
-            boolean isFromPlugin = cl instanceof org.pf4j.PluginClassLoader;
-
-            F existing = factories.get(name);
-            if (existing != null) {
-                boolean existingIsFromPlugin = existing.getClass().getClassLoader()
-                        instanceof org.pf4j.PluginClassLoader;
-                if (isFromPlugin && !existingIsFromPlugin) {
-                    // Replace classpath version with plugin version
-                    factories.put(name, factory);
-                }
-                // Otherwise skip duplicate (keep existing)
-                continue;
+            F existing = factories.get(factory.getName());
+            // a plugin wins over the same factory found on the classpath (tika.plugins.classpath)
+            if (existing == null || (isFromPlugin(factory) && !isFromPlugin(existing))) {
+                factories.put(factory.getName(), factory);
             }
-            factories.put(name, factory);
         }
         return factories;
+    }
+
+    private static boolean isFromPlugin(Object factory) {
+        return factory.getClass().getClassLoader() instanceof org.pf4j.PluginClassLoader;
     }
 
     private static String toJsonString(final JsonNode node) throws TikaConfigException {

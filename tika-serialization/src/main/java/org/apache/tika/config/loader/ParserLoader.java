@@ -34,15 +34,14 @@ import org.apache.tika.config.ServiceLoader;
 import org.apache.tika.detect.EncodingDetector;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.mime.MediaType;
-import org.apache.tika.mime.MediaTypeRegistry;
 import org.apache.tika.parser.AbstractEncodingDetectorParser;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.DefaultParser;
-import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.ParserDecorator;
 import org.apache.tika.parser.RenderingParser;
 import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.enricher.ContentEnricher;
 import org.apache.tika.parser.enricher.ContentEnrichers;
 import org.apache.tika.parser.enricher.EnrichingParser;
 import org.apache.tika.renderer.Renderer;
@@ -150,18 +149,21 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
      * Content enrichers are settled once, over the whole tree: the configured list, or
      * with none, one engine per type resolved from the enrichers among the loaded parsers.
      * Either way every {@link EnrichingParser} gets a composite (possibly empty), the
-     * effective engines are logged, and every engine under {@code "parsers"}, the deprecated
-     * shape, is called out with what the entry does today.
+     * effective engines are logged. An engine under {@code "parsers"}, the 4.0 shape, fails
+     * the load.
      */
     @Override
     protected Parser finish(Parser root, LoaderContext context) throws TikaConfigException {
+        List<Parser> engines = enginesUnderParsers(root);
+        if (!engines.isEmpty()) {
+            throw new TikaConfigException(names(engines) + " named under \"parsers\", which "
+                    + "holds parsers only since 4.2.0: configure an engine under \"engines\" and "
+                    + "name it in \"text-recognizers\" or bind it with \"inference\"");
+        }
         CompositeContentEnricher configured = context.getContentEnrichers();
         CompositeContentEnricher enrichers =
                 configured != null ? configured : ContentEnrichers.resolve(root);
         logEnrichers(enrichers, configured != null);
-        for (Parser engine : enginesUnderParsers(root)) {
-            warnEngineUnderParsers(engine, root, enrichers, configured != null);
-        }
         if (configured != null) {
             for (Map.Entry<List<Parser>, Set<MediaType>> e
                     : overlappingTextRecognizers(configured).entrySet()) {
@@ -205,81 +207,22 @@ public class ParserLoader extends AbstractSpiComponentLoader<Parser> {
         return names.toString();
     }
 
-    /** Engines (enrichers) named directly under {@code "parsers"}: the deprecated 4.0 shape. */
+    /**
+     * Engines named directly under {@code "parsers"} that are not also document parsers: the
+     * 4.0 way of configuring OCR.
+     */
     static List<Parser> enginesUnderParsers(Parser root) {
         List<Parser> engines = new ArrayList<>();
         if (!(root instanceof CompositeParser composite) || root instanceof DefaultParser) {
             return engines;
         }
         for (Parser member : composite.getAllComponentParsers()) {
-            if (ContentEnrichers.isEnricher(member)) {
+            ContentEnricher enricher = ContentEnrichers.asEnricher(member);
+            if (enricher != null && !enricher.parsesDocuments()) {
                 engines.add(member);
             }
         }
         return engines;
-    }
-
-    /** The types the composite dispatches to this member as their parser. */
-    static Set<MediaType> parsedTypes(Parser root, Parser member) {
-        Set<MediaType> parsed = new TreeSet<>();
-        if (!(root instanceof CompositeParser composite)) {
-            return parsed;
-        }
-        ParseContext empty = new ParseContext();
-        Map<MediaType, Parser> dispatch = composite.getParsers(empty);
-        MediaTypeRegistry registry = composite.getMediaTypeRegistry();
-        for (MediaType type : member.getSupportedTypes(empty)) {
-            if (dispatch.get(registry.normalize(type)) == member) {
-                parsed.add(type);
-            }
-        }
-        return parsed;
-    }
-
-    /**
-     * One WARN per engine under "parsers": the deprecation, then what the entry does today. A
-     * deprecated engine class is left to its own WARN, which already says where to go.
-     */
-    private void warnEngineUnderParsers(Parser engine, Parser root,
-                                        CompositeContentEnricher enrichers,
-                                        boolean listConfigured) {
-        if (unwrapClass(engine).isAnnotationPresent(Deprecated.class)) {
-            return;
-        }
-        String name = ParserUtils.getParserClassname(engine);
-        boolean recognizer = ContentEnrichers.asTextRecognizer(engine) != null;
-        String role = recognizer ? "text recognizer" : "annotator";
-        String lead = name + " is named under \"parsers\", which is deprecated for engines since "
-                + "4.1.0 and unsupported in 4.2.0: configure it under \"engines\" and "
-                + (recognizer ? "name it in \"text-recognizers\". "
-                        : "bind it with \"inference\" (or name it in \"text-recognizers\" to run it on "
-                        + "every image). ");
-        Set<MediaType> advertised = engine.getSupportedTypes(new ParseContext());
-        if (advertised.isEmpty()) {
-            LOG.warn("{}It advertises no media types (engine unavailable, or configured to skip) "
-                    + "and never runs; to turn recognition off, set \"text-recognizers\": [].",
-                    lead);
-            return;
-        }
-        Set<MediaType> parsed = parsedTypes(root, engine);
-        Set<MediaType> enriching = new TreeSet<>();
-        for (MediaType type : enrichers.getSupportedTypes()) {
-            if (enrichers.getEnrichers(type).contains(engine)) {
-                enriching.add(type);
-            }
-        }
-        if (!parsed.isEmpty()) {
-            LOG.warn("{}Today it is the parser for {}{}; in 4.2.0 the default parser keeps those "
-                    + "types and the engine is invoked on their images and rendered pages.", lead,
-                    parsed, enriching.isEmpty() ? "" : " and the " + role + " for " + enriching);
-        } else if (!enriching.isEmpty()) {
-            LOG.warn("{}It is never dispatched to as a parser (every type it advertises is claimed "
-                    + "by another parser); it acts only as the {} for {}.", lead, role, enriching);
-        } else {
-            LOG.warn("{}It never runs: every type it advertises is claimed by another parser and "
-                    + "{}.", lead, listConfigured ? "\"text-recognizers\" does not name it"
-                    : "another engine is preferred for those types");
-        }
     }
 
     private static void logEnrichers(CompositeContentEnricher enrichers, boolean configured) {

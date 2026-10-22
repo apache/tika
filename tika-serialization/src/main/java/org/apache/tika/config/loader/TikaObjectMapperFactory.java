@@ -32,6 +32,7 @@ import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.serialization.ComponentNameResolver;
+import org.apache.tika.serialization.OperatorOnlyGuard;
 import org.apache.tika.serialization.TikaModule;
 
 /**
@@ -52,6 +53,7 @@ public class TikaObjectMapperFactory {
             "detectors",
             "encoding-detectors",
             "metadata-filters",
+            "image-checks",
             "renderers",
             "translators",
             "digester-factories",
@@ -103,6 +105,24 @@ public class TikaObjectMapperFactory {
         return PLAIN_MAPPER;
     }
 
+    /**
+     * Reads a component's JSON config; called by tika-core's ConfigDeserializer by reflection.
+     * Untrusted JSON may not set an {@link org.apache.tika.config.OperatorOnly} property.
+     */
+    public static <T> T readConfig(String json, Class<T> configClass, boolean trusted)
+            throws Exception {
+        ObjectMapper mapper = getMapper();
+        if (!trusted) {
+            OperatorOnlyGuard.check(mapper, nestedName(configClass), json, configClass);
+        }
+        return ComponentInstantiator.withTrust(mapper.readerFor(configClass), trusted).readValue(json);
+    }
+
+    /** {@code PDFParser$Config}, not {@code Config}: names the component that owns the config. */
+    private static String nestedName(Class<?> configClass) {
+        return configClass.getName().substring(configClass.getPackageName().length() + 1);
+    }
+
     public static synchronized ObjectMapper getMapper() {
         if (MAPPER == null) {
             MAPPER = createMapper();
@@ -131,29 +151,9 @@ public class TikaObjectMapperFactory {
      * @return configured ObjectMapper
      */
     public static ObjectMapper createMapper(JsonFactory factory) {
-        ObjectMapper mapper = (factory != null) ? new ObjectMapper(factory) : new ObjectMapper();
-
-        // Allow comments in JSON config files (// and /* */ style)
-        mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
-
-        // Fail on unknown properties to catch configuration errors early
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
-
+        ObjectMapper mapper = strict((factory != null) ? new ObjectMapper(factory) : new ObjectMapper());
         // Prevent null values being assigned to primitive fields (int, boolean, etc.)
         mapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, true);
-
-        // Ensure enums are properly validated (not just numeric values)
-        mapper.configure(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS, true);
-
-        // Accept enum values in any case ("no_ocr" as well as "NO_OCR"): hand-written
-        // requests and older examples spell them either way
-        mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true);
-
-        // Catch duplicate keys in JSON objects
-        mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
-
-        // Need to allow creation of classes without setters/getters -- we may want to revisit this
-        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 
         sparseOverlays(mapper);
 
@@ -167,6 +167,34 @@ public class TikaObjectMapperFactory {
         // Set the shared mapper for TikaModule's deserializers
         TikaModule.setSharedMapper(mapper);
 
+        return mapper;
+    }
+
+    /**
+     * A strict mapper without Tika's component serializers, for plugin configuration
+     * ({@code PluginJson}). Same checks as {@link #getMapper()} except
+     * {@code FAIL_ON_NULL_FOR_PRIMITIVES}, which also rejects an absent primitive record
+     * component, and optional primitives with defaults are the norm in plugin configs.
+     */
+    public static ObjectMapper createStrictPlainMapper() {
+        return strict(new ObjectMapper());
+    }
+
+    private static ObjectMapper strict(ObjectMapper mapper) {
+        // Allow comments in JSON config files (// and /* */ style)
+        mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
+        // Duplicate keys: the parser feature covers readValue; the tree feature only readTree
+        mapper.configure(JsonParser.Feature.STRICT_DUPLICATE_DETECTION, true);
+        mapper.configure(DeserializationFeature.FAIL_ON_READING_DUP_TREE_KEY, true);
+        // Fail on unknown properties to catch configuration errors early
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, true);
+        // Ensure enums are properly validated (not just numeric values)
+        mapper.configure(DeserializationFeature.FAIL_ON_NUMBERS_FOR_ENUMS, true);
+        // Accept enum values in any case ("no_ocr" as well as "NO_OCR"): hand-written
+        // requests and older examples spell them either way
+        mapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS, true);
+        // Need to allow creation of classes without setters/getters -- we may want to revisit this
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         return mapper;
     }
 

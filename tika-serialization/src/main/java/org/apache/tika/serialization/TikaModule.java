@@ -235,7 +235,8 @@ public class TikaModule extends SimpleModule {
 
             try {
                 return ComponentInstantiator.instantiateComponent(typeName, configNode,
-                        mapper, Thread.currentThread().getContextClassLoader(), expectedType);
+                        mapper, Thread.currentThread().getContextClassLoader(), expectedType,
+                        ComponentInstantiator.isTrusted(ctxt));
             } catch (TikaConfigException e) {
                 throw new IOException(e.getMessage(), e);
             }

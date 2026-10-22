@@ -167,9 +167,9 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
      * position-aware: a top-level flat key for a self-configuring component (e.g.
      * {@code {"pdf-parser":{...}}}) is an inert per-request config that resolveAll skips, so it is
      * allowed and its opaque config subtree is not scanned; every other key is checked and its
-     * subtree scanned, refusing any blocked object key at any depth. Bare-string references are not
-     * scanned -- they name a defaults instance with no config. Running before resolution matters
-     * because merely constructing a blocked component can have side effects.
+     * subtree scanned, refusing any blocked object key at any depth. This is an early, readable
+     * refusal; the enforcement point is {@code ComponentInstantiator}, which refuses a blocked
+     * class however it is named (bare string, nested property) before constructing it.
      */
     private static void assertNoBlockedComponents(JsonNode contextNode) throws IOException {
         if (contextNode == null || !contextNode.isObject()) {
@@ -189,8 +189,7 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
     }
 
     /**
-     * Recursively refuses blocked-component object keys within a scanned subtree. Only object keys
-     * are checked; bare strings are inert defaults (see {@link #assertNoBlockedComponents}).
+     * Recursively refuses blocked-component object keys within a scanned subtree.
      */
     private static void scanForBlocked(JsonNode node) throws IOException {
         if (node == null) {
@@ -221,9 +220,13 @@ public class ParseContextDeserializer extends JsonDeserializer<ParseContext> {
             return;
         }
         Class<?> contextKey = ComponentNameResolver.determineContextKey(infoOpt.get());
-        if (ComponentNameResolver.isWireBlocked(contextKey)
-                || ComponentNameResolver.isWireBlockedName(name)) {
+        if (ComponentNameResolver.isWireBlocked(contextKey)) {
             throw new IOException(wireBlockedMessage(name, contextKey));
+        }
+        Class<?> componentClass = infoOpt.get().componentClass();
+        if (ComponentNameResolver.isWireBlockedClass(componentClass)) {
+            // the type is allowed; this implementation is not
+            throw new IOException(ComponentNameResolver.wireBlockedClassMessage(name, componentClass));
         }
     }
 

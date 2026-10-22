@@ -27,11 +27,17 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.ExceptionReporting;
+import org.apache.tika.config.OutputLimits;
+import org.apache.tika.config.ParseContextConfig;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
+import org.apache.tika.metadata.writelimiter.StandardMetadataLimiterFactory;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.core.extractor.UnpackConfig;
@@ -39,6 +45,9 @@ import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.protocol.ShutDownReceivedException;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
+import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.sax.ContentHandlerFactory;
+import org.apache.tika.sax.WriteLimiter;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 
@@ -378,13 +387,15 @@ public class ServerProtocolIO {
     }
 
     /**
-     * Trust boundary: caps request-supplied {@link TimeoutLimits} (typed or unresolved
-     * {@code timeout-limits} JSON) at {@code pipes.maxTotalTaskTimeoutMillis}; the
-     * server's own tika-config limits are never clamped. Must run after
+     * Caps request-supplied {@link TimeoutLimits} (typed or unresolved {@code timeout-limits}
+     * JSON) field by field at the operator's own limits ({@code operatorContext}: the server's
+     * config plus any preset, or the class defaults) and at
+     * {@code pipes.maxTotalTaskTimeoutMillis}: a request may shorten a timeout but not extend
+     * it. The operator's limits are never clamped. Must run after
      * {@code ParseContextUtils.resolveAll} and before {@code ParseTimeout} is armed.
      */
     public static void clampRequestTimeoutLimits(ParseContext requestContext,
-            ParseContext mergedContext, long maxMillis) {
+            ParseContext operatorContext, ParseContext mergedContext, long maxMillis) {
         if (requestContext == null) {
             return;
         }
@@ -394,15 +405,120 @@ public class ServerProtocolIO {
             return;
         }
         TimeoutLimits merged = mergedContext.get(TimeoutLimits.class);
-        if (merged == null) {
+        if (merged == null || merged == operatorContext.get(TimeoutLimits.class)) {
             return;
         }
-        TimeoutLimits clamped = merged.clampedTo(maxMillis);
-        if (clamped != merged) {
-            LOG.warn("request-supplied {} exceeds pipes.maxTotalTaskTimeoutMillis ({}); clamping",
-                    merged, maxMillis);
+        TimeoutLimits operator = TimeoutLimits.get(operatorContext);
+        long total = Math.min(merged.getTotalTaskTimeoutMillis(),
+                Math.min(operator.getTotalTaskTimeoutMillis(), maxMillis));
+        long progress = Math.min(merged.getProgressTimeoutMillis(),
+                Math.min(operator.getProgressTimeoutMillis(), maxMillis));
+        if (total != merged.getTotalTaskTimeoutMillis()
+                || progress != merged.getProgressTimeoutMillis()) {
+            LOG.warn("request-supplied {} exceeds the server's {} (pipes.maxTotalTaskTimeoutMillis"
+                    + " {}); clamping", merged, operator, maxMillis);
+            TimeoutLimits clamped = new TimeoutLimits(total, progress);
+            clamped.setThrowOnDeadline(merged.isThrowOnDeadline());
             mergedContext.set(TimeoutLimits.class, clamped);
         }
+    }
+
+    /**
+     * A request may tighten the operator's {@link OutputLimits},
+     * {@link EmbeddedLimits}, content-handler write limit, metadata limiter and
+     * {@code maxUnpackBytes} but not loosen them. Render limits in {@code "pages"} are bounded
+     * where the parser resolves them, by the {@link PagesConfig.OperatorPages} recorded here.
+     * {@code operatorContext} is the server's config plus any preset, before the request was
+     * overlaid; entries it already holds are the operator's and are left alone. Must run after
+     * {@code ParseContextUtils.resolveAll}.
+     */
+    public static void clampRequestLimits(ParseContext operatorContext, ParseContext merged)
+            throws TikaConfigException {
+        OutputLimits operatorOutput = OutputLimits.get(operatorContext);
+        OutputLimits output = merged.get(OutputLimits.class);
+        if (output != null && output != operatorContext.get(OutputLimits.class)) {
+            OutputLimits tightened = output.tightenedTo(operatorOutput);
+            if (tightened != output) {
+                LOG.warn("request-supplied {} is looser than the server's {}; clamping",
+                        output, operatorOutput);
+                merged.set(OutputLimits.class, tightened);
+            }
+        }
+        EmbeddedLimits operatorEmbedded = EmbeddedLimits.get(operatorContext);
+        EmbeddedLimits embedded = merged.get(EmbeddedLimits.class);
+        if (embedded != null && embedded != operatorContext.get(EmbeddedLimits.class)) {
+            EmbeddedLimits tightened = embedded.tightenedTo(operatorEmbedded);
+            if (tightened != embedded) {
+                LOG.warn("request-supplied {} is looser than the server's {}; clamping",
+                        embedded, operatorEmbedded);
+                merged.set(EmbeddedLimits.class, tightened);
+            }
+        }
+        MetadataWriteLimiterFactory operatorLimiter =
+                operatorContext.get(MetadataWriteLimiterFactory.class);
+        MetadataWriteLimiterFactory metadataLimiter = merged.get(MetadataWriteLimiterFactory.class);
+        if (operatorLimiter != null && metadataLimiter != operatorLimiter) {
+            if (!(operatorLimiter instanceof StandardMetadataLimiterFactory operatorStandard)
+                    || !(metadataLimiter instanceof StandardMetadataLimiterFactory standard)) {
+                throw new TikaConfigException("a request may not replace the server's " +
+                        "metadata limiter with " + metadataLimiter);
+            }
+            StandardMetadataLimiterFactory tightened = standard.tightenedTo(operatorStandard);
+            if (tightened != standard) {
+                LOG.warn("request-supplied {} is looser than the server's {}; clamping",
+                        standard, operatorStandard);
+                merged.set(MetadataWriteLimiterFactory.class, tightened);
+            }
+        }
+        try {
+            merged.set(PagesConfig.OperatorPages.class, new PagesConfig.OperatorPages(
+                    ParseContextConfig.getConfig(operatorContext, PagesConfig.KEY,
+                            PagesConfig.class, null)));
+        } catch (IOException e) {
+            throw new TikaConfigException("failed to read the server's pages config", e);
+        }
+        UnpackConfig operatorUnpack = operatorContext.get(UnpackConfig.class);
+        UnpackConfig unpack = merged.get(UnpackConfig.class);
+        if (unpack != null && unpack != operatorUnpack) {
+            long ceiling = operatorUnpack != null ? operatorUnpack.getMaxUnpackBytes()
+                    : UnpackConfig.DEFAULT_MAX_UNPACK_BYTES;
+            long maxUnpackBytes = ceiling < 0 ? unpack.getMaxUnpackBytes()
+                    : unpack.getMaxUnpackBytes() < 0 ? ceiling
+                    : Math.min(unpack.getMaxUnpackBytes(), ceiling);
+            if (maxUnpackBytes != unpack.getMaxUnpackBytes()) {
+                LOG.warn("request-supplied maxUnpackBytes {} exceeds the server's {}; clamping",
+                        unpack.getMaxUnpackBytes(), ceiling);
+                // the request's own instance, deserialized for this task
+                unpack.setMaxUnpackBytes(maxUnpackBytes);
+            }
+        }
+        ContentHandlerFactory operatorFactory = operatorContext.get(ContentHandlerFactory.class);
+        ContentHandlerFactory factory = merged.get(ContentHandlerFactory.class);
+        if (factory instanceof WriteLimiter limiter && factory != operatorFactory) {
+            int ceiling = operatorOutput.getWriteLimit();
+            if (operatorFactory instanceof WriteLimiter operatorWriteLimiter) {
+                ceiling = tighter(operatorWriteLimiter.getWriteLimit(), ceiling);
+            }
+            int writeLimit = tighter(limiter.getWriteLimit(), ceiling);
+            if (writeLimit != limiter.getWriteLimit()) {
+                if (!(factory instanceof BasicContentHandlerFactory basic)) {
+                    throw new TikaConfigException("request-supplied write limit " +
+                            limiter.getWriteLimit() + " exceeds the server's " + ceiling);
+                }
+                LOG.warn("request-supplied write limit {} exceeds the server's {}; clamping",
+                        limiter.getWriteLimit(), ceiling);
+                // the request's own instance, deserialized for this task
+                basic.setWriteLimit(writeLimit);
+            }
+        }
+    }
+
+    /** The tighter of two limits where a negative value means unlimited. */
+    private static int tighter(int requested, int ceiling) {
+        if (ceiling < 0) {
+            return requested;
+        }
+        return requested < 0 ? ceiling : Math.min(requested, ceiling);
     }
 
     /**

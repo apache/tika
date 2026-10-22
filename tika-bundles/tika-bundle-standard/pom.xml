@@ -61,6 +61,13 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!-- Test: deployed alongside the bundle so JsonConfig constructors work (test-bundles.xml) -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>tika-serialization</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
     <!-- Test: programmatic Felix and Equinox containers + JUnit 5 -->
     <dependency>
       <groupId>org.apache.felix</groupId>
@@ -172,7 +179,6 @@
               com.adobe.internal.xmp;com.adobe.internal.xmp.*,
               com.dd.plist,
               com.fasterxml.jackson.core;com.fasterxml.jackson.core.*,
-              com.fasterxml.jackson.databind,
               org.apache.commons.codec;org.apache.commons.codec.*,
               org.apache.commons.collections4;org.apache.commons.collections4.*,
               org.apache.commons.compress;org.apache.commons.compress.*,

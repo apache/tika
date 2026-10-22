@@ -156,7 +156,7 @@ public class OpenAIVLMParserTest {
     @Test
     void testFileSizeFiltering() throws Exception {
         config.setMinFileSizeToOcr(100);
-        parser = new OpenAIVLMParser(config);
+        reinitialize();
 
         Metadata metadata = new Metadata();
         metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
@@ -167,6 +167,70 @@ public class OpenAIVLMParserTest {
         }
 
         assertEquals(0, server.getRequestCount());
+        assertEquals("file-too-small", metadata.get(AbstractVLMParser.VLM_SKIPPED_REASON));
+    }
+
+    @Test
+    void testFileTooLargeRecordsSkip() throws Exception {
+        config.setMaxFileSizeToOcr(5);
+        reinitialize();
+
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
+
+        try (TikaInputStream tis = TikaInputStream.get(
+                new ByteArrayInputStream(new byte[10]))) {
+            parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
+        }
+
+        assertEquals(0, server.getRequestCount());
+        assertEquals("file-too-large", metadata.get(AbstractVLMParser.VLM_SKIPPED_REASON));
+    }
+
+    @Test
+    void testImageTooLargeRecordsSkip() throws Exception {
+        config.setMaxImagePixels(3);
+        reinitialize();
+
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
+
+        try (TikaInputStream tis = TikaInputStream.get(
+                new ByteArrayInputStream(png(2, 2)))) {
+            parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
+        }
+
+        assertEquals(0, server.getRequestCount());
+        assertEquals("image-too-large", metadata.get(AbstractVLMParser.VLM_SKIPPED_REASON));
+        assertEquals("4", metadata.get(AbstractVLMParser.VLM_IMAGE_PIXELS));
+    }
+
+    private void reinitialize() throws Exception {
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, "{\"object\":\"list\"}"));
+        parser = new OpenAIVLMParser(config);
+        parser.initialize();
+        server.clearRequests();
+    }
+
+    /** A white image with a black block over its left third, so it is not blank. */
+    private static byte[] png(int width, int height) throws Exception {
+        return png(width, height, true);
+    }
+
+    private static byte[] png(int width, int height, boolean ink) throws Exception {
+        java.awt.image.BufferedImage image = new java.awt.image.BufferedImage(width, height,
+                java.awt.image.BufferedImage.TYPE_INT_RGB);
+        java.awt.Graphics2D g = image.createGraphics();
+        g.setColor(java.awt.Color.WHITE);
+        g.fillRect(0, 0, width, height);
+        if (ink) {
+            g.setColor(java.awt.Color.BLACK);
+            g.fillRect(0, 0, Math.max(1, width / 3), height);
+        }
+        g.dispose();
+        java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(image, "png", out);
+        return out.toByteArray();
     }
 
     @Test
@@ -261,10 +325,32 @@ public class OpenAIVLMParserTest {
     }
 
     @Test
+    void testMaxCompletionTokens() throws Exception {
+        config.setUseMaxCompletionTokens(true);
+        JsonNode body = MAPPER.readTree(parser.buildRequestJson(config, "AAAA", "image/png"));
+        assertEquals(1024, body.get("max_completion_tokens").asInt());
+        assertNull(body.get("max_tokens"));
+    }
+
+    @Test
     void testBuildRequestJson() {
         String json = parser.buildRequestJson(config, "AAAA", "image/png");
         assertTrue(json.contains("\"model\":\"test-model\""));
         assertTrue(json.contains("data:image/png;base64,AAAA"));
+    }
+
+    @Test
+    void testTemperatureSentOnlyWhenSet() {
+        assertFalse(parser.buildRequestJson(config, "AAAA", "image/png").contains("temperature"));
+        config.setTemperature(0.0);
+        assertTrue(parser.buildRequestJson(config, "AAAA", "image/png")
+                .contains("\"temperature\":0.0"));
+    }
+
+    @Test
+    void testTemperatureOutOfRange() {
+        assertThrows(IllegalArgumentException.class, () -> config.setTemperature(-0.1));
+        assertThrows(IllegalArgumentException.class, () -> config.setTemperature(2.1));
     }
 
     @Test
@@ -319,6 +405,139 @@ public class OpenAIVLMParserTest {
                 content.replace("\\", "\\\\").replace("\"", "\\\"")
                         .replace("\n", "\\n"),
                 prompt, completion);
+    }
+
+    private Metadata parseImage(String responseBody, ParseContext context, Metadata metadata)
+            throws Exception {
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, responseBody));
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
+        try (TikaInputStream tis = TikaInputStream.get(
+                new ByteArrayInputStream(new byte[]{(byte) 0x89, 'P', 'N', 'G'}))) {
+            parser.parse(tis, new BodyContentHandler(), metadata, context);
+        }
+        return metadata;
+    }
+
+    @Test
+    void testNoWarningsOnOrdinaryText() throws Exception {
+        Metadata m = parseImage(buildChatResponse("Hello, World!", 10, 5),
+                new ParseContext(), new Metadata());
+        assertEquals(0, m.getValues(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS).length);
+    }
+
+    @Test
+    void testTruncatedWarning() throws Exception {
+        String body = "{\"choices\":[{\"finish_reason\":\"length\","
+                + "\"message\":{\"content\":\"cut off\"}}]}";
+        Metadata m = parseImage(body, new ParseContext(), new Metadata());
+        assertEquals("truncated", m.get(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS));
+    }
+
+    @Test
+    void testEmptyWarning() throws Exception {
+        Metadata m = parseImage(buildChatResponse("  ", 10, 5), new ParseContext(),
+                new Metadata());
+        assertEquals("empty", m.get(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS));
+    }
+
+    @Test
+    void testRepetitionWarningKeepsText() throws Exception {
+        String loop = "SUEZ (D)\n".repeat(400);
+        server.enqueue(new TikaTestHttpServer.MockResponse(200, buildChatResponse(loop, 10, 5)));
+        Metadata metadata = new Metadata();
+        metadata.set(HttpHeaders.CONTENT_TYPE, "image/png");
+        BodyContentHandler handler = new BodyContentHandler(-1);
+        try (TikaInputStream tis = TikaInputStream.get(
+                new ByteArrayInputStream(new byte[]{(byte) 0x89, 'P', 'N', 'G'}))) {
+            parser.parse(tis, handler, metadata, new ParseContext());
+        }
+        assertEquals("repetition", metadata.get(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS));
+        assertTrue(handler.toString().contains("SUEZ (D)"));
+    }
+
+    @Test
+    void testAShortLoopIsARepetition() {
+        // 1,000 to 2,000 bytes: a loop the model's token cap cuts off early
+        String loop = "TAPAN ".repeat(250);
+        assertTrue(loop.length() >= 1000 && loop.length() < 2000);
+        assertTrue(AbstractVLMParser.looksLikeLoop(loop));
+        assertFalse(AbstractVLMParser.looksLikeLoop("TAPAN ".repeat(100)));
+    }
+
+    @Test
+    void testProseIsNotARepetition() {
+        StringBuilder sb = new StringBuilder();
+        java.util.Random random = new java.util.Random(1);
+        for (int i = 0; i < 600; i++) {
+            sb.append(Integer.toString(random.nextInt(1_000_000), 36)).append(' ');
+        }
+        assertFalse(AbstractVLMParser.looksLikeLoop(sb.toString()));
+        assertFalse(AbstractVLMParser.looksLikeLoop("short ".repeat(10)));
+        // 1,000 to 2,000 bytes of ordinary varied text
+        assertFalse(AbstractVLMParser.looksLikeLoop(sb.substring(0, 1500)));
+    }
+
+    @Test
+    void testTablesAndLeadersAreNotARepetition() {
+        java.util.Random random = new java.util.Random(1);
+        String[] items = {"alpha", "beta", "gamma", "delta"};
+        StringBuilder table = new StringBuilder("<table>\n");
+        for (int i = 0; i < 200; i++) {
+            table.append("<tr><td>").append(random.nextInt(9999)).append("</td><td>Item ")
+                    .append(items[random.nextInt(4)]).append("</td><td>")
+                    .append(random.nextInt(99)).append('.').append(random.nextInt(99))
+                    .append("</td><td></td><td></td></tr>\n");
+        }
+        assertFalse(AbstractVLMParser.looksLikeLoop(table.append("</table>").toString()));
+        StringBuilder contents = new StringBuilder();
+        for (int i = 1; i < 40; i++) {
+            contents.append("Chapter ").append(i).append(' ').append(".".repeat(60)).append(' ')
+                    .append(i * 7).append('\n');
+        }
+        assertFalse(AbstractVLMParser.looksLikeLoop(contents.toString()));
+    }
+
+    @Test
+    void testInlineImageFlagsTheParent() throws Exception {
+        Metadata parent = new Metadata();
+        ParseContext context = new ParseContext();
+        context.set(org.apache.tika.extractor.ParentMetadata.class,
+                new org.apache.tika.extractor.ParentMetadata(parent));
+        Metadata child = new Metadata();
+        child.set(org.apache.tika.metadata.TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                org.apache.tika.metadata.TikaCoreProperties.EmbeddedResourceType.INLINE.name());
+        parseImage(buildChatResponse(" ", 10, 5), context, child);
+        assertEquals("empty", child.get(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS));
+        assertEquals("empty", parent.get(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS));
+    }
+
+    @Test
+    void testNonInlineImageLeavesTheParentAlone() throws Exception {
+        Metadata parent = new Metadata();
+        ParseContext context = new ParseContext();
+        context.set(org.apache.tika.extractor.ParentMetadata.class,
+                new org.apache.tika.extractor.ParentMetadata(parent));
+        parseImage(buildChatResponse(" ", 10, 5), context, new Metadata());
+        assertNull(parent.get(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS));
+    }
+
+    @Test
+    void testSkippedInlineImageFlagsTheParent() throws Exception {
+        config.setMinFileSizeToOcr(100);
+        reinitialize();
+        Metadata parent = new Metadata();
+        ParseContext context = new ParseContext();
+        context.set(org.apache.tika.extractor.ParentMetadata.class,
+                new org.apache.tika.extractor.ParentMetadata(parent));
+        Metadata child = new Metadata();
+        child.set(org.apache.tika.metadata.TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                org.apache.tika.metadata.TikaCoreProperties.EmbeddedResourceType.INLINE.name());
+        child.set(HttpHeaders.CONTENT_TYPE, "image/png");
+        try (TikaInputStream tis = TikaInputStream.get(new ByteArrayInputStream(new byte[10]))) {
+            parser.parse(tis, new BodyContentHandler(), child, context);
+        }
+        assertEquals("file-too-small", child.get(AbstractVLMParser.VLM_SKIPPED_REASON));
+        assertEquals("skipped:file-too-small", parent.get(org.apache.tika.metadata.TikaCoreProperties.OCR_WARNINGS));
     }
 
     /** The capability follows the configuration: a captioning prompt is not a recognizer. */

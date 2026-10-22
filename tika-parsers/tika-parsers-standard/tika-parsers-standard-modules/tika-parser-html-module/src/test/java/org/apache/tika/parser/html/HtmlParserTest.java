@@ -342,6 +342,27 @@ public class HtmlParserTest extends TikaTest {
     }
 
     /**
+     * XML that reaches the HTML parser keeps the text of its CDATA sections; jsoup 1.23
+     * tokenizes CDATA in HTML content as a bogus comment.
+     */
+    @Test
+    public void testCdataInHtmlContent() throws Exception {
+        String test = "<flashTemplate><desc><![CDATA[Spread & bold template]]></desc>"
+                + "<path><![CDATA[TmplData\\tmpl.html]]></path>"
+                + "<name>plain</name><!-- a real comment --></flashTemplate>";
+        BodyContentHandler body = new BodyContentHandler();
+        try (TikaInputStream tis = TikaInputStream.get(test.getBytes(UTF_8))) {
+            new JSoupParser().parse(tis, body, new Metadata(), new ParseContext());
+        }
+        String content = body.toString();
+        assertTrue(content.contains("Spread & bold template"), content);
+        assertTrue(content.contains("TmplData\\tmpl.html"), content);
+        assertTrue(content.contains("plain"), content);
+        assertFalse(content.contains("a real comment"), content);
+        assertFalse(content.contains("CDATA"), content);
+    }
+
+    /**
      * Test case for TIKA-341
      *
      * @see <a href="https://issues.apache.org/jira/browse/TIKA-341">TIKA-341</a>

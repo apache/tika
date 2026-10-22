@@ -19,6 +19,7 @@ package org.apache.tika.config.loader;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.junit.jupiter.api.Test;
@@ -49,5 +50,15 @@ public class TikaObjectMapperFactoryTest {
         ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
         assertThrows(InvalidFormatException.class,
                 () -> mapper.readValue("{\"strategy\":\"nope\"}", Config.class));
+    }
+
+    @Test
+    public void testDuplicateKeyFailsOnReadValue() {
+        // the last value would otherwise win silently
+        String json = "{\"strategy\":\"AUTO\",\"strategy\":\"NO_OCR\"}";
+        assertThrows(JsonParseException.class,
+                () -> TikaObjectMapperFactory.getMapper().readValue(json, Config.class));
+        assertThrows(JsonParseException.class,
+                () -> TikaObjectMapperFactory.readConfig(json, Config.class, true));
     }
 }

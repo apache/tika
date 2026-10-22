@@ -93,6 +93,7 @@
 ** `application/vnd.geogebra.slides`
 ** `application/vnd.geogebra.tool`
 * `org.apache.tika.parser.html.` link:{tika-javadoc-url}/org/apache/tika/parser/html/JSoupParser.html[JSoupParser]
+** `application/vnd.mozilla.xul+xml`
 ** `application/vnd.wap.xhtml+xml`
 ** `application/x-asp`
 ** `application/xhtml+xml`
@@ -112,6 +113,10 @@
 ** `image/heif-sequence`
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/ICNSParser.html[ICNSParser]
 ** `image/icns`
+* `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/ICOParser.html[ICOParser]
+** `image/vnd.microsoft.icon`
+** `image/x-icon`
+** `image/x-win-bitmap`
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/ImageParser.html[ImageParser]
 ** `image/bmp`
 ** `image/gif`
@@ -119,7 +124,6 @@
 ** `image/jpx`
 ** `image/png`
 ** `image/vnd.wap.wbmp`
-** `image/x-icon`
 ** `image/x-jbig2`
 ** `image/x-ms-bmp`
 ** `image/x-portable-pixmap`
@@ -133,7 +137,12 @@
 * `org.apache.tika.parser.image.` link:{tika-javadoc-url}/org/apache/tika/parser/image/RawTiffParser.html[RawTiffParser]
 ** `image/x-canon-cr2`
 ** `image/x-raw-adobe`
+** `image/x-raw-epson`
+** `image/x-raw-kodak`
+** `image/x-raw-leaf`
 ** `image/x-raw-nikon`
+** `image/x-raw-olympus`
+** `image/x-raw-panasonic`
 ** `image/x-raw-pentax`
 ** `image/x-raw-samsung`
 ** `image/x-raw-sony`

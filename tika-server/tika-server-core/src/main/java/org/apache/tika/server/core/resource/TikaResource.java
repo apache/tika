@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ws.rs.BadRequestException;
@@ -55,6 +56,7 @@ import org.apache.tika.config.JsonConfig;
 import org.apache.tika.config.OutputLimits;
 import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.config.loader.TikaLoader;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -215,6 +217,23 @@ public class TikaResource {
         return loadConfigDefaults().get(UnpackConfig.class);
     }
 
+    /**
+     * The config's unpack-config with the preset's unpack-config fields over it, field by
+     * field: the worker's preset merge replaces whole components, and the request's
+     * UnpackConfig (which the server always sends) would replace the preset's. Null when
+     * neither has one.
+     */
+    public UnpackConfig newPresetUnpackConfig(String presetName) throws IOException {
+        UnpackConfig base = newConfigUnpackConfig();
+        String presetJson = presetRegistry.parseContextJson(presetName);
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
+        JsonNode presetUnpack = presetJson == null ? null : mapper.readTree(presetJson).get("unpack-config");
+        if (presetUnpack == null) {
+            return base;
+        }
+        return mapper.readerForUpdating(base != null ? base : new UnpackConfig()).readValue(presetUnpack);
+    }
+
 
     public TikaLoader getTikaLoader() {
         return tikaLoader;
@@ -246,7 +265,7 @@ public class TikaResource {
      * @throws IOException if parsing fails
      */
     public static void mergeParseContextFromConfig(String configJson, ParseContext context) throws IOException, TikaConfigException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
         JsonNode root = mapper.readTree(configJson);
         // Request-supplied config: restrict so it cannot bind wire-blocked components.
         ParseContext configuredContext = ParseContextDeserializer.readParseContext(root, true);
@@ -263,7 +282,7 @@ public class TikaResource {
         }
         // Copy jsonConfigs for lazy resolution by parsers (e.g., pdf-parser config)
         for (Map.Entry<String, JsonConfig> entry : configuredContext.getJsonConfigs().entrySet()) {
-            context.setJsonConfig(entry.getKey(), entry.getValue().json());
+            context.setJsonConfig(entry.getKey(), entry.getValue());
             // Keep the jsonConfig->instance association: serialization uses it to send the
             // original JSON rather than re-serializing the resolved instance.
             Object resolved = configuredContext.getResolvedConfig(entry.getKey());

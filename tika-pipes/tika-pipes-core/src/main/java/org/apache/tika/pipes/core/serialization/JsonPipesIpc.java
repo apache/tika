@@ -40,9 +40,12 @@ import org.apache.tika.pipes.core.emitter.EmitDataImpl;
  */
 public class JsonPipesIpc {
 
-    private static final ObjectMapper OBJECT_MAPPER;
+    private static final ObjectMapper OBJECT_MAPPER = createMapper(false);
 
-    static {
+    // reads a trusted fork's requests: their parseContext is the operator's own config
+    private static final ObjectMapper TRUSTED_MAPPER = createMapper(true);
+
+    private static ObjectMapper createMapper(boolean trustedRequests) {
         // Use SmileFactory for binary format - more compact and faster than text JSON.
         // 7-bit binary encoding (the Smile default) costs +14% size and a transcode pass
         // on every binary payload; this is a private same-version channel, so write raw.
@@ -58,20 +61,23 @@ public class JsonPipesIpc {
         smileFactory.setStreamReadConstraints(constraints);
 
         // Create mapper with Smile factory and register TikaModule for Metadata/ParseContext serializers
-        OBJECT_MAPPER = TikaObjectMapperFactory.createMapper(smileFactory);
+        ObjectMapper mapper = TikaObjectMapperFactory.createMapper(smileFactory);
 
         // Add pipes-specific serializers
         SimpleModule pipesModule = new SimpleModule();
         pipesModule.addSerializer(FetchEmitTuple.class, new FetchEmitTupleSerializer());
         // Parent-to-child IPC: the host builds these tuples itself and they name __ components.
-        pipesModule.addDeserializer(FetchEmitTuple.class, FetchEmitTupleDeserializer.internal());
+        pipesModule.addDeserializer(FetchEmitTuple.class, trustedRequests
+                ? FetchEmitTupleDeserializer.internalTrusted()
+                : FetchEmitTupleDeserializer.internal());
         pipesModule.addSerializer(PipesRequest.class, new PipesRequestSerializer());
         pipesModule.addDeserializer(PipesRequest.class, new PipesRequestDeserializer());
         pipesModule.addSerializer(EmitData.class, new EmitDataSerializer());
         pipesModule.addDeserializer(EmitDataImpl.class, new EmitDataDeserializer());
         pipesModule.addSerializer(PipesResult.class, new PipesResultSerializer());
         pipesModule.addDeserializer(PipesResult.class, new PipesResultDeserializer());
-        OBJECT_MAPPER.registerModule(pipesModule);
+        mapper.registerModule(pipesModule);
+        return mapper;
     }
 
     /**
@@ -96,6 +102,15 @@ public class JsonPipesIpc {
      */
     public static <T> T fromBytes(byte[] bytes, Class<T> clazz) throws IOException {
         return OBJECT_MAPPER.readValue(bytes, clazz);
+    }
+
+    /**
+     * As {@link #fromBytes(byte[], Class)}; with {@code trustedRequests} a request's
+     * parseContext is read as trusted config ({@code pipes.trustedRequests}).
+     */
+    public static <T> T fromBytes(byte[] bytes, Class<T> clazz, boolean trustedRequests)
+            throws IOException {
+        return (trustedRequests ? TRUSTED_MAPPER : OBJECT_MAPPER).readValue(bytes, clazz);
     }
 
     /**

@@ -133,6 +133,27 @@ personal configuration does not override it.
   -Dmaven.repo.local=$(pwd)/.local_m2_repo
 ```
 
+## Building the Docs
+
+`docs/` is not in the default reactor; build it from its own pom. Antora
+renders the checked-out branch from the worktree, so uncommitted `.adoc`
+edits are included.
+
+```bash
+./mvnw -f docs/pom.xml clean package     # site in docs/target/site/tika/<version>/
+```
+
+- **Broken links don't fail the build** (`--log-failure-level=fatal`). Check
+  the log for `ERROR (asciidoctor)` lines such as `target of xref not found`.
+- **Parent-directory npm leaks in.** The Antora plugin runs `npx` in `docs/`,
+  which has no `package.json` or `node_modules`, so npm and Node search
+  upward. A `package.json` or `node_modules` in any parent directory, often
+  `$HOME` after an `npm install` run there, becomes the npm project root and
+  supplies packages. The plugin warns `Detected the existence of
+  $HOME/node_modules`. `npm prefix` in `docs/` should print `docs/`; if it
+  prints a parent, move that install elsewhere (e.g. `npm install -g`).
+- For a release build, use `update-site-for-release`.
+
 ## Common Module Paths
 
 | Module | Path |
@@ -156,6 +177,10 @@ personal configuration does not override it.
   invariant, workaround, spec quirk).  Never restate the code, narrate the
   next line, justify the change to a reviewer, or describe past states of
   the code.
+- **A `JsonConfig` is read only through `ConfigDeserializer` or `PluginJson.read(JsonConfig, Class)`**,
+  which apply request restrictions and `@OperatorOnly`; forbidden-apis rejects
+  `JsonConfig.json()` in main code outside tika-serialization. Per-request plugin config is
+  read into a class holding only what a request may set.
 - **XML is parsed only through `XMLReaderUtils.parseSAX` / `buildDOM`** (forbidden-apis
   rejects the JAXP and Commons Secure XML factories and the raw `getSAXParser` /
   `getXMLReader` / `getDocumentBuilder` in main code). Never install an `EntityResolver`;
@@ -211,6 +236,15 @@ them back. Anything hot enough to need a real seek gets a channel from
   CONCATENATE-only bugs).
 - Keep tests non-duplicative: don't add a test whose failure another test
   already guarantees.
+- `-Dtika.test.locale=random` runs every test JVM under a random default locale
+  (`RandomLocaleListener` in `tika-test-support`, wired through tika-parent); run it
+  before touching anything that formats or parses text. The PR jobs leave it off
+  until `nightly-locale-build` (one full build per priority locale, plus a random
+  draw) has been green several nights running (TIKA-4920). A plain build keeps the
+  JVM's own locale. A failure's stack trace and the fork's stderr name the locale;
+  reproduce with `-Dtika.test.locale=<tag>`.  A test that fails only
+  in some locales is a bug in the code under test (use `Locale.ROOT`), not a
+  reason to pin `Locale.US` in the test.
 - Where there's bang for the buck, prefer parameterized tests over
   copy-pasted cases, randomized inputs over hand-picked ones (log the seed
   so failures reproduce), and fuzzing for parsers and format/boundary

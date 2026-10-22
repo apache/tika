@@ -25,7 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -54,12 +53,22 @@ import org.apache.tika.server.core.writer.ZipWriter;
 
 /**
  * /unpack has no format segment, so the config part is the only place a handler is named --
- * and it reaches the RMETA list written to metadata.json.
+ * and it reaches the RMETA list written to rmeta.json.
+ * Per-file sidecars exist only in the REGULAR layout, so the server config pins it; the
+ * rmeta.json probes ask for FRICTIONLESS explicitly.
  */
 public class UnpackerResourceHandlerTest extends CXFTestBase {
 
     private static final String TEST_DOC = "test-documents/test_recursive_embedded.docx";
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    private static final String SERVER_CONFIG = """
+            {
+              "parsers": [ { "default-parser": {} } ],
+              "parse-context": {
+                "unpack-config": { "outputFormat": "REGULAR" }
+              }
+            }
+            """;
     private static final String FRICTIONLESS =
             "\"unpack-config\": {\"outputFormat\": \"FRICTIONLESS\", \"outputMode\": \"ZIPPED\", "
                     + "\"includeFullMetadata\": true}";
@@ -89,12 +98,12 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
 
     @Override
     protected InputStream getTikaConfigInputStream() throws IOException {
-        return this.getClass().getResourceAsStream("/configs/tika-config-unpacker.json");
+        return new ByteArrayInputStream(SERVER_CONFIG.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
     protected InputStream getPipesConfigInputStream() throws IOException {
-        unpackTempDir = Files.createTempDirectory("tika-unpack-probe-");
+        unpackTempDir = sharedUnpackDir();
         Map<String, Object> replacements = new HashMap<>();
         replacements.put("UNPACK_EMITTER_BASE_PATH", unpackTempDir.toAbsolutePath().toString());
         replacements.put("PLUGINS_PATHS",
@@ -122,7 +131,7 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
         String json = metadataJson("{" + FRICTIONLESS
                 + ", \"basic-content-handler-factory\": {\"type\": \"XML\"}}");
         assertTrue(json.contains("<html xmlns="),
-                "config part should select the handler for metadata.json");
+                "config part should select the handler for rmeta.json");
     }
 
     /** /unpack/all/<handler> used to 200 and silently ignore the segment. */
@@ -146,11 +155,11 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
     public void testAllConfigSpellingIsNotAHandlerNamedConfig() throws Exception {
         Response response = post("/unpack/all/config", "{" + FRICTIONLESS + "}");
         assertEquals(200, response.getStatus());
-        assertNotNull(readZipArchiveBytes((InputStream) response.getEntity()).get("metadata.json"));
+        assertNotNull(readZipArchiveBytes((InputStream) response.getEntity()).get("rmeta.json"));
         response = post("/unpack/all/config/ignore", "{" + FRICTIONLESS + "}");
         assertEquals(200, response.getStatus());
         String json = new String(readZipArchiveBytes((InputStream) response.getEntity())
-                .get("metadata.json"), StandardCharsets.UTF_8);
+                .get("rmeta.json"), StandardCharsets.UTF_8);
         assertFalse(json.contains("\"tk:content\""), "ignore after /config must suppress tk:content");
     }
 
@@ -172,10 +181,10 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
     /** includeMetadataInZip writes a sidecar per extracted file; it carries tk:content too. */
     @Test
     public void testPerFileSidecarsFollowTheConfigPartHandler() throws Exception {
-        assertTrue(perFileSidecar("{\"unpack-config\": {\"includeMetadataInZip\": true}}")
+        assertTrue(perFileSidecar("{\"unpack-config\": {\"outputFormat\": \"REGULAR\", \"includeMetadataInZip\": true}}")
                 .contains("\"tk:content-handler-type\":\"MARKDOWN\""));
 
-        String xml = perFileSidecar("{\"unpack-config\": {\"includeMetadataInZip\": true}, "
+        String xml = perFileSidecar("{\"unpack-config\": {\"outputFormat\": \"REGULAR\", \"includeMetadataInZip\": true}, "
                 + "\"basic-content-handler-factory\": {\"type\": \"XML\"}}");
         assertTrue(xml.contains("\"tk:content-handler-type\":\"XML\""), xml);
         assertTrue(xml.contains("<html xmlns="), xml);
@@ -184,8 +193,8 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
     /** IGNORE is the opt-out: sidecars keep their metadata but carry no extracted text. */
     @Test
     public void testIgnoreHandlerLeavesSidecarsWithoutContent() throws Exception {
-        String withText = "{\"unpack-config\": {\"includeMetadataInZip\": true}}";
-        String ignore = "{\"unpack-config\": {\"includeMetadataInZip\": true}, "
+        String withText = "{\"unpack-config\": {\"outputFormat\": \"REGULAR\", \"includeMetadataInZip\": true}}";
+        String ignore = "{\"unpack-config\": {\"outputFormat\": \"REGULAR\", \"includeMetadataInZip\": true}, "
                 + "\"basic-content-handler-factory\": {\"type\": \"IGNORE\"}}";
 
         assertTrue(sidecarsWithContent(withText) > 0, "baseline should carry tk:content");
@@ -247,8 +256,8 @@ public class UnpackerResourceHandlerTest extends CXFTestBase {
         Response response = post("/unpack", configJson);
         assertEquals(200, response.getStatus());
         Map<String, byte[]> entries = readZipArchiveBytes((InputStream) response.getEntity());
-        byte[] md = entries.get("metadata.json");
-        assertNotNull(md, "includeFullMetadata should write metadata.json");
+        byte[] md = entries.get("rmeta.json");
+        assertNotNull(md, "includeFullMetadata should write rmeta.json");
         return new String(md, StandardCharsets.UTF_8);
     }
 

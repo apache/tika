@@ -136,7 +136,11 @@ See also xref:pipes/timeouts.adoc[Timeouts] for the full timeout model.
 
 |`maxTotalTaskTimeoutMillis`
 |`3600000`
-|Ceiling for *request-supplied* timeout limits: a per-request `timeout-limits` override may lower its timeouts freely but can never raise `totalTaskTimeoutMillis` or `progressTimeoutMillis` above this value (values over the cap are clamped with a warning). Limits set in the server's own `parse-context` — or in a preset a request selects — are trusted and not subject to this cap.
+|Ceiling for *request-supplied* timeout limits, on top of the operator's own: a per-request `timeout-limits` override can never raise `totalTaskTimeoutMillis` or `progressTimeoutMillis` above the operator's value or this one (values over are clamped with a warning). Limits set in the server's own `parse-context` — or in a preset a request selects — are trusted and not subject to this cap.
+
+|`trustedRequests`
+|`false`
+|Whether requests are the operator's own: their `parse-context` may set `@OperatorOnly` properties, and their limits and timeouts are used as given instead of clamped to the operator's (xref:advanced/setting-limits.adoc#_per_request_limits[details]). `PipesForkParser` sets it for its fork. tika-server and tika-grpc refuse to start with it on.
 
 |`maxWaitForClientMillis`
 |`60000`

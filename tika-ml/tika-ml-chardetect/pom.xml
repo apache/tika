@@ -96,13 +96,6 @@
         </configuration>
       </plugin>
       <!-- Tools use System.out/printf freely — suppress forbidden-apis for this module -->
-      <plugin>
-        <groupId>de.thetaphi</groupId>
-        <artifactId>forbiddenapis</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
     </plugins>
   </build>
 

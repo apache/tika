@@ -553,11 +553,9 @@ public class OutlookExtractor extends AbstractPOIFSExtractor {
         } else {
             if (headers != null && headers.size() > 0) {
                 for (Map.Entry<String, String[]> header : headers.entrySet()) {
-                    String headerKey = header.getKey();
-                    if (headerKey.toLowerCase(Locale.ROOT).startsWith("date:")) {
-                        String date = headerKey.substring(headerKey.indexOf(':') + 1).trim();
-
-                        String d = TikaDates.toMetadataString(date);
+                    String[] values = header.getValue();
+                    if (header.getKey().equalsIgnoreCase("date") && values.length > 0) {
+                        String d = TikaDates.toMetadataString(values[0]);
                         if (d != null) {
                             metadata.set(TikaCoreProperties.CREATED, d);
                             metadata.set(TikaCoreProperties.MODIFIED, d);

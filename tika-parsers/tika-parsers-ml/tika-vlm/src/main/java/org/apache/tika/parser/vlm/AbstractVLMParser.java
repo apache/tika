@@ -24,7 +24,9 @@ import java.io.InputStream;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.zip.Deflater;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,6 +49,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.OcrWarnings;
 import org.apache.tika.parser.enricher.TextRecognizer;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
@@ -79,6 +82,28 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
             Property.externalInteger(VLM_META + "prompt-tokens");
     public static final Property VLM_COMPLETION_TOKENS =
             Property.externalInteger(VLM_META + "completion-tokens");
+
+    /** Why the file was not sent to the VLM; absent when it was sent. */
+    public static final Property VLM_SKIPPED_REASON =
+            Property.externalText(VLM_META + "skipped-reason");
+    /** Pixel count of an image that was skipped as too large. */
+    public static final Property VLM_IMAGE_PIXELS =
+            Property.externalInteger(VLM_META + "image-pixels");
+
+    static final String WARN_TRUNCATED = "truncated";
+    static final String WARN_REPETITION = "repetition";
+    static final String WARN_EMPTY = "empty";
+
+    /**
+     * Output of at least this many bytes that deflates below this ratio is a loop. A loop
+     * deflates to about 1.5 %; an HTML table of numbers to 12 %, dot leaders to 8 %.
+     */
+    private static final int REPETITION_MIN_BYTES = 1000;
+    private static final double REPETITION_MAX_DEFLATE_RATIO = 0.05;
+
+    static final String SKIP_FILE_TOO_SMALL = "file-too-small";
+    static final String SKIP_FILE_TOO_LARGE = "file-too-large";
+    static final String SKIP_IMAGE_TOO_LARGE = "image-too-large";
 
     /**
      * Encapsulates a fully built HTTP request for a VLM API call.
@@ -148,6 +173,20 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
      */
     protected abstract String getHealthCheckUrl(VLMOCRConfig config);
 
+    @Override
+    public boolean parsesDocuments() {
+        return true;
+    }
+
+    /**
+     * @return the headers for the health-check probe; Bearer auth by default
+     */
+    protected Map<String, String> getHealthCheckHeaders(VLMOCRConfig config) {
+        return config.getApiKey() != null
+                ? Map.of("Authorization", "Bearer " + config.getApiKey())
+                : Map.of();
+    }
+
     // ---- Parser interface -------------------------------------------------
 
     @Override
@@ -194,9 +233,12 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
         }
 
         long size = tis.getLength();
-        if (size >= 0
-                && (size < config.getMinFileSizeToOcr()
-                || size > config.getMaxFileSizeToOcr())) {
+        if (size >= 0 && size < config.getMinFileSizeToOcr()) {
+            skip(parseContext, metadata, SKIP_FILE_TOO_SMALL);
+            return;
+        }
+        if (size >= 0 && size > config.getMaxFileSizeToOcr()) {
+            skip(parseContext, metadata, SKIP_FILE_TOO_LARGE);
             return;
         }
 
@@ -206,10 +248,13 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
         if (maxPixels > 0 && mimeType.startsWith("image/")) {
             tis.mark((int) Math.min(tis.getLength() + 1, 1024 * 1024));
             try {
-                long pixels = getImagePixels(tis);
+                long[] dims = getImageSize(tis);
+                long pixels = dims == null ? -1 : dims[0] * dims[1];
                 if (pixels > maxPixels) {
                     LOG.warn("Image has {} pixels, exceeding maxImagePixels={}. "
                             + "Skipping VLM OCR.", pixels, maxPixels);
+                    metadata.set(VLM_IMAGE_PIXELS, (int) Math.min(pixels, Integer.MAX_VALUE));
+                    skip(parseContext, metadata, SKIP_IMAGE_TOO_LARGE);
                     return;
                 }
             } catch (IOException e) {
@@ -238,6 +283,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
         }
 
         metadata.set(VLM_MODEL, config.getModel());
+        checkOutput(parseContext, metadata, responseText);
 
         ContentHandler baseHandler = getContentHandler(
                 config.isInlineContent(), handler, metadata, parseContext);
@@ -258,10 +304,8 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
             return;
         }
         try {
-            Map<String, String> healthHeaders = defaultConfig.getApiKey() != null
-                    ? Map.of("Authorization", "Bearer " + defaultConfig.getApiKey())
-                    : Map.of();
-            httpClient().get(healthUrl, healthHeaders, defaultConfig.getTimeoutMillis());
+            httpClient().get(healthUrl, getHealthCheckHeaders(defaultConfig),
+                    defaultConfig.getTimeoutMillis());
             serverAvailable = true;
             LOG.info("VLM server is available at {}", defaultConfig.getBaseUrl());
         } catch (TikaException e) {
@@ -288,22 +332,44 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
             throws TikaConfigException, IOException {
         String key = configKey();
         if (parseContext.hasJsonConfig(key)) {
-            VLMOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
-                    parseContext, key, VLMOCRConfig.RuntimeConfig.class,
-                    new VLMOCRConfig.RuntimeConfig(defaultConfig));
-
-            if (runtimeConfig.isSkipOcr()) {
-                return runtimeConfig;
-            }
-
-            return ParseContextConfig.getConfig(
+            VLMOCRConfig config = ParseContextConfig.getConfig(
                     parseContext, key, VLMOCRConfig.class, defaultConfig);
+            if (!parseContext.getJsonConfig(key).trusted()) {
+                checkRuntimeOverrides(config);
+            }
+            return config;
         }
         VLMOCRConfig userConfig = parseContext.get(VLMOCRConfig.class);
         if (userConfig != null) {
             return userConfig;
         }
         return defaultConfig;
+    }
+
+    /**
+     * The per-request rules {@code @OperatorOnly} cannot express: maxTokens may be lowered
+     * but never raised (the ceiling bounds cost on a paid endpoint), and the prompt, with
+     * textRecognizer which describes it, changes only when the operator allowed that.
+     */
+    private void checkRuntimeOverrides(VLMOCRConfig config) throws TikaConfigException {
+        if (config.getMaxTokens() > defaultConfig.getMaxTokens()) {
+            throw new TikaConfigException("Cannot increase maxTokens beyond the init-time value ("
+                    + defaultConfig.getMaxTokens() + ") at runtime. Requested: "
+                    + config.getMaxTokens());
+        }
+        if (defaultConfig.isAllowRuntimePrompt()) {
+            return;
+        }
+        if (!Objects.equals(config.getPrompt(), defaultConfig.getPrompt())) {
+            throw new TikaConfigException("Cannot modify prompt at runtime. Set "
+                    + "allowRuntimePrompt=true at initialization time to permit per-request "
+                    + "prompt overrides.");
+        }
+        if (config.isTextRecognizer() != defaultConfig.isTextRecognizer()) {
+            throw new TikaConfigException("Cannot modify textRecognizer at runtime. Set "
+                    + "allowRuntimePrompt=true at initialization time to permit per-request "
+                    + "prompt overrides.");
+        }
     }
 
     protected static String stripTrailingSlash(String url) {
@@ -355,28 +421,68 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
         return is.readAllBytes();
     }
 
+    private static void skip(ParseContext parseContext, Metadata metadata, String reason) {
+        metadata.set(VLM_SKIPPED_REASON, reason);
+        warn(metadata, "skipped:" + reason);
+        OcrWarnings.addToInlineParent(parseContext, metadata, "skipped:" + reason);
+    }
+
+    static void warn(Metadata metadata, String code) {
+        OcrWarnings.add(metadata, code);
+    }
+
+    private void checkOutput(ParseContext parseContext, Metadata metadata, String text) {
+        if (text == null || text.isBlank()) {
+            warn(metadata, WARN_EMPTY);
+        } else if (looksLikeLoop(text)) {
+            warn(metadata, WARN_REPETITION);
+        }
+        for (String code : metadata.getValues(TikaCoreProperties.OCR_WARNINGS)) {
+            OcrWarnings.addToInlineParent(parseContext, metadata, code);
+        }
+    }
+
+    /** Text that deflates this well is a repeated line or sentence, not prose. */
+    static boolean looksLikeLoop(String text) {
+        byte[] in = text.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        if (in.length < REPETITION_MIN_BYTES) {
+            return false;
+        }
+        Deflater deflater = new Deflater(Deflater.DEFAULT_COMPRESSION);
+        try {
+            deflater.setInput(in);
+            deflater.finish();
+            byte[] buf = new byte[8192];
+            long out = 0;
+            while (!deflater.finished()) {
+                out += deflater.deflate(buf);
+            }
+            return (double) out / in.length < REPETITION_MAX_DEFLATE_RATIO;
+        } finally {
+            deflater.end();
+        }
+    }
+
     /**
      * Reads only the image header to determine width &times; height
-     * without decoding the full raster. Returns {@code -1} if dimensions
+     * without decoding the full raster. Returns null if dimensions
      * cannot be determined.
      */
-    private long getImagePixels(InputStream is) throws IOException {
+    private long[] getImageSize(InputStream is) throws IOException {
         try (javax.imageio.stream.ImageInputStream iis =
                      javax.imageio.ImageIO.createImageInputStream(is)) {
             if (iis == null) {
-                return -1;
+                return null;
             }
             java.util.Iterator<javax.imageio.ImageReader> readers =
                     javax.imageio.ImageIO.getImageReaders(iis);
             if (!readers.hasNext()) {
-                return -1;
+                return null;
             }
             javax.imageio.ImageReader reader = readers.next();
             try {
                 reader.setInput(iis);
-                long w = reader.getWidth(0);
-                long h = reader.getHeight(0);
-                return w * h;
+                return new long[] {reader.getWidth(0), reader.getHeight(0)};
             } finally {
                 reader.dispose();
             }
@@ -425,6 +531,14 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
         defaultConfig.setMaxTokens(maxTokens);
     }
 
+    public Double getTemperature() {
+        return defaultConfig.getTemperature();
+    }
+
+    public void setTemperature(Double temperature) {
+        defaultConfig.setTemperature(temperature);
+    }
+
     public long getTimeoutMillis() {
         return defaultConfig.getTimeoutMillis();
     }
@@ -433,7 +547,7 @@ public abstract class AbstractVLMParser implements Parser, Initializable, Closea
         defaultConfig.setTimeoutMillis(timeoutMillis);
     }
 
-    /** Retries of a 429/502/503/504 answer from the service; 0 fails at once. */
+    /** Retries of a 429/502/503/504 answer or a dropped connection; 0 fails at once. */
     public synchronized void setMaxRetries(int maxRetries) {
         defaultConfig.setMaxRetries(maxRetries);
         if (httpClient != null) {

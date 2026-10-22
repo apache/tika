@@ -53,7 +53,6 @@ import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
 import org.apache.tika.pipes.core.serialization.PipesRequest;
-import org.apache.tika.serialization.ParseContextUtils;
 
 /**
  * Handles a single client connection in shared server mode.
@@ -161,11 +160,12 @@ public class ConnectionHandler implements Runnable, Closeable {
         }
         PipesWorker w = tLastWorker;
         TIMING_LOG.trace("WORKER_TIMING handler={} id={} req_deser_us={} ctx_merge_us={}"
-                        + " handoff_us={} fetch_us={} parse_us={} emit_us={} worker_wall_us={}"
+                        + " handoff_us={} fetch_us={} parse_us={} prepare_us={} emit_us={} worker_wall_us={}"
                         + " intermediate_us={} resp_ser_us={} resp_write_us={} resp_ack_us={}"
                         + " resp_bytes={}",
                 handlerId, id, us(tReqDeserNanos), us(tCtxMergeNanos), us(tHandoffNanos),
                 us(w == null ? -1 : w.getFetchNanos()), us(w == null ? -1 : w.getParseNanos()),
+                us(w == null ? -1 : w.getPrepareNanos()),
                 us(w == null ? -1 : w.getEmitNanos()), us(w == null ? -1 : w.getWallNanos()),
                 us(protocolIO.getLastIntermediateNanos()), us(protocolIO.getLastRespSerNanos()),
                 us(protocolIO.getLastRespWriteNanos()), us(protocolIO.getLastRespAckNanos()),
@@ -205,7 +205,8 @@ public class ConnectionHandler implements Runnable, Closeable {
                         resetTimings();
                         long reqDeserStart = System.nanoTime();
                         try {
-                            pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class);
+                            pipesRequest = JsonPipesIpc.fromBytes(msg.payload(), PipesRequest.class,
+                                    pipesConfig.isTrustedRequests());
                             fetchEmitTuple = pipesRequest.getTuple();
                             tReqDeserNanos = System.nanoTime() - reqDeserStart;
                         } catch (IOException e) {
@@ -218,11 +219,6 @@ public class ConnectionHandler implements Runnable, Closeable {
                             long ctxStart = System.nanoTime();
                             mergedContext = resources.createMergedParseContext(
                                     fetchEmitTuple.getParseContext(), fetchEmitTuple.getPresetName());
-                            ParseContextUtils.resolveAll(mergedContext, getClass().getClassLoader());
-                            ServerProtocolIO.validateParseContext(mergedContext);
-                            ServerProtocolIO.clampRequestTimeoutLimits(
-                                    fetchEmitTuple.getParseContext(), mergedContext,
-                                    pipesConfig.getMaxTotalTaskTimeoutMillis());
                             // After resolveAll: the payload is typed runtime state for
                             // BytesFetcher, never a resolvable config entry.
                             pipesRequest.applyTo(mergedContext);

@@ -1040,7 +1040,8 @@
   <mime-type type="application/riscos"/>
   <mime-type type="application/rlmi+xml"/>
   <mime-type type="application/rls-services+xml">
-    <glob pattern="*.rs"/>
+    <root-XML namespaceURI="urn:ietf:params:xml:ns:rls-services" localName="rls-services"/>
+    <!-- <glob pattern="*.rs"/> - conflicts with text/x-rust -->
   </mime-type>
   <mime-type type="application/rsd+xml">
     <glob pattern="*.rsd"/>
@@ -2047,6 +2048,20 @@
   <mime-type type="application/vnd.motorola.flexsuite.wem"/>
   <mime-type type="application/vnd.motorola.iprm"/>
   <mime-type type="application/vnd.mozilla.xul+xml">
+    <sub-class-of type="application/xml"/>
+    <acronym>XUL</acronym>
+    <_comment>XML User Interface Language</_comment>
+    <!-- root-XML misses roots whose attributes use DTD entities; above application/xml -->
+    <magic priority="51">
+      <match value="&lt;(?:window|dialog|wizard|overlay|prefwindow|page)\\s[^&gt;]*xmlns\\s*=\\s*[&quot;']http://www\\.mozilla\\.org/keymaster/gatekeeper/there\\.is\\.only\\.xul[&quot;']"
+             type="regex" offset="0:8192"/>
+    </magic>
+    <root-XML localName="window" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
+    <root-XML localName="dialog" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
+    <root-XML localName="wizard" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
+    <root-XML localName="overlay" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
+    <root-XML localName="prefwindow" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
+    <root-XML localName="page" namespaceURI="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"/>
     <glob pattern="*.xul"/>
   </mime-type>
   <mime-type type="application/vnd.ms-artgalry">
@@ -3391,20 +3406,71 @@
   
   <mime-type type="image/x-tga">
      <alias type="image/x-targa"/>
-     <!-- trailer bytes: 54 52 55 45 56 49 53 49 4F 4E 2D 58 46 49 4C 45 2E 00
-          trailer as string: TRUEVISION-XFILE\\x2E\\x00
-          Some .tga files may be conflicting with application/x-123 recognition, 
-          therefore this mime-type must be set in front of application/x-123 -->
      <_comment>Targa image data</_comment>
-     <magic priority="90">
-        <match value="0x01010000" type="big32" offset="1" >
-           <match value=".*[\\x54\\x52\\x55\\x45\\x56\\x49\\x53\\x49\\x4F\\x4E\\x2D\\x58\\x46\\x49\\x4C\\x45\\x2E\\x00]" type="regex" offset="8" />
+     <!-- No signature: colour map type and image type at 1, colour map spec at 3-7,
+          pixel depth at 16. Without a colour map the first index and length (3-6) are
+          zero; the entry size at 7 is left free since some writers set it anyway.
+          The optional TRUEVISION-XFILE footer is out of reach. -->
+     <magic priority="50">
+        <!-- true colour, greyscale, and their RLE forms: 2, 3, 10, 11 -->
+        <match value="\000\002\000\000\000\000" type="string" offset="1">
+           <match value="\010" type="string" offset="16"/>
+           <match value="\017" type="string" offset="16"/>
+           <match value="\020" type="string" offset="16"/>
+           <match value="\030" type="string" offset="16"/>
+           <match value="\040" type="string" offset="16"/>
         </match>
-        <match value="0x00020000" type="big32" offset="1" >
-           <match value=".*[\\x54\\x52\\x55\\x45\\x56\\x49\\x53\\x49\\x4F\\x4E\\x2D\\x58\\x46\\x49\\x4C\\x45\\x2E\\x00]" type="regex" offset="8" />
+        <match value="\000\003\000\000\000\000" type="string" offset="1">
+           <match value="\010" type="string" offset="16"/>
+           <match value="\020" type="string" offset="16"/>
         </match>
-        <match value="0x00030000" type="big32" offset="1" >
-           <match value=".*[\\x54\\x52\\x55\\x45\\x56\\x49\\x53\\x49\\x4F\\x4E\\x2D\\x58\\x46\\x49\\x4C\\x45\\x2E\\x00]" type="regex" offset="8" />
+        <match value="\000\012\000\000\000\000" type="string" offset="1">
+           <match value="\010" type="string" offset="16"/>
+           <match value="\017" type="string" offset="16"/>
+           <match value="\020" type="string" offset="16"/>
+           <match value="\030" type="string" offset="16"/>
+           <match value="\040" type="string" offset="16"/>
+        </match>
+        <match value="\000\013\000\000\000\000" type="string" offset="1">
+           <match value="\010" type="string" offset="16"/>
+           <match value="\020" type="string" offset="16"/>
+        </match>
+        <!-- colour mapped and RLE colour mapped: 1, 9; entry size at 7, index depth at 16 -->
+        <match value="\001\001" type="string" offset="1">
+           <match value="\017" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\020" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\030" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\040" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+        </match>
+        <match value="\001\011" type="string" offset="1">
+           <match value="\017" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\020" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\030" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
+           <match value="\040" type="string" offset="7">
+              <match value="\010" type="string" offset="16"/>
+              <match value="\020" type="string" offset="16"/>
+           </match>
         </match>
      </magic>
      <glob pattern="*.tga"/>
@@ -4864,6 +4930,16 @@
     <glob pattern="*.MYD"/>
     <!-- MISAM Data files are header-less, so no magic -->
     <sub-class-of type="application/x-mysql-db"/>
+  </mime-type>
+  <mime-type type="application/x-navi-animation">
+    <acronym>ANI</acronym>
+    <_comment>Windows Animated Cursor</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/ANI_(file_format)</tika:link>
+    <magic priority="50">
+      <match value="RIFF....ACON" type="string" offset="0"
+             mask="0xFFFFFFFF00000000FFFFFFFF"/>
+    </magic>
+    <glob pattern="*.ani"/>
   </mime-type>
   <mime-type type="application/x-nesrom">
     <_comment>Nintendo Entertainment System ROM</_comment>
@@ -6748,8 +6824,9 @@
       <match value="MM\x00\x2a" type="string" offset="0"/>
       <!-- II*. = Little endian (I=Intel) and 0x002a in little endian -->
       <match value="II\x2a\x00" type="string" offset="0"/>
-      <!-- MM.+ = Big endian (M=Motorola) and 0x002a in big endian-->
+      <!-- BigTIFF: 0x002b (43) in place of 42, big and little endian -->
       <match value="MM\x00\x2b" type="string" offset="0"/>
+      <match value="II\x2b\x00" type="string" offset="0"/>
     </magic>
     <glob pattern="*.tiff"/>
     <glob pattern="*.tif"/>
@@ -6893,11 +6970,22 @@
     <tika:uti>com.microsoft.ico</tika:uti>
     <alias type="image/x-icon" />
     <magic priority="50">
-      <match value="\102\101\050\000\000\000\056\000\000\000\000\000\000\000"
-             type="string" offset="0"/>
       <match value="\000\000\001\000" type="string" offset="0"/>
     </magic>
     <glob pattern="*.ico"/>
+  </mime-type>
+
+  <mime-type type="image/x-win-bitmap">
+    <acronym>CUR</acronym>
+    <_comment>Windows Cursor</_comment>
+    <tika:link>https://en.wikipedia.org/wiki/ICO_(file_format)</tika:link>
+    <magic priority="50">
+      <!-- reserved 0, type 2, 1 to 255 images; a count of 0 would also match a TGA header -->
+      <match value="\000\000\002\000" type="string" offset="0">
+        <match value="[\\x01-\\xff]\\x00" type="regex" offset="4"/>
+      </match>
+    </magic>
+    <glob pattern="*.cur"/>
   </mime-type>
 
   <mime-type type="image/vnd.mix"/>
@@ -7241,6 +7329,7 @@
 
   <mime-type type="image/x-raw-kodak">
     <_comment>Kodak raw image</_comment>
+    <sub-class-of type="image/tiff" />
     <glob pattern="*.k25"/>
     <glob pattern="*.kdc"/>
     <glob pattern="*.dcs"/>
@@ -7301,6 +7390,7 @@
 
   <mime-type type="image/x-raw-epson">
     <_comment>Epson raw image</_comment>
+    <sub-class-of type="image/tiff" />
     <glob pattern="*.erf"/>
   </mime-type>
 
@@ -7311,6 +7401,7 @@
 
   <mime-type type="image/x-raw-leaf">
     <_comment>Leaf raw image</_comment>
+    <sub-class-of type="image/tiff" />
     <glob pattern="*.mos"/>
   </mime-type>
 
@@ -7559,9 +7650,9 @@
     <magic priority="60">
       <match value="From: \x3cSaved by Windows Internet Explorer 8\x3e" type="stringignorecase" offset="0"/>
       <match value="From: \x22Saved by Internet Explorer 11\x22" type="stringignorecase" offset="0"/>
-      <match value="MIME-Version: 1.0" type="string" offset="0">
-        <match value="\nContent-Type: multipart/related" type="string" offset="16:512"/>
-      </match>
+      <!-- the message's own Content-Type: non-empty lines only, so the match stops at the
+           blank line that ends the header block and never reaches a nested part's header -->
+      <match value="MIME-Version: 1[.]0(?: [^\r\n]{0,100})?\r?\n(?:[^\r\n]+\r?\n)*?Content-Type: multipart/related" type="regex" offset="0"/>
     </magic>
     <glob pattern="*.mht"/>
     <glob pattern="*.mhtml"/>
@@ -7831,8 +7922,8 @@
       <match value="&lt;head" type="string" offset="0:64"/>
       <match value="&lt;TITLE" type="string" offset="0:64"/>
       <match value="&lt;title" type="string" offset="0:64"/>
-      <match value="&lt;HTML" type="string" offset="0:64"/>
-      <match value="&lt;html" type="string" offset="0:128"/>
+      <!-- the tag must end: <htmlPath> in an XML file is not HTML -->
+      <match value="(?i)&lt;html[\\s>]" type="regex" offset="0:128"/>
     </magic>
     <magic priority="20">
       <!-- Lower priority match for <html anywhere near the top of the file -->
@@ -7842,7 +7933,7 @@
            MimeTypes#getMinLength() bytes. It should also only start after
            the higher priority "start of file" one above
        -->
-      <match value="&lt;html" type="string" offset="128:8192"/>
+      <match value="(?i)&lt;html[\\s>]" type="regex" offset="128:8192"/>
     </magic>
     <glob pattern="*.html"/>
     <glob pattern="*.htm"/>
@@ -8513,6 +8604,12 @@
   <mime-type type="text/x-ruby">
     <_comment>Ruby source code</_comment>
     <glob pattern="*.rb"/>
+    <sub-class-of type="text/plain"/>
+  </mime-type>
+
+  <mime-type type="text/x-rust">
+    <_comment>Rust source code</_comment>
+    <glob pattern="*.rs"/>
     <sub-class-of type="text/plain"/>
   </mime-type>
 

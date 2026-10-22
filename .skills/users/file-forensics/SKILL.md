@@ -106,7 +106,7 @@ java -jar tika-app.jar --config=file-forensics-config.json -Z --extract-dir=evid
 # mkdir -p evidence/suspect-embedded && unzip -q suspect-embedded.zip -d evidence/suspect-embedded
 
 jq 'map(del(."tk:content"))' suspect.rmeta.json > suspect.meta.json
-ls -lR evidence/suspect-embedded && sha256sum evidence/suspect-embedded/*/* 2>/dev/null || sha256sum evidence/suspect-embedded/*
+ls -lR evidence/suspect-embedded && sha256sum evidence/suspect-embedded/unpacked/*
 ```
 
 `suspect.rmeta.json` is the full evidence record — a JSON array where entry
@@ -339,22 +339,24 @@ files is incomplete.
   back visually corrupted (`VB\_Name`). The `-z`/`-Z` extracted files are
   pristine bytes. (Alternative: capture with `-J -t` for unescaped plain
   text per entry.)
-- Extracted files are **renumbered** (`00000001.jpg`, ...); original names
-  live in each rmeta entry's `tk:resource-name`, and `-z`/`-Z` writes a
-  sidecar `<name>.json` metadata dump for mapping numbers back to names.
-- Digest what you extracted (`sha256sum evidence/suspect-embedded/*/*`) so
-  each artifact is pinned the same way the container file is.
+- Extracted files are **renumbered** (`1.jpg`, `2.pdf`, ...); each
+  `datapackage.json` resource carries the original name (`tk:resource-name`)
+  and `tk:embedded-id`, the key to the file's row in `rmeta.json`.
+- The output is a Frictionless data package (Tika 4.2+): for a single input
+  file the extract dir is the package — files under `unpacked/`, and
+  `datapackage.json` already carries a SHA-256 per file (and for
+  `rmeta.json`). Digest what you extracted
+  (`sha256sum evidence/suspect-embedded/unpacked/*`) and check it against the
+  manifest, so each artifact is pinned the same way the container file is.
 - Mechanics and gotchas (Pipes-mode delay, chatty stderr) are in
   `file-to-markdown`; the server-side equivalent is `/unpack`, which returns
-  the embedded files as a zip over HTTP. **`/unpack` names differ from
-  `-z`/`-Z`:** plain sequential names (`1.jpg`, `2.pdf`, ...) and **no
-  sidecar JSON** — map names back via each rmeta entry's `tk:resource-name`
-  yourself. Against the server started above (forensics config loaded):
+  the same package as one zip over HTTP, laid out the same way. Against the
+  server started above (forensics config loaded):
 
   ```bash
   curl -T suspect.file http://localhost:9998/unpack > suspect-embedded.zip
   mkdir -p evidence/suspect-embedded && unzip -q suspect-embedded.zip -d evidence/suspect-embedded
-  sha256sum evidence/suspect-embedded/*
+  sha256sum evidence/suspect-embedded/unpacked/*
   ```
 
   `/unpack/all` also includes the container's own text and metadata. Both

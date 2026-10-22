@@ -11,7 +11,7 @@
   },
   "parse-context": {
     "timeout-limits": {
-      "progressTimeoutMillis": 120000
+      "progressTimeoutMillis": 5000
     }
   },
   "pipes": {

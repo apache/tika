@@ -25,10 +25,13 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.pages.PagesConfig;
+import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.serialization.ParseContextUtils;
 
 /**
@@ -55,12 +58,14 @@ public class PresetMergeTest {
                 """);
         ParseContext merged = new ParseContext();
         PipesServer.mergePreset(registry, "slow-ocr", merged);
+        ParseContext operator = new ParseContext();
+        operator.copyFrom(merged);
         ParseContext requestContext = new ParseContext();
         merged.copyFrom(requestContext);
         ParseContextUtils.resolveAll(merged, getClass().getClassLoader());
 
         // the clamp fires only on request-supplied limits; the preset's ride at config tier
-        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, merged, 60_000);
+        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, operator, merged, 60_000);
         assertEquals(3600000, TimeoutLimits.get(merged).getTotalTaskTimeoutMillis());
     }
 
@@ -71,14 +76,62 @@ public class PresetMergeTest {
                 """);
         ParseContext merged = new ParseContext();
         PipesServer.mergePreset(registry, "slow-ocr", merged);
+        ParseContext operator = new ParseContext();
+        operator.copyFrom(merged);
         ParseContext requestContext = new ParseContext();
         requestContext.setJsonConfig("timeout-limits",
                 "{\"totalTaskTimeoutMillis\": 7200000}");
         merged.copyFrom(requestContext);
         ParseContextUtils.resolveAll(merged, getClass().getClassLoader());
 
-        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, merged, 60_000);
+        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, operator, merged, 60_000);
         assertEquals(60_000, TimeoutLimits.get(merged).getTotalTaskTimeoutMillis());
+
+        // the preset's own limit is the ceiling below pipes.maxTotalTaskTimeoutMillis
+        merged = new ParseContext();
+        PipesServer.mergePreset(registry, "slow-ocr", merged);
+        operator = new ParseContext();
+        operator.copyFrom(merged);
+        merged.copyFrom(requestContext);
+        ParseContextUtils.resolveAll(merged, getClass().getClassLoader());
+        ServerProtocolIO.clampRequestTimeoutLimits(requestContext, operator, merged, 10_800_000);
+        assertEquals(3_600_000, TimeoutLimits.get(merged).getTotalTaskTimeoutMillis());
+    }
+
+    @Test
+    public void testPresetLimitsAreTheRequestCeiling() throws Exception {
+        PresetRegistry registry = registry("""
+                {"presets": {"deep": {"embedded-limits": {"maxDepth": 100}}}}
+                """);
+        ParseContext merged = new ParseContext();
+        PipesServer.mergePreset(registry, "deep", merged);
+        ParseContext requestContext = new ParseContext();
+        requestContext.setJsonConfig("embedded-limits", "{\"maxDepth\": 1000}");
+
+        PipesServer.overlayRequest(requestContext, merged, new PipesConfig(), null);
+        // looser than the preset: clamped to it, not to the class default of 20
+        assertEquals(100, EmbeddedLimits.get(merged).getMaxDepth());
+    }
+
+    @Test
+    public void testRequestPagesMayNotLoosenOperatorRender() throws Exception {
+        ParseContext merged = new ParseContext();
+        merged.setJsonConfig("pages", "{\"render\": {\"dpi\": 150}}", true);
+        ParseContext requestContext = new ParseContext();
+        // replaces the operator's block: without the bound, dpi would fall back to 300
+        requestContext.setJsonConfig("pages", "{\"text\": \"AUTO\"}", false);
+
+        PipesServer.overlayRequest(requestContext, merged, new PipesConfig(), null);
+        assertEquals(150, PagesConfig.resolve(merged, "pdf-parser", null, null)
+                .getRender().getDpi());
+
+        ParseContext higher = new ParseContext();
+        higher.setJsonConfig("pages", "{\"render\": {\"dpi\": 1200}}", false);
+        ParseContext merged2 = new ParseContext();
+        merged2.setJsonConfig("pages", "{\"render\": {\"dpi\": 150}}", true);
+        PipesServer.overlayRequest(higher, merged2, new PipesConfig(), null);
+        assertEquals(150, PagesConfig.resolve(merged2, "pdf-parser", null, null)
+                .getRender().getDpi());
     }
 
     @Test

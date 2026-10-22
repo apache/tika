@@ -35,10 +35,14 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -61,52 +65,76 @@ import org.apache.tika.sax.ContentHandlerFactory;
 
 
 public class PipesClientTest {
-    String fetcherName = "fsf";
-    String emitterName = "fse";
-    String testDoc = "testOverlappingText.pdf";
+    static final String fetcherName = "fsf";
+    static final String emitterName = "fse";
+    static final String testDoc = "testOverlappingText.pdf";
+    static final String embeddedDoc = "mock-embedded.xml";
+    static final String checkpointedSleepDoc = "mock-checkpointed-sleep-6s.xml";
+    static final String parseExceptionDoc = "mock-parse-exception.xml";
 
+    @TempDir
+    static Path sharedDir;
 
-    private PipesClient init(Path tmp, String testFileName) throws Exception {
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, tmp.resolve("input"), tmp.resolve("output"));
-        PluginsTestHelper.copyTestFilesToTmpInput(tmp, testFileName);
+    // basic config, for tests that neither kill the fork nor change its config
+    private static PipesClient sharedClient;
 
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-        return new PipesClient(pipesConfig, tikaConfigPath);
+    @BeforeAll
+    public static void startSharedClient() throws Exception {
+        PluginsTestHelper.copyTestFilesToTmpInput(sharedDir, testDoc, embeddedDoc);
+        Path inputDir = sharedDir.resolve("input");
+        Files.writeString(inputDir.resolve(checkpointedSleepDoc), "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
+                "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Test</metadata>" +
+                "<write element=\"p\">main_content</write>" +
+                "<checkpointedSleep millis=\"6000\" intervalMillis=\"500\"/>" +
+                "</mock>", StandardCharsets.UTF_8);
+        Files.writeString(inputDir.resolve(parseExceptionDoc), "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" +
+                "<mock>" +
+                "<metadata action=\"add\" name=\"dc:creator\">Test Author</metadata>" +
+                "<write element=\"p\">Some content before exception</write>" +
+                "<throw class=\"java.io.IOException\">Non-fatal parse exception</throw>" +
+                "</mock>", StandardCharsets.UTF_8);
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(
+                sharedDir, inputDir, sharedDir.resolve("output"));
+        sharedClient = new PipesClient(PipesConfig.load(TikaJsonConfig.load(tikaConfigPath)), tikaConfigPath);
+    }
+
+    @AfterAll
+    public static void closeSharedClient() throws Exception {
+        if (sharedClient != null) {
+            sharedClient.close();
+        }
+    }
+
+    private static PipesResult processShared(String file, ParseContext parseContext) throws Exception {
+        return sharedClient.process(
+                new FetchEmitTuple(file, new FetchKey(fetcherName, file),
+                        new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
     }
 
     @Test
-    public void testBasic(@TempDir Path tmp) throws Exception {
-        try (PipesClient pipesClient = init(tmp, testDoc)) {
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
-                            new EmitKey(), new Metadata(), new ParseContext(), FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
-            assertEquals(1, pipesResult.emitData().getMetadataList().size());
-            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-            assertEquals("testOverlappingText.pdf", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        }
+    public void testBasic() throws Exception {
+        PipesResult pipesResult = processShared(testDoc, new ParseContext());
+        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+        assertEquals("testOverlappingText.pdf", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     /** The request's "pages" crosses the fork: the PDF's first page comes back as a RENDERING. */
     @Test
-    public void testPagesInFork(@TempDir Path tmp) throws Exception {
+    public void testPagesInFork() throws Exception {
         ParseContext parseContext = new ParseContext();
         parseContext.setJsonConfig("pages", """
                 {"emit": {"enabled": true, "maxPages": 1,
                           "render": {"maxWidth": 64, "maxHeight": 64}}}
                 """);
-        try (PipesClient pipesClient = init(tmp, testDoc)) {
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
-                            new EmitKey(), new Metadata(), parseContext,
-                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            java.util.List<Metadata> metadataList = pipesResult.emitData().getMetadataList();
-            assertEquals(2, metadataList.size(), "the PDF and one render");
-            Metadata render = metadataList.get(1);
-            assertEquals("RENDERING", render.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
-            assertTrue(render.getInt(org.apache.tika.metadata.TIFF.IMAGE_WIDTH) <= 64);
-        }
+        PipesResult pipesResult = processShared(testDoc, parseContext);
+        java.util.List<Metadata> metadataList = pipesResult.emitData().getMetadataList();
+        assertEquals(2, metadataList.size(), "the PDF and one render");
+        Metadata render = metadataList.get(1);
+        assertEquals("RENDERING", render.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertTrue(render.getInt(org.apache.tika.metadata.TIFF.IMAGE_WIDTH) <= 64);
     }
 
     /** Wire test for the inference bindings: the dispatcher rides the fork's own config. */
@@ -212,48 +240,7 @@ public class PipesClientTest {
     }
 
     @Test
-    public void testMetadataFilter(@TempDir Path tmp) throws Exception {
-        ParseContext parseContext = new ParseContext();
-        // Use JSON config approach for Jackson serialization compatibility
-        // Don't resolve here - let PipesServer resolve on its side
-        parseContext.setJsonConfig("metadata-filters", """
-            ["mock-upper-case-filter"]
-        """);
-        try (PipesClient pipesClient = init(tmp, testDoc)) {
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
-                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
-            assertEquals(1, pipesResult.emitData().getMetadataList().size());
-            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-            assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        }
-    }
-
-    @Test
-    public void testMetadataListFilter(@TempDir Path tmp) throws Exception {
-        ParseContext parseContext = new ParseContext();
-        // Use JSON config approach for Jackson serialization compatibility
-        // Don't resolve here - let PipesServer resolve on its side
-        parseContext.setJsonConfig("metadata-filters", """
-            ["attachment-counting-list-filter"]
-        """);
-
-        String testFile = "mock-embedded.xml";
-
-        try (PipesClient pipesClient = init(tmp, testFile)) {
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
-                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
-            assertEquals(5, pipesResult.emitData().getMetadataList().size());
-            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-            assertEquals(4, Integer.parseInt(metadata.get("tk:attachment-count")));
-        }
-    }
-
-    @Test
-    public void testMetadataFilterFromJsonConfig(@TempDir Path tmp) throws Exception {
+    public void testMetadataFilterFromJsonConfig() throws Exception {
         // Test that metadata filters specified as JSON array in jsonConfigs
         // survive serialization to the forked PipesServer and are applied.
         ParseContext parseContext = new ParseContext();
@@ -263,21 +250,16 @@ public class PipesClientTest {
             ]
         """);
 
-        try (PipesClient pipesClient = init(tmp, testDoc)) {
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
-                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            
-            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
-            assertEquals(1, pipesResult.emitData().getMetadataList().size());
-            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-            // MockUpperCaseFilter uppercases all metadata values
-            assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-        }
+        PipesResult pipesResult = processShared(testDoc, parseContext);
+        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+        // MockUpperCaseFilter uppercases all metadata values
+        assertEquals("TESTOVERLAPPINGTEXT.PDF", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
     }
 
     @Test
-    public void testMultipleMetadataFiltersFromJsonConfig(@TempDir Path tmp) throws Exception {
+    public void testMultipleMetadataFiltersFromJsonConfig() throws Exception {
         // Test multiple filters specified as JSON array survive serialization
         ParseContext parseContext = new ParseContext();
         parseContext.setJsonConfig("metadata-filters", """
@@ -287,43 +269,16 @@ public class PipesClientTest {
             ]
         """);
 
-        String testFile = "mock-embedded.xml";
-        Metadata metadata;
-        try (PipesClient pipesClient = init(tmp, testFile)) {
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
-                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
-            assertEquals(5, pipesResult.emitData().getMetadataList().size());
-            metadata = pipesResult.emitData().getMetadataList().get(0);
-        }
+        PipesResult pipesResult = processShared(embeddedDoc, parseContext);
+        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(5, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
 
         // AttachmentCountingListFilter should have added the count
         assertEquals(4, Integer.parseInt(metadata.get("tk:attachment-count")));
 
         // MockUpperCaseFilter should have uppercased the resource name
         assertEquals("MOCK-EMBEDDED.XML", metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY));
-    }
-
-    @Test
-    public void testTimeout(@TempDir Path tmp) throws Exception {
-        //TODO -- figure out how to test pipes server timeout alone
-        //I did both manually during development, but unit tests are better. :D
-        ParseContext parseContext = new ParseContext();
-        parseContext.set(TimeoutLimits.class, new TimeoutLimits(1000, 1000));
-        // Use JSON config approach for Jackson serialization compatibility
-        // Don't resolve here - let PipesServer resolve on its side
-        parseContext.setJsonConfig("metadata-filters", """
-            ["attachment-counting-list-filter"]
-        """);
-
-        String testFile = "mock-timeout-10s.xml";
-        try (PipesClient pipesClient = init(tmp, testFile)) {
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
-                            new EmitKey(), new Metadata(), parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            assertEquals(PipesResults.TIMEOUT.status(), pipesResult.status());
-        }
     }
 
     @Test
@@ -374,7 +329,7 @@ public class PipesClientTest {
     }
 
     @Test
-    public void testWatchdogHonorsCheckpointsDuringLongExternalCall(@TempDir Path tmp) throws Exception {
+    public void testWatchdogHonorsCheckpointsDuringLongExternalCall() throws Exception {
         // A long "external call" (checkpointedSleep, standing in for e.g. Tesseract's
         // ProcessUtils.execute wait) reports progress every 500ms over its 6s run, under
         // a progressTimeoutMillis (3000ms) shorter than that but a totalTaskTimeoutMillis
@@ -384,32 +339,12 @@ public class PipesClientTest {
         // purpose -- a tighter 1000ms/300ms version previously flagged as flaky, since a
         // single GC pause or scheduler stall over ~700ms in the freshly forked JVM could
         // make one checkpoint arrive late enough to trip the watchdog.
-        Path inputDir = tmp.resolve("input");
-        Files.createDirectories(inputDir);
-        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
-                "<metadata action=\"add\" name=\"dc:creator\">Test</metadata>" +
-                "<write element=\"p\">main_content</write>" +
-                "<checkpointedSleep millis=\"6000\" intervalMillis=\"500\"/>" +
-                "</mock>";
-        String testFile = "mock-checkpointed-sleep-6s.xml";
-        Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
-
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-
         ParseContext parseContext = new ParseContext();
         parseContext.set(TimeoutLimits.class, new TimeoutLimits(20000, 3000));
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
-            PipesResult result = pipesClient.process(
-                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
-                            new EmitKey(), new Metadata(), parseContext,
-                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-
-            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS, result.status(),
-                    "A 6s checkpointing wait must not trip a 3000ms progress timeout");
-        }
+        PipesResult result = processShared(checkpointedSleepDoc, parseContext);
+        assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS, result.status(),
+                "A 6s checkpointing wait must not trip a 3000ms progress timeout");
     }
 
     @Test
@@ -432,11 +367,8 @@ public class PipesClientTest {
             assertEquals(PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE, pipesResult.status());
             assertTrue(pipesResult.isFatal(), "FAILED_TO_INITIALIZE should be a fatal error");
             Assertions.assertNotNull(pipesResult.message(), "Should have error message from server");
-            assertTrue(pipesResult.message().contains("non-existent-fetcher-plugin") ||
-                      pipesResult.message().contains("TikaConfigException") ||
-                      pipesResult.message().contains("error") ||
-                      pipesResult.message().contains("Exception"),
-                      "Error message should contain details about the failure");
+            assertTrue(pipesResult.message().contains("non-existent-fetcher-plugin"),
+                    "message should name the unknown component: " + pipesResult.message());
         }
     }
 
@@ -593,94 +525,64 @@ public class PipesClientTest {
     }
 
     @Test
-    public void testParseSuccessWithException(@TempDir Path tmp) throws Exception {
-        // Test PARSE_SUCCESS_WITH_EXCEPTION status
-        // This occurs when parsing completes with some content but throws a non-fatal exception
-        Path inputDir = tmp.resolve("input");
-        Files.createDirectories(inputDir);
+    public void testParseSuccessWithException() throws Exception {
+        // content, then a non-fatal IOException
+        FetchEmitTuple tuple = new FetchEmitTuple(parseExceptionDoc,
+                new FetchKey(fetcherName, parseExceptionDoc),
+                new EmitKey(emitterName, ""), new Metadata(), new ParseContext(),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
 
-        // Mock file that writes content then throws IOException
-        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
-                "<metadata action=\"add\" name=\"dc:creator\">Test Author</metadata>" +
-                "<write element=\"p\">Some content before exception</write>" +
-                "<throw class=\"java.io.IOException\">Non-fatal parse exception</throw>" +
-                "</mock>";
-        String testFile = "mock-parse-exception.xml";
-        Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
+        PipesResult pipesResult = sharedClient.process(tuple);
 
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        // Should be PARSE_SUCCESS_WITH_EXCEPTION because content was produced despite exception
+        assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION, pipesResult.status(),
+                "Should return PARSE_SUCCESS_WITH_EXCEPTION when parse throws but produces content");
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
-            FetchEmitTuple tuple = new FetchEmitTuple(testFile,
-                    new FetchKey(fetcherName, testFile),
-                    new EmitKey(emitterName, ""), new Metadata(), new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT);
+        // Verify it's still categorized as SUCCESS
+        assertTrue(pipesResult.isSuccess(), "PARSE_SUCCESS_WITH_EXCEPTION should be success category");
 
-            PipesResult pipesResult = pipesClient.process(tuple);
-
-            // Should be PARSE_SUCCESS_WITH_EXCEPTION because content was produced despite exception
-            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS_WITH_EXCEPTION, pipesResult.status(),
-                    "Should return PARSE_SUCCESS_WITH_EXCEPTION when parse throws but produces content");
-
-            // Verify it's still categorized as SUCCESS
-            assertTrue(pipesResult.isSuccess(), "PARSE_SUCCESS_WITH_EXCEPTION should be success category");
-
-            // Verify we got the metadata before the exception
-            Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
-            assertTrue(pipesResult.emitData().getMetadataList().size() > 0);
-            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-            assertEquals("Test Author", metadata.get("dc:creator"));
-        }
+        // Verify we got the metadata before the exception
+        Assertions.assertNotNull(pipesResult.emitData().getMetadataList());
+        assertTrue(pipesResult.emitData().getMetadataList().size() > 0);
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+        assertEquals("Test Author", metadata.get("dc:creator"));
     }
 
     @Test
-    public void testFetchException(@TempDir Path tmp) throws Exception {
+    public void testFetchException() throws Exception {
         // Test FETCH_EXCEPTION status
         // Occurs when fetcher fails to retrieve the file
-        Path inputDir = tmp.resolve("input");
-        Files.createDirectories(inputDir);
+        // Request a file that doesn't exist
+        String nonExistentFile = "does-not-exist.pdf";
+        FetchEmitTuple tuple = new FetchEmitTuple(nonExistentFile,
+                new FetchKey(fetcherName, nonExistentFile),
+                new EmitKey(), new Metadata(), new ParseContext(),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
 
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
+        PipesResult pipesResult = sharedClient.process(tuple);
 
-        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
-            // Request a file that doesn't exist
-            String nonExistentFile = "does-not-exist.pdf";
-            FetchEmitTuple tuple = new FetchEmitTuple(nonExistentFile,
-                    new FetchKey(fetcherName, nonExistentFile),
-                    new EmitKey(), new Metadata(), new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+        // Should be FETCH_EXCEPTION because file doesn't exist
+        assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, pipesResult.status(),
+                "Should return FETCH_EXCEPTION when file cannot be fetched");
 
-            PipesResult pipesResult = pipesClient.process(tuple);
+        // Verify it's categorized as TASK_EXCEPTION
+        assertTrue(pipesResult.isTaskException(),
+                "FETCH_EXCEPTION should be task exception category");
 
-            // Should be FETCH_EXCEPTION because file doesn't exist
-            assertEquals(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, pipesResult.status(),
-                    "Should return FETCH_EXCEPTION when file cannot be fetched");
-
-            // Verify it's categorized as TASK_EXCEPTION
-            assertTrue(pipesResult.isTaskException(),
-                    "FETCH_EXCEPTION should be task exception category");
-
-            // Verify error message contains useful information
-            Assertions.assertNotNull(pipesResult.message());
-            assertTrue(pipesResult.message().contains("does-not-exist") ||
-                            pipesResult.message().contains("NoSuchFileException") ||
-                            pipesResult.message().contains("not found"),
-                    "Error message should indicate file not found");
-        }
+        // Verify error message contains useful information
+        Assertions.assertNotNull(pipesResult.message());
+        assertTrue(pipesResult.message().contains("does-not-exist") ||
+                        pipesResult.message().contains("NoSuchFileException") ||
+                        pipesResult.message().contains("not found"),
+                "Error message should indicate file not found");
     }
 
     @Test
-    public void testEmitException(@TempDir Path tmp) throws Exception {
-        // Test EMIT_EXCEPTION status
-        // Occurs when emitter fails to write results
+    public void testEmitExceptionAndEmitterNotFound(@TempDir Path tmp) throws Exception {
+        // EMIT_EXCEPTION when the emitter fails to write; EMITTER_NOT_FOUND for an unknown emitter id
         Path inputDir = tmp.resolve("input");
         Files.createDirectories(inputDir);
 
-        // Create valid test file
         String testFile = "test.xml";
         String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
                 "<metadata action=\"add\" name=\"dc:creator\">Test</metadata>" +
@@ -688,125 +590,75 @@ public class PipesClientTest {
                 "</mock>";
         Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
 
-        // Create output directory and pre-create the output file to trigger onExists=EXCEPTION
+        // pre-create the emitter's output so onExists=EXCEPTION fires
         Path outputDir = tmp.resolve("output");
         Files.createDirectories(outputDir);
-        // The emitter will try to create test.xml.json, so pre-create it
         Files.writeString(outputDir.resolve("test.xml.json"), "existing file");
 
-        // Use config with directEmitThresholdBytes=0 to force server-side emission
-        // Config has onExists=EXCEPTION which will trigger FileAlreadyExistsException
+        // directEmitThresholdBytes=0 forces server-side emission
         Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig("tika-config-emit-all.json", tmp, inputDir, outputDir, false);
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
 
         try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
-            FetchEmitTuple tuple = new FetchEmitTuple(testFile,
+            PipesResult pipesResult = pipesClient.process(new FetchEmitTuple(testFile,
                     new FetchKey(fetcherName, testFile),
                     new EmitKey(emitterName, ""), new Metadata(), new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
-
-            PipesResult pipesResult = pipesClient.process(tuple);
-
-            // Should be EMIT_EXCEPTION because output file exists and onExists=EXCEPTION
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             assertEquals(PipesResult.RESULT_STATUS.EMIT_EXCEPTION, pipesResult.status(),
                     "Should return EMIT_EXCEPTION when emitter fails to write");
-
-            // Verify it's categorized as TASK_EXCEPTION
             assertTrue(pipesResult.isTaskException(),
                     "EMIT_EXCEPTION should be task exception category");
-        }
-    }
 
-    @Test
-    public void testFetcherNotFound(@TempDir Path tmp) throws Exception {
-        // Test FETCHER_NOT_FOUND status
-        // Occurs when FetchKey references a fetcher that doesn't exist
-        Path inputDir = tmp.resolve("input");
-        Files.createDirectories(inputDir);
-
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-
-        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
-            // Use invalid fetcher name
-            FetchEmitTuple tuple = new FetchEmitTuple("test.pdf",
-                    new FetchKey("non-existent-fetcher", "test.pdf"),
-                    new EmitKey(), new Metadata(), new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
-
-            PipesResult pipesResult = pipesClient.process(tuple);
-
-            // An unknown fetcher id is not an initialization failure: nothing failed to start,
-            // the caller named something this server does not have. FetchHandler used to catch
-            // IllegalArgumentException, which FetcherManager never throws, so this fell through
-            // to the initialization branch and FETCHER_NOT_FOUND was unreachable.
-            assertEquals(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, pipesResult.status(),
-                    "Should return FETCHER_NOT_FOUND when fetcher name is invalid");
-
-            assertTrue(pipesResult.isTaskException(),
-                    "FETCHER_NOT_FOUND is a task exception, not an initialization failure");
-
-            // Verify error message mentions the fetcher name
-            Assertions.assertNotNull(pipesResult.message());
-            assertTrue(pipesResult.message().contains("non-existent-fetcher") ||
-                            pipesResult.message().contains("not found") ||
-                            pipesResult.message().contains("fetcher"),
-                    "Error message should mention the missing fetcher");
-
-            // the configured fetcher ids must not be disclosed to the caller
-            assertFalse(pipesResult.message().contains("fsf"), pipesResult.message());
-        }
-    }
-
-    @Test
-    public void testEmitterNotFound(@TempDir Path tmp) throws Exception {
-        // Test EMITTER_NOT_FOUND status
-        // Occurs when EmitKey references an emitter that doesn't exist
-        Path inputDir = tmp.resolve("input");
-        Files.createDirectories(inputDir);
-
-        // Create valid test file
-        String testFile = "test.xml";
-        String mockContent = "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>" + "<mock>" +
-                "<metadata action=\"add\" name=\"dc:creator\">Test</metadata>" +
-                "<write element=\"p\">content</write>" +
-                "</mock>";
-        Files.write(inputDir.resolve(testFile), mockContent.getBytes(StandardCharsets.UTF_8));
-
-        // Use config with directEmitThresholdBytes=0 to force server-side emission
-        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig("tika-config-emit-all.json", tmp, inputDir, tmp.resolve("output"), false);
-        TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
-        PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
-
-        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
-            // Use invalid emitter name
-            FetchEmitTuple tuple = new FetchEmitTuple(testFile,
+            pipesResult = pipesClient.process(new FetchEmitTuple(testFile,
                     new FetchKey(fetcherName, testFile),
                     new EmitKey("non-existent-emitter", ""), new Metadata(), new ParseContext(),
-                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
-
-            PipesResult pipesResult = pipesClient.process(tuple);
-
-            // Should be EMITTER_NOT_FOUND
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             assertEquals(PipesResult.RESULT_STATUS.EMITTER_NOT_FOUND, pipesResult.status(),
                     "Should return EMITTER_NOT_FOUND when emitter name is invalid");
-
-            // Verify it's categorized as TASK_EXCEPTION
             assertTrue(pipesResult.isTaskException(),
                     "EMITTER_NOT_FOUND should be task exception category");
-
-            // Verify error message mentions the emitter name
             Assertions.assertNotNull(pipesResult.message());
             assertTrue(pipesResult.message().contains("non-existent-emitter") ||
                             pipesResult.message().contains("not found") ||
                             pipesResult.message().contains("emitter"),
                     "Error message should mention the missing emitter");
-
             // the configured emitter ids must not be disclosed to the caller
             assertFalse(pipesResult.message().contains("fse"), pipesResult.message());
         }
+    }
+
+    @Test
+    public void testFetcherNotFound() throws Exception {
+        // Test FETCHER_NOT_FOUND status
+        // Occurs when FetchKey references a fetcher that doesn't exist
+        // Use invalid fetcher name
+        FetchEmitTuple tuple = new FetchEmitTuple("test.pdf",
+                new FetchKey("non-existent-fetcher", "test.pdf"),
+                new EmitKey(), new Metadata(), new ParseContext(),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP);
+
+        PipesResult pipesResult = sharedClient.process(tuple);
+
+        // An unknown fetcher id is not an initialization failure: nothing failed to start,
+        // the caller named something this server does not have. FetchHandler used to catch
+        // IllegalArgumentException, which FetcherManager never throws, so this fell through
+        // to the initialization branch and FETCHER_NOT_FOUND was unreachable.
+        assertEquals(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, pipesResult.status(),
+                "Should return FETCHER_NOT_FOUND when fetcher name is invalid");
+
+        assertTrue(pipesResult.isTaskException(),
+                "FETCHER_NOT_FOUND is a task exception, not an initialization failure");
+
+        // Verify error message mentions the fetcher name
+        Assertions.assertNotNull(pipesResult.message());
+        assertTrue(pipesResult.message().contains("non-existent-fetcher") ||
+                        pipesResult.message().contains("not found") ||
+                        pipesResult.message().contains("fetcher"),
+                "Error message should mention the missing fetcher");
+
+        // the configured fetcher ids must not be disclosed to the caller
+        assertFalse(pipesResult.message().contains("fsf"), pipesResult.message());
     }
 
     @Test
@@ -908,35 +760,30 @@ public class PipesClientTest {
     }
 
     @Test
-    public void testContentOnlyMode(@TempDir Path tmp) throws Exception {
+    public void testContentOnlyMode() throws Exception {
         // Test that CONTENT_ONLY mode strips all metadata except tk:content
-        try (PipesClient pipesClient = init(tmp, testDoc)) {
-            ParseContext parseContext = new ParseContext();
-            parseContext.set(ParseMode.class, ParseMode.CONTENT_ONLY);
-            
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
-                            new EmitKey(), new Metadata(), parseContext,
-                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            assertNotNull(pipesResult.emitData().getMetadataList());
-            assertEquals(1, pipesResult.emitData().getMetadataList().size());
-            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-            
-            // Content should be present
-            String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
-            assertNotNull(content, "TIKA_CONTENT should be present in CONTENT_ONLY mode");
-            assertFalse(content.isEmpty(), "TIKA_CONTENT should not be empty");
-            
-            // Other metadata should be stripped by the IncludeFieldMetadataFilter
-            assertNull(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
-                    "RESOURCE_NAME should be stripped in CONTENT_ONLY mode");
-            assertNull(metadata.get(HttpHeaders.CONTENT_TYPE),
-                    "CONTENT_TYPE should be stripped in CONTENT_ONLY mode");
-        }
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.CONTENT_ONLY);
+
+        PipesResult pipesResult = processShared(testDoc, parseContext);
+        assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+
+        // Content should be present
+        String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
+        assertNotNull(content, "TIKA_CONTENT should be present in CONTENT_ONLY mode");
+        assertFalse(content.isEmpty(), "TIKA_CONTENT should not be empty");
+
+        // Other metadata should be stripped by the IncludeFieldMetadataFilter
+        assertNull(metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
+                "RESOURCE_NAME should be stripped in CONTENT_ONLY mode");
+        assertNull(metadata.get(HttpHeaders.CONTENT_TYPE),
+                "CONTENT_TYPE should be stripped in CONTENT_ONLY mode");
     }
 
     @Test
-    public void testContentOnlyModeWithUserFilter(@TempDir Path tmp) throws Exception {
+    public void testContentOnlyModeWithUserFilter() throws Exception {
         // Test that CONTENT_ONLY mode respects a user-provided MetadataFilter
         ParseContext parseContext = new ParseContext();
         parseContext.set(ParseMode.class, ParseMode.CONTENT_ONLY);
@@ -945,21 +792,16 @@ public class PipesClientTest {
             ["mock-upper-case-filter"]
         """);
 
-        try (PipesClient pipesClient = init(tmp, testDoc)) {
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testDoc, new FetchKey(fetcherName, testDoc),
-                            new EmitKey(), new Metadata(), parseContext,
-                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            assertNotNull(pipesResult.emitData().getMetadataList());
-            assertEquals(1, pipesResult.emitData().getMetadataList().size());
-            Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
-            
-            // User filter (uppercase) should take effect instead of CONTENT_ONLY filter
-            // So all metadata should still be present (but uppercased)
-            assertEquals("TESTOVERLAPPINGTEXT.PDF",
-                    metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
-                    "User filter should take priority over CONTENT_ONLY filter");
-        }
+        PipesResult pipesResult = processShared(testDoc, parseContext);
+        assertNotNull(pipesResult.emitData().getMetadataList());
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
+
+        // User filter (uppercase) should take effect instead of CONTENT_ONLY filter
+        // So all metadata should still be present (but uppercased)
+        assertEquals("TESTOVERLAPPINGTEXT.PDF",
+                metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY),
+                "User filter should take priority over CONTENT_ONLY filter");
     }
 
     @Test
@@ -1017,23 +859,52 @@ public class PipesClientTest {
     }
 
     @Test
-    public void testConcatenateMode(@TempDir Path tmp) throws Exception {
+    public void testRecoveryAfterRealOom(@TempDir Path tmp) throws Exception {
+        // Genuine heap exhaustion, not a thrown OutOfMemoryError: the fork must report OOM
+        // and the next document must succeed on a restarted fork.
+        Path inputDir = tmp.resolve("input");
+        Files.createDirectories(inputDir);
+        String oomFile = "mock-real-oom.xml";
+        Files.writeString(inputDir.resolve(oomFile),
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><mock><oom/></mock>", StandardCharsets.UTF_8);
+        String normalFile = "mock-normal.xml";
+        Files.writeString(inputDir.resolve(normalFile),
+                "<?xml version=\"1.0\" encoding=\"UTF-8\" ?><mock>" +
+                        "<metadata action=\"add\" name=\"dc:creator\">Normal Author</metadata>" +
+                        "<write element=\"p\">normal content</write></mock>", StandardCharsets.UTF_8);
+
+        Path tikaConfigPath = PluginsTestHelper.getFileSystemFetcherConfig(tmp, inputDir, tmp.resolve("output"));
+        PipesConfig pipesConfig = PipesConfig.load(TikaJsonConfig.load(tikaConfigPath));
+        pipesConfig.setForkedJvmArgs(new ArrayList<>(List.of("-Xmx128m")));
+
+        try (PipesClient pipesClient = new PipesClient(pipesConfig, tikaConfigPath)) {
+            PipesResult oomResult = pipesClient.process(
+                    new FetchEmitTuple(oomFile, new FetchKey(fetcherName, oomFile),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            assertEquals(PipesResult.RESULT_STATUS.OOM, oomResult.status(), oomResult.message());
+
+            PipesResult normalResult = pipesClient.process(
+                    new FetchEmitTuple(normalFile, new FetchKey(fetcherName, normalFile),
+                            new EmitKey(), new Metadata(), new ParseContext(),
+                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
+            assertTrue(normalResult.isSuccess(), "after OOM: " + normalResult.status() + " " + normalResult.message());
+            assertEquals("Normal Author",
+                    normalResult.emitData().getMetadataList().get(0).get("dc:creator"));
+        }
+    }
+
+    @Test
+    public void testConcatenateMode() throws Exception {
         // Test that CONCATENATE mode returns a single metadata object with content
         // but preserves all metadata fields (unlike CONTENT_ONLY)
-        String testFile = "mock-embedded.xml";
-        Metadata metadata;
-        try (PipesClient pipesClient = init(tmp, testFile)) {
-            ParseContext parseContext = new ParseContext();
-            parseContext.set(ParseMode.class, ParseMode.CONCATENATE);
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
-                            new EmitKey(), new Metadata(), parseContext,
-                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            assertNotNull(pipesResult.emitData().getMetadataList());
-            // CONCATENATE produces a single metadata object (not one per embedded doc)
-            assertEquals(1, pipesResult.emitData().getMetadataList().size());
-            metadata = pipesResult.emitData().getMetadataList().get(0);
-        }
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.CONCATENATE);
+        PipesResult pipesResult = processShared(embeddedDoc, parseContext);
+        assertNotNull(pipesResult.emitData().getMetadataList());
+        // CONCATENATE produces a single metadata object (not one per embedded doc)
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
 
         // Content should be present
         String content = metadata.get(TikaCoreProperties.TIKA_CONTENT);
@@ -1045,27 +916,20 @@ public class PipesClientTest {
     }
 
     @Test
-    public void testConcatenateModeIgnoreHandlerDoesNotLeakContent(@TempDir Path tmp) throws Exception {
+    public void testConcatenateModeIgnoreHandlerDoesNotLeakContent() throws Exception {
         // CONCATENATE + handler type "ignore" must not add TIKA_CONTENT at all -- previously
         // ParseHandler.parseConcatenated's finally block unconditionally called
         // handler.toString(), which for the DefaultHandler behind "ignore" produces garbage
         // like "org.xml.sax.helpers.DefaultHandler@6c8b1edd" instead of skipping, unlike
         // RecursiveParserWrapperHandler.addContent (used by RMETA mode), which already guards
         // against this.
-        String testFile = "mock-embedded.xml";
-        Metadata metadata;
-        try (PipesClient pipesClient = init(tmp, testFile)) {
-            ParseContext parseContext = new ParseContext();
-            parseContext.set(ParseMode.class, ParseMode.CONCATENATE);
-            parseContext.set(ContentHandlerFactory.class,
-                    new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
-            PipesResult pipesResult = pipesClient.process(
-                    new FetchEmitTuple(testFile, new FetchKey(fetcherName, testFile),
-                            new EmitKey(), new Metadata(), parseContext,
-                            FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
-            assertEquals(1, pipesResult.emitData().getMetadataList().size());
-            metadata = pipesResult.emitData().getMetadataList().get(0);
-        }
+        ParseContext parseContext = new ParseContext();
+        parseContext.set(ParseMode.class, ParseMode.CONCATENATE);
+        parseContext.set(ContentHandlerFactory.class,
+                new BasicContentHandlerFactory(BasicContentHandlerFactory.HANDLER_TYPE.IGNORE, -1));
+        PipesResult pipesResult = processShared(embeddedDoc, parseContext);
+        assertEquals(1, pipesResult.emitData().getMetadataList().size());
+        Metadata metadata = pipesResult.emitData().getMetadataList().get(0);
 
         assertNull(metadata.get(TikaCoreProperties.TIKA_CONTENT),
                 "TIKA_CONTENT must not be set when the handler type is \"ignore\"");

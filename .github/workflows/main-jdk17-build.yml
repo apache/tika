@@ -96,6 +96,8 @@ jobs:
       # javadoc:aggregate is push-only: it is an aggregate-docs artifact, is
       # single-threaded, and javadoc breakage is caught on main within the hour;
       # PR pushes should not wait on it.
+      # Random test locales (-Dtika.test.locale=random, RandomLocaleListener) stay off
+      # here until nightly-locale-build has been green several nights running (TIKA-4920).
       - name: Build with Maven
         run: |
           mvn install -Pfast -pl :tika-annotation-processor -am -B -q

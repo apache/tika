@@ -34,7 +34,7 @@
   "pipes": {
     "parseMode": "RMETA",
     "onParseException": "EMIT",
-    "numClients": 4,
+    "numClients": 1,
     "emitIntermediateResults": "EMIT_INTERMEDIATE_RESULTS",
     "forkedJvmArgs": ["-Xmx512m"],
     "emitStrategy": {
@@ -45,7 +45,9 @@
     "throwOnZeroBytes": false
   },
   "parse-context": {
-    "mock-digester-factory": {},
+    "commons-digester-factory": {
+      "digests": [{ "algorithm": "SHA256" }]
+    },
     "timeout-limits": {
       "progressTimeoutMillis": 60000
     }

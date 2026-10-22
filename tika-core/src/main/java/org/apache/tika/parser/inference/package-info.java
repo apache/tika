@@ -16,9 +16,9 @@
  */
 /**
  * Inference bindings: what is offered to which engine, buffered per document tree and run at
- * its end. Experimental in 4.1: the {@code "inference"} configuration, the unit and task
+ * its end. Experimental in 4.1 and 4.2: the {@code "inference"} configuration, the unit and task
  * contracts, and the metadata they write ({@code tk:chunks}, {@code tk:inference-released})
- * may change in a minor release without a deprecation cycle as 4.2 adds batched recognition,
+ * may change in a minor release without a deprecation cycle as 4.3 adds batched recognition,
  * media inputs, and document-level tasks. The {@code "engines"} map is stable.
  */
 package org.apache.tika.parser.inference;

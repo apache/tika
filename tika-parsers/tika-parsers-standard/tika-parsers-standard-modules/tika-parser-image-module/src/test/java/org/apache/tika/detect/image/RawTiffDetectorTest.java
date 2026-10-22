@@ -17,6 +17,7 @@
 package org.apache.tika.detect.image;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -55,7 +56,14 @@ public class RawTiffDetectorTest {
             "testDNG.dng, image/x-raw-adobe",
             "testDNG_bigtiff.dng, image/x-raw-adobe",
             "testCR2.cr2, image/x-canon-cr2",
+            "testERF.erf, image/x-raw-epson",
+            "testERF_nopreview.erf, image/x-raw-epson",
+            "testORF.orf, image/x-raw-olympus",
+            "testORF_bigendian.orf, image/x-raw-olympus",
+            "testORF_omsystem.orf, image/x-raw-olympus",
+            "testRW2.rw2, image/x-raw-panasonic",
             "testTIFF.tif, image/tiff",
+            "testBigTIFF.tif, image/tiff",
             "testJPEG.jpg, image/jpeg"})
     public void testDetectionWithoutName(String file, String expected) throws Exception {
         try (InputStream is = getClass().getResourceAsStream("/test-documents/" + file);
@@ -100,6 +108,16 @@ public class RawTiffDetectorTest {
         assertEquals(MediaType.OCTET_STREAM, RawTiffDetector.detect(tiff, tiff.length));
     }
 
+    /**
+     * A declared type can only refine what was detected, so the registry has
+     * to know an ERF for a TIFF.
+     */
+    @Test
+    public void testEpsonIsATiff() throws Exception {
+        assertTrue(MimeTypes.getDefaultMimeTypes().getMediaTypeRegistry()
+                .isSpecializationOf(RawTiffDetector.EPSON, MediaType.image("tiff")));
+    }
+
     @Test
     public void testVendorCompressionWins() {
         byte[] tiff = tiff("NIKON CORPORATION", 34713, 2, false);
@@ -128,6 +146,25 @@ public class RawTiffDetectorTest {
                 .ifd(entry(0x0103, 3, 1), entry(0x0106, 3, 32803))
                 .build();
         assertEquals(RawTiffDetector.NIKON, RawTiffDetector.detect(tiff, tiff.length));
+    }
+
+    /**
+     * The ERF layout: an uncompressed RGB thumbnail in IFD0 carrying the
+     * Make, the CFA image in a SubIFD. Epson's compression code is a
+     * published TIFF value other writers use, so the Make decides, whether
+     * the sensor image is compressed or not.
+     */
+    @Test
+    public void testEpsonRaw() {
+        byte[] tiff = new TiffBuilder(false)
+                .ifd(entry(0x0103, 3, 1), entry(0x010F, "SEIKO EPSON CORP."), subIfds(1))
+                .ifd(entry(0x0103, 3, 32769), entry(0x0106, 3, 32803))
+                .build();
+        assertEquals(RawTiffDetector.EPSON, RawTiffDetector.detect(tiff, tiff.length));
+
+        byte[] uncompressed = tiff("SEIKO EPSON CORP.", 1, 32803, false);
+        assertEquals(RawTiffDetector.EPSON,
+                RawTiffDetector.detect(uncompressed, uncompressed.length));
     }
 
     /**
