@@ -105,6 +105,9 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
     //maximum length to allow for mark for reparse to get JSON
     private static final int MAX_MARK = 20 * 1024 * 1024;//20MB
 
+    // Swing's html view instantiates the class an <object> names and fetches <link> stylesheets
+    private static final Set<String> HTML_VIEW_DROPPED = Set.of("head", "link", "object", "param");
+
     /**
      * Serial version UID.
      */
@@ -527,14 +530,10 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
                 if (XHTMLContentHandler.XHTML.equals(uri)) {
                     uri = null;
                 }
-                if (!"head".equals(localName)) {
+                if (!HTML_VIEW_DROPPED.contains(localName)) {
                     if ("img".equals(localName)) {
-                        AttributesImpl newAttrs;
-                        if (atts instanceof AttributesImpl) {
-                            newAttrs = (AttributesImpl) atts;
-                        } else {
-                            newAttrs = new AttributesImpl(atts);
-                        }
+                        // a copy: the other tee'd handlers see the same attributes
+                        AttributesImpl newAttrs = new AttributesImpl(atts);
 
                         for (int i = 0; i < newAttrs.getLength(); i++) {
                             if ("src".equals(newAttrs.getLocalName(i))) {
@@ -551,6 +550,10 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
                                         System.err.println("Error creating temp image file " + filename);
                                         // The html viewer will show a broken image too to alert them
                                     }
+                                } else {
+                                    // the view would fetch it on display
+                                    newAttrs.removeAttribute(i);
+                                    i--;
                                 }
                             }
                         }
@@ -566,7 +569,7 @@ public class TikaGUI extends JFrame implements ActionListener, HyperlinkListener
                 if (XHTMLContentHandler.XHTML.equals(uri)) {
                     uri = null;
                 }
-                if (!"head".equals(localName)) {
+                if (!HTML_VIEW_DROPPED.contains(localName)) {
                     super.endElement(uri, localName, name);
                 }
             }
