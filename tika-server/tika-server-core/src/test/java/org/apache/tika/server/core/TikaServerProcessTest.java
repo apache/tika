@@ -34,6 +34,22 @@ import org.apache.tika.server.core.resource.MetadataResource;
 
 public class TikaServerProcessTest {
 
+    /** 0 is maxRequestSizeBytes x 2 x clients, off when that size is unbounded; explicit values pass through. */
+    @Test
+    public void testMaxInFlightRequestBytesResolution() {
+        TikaServerConfig config = new TikaServerConfig();
+        config.setMaxRequestSizeBytes(1000);
+        assertEquals(6000, TikaServerProcess.maxInFlightRequestBytes(config, 3));
+        config.setMaxRequestSizeBytes(Long.MAX_VALUE / 2);
+        assertEquals(Long.MAX_VALUE, TikaServerProcess.maxInFlightRequestBytes(config, 3));
+        config.setMaxRequestSizeBytes(-1);
+        assertTrue(TikaServerProcess.maxInFlightRequestBytes(config, 3) < 0);
+        config.setMaxInFlightRequestBytes(5000);
+        assertEquals(5000, TikaServerProcess.maxInFlightRequestBytes(config, 3));
+        config.setMaxInFlightRequestBytes(-1);
+        assertTrue(TikaServerProcess.maxInFlightRequestBytes(config, 3) < 0);
+    }
+
     private static TikaServerConfig config(boolean allowPipes, String... endpoints) {
         TikaServerConfig c = new TikaServerConfig();
         c.setEndpoints(new ArrayList<>(List.of(endpoints)));

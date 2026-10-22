@@ -52,6 +52,7 @@ import org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter;
 import org.apache.cxf.service.factory.ServiceConstructionException;
 import org.apache.cxf.transport.common.gzip.GZIPInInterceptor;
 import org.apache.cxf.transport.common.gzip.GZIPOutInterceptor;
+import org.apache.cxf.transport.http.HttpServerEngineSupport;
 import org.apache.cxf.transport.http_jetty.JettyHTTPServerEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -248,6 +249,11 @@ public class TikaServerProcess {
         if ("*".equals(config.getCors())) {
             LOG.warn("cors is '*': any origin may call this server from a browser.");
         }
+        if (config.isAllowHttp2() && config.getMaxResponseWriteMillis() >= 0) {
+            LOG.warn("allowHttp2 is enabled: maxResponseWriteMillis does not apply to HTTP/2 "
+                    + "responses; a client reading an HTTP/2 response slowly is bounded only "
+                    + "by idleTimeoutMillis.");
+        }
         if ("0.0.0.0".equals(config.getHost()) || "*".equals(config.getHost())) {
             LOG.warn("host is {}: the server is reachable on every interface. tika-server "
                     + "performs no authentication; restrict access at the network layer.",
@@ -295,7 +301,11 @@ public class TikaServerProcess {
 
         List<ResourceProvider> resourceProviders = new ArrayList<>();
         List<Object> providers = new ArrayList<>();
-        loadAllProviders(tikaServerConfig, serverStatus, tikaResource, resourceProviders, providers);
+        long maxInFlight = maxInFlightRequestBytes(tikaServerConfig,
+                pipesParsingHelper == null ? 1 : pipesParsingHelper.getPipesConfig().getNumClients());
+        RequestBodyBudget bodyBudget = maxInFlight > 0 ? new RequestBodyBudget(maxInFlight) : null;
+        LOG.info("maxInFlightRequestBytes: {}", maxInFlight > 0 ? maxInFlight : "disabled");
+        loadAllProviders(tikaServerConfig, serverStatus, tikaResource, resourceProviders, providers, bodyBudget);
 
         TikaServerMetrics metrics = null;
         MetricsServer metricsServer = null;
@@ -303,6 +313,9 @@ public class TikaServerProcess {
             metrics = new TikaServerMetrics();
             metrics.bindJvm();
             metrics.bindServerStatus(serverStatus);
+            if (bodyBudget != null) {
+                metrics.bindRequestBodyBudget(bodyBudget);
+            }
             if (pipesParsingHelper != null) {
                 metrics.bindSyncPool(pipesParsingHelper.getPipesParser());
             }
@@ -321,7 +334,8 @@ public class TikaServerProcess {
 
         //set compression interceptors
         sf.setOutInterceptors(Collections.singletonList(new GZIPOutInterceptor()));
-        sf.setInInterceptors(Collections.singletonList(new GZIPInInterceptor()));
+        sf.setInInterceptors(List.of(new GZIPInInterceptor(),
+                new RequestReadDeadlineInterceptor(tikaServerConfig.getMaxRequestReadMillis())));
 
         warnOnPermissiveConfig(tikaServerConfig);
 
@@ -350,6 +364,16 @@ public class TikaServerProcess {
             factory.setBus(sf.getBus());
             manager.registerBindingFactory(JAXRSBindingFactory.JAXRS_BINDING_ID, factory);
         }
+        // CXF enables HTTP/2 whenever its jar is present; "true" would also make it required,
+        // and TLS startup fails without an ALPN provider, so allowing it leaves the property unset
+        if (!tikaServerConfig.isAllowHttp2()) {
+            sf.getBus().setProperty(HttpServerEngineSupport.ENABLE_HTTP2, false);
+        }
+        // CXF keys engines by port and reuses this one when the endpoint binds
+        sf.getBus()
+                .getExtension(JettyHTTPServerEngineFactory.class)
+                .createJettyHTTPServerEngine(host, port, protocol)
+                .setMaxIdleTime(tikaServerConfig.getIdleTimeoutMillis());
         ServerDetails details = new ServerDetails();
         details.sf = sf;
         details.url = url;
@@ -359,6 +383,23 @@ public class TikaServerProcess {
         details.metrics = metrics;
         details.metricsServer = metricsServer;
         return details;
+    }
+
+    /** 0 resolves to maxRequestSizeBytes x 2 x the pipes clients (off if that size is unbounded); negative is off. */
+    static long maxInFlightRequestBytes(TikaServerConfig config, int numClients) {
+        long configured = config.getMaxInFlightRequestBytes();
+        if (configured != 0) {
+            return configured;
+        }
+        long perRequest = config.getMaxRequestSizeBytes();
+        if (perRequest < 0) {
+            return -1;
+        }
+        try {
+            return Math.multiplyExact(perRequest, 2L * numClients);
+        } catch (ArithmeticException e) {
+            return Long.MAX_VALUE;
+        }
     }
 
     private static AsyncResource findAsyncResource(List<ResourceProvider> resourceProviders) {
@@ -428,7 +469,8 @@ public class TikaServerProcess {
     }
 
     private static void loadAllProviders(TikaServerConfig tikaServerConfig, ServerStatus serverStatus,
-                                          TikaResource tikaResource, List<ResourceProvider> resourceProviders, List<Object> writers)
+                                          TikaResource tikaResource, List<ResourceProvider> resourceProviders, List<Object> writers,
+                                          RequestBodyBudget bodyBudget)
             throws TikaException, SAXException, IOException {
         List<ResourceProvider> tmpCoreProviders = loadCoreProviders(tikaServerConfig, serverStatus, tikaResource);
 
@@ -451,9 +493,14 @@ public class TikaServerProcess {
 
         // Add ConfigEndpointSecurityFilter to gate /config endpoints
         writers.add(new ConfigEndpointSecurityFilter(tikaServerConfig.isAllowPerRequestConfig()));
-        writers.add(new MaxRequestSizeFilter(tikaServerConfig.getMaxRequestSizeBytes()));
+        writers.add(new MaxRequestSizeFilter(tikaServerConfig.getMaxRequestSizeBytes(),
+                tikaServerConfig.getMaxRequestReadMillis(), bodyBudget));
         // 413 for over-limit chunked bodies, which bypass the Content-Length pre-check.
         writers.add(new MaxRequestSizeFilter.RequestTooLargeExceptionMapper());
+        writers.add(new MaxRequestSizeFilter.RequestTimeoutExceptionMapper());
+        writers.add(new MaxRequestSizeFilter.RequestBudgetExceededExceptionMapper());
+        writers.add(new ResponseWriteDeadlineInterceptor(tikaServerConfig.getMaxResponseWriteMillis()));
+        writers.add(new ResponseWriteDeadlineInterceptor.ResponseWriteTimeoutExceptionMapper());
 
         // setRequestLogLevel rejects anything but debug/info, so no validation needed here.
         TikaLoggingFilter logFilter = null;

@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -76,13 +78,47 @@ public class TikaServerConfigTest extends TikaTest {
         assertTrue(config.isAllowPerRequestConfig());
     }
 
-    /** Documented defaults: 1 GiB request cap, 60s /async queue pause. */
+    /** Documented defaults: 1 GiB request cap, 5 min transfer deadlines, 2 min idle, derived in-flight budget, 60s /async queue pause. */
     @Test
     public void testDocumentedDefaults() {
         TikaServerConfig config = new TikaServerConfig();
         assertEquals(1024L * 1024 * 1024, config.getMaxRequestSizeBytes());
+        assertEquals(5L * 60 * 1000, config.getMaxRequestReadMillis());
+        assertEquals(5L * 60 * 1000, config.getMaxResponseWriteMillis());
+        assertEquals(120_000, config.getIdleTimeoutMillis());
+        assertEquals(0, config.getMaxInFlightRequestBytes());
         assertEquals(TikaServerConfig.DEFAULT_MAX_QUEUE_PAUSE_MILLIS, config.getMaxQueuePauseMillis());
         assertEquals(60000L, TikaServerConfig.DEFAULT_MAX_QUEUE_PAUSE_MILLIS);
+    }
+
+    /** Jetty reads a non-positive idle timeout as "use my default", not "never". */
+    @Test
+    public void testIdleTimeoutMustBePositive() {
+        TikaServerConfig config = new TikaServerConfig();
+        assertThrows(TikaConfigException.class, () -> config.setIdleTimeoutMillis(0));
+        assertThrows(TikaConfigException.class, () -> config.setIdleTimeoutMillis(-1));
+    }
+
+    /** Zero would fail every transfer rather than disable the deadline. */
+    @Test
+    public void testZeroDeadlinesRejected() throws Exception {
+        TikaServerConfig config = new TikaServerConfig();
+        assertThrows(TikaConfigException.class, () -> config.setMaxRequestReadMillis(0));
+        assertThrows(TikaConfigException.class, () -> config.setMaxResponseWriteMillis(0));
+        config.setMaxRequestReadMillis(-1);
+        config.setMaxResponseWriteMillis(-1);
+    }
+
+    /** A budget below one maximum-size request would refuse that request forever. */
+    @Test
+    public void testInFlightBudgetBelowRequestSizeRejected(@TempDir Path dir) throws Exception {
+        Path path = Files.writeString(dir.resolve("budget.json"),
+                "{\"server\": {\"maxRequestSizeBytes\": 1000, \"maxInFlightRequestBytes\": 999}}");
+        Options options = new Options().addOption(Option.builder("c").longOpt("config").hasArg().get());
+        String[] args = {"-c", ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(new DefaultParser().parse(options, args), null));
+        assertContains("maxInFlightRequestBytes", ex.getMessage());
     }
 
     @Test

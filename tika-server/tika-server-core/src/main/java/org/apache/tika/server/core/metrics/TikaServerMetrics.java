@@ -38,6 +38,7 @@ import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.RestartReason;
 import org.apache.tika.pipes.core.async.AsyncProcessor;
+import org.apache.tika.server.core.RequestBodyBudget;
 import org.apache.tika.server.core.ServerStatus;
 
 /**
@@ -73,6 +74,7 @@ public final class TikaServerMetrics implements AutoCloseable {
     static final String REQUEST_SIZE = "tika_server_request_size_bytes";
     static final String REJECTED = "tika_server_rejected_total";
     static final String TASKS_ACTIVE = "tika_server_tasks_active";
+    static final String REQUEST_BYTES_IN_FLIGHT = "tika_server_request_body_in_flight_bytes";
     static final String PIPES_WORKERS = "tika_pipes_workers";
     static final String PIPES_RESTARTS = "tika_pipes_worker_restarts_total";
     static final String PIPES_QUEUE_DEPTH = "tika_pipes_queue_depth";
@@ -110,6 +112,13 @@ public final class TikaServerMetrics implements AutoCloseable {
     public void bindServerStatus(ServerStatus serverStatus) {
         Gauge.builder(TASKS_ACTIVE, serverStatus, ServerStatus::getNumTasks)
                 .description("Sync parse/detect tasks currently running in this server")
+                .register(registry);
+    }
+
+    public void bindRequestBodyBudget(RequestBodyBudget budget) {
+        Gauge.builder(REQUEST_BYTES_IN_FLIGHT, budget, RequestBodyBudget::getInFlightBytes)
+                .description("Request-body bytes held by in-flight requests, against maxInFlightRequestBytes")
+                .baseUnit("bytes")
                 .register(registry);
     }
 
@@ -187,11 +196,12 @@ public final class TikaServerMetrics implements AutoCloseable {
         return (status / 100) + "xx";
     }
 
-    /** By status, as tika-server already maps them: 429 capacity, 503 fork OOM/timeout/crash, 413 body limit. */
+    /** By status, as tika-server already maps them: 429 capacity, 503 fork OOM/timeout/crash, 413 body limit, 408 body too slow. */
     static String rejectedReason(int status) {
         return switch (status) {
             case 429 -> "busy_429";
             case 413 -> "payload_413";
+            case 408 -> "slow_408";
             case 503 -> "crash_503";
             default -> null;
         };
