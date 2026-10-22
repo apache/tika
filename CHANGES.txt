@@ -1,3 +1,11 @@
+Release 4.2.1 - unreleased
+
+   * tika-grpc: experimental TikaV2 service on the same port as the existing
+     one. Its FetchAndParse replies carry a typed Document with the content
+     type, metadata, parse status and source origin, but not the extracted
+     text. Protos in the new tika-grpc-api module, metadata mapping in
+     tika-grpc-mapper (TIKA-4766).
+
 Release 4.2.0 - 10/22/2026
 
   BREAKING CHANGES AND DEPRECATIONS
@@ -205,12 +213,6 @@ Release 4.2.0 - 10/22/2026
 
    * OpenAI-compatible VLM parser: opt-in useMaxCompletionTokens for models that reject
      max_tokens.
-
-   * tika-grpc: experimental TikaV2 service on the same port as the existing
-     one. Its FetchAndParse replies carry a typed Document with the content
-     type, metadata, parse status and source origin, but not the extracted
-     text. Protos in the new tika-grpc-api module, metadata mapping in
-     tika-grpc-mapper (TIKA-4766).
 
 Release 4.1.0 - 9/26/2026
 
