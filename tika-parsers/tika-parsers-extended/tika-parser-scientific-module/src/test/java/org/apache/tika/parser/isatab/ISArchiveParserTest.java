@@ -106,4 +106,33 @@ public class ISArchiveParserTest {
         assertFalse(handler.toString().contains("OUTSIDE_DIRECTORY_CONTENT"),
                 "assay reader read a file outside the ISA-Tab directory");
     }
+
+    @Test
+    public void testDirectoryNotCachedAcrossParses(@TempDir Path root) throws Exception {
+        Parser parser = new ISArchiveParser();
+        assertEquals("FIRST", parseInvestigationId(parser, writeArchive(root, "first", "FIRST")));
+        assertEquals("SECOND", parseInvestigationId(parser, writeArchive(root, "second", "SECOND")));
+    }
+
+    private static Path writeArchive(Path root, String dirName, String investigationId)
+            throws IOException {
+        Path isaDir = Files.createDirectory(root.resolve(dirName));
+        Files.write(isaDir.resolve("i_test.txt"),
+                ("INVESTIGATION\n"
+                        + "Investigation Identifier\t\"" + investigationId + "\"\n"
+                        + "STUDY\n"
+                        + "Study File Name\t\"s_test.txt\"\n")
+                        .getBytes(StandardCharsets.UTF_8));
+        Path study = isaDir.resolve("s_test.txt");
+        Files.write(study, "\"Source Name\"\n\"culture1\"\n".getBytes(StandardCharsets.UTF_8));
+        return study;
+    }
+
+    private static String parseInvestigationId(Parser parser, Path study) throws Exception {
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(study)) {
+            parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
+        }
+        return metadata.get("Investigation Identifier");
+    }
 }
