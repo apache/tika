@@ -1,5 +1,13 @@
 Release 3.4.0 - ???
 
+  * ISArchiveParser resolves the ISA-Tab directory on each parse instead of reading every
+    later document's investigation and assay files from the first document's directory,
+    and concurrent parses no longer share the study file name (TIKA-4986).
+
+  * ISArchiveParser(String location) is deprecated and removed in 4.x: the ISA-Tab
+    directory is always the parent directory of the study file, so pass a file-backed
+    TikaInputStream (TikaInputStream.get(Path)) (TIKA-4986).
+    
   * The file-system emitter can gzip its output (param "compression": "gzip"), and tika-eval
     finds gzipped extracts (.json.gz) when comparing against a plain extract set, measuring
     their extract lengths and min/max length limits on uncompressed size (TIKA-4989).
