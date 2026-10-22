@@ -346,6 +346,8 @@ least three +1 Tika PMC votes are cast.
 
             <!-- Antora UI supplemental files -->
             <inputExclude>docs/supplemental-ui/**</inputExclude>
+            <!-- symlinks to files RAT checks in their own modules; plain-text paths on symlink-less checkouts -->
+            <inputExclude>docs/modules/ROOT/examples/**</inputExclude>
 
             <!-- UAT test fixtures (binary/markup test documents carry no license header) -->
             <inputExclude>release-tools/uat/test-files/**</inputExclude>
