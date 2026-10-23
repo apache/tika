@@ -43,25 +43,33 @@ no broker.
 
     composer (SC bolt now; coordinator service later, same rules)
         │  bytes
-        ├────► Tika ParseBytes ────► Document (core + extra)
-        ├────► external parser ───► ExtensionResult
+        ├────► TikaV2Service.ParseBytes ──► Document (core + extra)
+        ├────► external parser ───────────► ExtensionResult
         └─ compose ─► one Document (core + extra + extensions)
 
 ## Proto
 
+    // names follow the buf lint STANDARD rules the v2 protos adopted in TIKA-4766
     message ExtensionResult {
+      enum Status {
+        STATUS_UNSPECIFIED = 0;
+        STATUS_OK = 1;
+        STATUS_EMPTY = 2;
+        STATUS_FAILED = 3;
+        STATUS_SKIPPED = 4;
+      }
       string producer_id = 1;           // names the composer's contribution slot,
                                         // not a service instance: the same service
                                         // called twice is two slots
-      Status status = 2;                // OK | EMPTY | FAILED | SKIPPED
+      Status status = 2;
       google.protobuf.Any payload = 3;  // producer-owned schema; multiplicity inside
       repeated string warnings = 4;
       int64 elapsed_ms = 5;
     }
     // in Document:
     repeated ExtensionResult extensions = 40;   // the number the ticket already
-                                                // names, left unassigned on the
-                                                // 4795 branch
+                                                // names, still unassigned in
+                                                // TIKA-4766 and on the 4795 branch
 
 ## Rules
 
@@ -76,17 +84,17 @@ no broker.
    envelopes carry no digest in round one.
 4. Duplicates are deterministic. Same slot, identical contribution: collapse to
    one. Same slot, different content: a conflict, independent of arrival order —
-   neither is kept, the composer records a FAILED envelope for that slot with a
-   warning, and the core Document stays valid.
+   neither is kept, the composer records a STATUS_FAILED envelope for that slot
+   with a warning, and the core Document stays valid.
 5. One envelope per slot per call. Multi-part output (a preview per page) lives
    inside the producer's payload schema, not in N envelopes. This also defers
    streamed or partial contributions — the ticket's ParseStream mode — to a
    later round.
 6. The composer answers for its whole plan. A producer that replied contributes
    its envelope; one that timed out or crashed gets a composer-synthesized
-   FAILED envelope; one skipped by policy gets SKIPPED. The composed Document
-   then accounts for every planned slot; the plan itself stays with the
-   composer.
+   STATUS_FAILED envelope; one skipped by policy gets STATUS_SKIPPED. The
+   composed Document then accounts for every planned slot; the plan itself
+   stays with the composer.
 
 ## Runtime
 
@@ -117,7 +125,7 @@ path and parity oracle used by the first demo.
 
 ```mermaid
 flowchart LR
-    SC[composer: StormCrawler bolt] -->|bytes| T[Tika ParseBytes]
+    SC[composer: StormCrawler bolt] -->|bytes| T[TikaV2Service.ParseBytes]
     SC -->|bytes| P[external parser]
     T --> D["Document (core + extra)"]
     P --> E[ExtensionResult]
