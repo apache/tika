@@ -82,8 +82,8 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
         RequestBodyBudget.Reservation reservation =
                 budget == null ? null : budget.open(JAXRSUtils.getCurrentMessage());
         // Entity bytes: after any Content-Encoding is undone.
-        requestContext.setEntityStream(new BoundedInputStream(requestContext.getEntityStream(),
-                maxRequestSizeBytes, -1, -1, -1, reservation));
+        requestContext.setEntityStream(
+                new BoundedInputStream(requestContext.getEntityStream(), maxRequestSizeBytes, reservation));
     }
 
     private static Response tooLarge() {
@@ -110,6 +110,11 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
         private final long maxReadMillis;
         private final RequestBodyBudget.Reservation reservation;
         private long count;
+
+        /** Size and budget only; the deadline lives on the wire stream under this one. */
+        BoundedInputStream(InputStream in, long limit, RequestBodyBudget.Reservation reservation) {
+            this(in, limit, -1, -1, -1, reservation);
+        }
 
         BoundedInputStream(InputStream in, long limit, long startNanos, long maxReadNanos,
                            long maxReadMillis, RequestBodyBudget.Reservation reservation) {
@@ -185,6 +190,9 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
             }
         }
 
+        // On Jetty's servlet stream in blocking mode, available() pulls the next chunk without
+        // blocking and isReady() is defined as available() > 0; in async mode isReady() would
+        // register read demand as a side effect, so it is not used here.
         private boolean wouldBlock() throws IOException {
             if (in instanceof ServletInputStream servletIn && servletIn.isFinished()) {
                 return false;

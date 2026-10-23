@@ -217,7 +217,8 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
 
     /**
      * CXF reads the multipart closing boundary only after the resource returns; a parse that
-     * outlasts the read deadline must not turn into a 408 there.
+     * outlasts the read deadline must not turn into a 408 there. Load can only make the mock's
+     * hang longer, so timing cannot produce a false failure here.
      */
     @Test
     public void testParseOutlastingReadDeadlineMultipart() throws Exception {
