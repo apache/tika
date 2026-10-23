@@ -11,12 +11,12 @@ Release 4.2.1 - unreleased
      fetching anything. New "grpc" settings: parseBytesMaxContentBytes (64 MiB
      by default) and maxInboundMessageBytes (TIKA-4795).
 
-Release 4.2.0 - 10/22/2026
+Release 4.2.0 - 10/23/2026
 
   BREAKING CHANGES AND DEPRECATIONS
 
-   * Unpack output is a Frictionless Data Package by default on tika-server /unpack,
-     tika-app -z/-Z and pipes UNPACK; unpack-config.outputFormat=REGULAR
+   * Unpack output is a Frictionless Data Package by default (tika-server /unpack,
+     tika-app -z/-Z, pipes UNPACK); unpack-config.outputFormat=REGULAR
      (--unpack-format=REGULAR) restores the old layout (TIKA-4681). A document without
      attachments is still a package, so /unpack returns 200, not 204;
      unpack-config.emptyPackage=SKIP restores the 204 (TIKA-4971).
@@ -30,62 +30,70 @@ Release 4.2.0 - 10/22/2026
 
    * Config is untrusted unless the operator says so. @OperatorOnly properties (paths,
      executables, class names, URLs, credentials, operator-sized limits) are refused
-     wherever a request builds a component; on a class, the request can't build it at
-     all. Java code that sets one through a JsonConfig wraps it in
-     JsonConfig.trusted(json), and JsonConfig constructors now need tika-serialization.
+     wherever a request builds a component, and an @OperatorOnly class can't be built
+     from a request at all. Java code setting one through a JsonConfig wraps it in
+     JsonConfig.trusted(json); JsonConfig constructors now need tika-serialization.
      Newly locked: pdf-parser imageGraphicsEngineFactoryClass and maxMainMemoryBytes,
      raw-tiff maxTotalPreviewBytes, VLM completionsPath. The RuntimeConfig subclasses
      are removed (TIKA-4965, TIKA-4974).
 
-   * Per-request limits and timeouts may tighten the operator's but not loosen them.
-     pipes.trustedRequests=true marks requests as the operator's own: no clamp, and they
-     may set @OperatorOnly properties. PipesForkParser sets it; tika-server and tika-grpc
+   * Per-request limits and timeouts may tighten the operator's, never loosen them.
+     pipes.trustedRequests=true marks requests as the operator's own (no clamp, may set
+     @OperatorOnly properties); PipesForkParser sets it, and tika-server and tika-grpc
      refuse to start with it (TIKA-4978, TIKA-4985).
 
    * A duplicate key in configuration JSON is an error, not last-wins. A request's
-     http-fetcher config may set only httpRequestHeaders, and a file-system emitter's
-     runtime config naming basePath fails as an unknown key. forbidden-apis bans
-     JsonConfig.json() outside ConfigDeserializer and PluginJson, and projects that
-     inherit tika-parent inherit the ban (point json.forbiddenapis.signaturesFile at an
-     empty file to opt out). ExtensionConfig no longer implements JsonConfig (TIKA-4975).
+     http-fetcher config may set only httpRequestHeaders; a file-system emitter's runtime
+     config naming basePath fails as an unknown key. forbidden-apis bans JsonConfig.json()
+     outside ConfigDeserializer and PluginJson, also in projects inheriting tika-parent
+     (point json.forbiddenapis.signaturesFile at an empty file to opt out).
+     ExtensionConfig no longer implements JsonConfig (TIKA-4975).
 
    * Dates: Metadata.getDate() reads zone-less values as UTC, not the JVM's zone.
      Archive-entry and mail-attachment file times move from dcterms:* to
      fs:created/fs:modified. DateNormalizingMetadataFilter honors offsets, normalizes
      every value and completes partial dates (2019 -> 2019-01-01T12:00:00Z).
      MailDateParser is replaced by TikaDates; MailUtil moved to tika-parser-mail-module,
-     leaving tika-parser-mail-commons a deprecated shim (TIKA-4917).
+     leaving tika-parser-mail-commons a deprecated shim, to be removed in 4.3.0
+     (TIKA-4917).
 
-   * An OCR engine (tesseract-ocr-parser, tess4j-parser) under "parsers", deprecated in
-     4.1.0, fails config load: configure it under "engines" and name it in
+   * OCR engines (tesseract-ocr-parser, tess4j-parser) under "parsers", deprecated in
+     4.1.0, now fail config load: configure them under "engines" and name them in
      "text-recognizers". A VLM parser may stay under "parsers" as a document parser
      (ContentEnricher.parsesDocuments()). openai-embedding-filter, jina-embedding-filter
      and openai-image-embedding-parser, deprecated in 4.1.0, are removed; use an engine
      and an inference binding (TIKA-4985).
 
    * text-recognizers: an inline entry must have exactly one key, setting both
-     _min-width and min-width is an error, and gated entries load as GatedEnricher,
-     not SizeGatedEnricher (TIKA-4972).
+     _min-width and min-width is an error, and gated entries load as GatedEnricher, not
+     SizeGatedEnricher (TIKA-4972).
 
-   * tika-server adds transfer limits: maxRequestReadMillis (408) and
-     maxResponseWriteMillis, both 5 min; idleTimeoutMillis (120s, was CXF's fixed
-     200s); and maxInFlightRequestBytes (429). Raise the deadlines for very large or very slow
-     transfers; cut-offs are logged at INFO by the TransferLimitLog logger (TIKA-4991).
+   * tika-server transfer limits: maxRequestReadMillis (408) and maxResponseWriteMillis,
+     both 5 min; idleTimeoutMillis 120s (was CXF's fixed 200s); maxInFlightRequestBytes
+     (429). Raise the deadlines for very large or slow transfers; cut-offs are logged at
+     INFO by the TransferLimitLog logger. Cleartext HTTP/2 (h2c), on by default since
+     4.0.0, now needs allowHttp2 (TIKA-4991).
 
-   * tika-server accepts cleartext HTTP/2 (h2c) only when allowHttp2 is set; it had
-     been on by default since 4.0.0 (TIKA-4991).
+   * tika-server TLS: a tlsConfig block turns TLS on; "active" is deprecated (true
+     ignored with a warning, false refused, removed in 4.3.0), and
+     TikaServerConfig.getTlsConfig() is null without a block. Protocol and cipher suite
+     policy is the JVM's (jdk.tls.server.protocols, jdk.tls.server.cipherSuites,
+     jdk.tls.disabledAlgorithms): includedProtocols, excludedProtocols,
+     includedCipherSuites and excludedCipherSuites, none of which worked as documented,
+     are refused at startup. clientAuthenticationWanted is removed (true refused, false
+     ignored with a warning), as tika-server never reads client certificates
+     (TIKA-4994).
 
    * embedded-limits maxDepth defaults to 20 (was unlimited) and replaces output-limits
-     maxPackageEntryDepth (#3319). To be removed in 4.3.0: maxPackageEntryDepth and its
-     accessors on OutputLimits and SecureContentHandler, and tika-parser-mail-commons
-     (TIKA-4917).
+     maxPackageEntryDepth, which is to be removed in 4.3.0 with its accessors on
+     OutputLimits and SecureContentHandler (#3319).
 
    * Pipes plugins load only from the zips in plugin-roots; a plugin on the classpath
      needs -Dtika.plugins.classpath=true, which PipesForkParser sets when it finds no
      plugins directory holding tika-pipes-file-system (TIKA-4918, TIKA-4985).
 
    * image/vnd.microsoft.icon moves from ImageParser to the new ICOParser, which also
-     parses cursors (TIKA-4937). Animated cursors (RIFF ACON) are
+     parses cursors (TIKA-4937); animated cursors (RIFF ACON) are
      application/x-navi-animation, even when named *.cur (TIKA-4985).
 
    * ISArchiveParser(String location) is removed; pass a file-backed TikaInputStream
@@ -99,17 +107,17 @@ Release 4.2.0 - 10/22/2026
 
   SECURITY
 
-   * The default zip-bomb ratio (output-limits.zipBombRatio) is 1000, up from 100. The
-     ratio is measured across the whole embedded tree against the container's bytes, so
-     nested compression is still caught; at 100, ordinary compressed logs and text
-     tripped it. Set zipBombRatio to 100 to restore the old limit (TIKA-4985).
+   * The default zip-bomb ratio (output-limits.zipBombRatio) is 1000, up from 100. It
+     is measured across the whole embedded tree against the container's bytes, so nested
+     compression is still caught; at 100, ordinary compressed logs and text tripped it.
+     Set zipBombRatio to 100 to restore the old limit (TIKA-4985).
 
-   * The Gemini VLM parser sends its API key in x-goog-api-key instead of the URL,
-     which error messages and logs quote (TIKA-4985).
+   * The Gemini VLM parser sends its API key in x-goog-api-key, not in the URL that
+     error messages and logs quote (TIKA-4985).
 
-   * XML parsers are configured through Apache Commons Secure XML (TIKA-4935), Tika's
-     own entity-expansion limit is retired in favor of the JDK's settings (TIKA-4940),
-     and forbidden-apis rejects building XML parsers outside XMLReaderUtils (TIKA-4939).
+   * XML parsers are configured through Apache Commons Secure XML (TIKA-4935); Tika's
+     own entity-expansion limit is retired in favor of the JDK's (TIKA-4940); and
+     forbidden-apis rejects building XML parsers outside XMLReaderUtils (TIKA-4939).
      New tk:xml-external-reference and -count list the external DTDs and entities a
      document referenced, which Tika never resolves (TIKA-4941). XFA is read with SAX;
      XMLReaderUtils.getXMLInputFactory() is deprecated (TIKA-4938).
@@ -118,10 +126,14 @@ Release 4.2.0 - 10/22/2026
      construct classes or fetch URLs: only plain elements and attributes reach it, and
      remote images are not loaded (TIKA-4992).
 
-  SERVER, PIPES AND OPERATIONS
+   * tika-server TLS: a keystore configured without "active": true no longer serves plain
+     HTTP. 2-way TLS accepts client certificates issued by a CA in the truststore, which
+     it had rejected since 2.4.0; their revocation is checked through the certificate's
+     OCSP responder or CRL distribution point and fails closed (tlsConfig
+     checkRevocation=false turns it off). Rejected client certificates are logged at INFO
+     with the reason (TIKA-4994).
 
-   * tika-server's welcome page lists endpoints inherited from superclasses (XMP on
-     /meta) under their real paths (TIKA-4991).
+  SERVER, PIPES AND OPERATIONS
 
    * The file-system emitter can gzip its output ("compression": "GZIP"); tika-eval reads
      .json.gz extracts and measures them uncompressed (TIKA-4989).
@@ -173,8 +185,8 @@ Release 4.2.0 - 10/22/2026
      (TIKA-4936).
 
    * BigTIFF is read through metadata-extractor 2.22.0: EXIF and DNG tags from BigTIFF
-     DNGs, and plain BigTIFF no longer fails; little-endian BigTIFF is detected by content
-     (TIKA-4987).
+     DNGs, plain BigTIFF no longer fails, and little-endian BigTIFF is detected by
+     content (TIKA-4987).
 
    * Previews from Olympus ORF, Panasonic RW2, Epson ERF, Kodak KDC and Leaf MOS; Epson
      ERF is detected by content. A metadata-extractor tag descriptor that throws skips
@@ -205,10 +217,10 @@ Release 4.2.0 - 10/22/2026
      tk:chunks as JSON values rather than strings; new Property.ValueType.JSON
      (TIKA-4969).
 
-   * Parsers no longer carry one document's state into the next: IDML page counts no
-     longer accumulate, an ENVI header's multi-line field no longer absorbs the previous
-     field or document (#3406), and an IPTC/ANPA wire no longer inherits the previous
-     wire's agency format and publisher (TIKA-4995).
+   * Parsers no longer carry one document's state into the next, or share it between
+     concurrent parses: IDML page counts, an ENVI header's multi-line field (#3406), an
+     IPTC/ANPA wire's agency format and publisher (TIKA-4995), and ISArchiveParser's
+     ISA-Tab directory and study file name (TIKA-4986).
 
   OTHER CHANGES
 
@@ -220,10 +232,6 @@ Release 4.2.0 - 10/22/2026
      tk:exception:embedded-stream-exception on the container; what was extracted before
      the failure is kept and the rest of the archive is parsed (junrar 8.1.2, TIKA-4985).
 
-   * ISArchiveParser resolves the ISA-Tab directory on each parse instead of reading every
-     later document's investigation and assay files from the first document's directory,
-     and concurrent parses no longer share the study file name (TIKA-4986).
-
    * JSoupParser emits CDATA text again (TIKA-4963).
 
    * OutlookExtractor falls back to the Date: header when a .msg has no MAPI date
@@ -232,6 +240,9 @@ Release 4.2.0 - 10/22/2026
    * The MP4 parser no longer warns of an EOFException on every file (TIKA-4957).
 
    * GeoGebraParser no longer needs jackson-databind (TIKA-4956).
+
+   * tika-server's welcome page lists endpoints inherited from superclasses (XMP on
+     /meta) under their real paths (TIKA-4991).
 
 
 Release 4.1.0 - 9/26/2026

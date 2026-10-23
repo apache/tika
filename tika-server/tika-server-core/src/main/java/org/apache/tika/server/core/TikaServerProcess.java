@@ -38,10 +38,8 @@ import org.apache.cxf.binding.BindingFactoryManager;
 import org.apache.cxf.configuration.jsse.TLSParameterJaxBUtils;
 import org.apache.cxf.configuration.jsse.TLSServerParameters;
 import org.apache.cxf.configuration.security.ClientAuthentication;
-import org.apache.cxf.configuration.security.FiltersType;
 import org.apache.cxf.configuration.security.KeyManagersType;
 import org.apache.cxf.configuration.security.KeyStoreType;
-import org.apache.cxf.configuration.security.TrustManagersType;
 import org.apache.cxf.endpoint.Server;
 import org.apache.cxf.jaxrs.JAXRSBindingFactory;
 import org.apache.cxf.jaxrs.JAXRSServerFactoryBean;
@@ -339,18 +337,14 @@ public class TikaServerProcess {
 
         warnOnPermissiveConfig(tikaServerConfig);
 
-        String protocol = tikaServerConfig
-                .getTlsConfig()
-                .isActive() ? "https" : "http";
+        String protocol = tikaServerConfig.tlsEnabled() ? "https" : "http";
         String url = protocol + "://" + host + ":" + port + "/";
         sf.setAddress(url);
         sf.setResourceComparator(new ProduceTypeResourceComparator());
         BindingFactoryManager manager = sf
                 .getBus()
                 .getExtension(BindingFactoryManager.class);
-        if (tikaServerConfig
-                .getTlsConfig()
-                .isActive()) {
+        if (tikaServerConfig.tlsEnabled()) {
             LOG.warn("The TLS configuration is in BETA and might change " + "dramatically in future releases.");
             // Check for expiring certificates and log warnings
             tikaServerConfig.getTlsConfig().checkCertificateExpiration();
@@ -431,40 +425,12 @@ public class TikaServerProcess {
         parameters.setKeyManagers(TLSParameterJaxBUtils.getKeyManagers(kmt));
 
         if (tlsConfig.hasTrustStore()) {
-            KeyStoreType trustKeyStore = new KeyStoreType();
-            trustKeyStore.setType(tlsConfig.getTrustStoreType());
-            trustKeyStore.setPassword(tlsConfig.getTrustStorePassword());
-            trustKeyStore.setFile(tlsConfig.getTrustStoreFile());
-            TrustManagersType tmt = new TrustManagersType();
-            tmt.setKeyStore(trustKeyStore);
-            parameters.setTrustManagers(TLSParameterJaxBUtils.getTrustManagers(tmt, true));
+            parameters.setTrustManagers(ClientCertificateTrustManager.create(tlsConfig));
         }
         ClientAuthentication clientAuthentication = new ClientAuthentication();
         clientAuthentication.setRequired(tlsConfig.isClientAuthenticationRequired());
-        clientAuthentication.setWant(tlsConfig.isClientAuthenticationWanted());
         parameters.setClientAuthentication(clientAuthentication);
-
-        // Configure TLS protocols
-        if (tlsConfig.getIncludedProtocols() != null && !tlsConfig.getIncludedProtocols().isEmpty()) {
-            parameters.setIncludeProtocols(tlsConfig.getIncludedProtocols());
-        }
-        if (tlsConfig.getExcludedProtocols() != null && !tlsConfig.getExcludedProtocols().isEmpty()) {
-            parameters.setExcludeProtocols(tlsConfig.getExcludedProtocols());
-        }
-
-        // Configure cipher suites
-        if ((tlsConfig.getIncludedCipherSuites() != null && !tlsConfig.getIncludedCipherSuites().isEmpty()) ||
-                (tlsConfig.getExcludedCipherSuites() != null && !tlsConfig.getExcludedCipherSuites().isEmpty())) {
-            FiltersType cipherSuitesFilter = new FiltersType();
-            if (tlsConfig.getIncludedCipherSuites() != null) {
-                cipherSuitesFilter.getInclude().addAll(tlsConfig.getIncludedCipherSuites());
-            }
-            if (tlsConfig.getExcludedCipherSuites() != null) {
-                cipherSuitesFilter.getExclude().addAll(tlsConfig.getExcludedCipherSuites());
-            }
-            parameters.setCipherSuitesFilter(cipherSuitesFilter);
-        }
-
+        // protocols and cipher suites: the JVM's (jdk.tls.server.*), less Jetty's default excludes
         return parameters;
     }
 
