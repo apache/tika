@@ -82,10 +82,6 @@ public class EmbeddedDocumentUtilExtensionTest {
                 EmbeddedDocumentUtil.getExtensionForMediaType("application/tika-bogus-xyz"));
     }
 
-    @Test
-    public void testOcrRoutingTypeIsNormalized() {
-        assertEquals(".png", EmbeddedDocumentUtil.getExtensionForMediaType("image/ocr-png"));
-    }
 
     /**
      * The lookup must not register anything: forName() would add one glob-less entry

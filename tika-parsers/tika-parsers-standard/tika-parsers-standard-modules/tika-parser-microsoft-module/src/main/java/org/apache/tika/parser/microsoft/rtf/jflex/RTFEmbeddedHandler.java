@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.microsoft.rtf.jflex;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -26,6 +27,7 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -41,7 +43,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
  * {@link RTFPictStreamParser}) so that large embedded objects are written
  * to temp files rather than buffered entirely in memory.</p>
  */
-public class RTFEmbeddedHandler {
+public class RTFEmbeddedHandler implements Closeable {
 
     private final ContentHandler handler;
     private final ParseContext context;
@@ -151,7 +153,7 @@ public class RTFEmbeddedHandler {
                 extractObj(tis, metadata);
             }
         } catch (IOException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         } finally {
             objParser.close();
             objParser = null;
@@ -180,7 +182,7 @@ public class RTFEmbeddedHandler {
                 }
             }
         } catch (IOException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         } finally {
             pictParser = null;
             reset();
@@ -227,7 +229,7 @@ public class RTFEmbeddedHandler {
                 embeddedDocumentExtractor.parseEmbedded(
                         tis, new EmbeddedContentHandler(handler), meta, context, true);
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, meta);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, meta, context);
             }
         }
     }
@@ -253,5 +255,13 @@ public class RTFEmbeddedHandler {
         } else {
             return 10 + (ch - 'A');
         }
+    }
+
+    /** Closes a stream parser left open by a document that ended inside its group. */
+    @Override
+    public void close() throws IOException {
+        TemporaryResources.closeAll(objParser, pictParser);
+        objParser = null;
+        pictParser = null;
     }
 }

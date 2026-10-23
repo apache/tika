@@ -121,7 +121,8 @@ public class TikaDetectionTest {
         assertEquals("application/relax-ng-compact-syntax", tika.detect("x.rnc"));
         assertEquals("application/resource-lists+xml", tika.detect("x.rl"));
         assertEquals("application/resource-lists-diff+xml", tika.detect("x.rld"));
-        assertEquals("application/rls-services+xml", tika.detect("x.rs"));
+        // httpd maps .rs to application/rls-services+xml; Rust source wins (TIKA-4977)
+        assertEquals("text/x-rust", tika.detect("x.rs"));
         assertEquals("application/rsd+xml", tika.detect("x.rsd"));
         assertEquals("application/rss+xml", tika.detect("x.rss"));
         assertEquals("application/rtf", tika.detect("x.rtf"));
@@ -239,6 +240,8 @@ public class TikaDetectionTest {
         assertEquals("application/vnd.fuzzysheet", tika.detect("x.fzs"));
         assertEquals("application/vnd.genomatix.tuxedo", tika.detect("x.txd"));
         assertEquals("application/vnd.geogebra.file", tika.detect("x.ggb"));
+        assertEquals("application/vnd.geogebra.pinboard", tika.detect("x.ggp"));
+        assertEquals("application/vnd.geogebra.slides", tika.detect("x.ggs"));
         assertEquals("application/vnd.geogebra.tool", tika.detect("x.ggt"));
         assertEquals("application/vnd.geometry-explorer", tika.detect("x.gex"));
         assertEquals("application/vnd.geometry-explorer", tika.detect("x.gre"));

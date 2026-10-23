@@ -16,9 +16,11 @@
  */
 package org.apache.tika.pipes.core.emitter;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.utils.StringUtils;
@@ -30,6 +32,9 @@ public class EmitDataImpl implements EmitData {
     private final String containerStackTrace;
     // ParseContext is not serialized - it's set by PipesClient after deserialization
     private ParseContext parseContext;
+
+    // Raw UTF-8 content under content-bytes-config; rides the IPC as binary
+    private byte[] contentBytes;
 
     public EmitDataImpl(String emitKey, List<Metadata> metadataList) {
         this(emitKey, metadataList, StringUtils.EMPTY);
@@ -54,8 +59,39 @@ public class EmitDataImpl implements EmitData {
         return containerStackTrace;
     }
 
+    @Override
+    public byte[] getContentBytes() {
+        return contentBytes;
+    }
+
+    public void setContentBytes(byte[] contentBytes) {
+        this.contentBytes = contentBytes;
+    }
+
+    /**
+     * Inverse of the content-bytes move: puts the content back in
+     * {@code TIKA_CONTENT} for consumers that only read the metadata list
+     * (e.g. a regular Emitter). No-op when there are no content bytes or
+     * the metadata already carries content.
+     */
+    public void restoreContentFromBytes() {
+        if (contentBytes == null || metadataList == null || metadataList.isEmpty()) {
+            return;
+        }
+        Metadata m = metadataList.get(0);
+        if (m.get(TikaCoreProperties.TIKA_CONTENT) == null) {
+            m.set(TikaCoreProperties.TIKA_CONTENT,
+                    new String(contentBytes, StandardCharsets.UTF_8));
+        }
+        contentBytes = null;
+    }
+
     public long getEstimatedSizeBytes() {
-        return estimateSizeInBytes(getEmitKey(), getMetadataList(), containerStackTrace);
+        long sz = estimateSizeInBytes(getEmitKey(), getMetadataList(), containerStackTrace);
+        if (contentBytes != null) {
+            sz += 36 + contentBytes.length;
+        }
+        return sz;
     }
 
     /**
@@ -97,6 +133,8 @@ public class EmitDataImpl implements EmitData {
     @Override
     public String toString() {
         return "EmitData{" + "emitKey=" + emitKey + ", metadataList=" + metadataList +
-                ", containerStackTrace='" + containerStackTrace + '\'' + '}';
+                ", containerStackTrace='" + containerStackTrace + '\'' +
+                ", contentBytes.length=" + (contentBytes == null ? "null" : contentBytes.length) +
+                '}';
     }
 }

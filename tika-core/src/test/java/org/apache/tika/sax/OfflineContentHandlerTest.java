@@ -21,8 +21,8 @@ import static org.junit.jupiter.api.Assertions.fail;
 import java.io.StringReader;
 import java.net.ConnectException;
 import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.commons.xml.secure.SecureSAXParserFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
@@ -39,7 +39,7 @@ public class OfflineContentHandlerTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        parser = SAXParserFactory.newInstance().newSAXParser();
+        parser = SecureSAXParserFactory.newInstance().newSAXParser();
         offline = new OfflineContentHandler(new DefaultHandler());
     }
 

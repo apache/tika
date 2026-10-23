@@ -424,10 +424,10 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
             try {
                 bufferedImage = writeToBuffer(pdImage, suffix, useDirectJPEG, buffer);
             } catch (MissingImageReaderException e) {
-                EmbeddedDocumentUtil.recordException(e, parentMetadata);
+                EmbeddedDocumentUtil.recordException(e, parentMetadata, parseContext);
                 return;
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
                 return;
             }
             try (TikaInputStream tis = TikaInputStream.get(buffer.toByteArray())) {
@@ -451,7 +451,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
         metadata.set(TIFF.IMAGE_LENGTH, pdImage.getHeight());
         //TODO: what else can we extract from the PDImage without rendering?
         //Register the image's metadata entry without decoding it (marker skips the parse).
-        try (TikaInputStream tis = TikaInputStream.get(new byte[0])) {
+        try (TikaInputStream tis = TikaInputStream.getPlaceholder()) {
             parseContext.set(MetadataOnlyParse.class, MetadataOnlyParse.INSTANCE);
             embeddedDocumentExtractor.parseEmbedded(tis,
                     new EmbeddedContentHandler(xhtml), metadata, parseContext, false);
@@ -499,11 +499,7 @@ public class ImageGraphicsEngine extends PDFGraphicsStreamEngine {
                 throw e;
             }
 
-            String msg = e.getMessage();
-            if (msg == null) {
-                msg = "IOException, no message";
-            }
-            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, msg);
+            EmbeddedDocumentUtil.recordException(e, parentMetadata, parseContext);
             exceptions.add(e);
         } else {
             throw e;

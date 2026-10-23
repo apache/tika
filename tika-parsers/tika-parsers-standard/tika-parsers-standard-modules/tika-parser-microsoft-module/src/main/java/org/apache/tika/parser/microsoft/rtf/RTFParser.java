@@ -132,7 +132,7 @@ public class RTFParser implements Parser {
             throws TikaException, IOException, SAXException {
         RTFEmbObjHandler embObjHandler =
                 new RTFEmbObjHandler(handler, metadata, context, getMemoryLimitInKb());
-        final TextExtractor ert = new TextExtractor(handler, metadata, embObjHandler);
+        final TextExtractor ert = new TextExtractor(handler, metadata, embObjHandler, context);
         ert.setIgnoreListMarkup(ignoreListMarkup);
         ert.extract(is);
     }

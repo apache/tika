@@ -32,8 +32,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "fetchers": {
- *   "s3-fetcher": {
- *     "my-s3-fetcher": {
+ *   "my-s3-fetcher": {
+ *     "s3-fetcher": {
  *       "region": "us-east-1",
  *       "bucket": "my-bucket",
  *       "credentialsProvider": "profile",

@@ -1,0 +1,24 @@
+446       
+Subject: Trial balance
+Mime-Version: 1.0 (Mac OS X Mail 13.4 \(3608.120.23.2.7\))
+Content-Type: text/html;
+	charset=utf-8
+Message-Id: <0F1D2C3B-4A5E-4F60-8B7C-9D8E7F6A5B4C@example.com>
+Date: Fri, 27 Oct 2023 10:03:30 +0200
+To: dors.venabili@example.com
+Content-Transfer-Encoding: 7bit
+From: Hari Seldon <hseldon@example.com>
+
+<html><head></head><body dir="auto" style="word-wrap: break-word;">The trial balance is ready for review.</body></html>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>date-last-viewed</key>
+	<integer>1698393810</integer>
+	<key>date-received</key>
+	<integer>1698393810</integer>
+	<key>flags</key>
+	<integer>8623685697</integer>
+</dict>
+</plist>

@@ -52,6 +52,20 @@ import org.apache.tika.sax.BodyContentHandler;
 public class WordParserTest extends TikaTest {
 
     @Test
+    public void testToStyleClass() {
+        assertEquals("list_Bullet", WordExtractor.toStyleClass("List Bullet"));
+        assertEquals("x_omml", WordExtractor.toStyleClass("x\tomml"));
+        assertEquals("table_Text___3__", WordExtractor.toStyleClass("Table Text (.3\")"));
+        assertEquals("überschrift_1", WordExtractor.toStyleClass("Überschrift 1"));
+        assertEquals(128, WordExtractor.toStyleClass("a".repeat(10_000)).length());
+        // lowercasing U+0130 yields "i" + U+0307; sanitizing must still have the last word
+        assertEquals("i_stanbul", WordExtractor.toStyleClass("İstanbul"));
+        assertEquals(128, WordExtractor.toStyleClass("İ".repeat(200)).length());
+        assertNull(WordExtractor.toStyleClass(""));
+        assertNull(WordExtractor.toStyleClass(null));
+    }
+
+    @Test
     public void testWordParser() throws Exception {
         try (TikaInputStream tis = getResourceAsStream("/test-documents/testWORD.doc")) {
             ContentHandler handler = new BodyContentHandler();
@@ -63,6 +77,14 @@ public class WordParserTest extends TikaTest {
             assertEquals("Keith Bennett", metadata.get(TikaCoreProperties.CREATOR));
             assertContains("Sample Word Document", handler.toString());
         }
+    }
+
+    @Test
+    public void testLineAndParagraphCount() throws Exception {
+        XMLResult result = getXML("testWORD_2006ml.doc");
+
+        assertEquals("12", result.metadata.get(Office.LINE_COUNT));
+        assertEquals("3", result.metadata.get(Office.PARAGRAPH_COUNT));
     }
 
     @Test

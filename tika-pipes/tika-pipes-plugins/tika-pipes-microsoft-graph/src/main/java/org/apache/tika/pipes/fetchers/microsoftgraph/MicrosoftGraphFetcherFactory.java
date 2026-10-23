@@ -32,8 +32,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "fetchers": {
- *   "microsoft-graph-fetcher": {
- *     "my-graph-fetcher": {
+ *   "my-graph-fetcher": {
+ *     "microsoft-graph-fetcher": {
  *       "spoolToTemp": true,
  *       "scopes": ["https://graph.microsoft.com/.default"],
  *       "clientSecretCredentialsConfig": {

@@ -45,6 +45,7 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.RTFMetadata;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParser.POIFSDocumentType;
 
 /**
@@ -61,28 +62,21 @@ class RTFObjDataParser {
         this.memoryLimitInKb = memoryLimitInKb;
     }
 
-    /**
-     * Parses the embedded object/pict string
-     *
-     * @param is actual bytes (already converted from the
-     *              hex pair string stored in the embedded object data into actual bytes or read
-     *              as raw binary bytes)
-     * @return a SimpleRTFEmbObj or null
-     * @throws IOException if there are any surprise surprises during parsing
-     */
-
     private static boolean hasPOIFSHeader(InputStream is) throws IOException {
         return FileMagic.valueOf(is) == FileMagic.OLE2;
     }
 
     /**
-     * @param bytes
+     * Parses the embedded object/pict bytes (already converted from the hex pair string
+     * stored in the embedded object data, or read as raw binary bytes).
+     *
      * @param metadata             incoming metadata
-     * @param unknownFilenameCount
-     * @return byte[] for contents of obj data
-     * @throws IOException
+     * @param context              parse context, for the exception-reporting policy
+     * @param unknownFilenameCount counter for naming embedded objects that have no name
+     * @return byte[] for contents of obj data, or null if this is not an embedded object
      */
-    protected byte[] parse(byte[] bytes, Metadata metadata, AtomicInteger unknownFilenameCount)
+    protected byte[] parse(byte[] bytes, Metadata metadata, ParseContext context,
+                           AtomicInteger unknownFilenameCount)
             throws IOException, TikaException {
         UnsynchronizedByteArrayInputStream is = UnsynchronizedByteArrayInputStream.builder().setByteArray(bytes).get();
         long version = readUInt(is);
@@ -123,14 +117,14 @@ class RTFObjDataParser {
             try {
                 hasPoifs = hasPOIFSHeader(embIs);
             } catch (IOException e) {
-                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                 return embObjBytes;
             }
             if (hasPoifs) {
                 try {
                     return handleEmbeddedPOIFS(embIs, metadata, unknownFilenameCount);
                 } catch (Exception e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                 }
             }
         }

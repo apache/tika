@@ -107,6 +107,7 @@ public class ESEmitter extends AbstractEmitter {
     private void configure() throws TikaConfigException {
         ConfigValidator.mustNotBeEmpty("esUrl", config.esUrl());
         ConfigValidator.mustNotBeEmpty("idField", config.idField());
+        config.validate();
 
         HttpClientConfig http = config.httpClientConfig();
         if (http != null) {

@@ -33,6 +33,7 @@ public class Locators {
     private List<PaginatedLocator> paginated;
     private List<SpatialLocator> spatial;
     private List<TemporalLocator> temporal;
+    private List<EmbeddedLocator> embedded;
 
     public Locators() {
     }
@@ -109,6 +110,24 @@ public class Locators {
         return this;
     }
 
+    // ---- embedded ---------------------------------------------------------
+
+    public List<EmbeddedLocator> getEmbedded() {
+        return embedded;
+    }
+
+    public void setEmbedded(List<EmbeddedLocator> embedded) {
+        this.embedded = embedded;
+    }
+
+    public Locators addEmbedded(EmbeddedLocator locator) {
+        if (this.embedded == null) {
+            this.embedded = new ArrayList<>();
+        }
+        this.embedded.add(locator);
+        return this;
+    }
+
     /**
      * @return true if no locators of any type are present
      */
@@ -116,6 +135,7 @@ public class Locators {
         return (text == null || text.isEmpty())
                 && (paginated == null || paginated.isEmpty())
                 && (spatial == null || spatial.isEmpty())
-                && (temporal == null || temporal.isEmpty());
+                && (temporal == null || temporal.isEmpty())
+                && (embedded == null || embedded.isEmpty());
     }
 }

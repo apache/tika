@@ -17,11 +17,13 @@
 package org.apache.tika.io;
 
 import java.io.BufferedInputStream;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import org.apache.commons.io.IOUtils;
 
@@ -33,9 +35,9 @@ import org.apache.tika.utils.StringUtils;
  * Input source that wraps a raw InputStream with optional caching.
  * <p>
  * Starts in passthrough mode using {@link BufferedInputStream} for basic
- * mark/reset support. When {@link #enableRewind()} is called (at position 0),
- * switches to caching mode using {@link CachingInputStream} which enables
- * full rewind/seek capability.
+ * mark/reset support. When {@link #enableRewind(CacheMemoryBudget)} is called
+ * (at position 0), switches to caching mode using {@link CachingInputStream}
+ * which enables full rewind/seek capability.
  * <p>
  * If caching is not enabled, {@link #seekTo(long)} will fail for any position
  * other than the current position.
@@ -47,6 +49,8 @@ class CachingSource extends InputStream implements TikaInputSource {
     // temp-file suffix for threshold spills, which precede any getPath(suffix) call
     private final String suffix;
     private long length;
+    // getLength() is a declared hint until a drain/spill measures it
+    private boolean lengthMeasured;
 
     // Passthrough mode: just a BufferedInputStream
     private BufferedInputStream passthroughStream;
@@ -91,6 +95,8 @@ class CachingSource extends InputStream implements TikaInputSource {
         int b = passthroughStream.read();
         if (b != -1) {
             passthroughPosition++;
+        } else {
+            measured(passthroughPosition);
         }
         return b;
     }
@@ -110,6 +116,8 @@ class CachingSource extends InputStream implements TikaInputSource {
         int n = passthroughStream.read(b, off, len);
         if (n > 0) {
             passthroughPosition += n;
+        } else if (n == -1) {
+            measured(passthroughPosition);
         }
         return n;
     }
@@ -186,7 +194,7 @@ class CachingSource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public void enableRewind() throws IOException {
+    public void enableRewind(CacheMemoryBudget budget) throws IOException {
         // Already in caching or file mode - no-op
         if (cachingStream != null || fileStream != null) {
             return;
@@ -199,9 +207,40 @@ class CachingSource extends InputStream implements TikaInputSource {
         }
 
         // Switch to caching mode
-        StreamCache cache = new StreamCache(tmp, suffix);
+        StreamCache cache = new StreamCache(tmp, suffix, budget);
+        if (tmp != null) {
+            // tmp owns the cache: a scope that disposes tmp without closing this stream still
+            // frees the buffer and its budget reservation. The wrapped stream is not tmp's to close.
+            tmp.addResource(cache);
+        }
         cachingStream = new CachingInputStream(passthroughStream, cache);
         passthroughStream = null;
+    }
+
+    @Override
+    public SeekableByteChannel getSeekableByteChannel() throws IOException {
+        if (spilledPath != null) {
+            return FileChannel.open(spilledPath, StandardOpenOption.READ);
+        }
+        // If still in passthrough mode, switch to caching first (same rule as getPath)
+        if (cachingStream == null) {
+            if (passthroughPosition != 0) {
+                throw new IOException(
+                        "Cannot create seekable view: position is " + passthroughPosition +
+                                ", must be 0. Call enableRewind() before reading.");
+            }
+            enableRewind(null);
+        }
+        SeekableByteChannel channel = cachingStream.getSeekableByteChannel();
+        // Record the drained length like getPath() does (feeds SecureContentHandler's
+        // zip-bomb ratio)
+        length = channel.size();
+        lengthMeasured = true;
+        if (metadata != null &&
+                StringUtils.isBlank(metadata.get(HttpHeaders.CONTENT_LENGTH))) {
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(length));
+        }
+        return channel;
     }
 
     @Override
@@ -231,8 +270,19 @@ class CachingSource extends InputStream implements TikaInputSource {
     }
 
     @Override
+    public Path materializedPath() {
+        if (spilledPath != null) {
+            return spilledPath;
+        }
+        // the cache spills on its own; offer that file only once it holds the whole source,
+        // since a mid-stream spill file is still growing
+        return cachingStream == null ? null : cachingStream.completeSpillFile();
+    }
+
+    @Override
     public boolean hasPath() {
-        return spilledPath != null;
+        // the cache can spill on its own, without any getPath() call
+        return spilledPath != null || (cachingStream != null && cachingStream.isFileBacked());
     }
 
     @Override
@@ -245,7 +295,7 @@ class CachingSource extends InputStream implements TikaInputSource {
                             "Cannot spill to file: position is " + passthroughPosition +
                                     ", must be 0. Call enableRewind() before reading if you need file access.");
                 }
-                enableRewind();
+                enableRewind(null);
             }
 
             // Spill to file and switch to file-backed mode
@@ -271,6 +321,7 @@ class CachingSource extends InputStream implements TikaInputSource {
             // The spooled size is ground truth, even when it is 0 and a
             // Content-Length claimed otherwise
             length = Files.size(spilledPath);
+            lengthMeasured = true;
 
             // Update metadata if not already set
             if (metadata != null &&
@@ -283,9 +334,24 @@ class CachingSource extends InputStream implements TikaInputSource {
         return spilledPath;
     }
 
+    /** The end of the source is ground truth, over a declared length either way. */
+    private void measured(long total) {
+        length = total;
+        lengthMeasured = true;
+    }
+
     @Override
     public long getLength() {
+        if (!lengthMeasured && cachingStream != null && cachingStream.isSourceExhausted()) {
+            measured(cachingStream.getCachedSize());
+        }
         return length;
+    }
+
+    @Override
+    public boolean hasReliableLength() {
+        getLength();
+        return lengthMeasured;
     }
 
     // seekTo() reopens fileStream, so the registered resource must close whichever
@@ -298,24 +364,7 @@ class CachingSource extends InputStream implements TikaInputSource {
 
     @Override
     public void close() throws IOException {
-        IOException exception = null;
-        for (Closeable closeable :
-                new Closeable[]{this::closeFileStream, cachingStream, passthroughStream, spilledSource}) {
-            if (closeable == null) {
-                continue;
-            }
-            try {
-                closeable.close();
-            } catch (IOException e) {
-                if (exception == null) {
-                    exception = e;
-                } else {
-                    exception.addSuppressed(e);
-                }
-            }
-        }
-        if (exception != null) {
-            throw exception;
-        }
+        TemporaryResources.closeAll(this::closeFileStream, cachingStream, passthroughStream,
+                spilledSource);
     }
 }

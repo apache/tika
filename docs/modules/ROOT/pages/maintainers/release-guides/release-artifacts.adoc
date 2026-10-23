@@ -146,13 +146,23 @@ API or embedding it programmatically.
 Mechanism: `maven-assembly-plugin` with `<attach>false</attach>` in each
 plugin pom (TIKA-4723). Because `<attach>false</attach>` also skips the
 local-repo install, each plugin pom additionally runs
-`maven-install-plugin:install-file` during the `install` phase, writing
+`maven-install-plugin:install-file` during the `package` phase, writing
 the zip into the local repo at canonical coordinates
 (`<groupId>:<artifactId>:zip:<version>`). Sibling modules
 (`tika-pipes-fork-parser`, `tika-server-*`, `tika-grpc`, integration
 tests) declare the zip as a test-scope Maven dep and rely on this
 mechanism to resolve it from the local repo without ever publishing it
 to Central.
+
+The `package` binding is deliberate and must not be moved to `install`.
+A reactor `mvn package` — what the `tika-main-jdk21` and `tika-main-jdk26`
+Jenkins jobs run, and what a contributor building the tree runs — never
+reaches the `install` phase, so an `install`-bound `install-file` leaves
+the zip unresolvable and every consuming module fails dependency
+resolution. It builds only where a previous `mvn install`/`deploy` on the
+same machine happened to leave a matching zip in the local repo, which
+made the breakage look intermittent until the `4.0.0` → `4.1.0-SNAPSHOT`
+bump invalidated every cached copy.
 
 === tika-grpc
 

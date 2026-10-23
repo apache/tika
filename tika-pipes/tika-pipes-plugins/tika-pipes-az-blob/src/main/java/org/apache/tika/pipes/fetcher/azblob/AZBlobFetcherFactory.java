@@ -32,8 +32,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "fetchers": {
- *   "az-blob-fetcher": {
- *     "my-az-fetcher": {
+ *   "my-az-fetcher": {
+ *     "az-blob-fetcher": {
  *       "sasToken": "your-sas-token",
  *       "endpoint": "https://account.blob.core.windows.net",
  *       "container": "my-container",

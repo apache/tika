@@ -44,7 +44,8 @@ import org.apache.tika.utils.StringUtils;
  * vision, understanding layout, charts, tables, and diagrams — not just
  * extracting text).
  * <p>
- * The API key is sent as a {@code key} query parameter (not a Bearer header).
+ * The API key is sent in the {@code x-goog-api-key} header, never in the URL, which
+ * error messages and logs quote.
  * <p>
  * Default base URL points to the public Gemini API; change it for Vertex AI
  * or a proxy.
@@ -58,27 +59,24 @@ public class GeminiVLMParser extends AbstractVLMParser {
 
     private static final long serialVersionUID = 1L;
 
-    private static final String OCR = "ocr-";
+    static final String API_KEY_HEADER = "x-goog-api-key";
 
     private static final Set<MediaType> SUPPORTED_TYPES;
 
     static {
         Set<MediaType> types = new HashSet<>(Arrays.asList(
                 // images
-                MediaType.image(OCR + "png"),
-                MediaType.image(OCR + "jpeg"),
-                MediaType.image(OCR + "tiff"),
-                MediaType.image(OCR + "bmp"),
-                MediaType.image(OCR + "gif"),
+                MediaType.image("png"),
+                MediaType.image("jpeg"),
+                MediaType.image("tiff"),
+                MediaType.image("bmp"),
+                MediaType.image("gif"),
                 MediaType.image("jp2"),
                 MediaType.image("jpx"),
                 MediaType.image("x-portable-pixmap"),
-                MediaType.image(OCR + "jp2"),
-                MediaType.image(OCR + "jpx"),
-                MediaType.image(OCR + "x-portable-pixmap"),
                 MediaType.image("webp"),
-                MediaType.image(OCR + "webp"),
                 MediaType.image("heic"),
+
                 MediaType.image("heif"),
                 // PDFs — Gemini handles these natively with vision
                 MediaType.application("pdf")
@@ -119,12 +117,7 @@ public class GeminiVLMParser extends AbstractVLMParser {
 
         String baseUrl = stripTrailingSlash(config.getBaseUrl());
         String url = baseUrl + "/v1beta/models/" + config.getModel() + ":generateContent";
-
-        if (!StringUtils.isBlank(config.getApiKey())) {
-            url += "?key=" + config.getApiKey();
-        }
-
-        return new HttpCall(url, json, Map.of());
+        return new HttpCall(url, json, apiKeyHeader(config));
     }
 
     @Override
@@ -153,6 +146,10 @@ public class GeminiVLMParser extends AbstractVLMParser {
                     throw new TikaException("Gemini API error: " + error.toString());
                 }
                 throw new TikaException("Gemini response contains no candidates: " + responseBody);
+            }
+
+            if ("MAX_TOKENS".equals(candidates.get(0).path("finishReason").asText())) {
+                warn(metadata, WARN_TRUNCATED);
             }
 
             JsonNode content = candidates.get(0).get("content");
@@ -195,12 +192,17 @@ public class GeminiVLMParser extends AbstractVLMParser {
 
     @Override
     protected String getHealthCheckUrl(VLMOCRConfig config) {
-        String baseUrl = stripTrailingSlash(config.getBaseUrl());
-        String url = baseUrl + "/v1beta/models";
-        if (!StringUtils.isBlank(config.getApiKey())) {
-            url += "?key=" + config.getApiKey();
-        }
-        return url;
+        return stripTrailingSlash(config.getBaseUrl()) + "/v1beta/models";
+    }
+
+    @Override
+    protected Map<String, String> getHealthCheckHeaders(VLMOCRConfig config) {
+        return apiKeyHeader(config);
+    }
+
+    private static Map<String, String> apiKeyHeader(VLMOCRConfig config) {
+        return StringUtils.isBlank(config.getApiKey())
+                ? Map.of() : Map.of(API_KEY_HEADER, config.getApiKey());
     }
 
     // -- package-visible for tests --
@@ -226,6 +228,9 @@ public class GeminiVLMParser extends AbstractVLMParser {
         // generation config
         ObjectNode generationConfig = root.putObject("generationConfig");
         generationConfig.put("maxOutputTokens", config.getMaxTokens());
+        if (config.getTemperature() != null) {
+            generationConfig.put("temperature", config.getTemperature());
+        }
 
         return root.toString();
     }

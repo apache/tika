@@ -1,0 +1,4 @@
+{
+  "run": {"id": "run-b1", "note": "candidate", "start": "2026-08-27T10:59:00Z", "host": "box-b", "user": "tester"},
+  "tika": {"app_path": "/opt/tika/tika-app-4.1.0-SNAPSHOT.jar", "app_sha256": "def456", "version": "4.1.0-SNAPSHOT"}
+}

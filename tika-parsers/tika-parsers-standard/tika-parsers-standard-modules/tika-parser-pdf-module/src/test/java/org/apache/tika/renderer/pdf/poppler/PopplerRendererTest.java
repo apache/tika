@@ -21,11 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.awt.image.BufferedImage;
 import java.io.InputStream;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import javax.imageio.ImageIO;
 
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -37,6 +42,8 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.renderer.PageBasedRenderResults;
 import org.apache.tika.renderer.PageRangeRequest;
 import org.apache.tika.renderer.RenderResult;
+import org.apache.tika.renderer.RenderResults;
+import org.apache.tika.renderer.RenderSettings;
 import org.apache.tika.utils.ProcessUtils;
 
 public class PopplerRendererTest {
@@ -130,6 +137,76 @@ public class PopplerRendererTest {
 
                 results.close();
             }
+        }
+    }
+
+    /** dpi is the target, the box and maxScaleTo are ceilings, and nothing is enlarged. */
+    @Test
+    void testDpiBoxAndCeiling() throws Exception {
+        assumeTrue(hasPoppler, "pdftoppm not available");
+        PopplerRenderer renderer = new PopplerRenderer();
+        ParseContext context = new ParseContext();
+        RenderSettings settings = RenderSettings.defaults();
+        settings.setDpi(36);
+        context.set(RenderSettings.class, settings);
+        int[] at36 = size(renderer, context);
+        assertEquals(pixels(36, false), at36[0], 1, "-r is honoured");
+
+        settings.setMaxWidth(100);
+        settings.setMaxHeight(100);
+        int[] boxed = size(renderer, context);
+        assertEquals(100, boxed[1], 1, "the long side meets the box");
+        assertTrue(boxed[0] < 100);
+
+        settings.setMaxWidth(5000);
+        settings.setMaxHeight(5000);
+        assertEquals(at36[0], size(renderer, context)[0], 1, "a roomy box enlarges nothing");
+
+        settings.setMaxWidth(-1);
+        settings.setMaxHeight(-1);
+        renderer.setMaxScaleTo(200);
+        assertEquals(200, size(renderer, context)[1], 1, "maxScaleTo caps the long side");
+        settings.setDpi(300);
+        renderer.setMaxScaleTo(-1);
+        assertEquals(pixels(300, true), size(renderer, context)[1], 1, "no ceiling: 300 dpi");
+    }
+
+    /** A page over maxImagePixels is skipped with the reason on its metadata. */
+    @Test
+    void testMaxImagePixels() throws Exception {
+        assumeTrue(hasPoppler, "pdftoppm not available");
+        ParseContext context = new ParseContext();
+        RenderSettings settings = RenderSettings.defaults();
+        settings.setMaxImagePixels(1000L);
+        context.set(RenderSettings.class, settings);
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/testPDF_bookmarks.pdf");
+                TikaInputStream tis = TikaInputStream.get(is);
+                RenderResults results = new PopplerRenderer().render(tis, new Metadata(), context,
+                        new PageRangeRequest(1, 1))) {
+            RenderResult result = results.getResults().get(0);
+            assertEquals(RenderResult.STATUS.EXCEPTION, result.getStatus());
+            assertTrue(result.getMetadata().get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING)
+                    .contains("maxImagePixels"));
+        }
+    }
+
+    private int[] size(PopplerRenderer renderer, ParseContext context) throws Exception {
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/testPDF_bookmarks.pdf");
+                TikaInputStream tis = TikaInputStream.get(is);
+                RenderResults results = renderer.render(tis, new Metadata(), context,
+                        new PageRangeRequest(1, 1));
+                TikaInputStream image = results.getResults().get(0).getInputStream()) {
+            BufferedImage rendered = ImageIO.read(image);
+            return new int[] {rendered.getWidth(), rendered.getHeight()};
+        }
+    }
+
+    /** Page 1's size at a dpi, as pdftoppm rounds it. */
+    private int pixels(int dpi, boolean height) throws Exception {
+        try (InputStream is = getClass().getResourceAsStream("/test-documents/testPDF_bookmarks.pdf");
+                PDDocument document = Loader.loadPDF(is.readAllBytes())) {
+            PDRectangle box = document.getPage(0).getMediaBox();
+            return (int) Math.round((height ? box.getHeight() : box.getWidth()) * dpi / 72.0);
         }
     }
 

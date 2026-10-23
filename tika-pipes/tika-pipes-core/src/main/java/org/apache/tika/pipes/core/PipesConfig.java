@@ -28,9 +28,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.util.StdConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.ExceptionReporting;
 import org.apache.tika.config.TimeoutLimits;
 import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.ParseMode;
@@ -41,6 +45,8 @@ import org.apache.tika.utils.StringUtils;
 // Cross-field limits are checked after binding, so JSON key order cannot change the outcome.
 @JsonDeserialize(converter = PipesConfig.PostDeserializationCheck.class)
 public class PipesConfig {
+
+    private static final Logger LOG = LoggerFactory.getLogger(PipesConfig.class);
 
     /** Runs {@link #checkPayloadLimits()} on every Jackson deserialization path. */
     public static class PostDeserializationCheck extends StdConverter<PipesConfig, PipesConfig> {
@@ -82,7 +88,7 @@ public class PipesConfig {
         return Math.max(1, Math.min(byCores, MAX_AUTO_NUM_CLIENTS));
     }
 
-    public static final int DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS = 10000;
+    public static final int DEFAULT_MAX_FILES_PROCESSED_PER_PROCESS = 100000;
 
     public static final long DEFAULT_MAX_WAIT_FOR_CLIENT_MILLIS = 60000;
 
@@ -117,11 +123,12 @@ public class PipesConfig {
     public static final long DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS = 3_600_000L;
 
     /**
-     * Ceiling for request-supplied {@code TimeoutLimits}, so a client cannot disable the
-     * forked server's self-termination. Limits in the server's own tika-config
-     * {@code parse-context} are trusted and not capped.
+     * Ceiling for request-supplied {@code TimeoutLimits}, on top of the operator's own limits.
+     * Limits in the server's own tika-config {@code parse-context} are trusted and not capped.
      */
     private long maxTotalTaskTimeoutMillis = DEFAULT_MAX_TOTAL_TASK_TIMEOUT_MILLIS;
+
+    private boolean trustedRequests = false;
 
     private int numClients = defaultNumClients();
 
@@ -164,11 +171,8 @@ public class PipesConfig {
     private ArrayList<String> forkedJvmArgs = new ArrayList<>();
     private String javaPath = "java";
 
-    /**
-     * Optional directory for temporary files during pipes-based parsing.
-     * If not set, the system default temp directory will be used.
-     * Consider using a RAM-backed filesystem (e.g., /dev/shm) for better performance.
-     */
+    /** @deprecated since 4.1, removal planned for 5.0; see {@link #setTempDirectory(String)} */
+    @Deprecated
     private String tempDirectory = null;
 
     /**
@@ -204,21 +208,36 @@ public class PipesConfig {
         if (config == null) {
             config = new PipesConfig();
         }
-        // Carry the config-default limits to the client (for its backstop) without full
-        // parse-context resolution -- the client JVM may lack the plugin classes it needs.
-        JsonNode limitsNode = tikaJsonConfig.getRootNode().path("parse-context").path("timeout-limits");
-        if (!limitsNode.isMissingNode()) {
+        // Carry the config-default limits and reporting policy to the client (for its backstop
+        // and for the results it fabricates itself) without full parse-context resolution --
+        // the client JVM may lack the plugin classes it needs. Bind with Tika's own mapper so
+        // the parent reads these two exactly as the fork does.
+        ObjectMapper mapper = TikaObjectMapperFactory.getMapper();
+        JsonNode parseContextNode = tikaJsonConfig.getRootNode().path("parse-context");
+        JsonNode limitsNode = parseContextNode.path("timeout-limits");
+        //isNull: an explicit JSON null keeps the default rather than binding a null field
+        if (!limitsNode.isMissingNode() && !limitsNode.isNull()) {
             try {
-                config.defaultTimeoutLimits =
-                        new ObjectMapper().treeToValue(limitsNode, TimeoutLimits.class);
+                config.defaultTimeoutLimits = mapper.treeToValue(limitsNode, TimeoutLimits.class);
             } catch (JsonProcessingException e) {
                 throw new TikaConfigException("problem parsing parse-context.timeout-limits", e);
+            }
+        }
+        JsonNode reportingNode = parseContextNode.path("exception-reporting");
+        if (!reportingNode.isMissingNode() && !reportingNode.isNull()) {
+            try {
+                config.defaultExceptionReporting =
+                        mapper.treeToValue(reportingNode, ExceptionReporting.class);
+            } catch (JsonProcessingException e) {
+                throw new TikaConfigException("problem parsing parse-context.exception-reporting", e);
             }
         }
         return config;
     }
 
     private TimeoutLimits defaultTimeoutLimits = new TimeoutLimits();
+
+    private ExceptionReporting defaultExceptionReporting = new ExceptionReporting();
 
     /**
      * The config-level {@code parse-context.timeout-limits} defaults -- what the forked
@@ -227,6 +246,16 @@ public class PipesConfig {
     @JsonIgnore
     public TimeoutLimits getDefaultTimeoutLimits() {
         return defaultTimeoutLimits;
+    }
+
+    /**
+     * The config-level {@code parse-context.exception-reporting} policy. The parent JVM needs
+     * it for the results it fabricates itself (crash, timeout, failed-to-initialize): the
+     * request's own ParseContext can never carry the policy -- it is wire-blocked.
+     */
+    @JsonIgnore
+    public ExceptionReporting getDefaultExceptionReporting() {
+        return defaultExceptionReporting;
     }
 
     public long getSocketTimeoutMillis() {
@@ -254,6 +283,32 @@ public class PipesConfig {
                     maxTotalTaskTimeoutMillis + "; use Long.MAX_VALUE for no cap");
         }
         this.maxTotalTaskTimeoutMillis = maxTotalTaskTimeoutMillis;
+    }
+
+    /**
+     * Whether requests are the operator's own: their parseContext is read as trusted config
+     * (it may set {@code @OperatorOnly} properties) and their limits and timeouts are used as
+     * given rather than clamped to the operator's. Default {@code false}. {@code PipesForkParser}
+     * turns it on: its caller is the operator. tika-server and tika-grpc refuse to start with it.
+     */
+    public boolean isTrustedRequests() {
+        return trustedRequests;
+    }
+
+    public void setTrustedRequests(boolean trustedRequests) {
+        this.trustedRequests = trustedRequests;
+    }
+
+    /**
+     * For hosts whose requests come from callers other than the operator.
+     *
+     * @throws TikaConfigException if {@code trustedRequests} is on
+     */
+    public void refuseTrustedRequests(String host) throws TikaConfigException {
+        if (trustedRequests) {
+            throw new TikaConfigException(host + " refuses pipes.trustedRequests: its requests "
+                    + "come from callers, not the operator");
+        }
     }
 
     public long getStartupTimeoutMillis() {
@@ -501,11 +556,8 @@ public class PipesConfig {
         this.configStoreParams = configStoreParams;
     }
 
-    /**
-     * Gets the directory for temporary files during pipes-based parsing.
-     *
-     * @return the temp directory path, or null to use system default
-     */
+    /** @deprecated since 4.1, removal planned for 5.0; see {@link #setTempDirectory(String)} */
+    @Deprecated
     public String getTempDirectory() {
         return tempDirectory;
     }
@@ -514,7 +566,10 @@ public class PipesConfig {
      * Creates a temp directory under {@link #getTempDirectory()}, or under the system default
      * when unset. Callers must not use {@code Files.createTempDirectory} directly or the
      * configured directory is silently ignored.
+     *
+     * @deprecated since 4.1, removal planned for 5.0; use {@code Files.createTempDirectory(prefix)}
      */
+    @Deprecated
     public Path createTempDirectory(String prefix) throws IOException {
         if (StringUtils.isBlank(tempDirectory)) {
             return Files.createTempDirectory(prefix);
@@ -525,13 +580,25 @@ public class PipesConfig {
     }
 
     /**
-     * Sets the directory for temporary files during pipes-based parsing.
-     * If not set, the system default temp directory will be used.
-     * Consider using a RAM-backed filesystem (e.g., /dev/shm or /tmpfs) for better performance.
+     * Directory the forks create their private temp dirs under. It only ever covered the
+     * forks: this JVM's own spooling and every library calling {@code File.createTempFile}
+     * use {@code java.io.tmpdir}, fixed at JVM start. Set {@code -Djava.io.tmpdir} on the
+     * parent JVM instead; forks inherit subdirectories under it.
+     * <p>
+     * <b>DO NOT USE tmpfs</b> ({@code /dev/shm}) here or for {@code java.io.tmpdir}: spool
+     * size is bounded by input, not config, and a fork dir orphaned by a killed parent pins
+     * RAM until deleted.
      *
-     * @param tempDirectory the temp directory path, or null to use system default
+     * @deprecated since 4.1, removal planned for 5.0; set {@code -Djava.io.tmpdir} instead
      */
+    @Deprecated
     public void setTempDirectory(String tempDirectory) {
+        if (!StringUtils.isBlank(tempDirectory)) {
+            LOG.warn("pipes.tempDirectory={} is deprecated (removal in 5.0) and only redirects " +
+                    "the forks; this JVM's dependencies (POI, PDFBox, ...) write to " +
+                    "java.io.tmpdir={}, fixed at JVM start. Set -Djava.io.tmpdir on the parent JVM.",
+                    tempDirectory, System.getProperty("java.io.tmpdir"));
+        }
         this.tempDirectory = tempDirectory;
     }
 
@@ -601,7 +668,7 @@ public class PipesConfig {
      * (the FINISHED payload) and the largest request the server will accept from the client
      * (the NEW_REQUEST payload). Lowering this value below the size of a typical
      * {@link org.apache.tika.pipes.api.FetchEmitTuple} will cause requests to be rejected
-     * on the server side and reported as undiagnosable {@code UNSPECIFIED_CRASH} errors.
+     * client-side before sending, reported as {@code PAYLOAD_LIMIT_EXCEEDED}.
      * <p>
      * The value must be at least {@link org.apache.tika.pipes.core.server.ServerProtocolIO#MIN_FALLBACK_PAYLOAD_BYTES}
      * so that the server can always write a {@code PAYLOAD_LIMIT_EXCEEDED} response

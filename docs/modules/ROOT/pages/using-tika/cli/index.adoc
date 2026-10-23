@@ -115,6 +115,10 @@ For Pipes-mode options see <<_tika_pipes_processing,Tika Pipes Processing>>.
 Redirect to save: `--convert-config-xml-to-json=tika-config.xml > tika-config.json`.
 |===
 
+The config's `parse-context` applies to the CLI too, so `exception-reporting` bounds the
+`tk:exception:*` values in `-J`/`-j` output — see
+xref:advanced/setting-limits.adoc#_exception_reporting[Exception reporting].
+
 === Output Formatting
 
 [cols="1,3"]
@@ -284,6 +288,9 @@ java -jar tika-app.jar -i /path/to/input -o /path/to/output
 That parses every file under the input directory and writes JSON metadata (RMETA format) to the
 output directory.
 
+The throughput, memory, and isolation characteristics of this forked-JVM pipeline — and how to
+size it — are described in xref:pipes/performance.adoc[Performance and Isolation Trade-offs].
+
 [#_how_pipes_mode_is_activated]
 === How Pipes mode is activated
 
@@ -319,7 +326,7 @@ as usual.
 |File list, one path per line, relative to `--inputDir` or absolute.
 
 |`--on-exists=<mode>`
-|Behavior when an output file already exists: `exception` (default), `replace`, `skip`.
+|Behavior when an output file already exists: `exception` (default), `replace`, `skip`. Also applied to a configured `file-system-jsonl-reporter` (`skip` becomes `APPEND` there).
 |===
 
 === Output formatting
@@ -373,7 +380,8 @@ activate it. `-a` and `--async` both work.
 === Unpacking attachments
 
 `-z` and `-Z` differ only in depth: `-z` extracts direct attachments (depth 1), `-Z` recurses
-through every level. Both accept a single file or a directory as input.
+through every level. Both accept a single file or a directory as input. With a single file
+and no output directory, output goes to `<input>-unpacked/`, in either format.
 
 [cols="1,3"]
 |===
@@ -389,14 +397,25 @@ through every level. Both accept a single file or a directory as input.
 |Output directory for the extracted bytes; equivalent to `-o`.
 
 |`--unpack-format=<format>`
-|Output format: `REGULAR` (default) or `FRICTIONLESS`.
+|Output format: `FRICTIONLESS` (default) or `REGULAR`, the pre-4.2 flat layout.
 
 |`--unpack-mode=<mode>`
-|Output mode: `ZIPPED` (default) or `DIRECTORY`.
+|Output mode: `DIRECTORY` (default) or `ZIPPED`. `DIRECTORY` with a single input file makes
+`<out>` the package (`datapackage.json`, `rmeta.json`, `unpacked/...`); with an input directory each file gets `<out>/<input>/`. `ZIPPED`
+writes `<out>/<input>-frictionless.zip`.
 
 |`--unpack-include-metadata`
-|Include `metadata.json` in Frictionless output.
+|Metadata for every extracted file. A Frictionless package carries `rmeta.json` by default;
+this adds a `.metadata.json` sidecar per file to REGULAR zip output.
 |===
+
+A `-c`/`--config` file's `unpack-config` is honoured and the flags above are applied on top
+of it. That is the only way to get the source document itself into the output
+(`"unpack-config": {"includeOriginal": true}`); no flag does it. File naming stays the
+CLI's own (`unpacked/1.<ext>`, or `<input>-embed/1.<ext>` under
+`REGULAR`, detected suffixes, loose files unless `--unpack-mode=ZIPPED`) regardless of the
+file's `suffixStrategy`, `zeroPadName`, `embeddedIdPrefix`, `keyBaseStrategy` or `outputMode`. See
+xref:pipes/unpack-config.adoc#_what_each_surface_produces[what each surface produces].
 
 === Examples
 

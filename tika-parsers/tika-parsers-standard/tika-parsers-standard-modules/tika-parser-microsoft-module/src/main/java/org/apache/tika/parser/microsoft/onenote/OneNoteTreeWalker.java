@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,6 +36,8 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
@@ -44,6 +47,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
@@ -54,6 +58,10 @@ import org.apache.tika.sax.XHTMLContentHandler;
  */
 class OneNoteTreeWalker {
 
+    private static final Logger LOG = LoggerFactory.getLogger(OneNoteTreeWalker.class);
+    private static final int MAX_CYCLE_WARNINGS = 100;
+    // low enough that the ~3 stack frames per level cannot overflow a default thread stack
+    private static final int MAX_WALK_DEPTH = 500;
     private static final String P = "p";
     /**
      * See spec MS-ONE - 2.3.1 - TIME32 - epoch of jan 1 1980 UTC.
@@ -88,6 +96,7 @@ class OneNoteTreeWalker {
     private final Set<String> authors = new HashSet<>();
     private final Set<String> mostRecentAuthors = new HashSet<>();
     private final Set<String> originalAuthors = new HashSet<>();
+    private final OneNoteGuidCollector guidCollector;
     private final OneNoteTreeWalkerOptions options;
     private final OneNoteDocument oneNoteDocument;
     private final OneNoteDirectFileResource dif;
@@ -103,6 +112,14 @@ class OneNoteTreeWalker {
      * Contains pairs of {Offset,Length} that we have added to the text stream already.
      */
     private final Set<Pair<Long, Integer>> textAlreadyFetched = new HashSet<>();
+    private final Set<FileNode> activeFileNodes =
+            Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<FileNode> reportedCycleNodes =
+            Collections.newSetFromMap(new IdentityHashMap<>());
+    private int cycleWarningCount;
+    private boolean cycleWarningsSuppressed;
+    private int walkDepth;
+    private boolean depthWarningRecorded;
 
     /**
      * Create a one tree walker.
@@ -127,6 +144,7 @@ class OneNoteTreeWalker {
         this.xhtml = xhtml;
         this.parentMetadata = parentMetadata;
         this.parseContext = parseContext;
+        this.guidCollector = new OneNoteGuidCollector(this::recordGuidCapWarning);
         this.embeddedDocumentExtractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(parseContext);
     }
@@ -140,8 +158,12 @@ class OneNoteTreeWalker {
     public Map<String, Object> walkTree() throws IOException, TikaException, SAXException {
         Map<String, Object> structure = new HashMap<>();
         structure.put("header", oneNoteDocument.header);
-        structure.put("rootFileNodes", walkRootFileNodes());
-        return structure;
+        try {
+            structure.put("rootFileNodes", walkRootFileNodes());
+            return structure;
+        } finally {
+            publishGuidBags();
+        }
     }
 
     /**
@@ -292,6 +314,68 @@ class OneNoteTreeWalker {
     public Map<String, Object> walkFileNode(FileNode fileNode,
                                             OneNotePropertyId parentPropertyId)
             throws IOException, TikaException, SAXException {
+        if (fileNode == null) {
+            return Collections.emptyMap();
+        }
+        if (walkDepth >= MAX_WALK_DEPTH) {
+            // the cycle guard cannot catch a long acyclic chain - cap the recursion depth
+            // so a crafted file cannot overflow the stack
+            recordDepthWarning();
+            return Collections.emptyMap();
+        }
+        if (!activeFileNodes.add(fileNode)) {
+            recordCycleWarning(fileNode);
+            return Collections.emptyMap();
+        }
+        walkDepth++;
+        try {
+            return walkFileNodeInternal(fileNode, parentPropertyId);
+        } finally {
+            walkDepth--;
+            activeFileNodes.remove(fileNode);
+        }
+    }
+
+    private void recordDepthWarning() {
+        if (depthWarningRecorded) {
+            return;
+        }
+        depthWarningRecorded = true;
+        String warning = "OneNote file-node traversal exceeded depth limit " + MAX_WALK_DEPTH;
+        LOG.warn(warning);
+        if (parentMetadata != null) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+        }
+    }
+
+    private void recordCycleWarning(FileNode fileNode) {
+        if (reportedCycleNodes.contains(fileNode)) {
+            return;
+        }
+        if (cycleWarningCount >= MAX_CYCLE_WARNINGS) {
+            if (!cycleWarningsSuppressed) {
+                cycleWarningsSuppressed = true;
+                String warning = "Additional OneNote file-node cycle warnings were suppressed " +
+                        "after " + MAX_CYCLE_WARNINGS + " distinct cycles";
+                LOG.warn(warning);
+                if (parentMetadata != null) {
+                    parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+                }
+            }
+            return;
+        }
+        reportedCycleNodes.add(fileNode);
+        cycleWarningCount++;
+        String warning = "OneNote file-node cycle detected at " + fileNode.gosid;
+        LOG.warn(warning);
+        if (parentMetadata != null) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+        }
+    }
+
+    private Map<String, Object> walkFileNodeInternal(FileNode fileNode,
+                                                      OneNotePropertyId parentPropertyId)
+            throws IOException, TikaException, SAXException {
         Map<String, Object> structure = new HashMap<>();
         structure.put("oneNoteType", "FileNode");
         structure.put("gosid", fileNode.gosid.toString());
@@ -306,7 +390,8 @@ class OneNoteTreeWalker {
             structure.put("childFileNodeList", walkFileNodeList(fileNode.childFileNodeList, parentPropertyId));
         }
         if (fileNode.propertySet != null) {
-            List<Map<String, Object>> propSet = processPropertySet(fileNode.propertySet, parentPropertyId);
+            List<Map<String, Object>> propSet =
+                    processPropertySet(fileNode.propertySet, parentPropertyId, jcidIndex(fileNode));
             if (!propSet.isEmpty()) {
                 structure.put("propertySet", propSet);
             }
@@ -314,7 +399,7 @@ class OneNoteTreeWalker {
         if (fileNode.subType.fileDataStoreObjectReference.ref != null && !FileChunkReference.nil()
                 .equals(fileNode.subType.fileDataStoreObjectReference.ref.fileData)) {
             structure.put("fileDataStoreObjectReference", walkFileDataStoreObjectReference(
-                    fileNode.subType.fileDataStoreObjectReference));
+                    fileNode.subType.fileDataStoreObjectReference, fileNode.gosid));
         }
         return structure;
     }
@@ -327,7 +412,7 @@ class OneNoteTreeWalker {
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
     private Map<String, Object> walkFileDataStoreObjectReference(
-            FileDataStoreObjectReference fileDataStoreObjectReference)
+            FileDataStoreObjectReference fileDataStoreObjectReference, ExtendedGUID gosid)
             throws IOException, SAXException, TikaException {
         Map<String, Object> structure = new HashMap<>();
         OneNotePtr content = new OneNotePtr(oneNoteDocument, dif);
@@ -337,12 +422,13 @@ class OneNoteTreeWalker {
                     "File data store cb " + fileDataStoreObjectReference.ref.fileData.cb +
                             " exceeds document size: " + dif.size());
         }
-        handleEmbedded((int) fileDataStoreObjectReference.ref.fileData.cb);
+        handleEmbedded((int) fileDataStoreObjectReference.ref.fileData.cb, gosid);
         structure.put("fileDataStoreObjectMetadata", fileDataStoreObjectReference);
         return structure;
     }
 
-    private void handleEmbedded(int length) throws TikaException, IOException, SAXException {
+    private void handleEmbedded(int length, ExtendedGUID gosid)
+            throws TikaException, IOException, SAXException {
         TikaInputStream tis = null;
         ByteBuffer buf;
         try {
@@ -350,18 +436,25 @@ class OneNoteTreeWalker {
             dif.read(buf);
         } catch (IOException e) {
             //store this exception in the parent's metadata
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
             return;
         }
         Metadata embeddedMetadata = Metadata.newInstance(this.parseContext);
+        embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                TikaCoreProperties.EmbeddedResourceType.ATTACHMENT.toString());
+        if (gosid != null && !ExtendedGUID.nil().equals(gosid)) {
+            embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RELATIONSHIP_ID, gosid.toString());
+        }
         try {
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "embedded");
             xhtml.startElement("div", attributes);
             xhtml.endElement("div");
-            tis = TikaInputStream.get(buf.array());
-            embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
-                    embeddedMetadata, this.parseContext, false);
+            if (embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, parseContext)) {
+                tis = TikaInputStream.get(buf.array());
+                embeddedDocumentExtractor.parseEmbedded(tis, new EmbeddedContentHandler(xhtml),
+                        embeddedMetadata, this.parseContext, false);
+            }
         } finally {
             IOUtils.closeQuietly(tis);
         }
@@ -375,12 +468,13 @@ class OneNoteTreeWalker {
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
     private List<Map<String, Object>> processPropertySet(PropertySet propertySet,
-                                                         OneNotePropertyId parentPropertyId)
+                                                         OneNotePropertyId parentPropertyId,
+                                                         int objectType)
             throws IOException, TikaException, SAXException {
         List<Map<String, Object>> propValues = new ArrayList<>();
         for (int i = 0; i < propertySet.rgPridsData.size(); ++i) {
             PropertyValue propertyValue = propertySet.rgPridsData.get(i);
-            propValues.add(processPropertyValue(propertyValue, parentPropertyId));
+            propValues.add(processPropertyValue(propertyValue, parentPropertyId, objectType));
         }
         return propValues;
     }
@@ -409,8 +503,9 @@ class OneNoteTreeWalker {
      * @return The map parsed by this property value.
      * @throws IOException Can throw these when manipulating the seekable byte channel.
      */
-    private Map<String, Object> processPropertyValue(PropertyValue propertyValue,
-                                                     OneNotePropertyId parentPropertyId)
+    Map<String, Object> processPropertyValue(PropertyValue propertyValue,
+                                                     OneNotePropertyId parentPropertyId,
+                                                     int objectType)
             throws IOException, TikaException, SAXException {
         Map<String, Object> propMap = new HashMap<>();
         propMap.put("oneNoteType", "PropertyValue");
@@ -473,8 +568,11 @@ class OneNoteTreeWalker {
                 propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
                 if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
                     xhtml.startElement(P);
-                    xhtml.characters((String) propMap.get("dataUnicode16LE"));
-                    xhtml.endElement(P);
+                    try {
+                        xhtml.characters((String) propMap.get("dataUnicode16LE"));
+                    } finally {
+                        xhtml.endElement(P);
+                    }
                 }
             } else if (propertyValue.propertyId.propertyEnum ==
                     OneNotePropertyEnum.TextExtendedAscii) {
@@ -487,8 +585,11 @@ class OneNoteTreeWalker {
                 dif.read(buf);
                 propMap.put("dataAscii", new String(buf.array(), StandardCharsets.US_ASCII));
                 xhtml.startElement(P);
-                xhtml.characters((String) propMap.get("dataAscii"));
-                xhtml.endElement(P);
+                try {
+                    xhtml.characters((String) propMap.get("dataAscii"));
+                } finally {
+                    xhtml.endElement(P);
+                }
             } else if (!isBinary) {
                 if (content.size() > dif.size()) {
                     throw new TikaMemoryLimitException(
@@ -500,8 +601,11 @@ class OneNoteTreeWalker {
                 propMap.put("dataUnicode16LE", new String(buf.array(), StandardCharsets.UTF_16LE));
                 if (options.getUtf16PropertiesToPrint().contains(propertyValue.propertyId.propertyEnum)) {
                     xhtml.startElement(P);
-                    xhtml.characters((String) propMap.get("dataUnicode16LE"));
-                    xhtml.endElement(P);
+                    try {
+                        xhtml.characters((String) propMap.get("dataUnicode16LE"));
+                    } finally {
+                        xhtml.endElement(P);
+                    }
                 }
             } else {
                 if (content.size() > dif.size()) {
@@ -519,6 +623,20 @@ class OneNoteTreeWalker {
                         // only handle text for the latest revision, unless the options
                         // have the onlyLatestRevision = false
                         handleRichEditTextUnicode(content.size());
+                    }
+                } else if (propertyValue.propertyId.propertyEnum ==
+                        OneNotePropertyEnum.NotebookManagementEntityGuid
+                        && content.size() == 16) {
+                    ByteBuffer guidBuffer = ByteBuffer.allocate(16);
+                    dif.read(guidBuffer);
+                    String guid = pooledGuid(GUID.fromMicrosoftBytes(guidBuffer.array()).toString());
+                    propMap.put("notebookManagementEntityGuid", guid);
+                    // Version-history copies of a page are object-space roots; only the
+                    // current page's metadata is referenced via MetaDataObjectsAboveGraphSpace.
+                    if (objectType != OneNoteJcid.PAGE_METADATA || (parentPropertyId != null
+                            && parentPropertyId.propertyEnum ==
+                            OneNotePropertyEnum.MetaDataObjectsAboveGraphSpace)) {
+                        addClassicEntityGuid(objectType, guid);
                     }
                 } else {
                     //TODO -- these seem to be somewhat broken font files and other
@@ -538,7 +656,8 @@ class OneNoteTreeWalker {
             }
         }
         if (propertyValue.propertySet != null && propertyValue.propertySet.rgPridsData != null) {
-            List<Map<String, Object>> propSet = processPropertySet(propertyValue.propertySet, parentPropertyId);
+            List<Map<String, Object>> propSet =
+                    processPropertySet(propertyValue.propertySet, parentPropertyId, objectType);
             if (!propSet.isEmpty()) {
                 propMap.put("propertySet", propSet);
             }
@@ -593,13 +712,62 @@ class OneNoteTreeWalker {
         Matcher m = HYPERLINK_PATTERN.matcher(txt);
         if (m.find()) {
             xhtml.startElement("a", "href", m.group(1));
-            xhtml.characters(m.group(2));
-            xhtml.endElement("a");
+            try {
+                xhtml.characters(m.group(2));
+            } finally {
+                xhtml.endElement("a");
+            }
         } else {
             xhtml.startElement(P);
-            xhtml.characters(txt);
-            xhtml.endElement(P);
+            try {
+                xhtml.characters(txt);
+            } finally {
+                xhtml.endElement(P);
+            }
         }
+    }
+
+    void addClassicEntityGuid(int objectType, String guid) {
+        guidCollector.addForObjectType(objectType, guid);
+    }
+
+    private void publishGuidBags() {
+        if (parentMetadata != null) {
+            guidCollector.publish(parentMetadata);
+        }
+    }
+
+    /**
+     * Exempt from any warning budget: capped GUID metadata must always carry its own
+     * incompleteness signal.
+     */
+    private void recordGuidCapWarning(String warning) {
+        LOG.warn(warning);
+        if (parentMetadata != null) {
+            parentMetadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, warning);
+        }
+    }
+
+    // revisit-heavy graphs decode the same GUID many times; pool the canonical string so the
+    // retained per-node maps share one instance instead of one string per visit
+    final Map<String, String> guidStringPool = new HashMap<>();
+
+    String pooledGuid(String guid) {
+        if (guidStringPool.size() >= OneNoteGuidCollector.MAX_GUID_COUNT) {
+            return guid;
+        }
+        String pooled = guidStringPool.putIfAbsent(guid, guid);
+        return pooled != null ? pooled : guid;
+    }
+
+    static int jcidIndex(FileNode fileNode) {
+        if (fileNode == null || fileNode.subType == null
+                || fileNode.subType.objectDeclarationWithRefCount == null
+                || fileNode.subType.objectDeclarationWithRefCount.body == null
+                || fileNode.subType.objectDeclarationWithRefCount.body.jcid == null) {
+            return -1;
+        }
+        return (int) fileNode.subType.objectDeclarationWithRefCount.body.jcid.index;
     }
 
     public Set<String> getAuthors() {

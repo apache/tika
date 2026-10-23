@@ -31,6 +31,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,9 +51,12 @@ import org.apache.tika.pipes.core.PipesClient;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesResults;
+import org.apache.tika.pipes.core.RestartReason;
 import org.apache.tika.pipes.core.ServerManager;
 import org.apache.tika.pipes.core.SharedServerManager;
+import org.apache.tika.pipes.core.emitter.EmitDataImpl;
 import org.apache.tika.pipes.core.emitter.EmitterManager;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 import org.apache.tika.pipes.core.reporter.ReporterManager;
 import org.apache.tika.plugins.TikaPluginManager;
 
@@ -73,11 +77,12 @@ public class AsyncProcessor implements Closeable {
     private final ExecutorCompletionService<Integer> executorCompletionService;
     private final ExecutorService executorService;
     private final PipesConfig asyncConfig;
-    private final Path tikaConfigPath;
     private final PipesReporter pipesReporter;
     private final List<ServerManager> serverManagers = new ArrayList<>();
     private final AtomicLong totalProcessed = new AtomicLong(0);
     private final AtomicBoolean applicationErrorOccurred = new AtomicBoolean(false);
+    // first worker/emitter failure; reported to the reporter exactly once
+    private final AtomicReference<ExecutionException> failure = new AtomicReference<>();
     private static long MAX_OFFER_WAIT_MS = 120000;
     private volatile int numParserThreadsFinished = 0;
     private volatile int numEmitterThreadsFinished = 0;
@@ -115,15 +120,16 @@ public class AsyncProcessor implements Closeable {
             throws TikaException, IOException {
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(tikaConfigPath);
         TikaPluginManager.preExtractPlugins(tikaJsonConfig);
-        return new AsyncProcessor(tikaConfigPath, pipesIterator, tikaJsonConfig);
+        return new AsyncProcessor(pipesIterator, tikaJsonConfig);
     }
 
-    private AsyncProcessor(Path tikaConfigPath, PipesIterator pipesIterator,
-            TikaJsonConfig tikaJsonConfig) throws TikaException, IOException {
+    private AsyncProcessor(PipesIterator pipesIterator, TikaJsonConfig tikaJsonConfig)
+            throws TikaException, IOException {
         TikaPluginManager tikaPluginManager = TikaPluginManager.load(tikaJsonConfig);
-        MetadataFilter metadataFilter = TikaLoader.load(tikaConfigPath).loadMetadataFilters();
+        MetadataFilter metadataFilter = TikaLoader.load(tikaJsonConfig,
+                Thread.currentThread().getContextClassLoader()).loadMetadataFilters();
         this.asyncConfig = PipesConfig.load(tikaJsonConfig);
-        this.tikaConfigPath = tikaConfigPath;
+        byte[] tikaConfigJson = ForkBootstrap.toBytes(tikaJsonConfig);
         this.pipesReporter = ReporterManager.load(tikaPluginManager, tikaJsonConfig);
         LOG.debug("loaded reporter {}", pipesReporter.getClass());
         this.fetchEmitTuples = new ArrayBlockingQueue<>(asyncConfig.getQueueSize());
@@ -141,6 +147,12 @@ public class AsyncProcessor implements Closeable {
                         checkActive();
                     } catch (InterruptedException e) {
                         return WATCHER_FUTURE_CODE;
+                    } catch (RuntimeException e) {
+                        if (failure.get() == null) {
+                            throw e;
+                        }
+                        // already latched in failure; rethrowing would make this future a second one
+                        return WATCHER_FUTURE_CODE;
                     }
                 }
             });
@@ -155,7 +167,7 @@ public class AsyncProcessor implements Closeable {
             if (isSharedMode) {
                 LOG.info("Using shared server mode with {} workers", asyncConfig.getNumClients());
                 SharedServerManager sharedManager = new SharedServerManager(
-                        asyncConfig, tikaConfigPath, asyncConfig.getNumClients());
+                        asyncConfig, tikaConfigJson, asyncConfig.getNumClients());
                 serverManagers.add(sharedManager);
 
                 for (int i = 0; i < asyncConfig.getNumClients(); i++) {
@@ -167,7 +179,7 @@ public class AsyncProcessor implements Closeable {
                 LOG.info("Using per-client server mode with {} workers", asyncConfig.getNumClients());
                 for (int i = 0; i < asyncConfig.getNumClients(); i++) {
                     PerClientServerManager serverManager = new PerClientServerManager(
-                            asyncConfig, tikaConfigPath, i);
+                            asyncConfig, tikaConfigJson, i);
                     serverManagers.add(serverManager);
 
                     executorCompletionService.submit(
@@ -247,6 +259,16 @@ public class AsyncProcessor implements Closeable {
         return fetchEmitTuples.remainingCapacity();
     }
 
+    /** Tuples accepted but not yet picked up by a worker. */
+    public int getQueueDepth() {
+        return fetchEmitTuples.size();
+    }
+
+    /** Restarts of this processor's own forks, summed over all servers, for {@code reason}. */
+    public long getRestartCount(RestartReason reason) {
+        return serverManagers.stream().mapToLong(m -> m.getRestartCount(reason)).sum();
+    }
+
     /**
      * Long-running callers (tika-server) set true so one bad tuple
      * (unknown fetcher, init failure) can't halt the shared workers;
@@ -311,7 +333,9 @@ public class AsyncProcessor implements Closeable {
     }
 
     public synchronized boolean checkActive() throws InterruptedException {
-
+        if (failure.get() != null) {
+            throw new RuntimeException(failure.get());
+        }
         Future<Integer> future = executorCompletionService.poll();
         if (future != null) {
             try {
@@ -332,8 +356,15 @@ public class AsyncProcessor implements Closeable {
                         throw new IllegalArgumentException("Don't recognize this future code: " + i);
                 }
             } catch (ExecutionException e) {
-                LOG.error("execution exception", e);
-                this.pipesReporter.error(e);
+                if (failure.compareAndSet(null, e)) {
+                    LOG.error("execution exception", e);
+                    try {
+                        this.pipesReporter.error(e);
+                    } catch (RuntimeException re) {
+                        // the worker failure is the primary; don't let the reporter mask it
+                        e.addSuppressed(re);
+                    }
+                }
                 throw new RuntimeException(e);
             }
         }
@@ -437,10 +468,16 @@ public class AsyncProcessor implements Closeable {
                                     describeStopReason(result),
                                     result.status());
                             applicationErrorOccurred.set(true);
-                            pipesReporter.report(t, result, System.currentTimeMillis() - start);
-                            throw new PipesException(describeStopReason(result) + ": " +
+                            PipesException stop = new PipesException(describeStopReason(result) + ": " +
                                     result.status() +
                                     (result.message() != null ? " - " + result.message() : ""));
+                            try {
+                                pipesReporter.report(t, result, System.currentTimeMillis() - start);
+                            } catch (RuntimeException e) {
+                                // the stop reason is the primary failure; don't let the reporter mask it
+                                stop.addSuppressed(e);
+                            }
+                            throw stop;
                         }
                         if (LOG.isTraceEnabled()) {
                             LOG.trace("timer -- pipes client process: {} ms",
@@ -449,6 +486,11 @@ public class AsyncProcessor implements Closeable {
                         long offerStart = System.currentTimeMillis();
 
                         if (shouldEmit(result)) {
+                            if (result.emitData() instanceof EmitDataImpl emitDataImpl) {
+                                // a client-side Emitter reads only the metadata list;
+                                // undo any content-bytes move so content is not lost
+                                emitDataImpl.restoreContentFromBytes();
+                            }
                             LOG.trace("adding result to emitter queue: " + result.emitData());
                             boolean offered = emitDataTupleQueue.offer(
                                     new EmitDataPair(t.getEmitKey().getEmitterId(), result.emitData()), MAX_OFFER_WAIT_MS,
@@ -463,10 +505,22 @@ public class AsyncProcessor implements Closeable {
                                     System.currentTimeMillis() - offerStart);
                         }
                         long elapsed = System.currentTimeMillis() - start;
-                        pipesReporter.report(t, result, elapsed);
+                        report(t, result, elapsed);
                         totalProcessed.incrementAndGet();
                     }
                 }
+            }
+        }
+
+        // a reporter that throws must stop every worker, or the other workers keep
+        // emitting documents that never get an audit line
+        private void report(FetchEmitTuple t, PipesResult result, long elapsed) throws PipesException {
+            try {
+                pipesReporter.report(t, result, elapsed);
+            } catch (RuntimeException e) {
+                LOG.error("reporter failed; stopping all processing", e);
+                applicationErrorOccurred.set(true);
+                throw new PipesException("reporter failed", e);
             }
         }
 

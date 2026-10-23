@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "emf-parser": {
+        "pages": { "emit": { "enabled": true, "render": { "maxWidth": 400 } } }
+      }
+    }
+  ]
+}

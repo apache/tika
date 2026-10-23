@@ -1,0 +1,65 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Date Handling
+
+Since TIKA-4917 in 4.2.0, one parser in tika-core, `org.apache.tika.utils.TikaDates`, parses
+every date string a document supplies. It replaced three parsers with different rules
+(`DateUtils`, `MailDateParser`, and the XMP path), which had stamped some zone-less values with
+`Z`, resolved others in the server's time zone, and inflated partial or invalid dates into
+full timestamps. Dates now depend only on what the document says.
+
+== Storage forms
+
+A `DATE`-typed metadata value takes one of three shapes:
+
+[cols="1,2,2"]
+|===
+|Document says |Stored as |Example
+
+|Zone or offset |Canonical UTC |`2024-03-05T14:07:00Z`
+|Wall clock, no zone |Zone-less |`2024-03-05T14:07:00`
+|Date only |Date only |`2024-03-05`
+|===
+
+Partial dates (`2019`, `2019-06`) and values Tika cannot parse stay on the format's own key
+(for example `xmpDM:releaseDate`) and are never promoted to `dcterms:created` or
+`dcterms:modified`. Years outside 1000..2200 are rejected.
+
+== Reading dates back
+
+`Metadata.getDate()` reads a zone-less value as UTC, never as the JVM default zone, and a
+date-only value as midday UTC. Partial and out-of-range values return `null`.
+
+Endpoints that require a full timestamp (Solr `pdate`, for example) still need the
+xref:configuration/metadata-filters.adoc[`date-normalizing-metadata-filter`]. It resolves
+zone-less and date-only values in a configured default zone, and it *invents* the missing
+fields of a partial date: `2019` becomes January 1, `2019-06` becomes June 1, both at midday.
+Tika itself never does this; only the filter does, and only because a rejected date field
+would otherwise reject the whole document.
+
+== File-system times
+
+Entry times from archives (zip, 7z, tar, rar, arj, cpio) and mail attachments are file-system
+facts, not document facts. They are on `fs:created`, `fs:modified`, and `fs:accessed`, not on
+`dcterms:*`. DOS-format times are stored zone-less.
+
+== API
+
+`TikaDates` is the supported parser. `MailDateParser` and `org.apache.tika.parser.mailcommons.MailUtil`
+remain in `tika-parser-mail-commons` as a deprecated shim through 4.2.x and are removed in
+4.3.0; `MailUtil` lives in `org.apache.tika.parser.mail` in `tika-parser-mail-module`.

@@ -109,6 +109,131 @@ public class RunUatSmokeTest {
         }
     }
 
+    /**
+     * The UAT's inference pass: release-tools/uat/MockInferenceServer.java stands in for a
+     * hosted OCR model and an embedding model (started flaky, so every other request is
+     * refused first), the server runs on uat-inference-config.json with the engine key taken
+     * from the environment, and run-uat.sh's T40-T47 checks exercise the forked worker's
+     * engine wiring. Media needs ffmpeg on the PATH: asserted when it is there, skipped by
+     * the script when it is not.
+     */
+    @Test
+    void testRestUatInferencePasses() throws Exception {
+        Assumptions.assumeFalse(IS_WINDOWS, "run-uat.sh requires bash; skipping on Windows");
+        Path serverJar = locateServerJar();
+        Path uatScript = locateUatScript();
+        Assumptions.assumeTrue(serverJar != null, "tika-server-standard-*.jar not found; build the dist first");
+        Assumptions.assumeTrue(uatScript != null, "release-tools/uat/run-uat.sh not found");
+        Path uatDir = uatScript.getParent();
+        Path mockSource = uatDir.resolve("MockInferenceServer.java");
+        Path configTemplate = uatDir.resolve("uat-inference-config.json");
+        Assumptions.assumeTrue(Files.exists(mockSource) && Files.exists(configTemplate),
+                "mock engine or inference config missing next to run-uat.sh");
+
+        int mockPort = findFreePort();
+        // --flaky only once the shipped client retries a 429 (TIKA-4912); before that the
+        // refusals would fail the run for a reason this test is not about
+        boolean clientRetries = clientRetries(serverJar);
+        ProcessBuilder mockPb = clientRetries
+                ? new ProcessBuilder("java", mockSource.toString(), String.valueOf(mockPort), "--flaky")
+                : new ProcessBuilder("java", mockSource.toString(), String.valueOf(mockPort));
+        mockPb.redirectErrorStream(true);
+        Process mock = mockPb.start();
+        drainAsync(mock);
+        Process server = null;
+        try {
+            awaitHttp("http://localhost:" + mockPort + "/v1/models", mock, "mock inference server");
+            int port = findFreePort();
+            String baseUrl = "http://localhost:" + port;
+            String json = Files.readString(configTemplate, UTF_8)
+                    .replace("MOCK_BASE_URL", "http://localhost:" + mockPort);
+            Path config = writeConfig("uat-inference", json);
+            server = startServer(serverJar, java.util.Map.of("TIKA_UAT_MOCK_KEY", "uat-secret"),
+                    "-p", String.valueOf(port), "-h", "localhost", "-c", config.toString());
+            awaitServerStartup(server, baseUrl);
+
+            ProcessBuilder pb = new ProcessBuilder("bash", uatScript.toString(), baseUrl);
+            pb.environment().put("TIKA_UAT_INFERENCE", "1");
+            pb.environment().put("TIKA_UAT_MOCK_URL", "http://localhost:" + mockPort);
+            if (onPath("ffmpeg") && onPath("ffprobe")) {
+                pb.environment().put("TIKA_UAT_REQUIRE_MEDIA", "1");
+            }
+            pb.redirectErrorStream(true);
+            Process uat = pb.start();
+            String output = drain(uat);
+            boolean finished = uat.waitFor(180, TimeUnit.SECONDS);
+            if (!finished) {
+                uat.destroyForcibly();
+                fail("run-uat.sh (inference) did not finish within 180s");
+            }
+            log.info("run-uat.sh (inference) output:\n{}", output);
+            assertEquals(0, uat.exitValue(),
+                    "run-uat.sh (inference) reported failures against " + baseUrl + ":\n" + output);
+            if (clientRetries) {
+                assertTrue(output.contains("PASS  T47"),
+                        "the flaky mock's refusals must have been retried:\n" + output);
+            }
+        } finally {
+            if (server != null) {
+                stop(server);
+            }
+            mock.destroy();
+            mock.waitFor(10, TimeUnit.SECONDS);
+        }
+    }
+
+    /** Whether the server's HTTP client retries a 429: TikaHttpClient.build(int, int) exists. */
+    private static boolean clientRetries(Path serverJar) {
+        try (DirectoryStream<Path> jars = Files.newDirectoryStream(
+                serverJar.getParent().resolve("lib"), "tika-http-jdk-*.jar")) {
+            for (Path jar : jars) {
+                try (java.util.jar.JarFile jf = new java.util.jar.JarFile(jar.toFile())) {
+                    java.util.jar.JarEntry e = jf.getJarEntry("org/apache/tika/http/TikaHttpClient.class");
+                    if (e == null) {
+                        return false;
+                    }
+                    String bytes = new String(jf.getInputStream(e).readAllBytes(), StandardCharsets.ISO_8859_1);
+                    return bytes.contains("DEFAULT_MAX_RETRIES");
+                }
+            }
+        } catch (Exception e) {
+            // fall through
+        }
+        return false;
+    }
+
+    private static boolean onPath(String tool) {
+        try {
+            Process p = new ProcessBuilder(tool, "-version").redirectErrorStream(true).start();
+            p.getInputStream().readAllBytes();
+            return p.waitFor(10, TimeUnit.SECONDS) && p.exitValue() == 0;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private static void awaitHttp(String url, Process p, String what) throws Exception {
+        HttpClient client = HttpClient.newHttpClient();
+        Instant deadline = Instant.now().plus(Duration.ofSeconds(30));
+        while (Instant.now().isBefore(deadline)) {
+            if (!p.isAlive()) {
+                fail(what + " exited with " + p.exitValue());
+            }
+            try {
+                HttpResponse<String> r = client.send(HttpRequest.newBuilder(URI.create(url))
+                        .timeout(Duration.ofSeconds(2)).GET().build(),
+                        HttpResponse.BodyHandlers.ofString());
+                if (r.statusCode() == 200) {
+                    return;
+                }
+            } catch (Exception e) {
+                // not up yet
+            }
+            Thread.sleep(250);
+        }
+        fail(what + " did not answer at " + url + " within 30s");
+    }
+
     @Test
     void testPipesEndpointWithoutAllowPipesRefusesToStart() throws Exception {
         Path serverJar = locateServerJar();
@@ -144,6 +269,11 @@ public class RunUatSmokeTest {
     // ----- helpers -----
 
     private Process forkServer(Path serverJar, String... args) throws Exception {
+        return forkServer(serverJar, java.util.Map.of(), args);
+    }
+
+    private Process forkServer(Path serverJar, java.util.Map<String, String> env, String... args)
+            throws Exception {
         String[] cmd = new String[args.length + 3];
         cmd[0] = "java";
         cmd[1] = "-jar";
@@ -151,12 +281,18 @@ public class RunUatSmokeTest {
         System.arraycopy(args, 0, cmd, 3, args.length);
         ProcessBuilder pb = new ProcessBuilder(cmd);
         pb.directory(serverJar.getParent().toFile());
+        pb.environment().putAll(env);
         pb.redirectErrorStream(true);
         return pb.start();
     }
 
     private Process startServer(Path serverJar, String... args) throws Exception {
-        Process p = forkServer(serverJar, args);
+        return startServer(serverJar, java.util.Map.of(), args);
+    }
+
+    private Process startServer(Path serverJar, java.util.Map<String, String> env, String... args)
+            throws Exception {
+        Process p = forkServer(serverJar, env, args);
         drainAsync(p);
         return p;
     }

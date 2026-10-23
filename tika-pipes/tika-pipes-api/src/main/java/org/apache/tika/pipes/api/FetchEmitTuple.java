@@ -38,6 +38,8 @@ public class FetchEmitTuple implements Serializable {
     private final Metadata metadata;
     private final ParseContext parseContext;
     private final ON_PARSE_EXCEPTION onParseException;
+    // Preset selector only: the server resolves the content from its own config
+    private final String presetName;
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey) {
         this(id, fetchKey, emitKey, new Metadata());
@@ -52,12 +54,19 @@ public class FetchEmitTuple implements Serializable {
 
     public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ParseContext parseContext,
                           ON_PARSE_EXCEPTION onParseException) {
+        this(id, fetchKey, emitKey, metadata, parseContext, onParseException, null);
+    }
+
+    /** @since Apache Tika 4.1.0 */
+    public FetchEmitTuple(String id, FetchKey fetchKey, EmitKey emitKey, Metadata metadata, ParseContext parseContext,
+                          ON_PARSE_EXCEPTION onParseException, String presetName) {
         this.id = id;
         this.fetchKey = fetchKey;
         this.emitKey = emitKey;
         this.metadata = metadata;
         this.parseContext = parseContext;
         this.onParseException = onParseException;
+        this.presetName = presetName;
     }
 
     public String getId() {
@@ -86,6 +95,15 @@ public class FetchEmitTuple implements Serializable {
         return onParseException;
     }
 
+    /**
+     * The selected preset's name, or null for none.
+     *
+     * @since Apache Tika 4.1.0
+     */
+    public String getPresetName() {
+        return presetName;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -98,7 +116,8 @@ public class FetchEmitTuple implements Serializable {
         FetchEmitTuple that = (FetchEmitTuple) o;
         return Objects.equals(id, that.id) && Objects.equals(fetchKey, that.fetchKey) && Objects.equals(emitKey, that.emitKey)
                 && Objects.equals(metadata, that.metadata) &&
-                Objects.equals(parseContext, that.parseContext) && onParseException == that.onParseException;
+                Objects.equals(parseContext, that.parseContext) && onParseException == that.onParseException &&
+                Objects.equals(presetName, that.presetName);
     }
 
     @Override
@@ -109,6 +128,7 @@ public class FetchEmitTuple implements Serializable {
         result = 31 * result + Objects.hashCode(metadata);
         result = 31 * result + Objects.hashCode(parseContext);
         result = 31 * result + Objects.hashCode(onParseException);
+        result = 31 * result + Objects.hashCode(presetName);
         return result;
     }
 
@@ -116,6 +136,6 @@ public class FetchEmitTuple implements Serializable {
     public String toString() {
         return "FetchEmitTuple{" + "id='" + id + '\'' + ", fetchKey=" + fetchKey + ", emitKey=" + emitKey +
                 ", metadata=" + metadata + ", parseContext=" + parseContext +
-                ", onParseException=" + onParseException + '}';
+                ", onParseException=" + onParseException + ", presetName='" + presetName + "'}";
     }
 }

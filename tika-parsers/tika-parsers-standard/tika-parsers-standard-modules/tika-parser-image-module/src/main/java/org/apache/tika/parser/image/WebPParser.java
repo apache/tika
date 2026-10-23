@@ -24,7 +24,10 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -43,6 +46,20 @@ public class WebPParser implements Parser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.image("webp"));
 
+    private final ImageMetadataConfig defaultConfig;
+
+    public WebPParser() {
+        this(new ImageMetadataConfig());
+    }
+
+    public WebPParser(ImageMetadataConfig config) {
+        this.defaultConfig = config;
+    }
+
+    public WebPParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, ImageMetadataConfig.class));
+    }
+
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
     }
@@ -50,8 +67,12 @@ public class WebPParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
         // XMP first (canonical), then EXIF/etc. from metadata-extractor as fallback.
-        ImageXmp.extractWebp(tis.getFile(), metadata, context);
-        new ImageMetadataExtractor(metadata).parseWebP(tis.getFile());
+        tis.enableRewind(context.get(CacheMemoryBudget.class));
+        ImageXmp.extractWebp(tis, metadata, context);
+        tis.rewind();
+        new ImageMetadataExtractor(metadata,
+                ImageMetadataConfig.resolve(context, "web-p-parser", defaultConfig))
+                .parseWebP(tis);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();

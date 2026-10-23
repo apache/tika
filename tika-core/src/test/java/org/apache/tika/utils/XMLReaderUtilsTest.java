@@ -17,23 +17,41 @@
 package org.apache.tika.utils;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
+import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
 import java.util.NoSuchElementException;
 import javax.xml.stream.XMLEventReader;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.events.XMLEvent;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.ToTextContentHandler;
@@ -94,6 +112,9 @@ public class XMLReaderUtilsTest {
     private static final String[] EXTERNAL_ENTITY_XMLS = new String[]{ EXTERNAL_DTD_SIMPLE_FILE, EXTERNAL_DTD_SIMPLE_URL,
             EXTERNAL_ENTITY, EXTERNAL_LOCAL_DTD };
 
+    //above the entity expansion limit Tika set through 4.1.0
+    private static final int EXTERNAL_REFERENCES = 25;
+
     private static final String[] BILLION_LAUGHS = new String[]{ BILLION_LAUGHS_CLASSICAL, BILLION_LAUGHS_VARIANT };
 
     @AfterAll
@@ -123,6 +144,75 @@ public class XMLReaderUtilsTest {
                 fail("Parser tried to access resource: " + xml, e);
             }
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testStaxRejectsSmallInternalEntity(boolean eventReader) throws Exception {
+        // A single expansion stays below the limit, so this specifically guards disabled DTD processing.
+        String xml = "<!DOCTYPE root [<!ENTITY value 'INTERNAL_CONTENT'>]><root>&value;</root>";
+        XMLInputFactory factory = XMLReaderUtils.getXMLInputFactory(new ParseContext());
+        if (eventReader) {
+            XMLEventReader reader = factory.createXMLEventReader(new StringReader(xml));
+            try {
+                assertThrows(XMLStreamException.class, () -> {
+                    while (reader.hasNext()) {
+                        reader.nextEvent();
+                    }
+                });
+            } finally {
+                reader.close();
+            }
+        } else {
+            XMLStreamReader reader = factory.createXMLStreamReader(new StringReader(xml));
+            try {
+                assertThrows(XMLStreamException.class, () -> {
+                    while (reader.hasNext()) {
+                        reader.next();
+                    }
+                });
+            } finally {
+                reader.close();
+            }
+        }
+    }
+
+    @Test
+    public void testStaxNamespaceAware() throws Exception {
+        // Coverage only: provider defaults preserve this behavior even without Tika's explicit settings.
+        XMLStreamReader reader = XMLReaderUtils.getXMLInputFactory().createXMLStreamReader(
+                new StringReader("<p:root xmlns:p='urn:tika:test' p:flag='value'/>"));
+        try {
+            assertEquals(XMLStreamReader.START_ELEMENT, reader.nextTag());
+            assertEquals("root", reader.getLocalName());
+            assertEquals("urn:tika:test", reader.getNamespaceURI());
+            assertEquals("value", reader.getAttributeValue("urn:tika:test", "flag"));
+        } finally {
+            reader.close();
+        }
+    }
+
+    @Test
+    public void testStaxDoesNotExposeReadableExternalEntity(@TempDir Path tempDir) throws Exception {
+        // Coverage only: Commons Secure XML also blocks this content when DTD support is enabled.
+        Path external = tempDir.resolve("entity.txt");
+        Files.writeString(external, "EXTERNAL_CONTENT", StandardCharsets.UTF_8);
+        String xml = "<!DOCTYPE root [<!ENTITY value SYSTEM '" + external.toUri() + "'>]><root>&value;</root>";
+        XMLEventReader reader = XMLReaderUtils.getXMLInputFactory().createXMLEventReader(new StringReader(xml));
+        StringBuilder text = new StringBuilder();
+        try {
+            while (reader.hasNext()) {
+                XMLEvent event = reader.nextEvent();
+                if (event.isCharacters()) {
+                    text.append(event.asCharacters().getData());
+                }
+            }
+        } catch (XMLStreamException e) {
+            // Rejecting the entity is also acceptable; inspect any content delivered before rejection.
+        } finally {
+            reader.close();
+        }
+        assertFalse(text.toString().contains("EXTERNAL_CONTENT"), text.toString());
     }
 
     @Test
@@ -231,6 +321,106 @@ public class XMLReaderUtilsTest {
 
             }
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testTransformerExternalEntity(boolean saxFactory, @TempDir Path dir) throws Exception {
+        Path external = dir.resolve("external.txt");
+        Files.writeString(external, "EXTERNAL_CONTENT");
+        String xml = "<!DOCTYPE root [<!ENTITY external SYSTEM '" + external.toUri() + "'>]>" +
+                "<root>before&external;after</root>";
+        TransformerFactory factory = saxFactory ? XMLReaderUtils.getSAXTransformerFactory() : XMLReaderUtils.getTransformerFactory();
+        Transformer transformer = factory.newTransformer();
+        DOMResult output = new DOMResult();
+        transformer.transform(new StreamSource(new StringReader(xml)), output);
+        assertEquals("beforeafter", ((Document) output.getNode()).getDocumentElement().getTextContent());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testTransformerDocumentResolver(boolean saxFactory, @TempDir Path dir) throws Exception {
+        Path external = dir.resolve("external.xml");
+        Files.writeString(external, "<secret>EXTERNAL_CONTENT</secret>");
+        String uri = external.toUri().toString();
+        String stylesheet = String.format(Locale.ROOT, """
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:output method="text"/>
+                  <xsl:template match="/">before<xsl:value-of select="document('%s')/secret"/>after</xsl:template>
+                </xsl:stylesheet>
+                """, uri);
+        TransformerFactory factory = saxFactory ? XMLReaderUtils.getSAXTransformerFactory() : XMLReaderUtils.getTransformerFactory();
+        Transformer transformer = factory.newTransformer(new StreamSource(new StringReader(stylesheet)));
+        StringWriter output = new StringWriter();
+        transformer.transform(new StreamSource(new StringReader("<root/>")), new StreamResult(output));
+        assertEquals("beforeafter", output.toString());
+
+        transformer.setURIResolver((href, base) -> uri.equals(href) ?
+                new StreamSource(new StringReader("<secret>ALLOWED_CONTENT</secret>")) : null);
+        output = new StringWriter();
+        transformer.transform(new StreamSource(new StringReader("<root/>")), new StreamResult(output));
+        assertEquals("beforeALLOWED_CONTENTafter", output.toString());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"false, include", "true, include", "false, import", "true, import"})
+    public void testTransformerStylesheetResolver(boolean saxFactory, String directive, @TempDir Path dir) throws Exception {
+        String externalStylesheet = """
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:template match="payload" mode="external">EXTERNAL_CONTENT</xsl:template>
+                </xsl:stylesheet>
+                """;
+        Path external = dir.resolve("external.xsl");
+        Files.writeString(external, externalStylesheet);
+        String uri = external.toUri().toString();
+        String stylesheet = String.format(Locale.ROOT, """
+                <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+                  <xsl:%s href="%s"/>
+                  <xsl:output method="text"/>
+                  <xsl:template match="/">before<xsl:apply-templates select="root/payload" mode="external"/>after</xsl:template>
+                </xsl:stylesheet>
+                """, directive, uri);
+        TransformerFactory factory = saxFactory ? XMLReaderUtils.getSAXTransformerFactory() : XMLReaderUtils.getTransformerFactory();
+        Transformer transformer = factory.newTransformer(new StreamSource(new StringReader(stylesheet)));
+        StringWriter output = new StringWriter();
+        transformer.transform(new StreamSource(new StringReader("<root><payload/></root>")), new StreamResult(output));
+        assertEquals("beforeafter", output.toString());
+
+        factory.setURIResolver((href, base) -> uri.equals(href) ?
+                new StreamSource(new StringReader(externalStylesheet.replace("EXTERNAL_CONTENT", "ALLOWED_CONTENT"))) : null);
+        transformer = factory.newTransformer(new StreamSource(new StringReader(stylesheet)));
+        output = new StringWriter();
+        transformer.transform(new StreamSource(new StringReader("<root><payload/></root>")), new StreamResult(output));
+        assertEquals("beforeALLOWED_CONTENTafter", output.toString());
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    public void testManyExternalReferencesParse(boolean dom, @TempDir Path dir) throws Exception {
+        // external references resolve to nothing and must not fail the parse; nothing is read
+        Path external = dir.resolve("external.dtd");
+        Files.writeString(external, "<!ENTITY ext 'LEAKED'>");
+        StringBuilder sb = new StringBuilder("<!DOCTYPE root SYSTEM '" + external.toUri() +
+                "' [<!ENTITY ext SYSTEM '" + external.toUri() + "'>]><root>");
+        for (int i = 0; i < EXTERNAL_REFERENCES; i++) {
+            sb.append("<e>a&ext;b</e>");
+        }
+        String xml = sb.append("</root>").toString();
+        String text;
+        if (dom) {
+            Document doc = XMLReaderUtils.buildDOM(new StringReader(xml), new ParseContext());
+            text = doc.getDocumentElement().getTextContent();
+        } else {
+            StringBuilder chars = new StringBuilder();
+            XMLReaderUtils.parseSAX(new StringReader(xml), new DefaultHandler() {
+                @Override
+                public void characters(char[] ch, int start, int length) {
+                    chars.append(ch, start, length);
+                }
+            }, new ParseContext());
+            text = chars.toString();
+        }
+        assertEquals("ab".repeat(EXTERNAL_REFERENCES), text);
     }
 
     private void limitCheck(SAXException e) throws SAXException {

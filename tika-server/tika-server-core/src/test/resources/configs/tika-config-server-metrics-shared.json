@@ -1,0 +1,17 @@
+{
+  "server": {
+    "port": 9999,
+    "allowPipes": true,
+    "endpoints": [
+      "rmeta"
+    ]
+  },
+  "pipes": {
+    "useSharedServer": true,
+    "numClients": 2,
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ]
+  },
+  "plugin-roots": "target/plugins"
+}

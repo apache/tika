@@ -18,19 +18,28 @@ package org.apache.tika.server.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.exception.TikaConfigException;
@@ -50,6 +59,15 @@ public class TikaServerConfigTest extends TikaTest {
     }
 
     @Test
+    public void testTrustedRequestsRefuseToLoad() throws Exception {
+        CommandLine emptyCommandLine = new DefaultParser().parse(new Options(), new String[]{});
+        Path path = getConfigPath(getClass(), "tika-config-server-trusted-requests.json");
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(path, emptyCommandLine, new HashSet<>()));
+        assertContains("trustedRequests", ex.getMessage());
+    }
+
+    @Test
     public void testSupportedFetchersEmitters() throws Exception {
         Set<String> settings = new HashSet<>();
         CommandLineParser parser = new DefaultParser();
@@ -60,13 +78,82 @@ public class TikaServerConfigTest extends TikaTest {
         assertTrue(config.isAllowPerRequestConfig());
     }
 
-    /** Documented defaults: 1 GiB request cap, 60s /async queue pause. */
+    /** Documented defaults: 1 GiB request cap, 5 min transfer deadlines, 2 min idle, derived in-flight budget, 60s /async queue pause. */
     @Test
     public void testDocumentedDefaults() {
         TikaServerConfig config = new TikaServerConfig();
         assertEquals(1024L * 1024 * 1024, config.getMaxRequestSizeBytes());
+        assertEquals(5L * 60 * 1000, config.getMaxRequestReadMillis());
+        assertEquals(5L * 60 * 1000, config.getMaxResponseWriteMillis());
+        assertEquals(120_000, config.getIdleTimeoutMillis());
+        assertEquals(0, config.getMaxInFlightRequestBytes());
         assertEquals(TikaServerConfig.DEFAULT_MAX_QUEUE_PAUSE_MILLIS, config.getMaxQueuePauseMillis());
         assertEquals(60000L, TikaServerConfig.DEFAULT_MAX_QUEUE_PAUSE_MILLIS);
+    }
+
+    /** Jetty reads a non-positive idle timeout as "use my default", not "never". */
+    @Test
+    public void testIdleTimeoutMustBePositive() {
+        TikaServerConfig config = new TikaServerConfig();
+        assertThrows(TikaConfigException.class, () -> config.setIdleTimeoutMillis(0));
+        assertThrows(TikaConfigException.class, () -> config.setIdleTimeoutMillis(-1));
+    }
+
+    /** Zero would fail every transfer rather than disable the deadline. */
+    @Test
+    public void testZeroDeadlinesRejected() throws Exception {
+        TikaServerConfig config = new TikaServerConfig();
+        assertThrows(TikaConfigException.class, () -> config.setMaxRequestReadMillis(0));
+        assertThrows(TikaConfigException.class, () -> config.setMaxResponseWriteMillis(0));
+        config.setMaxRequestReadMillis(-1);
+        config.setMaxResponseWriteMillis(-1);
+    }
+
+    /** A budget below one maximum-size request would refuse that request forever. */
+    @Test
+    public void testInFlightBudgetBelowRequestSizeRejected(@TempDir Path dir) throws Exception {
+        Path path = Files.writeString(dir.resolve("budget.json"),
+                "{\"server\": {\"maxRequestSizeBytes\": 1000, \"maxInFlightRequestBytes\": 999}}");
+        Options options = new Options().addOption(Option.builder("c").longOpt("config").hasArg().get());
+        String[] args = {"-c", ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(new DefaultParser().parse(options, args), null));
+        assertContains("maxInFlightRequestBytes", ex.getMessage());
+    }
+
+    @Test
+    public void testPresetsFromCommandLineAndEnvironment() throws Exception {
+        Options options = new Options().addOption(Option.builder().longOpt("preset").hasArg().get());
+        CommandLine commandLine = new DefaultParser().parse(options,
+                new String[]{"--preset", "thumbnail", "--preset", "render-thumbnail"});
+
+        TikaServerConfig config = TikaServerConfig.load(commandLine, " render-thumbnail, ,no-ocr ");
+        assertEquals(List.of("thumbnail", "render-thumbnail", "no-ocr"), config.getPresets());
+
+        config = TikaServerConfig.load(commandLine, null);
+        assertEquals(List.of("thumbnail", "render-thumbnail"), config.getPresets());
+
+        config = TikaServerConfig.load(new DefaultParser().parse(options, new String[]{}), null);
+        assertTrue(config.getPresets().isEmpty());
+    }
+
+    @Test
+    public void testConfigPathWithPresets() throws Exception {
+        Path path = getConfigPath(getClass(), "tika-config-server.json");
+        Options options = new Options()
+                .addOption(Option.builder().longOpt("preset").hasArg().get())
+                .addOption(Option.builder("c").longOpt("config").hasArg().get());
+        String[] args = {"-c", ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())};
+
+        TikaServerConfig config = TikaServerConfig.load(new DefaultParser().parse(options, args), null);
+        assertEquals(path.toAbsolutePath(), config.getConfigPathWithPresets());
+
+        config = TikaServerConfig.load(new DefaultParser().parse(options, args), "thumbnail");
+        Path merged = config.getConfigPathWithPresets();
+        assertNotEquals(path.toAbsolutePath(), merged);
+        JsonNode root = new ObjectMapper().readTree(merged.toFile());
+        assertTrue(root.get("presets").get("thumbnail").asBoolean());
+        assertTrue(root.has("server"));
     }
 
     @Test
@@ -237,5 +324,58 @@ public class TikaServerConfigTest extends TikaTest {
                 .toString())});
         TikaServerConfig config = TikaServerConfig.load(commandLine);
         assertTrue(config.getTlsConfig().isClientAuthenticationRequired());
+    }
+    private static Options metricsOptions() {
+        return new Options()
+                .addOption(Option.builder("c").longOpt("config").hasArg().get())
+                .addOption(Option.builder("p").longOpt("port").hasArg().get())
+                .addOption(Option.builder().longOpt("metricsPort").hasArg().get());
+    }
+
+    @Test
+    public void testMetricsOffByDefault() throws Exception {
+        TikaServerConfig config = TikaServerConfig.load(
+                new DefaultParser().parse(metricsOptions(), new String[]{}));
+        assertNull(config.getMetricsPort());
+    }
+
+    @Test
+    public void testMetricsFromJson() throws Exception {
+        Path path = getConfigPath(getClass(), "tika-config-server-metrics.json");
+        TikaServerConfig config = TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
+                new String[]{"-c", ProcessUtils.escapeCommandLine(path.toAbsolutePath().toString())}));
+        assertEquals(9404, config.getMetricsPort());
+    }
+
+    @Test
+    public void testMetricsPortFromCommandLine() throws Exception {
+        TikaServerConfig config = TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
+                new String[]{"-p", "9998", "--metricsPort", "9500"}));
+        assertEquals(9500, config.getMetricsPort());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"abc, --metricsPort", "65536, 0-65535", "-1, 0-65535"})
+    public void testMetricsPortRejected(String value, String expectedMessage) throws Exception {
+        CommandLine commandLine = new DefaultParser().parse(metricsOptions(),
+                new String[]{"--metricsPort", value});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains(expectedMessage, ex.getMessage());
+    }
+
+    @Test
+    public void testMetricsPortZeroIsEphemeral() throws Exception {
+        assertEquals(0, TikaServerConfig.load(new DefaultParser().parse(metricsOptions(),
+                new String[]{"--metricsPort", "0"})).getMetricsPort());
+    }
+
+    @Test
+    public void testMetricsPortMustDifferFromServerPort() throws Exception {
+        CommandLine commandLine = new DefaultParser().parse(metricsOptions(),
+                new String[]{"-p", "9998", "--metricsPort", "9998"});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains("metricsPort", ex.getMessage());
     }
 }

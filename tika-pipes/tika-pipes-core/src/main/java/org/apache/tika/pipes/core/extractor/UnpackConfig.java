@@ -17,7 +17,14 @@
 package org.apache.tika.pipes.core.extractor;
 
 import java.io.Serializable;
+import java.util.Locale;
 import java.util.Objects;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.annotation.TikaComponent;
 
@@ -28,6 +35,8 @@ public class UnpackConfig implements Serializable {
      * Serial version UID
      */
     private static final long serialVersionUID = -3861669115439125268L;
+
+    private static final Logger LOG = LoggerFactory.getLogger(UnpackConfig.class);
 
     /**
      * Default maximum bytes to unpack per file: 10 GB.
@@ -75,7 +84,7 @@ public class UnpackConfig implements Serializable {
      */
     public enum OUTPUT_FORMAT {
         /**
-         * Regular output - embedded files emitted individually or as simple zip
+         * The pre-4.2 layout: embedded files emitted individually or as a flat zip
          */
         REGULAR,
         /**
@@ -116,6 +125,13 @@ public class UnpackConfig implements Serializable {
             throw new IllegalArgumentException("can't parse OUTPUT_MODE: " + s);
         }
     }
+    /** FRICTIONLESS: a document with nothing to unpack still gets a package, or none. */
+    public enum EMPTY_PACKAGE {
+        WRITE,
+        /** No package; tika-server's /unpack answers 204 */
+        SKIP
+    }
+
     private int zeroPadName = 0;
 
     private SUFFIX_STRATEGY suffixStrategy = SUFFIX_STRATEGY.NONE;
@@ -134,20 +150,46 @@ public class UnpackConfig implements Serializable {
 
     // Zipping options
     private boolean zipEmbeddedFiles = false;
-    private boolean includeMetadataInZip = false;
+
+    private Boolean includeMetadata = null;  // null: the format decides, see writesMetadata()
 
     // Maximum bytes to unpack per file (default 10GB, -1 to disable limit)
     private long maxUnpackBytes = DEFAULT_MAX_UNPACK_BYTES;
 
     // Frictionless Data Package options
-    private OUTPUT_FORMAT outputFormat = OUTPUT_FORMAT.REGULAR;
+    private OUTPUT_FORMAT outputFormat = OUTPUT_FORMAT.FRICTIONLESS;
     private OUTPUT_MODE outputMode = OUTPUT_MODE.ZIPPED;
-    private boolean includeFullMetadata = false;  // Include metadata.json in Frictionless output
+    // DIRECTORY-mode package root; null: the container's emit key
+    private String packageRoot = null;
+    // datapackage.json name; null: the fetch key's file name
+    private String packageName = null;
+    private EMPTY_PACKAGE emptyPackage = EMPTY_PACKAGE.WRITE;
 
     /**
      * Create an UnpackConfig with default settings.
      */
     public UnpackConfig() {
+    }
+
+    /** The worker mutates its instance; hand out copies. */
+    public UnpackConfig copy() {
+        UnpackConfig c = new UnpackConfig();
+        c.zeroPadName = zeroPadName;
+        c.suffixStrategy = suffixStrategy;
+        c.embeddedIdPrefix = embeddedIdPrefix;
+        c.emitter = emitter;
+        c.includeOriginal = includeOriginal;
+        c.keyBaseStrategy = keyBaseStrategy;
+        c.emitKeyBase = emitKeyBase;
+        c.zipEmbeddedFiles = zipEmbeddedFiles;
+        c.includeMetadata = includeMetadata;
+        c.maxUnpackBytes = maxUnpackBytes;
+        c.outputFormat = outputFormat;
+        c.outputMode = outputMode;
+        c.packageRoot = packageRoot;
+        c.packageName = packageName;
+        c.emptyPackage = emptyPackage;
+        return c;
     }
 
     public int getZeroPadName() {
@@ -227,16 +269,41 @@ public class UnpackConfig implements Serializable {
         this.zipEmbeddedFiles = zipEmbeddedFiles;
     }
 
-    /**
-     * Whether to include the metadata JSON for each embedded document in the zip file.
-     * Only applicable when {@link #isZipEmbeddedFiles()} is true.
-     */
-    public boolean isIncludeMetadataInZip() {
-        return includeMetadataInZip;
+    /** Null when the format decides; see {@link #writesMetadata()}. */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getIncludeMetadata() {
+        return includeMetadata;
     }
 
+    public void setIncludeMetadata(Boolean includeMetadata) {
+        this.includeMetadata = includeMetadata;
+    }
+
+    /**
+     * Metadata for every extracted file: {@code rmeta.json} under FRICTIONLESS, a sidecar
+     * per file under REGULAR zip output, nothing under REGULAR loose output. Unset means on
+     * for FRICTIONLESS, off for REGULAR. Not a bean getter: the class is introspected.
+     */
+    public boolean writesMetadata() {
+        if (includeMetadata != null) {
+            return includeMetadata;
+        }
+        return outputFormat == OUTPUT_FORMAT.FRICTIONLESS;
+    }
+
+    /** @deprecated since 4.1, removal planned for 5.0; see {@link #writesMetadata()} */
+    @Deprecated
+    @JsonIgnore
+    public boolean isIncludeMetadataInZip() {
+        return writesMetadata();
+    }
+
+    /** @deprecated since 4.1, removal planned for 5.0; use {@link #setIncludeMetadata(Boolean)} */
+    @Deprecated
+    @JsonProperty("includeMetadataInZip")
     public void setIncludeMetadataInZip(boolean includeMetadataInZip) {
-        this.includeMetadataInZip = includeMetadataInZip;
+        LOG.warn("unpack-config.includeMetadataInZip is deprecated (removal in 5.0); use includeMetadata");
+        setIncludeMetadata(includeMetadataInZip);
     }
 
     /**
@@ -270,8 +337,8 @@ public class UnpackConfig implements Serializable {
 
     /**
      * Get the output format for UNPACK mode.
-     * REGULAR is the default (existing behavior).
-     * FRICTIONLESS creates a Frictionless Data Package with datapackage.json manifest.
+     * FRICTIONLESS (the default since 4.2) is a Frictionless Data Package with a datapackage.json manifest.
+     * REGULAR is the pre-4.2 flat layout.
      */
     public OUTPUT_FORMAT getOutputFormat() {
         return outputFormat;
@@ -302,16 +369,59 @@ public class UnpackConfig implements Serializable {
         setOutputMode(OUTPUT_MODE.valueOf(outputMode));
     }
 
-    /**
-     * Whether to include full RMETA-style metadata in metadata.json.
-     * Only applicable when outputFormat is FRICTIONLESS.
-     */
+    /** @deprecated since 4.1, removal planned for 5.0; see {@link #writesMetadata()} */
+    @Deprecated
+    @JsonIgnore
     public boolean isIncludeFullMetadata() {
-        return includeFullMetadata;
+        return writesMetadata();
     }
 
+    /** @deprecated since 4.1, removal planned for 5.0; use {@link #setIncludeMetadata(Boolean)} */
+    @Deprecated
+    @JsonProperty("includeFullMetadata")
     public void setIncludeFullMetadata(boolean includeFullMetadata) {
-        this.includeFullMetadata = includeFullMetadata;
+        LOG.warn("unpack-config.includeFullMetadata is deprecated (removal in 5.0); use includeMetadata");
+        setIncludeMetadata(includeFullMetadata);
+    }
+
+    /**
+     * Emit key prefix of a FRICTIONLESS package in DIRECTORY mode. Unset: the container's
+     * emit key, one package per container. Empty: the emitter's root.
+     */
+    public String getPackageRoot() {
+        return packageRoot;
+    }
+
+    public void setPackageRoot(String packageRoot) {
+        this.packageRoot = packageRoot;
+    }
+
+    /**
+     * {@code name} of a FRICTIONLESS package. Unset: the fetch key's file name. Blank: no
+     * {@code name} (tika-server sets the caller's filename, or blank when there is none).
+     */
+    public String getPackageName() {
+        return packageName;
+    }
+
+    public void setPackageName(String packageName) {
+        this.packageName = packageName;
+    }
+
+    /**
+     * FRICTIONLESS: whether a document with nothing to unpack gets a package (its
+     * datapackage.json and rmeta.json) or none, which tika-server's /unpack answers with 204.
+     */
+    public EMPTY_PACKAGE getEmptyPackage() {
+        return emptyPackage;
+    }
+
+    public void setEmptyPackage(EMPTY_PACKAGE emptyPackage) {
+        this.emptyPackage = emptyPackage;
+    }
+
+    public void setEmptyPackage(String emptyPackage) {
+        setEmptyPackage(EMPTY_PACKAGE.valueOf(emptyPackage.toUpperCase(Locale.ROOT)));
     }
 
     @Override
@@ -320,9 +430,10 @@ public class UnpackConfig implements Serializable {
                 suffixStrategy + ", embeddedIdPrefix='" + embeddedIdPrefix + '\'' +
                 ", emitter='" + emitter + '\'' + ", includeOriginal=" + includeOriginal +
                 ", keyBaseStrategy=" + keyBaseStrategy + ", emitKeyBase='" + emitKeyBase + '\'' +
-                ", zipEmbeddedFiles=" + zipEmbeddedFiles + ", includeMetadataInZip=" + includeMetadataInZip +
+                ", zipEmbeddedFiles=" + zipEmbeddedFiles + ", includeMetadata=" + includeMetadata +
                 ", maxUnpackBytes=" + maxUnpackBytes + ", outputFormat=" + outputFormat +
-                ", outputMode=" + outputMode + ", includeFullMetadata=" + includeFullMetadata + '}';
+                ", outputMode=" + outputMode + ", packageRoot='" + packageRoot + '\'' +
+                ", packageName='" + packageName + '\'' + ", emptyPackage=" + emptyPackage + '}';
     }
 
     @Override
@@ -338,11 +449,13 @@ public class UnpackConfig implements Serializable {
                 keyBaseStrategy == config.keyBaseStrategy &&
                 Objects.equals(emitKeyBase, config.emitKeyBase) &&
                 zipEmbeddedFiles == config.zipEmbeddedFiles &&
-                includeMetadataInZip == config.includeMetadataInZip &&
+                Objects.equals(includeMetadata, config.includeMetadata) &&
                 maxUnpackBytes == config.maxUnpackBytes &&
                 outputFormat == config.outputFormat &&
                 outputMode == config.outputMode &&
-                includeFullMetadata == config.includeFullMetadata;
+                Objects.equals(packageRoot, config.packageRoot) &&
+                Objects.equals(packageName, config.packageName) &&
+                emptyPackage == config.emptyPackage;
     }
 
     @Override
@@ -355,11 +468,13 @@ public class UnpackConfig implements Serializable {
         result = 31 * result + Objects.hashCode(keyBaseStrategy);
         result = 31 * result + Objects.hashCode(emitKeyBase);
         result = 31 * result + Boolean.hashCode(zipEmbeddedFiles);
-        result = 31 * result + Boolean.hashCode(includeMetadataInZip);
+        result = 31 * result + Objects.hashCode(includeMetadata);
         result = 31 * result + Long.hashCode(maxUnpackBytes);
         result = 31 * result + Objects.hashCode(outputFormat);
         result = 31 * result + Objects.hashCode(outputMode);
-        result = 31 * result + Boolean.hashCode(includeFullMetadata);
+        result = 31 * result + Objects.hashCode(packageRoot);
+        result = 31 * result + Objects.hashCode(packageName);
+        result = 31 * result + Objects.hashCode(emptyPackage);
         return result;
     }
 }

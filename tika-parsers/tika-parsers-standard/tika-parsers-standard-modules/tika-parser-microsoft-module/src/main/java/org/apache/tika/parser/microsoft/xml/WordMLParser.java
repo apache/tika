@@ -282,7 +282,7 @@ public class WordMLParser extends AbstractXML2003Parser {
                     rawBytes = base64.decode(buffer.toString());
                     success = true;
                 } catch (IllegalArgumentException e) {
-                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, parseContext);
                 } finally {
                     //reset
                     buffer.setLength(0);

@@ -1,0 +1,29 @@
+{
+  "fetchers": {
+    "bad-fetcher": {
+      "non-existent-fetcher-plugin": {
+        "basePath": "FETCHER_BASE_PATH"
+      }
+    }
+  },
+  "pipes": {
+    "numClients": 1,
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ],
+    "emitStrategy": {
+      "type": "DYNAMIC",
+      "thresholdBytes": 1000000
+    }
+  },
+  "parse-context": {
+    "exception-reporting": {
+      "level": "MESSAGE_REDACTED",
+      "maxLength": 10000
+    },
+    "timeout-limits": {
+      "progressTimeoutMillis": 5000
+    }
+  },
+  "plugin-roots": "PLUGINS_PATHS"
+}

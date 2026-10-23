@@ -18,11 +18,11 @@ package org.apache.tika.parser.vlm;
 
 import java.io.Serializable;
 
+import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.utils.StringUtils;
 
 /**
- * Configuration for {@link VLMOCRParser}.
+ * Configuration for {@link AbstractVLMParser} and its subclasses.
  * <p>
  * The parser expects an OpenAI-compatible chat completions endpoint
  * (e.g. from vLLM, Ollama, or a local FastAPI server). The image is
@@ -62,10 +62,27 @@ public class VLMOCRConfig implements Serializable {
     private int maxTokens = 4096;
 
     /**
+     * Sampling temperature sent with each request; {@code null} (the default) sends none, so the
+     * service's own default applies. {@code 0} makes repeated requests for the same image
+     * return the same text on services that honor it. Claude accepts 0 to 1.
+     */
+    private Double temperature = null;
+
+    /**
+     * OpenAI-compatible parser only: send the limit as {@code max_completion_tokens}
+     * instead of {@code max_tokens}. Newer OpenAI models (o-series, GPT-5 and later)
+     * reject {@code max_tokens}; many other compatible servers only accept it.
+     */
+    private boolean useMaxCompletionTokens = false;
+
+    /**
      * HTTP timeout in millis for the chat completions request.
      * VLM inference can be slow; default is generous.
      */
     private long timeoutMillis = 120_000;
+
+    /** Retries of a 429/502/503/504 answer or a dropped connection; 0 fails at once. */
+    private int maxRetries = 4;
 
     /** Optional API key for authenticated endpoints. Empty means no auth. */
     private String apiKey = "";
@@ -80,6 +97,13 @@ public class VLMOCRConfig implements Serializable {
 
     /** Whether to skip VLM OCR entirely (runtime kill-switch). */
     private boolean skipOcr = false;
+    /**
+     * Whether the prompt transcribes the image, so the output is the document's text.
+     * Set false for a captioning or tagging prompt: the parser still runs, but a caller
+     * such as the PDF parser's AUTO OCR never substitutes its output for text it already
+     * has. Per request it changes only when {@code allowRuntimePrompt} lets the prompt change.
+     */
+    private boolean textRecognizer = true;
 
     /** Minimum file size (bytes) to submit to VLM OCR. */
     private long minFileSizeToOcr = 0;
@@ -112,6 +136,7 @@ public class VLMOCRConfig implements Serializable {
         return baseUrl;
     }
 
+    @OperatorOnly
     public void setBaseUrl(String baseUrl) throws TikaConfigException {
         this.baseUrl = baseUrl;
     }
@@ -120,6 +145,7 @@ public class VLMOCRConfig implements Serializable {
         return completionsPath;
     }
 
+    @OperatorOnly
     public void setCompletionsPath(String completionsPath) {
         this.completionsPath = completionsPath;
     }
@@ -128,6 +154,7 @@ public class VLMOCRConfig implements Serializable {
         return model;
     }
 
+    @OperatorOnly
     public void setModel(String model) {
         this.model = model;
     }
@@ -148,6 +175,28 @@ public class VLMOCRConfig implements Serializable {
         this.maxTokens = maxTokens;
     }
 
+    public Double getTemperature() {
+        return temperature;
+    }
+
+    @OperatorOnly
+    public void setTemperature(Double temperature) {
+        if (temperature != null && (temperature < 0 || temperature > 2)) {
+            throw new IllegalArgumentException(
+                    "temperature must be between 0 and 2, got: " + temperature);
+        }
+        this.temperature = temperature;
+    }
+
+    public boolean isUseMaxCompletionTokens() {
+        return useMaxCompletionTokens;
+    }
+
+    @OperatorOnly
+    public void setUseMaxCompletionTokens(boolean useMaxCompletionTokens) {
+        this.useMaxCompletionTokens = useMaxCompletionTokens;
+    }
+
     public long getTimeoutMillis() {
         return timeoutMillis;
     }
@@ -156,10 +205,20 @@ public class VLMOCRConfig implements Serializable {
         this.timeoutMillis = timeoutMillis;
     }
 
+    public int getMaxRetries() {
+        return maxRetries;
+    }
+
+    @OperatorOnly
+    public void setMaxRetries(int maxRetries) {
+        this.maxRetries = maxRetries;
+    }
+
     public String getApiKey() {
         return apiKey;
     }
 
+    @OperatorOnly
     public void setApiKey(String apiKey) throws TikaConfigException {
         this.apiKey = apiKey;
     }
@@ -178,6 +237,14 @@ public class VLMOCRConfig implements Serializable {
 
     public void setSkipOcr(boolean skipOcr) {
         this.skipOcr = skipOcr;
+    }
+
+    public boolean isTextRecognizer() {
+        return textRecognizer;
+    }
+
+    public void setTextRecognizer(boolean textRecognizer) {
+        this.textRecognizer = textRecognizer;
     }
 
     public long getMinFileSizeToOcr() {
@@ -204,6 +271,7 @@ public class VLMOCRConfig implements Serializable {
      * Set the maximum total pixels (width &times; height) for an image.
      * Default is 100,000,000. Set to {@code -1} for no limit (not recommended).
      */
+    @OperatorOnly
     public void setMaxImagePixels(long maxImagePixels) {
         if (maxImagePixels < 1 && maxImagePixels != -1) {
             throw new IllegalArgumentException(
@@ -217,108 +285,8 @@ public class VLMOCRConfig implements Serializable {
         return allowRuntimePrompt;
     }
 
+    @OperatorOnly
     public void setAllowRuntimePrompt(boolean allowRuntimePrompt) {
         this.allowRuntimePrompt = allowRuntimePrompt;
-    }
-
-    /**
-     * Runtime-only config that prevents modification of security-sensitive
-     * and cost-sensitive fields at parse time.
-     * <p>
-     * <b>Always blocked:</b> {@code baseUrl}, {@code apiKey}, {@code model},
-     * {@code maxTokens}, {@code allowRuntimePrompt}.
-     * <p>
-     * <b>Blocked by default (opt-in):</b> {@code prompt} — set
-     * {@code allowRuntimePrompt=true} at initialization time to permit
-     * per-request prompt overrides.
-     * <p>
-     * The {@code model} field is unconditionally blocked because there is
-     * no legitimate reason to swap models per-request; if a different model
-     * is needed, configure a separate parser instance.
-     * <p>
-     * The {@code maxTokens} field cannot be raised above the init-time
-     * value at runtime to prevent cost attacks on paid API endpoints.
-     */
-    public static class RuntimeConfig extends VLMOCRConfig {
-
-        /** Init-time maxTokens ceiling — runtime requests cannot exceed this. */
-        private int initMaxTokens = 4096;
-
-        public RuntimeConfig() {
-        }
-
-        /**
-         * Creates a RuntimeConfig that inherits the init-time
-         * {@code allowRuntimePrompt} setting and the {@code maxTokens}
-         * ceiling from the given parent config.
-         */
-        public RuntimeConfig(VLMOCRConfig initConfig) {
-            super.setAllowRuntimePrompt(initConfig.isAllowRuntimePrompt());
-            this.initMaxTokens = initConfig.getMaxTokens();
-        }
-
-        @Override
-        public void setBaseUrl(String baseUrl) throws TikaConfigException {
-            if (!StringUtils.isBlank(baseUrl)) {
-                throw new TikaConfigException(
-                        "Cannot modify baseUrl at runtime. "
-                                + "URLs must be configured at initialization time.");
-            }
-        }
-
-        @Override
-        public void setApiKey(String apiKey) throws TikaConfigException {
-            if (!StringUtils.isBlank(apiKey)) {
-                throw new TikaConfigException(
-                        "Cannot modify apiKey at runtime. "
-                                + "API keys must be configured at initialization time.");
-            }
-        }
-
-        @Override
-        public void setModel(String model) {
-            throw new IllegalStateException(
-                    "Cannot modify model at runtime. "
-                            + "Models must be configured at initialization time. "
-                            + "If you need a different model, configure a "
-                            + "separate parser instance.");
-        }
-
-        @Override
-        public void setPrompt(String prompt) {
-            if (!isAllowRuntimePrompt()) {
-                throw new IllegalStateException(
-                        "Cannot modify prompt at runtime. "
-                                + "Set allowRuntimePrompt=true at initialization time "
-                                + "to permit per-request prompt overrides.");
-            }
-            super.setPrompt(prompt);
-        }
-
-        @Override
-        public void setMaxTokens(int maxTokens) {
-            if (maxTokens > initMaxTokens) {
-                throw new IllegalStateException(
-                        "Cannot increase maxTokens beyond the init-time value ("
-                                + initMaxTokens + ") at runtime. "
-                                + "Requested: " + maxTokens);
-            }
-            super.setMaxTokens(maxTokens);
-        }
-
-        @Override
-        public void setAllowRuntimePrompt(boolean allowRuntimePrompt) {
-            throw new IllegalStateException(
-                    "Cannot modify allowRuntimePrompt at runtime. "
-                            + "This must be configured at initialization time.");
-        }
-
-        @Override
-        public void setMaxImagePixels(long maxImagePixels) {
-            throw new IllegalStateException(
-                    "Cannot modify maxImagePixels at runtime. "
-                            + "Image size limits must be configured at "
-                            + "initialization time.");
-        }
     }
 }

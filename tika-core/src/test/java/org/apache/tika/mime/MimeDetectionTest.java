@@ -16,6 +16,7 @@
  */
 package org.apache.tika.mime;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.nio.charset.StandardCharsets.UTF_16BE;
 import static java.nio.charset.StandardCharsets.UTF_16LE;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -91,6 +92,189 @@ public class MimeDetectionTest {
         // Carries a .xml extension, so magic must win over the *.xml glob and it must
         // NOT be routed to application/xml / the XML parser. See TIKA-4747.
         testFile("application/vnd.android.axml", "test-android-binary.xml");
+    }
+
+    /** The html magic needs the tag to end: an XML element such as htmlPath is not html. */
+    @Test
+    public void testHtmlMagicNeedsTagEnd() throws Exception {
+        String pad = " ".repeat(200);
+        String[] notHtml = {
+                "<htmlPath><![CDATA[TmplData\\tmpl.html]]></htmlPath>",
+                "<flashTemplate><info>" + pad + "<htmlPath>x</htmlPath></info></flashTemplate>",
+                "<root>" + pad + "<htmlContent>x</htmlContent></root>"
+        };
+        for (String xml : notHtml) {
+            assertDetected(MediaType.TEXT_PLAIN, xml.getBytes(UTF_8));
+            Metadata metadata = new Metadata();
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "flashTemplate.xml");
+            try (TikaInputStream tis = TikaInputStream.get(xml.getBytes(UTF_8))) {
+                assertEquals(MediaType.APPLICATION_XML, MIME_TYPES.detect(tis, metadata, new ParseContext()), xml);
+            }
+        }
+        String[] html = {
+                "<html><body>x</body></html>",
+                "<HTML>\n<body>x</body></HTML>",
+                "<html\nlang=\"en\"><body>x</body></html>",
+                "garbage\n".repeat(30) + "<html><body>x</body></html>"
+        };
+        for (String h : html) {
+            assertDetected(MediaType.TEXT_HTML, h.getBytes(UTF_8));
+        }
+    }
+
+    /** An OS/2 bitmap array's first entry header (size 40, next at 46) is not an icon. */
+    @Test
+    public void testOs2BitmapArrayIsNotAnIcon() throws Exception {
+        for (String tag : new String[]{"BM", "IC", "CI", "CP", "PT"}) {
+            byte[] bitmapArray = new byte[64];
+            bitmapArray[0] = 'B';
+            bitmapArray[1] = 'A';
+            bitmapArray[2] = 0x28;
+            bitmapArray[6] = 0x2e;
+            bitmapArray[14] = (byte) tag.charAt(0);
+            bitmapArray[15] = (byte) tag.charAt(1);
+            try (TikaInputStream tis = TikaInputStream.get(bitmapArray)) {
+                assertEquals(MediaType.parse("image/x-os2-graphics; charset=binary"),
+                        MIME_TYPES.detect(tis, new Metadata(), new ParseContext()), tag);
+            }
+        }
+    }
+
+    /**
+     * TGA has no signature. The rules key on the colour map type and image
+     * type, the colour map spec and the pixel depth.
+     */
+    @Test
+    public void testTgaDetection() throws Exception {
+        MediaType tga = MediaType.image("x-tga");
+        MediaType cursor = MediaType.image("x-win-bitmap");
+        // true colour, no id, no colour map, 24 bpp
+        assertDetected(tga, tgaHeader(0, 0, 2, 0, 24));
+        // the same with an id field and 32 bpp, and the RLE form
+        assertDetected(tga, tgaHeader(5, 0, 2, 0, 32));
+        assertDetected(tga, tgaHeader(0, 0, 10, 0, 32));
+        // 15 bpp, with and without an id
+        assertDetected(tga, tgaHeader(0, 0, 2, 0, 15));
+        assertDetected(tga, tgaHeader(3, 0, 2, 0, 15));
+        // greyscale
+        assertDetected(tga, tgaHeader(0, 0, 3, 0, 8));
+        assertDetected(tga, tgaHeader(0, 0, 11, 0, 8));
+        // colour mapped, 24 bit entries, 8 bit indices, and the RLE form
+        assertDetected(tga, tgaHeader(0, 1, 1, 24, 8));
+        assertDetected(tga, tgaHeader(0, 1, 9, 24, 8));
+        // no colour map but an entry size in the spec, as some writers leave it
+        byte[] strayEntrySize = tgaHeader(0, 0, 2, 0, 24);
+        strayEntrySize[7] = 24;
+        assertDetected(tga, strayEntrySize);
+
+        // a pixel depth no TGA has
+        assertDetected(MediaType.OCTET_STREAM, tgaHeader(0, 0, 2, 0, 7));
+        assertDetected(MediaType.OCTET_STREAM, tgaHeader(1, 0, 2, 0, 7));
+        // a colour map entry size and an index depth no TGA has
+        assertDetected(MediaType.OCTET_STREAM, tgaHeader(0, 1, 1, 7, 8));
+        assertDetected(MediaType.OCTET_STREAM, tgaHeader(0, 1, 1, 24, 99));
+        // a Windows cursor with one image starts like a true colour TGA
+        byte[] oneImage = tgaHeader(0, 0, 2, 0, 24);
+        oneImage[4] = 1;
+        assertDetected(cursor, oneImage);
+        // a cursor with no images is nothing; 256 images is a TGA with a colour map length
+        byte[] noImages = tgaHeader(0, 0, 2, 0, 24);
+        noImages[16] = 0;
+        assertDetected(MediaType.OCTET_STREAM, noImages);
+        byte[] images256 = tgaHeader(0, 0, 2, 0, 24);
+        images256[5] = 1;
+        assertDetected(MediaType.OCTET_STREAM, images256);
+        // Lotus 1-2-3 shares the first four bytes
+        byte[] lotus = new byte[64];
+        lotus[2] = 2;
+        lotus[4] = 4;
+        lotus[5] = 4;
+        assertDetected(MediaType.parse("application/vnd.lotus-1-2-3;version=1"), lotus);
+    }
+
+    @Test
+    public void testAnimatedCursorDetection() throws Exception {
+        MediaType ani = MediaType.application("x-navi-animation");
+        byte[] acon = new byte[64];
+        System.arraycopy("RIFF".getBytes(US_ASCII), 0, acon, 0, 4);
+        acon[4] = 56;
+        System.arraycopy("ACONanih".getBytes(US_ASCII), 0, acon, 8, 8);
+        assertDetected(ani, acon);
+        // the content beats a *.cur name
+        assertEquals(ani, detect(acon, "pointer.cur"));
+    }
+
+    private static byte[] tgaHeader(int idLength, int colourMapType, int imageType,
+                                    int colourMapEntrySize, int pixelDepth) {
+        byte[] header = new byte[64];
+        header[0] = (byte) idLength;
+        header[1] = (byte) colourMapType;
+        header[2] = (byte) imageType;
+        if (colourMapType == 1) {
+            // 256 entries
+            header[6] = 1;
+            header[7] = (byte) colourMapEntrySize;
+        }
+        header[12] = 32;
+        header[14] = 32;
+        header[16] = (byte) pixelDepth;
+        return header;
+    }
+
+    private static void assertDetected(MediaType expected, byte[] bytes) throws IOException {
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            assertEquals(expected, MIME_TYPES.detect(tis, new Metadata(), new ParseContext()));
+        }
+    }
+
+    private static MediaType detect(byte[] bytes, String name) throws IOException {
+        Metadata metadata = new Metadata();
+        if (name != null) {
+            metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
+        }
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
+            return MIME_TYPES.detect(tis, metadata, new ParseContext());
+        }
+    }
+
+    @Test
+    public void testXulByContent() throws IOException {
+        MediaType xul = MediaType.application("vnd.mozilla.xul+xml");
+        String ns = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
+        byte[] plain = ("<?xml version=\"1.0\"?><window xmlns=\"" + ns + "\"/>").getBytes(UTF_8);
+        // the root's attribute entity stops the root-element sniff
+        byte[] entityInRoot = ("<?xml version=\"1.0\"?>\n<!DOCTYPE wizard [<!ENTITY % d SYSTEM"
+                + " \"chrome://a/b.dtd\"> %d;]>\n<wizard title=\"&wizard.title;\" xmlns=\"" + ns
+                + "\"/>").getBytes(UTF_8);
+        byte[] noDeclaration = ("<window title=\"t\" xmlns=\"" + ns + "\"/>").getBytes(UTF_8);
+        for (byte[] doc : new byte[][]{plain, entityInRoot, noDeclaration}) {
+            assertEquals(xul, detect(doc, null));
+            assertEquals(xul, detect(doc, "attachment.xml"));
+        }
+        // mentioning the namespace is not enough
+        assertEquals(MediaType.TEXT_PLAIN,
+                detect(("document.createElementNS(\"" + ns + "\", \"label\");").getBytes(UTF_8), null));
+        assertEquals(MediaType.APPLICATION_XML,
+                detect(("<?xml version=\"1.0\"?><bindings xmlns=\"http://www.mozilla.org/xbl\""
+                        + " xmlns:xul=\"" + ns + "\"/>").getBytes(UTF_8), null));
+    }
+
+    @Test
+    public void testRustVersusRlsServices() throws IOException {
+        MediaType rust = MediaType.text("x-rust");
+        MediaType rls = MediaType.application("rls-services+xml");
+        assertEquals(rust, detect("fn main() {}\n".getBytes(UTF_8), "main.rs"));
+        assertEquals(rust, detect("// Licensed to the ASF\nfn main() {}\n".getBytes(UTF_8),
+                "main.rs"));
+
+        byte[] rlsXml = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+                + "<rls-services xmlns=\"urn:ietf:params:xml:ns:rls-services\">"
+                + "<service uri=\"sip:friends@example.com\"/></rls-services>").getBytes(UTF_8);
+        assertEquals(rls, detect(rlsXml, "services.rs"));
+        assertEquals(rls, detect(rlsXml, null));
+
+        byte[] png = {(byte) 0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n', 0, 0, 0, 0};
+        assertEquals(MediaType.image("png"), detect(png, "main.rs"));
     }
 
     @Test
@@ -305,5 +489,19 @@ public class MimeDetectionTest {
     @Test
     public void testPNGWithSomeEmlHeaders() throws IOException {
         testFile("image/png", "test-pngNotEml.bin");
+    }
+
+    @Test
+    public void testLyingDeclaredLengthDoesNotTruncateMagic() throws Exception {
+        byte[] pdf = "%PDF-1.4\nsome pdf content".getBytes(UTF_8);
+        Metadata metadata = new Metadata();
+        // an under-declared Content-Length must not shrink the magic read
+        metadata.set(HttpHeaders.CONTENT_LENGTH, "2");
+        try (TikaInputStream tis = TikaInputStream.get(
+                new java.io.ByteArrayInputStream(pdf),
+                new org.apache.tika.io.TemporaryResources(), metadata)) {
+            assertEquals(MediaType.application("pdf"),
+                    MIME_TYPES.detect(tis, metadata, new ParseContext()));
+        }
     }
 }

@@ -36,6 +36,8 @@ public class OfficeParserConfig implements Serializable {
 
     private boolean writeSelectHeadersInBody = false;
 
+    private boolean extractThumbnail = true;
+
     /**
      * Maximum bytes per embedded object/pict when extracting from RTF within
      * MSG files.  Since embedded data is streamed to disk (not held in memory),
@@ -44,6 +46,7 @@ public class OfficeParserConfig implements Serializable {
     private int rtfEmbeddedMaxBytesInKb = 2 * 1024 * 1024; // 2 GB
 
     private boolean includeGlossary = true;
+    private boolean includeCharacterStyleClasses = false;
     private String dateOverrideFormat = null;
     private int maxOverride = 0;//ignore
 
@@ -201,6 +204,23 @@ public class OfficeParserConfig implements Serializable {
         this.includeGlossary = includeGlossary;
     }
 
+    public boolean isIncludeCharacterStyleClasses() {
+        return includeCharacterStyleClasses;
+    }
+
+    /**
+     * Whether to wrap docx runs that carry a character style in
+     * <code>&lt;span class="..."&gt;</code>, named after the style the same way
+     * paragraph styles are.
+     * <p/>
+     * Default: <code>false</code>
+     *
+     * @param includeCharacterStyleClasses whether to emit character style classes
+     */
+    public void setIncludeCharacterStyleClasses(boolean includeCharacterStyleClasses) {
+        this.includeCharacterStyleClasses = includeCharacterStyleClasses;
+    }
+
     public boolean isIncludeMissingRows() {
         return includeMissingRows;
     }
@@ -301,5 +321,18 @@ public class OfficeParserConfig implements Serializable {
 
     public void setRtfEmbeddedMaxBytesInKb(int rtfEmbeddedMaxBytesInKb) {
         this.rtfEmbeddedMaxBytesInKb = rtfEmbeddedMaxBytesInKb;
+    }
+
+    /**
+     * Whether to emit the document thumbnail an OLE2 file stores in its
+     * SummaryInformation (a WMF) as a THUMBNAIL embedded document, the way
+     * the OOXML parsers emit the docProps thumbnail. On by default.
+     */
+    public boolean isExtractThumbnail() {
+        return extractThumbnail;
+    }
+
+    public void setExtractThumbnail(boolean extractThumbnail) {
+        this.extractThumbnail = extractThumbnail;
     }
 }

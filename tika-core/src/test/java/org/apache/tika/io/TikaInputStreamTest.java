@@ -685,7 +685,7 @@ public class TikaInputStreamTest {
         try (TemporaryResources tmp = new TemporaryResources()) {
             CachingSource source = new CachingSource(
                     new ByteArrayInputStream(data), tmp, -1, metadata, null);
-            source.enableRewind(); // Enable caching for spill support
+            source.enableRewind(null); // Enable caching for spill support
 
             // Read all data
             byte[] buffer = new byte[data.length];
@@ -721,7 +721,7 @@ public class TikaInputStreamTest {
         try (TemporaryResources tmp = new TemporaryResources()) {
             CachingSource source = new CachingSource(
                     new ByteArrayInputStream(data), tmp, -1, metadata, null);
-            source.enableRewind(); // Enable caching for seek/spill support
+            source.enableRewind(null); // Enable caching for seek/spill support
 
             // Read and spill
             IOUtils.toByteArray(source);
@@ -742,7 +742,7 @@ public class TikaInputStreamTest {
         try (TemporaryResources tmp = new TemporaryResources()) {
             CachingSource source = new CachingSource(
                     new ByteArrayInputStream(data), tmp, -1, null, null);
-            source.enableRewind(); // Enable caching for seek support
+            source.enableRewind(null); // Enable caching for seek support
 
             // Read first 5 bytes
             byte[] buf = new byte[5];
@@ -768,7 +768,7 @@ public class TikaInputStreamTest {
         try (TemporaryResources tmp = new TemporaryResources()) {
             CachingSource source = new CachingSource(
                     new ByteArrayInputStream(data), tmp, -1, null, null);
-            source.enableRewind(); // Enable caching for spill/seek support
+            source.enableRewind(null); // Enable caching for spill/seek support
 
             // Read first 5 bytes
             byte[] buf = new byte[5];
@@ -1052,7 +1052,7 @@ public class TikaInputStreamTest {
         TemporaryResources tmp = new TemporaryResources();
         CachingSource source = new CachingSource(
                 new ByteArrayInputStream(new byte[1024 * 1024 + 1]), tmp, -1, null, null);
-        source.enableRewind();
+        source.enableRewind(null);
         IOUtils.toByteArray(source);
         source.seekTo(0);
         assertEquals(0, source.read(), "precondition: reading from the spilled cache");

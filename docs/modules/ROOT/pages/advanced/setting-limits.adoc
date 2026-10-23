@@ -30,7 +30,7 @@ throughout the parse.
 
 |`embedded-limits`
 |`EmbeddedLimits`
-|Depth and count of embedded documents. Unlimited by default.
+|Depth and count of embedded documents. Depth 20, count unlimited by default.
 
 |`output-limits`
 |`OutputLimits`
@@ -47,12 +47,17 @@ throughout the parse.
 |`standard-metadata-limiter-factory`
 |`StandardMetadataLimiterFactory`
 |Metadata size, per-field size, key size, values per field, field allow/deny lists.
+
+|`exception-reporting`
+|`ExceptionReporting`
+|How much of an exception (stack trace, message, class name) is reported, and its length.
 |===
 
 == Configuring limits
 
-Every limit group is a `parse-context` block. This is the configuration
-exercised by `AllLimitsTest` (`tika-serialization/src/test/resources/configs/all-limits-test.json`):
+Every limit group is a `parse-context` block. `AllLimitsTest`
+(`tika-serialization/src/test/resources/configs/all-limits-test.json`) exercises all of
+these but `exception-reporting`, which has its own test:
 
 [source,json]
 ----
@@ -69,9 +74,8 @@ exercised by `AllLimitsTest` (`tika-serialization/src/test/resources/configs/all
       "writeLimit": 100000,
       "throwOnWriteLimit": false,
       "maxXmlDepth": 100,
-      "maxPackageEntryDepth": 10,
       "zipBombThreshold": 1000000,
-      "zipBombRatio": 100
+      "zipBombRatio": 1000
     },
     "timeout-limits": {
       "totalTaskTimeoutMillis": 3600000,
@@ -82,6 +86,10 @@ exercised by `AllLimitsTest` (`tika-serialization/src/test/resources/configs/all
       "maxFieldSize": 102400,
       "maxKeySize": 1024,
       "maxValuesPerField": 100
+    },
+    "exception-reporting": {
+      "level": "MESSAGE_REDACTED",
+      "maxLength": 10000
     }
   }
 }
@@ -109,8 +117,31 @@ context.set(OutputLimits.class, new OutputLimits(50000, true, 50, 5, 500000, 50)
 context.set(TimeoutLimits.class, new TimeoutLimits(7200000, 120000));
 ----
 
-Tests: `AllLimitsTest`, `EmbeddedLimitsTest`, `OutputLimitsTest`, and
-`TimeoutLimitsTest` under `tika-serialization/src/test/java/org/apache/tika/config/`.
+Tests: `AllLimitsTest`, `EmbeddedLimitsTest`, `OutputLimitsTest`, `TimeoutLimitsTest` and
+`ExceptionReportingConfigLoadTest` under `tika-serialization/src/test/java/org/apache/tika/config/`;
+`ExceptionReportingParseTest` (tika-core) drives the policy through a real parse.
+
+== Per-request limits
+
+A request to the pipes worker -- tika-server `/pipes`, `/async` and the multipart `config`
+part, tika-grpc, `PipesParser` callers -- may carry its own `embedded-limits`,
+`output-limits`, `standard-metadata-limiter-factory` and content-handler `writeLimit`. Each is
+clamped field by field to the operator's value (the server's `parse-context` plus any preset,
+or the class default when neither sets one), so a request can tighten a limit but not loosen
+it. A clamp is logged as a warning in the worker. A request may not replace a configured
+metadata limiter with a different kind. The same holds for the render limits in a `pages` block
+(`render` and `emit.render`: `dpi`, `maxImagePixels`, `maxWidth`, `maxHeight`, including the
+deprecated `ocr` aliases), at the top level or under a parser; the ceiling is what the
+operator's own `pages` layers resolve to for that parser. Timeouts follow the same rule
+(xref:pipes/timeouts.adoc#_per_request_overrides[details]).
+
+To let callers go further, raise the limit in the server's config or in a preset.
+
+`pipes.trustedRequests` (default `false`) marks requests as the operator's own: no clamp, and
+their `parse-context` may set `@OperatorOnly` properties. `PipesForkParser` sets it for its own
+fork, since its caller is the operator: per-call config is used as given, looser than its
+`PipesForkParserConfig` or not. A `PipesParser` caller whose requests are its own can set it too.
+tika-server and tika-grpc refuse to start with it on.
 
 == Embedded document limits
 
@@ -121,7 +152,7 @@ Tests: `AllLimitsTest`, `EmbeddedLimitsTest`, `OutputLimitsTest`, and
 |Setting |Default |Description
 
 |`maxDepth`
-|-1 (unlimited)
+|20
 |Maximum nesting depth. Recursion stops at the limit; siblings at the current
 level still parse.
 
@@ -174,16 +205,20 @@ container.zip (depth 0)
 |Maximum XML element nesting depth. Guards against XML bombs.
 
 |`maxPackageEntryDepth`
-|10
-|Maximum depth of nested package entries (zip within zip).
+|20
+|Deprecated in 4.2, removed in 4.3; use `embedded-limits` `maxDepth`, which
+bounds nesting on every path. Counts nested package entries only when embedded
+content is inlined into its container's XHTML.
 
 |`zipBombThreshold`
 |1,000,000
 |Extracted characters before the zip-bomb ratio check activates.
 
 |`zipBombRatio`
-|100
+|1,000
 |Maximum ratio of extracted characters to input bytes read before flagging a zip bomb.
+Measured against the container's bytes across the whole embedded tree, so nested
+compression multiplies; one deflate layer alone stays under about 1,032.
 |===
 
 == Timeout limits
@@ -346,9 +381,76 @@ if ("true".equals(metadata.get(TikaCoreProperties.TRUNCATED_METADATA))) {
 }
 ----
 
+== Exception reporting
+
+`ExceptionReporting` controls how much detail Tika reports when a parse fails:
+the `tk:exception:container-exception`, `tk:exception:embedded-exception`,
+`tk:exception:warn` and `tk:exception:embedded-stream-exception` metadata
+values. Stack traces and messages can carry file paths, hostnames and fragments
+of the document, and the metadata limiter is no backstop: with no
+`MetadataWriteLimiterFactory` configured these values are unbounded, and with
+one, only `container-exception` and `embedded-exception` are always-included
+(cut at `max(maxFieldSize, 300)` UTF-16 bytes); `warn` and
+`embedded-stream-exception` are ordinary fields, subject to
+`includeFields`/`excludeFields` and dropped past `maxValuesPerField` (see
+<<Always-included fields>>). The limiter's cut appends no marker, so keep
+`maxLength` (characters) under half `maxFieldSize` (UTF-16 bytes) if you want
+the `...[truncated]` marker to survive.
+
+[cols="2,1,3"]
+|===
+|Setting |Default |Description
+
+|`level`
+|`FULL`
+|`FULL`: the complete stack trace. `MESSAGE_REDACTED`: the complete stack
+trace with every exception message removed (class names, frames and the cause
+chain are kept). `REDACTED`: exception class names only, no frames.
+
+|`maxLength`
+|-1 (unlimited)
+|Length at which the formatted exception is cut; a truncated value is
+`maxLength` characters plus the `...[truncated]` marker.
+|===
+
+[source,json]
+----
+"exception-reporting": {
+  "level": "MESSAGE_REDACTED",
+  "maxLength": 10000
+}
+----
+
+The same policy applies to the container and to every embedded document, to
+parser-level warnings (`tk:exception:warn`,
+`tk:exception:embedded-stream-exception`), to every pipes result message
+(fetch/emit/crash inside the worker, and the results the parent fabricates when
+the worker never reports one), and to every tika-server error body built from an
+exception -- `422` and `500`. It is loaded from the config only and is
+rejected in a per-request `parse-context` -- tika-server `/rmeta/config` and
+friends, `/pipes` and `/async` answer `400` with the reason, tika-grpc's
+`parse_context_json` answers `INVALID_ARGUMENT` -- so a caller cannot turn
+redaction back off.
+
+Programmatically, parsers and callers should format exceptions through
+`ExceptionUtils.format(Throwable, ParseContext)`. A parser still calling the
+deprecated two-argument `EmbeddedDocumentUtil.recordException` /
+`recordEmbeddedStreamException` -- including any third-party parser compiled
+against 4.0.0 -- reports `FULL` whatever the policy says. To set a policy in a
+parser test:
+
+[source,java]
+----
+ParseContext context = new ParseContext();
+context.set(ExceptionReporting.class,
+        new ExceptionReporting(ExceptionReporting.Level.MESSAGE_REDACTED, 500));
+----
+
 == Recommendations
 
 . Set limits whenever the content is untrusted.
+. Set `exception-reporting` to `MESSAGE_REDACTED` with a finite `maxLength`
+  when the caller is not the operator.
 . Use `includeFields` to capture only the metadata you need.
 . Check `tk:warn:truncated-metadata` rather than guessing.
 . Combine with process isolation — limits protect against memory blowups,

@@ -51,34 +51,31 @@ import org.apache.tika.utils.StringUtils;
  *       {@code /openai/deployments/{deployment}/chat/completions?api-version=2024-02-01}</li>
  *   <li>{@code apiKeyHeaderName} — {@code api-key}</li>
  *   <li>{@code apiKeyPrefix} — {@code ""} (empty string)</li>
+ *   <li>{@code useMaxCompletionTokens} — {@code true} for models that reject
+ *       {@code max_tokens} (o-series, GPT-5 and later)</li>
  * </ul>
  * <p>
  * Configuration key: {@code "openai-vlm-parser"}
  *
  * @since Apache Tika 4.0
  */
-@TikaComponent(name = "openai-vlm-parser")
+// spi = false: VLM parsers are selected by name in config, never auto-registered (TIKA-4871)
+@TikaComponent(name = "openai-vlm-parser", spi = false)
 public class OpenAIVLMParser extends AbstractVLMParser {
 
     private static final long serialVersionUID = 1L;
 
-    private static final String OCR = "ocr-";
-
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
-                    MediaType.image(OCR + "png"),
-                    MediaType.image(OCR + "jpeg"),
-                    MediaType.image(OCR + "tiff"),
-                    MediaType.image(OCR + "bmp"),
-                    MediaType.image(OCR + "gif"),
+                    MediaType.image("png"),
+                    MediaType.image("jpeg"),
+                    MediaType.image("tiff"),
+                    MediaType.image("bmp"),
+                    MediaType.image("gif"),
                     MediaType.image("jp2"),
                     MediaType.image("jpx"),
                     MediaType.image("x-portable-pixmap"),
-                    MediaType.image(OCR + "jp2"),
-                    MediaType.image(OCR + "jpx"),
-                    MediaType.image(OCR + "x-portable-pixmap"),
-                    MediaType.image("webp"),
-                    MediaType.image(OCR + "webp")
+                    MediaType.image("webp")
             )));
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
@@ -154,6 +151,10 @@ public class OpenAIVLMParser extends AbstractVLMParser {
             JsonNode choices = root.get("choices");
             if (choices == null || !choices.isArray() || choices.isEmpty()) {
                 throw new TikaException("VLM response contains no choices: " + responseBody);
+            }
+
+            if ("length".equals(choices.get(0).path("finish_reason").asText())) {
+                warn(metadata, WARN_TRUNCATED);
             }
 
             JsonNode message = choices.get(0).get("message");
@@ -239,7 +240,11 @@ public class OpenAIVLMParser extends AbstractVLMParser {
     String buildRequestJson(VLMOCRConfig config, String base64Data, String mimeType) {
         ObjectNode root = MAPPER.createObjectNode();
         root.put("model", config.getModel());
-        root.put("max_tokens", config.getMaxTokens());
+        root.put(config.isUseMaxCompletionTokens() ? "max_completion_tokens" : "max_tokens",
+                config.getMaxTokens());
+        if (config.getTemperature() != null) {
+            root.put("temperature", config.getTemperature());
+        }
 
         ArrayNode messages = root.putArray("messages");
         ObjectNode userMessage = messages.addObject();

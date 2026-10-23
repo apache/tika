@@ -23,6 +23,7 @@ import java.security.Provider;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -110,13 +111,19 @@ public class InputStreamDigester implements Digester {
      *
      * @param tis          TikaInputStream to digest
      * @param metadata     metadata in which to store the digest information
-     * @param parseContext ParseContext -- not actually used yet, but there for future expansion
+     * @param parseContext ParseContext, which may carry a {@link CacheMemoryBudget}
      * @throws IOException on IO problem or IllegalArgumentException if algorithm couldn't be found
      */
     @Override
     public void digest(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
-        tis.enableRewind();
+        // Bridge the shared budget from ParseContext; TikaInputStream never sees ParseContext
+        CacheMemoryBudget budget =
+                (parseContext == null) ? null : parseContext.get(CacheMemoryBudget.class);
+        tis.enableRewind(budget);
+        // The parse re-reads what we are about to read. Where re-opening the source means
+        // inflating an embedded entry again, hold it in memory instead; a no-op for a file.
+        tis.tryRetainInMemory();
 
         MessageDigest messageDigest = newMessageDigest();
         byte[] buffer = new byte[8192];
@@ -133,4 +140,34 @@ public class InputStreamDigester implements Digester {
         tis.rewind();
     }
 
+    /** Streams: every write goes straight into the MessageDigest; close sets the values. */
+    @Override
+    public DigestSink digestSink(Metadata metadata, ParseContext parseContext) {
+        MessageDigest messageDigest = newMessageDigest();
+        return new DigestSink() {
+            private long total;
+
+            @Override
+            public void write(int b) throws IOException {
+                ensureOpen();
+                messageDigest.update((byte) b);
+                total++;
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) throws IOException {
+                ensureOpen();
+                messageDigest.update(b, off, len);
+                total += len;
+            }
+
+            @Override
+            protected void finish(boolean publish) {
+                if (publish) {
+                    setContentLength(total, metadata);
+                    metadata.set(metadataProperty, encoder.encode(messageDigest.digest()));
+                }
+            }
+        };
+    }
 }

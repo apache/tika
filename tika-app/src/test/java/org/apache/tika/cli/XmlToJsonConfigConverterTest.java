@@ -39,6 +39,8 @@ import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.parser.html.JSoupParser;
+import org.apache.tika.parser.inference.EngineRegistry;
+import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.parser.pdf.PDFParser;
 
 /**
@@ -142,10 +144,7 @@ public class XmlToJsonConfigConverterTest {
         assertTrue(json.contains("\"density\" : 300"), "density should be numeric, not string");
         assertFalse(json.contains("\"timeout\" : \"300\""), "timeout should not be a quoted string");
 
-        // Load the JSON config with TikaLoader to verify it's valid
-        TikaLoader loader = TikaLoader.load(jsonPath);
-        Parser parser = loader.loadParsers();
-        assertNotNull(parser);
+        assertLoads(jsonPath);
     }
 
     @Test
@@ -279,10 +278,10 @@ public class XmlToJsonConfigConverterTest {
         assertTrue(json.contains("\"textord_noise_hfract\" : \"0.15625\""),
                 "Should parse second pair");
 
-        // Verify it loads via TikaLoader without errors
-        TikaLoader loader = TikaLoader.load(jsonPath);
-        Parser parser = loader.loadParsers();
-        assertNotNull(parser);
+        // an OCR engine moves to "engines" and "text-recognizers" (TIKA-4985)
+        assertFalse(json.contains("\"parsers\""), json);
+        assertTrue(json.contains("\"text-recognizers\""), json);
+        assertLoads(jsonPath);
     }
 
     @Test
@@ -311,8 +310,7 @@ public class XmlToJsonConfigConverterTest {
                 "timeoutSeconds must be renamed and multiplied to millis, got: " + json);
         assertFalse(json.contains("timeoutSeconds"), "old key must not survive conversion");
 
-        TikaLoader loader = TikaLoader.load(jsonPath);
-        assertNotNull(loader.loadParsers());
+        assertLoads(jsonPath);
     }
 
     @Test
@@ -343,19 +341,15 @@ public class XmlToJsonConfigConverterTest {
         assertTrue(json.contains("\"enableImagePreprocessing\" : true"), "Should have boolean parameter");
         assertTrue(json.contains("\"language\" : \"eng\""), "Should have string parameter");
 
-        // Verify it loads correctly via TikaLoader
-        TikaLoader loader = TikaLoader.load(jsonPath);
-        Parser parser = loader.loadParsers();
-        assertNotNull(parser);
-        assertTrue(parser instanceof CompositeParser);
+        assertLoads(jsonPath);
     }
 
     @Test
     public void testOcrNestedMapMergedWithLegacyFlatParams(@TempDir Path tempDir) throws Exception {
-        // A pdf-parser config that carries BOTH an explicit nested "ocr" map and
-        // legacy flat ocr* params. nestOcrParams must merge them into a single
-        // "ocr" object: explicitly-nested values win, and flat params only fill
-        // the keys the nested map doesn't supply (TIKA-4748 review follow-up).
+        // A pdf-parser config that carries BOTH an explicit nested 4.0 "ocr" map and
+        // legacy flat ocr* params. Both land in the 4.1 "pages" block: explicitly-nested
+        // values win, and flat params only fill the keys the nested map doesn't supply
+        // (TIKA-4748 review follow-up).
         String xmlConfig = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                 "<properties>\n" +
                 "    <parsers>\n" +
@@ -392,17 +386,37 @@ public class XmlToJsonConfigConverterTest {
         assertFalse(pdf.has("ocrStrategy"), "flat ocrStrategy should be nested, not left at top level");
         assertFalse(pdf.has("ocrDPI"), "flat ocrDPI should be nested, not left at top level");
 
-        // ...and merged into the single nested "ocr" object.
-        JsonNode ocr = pdf.get("ocr");
-        assertNotNull(ocr, "merged nested ocr object should be present");
-        assertEquals("NO_OCR", ocr.get("strategy").asText(),
+        // ...and into the "pages" block, the strategy as "text", nothing left under "ocr".
+        assertFalse(pdf.has("ocr"), "the 4.0 ocr block is written as pages");
+        JsonNode pages = pdf.get("pages");
+        assertNotNull(pages, "pages block should be present");
+        assertEquals("EXTRACT", pages.get("text").asText(),
                 "explicit nested strategy must win over the legacy flat ocrStrategy");
-        assertEquals(200, ocr.get("dpi").asInt(),
-                "legacy flat ocrDPI must be migrated into ocr.dpi");
+        assertEquals(200, pages.get("render").get("dpi").asInt(),
+                "legacy flat ocrDPI must be migrated into pages.render.dpi");
 
         // The merged config must still load.
         TikaLoader loader = TikaLoader.load(jsonPath);
         Parser parser = loader.loadParsers();
         assertNotNull(parser);
+    }
+
+    /**
+     * Loads the converted config. A text recognizer that cannot run fails the load by design,
+     * so without tesseract only the engine itself is built.
+     */
+    private static void assertLoads(Path json) throws Exception {
+        TikaLoader loader = TikaLoader.load(json);
+        if (Files.readString(json).contains("\"text-recognizers\"") && !hasTesseract()) {
+            assertNotNull(loader.get(EngineRegistry.class).get("tesseract"));
+            return;
+        }
+        assertTrue(loader.loadParsers() instanceof CompositeParser);
+    }
+
+    private static boolean hasTesseract() throws Exception {
+        TesseractOCRParser parser = new TesseractOCRParser();
+        parser.initialize();
+        return parser.hasTesseract();
     }
 }

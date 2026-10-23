@@ -1,0 +1,232 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= OCR and Inference Recipes
+
+Each recipe is a complete config. They combine four sections:
+xref:configuration/index.adoc#text-recognizers[`text-recognizers`] (what produces text from
+pixels), xref:configuration/inference.adoc[`engines` and `inference`] (what is called, on what),
+and xref:configuration/pages.adoc[`pages`] (where a page's text comes from, what a PDF releases,
+how pages are rendered). Every default parser stays loaded in all of them.
+
+NOTE: `engines`, `text-recognizers` and `pages` are stable; `inference` (and
+`pages.inference`) is experimental in 4.1.0 and may change in a minor release without a
+deprecation cycle as 4.3 adds batched recognition, media inputs and document-level tasks. The
+recipes are correct for the release they ship with; check the release notes before moving.
+
+== Scanned pages only
+
+OCR a PDF page only when its extracted text is poor, and every embedded image. Tesseract is
+configured once and named as the recognizer; the PDF's `AUTO` strategy is the default.
+
+[source,json]
+----
+{
+  "engines": { "tesseract": { "tesseract-ocr-parser": { "language": "eng" } } },
+  "text-recognizers": [ { "engine": "tesseract" } ]
+}
+----
+
+== Hosted OCR: jina-ocr-v1
+
+A hosted document-OCR model in place of Tesseract, through the OpenAI chat-completions shape.
+It is a text recognizer like Tesseract: images and, under `AUTO`, the PDF pages whose extracted
+text is poor. The key comes from the environment
+(xref:configuration/index.adoc#env[Secrets from the environment]).
+
+[source,json]
+----
+{
+  "engines": {
+    "jina-ocr": { "openai-vlm-parser": {
+        "baseUrl": "https://api.jina.ai",
+        "model": "jina-ocr-v1",
+        "apiKey": "${env:JINA_API_KEY}",
+        "prompt": "Transcribe the provided document image into a clean Markdown format, preserving the natural reading order.",
+        "maxTokens": 8192 } }
+  },
+  "text-recognizers": [ { "engine": "jina-ocr" } ]
+}
+----
+
+The model returns markdown with tables as raw HTML, whatever the prompt says; Tika parses both
+into XHTML, so a table is a `<table>` in every output format and a pipe table in markdown. Body
+cells come back as `<th>` and are passed through as such. The load-time health check reads the
+public `/v1/models`, so a wrong key passes startup and surfaces on the first request as the
+document's parse exception (HTTP 401 in the message).
+
+== Text vectors for every document
+
+One embedding request per document tree, chunks of the container and its attachments mixed,
+each chunk on its own document with a `text` locator.
+
+[source,json]
+----
+{
+  "engines": {
+    "embedder": { "openai-embedding-engine": { "baseUrl": "http://embed:8000", "model": "bge-m3" } }
+  },
+  "inference": [
+    { "id": "text-vectors", "engine": "embedder", "input": "TEXT", "tasks": ["embed"],
+      "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } } }
+  ]
+}
+----
+
+== Page vectors, no OCR
+
+Every PDF page rendered once for the embedding engine, no text recognizer anywhere. The render
+settings live under `ocr` and are sized here for an image model rather than Tesseract.
+
+[source,json]
+----
+{
+  "engines": {
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip:8000", "model": "siglip2" } }
+  },
+  "inference": [
+    { "id": "page-vectors", "engine": "clip", "input": "PAGES", "tasks": ["embed"], "maxChunks": 50 }
+  ],
+  "text-recognizers": [],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "pages": { "inference": ["PAGES"], "text": "EXTRACT",
+                                 "render": { "dpi": 100, "imageType": "RGB" } } } }
+  ]
+}
+----
+
+== OCR when needed and a vector on every page
+
+One render per page feeds both: Tesseract on the pages the `AUTO` verdict picks, the embedding
+engine on all of them. The settings serve both consumers, so keep the dpi Tesseract needs.
+
+[source,json]
+----
+{
+  "engines": {
+    "tesseract": { "tesseract-ocr-parser": { "language": "eng" } },
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip:8000", "model": "siglip2" } }
+  },
+  "text-recognizers": [ { "engine": "tesseract" } ],
+  "inference": [
+    { "id": "page-vectors", "engine": "clip", "input": "PAGES", "tasks": ["embed"] }
+  ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "pages": { "inference": ["PAGES"], "render": { "imageType": "RGB" } } } }
+  ]
+}
+----
+
+== PDFs by page vectors, everything else by text vectors
+
+Two bindings. The PDF releases its pages, records that it did, and the text stage skips it;
+every other document is embedded by its text. List `["TEXT", "PAGES"]` on the PDF to get both.
+
+[source,json]
+----
+{
+  "engines": {
+    "embedder": { "openai-embedding-engine": { "baseUrl": "http://embed:8000", "model": "bge-m3" } },
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip:8000", "model": "siglip2" } }
+  },
+  "inference": [
+    { "id": "text-vectors", "engine": "embedder", "input": "TEXT", "tasks": ["embed"],
+      "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } } },
+    { "id": "page-vectors", "engine": "clip", "input": "PAGES", "tasks": ["embed"], "maxChunks": 50 }
+  ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "pages": { "inference": ["PAGES"], "text": "EXTRACT",
+                                 "render": { "dpi": 100, "imageType": "RGB" } } } }
+  ]
+}
+----
+
+== Text, pictures, audio and video in one index (Jina omni)
+
+One engine, `jina-embeddings-v5-omni-small`, embeds every input kind into one 1024-dimension
+space: the extracted text of every document, every picture, and audio and video cut into
+segments. Four bindings share it. `mediaInput: "object"` is required for the MEDIA bindings,
+`normalized` makes cosine scores comparable across the four fields, and `task` selects the
+indexing adapter (a query uses `retrieval.query` with the same model).
+
+[source,json]
+----
+{
+  "engines": {
+    "jina": { "openai-embedding-engine": {
+        "baseUrl": "https://api.jina.ai",
+        "apiKey": "${env:JINA_API_KEY}",
+        "model": "jina-embeddings-v5-omni-small",
+        "mediaInput": "object",
+        "maxBatchSize": 8,
+        "requestParameters": { "task": "retrieval.passage", "dimensions": 1024, "normalized": true } } }
+  },
+  "inference": [
+    { "id": "text",       "engine": "jina", "input": "TEXT",   "tasks": ["embed"],
+      "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } } },
+    { "id": "pictures",   "engine": "jina", "input": "IMAGES", "tasks": ["embed"] },
+    { "id": "jina-video", "engine": "jina", "input": "MEDIA",  "modality": "visual" },
+    { "id": "jina-audio", "engine": "jina", "input": "MEDIA",  "modality": "audio" }
+  ]
+}
+----
+
+Media needs ffmpeg on the `PATH`; the `-full` Docker image ships it, the minimal one does not.
+The default grid, 25 s windows with 5 s overlap, stays under the 30 s cap Jina puts on an audio
+item; a `media` block that raises `seconds` to 30 or more has every audio segment refused. A
+segment's two vectors share a `correlator`, and the Elasticsearch and OpenSearch emitters'
+`chunkStrategy: DOCUMENTS` merges them into one document per segment (see
+xref:migration-to-4x/chunk-strategies.adoc[Chunk strategies]).
+
+== OCR off for PDFs only
+
+The recognizer stays on for embedded and standalone images; the PDF parser never renders.
+
+[source,json]
+----
+{
+  "engines": { "tesseract": { "tesseract-ocr-parser": {} } },
+  "text-recognizers": [ { "engine": "tesseract" } ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "pages": { "text": "EXTRACT" } } }
+  ]
+}
+----
+
+== Everything off for one request
+
+Both lists stay configured; the request switches them off. Wire-safe, so it works as a
+xref:using-tika/server/index.adoc[preset], on `/rmeta/config`, and on a pipes tuple.
+
+[source,json]
+----
+{ "parse-context": { "text-recognizers": { "enabled": false },
+                     "inference": { "enabled": false } } }
+----
+
+`inference.bindings` selects a subset instead of all-or-nothing; a PDF can be switched to pages
+for one request with `"pages": { "inference": ["PAGES"] }` in the same block.
+
+== Not yet
+
+A caption or tag per picture (a chat task on a chat engine), OCR configured but promoted per
+request, and separate render settings for OCR and for an image model are later work; the
+xref:configuration/inference.adoc[Inference] page says what each binding can do today.

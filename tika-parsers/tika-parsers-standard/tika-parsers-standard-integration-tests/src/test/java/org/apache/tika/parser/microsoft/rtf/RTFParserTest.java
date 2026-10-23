@@ -85,16 +85,7 @@ public class RTFParserTest extends TikaTest {
             assertEquals(p.fileName,
                     FilenameUtils.getName(metadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_PATH)));
 
-            // When tesseract is available, image types may get an "ocr-" prefix
-            String actualType = metadata.get(HttpHeaders.CONTENT_TYPE);
-            if (p.mimeType.startsWith("image/")) {
-                String ocrVariant = p.mimeType.replace("image/", "image/ocr-");
-                assertTrue(p.mimeType.equals(actualType) || ocrVariant.equals(actualType),
-                        "Expected " + p.mimeType + " or " + ocrVariant +
-                                " but got: " + actualType);
-            } else {
-                assertEquals(p.mimeType, actualType);
-            }
+            assertEquals(p.mimeType, metadata.get(HttpHeaders.CONTENT_TYPE));
         }
         assertEquals("C:\\Users\\tallison\\AppData\\Local\\Temp\\testJPEG_普林斯顿.jpg",
                 metadataList.get(46).get(TikaCoreProperties.ORIGINAL_RESOURCE_NAME));
@@ -145,7 +136,9 @@ public class RTFParserTest extends TikaTest {
 
         //need flexibility for if tesseract is installed or not
         //TODO -- fix this test.  It is too fragile.
-        assertTrue(meta_jpg.names().length >= 52 && meta_jpg.names().length <= 60);
+        // in-memory embedded images no longer carry metadata-extractor's temp-file
+        // name/size/date tags (TIKA-4835), hence the lower bound
+        assertTrue(meta_jpg.names().length >= 49 && meta_jpg.names().length <= 60);
         assertTrue(meta_jpg_exif.names().length >= 100 && meta_jpg_exif.names().length <= 130);
     }
 

@@ -31,8 +31,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "emitters": {
- *   "es-emitter": {
- *     "my-es-emitter": {
+ *   "my-es-emitter": {
+ *     "es-emitter": {
  *       "esUrl": "https://localhost:9200/my-index",
  *       "idField": "id",
  *       "apiKey": "base64-encoded-id:api_key",

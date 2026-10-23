@@ -1,0 +1,8 @@
+{
+  "text-recognizers": [],
+  "parse-context": {
+    "unpack-config": {
+      "includeOriginal": true
+    }
+  }
+}

@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
 import org.apache.tika.utils.StringUtils;
 
@@ -34,6 +35,30 @@ public class GUID implements Comparable<GUID> {
     }
 
     /**
+     * Decodes a 16-byte GUID stored in the mixed-endian layout used by MS-DTYP.
+     *
+     * @return the GUID, or {@code null} if {@code data} is not exactly 16 bytes
+     */
+    public static GUID fromMicrosoftBytes(byte[] data) {
+        if (data == null || data.length != 16) {
+            return null;
+        }
+        int[] guid = new int[16];
+        guid[0] = data[3] & 0xff;
+        guid[1] = data[2] & 0xff;
+        guid[2] = data[1] & 0xff;
+        guid[3] = data[0] & 0xff;
+        guid[4] = data[5] & 0xff;
+        guid[5] = data[4] & 0xff;
+        guid[6] = data[7] & 0xff;
+        guid[7] = data[6] & 0xff;
+        for (int i = 8; i < 16; i++) {
+            guid[i] = data[i] & 0xff;
+        }
+        return new GUID(guid);
+    }
+
+    /**
      * Converts a GUID of format: {AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE} (in bytes) to a GUID
      * object.
      *
@@ -41,15 +66,42 @@ public class GUID implements Comparable<GUID> {
      *             -EEEEEEEEEEEE}
      * @return GUID object parsed from guid bytes.
      */
-    public static GUID fromCurlyBraceUTF16Bytes(byte[] guid) {
+    public static GUID fromCurlyBraceUTF16Bytes(byte[] guid) throws TikaException {
         int[] intGuid = new int[16];
-        String utf16Str = new String(guid, StandardCharsets.UTF_16LE).replaceAll("\\{", "")
-                .replaceAll("-", "").replaceAll("}", "");
-        for (int i = 0; i < utf16Str.length(); i += 2) {
-            intGuid[i / 2] =
-                    Integer.parseUnsignedInt("" + utf16Str.charAt(i) + utf16Str.charAt(i + 1), 16);
+        String utf16Str = new String(guid, StandardCharsets.UTF_16LE);
+        if (utf16Str.length() != 38 || utf16Str.charAt(0) != '{' ||
+                utf16Str.charAt(9) != '-' || utf16Str.charAt(14) != '-' ||
+                utf16Str.charAt(19) != '-' || utf16Str.charAt(24) != '-' ||
+                utf16Str.charAt(37) != '}') {
+            throw new TikaException("Invalid GUID string");
+        }
+        String hex = utf16Str.substring(1, 37).replace("-", "");
+        if (hex.length() != 32) {
+            throw new TikaException("Invalid GUID string");
+        }
+        for (int i = 0; i < hex.length(); i += 2) {
+            int high = asciiHexDigit(hex.charAt(i));
+            int low = asciiHexDigit(hex.charAt(i + 1));
+            if (high < 0 || low < 0) {
+                throw new TikaException("Invalid GUID string");
+            }
+            intGuid[i / 2] = (high << 4) | low;
         }
         return new GUID(intGuid);
+    }
+
+    // Character.digit accepts non-ASCII Unicode digits; GUIDs are ASCII hex only
+    private static int asciiHexDigit(char c) {
+        if (c >= '0' && c <= '9') {
+            return c - '0';
+        }
+        if (c >= 'a' && c <= 'f') {
+            return c - 'a' + 10;
+        }
+        if (c >= 'A' && c <= 'F') {
+            return c - 'A' + 10;
+        }
+        return -1;
     }
 
     public static int memcmp(int[] b1, int[] b2, int sz) {

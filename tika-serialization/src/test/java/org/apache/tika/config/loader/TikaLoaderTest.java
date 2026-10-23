@@ -28,6 +28,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.config.EmbeddedLimits;
@@ -42,6 +44,7 @@ import org.apache.tika.parser.Parser;
 /**
  * Unit tests for TikaLoader JSON configuration loading.
  */
+@Isolated // testUnusableTempDirectoryFailsAtLoad mutates java.io.tmpdir
 public class TikaLoaderTest {
 
     @Test
@@ -54,6 +57,27 @@ public class TikaLoaderTest {
 
         Parser parser = loader.get(Parser.class);
         assertNotNull(parser, "Parser should not be null");
+    }
+
+    @Test
+    public void testUnusableTempDirectoryFailsAtLoad(@TempDir Path tmp) throws Exception {
+        Path configPath = Path.of(getClass().getResource("/configs/test-loader-config.json").toURI());
+        Path missing = tmp.resolve("missing");
+        Path file = Files.writeString(tmp.resolve("file"), "");
+        String original = System.getProperty("java.io.tmpdir");
+        try {
+            for (Path bad : new Path[]{missing, file}) {
+                System.setProperty("java.io.tmpdir", bad.toString());
+                TikaConfigException e = assertThrows(TikaConfigException.class,
+                        () -> TikaLoader.load(configPath), bad.toString());
+                assertTrue(e.getMessage().contains("java.io.tmpdir"), e.getMessage());
+                assertTrue(e.getMessage().contains(bad.toString()), e.getMessage());
+            }
+            System.setProperty("java.io.tmpdir", tmp.toString());
+            assertNotNull(TikaLoader.load(configPath));
+        } finally {
+            System.setProperty("java.io.tmpdir", original);
+        }
     }
 
     @Test
@@ -348,7 +372,7 @@ public class TikaLoaderTest {
 
         // Create defaults - some values will be overridden by JSON, others kept
         EmbeddedLimits defaults = new EmbeddedLimits();
-        // Default values from EmbeddedLimits: maxDepth=UNLIMITED, maxCount=UNLIMITED, throwOnMax*=false
+        // Default values from EmbeddedLimits: maxDepth=DEFAULT_MAX_DEPTH, maxCount=UNLIMITED, throwOnMax*=false
 
         // Load with defaults - JSON has: maxDepth=5, throwOnMaxDepth=true, maxCount=100, throwOnMaxCount=false
         EmbeddedLimits config = loader.loadConfig(EmbeddedLimits.class, defaults);
@@ -360,7 +384,7 @@ public class TikaLoaderTest {
         assertFalse(config.isThrowOnMaxCount(), "throwOnMaxCount should be from JSON");
 
         // Verify original defaults object was NOT modified
-        assertEquals(EmbeddedLimits.UNLIMITED, defaults.getMaxDepth(), "Original defaults should be unchanged");
+        assertEquals(EmbeddedLimits.DEFAULT_MAX_DEPTH, defaults.getMaxDepth(), "Original defaults should be unchanged");
     }
 
     @Test

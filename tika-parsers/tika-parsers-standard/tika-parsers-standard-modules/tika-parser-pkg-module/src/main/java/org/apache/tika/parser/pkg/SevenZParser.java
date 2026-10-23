@@ -20,6 +20,7 @@ import static org.apache.tika.detect.zip.PackageConstants.SEVENZ;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.SeekableByteChannel;
 import java.util.Collections;
 import java.util.Set;
 
@@ -40,6 +41,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -112,34 +114,27 @@ public class SevenZParser extends AbstractArchiveParser {
             password = provider.getPassword(metadata);
         }
 
-        SevenZFile sevenZFile;
-        try {
-            // Use setMaxMemoryLimitKiB (direct KiB); setMaxMemoryLimitKb divides the arg by 1024.
-            SevenZFile.Builder builder = new SevenZFile.Builder()
-                    .setFile(tis.getFile())
-                    .setMaxMemoryLimitKiB(defaultConfig.getMemoryLimitInKb());
-            if (password == null) {
-                sevenZFile = builder.get();
-            } else {
-                sevenZFile = builder.setPassword(password.toCharArray()).get();
-            }
-        } catch (PasswordRequiredException e) {
-            throw new EncryptedDocumentException(e);
-        } catch (MemoryLimitException e) {
-            // The limit can be exceeded at open time (assertValidity) as well as lazily on the
-            // first getNextEntry() when the LZMA/LZMA2 dictionary is allocated.
-            throw new TikaMemoryLimitException(e.getMessage());
-        }
-
         metadata.set(HttpHeaders.CONTENT_TYPE, SEVENZ.toString());
 
         EmbeddedDocumentExtractor extractor =
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
-        xhtml.startDocument();
 
+        // SevenZFile.close() closes the channel it was built on; until it exists the channel
+        // is ours to close, and the SAX document is not started until the archive opened
+        SeekableByteChannel channel = tis.getSeekableByteChannel();
+        SevenZFile sevenZFile = null;
+        boolean started = false;
         try {
+            // Use setMaxMemoryLimitKiB (direct KiB); setMaxMemoryLimitKb divides the arg by 1024.
+            SevenZFile.Builder builder = new SevenZFile.Builder()
+                    .setSeekableByteChannel(channel)
+                    .setMaxMemoryLimitKiB(defaultConfig.getMemoryLimitInKb());
+            sevenZFile = password == null ? builder.get()
+                    : builder.setPassword(password.toCharArray()).get();
+            xhtml.startDocument();
+            started = true;
             SevenZArchiveEntry entry = sevenZFile.getNextEntry();
             while (entry != null) {
                 if (!entry.isDirectory()) {
@@ -150,10 +145,17 @@ public class SevenZParser extends AbstractArchiveParser {
         } catch (PasswordRequiredException e) {
             throw new EncryptedDocumentException(e);
         } catch (MemoryLimitException e) {
+            // at open time (assertValidity) or lazily on the first getNextEntry()
             throw new TikaMemoryLimitException(e.getMessage());
         } finally {
-            sevenZFile.close();
-            xhtml.endDocument();
+            if (sevenZFile != null) {
+                sevenZFile.close();
+            } else {
+                channel.close();
+            }
+            if (started) {
+                xhtml.endDocument();
+            }
         }
     }
 
@@ -170,12 +172,14 @@ public class SevenZParser extends AbstractArchiveParser {
                 entry.getSize(),
                 xhtml,
                 context);
+        if (entry.getHasAccessDate()) {
+            setInstant(entrydata, FileSystem.ACCESSED, entry.getAccessDate());
+        }
 
         if (extractor.shouldParseEmbedded(entrydata, context)) {
             TemporaryResources tmp = new TemporaryResources();
-            try {
-                TikaInputStream tis = TikaInputStream.get(
-                        new SevenZEntryInputStream(sevenZFile), tmp, entrydata);
+            try (TikaInputStream tis = TikaInputStream.get(
+                    new SevenZEntryInputStream(sevenZFile), tmp, entrydata)) {
                 extractor.parseEmbedded(tis, xhtml, entrydata, context, true);
             } finally {
                 tmp.dispose();

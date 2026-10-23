@@ -18,6 +18,9 @@ package org.apache.tika.config;
 import java.io.Serializable;
 import java.util.Objects;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.parser.ParseContext;
@@ -30,7 +33,9 @@ import org.apache.tika.parser.ParseContext;
  *       any embedded documents it recurses into
  *       (default: 3,600,000 ms = 1 hour)</li>
  *   <li>{@code progressTimeoutMillis} — bounds time since the last progress update;
- *       catches infinite loops and hung processes (default: 120,000 ms = 2 minutes)</li>
+ *       catches infinite loops and hung processes (default: 120,000 ms = 2 minutes).
+ *       Set it equal to {@code totalTaskTimeoutMillis} to disable stall detection and keep
+ *       only the total deadline; {@code 0} is rejected when the total is positive.</li>
  *   <li>{@code throwOnDeadline} — whether reaching the total timeout mid-parse throws
  *       (via {@link org.apache.tika.exception.EmbeddedLimitReachedException}) instead of
  *       skipping remaining embedded documents and returning content extracted so far
@@ -62,6 +67,8 @@ import org.apache.tika.parser.ParseContext;
 public class TimeoutLimits implements Serializable, Initializable {
 
     private static final long serialVersionUID = 2L;
+
+    private static final Logger LOG = LoggerFactory.getLogger(TimeoutLimits.class);
 
     public static final long DEFAULT_TOTAL_TASK_TIMEOUT_MILLIS = 3_600_000L;
     public static final long DEFAULT_PROGRESS_TIMEOUT_MILLIS = 120_000L;
@@ -147,6 +154,12 @@ public class TimeoutLimits implements Serializable, Initializable {
             throw new TikaConfigException("progressTimeoutMillis of 0 with a positive "
                     + "totalTaskTimeoutMillis (" + totalTaskTimeoutMillis
                     + ") would kill every task immediately; use a positive progress timeout");
+        }
+        // equal is the documented way to disable stall detection, so only warn above it
+        if (totalTaskTimeoutMillis > 0 && progressTimeoutMillis > totalTaskTimeoutMillis) {
+            LOG.warn("progressTimeoutMillis ({}) > totalTaskTimeoutMillis ({}) -- the stall "
+                    + "detector can never fire; set them equal to disable it deliberately",
+                    progressTimeoutMillis, totalTaskTimeoutMillis);
         }
     }
 

@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "raw-tiff-parser": {
+        "extractPreviews": false
+      }
+    }
+  ]
+}

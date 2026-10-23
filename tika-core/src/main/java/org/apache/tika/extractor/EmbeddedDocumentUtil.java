@@ -135,13 +135,11 @@ public class EmbeddedDocumentUtil {
     }
 
     /**
-     * Normalizes internal OCR routing media types (e.g., {@code image/ocr-png})
-     * back to standard media types (e.g., {@code image/png}).
-     * Returns the input unchanged if it is not an OCR routing type.
+     * {@code image/ocr-png} to {@code image/png}; anything else unchanged.
      *
-     * @param mediaType the media type string
-     * @return the normalized media type string, or the original if no normalization needed
+     * @deprecated since 4.1, removal in 5.0: nothing produces the pseudo-types any more.
      */
+    @Deprecated
     public static String normalizeMediaType(String mediaType) {
         if (mediaType != null && mediaType.startsWith("image/ocr-")) {
             return "image/" + mediaType.substring("image/ocr-".length());
@@ -159,9 +157,7 @@ public class EmbeddedDocumentUtil {
         if (mediaType == null) {
             return "";
         }
-        MimeType mimeType =
-                getRegisteredMimeType(MimeTypes.getDefaultMimeTypes(),
-                        normalizeMediaType(mediaType));
+        MimeType mimeType = getRegisteredMimeType(MimeTypes.getDefaultMimeTypes(), mediaType);
         return mimeType == null ? "" : mimeType.getExtension();
     }
 
@@ -231,14 +227,39 @@ public class EmbeddedDocumentUtil {
         metadata.set(TikaCoreProperties.RESOURCE_NAME_EXTENSION_INFERRED, true);
     }
 
-    public static void recordException(Throwable t, Metadata m) {
-        String ex = ExceptionUtils.getFilteredStackTrace(t);
-        m.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING, ex);
+    public static void recordException(Throwable t, Metadata m, ParseContext context) {
+        m.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
+                ExceptionUtils.format(t, context));
     }
 
+    /**
+     * @deprecated since 4.1, removal planned for 5.0; use
+     * {@link #recordException(Throwable, Metadata, ParseContext)} so the configured
+     * {@link org.apache.tika.config.ExceptionReporting} applies. Unlike in 4.0.0, this now
+     * keeps a bare {@link org.apache.tika.exception.TikaException} wrapper rather than
+     * stripping it, so the first line of the recorded value may name the wrapper.
+     */
+    @Deprecated
+    public static void recordException(Throwable t, Metadata m) {
+        recordException(t, m, null);
+    }
+
+    public static void recordEmbeddedStreamException(Throwable t, Metadata m,
+                                                     ParseContext context) {
+        m.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM,
+                ExceptionUtils.format(t, context));
+    }
+
+    /**
+     * @deprecated since 4.1, removal planned for 5.0; use
+     * {@link #recordEmbeddedStreamException(Throwable, Metadata, ParseContext)} so the
+     * configured {@link org.apache.tika.config.ExceptionReporting} applies. Unlike in 4.0.0,
+     * this now keeps a bare {@link org.apache.tika.exception.TikaException} wrapper rather
+     * than stripping it, so the first line of the recorded value may name the wrapper.
+     */
+    @Deprecated
     public static void recordEmbeddedStreamException(Throwable t, Metadata m) {
-        String ex = ExceptionUtils.getFilteredStackTrace(t);
-        m.add(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM, ex);
+        recordEmbeddedStreamException(t, m, null);
     }
 
     /**

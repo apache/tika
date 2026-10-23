@@ -100,12 +100,9 @@ public abstract class AbstractXML2003Parser implements Parser {
         TaggedContentHandler tagged = new TaggedContentHandler(balancer);
         tis.setCloseShield();
         try {
-            //need to get new SAXParser because
-            //an attachment might require another SAXParser
-            //mid-parse
-            XMLReaderUtils.getSAXParser().parse(tis,
-                    new EmbeddedContentHandler(
-                            getContentHandler(tagged, metadata, context)));
+            XMLReaderUtils.parseSAX(tis,
+                    new EmbeddedContentHandler(getContentHandler(tagged, metadata, context)),
+                    context);
         } catch (SAXException e) {
             WriteLimitReachedException.throwIfWriteLimitReached(e);
             // Close anything the aborted parse left open, then propagate.

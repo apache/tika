@@ -17,9 +17,8 @@
 package org.apache.tika.parser;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
@@ -33,6 +32,7 @@ import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.xml.secure.SecureSAXParserFactory;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -46,6 +46,28 @@ import org.apache.tika.sax.TaggedContentHandler;
 import org.apache.tika.sax.TextContentHandler;
 
 public class XMLTestBase extends TikaTest {
+
+    static final byte[] ENTITY_EXPANSION_BOMB = new String(
+            "<!DOCTYPE kaboom [ " + "<!ENTITY a \"1234567890\" > " +
+                    "<!ENTITY b \"&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;\" >" +
+                    "<!ENTITY c \"&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;\" > " +
+                    "<!ENTITY d \"&c;&c;&c;&c;&c;&c;&c;&c;&c;&c;\" > " +
+                    "<!ENTITY e \"&d;&d;&d;&d;&d;&d;&d;&d;&d;&d;\" > " +
+                    "<!ENTITY f \"&e;&e;&e;&e;&e;&e;&e;&e;&e;&e;\" > " +
+                    "<!ENTITY g \"&f;&f;&f;&f;&f;&f;&f;&f;&f;&f;\" > " +
+                    "<!ENTITY h \"&g;&g;&g;&g;&g;&g;&g;&g;&g;&g;\" > " +
+                    "<!ENTITY i \"&h;&h;&h;&h;&h;&h;&h;&h;&h;&h;\" > " +
+                    "<!ENTITY j \"&i;&i;&i;&i;&i;&i;&i;&i;&i;&i;\" > " +
+                    "<!ENTITY k \"&j;&j;&j;&j;&j;&j;&j;&j;&j;&j;\" > " +
+                    "<!ENTITY l \"&k;&k;&k;&k;&k;&k;&k;&k;&k;&k;\" > " +
+                    "<!ENTITY m \"&l;&l;&l;&l;&l;&l;&l;&l;&l;&l;\" > " +
+                    "<!ENTITY n \"&m;&m;&m;&m;&m;&m;&m;&m;&m;&m;\" > " +
+                    "<!ENTITY o \"&n;&n;&n;&n;&n;&n;&n;&n;&n;&n;\" > " +
+                    "<!ENTITY p \"&o;&o;&o;&o;&o;&o;&o;&o;&o;&o;\" > " +
+                    "<!ENTITY q \"&p;&p;&p;&p;&p;&p;&p;&p;&p;&p;\" > " +
+                    "<!ENTITY r \"&q;&q;&q;&q;&q;&q;&q;&q;&q;&q;\" > " +
+                    "<!ENTITY s \"&r;&r;&r;&r;&r;&r;&r;&r;&r;&r;\" > " + "]> " +
+                    "<kaboom>&s;</kaboom>").getBytes(StandardCharsets.UTF_8);
 
     static byte[] injectXML(byte[] input, byte[] toInject) throws IOException {
 
@@ -69,33 +91,30 @@ public class XMLTestBase extends TikaTest {
         return bos.toByteArray();
     }
 
-    static Path injectZippedXMLs(Path original, byte[] toInject, boolean includeSlides)
-            throws IOException {
-        ZipFile input = new ZipFile(original.toFile());
-        File output = Files.createTempFile("tika-xxe-", ".zip").toFile();
-        ZipOutputStream outZip = new ZipOutputStream(new FileOutputStream(output));
-        Enumeration<? extends ZipEntry> zipEntryEnumeration = input.entries();
-        while (zipEntryEnumeration.hasMoreElements()) {
-            ZipEntry entry = zipEntryEnumeration.nextElement();
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            IOUtils.copy(input.getInputStream(entry), bos);
-            byte[] bytes = bos.toByteArray();
-            if (entry.getName().endsWith(".xml") &&
-                    //don't inject the slides because you'll get a bean exception
-                    //Unexpected node
-                    (!includeSlides && !entry.getName().contains("slides/slide"))) {
-                bytes = injectXML(bytes, toInject);
-            }
-            ZipEntry outEntry = new ZipEntry(entry.getName());
-            outZip.putNextEntry(outEntry);
-            outZip.write(bytes);
-            outZip.closeEntry();
-        }
-        input.close();
-        outZip.flush();
-        outZip.close();
+    // XML parts of zip containers: OOXML/ODF/EPUB parts, OOXML relationships, XPS pages
+    static boolean isXmlEntry(String name) {
+        return name.endsWith(".xml") || name.endsWith(".rels") || name.endsWith(".fpage");
+    }
 
-        return output.toPath();
+    static Path injectZippedXMLs(Path original, byte[] toInject) throws IOException {
+        Path output = Files.createTempFile("tika-xxe-", ".zip");
+        try (ZipFile input = new ZipFile(original.toFile());
+                ZipOutputStream outZip = new ZipOutputStream(Files.newOutputStream(output))) {
+            Enumeration<? extends ZipEntry> zipEntryEnumeration = input.entries();
+            while (zipEntryEnumeration.hasMoreElements()) {
+                ZipEntry entry = zipEntryEnumeration.nextElement();
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                IOUtils.copy(input.getInputStream(entry), bos);
+                byte[] bytes = bos.toByteArray();
+                if (isXmlEntry(entry.getName())) {
+                    bytes = injectXML(bytes, toInject);
+                }
+                outZip.putNextEntry(new ZipEntry(entry.getName()));
+                outZip.write(bytes);
+                outZip.closeEntry();
+            }
+        }
+        return output;
     }
 
     static void parse(String testFileName, TikaInputStream is, Parser parser, ParseContext context)
@@ -116,7 +135,7 @@ public class XMLTestBase extends TikaTest {
 
             TaggedContentHandler tagged = new TaggedContentHandler(handler);
             try {
-                SAXParserFactory saxParserFactory = SAXParserFactory
+                SAXParserFactory saxParserFactory = SecureSAXParserFactory
                         .newInstance("org.apache.xerces.parsers.SAXParser",
                                 this.getClass().getClassLoader());
                 SAXParser parser = saxParserFactory.newSAXParser();
@@ -141,7 +160,7 @@ public class XMLTestBase extends TikaTest {
 
             TaggedContentHandler tagged = new TaggedContentHandler(handler);
             try {
-                SAXParserFactory saxParserFactory = SAXParserFactory
+                SAXParserFactory saxParserFactory = SecureSAXParserFactory
                         .newInstance();
                 SAXParser parser = saxParserFactory.newSAXParser();
                 parser.parse(stream, new TextContentHandler(handler, true));

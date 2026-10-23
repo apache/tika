@@ -45,6 +45,8 @@ import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.CacheMemoryBudget;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -58,6 +60,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.EndDocumentShieldingContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.apache.tika.zip.utils.ZipFileHelper;
 
 /**
  * OpenOffice parser
@@ -167,14 +170,13 @@ public class OpenDocumentParser implements Parser {
 
         EmbeddedDocumentExtractor embeddedDocumentExtractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
-        // Open the Zip stream
-        // Use a File if we can, and an already open zip is even better
+        // Open the Zip stream; an already open zip from the detector is best.
         ZipFile zipFile = null;
         Object container = tis.getOpenContainer();
         if (container instanceof ZipFile) {
             zipFile = (ZipFile) container;
         } else {
-            zipFile = ZipFile.builder().setFile(tis.getFile()).get();
+            zipFile = ZipFileHelper.open(tis, null);
             tis.setOpenContainer(zipFile);
         }
         // Prepare to handle the content
@@ -207,6 +209,11 @@ public class OpenDocumentParser implements Parser {
         return extractMacros;
     }
 
+    /** Re-opened from the zip on rewind rather than cached: the entry is in the container already. */
+    private static TikaInputStream entryStream(ZipFile zipFile, ZipArchiveEntry entry) {
+        return TikaInputStream.get(() -> zipFile.getInputStream(entry), new TemporaryResources(), null);
+    }
+
     private void handleZipFile(ZipFile zipFile, Metadata metadata, ParseContext context,
                                EndDocumentShieldingContentHandler handler,
                                EmbeddedDocumentExtractor embeddedDocumentExtractor)
@@ -225,7 +232,7 @@ public class OpenDocumentParser implements Parser {
 
         ZipArchiveEntry entry = zipFile.getEntry(MANIFEST_NAME);
         if (entry != null) {
-            try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
+            try (TikaInputStream tisZip = entryStream(zipFile, entry)) {
                 handleZipArchiveEntry(entry, tisZip, metadata, context, handler,
                         embeddedDocumentExtractor, picturePages);
             }
@@ -233,7 +240,7 @@ public class OpenDocumentParser implements Parser {
 
         entry = zipFile.getEntry(META_NAME);
         if (entry != null) {
-            try (TikaInputStream tisZip = TikaInputStream.get(zipFile.getInputStream(entry))) {
+            try (TikaInputStream tisZip = entryStream(zipFile, entry)) {
                 handleZipArchiveEntry(entry, tisZip, metadata, context, handler,
                         embeddedDocumentExtractor, picturePages);
             }
@@ -243,7 +250,7 @@ public class OpenDocumentParser implements Parser {
         while (entries.hasMoreElements()) {
             entry = entries.nextElement();
             if (!META_NAME.equals(entry.getName())) {
-                try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(entry))) {
+                try (TikaInputStream tis = entryStream(zipFile, entry)) {
                     handleZipArchiveEntry(entry, tis, metadata, context, handler,
                             embeddedDocumentExtractor, picturePages);
                 }
@@ -320,14 +327,13 @@ public class OpenDocumentParser implements Parser {
 
                     if (embeddedName.contains("Pictures/")) {
                         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE, TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-                        //spool
-                        tisZip.getFile();
+                        tisZip.enableRewind(context.get(CacheMemoryBudget.class));
                         MediaType embeddedMimeType = EmbeddedDocumentUtil.getDetector(context)
                                 .detect(tisZip, embeddedMetadata, context);
                         if (embeddedMimeType != null) {
                             embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, embeddedMimeType.toString());
                         }
-                        tisZip.reset();
+                        tisZip.rewind();
                         // Tag the picture with the draw:page indices it
                         // appears on (set populated by scanPicturePages).
                         // A null lookup means "not referenced by any

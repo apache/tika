@@ -49,15 +49,35 @@ Several file formats are most efficiently processed with random access vs stream
 The current architecture follows a simple principle: **each component that needs random
 access is responsible for obtaining it**.
 
-A detector or parser is handed a `TikaInputStream`; when it needs random access
-it simply asks for a file:
+A detector or parser is handed a `TikaInputStream`; when it needs random access it asks for
+a seekable view of the content and lets `TikaInputStream` decide whether that view is backed
+by memory or by a file:
 
 [source,java]
 ----
-Path path = tis.getPath();
-// or
-File file = tis.getFile();
+try (SeekableByteChannel channel = tis.getSeekableByteChannel()) {
+    ByteBuffer view = TikaInputStream.inMemoryContent(channel);
+    if (view != null) {
+        readInPlace(view);              // in memory: no copy, no temp file
+    } else {
+        readFromFile(tis.getFile());    // spilled: the file already exists
+    }
+}
 ----
+
+Two rules go with that form:
+
+* The `ByteBuffer` aliases the cache's own array and is valid *only while that channel is
+  open*. Keep the channel open for as long as the view is in use. A view that outlives its
+  channel still reads correctly but is no longer counted against the memory budget.
+* `inMemoryContent()` returns `null` whenever the content is not in memory -- file-backed
+  input, or a cache that spilled. That is the normal case for large content, not an error.
+
+`getFile()` remains correct when a consumer genuinely requires a `java.io.File` -- many
+third-party libraries do -- but it always materialises one. Prefer the channel/view form when
+the consumer can accept a buffer or a stream. For a worked example see
+`PDFRandomAccess.open(...)` in `tika-parser-pdf-module`, one factory that makes this choice
+for the PDF parser, its incremental-update scan, and the renderer.
 
 `TikaInputStream` handles the spooling transparently based on how it was initialized:
 

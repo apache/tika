@@ -54,6 +54,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.RuntimeSAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PageAnchoring;
@@ -62,7 +63,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.OfficeParserConfig;
 import org.apache.tika.parser.microsoft.TikaExcelDataFormatter;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
@@ -115,13 +115,10 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     private final Map<String, Set<Integer>> picturePages = new HashMap<>();
     protected final Map<String, String> drawingHyperlinks = new HashMap<>();
     protected Metadata metadata;
-    protected ParseContext parseContext;
 
     public XSSFExcelExtractorDecorator(ParseContext context, OPCPackage pkg,
                                        Locale locale) {
         super(context, pkg);
-
-        this.parseContext = context;
 
         if (locale == null) {
             formatter = new TikaExcelDataFormatter();
@@ -136,16 +133,10 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
     }
 
     @Override
-    public MetadataExtractor getMetadataExtractor() {
-        return new SAXBasedMetadataExtractor(opcPackage, parseContext);
-    }
-
-    @Override
     public void getXHTML(ContentHandler handler, Metadata metadata, ParseContext context)
             throws SAXException, IOException, TikaException {
 
         this.metadata = metadata;
-        this.parseContext = context;
         metadata.set(Office.PROTECTED_WORKSHEET, "false");
 
         super.getXHTML(handler, metadata, context);
@@ -172,17 +163,15 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         // Styles and shared strings are optional — if either part is missing or
         // unreadable, log to metadata and continue with degraded extraction.
         try {
-            stylesShim = new XSSFStylesShim(xssfReader.getStylesData(), parseContext);
+            stylesShim = new XSSFStylesShim(xssfReader.getStylesData(), context);
         } catch (Exception e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
         try {
             stringsShim = new XSSFSharedStringsShim(xssfReader.getSharedStringsData(),
-                    config.isConcatenatePhoneticRuns(), parseContext);
+                    config.isConcatenatePhoneticRuns(), context);
         } catch (Exception e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
         while (true) {
             try {
@@ -190,8 +179,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                     break;
                 }
             } catch (RuntimeException e) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        ExceptionUtils.getStackTrace(e));
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
                 break;
             }
             SheetTextAsHTML sheetExtractor = new SheetTextAsHTML(config, xhtml);
@@ -200,12 +188,8 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             try {
                 nextStream = iter.next();
             } catch (RuntimeException e) {
-                // POI can throw POIXMLException for missing sheet parts (e.g.,
-                // truncated workbook references a sheet that isn't in the zip).
-                // Break rather than continue — POI's iterator state may not have
-                // advanced, which would cause an infinite loop.
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        ExceptionUtils.getStackTrace(e));
+                // break, not continue: POI's iterator state may not have advanced
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
                 break;
             }
             try (InputStream stream = nextStream) {
@@ -230,21 +214,13 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 try {
                     processSheet(sheetExtractor, commentsShim, stylesShim, stringsShim, stream);
                 } catch (SAXException e) {
-                    // Truncated/malformed sheet XML — keep prior sheets and
-                    // record the failure as a warning.
                     WriteLimitReachedException.throwIfWriteLimitReached(e);
-                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                            ExceptionUtils.getStackTrace(e));
-                    // Balance any <tr>/<td> left open by the partial parse so
-                    // the </tbody></table></div> emitted below land in the
-                    // right place.
+                    EmbeddedDocumentUtil.recordException(e, metadata, context);
+                    // a partial parse can leave <tr>/<td> open; close them so the
+                    // </tbody></table></div> emitted below stay balanced
                     sheetExtractor.closeAnyPending();
                 } catch (IOException e) {
-                    // Truncated stream — same risk: partial <tr>/<td> still
-                    // open. Close them so the surrounding </tbody></table>
-                    // stays balanced, record the failure, and keep going.
-                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                            ExceptionUtils.getStackTrace(e));
+                    EmbeddedDocumentUtil.recordException(e, metadata, context);
                     sheetExtractor.closeAnyPending();
                 }
                 try {
@@ -284,7 +260,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         try (InputStream wbData = xssfReader.getWorkbookData()) {
             XMLReaderUtils
                     .parseSAX(wbData, new WorkbookMetadataHandler(),
-                            parseContext);
+                            context);
         } catch (InvalidFormatException | TikaException e) {
             //swallow
         }
@@ -355,7 +331,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 if (pivotCachePart != null) {
                     PivotCacheHandler handler = new PivotCacheHandler(xhtml);
                     try (InputStream is = pivotCachePart.getInputStream()) {
-                        XMLReaderUtils.parseSAX(is, handler, parseContext);
+                        XMLReaderUtils.parseSAX(is, handler, context);
                     }
                     if (handler.hasExternalData()) {
                         metadata.set(Office.HAS_EXTERNAL_PIVOT_DATA, true);
@@ -417,7 +393,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                     if (externalLinkPart != null) {
                         ExternalLinkHandler handler = new ExternalLinkHandler(xhtml);
                         try (InputStream is = externalLinkPart.getInputStream()) {
-                            XMLReaderUtils.parseSAX(is, handler, parseContext);
+                            XMLReaderUtils.parseSAX(is, handler, context);
                         }
                         if (handler.hasDdeLink()) {
                             metadata.set(Office.HAS_DDE_LINKS, true);
@@ -446,7 +422,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 if (connectionsPart != null) {
                     ConnectionsHandler handler = new ConnectionsHandler(xhtml);
                     try (InputStream is = connectionsPart.getInputStream()) {
-                        XMLReaderUtils.parseSAX(is, handler, parseContext);
+                        XMLReaderUtils.parseSAX(is, handler, context);
                     }
                     if (handler.hasConnections()) {
                         metadata.set(Office.HAS_DATA_CONNECTIONS, true);
@@ -477,7 +453,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 PackagePart queryTablePart = sheetPart.getRelatedPart(rel);
                 if (queryTablePart != null) {
                     try (InputStream is = queryTablePart.getInputStream()) {
-                        XMLReaderUtils.parseSAX(is, new QueryTableHandler(xhtml), parseContext);
+                        XMLReaderUtils.parseSAX(is, new QueryTableHandler(xhtml), context);
                     }
                 }
             } catch (IOException | TikaException | IllegalArgumentException e) {
@@ -687,12 +663,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             return;
         }
         for (PackageRelationship rel : coll) {
-            PackagePart threadedCommentPart = sheetPart.getRelatedPart(rel);
+            PackagePart threadedCommentPart = safeGetRelatedPart(sheetPart, rel);
             if (threadedCommentPart == null) {
                 continue;
             }
             try (InputStream is = threadedCommentPart.getInputStream()) {
-                XMLReaderUtils.parseSAX(is, new ThreadedCommentHandler(xhtml), parseContext);
+                XMLReaderUtils.parseSAX(is, new ThreadedCommentHandler(xhtml), context);
             }
         }
     }
@@ -714,12 +690,12 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             return;
         }
         for (PackageRelationship rel : coll) {
-            PackagePart personsPart = workbookPart.getRelatedPart(rel);
+            PackagePart personsPart = safeGetRelatedPart(workbookPart, rel);
             if (personsPart == null) {
                 continue;
             }
             try (InputStream is = personsPart.getInputStream()) {
-                XMLReaderUtils.parseSAX(is, new CommentPersonHandler(metadata), parseContext);
+                XMLReaderUtils.parseSAX(is, new CommentPersonHandler(metadata), context);
             }
         }
     }
@@ -794,7 +770,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 try (InputStream is = drawingPart.getInputStream()) {
                     XMLReaderUtils.parseSAX(is,
                             new DrawingShapeHandler(xhtml, drawingHyperlinks),
-                            parseContext);
+                            context);
                 } catch (IOException | TikaException e) {
                     //swallow
                 }
@@ -895,7 +871,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             XSSFSheetInterestingPartsCapturer handler = new XSSFSheetInterestingPartsCapturer(
                     new TikaSheetXMLHandler(stylesShim, commentsShim, stringsShim,
                             sheetContentsHandler, formatter, false));
-            XMLReaderUtils.parseSAX(sheetInputStream, handler, parseContext);
+            XMLReaderUtils.parseSAX(sheetInputStream, handler, context);
             sheetInputStream.close();
 
             if (handler.hasProtection) {
@@ -930,7 +906,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
                 return null;
             }
             try (InputStream is = commentsPart.getInputStream()) {
-                return new XSSFCommentsShim(is, parseContext);
+                return new XSSFCommentsShim(is, context);
             }
         } catch (InvalidFormatException | IOException | TikaException | SAXException e) {
             //swallow — comments are not critical
@@ -1339,8 +1315,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         try {
             prc = drawingPart.getRelationshipsByType(PackageRelationshipTypes.IMAGE_PART);
         } catch (InvalidFormatException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
             return;
         }
         if (prc == null) {
@@ -1354,8 +1329,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             try {
                 imagePart = drawingPart.getRelatedPart(rel);
             } catch (InvalidFormatException | IllegalArgumentException e) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        ExceptionUtils.getStackTrace(e));
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
                 continue;
             }
             if (imagePart == null) {

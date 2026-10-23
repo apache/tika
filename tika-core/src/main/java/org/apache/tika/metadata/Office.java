@@ -235,6 +235,38 @@ public interface Office {
     Property HAS_FRAMESETS = Property.internalBoolean("msoffice:doc:has-framesets");
 
     /**
+     * Security-relevant, best-effort: true when the OOXML package contains one or more
+     * declared parts that are NOT reachable from the package root through the OPC
+     * relationship graph. Office resolves content by following relationships, so such a
+     * part is dead weight to Office -- a place to hide bytes that a raw-ZIP reader
+     * (AV/DLP/CDR) can still see. Whether <em>Tika</em> parsed it depends on the parser:
+     * some discover parts by content type rather than by relationship (the SAX Word parser
+     * still extracts an unreferenced wordprocessingml part), so this flag says nothing
+     * about which bytes reached a parser.
+     * <p>Purely structural: the part's bytes are never inspected, and its content type comes
+     * from {@code [Content_Types].xml} by extension or explicit override, never by sniffing.
+     * So {@code smuggle.xml} holding RTF is flagged exactly as an innocent orphan is, and
+     * expect false positives -- some producers leave stale customXml or media parts behind
+     * after an edit. (A part with NO declared content type is a different case: POI rejects
+     * the whole package at open, so it surfaces as a container exception, never here.)
+     * <p>This is an informational signal, NOT a guarantee, and it is evadable (a payload
+     * referenced by a relationship type Tika ignores is still reachable and unflagged): per
+     * <a href="https://tika.apache.org/security-model.html">Tika's security model</a>,
+     * Tika is not a security boundary and does not attempt to detect parser differentials.
+     * <p>Set only for Word, Excel, PowerPoint and Visio OOXML (including macro-enabled
+     * variants). XPS links content by markup rather than relationships and is not checked.
+     * See {@link #UNREFERENCED_PART_NAMES} for the part names.
+     */
+    Property HAS_UNREFERENCED_PARTS =
+            Property.internalBoolean("msoffice:has-unreferenced-parts");
+
+    /**
+     * The names of the parts flagged by {@link #HAS_UNREFERENCED_PARTS}.
+     */
+    Property UNREFERENCED_PART_NAMES =
+            Property.internalTextBag("msoffice:unreferenced-part-names");
+
+    /**
      * 1-based sheet number for a resource (e.g. an embedded image)
      * anchored to exactly one sheet of a workbook.  For resources
      * spanning multiple sheets see {@link #SHEET_NUMBERS}.  This is the

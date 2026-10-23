@@ -91,8 +91,13 @@ public class TikaServerHttp2Test {
                 "mvn test -pl tika-e2e-tests/tika-server -Pe2e");
 
         log.info("Starting tika-server from: {}", serverJar);
+        // h2c is opt-in
+        Path config = Files.writeString(Files.createTempFile("tika-http2-", ".json"),
+                "{\"server\": {\"allowHttp2\": true}}");
+        config.toFile().deleteOnExit();
         ProcessBuilder pb = new ProcessBuilder(
                 "java", "-jar", serverJar.getFileName().toString(),
+                "-c", config.toAbsolutePath().toString(),
                 "-p", String.valueOf(port),
                 "-h", "localhost"
         );

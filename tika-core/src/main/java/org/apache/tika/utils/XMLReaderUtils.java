@@ -21,11 +21,9 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.io.StringReader;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -36,14 +34,16 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import javax.xml.stream.XMLInputFactory;
-import javax.xml.stream.XMLResolver;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.sax.SAXTransformerFactory;
 
-import org.apache.commons.io.input.UnsynchronizedByteArrayInputStream;
+import org.apache.commons.xml.secure.SecureDocumentBuilderFactory;
+import org.apache.commons.xml.secure.SecureSAXParserFactory;
+import org.apache.commons.xml.secure.SecureTransformerFactory;
+import org.apache.commons.xml.secure.SecureXMLInputFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -61,11 +61,13 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.OfflineContentHandler;
+import org.apache.tika.sax.OfflineEntityResolver;
 
 
 /**
  * Utility functions for reading XML.
  */
+@SuppressForbidden
 public class XMLReaderUtils implements Serializable {
 
     /**
@@ -73,6 +75,11 @@ public class XMLReaderUtils implements Serializable {
      * and the pool of DOM builders
      */
     public static final int DEFAULT_POOL_SIZE = 10;
+    /**
+     * @deprecated since 4.2.0, removal planned for 5.0; Tika no longer sets an entity
+     * expansion limit. The JAXP provider's secure-processing limits apply.
+     */
+    @Deprecated
     public static final int DEFAULT_MAX_ENTITY_EXPANSIONS = 20;
     public static final int DEFAULT_NUM_REUSES = 100;
     /**
@@ -80,11 +87,7 @@ public class XMLReaderUtils implements Serializable {
      */
     private static final long serialVersionUID = 6110455808615143122L;
     private static final Logger LOG = LoggerFactory.getLogger(XMLReaderUtils.class);
-    private static final String XERCES_SECURITY_MANAGER = "org.apache.xerces.util.SecurityManager";
-    private static final String XERCES_SECURITY_MANAGER_PROPERTY =
-            "http://apache.org/xml/properties/security-manager";
-
-    private static final AtomicBoolean HAS_WARNED_STAX = new AtomicBoolean(false);
+    private static final AtomicBoolean HAS_WARNED_ENTITY_LIMIT = new AtomicBoolean(false);
     private static final ContentHandler IGNORING_CONTENT_HANDLER = new DefaultHandler();
     private static final DTDHandler IGNORING_DTD_HANDLER = new DTDHandler() {
         @Override
@@ -115,7 +118,6 @@ public class XMLReaderUtils implements Serializable {
 
         }
     };
-    private static final String JAXP_ENTITY_EXPANSION_LIMIT_KEY = "jdk.xml.entityExpansionLimit";
     //TODO: figure out if the rw lock is any better than a simple lock
     //these lock the pool arrayblocking queues so that there isn't a race condition
     //of trying to acquire a parser while the pool is being resized
@@ -125,17 +127,11 @@ public class XMLReaderUtils implements Serializable {
     private static final EntityResolver IGNORING_SAX_ENTITY_RESOLVER =
             (publicId, systemId) -> new InputSource(new StringReader(""));
 
-    //BE CAREFUL with the return type. Some parsers will silently ignore an unexpected return type: CVE-2025-54988
-    private static final XMLResolver IGNORING_STAX_ENTITY_RESOLVER =
-            (publicID, systemID, baseURI, namespace) ->
-                    UnsynchronizedByteArrayInputStream.nullInputStream();
     /**
      * Parser pool size
      */
     private static int POOL_SIZE = DEFAULT_POOL_SIZE;
     private static int MAX_NUM_REUSES = DEFAULT_NUM_REUSES;
-    private static long LAST_LOG = -1;
-    private static volatile int MAX_ENTITY_EXPANSIONS = determineMaxEntityExpansions();
     private static ArrayBlockingQueue<PoolSAXParser> SAX_PARSERS =
             new ArrayBlockingQueue<>(POOL_SIZE);
     private static ArrayBlockingQueue<PoolDOMBuilder> DOM_BUILDERS =
@@ -147,21 +143,6 @@ public class XMLReaderUtils implements Serializable {
         } catch (TikaException e) {
             throw new RuntimeException("problem initializing SAXParser and DOMBuilder pools", e);
         }
-    }
-
-    private static int determineMaxEntityExpansions() {
-        String expansionLimit = System.getProperty(JAXP_ENTITY_EXPANSION_LIMIT_KEY);
-        if (expansionLimit != null) {
-            try {
-                return Integer.parseInt(expansionLimit);
-            } catch (NumberFormatException e) {
-                LOG.warn(
-                        "Couldn't parse an integer for the entity expansion limit: {}; " +
-                                "backing off to default: {}",
-                        expansionLimit, DEFAULT_MAX_ENTITY_EXPANSIONS);
-            }
-        }
-        return DEFAULT_MAX_ENTITY_EXPANSIONS;
     }
 
     /**
@@ -199,11 +180,11 @@ public class XMLReaderUtils implements Serializable {
      * @see #getSAXParserFactory()
      * @since Apache Tika 0.8
      */
+    // a raw parser honors a caller resolver that answers with a bare system id; in-tree
+    // code parses through parseSAX, which shadows the caller's resolver (TIKA-4939)
     public static SAXParser getSAXParser() throws TikaException {
         try {
-            SAXParser parser = getSAXParserFactory().newSAXParser();
-            trySetXercesSecurityManager(parser);
-            return parser;
+            return getSAXParserFactory().newSAXParser();
         } catch (ParserConfigurationException e) {
             throw new TikaException("Unable to configure a SAX parser", e);
         } catch (SAXException e) {
@@ -222,20 +203,11 @@ public class XMLReaderUtils implements Serializable {
      * @since Apache Tika 0.8
      */
     public static SAXParserFactory getSAXParserFactory() {
-        SAXParserFactory factory = SAXParserFactory.newInstance();
+        SAXParserFactory factory = SecureSAXParserFactory.newNSInstance();
         if (LOG.isDebugEnabled()) {
             LOG.debug("SAXParserFactory class {}", factory.getClass());
         }
-        factory.setNamespaceAware(true);
         factory.setValidating(false);
-        trySetSAXFeature(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        trySetSAXFeature(factory, "http://xml.org/sax/features/external-general-entities", false);
-        trySetSAXFeature(factory, "http://xml.org/sax/features/external-parameter-entities", false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-                false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
-                false);
-
         return factory;
     }
 
@@ -251,23 +223,13 @@ public class XMLReaderUtils implements Serializable {
      */
     public static DocumentBuilderFactory getDocumentBuilderFactory() {
         //borrowed from Apache POI
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = SecureDocumentBuilderFactory.newNSInstance();
         if (LOG.isDebugEnabled()) {
             LOG.debug("DocumentBuilderFactory class {}", factory.getClass());
         }
 
         factory.setExpandEntityReferences(false);
-        factory.setNamespaceAware(true);
         factory.setValidating(false);
-
-        trySetSAXFeature(factory, XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        trySetSAXFeature(factory, "http://xml.org/sax/features/external-general-entities", false);
-        trySetSAXFeature(factory, "http://xml.org/sax/features/external-parameter-entities", false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-external-dtd",
-                false);
-        trySetSAXFeature(factory, "http://apache.org/xml/features/nonvalidating/load-dtd-grammar",
-                false);
-        trySetXercesSecurityManager(factory);
         return factory;
     }
 
@@ -280,6 +242,15 @@ public class XMLReaderUtils implements Serializable {
      *
      * @return DOM Builder
      * @since Apache Tika 1.13
+     */
+    public static Document newDocument() throws TikaException {
+        return getDocumentBuilder().newDocument();
+    }
+
+    /**
+     * Returns a builder that accepts a caller-supplied {@link org.xml.sax.EntityResolver},
+     * which a parser will honor even when it answers with a bare system id. Parse
+     * untrusted XML with {@link #buildDOM(InputStream, ParseContext)} instead.
      */
     public static DocumentBuilder getDocumentBuilder() throws TikaException {
         try {
@@ -294,85 +265,28 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Returns the StAX input factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware and to apply reasonable security
-     * precautions.
+     * Returns a StAX input factory configured to be namespace-aware and to
+     * apply reasonable security precautions.
      *
      * @return StAX input factory
      * @since Apache Tika 1.13
+     * @deprecated since 4.2, removal planned for 5.0. Tika no longer parses with StAX;
+     * its security settings are best-effort and implementation-dependent. Use
+     * {@link #parseSAX(InputStream, ContentHandler, ParseContext)}.
      */
+    @Deprecated
     public static XMLInputFactory getXMLInputFactory() {
-        XMLInputFactory factory = XMLInputFactory.newFactory();
+        XMLInputFactory factory = SecureXMLInputFactory.newFactory();
         if (LOG.isDebugEnabled()) {
             LOG.debug("XMLInputFactory class {}", factory.getClass());
         }
 
-        tryToSetStaxProperty(factory, XMLInputFactory.IS_NAMESPACE_AWARE, true);
-
-        //try to configure secure processing
-        tryToSetStaxProperty(factory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
-        tryToSetStaxProperty(factory, XMLInputFactory.IS_VALIDATING, false);
+        //try to cause DTDs to throw exceptions
         tryToSetStaxProperty(factory, XMLInputFactory.SUPPORT_DTD, false);
-        tryToSetStaxProperty(factory, XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
-
-        //defense in depth
-        factory.setXMLResolver(IGNORING_STAX_ENTITY_RESOLVER);
-        trySetStaxSecurityManager(factory);
         return factory;
     }
 
-    private static void trySetTransformerAttribute(TransformerFactory transformerFactory,
-                                                   String attribute, String value) {
-        try {
-            transformerFactory.setAttribute(attribute, value);
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.warn("Transformer Attribute unsupported: {}", attribute, e);
-        } catch (AbstractMethodError ame) {
-            LOG.warn(
-                    "Cannot set Transformer attribute because outdated XML parser in classpath: {}",
-                    attribute, ame);
-        }
-    }
-
-    private static void trySetSAXFeature(SAXParserFactory saxParserFactory, String feature,
-                                         boolean enabled) {
-        try {
-            saxParserFactory.setFeature(feature, enabled);
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            LOG.warn("SAX Feature unsupported: {}", feature, e);
-        } catch (AbstractMethodError ame) {
-            LOG.warn("Cannot set SAX feature because outdated XML parser in classpath: {}", feature,
-                    ame);
-        }
-    }
-
-    private static void trySetSAXFeature(DocumentBuilderFactory documentBuilderFactory,
-                                         String feature, boolean enabled) {
-        try {
-            documentBuilderFactory.setFeature(feature, enabled);
-        } catch (Exception e) {
-            LOG.warn("SAX Feature unsupported: {}", feature, e);
-        } catch (AbstractMethodError ame) {
-            LOG.warn("Cannot set SAX feature because outdated XML parser in classpath: {}", feature,
-                    ame);
-        }
-    }
-
     private static void tryToSetStaxProperty(XMLInputFactory factory, String key, boolean value) {
-        try {
-            factory.setProperty(key, value);
-        } catch (IllegalArgumentException e) {
-            LOG.warn("StAX Feature unsupported: {}", key, e);
-        }
-    }
-
-    private static void tryToSetStaxProperty(XMLInputFactory factory, String key, String value) {
         try {
             factory.setProperty(key, value);
         } catch (IllegalArgumentException e) {
@@ -409,13 +323,8 @@ public class XMLReaderUtils implements Serializable {
      */
     public static TransformerFactory getTransformerFactory() throws TikaException {
         try {
-
-            TransformerFactory transformerFactory = TransformerFactory.newInstance();
-            transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-            return transformerFactory;
-        } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
+            return SecureTransformerFactory.newInstance();
+        } catch (TransformerFactoryConfigurationError e) {
             throw new TikaException("Transformer not available", e);
         }
     }
@@ -430,13 +339,8 @@ public class XMLReaderUtils implements Serializable {
      */
     public static SAXTransformerFactory getSAXTransformerFactory() throws TikaException {
         try {
-
-            SAXTransformerFactory transformerFactory = (SAXTransformerFactory) SAXTransformerFactory.newInstance();
-            transformerFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            trySetTransformerAttribute(transformerFactory, XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
-            return transformerFactory;
-        } catch (TransformerConfigurationException | TransformerFactoryConfigurationError e) {
+            return (SAXTransformerFactory) SecureTransformerFactory.newInstance();
+        } catch (TransformerFactoryConfigurationError e) {
             throw new TikaException("Transformer not available", e);
         }
     }
@@ -470,6 +374,8 @@ public class XMLReaderUtils implements Serializable {
             }
         }
 
+        //never the builder's own resolver, and record what was refused
+        builder.setEntityResolver(new OfflineEntityResolver(context));
         try {
             return builder.parse(is);
         } finally {
@@ -506,6 +412,8 @@ public class XMLReaderUtils implements Serializable {
             }
         }
 
+        //never the builder's own resolver, and record what was refused
+        builder.setEntityResolver(new OfflineEntityResolver(context));
         try {
             return builder.parse(new InputSource(reader));
         } finally {
@@ -554,6 +462,8 @@ public class XMLReaderUtils implements Serializable {
             }
         }
 
+        //a supplied builder never brings its own resolver along
+        builder.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
         try {
             return builder.parse(uriString);
         } finally {
@@ -585,6 +495,8 @@ public class XMLReaderUtils implements Serializable {
             }
         }
 
+        //a supplied builder never brings its own resolver along
+        builder.setEntityResolver(IGNORING_SAX_ENTITY_RESOLVER);
         try {
             return builder.parse(is);
         } finally {
@@ -624,7 +536,7 @@ public class XMLReaderUtils implements Serializable {
             }
         }
         try {
-            saxParser.parse(is, new OfflineContentHandler(contentHandler));
+            saxParser.parse(is, new OfflineContentHandler(contentHandler, context));
         } finally {
             releaseParser(poolSAXParser);
         }
@@ -662,7 +574,7 @@ public class XMLReaderUtils implements Serializable {
             }
         }
         try {
-            saxParser.parse(new InputSource(reader), new OfflineContentHandler(contentHandler));
+            saxParser.parse(new InputSource(reader), new OfflineContentHandler(contentHandler, context));
         } finally {
             releaseParser(poolSAXParser);
         }
@@ -817,111 +729,6 @@ public class XMLReaderUtils implements Serializable {
         }
     }
 
-    private static void trySetXercesSecurityManager(DocumentBuilderFactory factory) {
-        //from POI
-        // Try built-in JVM one first, standalone if not
-        for (String securityManagerClassName : new String[]{
-                //"com.sun.org.apache.xerces.internal.util.SecurityManager",
-                XERCES_SECURITY_MANAGER}) {
-            try {
-                Object mgr =
-                        Class.forName(securityManagerClassName).getDeclaredConstructor().newInstance();
-                Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit",
-                        Integer.TYPE);
-                setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
-                factory.setAttribute(XERCES_SECURITY_MANAGER_PROPERTY, mgr);
-                // Stop once one can be setup without error
-                return;
-            } catch (ClassNotFoundException e) {
-                // continue without log, this is expected in some setups
-            } catch (Throwable e) {     // NOSONAR - also catch things like NoClassDefError here
-                // throttle the log somewhat as it can spam the log otherwise
-                if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                    LOG.warn(
-                            "SAX Security Manager could not be setup [log suppressed for 5 " +
-                                    "minutes]",
-                            e);
-                    LAST_LOG = System.currentTimeMillis();
-                }
-            }
-        }
-
-        // separate old version of Xerces not found => use the builtin way of setting the property
-        try {
-            factory.setAttribute("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
-                    MAX_ENTITY_EXPANSIONS);
-        } catch (IllegalArgumentException e) {
-            // NOSONAR - also catch things like NoClassDefError here
-            // throttle the log somewhat as it can spam the log otherwise
-            if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                LOG.warn("SAX Security Manager could not be setup [log suppressed for 5 minutes]",
-                        e);
-                LAST_LOG = System.currentTimeMillis();
-            }
-        }
-    }
-
-    private static void trySetXercesSecurityManager(SAXParser parser) {
-        //from POI
-        // Try built-in JVM one first, standalone if not
-        for (String securityManagerClassName : new String[]{
-                //"com.sun.org.apache.xerces.internal.util.SecurityManager",
-                XERCES_SECURITY_MANAGER}) {
-            try {
-                Object mgr =
-                        Class.forName(securityManagerClassName).getDeclaredConstructor().newInstance();
-                Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
-                setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
-
-                parser.setProperty(XERCES_SECURITY_MANAGER_PROPERTY, mgr);
-                // Stop once one can be setup without error
-                return;
-            } catch (ClassNotFoundException e) {
-                // continue without log, this is expected in some setups
-            } catch (Throwable e) {
-                // NOSONAR - also catch things like NoClassDefError here
-                // throttle the log somewhat as it can spam the log otherwise
-                if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                    LOG.warn(
-                            "SAX Security Manager could not be setup [log suppressed for 5 " +
-                                    "minutes]",
-                            e);
-                    LAST_LOG = System.currentTimeMillis();
-                }
-            }
-        }
-
-        // separate old version of Xerces not found => use the builtin way of setting the property
-        try {
-            parser.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
-                    MAX_ENTITY_EXPANSIONS);
-        } catch (SAXException e) {     // NOSONAR - also catch things like NoClassDefError here
-            // throttle the log somewhat as it can spam the log otherwise
-            if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                LOG.warn("SAX Security Manager could not be setup [log suppressed for 5 minutes]",
-                        e);
-                LAST_LOG = System.currentTimeMillis();
-            }
-        }
-    }
-
-    private static void trySetStaxSecurityManager(XMLInputFactory inputFactory) {
-        //try default java entity expansion, then fallback to woodstox, then warn...once.
-        try {
-            inputFactory.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
-                    MAX_ENTITY_EXPANSIONS);
-        } catch (IllegalArgumentException e) {
-            try {
-                inputFactory.setProperty("com.ctc.wstx.maxEntityCount", MAX_ENTITY_EXPANSIONS);
-            } catch (IllegalArgumentException e2) {
-                if (HAS_WARNED_STAX.getAndSet(true) == false) {
-                    LOG.warn("Could not set limit on maximum entity expansions for: " + inputFactory.getClass());
-                }
-            }
-
-        }
-    }
-
     /**
      * Get the maximum number of times a SAXParser or DOMBuilder may be reused.
      *
@@ -942,7 +749,7 @@ public class XMLReaderUtils implements Serializable {
     /**
      * Set the pool size for cached XML parsers.  This has a side
      * effect of locking the pool, and rebuilding the pool from
-     * scratch with the most recent settings, such as {@link #MAX_ENTITY_EXPANSIONS}
+     * scratch with the most recent settings.
      *
      * As of Tika 3.2.1, if a value of <code>0</code> is passed in, no SAXParsers or DOMBuilders
      * will be pooled, and a new parser/builder will be built for each parse.
@@ -1001,26 +808,28 @@ public class XMLReaderUtils implements Serializable {
         POOL_SIZE = poolSize;
     }
 
+    /**
+     * @return -1: Tika sets no entity expansion limit; the JAXP provider's
+     * secure-processing limits apply
+     * @deprecated since 4.2.0, removal planned for 5.0
+     */
+    @Deprecated
     public static int getMaxEntityExpansions() {
-        return MAX_ENTITY_EXPANSIONS;
+        return -1;
     }
 
     /**
-     * Set the maximum number of entity expansions allowable in SAX/DOM/StAX parsing.
-     * <b>NOTE:</b>A value less than or equal to zero indicates no limit.
-     * This will override the system property {@link #JAXP_ENTITY_EXPANSION_LIMIT_KEY}
-     * and the {@link #DEFAULT_MAX_ENTITY_EXPANSIONS} value for allowable entity expansions
-     * <p>
-     * <b>NOTE:</b> To trigger a rebuild of the pool of parsers with this setting,
-     * the client must call {@link #setPoolSize(int)} to rebuild the SAX and DOM parsers
-     * with this setting.
-     * </p>
+     * No-op. Tika no longer sets an entity expansion limit; the JAXP provider's
+     * secure-processing limits apply on every parse.
      *
-     * @param maxEntityExpansions -- maximum number of allowable entity expansions
-     * @since Apache Tika 1.19
+     * @deprecated since 4.2.0, removal planned for 5.0
      */
+    @Deprecated
     public static void setMaxEntityExpansions(int maxEntityExpansions) {
-        MAX_ENTITY_EXPANSIONS = maxEntityExpansions;
+        if (!HAS_WARNED_ENTITY_LIMIT.getAndSet(true)) {
+            LOG.warn("setMaxEntityExpansions is ignored since 4.2.0; " +
+                    "the JAXP provider's secure-processing limits apply");
+        }
     }
 
     /**
@@ -1038,66 +847,12 @@ public class XMLReaderUtils implements Serializable {
     }
 
     private static PoolSAXParser buildPoolParser(int generation, SAXParser parser) {
-        boolean canReset = false;
         try {
             parser.reset();
-            canReset = true;
-        } catch (UnsupportedOperationException e) {
-            canReset = false;
-        }
-        boolean hasSecurityManager = false;
-        try {
-            Object mgr =
-                    Class.forName(XERCES_SECURITY_MANAGER).getDeclaredConstructor().newInstance();
-            Method setLimit = mgr.getClass().getMethod("setEntityExpansionLimit", Integer.TYPE);
-            setLimit.invoke(mgr, MAX_ENTITY_EXPANSIONS);
-
-            parser.setProperty(XERCES_SECURITY_MANAGER_PROPERTY, mgr);
-            hasSecurityManager = true;
-        } catch (SecurityException e) {
-            //don't swallow security exceptions
-            throw e;
-        } catch (ClassNotFoundException e) {
-            // continue without log, this is expected in some setups
-        } catch (Throwable e) {
-            // NOSONAR - also catch things like NoClassDefError here
-            // throttle the log somewhat as it can spam the log otherwise
-            if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                LOG.warn("SAX Security Manager could not be setup [log suppressed for 5 minutes]",
-                        e);
-                LAST_LOG = System.currentTimeMillis();
-            }
-        }
-
-        boolean canSetJaxPEntity = false;
-        if (!hasSecurityManager) {
-            // use the builtin way of setting the property
-            try {
-                parser.setProperty("http://www.oracle.com/xml/jaxp/properties/entityExpansionLimit",
-                        MAX_ENTITY_EXPANSIONS);
-                canSetJaxPEntity = true;
-            } catch (SAXException e) {     // NOSONAR - also catch things like NoClassDefError here
-                // throttle the log somewhat as it can spam the log otherwise
-                if (System.currentTimeMillis() > LAST_LOG + TimeUnit.MINUTES.toMillis(5)) {
-                    LOG.warn(
-                            "SAX Security Manager could not be setup [log suppressed for 5 " +
-                                    "minutes]",
-                            e);
-                    LAST_LOG = System.currentTimeMillis();
-                }
-            }
-        }
-
-        if (!canReset && hasSecurityManager) {
-            return new XercesPoolSAXParser(generation, parser);
-        } else if (canReset && hasSecurityManager) {
-            return new Xerces2PoolSAXParser(generation, parser);
-        } else if (canReset && !hasSecurityManager && canSetJaxPEntity) {
             return new BuiltInPoolSAXParser(generation, parser);
-        } else {
+        } catch (UnsupportedOperationException e) {
             return new UnrecognizedPoolSAXParser(generation, parser);
         }
-
     }
 
     private static void clearReader(XMLReader reader) {
@@ -1164,46 +919,6 @@ public class XMLReaderUtils implements Serializable {
 
     }
 
-    private static class XercesPoolSAXParser extends PoolSAXParser {
-        public XercesPoolSAXParser(int generation, SAXParser parser) {
-            super(generation, parser);
-        }
-
-        @Override
-        public void reset() {
-            //don't do anything
-            try {
-                XMLReader reader = saxParser.getXMLReader();
-                clearReader(reader);
-            } catch (SAXException e) {
-                //swallow
-            }
-        }
-    }
-
-    private static class Xerces2PoolSAXParser extends PoolSAXParser {
-        public Xerces2PoolSAXParser(int generation, SAXParser parser) {
-            super(generation, parser);
-        }
-
-        @Override
-        void reset() {
-            try {
-                Object object = saxParser.getProperty(XERCES_SECURITY_MANAGER_PROPERTY);
-                saxParser.reset();
-                saxParser.setProperty(XERCES_SECURITY_MANAGER_PROPERTY, object);
-            } catch (SAXException e) {
-                LOG.warn("problem resetting sax parser", e);
-            }
-            try {
-                XMLReader reader = saxParser.getXMLReader();
-                clearReader(reader);
-            } catch (SAXException e) {
-                // ignored
-            }
-        }
-    }
-
     private static class BuiltInPoolSAXParser extends PoolSAXParser {
         public BuiltInPoolSAXParser(int generation, SAXParser parser) {
             super(generation, parser);
@@ -1221,9 +936,8 @@ public class XMLReaderUtils implements Serializable {
         }
     }
 
+    //parser that does not support reset(); try anyway on every release
     private static class UnrecognizedPoolSAXParser extends PoolSAXParser {
-        //if unrecognized, try to set all protections
-        //and try to reset every time
         public UnrecognizedPoolSAXParser(int generation, SAXParser parser) {
             super(generation, parser);
         }
@@ -1241,7 +955,6 @@ public class XMLReaderUtils implements Serializable {
             } catch (SAXException e) {
                 // ignored
             }
-            trySetXercesSecurityManager(saxParser);
         }
     }
 
@@ -1266,14 +979,13 @@ public class XMLReaderUtils implements Serializable {
     }
 
     /**
-     * Returns the StAX input factory specified in this parsing context.
-     * If a factory is not explicitly specified, then a default factory
-     * instance is created and returned. The default factory instance is
-     * configured to be namespace-aware and to apply reasonable security
-     * precautions.
+     * Returns the StAX input factory in the context, or {@link #getXMLInputFactory()}.
      *
      * @return StAX input factory
+     * @deprecated since 4.2, removal planned for 5.0; see {@link #getXMLInputFactory()}.
+     * Use {@link #parseSAX(InputStream, ContentHandler, ParseContext)}.
      */
+    @Deprecated
     public static XMLInputFactory getXMLInputFactory(ParseContext context) {
         XMLInputFactory factory = context.get(XMLInputFactory.class);
         if (factory != null) {

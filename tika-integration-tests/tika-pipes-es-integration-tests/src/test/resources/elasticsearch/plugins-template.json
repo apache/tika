@@ -55,12 +55,12 @@
     "onParseException": "EMIT",
     "emitStrategy": {
       "type": "DYNAMIC",
-      "thresholdBytes": 10000
+      "thresholdBytes": 12000
     },
     "emitMaxEstimatedBytes": 100000,
     "emitWithinMillis": 60000,
     "numEmitters": 1,
-    "numClients": 3,
+    "numClients": 1,
     "forkedJvmArgs": [
       "-Xmx512m",
       "-XX:ParallelGCThreads=2",

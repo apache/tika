@@ -399,10 +399,23 @@ public final class UnicodeBlockRanges {
 
     /** Cached start_cp array for binary search. */
     private static final int[] STARTS;
+
+    /**
+     * Precomputed bucket per BMP codepoint (128KB): bucketOf runs per character of
+     * every scored text, and the binary search was a visible share of junk-detection
+     * time. Filled from {@link #searchBucketOf(int)}, so the answers are identical
+     * by construction; supplementary planes stay on the search path.
+     */
+    private static final short[] BMP_BUCKETS;
+
     static {
         STARTS = new int[RANGES.length];
         for (int i = 0; i < RANGES.length; i++) {
             STARTS[i] = RANGES[i][0];
+        }
+        BMP_BUCKETS = new short[0x10000];
+        for (int cp = 0; cp < 0x10000; cp++) {
+            BMP_BUCKETS[cp] = (short) searchBucketOf(cp);
         }
     }
 
@@ -423,6 +436,13 @@ public final class UnicodeBlockRanges {
      * O(log N) where N = {@value #UNASSIGNED} (the number of named blocks).
      */
     public static int bucketOf(int cp) {
+        if (cp >= 0 && cp < 0x10000) {
+            return BMP_BUCKETS[cp];
+        }
+        return searchBucketOf(cp);
+    }
+
+    private static int searchBucketOf(int cp) {
         // Binary search: find largest STARTS[i] <= cp
         int lo = 0;
         int hi = STARTS.length - 1;

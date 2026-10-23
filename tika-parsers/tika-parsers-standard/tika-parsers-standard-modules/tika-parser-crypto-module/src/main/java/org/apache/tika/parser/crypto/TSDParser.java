@@ -62,7 +62,6 @@ import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
@@ -189,8 +188,7 @@ public class TSDParser implements Parser {
                     }
                 } catch (IOException e) {
                     // Truncated file - record exception and work with what we got
-                    metadata.set(TikaCoreProperties.EMBEDDED_EXCEPTION,
-                            e.getClass().getName() + ": " + e.getMessage());
+                    EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
                     LOG.debug("Error reading TSD content (possibly truncated)", e);
                 }
 

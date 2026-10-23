@@ -21,12 +21,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
-import java.util.TimeZone;
 
 import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
@@ -35,11 +35,13 @@ import com.drew.metadata.Tag;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.exif.GpsDirectory;
+import com.drew.metadata.icc.IccDirectory;
 import com.drew.metadata.jpeg.JpegCommentDirectory;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
 
 public class ImageMetadataExtractorTest {
@@ -75,11 +77,7 @@ public class ImageMetadataExtractorTest {
     public void testExifHandlerParseDate() throws MetadataException {
         ExifSubIFDDirectory exif = Mockito.mock(ExifSubIFDDirectory.class);
         Mockito.when(exif.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
-        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"), Locale.ROOT);
-        calendar.setTimeInMillis(0);
-        calendar.set(2000, 0, 1, 0, 0, 0);
-        Mockito.when(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL))
-                .thenReturn(calendar.getTime()); // UTC timezone as in Metadata Extractor
+        Mockito.when(exif.getObject(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn("2000:01:01 00:00:00");
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
@@ -113,11 +111,7 @@ public class ImageMetadataExtractorTest {
     public void testExifHandlerParseDateFallback() throws MetadataException {
         ExifIFD0Directory exif = Mockito.mock(ExifIFD0Directory.class);
         Mockito.when(exif.containsTag(ExifIFD0Directory.TAG_DATETIME)).thenReturn(true);
-        GregorianCalendar calendar = new GregorianCalendar(TimeZone.getTimeZone("UTC"), Locale.ROOT);
-        calendar.setTimeInMillis(0);
-        calendar.set(1999, 0, 1, 0, 0, 0);
-        Mockito.when(exif.getDate(ExifIFD0Directory.TAG_DATETIME))
-                .thenReturn(calendar.getTime()); // UTC timezone as in Metadata Extractor
+        Mockito.when(exif.getObject(ExifIFD0Directory.TAG_DATETIME)).thenReturn("1999:01:01 00:00:00");
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
@@ -126,10 +120,21 @@ public class ImageMetadataExtractorTest {
     }
 
     @Test
+    public void testExifHandlerParseDateOutOfBounds() throws MetadataException {
+        ExifSubIFDDirectory exif = Mockito.mock(ExifSubIFDDirectory.class);
+        Mockito.when(exif.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
+        Mockito.when(exif.getObject(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn("0004:12:31 23:00:00");
+        Metadata metadata = new Metadata();
+        new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
+        assertNull(metadata.get(TikaCoreProperties.CREATED));
+        assertNull(metadata.get(TIFF.ORIGINAL_DATE));
+    }
+
+    @Test
     public void testExifHandlerParseDateError() throws MetadataException {
         ExifIFD0Directory exif = Mockito.mock(ExifIFD0Directory.class);
         Mockito.when(exif.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(true);
-        Mockito.when(exif.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn(null);
+        Mockito.when(exif.getObject(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)).thenReturn("    :  :     :  :  ");
         Metadata metadata = new Metadata();
 
         new ImageMetadataExtractor.ExifHandler().handle(exif, metadata);
@@ -157,6 +162,76 @@ public class ImageMetadataExtractorTest {
         assertNull(metadata.get(TikaCoreProperties.SUBJECT),
                 "keywords should be excluded from bulk copy because it is a defined field");
         assertNull(metadata.get(TikaCoreProperties.DESCRIPTION));
+    }
+
+    @Test
+    public void testIccCurvesSkippedUnlessConfigured() throws MetadataException {
+        List<Integer> described = new ArrayList<>();
+        IccDirectory d = new IccDirectory() {
+            @Override
+            public String getDescription(int tagType) {
+                described.add(tagType);
+                return super.getDescription(tagType);
+            }
+        };
+        d.setString(IccDirectory.TAG_COLOR_SPACE, "RGB ");
+        d.setByteArray(IccDirectory.TAG_TAG_desc, iccDesc("sRGB"));
+        d.setByteArray(IccDirectory.TAG_TAG_rTRC, iccCurve(2));
+
+        Metadata metadata = new Metadata();
+        new ImageMetadataExtractor.CopyUnknownFieldsHandler().handle(d, metadata);
+        assertEquals("RGB", metadata.get(ImageMetadataExtractor.ICC_NS + "Color space"));
+        assertEquals("sRGB", metadata.get(ImageMetadataExtractor.ICC_NS + "Profile Description"));
+        assertNull(metadata.get(ImageMetadataExtractor.ICC_NS + "Red TRC"));
+        //the skip happens before the curve is formatted, not after
+        assertFalse(described.contains(IccDirectory.TAG_TAG_rTRC));
+
+        ImageMetadataConfig config = new ImageMetadataConfig();
+        config.setIncludeIccCurvesAndLuts(true);
+        metadata = new Metadata();
+        new ImageMetadataExtractor.CopyUnknownFieldsHandler(config).handle(d, metadata);
+        assertEquals("sRGB", metadata.get(ImageMetadataExtractor.ICC_NS + "Profile Description"));
+        assertEquals("0.0, 1.0", metadata.get(ImageMetadataExtractor.ICC_NS + "Red TRC"));
+    }
+
+    @Test
+    public void testIccCurveSpecialCounts() {
+        assertEquals("1.0", ImageMetadataExtractor.CopyUnknownFieldsHandler.formatIccCurve(
+                iccCurveRaw(0)));
+        assertEquals("1.0", ImageMetadataExtractor.CopyUnknownFieldsHandler.formatIccCurve(
+                iccCurveRaw(1, (short) 0x0100)));
+        assertEquals("2.1992188", ImageMetadataExtractor.CopyUnknownFieldsHandler.formatIccCurve(
+                iccCurveRaw(1, (short) 0x0233)));
+        assertEquals("0.0, 0.4999924, 1.0",
+                ImageMetadataExtractor.CopyUnknownFieldsHandler.formatIccCurve(iccCurve(3)));
+    }
+
+    //ICC 'desc' tag: type, reserved, byte count including the NUL, ASCII, NUL
+    private static byte[] iccDesc(String text) {
+        byte[] ascii = text.getBytes(StandardCharsets.US_ASCII);
+        ByteBuffer b = ByteBuffer.allocate(12 + ascii.length + 1);
+        b.put("desc".getBytes(StandardCharsets.US_ASCII)).putInt(0).putInt(ascii.length + 1)
+                .put(ascii).put((byte) 0);
+        return b.array();
+    }
+
+    //ICC 'curv' tag: type, reserved, count, count uint16 samples spread over 0..1
+    static byte[] iccCurveRaw(int count, short... entries) {
+        ByteBuffer b = ByteBuffer.allocate(12 + 2 * entries.length);
+        b.put("curv".getBytes(StandardCharsets.US_ASCII)).putInt(0).putInt(count);
+        for (short e : entries) {
+            b.putShort(e);
+        }
+        return b.array();
+    }
+
+    static byte[] iccCurve(int count) {
+        ByteBuffer b = ByteBuffer.allocate(12 + 2 * count);
+        b.put("curv".getBytes(StandardCharsets.US_ASCII)).putInt(0).putInt(count);
+        for (int i = 0; i < count; i++) {
+            b.putShort((short) (65535L * i / (count - 1)));
+        }
+        return b.array();
     }
 
 }

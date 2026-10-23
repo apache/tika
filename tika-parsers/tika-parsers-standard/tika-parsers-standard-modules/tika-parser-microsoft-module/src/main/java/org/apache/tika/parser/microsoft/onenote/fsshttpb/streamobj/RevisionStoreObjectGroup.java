@@ -18,7 +18,7 @@ package org.apache.tika.parser.microsoft.onenote.fsshttpb.streamobj;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -38,13 +38,20 @@ public class RevisionStoreObjectGroup {
 
     public static RevisionStoreObjectGroup createInstance(ExGuid objectGroupId,
                                                           ObjectGroupDataElementData dataObject,
-                                                          boolean isEncryption) throws IOException {
+                                                          boolean isEncryption,
+                                                          Map<ExGuid, DataElement> blobElements)
+            throws IOException {
         RevisionStoreObjectGroup objectGroup = new RevisionStoreObjectGroup(objectGroupId);
-        Map<ExGuid, RevisionStoreObject> objectDict = new HashMap<>();
+        // insertion-ordered so the object list (and any degraded-file fallback walk) is
+        // deterministic
+        Map<ExGuid, RevisionStoreObject> objectDict = new LinkedHashMap<>();
         if (!isEncryption) {
             RevisionStoreObject revisionObject = null;
             for (int i = 0; i < dataObject.objectGroupDeclarations.objectDeclarationList.size();
                     i++) {
+                if (i >= dataObject.objectGroupData.objectGroupObjectDataList.size()) {
+                    throw new IOException("Missing object data for object declaration " + i);
+                }
                 ObjectGroupObjectDeclare objectDeclaration =
                         dataObject.objectGroupDeclarations.objectDeclarationList.get(i);
                 ObjectGroupObjectData objectData =
@@ -63,16 +70,20 @@ public class RevisionStoreObjectGroup {
                 } else if (objectDeclaration.objectPartitionID.getDecodedValue() == 1) {
                     revisionObject.propertySet =
                             new PropertySetObject(objectDeclaration, objectData);
-                    if (revisionObject.jcid.jcid.isFileData != 0) {
-                        revisionObject.referencedObjectID = objectData.objectExGUIDArray;
-                        revisionObject.referencedObjectSpacesID = objectData.cellIDArray;
-                    }
+                    // the object extended GUID array lists the objects referenced by this
+                    // object, in the same order as the CompactIDs in the OID stream of the
+                    // ObjectSpaceObjectPropSet - see MS-ONESTORE section 2.7.8
+                    revisionObject.referencedObjectID = objectData.objectExGUIDArray;
+                    revisionObject.referencedObjectSpacesID = objectData.cellIDArray;
                 }
             }
 
             for (int i = 0; i <
                     dataObject.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList.size();
                     i++) {
+                if (i >= dataObject.objectGroupData.objectGroupObjectDataBLOBReferenceList.size()) {
+                    throw new IOException("Missing BLOB reference for object declaration " + i);
+                }
                 ObjectGroupObjectBLOBDataDeclaration objectGroupObjectBLOBDataDeclaration =
                         dataObject.objectGroupDeclarations.objectGroupObjectBLOBDataDeclarationList.get(
                                 i);
@@ -87,17 +98,24 @@ public class RevisionStoreObjectGroup {
                             objectDict.get(objectGroupObjectBLOBDataDeclaration.objectExGUID);
                 }
                 if (objectGroupObjectBLOBDataDeclaration.objectPartitionID.getDecodedValue() == 2) {
+                    revisionObject.objectID = objectGroupObjectBLOBDataDeclaration.objectExGUID;
+                    revisionObject.objectGroupID = objectGroupId;
                     revisionObject.fileDataObject = new FileDataObject();
                     revisionObject.fileDataObject.objectDataBLOBDeclaration =
                             objectGroupObjectBLOBDataDeclaration;
                     revisionObject.fileDataObject.objectDataBLOBReference =
                             objectGroupObjectDataBLOBReference;
+                    revisionObject.fileDataObject.objectDataBLOBDataElement = blobElements.get(
+                            objectGroupObjectDataBLOBReference.blobExtendedGUID);
                 }
             }
             objectGroup.objects.addAll(objectDict.values());
         } else {
             for (int i = 0; i < dataObject.objectGroupDeclarations.objectDeclarationList.size();
                     i++) {
+                if (i >= dataObject.objectGroupData.objectGroupObjectDataList.size()) {
+                    throw new IOException("Missing object data for object declaration " + i);
+                }
                 ObjectGroupObjectDeclare objectDeclaration =
                         dataObject.objectGroupDeclarations.objectDeclarationList.get(i);
                 ObjectGroupObjectData objectData =
@@ -113,5 +131,18 @@ public class RevisionStoreObjectGroup {
         }
 
         return objectGroup;
+    }
+
+    /**
+     * Creates a cell-local wrapper around this parsed group. The object lists are copied so
+     * revision supersession filtering cannot mutate a cached group used by another cell.
+     *
+     * @return a shallow copy with independent mutable lists
+     */
+    public RevisionStoreObjectGroup copy() {
+        RevisionStoreObjectGroup copy = new RevisionStoreObjectGroup(objectGroupID);
+        copy.objects.addAll(objects);
+        copy.encryptionObjects.addAll(encryptionObjects);
+        return copy;
     }
 }

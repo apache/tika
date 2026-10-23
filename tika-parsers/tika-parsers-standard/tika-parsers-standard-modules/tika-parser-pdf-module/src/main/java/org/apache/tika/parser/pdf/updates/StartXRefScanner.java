@@ -44,7 +44,10 @@ public class StartXRefScanner {
 
     static final int MAX_LENGTH_LONG = Long.toString(Long.MAX_VALUE).length();
 
-    private static final char[] STARTXREF = new char[]{'s', 't', 'a', 'r', 't', 'x', 'r', 'e', 'f'};
+    private static final byte[] STARTXREF =
+            new byte[]{'s', 't', 'a', 'r', 't', 'x', 'r', 'e', 'f'};
+
+    private static final int BLOCK_SIZE = 1 << 16;
 
     private static final char[] EOF_MARKER = new char[]{'%', '%', 'E', 'O', 'F'};
 
@@ -65,19 +68,46 @@ public class StartXRefScanner {
     }
 
     public List<StartXRefOffset> scan() throws IOException {
+        long length = source.length();
+        if (length >= Integer.MAX_VALUE) {
+            throw new IOException("can't read more than " + Integer.MAX_VALUE + " bytes");
+        }
         List<StartXRefOffset> offsets = new ArrayList<>();
+        byte[] block = new byte[BLOCK_SIZE];
+        long blockStart = source.getPosition();
         try {
-            int b = source.read();
-            while (b > -1) {
-                if (b == STARTXREF[0]) {
-                    tryStartXRef(offsets);
+            blocks:
+            while (blockStart < length) {
+                source.seek(blockStart);
+                int read = fill(block);
+                if (read <= 0) {
+                    break;
                 }
-                b = source.read();
+                //a candidate that runs off the end of a block is found by the next block, which
+                //starts STARTXREF.length - 1 bytes before this one ends
+                int limit = blockStart + read >= length ? read : read - STARTXREF.length + 1;
+                int i = 0;
+                while (i < limit) {
+                    while (i < limit && block[i] != STARTXREF[0]) {
+                        i++;
+                    }
+                    if (i >= limit || !startsWithStartXRef(block, i, read)) {
+                        i++;
+                        continue;
+                    }
+                    source.seek(blockStart + i + STARTXREF.length);
+                    readStartXRef(offsets, blockStart + i);
+                    //the number and the %%EOF marker have been consumed; resume after them
+                    long resume = Math.max(source.getPosition(), blockStart + i + STARTXREF.length);
+                    if (resume >= blockStart + limit) {
+                        blockStart = resume;
+                        continue blocks;
+                    }
+                    i = (int) (resume - blockStart);
+                }
+                blockStart += limit;
             }
         } finally {
-            if (source.getPosition() >= Integer.MAX_VALUE) {
-                throw new IOException("read more than " + Integer.MAX_VALUE + " bytes");
-            }
             //TODO: if we're opening a new file for the source
             //we shouldn't bother with this.
             source.rewind((int) source.getPosition());
@@ -85,32 +115,43 @@ public class StartXRefScanner {
         return offsets;
     }
 
-    private void tryStartXRef(List<StartXRefOffset> offsets) throws IOException {
-        int match = 1;
-        int read = 0;
-        int b = source.read();
-        while (b > -1) {
-            if (b == STARTXREF[match]) {
-                ++match;
-                if (match == STARTXREF.length) {
-                    try {
-                        long startXREFOffset = source.getPosition() - STARTXREF.length;
-                        long startxref = readLong();
-                        boolean hasEof = readEOF();
-                        long endOfEOFOffset = source.getPosition();
-                        offsets.add(new StartXRefOffset(startxref, startXREFOffset, endOfEOFOffset,
-                                hasEof));
-                        return;
-                    } catch (IOException e) {
-                        //swallow
-                        return;
-                    }
-                }
-            } else {
-                source.rewind(1);
-                return;
+    /**
+     * A single read stops at the source's internal page boundary; keep going until the block
+     * is full or the source is exhausted.
+     */
+    private int fill(byte[] block) throws IOException {
+        int off = 0;
+        while (off < block.length) {
+            int read = source.read(block, off, block.length - off);
+            if (read <= 0) {
+                break;
             }
-            b = source.read();
+            off += read;
+        }
+        return off;
+    }
+
+    private boolean startsWithStartXRef(byte[] block, int i, int read) {
+        if (i + STARTXREF.length > read) {
+            return false;
+        }
+        for (int j = 1; j < STARTXREF.length; j++) {
+            if (block[i + j] != STARTXREF[j]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private void readStartXRef(List<StartXRefOffset> offsets, long startXREFOffset)
+            throws IOException {
+        try {
+            long startxref = readLong();
+            boolean hasEof = readEOF();
+            offsets.add(new StartXRefOffset(startxref, startXREFOffset, source.getPosition(),
+                    hasEof));
+        } catch (IOException e) {
+            //swallow
         }
     }
 

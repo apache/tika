@@ -44,8 +44,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <pre>
  * {
  *   "emitters": {
- *     "kafka-emitter": {
- *       "my-kafka": {
+ *     "my-kafka": {
+ *       "kafka-emitter": {
  *         "topic": "tika-output",
  *         "bootstrapServers": "localhost:9092",
  *         "acks": "all",

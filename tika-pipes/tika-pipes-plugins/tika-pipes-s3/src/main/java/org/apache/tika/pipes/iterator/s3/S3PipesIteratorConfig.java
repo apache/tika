@@ -18,24 +18,15 @@ package org.apache.tika.pipes.iterator.s3;
 
 import java.util.Objects;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.pipesiterator.PipesIteratorConfig;
+import org.apache.tika.plugins.PluginJson;
 
 public class S3PipesIteratorConfig extends PipesIteratorConfig {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     public static S3PipesIteratorConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, S3PipesIteratorConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse S3PipesIteratorConfig from JSON", e);
-        }
+        return PluginJson.read(json, S3PipesIteratorConfig.class);
     }
 
     private String prefix = "";

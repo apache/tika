@@ -36,7 +36,6 @@ import org.apache.cxf.jaxrs.ext.multipart.Attachment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.DocumentSelector;
 import org.apache.tika.extractor.SkipEmbeddedDocumentSelector;
 import org.apache.tika.io.TikaInputStream;
@@ -46,7 +45,6 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ParseMode;
 import org.apache.tika.sax.BasicContentHandlerFactory;
 import org.apache.tika.sax.ContentHandlerFactory;
-import org.apache.tika.server.core.TikaServerParseException;
 
 
 @Path("/meta")
@@ -153,7 +151,7 @@ public class MetadataResource {
 
         String containerException = metadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
         if (containerException != null && !containerException.isEmpty()) {
-            throw new TikaServerParseException(new TikaException(containerException));
+            throw PipesParsingHelper.containerExceptionResponse(containerException);
         }
 
         if (metadata.get(field) == null) {

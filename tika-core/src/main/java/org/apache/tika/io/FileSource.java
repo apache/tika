@@ -19,8 +19,11 @@ package org.apache.tika.io;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 
 import org.apache.commons.io.IOUtils;
 
@@ -84,16 +87,18 @@ class FileSource extends InputStream implements TikaInputSource {
             throw new IOException("Cannot seek past end of file. Position: " +
                     newPosition + ", length: " + length);
         }
-
-        // Close current stream and reopen at the beginning
         currentStream.close();
         currentStream = new BufferedInputStream(Files.newInputStream(path));
-
-        // Skip to the new position
+        markInStream = false;
         if (newPosition > 0) {
             IOUtils.skipFully(currentStream, newPosition);
         }
         this.position = newPosition;
+    }
+
+    @Override
+    public Path materializedPath() {
+        return path;
     }
 
     @Override
@@ -105,6 +110,11 @@ class FileSource extends InputStream implements TikaInputSource {
     public Path getPath(String suffix) throws IOException {
         // Already file-backed, just return the path
         return path;
+    }
+
+    @Override
+    public boolean hasReliableLength() {
+        return true;
     }
 
     @Override
@@ -120,22 +130,40 @@ class FileSource extends InputStream implements TikaInputSource {
     }
 
     @Override
-    public void enableRewind() throws IOException {
+    public void enableRewind(CacheMemoryBudget budget) throws IOException {
         // No-op: file is always rewindable
     }
 
+    @Override
+    public SeekableByteChannel getSeekableByteChannel() throws IOException {
+        return FileChannel.open(path, StandardOpenOption.READ);
+    }
+
     // Mark/reset support using seekTo
+    private static final int MAX_BUFFERED_MARK = 1024 * 1024;
     private long markPosition = -1;
+    private boolean markInStream;
 
     @Override
     public synchronized void mark(int readlimit) {
         markPosition = position;
+        currentStream.mark(Math.min(readlimit, MAX_BUFFERED_MARK));
+        markInStream = true;
     }
 
     @Override
     public synchronized void reset() throws IOException {
         if (markPosition < 0) {
             throw new IOException("Mark not set");
+        }
+        if (markInStream) {
+            try {
+                currentStream.reset();   // within the limit the buffer holds the mark
+                position = markPosition;
+                return;
+            } catch (IOException e) {
+                // past it: reopen
+            }
         }
         seekTo(markPosition);
     }

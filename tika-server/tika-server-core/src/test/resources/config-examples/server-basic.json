@@ -9,6 +9,10 @@
     "timeout-limits": {
       "totalTaskTimeoutMillis": 3600000,
       "progressTimeoutMillis": 120000
+    },
+    "exception-reporting": {
+      "level": "MESSAGE_REDACTED",
+      "maxLength": 10000
     }
   },
   "parsers": [

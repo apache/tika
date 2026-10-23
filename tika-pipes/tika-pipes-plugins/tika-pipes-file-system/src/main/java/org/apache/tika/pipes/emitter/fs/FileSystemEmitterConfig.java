@@ -16,35 +16,43 @@
  */
 package org.apache.tika.pipes.emitter.fs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.PluginJson;
 
-public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_EXISTS onExists, boolean prettyPrint, boolean allowAbsolutePaths) {
+public record FileSystemEmitterConfig(String basePath, String fileExtension, ON_EXISTS onExists, boolean prettyPrint, boolean allowAbsolutePaths,
+        Boolean atomicWrites, COMPRESSION compression) {
 
     enum ON_EXISTS {
         SKIP, EXCEPTION, REPLACE
     }
 
-    /** onExists is optional; absent means EXCEPTION, the documented default. */
+    enum COMPRESSION {
+        NONE, GZIP
+    }
+
+    /**
+     * onExists absent means EXCEPTION, atomicWrites absent means true, compression absent means
+     * NONE -- the documented defaults.
+     */
     public FileSystemEmitterConfig {
         if (onExists == null) {
             onExists = ON_EXISTS.EXCEPTION;
         }
+        if (atomicWrites == null) {
+            atomicWrites = Boolean.TRUE;
+        }
+        if (compression == null) {
+            compression = COMPRESSION.NONE;
+        }
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    boolean gzip() {
+        return compression == COMPRESSION.GZIP;
+    }
 
     public static FileSystemEmitterConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json,
-                    FileSystemEmitterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse FileSystemEmitterConfig from JSON", e);
-        }
+        return PluginJson.read(json, FileSystemEmitterConfig.class);
     }
 
 }

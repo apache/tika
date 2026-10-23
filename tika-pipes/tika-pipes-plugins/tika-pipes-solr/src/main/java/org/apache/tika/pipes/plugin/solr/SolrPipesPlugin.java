@@ -30,19 +30,19 @@ public class SolrPipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting Solr Emitter Plugin");
+        LOG.debug("Starting Solr Emitter Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping Solr Emitter Plugin");
+        LOG.debug("Stopping Solr Emitter Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting Solr Emitter Plugin");
+        LOG.debug("Deleting Solr Emitter Plugin");
         super.delete();
     }
 }

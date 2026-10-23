@@ -16,10 +16,8 @@
  */
 package org.apache.tika.pipes.emitter.es;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.PluginJson;
 
 /**
  * Configuration for the ES emitter.
@@ -35,12 +33,32 @@ import org.apache.tika.exception.TikaConfigException;
  *                           If null/empty, falls back to httpClientConfig's userName/password
  *                           for basic auth.
  * @param httpClientConfig   HTTP connection settings (basic auth, timeouts, proxy)
+ * @param chunkStrategy      Where {@code tk:chunks} goes; null means {@link ChunkStrategy#INLINE}
  */
 public record ESEmitterConfig(String esUrl, String idField,
                               AttachmentStrategy attachmentStrategy,
                               UpdateStrategy updateStrategy, int commitWithin,
                               String embeddedFileFieldName, String apiKey,
-                              HttpClientConfig httpClientConfig) {
+                              HttpClientConfig httpClientConfig,
+                              ChunkStrategy chunkStrategy) {
+    /** Where {@code tk:chunks} goes: inside its document, or one document per chunk. */
+    public enum ChunkStrategy {
+        INLINE, DOCUMENTS
+    }
+
+    public ESEmitterConfig {
+        chunkStrategy = chunkStrategy == null ? ChunkStrategy.INLINE : chunkStrategy;
+    }
+
+    /** The 4.0.0 shape: chunks stay inline. */
+    public ESEmitterConfig(String esUrl, String idField, AttachmentStrategy attachmentStrategy,
+                           UpdateStrategy updateStrategy, int commitWithin,
+                           String embeddedFileFieldName, String apiKey,
+                           HttpClientConfig httpClientConfig) {
+        this(esUrl, idField, attachmentStrategy, updateStrategy, commitWithin,
+                embeddedFileFieldName, apiKey, httpClientConfig, ChunkStrategy.INLINE);
+    }
+
     public enum AttachmentStrategy {
         SEPARATE_DOCUMENTS, PARENT_CHILD,
     }
@@ -49,15 +67,19 @@ public record ESEmitterConfig(String esUrl, String idField,
         OVERWRITE, UPSERT
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     public static ESEmitterConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json, ESEmitterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse ESEmitterConfig from JSON", e);
+        ESEmitterConfig config = PluginJson.read(json, ESEmitterConfig.class);
+        config.validate();
+        return config;
+    }
+
+    /** Chunk documents carry no join field, so they cannot live in a PARENT_CHILD index. */
+    public void validate() throws TikaConfigException {
+        if (chunkStrategy == ChunkStrategy.DOCUMENTS
+                && attachmentStrategy == AttachmentStrategy.PARENT_CHILD) {
+            throw new TikaConfigException("chunkStrategy DOCUMENTS needs attachmentStrategy "
+                    + "SEPARATE_DOCUMENTS: chunk documents have no join field");
         }
     }
 
@@ -68,6 +90,7 @@ public record ESEmitterConfig(String esUrl, String idField,
                 ", idField='" + idField + '\'' +
                 ", attachmentStrategy=" + attachmentStrategy +
                 ", updateStrategy=" + updateStrategy +
+                ", chunkStrategy=" + chunkStrategy +
                 ", apiKey=" + (apiKey != null ? "[REDACTED]" : "null") +
                 '}';
     }

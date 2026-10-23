@@ -67,7 +67,7 @@ POST endpoints accept multipart requests with a `file` part and optional `config
 # Parse with custom PDF parser settings (requires allowPerRequestConfig)
 curl -X POST http://localhost:9998/tika/config/json \
   -F "file=@document.pdf" \
-  -F "config={\"pdf-parser\":{\"ocr\":{\"strategy\":\"no_ocr\"}}};type=application/json"
+  -F "config={\"pdf-parser\":{\"text\":\"EXTRACT\"}};type=application/json"
 ----
 
 == Breaking Changes
@@ -155,7 +155,9 @@ at least a `status` field:
 ----
 
 A `message` field is included when one is available and may contain a server-side stack
-trace, e.g. `{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`.
+trace, e.g. `{"status": "TIMEOUT", "message": "Task timed out after 60000ms"}`. How much of
+that trace is returned is set by `parse-context.exception-reporting` (default `FULL`) — see
+xref:advanced/setting-limits.adoc#_exception_reporting[Exception reporting].
 
 The HTTP status codes are also more precise:
 
@@ -295,8 +297,10 @@ granting per-request parser configuration are separate decisions:
 
 The capabilities are two default-`false` flags in the `server` section:
 
-* `allowPipes` gates the `/pipes` and `/async` endpoints, which drive process-isolated batch parsing through your fetchers and emitters. Selecting either without `allowPipes` causes the server to refuse to start with a clear error.
-* `allowPerRequestConfig` gates per-request parser configuration: the `/config` family of endpoints and the multipart `config` part. When off, such requests are rejected with 403.
+* `allowPipes` gates the `/pipes` and `/async` endpoints, which drive process-isolated batch parsing through your fetchers and emitters. Selecting either without `allowPipes` causes the server to refuse to start with a clear error. It includes each tuple's `parse-context`, which is per-request configuration in its own right; `allowPerRequestConfig` is not needed for it.
+* `allowPerRequestConfig` gates per-request parser configuration on the parse endpoints: the `/config` family of endpoints and the multipart `config` part. When off, such requests are rejected with 403.
+
+Per-request configuration that either flag admits is still bounded: `@OperatorOnly` properties are refused, and limits may tighten the server's but not loosen them (xref:advanced/setting-limits.adoc#_per_request_limits[details]).
 
 `/status` is no longer gated: it exposes only aggregate counters, so it is enabled simply by listing `status` under `endpoints`.
 
@@ -329,8 +333,14 @@ The following `TikaServerConfig` options have been removed:
   exception detail — including messages carrying file paths and document fragments —
   continued to travel in `tk:exception:*` metadata on successful parses and inside
   `/unpack` zips. Setting it to `false` did not keep stack traces inside the server, which
-  is what the name implied. Exception detail is now always returned; filter Tika's output
-  with a `MetadataFilter` before forwarding it somewhere less trusted.
+  is what the name implied. The replacement is `parse-context.exception-reporting`
+  (`MESSAGE_REDACTED` or `REDACTED`, plus a `maxLength`), one operator-set policy over every
+  channel that turns an exception into caller-visible text — metadata values, error bodies and
+  pipes result messages alike. See
+  xref:advanced/setting-limits.adoc#_exception_reporting[Exception reporting]. A
+  `MetadataFilter` dropping `tk:exception:*` is a convenience, not the replacement: it reaches
+  neither error bodies nor pipes result messages, and with `allowPerRequestConfig` on, a filter
+  supplied in a request's config *replaces* the operator's rather than adding to it.
 
 * `taskTimeoutMillis` - Was the total time allowed per task before the forked process was
   killed; that is now `parse-context.timeout-limits.totalTaskTimeoutMillis` (same
@@ -404,8 +414,8 @@ The `X-Tika-OCR*` and `X-Tika-PDF*` header families were removed earlier in the
 
 **Migration:** move these settings into your tika-config. For per-request values,
 POST to a `/config` endpoint (`/tika/config`, `/tika/config/json`, `/rmeta/config`,
-`/meta/config`) with the JSON above as the multipart `config` part; this requires
-`allowPerRequestConfig=true`.
+`/rmeta/config/{handlerType}`, `/meta/config`) with the JSON above as the multipart `config`
+part; this requires `allowPerRequestConfig=true`.
 
 [IMPORTANT]
 ====
@@ -427,6 +437,15 @@ the call, or use `/pipes`, where the `FetchEmitTuple` carries metadata.
 Transport headers are unaffected: `Content-Disposition`,
 `Content-Type` and `Content-Length` still describe the payload and still
 influence detection.
+
+NOTE: The way `Content-Type` influences detection changed. In 3.x, parsing ran
+in-process and a request `Content-Type` acted as a hard override that forced the
+type. In 4.x, parsing runs in a forked worker and the header is carried across as
+a *soft* hint: detection keeps it only when it equals or specializes the type
+detected from the content, and otherwise ignores it (TIKA-4825). A 3.x client
+that forced an unrelated type onto arbitrary bytes (for example `text/plain`)
+will now see that type ignored in favor of content-based detection. Supply the
+correct `Content-Type` (or a filename) to refine within the detected hierarchy.
 
 === Pipes Configuration (for `/pipes` and `/async`)
 
@@ -523,6 +542,12 @@ All parsing now occurs in isolated child processes, providing:
 * Memory isolation (OOM in parser doesn't crash server)
 * Configurable timeouts at the pipes level
 
+This isolation carries a throughput and memory cost relative to a single in-JVM
+parser, and the size of that cost depends on your document mix and the pool
+configuration (per-client versus shared-server, `numClients`, per-fork heap).
+See xref:pipes/performance.adoc[Performance and Isolation Trade-offs] for the
+comparison and tuning guidance.
+
 [#backpressure]
 === Backpressure: `429` Separates "Busy" From "Broken"
 
@@ -553,7 +578,7 @@ xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing].
 === Performance Optimizations
 
 * TCP_NODELAY enabled for reduced latency on small requests
-* Configurable temp directory for RAM disk optimization (`pipes.tempDirectory`)
+* Temporary files go to `-Djava.io.tmpdir`; forks get private subdirectories under it (see xref:pipes/configuration.adoc#_where_temporary_files_go[Where temporary files go]; `pipes.tempDirectory` is deprecated, and do not use a RAM disk)
 
 == Advanced: Shared Server Mode
 

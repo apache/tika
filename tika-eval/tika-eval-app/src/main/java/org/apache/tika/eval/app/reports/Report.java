@@ -80,12 +80,14 @@ public class Report {
 
             try {
                 dumpReportToWorkbook(st, wb);
+            } catch (SQLException | RuntimeException e) {
+                wb.close(); // no file for a report that failed
+                throw e;
+            }
+            try (OutputStream os = Files.newOutputStream(out)) {
+                wb.write(os);
             } finally {
-                try (OutputStream os = Files.newOutputStream(out)) {
-                    wb.write(os);
-                } finally {
-                    wb.close();
-                }
+                wb.close();
             }
         }
     }

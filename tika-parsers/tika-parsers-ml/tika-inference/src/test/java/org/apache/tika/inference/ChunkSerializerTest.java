@@ -20,16 +20,19 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.inference.locator.EmbeddedLocator;
 import org.apache.tika.inference.locator.Locators;
 import org.apache.tika.inference.locator.PaginatedLocator;
 import org.apache.tika.inference.locator.SpatialLocator;
 import org.apache.tika.inference.locator.TemporalLocator;
 import org.apache.tika.inference.locator.TextLocator;
+import org.apache.tika.parser.inference.Modality;
 
 public class ChunkSerializerTest {
 
@@ -152,6 +155,16 @@ public class ChunkSerializerTest {
     }
 
     @Test
+    void testProducerRoundTrips() throws Exception {
+        Chunk chunk = new Chunk("t", 0, 1);
+        chunk.setProducer("text-vectors");
+        List<Chunk> back = ChunkSerializer.fromJson(ChunkSerializer.toJson(List.of(chunk)));
+        assertEquals("text-vectors", back.get(0).getProducer());
+        assertNull(ChunkSerializer.fromJson(ChunkSerializer.toJson(
+                List.of(new Chunk("t", 0, 1)))).get(0).getProducer());
+    }
+
+    @Test
     void testWithoutVector() throws Exception {
         Chunk c = new Chunk("No vector", 0, 9);
         String json = ChunkSerializer.toJson(List.of(c));
@@ -179,5 +192,46 @@ public class ChunkSerializerTest {
 
         assertEquals("He said \"hello\" & <goodbye>",
                 restored.get(0).getText());
+    }
+
+    @Test
+    void testRoundTripEmbeddedLocator() throws Exception {
+        Chunk c = new Chunk(null, new Locators()
+                .addPaginated(new PaginatedLocator(3))
+                .addEmbedded(new EmbeddedLocator("/1/2", "page-3.png")));
+        c.setVector(new float[]{0.5f});
+        Chunk unnamed = new Chunk(null, new Locators().addEmbedded(new EmbeddedLocator("/4", null)));
+
+        List<Chunk> restored = ChunkSerializer.fromJson(ChunkSerializer.toJson(List.of(c, unnamed)));
+
+        EmbeddedLocator e = restored.get(0).getLocators().getEmbedded().get(0);
+        assertEquals("/1/2", e.getIdPath());
+        assertEquals("page-3.png", e.getName());
+        assertEquals(3, restored.get(0).getLocators().getPaginated().get(0).getPage());
+        assertEquals("/4", restored.get(1).getLocators().getEmbedded().get(0).getIdPath());
+        assertNull(restored.get(1).getLocators().getEmbedded().get(0).getName());
+    }
+
+    @Test
+    void testModalityAndCorrelatorRoundTrip() throws Exception {
+        Chunk c = new Chunk(null, new Locators().addTemporal(new TemporalLocator(0, 30000)));
+        c.setVector(new float[]{1f});
+        c.setProducer("jina-audio");
+        c.setModality(Modality.AUDIO);
+        c.setCorrelator("t:0-30000");
+        String json = ChunkSerializer.toJson(List.of(c));
+        assertTrue(json.contains("\"modality\":\"audio\""), json);
+        Chunk back = ChunkSerializer.fromJson(json).get(0);
+        assertEquals(Modality.AUDIO, back.getModality());
+        assertEquals("t:0-30000", back.getCorrelator());
+        Chunk plain = ChunkSerializer.fromJson(ChunkSerializer.toJson(
+                List.of(new Chunk("t", 0, 1)))).get(0);
+        assertNull(plain.getModality());
+        assertNull(plain.getCorrelator());
+        // a newer writer's value reads as unsaid, and the rest of the array still reads
+        List<Chunk> foreign = ChunkSerializer.fromJson(
+                "[{\"modality\":\"smell\",\"text\":\"a\"},{\"modality\":\"Audio\",\"text\":\"b\"}]");
+        assertNull(foreign.get(0).getModality());
+        assertEquals(Modality.AUDIO, foreign.get(1).getModality());
     }
 }

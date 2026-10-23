@@ -81,8 +81,12 @@ matches. Use it to keep, say, embedded images out of the output entirely.
 `RENDERING`, `VERSION`, `ALTERNATE_FORMAT_CHUNK` (empty). An unrecognized name is a config error.
 
 |`date-normalizing-metadata-filter`
-|Rewrites every `DATE`-typed field that has no timezone to `yyyy-MM-dd'T'HH:mm:ss'Z'`, assuming
-the configured zone. Values that already end in `Z` are left alone.
+|Rewrites every `DATE`-typed value to `yyyy-MM-dd'T'HH:mm:ss'Z'` so that date fields in
+Solr, Elasticsearch, and OpenSearch never reject a document. A zone-less value is resolved in
+the configured zone, a date-only value as midday there, and an explicit offset is converted.
+*Partial dates are invented, not dropped*: `2019` becomes `2019-01-01T12:00:00Z` and
+`2019-06` becomes `2019-06-01T12:00:00Z` (in the configured zone). Unparseable values pass
+through with a warning. See xref:advanced/date-handling.adoc[Date Handling].
 |`defaultTimeZone` — zone id, e.g. `America/New_York` (`UTC`)
 
 |`capture-group-metadata-filter`
@@ -112,11 +116,6 @@ Adding the module to the classpath is enough to make the name resolvable.
 [cols="2,2,3"]
 |===
 |Name |Module |What it adds
-
-|`openai-embedding-filter`, `jina-embedding-filter`
-|`tika-inference`
-|Chunks `tk:content` and calls an embeddings endpoint, putting the vectors on `tk:chunks`. See
-xref:migration-to-4x/chunk-strategies.adoc[Chunk Strategies].
 
 |`charsoup-metadata-filter`, `optimaize-metadata-filter`, `open-nlp-metadata-filter`
 |`tika-langdetect-charsoup`, `-optimaize`, `-opennlp`
@@ -235,8 +234,10 @@ one for that request rather than adding to it.
 
 NOTE: In `CONTENT_ONLY` xref:pipes/parse-modes.adoc[parse mode], Tika applies an
 `include-field-metadata-filter` for `tk:content` and `tk:exception:container-exception` when you have
-configured no filter of your own. Configure one and yours wins — including having to keep
-`tk:content` yourself.
+configured no filter of your own. Only a filter that reaches the `parse-context` replaces it —
+whether from the request or from the `parse-context` block of the server's own config — and then
+you are responsible for keeping `tk:content` yourself. The top-level `metadata-filters` chain this
+page documents is not consulted in this mode.
 
 == Writing your own
 

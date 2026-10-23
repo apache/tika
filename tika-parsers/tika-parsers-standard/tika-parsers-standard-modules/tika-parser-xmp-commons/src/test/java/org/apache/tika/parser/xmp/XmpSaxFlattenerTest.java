@@ -22,7 +22,9 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -151,5 +153,34 @@ public class XmpSaxFlattenerTest {
         sb.append("</rdf:Description></rdf:RDF></x:xmpmeta>");
         List<XmpProperty> leaves = new XmpSaxFlattener().flatten(sb.toString().getBytes(UTF_8));
         assertEquals(50000, leaves.size());   // capped at MAX_LEAVES, not 60000
+    }
+
+    /**
+     * An XMP prefix is the writer's own choice: exiftool rewrites the Google
+     * container namespaces to GContainer, where the camera writes Container.
+     * The keys stay put, so what reads them does not have to know which tool
+     * last touched the file.
+     */
+    @Test
+    public void testGoogleContainerKeepsItsCanonicalPrefix() throws Exception {
+        String packet = "<x:xmpmeta xmlns:x='adobe:ns:meta/'>"
+                + "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>"
+                + "<rdf:Description rdf:about=''"
+                + " xmlns:GContainer='http://ns.google.com/photos/1.0/container/'"
+                + " xmlns:GItem='http://ns.google.com/photos/1.0/container/item/'>"
+                + "<GContainer:Directory><rdf:Seq>"
+                + "<rdf:li rdf:parseType='Resource'>"
+                + "<GContainer:Item GItem:Semantic='MotionPhoto' GItem:Length='1583'/>"
+                + "</rdf:li>"
+                + "</rdf:Seq></GContainer:Directory>"
+                + "</rdf:Description></rdf:RDF></x:xmpmeta>";
+        Map<String, String> paths = new HashMap<>();
+        for (XmpProperty p : new XmpSaxFlattener().flatten(
+                packet.getBytes(UTF_8))) {
+            paths.put(p.path, p.value);
+        }
+        assertEquals("MotionPhoto",
+                paths.get("Container:Directory[1]/Container:Item/Item:Semantic"));
+        assertEquals("1583", paths.get("Container:Directory[1]/Container:Item/Item:Length"));
     }
 }

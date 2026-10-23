@@ -57,6 +57,6 @@ Unlike the other iterators, this one takes no `fetcherId` / `emitterId`: each li
 == Notes
 
 * The file format is JSON-lines (also called NDJSON) — one valid JSON object per line, no surrounding array brackets.
-* Each line must be a serialized `FetchEmitTuple`: `id`, `fetcher`, `fetchKey`, `emitter`, `emitKey`, and optionally `fetchRangeStart`, `fetchRangeEnd`, `metadata`, `parse-context`, `onParseException`. Any other
+* Each line must be a serialized `FetchEmitTuple`: `id`, `fetcher`, `fetchKey`, `emitter`, `emitKey`, and optionally `fetchRangeStart`, `fetchRangeEnd`, `metadata`, `parse-context`, `onParseException`, `preset`. Any other
   field is rejected — the deserializer does not tolerate unknown keys.
 * For columnar work items in a CSV, use the xref:pipes/plugins/csv.adoc[CSV iterator] instead.

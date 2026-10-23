@@ -33,8 +33,10 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -92,7 +94,9 @@ public class TikaPipesKafkaTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Set<String> waitingFor = new HashSet<>();
     // https://java.testcontainers.org/modules/kafka/#using-orgtestcontainerskafkaconfluentkafkacontainer
-    ConfluentKafkaContainer kafka = new ConfluentKafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.4.0"));
+    private static final DockerImageName KAFKA_IMAGE =
+            DockerImageName.parse("confluentinc/cp-kafka:7.4.0");
+    ConfluentKafkaContainer kafka = new ConfluentKafkaContainer(KAFKA_IMAGE);
 
     private void createTestFiles(Path testFileFolderPath) throws Exception {
         Files.createDirectories(testFileFolderPath);
@@ -117,10 +121,30 @@ public class TikaPipesKafkaTest {
 
     @Test
     public void testKafkaPipeIteratorAndEmitter(@TempDir Path pipesDirectory) throws Exception {
+        runPipeIteratorAndEmitter(pipesDirectory, 1000);
+    }
+
+    /**
+     * Testcontainers pins the broker's group.initial.rebalance.delay.ms to 0; Kafka's own
+     * default is 3000, and tika-pipes leaves the group empty between runs, so a real
+     * deployment pays that delay on every run. Restore the stock value here: with the default
+     * 100 ms pollDelayMs the iterator used to give up ~30x too early, enqueue 0 files and
+     * report success (TIKA-4833). Without this the suite cannot see the production case at all.
+     */
+    @Test
+    public void testStockBrokerRebalanceDelay(@TempDir Path pipesDirectory) throws Exception {
+        kafka.close();
+        kafka = new ConfluentKafkaContainer(KAFKA_IMAGE)
+                .withEnv("KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS", "3000");
+        kafka.start();
+        runPipeIteratorAndEmitter(pipesDirectory, 100);
+    }
+
+    private void runPipeIteratorAndEmitter(Path pipesDirectory, int pollDelayMs) throws Exception {
         Path testFileFolderPath = pipesDirectory.resolve("test-files");
         createTestFiles(testFileFolderPath);
 
-        Path tikaConfigPath = getTikaConfig(pipesDirectory, testFileFolderPath);
+        Path tikaConfigPath = getTikaConfig(pipesDirectory, testFileFolderPath, pollDelayMs);
 
         Properties consumerProps = new Properties();
         consumerProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, kafka.getBootstrapServers());
@@ -165,7 +189,10 @@ public class TikaPipesKafkaTest {
             LOG.info("Producer is now complete - sent {}.", numSent);
         }
 
-        es.execute(() -> {
+        // Keep the Future: a bare execute() sent any TikaCLI failure to the thread's uncaught
+        // handler, so a broken pipeline surfaced only as the generic "timed out waiting for the
+        // emitted docs" below, hiding the real cause (TIKA-4833).
+        Future<?> pipesRun = es.submit(() -> {
             try {
                 TikaCLI.main(new String[]{"-a", "-c", tikaConfigPath.toAbsolutePath().toString()});
             } catch (Exception e) {
@@ -179,9 +206,20 @@ public class TikaPipesKafkaTest {
 
         long startNanos = System.nanoTime();
         while (!waitingFor.isEmpty()) {
+            // Surface a tika-pipes failure as itself rather than as a timeout.
+            if (pipesRun.isDone()) {
+                try {
+                    pipesRun.get();
+                } catch (ExecutionException e) {
+                    throw new AssertionError(
+                            "tika-pipes failed before emitting all docs; still waiting for " +
+                                    waitingFor.size() + " of " + numDocs, e.getCause());
+                }
+            }
             assertFalse(TimeUnit.NANOSECONDS.toMinutes(System.nanoTime() - startNanos) > WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES,
                     "Timed out after " + WAIT_FOR_EMITTED_DOCS_TIMEOUT_MINUTES +
-                            " minutes waiting for the emitted docs");
+                            " minutes waiting for the emitted docs; still waiting for " +
+                            waitingFor.size() + " of " + numDocs);
             try {
                 ConsumerRecords<String, String> records = consumer.poll(Duration.ofSeconds(1));
                 for (ConsumerRecord<String, String> record : records) {
@@ -205,7 +243,8 @@ public class TikaPipesKafkaTest {
 
 
     @NotNull
-    private Path getTikaConfig(Path pipesDirectory, Path testFileFolderPath) throws Exception {
+    private Path getTikaConfig(Path pipesDirectory, Path testFileFolderPath, int pollDelayMs)
+            throws Exception {
         Path tikaConfig = pipesDirectory.resolve("tika-config.json");
 
         Path log4jPropFile = pipesDirectory.resolve("log4j2.xml");
@@ -220,6 +259,7 @@ public class TikaPipesKafkaTest {
         replacements.put("BOOTSTRAP_SERVERS", kafka.getBootstrapServers());
         replacements.put("FETCHER_BASE_PATH", testFileFolderPath);
         replacements.put("PARSE_MODE", ParseMode.RMETA.name());
+        replacements.put("POLL_DELAY_MS", pollDelayMs);
         replacements.put("LOG4J_JVM_ARG", "-Dlog4j.configurationFile=" + log4jPropFile.toAbsolutePath());
 
         JsonConfigHelper.writeConfigFromResource("/kafka/plugins-template.json",

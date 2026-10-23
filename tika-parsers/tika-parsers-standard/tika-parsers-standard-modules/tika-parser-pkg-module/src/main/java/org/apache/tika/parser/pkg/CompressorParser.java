@@ -35,9 +35,11 @@ import static org.apache.tika.metadata.HttpHeaders.CONTENT_TYPE;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
+import java.nio.channels.Channels;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -70,6 +72,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.FilenameUtils;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -78,6 +81,7 @@ import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Parser for various compression formats.
@@ -251,13 +255,14 @@ public class CompressorParser implements Parser {
                 // TIKA-4221 / COMPRESS-721 workaround: commons-compress' Pack200CompressorInputStream
                 // reflects into java.io internals (FilterInputStream.in / FileInputStream.path) to
                 // bound its input, which throws InaccessibleObjectException on Java 17+. A
-                // TikaInputStream is a FilterInputStream, so it triggers this. Spool to a file and
-                // reopen via Files.newInputStream (a ChannelInputStream) -- the one input type
-                // commons-compress does not reflect into. Pack200CompressorInputStream reads its
-                // input fully in the constructor (IN_MEMORY) and then serves bytes from an in-memory
-                // buffer, so the channel stream can be closed immediately afterward. Remove this once
-                // Tika depends on a commons-compress release that contains the COMPRESS-721 fix.
-                try (InputStream packStream = Files.newInputStream(tis.getPath())) {
+                // TikaInputStream is a FilterInputStream, so it triggers this. Re-read via
+                // Channels.newInputStream (a ChannelInputStream) -- the one input type
+                // commons-compress does not reflect into -- without forcing in-memory content to
+                // disk. Pack200CompressorInputStream reads its input fully in the constructor
+                // (IN_MEMORY) and then serves bytes from an in-memory buffer, so the channel
+                // stream can be closed immediately afterward. Remove this once Tika depends on a
+                // commons-compress release that contains the COMPRESS-721 fix.
+                try (InputStream packStream = Channels.newInputStream(tis.getSeekableByteChannel())) {
                     cis = factory.createCompressorInputStream(CompressorStreamFactory.PACK200,
                             packStream);
                 }
@@ -328,13 +333,18 @@ public class CompressorParser implements Parser {
         if (gzipParameters == null) {
             return false;
         }
+        // MTIME 0 means no timestamp (RFC 1952)
+        Instant mtime = gzipParameters.getModificationInstant();
+        if (mtime != null && mtime.getEpochSecond() != 0 && TikaDates.inYearBounds(mtime)) {
+            metadata.set(FileSystem.MODIFIED, Date.from(mtime));
+        }
         String name = gzipParameters.getFileName();
         if (!StringUtils.isBlank(name)) {
             metadata.set(TikaCoreProperties.INTERNAL_PATH, name);
             metadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, name);
             return true;
         }
-        //TODO: modification, OS, comment
+        //TODO: OS, comment
         return false;
     }
 

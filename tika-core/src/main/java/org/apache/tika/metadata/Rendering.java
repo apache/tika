@@ -23,6 +23,14 @@ public interface Rendering {
     Property RENDERED_MS = Property.reservedExternalReal(RENDERING_PREFIX + "rendering-time-ms");
 
     /**
+     * 1-based pages of this document the engine could not render: refused for their size,
+     * failed, or timed out. On the document, beside the warning that says why; a page skipped
+     * by policy (below the minimum size) is not listed. A metafile is page 1.
+     */
+    Property RENDER_FAILED_PAGE =
+            Property.reservedInternalIntegerSequence(RENDERING_PREFIX + "failed-page");
+
+    /**
      * Time PDFBox took to render the page to a {@code BufferedImage}.
      * @see org.apache.tika.renderer.pdf.pdfbox.PDFBoxRenderer
      */

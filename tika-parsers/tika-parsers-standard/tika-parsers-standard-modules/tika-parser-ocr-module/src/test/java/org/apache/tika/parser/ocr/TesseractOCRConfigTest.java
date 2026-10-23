@@ -28,7 +28,7 @@ import org.junit.jupiter.api.Test;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.config.loader.TikaLoader;
-import org.apache.tika.parser.CompositeParser;
+import org.apache.tika.parser.inference.EngineRegistry;
 
 public class TesseractOCRConfigTest extends TikaTest {
 
@@ -53,8 +53,7 @@ public class TesseractOCRConfigTest extends TikaTest {
         TikaLoader loader = TikaLoader.load(
                 getConfigPath(TesseractOCRConfigTest.class, "tika-config-tesseract-partial.json"));
         TesseractOCRParser parser =
-                (TesseractOCRParser) ((CompositeParser) loader.loadParsers())
-                        .getAllComponentParsers().get(0);
+                (TesseractOCRParser) loader.get(EngineRegistry.class).get("tesseract");
         TesseractOCRConfig config = parser.getDefaultConfig();
         assertEquals("fra+deu", config.getLanguage(), "Invalid overridden language value");
         assertEquals("1", config.getPageSegMode(), "Invalid default pageSegMode value");
@@ -73,8 +72,7 @@ public class TesseractOCRConfigTest extends TikaTest {
         TikaLoader loader = TikaLoader.load(
                 getConfigPath(TesseractOCRConfigTest.class, "tika-config-tesseract-full.json"));
         TesseractOCRParser parser =
-                (TesseractOCRParser) ((CompositeParser) loader.loadParsers())
-                        .getAllComponentParsers().get(0);
+                (TesseractOCRParser) loader.get(EngineRegistry.class).get("tesseract");
         TesseractOCRConfig config = parser.getDefaultConfig();
         assertEquals("ceb", config.getLanguage(), "Invalid overridden language value");
         assertEquals("2", config.getPageSegMode(), "Invalid default pageSegMode value");
@@ -94,7 +92,8 @@ public class TesseractOCRConfigTest extends TikaTest {
         List<String> validLanguages =
                 Arrays.asList("eng", "slk_frak", "chi_tra", "eng+fra", "tgk+chi_tra+slk_frak",
                         "chi_tra_vert", "tgk+chi_tra_vert+slk_frak", "eng+script/Arabic",
-                        "script/HanT_vert");
+                        "script/HanT_vert", "Latin", "eng+Latin", "Japanese_vert",
+                        "Canadian_Aboriginal");
 
         TesseractOCRConfig config = new TesseractOCRConfig();
 
@@ -108,7 +107,8 @@ public class TesseractOCRConfigTest extends TikaTest {
     public void testValidateInvalidLanguage() {
         List<String> invalidLanguages = Arrays.asList(
                 //"", allow empty string
-                "+", "en", "en+", "eng+fra+", "Arabic", "/script/Arabic", "rm -rf *");
+                "+", "en", "en+", "eng+fra+", "/script/Arabic", "latin1", "+eng",
+                "script/", "rm -rf *");
 
         TesseractOCRConfig config = new TesseractOCRConfig();
 

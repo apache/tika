@@ -292,17 +292,9 @@ image/ida	class org.apache.tika.parser.gdal.GDALParser
 image/ilwis	class org.apache.tika.parser.gdal.GDALParser
 image/jp2	class org.apache.tika.parser.gdal.GDALParser
 image/jpeg	class org.apache.tika.parser.gdal.GDALParser
-image/jpx	class org.apache.tika.parser.ocr.TesseractOCRParser
+image/jpx	class org.apache.tika.parser.image.ImageParser
 image/jxl	class org.apache.tika.parser.image.JXLParser
 image/nitf	class org.apache.tika.parser.gdal.GDALParser
-image/ocr-bmp	class org.apache.tika.parser.ocr.TesseractOCRParser
-image/ocr-gif	class org.apache.tika.parser.ocr.TesseractOCRParser
-image/ocr-jp2	class org.apache.tika.parser.ocr.TesseractOCRParser
-image/ocr-jpeg	class org.apache.tika.parser.ocr.TesseractOCRParser
-image/ocr-jpx	class org.apache.tika.parser.ocr.TesseractOCRParser
-image/ocr-png	class org.apache.tika.parser.ocr.TesseractOCRParser
-image/ocr-tiff	class org.apache.tika.parser.ocr.TesseractOCRParser
-image/ocr-x-portable-pixmap	class org.apache.tika.parser.ocr.TesseractOCRParser
 image/png	class org.apache.tika.parser.gdal.GDALParser
 image/raster	class org.apache.tika.parser.gdal.GDALParser
 image/sar-ceos	class org.apache.tika.parser.gdal.GDALParser
@@ -312,7 +304,7 @@ image/tiff	class org.apache.tika.parser.image.TiffParser
 image/vnd.adobe.photoshop	class org.apache.tika.parser.image.PSDParser
 image/vnd.dgn; version=8	class org.apache.tika.parser.dgn.DGN8Parser
 image/vnd.dwg	class org.apache.tika.parser.dwg.DWGParser
-image/vnd.microsoft.icon	class org.apache.tika.parser.image.ImageParser
+image/vnd.microsoft.icon	class org.apache.tika.parser.image.ICOParser
 image/vnd.wap.wbmp	class org.apache.tika.parser.image.ImageParser
 image/webp	class org.apache.tika.parser.image.WebPParser
 image/wmf	class org.apache.tika.parser.microsoft.WMFParser
@@ -326,7 +318,7 @@ image/x-mff	class org.apache.tika.parser.gdal.GDALParser
 image/x-mff2	class org.apache.tika.parser.gdal.GDALParser
 image/x-ozi	class org.apache.tika.parser.gdal.GDALParser
 image/x-pcraster	class org.apache.tika.parser.gdal.GDALParser
-image/x-portable-pixmap	class org.apache.tika.parser.ocr.TesseractOCRParser
+image/x-portable-pixmap	class org.apache.tika.parser.image.ImageParser
 image/x-srp	class org.apache.tika.parser.gdal.GDALParser
 image/x-xcf	class org.apache.tika.parser.image.ImageParser
 message/rfc822	class org.apache.tika.parser.mail.RFC822Parser

@@ -111,12 +111,12 @@ public class WARCParser implements Parser {
             try {
                 processResponse((WarcResponse) record, xhtml, context, embeddedDocumentExtractor);
             } catch (IOException | TikaException e) {
-                EmbeddedDocumentUtil.recordException(e, metadata);
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             } catch (SAXException e) {
                 if (WriteLimitReachedException.isWriteLimitReached(e)) {
                     throw e;
                 } else {
-                    EmbeddedDocumentUtil.recordException(e, metadata);
+                    EmbeddedDocumentUtil.recordException(e, metadata, context);
                 }
             }
         } else if (WARCINFO.equals(record.type())) {

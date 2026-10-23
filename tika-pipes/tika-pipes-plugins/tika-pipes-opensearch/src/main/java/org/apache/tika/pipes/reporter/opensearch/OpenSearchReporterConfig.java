@@ -18,25 +18,15 @@ package org.apache.tika.pipes.reporter.opensearch;
 
 import java.util.Set;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.PluginJson;
 
 public record OpenSearchReporterConfig(String openSearchUrl, Set<String> includes, Set<String> excludes, String keyPrefix,
                                        boolean includeRouting, HttpClientConfig httpClientConfig) {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     public static OpenSearchReporterConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json,
-                    OpenSearchReporterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse OpenSearchReporterConfig from JSON", e);
-        }
+        return PluginJson.read(json, OpenSearchReporterConfig.class);
     }
 
 }

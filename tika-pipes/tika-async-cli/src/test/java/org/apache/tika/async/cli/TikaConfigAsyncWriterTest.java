@@ -27,13 +27,47 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.sax.BasicContentHandlerFactory;
+import org.apache.tika.utils.XMLReaderUtils;
 
 public class TikaConfigAsyncWriterTest {
 
+
+    @Test
+    public void testWriteNewXMLConfig(@TempDir Path dir) throws Exception {
+        SimpleAsyncConfig config = new SimpleAsyncConfig(dir.toString(), dir.toString(), 4,
+                10000L, null, null, null, BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                SimpleAsyncConfig.ExtractBytesMode.NONE, null);
+        Path output = dir.resolve("output.xml");
+        new TikaConfigAsyncWriter(config).write(output);
+
+        Document document = XMLReaderUtils.buildDOM(output);
+        assertEquals("properties", document.getDocumentElement().getTagName());
+        assertEquals(0, document.getDocumentElement().getElementsByTagName("*").getLength());
+    }
+
+    @Test
+    public void testWriteExistingXMLConfig(@TempDir Path dir) throws Exception {
+        Path input = dir.resolve("input.xml");
+        Files.writeString(input, "<properties><entry key=\"test\">value &amp; more</entry></properties>");
+        SimpleAsyncConfig config = new SimpleAsyncConfig(dir.toString(), dir.toString(), 4,
+                10000L, null, null, input.toString(), BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                SimpleAsyncConfig.ExtractBytesMode.NONE, null);
+        Path output = dir.resolve("output.xml");
+        new TikaConfigAsyncWriter(config).write(output);
+
+        Document document = XMLReaderUtils.buildDOM(output);
+        assertEquals("properties", document.getDocumentElement().getTagName());
+        assertEquals(1, document.getElementsByTagName("entry").getLength());
+        Element entry = (Element) document.getElementsByTagName("entry").item(0);
+        assertEquals("test", entry.getAttribute("key"));
+        assertEquals("value & more", entry.getTextContent());
+    }
 
     @Test
     public void testBasic(@TempDir Path dir) throws Exception {
@@ -82,5 +116,29 @@ public class TikaConfigAsyncWriterTest {
         assertEquals(10000L, timeouts.path("totalTaskTimeoutMillis").asLong());
         assertEquals(60000L, timeouts.path("progressTimeoutMillis").asLong());
         assertTrue(timeouts.path("throwOnDeadline").asBoolean());
+    }
+
+    @Test
+    public void testOnExistsReachesJsonlReporter(@TempDir Path dir) throws Exception {
+        Path config = dir.resolve("config.json");
+        Files.writeString(config, """
+                {
+                  "pipes-reporters": {
+                    "file-system-jsonl-reporter": { "path": "audit.jsonl" }
+                  }
+                }
+                """);
+        for (String[] pair : new String[][]{{"REPLACE", "REPLACE"}, {"SKIP", "APPEND"}, {"EXCEPTION", "EXCEPTION"}}) {
+            SimpleAsyncConfig simpleAsyncConfig = new SimpleAsyncConfig("input", "output", 4,
+                    null, null, null, config.toAbsolutePath().toString().replace("\\", "/"),
+                    BasicContentHandlerFactory.HANDLER_TYPE.TEXT,
+                    SimpleAsyncConfig.ExtractBytesMode.NONE, null);
+            simpleAsyncConfig.setOnExists(pair[0]);
+            Path tmp = Files.createTempFile(dir, "plugins-", ".json");
+            new PluginsWriter(simpleAsyncConfig, null).write(tmp);
+            JsonNode root = new ObjectMapper().readTree(tmp.toFile());
+            assertEquals(pair[1], root.path("pipes-reporters").path("file-system-jsonl-reporter")
+                    .path("onExists").asText(), pair[0]);
+        }
     }
 }

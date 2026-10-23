@@ -1,0 +1,41 @@
+{
+  "fetchers": {
+    "fsf": {
+      "file-system-fetcher": {
+        "basePath": "FETCHER_BASE_PATH",
+        "extractFileSystemMetadata": false
+      }
+    }
+  },
+  "emitters": {
+    "fse": {
+      "file-system-emitter": {
+        "basePath": "EMITTER_BASE_PATH",
+        "fileExtension": "json",
+        "onExists": "EXCEPTION"
+      }
+    }
+  },
+  "pipes": {
+    "numClients": 1,
+    "forkedJvmArgs": [
+      "-Xmx256m"
+    ],
+    "emitStrategy": {
+      "type": "EMIT_ALL"
+    }
+  },
+  "parse-context": {
+    "exception-reporting": {
+      "level": "MESSAGE_REDACTED",
+      "maxLength": 10000
+    },
+    "timeout-limits": {
+      "progressTimeoutMillis": 60000
+    }
+  },
+  "auto-detect-parser": {
+    "throwOnZeroBytes": false
+  },
+  "plugin-roots": "PLUGINS_PATHS"
+}

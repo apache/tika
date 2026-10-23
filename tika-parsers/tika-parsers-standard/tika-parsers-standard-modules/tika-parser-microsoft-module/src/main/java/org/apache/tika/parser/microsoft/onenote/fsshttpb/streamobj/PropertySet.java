@@ -37,6 +37,10 @@ import org.apache.tika.parser.microsoft.onenote.fsshttpb.util.BitConverter;
  * This class is used to represent a PropertySet.
  */
 public class PropertySet implements IProperty {
+    // a nesting level costs ~14 file bytes, so unbounded depth lets a small
+    // crafted file drive a StackOverflowError that escapes catch(Exception)
+    public static final int MAX_PROPERTY_NESTING = 100;
+
     public int cProperties;
 
     public PropertyID[] rgPrids;
@@ -72,6 +76,14 @@ public class PropertySet implements IProperty {
      * @return Return the length in byte of the PropertySet.
      */
     public int doDeserializeFromByteArray(byte[] byteArray, int startIndex) throws IOException {
+        return doDeserializeFromByteArray(byteArray, startIndex, 0);
+    }
+
+    public int doDeserializeFromByteArray(byte[] byteArray, int startIndex, int depth)
+            throws IOException {
+        if (depth > MAX_PROPERTY_NESTING) {
+            throw new IOException("PropertySet nesting exceeds " + MAX_PROPERTY_NESTING);
+        }
         int index = startIndex;
 
         this.cProperties = BitConverter.toInt16(byteArray, startIndex);
@@ -124,7 +136,16 @@ public class PropertySet implements IProperty {
                     break;
             }
             if (property != null) {
-                int len = property.doDeserializeFromByteArray(byteArray, index);
+                int len;
+                if (property instanceof PropertySet) {
+                    len = ((PropertySet) property)
+                            .doDeserializeFromByteArray(byteArray, index, depth + 1);
+                } else if (property instanceof PrtArrayOfPropertyValues) {
+                    len = ((PrtArrayOfPropertyValues) property)
+                            .doDeserializeFromByteArray(byteArray, index, depth + 1);
+                } else {
+                    len = property.doDeserializeFromByteArray(byteArray, index);
+                }
                 this.rgData.add(property);
                 index += len;
             }

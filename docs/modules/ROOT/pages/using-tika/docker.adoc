@@ -44,14 +44,16 @@ external.
 
 |`apache/tika:<version>-full`
 |Adds the external tools some parsers shell out to: Tesseract OCR (with `eng`, `ita`, `fra`,
-`spa`, `deu`, `jpn` language packs), GDAL, ImageMagick, and the Liberation / FreeFont /
-msttcorefonts font sets. Considerably larger.
+`spa`, `deu`, `jpn` language packs), GDAL, ImageMagick, ffmpeg (for the audio and video
+segments of a MEDIA inference binding), and the Liberation / FreeFont / msttcorefonts font
+sets. Considerably larger.
 
 |`apache/tika-grpc:<version>`
 |gRPC server on port 9090, with OCR, GDAL and fonts included.
 |===
 
-Take `-full` if you OCR scanned documents or parse geospatial rasters; otherwise take minimal.
+Take `-full` if you OCR scanned documents, parse geospatial rasters, or embed audio and video
+with a xref:configuration/inference.adoc#media[MEDIA inference binding]; otherwise take minimal.
 
 Tags come in three forms: `<version>` rolls forward if the image is rebuilt for the same Tika
 release, `<version>-<N>` is immutable and is what to pin in production, and `latest` tracks the
@@ -98,15 +100,21 @@ For example, to keep the full image's parsers but turn OCR off:
 
 [source,json]
 ----
-{
-  "parsers": [
-    { "default-parser": {} },
-    { "tesseract-ocr-parser": { "skipOcr": true } }
-  ]
-}
+{ "text-recognizers": [] }
 ----
 
 See xref:configuration/index.adoc[Configuration] for the file format.
+
+A catalog preset needs no file: name it in `TIKA_PRESETS` (comma-separated) or with `--preset`,
+and its route is live:
+
+[source,bash]
+----
+docker run -d -p 127.0.0.1:9998:9998 -e TIKA_PRESETS=thumbnail apache/tika:X.Y.Z-full
+curl -T document.pdf http://localhost:9998/unpack/preset/thumbnail
+----
+
+See xref:using-tika/server/index.adoc#_presets_named_configuration_without_config[Presets].
 
 == Extra jars
 
@@ -127,7 +135,9 @@ the Tika process. Outside Docker the equivalent is the `tika.extras.dir` system 
 `/tika`, `/rmeta`, `/meta` and `/unpack` work out of the box. The pipes endpoints (`/pipes`,
 `/async`) need the fetcher and emitter plugins for whatever they talk to. The image ships
 `tika-pipes-file-system` under `/opt/tika-server/plugins/`; mount any other plugin into that
-directory, one subdirectory per plugin.
+directory, one subdirectory per plugin. Plugins publish as `.zip`, so unzip yours first and mount
+the resulting directory — the container cannot expand the zip in place, because
+`/opt/tika-server` is copied in root-owned while the server runs as UID 35002.
 
 [source,bash]
 ----

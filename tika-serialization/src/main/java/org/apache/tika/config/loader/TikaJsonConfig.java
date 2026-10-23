@@ -69,10 +69,10 @@ import org.apache.tika.exception.TikaConfigException;
  * {
  *   // Core Tika components (validated by TikaLoader)
  *   "parsers": [
- *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocr": {"strategy": "AUTO"}, ... } },
+ *     { "pdf-parser": { "_mime-include": ["application/pdf"], "pages": {"text": "AUTO"}, ... } },
  *     { "html-parser": { ... } },
  *     { "default-parser": { "exclude": ["some-parser"] } }
- *     { "pdf-parser": { "_mime-include": ["application/pdf"], "ocr": {"strategy": "AUTO"} } },
+ *     { "pdf-parser": { "_mime-include": ["application/pdf"], "pages": {"text": "AUTO"} } },
  *     "html-parser",                    // String shorthand for no-config components
  *     { "default-parser": { "exclude": ["ocr-parser"] } }
  *   ],
@@ -113,9 +113,13 @@ public class TikaJsonConfig {
             "metadata-filters",
             "content-handler-factory",
             "renderers",
+            "text-recognizers",
+            "engines",
+            "inference",
             "translator",
             "auto-detect-parser",
             "parse-context",
+            "presets",
             "server",
             "grpc",
 
@@ -157,15 +161,36 @@ public class TikaJsonConfig {
     }
 
     /**
-     * Loads configuration from an input stream.
+     * Loads configuration from an input stream. A string value may reference an environment
+     * variable as {@code ${env:NAME}}, alone or inside a longer string; an unset one fails
+     * the load. No other form is interpolated.
      *
      * @param inputStream the input stream containing JSON configuration
      * @return the parsed configuration
      * @throws TikaConfigException if loading or parsing fails
      */
     public static TikaJsonConfig load(InputStream inputStream) throws TikaConfigException {
+        return load(inputStream, true);
+    }
+
+    /**
+     * Loads configuration from an input stream, resolving {@code ${env:NAME}} references only
+     * when {@code resolveEnv} is true. Pass false for JSON whose references were already
+     * resolved, so that a resolved value containing {@code ${env:...}} is not expanded again.
+     *
+     * @param inputStream the input stream containing JSON configuration
+     * @param resolveEnv whether to resolve environment variable references
+     * @return the parsed configuration
+     * @throws TikaConfigException if loading or parsing fails
+     */
+    public static TikaJsonConfig load(InputStream inputStream, boolean resolveEnv)
+            throws TikaConfigException {
         try {
             JsonNode rootNode = OBJECT_MAPPER.readTree(inputStream);
+            if (resolveEnv) {
+                // startup config only: a request's JSON never reaches this method
+                EnvInterpolator.resolve(rootNode, System::getenv);
+            }
             TikaJsonConfig tikaJsonConfig = new TikaJsonConfig(rootNode);
             tikaJsonConfig.validateKeys();
             return tikaJsonConfig;

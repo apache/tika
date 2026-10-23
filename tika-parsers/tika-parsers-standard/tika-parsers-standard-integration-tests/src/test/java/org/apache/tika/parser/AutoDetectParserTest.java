@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -44,6 +45,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
+import org.apache.tika.parser.html.JSoupParser;
 import org.apache.tika.parser.ogg.FlacParser;
 import org.apache.tika.parser.ogg.OpusParser;
 import org.apache.tika.parser.ogg.VorbisParser;
@@ -98,13 +100,7 @@ public class AutoDetectParserTest extends TikaTest {
             TikaLoader.loadDefault().loadAutoDetectParser().parse(tis, handler, metadata, pc);
 
             String actualType = metadata.get(HttpHeaders.CONTENT_TYPE);
-            // When tesseract is available, image types may get an "ocr-" prefix
-            String ocrVariant = tp.realType.startsWith("image/") ?
-                    tp.realType.replace("image/", "image/ocr-") : null;
-            assertTrue(tp.realType.equals(actualType) ||
-                            (ocrVariant != null && ocrVariant.equals(actualType)),
-                    "Bad content type: " + tp +
-                            " ==> expected: <" + tp.realType + "> but was: <" + actualType + ">");
+            assertEquals(tp.realType, actualType, "Bad content type: " + tp);
 
             if (tp.expectedContentFragment != null) {
                 assertTrue(handler.toString().contains(tp.expectedContentFragment),
@@ -386,6 +382,23 @@ public class AutoDetectParserTest extends TikaTest {
         parser.parse(tis, new BodyContentHandler(), metadata, new ParseContext());
 
         assertEquals("value", metadata.get("MyParser"));
+    }
+
+    @Test
+    public void testXulWithExternalDtdEntities() throws Exception {
+        String xul = "<?xml version=\"1.0\"?>\n"
+                + "<!DOCTYPE window [<!ENTITY % appDTD SYSTEM \"chrome://app/locale/app.dtd\">"
+                + " %appDTD;]>\n"
+                + "<window xmlns=\"http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul\""
+                + " xmlns:html=\"http://www.w3.org/1999/xhtml\">"
+                + "<html:p>&app.name; release notes</html:p></window>";
+        Metadata m = new Metadata();
+        m.set(TikaCoreProperties.RESOURCE_NAME_KEY, "aboutDialog.xul");
+        XMLResult r = getXML(TikaInputStream.get(xul.getBytes(UTF_8)), AUTO_DETECT_PARSER, m);
+        assertEquals("application/vnd.mozilla.xul+xml", m.get(HttpHeaders.CONTENT_TYPE));
+        assertContains("release notes", r.xml);
+        assertContains(JSoupParser.class.getName(),
+                Arrays.asList(m.getValues(TikaCoreProperties.TIKA_PARSED_BY)));
     }
 
     @Test

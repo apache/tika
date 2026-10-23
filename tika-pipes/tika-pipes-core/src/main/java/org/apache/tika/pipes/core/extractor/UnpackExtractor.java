@@ -100,6 +100,9 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         }
 
         // Use the delegate parser to parse this entry
+        if (parseRecord != null) {
+            parseRecord.enterEmbedded();
+        }
         try {
             tis.setCloseShield();
             UnpackHandler bytesHandler = context.get(UnpackHandler.class);
@@ -117,6 +120,9 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         } catch (TikaException e) {
             recordException(e, context);
         } finally {
+            if (parseRecord != null) {
+                parseRecord.exitEmbedded();
+            }
             tis.removeCloseShield();
         }
 
@@ -175,7 +181,7 @@ public class UnpackExtractor extends ParsingEmbeddedDocumentExtractor {
         // Get UnpackSelector from ParseContext - if configured, use it to filter
         // If no selector configured, accept all embedded documents
         UnpackSelector selector = context.get(UnpackSelector.class);
-        if (selector != null && !selector.select(metadata)) {
+        if (selector != null && !selector.select(metadata, context)) {
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug("skipping embedded bytes {} <-> {}",
                         metadata.get(HttpHeaders.CONTENT_TYPE),

@@ -17,7 +17,6 @@
 package org.apache.tika.langdetect.charsoup.core;
 
 import java.text.Normalizer;
-import java.util.regex.Pattern;
 
 /**
  * Extracts character n-gram features from text using the hashing trick (FNV-1a).
@@ -36,7 +35,7 @@ import java.util.regex.Pattern;
  * <h3>Pipeline</h3>
  * <ol>
  *   <li>Truncate input at {@link #MAX_TEXT_LENGTH} chars</li>
- *   <li>Strip URLs and emails (TIKA-2777 bounded patterns)</li>
+ *   <li>Strip URLs and emails</li>
  *   <li>NFC normalize</li>
  *   <li>Iterate codepoints (surrogate-safe)</li>
  *   <li>Skip transparent characters (see {@link #isTransparent(int)})</li>
@@ -73,11 +72,26 @@ public class CharSoupFeatureExtractor {
     /** Underscore sentinel codepoint used for word boundary bigrams. */
     static final int SENTINEL = '_';
 
-    // TIKA-2777: bounded regexes to avoid catastrophic backtracking
-    private static final Pattern URL_REGEX =
-            Pattern.compile("https?://[-_.?&~;+=/#0-9A-Za-z]{10,10000}");
-    private static final Pattern MAIL_REGEX =
-            Pattern.compile("[-_.0-9A-Za-z]{1,100}@[-_0-9A-Za-z]{1,100}[-_.0-9A-Za-z]{1,100}");
+    // char classes for the URL/mail scanners below (TIKA-4875)
+    private static final boolean[] URL_CHARS = new boolean[128];
+    private static final boolean[] MAIL_CHARS = new boolean[128];     // domain head: no '.'
+    private static final boolean[] MAIL_DOT_CHARS = new boolean[128]; // local part / domain tail
+
+    static {
+        for (int c = '0'; c <= '9'; c++) {
+            URL_CHARS[c] = MAIL_CHARS[c] = MAIL_DOT_CHARS[c] = true;
+        }
+        for (int c = 'A'; c <= 'Z'; c++) {
+            URL_CHARS[c] = MAIL_CHARS[c] = MAIL_DOT_CHARS[c] = true;
+            int l = c + ('a' - 'A');
+            URL_CHARS[l] = MAIL_CHARS[l] = MAIL_DOT_CHARS[l] = true;
+        }
+        for (char c : "-_.?&~;+=/#".toCharArray()) {
+            URL_CHARS[c] = true;
+        }
+        MAIL_CHARS['-'] = MAIL_CHARS['_'] = true;
+        MAIL_DOT_CHARS['-'] = MAIL_DOT_CHARS['_'] = MAIL_DOT_CHARS['.'] = true;
+    }
 
     /** Arabic Tatweel (kashida) — a typographic stretching character (U+0640). */
     private static final int TATWEEL = 0x0640;
@@ -244,17 +258,9 @@ public class CharSoupFeatureExtractor {
      * @return cleaned, NFC-normalized text
      */
     public static String preprocessNoTruncate(String rawText) {
-        // Strip URLs and emails. Both regexes scan the entire input on every call;
-        // skip each unless its required marker is present ("://" for URL_REGEX, "@"
-        // for MAIL_REGEX). This is a no-op for the common (markerless) case — the
-        // output is identical — but avoids a full-buffer regex scan + Matcher alloc.
-        String text = rawText;
-        if (text.indexOf("://") >= 0) {
-            text = URL_REGEX.matcher(text).replaceAll(" ");
-        }
-        if (text.indexOf('@') >= 0) {
-            text = MAIL_REGEX.matcher(text).replaceAll(" ");
-        }
+        // order matters: the URL replacement is a barrier ("http://aaaaaaaaaa@bb" is not a mail match)
+        String text = stripUrls(rawText);
+        text = stripEmails(text);
 
         // NFC normalize
         if (!Normalizer.isNormalized(text, Normalizer.Form.NFC)) {
@@ -262,6 +268,115 @@ public class CharSoupFeatureExtractor {
         }
 
         return text;
+    }
+
+    /**
+     * Equivalent to {@code "https?://[-_.?&~;+=/#0-9A-Za-z]{10,10000}"} replaced with " ".
+     * Matches cannot overlap (':' is outside the char class), so consuming them left to
+     * right reproduces the regex's leftmost order.
+     */
+    private static String stripUrls(String text) {
+        int n = text.length();
+        StringBuilder sb = null;
+        int emitted = 0;
+        int i = 0;
+        while (i < n) {
+            if (text.charAt(i) == 'h') {
+                int afterScheme = -1;
+                if (text.startsWith("http://", i)) {
+                    afterScheme = i + 7;
+                } else if (text.startsWith("https://", i)) {
+                    afterScheme = i + 8;
+                }
+                if (afterScheme > 0) {
+                    int max = Math.min(n, afterScheme + 10000);
+                    int k = afterScheme;
+                    while (k < max && text.charAt(k) < 128 && URL_CHARS[text.charAt(k)]) {
+                        k++;
+                    }
+                    if (k - afterScheme >= 10) {
+                        if (sb == null) {
+                            sb = new StringBuilder(n);
+                        }
+                        sb.append(text, emitted, i).append(' ');
+                        emitted = k;
+                        i = k;
+                        continue;
+                    }
+                }
+            }
+            i++;
+        }
+        if (sb == null) {
+            return text;
+        }
+        return sb.append(text, emitted, n).toString();
+    }
+
+    /**
+     * Equivalent to
+     * {@code "[-_.0-9A-Za-z]{1,100}@[-_0-9A-Za-z]{1,100}[-_.0-9A-Za-z]{1,100}"} replaced with " ".
+     * Rebuilt around each '@': the local part scans back (max 100, not past the previous
+     * match, where find() resumes); ahead, the dotless head runs greedily (max 100) and
+     * yields exactly one char to the tail when the tail cannot otherwise start -- the
+     * only backtrack the regex can take ("a@bb" matches, "a@b" does not).
+     * No match spans a second '@', so left to right is leftmost order.
+     */
+    private static String stripEmails(String text) {
+        int n = text.length();
+        StringBuilder sb = null;
+        int emitted = 0;
+        int floor = 0;
+        int i = 0;
+        while (i < n) {
+            if (text.charAt(i) == '@') {
+                int s = i;
+                while (s > floor && i - s < 100) {
+                    char p = text.charAt(s - 1);
+                    if (p < 128 && MAIL_DOT_CHARS[p]) {
+                        s--;
+                    } else {
+                        break;
+                    }
+                }
+                if (s < i) {
+                    int m = i + 1;
+                    int cap2 = Math.min(n, m + 100);
+                    int j = m;
+                    while (j < cap2 && text.charAt(j) < 128 && MAIL_CHARS[text.charAt(j)]) {
+                        j++;
+                    }
+                    int end = -1;
+                    if (j > m) {
+                        if (j < n && text.charAt(j) < 128 && MAIL_DOT_CHARS[text.charAt(j)]) {
+                            int cap3 = Math.min(n, j + 100);
+                            int k = j;
+                            while (k < cap3 && text.charAt(k) < 128 && MAIL_DOT_CHARS[text.charAt(k)]) {
+                                k++;
+                            }
+                            end = k;
+                        } else if (j - m >= 2) {
+                            end = j;
+                        }
+                    }
+                    if (end >= 0) {
+                        if (sb == null) {
+                            sb = new StringBuilder(n);
+                        }
+                        sb.append(text, emitted, s).append(' ');
+                        emitted = end;
+                        floor = end;
+                        i = end;
+                        continue;
+                    }
+                }
+            }
+            i++;
+        }
+        if (sb == null) {
+            return text;
+        }
+        return sb.append(text, emitted, n).toString();
     }
 
     /**

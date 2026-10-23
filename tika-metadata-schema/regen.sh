@@ -22,7 +22,7 @@
 #
 # Run this after adding, renaming, or removing a Property or KeyPrefix
 # constant anywhere in tika-core or the standard parser bundle. It replaces the
-# multi-step manual sequence in .skills/metadata-schema/SKILL.md with one command:
+# multi-step manual sequence in .skills/devs/metadata-schema/SKILL.md with one command:
 # install the dependency modules, regenerate the three registry files, sanity
 # check the diff, then run the gate tests.
 #
@@ -34,7 +34,7 @@
 #                   changed since the last install)
 #   --skip-tests    skip the final gate-test run, for a faster inner loop
 #
-# See tika-metadata-schema/README.md and .skills/metadata-schema/SKILL.md for the
+# See tika-metadata-schema/README.md and .skills/devs/metadata-schema/SKILL.md for the
 # design and the traps this script exists to route around.
 
 set -euo pipefail
@@ -86,7 +86,7 @@ for f in "${REGISTRY_FILES[@]}"; do
     fi
 done
 
-echo "==> Regenerating the registry (forked exec — see .skills/metadata-schema/SKILL.md for why exec:java is unsafe)"
+echo "==> Regenerating the registry (forked exec — see .skills/devs/metadata-schema/SKILL.md for why exec:java is unsafe)"
 ./mvnw -pl tika-metadata-schema -Pregen-metadata-schema process-classes "$MVN_REPO_OPT"
 
 echo "==> Comparing key counts before/after (a large drop usually means classes failed to load):"

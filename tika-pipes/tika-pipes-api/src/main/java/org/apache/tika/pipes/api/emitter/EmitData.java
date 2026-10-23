@@ -28,6 +28,15 @@ public interface EmitData {
 
     String getContainerStackTrace();
 
+    /**
+     * Raw UTF-8 content bytes, set only when the request opted in via
+     * {@code content-bytes-config} under {@code ParseMode.CONTENT_ONLY};
+     * the metadata then no longer carries {@code TIKA_CONTENT}. Null otherwise.
+     */
+    default byte[] getContentBytes() {
+        return null;
+    }
+
     long getEstimatedSizeBytes();
 
     /**

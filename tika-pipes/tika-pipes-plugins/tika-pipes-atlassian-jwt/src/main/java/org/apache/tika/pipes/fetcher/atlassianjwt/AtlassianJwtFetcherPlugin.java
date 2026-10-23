@@ -25,19 +25,19 @@ public class AtlassianJwtFetcherPlugin extends Plugin {
     
     @Override
     public void start() {
-        LOG.info("Starting Atlassian JWT Fetcher Plugin");
+        LOG.debug("Starting Atlassian JWT Fetcher Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping Atlassian JWT Fetcher Plugin");
+        LOG.debug("Stopping Atlassian JWT Fetcher Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting Atlassian JWT Fetcher Plugin");
+        LOG.debug("Deleting Atlassian JWT Fetcher Plugin");
         super.delete();
     }
 }

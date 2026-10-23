@@ -1,0 +1,10 @@
+{
+  "pipes-reporters": {
+    "file-system-jsonl-reporter": {
+      "path": "/var/log/tika/pipes-audit.jsonl",
+      "includes": ["OOM", "TIMEOUT", "UNSPECIFIED_CRASH", "PAYLOAD_LIMIT_EXCEEDED", "EMIT_EXCEPTION", "FETCH_EXCEPTION"],
+      "onExists": "EXCEPTION",
+      "maxMessageLength": 10000
+    }
+  }
+}

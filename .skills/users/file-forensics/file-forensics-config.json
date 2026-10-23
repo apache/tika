@@ -1,0 +1,46 @@
+{
+  "server": {},
+  "parsers": [
+    {
+      "default-parser": {}
+    },
+    {
+      "pdf-parser": {
+        "extractActions": true,
+        "extractFontNames": true,
+        "parseIncrementalUpdates": true,
+        "extractInlineImages": true
+      }
+    },
+    {
+      "office-parser": {
+        "extractMacros": true,
+        "includeDeletedContent": true,
+        "includeMoveFromContent": true,
+        "includeMissingRows": true
+      }
+    },
+    {
+      "ooxml-parser": {
+        "extractMacros": true,
+        "includeDeletedContent": true,
+        "includeMoveFromContent": true,
+        "includeMissingRows": true
+      }
+    },
+    {
+      "jsoup-parser": {
+        "extractScripts": true
+      }
+    }
+  ],
+  "parse-context": {
+    "commons-digester-factory": {
+      "digests": [
+        {
+          "algorithm": "SHA256"
+        }
+      ]
+    }
+  }
+}

@@ -158,7 +158,7 @@ In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.
 
 |`queryTimeoutSeconds`
 |`-1`
-|Passed straight to `Statement.setQueryTimeout(int seconds)` with no guard. Use `0` for the JDBC contract's "no limit" — the `-1` default is outside that contract and drivers may reject it.
+|Applied via `Statement.setQueryTimeout(int seconds)` only when greater than `0`. `0` and any negative value both leave the driver's own setting alone, so the JDBC contract's explicit "no limit" cannot be requested here.
 |===
 
 [#jdbc-reporter]

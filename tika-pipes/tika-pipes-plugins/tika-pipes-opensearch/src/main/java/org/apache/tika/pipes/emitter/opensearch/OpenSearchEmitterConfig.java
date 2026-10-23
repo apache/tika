@@ -16,14 +16,31 @@
  */
 package org.apache.tika.pipes.emitter.opensearch;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
+import org.apache.tika.plugins.PluginJson;
 
 public record OpenSearchEmitterConfig(String openSearchUrl, String idField, AttachmentStrategy attachmentStrategy,
                                       UpdateStrategy updateStrategy, int commitWithin,
-                                      String embeddedFileFieldName, HttpClientConfig httpClientConfig) {
+                                      String embeddedFileFieldName, HttpClientConfig httpClientConfig,
+                                      ChunkStrategy chunkStrategy) {
+    /** Where {@code tk:chunks} goes: inside its document, or one document per chunk. */
+    public enum ChunkStrategy {
+        INLINE, DOCUMENTS
+    }
+
+    public OpenSearchEmitterConfig {
+        chunkStrategy = chunkStrategy == null ? ChunkStrategy.INLINE : chunkStrategy;
+    }
+
+    /** The 4.0.0 shape: chunks stay inline. */
+    public OpenSearchEmitterConfig(String openSearchUrl, String idField,
+                                   AttachmentStrategy attachmentStrategy,
+                                   UpdateStrategy updateStrategy, int commitWithin,
+                                   String embeddedFileFieldName, HttpClientConfig httpClientConfig) {
+        this(openSearchUrl, idField, attachmentStrategy, updateStrategy, commitWithin,
+                embeddedFileFieldName, httpClientConfig, ChunkStrategy.INLINE);
+    }
+
     public enum AttachmentStrategy {
         SEPARATE_DOCUMENTS, PARENT_CHILD,
     }
@@ -32,16 +49,19 @@ public record OpenSearchEmitterConfig(String openSearchUrl, String idField, Atta
         OVERWRITE, UPSERT
     }
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     public static OpenSearchEmitterConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json,
-                    OpenSearchEmitterConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse OpenSearchEmitterConfig from JSON", e);
+        OpenSearchEmitterConfig config = PluginJson.read(json, OpenSearchEmitterConfig.class);
+        config.validate();
+        return config;
+    }
+
+    /** Chunk documents carry no join field, so they cannot live in a PARENT_CHILD index. */
+    public void validate() throws TikaConfigException {
+        if (chunkStrategy == ChunkStrategy.DOCUMENTS
+                && attachmentStrategy == AttachmentStrategy.PARENT_CHILD) {
+            throw new TikaConfigException("chunkStrategy DOCUMENTS needs attachmentStrategy "
+                    + "SEPARATE_DOCUMENTS: chunk documents have no join field");
         }
     }
 

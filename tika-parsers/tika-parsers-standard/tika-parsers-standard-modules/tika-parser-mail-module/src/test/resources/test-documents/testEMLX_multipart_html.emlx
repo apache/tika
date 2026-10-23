@@ -1,0 +1,86 @@
+2803      
+Delivered-To: dors.venabili@example.com
+Received: by 10.0.0.1 with SMTP id a1csp000001abc; Sat, 26 Sep 2015
+ 13:02:49 -0700 (PDT)
+X-Received: by 10.0.0.2 with SMTP id b2mr000002pbc.10.1443297769000;
+ Sat, 26 Sep 2015 13:02:49 -0700 (PDT)
+Return-Path: <listings@example.com>
+Received: from mail.example.com (mail.example.com. [10.0.0.3]) by
+ mx.example.net with ESMTP id c3si000003abc.10.2015.09.26.13.02.48 for
+ <dors.venabili@example.com>; Sat, 26 Sep 2015 13:02:49 -0700 (PDT)
+Received-SPF: pass (example.net: domain of listings@example.com
+ designates 10.0.0.3 as permitted sender) client-ip=10.0.0.3;
+Authentication-Results: mx.example.net; spf=pass (example.net: domain of
+ listings@example.com designates 10.0.0.3 as permitted sender)
+ smtp.mailfrom=listings@example.com; dkim=pass header.i=@example.com
+DKIM-Signature: v=1; a=rsa-sha256; c=simple; d=example.com; s=selector;
+ t=1443297733; x=1443902533; q=dns/txt; h=From:To:
+ Subject:Date:MIME-Version:Content-Type:Reply-To:Message-ID; bh=
+ AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=; b=BBBBBBBBBBBBBBBBBB
+ BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+ BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+ BBBBBBBBBBBBBBBBBBBBBBBBBBBB=
+Received: from relay01 by mail.example.com (ExampleMTA v1.0) with
+ ESMTPA id d4msg000004.msg for <dors.venabili@example.com>; Sat, 26 Sep 2015
+ 13:02:11 -0700
+X-Spam-Processed: mail.example.com, Sat, 26 Sep 2015 13:02:11 -0700 (not
+ processed: spam filter heuristic analysis disabled)
+X-MTA-Helo: relay01
+X-MTA-Arrival-Date: Sat, 26 Sep 2015 13:02:11 -0700
+X-Authenticated-Sender: mailer@example.com
+X-Return-Path: listings@example.com
+X-Envelope-From: listings@example.com
+X-MTA-Deliver-To: dors.venabili@example.com
+From: Hari Seldon <hseldon@example.com>
+To: "Venabili, Dors" <dors.venabili@example.com>
+Subject: Set the Foundation Straight
+Date: Sat, 26 Sep 2015 09:30:20 -0700
+MIME-Version: 1.0
+X-Mailer: ExampleMailer 0.5.8b
+Content-Type: multipart/alternative;
+ boundary="_=ExampleMailer=_0123456789abcdef"
+Reply-To: Hari Seldon <hseldon@example.com>
+Message-ID: <20150926163020.0001@example.com>
+
+
+--_=ExampleMailer=_0123456789abcdef
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: TEXT/PLAIN;
+	charset=utf-8
+
+Dear Dors Venabili,
+
+The plan for the Foundation is attached in this message=E2=80=99s HTML part.
+
+Best regards,
+Hari Seldon
+
+--_=ExampleMailer=_0123456789abcdef
+Content-Transfer-Encoding: QUOTED-PRINTABLE
+Content-Type: TEXT/HTML;
+	charset=utf-8
+
+<html><head><title>Set the Foundation Straight</title></head>
+<body><font face=3D"Arial" size=3D"2">
+Dear Dors Venabili,<br><br>
+The plan for the Foundation is in this message=E2=80=99s HTML part.<br><br>
+Best regards,<br>Hari Seldon<br>
+</font></body></html>
+
+--_=ExampleMailer=_0123456789abcdef--
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>conversation-id</key>
+	<integer>900001</integer>
+	<key>date-last-viewed</key>
+	<integer>0</integer>
+	<key>date-received</key>
+	<integer>1443297769</integer>
+	<key>flags</key>
+	<integer>25803619329</integer>
+	<key>remote-id</key>
+	<string>90002</string>
+</dict>
+</plist>

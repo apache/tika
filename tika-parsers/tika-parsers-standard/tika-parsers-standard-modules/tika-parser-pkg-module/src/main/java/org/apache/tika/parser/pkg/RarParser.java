@@ -17,12 +17,14 @@
 package org.apache.tika.parser.pkg;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.Set;
 
 import com.github.junrar.Archive;
 import com.github.junrar.exception.RarException;
 import com.github.junrar.rarfile.FileHeader;
+import org.apache.commons.io.input.ProxyInputStream;
 import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
@@ -34,6 +36,7 @@ import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -85,12 +88,21 @@ public class RarParser implements Parser {
             while (header != null && !Thread.currentThread().isInterrupted()) {
                 if (!header.isDirectory()) {
                     Metadata entrydata = AbstractArchiveParser.handleEntryMetadata(
-                            header.getFileName(), header.getCTime(), header.getMTime(),
-                            header.getFullUnpackSize(), xhtml, context);
-                    try (TikaInputStream rarTis = TikaInputStream.get(rar.getInputStream(header))) {
+                            header.getFileName(), null, null, header.getFullUnpackSize(), xhtml, context);
+                    // RAR4 times are DOS local time; junrar resolves them in the JVM default zone
+                    AbstractArchiveParser.setLocalTime(entrydata, FileSystem.CREATED, header.getCTime());
+                    AbstractArchiveParser.setLocalTime(entrydata, FileSystem.MODIFIED, header.getMTime());
+                    AbstractArchiveParser.setLocalTime(entrydata, FileSystem.ACCESSED, header.getATime());
+                    EntryStream entryStream = new EntryStream(rar.getInputStream(header));
+                    try (TikaInputStream rarTis = TikaInputStream.get(entryStream)) {
                         if (extractor.shouldParseEmbedded(entrydata, context)) {
                             extractor.parseEmbedded(rarTis, handler, entrydata, context, true);
                         }
+                    }
+                    if (entryStream.failure != null) {
+                        EmbeddedDocumentUtil.recordEmbeddedStreamException(
+                                new IOException("RAR entry " + header.getFileName(),
+                                        entryStream.failure), metadata, context);
                     }
                 }
 
@@ -107,5 +119,25 @@ public class RarParser implements Parser {
         }
 
         xhtml.endDocument();
+    }
+
+    /**
+     * junrar 8.1.2+ reports a failed entry (truncated archive, bad CRC, missing password) as an
+     * IOException on the entry's stream. End the entry there instead, as junrar 8.1.1 did, so
+     * the bytes it delivered are still parsed and the rest of the archive is reached.
+     */
+    private static class EntryStream extends ProxyInputStream {
+        private IOException failure;
+
+        EntryStream(InputStream in) {
+            super(in);
+        }
+
+        @Override
+        protected void handleIOException(IOException e) {
+            if (failure == null) {
+                failure = e;
+            }
+        }
     }
 }

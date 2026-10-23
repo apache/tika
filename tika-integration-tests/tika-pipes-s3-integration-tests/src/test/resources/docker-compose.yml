@@ -14,11 +14,13 @@
 # limitations under the License.
 version: '3.7'
 services:
-  minio-service:
-    image: quay.io/minio/minio
-    command: minio server /data
+  s3-service:
+    # S3-compatible stand-in; MinIO withdrew its public images (TIKA-4928)
+    image: rustfs/rustfs:1.0.0
     ports:
       - "9000:9000"
     environment:
-      MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: minio123
+      RUSTFS_ADDRESS: 0.0.0.0:9000
+      RUSTFS_CONSOLE_ENABLE: "false"
+      RUSTFS_ACCESS_KEY: minio
+      RUSTFS_SECRET_KEY: minio123

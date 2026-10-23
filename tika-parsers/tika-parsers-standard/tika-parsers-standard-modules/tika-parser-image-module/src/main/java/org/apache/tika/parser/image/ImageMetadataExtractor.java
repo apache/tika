@@ -19,9 +19,15 @@ package org.apache.tika.parser.image;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.SimpleDateFormat;
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
@@ -41,6 +47,7 @@ import com.drew.imaging.tiff.TiffProcessingException;
 import com.drew.imaging.webp.WebpMetadataReader;
 import com.drew.lang.ByteArrayReader;
 import com.drew.lang.GeoLocation;
+import com.drew.lang.RandomAccessReader;
 import com.drew.lang.Rational;
 import com.drew.metadata.Directory;
 import com.drew.metadata.MetadataException;
@@ -70,6 +77,7 @@ import org.apache.commons.io.IOUtils;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Geographic;
 import org.apache.tika.metadata.IPTC;
 import org.apache.tika.metadata.KeyPrefix;
@@ -77,6 +85,7 @@ import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TIFF;
 import org.apache.tika.metadata.TikaCoreProperties;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Uses the <a href="http://www.drewnoakes.com/code/exif/">Metadata Extractor</a> library
@@ -102,10 +111,18 @@ public class ImageMetadataExtractor {
     private DirectoryHandler[] handlers;
 
     /**
-     * @param metadata to extract to, using default directory handlers
+     * @param metadata to extract to, using default directory handlers and options
      */
     public ImageMetadataExtractor(Metadata metadata) {
-        this(metadata, new CopyUnknownFieldsHandler(), new TiffPageNumberHandler(),
+        this(metadata, new ImageMetadataConfig());
+    }
+
+    /**
+     * @param metadata to extract to, using default directory handlers
+     * @param config   options for the default handlers
+     */
+    public ImageMetadataExtractor(Metadata metadata, ImageMetadataConfig config) {
+        this(metadata, new CopyUnknownFieldsHandler(config), new TiffPageNumberHandler(),
                 new JpegCommentHandler(), new ExifHandler(), new DimensionsHandler(),
                 new GeotagHandler(), new IptcHandler());
     }
@@ -135,6 +152,50 @@ public class ImageMetadataExtractor {
             new ExifReader(), new IccReader(), new PhotoshopReader(), new DuckyReader(),
             new IptcReader(), new AdobeJpegReader(), new JpegDhtReader(), new JpegDnlReader());
 
+    /**
+     * Reads from the file when one already exists (that path also yields metadata-extractor's
+     * file-system tags: img:File Name/Size/Modified Date, which describe the file, not the
+     * image), and from the stream otherwise. JPEG is read sequentially, so the stream costs
+     * no extra memory.
+     */
+    public void parseJpeg(TikaInputStream tis) throws IOException, SAXException, TikaException {
+        if (tis.hasFile()) {
+            parseJpeg(tis.getFile());
+        } else {
+            parseJpeg((InputStream) tis);
+        }
+    }
+
+    /**
+     * TIFF needs random access. In-memory content is read in place through a zero-copy view;
+     * anything else is read from the file. There is deliberately no InputStream overload:
+     * metadata-extractor's stream reader retains everything it reads.
+     */
+    public void parseTiff(TikaInputStream tis) throws IOException, SAXException, TikaException {
+        if (tis.hasFile()) {
+            parseTiff(tis.getFile());
+            return;
+        }
+        try (SeekableByteChannel channel = tis.getSeekableByteChannel()) {
+            ByteBuffer view = TikaInputStream.inMemoryContent(channel);
+            if (view != null) {
+                parseTiff(new ByteBufferReader(view));
+                return;
+            }
+        }
+        // the drain spilled: the content is on disk now
+        parseTiff(tis.getFile());
+    }
+
+    /** See {@link #parseJpeg(TikaInputStream)}; WebP is read sequentially too. */
+    public void parseWebP(TikaInputStream tis) throws IOException, TikaException {
+        if (tis.hasFile()) {
+            parseWebP(tis.getFile());
+        } else {
+            parseWebP((InputStream) tis);
+        }
+    }
+
     public void parseJpeg(File file) throws IOException, SAXException, TikaException {
         try {
             com.drew.metadata.Metadata jpegMetadata =
@@ -145,23 +206,41 @@ public class ImageMetadataExtractor {
         }
     }
 
+    public void parseJpeg(InputStream stream) throws IOException, SAXException, TikaException {
+        try {
+            handle(JpegMetadataReader.readMetadata(stream, JPEG_READERS_NO_XMP));
+        } catch (JpegProcessingException | MetadataException e) {
+            throw new TikaException("Can't read JPEG metadata", e);
+        }
+    }
+
     public void parseTiff(File file) throws IOException, SAXException, TikaException {
         try {
-            com.drew.metadata.Metadata tiffMetadata = TiffMetadataReader.readMetadata(file);
-            handle(tiffMetadata);
+            handle(TiffMetadataReader.readMetadata(file));
+        } catch (MetadataException | TiffProcessingException e) {
+            throw new TikaException("Can't read TIFF metadata", e);
+        }
+    }
+
+    private void parseTiff(RandomAccessReader reader) throws IOException, SAXException, TikaException {
+        try {
+            handle(TiffMetadataReader.readMetadata(reader));
         } catch (MetadataException | TiffProcessingException e) {
             throw new TikaException("Can't read TIFF metadata", e);
         }
     }
 
     public void parseWebP(File file) throws IOException, TikaException {
-
         try {
-            com.drew.metadata.Metadata webPMetadata = new com.drew.metadata.Metadata();
-            webPMetadata = WebpMetadataReader.readMetadata(file);
-            handle(webPMetadata);
-        } catch (IOException e) {
-            throw e;
+            handle(WebpMetadataReader.readMetadata(file));
+        } catch (RiffProcessingException | MetadataException e) {
+            throw new TikaException("Can't process Riff data", e);
+        }
+    }
+
+    public void parseWebP(InputStream stream) throws IOException, TikaException {
+        try {
+            handle(WebpMetadataReader.readMetadata(stream));
         } catch (RiffProcessingException | MetadataException e) {
             throw new TikaException("Can't process Riff data", e);
         }
@@ -281,6 +360,24 @@ public class ImageMetadataExtractor {
      * This leads to more predictable behavior than {@link CopyAllFieldsHandler}.
      */
     static class CopyUnknownFieldsHandler implements DirectoryHandler {
+        // ICC tag-table entries carry a 4-byte type signature; these types are curves and LUTs
+        private static final int ICC_TYPE_CURV = 0x63757276;
+        private static final int ICC_TYPE_PARA = 0x70617261;
+        private static final int ICC_TYPE_MFT1 = 0x6D667431;
+        private static final int ICC_TYPE_MFT2 = 0x6D667432;
+        private static final int ICC_TYPE_MAB = 0x6D414220;
+        private static final int ICC_TYPE_MBA = 0x6D424120;
+
+        private final boolean includeIccCurvesAndLuts;
+
+        CopyUnknownFieldsHandler() {
+            this(new ImageMetadataConfig());
+        }
+
+        CopyUnknownFieldsHandler(ImageMetadataConfig config) {
+            this.includeIccCurvesAndLuts = config.isIncludeIccCurvesAndLuts();
+        }
+
         public boolean supports(Class<? extends Directory> directoryType) {
             return true;
         }
@@ -289,8 +386,28 @@ public class ImageMetadataExtractor {
             if (directory.getTags() != null) {
                 for (Tag tag : directory.getTags()) {
                     String name = tag.getTagName();
-                    if (!MetadataFields.isMetadataField(name) && tag.getDescription() != null) {
-                        String value = tag.getDescription().trim();
+                    if (MetadataFields.isMetadataField(name)) {
+                        continue;
+                    }
+                    int iccType = directory instanceof IccDirectory ?
+                            iccTagDataType(directory, tag.getTagType()) : 0;
+                    // decided before getDescription(): formatting a curve is the whole cost
+                    if (!includeIccCurvesAndLuts && isIccCurveOrLut(iccType)) {
+                        continue;
+                    }
+                    String description;
+                    try {
+                        description = iccType == ICC_TYPE_CURV ?
+                                formatIccCurve(directory.getByteArray(tag.getTagType())) :
+                                tag.getDescription();
+                    } catch (ClassCastException | IndexOutOfBoundsException e) {
+                        //a descriptor reads its tag as the type and length it expects,
+                        //and throws when the file stored another: one tag nobody can
+                        //describe is no reason to drop the rest of the directory
+                        continue;
+                    }
+                    if (description != null) {
+                        String value = description.trim();
                         if (Boolean.TRUE.toString().equalsIgnoreCase(value)) {
                             value = Boolean.TRUE.toString();
                         } else if (Boolean.FALSE.toString().equalsIgnoreCase(value)) {
@@ -306,6 +423,69 @@ public class ImageMetadataExtractor {
                     }
                 }
             }
+        }
+
+        private static int iccTagDataType(Directory directory, int tagType) {
+            // header fields sit below the printable-ASCII range of tag-table signatures
+            if (tagType <= 0x20202020 || tagType >= 0x7a7a7a7a) {
+                return 0;
+            }
+            byte[] data = directory.getByteArray(tagType);
+            if (data == null || data.length < 4) {
+                return 0;
+            }
+            return ((data[0] & 0xff) << 24) | ((data[1] & 0xff) << 16) |
+                    ((data[2] & 0xff) << 8) | (data[3] & 0xff);
+        }
+
+        private static boolean isIccCurveOrLut(int type) {
+            switch (type) {
+                case ICC_TYPE_CURV:
+                case ICC_TYPE_PARA:
+                case ICC_TYPE_MFT1:
+                case ICC_TYPE_MFT2:
+                case ICC_TYPE_MAB:
+                case ICC_TYPE_MBA:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        // metadata-extractor 2.21.0 formats curv in the default locale: "0," under de_DE
+        static String formatIccCurve(byte[] data) {
+            if (data.length < 12) {
+                return null;
+            }
+            ByteBuffer b = ByteBuffer.wrap(data);
+            long count = Integer.toUnsignedLong(b.getInt(8));
+            if (count > (data.length - 12) / 2) {
+                return null;
+            }
+            // per the ICC curveType: no entries is identity, one entry is a u8Fixed8 gamma
+            if (count == 0) {
+                return "1.0";
+            }
+            if (count == 1) {
+                return formatIccNumber((b.getShort(12) & 0xffff) / 256.0);
+            }
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < count; i++) {
+                if (i > 0) {
+                    sb.append(", ");
+                }
+                sb.append(formatIccNumber((b.getShort(12 + i * 2) & 0xffff) / 65535.0));
+            }
+            return sb.toString();
+        }
+
+        private static String formatIccNumber(double value) {
+            String v = String.format(Locale.ROOT, "%.7f", value);
+            int end = v.length();
+            while (end > v.indexOf('.') + 2 && v.charAt(end - 1) == '0') {
+                end--;
+            }
+            return v.substring(0, end);
         }
     }
 
@@ -385,13 +565,25 @@ public class ImageMetadataExtractor {
 
     static class ExifHandler implements DirectoryHandler {
         // There's a new ExifHandler for each file processed, so this is thread safe
+        // EXIF dates have no zone: write them in GMT
+        private static final TimeZone GMT = TimeZone.getTimeZone("GMT");
         private final SimpleDateFormat dateUnspecifiedTz = getUnspecifiedTzDateFormat();
+
+        // metadata-extractor parses with the default locale's calendar; TikaDates does not
+        private static Date exifDate(Directory directory, int tag) {
+            Object o = directory.getObject(tag);
+            if (o instanceof Date) {
+                return TikaDates.inYearBounds(((Date) o).toInstant()) ? (Date) o : null;
+            }
+            if (o == null) {
+                return null;
+            }
+            return TikaDates.parse(o.toString()).map(d -> Date.from(d.toInstant())).orElse(null);
+        }
 
         private SimpleDateFormat getUnspecifiedTzDateFormat() {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);
-            // As of Drew Noakes' metadata-extractor 2.8.1, unspecified
-            // timezones are set to TimeZone.getTimeZone("GMT")
-            df.setTimeZone(TimeZone.getTimeZone("GMT"));
+            df.setTimeZone(GMT);
             return df;
         }
 
@@ -561,18 +753,17 @@ public class ImageMetadataExtractor {
             // Date/Time Original overrides value from ExifDirectory.TAG_DATETIME
             Date original = null;
             if (directory.containsTag(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)) {
-                original = directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
+                original = exifDate(directory, ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
                 // Unless we have GPS time we don't know the time zone so date must be set
                 // as ISO 8601 datetime without timezone suffix (no Z or +/-)
                 if (original != null) {
-                    String datetimeNoTimeZone = dateUnspecifiedTz
-                            .format(original); // Same time zone as Metadata Extractor uses
+                    String datetimeNoTimeZone = dateUnspecifiedTz.format(original);
                     metadata.set(TikaCoreProperties.CREATED, datetimeNoTimeZone);
                     metadata.set(TIFF.ORIGINAL_DATE, datetimeNoTimeZone);
                 }
             }
             if (directory.containsTag(ExifIFD0Directory.TAG_DATETIME)) {
-                Date datetime = directory.getDate(ExifIFD0Directory.TAG_DATETIME);
+                Date datetime = exifDate(directory, ExifIFD0Directory.TAG_DATETIME);
                 if (datetime != null) {
                     String datetimeNoTimeZone = dateUnspecifiedTz.format(datetime);
                     metadata.set(TikaCoreProperties.MODIFIED, datetimeNoTimeZone);
@@ -635,6 +826,25 @@ public class ImageMetadataExtractor {
      * Maps EXIF Geo Tags onto the Tika Geo metadata namespace.
      */
     static class GeotagHandler implements DirectoryHandler {
+        // GpsDirectory.getGpsDate parses with the default locale's calendar
+        static Date gpsDate(GpsDirectory directory) {
+            String stamp = directory.getString(GpsDirectory.TAG_DATE_STAMP);
+            Rational[] time = directory.getRationalArray(GpsDirectory.TAG_TIME_STAMP);
+            if (stamp == null || time == null || time.length != 3) {
+                return null;
+            }
+            try {
+                LocalDate day = TikaDates.parse(stamp).map(d -> d.getLocalDateTime().toLocalDate()).orElse(null);
+                if (day == null) {
+                    return null;
+                }
+                LocalTime t = LocalTime.of(time[0].intValue(), time[1].intValue(), (int) time[2].doubleValue());
+                return Date.from(day.atTime(t).toInstant(ZoneOffset.UTC));
+            } catch (DateTimeException e) {
+                return null;
+            }
+        }
+
         public boolean supports(Class<? extends Directory> directoryType) {
             return directoryType == GpsDirectory.class;
         }
@@ -649,7 +859,7 @@ public class ImageMetadataExtractor {
                 metadata.set(TikaCoreProperties.LONGITUDE,
                         geoDecimalFormat.format(geoLocation.getLongitude()));
             }
-            Date gpsDate = ((GpsDirectory)directory).getGpsDate();
+            Date gpsDate = gpsDate((GpsDirectory) directory);
             if (gpsDate != null) {
                 metadata.set(Geographic.TIMESTAMP, gpsDate);
             }

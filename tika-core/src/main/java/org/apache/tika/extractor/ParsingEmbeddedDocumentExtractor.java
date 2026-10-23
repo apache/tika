@@ -32,6 +32,7 @@ import org.apache.tika.exception.EmbeddedLimitReachedException;
 import org.apache.tika.exception.EncryptedDocumentException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.DelegatingParser;
@@ -42,6 +43,7 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.SAXOutputConfig;
 import org.apache.tika.sax.XHTMLBalancingHandler;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Helper class for parsers of package archives or other compound document
@@ -152,10 +154,10 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
         // Depth limit only applies to current depth - siblings at shallower levels
         // can still be parsed. The flag is set for reporting purposes.
-        // depth is 1-indexed (main doc is depth 1), so embedded depth limit of N
-        // means we allow parsing up to depth N+1
+        // The child would be one level below the current document, so with
+        // maxDepth N the children of documents at depth N are not parsed.
         int maxDepth = parseRecord.getMaxEmbeddedDepth();
-        if (maxDepth >= 0 && parseRecord.getDepth() > maxDepth + 1) {
+        if (maxDepth >= 0 && parseRecord.getEmbeddedDepth() + 1 > maxDepth) {
             parseRecord.setEmbeddedDepthLimitReached(true);
             if (parseRecord.isThrowOnMaxDepth()) {
                 throw new EmbeddedLimitReachedException(
@@ -182,6 +184,13 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
             parseRecord.incrementEmbeddedCount();
         }
 
+        // A parser builds the metadata beside the stream, so a length the stream
+        // knows is often missing from it. hasLength() answers from the source,
+        // without spooling a stream to measure it (TIKA-4873).
+        if (StringUtils.isBlank(metadata.get(HttpHeaders.CONTENT_LENGTH)) && tis.hasLength()) {
+            metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(tis.getLength()));
+        }
+
         if (outputHtml) {
             AttributesImpl attributes = new AttributesImpl();
             attributes.addAttribute("", "class", "class", "CDATA", "package-entry");
@@ -206,6 +215,9 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
 
         // Use the delegate parser to parse this entry
         boolean parsedCleanly = false;
+        if (parseRecord != null) {
+            parseRecord.enterEmbedded();
+        }
         try {
             tis.setCloseShield();
             DELEGATING_PARSER.parse(tis,
@@ -221,6 +233,9 @@ public class ParsingEmbeddedDocumentExtractor implements EmbeddedDocumentExtract
         } catch (TikaException e) {
             recordException(e, context);
         } finally {
+            if (parseRecord != null) {
+                parseRecord.exitEmbedded();
+            }
             tis.removeCloseShield();
             if (outputHtml) {
                 // Only an aborted parse can leave elements open; on a clean parse

@@ -30,6 +30,7 @@ import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.utils.StringUtils;
 
@@ -115,9 +116,10 @@ public class TesseractOCRConfig implements Serializable {
         // Split on the + sign
         final String[] langs = language.split("\\+");
         for (String lang : langs) {
-            // First, make sure it conforms to the correct syntax
+            // Script models are capitalized and ship as either script/Latin or a top-level
+            // Latin.traineddata (Debian's tesseract-ocr-script-* packages); accept both.
             if (!lang.matches(
-                    "([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|script(/|\\\\)[A-Z][a-zA-Z_]+")) {
+                    "([a-zA-Z]{3}(_[a-zA-Z]{3,4}){0,2})|(script(/|\\\\))?[A-Z][a-zA-Z_]+")) {
                 invalidLangs.add(lang + " (invalid syntax)");
             } else {
                 validLangs.add(lang);
@@ -138,9 +140,12 @@ public class TesseractOCRConfig implements Serializable {
      * <ol>
      *   <li>Nominally an ISO-639-2 code but compound codes are allowed separated by underscore:
      *   e.g., chi_tra_vert, aze_cyrl</li>
-     *   <li>A file path in the script directory.  The name starts with upper-case letter.
-     *       Some of them have underscores and other upper-case letters: e.g., script/Arabic,
-     *       script/HanS_vert, script/Japanese_vert, script/Canadian_Aboriginal</li>
+     *   <li>A script model. The name starts with an upper-case letter and may contain
+     *       underscores and other upper-case letters: e.g., Arabic, HanS_vert, Japanese_vert,
+     *       Canadian_Aboriginal. Prefix with script/ when the model lives in tessdata's
+     *       script subdirectory (script/Arabic); use the bare name when it sits at the
+     *       tessdata top level, as the Debian/Ubuntu tesseract-ocr-script-* packages install
+     *       it.</li>
      * </ol>
      * Multiple languages may be specified, separated by plus characters.
      * e.g. "chi_tra+chi_sim+script/Arabic"
@@ -209,6 +214,7 @@ public class TesseractOCRConfig implements Serializable {
      *
      * @param pageSeparator
      */
+    @OperatorOnly
     public void setTrustedPageSeparator(String pageSeparator) {
         this.pageSeparator = pageSeparator;
     }
@@ -500,6 +506,7 @@ public class TesseractOCRConfig implements Serializable {
      *
      * @param otherTesseractConfig map of key-value pairs
      */
+    @OperatorOnly
     public void setOtherTesseractConfig(Map<String, String> otherTesseractConfig) {
         if (otherTesseractConfig != null) {
             for (Map.Entry<String, String> entry : otherTesseractConfig.entrySet()) {
@@ -511,10 +518,6 @@ public class TesseractOCRConfig implements Serializable {
     /**
      * Add a key-value pair to pass to Tesseract using its -c command line option.
      * To see the possible options, run tesseract --print-parameters.
-     * <p>
-     * You may also add these parameters in TesseractOCRConfig.properties; any
-     * key-value pair in the properties file where the key contains an underscore
-     * is passed directly to Tesseract.
      *
      * @param key
      * @param value
@@ -542,6 +545,7 @@ public class TesseractOCRConfig implements Serializable {
         return tesseractPath;
     }
 
+    @OperatorOnly
     public void setTesseractPath(String tesseractPath) throws TikaConfigException {
         tesseractPath = FilenameUtils.normalize(tesseractPath);
         if (!tesseractPath.isEmpty() && !tesseractPath.endsWith(File.separator)) {
@@ -554,6 +558,7 @@ public class TesseractOCRConfig implements Serializable {
         return tessdataPath;
     }
 
+    @OperatorOnly
     public void setTessdataPath(String tessdataPath) throws TikaConfigException {
         tessdataPath = FilenameUtils.normalize(tessdataPath);
         if (!tessdataPath.isEmpty() && !tessdataPath.endsWith(File.separator)) {
@@ -566,53 +571,13 @@ public class TesseractOCRConfig implements Serializable {
         return imageMagickPath;
     }
 
+    @OperatorOnly
     public void setImageMagickPath(String imageMagickPath) throws TikaConfigException {
         imageMagickPath = FilenameUtils.normalize(imageMagickPath);
         if (!imageMagickPath.isEmpty() && !imageMagickPath.endsWith(File.separator)) {
             imageMagickPath += File.separator;
         }
         this.imageMagickPath = imageMagickPath;
-    }
-
-    /**
-     * Runtime-only TesseractOCRConfig that prevents modification of paths.
-     * Used to enforce immutability of parser-level paths during parse-time configuration.
-     * <p>
-     * This class is deserialized by ConfigDeserializer (in tika-serialization) which uses
-     * Jackson to populate fields via setters. If the JSON contains any path fields, the
-     * overridden setters will throw TikaConfigException.
-     */
-    public static class RuntimeConfig extends TesseractOCRConfig {
-
-        public RuntimeConfig() {
-            super();
-        }
-
-        @Override
-        public void setTesseractPath(String tesseractPath) throws TikaConfigException {
-            if (! StringUtils.isBlank(tesseractPath)) {
-                throw new TikaConfigException("Cannot modify tesseractPath at runtime. Paths must be configured at parser initialization time.");
-            }
-        }
-
-        @Override
-        public void setTessdataPath(String tessdataPath) throws TikaConfigException {
-            if (! StringUtils.isBlank(tessdataPath)) {
-                throw new TikaConfigException("Cannot modify tessdataPath at runtime. " + "Paths must be configured at parser initialization time.");
-            }
-        }
-
-        @Override
-        public void setImageMagickPath(String imageMagickPath) throws TikaConfigException {
-            if (! StringUtils.isBlank(imageMagickPath)) {
-                throw new TikaConfigException("Cannot modify imageMagickPath at runtime. " + "Paths must be configured at parser initialization time.");
-            }
-        }
-
-        @Override
-        public void setTrustedPageSeparator(String pageSeparator) {
-            throw new IllegalArgumentException("Cannot use setTrustedPageSeparator at runtime. " + "Use setPageSeparator instead.");
-        }
     }
 
     public enum OUTPUT_TYPE {

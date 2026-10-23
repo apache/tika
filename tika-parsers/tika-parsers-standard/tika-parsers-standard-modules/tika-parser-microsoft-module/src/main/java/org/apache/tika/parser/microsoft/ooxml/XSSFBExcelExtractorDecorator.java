@@ -53,7 +53,6 @@ public class XSSFBExcelExtractorDecorator extends XSSFExcelExtractorDecorator {
             throws SAXException, IOException, TikaException {
 
         this.metadata = metadata;
-        this.parseContext = context;
         metadata.set(Office.PROTECTED_WORKSHEET, false);
 
         super.getXHTML(handler, metadata, context);

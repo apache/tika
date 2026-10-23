@@ -135,6 +135,12 @@ public class DefaultDetector extends CompositeDetector {
     @Override
     public MediaType detect(TikaInputStream tis, Metadata metadata, ParseContext parseContext)
             throws IOException {
+        // An override short-circuits detection entirely, as in CompositeDetector.
+        MediaType override = detectOverrides(metadata);
+        if (override != null) {
+            return override;
+        }
+
         // 1. Magic detection via MimeTypes
         MediaType magicType = mimeTypes.detect(tis, metadata, parseContext);
         metadata.set(TikaCoreProperties.CONTENT_TYPE_MAGIC_DETECTED, magicType.toString());
@@ -195,6 +201,10 @@ public class DefaultDetector extends CompositeDetector {
     public List<Detector> getDetectors() {
         if (loader != null && loader.isDynamic()) {
             List<Detector> detectors = loader.loadDynamicServiceProviders(Detector.class);
+            //a dynamic DefaultDetector already merges every dynamic provider; nesting one
+            //(this detector included) delegates back into itself
+            detectors.removeIf(d -> d instanceof DefaultDetector &&
+                    ((DefaultDetector) d).loader != null && ((DefaultDetector) d).loader.isDynamic());
             if (!detectors.isEmpty()) {
                 detectors.addAll(super.getDetectors());
                 return detectors;

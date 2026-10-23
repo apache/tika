@@ -55,7 +55,7 @@ public class MotionPhotoXmpTest extends TikaTest {
         // video without downloading the whole file) is exposed too.
         assertEquals("MotionPhoto",
                 metadata.get("xmp-raw:Container:Directory[2]/Container:Item/Item:Semantic"));
-        assertEquals("122562",
+        assertEquals("1583",
                 metadata.get("xmp-raw:Container:Directory[2]/Container:Item/Item:Length"));
     }
 
@@ -69,7 +69,7 @@ public class MotionPhotoXmpTest extends TikaTest {
             new JpegParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
         }
         assertEquals("1", metadata.get("Camera:MicroVideo"));
-        assertEquals("4182318", metadata.get("Camera:MicroVideoOffset"));
+        assertEquals("1583", metadata.get("Camera:MicroVideoOffset"));
         assertNull(metadata.get("GCamera:MicroVideoOffset"));
     }
 }

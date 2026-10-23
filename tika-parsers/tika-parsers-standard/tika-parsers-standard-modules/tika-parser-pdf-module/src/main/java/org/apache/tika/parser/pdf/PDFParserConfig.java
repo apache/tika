@@ -20,6 +20,8 @@ import java.io.Serializable;
 
 import org.apache.pdfbox.text.PDFTextStripper;
 
+import org.apache.tika.config.OperatorOnly;
+import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngineFactory;
 
 /**
@@ -97,9 +99,7 @@ public class PDFParserConfig implements Serializable {
     //a pdf file) should only be extracted once.
     private boolean extractUniqueInlineImagesOnly = true;
 
-    //Should the PDFParser _try_ to extract marked content/structure tags (backoff to regular
-    //text extraction if the given PDF doesn't have marked content)
-    private boolean extractMarkedContent = false;
+    private MarkedContentConfig markedContent = new MarkedContentConfig();
 
     //The character width-based tolerance value used to estimate where spaces in text should be
     // added. Default taken from PDFBox.
@@ -117,12 +117,10 @@ public class PDFParserConfig implements Serializable {
     //content from elsewhere in the document.
     private boolean ifXFAExtractOnlyXFA = false;
 
-    private OcrConfig ocr = new OcrConfig();
+    /** This parser's overlay on the {@code "pages"} block; the 4.0 aliases write to it too. */
+    private PagesConfig pages = new PagesConfig();
 
-    /**
-     * Should the entire document be rendered?
-     */
-    private IMAGE_STRATEGY imageStrategy = IMAGE_STRATEGY.NONE;
+    private OcrConfig.RenderingStrategy renderingStrategy = OcrConfig.RenderingStrategy.ALL;
     private AccessCheckMode accessCheckMode = AccessCheckMode.DONT_CHECK;
 
     //The PDFParser can throw IOExceptions if there is a problem
@@ -173,20 +171,27 @@ public class PDFParserConfig implements Serializable {
         this.extractInlineImageMetadataOnly = extractInlineImageMetadataOnly;
     }
 
-    public boolean isExtractMarkedContent() {
-        return extractMarkedContent;
+    public MarkedContentConfig getMarkedContent() {
+        return markedContent;
     }
 
     /**
-     * If the PDF contains marked content, try to extract text and its marked structure.
-     * If the PDF does not contain marked content, backoff to the regular PDF2XHTML for
-     * text extraction.  As of 1.24, this is an "alpha" version.
-     *
-     * @param extractMarkedContent
-     * @since 1.24
+     * How to use a PDF's structure tree (tagged PDF); see {@link MarkedContentConfig}.
+     * A PDF without a structure tree always uses the text stripper.
      */
+    public void setMarkedContent(MarkedContentConfig markedContent) {
+        this.markedContent = markedContent == null ? new MarkedContentConfig() : markedContent;
+    }
+
+    /**
+     * @deprecated since 4.1.0; use {@link #setMarkedContent(MarkedContentConfig)}.
+     * {@code true} is {@link MarkedContentConfig.Strategy#TAGS}, {@code false} is
+     * {@link MarkedContentConfig.Strategy#NONE}.
+     */
+    @Deprecated
     public void setExtractMarkedContent(boolean extractMarkedContent) {
-        this.extractMarkedContent = extractMarkedContent;
+        markedContent.setStrategy(extractMarkedContent ? MarkedContentConfig.Strategy.TAGS :
+                MarkedContentConfig.Strategy.NONE);
     }
 
     /**
@@ -509,22 +514,52 @@ public class PDFParserConfig implements Serializable {
     }
 
     /**
-     * @return the OCR configuration
+     * This parser's overlay on the {@code "pages"} block, which the parser folds onto the
+     * context's {@code "pages"} and the defaults
+     * ({@code PagesConfig.resolve(context, defaultConfig.getPages(), localConfig.getPages())}).
+     * The 4.0 aliases ({@link #setOcr}, {@link #setImageStrategy}) write to the same overlay,
+     * so in one JSON object the later spelling of a field wins.
      */
-    public OcrConfig getOcr() {
-        return ocr;
+    public PagesConfig getPages() {
+        return pages;
+    }
+
+    /** The overlay, to configure in code: {@code config.pages().setText(TextPolicy.OCR)}. */
+    public PagesConfig pages() {
+        return pages;
+    }
+
+    /** Applies the set fields of {@code pages} to the overlay. */
+    public void setPages(PagesConfig pages) {
+        this.pages = this.pages.over(pages);
     }
 
     /**
-     * @param ocr the OCR configuration
+     * @deprecated since 4.1.0; the 4.0 {@code "ocr"} block. Every field it sets lands on
+     * {@link #pages()}: {@code strategy} as {@code text}, {@code strategyAuto} as
+     * {@code ocr.auto}, {@code maxPagesToOcr} as {@code ocr.maxPages}, the image settings as
+     * {@code render}, {@code renderingStrategy} as {@link #setRenderingStrategy}.
      */
+    @Deprecated
     public void setOcr(OcrConfig ocr) {
-        this.ocr = ocr;
+        if (ocr == null) {
+            return;
+        }
+        ocr.applyTo(pages);
+        if (ocr.getRenderingStrategy() != null) {
+            renderingStrategy = ocr.getRenderingStrategy();
+        }
     }
 
-    // OCR settings are configured through the nested OcrConfig (getOcr()/setOcr()).
-    // The flat ocr* convenience accessors (getOcrStrategy/setOcrDPI/...) were removed in
-    // 4.x so that "ocr" is the single JSON spelling; use getOcr().setStrategy(...) etc.
+    /** What PDFBox draws when it renders a page for OCR: everything, text only, no text, or vector graphics only. */
+    public OcrConfig.RenderingStrategy getRenderingStrategy() {
+        return renderingStrategy;
+    }
+
+    public void setRenderingStrategy(OcrConfig.RenderingStrategy renderingStrategy) {
+        this.renderingStrategy = renderingStrategy == null
+                ? OcrConfig.RenderingStrategy.ALL : renderingStrategy;
+    }
 
     /**
      * @return whether or not to extract PDActions
@@ -555,6 +590,7 @@ public class PDFParserConfig implements Serializable {
         return maxMainMemoryBytes;
     }
 
+    @OperatorOnly
     public void setMaxMainMemoryBytes(long maxMainMemoryBytes) {
         this.maxMainMemoryBytes = maxMainMemoryBytes;
     }
@@ -593,8 +629,29 @@ public class PDFParserConfig implements Serializable {
         this.detectAngles = detectAngles;
     }
 
+    /**
+     * @deprecated since 4.1.0; {@code RAW_IMAGES} is {@link #setExtractInlineImages}, the
+     * {@code RENDER_PAGES_*} values are {@code "pages": {"emit": {"enabled": true}}} and
+     * {@code NONE} is {@code false}. Renders are emitted at page end whichever value is given;
+     * when the engine renders is its own business.
+     */
+    @Deprecated
     public void setImageStrategy(IMAGE_STRATEGY imageStrategy) {
-        this.imageStrategy = imageStrategy;
+        if (imageStrategy == null) {
+            return;
+        }
+        switch (imageStrategy) {
+            case RAW_IMAGES:
+                extractInlineImages = true;
+                break;
+            case RENDER_PAGES_BEFORE_PARSE:
+            case RENDER_PAGES_AT_PAGE_END:
+                pages.emit().setEnabled(true);
+                break;
+            case NONE:
+                pages.emit().setEnabled(false);
+                break;
+        }
     }
 
     /**
@@ -602,6 +659,7 @@ public class PDFParserConfig implements Serializable {
      *
      * @param imageGraphicsEngineFactory
      */
+    @OperatorOnly
     public void setImageGraphicsEngineFactory(ImageGraphicsEngineFactory imageGraphicsEngineFactory) {
         this.imageGraphicsEngineFactory = imageGraphicsEngineFactory;
     }
@@ -612,6 +670,7 @@ public class PDFParserConfig implements Serializable {
      *
      * @param className fully qualified class name of an ImageGraphicsEngineFactory implementation
      */
+    @OperatorOnly
     public void setImageGraphicsEngineFactoryClass(String className) {
         try {
             Class<?> clazz = Class.forName(className);
@@ -623,10 +682,6 @@ public class PDFParserConfig implements Serializable {
 
     public ImageGraphicsEngineFactory getImageGraphicsEngineFactory() {
         return imageGraphicsEngineFactory;
-    }
-
-    public IMAGE_STRATEGY getImageStrategy() {
-        return imageStrategy;
     }
 
     public boolean isExtractIncrementalUpdateInfo() {
@@ -689,25 +744,12 @@ public class PDFParserConfig implements Serializable {
         return throwOnEncryptedPayload;
     }
 
+    /** @deprecated since 4.1.0; see {@link #setImageStrategy}. */
+    @Deprecated
     public enum IMAGE_STRATEGY {
         NONE,
-        /**
-         * This is the more modern version of {@link PDFParserConfig#extractInlineImages}
-         */
         RAW_IMAGES,
-        /**
-         * If you want the rendered images, and you don't care that there's
-         * markup in the xhtml handler per page then go with this option.
-         * For some rendering engines, it is faster to render the full document
-         * upfront than to parse a page, render a page, etc.
-         */
         RENDER_PAGES_BEFORE_PARSE,
-        /**
-         * This renders each page, one at a time, at the end of the page.
-         * For some rendering engines, this may be slower, but it allows the writing
-         * of image metadata into the xhtml in the proper location
-         */
         RENDER_PAGES_AT_PAGE_END
-        //TODO: add LOGICAL_IMAGES
     }
 }

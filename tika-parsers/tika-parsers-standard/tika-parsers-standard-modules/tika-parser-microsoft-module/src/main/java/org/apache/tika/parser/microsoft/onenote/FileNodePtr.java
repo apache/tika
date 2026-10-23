@@ -56,12 +56,21 @@ class FileNodePtr {
         if (nodeListPositions.isEmpty()) {
             return null;
         }
-        if (nodeListPositions.get(0) >= document.root.children.size()) {
+        int rootPosition = nodeListPositions.get(0);
+        if (rootPosition < 0 || rootPosition >= document.root.children.size()) {
             throw new TikaException("Exceeded root child size");
         }
-        FileNode cur = document.root.children.get(nodeListPositions.get(0));
+        FileNode cur = document.root.children.get(rootPosition);
         for (int i = 1, ie = nodeListPositions.size(); i < ie; ++i) {
-            cur = cur.childFileNodeList.children.get(nodeListPositions.get(i));
+            if (cur == null || cur.childFileNodeList == null ||
+                    cur.childFileNodeList.children == null) {
+                throw new TikaException("Missing child file node list");
+            }
+            int childPosition = nodeListPositions.get(i);
+            if (childPosition < 0 || childPosition >= cur.childFileNodeList.children.size()) {
+                throw new TikaException("Exceeded child file node size");
+            }
+            cur = cur.childFileNodeList.children.get(childPosition);
         }
         return cur;
     }

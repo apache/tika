@@ -22,32 +22,38 @@ to remote Vision-Language Model (VLM) endpoints. These parsers send images
 (or PDFs) to an external API and convert the model's markdown response into
 structured XHTML.
 
-Three implementations are provided out of the box. Only `openai-vlm-parser` is auto-loaded via SPI;
-the other two must be named explicitly in your configuration.
+NOTE: `tika-vlm` is experimental. Its classes, configuration keys and metadata output may
+change in minor releases without a deprecation cycle, and no compatibility shims are kept
+for earlier shapes.
 
-[cols="1,2,1,1"]
+Three implementations are provided out of the box. None is auto-loaded: each must be
+named explicitly in your configuration. (Changed in 4.1.0: `openai-vlm-parser` previously
+auto-registered via SPI.) To use a VLM as the OCR engine for embedded images and rendered
+PDF pages, configure it under `engines` and name it in the `text-recognizers` list — see
+xref:configuration/index.adoc[Configuration]. Named under `parsers`, a VLM is a document
+parser as well (below).
+
+[cols="1,2,1"]
 |===
-|Parser |Endpoint |Config key |Auto-loaded
+|Parser |Endpoint |Config key
 
 |`OpenAIVLMParser`
-|Any OpenAI-compatible chat completions endpoint (vLLM, Ollama, local FastAPI, OpenAI)
+|Any OpenAI-compatible chat completions endpoint (vLLM, Ollama, local FastAPI, OpenAI, Jina AI)
 |`openai-vlm-parser`
-|Yes
 
 |`ClaudeVLMParser`
 |Anthropic Messages API
 |`claude-vlm-parser`
-|No
 
 |`GeminiVLMParser`
 |Google Gemini `generateContent` API
 |`gemini-vlm-parser`
-|No
 |===
 
-All three handle the standard OCR image types (`image/ocr-png`, `image/ocr-jpeg`, ...).
-`ClaudeVLMParser` and `GeminiVLMParser` additionally declare `application/pdf`, so they can process
-PDFs natively with the model's vision capabilities.
+All three enrich the standard image types (`image/png`, `image/jpeg`, ...).
+`ClaudeVLMParser` and `GeminiVLMParser` additionally declare `application/pdf`, so under `parsers`
+they can process PDFs natively with the model's vision capabilities once the default `pdf-parser`
+is excluded (see below); an enricher never displaces the parser for a type.
 
 == Module dependency
 
@@ -137,11 +143,39 @@ endpoint. The API key is passed as a `key` query parameter.
 
 Change `baseUrl` if you are using Vertex AI or a proxy.
 
+== Jina OCR
+
+https://jina.ai[Jina AI]'s `jina-ocr-v1` model is a document-OCR model that outputs
+clean Markdown. Its API is OpenAI-compatible, so `OpenAIVLMParser` drives it with no
+extra dependencies.
+
+=== Basic Configuration
+
+[source,json]
+----
+include::example$jina-ocr-basic.json[]
+----
+
+Set the `JINA_API_KEY` environment variable to your key.
+`${env:NAME}` syntax is supported everywhere in Tika JSON config
+(xref:configuration/index.adoc#env[Secrets from the environment]).
+
+Jina OCR accepts images only (PNG, JPEG, GIF, TIFF, WebP, BMP). It does not accept
+PDFs or video. The MIME type declared in the `data:` URI is informational — Jina
+auto-detects the format from the bytes, so a mismatched label does not cause an error.
+
+NOTE: `jina-ocr-v1` tables are emitted as raw HTML inside the model's Markdown output.
+Tika's Markdown-to-XHTML converter handles this correctly — see <<_markdown_to_xhtml_conversion>>.
+
 == Using a VLM parser for PDF parsing
 
 Claude and Gemini can process entire PDFs with their vision capabilities.
 To route PDFs to a VLM parser instead of the default `PDFParser`, exclude
 the default and add the VLM parser:
+
+NOTE: The alternative is the PDF parser's `"pages": {"text": "OCR"}` with the VLM named in
+`text-recognizers`: every page is rendered and transcribed, and the PDF's own structure
+(attachments, bookmarks, forms) is still parsed. That sends page images, not the PDF file.
 
 [source,json]
 ----
@@ -149,6 +183,10 @@ include::example$vlm-pdf-parsing.json[]
 ----
 
 You can substitute `gemini-vlm-parser` for `claude-vlm-parser` above.
+
+Named under `parsers`, the VLM is also the text recognizer for the image types it advertises, so
+embedded images in every other document type are sent to it too. Add a `text-recognizers` list to choose a different engine for those, or
+`"text-recognizers": []` for none; see xref:configuration/index.adoc[Configuration].
 
 == Configuration options reference
 
@@ -178,10 +216,18 @@ All three parsers share the same configuration POJO (`VLMOCRConfig`):
 |`120000`
 |HTTP read timeout in milliseconds.
 
+|`maxRetries`
+|`4`
+|Retries of a 429, 502, 503 or 504 answer, or of a connection that dropped before a full
+response arrived, with a jittered backoff inside the parse budget;
+`0` fails at once. A hosted service caps requests in flight per key, so see
+xref:configuration/inference.adoc#concurrency[Hosted engines and concurrency].
+
 |`apiKey`
 |`""` (empty)
 |API key. Format depends on the parser (Bearer header, x-api-key header,
-or query parameter).
+or query parameter). `${env:NAME}` reads it from the environment
+(xref:configuration/index.adoc#env[Secrets from the environment]).
 
 |`inlineContent`
 |`true`
@@ -192,6 +238,18 @@ text into the parent document's content stream. Mirrors
 |`skipOcr`
 |`false`
 |Runtime kill-switch to disable the parser entirely.
+
+|`textRecognizer`
+|`true`
+|Whether the prompt transcribes the image, so the output is the document's text. Set `false` for a
+captioning or tagging prompt: the parser still runs, but the PDF parser's `AUTO` OCR never replaces
+a page's extracted text with its output.
+
+|`temperature`
+|unset
+|Sampling temperature sent with each request (0 to 2; Claude accepts 0 to 1). Unset sends none and the
+service's default applies. `0` makes repeated requests for the same image return the same text on
+services that honor it, which makes a wrong answer reproducible; it does not make the answer correct.
 
 |`minFileSizeToOcr`
 |`0`
@@ -215,7 +273,33 @@ trusted callers. See <<_per_request_configuration,Per-request configuration>>.
 |`completionsPath`
 |`/v1/chat/completions` (OpenAI/vLLM only)
 |HTTP path appended to `baseUrl` for the chat-completions endpoint. Used by the OpenAI-compatible parser only. Claude and Gemini hardcode their own API paths (`/v1/messages` and `/v1beta/models/\{model}:generateContent` respectively) and ignore this field.
+
+|`useMaxCompletionTokens`
+|`false` (OpenAI/vLLM only)
+|Send the output limit as `max_completion_tokens` instead of `max_tokens`. Required for OpenAI / Azure OpenAI models that reject `max_tokens` (o-series, GPT-5 and later); leave `false` for servers that only accept `max_tokens`.
 |===
+
+When a file is not sent because of `minFileSizeToOcr`, `maxFileSizeToOcr` or
+`maxImagePixels`, the parser sets `vlm:skipped-reason` to `file-too-small`, `file-too-large` or
+`image-too-large`; the last also sets `vlm:image-pixels`.
+xref:configuration/index.adoc#image-checks[Image checks] can screen out images too small or
+blank to be worth sending, before any text recognizer sees them.
+
+The returned text is never changed or dropped. When it looks doubtful, `tk:ocr-warnings` (multi-valued)
+gets one of: `truncated` (the model stopped at `maxTokens`), `repetition` (a repeated line or sentence;
+output of at least 1,000 bytes that deflates to under 5% of its size), or `empty`. For an
+`INLINE` image, whose text goes into the parent document, the same
+codes are added to the parent's `tk:ocr-warnings`, and a skip appears there as `skipped:<reason>`. That
+needs the recursive parser wrapper, which supplies the parent's metadata.
+
+[#fluent-hallucinations]
+=== Limits of the checks and warnings
+
+The image checks screen what is sent, and `tk:ocr-warnings` describes the shape of what comes
+back: a loop, a cut-off answer or no answer. Neither judges accuracy, so neither identifies fluent
+hallucinations, text that reads well but is not what the image says. Like any OCR engine, a VLM
+can misread an image, and output with no warning has not been verified. Where accuracy matters,
+spot-check a sample against the source.
 
 == Markdown-to-XHTML conversion
 
@@ -223,6 +307,12 @@ The VLM's text response is expected to be markdown. Tika parses it using
 https://github.com/commonmark/commonmark-java[commonmark-java] and emits
 proper XHTML elements (`<h1>`, `<p>`, `<table>`, `<b>`, `<i>`, etc.)
 instead of dumping raw text. GFM tables and strikethrough are supported.
+
+Document-OCR models such as jina-ocr-v1 and DeepSeek-OCR write tables as raw HTML inside the
+markdown, and a prompt does not change that. An HTML block is parsed leniently and re-emitted as
+the same structural elements (`table`, `tr`, `th`, `td`, `p`, lists, headings) with attributes
+dropped except `colspan` and `rowspan`; other elements contribute their text, and `script`/`style` contribute nothing. Inline
+HTML tags are dropped and their text kept, except `<br>`.
 
 [#_per_request_configuration]
 == Per-request configuration
@@ -243,14 +333,14 @@ context.set(VLMOCRConfig.class, override);
 ----
 
 *Caller-supplied JSON* — the tika-server `/config` endpoints and tika-grpc's `parse_context_json`,
-each gated by its own `allowPerRequestConfig`. Here the parser applies a restricted config that
-rejects cost- and security-sensitive changes with an exception:
+each gated by its own `allowPerRequestConfig`. Here cost- and security-sensitive changes are
+rejected with an exception:
 
 [cols="1,3"]
 |===
 |Field |Runtime rule
 
-|`baseUrl`, `apiKey`
+|`baseUrl`, `completionsPath`, `apiKey`
 |Always blocked; configure at initialization time.
 
 |`model`
@@ -260,9 +350,10 @@ rejects cost- and security-sensitive changes with an exception:
 |May be lowered, never raised above the initialization-time value — that ceiling is what bounds
 cost on a paid endpoint.
 
-|`maxImagePixels`, `allowRuntimePrompt`
+|`maxImagePixels`, `temperature`, `maxRetries`, `allowRuntimePrompt`, `useMaxCompletionTokens`
 |Always blocked.
 
-|`prompt`
-|Blocked unless `allowRuntimePrompt` was set to `true` at initialization time.
+|`prompt`, `textRecognizer`
+|Blocked unless `allowRuntimePrompt` was set to `true` at initialization time; `textRecognizer`
+describes the prompt, so it changes only when the prompt can.
 |===

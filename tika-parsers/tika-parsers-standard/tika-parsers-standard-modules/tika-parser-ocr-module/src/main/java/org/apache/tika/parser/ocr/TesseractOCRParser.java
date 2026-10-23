@@ -69,13 +69,13 @@ import org.apache.tika.exception.TikaTimeoutException;
 import org.apache.tika.extractor.ParentContentHandler;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.AbstractExternalProcessParser;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.enricher.TextRecognizer;
 import org.apache.tika.sax.BodyContentHandler;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.TeeContentHandler;
@@ -96,8 +96,10 @@ import org.apache.tika.utils.XMLReaderUtils;
  * parseContext.set(TesseractOCRConfig.class, config);<br>
  * </p>
  */
-@TikaComponent
-public class TesseractOCRParser extends AbstractExternalProcessParser implements Initializable {
+// name pinned: the documented "text-recognizers" selector for this engine
+@TikaComponent(name = "tesseract-ocr-parser")
+public class TesseractOCRParser extends AbstractExternalProcessParser
+        implements Initializable, TextRecognizer {
 
     public static final String TESS_META = "tess:";
     public static final Property IMAGE_ROTATION = Property.externalRealSeq(TESS_META + "rotation");
@@ -116,23 +118,15 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     public static final Property PSM0_SCRIPT_CONFIDENCE = Property.externalReal(TESS_META +
             "script-confidence");
 
-    private static final String OCR = "ocr-";
     private static final Logger LOG = LoggerFactory.getLogger(TesseractOCRParser.class);
     private static final Object[] LOCK = new Object[0];
     private static final long serialVersionUID = -8167538283213097265L;
     private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(new HashSet<>(
-            Arrays.asList(
-                    new MediaType[]{MediaType.image(OCR + "png"), MediaType.image(OCR + "jpeg"),
-                            MediaType.image(OCR + "tiff"), MediaType.image(OCR + "bmp"),
-                            MediaType.image(OCR + "gif"),
-                            //these are not currently covered by other parsers
-                            MediaType.image("jp2"), MediaType.image("jpx"),
-                            MediaType.image("x-portable-pixmap"),
-                            //add the ocr- versions as well
-                            MediaType.image(OCR + "jp2"), MediaType.image(OCR + "jpx"),
-                            MediaType.image(OCR + "x-portable-pixmap"),
+            Arrays.asList(MediaType.image("png"), MediaType.image("jpeg"),
+                    MediaType.image("tiff"), MediaType.image("bmp"), MediaType.image("gif"),
+                    MediaType.image("jp2"), MediaType.image("jpx"),
+                    MediaType.image("x-portable-pixmap"))));
 
-                    })));
     private static volatile boolean HAS_WARNED = false;
 
 
@@ -261,8 +255,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
     @Override
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext parseContext) throws IOException, SAXException, TikaException {
-        normalizeOCRMimeMetadata(metadata);
-
         TesseractOCRConfig config = getConfig(parseContext);
 
         // If Tesseract is not on the path with the current config, do not try to run OCR
@@ -299,23 +291,22 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
         }
     }
 
-    private TesseractOCRConfig getConfig(ParseContext parseContext) throws TikaConfigException, IOException {
-        // Check for JSON config with component-specific runtime config
+    @Override
+    public boolean recognizesText(ParseContext context) {
+        if (!hasTesseract) {
+            return false;
+        }
+        try {
+            return !getConfig(context).isSkipOcr();
+        } catch (TikaConfigException | IOException e) {
+            // parse() surfaces the broken config; for the question asked, nothing is recognized
+            return false;
+        }
+    }
+
+    TesseractOCRConfig getConfig(ParseContext parseContext) throws TikaConfigException, IOException {
         if (parseContext.hasJsonConfig("tesseract-ocr-parser")) {
-            // First validate that no paths are being set by deserializing into RuntimeConfig
-            // The RuntimeConfig setters will throw TikaConfigException if JSON contains path fields
-            TesseractOCRConfig.RuntimeConfig runtimeConfig = ParseContextConfig.getConfig(
-                    parseContext,
-                    "tesseract-ocr-parser",
-                    TesseractOCRConfig.RuntimeConfig.class,
-                    new TesseractOCRConfig.RuntimeConfig());
-
-            // Short-circuit if skipOcr is set
-            if (runtimeConfig.isSkipOcr()) {
-                return runtimeConfig;
-            }
-
-            // Now merge with defaultConfig using the base class
+            // per-request JSON may not set the @OperatorOnly paths or otherTesseractConfig
             return ParseContextConfig.getConfig(
                     parseContext,
                     "tesseract-ocr-parser",
@@ -329,25 +320,6 @@ public class TesseractOCRParser extends AbstractExternalProcessParser implements
             return userConfig;
         }
         return defaultConfig;
-    }
-
-    private void normalizeOCRMimeMetadata(Metadata metadata) {
-        String parserOverride = metadata.get(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE);
-        if (parserOverride != null) {
-            MediaType overrideType = MediaType.parse(parserOverride);
-            if (overrideType != null && overrideType.getSubtype().startsWith(OCR)) {
-                metadata.remove(TikaCoreProperties.CONTENT_TYPE_PARSER_OVERRIDE.getName());
-            }
-        }
-        String contentType = metadata.get(HttpHeaders.CONTENT_TYPE);
-        if (contentType != null) {
-            MediaType parsedType = MediaType.parse(contentType);
-            if (parsedType != null && parsedType.getSubtype().startsWith(OCR)) {
-                metadata.set(HttpHeaders.CONTENT_TYPE,
-                        new MediaType(parsedType.getType(),
-                                parsedType.getSubtype().substring(OCR.length())).toString());
-            }
-        }
     }
 
     private ContentHandler getContentHandler(boolean isInlineContent,

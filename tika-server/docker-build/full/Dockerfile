@@ -15,7 +15,7 @@
 # the subsequent stages -- see TIKA-3912
 ARG UID_GID="35002:35002"
 
-FROM ubuntu:resolute AS base
+FROM ubuntu:resolute@sha256:f144425ff09be612d6d9ad965196e9cdc23dae1f42110a8a11a3e9a8198759f7 AS base
 
 FROM base AS fetch_tika
 
@@ -59,6 +59,7 @@ RUN set -eux \
     && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends $JRE \
         gdal-bin \
         imagemagick \
+        ffmpeg \
         tesseract-ocr \
         $(printf 'tesseract-ocr-%s ' $LANGUAGES) \
     && echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections \
@@ -66,6 +67,7 @@ RUN set -eux \
         xfonts-utils \
         fonts-freefont-ttf \
         fonts-liberation \
+        fonts-noto-cjk \
         ttf-mscorefonts-installer \
         wget \
         cabextract \
@@ -73,11 +75,10 @@ RUN set -eux \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 ARG TIKA_VERSION
 ENV TIKA_VERSION=$TIKA_VERSION
+# tesseract links libgomp; one thread per OCR process - parallelism comes from the forked parse workers
+ENV OMP_THREAD_LIMIT=1
 
 COPY --from=fetch_tika /opt/tika-server /opt/tika-server
-# WORKDIR sets the CWD so tika-server's plugin-root fallback resolves
-# `plugins/` relative to /opt/tika-server (its `getCodeSource()` returns a
-# lib/* path, not the top-level jar, so the "next-to-jar" resolution misses).
 WORKDIR /opt/tika-server
 USER $UID_GID
 

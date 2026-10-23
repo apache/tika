@@ -24,6 +24,8 @@ import java.util.Properties;
 
 import org.apache.commons.io.output.NullOutputStream;
 
+import org.apache.tika.config.OperatorOnly;
+
 /**
  * Configuration for {@link CTAKESContentHandler}.
  * <p>
@@ -128,6 +130,7 @@ public class CTAKESConfig implements Serializable {
      *
      * @param aeDescriptorPath the path to XML descriptor for AnalysisEngine.
      */
+    @OperatorOnly
     public void setAeDescriptorPath(String aeDescriptorPath) {
         this.aeDescriptorPath = aeDescriptorPath;
     }

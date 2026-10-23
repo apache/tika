@@ -26,12 +26,14 @@ import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ID;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.METADATA_KEY;
 import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.ON_PARSE_EXCEPTION;
+import static org.apache.tika.pipes.core.serialization.FetchEmitTupleSerializer.PRESET;
 import static org.apache.tika.serialization.serdes.ParseContextSerializer.PARSE_CONTEXT;
 
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import com.fasterxml.jackson.core.JacksonException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -39,6 +41,7 @@ import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.JsonNode;
 
+import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.pipes.api.ComponentIds;
@@ -49,22 +52,27 @@ import org.apache.tika.serialization.serdes.ParseContextDeserializer;
 
 public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple> {
 
+    /** The parse-context name InlineBytes was registered under in 4.0.0. */
+    static final String LEGACY_INLINE_BYTES_ENTRY = "inline-bytes";
+
     private static final Set<String> KNOWN_KEYS = Set.of(
             ID, FETCHER, FETCH_KEY, EMITTER, EMIT_KEY, FETCH_RANGE_START, FETCH_RANGE_END,
-            METADATA_KEY, PARSE_CONTEXT, ON_PARSE_EXCEPTION);
+            METADATA_KEY, PARSE_CONTEXT, ON_PARSE_EXCEPTION, PRESET);
 
     private final boolean restricted;
+    private final boolean trustedParseContext;
 
     /**
      * Deserializer for untrusted input: refuses system component ids. This is the default
      * because forgetting to restrict a new caller must not be the thing that opens the gate.
      */
     public FetchEmitTupleDeserializer() {
-        this(true);
+        this(true, false);
     }
 
-    private FetchEmitTupleDeserializer(boolean restricted) {
+    private FetchEmitTupleDeserializer(boolean restricted, boolean trustedParseContext) {
         this.restricted = restricted;
+        this.trustedParseContext = trustedParseContext;
     }
 
     /**
@@ -74,12 +82,34 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
      * component here.
      */
     public static FetchEmitTupleDeserializer internal() {
-        return new FetchEmitTupleDeserializer(false);
+        return new FetchEmitTupleDeserializer(false, false);
+    }
+
+    /**
+     * As {@link #internal()}, for a fork whose requests are the operator's own
+     * ({@code pipes.trustedRequests}): the parseContext is read as trusted config.
+     */
+    public static FetchEmitTupleDeserializer internalTrusted() {
+        return new FetchEmitTupleDeserializer(false, true);
     }
 
     @Override
     public FetchEmitTuple deserialize(JsonParser jsonParser, DeserializationContext deserializationContext) throws IOException, JacksonException {
         JsonNode root = jsonParser.readValueAsTree();
+        // Both checked before rejectUnknownKeys so they get tailored messages.
+        if (root.has(PipesRequest.INLINE_BYTES)) {
+            throw new IOException("'" + PipesRequest.INLINE_BYTES
+                    + "' is not a FetchEmitTuple field; content travels outside the tuple, and"
+                    + " only on the host's internal IPC. For tika-server, PUT content you"
+                    + " already hold to /tika or /rmeta, which inline it for you.");
+        }
+        if (root.path(PARSE_CONTEXT).has(LEGACY_INLINE_BYTES_ENTRY)) {
+            // 4.0.0 serialized this entry; the generic "check for a typo" would mislead upgraders.
+            throw new IOException("'" + LEGACY_INLINE_BYTES_ENTRY + "' is no longer a serializable"
+                    + " parse-context entry (4.0.0 wrote it as base64): content travels outside"
+                    + " the tuple, and only on the host's internal IPC. For tika-server, PUT"
+                    + " content you already hold to /tika or /rmeta, which inline it for you.");
+        }
         rejectUnknownKeys(root);
 
         String id = readVal(ID, root, null, true);
@@ -91,15 +121,18 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
         long fetchRangeEnd = readLong(FETCH_RANGE_END, root, -1l, false);
         Metadata metadata = readMetadata(root);
         JsonNode parseContextNode = root.get(PARSE_CONTEXT);
-        // A FetchEmitTuple is always untrusted wire input (request body, pipes iterator): restrict
-        // its parseContext so it cannot introduce wire-blocked components (parsers, detectors, ...).
+        // Untrusted wire input (request body, pipes iterator) unless the fork's requests are the
+        // operator's own: restricted, it cannot introduce wire-blocked components or set
+        // @OperatorOnly properties.
         ParseContext parseContext = parseContextNode == null ? new ParseContext()
-                : ParseContextDeserializer.readParseContext(parseContextNode, true);
+                : ParseContextDeserializer.readParseContext(parseContextNode,
+                        !trustedParseContext);
         FetchEmitTuple.ON_PARSE_EXCEPTION onParseException = readOnParseException(root);
+        String presetName = readPresetName(root);
 
         return new FetchEmitTuple(id, new FetchKey(fetcherId, fetchKey, fetchRangeStart, fetchRangeEnd),
                 new EmitKey(emitterName, emitKey), metadata, parseContext,
-                onParseException);
+                onParseException, presetName);
     }
 
     /**
@@ -124,9 +157,19 @@ public class FetchEmitTupleDeserializer extends JsonDeserializer<FetchEmitTuple>
             String name = it.next();
             if (!KNOWN_KEYS.contains(name)) {
                 throw new IOException("Unrecognized FetchEmitTuple field '" + name
-                        + "'. Check for a typo; known fields are " + KNOWN_KEYS + ".");
+                        + "'. Check for a typo; known fields are " + new TreeSet<>(KNOWN_KEYS) + ".");
             }
         }
+    }
+
+    // A preset name is only a selector; the shared syntax rule also bounds its length.
+    private static String readPresetName(JsonNode root) throws IOException {
+        String presetName = readVal(PRESET, root, null, false);
+        if (presetName != null && !PresetRegistry.isValidName(presetName)) {
+            throw new IOException("invalid preset name (letters, digits, '.', '_', '-'; " +
+                    "max 100 chars; may not start with 'config')");
+        }
+        return presetName;
     }
 
     private static FetchEmitTuple.ON_PARSE_EXCEPTION readOnParseException(JsonNode root) throws IOException {

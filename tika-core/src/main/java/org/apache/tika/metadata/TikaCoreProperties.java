@@ -151,7 +151,23 @@ public interface TikaCoreProperties {
      * Used by inference parsers and metadata filters to attach chunked representations
      * of document content for downstream indexing and semantic search.
      */
-    Property TIKA_CHUNKS = Property.reservedInternalText("tk:chunks");
+    Property TIKA_CHUNKS = Property.reservedInternalJson("tk:chunks");
+
+    /**
+     * Doubts a text recognizer has about the text it returned, which is never altered or dropped.
+     * Codes are short and tool-neutral: {@code truncated}, {@code repetition}, {@code empty},
+     * and {@code skipped:<reason>} for an input it did not read. On a
+     * document, the union over the pages or images it had recognized.
+     */
+    Property OCR_WARNINGS = Property.reservedInternalTextBag(TIKA_META_PREFIX + "ocr-warnings");
+
+    /**
+     * The inference inputs a parser released for this document (TEXT, PAGES, ...), written
+     * only when they differ from the default of its text. The TEXT stage skips a document
+     * whose list lacks TEXT, so a PDF released as pages is not embedded twice.
+     */
+    Property INFERENCE_RELEASED =
+            Property.reservedInternalTextBag(TIKA_META_PREFIX + "inference-released");
     /**
      * Use this to store parse exception information in the Metadata object.
      */
@@ -193,6 +209,24 @@ public interface TikaCoreProperties {
 
     Property EMBEDDED_DEPTH_LIMIT_REACHED =
             Property.reservedInternalBoolean(TIKA_META_EXCEPTION_PREFIX + "embedded-depth-limit-reached");
+
+    /**
+     * External DTDs and entities this document's XML referenced, by system id (public id
+     * when there is none). Tika never resolves them; this records what the document would
+     * have fetched. At most {@link org.apache.tika.parser.ParseRecord#MAX_EXTERNAL_REFERENCES}
+     * are listed; {@link #XML_EXTERNAL_REFERENCE_COUNT} is the full count. XML that a
+     * third-party library parses with its own parser (OOXML package parts, plists, feeds) is
+     * not seen.
+     */
+    Property XML_EXTERNAL_REFERENCE =
+            Property.reservedInternalTextBag(TIKA_META_PREFIX + "xml-external-reference");
+
+    Property XML_EXTERNAL_REFERENCE_COUNT =
+            Property.reservedInternalInteger(TIKA_META_PREFIX + "xml-external-reference-count");
+
+    //on the container: an embedded document recorded an XML_EXTERNAL_REFERENCE
+    Property XML_EXTERNAL_REFERENCE_EMBEDDED =
+            Property.reservedInternalBoolean(TIKA_META_PREFIX + "xml-external-reference-embedded");
 
     //total timeout exhausted mid-parse; remaining embedded docs were skipped, not attempted
     Property TASK_DEADLINE_REACHED =

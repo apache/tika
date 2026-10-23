@@ -39,15 +39,14 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
+import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Office;
 import org.apache.tika.metadata.PageAnchoring;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.microsoft.ooxml.xslf.XSLFEventBasedPowerPointExtractor;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.XMLReaderUtils;
 
 /**
@@ -72,7 +71,6 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     //TODO: what else
             };
 
-    private final ParseContext context;
     private final Metadata metadata;
     private final CommentAuthors commentAuthors = new CommentAuthors();
     private PackagePart mainDocument = null;
@@ -90,7 +88,6 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                                              XSLFEventBasedPowerPointExtractor extractor) {
         super(context, extractor.getPackage());
         this.metadata = metadata;
-        this.context = context;
         for (String contentType : MAIN_STORY_PART_RELATIONS) {
             List<PackagePart> pps = opcPackage.getPartsByContentType(contentType);
             if (pps.size() > 0) {
@@ -112,8 +109,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         try {
             slidesPRC = mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
         } catch (InvalidFormatException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
 
         int hiddenSlideCount = 0;
@@ -127,8 +123,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     }
                     hiddenSlideCount += handleSlidePart(slidePart, xhtml);
                 } catch (InvalidFormatException | ZipException e) {
-                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                            ExceptionUtils.getStackTrace(e));
+                    EmbeddedDocumentUtil.recordException(e, metadata, context);
                 }
             }
         }
@@ -155,8 +150,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         try {
             prc = mainDocument.getRelationshipsByType(XSLFRelation.COMMENT_AUTHORS.getRelation());
         } catch (InvalidFormatException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
         }
         if (prc == null || prc.size() == 0) {
             return;
@@ -167,8 +161,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             try {
                 commentAuthorsPart = safeGetRelatedPart(mainDocument, prc.getRelationship(i));
             } catch (InvalidFormatException e) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        ExceptionUtils.getStackTrace(e));
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
             if (commentAuthorsPart == null) {
                 continue;
@@ -178,8 +171,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                         new XSLFCommentAuthorHandler(commentAuthors), context);
 
             } catch (TikaException | SAXException | IOException e) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        ExceptionUtils.getStackTrace(e));
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
         }
 
@@ -222,12 +214,10 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             // </div> below so subsequent slides -- and the outer </body> --
             // land in a balanced spot.
             WriteLimitReachedException.throwIfWriteLimitReached(e);
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
             bodyHandler.closeAnyPending();
         } catch (TikaException | IOException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
             bodyHandler.closeAnyPending();
         }
 
@@ -279,8 +269,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         try {
             slidePRC = mainDocument.getRelationshipsByType(XSLFRelation.SLIDE.getRelation());
         } catch (InvalidFormatException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
 
         }
         if (slidePRC != null) {
@@ -289,8 +278,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                 try {
                     slidePart = safeGetRelatedPart(mainDocument, slidePRC.getRelationship(i));
                 } catch (InvalidFormatException e) {
-                    metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                            ExceptionUtils.getStackTrace(e));
+                    EmbeddedDocumentUtil.recordException(e, metadata, context);
                 }
                 recordPicturePageRefs(slidePart, i + 1);
                 addSlideParts(slidePart, parts);
@@ -304,8 +292,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             try {
                 prc = mainDocument.getRelationshipsByType(rel);
             } catch (InvalidFormatException e) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        ExceptionUtils.getStackTrace(e));
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
             if (prc != null) {
                 for (int i = 0; i < prc.size(); i++) {
@@ -313,8 +300,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                     try {
                         pp = safeGetRelatedPart(mainDocument, prc.getRelationship(i));
                     } catch (InvalidFormatException e) {
-                        metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                                ExceptionUtils.getStackTrace(e));
+                        EmbeddedDocumentUtil.recordException(e, metadata, context);
                     }
                     if (pp != null) {
                         parts.add(pp);
@@ -346,8 +332,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
         try {
             prc = slidePart.getRelationshipsByType(PackageRelationshipTypes.IMAGE_PART);
         } catch (InvalidFormatException e) {
-            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                    ExceptionUtils.getStackTrace(e));
+            EmbeddedDocumentUtil.recordException(e, metadata, context);
             return;
         }
         if (prc == null) {
@@ -361,8 +346,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             try {
                 imagePart = slidePart.getRelatedPart(rel);
             } catch (InvalidFormatException | IllegalArgumentException e) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        ExceptionUtils.getStackTrace(e));
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
                 continue;
             }
             if (imagePart == null) {
@@ -394,8 +378,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
             try {
                 prc = slidePart.getRelationshipsByType(relation);
             } catch (InvalidFormatException e) {
-                metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                        ExceptionUtils.getStackTrace(e));
+                EmbeddedDocumentUtil.recordException(e, metadata, context);
             }
             if (prc != null) {
                 for (PackageRelationship packageRelationship : prc) {
@@ -405,8 +388,7 @@ public class SXSLFPowerPointExtractorDecorator extends AbstractOOXMLExtractor {
                             relName = PackagingURIHelper
                                     .createPartName(packageRelationship.getTargetURI());
                         } catch (InvalidFormatException e) {
-                            metadata.add(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING,
-                                    ExceptionUtils.getStackTrace(e));
+                            EmbeddedDocumentUtil.recordException(e, metadata, context);
                         }
                         if (relName != null) {
                             parts.add(packageRelationship.getPackage().getPart(relName));

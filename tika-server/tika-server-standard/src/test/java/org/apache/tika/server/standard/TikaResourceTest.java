@@ -50,6 +50,7 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.ocr.TesseractOCRParser;
 import org.apache.tika.serialization.JsonMetadata;
+import org.apache.tika.server.core.BadRequestExceptionMapper;
 import org.apache.tika.server.core.CXFTestBase;
 import org.apache.tika.server.core.TikaServerParseExceptionMapper;
 import org.apache.tika.server.core.resource.TikaResource;
@@ -78,6 +79,7 @@ public class TikaResourceTest extends CXFTestBase {
     protected void setUpProviders(JAXRSServerFactoryBean sf) {
         List<Object> providers = new ArrayList<>();
         providers.add(new TikaServerParseExceptionMapper());
+        providers.add(new BadRequestExceptionMapper());
         providers.add(new JSONMessageBodyWriter());
         sf.setProviders(providers);
     }
@@ -335,28 +337,7 @@ public class TikaResourceTest extends CXFTestBase {
         // With skipOcr=true, the OCR text should not be present
         assertNotFound("Happy New Year 2003!", responseMsg);
 
-        // Test ocr_only strategy
-        configJson = """
-                {
-                  "pdf-parser": {
-                    "ocr": {
-                      "strategy": "OCR_ONLY"
-                    }
-                  }
-                }
-                """;
-        fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
-        fileAtt = new Attachment("file",
-                ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
-        configAtt = new Attachment("config", "application/json",
-                new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
-
-        response = WebClient
-                .create(endPoint + TIKA_PATH + "/config")
-                .type("multipart/form-data")
-                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
-        responseMsg = getStringFromInputStream((InputStream) response.getEntity());
-        assertContains("Happy New Year 2003!", responseMsg);
+        // the positive control (OCR_ONLY finds the text) is testOCRLanguageConfig
 
         // Test bad value - should return error
         configJson = """
@@ -384,7 +365,8 @@ public class TikaResourceTest extends CXFTestBase {
     //TIKA-2669
     @Test
     public void testPDFConfig() throws Exception {
-        // Test default behavior (sortByPosition=true from server config)
+        // Test default behavior (sortByPosition=true from server config, which also keeps the
+        // structure tree out of it: sorting reorders the stripper's lines)
         Response response = WebClient
                 .create(endPoint + TIKA_PATH + "/text")
                 .type("application/pdf")
@@ -480,7 +462,8 @@ public class TikaResourceTest extends CXFTestBase {
                     .create(endPoint + TIKA_PATH + "/config")
                     .type("multipart/form-data")
                     .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
-            assertEquals(500, response.getStatus());
+            // a raw NUL in the JSON is rejected before any parse: bad request, not a parse failure
+            assertEquals(400, response.getStatus());
         } catch (ProcessingException e) {
             //can't tell why this intermittently happens. :(
             //started after the upgrade to 3.2.7
@@ -536,6 +519,66 @@ public class TikaResourceTest extends CXFTestBase {
                 .type("multipart/form-data")
                 .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
         assertEquals(422, response.getStatus());
+    }
+
+    @Test
+    public void testOtherTesseractConfigNotSettableAtRuntime() throws Exception {
+        assumeTrue(new TesseractOCRParser().hasTesseract(), "Tesseract not installed, skipping test");
+
+        // -c pass-through names files tesseract opens (debug_file); server-side only
+        String configJson = """
+                {
+                  "tesseract-ocr-parser": {
+                    "otherTesseractConfig": {
+                      "debug_file": "/tmp/tika-should-never-write-this"
+                    }
+                  }
+                }
+                """;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/config")
+                .type("multipart/form-data")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+        assertEquals(422, response.getStatus());
+    }
+
+    /** The factory class name loads and constructs the class it names: operator-only. */
+    @Test
+    public void testOperatorOnlyPdfConfigRefused() throws Exception {
+        String configJson = """
+                {
+                  "pdf-parser": {
+                    "imageGraphicsEngineFactoryClass": "org.apache.tika.server.standard.TikaResourceTest$ConstructorWitness"
+                  }
+                }
+                """;
+        ConstructorWitness.constructed = false;
+        ContentDisposition fileCd = new ContentDisposition("form-data; name=\"file\"; filename=\"testOCR.pdf\"");
+        Attachment fileAtt = new Attachment("file",
+                ClassLoader.getSystemResourceAsStream("test-documents/testOCR.pdf"), fileCd);
+        Attachment configAtt = new Attachment("config", "application/json",
+                new java.io.ByteArrayInputStream(configJson.getBytes(StandardCharsets.UTF_8)));
+
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/config")
+                .type("multipart/form-data")
+                .post(new MultipartBody(Arrays.asList(fileAtt, configAtt)));
+        assertEquals(422, response.getStatus());
+        assertFalse(ConstructorWitness.constructed, "a class named by per-request config was constructed");
+    }
+
+    public static class ConstructorWitness {
+        static volatile boolean constructed;
+
+        public ConstructorWitness() {
+            constructed = true;
+        }
     }
 
     @Test

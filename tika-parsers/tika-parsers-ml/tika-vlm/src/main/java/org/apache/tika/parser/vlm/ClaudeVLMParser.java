@@ -59,18 +59,16 @@ public class ClaudeVLMParser extends AbstractVLMParser {
 
     private static final String ANTHROPIC_VERSION = "2023-06-01";
 
-    private static final String OCR = "ocr-";
-
     private static final Set<MediaType> SUPPORTED_TYPES;
 
     static {
         Set<MediaType> types = new HashSet<>(Arrays.asList(
                 // images — Claude supports JPEG, PNG, GIF, WebP
-                MediaType.image(OCR + "png"),
-                MediaType.image(OCR + "jpeg"),
-                MediaType.image(OCR + "gif"),
+                MediaType.image("png"),
+                MediaType.image("jpeg"),
+                MediaType.image("gif"),
                 MediaType.image("webp"),
-                MediaType.image(OCR + "webp"),
+
                 // PDFs — Claude handles these natively with vision
                 MediaType.application("pdf")
         ));
@@ -144,9 +142,13 @@ public class ClaudeVLMParser extends AbstractVLMParser {
                 }
             }
 
+            if ("max_tokens".equals(root.path("stop_reason").asText())) {
+                warn(metadata, WARN_TRUNCATED);
+            }
+
             // Content blocks
             JsonNode content = root.get("content");
-            if (content == null || !content.isArray() || content.isEmpty()) {
+            if (content == null || !content.isArray()) {
                 throw new TikaException(
                         "Claude response contains no content: " + responseBody);
             }
@@ -193,6 +195,9 @@ public class ClaudeVLMParser extends AbstractVLMParser {
         ObjectNode root = MAPPER.createObjectNode();
         root.put("model", config.getModel());
         root.put("max_tokens", config.getMaxTokens());
+        if (config.getTemperature() != null) {
+            root.put("temperature", config.getTemperature());
+        }
 
         ArrayNode messages = root.putArray("messages");
         ObjectNode userMessage = messages.addObject();

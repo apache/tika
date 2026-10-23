@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,6 +29,8 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
+import org.apache.tika.config.ConfigDeserializer;
+import org.apache.tika.config.JsonConfig;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
@@ -39,9 +42,24 @@ import org.apache.tika.parser.ParseContext;
 @TikaComponent
 public class HeifParser extends AbstractImageParser {
 
-    private static final Set<MediaType> SUPPORTED_TYPES = new HashSet<>(
-            Arrays.asList(MediaType.image("heif"), MediaType.image("heif-sequence"),
-                    MediaType.image("heic"), MediaType.image("heic-sequence")));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(MediaType.image("heif"), MediaType.image("heif-sequence"),
+                    MediaType.image("heic"), MediaType.image("heic-sequence"),
+                    MediaType.image("avif"))));
+
+    private final ImageMetadataConfig defaultConfig;
+
+    public HeifParser() {
+        this(new ImageMetadataConfig());
+    }
+
+    public HeifParser(ImageMetadataConfig config) {
+        this.defaultConfig = config;
+    }
+
+    public HeifParser(JsonConfig jsonConfig) {
+        this(ConfigDeserializer.buildConfig(jsonConfig, ImageMetadataConfig.class));
+    }
 
     @Override
     public Set<MediaType> getSupportedTypes(ParseContext context) {
@@ -64,7 +82,9 @@ public class HeifParser extends AbstractImageParser {
                 ImageXmp.scanAndExtract(tis, metadata, parseContext);
             }
             try (InputStream heif = Files.newInputStream(file.toPath())) {
-                new ImageMetadataExtractor(metadata).parseHeif(heif);
+                new ImageMetadataExtractor(metadata,
+                        ImageMetadataConfig.resolve(parseContext, "heif-parser", defaultConfig))
+                        .parseHeif(heif);
             }
         } finally {
             tmp.dispose();

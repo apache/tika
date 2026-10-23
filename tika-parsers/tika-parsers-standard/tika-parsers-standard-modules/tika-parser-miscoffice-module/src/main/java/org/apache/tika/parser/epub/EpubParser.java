@@ -51,6 +51,7 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.WriteLimitReachedException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -64,6 +65,7 @@ import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLBalancingHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.XMLReaderUtils;
+import org.apache.tika.zip.utils.ZipFileHelper;
 
 /**
  * Epub parser
@@ -152,7 +154,7 @@ public class EpubParser implements Parser {
             return bufferedParseZipFile((ZipFile) tis.getOpenContainer(), bodyHandler,
                     normalizer, xhtml, metadata, context);
         }
-        try (ZipFile zipFile = ZipFile.builder().setFile(tis.getPath().toFile()).get()) {
+        try (ZipFile zipFile = ZipFileHelper.open(tis, null)) {
             return bufferedParseZipFile(zipFile, bodyHandler, normalizer, xhtml, metadata, context);
         }
     }
@@ -183,7 +185,7 @@ public class EpubParser implements Parser {
             return fallbackParseAllHtmlEntries(zipFile, bodyHandler, normalizer, metadata, context,
                     "OPF entry missing or unreadable in (possibly truncated) container");
         }
-        try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(zae))) {
+        try (TikaInputStream tis = entryStream(zipFile, zae)) {
             opf.parse(tis, new DefaultHandler(), metadata, context);
         }
 
@@ -233,7 +235,7 @@ public class EpubParser implements Parser {
                     }
                     zae = zipFile.getEntry(relativePath + hRefMediaPair.href);
                     if (zae != null) {
-                        try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(zae))) {
+                        try (TikaInputStream tis = entryStream(zipFile, zae)) {
                             content.parse(tis, bodyHandler, metadata, context);
                             spineParsed++;
                         } catch (SAXException e) {
@@ -281,8 +283,9 @@ public class EpubParser implements Parser {
                     continue;
                 }
                 if (shouldHandleEmbedded(hRefMediaPair.media)) {
-                    handleEmbedded(zipFile, relativePath, hRefMediaPair, embeddedDocumentExtractor,
-                            xhtml, metadata, context);
+                    handleEmbedded(zipFile, relativePath, hRefMediaPair,
+                            id.equals(contentOrderScraper.getCoverId()),
+                            embeddedDocumentExtractor, xhtml, metadata, context);
                 }
             }
         }
@@ -343,7 +346,7 @@ public class EpubParser implements Parser {
             if (!zipFile.canReadEntryData(entry)) {
                 continue;
             }
-            try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(entry))) {
+            try (TikaInputStream tis = entryStream(zipFile, entry)) {
                 content.parse(tis, bodyHandler, metadata, context);
                 parsed++;
             } catch (SAXException e) {
@@ -422,7 +425,17 @@ public class EpubParser implements Parser {
         return true;
     }
 
+    /**
+     * @param cover whether this is the publication's cover image, emitted as
+     *              the {@link TikaCoreProperties.EmbeddedResourceType#THUMBNAIL}
+     */
+    /** Re-opened from the zip on rewind rather than cached: the entry is in the container already. */
+    private static TikaInputStream entryStream(ZipFile zipFile, ZipArchiveEntry entry) {
+        return TikaInputStream.get(() -> zipFile.getInputStream(entry), new TemporaryResources(), null);
+    }
+
     private void handleEmbedded(ZipFile zipFile, String relativePath, HRefMediaPair hRefMediaPair,
+                                boolean cover,
                                 EmbeddedDocumentExtractor embeddedDocumentExtractor,
                                 XHTMLContentHandler xhtml, Metadata parentMetadata,
                                 ParseContext context)
@@ -441,23 +454,28 @@ public class EpubParser implements Parser {
             embeddedMetadata.set(HttpHeaders.CONTENT_TYPE, hRefMediaPair.media);
         }
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, fullPath);
+        if (cover) {
+            embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
+                    TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
+        }
         if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             return;
         }
 
-        TikaInputStream tis = null;
+        //open once now so a broken entry is recorded here, not mid-parse
         try {
-            tis = TikaInputStream.get(zipFile.getInputStream(ze));
+            zipFile.getInputStream(ze).close();
         } catch (IOException e) {
-            //store this exception in the parent's metadata
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, parentMetadata, context);
             return;
         }
+        TikaInputStream tis = entryStream(zipFile, ze);
 
         xhtml.startElement("div", "class", "embedded");
         try {
             boolean outputHtml = true;
-            if (hRefMediaPair.media.contains("font") || hRefMediaPair.href.startsWith("fonts")) {
+            if ((hRefMediaPair.media != null && hRefMediaPair.media.contains("font"))
+                    || hRefMediaPair.href.startsWith("fonts")) {
                 outputHtml = false;
             }
             embeddedDocumentExtractor
@@ -479,7 +497,7 @@ public class EpubParser implements Parser {
         }
         zae = zipFile.getEntry("metadata.xml");
         if (zae != null && zipFile.canReadEntryData(zae)) {
-            try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(zae))) {
+            try (TikaInputStream tis = entryStream(zipFile, zae)) {
                 meta.parse(tis, new DefaultHandler(), metadata, context);
             }
         }
@@ -523,8 +541,19 @@ public class EpubParser implements Parser {
 
         Map<String, HRefMediaPair> locationMap = new HashMap<>();
         List<String> contentItems = new ArrayList<>();
+        //the cover image: EPUB 3 marks its manifest item with the
+        //cover-image property, EPUB 2 names the item id in a cover meta
+        String coverImageItem;
+        String coverMetaItem;
         boolean inManifest = false;
         boolean inSpine = false;
+
+        /**
+         * The manifest id of the cover image, or null if the OPF names none.
+         */
+        String getCoverId() {
+            return coverImageItem != null ? coverImageItem : coverMetaItem;
+        }
 
         @Override
         public void startElement(String uri, String localName, String name, Attributes atts)
@@ -546,7 +575,19 @@ public class EpubParser implements Parser {
                             //swallow
                         }
                         locationMap.put(id, new HRefMediaPair(href, mime));
+                        String properties = XMLReaderUtils.getAttrValue("properties", atts);
+                        if (coverImageItem == null && properties != null
+                                && Arrays.asList(properties.trim().split("\\s+"))
+                                .contains("cover-image")) {
+                            coverImageItem = id;
+                        }
                     }
+                }
+            } else if ("meta".equalsIgnoreCase(localName) && coverMetaItem == null
+                    && "cover".equals(XMLReaderUtils.getAttrValue("name", atts))) {
+                String content = XMLReaderUtils.getAttrValue("content", atts);
+                if (!StringUtils.isBlank(content)) {
+                    coverMetaItem = content.trim();
                 }
             }
             if (inSpine) {

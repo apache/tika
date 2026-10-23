@@ -39,6 +39,7 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.Property;
@@ -65,10 +66,11 @@ public class ImageParser extends AbstractImageParser {
         TMP_SUPPORTED = new HashSet<>(
                 Arrays.asList(MAIN_BMP_TYPE, OLD_BMP_TYPE, MediaType.image("gif"),
                         MediaType.image("png"), MediaType.image("vnd.wap.wbmp"),
-                        MediaType.image("x-icon"), MediaType.image("x-xcf"),
-                        MediaType.image("x-jbig2")));
-        //add try/catch class.forName() for image types relying on
-        //provided dependencies
+                        MediaType.image("x-xcf"),
+                        MediaType.image("x-jbig2"),
+                        // no JPEG 2000 reader (license): owned so OCR still reaches them
+                        MediaType.image("jp2"), MediaType.image("jpx"),
+                        MediaType.image("x-portable-pixmap")));
     }
 
     private static final Set<MediaType> SUPPORTED_TYPES =
@@ -169,8 +171,8 @@ public class ImageParser extends AbstractImageParser {
             if (iterator.hasNext()) {
                 ImageReader reader = iterator.next();
                 try {
-                    try (ImageInputStream imageStream = ImageIO
-                            .createImageInputStream(CloseShieldInputStream.wrap(stream))) {
+                    // a file we already have beats ImageIO copying the stream to its own cache file
+                    try (ImageInputStream imageStream = imageInput(stream)) {
                         reader.setInput(imageStream);
                         try {
                             int numImages = reader.getNumImages(true);
@@ -206,6 +208,13 @@ public class ImageParser extends AbstractImageParser {
                 throw new TikaException(type + " parse error", e);
             }
         }
+    }
+
+    private static ImageInputStream imageInput(InputStream stream) throws IOException {
+        if (stream instanceof TikaInputStream tis && tis.hasFile()) {
+            return ImageIO.createImageInputStream(tis.getPath().toFile());
+        }
+        return ImageIO.createImageInputStream(CloseShieldInputStream.wrap(stream));
     }
 
     @Override

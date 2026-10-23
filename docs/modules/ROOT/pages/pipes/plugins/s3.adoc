@@ -83,7 +83,8 @@ include::example$pipes-s3-fetcher.json[]
 
 |`profile` / `accessKey` / `secretKey`
 |_conditional_
-|Required by the matching `credentialsProvider`.
+|Required by the matching `credentialsProvider`. `${env:AWS_SECRET_ACCESS_KEY}` keeps the
+secret out of the file (xref:configuration/index.adoc#env[Secrets from the environment]).
 
 |`spoolToTemp`
 |`true`

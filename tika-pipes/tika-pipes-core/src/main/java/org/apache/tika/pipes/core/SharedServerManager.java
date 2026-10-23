@@ -19,16 +19,16 @@ package org.apache.tika.pipes.core;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaExtras;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ProcessUtils;
 
@@ -53,12 +54,10 @@ import org.apache.tika.utils.ProcessUtils;
  * {@link #ensureRunning()} is synchronized to prevent multiple clients from attempting
  * to restart the server simultaneously.
  * <p>
- * <b>Security:</b> The server port and a 32-byte auth token are passed to the child
- * process via environment variables (not command-line args), so they are not visible
- * in {@code /proc/<pid>/cmdline}. Each client connection must present the token before
- * the server will accept it. This prevents CVE-style abuse from untrusted local
- * processes. Note: if a malicious actor has same-uid access to your host and can read
- * {@code /proc/<pid>/environ}, that is beyond Tika's security model.
+ * <b>Security:</b> A 32-byte auth token goes to the child with its config on stdin
+ * ({@link ForkBootstrap}), so it is not visible in {@code /proc/<pid>/cmdline} or
+ * {@code /proc/<pid>/environ}. Each client connection must present the token before
+ * the server will accept it.
  *
  * @see PipesConfig#setUseSharedServer(boolean)
  */
@@ -70,14 +69,17 @@ public class SharedServerManager implements ServerManager {
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
 
     private final PipesConfig pipesConfig;
-    private final Path tikaConfigPath;
+    private final byte[] tikaConfigJson;
     private final int numConnections;
 
     private final Object lock = new Object();
     private final AtomicLong filesProcessed = new AtomicLong(0);
     private volatile boolean restarting = false;
     private volatile boolean pendingRestart = false; // Set when a client reports fatal error or max files reached
+    private final RestartCounter restarts = new RestartCounter();
     private volatile byte[] currentToken;
+    private volatile long generation;
+    private volatile boolean closed;
     private Process process;
     private Path tmpDir;
     private int serverPort = -1;
@@ -86,12 +88,12 @@ public class SharedServerManager implements ServerManager {
      * Creates a SharedServerManager.
      *
      * @param pipesConfig the pipes configuration
-     * @param tikaConfigPath path to the tika config file
+     * @param tikaConfigJson the parent's resolved config, from {@link ForkBootstrap#toBytes}
      * @param numConnections number of concurrent connections the server should support
      */
-    public SharedServerManager(PipesConfig pipesConfig, Path tikaConfigPath, int numConnections) {
+    public SharedServerManager(PipesConfig pipesConfig, byte[] tikaConfigJson, int numConnections) {
         this.pipesConfig = pipesConfig;
-        this.tikaConfigPath = tikaConfigPath;
+        this.tikaConfigJson = tikaConfigJson;
         this.numConnections = numConnections;
     }
 
@@ -141,12 +143,21 @@ public class SharedServerManager implements ServerManager {
             if (isProcessAlive() && !pendingRestart) {
                 return;
             }
+            if (closed) {
+                throw new IllegalStateException("shared server manager is closed");
+            }
             restarting = true;
+            Process previous = process;
             try {
                 startServer();
+                generation++; // supersedes every report still in flight against the old process
                 pendingRestart = false; // Clear the flag after successful restart
                 filesProcessed.set(0); // Reset file counter on restart
             } finally {
+                // Count the old process once it is really gone, even if the new start failed.
+                if (process != previous) {
+                    restarts.restarted(previous);
+                }
                 restarting = false;
                 lock.notifyAll(); // Wake up any threads waiting in getPort()
             }
@@ -154,21 +165,65 @@ public class SharedServerManager implements ServerManager {
     }
 
     /**
-     * Marks the server for restart due to a fatal error (OOM, timeout).
-     * <p>
-     * This is called by clients when they receive OOM or TIMEOUT status.
-     * It signals that the server process is stopping (System.exit was called),
-     * even if isRunning() might still return true briefly.
-     * <p>
-     * The next call to ensureRunning() will wait for the process to fully
-     * exit and then restart the server.
+     * Called by a client that received OOM or TIMEOUT: the process is exiting even if
+     * isRunning() still says otherwise; the next ensureRunning() restarts it.
      */
     @Override
-    public void markServerForRestart() {
+    public void markServerForRestart(RestartReason reason, long generation) {
         synchronized (lock) {
-            LOG.debug("Server marked for restart - will restart on next ensureRunning()");
+            if (isSuperseded(generation, reason)) {
+                return;
+            }
+            LOG.debug("Server marked for restart ({}) - will restart on next ensureRunning()", reason);
+            markForRestart(reason);
+        }
+    }
+
+    /**
+     * A restart kills the shared JVM out from under every sibling still parsing on it, and
+     * {@code ensureRunning} holds {@code lock} for the whole fork, so those siblings cannot
+     * report until after the replacement is up. Their reports describe the process that was
+     * already destroyed and already counted; applying them would destroy the healthy
+     * replacement and book a second restart for a single death.
+     */
+    private boolean isSuperseded(long reportedGeneration, RestartReason reason) {
+        if (reportedGeneration >= generation) {
+            return false;
+        }
+        LOG.debug("dropping stale {} report for generation {}; current generation is {}",
+                reason, reportedGeneration, generation);
+        return true;
+    }
+
+    /** Callers hold {@code lock}. */
+    private void markForRestart(RestartReason reason) {
+        restarts.mark(reason);
+        pendingRestart = true;
+    }
+
+    @Override
+    public long getGeneration() {
+        synchronized (lock) {
+            return generation;
+        }
+    }
+
+    @Override
+    public long getRestartCount(RestartReason reason) {
+        return restarts.count(reason);
+    }
+
+    /** Another client may already have attributed this crash (OOM/TIMEOUT); don't overwrite it. */
+    @Override
+    public int handleCrashAndGetExitCode(long generation) {
+        synchronized (lock) {
+            if (isSuperseded(generation, RestartReason.CRASH)) {
+                return -1;
+            }
+            restarts.markIfUnmarked(RestartReason.CRASH);
             pendingRestart = true;
         }
+        return -1;
     }
 
     /**
@@ -184,6 +239,9 @@ public class SharedServerManager implements ServerManager {
             synchronized (lock) {
                 LOG.info("Shared server reached max files limit ({}/{}), marking for restart",
                         count, maxFilesPerProcess);
+                // A fatal reason already recorded for this same pending restart outranks a
+                // scheduled recycle: the boundary file may be the one that killed the worker.
+                restarts.markIfUnmarked(RestartReason.MAX_FILES);
                 pendingRestart = true;
             }
         }
@@ -236,15 +294,14 @@ public class SharedServerManager implements ServerManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     private void startServer() throws IOException, InterruptedException, TimeoutException, ServerInitializationException {
         // Clean up any previous server
         if (process != null || tmpDir != null) {
             shutdownUnsafe();
         }
 
-        // Generate auth token for this server instance
-        byte[] token = new byte[PipesServer.AUTH_TOKEN_LENGTH_BYTES];
-        new SecureRandom().nextBytes(token);
+        byte[] token = ForkBootstrap.newToken();
         currentToken = token;
 
         LOG.info("\n\n" +
@@ -274,16 +331,12 @@ public class SharedServerManager implements ServerManager {
                 "  in-flight parses as collateral damage.\n");
         LOG.info("Starting shared server with {} connections", numConnections);
 
-        tmpDir = pipesConfig.createTempDirectory("pipes-shared-server-");
+        tmpDir = pipesConfig.createTempDirectory(PipesServer.SHARED_TEMP_DIR_PREFIX);
         ProcessBuilder pb = new ProcessBuilder(getCommandline());
-        // Pass port and auth token via environment variables so they are not
-        // visible in /proc/<pid>/cmdline. The token is only readable via
-        // /proc/<pid>/environ which requires same-uid access.
         // Pass port=0 so the server binds to any available ephemeral port.
         // The actual port is read back from the READY:{port} stdout signal,
         // eliminating the TOCTOU race between probing a free port and binding it.
         pb.environment().put("TIKA_PIPES_PORT", "0");
-        pb.environment().put("TIKA_PIPES_AUTH_TOKEN", HexFormat.of().formatHex(token));
         // Tell the child our PID so it can watch ProcessHandle.onExit() and
         // self-terminate promptly if we die. See PipesServer.watchParentProcess.
         pb.environment().put(PipesServer.PARENT_PID_ENV,
@@ -322,6 +375,13 @@ public class SharedServerManager implements ServerManager {
             throw new ServerInitializationException(msg, e);
         }
 
+        try (OutputStream stdin = process.getOutputStream()) {
+            ForkBootstrap.write(stdin, token, tikaConfigJson);
+        } catch (IOException e) {
+            // The server died before reading it; waitForServerReady() reports the exit.
+            LOG.warn("Couldn't send the bootstrap to the shared server process", e);
+        }
+
         // Wait for the server to signal it's ready and report the port it actually bound to
         serverPort = waitForServerReady();
         LOG.info("Shared server started successfully on port {}", serverPort);
@@ -338,7 +398,6 @@ public class SharedServerManager implements ServerManager {
                 if (!process.isAlive()) {
                     int exitValue = process.exitValue();
                     LOG.error("Shared server process exited with code {} before becoming ready", exitValue);
-                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "shared-server", tmpDir);
                     throw new ServerInitializationException(
                             "Shared server failed to start (exit code " + exitValue + "). Check JVM arguments and classpath.");
                 }
@@ -347,7 +406,6 @@ public class SharedServerManager implements ServerManager {
                 long elapsed = System.currentTimeMillis() - startTime;
                 if (elapsed > STARTUP_TIMEOUT_MILLIS) {
                     LOG.error("Timed out waiting for shared server to start after {}ms", elapsed);
-                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "shared-server", tmpDir);
                     destroyProcessUnsafe();
                     throw new ServerInitializationException(
                             "Shared server did not start within " + STARTUP_TIMEOUT_MILLIS + "ms");
@@ -378,6 +436,11 @@ public class SharedServerManager implements ServerManager {
     @Override
     public void shutdown() throws InterruptedException {
         synchronized (lock) {
+            // Latch here, not in shutdownUnsafe(): startServer() calls that to reap the previous
+            // process on every restart, so latching there would brick the manager on restart #1.
+            // A request thread racing us into ensureRunning must fail rather than fork a
+            // replacement that nothing owns and nothing will ever destroy.
+            closed = true;
             shutdownUnsafe();
         }
     }
@@ -388,6 +451,8 @@ public class SharedServerManager implements ServerManager {
         destroyProcessUnsafe();
 
         if (tmpDir != null) {
+            // never delete a crash log unread
+            ServerProcessIO.surfaceCrashDiagnostics(LOG, "shared-server", tmpDir);
             deleteDir(tmpDir);
             tmpDir = null;
         }
@@ -398,11 +463,17 @@ public class SharedServerManager implements ServerManager {
     private void destroyProcessUnsafe() throws InterruptedException {
         if (process != null) {
             process.destroyForcibly();
-            process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
-            if (process.isAlive()) {
-                LOG.error("Shared server process still alive after {}ms", WAIT_ON_DESTROY_MS);
+            try {
+                process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
+                if (process.isAlive()) {
+                    LOG.error("Shared server process still alive after {}ms", WAIT_ON_DESTROY_MS);
+                }
+            } finally {
+                // An interrupt here must not leave the field pointing at a SIGKILLed process:
+                // ensureRunning would then see process == previous and skip counting the restart,
+                // startServer() would try to reap it again, and tmpDir would never be deleted.
+                process = null;
             }
-            process = null;
         }
     }
 
@@ -434,6 +505,7 @@ public class SharedServerManager implements ServerManager {
         boolean hasExitOnOOM = false;
         boolean hasLog4j = false;
         boolean hasErrorFile = false;
+        boolean hasLocale = false;
 
         for (String arg : configArgs) {
             if (arg.startsWith("-Djava.awt.headless")) {
@@ -450,6 +522,9 @@ public class SharedServerManager implements ServerManager {
             }
             if (arg.startsWith("-XX:ErrorFile=")) {
                 hasErrorFile = true;
+            }
+            if (arg.startsWith("-Duser.language")) {
+                hasLocale = true;
             }
         }
 
@@ -483,14 +558,17 @@ public class SharedServerManager implements ServerManager {
             commandLine.add("-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
         }
         commandLine.add("-DpipesClientId=shared");
+        // the fork parses like the parent would; a fresh JVM would take the OS locale instead
+        if (!hasLocale) {
+            commandLine.addAll(ProcessUtils.defaultLocaleJvmArgs(Locale.getDefault()));
+        }
         commandLine.addAll(configArgs);
         commandLine.add("-Djava.io.tmpdir=" + tmpDir.toAbsolutePath());
         commandLine.add("org.apache.tika.pipes.core.server.PipesServer");
 
-        // Shared mode arguments: port and auth token are passed via env vars
+        // Port is passed via env var; token and config via stdin
         commandLine.add("--shared");
         commandLine.add(Integer.toString(numConnections));
-        commandLine.add(tikaConfigPath.toAbsolutePath().toString());
 
         LOG.debug("Shared server commandline: {}", commandLine);
         return commandLine.toArray(new String[0]);

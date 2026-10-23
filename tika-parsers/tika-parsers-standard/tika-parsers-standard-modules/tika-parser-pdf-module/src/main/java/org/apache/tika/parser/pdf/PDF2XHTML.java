@@ -38,17 +38,11 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
-import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.pages.PagesConfig;
 import org.apache.tika.parser.pdf.image.ImageGraphicsEngine;
-import org.apache.tika.renderer.PageRangeRequest;
-import org.apache.tika.renderer.RenderRequest;
-import org.apache.tika.renderer.RenderResult;
-import org.apache.tika.renderer.RenderResults;
-import org.apache.tika.renderer.Renderer;
-import org.apache.tika.renderer.pdf.pdfbox.PDFRenderingState;
 
 /**
  * Utility class that overrides the {@link PDFTextStripper} functionality
@@ -73,8 +67,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     private AtomicInteger inlineImageCounter = new AtomicInteger(0);
 
     PDF2XHTML(PDDocument document, ContentHandler handler, ParseContext context, Metadata metadata,
-              PDFParserConfig config, Renderer renderer) throws IOException {
-        super(document, handler, context, metadata, config, renderer);
+              PDFParserConfig config, PagesConfig pages, PageEmitter emitter,
+              CompositeContentEnricher contentEnrichers) throws IOException {
+        super(document, handler, context, metadata, config, pages, emitter, contentEnrichers);
     }
 
     /**
@@ -84,12 +79,13 @@ class PDF2XHTML extends AbstractPDF2XHTML {
      * @param document PDF document
      * @param handler  SAX content handler
      * @param metadata PDF metadata
-     * @param renderer the renderer to use for rendering pages
      * @throws SAXException  if the content handler fails to process SAX events
      * @throws TikaException if there was an exception outside of per page processing
      */
     public static void process(PDDocument document, ContentHandler handler, ParseContext context,
-                               Metadata metadata, PDFParserConfig config, Renderer renderer)
+                               Metadata metadata, PDFParserConfig config, PagesConfig pages,
+                               PageEmitter emitter,
+                               CompositeContentEnricher contentEnrichers)
             throws SAXException, TikaException {
         PDF2XHTML pdf2XHTML = null;
         try {
@@ -98,9 +94,11 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             // handler.
             if (config.isDetectAngles()) {
                 pdf2XHTML =
-                        new AngleDetectingPDF2XHTML(document, handler, context, metadata, config, renderer);
+                        new AngleDetectingPDF2XHTML(document, handler, context, metadata,
+                                config, pages, emitter, contentEnrichers);
             } else {
-                pdf2XHTML = new PDF2XHTML(document, handler, context, metadata, config, renderer);
+                pdf2XHTML = new PDF2XHTML(document, handler, context, metadata, config, pages,
+                        emitter, contentEnrichers);
             }
             config.configure(pdf2XHTML);
 
@@ -144,9 +142,9 @@ class PDF2XHTML extends AbstractPDF2XHTML {
     protected void endPage(PDPage page) throws IOException {
         try {
             writeParagraphEnd();
+            endPageText();
             try {
                 extractImages(page);
-                renderPage(page);
             } catch (IOException e) {
                 handleCatchableIOE(e);
             }
@@ -155,37 +153,6 @@ class PDF2XHTML extends AbstractPDF2XHTML {
             throw new IOException("Unable to end a page", e);
         } catch (IOException e) {
             handleCatchableIOE(e);
-        }
-    }
-
-    private void renderPage(PDPage page) throws IOException {
-        if (config.getImageStrategy() != PDFParserConfig.IMAGE_STRATEGY.RENDER_PAGES_AT_PAGE_END) {
-            return;
-        }
-        PDFRenderingState state = context.get(PDFRenderingState.class);
-        //this is the document's inputstream/PDDocument
-        //TODO: figure out if we can send in the PDPage in the TikaInputStream
-        TikaInputStream tis = state.getTikaInputStream();
-        RenderRequest request = new PageRangeRequest(getCurrentPageNo(), getCurrentPageNo());
-        Metadata renderedMetadata = Metadata.newInstance(context);
-        renderedMetadata.set(TikaCoreProperties.TYPE, PDFParser.MEDIA_TYPE.toString());
-        try (RenderResults results = renderer.render(tis, renderedMetadata, context, request)) {
-            for (RenderResult result : results.getResults()) {
-                if (result.getStatus() == RenderResult.STATUS.SUCCESS) {
-                    if (embeddedDocumentExtractor.shouldParseEmbedded(result.getMetadata(), context)) {
-
-                        try (TikaInputStream resultInputStream = result.getInputStream()) {
-                            //TODO: add markup here?
-                            embeddedDocumentExtractor.parseEmbedded(resultInputStream, xhtml,
-                                    result.getMetadata(), context, true);
-                        }
-                    }
-                }
-            }
-        } catch (SecurityException e) {
-            throw e;
-        } catch (Exception e) {
-            handleCatchableIOE(new IOException(e));
         }
     }
 
@@ -270,8 +237,11 @@ class PDF2XHTML extends AbstractPDF2XHTML {
 
         private AngleDetectingPDF2XHTML(PDDocument document, ContentHandler handler,
                                         ParseContext context, Metadata metadata,
-                                        PDFParserConfig config, Renderer renderer) throws IOException {
-            super(document, handler, context, metadata, config, renderer);
+                                        PDFParserConfig config, PagesConfig pages,
+                                        PageEmitter emitter,
+                                        CompositeContentEnricher contentEnrichers)
+                throws IOException {
+            super(document, handler, context, metadata, config, pages, emitter, contentEnrichers);
         }
 
         @Override

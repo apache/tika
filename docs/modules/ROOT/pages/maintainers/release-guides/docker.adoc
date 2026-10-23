@@ -26,7 +26,9 @@ Starting with 4.0.0-alpha-1, the Dockerfiles and the GitHub Actions workflow
 that publishes them live in this repository:
 
 * `tika-server/docker-build/{minimal,full}/Dockerfile` — `apache/tika` (server) release builds
-* `tika-server/docker-build/{minimal,full}/Dockerfile.snapshot` — snapshot builds
+* `tika-server/docker-build/{minimal,full}/Dockerfile.snapshot` — snapshot builds; keep the
+  package lists in step with the release Dockerfiles (`docker-tool.sh test-uat-snapshot` runs
+  the UAT against images built from these, ffmpeg asserted on full)
 * `tika-grpc/docker-build/Dockerfile` — `apache/tika-grpc` release *and* snapshot builds
 * `.github/workflows/docker-release.yml` — the release publishing workflow
 * `.github/workflows/docker-snapshot.yml` — the snapshot publishing workflow (auto on push to `main`, skipped when the version is not a `-SNAPSHOT`)
@@ -42,7 +44,7 @@ Apache Tika server with base dependencies (Java + the unpacked
 `tika-server-standard-<v>.zip`).
 
 full::
-Adds Tesseract OCR, GDAL, ImageMagick, and Microsoft fonts.
+Adds Tesseract OCR, GDAL, ImageMagick, ffmpeg, and Microsoft fonts.
 
 `apache/tika-grpc`::
 The gRPC server packaged with parser-package jars and pipes plugin zips.
@@ -181,8 +183,12 @@ The Tika git tag (e.g. `4.0.0`) stays put. The `-<N>` suffix in
 hand. The workflow auto-creates a `4.0.0-2` git tag at the same SHA it built
 from for provenance.
 
-*Case 1: pure base-image refresh* (no Dockerfile changes — `FROM ubuntu:resolute`
-just picks up newer upstream layers).
+The base images are pinned by digest (`FROM ubuntu:resolute@sha256:...`), and
+dependabot opens a PR each week when an upstream image is rebuilt. A rebuild
+at the original tag therefore reuses the base image that tag pinned. Only the
+apt packages installed on top of it are refreshed.
+
+*Case 1: apt-package refresh only.* Rebuild at the original tag:
 
 [source,bash]
 ----
@@ -194,9 +200,9 @@ gh workflow run docker-release.yml \
 `source_ref` defaults to the `tag`, so the workflow checks out at the
 original `4.0.0` source state.
 
-*Case 2: Dockerfile changes since the original release.* Land the
-Dockerfile changes on `main` first (or on a branch). Then point the
-workflow at that ref:
+*Case 2: newer base image (a base-image CVE) or Dockerfile changes.* Land the
+change on `main` first: merge dependabot's digest bump, or the Dockerfile
+fix. Then point the workflow at that ref:
 
 [source,bash]
 ----

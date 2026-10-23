@@ -17,7 +17,9 @@
 package org.apache.tika.serialization.serdes;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,6 +29,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.TransientParseState;
 import org.apache.tika.config.loader.TikaObjectMapperFactory;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.serialization.ComponentNameResolver;
@@ -53,6 +56,20 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
         // Friendly names written from the context map, so we skip them when writing jsonConfigs.
         Set<String> serializedNames = new HashSet<>();
 
+        // Unregistered instances that resolveAll materialized from a jsonConfig (e.g. the
+        // composite behind "metadata-filters") cannot be serialized themselves; their original
+        // JSON below carries them. Registered instances are always written from the instance:
+        // callers may mutate a resolved instance before serialization (parseUnpack does), so
+        // the live object, not the original JSON, is the truth for them.
+        Map<String, JsonConfig> jsonConfigs = parseContext.getJsonConfigs();
+        Set<Object> resolvedFromJson = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (String name : jsonConfigs.keySet()) {
+            Object resolved = parseContext.getResolvedConfig(name);
+            if (resolved != null) {
+                resolvedFromJson.add(resolved);
+            }
+        }
+
         // Context-map objects are written flat, by friendly name; read back as lazy jsonConfigs.
         Map<String, Object> contextMap = parseContext.getContextMap();
         for (Map.Entry<String, Object> entry : contextMap.entrySet()) {
@@ -63,9 +80,19 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
                 continue;
             }
 
+            // per-parse runtime state (ParseRecord, ParseTimeout, ...) is never
+            // configuration; a context that has been through a parse must still serialize
+            if (value instanceof TransientParseState) {
+                continue;
+            }
+
             // Find the friendly component name — all serializable components must be registered
             String keyName = ComponentNameResolver.getFriendlyName(value.getClass());
             if (keyName == null) {
+                if (resolvedFromJson.contains(value)) {
+                    // unserializable, but its original jsonConfig is written below
+                    continue;
+                }
                 throw new IOException(
                         "Cannot serialize ParseContext entry: " + value.getClass().getName() +
                         " is not registered. Components must be registered via " +
@@ -82,7 +109,6 @@ public class ParseContextSerializer extends JsonSerializer<ParseContext> {
         }
 
         // Then, serialize JSON configs at the top level (skip any already written above)
-        Map<String, JsonConfig> jsonConfigs = parseContext.getJsonConfigs();
         for (Map.Entry<String, JsonConfig> entry : jsonConfigs.entrySet()) {
             if (serializedNames.contains(entry.getKey())) {
                 continue;

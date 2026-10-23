@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.ignite;
 
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 import org.apache.ignite.Ignite;
@@ -96,7 +97,7 @@ public class IgniteConfigStore implements ConfigStore {
                     .addresses("127.0.0.1:10800")
                     .build();
 
-            Table table = ignite.tables().table(tableName);
+            Table table = ignite.tables().table(quotedName(tableName));
             if (table == null) {
                 throw new IllegalStateException("Table " + tableName + " not found. Ensure IgniteStoreServer is running.");
             }
@@ -148,10 +149,11 @@ public class IgniteConfigStore implements ConfigStore {
     public Set<String> keySet() {
         checkInitialized();
         try {
-            var resultSet = ignite.sql().execute(null, "SELECT id FROM " + tableName);
+            var resultSet = ignite.sql().execute(null, "SELECT id FROM " + quotedName(tableName));
             Set<String> keys = new HashSet<>();
             while (resultSet.hasNext()) {
-                keys.add(resultSet.next().stringValue("id"));
+                // by position: column lookup by name folds in the default locale too
+                keys.add(resultSet.next().stringValue(0));
             }
             return keys;
         } catch (Exception e) {
@@ -164,9 +166,9 @@ public class IgniteConfigStore implements ConfigStore {
     public int size() {
         checkInitialized();
         try {
-            var resultSet = ignite.sql().execute(null, "SELECT COUNT(*) as cnt FROM " + tableName);
+            var resultSet = ignite.sql().execute(null, "SELECT COUNT(*) as cnt FROM " + quotedName(tableName));
             if (resultSet.hasNext()) {
-                return (int) resultSet.next().longValue("cnt");
+                return (int) resultSet.next().longValue(0);
             }
             return 0;
         } catch (Exception e) {
@@ -203,6 +205,14 @@ public class IgniteConfigStore implements ConfigStore {
 
     public void setTableName(String tableName) {
         this.tableName = tableName;
+    }
+
+    /**
+     * Quoted so Ignite does not fold it in the default locale (TIKA-4922); upper-cased
+     * first so it still names a table created unquoted.
+     */
+    public static String quotedName(String tableName) {
+        return '"' + tableName.toUpperCase(Locale.ROOT).replace("\"", "\"\"") + '"';
     }
 
     public void setReplicas(int replicas) {

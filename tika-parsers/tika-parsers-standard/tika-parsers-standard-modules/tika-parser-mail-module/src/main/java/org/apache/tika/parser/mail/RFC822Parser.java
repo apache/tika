@@ -16,10 +16,18 @@
  */
 package org.apache.tika.parser.mail;
 
+import static java.nio.charset.StandardCharsets.US_ASCII;
+
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.SeekableByteChannel;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.james.mime4j.MimeException;
 import org.apache.james.mime4j.message.DefaultBodyDescriptorBuilder;
 import org.apache.james.mime4j.parser.MimeStreamParser;
@@ -34,6 +42,7 @@ import org.apache.tika.detect.Detector;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.ZeroByteFileException;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.BoundedInputStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -44,6 +53,11 @@ import org.apache.tika.sax.XHTMLContentHandler;
 /**
  * Uses apache-mime4j to parse emails. Each part is treated with the
  * corresponding parser and displayed within elements.
+ * <p/>
+ * Also handles Apple Mail's emlx framing: a first line carrying the message's
+ * byte count, and an XML plist after the message. Both are dropped when the
+ * count checks out; an edited file whose count no longer lands on the plist
+ * is parsed whole rather than cut.
  * <p/>
  * A {@link MimeConfig} object can be passed in the parsing context
  * to better control the parsing process.
@@ -72,8 +86,14 @@ public class RFC822Parser implements Parser {
         }
     }
 
-    private static final Set<MediaType> SUPPORTED_TYPES =
-            Collections.singleton(MediaType.parse("message/rfc822"));
+    private static final Set<MediaType> SUPPORTED_TYPES = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(MediaType.parse("message/rfc822"),
+                    MediaType.parse("message/x-emlx"))));
+
+    // digits, then Apple Mail's space padding to 10 columns, then the newline
+    private static final int EMLX_COUNT_LINE_MAX = 11;
+
+    private static final byte[] PLIST_START = "<?xml".getBytes(US_ASCII);
 
     //rely on the detector to be thread-safe
     //built lazily and then reused
@@ -134,7 +154,7 @@ public class RFC822Parser implements Parser {
         xhtml.startDocument();
         checkForZeroByte(tis);//avoid stackoverflow
         try {
-            parser.parse(tis);
+            parser.parse(stripEmlxFraming(tis));
         } catch (IOException e) {
             tis.throwIfCauseOf(e);
             throw new TikaException("Failed to parse an email message", e);
@@ -150,6 +170,60 @@ public class RFC822Parser implements Parser {
             }
         }
         xhtml.endDocument();
+    }
+
+    /**
+     * Consumes the emlx byte-count line if the stream starts with one, and bounds the
+     * message to that count when the plist really starts there.
+     *
+     * @return the stream to hand to mime4j
+     */
+    private static InputStream stripEmlxFraming(TikaInputStream tis) throws IOException {
+        byte[] head = new byte[EMLX_COUNT_LINE_MAX];
+        int n = tis.peek(head);
+        long count = 0;
+        int digits = 0;
+        boolean padding = false;
+        int lineLength = -1;
+        for (int i = 0; i < n; i++) {
+            int c = head[i];
+            if (c >= '0' && c <= '9' && !padding) {
+                count = count * 10 + (c - '0');
+                digits++;
+            } else if (c == ' ' && digits > 0) {
+                padding = true;
+            } else if (c == '\n' && digits > 0) {
+                lineLength = i + 1;
+                break;
+            } else {
+                break;
+            }
+        }
+        if (lineLength < 0) {
+            return tis;
+        }
+        boolean verified = plistStartsAt(tis, lineLength + count);
+        IOUtils.skipFully(tis, lineLength);
+        return verified ? new BoundedInputStream(count, tis) : tis;
+    }
+
+    private static boolean plistStartsAt(TikaInputStream tis, long offset) {
+        // must run before any byte is consumed: a passthrough source refuses a seekable
+        // view once its position has moved
+        try (SeekableByteChannel channel = tis.getSeekableByteChannel()) {
+            if (offset + PLIST_START.length > channel.size()) {
+                return false;
+            }
+            ByteBuffer buffer = ByteBuffer.allocate(PLIST_START.length);
+            channel.position(offset);
+            while (buffer.hasRemaining() && channel.read(buffer) != -1) {
+                // fill
+            }
+            return !buffer.hasRemaining() && Arrays.equals(buffer.array(), PLIST_START);
+        } catch (IOException e) {
+            // unverifiable is not a reason to cut; a real read failure recurs in mime4j
+            return false;
+        }
     }
 
     private void checkForZeroByte(TikaInputStream tstream) throws IOException, ZeroByteFileException {

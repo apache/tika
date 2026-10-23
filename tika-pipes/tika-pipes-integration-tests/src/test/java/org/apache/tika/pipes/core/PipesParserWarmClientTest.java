@@ -49,7 +49,7 @@ public class PipesParserWarmClientTest {
         PipesConfig pipesConfig = PipesConfig.load(tikaJsonConfig);
         pipesConfig.setNumClients(3);
 
-        try (PipesParser parser = PipesParser.load(tikaJsonConfig, pipesConfig, tikaConfigPath)) {
+        try (PipesParser parser = PipesParser.load(tikaJsonConfig, pipesConfig)) {
             for (int i = 0; i < 4; i++) {
                 PipesResult result = parser.parse(
                         new FetchEmitTuple(testDoc + "-" + i, new FetchKey("fsf", testDoc),

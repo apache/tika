@@ -39,6 +39,7 @@ import org.xml.sax.helpers.DefaultHandler;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
@@ -53,14 +54,12 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
             "http://schemas.openxps.org/oxps/v1.0/fixedrepresentation";
     private static String XPS_DOCUMENT =
             "http://schemas.microsoft.com/xps/2005/06/fixedrepresentation";
-    private final ParseContext context;
     private final ZipPackage pkg;
     Map<String, Metadata> embeddedImages = new LinkedHashMap<>();
 
     public XPSExtractorDecorator(ParseContext context, OPCPackage opcPackage)
             throws TikaException {
         super(context, opcPackage);
-        this.context = context;
         if (opcPackage instanceof ZipPackage) {
             this.pkg = (ZipPackage) opcPackage;
         } else {
@@ -85,7 +84,9 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
         if (zipEntry == null) {
             throw new TikaException("Couldn't find required zip entry: " + zipPath);
         }
-        return TikaInputStream.get(zipEntrySource.getInputStream(zipEntry));
+        ZipArchiveEntry entry = zipEntry;
+        return TikaInputStream.get(() -> zipEntrySource.getInputStream(entry),
+                new TemporaryResources(), null);
     }
 
     @Override
@@ -130,7 +131,7 @@ public class XPSExtractorDecorator extends AbstractOOXMLExtractor {
             tis = getZipStream(zipPath, pkg);
         } catch (IOException | TikaException e) {
             //store this exception in the parent's metadata
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
             return;
         }
 

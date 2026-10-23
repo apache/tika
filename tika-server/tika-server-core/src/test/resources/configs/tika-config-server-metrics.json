@@ -1,0 +1,10 @@
+{
+  "server": {
+    "port": 9999,
+    "endpoints": [
+      "tika"
+    ],
+    "metricsPort": 9404
+  },
+  "plugin-roots": "target/plugins"
+}

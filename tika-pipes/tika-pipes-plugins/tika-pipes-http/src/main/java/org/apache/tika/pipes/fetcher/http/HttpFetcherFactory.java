@@ -32,8 +32,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "fetchers": {
- *   "http-fetcher": {
- *     "my-http-fetcher": {
+ *   "my-http-fetcher": {
+ *     "http-fetcher": {
  *       "userName": "user",
  *       "password": "pass",
  *       "connectTimeoutMillis": 30000,

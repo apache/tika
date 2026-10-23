@@ -71,7 +71,7 @@ public class FrameworkConfig {
         if (configNode == null || !configNode.isObject()) {
             // Use plain JSON mapper since the main mapper may be binary (Smile)
             String jsonString = JSON_MAPPER.writeValueAsString(configNode);
-            JsonConfig jsonConfig = () -> jsonString;
+            JsonConfig jsonConfig = JsonConfig.trusted(jsonString);
             return new FrameworkConfig(null, jsonConfig, configNode);
         }
 
@@ -89,7 +89,7 @@ public class FrameworkConfig {
         // Remaining fields are component-specific config
         // Use plain JSON mapper since the main mapper may be binary (Smile)
         String jsonString = JSON_MAPPER.writeValueAsString(objNode);
-        JsonConfig componentConfigJson = () -> jsonString;
+        JsonConfig componentConfigJson = JsonConfig.trusted(jsonString);
 
         return new FrameworkConfig(decoration, componentConfigJson, objNode);
     }

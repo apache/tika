@@ -18,6 +18,7 @@ package org.apache.tika.io;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Path;
 
 /**
@@ -42,6 +43,15 @@ interface TikaInputSource extends Closeable {
     boolean hasPath();
 
     /**
+     * The file this source is already associated with, or {@code null}. Never creates one
+     * and never reads from the source, so it is safe where {@link #getPath(String)} is not
+     * -- logging, diagnostics, {@code toString()}. For diagnostics only: the file may since
+     * have been deleted, and for a stream cache the last bytes may still be buffered until
+     * {@link #getPath(String)} completes it.
+     */
+    Path materializedPath();
+
+    /**
      * Gets the file path, potentially spilling to a temp file if needed.
      * @param suffix file suffix for temp files
      * @return the file path
@@ -54,6 +64,20 @@ interface TikaInputSource extends Closeable {
     long getLength();
 
     /**
+     * True when {@link #getLength()} is ground truth (file size, byte array,
+     * fully-drained cache) rather than a caller-declared hint, which may lie.
+     */
+    boolean hasReliableLength();
+
+    /**
+     * Whether this source stands in for content that is never extracted. Spooling one
+     * measures nothing, so its unknown length must not cost a temp file to confirm.
+     */
+    default boolean isPlaceholder() {
+        return false;
+    }
+
+    /**
      * Enables full rewind capability.
      * <p>
      * For ByteArraySource and FileSource, this is a no-op (always rewindable).
@@ -62,7 +86,38 @@ interface TikaInputSource extends Closeable {
      * <p>
      * Must be called when position is 0, otherwise throws IOException.
      *
+     * @param budget shared memory budget governing how much a caching source may hold in
+     *               memory before spilling, or {@code null} for the per-object default;
+     *               inherently rewindable sources ignore it
      * @throws IOException if position is not 0
      */
-    void enableRewind() throws IOException;
+    void enableRewind(CacheMemoryBudget budget) throws IOException;
+
+    /**
+     * Returns a read-only random-access channel over this source's full content: content
+     * already in memory (byte[], unspilled cache) is served from memory; file-backed or
+     * spilled content from a file channel; unread stream content is drained through the
+     * cache, which decides memory-vs-disk during the drain. Fails for a stream-backed
+     * source that has been partially read without rewind enabled. Callers own closing the
+     * returned channel. Does not change this source's read position.
+     *
+     * @throws IOException if the source is partially read and cannot be rewound
+     */
+    SeekableByteChannel getSeekableByteChannel() throws IOException;
+
+    /**
+     * Asks the source to hold its full content in memory, so that later reads -- sequential
+     * or via {@link #getSeekableByteChannel()} -- are served from there instead of going
+     * back to the underlying source. Re-opening is cheap for a file (the page cache serves
+     * it) but not for a zip entry, where it means inflating the entry again.
+     * <p>
+     * Advisory and best effort: a source that would have to spill to disk, or that cannot
+     * tell whether the content fits, returns false and keeps its current behaviour. Callers
+     * must work the same either way. Does not change this source's read position.
+     *
+     * @return true if the full content is now held in memory
+     */
+    default boolean tryRetainInMemory() throws IOException {
+        return false;
+    }
 }

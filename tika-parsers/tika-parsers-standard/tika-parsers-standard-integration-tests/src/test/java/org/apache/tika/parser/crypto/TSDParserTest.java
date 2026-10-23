@@ -28,7 +28,7 @@ import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.parser.pdf.OcrConfig;
+import org.apache.tika.parser.pages.TextPolicy;
 import org.apache.tika.parser.pdf.PDFParserConfig;
 
 public class TSDParserTest extends TikaTest {
@@ -37,17 +37,17 @@ public class TSDParserTest extends TikaTest {
     public void testBrokenPdf() throws Exception {
         ParseContext parseContext = new ParseContext();
         PDFParserConfig config = new PDFParserConfig();
-        config.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+        config.pages().setText(TextPolicy.EXTRACT);
         parseContext.set(PDFParserConfig.class, config);
         //make sure that embedded file appears in list
         //and make sure embedded exception is recorded
         List<Metadata> list = getRecursiveMetadata("testTSD_broken_pdf.tsd", parseContext);
         assertEquals(2, list.size());
         assertEquals("application/pdf", list.get(1).get(HttpHeaders.CONTENT_TYPE));
-        assertNotNull(list.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
+        assertNotNull(list.get(1).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
         // Exception occurs during TSD content extraction (truncated file)
         assertContains("EOFException",
-                list.get(1).get(TikaCoreProperties.EMBEDDED_EXCEPTION));
+                list.get(1).get(TikaCoreProperties.TIKA_META_EXCEPTION_EMBEDDED_STREAM));
     }
 
     @Test

@@ -49,6 +49,7 @@ include::example$pipes-http-fetcher.json[]
 |`userName` / `password`
 |_none_
 |Credentials. Applied only when `authScheme` is also set — without it they are silently ignored.
+`${env:NAME}` reads one from the environment (xref:configuration/index.adoc#env[Secrets from the environment]).
 
 |`ntDomain`
 |_none_
@@ -126,6 +127,17 @@ include::example$pipes-http-fetcher.json[]
 |_none_
 |Base64-encoded private key for asymmetric (RSA/ECDSA) JWT signing. Mutually exclusive with `jwtSecret`.
 |===
+
+==== Per-request headers
+
+A request can add headers to one fetch through an `http-fetcher` entry in its parse context
+(gRPC: `additional_fetch_config_json`). Only `httpRequestHeaders` may be set there; any other
+key is an error, since credentials, proxy, TLS and JWT settings belong to the operator.
+
+[source,json]
+----
+{ "httpRequestHeaders": { "map": { "X-Request-Id": ["abc123"] } } }
+----
 
 [#security-notes]
 == Security Notes

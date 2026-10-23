@@ -18,6 +18,8 @@ package org.apache.tika.parser.apple;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,7 +37,9 @@ import org.apache.tika.exception.TikaException;
 import org.apache.tika.exception.TikaMemoryLimitException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.EndianUtils;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -86,34 +90,52 @@ public class AppleSingleFileParser implements Parser {
 
         EmbeddedDocumentExtractor ex = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
 
+        //the data fork is handed over as a region of this stream, which needs a
+        //seekable view after the header has been read sequentially
+        tis.enableRewind(context.get(CacheMemoryBudget.class));
         short numEntries = readThroughNumEntries(tis);
-        long bytesRead = 26;
         List<FieldInfo> fieldInfoList = getSortedFieldInfoList(tis, numEntries);
-        bytesRead += 12 * numEntries;
         Metadata embeddedMetadata = Metadata.newInstance(context);
-        bytesRead = processFieldEntries(tis, fieldInfoList, embeddedMetadata, bytesRead);
+        processFieldEntries(tis, fieldInfoList, embeddedMetadata, 26 + 12L * numEntries);
         FieldInfo contentFieldInfo = getContentFieldInfo(fieldInfoList);
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
-        if (contentFieldInfo != null) {
-            long diff = contentFieldInfo.offset - bytesRead;
-            IOUtils.skipFully(tis, diff);
-            if (ex.shouldParseEmbedded(embeddedMetadata, context)) {
-                // Use BoundedInputStream to limit bytes read, then spool to temp file
-                // for complete isolation from parent stream (reset() goes to embedded start)
-                BoundedInputStream bounded =
-                        BoundedInputStream.builder()
-                                .setInputStream(tis)
-                                .setMaxCount(contentFieldInfo.length)
-                                .get();
-                try (TikaInputStream inner = TikaInputStream.get(bounded)) {
-                    inner.getPath();
-                    ex.parseEmbedded(inner, xhtml, embeddedMetadata, context, true);
-                }
+        if (contentFieldInfo != null && ex.shouldParseEmbedded(embeddedMetadata, context)) {
+            //re-opened from the channel on rewind: a digest re-reads the fork in place
+            //instead of the copy-and-spool that getPath() used to force on every parse
+            long offset = contentFieldInfo.offset;
+            long length = contentFieldInfo.length;
+            try (TikaInputStream inner = TikaInputStream.get(() -> region(tis, offset, length),
+                    new TemporaryResources(), null)) {
+                ex.parseEmbedded(inner, xhtml, embeddedMetadata, context, true);
             }
         }
         xhtml.endDocument();
 
+    }
+
+    /**
+     * The data fork as a fresh stream over the parent's seekable channel: in memory
+     * when the parent is, from its file when it has one. The offset and length are
+     * the file's own claims; a region past the end simply reads as empty.
+     */
+    private static InputStream region(TikaInputStream tis, long offset, long length)
+            throws IOException {
+        if (offset < 0 || length < 0) {
+            throw new IOException("AppleSingle data fork out of range: offset=" + offset +
+                    " length=" + length);
+        }
+        SeekableByteChannel channel = tis.getSeekableByteChannel();
+        try {
+            channel.position(offset);
+            return BoundedInputStream.builder()
+                    .setInputStream(Channels.newInputStream(channel))
+                    .setMaxCount(length)
+                    .get();
+        } catch (IOException e) {
+            channel.close();
+            throw e;
+        }
     }
 
     private FieldInfo getContentFieldInfo(List<FieldInfo> fieldInfoList) {

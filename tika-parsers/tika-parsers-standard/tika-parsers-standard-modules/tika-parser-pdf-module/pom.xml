@@ -63,15 +63,6 @@
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk18on</artifactId>
     </dependency>
-    <!-- for java 10
-       See TIKA-2778 for why we need to do this now.
-        May the gods of API design fix this in the future.
-        only required for jackcess-encrypt
-       -->
-    <dependency>
-      <groupId>org.glassfish.jaxb</groupId>
-      <artifactId>jaxb-runtime</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>jcl-over-slf4j</artifactId>
@@ -83,6 +74,11 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <properties>
+    <!-- TIKA-4816 metadata string-key ban, main sources; see tika-parent -->
+    <forbiddenapis.module.signaturesFile>${metadata.forbiddenapis.signaturesFile}</forbiddenapis.module.signaturesFile>
+  </properties>
 
   <build>
     <plugins>
@@ -114,25 +110,10 @@
           </execution>
         </executions>
       </plugin>
-      <!-- TIKA-4816 metadata string-key ban, main sources; see tika-parent -->
-      <plugin>
-        <groupId>de.thetaphi</groupId>
-        <artifactId>forbiddenapis</artifactId>
-        <executions>
-          <execution>
-            <id>forbiddenapis-check</id>
-            <configuration>
-              <signaturesFiles>
-                <signaturesFile>${metadata.forbiddenapis.signaturesFile}</signaturesFile>
-              </signaturesFiles>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
     </plugins>
   </build>
 
   <scm>
-    <tag>3.0.0-rc1</tag>
+    <tag>4.1.0-rc2</tag>
   </scm>
 </project>

@@ -1,10 +1,14 @@
+// TIKA-4834: keep these comments; TikaServerBasicIntegrationTest is the check that the
+// server and its forks load a commented config.
 {
+  /* block comment before a key */
   "server": {
-    "port": 9999,
+    "port": 9999, // trailing comment
     "allowPipes": true,
     "allowPerRequestConfig": true,
     "endpoints": [
       "rmeta",
+      // comment inside an array
       "status",
       "tika"
     ]

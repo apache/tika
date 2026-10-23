@@ -52,10 +52,6 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.singleton(MediaType.application("envi.hdr"));
 
-    private List<String> multiLineFieldValueList = new ArrayList<>();
-
-    private transient XHTMLContentHandler xhtml;
-
     public EnviHeaderParser() {
         super();
     }
@@ -84,9 +80,9 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
             Charset charset = reader.getCharset();
             // deprecated, see TIKA-431
             metadata.set(HttpHeaders.CONTENT_ENCODING, charset.name());
-            xhtml = new XHTMLContentHandler(handler, metadata, context);
+            XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
             xhtml.startDocument();
-            readLines(reader, metadata);
+            readLines(reader, metadata, xhtml);
             xhtml.endDocument();
         } catch (IOException | TikaException e) {
             LOG.error("Error reading input data tis.", e);
@@ -96,18 +92,19 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
 
     }
 
-    private void readLines(AutoDetectReader reader, Metadata metadata)
-            throws IOException, SAXException {
+    private void readLines(AutoDetectReader reader, Metadata metadata,
+                           XHTMLContentHandler xhtml) throws IOException, SAXException {
         // text contents of the xhtml
         String line;
+        List<String> multiLineFieldValueList = new ArrayList<>();
         while ((line = reader.readLine()) != null) {
             if (line.contains("{") && !line.endsWith("}") || line.startsWith(" ")) {
-                String completeField = parseMultiLineFieldValue(line);
+                String completeField = parseMultiLineFieldValue(line, multiLineFieldValueList);
                 if (completeField != null) {
-                    writeParagraphAndSetMetadata(completeField, metadata);
+                    writeParagraphAndSetMetadata(completeField, metadata, xhtml);
                 }
             } else {
-                writeParagraphAndSetMetadata(line, metadata);
+                writeParagraphAndSetMetadata(line, metadata, xhtml);
             }
         }
     }
@@ -115,7 +112,8 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
     /*
      * Write a line to the XHTMLContentHandler and populate the key, value into the Metadata
      */
-    private void writeParagraphAndSetMetadata(String line, Metadata metadata) throws SAXException {
+    private void writeParagraphAndSetMetadata(String line, Metadata metadata,
+                                              XHTMLContentHandler xhtml) throws SAXException {
         if (line.length() < 300) {
             String[] keyValue = line.split("=", 2);
             if (keyValue.length != 1) {
@@ -227,10 +225,12 @@ public class EnviHeaderParser extends AbstractEncodingDetectorParser {
      * check it made to ensure the multi-line contents are contained in
      * opening and closing braces.
      */
-    private String parseMultiLineFieldValue(String line) {
+    private String parseMultiLineFieldValue(String line, List<String> multiLineFieldValueList) {
         multiLineFieldValueList.add(line);
         if (line.endsWith("}")) {
-            return String.join("", multiLineFieldValueList);
+            String completeField = String.join("", multiLineFieldValueList);
+            multiLineFieldValueList.clear();
+            return completeField;
         } else {
             //do nothing
         }

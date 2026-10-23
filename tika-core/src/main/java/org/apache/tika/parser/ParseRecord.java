@@ -16,14 +16,18 @@
  */
 package org.apache.tika.parser;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.tika.config.EmbeddedLimits;
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.TransientParseState;
 import org.apache.tika.metadata.Metadata;
+import org.apache.tika.metadata.TikaCoreProperties;
 
 /**
  * Use this class to store exceptions, warnings and other information
@@ -34,7 +38,7 @@ import org.apache.tika.metadata.Metadata;
  * which can be configured via {@link #setMaxEmbeddedDepth(int)} and
  * {@link #setMaxEmbeddedCount(int)}.
  */
-public class ParseRecord {
+public class ParseRecord implements TransientParseState {
 
     //hard limits so that specially crafted files
     //don't cause an OOM
@@ -45,6 +49,8 @@ public class ParseRecord {
     private static final int MAX_WARNINGS = 100;
 
     private static final int MAX_METADATA_LIST_SIZE = 100;
+    public static final int MAX_EXTERNAL_REFERENCES = 20;
+    private static final int MAX_EXTERNAL_REFERENCE_LENGTH = 1000;
 
     private int depth = 0;
     private final Set<String> parsers = new LinkedHashSet<>();
@@ -54,11 +60,15 @@ public class ParseRecord {
     private final List<String> warnings = new ArrayList<>();
 
     private final List<Metadata> metadataList = new ArrayList<>();
+    //metadata of the documents being parsed, innermost on top
+    private final Deque<Metadata> documents = new ArrayDeque<>();
+    private boolean externalReferenceInEmbedded = false;
 
     private boolean writeLimitReached = false;
 
     // Embedded document tracking
     private int embeddedCount = 0;
+    private int embeddedDepth = 0;
     private int maxEmbeddedDepth = -1;
     private int maxEmbeddedCount = -1;
     private boolean throwOnMaxDepth = false;
@@ -88,12 +98,41 @@ public class ParseRecord {
         return record;
     }
 
-    void beforeParse() {
+    void beforeParse(Metadata metadata) {
         depth++;
+        documents.push(metadata);
     }
 
     void afterParse() {
         depth--;
+        documents.pop();
+    }
+
+    /**
+     * Records an external DTD or entity reference Tika refused, on the metadata of the
+     * document being parsed. No-op outside a {@link CompositeParser} parse.
+     */
+    public void addExternalReference(String reference) {
+        Metadata metadata = documents.peek();
+        if (metadata == null || reference == null) {
+            return;
+        }
+        Integer seen = metadata.getInt(TikaCoreProperties.XML_EXTERNAL_REFERENCE_COUNT);
+        int count = seen == null ? 0 : seen;
+        metadata.set(TikaCoreProperties.XML_EXTERNAL_REFERENCE_COUNT, count + 1);
+        if (count < MAX_EXTERNAL_REFERENCES) {
+            String value = reference.length() > MAX_EXTERNAL_REFERENCE_LENGTH ?
+                    reference.substring(0, MAX_EXTERNAL_REFERENCE_LENGTH) : reference;
+            metadata.add(TikaCoreProperties.XML_EXTERNAL_REFERENCE, value);
+        }
+        //composite delegation pushes the same metadata again; embedded documents bring their own
+        if (metadata != documents.peekLast()) {
+            externalReferenceInEmbedded = true;
+        }
+    }
+
+    public boolean isExternalReferenceInEmbedded() {
+        return externalReferenceInEmbedded;
     }
 
     public int getDepth() {
@@ -104,7 +143,8 @@ public class ParseRecord {
         return parsers.toArray(new String[0]);
     }
 
-    void addParserClass(String parserClass) {
+    /** Records a parser that ran, dispatched or invoked as an enricher. */
+    public void addParserClass(String parserClass) {
         if (parsers.size() < MAX_PARSERS) {
             parsers.add(parserClass);
         }
@@ -191,6 +231,36 @@ public class ParseRecord {
      */
     public void incrementEmbeddedCount() {
         embeddedCount++;
+    }
+
+    /**
+     * Marks the start of an embedded document's parse: the documents parsed
+     * until {@link #exitEmbedded()} are one level deeper than the current one.
+     * Unlike {@link #getDepth()}, which counts the parsers a parse passes
+     * through, this counts embedding levels only.
+     */
+    public void enterEmbedded() {
+        embeddedDepth++;
+    }
+
+    /**
+     * Marks the end of an embedded document's parse.
+     */
+    public void exitEmbedded() {
+        if (embeddedDepth <= 0) {
+            throw new IllegalStateException("exitEmbedded() without a matching enterEmbedded()");
+        }
+        embeddedDepth--;
+    }
+
+    /**
+     * Gets the embedding depth of the document currently being parsed:
+     * 0 for the container, 1 for its embedded documents, and so on.
+     *
+     * @return the embedding depth of the current document
+     */
+    public int getEmbeddedDepth() {
+        return embeddedDepth;
     }
 
     /**

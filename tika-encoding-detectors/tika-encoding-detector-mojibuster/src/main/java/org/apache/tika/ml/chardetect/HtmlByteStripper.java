@@ -184,27 +184,93 @@ public final class HtmlByteStripper {
         return strip(src, srcOffset, srcLen, dst, dstOffset, false);
     }
 
+    /**
+     * Scan state carried across chunked {@link #stripTags(byte[], int, byte[], Cursor,
+     * boolean)} calls. All positions are absolute indices into the caller's (growing)
+     * source buffer, so the buffer must retain its prefix across calls (e.g. grow with
+     * {@code Arrays.copyOf}). Tags-only: the resumable path never drops entities.
+     */
+    static final class Cursor {
+        private int state = TEXT;
+        private int nameStart;
+        private byte[] rawEnd;
+        private int rawMatch;
+        private int tagCount;
+        private int entityCount;
+        private int entityStart;
+        private int attrNameStart;
+        private boolean emitAttrValue;
+        private int written;
+        private int next;
+        // where the very first scan started; guards the comment lookbehind
+        private int origin;
+
+        int contentLength() {
+            return written;
+        }
+
+        int tagCount() {
+            return tagCount;
+        }
+    }
+
+    /**
+     * Resumable {@link #stripTags(byte[], int, int, byte[], int)}: scans
+     * {@code src[cursor.next .. end)}, appending stripped output at
+     * {@code dst[cursor.written]}. Byte-identical to a single-shot strip of the final
+     * buffer: on a non-final call the scan holds back at a {@code <!} too close to
+     * {@code end} for the comment lookahead, so the next call re-examines it with more
+     * bytes; everything else in the machine is strictly left-to-right.
+     *
+     * @param isFinal true on the last call (no more input will arrive)
+     */
+    static void stripTags(byte[] src, int end, byte[] dst, Cursor cursor, boolean isFinal) {
+        scan(src, end, dst, cursor, false, isFinal);
+    }
+
     private static Result strip(byte[] src, int srcOffset, int srcLen,
                      byte[] dst, int dstOffset, boolean dropEntities) {
-        int w = dstOffset;
-        int state = TEXT;
-        int nameStart = 0;
-        byte[] rawEnd = null;
-        int rawMatch = 0;
+        Cursor c = new Cursor();
+        c.next = srcOffset;
+        c.origin = srcOffset;
+        c.written = dstOffset;
         int end = srcOffset + srcLen;
-        int tagCount = 0;
-        int entityCount = 0;
+        scan(src, end, dst, c, dropEntities, true);
+        int w = c.written;
+
+        // Unterminated entity at EOF: emit consumed prefix as literal text.
+        if (c.state == ENTITY || c.state == ENTITY_NAME || c.state == ENTITY_NUM
+                || c.state == ENTITY_DEC || c.state == ENTITY_HEX) {
+            for (int k = c.entityStart; k < end; k++) {
+                dst[w++] = src[k];
+            }
+        }
+
+        return new Result(w - dstOffset, c.tagCount, c.entityCount);
+    }
+
+    private static void scan(byte[] src, int end, byte[] dst, Cursor c,
+                     boolean dropEntities, boolean isFinal) {
+        int w = c.written;
+        int state = c.state;
+        int nameStart = c.nameStart;
+        byte[] rawEnd = c.rawEnd;
+        int rawMatch = c.rawMatch;
+        int tagCount = c.tagCount;
+        int entityCount = c.entityCount;
         // Position of the leading '&' for the in-progress entity.
         // Tracked so the bailout path can emit the consumed prefix
         // as literal text when the parse fails (e.g. "AT&T").
-        int entityStart = 0;
-        int attrNameStart = 0;
+        int entityStart = c.entityStart;
+        int attrNameStart = c.attrNameStart;
         // When true, the current quoted attribute value's bytes are
         // emitted to dst (attribute name matched TEXT_ATTRS).  Reset
         // to false when the quote closes or the tag ends.
-        boolean emitAttrValue = false;
+        boolean emitAttrValue = c.emitAttrValue;
 
-        for (int i = srcOffset; i < end; i++) {
+        int i = c.next;
+        outer:
+        for (; i < end; i++) {
             byte b = src[i];
             switch (state) {
                 case TEXT:
@@ -219,6 +285,11 @@ public final class HtmlByteStripper {
                     break;
 
                 case LT:
+                    if (b == '!' && i + 2 >= end && !isFinal) {
+                        // comment lookahead needs 2 more bytes: hold back so the next
+                        // call re-examines '!' -- keeps chunked == single-shot
+                        break outer;
+                    }
                     if (b == '!' && i + 2 < end
                             && src[i + 1] == '-' && src[i + 2] == '-') {
                         state = COMMENT;
@@ -474,7 +545,7 @@ public final class HtmlByteStripper {
                     break;
 
                 case COMMENT:
-                    if (b == '>' && i >= srcOffset + 2
+                    if (b == '>' && i >= c.origin + 2
                             && src[i - 1] == '-' && src[i - 2] == '-') {
                         state = TEXT;
                     }
@@ -508,15 +579,17 @@ public final class HtmlByteStripper {
             }
         }
 
-        // Unterminated entity at EOF: emit consumed prefix as literal text.
-        if (state == ENTITY || state == ENTITY_NAME || state == ENTITY_NUM
-                || state == ENTITY_DEC || state == ENTITY_HEX) {
-            for (int k = entityStart; k < end; k++) {
-                dst[w++] = src[k];
-            }
-        }
-
-        return new Result(w - dstOffset, tagCount, entityCount);
+        c.state = state;
+        c.nameStart = nameStart;
+        c.rawEnd = rawEnd;
+        c.rawMatch = rawMatch;
+        c.tagCount = tagCount;
+        c.entityCount = entityCount;
+        c.entityStart = entityStart;
+        c.attrNameStart = attrNameStart;
+        c.emitAttrValue = emitAttrValue;
+        c.written = w;
+        c.next = i;
     }
 
     /**

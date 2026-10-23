@@ -1,6 +1,6 @@
 {
-  "parsers": [
-    {
+  "engines": {
+    "gemini": {
       "gemini-vlm-parser": {
         "baseUrl": "https://generativelanguage.googleapis.com",
         "model": "gemini-2.5-flash",
@@ -10,11 +10,17 @@
         "apiKey": "your-gemini-api-key",
         "inlineContent": true,
         "skipOcr": false,
+        "textRecognizer": true,
         "minFileSizeToOcr": 0,
         "maxFileSizeToOcr": 52428800,
         "maxImagePixels": 100000000,
         "allowRuntimePrompt": false
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "gemini"
     }
   ]
 }

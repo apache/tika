@@ -22,6 +22,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.List;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -50,6 +51,7 @@ public class JsonFetchEmitTupleList {
         module.addSerializer(ParseContext.class, new ParseContextSerializer());
         module.addDeserializer(ParseContext.class, new ParseContextDeserializer());
         OBJECT_MAPPER.registerModule(module);
+        OBJECT_MAPPER.enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION);
     }
 
     public static List<FetchEmitTuple> fromJson(Reader reader) throws IOException {

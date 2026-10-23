@@ -96,7 +96,7 @@ public class CompositeDetector implements Detector {
      * @param metadata
      * @return mediaType if a parseable mediatype was sent in via user or parser overrides
      */
-    private static MediaType detectOverrides(Metadata metadata) {
+    protected static MediaType detectOverrides(Metadata metadata) {
         String override = metadata.get(TikaCoreProperties.CONTENT_TYPE_USER_OVERRIDE);
         if (!StringUtils.isBlank(override)) {
             MediaType mt = MediaType.parse(override);

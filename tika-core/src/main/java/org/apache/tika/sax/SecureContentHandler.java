@@ -66,7 +66,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     /**
      * Maximum compression ratio.
      */
-    private long ratio = 100;
+    private long ratio = 1000;
 
     /**
      * Maximum XML element nesting level.
@@ -76,7 +76,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
     /**
      * Maximum package entry nesting level.
      */
-    private int maxPackageEntryDepth = 10;
+    private int maxPackageEntryDepth = 20;
 
     /**
      * Decorates the given content handler with zip bomb prevention based
@@ -103,6 +103,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      * @param context the ParseContext (may be null)
      * @return a configured SecureContentHandler
      */
+    @SuppressWarnings("removal")
     public static SecureContentHandler newInstance(ContentHandler handler, TikaInputStream stream,
                                                     ParseContext context) {
         SecureContentHandler sch = new SecureContentHandler(handler, stream);
@@ -181,7 +182,10 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      * Returns the maximum package entry nesting level.
      *
      * @return maximum package entry nesting level
+     * @deprecated use {@link org.apache.tika.config.EmbeddedLimits#getMaxDepth()}.
+     *     To be removed in 4.3.
      */
+    @Deprecated(since = "4.2", forRemoval = true)
     public int getMaximumPackageEntryDepth() {
         return maxPackageEntryDepth;
     }
@@ -191,7 +195,10 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      * exceeded then an exception gets thrown.
      *
      * @param depth maximum package entry nesting level
+     * @deprecated use {@link org.apache.tika.config.EmbeddedLimits#setMaxDepth(int)}.
+     *     To be removed in 4.3.
      */
+    @Deprecated(since = "4.2", forRemoval = true)
     public void setMaximumPackageEntryDepth(int depth) {
         this.maxPackageEntryDepth = depth;
     }
@@ -210,9 +217,11 @@ public class SecureContentHandler extends ContentHandlerDecorator {
         }
     }
 
-    private long getByteCount() throws SAXException {
+    private static long getByteCount(TikaInputStream stream) throws SAXException {
         try {
-            if (stream.hasLength()) {
+            //a declared Content-Length is the file's claim; only a measured length
+            //or the bytes actually read can serve as the ratio's denominator
+            if (stream.hasReliableLength()) {
                 return stream.getLength();
             } else {
                 return stream.getPosition();
@@ -232,8 +241,21 @@ public class SecureContentHandler extends ContentHandlerDecorator {
      */
     protected void advance(int length) throws SAXException {
         characterCount += length;
+        checkCompressionRatio(characterCount, stream);
+    }
+
+    /**
+     * Throws if {@code characterCount} exceeds the output threshold and the maximum
+     * compression ratio against the bytes of {@code source}.
+     *
+     * @param characterCount output characters to check
+     * @param source         input stream whose bytes produced them
+     * @throws SAXException if a zip bomb is detected
+     */
+    protected void checkCompressionRatio(long characterCount, TikaInputStream source)
+            throws SAXException {
         if (characterCount > threshold) {
-            long byteCount = getByteCount();
+            long byteCount = getByteCount(source);
             if (characterCount > byteCount * ratio) {
                 throw new SecureSAXException("Suspected zip bomb: " + byteCount + " input bytes produced " + characterCount + " output characters");
             }
@@ -251,7 +273,7 @@ public class SecureContentHandler extends ContentHandlerDecorator {
 
         if ("div".equals(name) && "package-entry".equals(atts.getValue("class"))) {
             packageEntryDepths.addLast(currentDepth);
-            if (packageEntryDepths.size() >= maxPackageEntryDepth) {
+            if (packageEntryDepths.size() > maxPackageEntryDepth) {
                 throw new SecureSAXException("Suspected zip bomb: " + packageEntryDepths.size() +
                         " levels of package entry nesting");
             }

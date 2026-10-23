@@ -17,7 +17,11 @@
 package org.apache.tika.config.loader;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -32,6 +36,29 @@ public final class JsonMergeUtils {
 
     private JsonMergeUtils() {
         // Utility class
+    }
+
+    /**
+     * Field-access mappers used only to clone an already-valid default, keyed by the
+     * mapper they were derived from ({@code copy()} is expensive and the set of source
+     * mappers is tiny and long-lived).
+     * <p>
+     * The clone must not run through setters: a validating setter would re-check the
+     * default's own values, and a setter that rejects caller input would throw before the
+     * caller's JSON is even reached. Copying by field also preserves init-time state that
+     * has no getter, which a serialization round-trip silently reset to the class default.
+     */
+    private static final Map<ObjectMapper, ObjectMapper> COPY_MAPPERS = new ConcurrentHashMap<>();
+
+    private static ObjectMapper copyMapper(ObjectMapper mapper) {
+        return COPY_MAPPERS.computeIfAbsent(mapper, m -> m.copy()
+                .setVisibility(PropertyAccessor.ALL, Visibility.NONE)
+                .setVisibility(PropertyAccessor.FIELD, Visibility.ANY));
+    }
+
+    /** Clones an already-validated default without invoking its setters. */
+    private static <T> T copyDefaults(ObjectMapper mapper, Class<T> configClass, T defaultConfig) {
+        return copyMapper(mapper).convertValue(defaultConfig, configClass);
     }
 
     /**
@@ -51,15 +78,24 @@ public final class JsonMergeUtils {
      */
     public static <T> T mergeWithDefaults(ObjectMapper mapper, String json,
                                           Class<T> configClass, T defaultConfig) throws IOException {
+        return mergeWithDefaults(mapper, json, configClass, defaultConfig, true);
+    }
+
+    /**
+     * As {@link #mergeWithDefaults(ObjectMapper, String, Class, Object)}; when {@code trusted} is
+     * false, components nested in the config are built as per-request input (see
+     * {@link ComponentInstantiator#withTrust}).
+     */
+    public static <T> T mergeWithDefaults(ObjectMapper mapper, String json, Class<T> configClass,
+                                          T defaultConfig, boolean trusted) throws IOException {
         if (defaultConfig == null) {
-            return mapper.readValue(json, configClass);
+            return ComponentInstantiator.withTrust(mapper.readerFor(configClass), trusted).readValue(json);
         }
 
-        // Create a deep copy of defaultConfig to preserve immutability
-        T copy = mapper.convertValue(defaultConfig, configClass);
+        T copy = copyDefaults(mapper, configClass, defaultConfig);
 
-        // Merge JSON properties into the copy
-        return mapper.readerForUpdating(copy).readValue(json);
+        // Only the caller's JSON goes through setters -- that is what validation guards are for
+        return ComponentInstantiator.withTrust(mapper.readerForUpdating(copy), trusted).readValue(json);
     }
 
     /**
@@ -79,11 +115,10 @@ public final class JsonMergeUtils {
             return mapper.treeToValue(node, configClass);
         }
 
-        // Create a deep copy of defaultConfig to preserve immutability
         @SuppressWarnings("unchecked")
-        T copy = mapper.convertValue(defaultConfig, (Class<T>) defaultConfig.getClass());
+        T copy = copyDefaults(mapper, (Class<T>) defaultConfig.getClass(), defaultConfig);
 
-        // Merge JSON properties into the copy
+        // Only the caller's JSON goes through setters -- that is what validation guards are for
         return mapper.readerForUpdating(copy).readValue(node);
     }
 

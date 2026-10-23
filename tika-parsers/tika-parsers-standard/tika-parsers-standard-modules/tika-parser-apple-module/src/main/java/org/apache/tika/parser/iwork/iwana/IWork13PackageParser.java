@@ -155,7 +155,8 @@ public class IWork13PackageParser implements Parser {
             if (type == null) {
                 type = IWork13DocumentType.detectIfPossible(entry);
             }
-            try (TikaInputStream tis = TikaInputStream.get(zipFile.getInputStream(entry))) {
+            try (TikaInputStream tis = TikaInputStream.get(() -> zipFile.getInputStream(entry),
+                    new TemporaryResources(), null)) {
                 processZipEntry(entry, tis, metadata, xhtml, parseContext, embeddedDocumentExtractor);
             } catch (SecurityException e) {
                 throw e;

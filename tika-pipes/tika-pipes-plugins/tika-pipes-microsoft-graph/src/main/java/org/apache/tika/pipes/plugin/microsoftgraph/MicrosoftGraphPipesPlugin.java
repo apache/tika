@@ -30,19 +30,19 @@ public class MicrosoftGraphPipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting Microsoft Graph Fetcher Plugin");
+        LOG.debug("Starting Microsoft Graph Fetcher Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping Microsoft Graph Fetcher Plugin");
+        LOG.debug("Stopping Microsoft Graph Fetcher Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting Microsoft Graph Fetcher Plugin");
+        LOG.debug("Deleting Microsoft Graph Fetcher Plugin");
         super.delete();
     }
 }

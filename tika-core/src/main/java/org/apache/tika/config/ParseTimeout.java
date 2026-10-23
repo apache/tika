@@ -49,7 +49,7 @@ import org.apache.tika.parser.ParseContext;
  *
  * @since Apache Tika 4.0
  */
-public class ParseTimeout {
+public class ParseTimeout implements TransientParseState {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParseTimeout.class);
 
@@ -81,8 +81,7 @@ public class ParseTimeout {
      * immediately). A progress timeout of zero with a <em>positive</em> total is rejected:
      * it is never intended and would fire the stall detector immediately, killing every task
      * despite the remaining total budget. A progress timeout at or above a positive total is
-     * accepted but logged, since the stall detector could then never fire before the total
-     * deadline.
+     * accepted and disables the stall detector.
      *
      * @throws IllegalArgumentException if either limit is negative, or the progress timeout is
      *         zero while the total is positive
@@ -100,10 +99,6 @@ public class ParseTimeout {
             throw new IllegalArgumentException("progressTimeoutMillis of 0 with a positive "
                     + "totalTaskTimeoutMillis (" + total + ") would kill every task immediately; "
                     + "use a positive progress timeout");
-        }
-        if (total > 0 && progress >= total) {
-            LOG.warn("progressTimeoutMillis ({}) >= totalTaskTimeoutMillis ({}) -- the stall " +
-                    "detector can never fire before the total deadline does", progress, total);
         }
         if (total > 0 && total < 1000) {
             LOG.warn("totalTaskTimeoutMillis ({}) is under one second -- this is often a " +

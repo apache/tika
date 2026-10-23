@@ -19,6 +19,10 @@ package org.apache.tika.eval.app.db;
 public enum Cols {
     //container table
     CONTAINER_ID, FILE_PATH, EXTRACT_FILE_LENGTH,
+    PIPES_STATUS, PIPES_MESSAGE, //from the batch run's jsonl reporter, joined on file_path
+    PIPES_STATUS_A, PIPES_MESSAGE_A, PIPES_STATUS_B, PIPES_MESSAGE_B,
+    //run_info table
+    RUN_KEY, RUN_VALUE,
 
     EXTRACT_FILE_LENGTH_A, //for comparisons
     EXTRACT_FILE_LENGTH_B,

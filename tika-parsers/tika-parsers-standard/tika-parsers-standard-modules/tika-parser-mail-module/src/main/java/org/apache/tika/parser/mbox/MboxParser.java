@@ -16,13 +16,10 @@
  */
 package org.apache.tika.parser.mbox;
 
-import static org.apache.tika.parser.mailcommons.MailDateParser.parseDateLenient;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Locale;
@@ -40,6 +37,7 @@ import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.extractor.EmbeddedDocumentExtractor;
 import org.apache.tika.extractor.EmbeddedDocumentUtil;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.KeyPrefix;
@@ -50,9 +48,10 @@ import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
-import org.apache.tika.parser.mailcommons.MailUtil;
+import org.apache.tika.parser.mail.MailUtil;
 import org.apache.tika.sax.XHTMLContentHandler;
 import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * Mbox (mailbox) parser. This version extracts each mail from Mbox and uses the
@@ -144,11 +143,13 @@ public class MboxParser implements Parser {
                         saveHeaderInMetadata(mailMetadata, item);
                     }
 
-                    TikaInputStream msgStream = TikaInputStream.get(message.toInputStream());
-                    message = null;
-
-                    if (extractor.shouldParseEmbedded(mailMetadata, context)) {
-                        extractor.parseEmbedded(msgStream, xhtml, mailMetadata, context, true);
+                    //re-opened over the buffer on rewind rather than cached: the
+                    //message is in memory already, a digest must not copy it again
+                    try (TikaInputStream msgStream = TikaInputStream.get(message::toInputStream,
+                            new TemporaryResources(), null)) {
+                        if (extractor.shouldParseEmbedded(mailMetadata, context)) {
+                            extractor.parseEmbedded(msgStream, xhtml, mailMetadata, context, true);
+                        }
                     }
 
                     if (tracking) {
@@ -208,15 +209,9 @@ public class MboxParser implements Parser {
         } else if (headerTag.equalsIgnoreCase("Subject")) {
             metadata.add(TikaCoreProperties.SUBJECT, headerContent);
         } else if (headerTag.equalsIgnoreCase("Date")) {
-            try {
-                Date date = parseDateLenient(headerContent);
-                if (date != null) {
-                    metadata.set(TikaCoreProperties.CREATED, date);
-                }
-            } catch (SecurityException e) {
-                throw e;
-            } catch (Exception e) {
-                // ignoring date because format was not understood
+            String date = TikaDates.toMetadataString(headerContent);
+            if (date != null) {
+                metadata.set(TikaCoreProperties.CREATED, date);
             }
         } else if (headerTag.equalsIgnoreCase("Message-Id")) {
             metadata.set(TikaCoreProperties.IDENTIFIER, headerContent);

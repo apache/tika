@@ -30,19 +30,19 @@ public class AtlassianJwtPipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting Atlassian JWT Pipes Plugin");
+        LOG.debug("Starting Atlassian JWT Pipes Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping Atlassian JWT Pipes Plugin");
+        LOG.debug("Stopping Atlassian JWT Pipes Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting Atlassian JWT Pipes Plugin");
+        LOG.debug("Deleting Atlassian JWT Pipes Plugin");
         super.delete();
     }
 }

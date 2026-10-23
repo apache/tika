@@ -158,8 +158,8 @@ curl -s -X PUT -T test_recursive_embedded.docx http://localhost:9998/unpack/all 
 unzip -l /tmp/unpack.zip
 ----
 
-*Expected:* ZIP file containing the extracted embedded files, a `*.metadata.json` entry
-per file, and the original container document.
+*Expected:* A Frictionless package: `datapackage.json`, `rmeta.json`, and the embedded
+files plus the original container (`0.docx`) under `unpacked/`.
 
 === Test 13: GET /parsers
 
@@ -283,7 +283,7 @@ curl -s -X POST -F "file=@testPDF.pdf" -H "Accept: application/json" http://loca
 [source,bash]
 ----
 curl -s -X POST -F "file=@testPDF.pdf" \
-  -F 'config={"pdf-parser":{"ocr":{"strategy":"NO_OCR"}}}' \
+  -F 'config={"pages":{"text":"EXTRACT"}}' \
   -H "Accept: application/json" \
   http://localhost:9998/meta/config
 ----
@@ -302,7 +302,7 @@ request time). Supplying the nested form currently returns HTTP 500 (the blocked
 [source,bash]
 ----
 curl -s -X POST -F "file=@test_recursive_embedded.docx" \
-  -F 'config={"pdf-parser":{"ocr":{"strategy":"NO_OCR"}}}' \
+  -F 'config={"pages":{"text":"EXTRACT"}}' \
   http://localhost:9998/unpack/all/config -o /tmp/unpack-config.zip
 unzip -l /tmp/unpack-config.zip
 ----

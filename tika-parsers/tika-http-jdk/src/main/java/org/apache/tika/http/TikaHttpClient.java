@@ -18,19 +18,27 @@ package org.apache.tika.http;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLException;
 
 import org.apache.tika.config.ParseTimeout;
 import org.apache.tika.exception.TikaException;
@@ -49,11 +57,35 @@ import org.apache.tika.parser.ParseContext;
  * Obtain an instance via {@link #build(int)} and close it when done to release
  * the underlying executor.
  *
+ * <p>
+ * A hosted inference engine caps the requests in flight per key and answers the excess with
+ * 429 at once, usually without a Retry-After; a saturated one answers 502, 503 or 504. Those
+ * four statuses are retried up to {@code maxRetries} times with a short jittered backoff
+ * (250 ms doubling to 4 s), or the Retry-After the server sends, never sleeping past the
+ * budget the parse granted the call. Any other status fails at once. The retries cover
+ * collisions between a few parse workers, not a sustained excess of workers over the key's
+ * concurrency.
+ * <p>
+ * A connection that drops, or is cut short before a full response arrives, is retried the
+ * same way: the JDK client does not resend a POST on a keep-alive connection the service
+ * has already closed, and the failure surfaces as an {@link IOException} such as
+ * {@code HTTP/1.1 header parser received no bytes}. It shares the {@code maxRetries} count
+ * and the budget with the status retries; a service that had already read the request may
+ * bill the call twice. Failures a retry cannot fix (unknown host,
+ * refused connection, TLS errors) and interruption fail at once.
  * @since Apache Tika 4.0
  */
 public class TikaHttpClient implements Closeable {
 
     private static final String JSON_CONTENT_TYPE = "application/json; charset=utf-8";
+
+    /** Retries of a 429/502/503/504 answer or a dropped connection unless {@link #build(int, int)} says otherwise. */
+    public static final int DEFAULT_MAX_RETRIES = 4;
+    private static final Set<Integer> RETRYABLE = Set.of(429, 502, 503, 504);
+    private static final long INITIAL_BACKOFF_MILLIS = 250;
+    private static final long MAX_BACKOFF_MILLIS = 4000;
+    /** A Retry-After longer than this is treated as "not now": the call fails instead. */
+    private static final long MAX_RETRY_AFTER_MILLIS = 30_000;
 
     // How often a bounded HTTP wait checkpoints the task's ParseTimeout -- see
     // org.apache.tika.utils.ProcessUtils.HEARTBEAT_INTERVAL_MILLIS for the same rationale.
@@ -62,12 +94,14 @@ public class TikaHttpClient implements Closeable {
     private final HttpClient httpClient;
     private final ExecutorService executor;
     private final int defaultTimeoutSeconds;
+    private final int maxRetries;
 
     private TikaHttpClient(HttpClient httpClient, ExecutorService executor,
-                           int defaultTimeoutSeconds) {
+                           int defaultTimeoutSeconds, int maxRetries) {
         this.httpClient = httpClient;
         this.executor = executor;
         this.defaultTimeoutSeconds = defaultTimeoutSeconds;
+        this.maxRetries = maxRetries;
     }
 
     /**
@@ -76,6 +110,20 @@ public class TikaHttpClient implements Closeable {
      * @param connectTimeoutSeconds TCP connection timeout in seconds
      */
     public static TikaHttpClient build(int connectTimeoutSeconds) {
+        return build(connectTimeoutSeconds, DEFAULT_MAX_RETRIES);
+    }
+
+    /**
+     * Create a new {@code TikaHttpClient} with a daemon-thread executor.
+     *
+     * @param connectTimeoutSeconds TCP connection timeout in seconds
+     * @param maxRetries            how many times a 429, 502, 503 or 504 answer, or a dropped
+     *                              connection, is retried; 0 fails on the first one
+     */
+    public static TikaHttpClient build(int connectTimeoutSeconds, int maxRetries) {
+        if (maxRetries < 0) {
+            throw new IllegalArgumentException("maxRetries must be >= 0, not " + maxRetries);
+        }
         ExecutorService executor = Executors.newCachedThreadPool(r -> {
             Thread t = new Thread(r, "tika-http-jdk");
             t.setDaemon(true);
@@ -87,7 +135,11 @@ public class TikaHttpClient implements Closeable {
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .version(HttpClient.Version.HTTP_1_1)
                 .build();
-        return new TikaHttpClient(client, executor, connectTimeoutSeconds);
+        return new TikaHttpClient(client, executor, connectTimeoutSeconds, maxRetries);
+    }
+
+    public int getMaxRetries() {
+        return maxRetries;
     }
 
     /**
@@ -223,18 +275,63 @@ public class TikaHttpClient implements Closeable {
         }
     }
 
+    /**
+     * One budget for every attempt: each retry is sent with what is left of
+     * {@code grantedMillis}, and a backoff that would run past it fails the call with the
+     * last answer instead.
+     */
     private String send(HttpRequest request, ParseContext context, long requestedMillis, long grantedMillis)
+            throws IOException, TikaException {
+        long startNanos = System.nanoTime();
+        for (int attempt = 0; ; attempt++) {
+            long remaining = grantedMillis - (System.nanoTime() - startNanos) / 1_000_000L;
+            if (remaining <= 0) {
+                throw new TikaTimeoutException("HTTP request to " + request.uri() + " timed out",
+                        requestedMillis, grantedMillis);
+            }
+            HttpRequest attemptRequest = attempt == 0 ? request
+                    : HttpRequest.newBuilder(request, (name, value) -> true)
+                            .timeout(Duration.ofMillis(remaining)).build();
+            HttpResponse<String> response;
+            try {
+                response = sendOnce(attemptRequest, context, requestedMillis, remaining);
+            } catch (IOException e) {
+                if (attempt >= maxRetries || !isRetryableTransportFailure(e)) {
+                    throw e;
+                }
+                long delay = backoffMillis(attempt);
+                long left = grantedMillis - (System.nanoTime() - startNanos) / 1_000_000L;
+                if (delay >= left) {
+                    throw e;
+                }
+                sleepWithHeartbeat(delay, context);
+                continue;
+            }
+            int status = response.statusCode();
+            if (status >= 200 && status < 300) {
+                return response.body();
+            }
+            TikaException failure = new TikaException("HTTP " + status
+                    + " from " + request.uri() + ": " + response.body());
+            if (!RETRYABLE.contains(status) || attempt >= maxRetries) {
+                throw failure;
+            }
+            long delay = retryDelayMillis(response, attempt);
+            long left = grantedMillis - (System.nanoTime() - startNanos) / 1_000_000L;
+            if (delay < 0 || delay >= left) {
+                throw failure;
+            }
+            sleepWithHeartbeat(delay, context);
+        }
+    }
+
+    private HttpResponse<String> sendOnce(HttpRequest request, ParseContext context,
+                                          long requestedMillis, long grantedMillis)
             throws IOException, TikaException {
         CompletableFuture<HttpResponse<String>> future = httpClient.sendAsync(
                 request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
         try {
-            HttpResponse<String> response = waitWithHeartbeat(future, context, grantedMillis,
-                    request.uri(), requestedMillis);
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new TikaException("HTTP " + response.statusCode()
-                        + " from " + request.uri() + ": " + response.body());
-            }
-            return response.body();
+            return waitWithHeartbeat(future, context, grantedMillis, request.uri(), requestedMillis);
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof HttpTimeoutException) {
@@ -251,6 +348,69 @@ public class TikaHttpClient implements Closeable {
             Thread.currentThread().interrupt();
             future.cancel(true);
             throw new IOException("HTTP request interrupted: " + request.uri(), e);
+        }
+    }
+
+    /**
+     * A dropped or truncated exchange is worth resending; a server that is not there, a TLS
+     * failure, or an interrupted thread will not be fixed by waiting. {@code sendOnce} sets the
+     * interrupt flag when it reports an interruption.
+     */
+    static boolean isRetryableTransportFailure(IOException e) {
+        return !Thread.currentThread().isInterrupted()
+                && !(e instanceof UnknownHostException || e instanceof ConnectException
+                || e instanceof SSLException);
+    }
+
+    /** The server's Retry-After (delta seconds or an HTTP date) when usable, else backoff. */
+    static long retryDelayMillis(HttpResponse<String> response, int attempt) {
+        String retryAfter = response.headers().firstValue("Retry-After").orElse(null);
+        if (retryAfter != null) {
+            long millis = parseRetryAfterMillis(retryAfter.trim());
+            if (millis >= 0) {
+                return millis > MAX_RETRY_AFTER_MILLIS ? -1 : millis;
+            }
+        }
+        return backoffMillis(attempt);
+    }
+
+    /** {@code 250 ms * 2^attempt}, capped at 4 s, with 25% jitter so workers do not retry in step. */
+    static long backoffMillis(int attempt) {
+        long base = Math.min(MAX_BACKOFF_MILLIS, INITIAL_BACKOFF_MILLIS << Math.min(attempt, 20));
+        long jitter = base / 4;
+        return base - jitter + ThreadLocalRandom.current().nextLong(2 * jitter + 1);
+    }
+
+    /** Millis to wait, or -1 when the header is neither a delta nor an HTTP date. */
+    static long parseRetryAfterMillis(String value) {
+        try {
+            return Long.parseLong(value) * 1000L;
+        } catch (NumberFormatException e) {
+            // an HTTP date, then
+        }
+        try {
+            ZonedDateTime at = ZonedDateTime.parse(value, DateTimeFormatter.RFC_1123_DATE_TIME);
+            return Math.max(0, at.toInstant().toEpochMilli() - System.currentTimeMillis());
+        } catch (DateTimeParseException e) {
+            return -1;
+        }
+    }
+
+    /** Sleeps in heartbeat slices so the stall detector sees the wait as progress. */
+    private static void sleepWithHeartbeat(long millis, ParseContext context) throws IOException {
+        long deadline = System.nanoTime() + millis * 1_000_000L;
+        try {
+            while (true) {
+                long left = (deadline - System.nanoTime()) / 1_000_000L;
+                if (left <= 0) {
+                    return;
+                }
+                Thread.sleep(Math.min(left, HEARTBEAT_INTERVAL_MILLIS));
+                ParseTimeout.checkpoint(context);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("HTTP retry interrupted", e);
         }
     }
 

@@ -18,9 +18,15 @@ package org.apache.tika.parser.ogg;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.TikaTest;
 import org.apache.tika.metadata.HttpHeaders;
@@ -45,7 +51,7 @@ public class FlacParserTest extends TikaTest {
 
         Metadata pictureMetadata = metadataList.get(1);
         assertEquals("image/png", pictureMetadata.get(HttpHeaders.CONTENT_TYPE));
-        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
                 pictureMetadata.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
         assertEquals("Test Cover", pictureMetadata.get(TikaCoreProperties.TITLE));
         assertEquals("Cover (front)", pictureMetadata.get(TikaCoreProperties.DESCRIPTION));
@@ -65,10 +71,87 @@ public class FlacParserTest extends TikaTest {
         assertEquals("image/png", front.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Front Cover", front.get(TikaCoreProperties.TITLE));
         assertEquals("Cover (front)", front.get(TikaCoreProperties.DESCRIPTION));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString(),
+                front.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
 
         Metadata back = metadataList.get(2);
         assertEquals("image/png", back.get(HttpHeaders.CONTENT_TYPE));
         assertEquals("Back Cover", back.get(TikaCoreProperties.TITLE));
         assertEquals("Cover (back)", back.get(TikaCoreProperties.DESCRIPTION));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.toString(),
+                back.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
+     * A file carrying a picture in a metadata_block_picture comment and
+     * another in a native PICTURE block still has exactly one thumbnail:
+     * both sources are merged before the pick (both are front covers here,
+     * so the first one, from the comment, wins).
+     */
+    @Test
+    public void testCommentAndNativePictureYieldOneThumbnail() throws Exception {
+        List<Metadata> metadataList =
+                getRecursiveMetadata("testFLAC_commentAndNativePicture.flac");
+
+        assertEquals(3, metadataList.size());
+        int thumbnails = 0;
+        for (Metadata m : metadataList) {
+            if (TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name()
+                    .equals(m.get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE))) {
+                thumbnails++;
+            }
+        }
+        assertEquals(1, thumbnails);
+        assertEquals("Comment cover", metadataList.get(1).get(TikaCoreProperties.TITLE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.name(),
+                metadataList.get(1).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+        assertEquals(TikaCoreProperties.EmbeddedResourceType.INLINE.name(),
+                metadataList.get(2).get(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE));
+    }
+
+    /**
+     * A PICTURE block that declares more data than the file has left ends
+     * the walk, but the pictures before it survive: the walk breaks instead
+     * of returning or throwing (regression guard for the return-vs-break in
+     * readNativePictures).
+     */
+    @Test
+    public void testTruncatedPictureBlockKeepsEarlierPictures(@TempDir Path tmp) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.write("fLaC".getBytes(StandardCharsets.US_ASCII));
+        byte[] picture = pictureBlock(3, "image/png", "front");
+        out.write(blockHeader(false, 6, picture.length));
+        out.write(picture);
+        //a second PICTURE block declaring far more data than follows
+        out.write(blockHeader(true, 6, 0x00FFFF));
+        out.write(new byte[]{1, 2, 3});
+        Path flac = tmp.resolve("truncated.flac");
+        Files.write(flac, out.toByteArray());
+
+        List<OggAudioParser.PictureBlock> pictures = FlacParser.readNativePictures(flac);
+        assertEquals(1, pictures.size());
+    }
+
+    private static byte[] blockHeader(boolean last, int type, int length) {
+        return new byte[]{(byte) ((last ? 0x80 : 0) | type),
+                (byte) (length >>> 16), (byte) (length >>> 8), (byte) length};
+    }
+
+    private static byte[] pictureBlock(int pictureType, String mimeType, String description)
+            throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        DataOutputStream data = new DataOutputStream(out);
+        data.writeInt(pictureType);
+        byte[] mime = mimeType.getBytes(StandardCharsets.ISO_8859_1);
+        data.writeInt(mime.length);
+        data.write(mime);
+        byte[] desc = description.getBytes(StandardCharsets.UTF_8);
+        data.writeInt(desc.length);
+        data.write(desc);
+        data.write(new byte[16]); //geometry
+        byte[] image = {(byte) 0x89, 'P', 'N', 'G'};
+        data.writeInt(image.length);
+        data.write(image);
+        return out.toByteArray();
     }
 }

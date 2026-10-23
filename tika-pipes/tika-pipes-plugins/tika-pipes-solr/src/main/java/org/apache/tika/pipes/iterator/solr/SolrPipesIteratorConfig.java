@@ -20,25 +20,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.pipesiterator.PipesIteratorConfig;
+import org.apache.tika.plugins.PluginJson;
 
 public class SolrPipesIteratorConfig extends PipesIteratorConfig {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     public static SolrPipesIteratorConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json,
-                    SolrPipesIteratorConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse SolrPipesIteratorConfig from JSON", e);
-        }
+        return PluginJson.read(json, SolrPipesIteratorConfig.class);
     }
 
     private String solrCollection;

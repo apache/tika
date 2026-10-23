@@ -60,7 +60,6 @@ import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.sax.EmbeddedContentHandler;
 import org.apache.tika.sax.XHTMLContentHandler;
-import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.FileProcessResult;
 import org.apache.tika.utils.ProcessUtils;
 
@@ -189,9 +188,9 @@ public class DWGReadParser extends AbstractDWGParser {
             try {
                 jParser = jfactory.createParser(tmpFileOut);
             } catch (JsonParseException e1) {
-                throw new TikaException("Failed to parse Json: " + ExceptionUtils.getStackTrace(e1));
+                throw new TikaException("Failed to parse Json", e1);
             } catch (IOException e1) {
-                throw new TikaException("Failed to read json file: " + ExceptionUtils.getStackTrace(e1));
+                throw new TikaException("Failed to read json file", e1);
             }
             // read json token in a stream using jackson, iterate over each token. We only
             // support OBJECTS, FILEHEADER and SummaryInfo
@@ -417,8 +416,9 @@ public class DWGReadParser extends AbstractDWGParser {
                 EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
         Metadata embeddedMetadata = new Metadata();
         embeddedMetadata.set(TikaCoreProperties.RESOURCE_NAME_KEY, "thumbnail");
+        // The drawing's preview image, not a picture placed in the drawing
         embeddedMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
+                TikaCoreProperties.EmbeddedResourceType.THUMBNAIL.toString());
         if (!embeddedDocumentExtractor.shouldParseEmbedded(embeddedMetadata, context)) {
             return;
         }

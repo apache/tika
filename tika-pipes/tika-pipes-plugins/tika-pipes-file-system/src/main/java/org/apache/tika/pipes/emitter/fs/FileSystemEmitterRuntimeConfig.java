@@ -16,30 +16,12 @@
  */
 package org.apache.tika.pipes.emitter.fs;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import org.apache.tika.exception.TikaConfigException;
-
 /**
  * Runtime configuration for FileSystemEmitter.
  * Only includes fields that are safe to update at runtime.
  * basePath is intentionally excluded for security reasons.
  */
 public class FileSystemEmitterRuntimeConfig {
-
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
-    public static FileSystemEmitterRuntimeConfig load(final String json)
-            throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json,
-                    FileSystemEmitterRuntimeConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse FileSystemEmitterRuntimeConfig from JSON", e);
-        }
-    }
 
     private String fileExtension;
     private FileSystemEmitterConfig.ON_EXISTS onExists;

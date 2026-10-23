@@ -29,7 +29,10 @@ import org.xml.sax.helpers.AttributesImpl;
 import org.xml.sax.helpers.DefaultHandler;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.HttpHeaders;
+import org.apache.tika.metadata.Metadata;
 
 /**
  * Tests for the {@link SecureContentHandler} class.
@@ -97,10 +100,35 @@ public class SecureContentHandlerTest {
     @Test
     public void testManyCharactersPerByte() throws IOException {
         try {
-            char[] ch = new char[1000];
+            char[] ch = new char[2000];
             for (int i = 0; i < MANY_BYTES; i++) {
                 stream.read();
                 handler.characters(ch, 0, ch.length);
+            }
+            fail("Expected SAXException not thrown");
+        } catch (SAXException e) {
+            // expected
+        }
+    }
+
+    /**
+     * A one-shot stream carrying a declared Content-Length far above what it holds:
+     * the claim must not become the input byte count, or the ratio never trips.
+     */
+    @Test
+    public void testDeclaredLengthDoesNotInflateByteCount() throws IOException {
+        Metadata metadata = new Metadata();
+        //a plausible lie: large enough that no ratio trips, small enough that
+        //byteCount * ratio does not overflow and trip for the wrong reason
+        metadata.set(HttpHeaders.CONTENT_LENGTH, Long.toString(100L * 1024 * 1024 * 1024));
+        try (TikaInputStream lying = TikaInputStream.get(new NullInputStream(MANY_BYTES),
+                new TemporaryResources(), metadata)) {
+            SecureContentHandler lyingHandler =
+                    new SecureContentHandler(new DefaultHandler(), lying);
+            char[] ch = new char[2000];
+            for (int i = 0; i < MANY_BYTES; i++) {
+                lying.read();
+                lyingHandler.characters(ch, 0, ch.length);
             }
             fail("Expected SAXException not thrown");
         } catch (SAXException e) {
@@ -154,7 +182,7 @@ public class SecureContentHandlerTest {
     public void testNestedEntries() throws SAXException {
         AttributesImpl atts = new AttributesImpl();
         atts.addAttribute("", "class", "class", "CDATA", "package-entry");
-        for (int i = 1; i < handler.getMaximumPackageEntryDepth(); i++) {
+        for (int i = 1; i <= handler.getMaximumPackageEntryDepth(); i++) {
             handler.startElement("", "div", "div", atts);
         }
         try {

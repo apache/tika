@@ -257,12 +257,11 @@ public class JunkFilterEncodingDetector implements MetaEncodingDetector {
         // by shared content (whitespace/digits identical across decodes); on a
         // COMMON-dominated doc the discriminating bytes are diluted and the top
         // candidates differ only by noise.  The quality signal is STATISTICAL-
-        // grade evidence, so it may override a higher-evidence anchor
-        // (DECLARATIVE author intent, or STRUCTURAL byte-grammar proof) only when
-        // it beats that anchor's score by OVERRIDE_MARGIN; otherwise we defer to
-        // the anchor.  This is honest low-confidence behaviour, not a tie-break:
-        // where the model has real signal (e.g. UTF-8 over garbage UTF-16, Δ≫1)
-        // it still overrides freely.
+        // grade evidence, so it yields to a higher-evidence anchor (DECLARATIVE
+        // author intent, or STRUCTURAL byte-grammar proof) whenever the
+        // statistical layer itself abstained -- see the deferral below.  This is
+        // honest low-confidence behaviour, not a tie-break: where the model has
+        // real signal (e.g. UTF-8 over garbage UTF-16) it still overrides freely.
         Charset champion = null;
         double championZ = Double.NEGATIVE_INFINITY;
         Map<Charset, Double> scoreByCharset = new LinkedHashMap<>();

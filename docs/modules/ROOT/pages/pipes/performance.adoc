@@ -1,0 +1,361 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+= Performance and Isolation Trade-offs
+
+Tika 4.x parses through Tika Pipes: each document is handled by a pool of forked
+worker JVMs rather than in the calling process. That architecture pays off in two
+ways — crash/OOM isolation (a bad document can't take down the server), and, for
+`tika-server`, a reliable **backpressure signal**: because parsing runs in a
+managed worker pool, the server can see when it is saturated and push back,
+rather than accepting unbounded work until it topples the way a single in-process
+parser could. That signal simply did not exist before pipes, and it is one of the
+strongest reasons to run 4.x.
+
+This page covers the pipes deployment shapes, their isolation and recovery
+behaviour, and **file-system-to-file-system batch throughput** — a worker fetches
+each document from a file system and emits the extract to a file system. A
+dedicated `tika-server` performance analysis (the HTTP upload endpoints `/tika`,
+`/rmeta`, and so on, and the backpressure behaviour above) is planned as a
+companion to this page.
+
+[NOTE]
+====
+The batch measurements (<<found-in-400>>) are on **4.1.0-SNAPSHOT**, which
+includes the temp-file spill improvements described there.
+====
+
+== Deployment shapes
+
+[cols="1,3,2"]
+|===
+|Shape |Description |Parsing JVMs
+
+|In-process (legacy)
+|Tika 3.x with `--noFork`. The server parses in its own JVM. No isolation, no
+recovery. Not recommended.
+|1 (the server itself)
+
+|Single forked child
+|Tika 3.x *default*. A thin watchdog parent forks one child that binds the port
+and does all parsing; the watchdog restarts it on crash/OOM/timeout.
+|1 (the child)
+
+|Pipes per-client
+|Tika 4.x *default*. The HTTP front-end forks `numClients` worker JVMs; each
+handles one request at a time.
+|`numClients` (e.g. 4)
+
+|Pipes shared-server
+|Tika 4.x opt-in (`useSharedServer=true`; see
+xref:pipes/shared-server-mode.adoc[Shared Server Mode]). The front-end forks a
+single worker JVM with a `numClients`-sized thread pool.
+|1 (shared worker)
+|===
+
+The single-forked-child (3.x) and shared-server (4.x) shapes are close cousins:
+one parsing JVM serving all concurrency, with the front-end/watchdog restarting
+it on failure. The practical 4.x default choice is between **per-client**
+(strongest isolation) and **shared-server** (highest throughput).
+
+== Memory
+
+Per-client mode runs `numClients` heaps; size each for the worst-case *single*
+document. Shared-server and single-JVM modes run one heap; size it for the
+worst-case *concurrent* load (see
+xref:pipes/shared-server-mode.adoc#_sizing_guidance[Shared-server sizing]). Per-client
+therefore uses more total resident memory but bounds per-document usage: a
+memory-hungry document can only exhaust its own worker's heap, not the pool's.
+For the per-fork `-Xmx` and CPU rules of thumb, see
+xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing].
+
+== Isolation and recovery
+
+Every shape below *except* 3.x `--noFork` recovers automatically from a
+crash, `OutOfMemoryError`, or timeout. They differ in how many in-flight
+requests a single failure takes down, and whether the HTTP endpoint stays up:
+
+[cols="2,2,2,2"]
+|===
+|Shape |Blast radius |HTTP front-end |Recovery
+
+|In-process (`--noFork`) |All in-flight |Dies |None — manual restart
+|Single forked child (3.x default) |All in-flight (shared child) |Brief outage while the child restarts (the child owns the port) |Auto — watchdog restarts child
+|Shared-server (4.x) |All in-flight (shared worker) |Stays up (separate front-end) |Auto — front-end respawns worker
+|Per-client (4.x default) |One request (1 of `numClients`) |Stays up |Auto — only that worker respawns
+|===
+
+3.x already provides process isolation in its default configuration: the forked
+child survives a parser crash, OOM, or timeout because the watchdog restarts it.
+Only the legacy `--noFork` mode parses in the server process itself and has no
+recovery. So the 4.x change is a *finer* granularity of isolation, not isolation
+where there was none — per-client mode narrows the blast radius from "all
+in-flight" to "one request," and both pipes modes keep the HTTP front-end serving
+while a worker restarts.
+
+== Choosing a shape
+
+* **Per-client (default)** — hostile or heterogeneous inputs, where one bad
+  document must not disturb the others. Strongest isolation; highest memory;
+  lowest raw throughput.
+* **Shared-server** — well-behaved inputs where you want throughput close to a
+  single in-JVM parser and a crash-resilient front-end, and can accept that one
+  failure drops all in-flight requests. See
+  xref:pipes/shared-server-mode.adoc[Shared Server Mode].
+* Tune `numClients` and per-fork heap with
+  xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing]; configure per-parse
+  limits with xref:pipes/timeouts.adoc[Timeouts].
+
+[#found-in-400]
+== Restoring batch throughput in 4.1.0
+
+4.1.0 brings file-system batch throughput back in line with 3.x while keeping the
+isolation and backpressure gains above — here is how it got there. Our own
+regression testing runs `tika-app` in batch mode over a 1.2-million-file corpus
+(file system in, file system out) on a box with spinning disks: about 4 hours on
+3.x, and about 7.5 hours on 4.0.0. The cause turned out not to be where the
+architecture suggested, which made it both surprising to find and clean to
+improve.
+
+=== The cause: temp-file volume
+
+4.0.0 wrote **8–30 times more temp bytes** than 3.x for the same documents:
+
+* Digesting an embedded document (MD5/SHA-256 per embedded object) buffered a
+  rewindable copy of it that spilled to a temp file past 1 MB — one file per
+  embedded object, hundreds of thousands of them over a large corpus.
+* Several parsers and detectors asked for a `java.io.File` even when the
+  document was already in memory: the JPEG/TIFF/WebP metadata extractors, the
+  OLE2 container detector, the OpenDocument parser's inline pictures, the
+  digest of translated embedded streams, the PDF incremental-update scan, and
+  PDFParser's main document load and renderer each wrote the bytes out just to
+  read them back.
+
+On a spinning-disk host where the temp directory, the corpus, and the outputs
+share spindles, every temp byte is a seek taken away from a corpus read or an
+extract write. Wall clock tracked temp volume almost linearly.
+
+=== What it was *not*
+
+Each of these was measured and ruled out, so they need not be re-chased:
+
+* Pipes IPC and result passback — about 1% of worker time.
+* The driver's emit path — with the default `DYNAMIC` strategy the workers
+  already write nearly all extract bytes themselves; more emitter threads made
+  no difference.
+* Reading each container twice for the digest pre-pass — the second read is
+  served from the page cache; disk reads were equal to or lower than 3.x's.
+* The parsers — on identical embedded objects most 4.x parsers are as fast or
+  faster; the JPEG parser is 4x faster in isolation.
+* 4.x extracting more embedded objects (it does, about 3% more) — negligible
+  cost.
+
+=== The improvement (4.1.0-SNAPSHOT)
+
+* TIKA-4828/TIKA-4829: embedded zip entries are re-read from the archive on
+  rewind instead of being copied, and a process-wide `CacheMemoryBudget`
+  (seeded by the forked worker, tunable via
+  `-Dtika.pipes.cacheMemoryBudgetBytes` in `forkedJvmArgs`, `<=0` disables)
+  governs how much rewindable content stays in memory.
+* TIKA-4835: the parsers and detectors above no longer spool in-memory input
+  to disk; they rewind or read through a seekable channel, within the same
+  budget, and fall back to a file only past it.
+
+We then measured it as a controlled study on the same box, one variable at a
+time: 100,000 documents randomly sampled from the corpus (fixed, md5-pinned
+list reused across every run), page cache evicted cold before each run,
+plain-text extraction and SHA-256 digest held constant, extracts written to the
+corpus disk. Every version (3.x, 4.0.0, 4.1.0) was run in each 4.x process shape
+so version and shape vary independently. Concurrency was fixed at seven
+workers (the throughput sweet spot on this host — see <<corpora-case-study>>)
+and heap at 4 GB per worker thread everywhere. Each cell was run at least twice;
+a third rep was added automatically wherever the two disagreed by more than 10%.
+Run-to-run agreement was within ±6% for every cell but one. Medians, measured on
+4.1.0-SNAPSHOT (August 2026):
+
+[cols="3,1,1"]
+|===
+|Version and shape |Wall (median) |Temp written
+
+|Tika 3.x                              |25.2 min |3.3 GB
+|4.1.0, shared server                  |27.2 min |1.4 GB
+|**4.1.0, per-client (default)**       |**29.0 min** |8.2 GB
+|4.0.0, shared server                  |41.1 min |57 GB
+|4.0.0, per-client                     |42.0 min |57 GB
+|===
+
+The like-for-like pair is 4.0.0 → 4.1.0 per-client (same seven workers, same
+4 GB heap): **1.45× faster**, with temp falling from 57 GB to 8 GB. Shared
+server recovers 1.51×. On this box the 100k subset reproduces the full-run
+story — 4.0.0 was about 1.65× slower than 3.x, matching the 7.5 h / 4.5 h ratio.
+
+**4.1.0 lands within about 15% of 3.x** in its default per-client configuration
+(median-to-median; range +11% to +20%, since 3.x is the fastest cell and its
+±6% run variance drives the ratio). That is a modest price, and it buys real
+isolation: where 3.x parses every document in one JVM — so a single fatal
+document takes down the whole run — 4.x parses each in its own worker, and
+shared-server mode closes the gap further still (+8%) when you want it.
+
+That +15% has two parts, separated by a single-client run (one worker, otherwise
+identical) where the per-client tax over 3.x drops to about **+7%**:
+
+* **~+7% per-request boundary** — crossing the process boundary to a worker and
+  serializing the result back. Present in both shapes at every concurrency
+  (shared server's tax is a flat ~8% at one thread or seven), and inherent to
+  isolation.
+* **Up to ~+8% more, only in per-client** — at seven workers, per-client (seven
+  JVMs) and shared server (one JVM) run under the same driver and disk load and
+  differ only in JVM count, so the ~7-point gap between them is the cost of
+  several worker JVMs on one box: independent GCs and JIT caches, and contention
+  for CPU, memory bandwidth, and last-level cache. Whether GC/heap tuning, CPU
+  pinning, or fewer/fatter workers reduce it is under investigation; how it
+  scales between one and seven workers was not measured.
+
+(At one client per-client edges out shared server — shared server's single-JVM
+advantage only pays off once several worker JVMs would otherwise contend.)
+
+Caveats: 4.1.0-SNAPSHOT, one 100k subset on one host; the full 1.2M run was not
+re-timed and remote emitters were not measured. The win is storage-dependent
+(<<corpora-case-study>>, <<reading-your-own>>), and the isolation split is still
+under investigation — read these as a snapshot, not a final characterization.
+
+[#corpora-case-study]
+== A worked configuration: the regression-test box
+
+The diagnosis box is an 8-core/16-thread Ryzen with 62 GB of RAM and two
+spinning disks in RAID1, holding the temp directory, the 4 TB corpus, and the
+outputs on the same pair of spindles. The corpus is far larger than RAM, so
+every run is effectively cold-cache. The configuration we settled on:
+
+* **Per-client mode, `numClients = 7`.** Tika auto-injects
+  `-XX:ActiveProcessorCount` per fork as `(cores − 2) / numClients`, clamped
+  at 2. Before 4.1.0 a share below 2 switched the cap off: on 16 logical
+  cores, 8 workers gave 1.75 and eight JVMs each sized GC and JIT for 16
+  cores, which is what the 7.5 h run did. Seven workers get 2 cores each. Per-client cost about 7% versus shared-server here (29.0 min vs
+  27.2 min in the controlled study above)
+  and dropped no files, where the shared worker loses the in-flight documents
+  of every other client when one document crashes it.
+* **`-Xmx4g` per fork.** The cache budget clamps to a quarter of the fork heap,
+  so this gives each worker 1 GB of in-memory rewind space; seven of them
+  leave about 30 GB for the page cache, which matters more than heap on a
+  cold-cache corpus. Archive-heavy corpora do better with `-Xmx6g` (1.5 GB
+  budget) — the tar/gz subset only reached parity with the budget raised.
+* Digest MD5 (SHA-256 measured within noise), default emit strategy, temp
+  directory left on disk.
+
+[#reading-your-own]
+=== Reading your own deployment
+
+Three questions decided the result above, and they are cheap to answer for any
+box:
+
+* **Do temp, corpus, and outputs share spindles?** `/proc/mdstat`,
+  `lsblk`, or your cloud volume layout will say. If they do, temp volume is
+  wall clock; if temp is on separate fast storage, the 4.0.0 regression may
+  never have shown.
+* **Is the corpus larger than RAM?** If so, benchmark cold — evict the page
+  cache (or use a subset you have not touched) and write outputs to the real
+  destination. Warm-cache runs with outputs on tmpfs hid this entire problem
+  from us for weeks.
+* **Is your `numClients` over-provisioned?** Check the startup log for the
+  `ActiveProcessorCount` decision; if it reports `clamped`, lower
+  `numClients` or set the cap yourself in `forkedJvmArgs`.
+
+Beyond those: fix concurrency equal to the worker count when comparing, exclude
+a warm-up phase, hold the output format constant, and watch peak RSS across the
+whole process tree rather than one JVM.
+
+=== Diagnosing temp-file volume in your own run
+
+The tmpfs check in the appendix says *whether* temp volume is the bottleneck.
+To find *which* code path writes it, record `jdk.FileWrite` with JFR: path,
+bytes written, full stack trace — the per-call-site table you need. Two traps:
+
+**Flags go in `forkedJvmArgs`.** Parsing happens in the forked worker, which
+does not inherit the driver's `-D`/`-XX` flags (see
+xref:pipes/troubleshooting.adoc#_configuration_knobs_reference[Troubleshooting]).
+A recording on the driver shows near-zero bytes — a clean bill of health on
+exactly the wrong question.
+
+**Default thresholds hide temp writes.** `jdk.FileWrite` records only writes
+over 20 ms (`default`) or 10 ms (`profile`); temp spills finish well under
+that. A 200-write probe on Temurin 17: 201 events with the override, 0
+without. Override it:
+
+[source,json]
+----
+"forkedJvmArgs": [
+  "-XX:FlightRecorderOptions=maxchunksize=1m",
+  "-XX:StartFlightRecording=settings=profile,jdk.FileWrite#threshold=0ms,maxsize=500M,filename=/var/tmp/spill.jfr,dumponexit=true"
+]
+----
+
+`maxchunksize` belongs to `FlightRecorderOptions`; on `StartFlightRecording`
+it is ignored with only a warning.
+
+Group events by `path` for per-file bytes and by the top `org.apache.tika`
+frame for the call site. Stream the text form (`jfr print --events
+jdk.FileWrite`); `jfr print --json` on a large recording expands to tens of
+GB.
+
+Caveats:
+
+* **Observer effect.** On a host where temp, corpus and output share spindles,
+  JFR writes ~1 MB/s of chunk data to those same disks. Record to another
+  volume, or read the *ranking* rather than the totals.
+* **Hard kills lose the current chunk.** Workers are `destroyForcibly()`'d on
+  every teardown path; `maxchunksize` bounds the loss. `maxsize` rolls off the
+  *earliest* data — size it for the run or use `dumponexit` on a bounded
+  corpus.
+
+Once a site is found, lock it with a test rather than re-running the
+diagnostic: wrap the parser's `TikaInputStream` so any `getFile()`/`getPath()`
+call is recorded, and assert none happened. A watched temp directory is not
+enough — not every `TemporaryResources` on the path is bound to it — and a
+test that passes with the improvement reverted is not a test.
+
+== Appendix: approaches considered and set aside
+
+Levers that were tried against the isolated-mode throughput gap and do *not*
+close it, recorded here so they need not be re-litigated:
+
+* **Class-data sharing (CDS / AppCDS).** A shared archive measurably speeds
+  worker *start-up* (class loading is a one-time cost), but class loading is not a
+  steady-state cost, so parsing throughput is unchanged. CDS is still worth having
+  for faster worker cold-start and restart — a resilience/latency benefit that is
+  compatible with the hard-kill lifecycle, since the archive is generated offline
+  and mapped read-only (a worker can be force-killed at any instant). It is not,
+  however, a throughput lever.
+* **Uncapping the per-fork CPU view.** Raising or removing the auto-injected
+  `-XX:ActiveProcessorCount` slice makes throughput *worse*: N forks each sizing
+  their GC and JIT thread pools to the full host core count oversubscribes the
+  cores. The slice (see xref:pipes/cpu-sizing.adoc[Forked-JVM CPU and Heap Sizing])
+  is doing its job.
+* **Swapping the garbage collector.** ParallelGC helped tiny documents marginally
+  and hurt larger ones — no reliable win over the default across a mixed corpus.
+
+* **Driver-side emitter parallelism (`numEmitters`) and worker-direct emit
+  (`EMIT_ALL`) for file-system output.** Neither moved the batch numbers: under
+  the default `DYNAMIC` strategy the workers already write nearly all extract
+  bytes directly.
+* **A RAM-disk temp directory.** It does recover the 4.0.0 batch loss, and it is
+  a useful *diagnostic* (if moving temp to tmpfs makes a run fast, temp volume
+  is your problem) — but do not run with it. Temp on tmpfs is bounded only by
+  RAM: a single large archive expanding into it can exhaust memory for every
+  process on the host, starve the page cache a cold-corpus run depends on, or
+  count against a container's memory limit and get the pod evicted. A slow run
+  is recoverable; that is not. 4.1.0 removes the temp writes instead of hiding
+  them.

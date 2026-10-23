@@ -1,0 +1,495 @@
+//
+// Licensed to the Apache Software Foundation (ASF) under one or more
+// contributor license agreements.  See the NOTICE file distributed with
+// this work for additional information regarding copyright ownership.
+// The ASF licenses this file to You under the Apache License, Version 2.0
+// (the "License"); you may not use this file except in compliance with
+// the License.  You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+= Inference: engines and bindings
+:toc:
+
+Inference is model interpretation of a document's bytes that does not produce its text:
+embeddings, captions, tags, classifications. (Engines that produce text, OCR and transcription,
+are xref:configuration/index.adoc#text-recognizers[text recognizers].) Three sections
+configure it, each answering one question.
+
+NOTE: Inference is experimental in 4.1.0. The `inference` section, `pages.inference` (what a
+rendering parser releases), the keys of an embedding or VLM engine's entry, the `tika-inference`
+and `tika-vlm` classes, and the chunk and vector output (`tk:chunks`, `tk:inference-released`)
+may change in a minor release without a deprecation cycle, and no compatibility shims are kept
+for earlier shapes; 4.3 adds batched recognition and document-level tasks. The `engines` map
+itself, and the
+`text-recognizers` list, are stable. Pin the Tika version you validated against and read the
+release notes before moving.
+
+== `engines`: what can be called
+
+A map of names you choose to one engine each: an endpoint or a local binary with its settings.
+An engine knows nothing about documents. Two names may point at the same endpoint with
+different models. Secrets and paths live here and only here.
+
+[source,json]
+----
+{
+  "engines": {
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip:8000", "model": "siglip2",
+                                           "maxBatchSize": 32 } }
+  }
+}
+----
+
+`openai-embedding-engine` posts to `/v1/embeddings` in the OpenAI shape and sends up to
+`maxBatchSize` images per request. Options: `baseUrl`, `model`, `apiKey`, `timeoutMillis`
+(120000), `maxBatchSize` (32), `maxRetries` (4), `embeddingsPath`, `apiKeyHeaderName`,
+`apiKeyPrefix`, `requestParameters`, `imageInput`, `mediaInput` (see <<media>>).
+
+[#concurrency]
+=== Hosted engines and concurrency
+
+A hosted engine caps the requests in flight per key and answers the excess with 429 at once,
+usually with no `Retry-After`; a saturated one answers 502, 503 or 504. Those four answers are
+retried, `maxRetries` times (4 unless set, 0 to fail at once), with a short jittered backoff
+from 250 ms doubling to 4 s, or the `Retry-After` the server sends, and never past the budget
+the parse granted the call. A connection that drops before a full response arrives is retried
+the same way, sharing the `maxRetries` count; if the service had already read the
+request, a paid call may be billed twice. Any other answer, a 401 or a 400, fails at once,
+as do an unknown host, a refused connection and a TLS failure. The retries cover
+collisions between a few parse workers; they do not turn more workers than the key allows
+into throughput. Keep `numClients` (tika-server, Pipes) at or below the key's concurrency,
+counting every engine the workers call, and raise the key's tier before raising the workers.
+The VLM parsers take the same `maxRetries`.
+
+=== Vendor keys: `requestParameters`
+
+Most hosted and self-hosted embedding services speak the OpenAI shape and add their own keys
+to it. `requestParameters` is a map copied verbatim into every request body, beside the
+engine's `model` and `input`; the engine neither knows nor checks the keys, so use the names
+your vendor documents. Three keys recur under different names: a Matryoshka dimension
+(`dimensions`, `output_dimension`), a query-versus-document hint (`task`, `input_type`,
+`task_type`; use the document/passage value, since Tika indexes), and normalize/truncate
+flags. Two rules: `model` and `input` belong to the engine and are refused; so is any key that
+changes the response from float vectors by index (`encoding_format`, `embedding_type`,
+`output_type`, `output_dtype`, `return_multivector`), since that is what the engine reads back.
+
+Jina `jina-embeddings-v5-omni` embeds text, images and rendered pages in one space; `task`
+selects the indexing adapter and `dimensions` the vector size. `PAGES` sends each page's
+rendering as a PNG, never the PDF itself, and the PDF parser renders only when its
+`pages.inference` says so:
+
+[source,json]
+----
+{
+  "engines": {
+    "jina": { "openai-embedding-engine": {
+      "baseUrl": "https://api.jina.ai", "apiKey": "${env:JINA_API_KEY}",
+      "model": "jina-embeddings-v5-omni-small", "maxBatchSize": 16,
+      "requestParameters": { "task": "retrieval.passage", "dimensions": 1024 } } }
+  },
+  "inference": [
+    { "id": "pictures", "engine": "jina", "input": "IMAGES", "tasks": ["embed"], "maxBytes": 5000000 },
+    { "id": "pages",    "engine": "jina", "input": "PAGES",  "tasks": ["embed"], "maxBytes": 5000000 },
+    { "id": "text",     "engine": "jina", "input": "TEXT",   "tasks": ["embed"],
+      "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } } }
+  ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "pages": { "inference": ["TEXT", "PAGES"],
+                                 "render": { "dpi": 96, "imageType": "RGB" } } } }
+  ]
+}
+----
+
+Azure OpenAI puts the key in an `api-key` header with no prefix and the deployment and API
+version in the path; `dimensions` truncates `text-embedding-3-large`. Plain OpenAI is the
+same engine with the defaults and `"baseUrl": "https://api.openai.com"`:
+
+[source,json]
+----
+{
+  "engines": {
+    "azure": { "openai-embedding-engine": {
+      "baseUrl": "https://my-resource.openai.azure.com",
+      "embeddingsPath": "/openai/deployments/text-embedding-3-large/embeddings?api-version=2024-10-21",
+      "apiKeyHeaderName": "api-key", "apiKeyPrefix": "", "apiKey": "${env:AZURE_OPENAI_KEY}",
+      "requestParameters": { "dimensions": 1024 } } }
+  }
+}
+----
+
+The OpenAI shape has no image input, so services differ on how an image goes into `input`:
+`imageInput` is `object` (the default: `{"image": "data:..."}`, Jina's form) or `data-uri` (a
+bare `data:...` string, the form LiteLLM takes).
+
+For a service whose request shape is not OpenAI's (Google's `embedContent`, Amazon Bedrock's
+`InvokeModel`, Cohere's `/v2/embed`), put a gateway that speaks the OpenAI shape in front of it
+and point this engine at the gateway. LiteLLM routes `gemini-embedding-2` this way, text and
+images alike, on the Gemini API path (its Vertex path fuses every input into one vector,
+which this engine refuses because it expects one per input), and Amazon Nova 2 on Bedrock
+for text and images, one input per request; the gateway holds the cloud credentials, and
+provider keys ride `requestParameters`. Audio and video on those services go through
+asynchronous, object-store-backed jobs that an embeddings call cannot use.
+
+[source,json]
+----
+{
+  "engines": {
+    "gemini": { "openai-embedding-engine": {
+      "baseUrl": "http://litellm:4000", "apiKey": "${env:LITELLM_KEY}",
+      "model": "gemini-embedding-2-preview", "imageInput": "data-uri", "maxBatchSize": 6 } },
+    "nova": { "openai-embedding-engine": {
+      "baseUrl": "http://litellm:4000", "apiKey": "${env:LITELLM_KEY}",
+      "model": "bedrock/amazon.nova-2-multimodal-embeddings-v1:0",
+      "imageInput": "data-uri", "maxBatchSize": 1,
+      "requestParameters": { "dimensions": 1024, "embedding_purpose": "GENERIC_INDEX" } } }
+  }
+}
+----
+
+A text recognizer is an engine too: `"tesseract": { "tesseract-ocr-parser": { "language": "eng" } }`
+here, and `{ "engine": "tesseract" }` in
+xref:configuration/index.adoc#text-recognizers[`text-recognizers`], so an OCR engine or a VLM is
+configured in one place. A binding cannot use a recognizer for a task it does not fit; `embed`
+on Tesseract fails config load.
+
+An engine lives as long as the config that loaded it. `Engine` is `Closeable`; an engine that
+holds a client or a native handle releases it in `close()`, and the registry closes every
+engine once when the pipes server shuts down. Library users holding a `TikaLoader` close
+`loader.get(EngineRegistry.class)` themselves.
+
+== `inference`: what runs on what
+
+A list of bindings. Each names an engine, says what it is fed, and what to ask:
+
+[source,json]
+----
+{
+  "inference": [
+    { "id": "picture-vectors", "engine": "clip", "input": "IMAGES", "tasks": ["embed"],
+      "_mime-include": ["image/png", "image/jpeg"], "maxChunks": 100 }
+  ]
+}
+----
+
+`id`:: Names the binding; defaults to `<engine>-<input>`. Unique within the list.
+`input`:: What the binding is fed. `IMAGES` is every image document Tika parses: an inline
+  picture, an image attachment, a top-level image file; a page render emitted as an embedded
+  document is not one. `PAGES` is one image per rendered page of a document whose parser
+  renders pages for inference: the PDF parser, when `pages.inference` says so (see
+  <<pages>>). `TEXT` is the extracted text of every document in the tree (see <<text>>).
+  `MEDIA` is every document in the `audio/` and `video/` families, cut into segments at the
+  flush (see <<media>>); playlists (m3u, pls, xspf, asx) are text that names other files and
+  are never media. Container types Tika detects as `application/*` (some ogg, matroska, mxf)
+  are not offered.
+`modality`:: What the engine is shown: `text`, `visual` or `audio`. Implied by `TEXT`,
+  `IMAGES` and `PAGES`; a `MEDIA` binding must say `visual` or `audio`.
+`tasks`:: One call per task on the same engine and input. `embed` writes one vector chunk per
+  unit into `tk:chunks`, with the page locator when the unit has a page.
+`maxChunks`:: How many units one document tree may send; for `PAGES`, how many pages of one
+  document; for `TEXT`, how many chunks across the tree; for `MEDIA`, how many segments of one
+  file (480 unless set: the ceiling a request's `media` block cannot raise); -1 for no limit.
+`chunker`:: `TEXT` only: how a document's text is cut, `{ "markdown-chunker": { "maxChunkChars":
+  1500, "overlapChars": 200 } }`. Without one the whole text is one chunk.
+`maxBytes`:: Largest unit the binding accepts (20 MB unless set; -1 for no limit); larger
+  ones are skipped and counted. For `MEDIA` the unit is one cut segment, not the file: a
+  film of any size is offered, and a segment over the limit is the one that is skipped.
+`minWidth`, `minHeight`:: `IMAGES` only: an image whose recorded size (`tiff:ImageWidth`,
+  `tiff:ImageLength`) falls short in either dimension is not offered; one of unknown size is.
+  2 unless set, so a spacer is never embedded.
+`enabled`:: `false` keeps the binding configured but idle until a request selects it.
+`_mime-include`, `_mime-exclude`:: Narrow by media type within the input kind. With neither,
+  an `IMAGES` binding skips vector and CAD image types (SVG, EMF, DWG, ...) that no embedding
+  endpoint takes.
+
+A binding that names an engine not in `engines`, a task that cannot use its engine (`embed`
+on a chat engine), or an unknown key fails config load.
+
+== How it runs
+
+Parsers do not call engines. Every image, audio or video document Tika parses is offered to one dispatcher
+after its own parser has run, whatever container it came from and however deep. The
+dispatcher keeps the units of the whole document tree until the top-level parse ends, then
+sends each binding's units to its engine in requests of up to `maxBatchSize` units: a docx
+with twelve pictures is one embeddings request, not twelve, when the engine takes twelve at
+once; if one image in a batch is rejected, the rest are retried one by one. Results land on the document a unit belongs to, as it appears in the
+output. In the recursive outputs (`/rmeta`, `-J`, pipes `RMETA`), where every document has
+its own metadata object, a picture in the body of a docx or an email puts its vector on the
+docx or the email, with an `embedded` locator naming the picture, whether the docx is the
+file itself or inside a zip; an attachment keeps its own. In the single-object outputs
+(`/tika` as JSON, `-j`, pipes `CONCATENATE`) there is one object, so everything lands on it:
+an attachment's pages and pictures put their vectors on the top-level document too, each
+with an `embedded` locator whose id path and name say which part they came from. The chunks
+are the same either way; only the object they sit on differs. A failed request marks the
+top-level document with a warning and never fails the parse.
+
+The flush is the end of the top-level walk, still inside `parse()`: every byte has been read
+and the last document closed, the engines are called under the parse's timeout, and the
+units, held as files the dispatcher owns and bounded by each binding's `maxChunks` and
+`maxBytes`, are deleted when it ends. The `TEXT` stage alone runs after `parse()` returns,
+over the finished metadata list (see <<text>>). A chunker runs where its input is: a media
+chunker at the flush, on the file; the text chunker in the `TEXT` stage, on the text.
+
+[#pages]
+== Pages
+
+A `PAGES` binding is fed by the parsers that render pages. Today that is the PDF parser, and
+only when its own config releases pages:
+
+[source,json]
+----
+{
+  "engines": {
+    "clip": { "openai-embedding-engine": { "baseUrl": "http://clip:8000/v1", "model": "clip" } }
+  },
+  "inference": [
+    { "id": "page-vectors", "engine": "clip", "input": "PAGES", "tasks": ["embed"], "maxChunks": 50 }
+  ],
+  "parsers": [
+    { "default-parser": {} },
+    { "pdf-parser": { "pages": { "inference": ["PAGES"], "text": "EXTRACT",
+                                 "render": { "dpi": 100, "imageType": "RGB" } } } }
+  ]
+}
+----
+
+`pages.inference` lists what a rendering parser releases to inference: `TEXT`, the default
+(text bindings follow), and `PAGES`. With `PAGES`, and a `PAGES` binding that runs for the
+request, the PDF renders every page once and hands the same image to the OCR engine, when
+`text` asks for it, and to the bindings: a scanned page costs one render whether one
+consumer or two see it. Each page is one unit. Its vector lands on the PDF's own `tk:chunks`
+with a `paginated` locator naming the page, and `maxChunks` is the number of pages one document
+sends. Nothing is rendered for inference unless a `PAGES` binding runs, so the block can stay on
+a config whose bindings are on standby.
+
+The render is the `pages.render` render: `dpi`, `imageType`, `imageFormat`, `imageQuality` and
+a `maxWidth`/`maxHeight` box shape it, and the defaults (300 dpi grayscale PNG) suit Tesseract,
+not an embedding endpoint. Set them to what the engine wants; when OCR and page vectors run
+together the one setting serves both. `maxImagePixels` and the minimum apply as for OCR; a page
+skipped for its size is not offered. See xref:configuration/pages.adoc[Pages].
+
+Page renders emitted as embedded documents (`pages.emit`) are not images to an `IMAGES`
+binding: pages reach inference through `PAGES` only, so no page is embedded twice.
+
+Per request, like every `pages` setting:
+
+[source,json]
+----
+{ "parse-context": { "pages": { "inference": ["PAGES"] },
+                     "inference": { "bindings": ["page-vectors"] } } }
+----
+
+[#text]
+== Text
+
+A `TEXT` binding embeds the extracted text of every document in the tree, the container and
+its attachments alike:
+
+[source,json]
+----
+{
+  "engines": {
+    "embedder": { "openai-embedding-engine": { "baseUrl": "http://embed:8000", "model": "bge-m3" } }
+  },
+  "inference": [
+    { "id": "text-vectors", "engine": "embedder", "input": "TEXT", "tasks": ["embed"],
+      "chunker": { "markdown-chunker": { "maxChunkChars": 1500, "overlapChars": 200 } },
+      "maxChunks": 500 }
+  ]
+}
+----
+
+It runs after the parse, over the finished metadata list and before the metadata filters
+(so a filter shapes what it wrote and cannot starve it): every document's `tk:content` is chunked, the chunks of the whole tree are sent in
+`maxBatchSize` requests in document order (a request may hold a container's last chunks and
+an attachment's first; the endpoint treats inputs independently and answers by index), and
+each chunk lands on the document its text came from, with a `text` locator and the binding
+as its `producer`. A rejected request is retried one document at a time. `maxChunks` caps the
+chunks of the tree, `maxBytes` the text of one document, and `_mime-include`/`_mime-exclude`
+narrow by document type. Use a `MARKDOWN` content handler for the chunker to see headings.
+
+A document that released other inputs to inference is not embedded twice: a PDF parsed with
+`pages.inference: ["PAGES"]` records `tk:inference-released: PAGES` and the TEXT stage skips
+it; list `["TEXT", "PAGES"]` to get both. This stage runs over the metadata list, so it
+covers `-J`, `/rmeta` and pipes, and `/tika` as JSON, whose list is the one object with the
+concatenated text; the plain-text `/tika` output carries no metadata and so no vectors. It is
+not a metadata filter: a per-request `metadata-filters` list does not touch it, and the
+per-request `inference` block below is the way to switch it off.
+
+The 4.0 `openai-embedding-filter` and `jina-embedding-filter` were removed in 4.2.0; this
+binding replaces them.
+
+[[media]]
+== Media
+
+A `MEDIA` binding embeds audio and video. The engine sees one channel, so the binding says
+which: `modality` is `visual` (the picture, as short silent clips) or `audio` (the sound,
+as mono Opus). Two bindings on one engine index both channels of a video:
+
+[source,json]
+----
+{
+  "engines": {
+    "jina": { "openai-embedding-engine": { "baseUrl": "https://api.jina.ai", "apiKey": "${env:JINA_API_KEY}",
+              "model": "jina-embeddings-v5-omni-small", "mediaInput": "object",
+              "requestParameters": { "task": "retrieval.passage", "dimensions": 1024 } } }
+  },
+  "inference": [
+    { "id": "jina-video", "engine": "jina", "input": "MEDIA", "modality": "visual" },
+    { "id": "jina-audio", "engine": "jina", "input": "MEDIA", "modality": "audio" }
+  ]
+}
+----
+
+Tika cuts the file into segments with ffmpeg (on the `PATH`) on one grid per document, set
+in the parse context:
+
+[source,json]
+----
+{ "parse-context": { "media": { "segment": { "seconds": 25, "overlap": 5 }, "maxSegments": 480 } } }
+----
+
+Those are the defaults: 25 s windows, each starting 20 s after the last, so any event of
+5 s or less is whole in at least one segment, and no audio item reaches the 30 s cap the
+hosted omni engines enforce (see <<jina-omni>>); `maxSegments` caps a document, the rest of the
+file is not embedded. A block with `overlap` outside `[0, seconds)`, or `maxSegments` of 0
+or below -1, fails at config load and per request. The segmenter defines the unit and every binding on the document sees
+the same segments, so each segment's chunks share the segment's id: a chunk carries a
+`temporal` locator (`start_ms`, `end_ms` on the container's presentation timeline), its
+`producer` (the binding), its `modality` (`visual` or `audio`) and a `correlator`, the
+segment's id. Group by `correlator` to get a segment with both channels:
+
+[source,json]
+----
+[
+  { "producer": "jina-video", "modality": "visual", "correlator": "t:20000-45000",
+    "vector": "<base64 float32>", "locators": { "temporal": [{"start_ms": 20000, "end_ms": 45000}] } },
+  { "producer": "jina-audio", "modality": "audio", "correlator": "t:20000-45000",
+    "vector": "<base64 float32>", "locators": { "temporal": [{"start_ms": 20000, "end_ms": 45000}] } }
+]
+----
+
+An audio file has no picture and a silent video has no sound: the binding for the missing
+channel skips the document; cover art in an audio file is not a picture. The binding's
+`maxChunks` (480 unless set) also caps segments per document, and since a request may send
+its own `media` block, it is the ceiling an operator relies on: the smaller of the two wins.
+`maxBytes` bounds one cut segment (the cuts are small: 360p H.264 and 32 kbps Opus); the
+file's own size is not gated. The engine must accept media, which the OpenAI shape has no
+form for, so the vendor's form is declared: `mediaInput: "object"` sends
+`{"audio": data-uri}` and `{"video": data-uri}` items as Jina names them; without it a MEDIA
+binding on the engine fails at load. Each segment is one request input; a request holds up
+to `maxBatchSize` of them (the engine default is 32; the cuts are 100-500 KB each as base64,
+so set it lower for a small request body). A request the engine rejects is retried one
+segment at a time from the same cut files; nothing is cut twice. A file ffprobe cannot read
+is reported once as the binding's warning and the next file runs.
+
+ffmpeg and ffprobe are looked up on the `PATH` once, at config load: a MEDIA binding without
+them logs one warning and stands by, and each audio or video document is then skipped with a
+warning in its metadata rather than failed, the way OCR behaves without tesseract. The
+`apache/tika:<version>-full` image ships them; the minimal and grpc images do not.
+
+ffmpeg runs under the parse's time budget: each probe and cut asks for its own cap (60 s and
+5 min) and gets the smaller of that and what remains of the request's total timeout, with
+the wait counted as progress. When the budget runs out mid-file the task writes the segments
+it has embedded, stops, and reports the timeout once as the binding's warning on the root
+document; every later MEDIA binding's first probe fails fast the same way.
+
+[[jina-omni]]
+=== Jina omni
+
+`jina-embeddings-v5-omni-small` (1024 dimensions) and `-nano` (768) embed text, images,
+pages, audio and video in one space, one modality per input item, mixed within a request.
+There is no Jina engine class; it is the OpenAI shape with Jina's keys:
+
+[cols="1,3"]
+|===
+|Setting |Value for Jina omni
+
+|`baseUrl`
+|`https://api.jina.ai` (the engine appends `/v1/embeddings`).
+
+|`apiKey`
+|The Jina key, sent as `Authorization: Bearer`; `${env:JINA_API_KEY}` keeps it out of the file
+(see xref:configuration/index.adoc#env[Secrets from the environment]).
+
+|`model`
+|`jina-embeddings-v5-omni-small` or `jina-embeddings-v5-omni-nano`.
+
+|`imageInput`
+|`object` (the default): images and pages go as `{"image": data-uri}`.
+
+|`mediaInput`
+|`object`: audio as `{"audio": data-uri}`, video as `{"video": data-uri}`. Required for
+MEDIA bindings.
+
+|`maxBatchSize`
+|Items per request across modalities; the segment cuts are 100-500 KB each as base64, so
+keep the request well under Jina's body limit (start at 8).
+
+|`maxRetries`
+|Jina's limit is concurrency per key, not requests per minute: 2 requests in flight on a free
+key (1 on the OCR endpoint), 50 on a paid key, 500 on premium; the excess gets a 429 at once
+with no `Retry-After`, and the limit clears as soon as an in-flight request returns. The
+default 4 retries absorb the collisions of two or three workers; more workers than the key's
+concurrency need a bigger key, not more retries (see <<concurrency>>).
+
+|`requestParameters`
+|`task`: `retrieval.passage` for indexing (default nothing is sent; set it), `retrieval.query`
+for queries, `text-matching`, `classification`, `separation`. `dimensions`: a Matryoshka
+size up to the model's. `normalized`: `true` for unit vectors, which makes cosine scores
+comparable across the picture, sound and text fields. `truncate` and `late_chunking` apply
+to text items. `embedding_type` is refused: the engine reads float vectors by index.
+|===
+
+Jina's limits: images 5 MB, PDFs 8 MB and one per request; audio as WAV, MP3, FLAC, OGG,
+M4A or Opus, capped at 30 s per item, inclusive (a 30.0 s clip is refused with HTTP 400 and
+the binding's warning names it), which is why the default window is 25 s and a `media` block
+for this engine should keep `seconds` below 30; video as 32 uniformly sampled frames
+whatever its length, and nothing says the video item's audio track is used, which is why
+Tika sends the sound as its own item. The 32 frames are why the grid matters: a whole film
+as one input is 32 frames for the film, a 25 s segment is more than one frame a second. Byte
+caps for audio and video items are not documented; measure before raising `maxBytes`.
+
+A query is the same call with the query task, and one vector searches every field:
+
+[source,bash]
+----
+curl https://api.jina.ai/v1/embeddings -H "Authorization: Bearer $JINA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "jina-embeddings-v5-omni-small", "task": "retrieval.query",
+       "dimensions": 1024, "normalized": true, "input": ["a horse jumping a fence"]}'
+----
+
+For search, index one document per segment so a hit is a segment and its two vectors score
+together: the Elasticsearch and OpenSearch emitters do that with `chunkStrategy: DOCUMENTS`,
+which merges the chunks of one correlator into one document (see
+xref:migration-to-4x/chunk-strategies.adoc[Chunk strategies]).
+
+== Per request
+
+[source,json]
+----
+{ "parse-context": { "inference": { "bindings": ["picture-vectors"], "enabled": true } } }
+----
+
+`enabled: false` runs nothing for this request; `bindings` names the ones that run, every
+enabled binding when absent. The recognizers have the same switch,
+`{"text-recognizers": {"enabled": false}}`; together they are "everything off for one
+request" (see xref:configuration/inference-recipes.adoc[Recipes]). Names only, so it is wire-safe and works as a
+xref:using-tika/server/index.adoc[preset]. A name not in the configured list fails the request.
+Engines cannot be defined or changed per request.
+
+== From `openai-image-embedding-parser` (removed)
+
+The 4.0 `openai-image-embedding-parser` was removed in 4.2.0. The same endpoint as an engine
+plus a binding on `IMAGES` embeds a document's images in requests of the engine's batch size
+and puts the vectors where they belong; move the `baseUrl`, `model` and `apiKey` to the engine
+and drop the parser entry.

@@ -47,6 +47,9 @@
     -->
   </Appenders>
   <Loggers>
+    <!-- per-parse WORKER_TIMING lines (TIKA-4868) log at trace
+    <Logger name="org.apache.tika.pipes.timing" level="trace"/>
+    -->
     <Root level="info" additivity="false">
       <AppenderRef ref="console" />
     </Root>

@@ -94,6 +94,7 @@ public class OpenSearchEmitter extends AbstractEmitter {
     private void configure() throws TikaConfigException {
         ConfigValidator.mustNotBeEmpty("openSearchUrl", config.openSearchUrl());
         ConfigValidator.mustNotBeEmpty("idField", config.idField());
+        config.validate();
         HttpClientConfig http = config.httpClientConfig();
         httpClientFactory.setUserName(http.userName());
         httpClientFactory.setPassword(http.password());

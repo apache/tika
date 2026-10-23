@@ -25,7 +25,7 @@ import org.apache.tika.parser.ParseContext;
  * <p>
  * This controls how deep and how many embedded documents are processed:
  * <ul>
- *   <li>{@code maxDepth} - maximum nesting depth for embedded documents (-1 = unlimited)</li>
+ *   <li>{@code maxDepth} - maximum nesting depth for embedded documents (default: 20, -1 = unlimited)</li>
  *   <li>{@code throwOnMaxDepth} - whether to throw an exception when maxDepth is reached</li>
  *   <li>{@code maxCount} - maximum number of embedded documents to process (-1 = unlimited)</li>
  *   <li>{@code throwOnMaxCount} - whether to throw an exception when maxCount is reached</li>
@@ -74,7 +74,9 @@ public class EmbeddedLimits implements Serializable {
 
     public static final int UNLIMITED = -1;
 
-    private int maxDepth = UNLIMITED;
+    public static final int DEFAULT_MAX_DEPTH = 20;
+
+    private int maxDepth = DEFAULT_MAX_DEPTH;
     private boolean throwOnMaxDepth = false;
     private int maxCount = UNLIMITED;
     private boolean throwOnMaxCount = false;
@@ -184,6 +186,32 @@ public class EmbeddedLimits implements Serializable {
         }
         EmbeddedLimits limits = context.get(EmbeddedLimits.class);
         return limits != null ? limits : new EmbeddedLimits();
+    }
+
+    /**
+     * Returns this instance if neither limit is looser than {@code ceiling}'s, otherwise a
+     * copy with each looser limit reduced to the ceiling's. Used at trust boundaries so a
+     * request may tighten operator limits but not loosen them.
+     *
+     * @param ceiling the operator's limits
+     * @return this, or a tightened copy
+     * @since Apache Tika 4.2
+     */
+    public EmbeddedLimits tightenedTo(EmbeddedLimits ceiling) {
+        int depth = tighter(maxDepth, ceiling.maxDepth);
+        int count = tighter(maxCount, ceiling.maxCount);
+        if (depth == maxDepth && count == maxCount) {
+            return this;
+        }
+        return new EmbeddedLimits(depth, throwOnMaxDepth, count, throwOnMaxCount);
+    }
+
+    /** The tighter of two limits where a negative value means unlimited. */
+    static int tighter(int requested, int ceiling) {
+        if (ceiling < 0) {
+            return requested;
+        }
+        return requested < 0 ? ceiling : Math.min(requested, ceiling);
     }
 
     @Override

@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -27,6 +28,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -35,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TikaExtras;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 import org.apache.tika.pipes.core.server.PipesServer;
 import org.apache.tika.utils.ProcessUtils;
 
@@ -46,24 +49,40 @@ import org.apache.tika.utils.ProcessUtils;
  * <p>
  * Connection model: The client creates a ServerSocket and the server connects TO it.
  * This is the reverse of typical client-server patterns but allows the client to
- * control the port assignment.
+ * control the port assignment. The config and a per-process auth token go to the
+ * server on its stdin ({@link ForkBootstrap}); the server presents the token as the
+ * first bytes of its connection.
  */
 public class PerClientServerManager implements ServerManager {
 
     private static final Logger LOG = LoggerFactory.getLogger(PerClientServerManager.class);
     private static final long WAIT_ON_DESTROY_MS = 10000;
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
+    private static final int TOKEN_READ_TIMEOUT_MS = 10000;
     /** Cores reserved for the parent JVM when auto-sizing forked JVMs'
      *  -XX:ActiveProcessorCount. The parent has client-side serialization,
      *  response deserialization, and heartbeat bookkeeping; if it's CPU-starved
      *  small operations like socket flush show pathological tail latency. */
     private static final int PARENT_RESERVED_CORES = 2;
-    /** Don't auto-cap below this many CPUs per fork. At cap=1 the fork's only
-     *  CPU is fully consumed by parsing, so its socket-reader thread can't run
-     *  and the parent's writes block on receiver-side back-pressure -- worse
-     *  than no cap at all. This guard matters for small k8s pods where the
-     *  formula could otherwise produce slice=1. */
-    private static final int MIN_AUTO_CAP_SLICE = 2;
+    /** Floor for the auto-cap. At cap=1 the fork's only CPU is fully consumed by
+     *  parsing, so its socket-reader thread can't run and the parent's writes block
+     *  on receiver-side back-pressure. The floor is a CLAMP, not a switch: when the
+     *  fair slice falls below it, the fork still gets this cap rather than none.
+     *  Skipping the cap hands every fork all the host's cores, and N forks then each
+     *  size their GC/JIT pools for the whole machine -- measured 2026-09-18 at 10
+     *  forks on 16 cores as +18% wall against the clamped run (TIKA-4905). */
+    static final int MIN_AUTO_CAP_SLICE = 2;
+
+    /**
+     * The {@code -XX:ActiveProcessorCount} each fork gets when the user has not set one: a
+     * fair share of the host after the parent's reservation, never below
+     * {@link #MIN_AUTO_CAP_SLICE}. Over-provisioned hosts (numClients above the recommended
+     * max) land on the floor for every fork; the caller warns separately.
+     */
+    static int autoCapSlice(int hostCores, int numClients) {
+        int budget = Math.max(1, hostCores - PARENT_RESERVED_CORES);
+        return Math.max(MIN_AUTO_CAP_SLICE, budget / Math.max(1, numClients));
+    }
 
     /** Share of host/container memory the forks may collectively claim; the remainder is
      *  left for the parent JVM, the OS, and page cache for spooled input. */
@@ -171,22 +190,29 @@ public class PerClientServerManager implements ServerManager {
 
 
     private final PipesConfig pipesConfig;
-    private final Path tikaConfigPath;
+    private final byte[] tikaConfigJson;
     private final int clientId;
 
     private volatile Process process;
     private volatile ServerSocket serverSocket;
     private volatile Path tmpDir;
+    private volatile byte[] token;
     private volatile int port = -1;
     private long filesProcessed = 0;
+    private volatile long generation;
     private volatile boolean pendingRestart = false;
+    private final RestartCounter restarts = new RestartCounter();
     // Set once by shutdown()/close(); guards a request thread from starting a fresh
     // process after the manager has been torn down (which would leak the child).
     private volatile boolean closed = false;
 
-    public PerClientServerManager(PipesConfig pipesConfig, Path tikaConfigPath, int clientId) {
+    /**
+     * @param tikaConfigJson the parent's resolved config, from {@link ForkBootstrap#toBytes};
+     *                       handed to every fork this manager starts
+     */
+    public PerClientServerManager(PipesConfig pipesConfig, byte[] tikaConfigJson, int clientId) {
         this.pipesConfig = pipesConfig;
-        this.tikaConfigPath = tikaConfigPath;
+        this.tikaConfigJson = tikaConfigJson;
         this.clientId = clientId;
         // Emit CPU-sizing diagnostics once per PipesParser (only on the first client).
         if (clientId == 0) {
@@ -234,11 +260,11 @@ public class PerClientServerManager implements ServerManager {
         if (userSetCap) {
             capDecision = "user-set in forkedJvmArgs";
         } else {
-            int budget = Math.max(1, hostCores - PARENT_RESERVED_CORES);
-            int slice = budget / numClients;
-            capDecision = (slice >= MIN_AUTO_CAP_SLICE)
+            int fair = Math.max(1, hostCores - PARENT_RESERVED_CORES) / Math.max(1, numClients);
+            int slice = autoCapSlice(hostCores, numClients);
+            capDecision = (fair >= MIN_AUTO_CAP_SLICE)
                     ? "slice=" + slice
-                    : "skipped (slice<" + MIN_AUTO_CAP_SLICE + ")";
+                    : "slice=" + slice + " (clamped; fair share would be " + fair + ")";
         }
         String heapDecision;
         if (userSetHeap(pipesConfig.getForkedJvmArgs())) {
@@ -281,7 +307,7 @@ public class PerClientServerManager implements ServerManager {
         if (filesProcessed >= maxFilesPerProcess) {
             LOG.info("clientId={}: reached max files limit ({}/{}), marking for restart",
                     clientId, filesProcessed, maxFilesPerProcess);
-            pendingRestart = true;
+            markForRestart(RestartReason.MAX_FILES);
         }
     }
 
@@ -290,20 +316,49 @@ public class PerClientServerManager implements ServerManager {
         return pendingRestart;
     }
 
+    /**
+     * One client owns one manager here, so {@code generation} carries no information a sibling
+     * could invalidate and is accepted only to satisfy the single {@link ServerManager} spelling.
+     * Shared mode is where staleness is real.
+     */
     @Override
-    public void markServerForRestart() {
-        LOG.info("clientId={}: marking server for restart", clientId);
+    public void markServerForRestart(RestartReason reason, long ignoredGeneration) {
+        LOG.info("clientId={}: marking server for restart ({})", clientId, reason);
+        markForRestart(reason);
+    }
+
+    /** Counts forks so {@code PipesParser.getGeneration()} is meaningful in per-client mode too. */
+    @Override
+    public long getGeneration() {
+        return generation;
+    }
+
+    /**
+     * Takes the same monitor as {@link #ensureRunning()}, which consumes the mark: recording the
+     * reason and raising the flag must not straddle a restart, or a reason lands against a
+     * restart that has already been counted. Correctness here previously rested on an
+     * undocumented one-client-per-manager invariant; shared mode, where siblings are the norm,
+     * already locked for this and TIKA-4844 is what a stale mark costs.
+     */
+    private synchronized void markForRestart(RestartReason reason) {
+        restarts.mark(reason);
         pendingRestart = true;
+    }
+
+    @Override
+    public long getRestartCount(RestartReason reason) {
+        return restarts.count(reason);
     }
 
     @Override
     public void connectionAbandoned() {
         LOG.info("clientId={}: connection abandoned, worker will be recycled on next use", clientId);
-        pendingRestart = true;
+        markForRestart(RestartReason.CONNECTION_ABANDONED);
     }
 
     @Override
-    public int handleCrashAndGetExitCode() {
+    public int handleCrashAndGetExitCode(long generation) {
+        // Not marked: RestartCounter attributes by exit code; the caller refines OOM/TIMEOUT.
         pendingRestart = true;
         if (process != null) {
             try {
@@ -311,7 +366,10 @@ public class PerClientServerManager implements ServerManager {
                 if (!process.isAlive()) {
                     int exitValue = process.exitValue();
                     if (exitValue == 0) {
-                        LOG.info("clientId={}: process exited cleanly", clientId);
+                        LOG.warn("clientId={}: process exited with code 0 without a shutdown request; " +
+                                "counted as a crash restart", clientId);
+                    } else if (exitValue == PipesServer.IDLE_EXIT_CODE) {
+                        LOG.info("clientId={}: process exited after idle timeout", clientId);
                     } else {
                         LOG.warn("clientId={}: process exited with code {}", clientId, exitValue);
                     }
@@ -335,7 +393,15 @@ public class PerClientServerManager implements ServerManager {
         if (isRunning() && !pendingRestart) {
             return;
         }
-        startServer();
+        Process previous = process;
+        try {
+            startServer();
+        } finally {
+            // Count the old process once it is really gone, even if the new start failed.
+            if (process != previous) {
+                restarts.restarted(previous);
+            }
+        }
     }
 
     @Override
@@ -343,17 +409,30 @@ public class PerClientServerManager implements ServerManager {
         // Capture the socket up front: shutdown() may null the field concurrently, but this
         // request keeps using (and detects the close on) the instance it started with.
         ServerSocket ss = serverSocket;
+        byte[] expectedToken = token;
         if (ss == null) {
             throw new IllegalStateException("Server not started. Call ensureRunning() first.");
         }
 
-        // Accept incoming connection from the server process
-        ss.setSoTimeout(1000); // 1 second timeout for each poll
+        // Accept the server's connection; poll briefly so a child that dies first is noticed fast
+        ss.setSoTimeout(100);
         long startTime = System.currentTimeMillis();
 
         while (true) {
             try {
                 Socket socket = ss.accept();
+                if (!presentsToken(socket, expectedToken)) {
+                    LOG.warn("clientId={}: rejected a connection that did not present the fork's token",
+                            clientId);
+                    try {
+                        socket.close();
+                    } catch (IOException closeEx) {
+                        LOG.debug("clientId={}: error closing rejected connection", clientId, closeEx);
+                    }
+                    // Strangers must not be able to hold the deadline open.
+                    checkConnectDeadline(startTime);
+                    continue;
+                }
                 socket.setSoTimeout(socketTimeoutMillis);
                 socket.setTcpNoDelay(true);
                 LOG.debug("clientId={}: accepted connection from server", clientId);
@@ -366,9 +445,14 @@ public class PerClientServerManager implements ServerManager {
                 }
                 if (!p.isAlive()) {
                     int exitValue = p.exitValue();
-                    LOG.error("clientId={}: Process exited with code {} before connecting to socket",
-                            clientId, exitValue);
-                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
+                    if (exitValue == 0 || exitValue == PipesServer.IDLE_EXIT_CODE) {
+                        // Idle/SHUT_DOWN exit raced the reconnect; not a crash.
+                        LOG.info("clientId={}: process exited with code {} before connecting",
+                                clientId, exitValue);
+                    } else {
+                        LOG.error("clientId={}: Process exited with code {} before connecting to socket",
+                                clientId, exitValue);
+                    }
                     // Always treat pre-connect death as retryable.
                     // The only non-retryable paths are:
                     // 1. pb.start() fails (can't launch process) - handled in startServer()
@@ -378,19 +462,32 @@ public class PerClientServerManager implements ServerManager {
                     throw new IOException(
                             "Server process died before connecting (exit code " + exitValue + ") - will retry");
                 }
-                // Check if we've exceeded the overall timeout
-                long elapsed = System.currentTimeMillis() - startTime;
-                if (elapsed > SOCKET_CONNECT_TIMEOUT_MS) {
-                    LOG.error("clientId={}: Timed out waiting for server to connect after {}ms", clientId, elapsed);
-                    ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
-                    throw new ServerInitializationException(
-                            "Server did not connect within " + SOCKET_CONNECT_TIMEOUT_MS + "ms");
-                }
+                checkConnectDeadline(startTime);
                 // Continue polling
             }
         }
     }
 
+    private void checkConnectDeadline(long startTime) throws ServerInitializationException {
+        long elapsed = System.currentTimeMillis() - startTime;
+        if (elapsed > SOCKET_CONNECT_TIMEOUT_MS) {
+            LOG.error("clientId={}: Timed out waiting for server to connect after {}ms", clientId, elapsed);
+            throw new ServerInitializationException(
+                    "Server did not connect within " + SOCKET_CONNECT_TIMEOUT_MS + "ms");
+        }
+    }
+
+    private static boolean presentsToken(Socket socket, byte[] expectedToken) {
+        try {
+            // The fork writes its token immediately; a silent stranger only costs this wait.
+            socket.setSoTimeout(TOKEN_READ_TIMEOUT_MS);
+            return ForkBootstrap.checkToken(socket.getInputStream(), expectedToken);
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    @SuppressWarnings("deprecation")
     private synchronized void startServer() throws IOException, InterruptedException, TimeoutException, ServerInitializationException {
         if (closed) {
             throw new IllegalStateException("PerClientServerManager is closed");
@@ -409,7 +506,7 @@ public class PerClientServerManager implements ServerManager {
 
         LOG.trace("clientId={}: starting server on port={}", clientId, port);
 
-        tmpDir = pipesConfig.createTempDirectory("pipes-server-" + clientId + "-");
+        tmpDir = pipesConfig.createTempDirectory(PipesServer.TEMP_DIR_PREFIX + clientId + "-");
         ProcessBuilder pb = new ProcessBuilder(getCommandline(tmpDir));
         // Tell the child our PID so it can watch ProcessHandle.onExit() and
         // self-terminate promptly if we die. Without this, an orphan child
@@ -438,9 +535,12 @@ public class PerClientServerManager implements ServerManager {
             pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
             pb.redirectError(ProcessBuilder.Redirect.DISCARD);
         }
+        // stdin carries the ForkBootstrap
+        pb.redirectInput(ProcessBuilder.Redirect.PIPE);
 
         try {
             process = pb.start();
+            generation++;
         } catch (Exception e) {
             deleteDir(tmpDir);
             tmpDir = null;
@@ -450,6 +550,14 @@ public class PerClientServerManager implements ServerManager {
                 msg += ": " + e.getMessage();
             }
             throw new ServerInitializationException(msg, e);
+        }
+
+        token = ForkBootstrap.newToken();
+        try (OutputStream stdin = process.getOutputStream()) {
+            ForkBootstrap.write(stdin, token, tikaConfigJson);
+        } catch (IOException e) {
+            // The fork died before reading it; connect() sees the exit and retries.
+            LOG.warn("clientId={}: couldn't send the bootstrap to the server process", clientId, e);
         }
 
         // Server is started, but we don't wait for connection here.
@@ -487,6 +595,8 @@ public class PerClientServerManager implements ServerManager {
         destroyProcess();
 
         if (tmpDir != null) {
+            // never delete a crash log unread
+            ServerProcessIO.surfaceCrashDiagnostics(LOG, "clientId=" + clientId, tmpDir);
             deleteDir(tmpDir);
             tmpDir = null;
         }
@@ -497,11 +607,17 @@ public class PerClientServerManager implements ServerManager {
     private void destroyProcess() throws InterruptedException {
         if (process != null) {
             process.destroyForcibly();
-            process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
-            if (process.isAlive()) {
-                LOG.error("clientId={}: process still alive after {}ms", clientId, WAIT_ON_DESTROY_MS);
+            try {
+                process.waitFor(WAIT_ON_DESTROY_MS, TimeUnit.MILLISECONDS);
+                if (process.isAlive()) {
+                    LOG.error("clientId={}: process still alive after {}ms", clientId, WAIT_ON_DESTROY_MS);
+                }
+            } finally {
+                // An interrupt here must not leave the field pointing at a SIGKILLed process:
+                // ensureRunning would then see process == previous and skip counting the restart,
+                // startServer() would try to reap it again, and tmpDir would never be deleted.
+                process = null;
             }
-            process = null;
         }
     }
 
@@ -555,6 +671,7 @@ public class PerClientServerManager implements ServerManager {
         boolean hasLog4j = false;
         boolean hasActiveProcessorCount = false;
         boolean hasErrorFile = false;
+        boolean hasLocale = false;
         String origGCString = null;
         String newGCLogString = null;
 
@@ -576,6 +693,9 @@ public class PerClientServerManager implements ServerManager {
             }
             if (arg.startsWith("-XX:ErrorFile=")) {
                 hasErrorFile = true;
+            }
+            if (arg.startsWith("-Duser.language")) {
+                hasLocale = true;
             }
             if (arg.startsWith("-Xloggc:")) {
                 origGCString = arg;
@@ -613,27 +733,24 @@ public class PerClientServerManager implements ServerManager {
         // fight each other. We also reserve PARENT_RESERVED_CORES so the parent
         // JVM (which serializes requests, deserializes responses, runs heartbeat
         // bookkeeping) isn't starved for CPU.
-        // Skip the auto-cap when the computed slice would drop below
-        // MIN_AUTO_CAP_SLICE -- below that, the fork can't keep its socket
-        // reader responsive and back-pressures the parent.
+        // The cap is clamped at MIN_AUTO_CAP_SLICE rather than skipped: a fork that
+        // sees every core on an over-provisioned host is the expensive case.
         if (!hasActiveProcessorCount) {
             int hostCores = Runtime.getRuntime().availableProcessors();
-            int forkBudget = Math.max(1, hostCores - PARENT_RESERVED_CORES);
-            int slice = forkBudget / pipesConfig.getNumClients();
-            if (slice >= MIN_AUTO_CAP_SLICE) {
-                configArgs.add("-XX:ActiveProcessorCount=" + slice);
+            int numClients = pipesConfig.getNumClients();
+            int fair = Math.max(1, hostCores - PARENT_RESERVED_CORES) / Math.max(1, numClients);
+            int slice = autoCapSlice(hostCores, numClients);
+            configArgs.add("-XX:ActiveProcessorCount=" + slice);
+            if (fair >= MIN_AUTO_CAP_SLICE) {
                 LOG.debug("clientId={}: auto-injected -XX:ActiveProcessorCount={} " +
                         "(hostCores={}, parentReserved={}, numClients={})",
-                        clientId, slice, hostCores, PARENT_RESERVED_CORES,
-                        pipesConfig.getNumClients());
+                        clientId, slice, hostCores, PARENT_RESERVED_CORES, numClients);
             } else {
-                LOG.info("clientId={}: skipping -XX:ActiveProcessorCount auto-cap " +
-                        "(would yield slice={} < MIN_AUTO_CAP_SLICE={}; " +
-                        "hostCores={}, parentReserved={}, numClients={}).{}",
-                        clientId, slice, MIN_AUTO_CAP_SLICE, hostCores,
-                        PARENT_RESERVED_CORES, pipesConfig.getNumClients(),
-                        pipesConfig.getNumClients() > 1
-                                ? " Consider lowering numClients on this host." : "");
+                LOG.info("clientId={}: -XX:ActiveProcessorCount clamped to {} " +
+                        "(fair share would be {}; hostCores={}, parentReserved={}, " +
+                        "numClients={}).{}", clientId, slice, fair, hostCores,
+                        PARENT_RESERVED_CORES, numClients,
+                        numClients > 1 ? " Consider lowering numClients on this host." : "");
             }
         }
 
@@ -662,12 +779,15 @@ public class PerClientServerManager implements ServerManager {
             commandLine.add("-Dlog4j.configurationFile=classpath:pipes-fork-server-default-log4j2.xml");
         }
         commandLine.add("-DpipesClientId=" + clientId);
+        // the fork parses like the parent would; a fresh JVM would take the OS locale instead
+        if (!hasLocale) {
+            commandLine.addAll(ProcessUtils.defaultLocaleJvmArgs(Locale.getDefault()));
+        }
         commandLine.addAll(configArgs);
         commandLine.add("-Djava.io.tmpdir=" + tmpDir.toAbsolutePath());
         commandLine.add("org.apache.tika.pipes.core.server.PipesServer");
 
         commandLine.add(Integer.toString(port));
-        commandLine.add(tikaConfigPath.toAbsolutePath().toString());
 
         LOG.debug("clientId={}: commandline: {}", clientId, commandLine);
         return commandLine.toArray(new String[0]);

@@ -49,11 +49,8 @@ public class VSDXExtractorDecorator extends AbstractOOXMLExtractor {
     private static final String VISIO_PAGE_REL =
             "http://schemas.microsoft.com/visio/2010/relationships/page";
 
-    private final ParseContext context;
-
     public VSDXExtractorDecorator(ParseContext context, OPCPackage pkg) {
         super(context, pkg);
-        this.context = context;
     }
 
     @Override
@@ -93,7 +90,7 @@ public class VSDXExtractorDecorator extends AbstractOOXMLExtractor {
         PackageRelationshipCollection pageRels =
                 pagesPart.getRelationshipsByType(VISIO_PAGE_REL);
         for (PackageRelationship rel : pageRels) {
-            PackagePart pagePart = pagesPart.getRelatedPart(rel);
+            PackagePart pagePart = safeGetRelatedPart(pagesPart, rel);
             if (pagePart != null) {
                 pageParts.add(pagePart);
             }
@@ -116,7 +113,7 @@ public class VSDXExtractorDecorator extends AbstractOOXMLExtractor {
         if (rels.isEmpty()) {
             return null;
         }
-        return part.getRelatedPart(rels.getRelationship(0));
+        return safeGetRelatedPart(part, rels.getRelationship(0));
     }
 
     @Override

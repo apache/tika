@@ -56,7 +56,7 @@ Inside an array-valued section (`parsers`, `detectors`, `encoding-detectors`,
 `metadata-filters`) an element can be specified as:
 
 * **String**: `"pdf-parser"` - creates instance with defaults
-* **Object**: `{"pdf-parser": {"ocr": {"strategy": "AUTO"}}}` - creates configured instance
+* **Object**: `{"pdf-parser": {"sortByPosition": true}}` - creates configured instance
 
 Object-valued sections such as `parse-context` key each entry by name instead, with
 the config object as the value.
@@ -190,7 +190,7 @@ it needs it. `Parser` extends `SelfConfiguring`, so every parser is self-configu
 [source,java]
 ----
 @TikaComponent
-public class PDFParser implements Parser {
+public class PDFParser implements Parser, RenderingParser {
 
     private final PDFParserConfig defaultConfig = new PDFParserConfig();
 
@@ -220,9 +220,7 @@ Benefits:
 {
   "parse-context": {
     "pdf-parser": {
-      "ocr": {
-        "strategy": "AUTO"
-      },
+      "pages": { "text": "AUTO" },
       "extractInlineImages": true
     },
     "commons-digester-factory": {
@@ -236,6 +234,7 @@ All entries use this flat, friendly-named form and are resolved lazily: a config
 is parsed into its component only when first needed (see `resolveAll`). There is
 no separate "immediate" or "typed" form.
 
+[#security-model]
 == Security Model
 
 The serialization system implements a security allowlist:
@@ -257,14 +256,20 @@ extends `SelfConfiguring` — are skipped by the wire-block scan
 (`ParseContextDeserializer.assertNoBlockedComponents`): their config subtree is
 passed through to the component unexamined. So while a request cannot bind a new
 `Parser` from the wire, a request carrying
-`{"parse-context": {"pdf-parser": {"ocr": {"strategy": "OCR_AND_TEXT_EXTRACTION"}}}}`
+`{"parse-context": {"pages": {"text": "EXTRACT_AND_OCR"}}}`
 will reach `PDFParser` and take effect.
 
-That is why per-request configuration is gated separately by
-`allowPerRequestConfig`, which is off by default. Treat "the caller may supply
+That is why per-request configuration is an operator decision: tika-server's
+`allowPerRequestConfig` for the `/config` routes, and `allowPipes` for `/pipes`
+and `/async`, whose tuples carry a `parse-context`. Treat "the caller may supply
 per-request config" as equivalent to "the caller may set any parser option,
 including options that spawn external processes such as OCR" — not as something
-the allowlist constrains.
+the allowlist constrains. Two things still bound it. A property marked
+`@OperatorOnly` (a path, executable, class name, URL, credential or
+operator-sized limit; see <<_operator_only_properties,Operator-only properties>>)
+is refused in a per-request block. And the pipes worker clamps request-supplied
+output, embedded-document, metadata and timeout limits so they can tighten the
+operator's but not loosen them (`ServerProtocolIO.clampRequestLimits`).
 ====
 
 [source,json]
@@ -276,8 +281,8 @@ the allowlist constrains.
 }
 ----
 
-That fails with "Unrecognized parse-context entry 'java.lang.Runtime'" — the class
-is not registered.
+That fails with "Unrecognized parse-context entry 'java.lang.Runtime'. Check for a typo; it does
+not match any registered component."
 
 === Untrusted (Wire) Input: Restricted Mode
 
@@ -296,13 +301,69 @@ fail-closed gate on top of the registry:
   `EmbeddedDocumentExtractor`
 * The check is fail-closed: a newly added context-key interface is blocked until
   it is consciously allow-listed
-* The whole tree is scanned *before* any component is constructed
+* Every object key in the tree is scanned *before* any component is constructed, for an
+  early, readable refusal
+* `ComponentInstantiator` is the enforcement point: it applies the same rule to every
+  component a request builds, however it is named — a `metadata-filters` entry, a top-level
+  entry, a nested property, or a bare-string reference — before calling its constructor
 
 The allowlist/blocklist lives in `ComponentNameResolver`
 (`WIRE_INSTANTIABLE_CONTEXT_KEYS` / `WIRE_BLOCKED_CONTEXT_KEYS`); an
 exhaustiveness test asserts every context-key interface is classified as
-exactly one of the two. Plain config DTOs (non-component keys) are never
-blocked.
+exactly one of the two. Plain config DTOs (non-component keys) are allowed, except
+operator policy such as `exception-reporting`.
+
+[#_operator_only_properties]
+=== Operator-only properties
+
+Restricted mode decides which components a request may bind. It cannot see inside a
+self-configuring component's config: every `Parser` is self-configuring, so a per-request
+`pdf-parser` block reaches `PDFParserConfig` unexamined. A property whose value reaches the
+host rather than the document — a path or executable the parser runs, a class name it loads,
+a URL or credential it sends data to, a pool size or memory ceiling the operator sized — is
+therefore marked on the config class:
+
+[source,java]
+----
+@OperatorOnly
+public void setTesseractPath(String tesseractPath) throws TikaConfigException { ... }
+----
+
+`ConfigDeserializer` refuses per-request JSON (`JsonConfig.trusted()` false: a tika-server
+`/config` part, a pipes `FetchEmitTuple` parse context) that names such a property. The check
+is by JSON key, before any setter runs, and surfaces as an `IOException` that names the
+property. Operator JSON — tika-config.json, including its presets — is trusted and unaffected.
+A nested config object is checked against its own type, and an override that drops the
+annotation does not unlock the property.
+
+The same check covers every component a request builds, not only self-configuring ones: a
+`metadata-filters` entry, a top-level entry, and any component nested in their config, whether
+configured through setters or a `JsonConfig` constructor (`ConfigDeserializer.buildConfig`
+refuses untrusted JSON the same way, and throws if tika-serialization is not on the classpath).
+
+On a class, `@OperatorOnly` keeps a request from building the component at all. Use it for an
+implementation of a request-allowed type that breaks the type's promise, such as a
+`MetadataFilter` that sends document text over the network. Subclasses inherit it; an
+interface does not pass it on. A self-configuring component marked this way still takes its
+flat per-request config, which tunes the operator's instance; its operator-only properties stay
+refused.
+
+Java code that builds a component from a `JsonConfig` it wrote itself is operator code, and
+says so with `JsonConfig.trusted(json)`; a plain lambda is untrusted, so it cannot set an
+operator-only property.
+
+A `JsonConfig` may be per-request input, so its raw text is read only by the readers that
+apply these checks: `ConfigDeserializer` and the rest of tika-serialization, and
+`PluginJson.read(JsonConfig, Class)` for plugins. forbidden-apis rejects `JsonConfig.json()`
+anywhere else in Tika's main code. A plugin reads its per-request config into a class holding
+only the keys a request may set.
+
+Writing a config class: annotate the setter of anything a caller must not be able to point
+elsewhere. A rule the annotation cannot express — a ceiling a request may lower but not raise,
+a field that unlocks when the operator opts in — belongs in the component after the merge, as
+`AbstractVLMParser` does for `maxTokens` and `prompt`. tika-app's `OperatorOnlyAuditTest` fails
+on any `*Config` setter on its classpath whose name says path, executable, class, URL,
+credential or model but carries no annotation.
 
 == Framework Directives
 

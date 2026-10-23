@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.text.Format;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -141,7 +142,8 @@ public class SAS7BDATParser implements Parser {
         Object[] row = null;
         while ((row = sas.readNext()) != null) {
             xhtml.startElement("tr");
-            for (String val : DataWriterUtil.getRowValues(sas.getColumns(), row, formatMap)) {
+            // parso otherwise formats dates and percents with the JVM default locale
+            for (String val : DataWriterUtil.getRowValues(sas.getColumns(), row, Locale.US, formatMap)) {
                 // Use explicit start/end, rather than element, to 
                 //  ensure that empty cells still get output
                 xhtml.startElement("td");

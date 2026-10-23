@@ -110,14 +110,14 @@ The `pipes` section controls the pipeline. The four settings worth knowing first
 
 |`numClients`
 |_CPU-derived_
-|Number of parallel forked parse processes. `max(1, min((cores - 2) / 2, 4))` — roughly half the host's cores, capped at 4.
+|Number of parallel forked parse processes. `+max(1, min((cores - 2) / 2, 4))+` — roughly half the host's cores, capped at 4.
 
 |`parseMode`
 |`RMETA`
 |Output mode: `RMETA`, `CONCATENATE`, `CONTENT_ONLY`, `NO_PARSE`, `UNPACK`.
 
 |`maxFilesProcessedPerProcess`
-|`10000`
+|`100000`
 |Restart forked processes after this many files, bounding slow memory leaks.
 
 |`onParseException`

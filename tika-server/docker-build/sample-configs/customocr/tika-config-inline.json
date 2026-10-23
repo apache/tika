@@ -1,7 +1,10 @@
 {
-  // Extract inline images from PDF and OCR them with Tesseract.
+  // Extract inline images from PDFs and OCR them with Tesseract.
+  "text-recognizers": [
+    { "tesseract-ocr-parser": {} }
+  ],
   "parsers": [
-    { "tesseract-ocr-parser": {} },
+    { "default-parser": {} },
     {
       "pdf-parser": {
         "extractInlineImages": true

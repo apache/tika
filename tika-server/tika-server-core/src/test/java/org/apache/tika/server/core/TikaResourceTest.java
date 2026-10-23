@@ -208,6 +208,22 @@ public class TikaResourceTest extends CXFTestBase {
                 "no client filename was sent, so the spool name must not stand in as one: " + name);
     }
 
+    /**
+     * TIKA-4932: a request Content-Type is a detection hint. When detection rejects it, the
+     * reported type is the detected one, not the header echoed back.
+     */
+    @Test
+    public void testRejectedContentTypeHintIsNotEchoed() throws Exception {
+        Response response = WebClient
+                .create(endPoint + TIKA_PATH + "/json")
+                .type("application/pdf")
+                .put(ClassLoader.getSystemResourceAsStream(TEST_HELLO_WORLD));
+        Metadata metadata = JsonMetadata.fromJson(new InputStreamReader(
+                (InputStream) response.getEntity(), StandardCharsets.UTF_8));
+
+        assertEquals("application/mock+xml", metadata.get(HttpHeaders.CONTENT_TYPE));
+    }
+
     /** A filename the caller did supply is theirs, and must survive. */
     @Test
     public void testClientFilenameIsPreserved() throws Exception {

@@ -20,6 +20,10 @@ package org.apache.tika.utils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -81,6 +85,39 @@ public class ProcessUtils {
             arg = "\"" + arg + "\"";
         }
         return arg;
+    }
+
+    /**
+     * The -D arguments that give a child JVM {@code locale} as its default: a fresh JVM reads
+     * the OS locale, not its parent's, and a command-line -D beats JAVA_TOOL_OPTIONS.
+     * Empty for {@link Locale#ROOT}.
+     */
+    public static List<String> defaultLocaleJvmArgs(Locale locale) {
+        List<String> args = new ArrayList<>();
+        if (locale.getLanguage().isEmpty()) {
+            return args;
+        }
+        args.add("-Duser.language=" + locale.getLanguage());
+        if (!locale.getScript().isEmpty()) {
+            args.add("-Duser.script=" + locale.getScript());
+        }
+        if (!locale.getCountry().isEmpty()) {
+            args.add("-Duser.country=" + locale.getCountry());
+        }
+        if (!locale.getVariant().isEmpty()) {
+            args.add("-Duser.variant=" + locale.getVariant());
+        }
+        StringBuilder extensions = new StringBuilder();
+        for (char key : locale.getExtensionKeys()) {
+            if (extensions.length() > 0) {
+                extensions.append('-');
+            }
+            extensions.append(key).append('-').append(locale.getExtension(key));
+        }
+        if (extensions.length() > 0) {
+            args.add("-Duser.extensions=" + extensions);
+        }
+        return args;
     }
 
     public static String unescapeCommandLine(String arg) {
@@ -146,6 +183,12 @@ public class ProcessUtils {
         long grantedTimeoutMillis = context == null
                 ? requestedTimeoutMillis
                 : ParseTimeout.getOrCreate(context).budgetFor(requestedTimeoutMillis);
+
+        Optional<FileProcessResult> potentiallyFailedResult = failFastIfNoGrantedTimeout(requestedTimeoutMillis, grantedTimeoutMillis);
+        if (potentiallyFailedResult.isPresent()) {
+            return potentiallyFailedResult.get();
+        }
+
         Process p = null;
         String id = null;
         try {
@@ -261,7 +304,14 @@ public class ProcessUtils {
         long grantedTimeoutMillis = context == null
                 ? requestedTimeoutMillis
                 : ParseTimeout.getOrCreate(context).budgetFor(requestedTimeoutMillis);
+
+        Optional<FileProcessResult> potentiallyFailedResult = failFastIfNoGrantedTimeout(requestedTimeoutMillis, grantedTimeoutMillis);
+        if (potentiallyFailedResult.isPresent()) {
+            return potentiallyFailedResult.get();
+        }
+
         pb.redirectOutput(stdoutRedirect.toFile());
+
         Process p = null;
         String id = null;
         try {
@@ -442,4 +492,26 @@ public class ProcessUtils {
         }
     }
 
+    /**
+     * Guards against both 0 and negative grants.
+     *
+     * @param requestedTimeoutMillis
+     * @param grantedTimeoutMillis
+     * @return result, if the process shouldn't be started, otherwise empty optional
+     */
+    private static Optional<FileProcessResult> failFastIfNoGrantedTimeout(long requestedTimeoutMillis, long grantedTimeoutMillis) {
+        if (grantedTimeoutMillis <= 0) {
+            FileProcessResult result = new FileProcessResult();
+            result.isTimeout = true;
+            result.requestedTimeoutMillis = requestedTimeoutMillis;
+            result.grantedTimeoutMillis = grantedTimeoutMillis;
+            result.processTimeMillis = 0;
+            result.stdoutLength = 0;
+            result.stderrLength = 0;
+
+            return Optional.of(result);
+        }
+
+        return Optional.empty();
+    }
 }

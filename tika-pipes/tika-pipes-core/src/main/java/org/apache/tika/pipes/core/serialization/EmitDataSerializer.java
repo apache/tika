@@ -17,12 +17,16 @@
 package org.apache.tika.pipes.core.serialization;
 
 import java.io.IOException;
+import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
+import org.apache.tika.metadata.Property;
 import org.apache.tika.pipes.api.emitter.EmitData;
+import org.apache.tika.serialization.JsonMetadataList;
+import org.apache.tika.serialization.MetadataValueTypes;
 import org.apache.tika.utils.StringUtils;
 
 public class EmitDataSerializer extends JsonSerializer<EmitData> {
@@ -30,14 +34,33 @@ public class EmitDataSerializer extends JsonSerializer<EmitData> {
     public static final String EMIT_KEY = "emitKey";
     public static final String METADATA_LIST = "metadataList";
     public static final String CONTAINER_STACK_TRACE = "containerStackTrace";
+    public static final String CONTENT_BYTES = "contentBytes";
+    public static final String VALUE_TYPES = "valueTypes";
 
     @Override
     public void serialize(EmitData emitData, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         jsonGenerator.writeStartObject();
         jsonGenerator.writeStringField(EMIT_KEY, emitData.getEmitKey());
         jsonGenerator.writeObjectField(METADATA_LIST, emitData.getMetadataList());
+        // the parent may never load the classes that declare these keys
+        if (JsonMetadataList.isTypedValues() && emitData.getMetadataList() != null) {
+            Map<String, Property.ValueType> types =
+                    MetadataValueTypes.describe(emitData.getMetadataList());
+            if (!types.isEmpty()) {
+                jsonGenerator.writeObjectFieldStart(VALUE_TYPES);
+                for (Map.Entry<String, Property.ValueType> e : types.entrySet()) {
+                    jsonGenerator.writeStringField(e.getKey(), e.getValue().name());
+                }
+                jsonGenerator.writeEndObject();
+            }
+        }
         if (!StringUtils.isBlank(emitData.getContainerStackTrace())) {
             jsonGenerator.writeStringField(CONTAINER_STACK_TRACE, emitData.getContainerStackTrace());
+        }
+        if (emitData.getContentBytes() != null) {
+            // Smile writes this as raw binary (7-bit encoding is disabled), so multi-MB
+            // content costs a copy, not a string transcode
+            jsonGenerator.writeBinaryField(CONTENT_BYTES, emitData.getContentBytes());
         }
         // ParseContext is NOT serialized - it's restored by PipesClient from the original FetchEmitTuple
         jsonGenerator.writeEndObject();

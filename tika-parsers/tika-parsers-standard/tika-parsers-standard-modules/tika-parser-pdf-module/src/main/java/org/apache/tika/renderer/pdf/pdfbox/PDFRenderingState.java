@@ -17,14 +17,12 @@
 package org.apache.tika.renderer.pdf.pdfbox;
 
 import org.apache.tika.io.TikaInputStream;
-import org.apache.tika.renderer.RenderResults;
 import org.apache.tika.renderer.RenderingState;
 
+/** The spooled stream of the PDF being parsed, for renderers that read the file. */
 public class PDFRenderingState extends RenderingState {
 
-    private TikaInputStream tis;
-
-    private RenderResults renderResults;
+    private final TikaInputStream tis;
 
     public PDFRenderingState(TikaInputStream tis) {
         this.tis = tis;
@@ -32,14 +30,5 @@ public class PDFRenderingState extends RenderingState {
 
     public TikaInputStream getTikaInputStream() {
         return tis;
-    }
-
-
-    public void setRenderResults(RenderResults renderResults) {
-        this.renderResults = renderResults;
-    }
-
-    public RenderResults getRenderResults() {
-        return renderResults;
     }
 }

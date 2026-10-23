@@ -30,8 +30,14 @@
   </parent>
 
   <artifactId>tika-serialization</artifactId>
+  <packaging>bundle</packaging>
   <name>Apache Tika serialization</name>
   <url>https://tika.apache.org</url>
+
+  <properties>
+    <!-- TIKA-4975: this module reads JsonConfigs under the request restrictions -->
+    <json.forbiddenapis.signaturesFile>${tika.parent.dir}/forbidden-apis-none.txt</json.forbiddenapis.signaturesFile>
+  </properties>
 
   <dependencies>
     <!-- Optional OSGi dependency, used only when running within OSGi -->
@@ -112,6 +118,26 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>org.apache.felix</groupId>
+        <artifactId>maven-bundle-plugin</artifactId>
+        <version>${maven.bundle.version}</version>
+        <extensions>true</extensions>
+        <configuration>
+          <instructions>
+            <Bundle-DocURL>${project.url}</Bundle-DocURL>
+            <Bundle-Activator>org.apache.tika.serialization.SerializationActivator</Bundle-Activator>
+            <Export-Package>
+              org.apache.tika.config.loader,
+              org.apache.tika.serialization.*
+            </Export-Package>
+            <Import-Package>
+              org.osgi.*;resolution:=optional,
+              *
+            </Import-Package>
+          </instructions>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
@@ -163,6 +189,6 @@
   </build>
 
   <scm>
-    <tag>3.0.0-rc1</tag>
+    <tag>4.1.0-rc2</tag>
   </scm>
 </project>

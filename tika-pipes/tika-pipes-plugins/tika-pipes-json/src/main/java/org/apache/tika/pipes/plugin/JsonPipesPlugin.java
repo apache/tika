@@ -30,19 +30,19 @@ public class JsonPipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting JSON Pipes Iterator Plugin");
+        LOG.debug("Starting JSON Pipes Iterator Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping JSON Pipes Iterator Plugin");
+        LOG.debug("Stopping JSON Pipes Iterator Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting JSON Pipes Iterator Plugin");
+        LOG.debug("Deleting JSON Pipes Iterator Plugin");
         super.delete();
     }
 }

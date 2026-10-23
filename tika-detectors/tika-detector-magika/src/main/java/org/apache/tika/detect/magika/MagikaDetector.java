@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.config.ConfigDeserializer;
 import org.apache.tika.config.JsonConfig;
+import org.apache.tika.config.OperatorOnly;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.ExternalProcess;
@@ -102,6 +103,7 @@ public class MagikaDetector implements Detector {
             return magikaPath;
         }
 
+        @OperatorOnly
         public void setMagikaPath(String magikaPath) {
             this.magikaPath = magikaPath;
         }
@@ -128,24 +130,6 @@ public class MagikaDetector implements Detector {
 
         public void setUseMime(boolean useMime) {
             this.useMime = useMime;
-        }
-    }
-
-    /**
-     * RuntimeConfig blocks modification of security-sensitive path fields at runtime.
-     */
-    public static class RuntimeConfig extends Config {
-        public RuntimeConfig() {
-            super();
-        }
-
-        @Override
-        public void setMagikaPath(String magikaPath) {
-            if (!StringUtils.isBlank(magikaPath)) {
-                throw new IllegalArgumentException(
-                        "Cannot modify magikaPath at runtime. " +
-                                "Paths must be configured at detector initialization time.");
-            }
         }
     }
 

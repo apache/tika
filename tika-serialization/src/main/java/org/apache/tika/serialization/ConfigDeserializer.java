@@ -95,8 +95,13 @@ public class ConfigDeserializer {
             return defaultConfig;
         }
 
+        if (!jsonConfig.trusted()) {
+            OperatorOnlyGuard.check(MAPPER, configKey, jsonConfig.json(), configClass);
+        }
+
         // Deserialize and merge with default
-        T config = JsonMergeUtils.mergeWithDefaults(MAPPER, jsonConfig.json(), configClass, defaultConfig);
+        T config = JsonMergeUtils.mergeWithDefaults(MAPPER, jsonConfig.json(), configClass, defaultConfig,
+                jsonConfig.trusted());
 
         // Cache per key and class. A key-less, class-keyed write would leak this config to
         // every component sharing the class (e.g. the three VLM parsers all bind

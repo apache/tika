@@ -195,7 +195,6 @@ public class RecursiveMetadataResourceTest extends CXFTestBase {
     }
 
     @Test
-    @org.junit.jupiter.api.Disabled("multipart config endpoint not yet fully supported with pipes-based parsing")
     public void testPasswordProtectedWithConfig() throws Exception {
         // Test with password via JSON config
         String configJson = """

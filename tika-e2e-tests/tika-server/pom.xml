@@ -94,6 +94,16 @@
     <profiles>
         <profile>
             <id>e2e</id>
+            <!-- The zip dep is what forces reactor ordering; the zip is consumed by dependency-plugin below. -->
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.tika</groupId>
+                    <artifactId>tika-server-standard</artifactId>
+                    <version>${revision}</version>
+                    <scope>test</scope>
+                    <type>zip</type>
+                </dependency>
+            </dependencies>
             <build>
                 <plugins>
                     <plugin>

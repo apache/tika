@@ -33,6 +33,7 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 
 import org.apache.tika.exception.TikaException;
+import org.apache.tika.io.CacheMemoryBudget;
 import org.apache.tika.io.TemporaryResources;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Metadata;
@@ -244,7 +245,7 @@ public abstract class AbstractMultipleParser implements Parser {
                        ContentHandlerFactory handlerFactory, Metadata originalMetadata,
                        ParseContext context) throws IOException, SAXException, TikaException {
         // Enable rewind capability since we rewind between multiple parsers
-        tis.enableRewind();
+        tis.enableRewind(context == null ? null : context.get(CacheMemoryBudget.class));
 
         // Track the metadata between parsers, so we can apply our policy
         Metadata lastMetadata = cloneMetadata(originalMetadata);
@@ -276,8 +277,8 @@ public abstract class AbstractMultipleParser implements Parser {
                     p.parse(tis, handler, metadata, context);
                 } catch (Exception e) {
                     // Record the failure such that it can't get lost / overwritten
-                    recordParserFailure(p, e, originalMetadata);
-                    recordParserFailure(p, e, metadata);
+                    recordParserFailure(p, e, originalMetadata, context);
+                    recordParserFailure(p, e, metadata, context);
                     failure = e;
                 }
 

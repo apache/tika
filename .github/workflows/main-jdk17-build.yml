@@ -43,7 +43,7 @@ env:
   # nowhere, and CI stays green while the tests stop existing.
   #
   # These six are ~15 of the build's 37 minutes -- five are testcontainers-backed
-  # (Elasticsearch/OpenSearch/Solr/Kafka/MinIO) and tika-pipes-integration-tests
+  # (Elasticsearch/OpenSearch/Solr/Kafka/RustFS) and tika-pipes-integration-tests
   # forks JVMs. Adding a slow IT module here is the intended way to rebalance.
   IT_MODULES: ':tika-pipes-integration-tests,:tika-pipes-es-integration-tests,:tika-pipes-opensearch-integration-tests,:tika-pipes-solr-integration-tests,:tika-pipes-kafka-integration-tests,:tika-pipes-s3-integration-tests'
 
@@ -56,20 +56,52 @@ jobs:
         java: [ '17' ]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
-          cache: 'maven'
+      - name: Cache Maven repository
+        # Explicit, not setup-java's cache: 'maven', so our own snapshots stay out of the tarball.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/apache/tika
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
       - name: Install external tools
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg libimage-exiftool-perl
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg libimage-exiftool-perl tesseract-ocr
       # Everything except $IT_MODULES, which the integration-tests job owns.
       # sed turns each ':artifactId' into the '!:artifactId' exclusion form.
+      # rat runs in its own SERIAL invocation: apache-rat-plugin 0.18 is not
+      # thread-safe (ConcurrentModificationException / corrupted counters under
+      # -T), so it must never share a -T1C command line.
+      - name: No dot-directories under src/*/resources (the source release excludes **/.*/**)
+        run: |
+          if git ls-files -- '*/src/main/resources/*' '*/src/test/resources/*' | grep -E '/\.[^/]+/'; then
+            echo "::error::dot-directory fixtures are dropped from the source release by assembly.xml; build them at test time instead"
+            exit 1
+          fi
+      - name: License check (apache-rat, serial)
+        run: |
+          mvn apache-rat:check -Pci \
+            -pl "$(echo "$IT_MODULES" | sed 's/:/!:/g')" \
+            -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+      # Pre-install tika-annotation-processor before any -T1C invocation:
+      # annotationProcessorPaths resolves from the LOCAL REPO, not the reactor,
+      # so parallel Maven schedules consumers before the processor's install
+      # and the build races to "Could not find artifact tika-annotation-processor".
+      # javadoc:aggregate is push-only: it is an aggregate-docs artifact, is
+      # single-threaded, and javadoc breakage is caught on main within the hour;
+      # PR pushes should not wait on it.
+      # Random test locales (-Dtika.test.locale=random, RandomLocaleListener) stay off
+      # here until nightly-locale-build has been green several nights running (TIKA-4920).
       - name: Build with Maven
         run: |
-          mvn clean apache-rat:check test install javadoc:aggregate -Pci \
+          mvn install -Pfast -pl :tika-annotation-processor -am -B -q
+          mvn clean test install ${{ github.event_name == 'push' && 'javadoc:aggregate' || '' }} -Pci -T1C \
             -pl "$(echo "$IT_MODULES" | sed 's/:/!:/g')" \
             -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
 
@@ -83,13 +115,21 @@ jobs:
         java: [ '17' ]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
-          cache: 'maven'
+      - name: Cache Maven repository
+        # Explicit, not setup-java's cache: 'maven', so our own snapshots stay out of the tarball.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/apache/tika
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
       - name: Install external tools
         run: sudo apt-get update && sudo apt-get install -y ffmpeg libimage-exiftool-perl
       # Full reactor for the same reason as the e2e job: these modules depend on
@@ -97,7 +137,7 @@ jobs:
       # jar-packaging reactor module, so -am cannot supply them. -Pfast keeps it
       # to ~3 min; the tests themselves run in the next step.
       - name: Install all modules (produces the plugin zips)
-        run: mvn clean install -Pfast -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        run: mvn install -Pfast -pl :tika-annotation-processor -am -B -q && mvn clean install -Pfast -T1C -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
       # apache-rat:check here too -- the build job no longer sees these modules,
       # so without this they would drop out of license checking entirely.
       - name: Run integration tests
@@ -118,13 +158,21 @@ jobs:
         java: [ '17' ]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.java }}
-          cache: 'maven'
+      - name: Cache Maven repository
+        # Explicit, not setup-java's cache: 'maven', so our own snapshots stay out of the tarball.
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.m2/repository
+            !~/.m2/repository/org/apache/tika
+          key: maven-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
+          restore-keys: maven-${{ runner.os }}-
       # Full reactor, not -pl ... -am: the e2e modules need tika-pipes-plugins zips, and a
       # zip-type dependency never matches a jar-packaging reactor module, so -am treats every
       # plugin zip as external and skips building those modules entirely. install (not verify)
@@ -132,7 +180,7 @@ jobs:
       # what puts each zip in the local repo. -Pfast (skipTests + rat/checkstyle/spotless
       # off) because the build job owns all of that; this job only needs the artifacts.
       - name: Install all modules (produces the plugin zips)
-        run: mvn clean install -Pfast -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
+        run: mvn install -Pfast -pl :tika-annotation-processor -am -B -q && mvn clean install -Pfast -T1C -B "-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn"
       # -pl must name the leaf modules: tika-e2e-tests is an aggregator pom, and Maven does
       # not pull in a selected aggregator's children, so this job built two pom-only modules
       # and ran zero tests while reporting green.

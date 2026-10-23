@@ -52,7 +52,7 @@ public class PDMetadataExtractor {
         try {
             is = pdMetadata.exportXMPMetadata();
         } catch (IOException e) {
-            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata);
+            EmbeddedDocumentUtil.recordEmbeddedStreamException(e, metadata, context);
             return;
         }
         try {
@@ -70,7 +70,7 @@ public class PDMetadataExtractor {
         } catch (SecurityException e) {
             throw e;
         } catch (IOException | SAXException | TikaException | RuntimeException e) {
-            EmbeddedDocumentUtil.recordException(e, metadata);   // malformed XMP must not fail the PDF
+            EmbeddedDocumentUtil.recordException(e, metadata, context);   // malformed XMP must not fail the PDF
         }
         derivePDFAVersion(metadata);
     }

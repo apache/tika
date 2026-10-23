@@ -1,0 +1,8 @@
+{
+  "parse-context": {
+    "exception-reporting": {
+      "level": "MESSAGE_REDACTED",
+      "maxLength": 500
+    }
+  }
+}

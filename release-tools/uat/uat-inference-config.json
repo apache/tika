@@ -1,0 +1,17 @@
+{
+  "server": { "allowPerRequestConfig": true },
+  "engines": {
+    "mock-ocr": { "openai-vlm-parser": {
+        "baseUrl": "MOCK_BASE_URL", "model": "mock-ocr", "apiKey": "${env:TIKA_UAT_MOCK_KEY}", "maxTokens": 512 } },
+    "mock-embed": { "openai-embedding-engine": {
+        "baseUrl": "MOCK_BASE_URL", "model": "mock-embed", "apiKey": "${env:TIKA_UAT_MOCK_KEY}",
+        "mediaInput": "object", "maxBatchSize": 8 } }
+  },
+  "text-recognizers": [ { "engine": "mock-ocr" } ],
+  "inference": [
+    { "id": "text",     "engine": "mock-embed", "input": "TEXT",   "tasks": ["embed"] },
+    { "id": "pictures", "engine": "mock-embed", "input": "IMAGES", "tasks": ["embed"] },
+    { "id": "video",    "engine": "mock-embed", "input": "MEDIA",  "modality": "visual" },
+    { "id": "audio",    "engine": "mock-embed", "input": "MEDIA",  "modality": "audio" }
+  ]
+}

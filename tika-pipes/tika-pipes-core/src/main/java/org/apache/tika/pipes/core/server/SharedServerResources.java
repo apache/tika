@@ -16,10 +16,13 @@
  */
 package org.apache.tika.pipes.core.server;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 import org.xml.sax.SAXException;
 
+import org.apache.tika.config.ExceptionReporting;
+import org.apache.tika.config.loader.PresetRegistry;
 import org.apache.tika.config.loader.TikaJsonConfig;
 import org.apache.tika.config.loader.TikaLoader;
 import org.apache.tika.detect.Detector;
@@ -30,6 +33,8 @@ import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.RecursiveParserWrapper;
+import org.apache.tika.parser.inference.EngineRegistry;
+import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.config.ConfigStore;
@@ -50,7 +55,7 @@ import org.apache.tika.sax.ContentHandlerFactory;
  *   <li>MetadataFilter, ContentHandlerFactory - stateless</li>
  * </ul>
  */
-public class SharedServerResources {
+public class SharedServerResources implements Closeable {
 
     private final TikaLoader tikaLoader;
     private final PipesConfig pipesConfig;
@@ -60,18 +65,25 @@ public class SharedServerResources {
     private final FetcherManager fetcherManager;
     private final EmitterManager emitterManager;
     private final MetadataFilter defaultMetadataFilter;
+    private final InferenceDispatcher inferenceDispatcher;
+    private final EngineRegistry engineRegistry;
     private final ContentHandlerFactory defaultContentHandlerFactory;
     private final MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory;
     private final EmitStrategy emitStrategy;
     private final ConfigStore configStore;
+    private final ExceptionReporting exceptionReporting;
+    private final PresetRegistry presetRegistry;
 
     private SharedServerResources(TikaLoader tikaLoader, PipesConfig pipesConfig,
                                   AutoDetectParser autoDetectParser, Detector detector,
                                   RecursiveParserWrapper rMetaParser, FetcherManager fetcherManager,
                                   EmitterManager emitterManager, MetadataFilter defaultMetadataFilter,
+                                  InferenceDispatcher inferenceDispatcher, EngineRegistry engineRegistry,
                                   ContentHandlerFactory defaultContentHandlerFactory,
                                   MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory,
-                                  EmitStrategy emitStrategy, ConfigStore configStore) {
+                                  EmitStrategy emitStrategy, ConfigStore configStore,
+                                  ExceptionReporting exceptionReporting,
+                                  PresetRegistry presetRegistry) {
         this.tikaLoader = tikaLoader;
         this.pipesConfig = pipesConfig;
         this.autoDetectParser = autoDetectParser;
@@ -80,10 +92,14 @@ public class SharedServerResources {
         this.fetcherManager = fetcherManager;
         this.emitterManager = emitterManager;
         this.defaultMetadataFilter = defaultMetadataFilter;
+        this.inferenceDispatcher = inferenceDispatcher;
+        this.engineRegistry = engineRegistry;
         this.defaultContentHandlerFactory = defaultContentHandlerFactory;
         this.defaultMetadataWriteLimiterFactory = defaultMetadataWriteLimiterFactory;
         this.emitStrategy = emitStrategy;
         this.configStore = configStore;
+        this.exceptionReporting = exceptionReporting;
+        this.presetRegistry = presetRegistry;
     }
 
     /**
@@ -116,15 +132,24 @@ public class SharedServerResources {
 
         // Load filters and factories
         MetadataFilter metadataFilter = tikaLoader.loadMetadataFilters();
+        EngineRegistry engineRegistry = tikaLoader.get(EngineRegistry.class);
+        InferenceDispatcher inferenceDispatcher = tikaLoader.get(InferenceDispatcher.class);
         ContentHandlerFactory contentHandlerFactory = tikaLoader.loadContentHandlerFactory();
+        ParseContext configContext = tikaLoader.loadParseContext();
         MetadataWriteLimiterFactory metadataWriteLimiterFactory =
-                tikaLoader.loadParseContext().get(MetadataWriteLimiterFactory.class);
+                configContext.get(MetadataWriteLimiterFactory.class);
 
         EmitStrategy emitStrategy = pipesConfig.getEmitStrategy().getType();
 
+        // fails startup on an unresolvable preset, mirroring the front-end's own load
+        PresetRegistry presetRegistry =
+                PresetRegistry.load(tikaJsonConfig, tikaLoader.getClassLoader());
+
         return new SharedServerResources(tikaLoader, pipesConfig, autoDetectParser, detector,
-                rMetaParser, fetcherManager, emitterManager, metadataFilter, contentHandlerFactory,
-                metadataWriteLimiterFactory, emitStrategy, configStore);
+                rMetaParser, fetcherManager, emitterManager, metadataFilter, inferenceDispatcher,
+                engineRegistry, contentHandlerFactory,
+                metadataWriteLimiterFactory, emitStrategy, configStore,
+                ExceptionReporting.get(configContext), presetRegistry);
     }
 
     private static ConfigStore createConfigStore(PipesConfig pipesConfig, TikaPluginManager tikaPluginManager)
@@ -149,15 +174,19 @@ public class SharedServerResources {
      * Creates a merged ParseContext with defaults from tika-config overlaid with request values.
      *
      * @param requestContext the ParseContext from FetchEmitTuple
-     * @return a new ParseContext with defaults + request overrides
+     * @param presetName name of the preset to overlay at config-tier trust, or null
+     * @return a new, resolved ParseContext with defaults + preset + clamped request overrides
      */
-    public ParseContext createMergedParseContext(ParseContext requestContext) throws TikaConfigException {
+    public ParseContext createMergedParseContext(ParseContext requestContext, String presetName)
+            throws TikaConfigException {
         ParseContext mergedContext = tikaLoader.loadParseContext();
         // EmbeddedDocumentExtractor is deliberately left unset here -- see PipesServer's
         // createMergedParseContext for why defaulting it would silently disable embedded
         // content extraction for every non-UNPACK parse mode.
-        // Request-level values override config defaults
-        mergedContext.copyFrom(requestContext);
+        PipesServer.mergePreset(presetRegistry, presetName, mergedContext);
+        PipesServer.overlayRequest(requestContext, mergedContext, pipesConfig,
+                defaultContentHandlerFactory);
+        PipesServer.seedCacheMemoryBudget(mergedContext);
         return mergedContext;
     }
 
@@ -193,6 +222,23 @@ public class SharedServerResources {
         return defaultMetadataFilter;
     }
 
+    /** Closes what the config loaded and holds open: the filter chain and the engines. */
+    @Override
+    public void close() throws IOException {
+        try {
+            defaultMetadataFilter.close();
+        } finally {
+            if (engineRegistry != null) {
+                engineRegistry.close();
+            }
+        }
+    }
+
+    /** Null when no {@code "inference"} bindings are configured. */
+    public InferenceDispatcher getInferenceDispatcher() {
+        return inferenceDispatcher;
+    }
+
     public ContentHandlerFactory getDefaultContentHandlerFactory() {
         return defaultContentHandlerFactory;
     }
@@ -203,6 +249,10 @@ public class SharedServerResources {
 
     public EmitStrategy getEmitStrategy() {
         return emitStrategy;
+    }
+
+    public ExceptionReporting getExceptionReporting() {
+        return exceptionReporting;
     }
 
     public ConfigStore getConfigStore() {

@@ -1,0 +1,10 @@
+{
+  "parsers": [
+    "default-parser",
+    {
+      "jpeg-parser": {
+        "includeIccCurvesAndLuts": true
+      }
+    }
+  ]
+}

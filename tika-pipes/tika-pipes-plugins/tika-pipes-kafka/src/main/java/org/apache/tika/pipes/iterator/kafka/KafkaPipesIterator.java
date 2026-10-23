@@ -69,7 +69,6 @@ public class KafkaPipesIterator extends PipesIteratorBase {
                 serializerClass(config.getValueSerializer(), StringDeserializer.class));
         safePut(props, ConsumerConfig.GROUP_ID_CONFIG, config.getGroupId());
         safePut(props, ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, config.getAutoOffsetReset());
-        safePut(props, "group.initial.rebalance.delay.ms", config.getGroupInitialRebalanceDelayMs());
 
         consumer = new KafkaConsumer<>(props);
         consumer.subscribe(Arrays.asList(config.getTopic()));
@@ -103,10 +102,29 @@ public class KafkaPipesIterator extends PipesIteratorBase {
         long start = System.currentTimeMillis();
         int count = 0;
         int emitMax = config.getEmitMax();
-        ConsumerRecords<String, String> records;
+        boolean assigned = false;
+        long assignmentDeadline = start + config.getAssignmentTimeoutMs();
+        long idleSince = 0;
 
-        do {
-            records = consumer.poll(Duration.ofMillis(config.getPollDelayMs()));
+        while (true) {
+            ConsumerRecords<String, String> records =
+                    consumer.poll(Duration.ofMillis(config.getPollDelayMs()));
+            // A freshly subscribed consumer spends its first poll(s) joining the group, and
+            // those return empty even when the topic has a backlog. Treating that as "drained"
+            // silently enqueued nothing and reported success (TIKA-4833), so wait for a
+            // partition assignment before an empty poll is allowed to end the loop.
+            if (!assigned) {
+                assigned = !consumer.assignment().isEmpty();
+                if (!assigned) {
+                    if (System.currentTimeMillis() > assignmentDeadline) {
+                        throw new TimeoutException(
+                                "Kafka consumer was not assigned a partition of topic '" +
+                                        config.getTopic() + "' within " +
+                                        config.getAssignmentTimeoutMs() + " ms");
+                    }
+                    continue;
+                }
+            }
             for (ConsumerRecord<String, String> r : records) {
                 long elapsed = System.currentTimeMillis() - start;
                 if (LOGGER.isDebugEnabled()) {
@@ -118,7 +136,23 @@ public class KafkaPipesIterator extends PipesIteratorBase {
                         FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT));
                 ++count;
             }
-        } while ((emitMax < 0 || count < emitMax) && !records.isEmpty());
+            if (emitMax >= 0 && count >= emitMax) {
+                break;
+            }
+            // A single empty poll mid-drain doesn't mean the topic is exhausted -- records may
+            // simply not have arrived yet -- so require a continuous quiet window. This is a
+            // duration, not a poll count, so it holds however short pollDelayMs is.
+            if (records.isEmpty()) {
+                long now = System.currentTimeMillis();
+                if (idleSince == 0) {
+                    idleSince = now;
+                } else if (now - idleSince >= config.getDrainIdleMs()) {
+                    break;
+                }
+            } else {
+                idleSince = 0;
+            }
+        }
 
         long elapsed = System.currentTimeMillis() - start;
         LOGGER.info("Finished enqueuing {} files in {} ms", count, elapsed);

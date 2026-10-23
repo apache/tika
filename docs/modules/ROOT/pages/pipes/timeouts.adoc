@@ -27,7 +27,10 @@ Three timeout settings bound a parse, and each answers a different question:
   including all of its embedded documents. Default: `3600000` (1 hour).
 
 * **`progressTimeoutMillis`** -- How long may the parse go *silent* before it is
-  considered hung and killed. Default: `120000` (2 minutes).
+  considered hung and killed. Default: `120000` (2 minutes). To turn stall detection
+  off and keep only the total deadline, set it equal to `totalTaskTimeoutMillis`.
+  Don't use `0` (rejected when the total is positive) or `Long.MAX_VALUE` (it also
+  removes the pipes client's backstop for a wedged server).
 
 * **Per-parser timeouts** (e.g., `tesseract-ocr-parser.timeoutMillis`) -- How long may
   *one call* to that parser's external process or service take.
@@ -56,8 +59,7 @@ configuration, alongside any per-parser timeouts:
 [source,json]
 ----
 {
-  "parsers": [
-    "default-parser",
+  "text-recognizers": [
     { "tesseract-ocr-parser": { "timeoutMillis": 120000 } }
   ],
   "parse-context": {
@@ -410,14 +412,15 @@ timeoutMillis)` directly instead of `checkCommand()`.
 
 == Per-Request Overrides
 
-When using Tika Server with `allowPerRequestConfig: true`, timeouts can be overridden
-per-request by including `TimeoutLimits` in the `ParseContext` of a `FetchEmitTuple`:
+Timeouts can be overridden per request by including `TimeoutLimits` in the `ParseContext`
+of a `FetchEmitTuple` (tika-server `/pipes` and `/async`, or the multipart `config` part
+with `allowPerRequestConfig: true`):
 
 [source,java]
 ----
 ParseContext parseContext = new ParseContext();
 parseContext.setJsonConfig("timeout-limits",
-    "{\"progressTimeoutMillis\": 300000}");
+    "{\"totalTaskTimeoutMillis\": 60000}");
 
 FetchEmitTuple t = new FetchEmitTuple("id",
     new FetchKey("my-fetcher", "large-document.pdf"),
@@ -429,12 +432,14 @@ FetchEmitTuple t = new FetchEmitTuple("id",
 Enforcement happens in the fork against the merged configuration (server config
 with per-request values applied on top).
 
-A per-request override can lower timeouts freely, but raising them is capped at
-`pipes.maxTotalTaskTimeoutMillis` (default 1 hour): request values above the cap are
-clamped to it, with a warning in the fork's log. This keeps a client from
-disabling the server's self-termination with an enormous requested timeout. Operators
-who need longer per-request budgets raise the cap; limits set in the server's own
-`parse-context` are trusted and never clamped.
+A per-request override can shorten a timeout but not extend it: each of
+`totalTaskTimeoutMillis` and `progressTimeoutMillis` is clamped to the operator's own value
+(the server's `parse-context` plus any preset, or the class default when neither sets one)
+and to `pipes.maxTotalTaskTimeoutMillis` (default 1 hour), with a warning in the fork's log.
+Operators who need longer per-request budgets raise their own limits or offer a preset; limits
+set in the server's own `parse-context` are trusted and never clamped. `PipesForkParser`
+callers are the operator and are not clamped
+(xref:advanced/setting-limits.adoc#_per_request_limits[`pipes.trustedRequests`]).
 
 == CLI Usage
 

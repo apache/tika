@@ -18,25 +18,15 @@ package org.apache.tika.pipes.iterator.kafka;
 
 import java.util.Objects;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.pipes.pipesiterator.PipesIteratorConfig;
+import org.apache.tika.plugins.PluginJson;
 
 public class KafkaPipesIteratorConfig extends PipesIteratorConfig {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     public static KafkaPipesIteratorConfig load(final String json)
             throws TikaConfigException {
-        try {
-            return OBJECT_MAPPER.readValue(json,
-                    KafkaPipesIteratorConfig.class);
-        } catch (JsonProcessingException e) {
-            throw new TikaConfigException(
-                    "Failed to parse KafkaPipesIteratorConfig from JSON", e);
-        }
+        return PluginJson.read(json, KafkaPipesIteratorConfig.class);
     }
 
     private String topic;
@@ -47,7 +37,15 @@ public class KafkaPipesIteratorConfig extends PipesIteratorConfig {
     private String autoOffsetReset = "earliest";
     private int pollDelayMs = 100;
     private int emitMax = -1;
+    /**
+     * @deprecated inert -- this is a broker setting, never a consumer one, so Kafka has always
+     * ignored it ("supplied but not used yet"). Kept only so existing configs still start;
+     * remove in 4.1.0. Use assignmentTimeoutMs to bound waiting for a partition assignment.
+     */
+    @Deprecated
     private int groupInitialRebalanceDelayMs = 3000;
+    private int assignmentTimeoutMs = 30000;
+    private int drainIdleMs = 1000;
 
     public String getTopic() {
         return topic;
@@ -81,8 +79,17 @@ public class KafkaPipesIteratorConfig extends PipesIteratorConfig {
         return emitMax;
     }
 
+    @Deprecated
     public int getGroupInitialRebalanceDelayMs() {
         return groupInitialRebalanceDelayMs;
+    }
+
+    public int getAssignmentTimeoutMs() {
+        return assignmentTimeoutMs;
+    }
+
+    public int getDrainIdleMs() {
+        return drainIdleMs;
     }
 
     @Override
@@ -96,6 +103,8 @@ public class KafkaPipesIteratorConfig extends PipesIteratorConfig {
         return pollDelayMs == that.pollDelayMs &&
                 emitMax == that.emitMax &&
                 groupInitialRebalanceDelayMs == that.groupInitialRebalanceDelayMs &&
+                assignmentTimeoutMs == that.assignmentTimeoutMs &&
+                drainIdleMs == that.drainIdleMs &&
                 Objects.equals(topic, that.topic) &&
                 Objects.equals(bootstrapServers, that.bootstrapServers) &&
                 Objects.equals(keySerializer, that.keySerializer) &&
@@ -116,6 +125,8 @@ public class KafkaPipesIteratorConfig extends PipesIteratorConfig {
         result = 31 * result + pollDelayMs;
         result = 31 * result + emitMax;
         result = 31 * result + groupInitialRebalanceDelayMs;
+        result = 31 * result + assignmentTimeoutMs;
+        result = 31 * result + drainIdleMs;
         return result;
     }
 }

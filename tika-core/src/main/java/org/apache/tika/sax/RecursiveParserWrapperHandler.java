@@ -141,6 +141,16 @@ public class RecursiveParserWrapperHandler extends AbstractRecursiveParserWrappe
      * @return a list of Metadata objects, one for the main document and one for each embedded
      * document
      */
+    @Override
+    public Metadata getEmbeddedMetadata(String idPath) {
+        for (Metadata m : metadataList) {
+            if (idPath.equals(m.get(TikaCoreProperties.EMBEDDED_ID_PATH))) {
+                return m;
+            }
+        }
+        return null;
+    }
+
     public List<Metadata> getMetadataList() {
         return metadataList;
     }

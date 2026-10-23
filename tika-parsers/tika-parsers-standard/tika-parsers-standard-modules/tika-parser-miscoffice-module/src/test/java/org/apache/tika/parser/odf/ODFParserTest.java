@@ -86,6 +86,41 @@ public class ODFParserTest extends TikaTest {
     }
 
     @Test
+    public void testContainerDateNotJoined() throws Exception {
+        try (TikaInputStream tis = getResourceAsStream("/test-documents/testOpenOffice2.odt")) {
+            Metadata metadata = new Metadata();
+            metadata.set(TikaCoreProperties.CREATED, "2020-01-01T00:00:00.123456789Z");
+            new OpenDocumentParser().parse(tis, new BodyContentHandler(), metadata, new ParseContext());
+            assertArrayEquals(new String[]{"2007-09-14T11:06:08"},
+                    metadata.getValues(TikaCoreProperties.CREATED));
+        }
+    }
+
+    @Test
+    public void testMetaDates() throws Exception {
+        assertArrayEquals(new String[]{"2011-03-04T10:22:33", "2011-03-05T01:02:03Z"},
+                metaDates("2011-03-04T10:22:33.123456789", "2011-03-05T02:02:03+01:00"));
+        assertArrayEquals(new String[]{null, null},
+                metaDates("0101-01-01T00:00:00+00:00", "2018--0-8-T23: 1:4:+01:00"));
+        assertArrayEquals(new String[]{"2012-06-01", null}, metaDates("2012-06-01", "May 1917"));
+    }
+
+    private String[] metaDates(String created, String modified) throws Exception {
+        String xml = "<?xml version='1.0' encoding='UTF-8'?>"
+                + "<office:document-meta xmlns:office='urn:oasis:names:tc:opendocument:xmlns:office:1.0'"
+                + " xmlns:meta='urn:oasis:names:tc:opendocument:xmlns:meta:1.0'"
+                + " xmlns:dc='http://purl.org/dc/elements/1.1/'><office:meta>"
+                + "<meta:creation-date>" + created + "</meta:creation-date>"
+                + "<dc:date>" + modified + "</dc:date>"
+                + "</office:meta></office:document-meta>";
+        Metadata metadata = new Metadata();
+        try (TikaInputStream tis = TikaInputStream.get(xml.getBytes(StandardCharsets.UTF_8))) {
+            new OpenDocumentMetaParser().parse(tis, new DefaultHandler(), metadata, new ParseContext());
+        }
+        return new String[]{metadata.get(TikaCoreProperties.CREATED), metadata.get(TikaCoreProperties.MODIFIED)};
+    }
+
+    @Test
     public void testOO2() throws Exception {
         for (Parser parser : getParsers()) {
             try (TikaInputStream tis = getResourceAsStream("/test-documents/testOpenOffice2.odt")) {

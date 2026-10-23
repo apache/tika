@@ -45,6 +45,7 @@ import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitData;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.fetcher.FetchKey;
+import org.apache.tika.pipes.core.ContentBytesConfig;
 import org.apache.tika.pipes.core.EmitStrategy;
 import org.apache.tika.pipes.core.EmitStrategyConfig;
 import org.apache.tika.pipes.core.PipesConfig;
@@ -67,6 +68,9 @@ import org.apache.tika.server.core.TikaServerParseException;
 public class PipesParsingHelper {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesParsingHelper.class);
+    /** Per-request server-layer latency breakdown; joins the pipes lines on {@code id}. */
+    private static final Logger TIMING_LOG =
+            LoggerFactory.getLogger("org.apache.tika.pipes.timing.server");
 
     /**
      * The fetcher ID used for reading temp files.
@@ -176,13 +180,42 @@ public class PipesParsingHelper {
      */
     public List<Metadata> parse(TikaInputStream tis, Metadata metadata,
                                  ParseContext parseContext, ParseMode parseMode) throws IOException {
+        return parseInternal(tis, metadata, parseContext, parseMode, false).metadataList();
+    }
+
+    /**
+     * The metadata plus, when requested via {@code content-bytes-config}, the extracted
+     * content as raw UTF-8 -- {@code TIKA_CONTENT} is then absent from the metadata.
+     */
+    public record ParseOutput(List<Metadata> metadataList, byte[] contentBytes) {
+    }
+
+    /**
+     * Like {@link #parse} but asks the worker for the content as raw UTF-8 bytes, which
+     * travel as binary over the IPC instead of a Smile-encoded string -- the win is one
+     * UTF-8 encode in the worker instead of a string transcode on both sides plus a
+     * re-encode at the HTTP layer. CONTENT_ONLY only.
+     */
+    public ParseOutput parseContentOnlyToBytes(TikaInputStream tis, Metadata metadata,
+                                               ParseContext parseContext) throws IOException {
+        return parseInternal(tis, metadata, parseContext, ParseMode.CONTENT_ONLY, true);
+    }
+
+    private ParseOutput parseInternal(TikaInputStream tis, Metadata metadata,
+                                      ParseContext parseContext, ParseMode parseMode,
+                                      boolean contentAsBytes) throws IOException {
         String requestId = UUID.randomUUID().toString();
         PayloadRouter.Routed routed = null;
         String callerSuppliedName = metadata.get(TikaCoreProperties.RESOURCE_NAME_KEY);
+        long entryNanos = System.nanoTime();
+        long routeNanos = -1;
+        long pipesNanos = -1;
+        long postNanos = -1;
 
         try {
             routed = PayloadRouter.route(tis, maxInlineBytes,
                     () -> Files.createTempFile(inputTempDirectory, "tika-", getSuffix(metadata)));
+            routeNanos = System.nanoTime() - entryNanos;
 
             String relativeName = null;
             FetchKey fetchKey;
@@ -201,6 +234,11 @@ public class PipesParsingHelper {
 
             // Set parse mode in context
             parseContext.set(ParseMode.class, parseMode);
+            if (contentAsBytes) {
+                parseContext.set(ContentBytesConfig.class, new ContentBytesConfig());
+            }
+
+            String presetName = liftPresetSelection(parseContext);
 
             // This parser is shared with /pipes, whose own default is EMIT_ALL. No
             // emitter is configured for /tika/rmeta/unpack requests (EmitKey.NO_EMIT
@@ -213,18 +251,28 @@ public class PipesParsingHelper {
                     fetchKey,
                     EmitKey.NO_EMIT,
                     metadata,
-                    parseContext
+                    parseContext,
+                    FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT,
+                    presetName
             );
 
             // Execute parse via pipes - results will be passed back through socket
+            long pipesStart = System.nanoTime();
             PipesResult result = pipesParser.parse(tuple);
+            pipesNanos = System.nanoTime() - pipesStart;
 
             // Process result
+            long postStart = System.nanoTime();
             List<Metadata> metadataList = processResult(result);
             if (relativeName != null) {
                 stripSpoolIdentity(metadataList, relativeName, callerSuppliedName);
             }
-            return metadataList;
+            byte[] contentBytes = (contentAsBytes && result.emitData() != null)
+                    ? result.emitData().getContentBytes() : null;
+            postNanos = System.nanoTime() - postStart;
+            logTiming(requestId, routed.route().name(), routeNanos, pipesNanos, postNanos,
+                    System.nanoTime() - entryNanos);
+            return new ParseOutput(metadataList, contentBytes);
 
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -239,6 +287,35 @@ public class PipesParsingHelper {
                 routed.close();
             }
         }
+    }
+
+    // Only the name travels: the worker resolves the preset from its own config.
+    private static String liftPresetSelection(ParseContext parseContext) {
+        PresetSelection preset = parseContext.get(PresetSelection.class);
+        if (preset == null) {
+            return null;
+        }
+        parseContext.set(PresetSelection.class, null);
+        return preset.name();
+    }
+
+    /**
+     * One line per request on {@code org.apache.tika.pipes.timing.server}, microseconds.
+     * {@code route_us} covers reading the request body and deciding inline-vs-spool;
+     * {@code pipes_us} is the whole pipes round trip; {@code post_us} is result unpacking.
+     * The HTTP/JAX-RS layer outside this method is measured from the client.
+     */
+    private static void logTiming(String id, String route, long routeNanos, long pipesNanos,
+                                  long postNanos, long totalNanos) {
+        if (!TIMING_LOG.isTraceEnabled()) {
+            return;
+        }
+        TIMING_LOG.trace("SERVER_TIMING id={} route={} route_us={} pipes_us={} post_us={} total_us={}",
+                id, route, us(routeNanos), us(pipesNanos), us(postNanos), us(totalNanos));
+    }
+
+    private static long us(long nanos) {
+        return nanos < 0 ? nanos : nanos / 1000L;
     }
 
     /** Longest suffix carried over from a client filename; keeps well clear of NAME_MAX. */
@@ -385,6 +462,19 @@ public class PipesParsingHelper {
 
 
     /**
+     * 422 whose body is the already policy-formatted container exception. Re-wrapping it as
+     * an exception message would let the mapper redact it a second time and append this
+     * server's own frames.
+     */
+    public static WebApplicationException containerExceptionResponse(String containerException) {
+        return new WebApplicationException(Response
+                .status(422)
+                .entity(containerException)
+                .type(MediaType.TEXT_PLAIN)
+                .build());
+    }
+
+    /**
      * Maps PipesResult status to HTTP response status. Private so no caller can map a
      * status without the Retry-After headers {@link #responseBuilder} attaches.
      */
@@ -405,7 +495,7 @@ public class PipesParsingHelper {
             // The caller named a fetcher/emitter this server does not have. Nothing failed
             // on our side, and retrying the same request will never succeed -- 500 told
             // clients to retry a request that is permanently malformed.
-            case FETCHER_NOT_FOUND, EMITTER_NOT_FOUND ->
+            case FETCHER_NOT_FOUND, EMITTER_NOT_FOUND, PRESET_NOT_FOUND ->
                     Response.Status.BAD_REQUEST;
             case PAYLOAD_LIMIT_EXCEEDED ->
                     Response.Status.REQUEST_ENTITY_TOO_LARGE;
@@ -553,6 +643,8 @@ public class PipesParsingHelper {
             // Set parse mode to UNPACK
             parseContext.set(ParseMode.class, ParseMode.UNPACK);
 
+            String presetName = liftPresetSelection(parseContext);
+
             // Shared parser (see parse() above) -- PASSBACK_ALL is also required here
             // for correctness: with UNPACK mode, EmitHandler.shouldEmit() only skips
             // re-emitting metadata (already emitted as part of the zip) when the
@@ -565,7 +657,7 @@ public class PipesParsingHelper {
                 unpackConfig = new UnpackConfig();
             }
 
-            // Enable zip creation in the child process
+            // Enable zip creation in the child process (DIRECTORY was refused before this)
             unpackConfig.setZipEmbeddedFiles(true);
 
             // Set suffix strategy to DETECTED so files get their proper extensions (e.g., .wav, .jpg)
@@ -574,10 +666,13 @@ public class PipesParsingHelper {
             // Set emitter to our file-system emitter
             unpackConfig.setEmitter(UNPACK_EMITTER_ID);
 
-            // Include original document if saveAll is requested
+            // The fetch key may be the spool file; name the package for the caller's file
+            unpackConfig.setPackageName(callerSuppliedName == null ? "" : callerSuppliedName);
+
+            // /all = the original document plus metadata, in either output format.
             if (saveAll) {
                 unpackConfig.setIncludeOriginal(true);
-                unpackConfig.setIncludeMetadataInZip(true);
+                unpackConfig.setIncludeMetadata(true);
             }
 
             parseContext.set(UnpackConfig.class, unpackConfig);
@@ -589,7 +684,9 @@ public class PipesParsingHelper {
                 fetchKey,
                 emitKey,
                 metadata,
-                parseContext
+                parseContext,
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT,
+                presetName
         );
 
             // Execute parse via pipes
@@ -627,11 +724,7 @@ public class PipesParsingHelper {
                 Metadata containerMetadata = metadataList.get(0);
                 String containerException = containerMetadata.get(TikaCoreProperties.CONTAINER_EXCEPTION);
                 if (containerException != null) {
-                    Response response = Response.status(422)
-                            .entity(containerException)
-                            .type("text/plain")
-                            .build();
-                    throw new WebApplicationException(response);
+                    throw containerExceptionResponse(containerException);
                 }
             }
 

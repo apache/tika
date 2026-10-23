@@ -29,7 +29,9 @@ import org.xml.sax.SAXException;
 import org.apache.tika.exception.TikaException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.renderer.Renderer;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.pages.PagesConfig;
+import org.apache.tika.parser.pages.TextPolicy;
 
 
 /**
@@ -39,8 +41,10 @@ import org.apache.tika.renderer.Renderer;
 class OCR2XHTML extends AbstractPDF2XHTML {
 
     private OCR2XHTML(PDDocument document, ContentHandler handler, ParseContext context,
-                      Metadata metadata, PDFParserConfig config, Renderer renderer) throws IOException {
-        super(document, handler, context, metadata, config, renderer);
+                      Metadata metadata, PDFParserConfig config, PagesConfig pages,
+                      PageEmitter emitter,
+                      CompositeContentEnricher contentEnrichers) throws IOException {
+        super(document, handler, context, metadata, config, pages, emitter, contentEnrichers);
     }
 
     /**
@@ -51,18 +55,19 @@ class OCR2XHTML extends AbstractPDF2XHTML {
      * @param handler SAX content handler
      * @param metadata PDF metadata
      * @param config PDF parser config
-     * @param renderer the renderer to use for rendering pages
      * @throws SAXException  if the content handler fails to process SAX events
      * @throws TikaException if there was an exception outside of per page processing
      */
     public static void process(PDDocument document, ContentHandler handler, ParseContext context,
                                Metadata metadata,
-                               PDFParserConfig config, Renderer renderer)
+                               PDFParserConfig config, PagesConfig pages, PageEmitter emitter,
+                               CompositeContentEnricher contentEnrichers)
             throws SAXException, TikaException {
         OCR2XHTML ocr2XHTML = null;
 
         try {
-            ocr2XHTML = new OCR2XHTML(document, handler, context, metadata, config, renderer);
+            ocr2XHTML = new OCR2XHTML(document, handler, context, metadata, config, pages,
+                    emitter, contentEnrichers);
             ocr2XHTML.writeText(document, new Writer() {
                 @Override
                 public void write(char[] cbuf, int off, int len) {
@@ -94,7 +99,11 @@ class OCR2XHTML extends AbstractPDF2XHTML {
     public void processPage(PDPage pdPage) throws IOException {
         try {
             startPage(pdPage);
-            doOCROnCurrentPage(pdPage, OcrConfig.Strategy.OCR_ONLY);
+            // NONE walks the pages for their renders and writes no text
+            if (pages.getText() != TextPolicy.NONE) {
+                doOCROnCurrentPage(pdPage, TextPolicy.OCR);
+            }
+            // endPage annotates the page when no engine ran, and offers it to inference
             endPage(pdPage);
         } catch (TikaException | SAXException e) {
             throw new IOException(e);

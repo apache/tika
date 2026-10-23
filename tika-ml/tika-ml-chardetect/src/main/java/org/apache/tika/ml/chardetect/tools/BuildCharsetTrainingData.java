@@ -38,6 +38,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -513,19 +514,19 @@ public class BuildCharsetTrainingData {
         System.out.println("=== BuildCharsetTrainingData ===");
         System.out.println("  madlad-dir:          " + madladDir);
         System.out.println("  output-dir:          " + outputDir);
-        System.out.printf ("  sample cap:          %,d%n", sampleCap);
-        System.out.printf ("  byte budget:         %,d%n", byteBudget);
-        System.out.printf ("  chunk:               %d–%d bytes  seed=%d%n", minChunk, maxChunk, seed);
-        System.out.printf ("  unicode langs:       %d (from %s)%n",
+        System.out.printf(Locale.ROOT, "  sample cap:          %,d%n", sampleCap);
+        System.out.printf(Locale.ROOT, "  byte budget:         %,d%n", byteBudget);
+        System.out.printf(Locale.ROOT, "  chunk:               %d–%d bytes  seed=%d%n", minChunk, maxChunk, seed);
+        System.out.printf(Locale.ROOT, "  unicode langs:       %d (from %s)%n",
                 unicodeLangs.size(), unicodeLangsFile.getFileName());
-        System.out.printf ("  charsets:            %d%n%n", targetCharsets.size());
+        System.out.printf(Locale.ROOT, "  charsets:            %d%n%n", targetCharsets.size());
 
         // Ambiguity gate: for each SBCS charset, precompute encoders for all
         // other SBCS charsets. A chunk is dropped if any rival produces
         // byte-for-byte identical output — such chunks carry no discriminative
         // signal and actively confuse the model.
         Map<String, List<CharsetEncoder>> sbcsRivals = buildSbcsRivals(targetCharsets);
-        System.out.printf("  ambiguity-gate:      %d SBCS charsets compared pairwise%n%n",
+        System.out.printf(Locale.ROOT, "  ambiguity-gate:      %d SBCS charsets compared pairwise%n%n",
                 sbcsRivals.size());
 
         // charset label → split name → sample count (for manifest)
@@ -540,7 +541,7 @@ public class BuildCharsetTrainingData {
             String[] splits       = {"train", "devtest", "test"};
             int[]    splitCaps    = {sampleCap, sampleCap, sampleCap};
             long[]   splitBudgets = {byteBudget, byteBudget / 5, byteBudget / 5};
-            System.out.printf("%s  (%s)%s%n", label, javaName,
+            System.out.printf(Locale.ROOT, "%s  (%s)%s%n", label, javaName,
                     structOnly ? "  [structural-only: skipping train]" : "");
 
             // Determine contributing languages.
@@ -568,17 +569,17 @@ public class BuildCharsetTrainingData {
                     ? Math.max(5_000, UNICODE_SENTENCE_BUDGET / nLangs)
                     : Math.min(MAX_LOAD_CAP_PER_LANG, LEGACY_SENTENCE_BUDGET / nLangs);
             List<String> allSentences = new ArrayList<>();
-            System.out.printf("  Contributing languages (%d), perLangCap=%,d:%n",
+            System.out.printf(Locale.ROOT, "  Contributing languages (%d), perLangCap=%,d:%n",
                     nLangs, perLangCap);
             for (String lang : langs) {
                 Path langDir = madladDir.resolve(lang);
                 List<String> sents = loadMadladSentences(langDir, perLangCap);
                 if (sents.isEmpty()) {
-                    System.out.printf("    %-6s: ** 0 sentences — MISSING DATA **%n", lang);
+                    System.out.printf(Locale.ROOT, "    %-6s: ** 0 sentences — MISSING DATA **%n", lang);
                 } else {
                     long totalChars = 0;
                     for (String s : sents) totalChars += s.length();
-                    System.out.printf("    %-6s: %,8d sentences  avg_len=%,.0f chars%n",
+                    System.out.printf(Locale.ROOT, "    %-6s: %,8d sentences  avg_len=%,.0f chars%n",
                             lang, sents.size(), (double) totalChars / sents.size());
                 }
                 allSentences.addAll(sents);
@@ -632,10 +633,10 @@ public class BuildCharsetTrainingData {
                 splitBytes.put(split, totalBytes);
                 double budgetPct = 100.0 * totalBytes / budget;
                 if (ambiguousDropped > 0) {
-                    System.out.printf("    %s: %,d samples  %,d bytes (%.1f%% of budget)  (%,d ambiguous-dropped)%n",
+                    System.out.printf(Locale.ROOT, "    %s: %,d samples  %,d bytes (%.1f%% of budget)  (%,d ambiguous-dropped)%n",
                             split, written, totalBytes, budgetPct, ambiguousDropped);
                 } else {
-                    System.out.printf("    %s: %,d samples  %,d bytes (%.1f%% of budget)%n",
+                    System.out.printf(Locale.ROOT, "    %s: %,d samples  %,d bytes (%.1f%% of budget)%n",
                             split, written, totalBytes, budgetPct);
                 }
             }
@@ -647,14 +648,14 @@ public class BuildCharsetTrainingData {
 
         // Summary table
         System.out.println("\n=== SUMMARY ===");
-        System.out.printf("%-22s %8s %12s %8s %12s %8s %12s%n",
+        System.out.printf(Locale.ROOT, "%-22s %8s %12s %8s %12s %8s %12s%n",
                 "Charset", "Train", "Train MB", "DevTest", "DT MB", "Test", "Test MB");
         System.out.println("-".repeat(100));
         for (Map.Entry<String, Map<String, Integer>> e : manifest.entrySet()) {
             String cs = e.getKey();
             Map<String, Integer> sc = e.getValue();
             Map<String, Long> bt = byteTotals.getOrDefault(cs, Collections.emptyMap());
-            System.out.printf("%-22s %,8d %10.1f MB %,8d %10.1f MB %,8d %10.1f MB%n",
+            System.out.printf(Locale.ROOT, "%-22s %,8d %10.1f MB %,8d %10.1f MB %,8d %10.1f MB%n",
                     cs,
                     sc.getOrDefault("train", 0),
                     bt.getOrDefault("train", 0L) / 1_000_000.0,
@@ -670,7 +671,7 @@ public class BuildCharsetTrainingData {
         for (Map.Entry<String, Map<String, Integer>> e : manifest.entrySet()) {
             int train = e.getValue().getOrDefault("train", 0);
             if (train > 0 && train < 1000) {
-                System.out.printf("WARNING: %s has only %,d train samples — check source data!%n",
+                System.out.printf(Locale.ROOT, "WARNING: %s has only %,d train samples — check source data!%n",
                         e.getKey(), train);
                 anyWarnings = true;
             }
@@ -783,7 +784,7 @@ public class BuildCharsetTrainingData {
             }
             int added = result.size() - before;
             if (added > 0) {
-                System.out.printf("      (loaded %,d from %s)%n", added, filename);
+                System.out.printf(Locale.ROOT, "      (loaded %,d from %s)%n", added, filename);
             }
         }
         return result;
@@ -874,7 +875,7 @@ public class BuildCharsetTrainingData {
             stopReason = "unknown";
         }
         if (encodeRejected > 0 || !"hit byte budget".equals(stopReason)) {
-            System.out.printf("      [stop: %s | encode-rejected=%,d | "
+            System.out.printf(Locale.ROOT, "      [stop: %s | encode-rejected=%,d | "
                             + "sentences-consumed=%,d/%,d]%n",
                     stopReason, encodeRejected, sentIdx, sentences.size());
         }

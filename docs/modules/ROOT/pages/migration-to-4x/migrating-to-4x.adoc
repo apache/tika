@@ -56,9 +56,11 @@ try (TikaInputStream tis = TikaInputStream.get(myInputStream)) {
 ----
 
 The `Tika` facade (`Tika#parse`, `Tika#parseToString`, `Tika#detect`) still accepts a plain
-`InputStream`. One behavior change: `Tika#detect(InputStream, ...)` no longer resets the stream
-to its original position — treat the stream as consumed after the call. It still does not close
-the caller's stream.
+`InputStream`. One behavior change: `Tika#detect(InputStream, ...)` no longer returns the
+caller's stream at its original position. The detector still resets the `TikaInputStream` it
+reads — but that read-ahead is buffered inside an internal wrapper that `detect()` discards, so
+the caller's own stream comes back advanced. Pass a `TikaInputStream` you own (and rewind it),
+or re-open the source. The stream is still not closed for you.
 
 Why: passing `TikaInputStream` explicitly makes the spooling and rewind contract visible in the
 signature instead of leaving every implementation to wrap defensively. See
@@ -67,9 +69,12 @@ xref:advanced/spooling.adoc[spooling] for the stream contract.
 `TikaInputStream` itself dropped several members in 4.0: `isTikaInputStream`, `cast`,
 `getPath(int)`, `get(InputStreamFactory)` (both overloads), `hasInputStreamFactory`,
 `getInputStreamFactory`, and `setOpenContainer(Object, long)` — along with the
-`InputStreamFactory` class. `get(byte[])` and `getFromContainer` no longer declare
-`IOException`. `enableRewind()` now throws a checked `IOException` when bytes have
-already been read.
+`InputStreamFactory` class.
+
+NOTE: Two further `TikaInputStream` changes are easy to mistake for 3.x deltas but are deltas
+against 4.0.0-beta-1: `get(byte[])` and `getFromContainer` no longer declaring `IOException`
+(neither declared it in 3.3.2), and `enableRewind()` throwing a checked `IOException` (the method
+did not exist in 3.3.2). Upgrading from 3.x, neither is a change you need to make.
 
 [#thin-launcher-zip]
 == `tika-app` and `tika-server` distributions: jar -> zip
@@ -223,6 +228,86 @@ See the xref:configuration/index.adoc[Configuration] section for full details, i
 * xref:configuration/parsers/tess4j-parser.adoc[Tess4J OCR (In-Process) Configuration]
 * xref:configuration/parsers/vlm-parsers.adoc[VLM Parsers (Claude, Gemini, OpenAI)]
 * xref:configuration/parsers/external-parser.adoc[External Parser (ffmpeg, exiftool, etc.)]
+
+=== OCR engines and the `image/ocr-*` pseudo-types (4.1.0+)
+
+Through 4.0.x an OCR engine was found because it advertised `image/ocr-png`, `image/ocr-jpeg`,
+... in the parser registry. Since 4.1.0 an engine is found because it implements
+`org.apache.tika.parser.enricher.TextRecognizer` and advertises the real types (`image/png`).
+What changes for you:
+
+* A `_mime-include`/`_mime-exclude` naming `image/ocr-*` fails config load. To keep an engine off
+  a type, filter the real type on the engine's own entry
+  (`{"tesseract-ocr-parser": {"_mime-exclude": ["image/tiff"]}}`); on the `default-parser` entry a
+  real-type filter also removes the parser for that type.
+* An engine the classpath supplied is never dispatched to; `image-parser` always invokes it, and
+  the PDF parser's `text` policy controls pages. A `tk:content-type-parser-override` of
+  `image/ocr-*` matches no parser any more and the document falls to the empty fallback parser:
+  drop the override.
+* `Content-Type` never carries an `ocr-` prefix any more, so extracted image files get their real
+  extension instead of `.bin`.
+* A custom engine that still advertises the pseudo-types keeps working as a text recognizer for the
+  real types, with a WARN at startup, until 5.0. Advertise the real types and implement
+  `TextRecognizer` to silence it.
+* Put the engine under `engines` and name it in the top-level `text-recognizers` list rather
+  than under `parsers`; every default parser stays loaded. `"text-recognizers": []` turns
+  enrichment off everywhere. An OCR engine left under `parsers` fails config load since 4.2.0
+  (see below). Startup also logs one line per effective engine.
+* VLM parsers gain `textRecognizer` (default `true`); set it to `false` for a captioning or tagging
+  prompt so the PDF parser's `AUTO` OCR never replaces extracted text with the VLM's output.
+
+=== OCR engines under `parsers` (4.2.0+)
+
+An OCR engine named as a `parsers` entry (`tesseract-ocr-parser`, `tess4j-parser`) was
+deprecated in 4.1.0 and fails config load since 4.2.0. Configure it under `engines` and name it
+in `text-recognizers`; every default parser stays loaded. A VLM parser may still be named under
+`parsers`, as a document parser: excluding `pdf-parser` and naming Claude or Gemini there still
+sends whole PDFs to the model. The 4.1 `openai-image-embedding-parser` and the embedding
+metadata filters are removed; bind an engine with `inference` instead.
+
+=== Embedded depth defaults and `maxPackageEntryDepth` deprecated (4.2.0+)
+
+`embedded-limits` `maxDepth` defaults to 20 (was unlimited) on every path. `output-limits`
+`maxPackageEntryDepth` is deprecated and removed in 4.3.0, after which a config that sets it
+fails to load; it logs a WARN when set. Until then it defaults to 20 (was 10, which allowed
+only 9 levels). A concatenated parse of a deeply nested archive now stops at depth 20 and sets
+`tk:exception:embedded-depth-limit-reached` instead of throwing. The zip-bomb ratio now
+applies across the whole document tree on the `/rmeta` path, as it already did on the
+concatenated path, and fails the parse with `Zip bomb detected!`.
+
+=== Embedding filters and the image embedding parser removed (4.2.0)
+
+`openai-embedding-filter`, `jina-embedding-filter` and `openai-image-embedding-parser`,
+deprecated in 4.1.0, are removed in 4.2.0; a config naming them fails to load. Configure the
+endpoint once under `engines` and bind it with a `TEXT` or `IMAGES`
+xref:configuration/inference.adoc[inference binding]; it embeds the whole document tree in
+batched requests and puts a picture's vector on the document it is part of.
+
+=== PDF page settings become the `pages` block (4.1.0+)
+
+What the PDF parser did with its pages was spread over `ocr`, `imageStrategy` and the parser's
+own flags. It is now one xref:configuration/pages.adoc[`pages`] block, shared with every parser
+that renders (the EMF/WMF parsers in 4.1): `text` (where a page's text comes from: `EXTRACT`,
+`AUTO`, `EXTRACT_AND_OCR`, `OCR`, and the new `NONE`), `render` (dpi, a box, a minimum, colour,
+format, quality, `maxImagePixels`), `ocr` (`maxPages`, the `AUTO` verdict under `auto`),
+`inference` and `emit`. The same block under `parse-context` is the default for every such
+parser; a parser's own `pages` overlays it.
+
+The 4.0 spellings load as aliases, and a config dump and the XML converter write `pages`:
+`ocr.strategy` is `pages.text` (`NO_OCR` is `EXTRACT`, `OCR_ONLY` is `OCR`,
+`OCR_AND_TEXT_EXTRACTION` is `EXTRACT_AND_OCR`), `ocr.strategyAuto` is `pages.ocr.auto`,
+`ocr.maxPagesToOcr` is `pages.ocr.maxPages`, the `ocr` image settings are `pages.render`,
+`ocr.renderingStrategy` is the parser's `renderingStrategy`, `imageStrategy: RAW_IMAGES` is
+`extractInlineImages` and the `RENDER_PAGES_*` values are `pages.emit.enabled`. Two behaviours
+change with the aliases: page renders are emitted at the end of each page whichever
+`RENDER_PAGES_*` value was given (they preceded the text under `RENDER_PAGES_BEFORE_PARSE`),
+and a page the parser does not read (`maxPages`) is not rendered. Two floors are new: a page
+narrower or shorter than 2 pixels at the target dpi is not rendered, and an image under 2 x 2
+pixels reaches no text recognizer or inference binding (`pages.render.minWidth`/`minHeight`,
+`min-width`/`min-height` (or the older `_min-width`/`_min-height`) on a recognizer entry, `minWidth`/`minHeight` on a binding). A binding's
+`minWidth: 0` restores 4.0; the 2-pixel floor before the recognizers stays whatever the entry says. A per-request `ocr` block now changes only the fields it names (4.0 replaced the whole
+block). In Java, `PDFParserConfig.getOcr()` and `getImageStrategy()` are gone: `getPages()` is
+the overlay, the aliases write to it, the deprecated setters stay.
 
 For the general serialization model and how JSON configuration works, see
 xref:developers/serialization.adoc[Serialization and Configuration].

@@ -46,7 +46,7 @@ class FetchHandler {
     }
 
     public TisOrResult fetch(FetchEmitTuple fetchEmitTuple, Metadata metadata, ParseContext parseContext) {
-        FetcherOrResult fetcherResult = getFetcher(fetchEmitTuple);
+        FetcherOrResult fetcherResult = getFetcher(fetchEmitTuple, parseContext);
         if (fetcherResult.pipesResult != null) {
             return new TisOrResult(null, fetcherResult.pipesResult);
         }
@@ -55,11 +55,12 @@ class FetchHandler {
                     fetchEmitTuple.getFetchKey().getFetchKey(), metadata, parseContext);
             return new TisOrResult(tis, null);
         } catch (IOException | TikaException e) {
-            return new TisOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION, ExceptionUtils.getStackTrace(e)));
+            return new TisOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCH_EXCEPTION,
+                    ExceptionUtils.format(e, parseContext)));
         }
     }
 
-    private FetcherOrResult getFetcher(FetchEmitTuple t) {
+    private FetcherOrResult getFetcher(FetchEmitTuple t, ParseContext parseContext) {
         String fetcherId = t.getFetchKey().getFetcherId();
         // Built in, not configured: the bytes come with the request, so there is nothing for an
         // operator to point at and no reason for it to occupy an id in the ConfigStore.
@@ -69,31 +70,18 @@ class FetchHandler {
         try {
             return new FetcherOrResult(fetcherManager.getFetcher(fetcherId), null);
         } catch (FetcherNotFoundException e) {
-            String noFetcherMsg = getNoFetcherMsg(t.getFetchKey().getFetcherId());
-            LOG.warn(noFetcherMsg);
+            String noFetcherMsg = "Fetcher '" + t.getFetchKey().getFetcherId() + "' not found.";
+            // configured ids are operator-facing; log them, don't return them to the caller
+            LOG.warn("{} The configured FetcherManager supports: {}", noFetcherMsg,
+                    fetcherManager.getSupported());
             return new FetcherOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCHER_NOT_FOUND, noFetcherMsg));
         } catch (IOException | TikaException e) {
             LOG.warn("Couldn't initialize fetcher for fetch id={}", t.getId(), e);
             return new FetcherOrResult(null, new PipesResult(PipesResult.RESULT_STATUS.FETCHER_INITIALIZATION_EXCEPTION,
-                    ExceptionUtils.getStackTrace(e)));
+                    ExceptionUtils.format(e, parseContext)));
         }
     }
 
-
-    private String getNoFetcherMsg(String fetcherId) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Fetcher '").append(fetcherId).append("'");
-        sb.append(" not found.");
-        sb.append("\nThe configured FetcherManager supports:");
-        int i = 0;
-        for (String f : fetcherManager.getSupported()) {
-            if (i++ > 0) {
-                sb.append(", ");
-            }
-            sb.append(f);
-        }
-        return sb.toString();
-    }
 
     private record FetcherOrResult(Fetcher fetcher, PipesResult pipesResult) {
 

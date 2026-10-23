@@ -15,7 +15,7 @@
 # the subsequent stages -- see TIKA-3912
 ARG UID_GID="35002:35002"
 
-FROM ubuntu:noble
+FROM ubuntu:resolute@sha256:f144425ff09be612d6d9ad965196e9cdc23dae1f42110a8a11a3e9a8198759f7
 
 ARG UID_GID
 COPY libs/ /tika/libs/
@@ -43,6 +43,7 @@ RUN set -eux \
         xfonts-utils \
         fonts-freefont-ttf \
         fonts-liberation \
+        fonts-noto-cjk \
         ttf-mscorefonts-installer \
         wget \
         cabextract \
@@ -56,6 +57,8 @@ USER $UID_GID
 
 EXPOSE 9090
 ENV TIKA_VERSION=$VERSION
+# tesseract links libgomp; one thread per OCR process - parallelism comes from the forked parse workers
+ENV OMP_THREAD_LIMIT=1
 ENV TIKA_GRPC_MAX_INBOUND_MESSAGE_SIZE=$TIKA_GRPC_MAX_INBOUND_MESSAGE_SIZE
 ENV TIKA_GRPC_MAX_OUTBOUND_MESSAGE_SIZE=$TIKA_GRPC_MAX_OUTBOUND_MESSAGE_SIZE
 ENV TIKA_GRPC_NUM_THREADS=$TIKA_GRPC_NUM_THREADS

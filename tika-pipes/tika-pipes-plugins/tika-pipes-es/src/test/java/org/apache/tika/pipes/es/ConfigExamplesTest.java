@@ -49,6 +49,8 @@ public class ConfigExamplesTest extends AbstractConfigExamplesTest {
                 config.attachmentStrategy());
         assertEquals(ESEmitterConfig.UpdateStrategy.OVERWRITE, config.updateStrategy());
         assertEquals(1000, config.commitWithin());
+        assertEquals(ESEmitterConfig.ChunkStrategy.INLINE, config.chunkStrategy(),
+                "the documented example loads");
         assertNotNull(config.apiKey());
         assertNotNull(config.httpClientConfig());
         // The toString override redacts the apiKey value

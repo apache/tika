@@ -18,6 +18,9 @@ package org.apache.tika.pipes.core.serialization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -121,7 +124,7 @@ public class JsonFetchEmitTupleTest {
         // Create UnpackConfig with specific settings
         UnpackConfig unpackConfig = new UnpackConfig();
         unpackConfig.setZipEmbeddedFiles(true);
-        unpackConfig.setIncludeMetadataInZip(true);
+        unpackConfig.setIncludeMetadata(true);
         unpackConfig.setEmitter("test-emitter");
         unpackConfig.setSuffixStrategy(UnpackConfig.SUFFIX_STRATEGY.DETECTED);
         parseContext.set(UnpackConfig.class, unpackConfig);
@@ -150,11 +153,38 @@ public class JsonFetchEmitTupleTest {
         UnpackConfig deserializedConfig = deserialized.getParseContext().get(UnpackConfig.class);
         assertEquals(unpackConfig.isZipEmbeddedFiles(), deserializedConfig.isZipEmbeddedFiles(),
                 "zipEmbeddedFiles should be preserved");
-        assertEquals(unpackConfig.isIncludeMetadataInZip(), deserializedConfig.isIncludeMetadataInZip(),
-                "includeMetadataInZip should be preserved");
+        assertEquals(unpackConfig.getIncludeMetadata(), deserializedConfig.getIncludeMetadata(),
+                "includeMetadata should be preserved");
+        assertTrue(deserializedConfig.isIncludeMetadataInZip(),
+                "deprecated getter should read the unified flag");
         assertEquals(unpackConfig.getEmitter(), deserializedConfig.getEmitter(),
                 "emitter should be preserved");
         assertEquals(unpackConfig.getSuffixStrategy(), deserializedConfig.getSuffixStrategy(),
                 "suffixStrategy should be preserved");
+    }
+
+    @Test
+    public void testPresetNameRoundTrips() throws Exception {
+        FetchEmitTuple t = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "k"),
+                new EmitKey("my_emitter", "e"), new Metadata(), new ParseContext(),
+                FetchEmitTuple.ON_PARSE_EXCEPTION.EMIT, "ocr-heavy");
+        FetchEmitTuple deserialized =
+                JsonFetchEmitTuple.fromJson(new StringReader(JsonFetchEmitTuple.toJson(t)));
+        assertEquals("ocr-heavy", deserialized.getPresetName());
+
+        FetchEmitTuple noPreset = new FetchEmitTuple("my_id", new FetchKey("my_fetcher", "k"),
+                new EmitKey("my_emitter", "e"));
+        assertNull(JsonFetchEmitTuple
+                .fromJson(new StringReader(JsonFetchEmitTuple.toJson(noPreset)))
+                .getPresetName());
+    }
+
+    @Test
+    public void testInvalidPresetNameRefused() {
+        // the name is only a selector, but it must obey the shared syntax bound
+        assertThrows(Exception.class, () -> JsonFetchEmitTuple.fromJson(new StringReader(
+                "{\"id\":\"i\",\"fetcher\":\"f\",\"fetchKey\":\"k\",\"preset\":\"../etc\"}")));
+        assertThrows(Exception.class, () -> JsonFetchEmitTuple.fromJson(new StringReader(
+                "{\"id\":\"i\",\"fetcher\":\"f\",\"fetchKey\":\"k\",\"preset\":\"config-x\"}")));
     }
 }

@@ -39,16 +39,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.tika.config.TimeoutLimits;
+import org.apache.tika.config.loader.TikaJsonConfig;
+import org.apache.tika.exception.TikaConfigException;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.FetchEmitTuple;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.core.emitter.EmitDataImpl;
+import org.apache.tika.pipes.core.protocol.ForkBootstrap;
 import org.apache.tika.pipes.core.protocol.PayloadLimitExceededException;
 import org.apache.tika.pipes.core.protocol.PipesMessage;
 import org.apache.tika.pipes.core.protocol.PipesMessageType;
 import org.apache.tika.pipes.core.serialization.JsonPipesIpc;
+import org.apache.tika.pipes.core.serialization.PipesRequest;
 import org.apache.tika.pipes.core.server.IntermediateResult;
 import org.apache.tika.utils.ExceptionUtils;
 import org.apache.tika.utils.StringUtils;
@@ -66,6 +70,10 @@ import org.apache.tika.utils.StringUtils;
 public class PipesClient implements Closeable {
 
     private static final Logger LOG = LoggerFactory.getLogger(PipesClient.class);
+    /** Per-parse latency breakdown; one key=value line per parse. Route or silence
+     *  independently of {@link #LOG}. Diagnostic only -- off unless INFO is enabled. */
+    private static final Logger TIMING_LOG =
+            LoggerFactory.getLogger("org.apache.tika.pipes.timing.client");
     private static final AtomicInteger CLIENT_COUNTER = new AtomicInteger(0);
     public static final int SOCKET_CONNECT_TIMEOUT_MS = 60000;
     public static final int SOCKET_TIMEOUT_MILLIS = 60000;
@@ -81,7 +89,25 @@ public class PipesClient implements Closeable {
     // calling close(). The lock lets one thread atomically claim and null the tuple.
     private final Object connectionLock = new Object();
     private volatile ConnectionTuple connectionTuple;
+    /**
+     * The server generation this client's connection belongs to, captured in {@link #reconnect()}.
+     * Starts at MAX_VALUE so a report made before we have ever connected is never mistaken for a
+     * stale one: dropping a legitimate mark can wedge the pool, while an extra mark only costs a
+     * restart, so the un-connected case must fail toward marking.
+     */
+    private volatile long connectionGeneration = Long.MAX_VALUE;
     private int filesProcessed = 0;
+
+    // Per-parse timing scratch. A PipesClient serves one parse at a time (the pool hands
+    // out an exclusive client), so plain fields are safe and avoid per-parse allocation.
+    private long tInitNanos;
+    private long tReqSerNanos;
+    private long tReqWriteNanos;
+    private long tFirstFrameNanos;
+    private long tFinishedNanos;
+    private long tRespDeserNanos;
+    private long tAckNanos;
+    private int tFrames;
 
     /**
      * Creates a PipesClient with the given server manager.
@@ -109,14 +135,38 @@ public class PipesClient implements Closeable {
      * lazily on first use and shut down when this client is closed.
      *
      * @param pipesConfig the pipes configuration
-     * @param tikaConfigPath path to the tika config file
+     * @param tikaConfigPath path to the tika config file; read once, here
+     * @throws IOException if the config can't be read
+     * @throws TikaConfigException if the config is invalid
      */
-    public PipesClient(PipesConfig pipesConfig, java.nio.file.Path tikaConfigPath) {
+    public PipesClient(PipesConfig pipesConfig, java.nio.file.Path tikaConfigPath)
+            throws IOException, TikaConfigException {
         this.pipesConfig = pipesConfig;
         this.maxIpcPayloadBytes = pipesConfig.getMaxIpcPayloadBytes();
         this.pipesClientId = CLIENT_COUNTER.getAndIncrement();
-        this.serverManager = new PerClientServerManager(pipesConfig, tikaConfigPath, pipesClientId);
+        byte[] tikaConfigJson = ForkBootstrap.toBytes(TikaJsonConfig.load(tikaConfigPath));
+        this.serverManager = new PerClientServerManager(pipesConfig, tikaConfigJson, pipesClientId);
         this.ownsServerManager = true;
+    }
+
+    /**
+     * Brings the server up and waits until it is ready, rather than on the first
+     * {@link #process}. Does nothing if it is already up.
+     *
+     * @throws ServerInitializationException if the server can't start
+     */
+    public void start() throws InterruptedException, ServerInitializationException {
+        try {
+            maybeInit();
+        } catch (InterruptedException e) {
+            serverManager.connectionAbandoned();
+            closeConnection();
+            throw e;
+        } catch (ServerInitializationException e) {
+            serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
+            closeConnection();
+            throw e;
+        }
     }
 
     public int getFilesProcessed() {
@@ -206,8 +256,12 @@ public class PipesClient implements Closeable {
         // Container object to hold latest intermediate result if the parser is doing that
         IntermediateResult intermediateResult = new IntermediateResult();
         PipesResult result = null;
+        long callStart = System.nanoTime();
+        resetTimings();
+        long initStart = System.nanoTime();
         try {
             maybeInit();
+            tInitNanos = System.nanoTime() - initStart;
         } catch (InterruptedException e) {
             // Same invariant as the in-flight path below: an abandoned connection,
             // here possibly half-established, must not be re-queued, and an
@@ -217,14 +271,29 @@ public class PipesClient implements Closeable {
             throw e;
         } catch (ServerInitializationException e) {
             LOG.error("server initialization failed: {} ", t.getId(), e);
+            serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
             closeConnection();
+            // Config policy, not t.getParseContext(): a request context can never carry
+            // ExceptionReporting (wire-blocked), so it would always report FULL. Applies to
+            // every message this class fabricates below.
             return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
-                    intermediateResult.get(), e.getMessage());
+                    intermediateResult.get(), ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
         } catch (SecurityException e) {
             LOG.error("security exception during initialization: {} ", t.getId());
+            serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
             closeConnection();
             return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
                     intermediateResult.get());
+        } catch (IllegalStateException e) {
+            // Typically the manager was closed underneath us: a request thread racing PipesParser.close()
+            // or AsyncProcessor.close(), which interrupts workers without awaiting them. Nothing
+            // to restart and nothing to recover -- but report it rather than letting an unchecked
+            // exception escape PipesParser.parse() to a caller that cannot act on it.
+            LOG.warn("clientId={}: server manager rejected initialization of {}", pipesClientId,
+                    t.getId(), e);
+            closeConnection();
+            return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.FAILED_TO_INITIALIZE,
+                    intermediateResult.get(), ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
         }
 
         try {
@@ -240,12 +309,55 @@ public class PipesClient implements Closeable {
             serverManager.connectionAbandoned();
             closeConnection();
             throw e;
+        } catch (PayloadLimitExceededException e) {
+            // Only writeTask's pre-send check throws this here (waitForServer handles its
+            // own); nothing was written, so the connection stays in sync -- keep it.
+            LOG.warn("clientId={}: request too large for id={}: {}", pipesClientId, t.getId(),
+                    e.getMessage());
+            return buildFatalResult(t.getId(), t.getEmitKey(),
+                    PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED,
+                    intermediateResult.get(), ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
         } catch (Exception e) {
             LOG.error("exception waiting for server to complete task: {} ", t.getId(), e);
+            serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
             closeConnection();
             return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH, intermediateResult.get());
         }
+        logTiming(t.getId(), result, System.nanoTime() - callStart);
         return result;
+    }
+
+    private void resetTimings() {
+        tInitNanos = 0;
+        tReqSerNanos = 0;
+        tReqWriteNanos = 0;
+        tFirstFrameNanos = 0;
+        tFinishedNanos = 0;
+        tRespDeserNanos = 0;
+        tAckNanos = 0;
+        tFrames = 0;
+    }
+
+    /**
+     * One line per parse on {@code org.apache.tika.pipes.timing.client}, microseconds.
+     * {@code finished_us} is measured from the end of the request write to the moment the
+     * FINISHED frame is fully read, so it contains the worker's own work plus everything
+     * the response leg costs; the worker logs its side under the same {@code id}.
+     */
+    private void logTiming(String id, PipesResult result, long totalNanos) {
+        if (!TIMING_LOG.isTraceEnabled()) {
+            return;
+        }
+        TIMING_LOG.trace("CLIENT_TIMING client={} id={} status={} init_us={} req_ser_us={}"
+                        + " req_write_us={} first_frame_us={} finished_us={} resp_deser_us={}"
+                        + " ack_us={} frames={} total_us={}",
+                pipesClientId, id, result == null ? "NULL" : result.status().name(),
+                us(tInitNanos), us(tReqSerNanos), us(tReqWriteNanos), us(tFirstFrameNanos),
+                us(tFinishedNanos), us(tRespDeserNanos), us(tAckNanos), tFrames, us(totalNanos));
+    }
+
+    private static long us(long nanos) {
+        return nanos < 0 ? nanos : nanos / 1000L;
     }
 
     private void maybeInit() throws InterruptedException, ServerInitializationException {
@@ -316,6 +428,9 @@ public class PipesClient implements Closeable {
 
         // Get port after ensureRunning - this is the port we'll connect to
         int port = serverManager.getPort();
+        // Captured with the port: every report we make below is about THIS process, and must
+        // be dropped if a sibling has already replaced it.
+        connectionGeneration = serverManager.getGeneration();
         LOG.debug("pipesClientId={}: connecting to server", pipesClientId);
 
         // Connect to server. Use the generous startup timeout as the read SO_TIMEOUT so the
@@ -340,8 +455,19 @@ public class PipesClient implements Closeable {
             throw new IOException("connection closed");
         }
         LOG.debug("pipesClientId={}: sending NEW_REQUEST for id={}", pipesClientId, t.getId());
-        byte[] bytes = JsonPipesIpc.toBytes(t);
+        long serStart = System.nanoTime();
+        byte[] bytes = JsonPipesIpc.toBytes(PipesRequest.of(t));
+        tReqSerNanos = System.nanoTime() - serStart;
+        // Fail fast before sending: the server would refuse the frame anyway, but only by
+        // dying or dropping the connection, misreported as a crash.
+        if (bytes.length > maxIpcPayloadBytes) {
+            throw new PayloadLimitExceededException("serialized request for id=" + t.getId()
+                    + " is " + bytes.length + " bytes, over maxIpcPayloadBytes="
+                    + maxIpcPayloadBytes + "; raise maxIpcPayloadBytes or shrink the request");
+        }
+        long writeStart = System.nanoTime();
         PipesMessage.newRequest(bytes).write(tuple.output);
+        tReqWriteNanos = System.nanoTime() - writeStart;
     }
 
     /**
@@ -378,6 +504,9 @@ public class PipesClient implements Closeable {
         long clientBackstopMillis = clientBackstopMillis(limits);
         // nanoTime: the backstop must be immune to wall-clock steps
         long startNanos = System.nanoTime();
+        // Separate anchor for the timing log: the backstop's is conceptually the deadline
+        // clock, and conflating them would silently break if either moves.
+        final long respAnchor = startNanos;
 
         while (true) {
             if (Thread.currentThread().isInterrupted()) {
@@ -388,35 +517,41 @@ public class PipesClient implements Closeable {
                 LOG.warn("clientId={}: client-side backstop timeout: id={} elapsed={}ms limit={}ms " +
                                 "-- server should have self-terminated well before this", pipesClientId,
                         t.getId(), totalElapsed, clientBackstopMillis);
-                serverManager.markServerForRestart();
+                serverManager.markServerForRestart(RestartReason.TIMEOUT, connectionGeneration);
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get());
             }
             try {
                 PipesMessage msg = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
+                long frameReadAt = System.nanoTime() - respAnchor;
+                if (++tFrames == 1) {
+                    tFirstFrameNanos = frameReadAt;
+                }
                 LOG.trace("clientId={}: received message type={} id={}", pipesClientId, msg.type(), t.getId());
 
                 // Send ACK only for messages that require it
                 if (msg.type().requiresAck()) {
+                    long ackStart = System.nanoTime();
                     PipesMessage.ack().write(tuple.output);
+                    tAckNanos += System.nanoTime() - ackStart;
                 }
 
                 switch (msg.type()) {
                     case OOM:
                         String oomMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
-                        serverManager.markServerForRestart();
+                        serverManager.markServerForRestart(RestartReason.OOM, connectionGeneration);
                         closeConnection();
                         return buildFatalResult(t.getId(), t.getEmitKey(), PipesResult.RESULT_STATUS.OOM,
                                 intermediateResult.get(), oomMsg);
                     case TIMEOUT:
                         String timeoutMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
-                        serverManager.markServerForRestart();
+                        serverManager.markServerForRestart(RestartReason.TIMEOUT, connectionGeneration);
                         closeConnection();
                         return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT,
                                 intermediateResult.get(), timeoutMsg);
                     case UNSPECIFIED_CRASH:
                         String crashMsg = JsonPipesIpc.fromBytes(msg.payload(), String.class);
-                        serverManager.markServerForRestart();
+                        serverManager.markServerForRestart(RestartReason.CRASH, connectionGeneration);
                         closeConnection();
                         return buildFatalResult(t.getId(), t.getEmitKey(), UNSPECIFIED_CRASH,
                                 intermediateResult.get(), crashMsg);
@@ -428,7 +563,10 @@ public class PipesClient implements Closeable {
                         // is what keeps the blocking read below from hitting SO_TIMEOUT.
                         break;
                     case FINISHED:
+                        tFinishedNanos = frameReadAt;
+                        long deserStart = System.nanoTime();
                         PipesResult result = JsonPipesIpc.fromBytes(msg.payload(), PipesResult.class);
+                        tRespDeserNanos = System.nanoTime() - deserStart;
                         // Restore ParseContext from original FetchEmitTuple (not serialized back from server)
                         if (result.emitData() instanceof EmitDataImpl emitDataImpl) {
                             emitDataImpl.setParseContext(t.getParseContext());
@@ -450,32 +588,35 @@ public class PipesClient implements Closeable {
             } catch (SocketTimeoutException e) {
                 LOG.warn("clientId={}: Socket timeout exception while waiting for server", pipesClientId, e);
                 // Mark for restart - server is stuck on current request and needs to be restarted
-                serverManager.markServerForRestart();
+                serverManager.markServerForRestart(RestartReason.TIMEOUT, connectionGeneration);
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), TIMEOUT, intermediateResult.get(),
-                        ExceptionUtils.getStackTrace(e));
+                        ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
             } catch (PayloadLimitExceededException e) {
                 // Stream is desynchronized (payload bytes were not consumed); close the connection.
                 LOG.warn("clientId={}: payload too large for id={}: {}", pipesClientId, t.getId(), e.getMessage());
+                serverManager.connectionAbandoned();
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(),
                         PipesResult.RESULT_STATUS.PAYLOAD_LIMIT_EXCEEDED,
-                        intermediateResult.get(), e.getMessage());
+                        intermediateResult.get(), ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
             } catch (SecurityException e) {
                 throw e;
             } catch (Exception e) {
                 LOG.warn("clientId={} - crash while waiting for server", pipesClientId, e);
                 // Handle crash and determine status based on exit code
-                int exitCode = serverManager.handleCrashAndGetExitCode();
+                int exitCode = serverManager.handleCrashAndGetExitCode(connectionGeneration);
                 PipesResult.RESULT_STATUS status = UNSPECIFIED_CRASH;
                 if (exitCode == PipesMessageType.OOM.getExitCode().orElse(-1)) {
                     status = PipesResult.RESULT_STATUS.OOM;
+                    serverManager.markServerForRestart(RestartReason.OOM, connectionGeneration);
                 } else if (exitCode == PipesMessageType.TIMEOUT.getExitCode().orElse(-1)) {
                     status = PipesResult.RESULT_STATUS.TIMEOUT;
+                    serverManager.markServerForRestart(RestartReason.TIMEOUT, connectionGeneration);
                 }
                 closeConnection();
                 return buildFatalResult(t.getId(), t.getEmitKey(), status, intermediateResult.get(),
-                        ExceptionUtils.getStackTrace(e));
+                        ExceptionUtils.format(e, pipesConfig.getDefaultExceptionReporting()));
             }
         }
     }
@@ -529,7 +670,7 @@ public class PipesClient implements Closeable {
         }
         PipesMessage msg = PipesMessage.read(tuple.input, maxIpcPayloadBytes);
         if (msg.type() == PipesMessageType.READY) {
-            LOG.info("clientId={}: server successfully started", pipesClientId);
+            LOG.debug("clientId={}: server successfully started", pipesClientId);
         } else if (msg.type() == PipesMessageType.STARTUP_FAILED) {
             // Send ACK for startup failure
             PipesMessage.ack().write(tuple.output);

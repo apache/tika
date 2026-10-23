@@ -31,8 +31,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "emitters": {
- *   "s3-emitter": {
- *     "my-s3-emitter": {
+ *   "my-s3-emitter": {
+ *     "s3-emitter": {
  *       "region": "us-east-1",
  *       "bucket": "my-bucket",
  *       "credentialsProvider": "profile",

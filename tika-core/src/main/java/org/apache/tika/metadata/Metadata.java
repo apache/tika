@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import org.slf4j.Logger;
@@ -40,7 +41,8 @@ import org.apache.tika.metadata.Property.PropertyType;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiter;
 import org.apache.tika.metadata.writelimiter.MetadataWriteLimiterFactory;
 import org.apache.tika.parser.ParseContext;
-import org.apache.tika.utils.DateUtils;
+import org.apache.tika.utils.StringUtils;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * A multi-valued metadata container.
@@ -112,7 +114,6 @@ public class Metadata implements Serializable {
      * Some parsers will have the date as a ISO-8601 string
      * already, and will set that into the Metadata object.
      */
-    private static final DateUtils DATE_UTILS = new DateUtils();
     /**
      * A map of all metadata attributes.
      */
@@ -173,16 +174,10 @@ public class Metadata implements Serializable {
         return sdf;
     }
 
-    /**
-     * Parses the given date string. This method is synchronized to prevent
-     * concurrent access to the thread-unsafe date formats.
-     *
-     * @param date date string
-     * @return parsed date, or <code>null</code> if the date can't be parsed
-     * @see <a href="https://issues.apache.org/jira/browse/TIKA-495">TIKA-495</a>
-     */
-    private static synchronized Date parseDate(String date) {
-        return DATE_UTILS.tryToParse(date);
+    /** Zone-less values read as UTC. */
+    private static Date parseDate(String date) {
+        Optional<TikaDates.ParsedDate> parsed = TikaDates.parse(date);
+        return parsed.isPresent() && parsed.get().isFullPrecision() ? Date.from(parsed.get().toInstant()) : null;
     }
 
     /**
@@ -274,6 +269,12 @@ public class Metadata implements Serializable {
     /**
      * Returns the value of the identified Date based metadata property. If many values are
      * associated to the specified property, then the first one is returned.
+     * <p>
+     * The value is read with {@link org.apache.tika.utils.TikaDates}: a zone-less value is read
+     * as UTC (never the JVM default zone), a date-only {@code yyyy-MM-dd} value as midday UTC.
+     * Partial dates ({@code yyyy}, {@code yyyy-MM}) and years outside
+     * {@value org.apache.tika.utils.TikaDates#MIN_YEAR}..{@value org.apache.tika.utils.TikaDates#MAX_YEAR}
+     * return null.
      *
      * @param property simple date property definition
      * @return property value as a Date, or <code>null</code> if the property is not set, or not
@@ -445,7 +446,18 @@ public class Metadata implements Serializable {
      * reserved key by name rather than by its {@link Property}.
      */
     public void addTrusted(final String name, final String value) {
-        writeLimiter.add(name, value, metadata);
+        writeLimiter.add(name, wellFormed(name, value), metadata);
+    }
+
+    /**
+     * Every string value is stored well-formed: a lone surrogate becomes U+FFFD at the write,
+     * so no reader (a Smile encoder, for one) meets one. {@code tk:content} is exempt: it came
+     * through {@link org.apache.tika.sax.SafeContentHandler}, which already did this, and it
+     * is the one value large enough for the scan to cost anything.
+     */
+    private static String wellFormed(String name, String value) {
+        return TikaCoreProperties.TIKA_CONTENT.getName().equals(name) ? value
+                : StringUtils.wellFormed(value);
     }
 
     /**
@@ -481,7 +493,9 @@ public class Metadata implements Serializable {
                     name.length(), MAX_PREFIX_ROUTE_NAME_LENGTH);
             return;
         }
-        String key = prefix.key(name);
+        // a source-derived name can carry a lone surrogate as easily as a value; a code
+        // constant never does, so only this route pays for the check on the name
+        String key = prefix.key(StringUtils.wellFormed(name));
         if (!metadata.containsKey(key)) {
             if (prefixRouteNames >= MAX_PREFIX_ROUTE_NAMES) {
                 if (!prefixRouteFloodWarned) {
@@ -680,7 +694,7 @@ public class Metadata implements Serializable {
      * ({@code tk:}) keys directly. See {@link #addTrusted}.
      */
     public void setTrusted(String name, String value) {
-        writeLimiter.set(name, value, metadata);
+        writeLimiter.set(name, wellFormed(name, value), metadata);
     }
 
     protected void set(String name, String[] values) {

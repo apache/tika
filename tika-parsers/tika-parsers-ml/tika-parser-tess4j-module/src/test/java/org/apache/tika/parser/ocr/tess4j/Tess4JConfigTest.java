@@ -23,7 +23,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
-import org.apache.tika.exception.TikaConfigException;
 
 public class Tess4JConfigTest {
 
@@ -53,6 +52,17 @@ public class Tess4JConfigTest {
     public void testSetLanguageInvalid() {
         Tess4JConfig config = new Tess4JConfig();
         assertThrows(IllegalArgumentException.class, () -> config.setLanguage("xy"));
+    }
+
+    @Test
+    public void testScriptModelsByBareName() {
+        Tess4JConfig config = new Tess4JConfig();
+        for (String ok : new String[]{"Latin", "eng+Latin", "script/Latin", "Japanese_vert"}) {
+            config.setLanguage(ok);
+            assertEquals(ok, config.getLanguage());
+        }
+        assertThrows(IllegalArgumentException.class, () -> config.setLanguage("latin1"));
+        assertThrows(IllegalArgumentException.class, () -> config.setLanguage("script/"));
     }
 
     @Test
@@ -122,19 +132,5 @@ public class Tess4JConfigTest {
         Tess4JConfig config = new Tess4JConfig();
         config.setSkipOcr(true);
         assertTrue(config.isSkipOcr());
-    }
-
-    @Test
-    public void testRuntimeConfigBlocksDataPath() {
-        Tess4JConfig.RuntimeConfig config = new Tess4JConfig.RuntimeConfig();
-        assertThrows(TikaConfigException.class,
-                () -> config.setDataPath("/some/path"));
-    }
-
-    @Test
-    public void testRuntimeConfigAllowsEmptyDataPath() throws TikaConfigException {
-        Tess4JConfig.RuntimeConfig config = new Tess4JConfig.RuntimeConfig();
-        config.setDataPath("");
-        assertEquals("", config.getDataPath());
     }
 }

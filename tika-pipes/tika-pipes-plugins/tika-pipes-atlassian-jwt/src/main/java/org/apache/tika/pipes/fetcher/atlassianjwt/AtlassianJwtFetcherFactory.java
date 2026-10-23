@@ -32,8 +32,8 @@ import org.apache.tika.plugins.ExtensionConfig;
  * <p>Example JSON configuration:
  * <pre>
  * "fetchers": {
- *   "atlassian-jwt-fetcher": {
- *     "my-atlassian-fetcher": {
+ *   "my-atlassian-fetcher": {
+ *     "atlassian-jwt-fetcher": {
  *       "sharedSecret": "your-shared-secret",
  *       "issuer": "your-app-key",
  *       "connectTimeoutMillis": 30000,

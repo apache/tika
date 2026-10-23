@@ -122,8 +122,8 @@ include::example$pipes-elasticsearch-emitter.json[]
 |Validated non-blank, but not otherwise read: the `_id` is the emit key (attachments get the emit key plus a random suffix).
 
 |`attachmentStrategy`
-|`SEPARATE_DOCUMENTS`
-|How attached/embedded documents are indexed. `SEPARATE_DOCUMENTS` — each attachment becomes its own top-level document; `PARENT_CHILD` — attachments are nested under the parent in a parent/child relation. Absent behaves as `SEPARATE_DOCUMENTS`.
+|_none_
+|How attached/embedded documents are indexed. `SEPARATE_DOCUMENTS` — each attachment becomes its own top-level document; `PARENT_CHILD` — attachments are nested under the parent in a parent/child relation. There is no default: leave it unset and embedded documents get neither the `parent` field nor the parent/child relation, so set it explicitly.
 
 |`updateStrategy`
 |`UPSERT`
@@ -133,13 +133,18 @@ include::example$pipes-elasticsearch-emitter.json[]
 |_unused_
 |Accepted by the config parser but never read. Control refresh visibility on the Elasticsearch side instead.
 
+|`chunkStrategy`
+|`INLINE`
+|Where `tk:chunks` goes. `INLINE` — inside the document, as a JSON array; `DOCUMENTS` — one document per unit (`_id` is the document's id plus `-chunk-N`): chunks sharing a `correlator` merge into one, with `file_id`, `container_id`, `correlator`, the locators as flat fields (`start_ms`/`end_ms`, `page`, `start_offset`/`end_offset`, `embedded_id_path`) and every vector decoded to a float array under `v.<producer>`; the document itself is written without `tk:chunks`. Needs `attachmentStrategy: SEPARATE_DOCUMENTS`; re-indexing does not delete an earlier run's surplus chunk documents. See xref:migration-to-4x/chunk-strategies.adoc[Chunk strategies].
+
 |`embeddedFileFieldName`
 |_none_
 |Name of the field used to hold embedded-file content (used by `PARENT_CHILD`).
 
 |`apiKey`
 |_none_
-|Base64-encoded `id:api_key`. See <<credentials>>.
+|Base64-encoded `id:api_key`. See <<credentials>>. `${env:ES_API_KEY}` reads it from the
+environment (xref:configuration/index.adoc#env[Secrets from the environment]).
 
 |`httpClientConfig`
 |_none_

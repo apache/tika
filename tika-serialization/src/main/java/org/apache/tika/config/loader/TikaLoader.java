@@ -19,7 +19,9 @@ package org.apache.tika.config.loader;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -30,6 +32,8 @@ import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.tika.detect.CompositeDetector;
 import org.apache.tika.detect.CompositeEncodingDetector;
@@ -48,6 +52,10 @@ import org.apache.tika.parser.AutoDetectParserConfig;
 import org.apache.tika.parser.CompositeParser;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.enricher.CompositeContentEnricher;
+import org.apache.tika.parser.hook.ParseHooks;
+import org.apache.tika.parser.inference.EngineRegistry;
+import org.apache.tika.parser.inference.InferenceDispatcher;
 import org.apache.tika.renderer.CompositeRenderer;
 import org.apache.tika.renderer.Renderer;
 import org.apache.tika.sax.BasicContentHandlerFactory;
@@ -59,6 +67,7 @@ import org.apache.tika.serialization.JsonMetadataList;
 import org.apache.tika.serialization.ParseContextUtils;
 import org.apache.tika.serialization.config.GlobalSettings;
 import org.apache.tika.serialization.serdes.ParseContextDeserializer;
+import org.apache.tika.utils.StringUtils;
 
 /**
  * Main entry point for loading Tika components from JSON configuration.
@@ -79,7 +88,7 @@ import org.apache.tika.serialization.serdes.ParseContextDeserializer;
  *       "pdf-parser": {
  *         "_mime-include": ["application/pdf"],
  *         "_mime-exclude": ["application/pdf+fdf"],
- *         "ocr": {"strategy": "AUTO"},
+ *         "pages": { "text": "AUTO" },
  *         "extractInlineImages": true
  *       }
  *     }
@@ -91,6 +100,10 @@ import org.apache.tika.serialization.serdes.ParseContextDeserializer;
  * </pre>
  */
 public class TikaLoader {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TikaLoader.class);
+
+    private static volatile boolean tempDirectoryLogged = false;
 
     // Static registration of component configurations
     static {
@@ -123,6 +136,16 @@ public class TikaLoader {
         ComponentConfig.builder("renderers", Renderer.class)
                 .loadAsList()
                 .wrapWith(list -> new CompositeRenderer((List<Renderer>) list))
+                .register();
+
+        ComponentConfig.builder("text-recognizers", CompositeContentEnricher.class)
+                .customLoader(new ContentEnricherLoader())
+                .register();
+        ComponentConfig.builder(EngineLoader.KEY, EngineRegistry.class)
+                .customLoader(new EngineLoader())
+                .register();
+        ComponentConfig.builder(InferenceLoader.KEY, InferenceDispatcher.class)
+                .customLoader(new InferenceLoader())
                 .register();
 
         ComponentConfig.builder("translator", Translator.class)
@@ -165,7 +188,28 @@ public class TikaLoader {
      * @throws TikaConfigException if loading global settings fails
      */
     private void init() throws TikaConfigException, IOException {
+        checkTempDirectory();
         loadGlobalSettings();
+    }
+
+    /** Fail here, naming the dir, rather than on the first spool with a bare NoSuchFileException. */
+    private static void checkTempDirectory() throws TikaConfigException {
+        String prop = System.getProperty("java.io.tmpdir");
+        if (StringUtils.isBlank(prop)) {
+            throw new TikaConfigException("java.io.tmpdir is not set");
+        }
+        Path dir = Paths.get(prop);
+        if (!Files.isDirectory(dir)) {
+            throw new TikaConfigException(
+                    "java.io.tmpdir does not exist or is not a directory: " + dir);
+        }
+        if (!Files.isWritable(dir)) {
+            throw new TikaConfigException("java.io.tmpdir is not writable: " + dir);
+        }
+        if (!tempDirectoryLogged) {
+            LOG.info("temporary files go to java.io.tmpdir={}", dir.toAbsolutePath());
+            tempDirectoryLogged = true;
+        }
     }
 
     /**
@@ -191,7 +235,20 @@ public class TikaLoader {
      */
     public static TikaLoader load(Path configPath, ClassLoader classLoader)
             throws TikaConfigException, IOException {
-        TikaJsonConfig config = TikaJsonConfig.load(configPath);
+        return load(TikaJsonConfig.load(configPath), classLoader);
+    }
+
+    /**
+     * Creates a Tika loader from an already-loaded configuration.
+     * Global settings are automatically loaded and applied during initialization.
+     *
+     * @param config the configuration
+     * @param classLoader the class loader to use for loading components
+     * @return the Tika loader
+     * @throws TikaConfigException if loading global settings fails
+     */
+    public static TikaLoader load(TikaJsonConfig config, ClassLoader classLoader)
+            throws TikaConfigException, IOException {
         TikaLoader loader = new TikaLoader(config, classLoader);
         loader.init();
         return loader;
@@ -372,6 +429,11 @@ public class TikaLoader {
                 adpConfig = new AutoDetectParserConfig();
             }
             autoDetectParser = AutoDetectParser.build((CompositeParser)loadParsers(), loadDetectors(), adpConfig);
+            InferenceDispatcher dispatcher = get(InferenceDispatcher.class);
+            if (dispatcher != null) {
+                ((AutoDetectParser) autoDetectParser)
+                        .setParseHooks(new ParseHooks(List.of(dispatcher)));
+            }
         }
         return autoDetectParser;
     }
@@ -429,7 +491,7 @@ public class TikaLoader {
      *
      * // At runtime, create per-request overrides
      * PDFParserConfig requestConfig = new PDFParserConfig();
-     * requestConfig.getOcr().setStrategy(OcrConfig.Strategy.NO_OCR);
+     * requestConfig.pages().setText(TextPolicy.EXTRACT);
      *
      * // Merge: base config values + request overrides
      * // (Note: for runtime merging, use JsonMergeUtils directly or loadConfig on a runtime loader)
@@ -519,7 +581,7 @@ public class TikaLoader {
      *
      * <p>Settings include:
      * <ul>
-     *   <li>metadata-list - Jackson StreamReadConstraints for JsonMetadata/JsonMetadataList serialization</li>
+     *   <li>metadata-list - Jackson StreamReadConstraints and typedValues for JsonMetadata/JsonMetadataList serialization</li>
      *   <li>service-loader - Service loader configuration</li>
      *   <li>xml-reader-utils - XML parser security settings</li>
      * </ul>
@@ -533,7 +595,6 @@ public class TikaLoader {
      *     "maxNumberLength": 500
      *   },
      *   "xml-reader-utils": {
-     *     "maxEntityExpansions": 1000,
      *     "maxNumReuses": 100,
      *     "poolSize": 10
      *   }
@@ -561,6 +622,10 @@ public class TikaLoader {
             GlobalSettings.XmlReaderUtilsConfig xmlReaderUtilsConfig =
                     config.deserialize("xml-reader-utils", GlobalSettings.XmlReaderUtilsConfig.class);
             if (xmlReaderUtilsConfig != null) {
+                if (xmlReaderUtilsConfig.getMaxEntityExpansions() != null) {
+                    LOG.warn("xml-reader-utils.maxEntityExpansions is ignored since 4.2.0; " +
+                            "the JAXP provider's secure-processing limits apply");
+                }
                 globalSettings.setXmlReaderUtils(xmlReaderUtilsConfig);
             }
         }
@@ -571,20 +636,37 @@ public class TikaLoader {
      * Loads the metadata-list configuration section and applies it to
      * JsonMetadata and JsonMetadataList serializers.
      * <p>
-     * Configuration uses Jackson's StreamReadConstraints property names:
+     * Read limits use Jackson's StreamReadConstraints property names; {@code typedValues}
+     * opts in to native numbers, booleans and JSON values (see
+     * {@link JsonMetadataList#setTypedValues(boolean)}):
      * <pre>
      * {
      *   "metadata-list": {
      *     "maxStringLength": 20000000,
      *     "maxNestingDepth": 10,
-     *     "maxNumberLength": 500
+     *     "maxNumberLength": 500,
+     *     "typedValues": true
      *   }
      * }
      * </pre>
      */
-    private void loadMetadataListConfig() {
+    private void loadMetadataListConfig() throws TikaConfigException {
         JsonNode metadataListNode = config.getRootNode().get("metadata-list");
         if (metadataListNode == null) {
+            return;
+        }
+        if (metadataListNode.has("typedValues")) {
+            JsonNode typedNode = metadataListNode.get("typedValues");
+            if (!typedNode.isBoolean()) {
+                throw new TikaConfigException(
+                        "metadata-list.typedValues must be true or false, not " + typedNode);
+            }
+            boolean typed = typedNode.booleanValue();
+            JsonMetadata.setTypedValues(typed);
+            JsonMetadataList.setTypedValues(typed);
+        }
+        if (!metadataListNode.has("maxStringLength") && !metadataListNode.has("maxNestingDepth")
+                && !metadataListNode.has("maxNumberLength")) {
             return;
         }
 
@@ -787,6 +869,17 @@ public class TikaLoader {
             output.set("renderers", serializeComponent(componentCache.get(Renderer.class), "renderers"));
         } else if (config.hasArrayComponents("renderers")) {
             output.set("renderers", config.getRootNode().get("renderers"));
+        }
+
+        // [] is meaningful (enrichment off), so the section is kept even when empty
+        if (config.hasComponentSection("text-recognizers")) {
+            output.set("text-recognizers", config.getRootNode().get("text-recognizers"));
+        }
+        // a text-recognizers entry may name an engine, so both travel with it
+        for (String section : new String[]{EngineLoader.KEY, InferenceLoader.KEY}) {
+            if (config.hasComponentSection(section)) {
+                output.set(section, config.getRootNode().get(section));
+            }
         }
 
         // Preserve auto-detect-parser config if present

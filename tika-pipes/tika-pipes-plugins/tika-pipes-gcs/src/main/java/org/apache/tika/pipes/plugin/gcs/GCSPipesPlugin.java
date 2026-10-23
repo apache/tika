@@ -30,19 +30,19 @@ public class GCSPipesPlugin extends Plugin {
 
     @Override
     public void start() {
-        LOG.info("Starting GCS Fetcher Plugin");
+        LOG.debug("Starting GCS Fetcher Plugin");
         super.start();
     }
 
     @Override
     public void stop() {
-        LOG.info("Stopping GCS Fetcher Plugin");
+        LOG.debug("Stopping GCS Fetcher Plugin");
         super.stop();
     }
 
     @Override
     public void delete() {
-        LOG.info("Deleting GCS Fetcher Plugin");
+        LOG.debug("Deleting GCS Fetcher Plugin");
         super.delete();
     }
 }

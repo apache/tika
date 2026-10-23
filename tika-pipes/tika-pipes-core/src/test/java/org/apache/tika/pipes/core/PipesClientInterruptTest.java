@@ -16,6 +16,7 @@
  */
 package org.apache.tika.pipes.core;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.DataInputStream;
@@ -96,6 +97,11 @@ public class PipesClientInterruptTest {
                 assertTrue(manager.abandoned,
                         "the manager was not told; a per-client worker never dials back, so the "
                                 + "next connect() would wait out the accept timeout for nothing");
+                // Recycling on an abandoned connection travels connectionAbandoned(), which the
+                // real managers attribute to CONNECTION_ABANDONED. Marking here too would double
+                // count the restart and overwrite that reason with a less specific one.
+                assertNull(manager.marked,
+                        "an interrupt must recycle via connectionAbandoned(), not by marking");
             }
         }
     }
@@ -224,57 +230,4 @@ public class PipesClientInterruptTest {
         }
     }
 
-    /**
-     * Points the client at the scripted server; no forked process anywhere.
-     */
-    private static final class SentinelServerManager implements ServerManager {
-        private final int port;
-        private volatile boolean abandoned;
-
-        private SentinelServerManager(int port) {
-            this.port = port;
-        }
-
-        @Override
-        public void connectionAbandoned() {
-            abandoned = true;
-        }
-
-        @Override
-        public int getPort() {
-            return port;
-        }
-
-        @Override
-        public void ensureRunning() {
-            // the scripted server is already listening
-        }
-
-        @Override
-        public Socket connect(int socketTimeoutMs) throws IOException {
-            Socket socket = new Socket("localhost", port);
-            socket.setSoTimeout(socketTimeoutMs);
-            return socket;
-        }
-
-        @Override
-        public void shutdown() {
-            // nothing to shut down
-        }
-
-        @Override
-        public boolean isRunning() {
-            return true;
-        }
-
-        @Override
-        public java.nio.file.Path getTempDirectory() {
-            return null;
-        }
-
-        @Override
-        public void close() {
-            // nothing to close
-        }
-    }
 }

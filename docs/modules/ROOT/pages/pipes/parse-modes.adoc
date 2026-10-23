@@ -130,6 +130,8 @@ these values. If unset, the default is `MARKDOWN`.
 
 If the container parse fails (`SAXException`, `EncryptedDocumentException`, or any other `Exception`), the stack trace is caught, logged, and stored on the container metadata as `tk:exception:container-exception`. The parse continues to a return value rather than throwing — callers must check this field if they need to detect failure.
 
+How much of that trace is stored is set by `parse-context.exception-reporting` — see xref:advanced/setting-limits.adoc#_exception_reporting[Exception reporting].
+
 If the configured write limit is reached during concatenation, `tk:exception:write-limit-reached` is set to `true`.
 
 [#content-only-mode]

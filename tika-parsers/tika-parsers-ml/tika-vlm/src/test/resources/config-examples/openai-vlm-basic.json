@@ -1,11 +1,16 @@
 {
-  "parsers": [
-    {
+  "engines": {
+    "vlm": {
       "openai-vlm-parser": {
         "baseUrl": "http://127.0.0.1:8000",
         "model": "jinaai/jina-vlm",
         "timeoutMillis": 300000
       }
+    }
+  },
+  "text-recognizers": [
+    {
+      "engine": "vlm"
     }
   ]
 }

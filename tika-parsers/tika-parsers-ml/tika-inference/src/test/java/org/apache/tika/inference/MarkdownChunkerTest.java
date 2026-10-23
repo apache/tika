@@ -24,6 +24,8 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
+import org.apache.tika.exception.TikaConfigException;
+
 public class MarkdownChunkerTest {
 
     @Test
@@ -35,6 +37,25 @@ public class MarkdownChunkerTest {
         assertEquals(2, chunks.size());
         assertTrue(chunks.get(0).getText().startsWith("# Heading 1"));
         assertTrue(chunks.get(1).getText().startsWith("# Heading 2"));
+    }
+
+    @Test
+    void testSpansMatchChunkOffsets() throws Exception {
+        MarkdownChunker chunker = new MarkdownChunker();
+        chunker.setMaxChunkChars(10);
+        chunker.setOverlapChars(0);
+        chunker.initialize();
+        String text = "one two\n\nthree four\n\nfive";
+        List<Chunk> chunks = chunker.chunk(text);
+        List<int[]> spans = chunker.spans(text);
+        assertEquals(chunks.size(), spans.size());
+        for (int i = 0; i < chunks.size(); i++) {
+            assertEquals(chunks.get(i).getStartOffset(), spans.get(i)[0]);
+            assertEquals(chunks.get(i).getEndOffset(), spans.get(i)[1]);
+            assertEquals(chunks.get(i).getText(), text.substring(spans.get(i)[0], spans.get(i)[1]));
+        }
+        chunker.setOverlapChars(10);
+        assertThrows(TikaConfigException.class, chunker::initialize);
     }
 
     @Test

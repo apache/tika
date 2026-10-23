@@ -28,8 +28,6 @@ import org.xml.sax.SAXException;
 
 import org.apache.tika.annotation.TikaComponent;
 import org.apache.tika.exception.TikaException;
-import org.apache.tika.extractor.EmbeddedDocumentExtractor;
-import org.apache.tika.extractor.EmbeddedDocumentUtil;
 import org.apache.tika.io.TailStream;
 import org.apache.tika.io.TikaInputStream;
 import org.apache.tika.metadata.Audio;
@@ -41,10 +39,12 @@ import org.apache.tika.metadata.XMPDM;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
 import org.apache.tika.parser.Parser;
+import org.apache.tika.parser.audio.CoverArt;
 import org.apache.tika.parser.audio.NumberAndTotal;
 import org.apache.tika.parser.mp3.ID3Tags.ID3Comment;
 import org.apache.tika.parser.mp3.ID3Tags.ID3Picture;
 import org.apache.tika.sax.XHTMLContentHandler;
+import org.apache.tika.utils.TikaDates;
 
 /**
  * The <code>Mp3Parser</code> is used to parse ID3 Version 1 Tag information
@@ -226,7 +226,7 @@ public class Mp3Parser implements Parser {
             metadata.set(XMPDM.COPYRIGHT, tag.getCopyright());
             metadata.set(XMPDM.ALBUM, tag.getAlbum());
             metadata.set(XMPDM.COMPILATION, tag.getCompilation());
-            metadata.set(XMPDM.RELEASE_DATE, tag.getYear());
+            setReleaseDate(metadata, tag.getYear());
             metadata.set(XMPDM.GENRE, tag.getGenre());
 
             for (ID3Comment comment : tag.getComments()) {
@@ -251,7 +251,9 @@ public class Mp3Parser implements Parser {
 
             // ID3v1.1 Track addition
             StringBuilder sb = new StringBuilder();
-            sb.append(tag.getAlbum());
+            if (tag.getAlbum() != null) {
+                sb.append(tag.getAlbum());
+            }
             if (tag.getTrackNumber() != null) {
                 sb.append(", track ").append(tag.getTrackNumber());
                 metadata.set(Audio.RAW_TRACK_NUMBER, tag.getTrackNumber());
@@ -288,7 +290,6 @@ public class Mp3Parser implements Parser {
             xhtml.element("p", tag.getYear());
             xhtml.element("p", tag.getGenre());
         }
-        xhtml.element("p", String.valueOf(audioAndTags.durationSeconds()));
         for (String comment : comments) {
             xhtml.element("p", comment);
         }
@@ -308,40 +309,21 @@ public class Mp3Parser implements Parser {
 
     /**
      * Sends the embedded pictures, such as cover art, from the ID3v2 tags
-     * to the embedded document extractor. The pictures only become embedded
-     * documents, no metadata is recorded on the audio document itself.
+     * to the embedded document extractor;
+     * {@link CoverArt#thumbnailIndex(java.util.List)} decides which of them
+     * is the file's thumbnail.
      */
     private static void extractPictures(ID3Tags[] tags, XHTMLContentHandler xhtml,
                                         ParseContext context)
             throws IOException, SAXException {
-        EmbeddedDocumentExtractor extractor = null;
+        List<CoverArt.Picture> pictures = new ArrayList<>();
         for (ID3Tags tag : tags) {
             for (ID3Picture picture : tag.getPictures()) {
-                if (extractor == null) {
-                    extractor = EmbeddedDocumentUtil.getEmbeddedDocumentExtractor(context);
-                }
-                Metadata pictureMetadata = Metadata.newInstance(context);
-                pictureMetadata.set(TikaCoreProperties.EMBEDDED_RESOURCE_TYPE,
-                        TikaCoreProperties.EmbeddedResourceType.INLINE.toString());
-                if (picture.getMimeType() != null) {
-                    pictureMetadata.set(HttpHeaders.CONTENT_TYPE, picture.getMimeType());
-                }
-                if (picture.getDescription() != null && !picture.getDescription().isEmpty()) {
-                    pictureMetadata.set(TikaCoreProperties.TITLE, picture.getDescription());
-                }
-                if (picture.getPictureType() >= 0 &&
-                        picture.getPictureType() < ID3Tags.PICTURE_TYPES.length) {
-                    pictureMetadata.set(TikaCoreProperties.DESCRIPTION,
-                            ID3Tags.PICTURE_TYPES[picture.getPictureType()]);
-                }
-                if (extractor.shouldParseEmbedded(pictureMetadata, context)) {
-                    try (TikaInputStream pictureStream = TikaInputStream.get(picture.getData())) {
-                        extractor.parseEmbedded(pictureStream, xhtml, pictureMetadata, context,
-                                true);
-                    }
-                }
+                pictures.add(new CoverArt.Picture(picture.getPictureType(),
+                        picture.getMimeType(), picture.getDescription(), picture.getData()));
             }
         }
+        CoverArt.extractPictures(pictures, xhtml, context);
     }
 
     /**
@@ -390,4 +372,12 @@ public class Mp3Parser implements Parser {
         }
     }
 
+
+    // ID3 years are free text: empty, "2018 2018", URLs
+    private static void setReleaseDate(Metadata metadata, String raw) {
+        String value = TikaDates.toMetadataStringKeepPartial(raw);
+        if (value != null) {
+            metadata.set(XMPDM.RELEASE_DATE, value);
+        }
+    }
 }
