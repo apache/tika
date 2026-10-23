@@ -27,10 +27,11 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,17 +44,12 @@ public class TlsConfig {
     private static final Logger LOG = LoggerFactory.getLogger(TlsConfig.class);
 
     /**
-     * Default TLS protocols - only TLS 1.2 and 1.3 are enabled by default.
-     * TLS 1.0 and 1.1 are considered insecure and should not be used.
-     */
-    public static final List<String> DEFAULT_PROTOCOLS = Arrays.asList("TLSv1.2", "TLSv1.3");
-
-    /**
      * Default warning threshold for certificate expiration (30 days).
      */
     public static final int DEFAULT_CERT_EXPIRATION_WARNING_DAYS = 30;
 
-    private boolean active = false;
+    // deprecated 4.2.0, removed in 4.3.0: TLS is on whenever a tlsConfig block is present
+    private Boolean active = null;
     private int certExpirationWarningDays = DEFAULT_CERT_EXPIRATION_WARNING_DAYS;
     private String keyStoreType = null;
     private String keyStorePassword = null;
@@ -62,21 +58,25 @@ public class TlsConfig {
     private String trustStorePassword = null;
     private String trustStoreFile = null;
 
-    private boolean clientAuthenticationWanted = false;
     private boolean clientAuthenticationRequired = false;
+    private boolean checkRevocation = true;
 
-    // TLS protocol configuration
-    private List<String> includedProtocols = DEFAULT_PROTOCOLS;
-    private List<String> excludedProtocols = null;
+    private static final String PROTOCOLS_REPLACEMENT = "-Djdk.tls.server.protocols=TLSv1.3 (for example)";
+    private static final String CIPHERS_REPLACEMENT =
+            "-Djdk.tls.server.cipherSuites=... or jdk.tls.disabledAlgorithms in java.security";
 
-    // Cipher suite configuration
-    private List<String> includedCipherSuites = null;
-    private List<String> excludedCipherSuites = null;
+    // keys removed in 4.2.0; refused at startup with a pointer to the replacement
+    private Boolean clientAuthenticationWanted = null;
+    private final Map<String, String> removedKeys = new LinkedHashMap<>();
 
+    /** @deprecated since 4.2.0: a {@code TlsConfig} exists only when TLS is on. */
+    @Deprecated
     public boolean isActive() {
-        return active;
+        return true;
     }
 
+    /** @deprecated since 4.2.0: a {@code tlsConfig} block turns TLS on; remove the block to turn it off. */
+    @Deprecated
     public void setActive(boolean active) {
         this.active = active;
     }
@@ -130,45 +130,68 @@ public class TlsConfig {
     }
 
     public void checkInitialization() throws TikaConfigException {
-        if (active) {
-            // Validate keystore configuration
-            if (StringUtils.isBlank(keyStoreType)) {
-                throw new TikaConfigException("must initialize keyStoreType");
-            } else if (StringUtils.isBlank(keyStoreFile)) {
-                throw new TikaConfigException("must initialize keyStoreFile");
-            } else if (StringUtils.isBlank(keyStorePassword)) {
-                throw new TikaConfigException("must initialize keyStorePassword");
+        if (Boolean.FALSE.equals(active)) {
+            throw new TikaConfigException("tlsConfig.active=false: a tlsConfig block turns TLS on; "
+                    + "remove the block to serve plain HTTP (\"active\" is deprecated and will be removed in 4.3.0)");
+        }
+        if (Boolean.TRUE.equals(active)) {
+            LOG.warn("tlsConfig.active is deprecated and ignored: a tlsConfig block turns TLS on; remove \"active\" (it will be rejected in 4.3.0)");
+        }
+        if (Boolean.TRUE.equals(clientAuthenticationWanted)) {
+            throw new TikaConfigException("tlsConfig.clientAuthenticationWanted was removed in 4.2.0: tika-server never "
+                    + "reads client certificates, so requesting one without requiring it authenticates nobody; "
+                    + "use clientAuthenticationRequired");
+        }
+        if (Boolean.FALSE.equals(clientAuthenticationWanted)) {
+            LOG.warn("tlsConfig.clientAuthenticationWanted was removed in 4.2.0 and is ignored; remove it");
+        }
+        if (!removedKeys.isEmpty()) {
+            StringBuilder msg = new StringBuilder("removed in 4.2.0; Tika no longer sets TLS protocol or cipher "
+                    + "policy, the JVM does:");
+            removedKeys.forEach((key, replacement) -> msg.append(" tlsConfig.").append(key).append(" -> ").append(replacement).append(';'));
+            throw new TikaConfigException(msg.toString());
+        }
+        // Validate keystore configuration
+        if (StringUtils.isBlank(keyStoreType)) {
+            throw new TikaConfigException("must initialize keyStoreType");
+        } else if (StringUtils.isBlank(keyStoreFile)) {
+            throw new TikaConfigException("must initialize keyStoreFile");
+        } else if (StringUtils.isBlank(keyStorePassword)) {
+            throw new TikaConfigException("must initialize keyStorePassword");
+        }
+
+        // Validate keystore file exists
+        File ksFile = new File(keyStoreFile);
+        if (!ksFile.isFile()) {
+            throw new TikaConfigException("keyStoreFile does not exist or is not a file: " + keyStoreFile);
+        }
+
+        // Validate truststore configuration
+        if (hasTrustStore()) {
+            if (StringUtils.isBlank(trustStoreType)) {
+                throw new TikaConfigException("must initialize trustStoreType if there's any trustStore info");
+            } else if (StringUtils.isBlank(trustStoreFile)) {
+                throw new TikaConfigException("must initialize trustStoreFile if there's any trustStore info");
+            } else if (StringUtils.isBlank(trustStorePassword)) {
+                throw new TikaConfigException("must initialize trustStorePassword if there's any trustStore info");
             }
 
-            // Validate keystore file exists
-            File ksFile = new File(keyStoreFile);
-            if (!ksFile.isFile()) {
-                throw new TikaConfigException("keyStoreFile does not exist or is not a file: " + keyStoreFile);
+            // Validate truststore file exists
+            File tsFile = new File(trustStoreFile);
+            if (!tsFile.isFile()) {
+                throw new TikaConfigException("trustStoreFile does not exist or is not a file: " + trustStoreFile);
             }
+        }
 
-            // Validate truststore configuration
-            if (hasTrustStore()) {
-                if (StringUtils.isBlank(trustStoreType)) {
-                    throw new TikaConfigException("must initialize trustStoreType if there's any trustStore info");
-                } else if (StringUtils.isBlank(trustStoreFile)) {
-                    throw new TikaConfigException("must initialize trustStoreFile if there's any trustStore info");
-                } else if (StringUtils.isBlank(trustStorePassword)) {
-                    throw new TikaConfigException("must initialize trustStorePassword if there's any trustStore info");
-                }
+        // Warn about partial truststore configuration
+        checkPartialTrustStoreConfig();
 
-                // Validate truststore file exists
-                File tsFile = new File(trustStoreFile);
-                if (!tsFile.isFile()) {
-                    throw new TikaConfigException("trustStoreFile does not exist or is not a file: " + trustStoreFile);
-                }
-            }
-
-            // Warn about partial truststore configuration
-            checkPartialTrustStoreConfig();
-
-            if (!hasTrustStore() && isClientAuthenticationRequired()) {
-                throw new TikaConfigException("requiring client authentication, but no trust store has been specified");
-            }
+        if (!hasTrustStore() && isClientAuthenticationRequired()) {
+            throw new TikaConfigException("requiring client authentication, but no trust store has been specified");
+        }
+        if (hasTrustStore() && !isClientAuthenticationRequired()) {
+            LOG.warn("tlsConfig has a truststore but clientAuthenticationRequired is false: clients are not asked for "
+                    + "a certificate, so the truststore has no effect");
         }
     }
 
@@ -192,10 +215,8 @@ public class TlsConfig {
         }
     }
 
-    public boolean isClientAuthenticationWanted() {
-        return clientAuthenticationWanted;
-    }
-
+    /** @deprecated removed in 4.2.0: tika-server never reads client certificates; use {@link #setClientAuthenticationRequired}. */
+    @Deprecated
     public void setClientAuthenticationWanted(boolean clientAuthenticationWanted) {
         this.clientAuthenticationWanted = clientAuthenticationWanted;
     }
@@ -208,36 +229,37 @@ public class TlsConfig {
         this.clientAuthenticationRequired = clientAuthenticationRequired;
     }
 
-    public List<String> getIncludedProtocols() {
-        return includedProtocols;
-    }
-
+    /** @deprecated removed in 4.2.0: refused at startup; use the {@code jdk.tls.server.protocols} system property. */
+    @Deprecated
     public void setIncludedProtocols(List<String> includedProtocols) {
-        this.includedProtocols = includedProtocols;
+        removedKeys.put("includedProtocols", PROTOCOLS_REPLACEMENT);
     }
 
-    public List<String> getExcludedProtocols() {
-        return excludedProtocols;
-    }
-
+    /** @deprecated removed in 4.2.0: refused at startup; use the {@code jdk.tls.server.protocols} system property. */
+    @Deprecated
     public void setExcludedProtocols(List<String> excludedProtocols) {
-        this.excludedProtocols = excludedProtocols;
+        removedKeys.put("excludedProtocols", PROTOCOLS_REPLACEMENT);
     }
 
-    public List<String> getIncludedCipherSuites() {
-        return includedCipherSuites;
-    }
-
+    /** @deprecated removed in 4.2.0: refused at startup; use the {@code jdk.tls.server.cipherSuites} system property. */
+    @Deprecated
     public void setIncludedCipherSuites(List<String> includedCipherSuites) {
-        this.includedCipherSuites = includedCipherSuites;
+        removedKeys.put("includedCipherSuites", CIPHERS_REPLACEMENT);
     }
 
-    public List<String> getExcludedCipherSuites() {
-        return excludedCipherSuites;
-    }
-
+    /** @deprecated removed in 4.2.0: refused at startup; use {@code jdk.tls.disabledAlgorithms} in {@code java.security}. */
+    @Deprecated
     public void setExcludedCipherSuites(List<String> excludedCipherSuites) {
-        this.excludedCipherSuites = excludedCipherSuites;
+        removedKeys.put("excludedCipherSuites", CIPHERS_REPLACEMENT);
+    }
+
+    /** Whether a client certificate's revocation status (CRL or OCSP) must be confirmed; default true. */
+    public boolean isCheckRevocation() {
+        return checkRevocation;
+    }
+
+    public void setCheckRevocation(boolean checkRevocation) {
+        this.checkRevocation = checkRevocation;
     }
 
     public int getCertExpirationWarningDays() {
@@ -256,7 +278,7 @@ public class TlsConfig {
      * warn about upcoming certificate expirations.
      */
     public void checkCertificateExpiration() {
-        if (!active || certExpirationWarningDays <= 0) {
+        if (certExpirationWarningDays <= 0) {
             return;
         }
 
@@ -322,19 +344,14 @@ public class TlsConfig {
     @Override
     public String toString() {
         return "TlsConfig{" +
-                "active=" + active +
-                ", keyStoreType='" + keyStoreType + '\'' +
+                "keyStoreType='" + keyStoreType + '\'' +
                 ", keyStorePassword='" + maskPassword(keyStorePassword) + '\'' +
                 ", keyStoreFile='" + keyStoreFile + '\'' +
                 ", trustStoreType='" + trustStoreType + '\'' +
                 ", trustStorePassword='" + maskPassword(trustStorePassword) + '\'' +
                 ", trustStoreFile='" + trustStoreFile + '\'' +
-                ", clientAuthenticationWanted=" + clientAuthenticationWanted +
                 ", clientAuthenticationRequired=" + clientAuthenticationRequired +
-                ", includedProtocols=" + includedProtocols +
-                ", excludedProtocols=" + excludedProtocols +
-                ", includedCipherSuites=" + includedCipherSuites +
-                ", excludedCipherSuites=" + excludedCipherSuites +
+                ", checkRevocation=" + checkRevocation +
                 '}';
     }
 

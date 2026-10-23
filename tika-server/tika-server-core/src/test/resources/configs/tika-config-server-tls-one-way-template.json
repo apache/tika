@@ -12,11 +12,9 @@
       "rmeta"
     ],
     "tlsConfig": {
-      "active": true,
       "keyStoreType": "PKCS12",
       "keyStorePassword": "tika-secret",
       "keyStoreFile": "{SSL_KEYS}/tika-server-keystore.p12",
-      "clientAuthenticationWanted": false,
       "clientAuthenticationRequired": false
     }
   },

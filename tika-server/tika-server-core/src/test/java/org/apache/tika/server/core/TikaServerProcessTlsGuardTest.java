@@ -46,7 +46,6 @@ class TikaServerProcessTlsGuardTest {
 
     private static TlsConfig validKeyStoreOnlyConfig() {
         TlsConfig tlsConfig = new TlsConfig();
-        tlsConfig.setActive(true);
         tlsConfig.setKeyStoreType("PKCS12");
         tlsConfig.setKeyStorePassword("tika-secret");
         tlsConfig.setKeyStoreFile(Paths

@@ -101,7 +101,8 @@ public class TikaServerConfig {
     private List<String> presets = new ArrayList<>();
     private ArrayList<String> endpoints = new ArrayList<>();
 
-    private TlsConfig tlsConfig = new TlsConfig();
+    // null = plain HTTP; a tlsConfig block, however sparse, means TLS and must be complete
+    private TlsConfig tlsConfig = null;
     private Integer metricsPort;
 
     /**
@@ -278,7 +279,9 @@ public class TikaServerConfig {
                         "files and reach network resources.");
             }
         }
-        tlsConfig.checkInitialization();
+        if (tlsConfig != null) {
+            tlsConfig.checkInitialization();
+        }
         if (maxInFlightRequestBytes > 0 && maxRequestSizeBytes >= 0
                 && maxInFlightRequestBytes < maxRequestSizeBytes) {
             throw new TikaConfigException("maxInFlightRequestBytes (" + maxInFlightRequestBytes
@@ -465,8 +468,13 @@ public class TikaServerConfig {
         this.maxQueuePauseMillis = maxQueuePauseMillis;
     }
 
+    /** Null when the config has no {@code tlsConfig} block, i.e. plain HTTP. */
     public TlsConfig getTlsConfig() {
         return tlsConfig;
+    }
+
+    public boolean tlsEnabled() {
+        return tlsConfig != null;
     }
 
     public void setTlsConfig(TlsConfig tlsConfig) {
