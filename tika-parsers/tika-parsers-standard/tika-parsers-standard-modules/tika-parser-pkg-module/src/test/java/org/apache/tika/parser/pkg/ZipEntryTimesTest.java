@@ -45,6 +45,7 @@ import org.apache.tika.metadata.FileSystem;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.test.TestLocales;
 
 /** Runs in a +14h zone. */
 @Isolated
@@ -86,7 +87,10 @@ public class ZipEntryTimesTest extends TikaTest {
         List<Metadata> list = getRecursiveMetadata(zip, new ParseContext(), false);
         Metadata dosMd = entry(list, "dos.txt");
         Metadata extMd = entry(list, "ext.txt");
-        assertEquals("2009-08-11T09:09:44", dosMd.get(FileSystem.MODIFIED));
+        // commons-compress ZipUtil.dosToJavaDate uses Calendar.getInstance() (TIKA-4920)
+        if (!TestLocales.nonGregorianDefault()) {
+            assertEquals("2009-08-11T09:09:44", dosMd.get(FileSystem.MODIFIED));
+        }
         assertEquals("2012-02-20T16:44:22Z", extMd.get(FileSystem.MODIFIED));
         for (Metadata m : List.of(dosMd, extMd)) {
             assertNull(m.get(TikaCoreProperties.CREATED));
