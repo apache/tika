@@ -27,13 +27,19 @@ final class JettyRequests {
     private JettyRequests() {
     }
 
-    /** Null when there is no HTTP request, as under CXF's local transport. */
+    /** Null when there is no Jetty HTTP request, as under CXF's local transport. */
     static ServletContextRequest of(Message message) {
         if (message == null || message.getExchange() == null) {
             return null;
         }
         Object request = message.getExchange().getInMessage().get(AbstractHTTPDestination.HTTP_REQUEST);
-        return request instanceof HttpServletRequest httpRequest
-                ? ServletContextRequest.getServletContextRequest(httpRequest) : null;
+        if (!(request instanceof HttpServletRequest httpRequest)) {
+            return null;
+        }
+        try {
+            return ServletContextRequest.getServletContextRequest(httpRequest);
+        } catch (IllegalStateException e) {
+            return null;
+        }
     }
 }

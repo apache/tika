@@ -35,7 +35,8 @@ public class RequestReadDeadlineInterceptor extends AbstractPhaseInterceptor<Mes
 
     static final String START_NANOS = RequestReadDeadlineInterceptor.class.getName() + ".startNanos";
 
-    // CXF's switch for caching the unread request body when the response starts
+    // must be on the exchange: unset there, CXF's OutgoingChainInterceptor sets it true on the
+    // in-message and the unread body of a 2xx response is spooled to disk
     private static final String CXF_CACHE_INPUT = "cxf.io.cacheinput";
 
     private final long maxRequestReadMillis;

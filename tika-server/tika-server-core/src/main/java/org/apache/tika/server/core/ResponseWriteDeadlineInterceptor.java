@@ -206,6 +206,7 @@ public class ResponseWriteDeadlineInterceptor implements WriterInterceptor {
             if (state.get() != WRITING) {
                 return;
             }
+            // a task scheduled after complete() cancels the old one is harmless: expire() CAS-fails
             timer = committed.getAsBoolean()
                     ? scheduler.schedule(this::expire, maxWriteMillis, TimeUnit.MILLISECONDS)
                     : scheduler.schedule(this::awaitCommit, Math.min(COMMIT_POLL_MILLIS, maxWriteMillis),

@@ -208,7 +208,10 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
     @Test
     public void testOptionsBodyNotSpooled() throws Exception {
         for (String path : new String[]{"/tika", "/rmeta"}) {
-            assertWithinReadDeadline("200", sendThenDrip(new String[]{"OPTIONS", path, "*/*"}, SENT_BYTES));
+            String[] reply = sendThenDrip(new String[]{"OPTIONS", path, "*/*"}, SENT_BYTES);
+            assertEquals("200", reply[0]);
+            // spooling reads on until the read deadline; discarding stops at 16 MiB and answers
+            assertTrue(Long.parseLong(reply[1]) < MAX_READ_MILLIS / 2, "answered after " + reply[1] + " ms");
         }
     }
 
