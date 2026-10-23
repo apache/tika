@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Paths;
 import java.util.List;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +31,7 @@ import org.apache.tika.exception.TikaConfigException;
 
 /**
  * A tlsConfig block means TLS. One that cannot work as written must refuse to load; it must
- * never fall back to plain HTTP or to the JVM's TLS defaults.
+ * never fall back to plain HTTP.
  */
 public class TlsConfigTest {
 
@@ -49,6 +51,14 @@ public class TlsConfigTest {
         c.setTrustStoreType("PKCS12");
         c.setTrustStorePassword("tika-secret");
         c.setTrustStoreFile(key("tika-server-truststore.p12"));
+    }
+
+    static final String CBC_SHA_SUITE = "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA";
+
+    static SSLParameters jvmEnabled() throws Exception {
+        SSLContext context = SSLContext.getInstance("TLS");
+        context.init(null, null, null);
+        return context.getDefaultSSLParameters();
     }
 
     private static String refused(TlsConfig c) {
@@ -82,81 +92,55 @@ public class TlsConfigTest {
     }
 
     @Test
-    public void clientAuthWantedWithoutTrustStoreRefuses() {
-        TlsConfig c = keyStoreOnly();
-        c.setClientAuthenticationWanted(true);
-        assertTrue(refused(c).contains("clientAuthenticationWanted"));
-    }
-
-    @Test
-    public void clientAuthWantedWithTrustStoreLoads() {
+    @SuppressWarnings("deprecation")
+    public void clientAuthWantedRefuses() {
         TlsConfig c = keyStoreOnly();
         withTrustStore(c);
         c.setClientAuthenticationWanted(true);
+        assertTrue(refused(c).contains("clientAuthenticationRequired"));
+    }
+
+    /** 4.1 configs and the old docs carry "clientAuthenticationWanted": false; it asks for nothing. */
+    @Test
+    @SuppressWarnings("deprecation")
+    public void clientAuthWantedFalseIsIgnored() {
+        TlsConfig c = keyStoreOnly();
+        c.setClientAuthenticationWanted(false);
         assertDoesNotThrow(c::checkInitialization);
     }
 
     @Test
-    public void unsupportedIncludedProtocolRefuses() {
+    public void clientAuthRequiredWithoutTrustStoreRefuses() {
         TlsConfig c = keyStoreOnly();
-        c.setIncludedProtocols(List.of("TLSv9.9"));
-        assertTrue(refused(c).contains("TLSv9.9"));
+        c.setClientAuthenticationRequired(true);
+        assertTrue(refused(c).contains("no trust store"));
     }
 
     @Test
-    public void excludingEveryProtocolRefuses() {
+    public void clientAuthRequiredWithTrustStoreLoads() {
         TlsConfig c = keyStoreOnly();
-        c.setExcludedProtocols(List.of("TLSv1.2", "TLSv1.3"));
-        assertTrue(refused(c).contains("no TLS protocol"));
-    }
-
-    @Test
-    public void excludingAnUnsupportedProtocolIsFine() {
-        TlsConfig c = keyStoreOnly();
-        c.setExcludedProtocols(List.of("SSLv2Hello-from-another-jvm"));
+        withTrustStore(c);
+        c.setClientAuthenticationRequired(true);
         assertDoesNotThrow(c::checkInitialization);
     }
 
+    /** Any value, even an empty list: the key never worked as written through 4.1. */
     @Test
-    public void tls13OnlyLoads() {
+    @SuppressWarnings("deprecation")
+    public void removedProtocolAndCipherKeysRefuse() {
         TlsConfig c = keyStoreOnly();
         c.setIncludedProtocols(List.of("TLSv1.3"));
-        assertDoesNotThrow(c::checkInitialization);
-    }
+        assertTrue(refused(c).contains("tlsConfig.includedProtocols -> -Djdk.tls.server.protocols"));
 
-    @Test
-    public void unmatchedIncludedCipherRefuses() {
-        TlsConfig c = keyStoreOnly();
-        c.setIncludedCipherSuites(List.of("TLS_AES_256_GCM_SHA384", "TLS_NOPE_WITH_NOPE"));
-        assertTrue(refused(c).contains("TLS_NOPE_WITH_NOPE"));
-    }
+        c = keyStoreOnly();
+        c.setExcludedProtocols(List.of());
+        assertTrue(refused(c).contains("tlsConfig.excludedProtocols"));
 
-    @Test
-    public void excludingEveryCipherRefuses() {
-        TlsConfig c = keyStoreOnly();
-        c.setExcludedCipherSuites(List.of(".*"));
-        assertTrue(refused(c).contains("no cipher suite"));
-    }
-
-    @Test
-    public void excludingAnAbsentCipherFamilyIsFine() {
-        TlsConfig c = keyStoreOnly();
-        c.setExcludedCipherSuites(List.of(".*RC4.*", ".*NULL.*"));
-        assertDoesNotThrow(c::checkInitialization);
-    }
-
-    @Test
-    public void cipherAllowlistAndDenylistLoad() {
-        TlsConfig c = keyStoreOnly();
-        c.setIncludedCipherSuites(List.of("TLS_AES_256_GCM_SHA384", "TLS_ECDHE_.*_GCM_.*"));
+        c = keyStoreOnly();
+        c.setIncludedCipherSuites(null);
         c.setExcludedCipherSuites(List.of(".*CBC.*"));
-        assertDoesNotThrow(c::checkInitialization);
-    }
-
-    @Test
-    public void invalidCipherRegexRefuses() {
-        TlsConfig c = keyStoreOnly();
-        c.setIncludedCipherSuites(List.of("TLS_("));
-        assertTrue(refused(c).contains("regular expression"));
+        String msg = refused(c);
+        assertTrue(msg.contains("tlsConfig.includedCipherSuites -> -Djdk.tls.server.cipherSuites"), msg);
+        assertTrue(msg.contains("tlsConfig.excludedCipherSuites"), msg);
     }
 }

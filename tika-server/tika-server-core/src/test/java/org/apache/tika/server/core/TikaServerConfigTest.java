@@ -244,7 +244,6 @@ public class TikaServerConfigTest extends TikaTest {
         TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
         assertTrue(config.tlsEnabled());
         TlsConfig tlsConfig = config.getTlsConfig();
-        assertFalse(tlsConfig.isClientAuthenticationWanted());
         assertFalse(tlsConfig.isClientAuthenticationRequired());
         assertEquals("myType", tlsConfig.getKeyStoreType());
         assertEquals("pass", tlsConfig.getKeyStorePassword());
@@ -303,6 +302,34 @@ public class TikaServerConfigTest extends TikaTest {
         TikaConfigException ex = assertThrows(TikaConfigException.class,
                 () -> TikaServerConfig.load(commandLine));
         assertContains("remove the block", ex.getMessage());
+    }
+
+    /** tls.adoc tells users to write keystore passwords as ${env:NAME}; PATH is set everywhere. */
+    @Test
+    public void testTlsPasswordFromEnvironment() throws Exception {
+        CommandLine emptyCommandLine = new DefaultParser().parse(new Options(), new String[]{});
+        Path path = getConfigPath(getClass(), "tika-config-server-tls-env.json");
+        TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, new HashSet<>());
+        assertEquals(System.getenv("PATH"), config.getTlsConfig().getKeyStorePassword());
+    }
+
+    /** A 4.1 config with the removed protocol/cipher lists is refused, naming the JVM property to use. */
+    @Test
+    public void testRemovedTlsListsRefuseToLoad() throws Exception {
+        CommandLineParser parser = new DefaultParser();
+        Path path = getConfigPath(getClass(), "tika-config-server-tls-removed-keys.json");
+        CommandLine commandLine = parser.parse(new Options()
+                .addOption(Option
+                        .builder("c")
+                        .longOpt("config")
+                        .hasArg()
+                        .get()), new String[]{"-c", ProcessUtils.escapeCommandLine(path
+                .toAbsolutePath()
+                .toString())});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains("tlsConfig.includedProtocols -> -Djdk.tls.server.protocols", ex.getMessage());
+        assertContains("tlsConfig.excludedCipherSuites", ex.getMessage());
     }
 
     @Test

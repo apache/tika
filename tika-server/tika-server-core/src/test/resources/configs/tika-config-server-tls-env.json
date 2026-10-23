@@ -1,0 +1,9 @@
+{
+  "server": {
+    "tlsConfig": {
+      "keyStoreType": "PKCS12",
+      "keyStorePassword": "${env:PATH}",
+      "keyStoreFile": "src/test/resources/ssl-keys/tika-server-keystore.p12"
+    }
+  }
+}
