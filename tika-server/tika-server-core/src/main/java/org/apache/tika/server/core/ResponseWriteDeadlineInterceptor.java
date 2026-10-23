@@ -226,7 +226,7 @@ public class ResponseWriteDeadlineInterceptor implements WriterInterceptor {
 
         private ResponseWriteTimeoutException timeout() {
             return new ResponseWriteTimeoutException(
-                    "Response not written within maxResponseWriteMillis (" + maxWriteMillis + ")");
+                    "Response not written within maxResponseWriteMillis (" + maxWriteMillis + " ms)");
         }
     }
 

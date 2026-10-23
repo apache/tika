@@ -49,7 +49,7 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
     static final String TOO_LARGE_MESSAGE = "Request body exceeds maxRequestSizeBytes";
     static final String TOO_SLOW_MESSAGE = "Request body not received within maxRequestReadMillis";
     static final String IDLE_MESSAGE = "Request body stalled past idleTimeoutMillis";
-    static final String BUSY_MESSAGE = "Request bodies in flight exceed maxInFlightRequestBytes";
+    static final String BUSY_MESSAGE = "Request body would exceed maxInFlightRequestBytes across requests in flight";
     // budget frees as soon as any in-flight request completes
     private static final long RETRY_AFTER_SECONDS = 1;
 
@@ -192,14 +192,14 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
 
         private void checkDeadline() {
             if (maxReadNanos >= 0 && System.nanoTime() - startNanos > maxReadNanos) {
-                throw new RequestTimeoutException(TOO_SLOW_MESSAGE + " (" + maxReadMillis + ")");
+                throw new RequestTimeoutException(TOO_SLOW_MESSAGE + " (" + maxReadMillis + " ms)");
             }
         }
 
         private void add(int n) {
             count += n;
             if (limit >= 0 && count > limit) {
-                throw new RequestTooLargeException(TOO_LARGE_MESSAGE + " (" + limit + ")");
+                throw new RequestTooLargeException(TOO_LARGE_MESSAGE + " (" + limit + " bytes)");
             }
             if (reservation != null && !reservation.ensure(count)) {
                 throw new RequestBudgetExceededException(BUSY_MESSAGE);
