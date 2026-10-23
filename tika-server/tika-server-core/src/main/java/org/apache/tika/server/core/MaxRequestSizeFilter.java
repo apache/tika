@@ -19,9 +19,9 @@ package org.apache.tika.server.core;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import jakarta.servlet.ServletInputStream;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
 import jakarta.ws.rs.core.HttpHeaders;
@@ -30,7 +30,6 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
 import org.apache.cxf.jaxrs.utils.JAXRSUtils;
-import org.apache.cxf.message.Message;
 
 /**
  * Rejects request bodies larger than {@code maxRequestSizeBytes} (413), still arriving
@@ -40,8 +39,8 @@ import org.apache.cxf.message.Message;
  * A declared Content-Length over the limit is refused before the body is read. Requests
  * without a usable Content-Length -- chunked transfer encoding, in particular -- are
  * counted as they are consumed, so the limit holds whether or not the client is honest
- * about the size. The wire under the entity is bounded by
- * {@link RequestReadDeadlineInterceptor}, whose start time this deadline shares.
+ * about the size. The 408 comes from {@link RequestReadDeadlineInterceptor}, which puts
+ * the deadline on the wire under this stream.
  */
 @Provider
 public class MaxRequestSizeFilter implements ContainerRequestFilter {
@@ -54,25 +53,21 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
     private static final long RETRY_AFTER_SECONDS = 1;
 
     private final long maxRequestSizeBytes;
-    private final long maxRequestReadMillis;
     private final RequestBodyBudget budget;
 
     /**
      * @param maxRequestSizeBytes maximum request body in bytes; negative disables the limit
      */
     public MaxRequestSizeFilter(long maxRequestSizeBytes) {
-        this(maxRequestSizeBytes, -1, null);
+        this(maxRequestSizeBytes, null);
     }
 
     /**
      * @param maxRequestSizeBytes maximum request body in bytes; negative disables the limit
-     * @param maxRequestReadMillis how long reading the body may take; negative disables it
      * @param budget bytes all requests may hold at once; null disables it
      */
-    public MaxRequestSizeFilter(long maxRequestSizeBytes, long maxRequestReadMillis,
-                                RequestBodyBudget budget) {
+    public MaxRequestSizeFilter(long maxRequestSizeBytes, RequestBodyBudget budget) {
         this.maxRequestSizeBytes = maxRequestSizeBytes;
-        this.maxRequestReadMillis = maxRequestReadMillis;
         this.budget = budget;
     }
 
@@ -84,19 +79,11 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
             requestContext.abortWith(tooLarge());
             return;
         }
-        long maxReadNanos = maxRequestReadMillis < 0 ? -1 : TimeUnit.MILLISECONDS.toNanos(maxRequestReadMillis);
         RequestBodyBudget.Reservation reservation =
                 budget == null ? null : budget.open(JAXRSUtils.getCurrentMessage());
         // Entity bytes: after any Content-Encoding is undone.
         requestContext.setEntityStream(new BoundedInputStream(requestContext.getEntityStream(),
-                maxRequestSizeBytes, startNanos(), maxReadNanos, maxRequestReadMillis, reservation));
-    }
-
-    private static long startNanos() {
-        Message message = JAXRSUtils.getCurrentMessage();
-        Object start = message == null || message.getExchange() == null
-                ? null : message.getExchange().get(RequestReadDeadlineInterceptor.START_NANOS);
-        return start instanceof Long l ? l : System.nanoTime();
+                maxRequestSizeBytes, -1, -1, -1, reservation));
     }
 
     private static Response tooLarge() {
@@ -110,8 +97,10 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
     /**
      * Throws once more than {@code limit} bytes have been read, or on a read after the
      * deadline. Deliberately not silent truncation: a caller that sent too much must not
-     * receive a 200 describing a prefix of their document. A client that sends nothing at
-     * all is left to the connector's idle timeout.
+     * receive a 200 describing a prefix of their document. The deadline applies only to a
+     * read that would wait on the client: bytes it already sent, such as a multipart closing
+     * boundary CXF reads after a long parse, are not late. A client that sends nothing at all
+     * is left to the connector's idle timeout.
      */
     static final class BoundedInputStream extends FilterInputStream {
 
@@ -190,10 +179,17 @@ public class MaxRequestSizeFilter implements ContainerRequestFilter {
             return skipped;
         }
 
-        private void checkDeadline() {
-            if (maxReadNanos >= 0 && System.nanoTime() - startNanos > maxReadNanos) {
+        private void checkDeadline() throws IOException {
+            if (maxReadNanos >= 0 && System.nanoTime() - startNanos > maxReadNanos && wouldBlock()) {
                 throw new RequestTimeoutException(TOO_SLOW_MESSAGE + " (" + maxReadMillis + " ms)");
             }
+        }
+
+        private boolean wouldBlock() throws IOException {
+            if (in instanceof ServletInputStream servletIn && servletIn.isFinished()) {
+                return false;
+            }
+            return in.available() == 0;
         }
 
         private void add(int n) {

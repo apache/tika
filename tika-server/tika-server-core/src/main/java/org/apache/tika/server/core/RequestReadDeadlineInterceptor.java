@@ -33,8 +33,6 @@ import org.apache.cxf.phase.Phase;
  */
 public class RequestReadDeadlineInterceptor extends AbstractPhaseInterceptor<Message> {
 
-    static final String START_NANOS = RequestReadDeadlineInterceptor.class.getName() + ".startNanos";
-
     // must be on the exchange: unset there, CXF's OutgoingChainInterceptor sets it true on the
     // in-message and the unread body of a 2xx response is spooled to disk
     private static final String CXF_CACHE_INPUT = "cxf.io.cacheinput";
@@ -57,7 +55,6 @@ public class RequestReadDeadlineInterceptor extends AbstractPhaseInterceptor<Mes
         }
         long startNanos = System.nanoTime();
         exchange.put(CXF_CACHE_INPUT, Boolean.FALSE);
-        exchange.put(START_NANOS, startNanos);
         DelegatingInputStream wire = message.getContent(DelegatingInputStream.class);
         if (maxRequestReadMillis >= 0 && wire != null) {
             // deadline only: a size cap here would cut off a client that reads only after sending

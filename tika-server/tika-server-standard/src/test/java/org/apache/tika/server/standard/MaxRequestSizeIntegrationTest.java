@@ -215,6 +215,28 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * CXF reads the multipart closing boundary only after the resource returns; a parse that
+     * outlasts the read deadline must not turn into a 408 there.
+     */
+    @Test
+    public void testParseOutlastingReadDeadlineMultipart() throws Exception {
+        String mock = "<mock><write element=\"p\">slow parse done</write><hang millis=\""
+                + 2 * MAX_READ_MILLIS + "\" heavy=\"false\" pulse_millis=\"100\"/></mock>";
+        String body = "--" + BOUNDARY + "\r\nContent-Disposition: form-data; name=\"file\"; "
+                + "filename=\"mock.xml\"\r\nContent-Type: application/mock+xml\r\n\r\n"
+                + mock + "\r\n--" + BOUNDARY + "--\r\n";
+        HttpResponse<String> response = HttpClient.newHttpClient().send(HttpRequest
+                .newBuilder(URI.create("http://localhost:" + integrationTestPort + "/rmeta/form"))
+                .header("Content-Type", "multipart/form-data; boundary=" + BOUNDARY)
+                .header("Accept", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(body, UTF_8))
+                .build(), HttpResponse.BodyHandlers.ofString(UTF_8));
+        assertEquals(200, response.statusCode(), response.body());
+        // proves the mock parser ran, so the parse really did outlast the deadline
+        assertTrue(response.body().contains("slow parse done"), response.body());
+    }
+
     private static void assertWithinReadDeadline(String expected, String[] reply) {
         assertEquals(expected, reply[0], "after " + reply[1] + " ms");
         // the idle timeout alone would answer only once the drip ends
