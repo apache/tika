@@ -54,8 +54,9 @@ class TikaGrpcV2ServerImpl extends TikaV2Grpc.TikaV2ImplBase {
         if (parseContext == null) {
             return;
         }
-        fetchAndParseImpl(request, parseContext, responseObserver);
-        responseObserver.onCompleted();
+        if (fetchAndParseImpl(request, parseContext, responseObserver)) {
+            responseObserver.onCompleted();
+        }
     }
 
     @Override
@@ -71,8 +72,9 @@ class TikaGrpcV2ServerImpl extends TikaV2Grpc.TikaV2ImplBase {
         if (parseContext == null) {
             return;
         }
-        fetchAndParseImpl(request, parseContext, responseObserver);
-        responseObserver.onCompleted();
+        if (fetchAndParseImpl(request, parseContext, responseObserver)) {
+            responseObserver.onCompleted();
+        }
     }
 
     @Override
@@ -106,12 +108,18 @@ class TikaGrpcV2ServerImpl extends TikaV2Grpc.TikaV2ImplBase {
         };
     }
 
-    private void fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
-                                   StreamObserver<FetchAndParseReply> responseObserver) {
+    /**
+     * Sends the typed reply for one request. Returns {@code false} when the call was closed
+     * with an error instead (the fetch and parse was interrupted), so the caller must not
+     * complete it.
+     */
+    private boolean fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
+                                      StreamObserver<FetchAndParseReply> responseObserver) {
         TikaGrpcServerImpl.FetchParseOutcome outcome = v1.runFetchAndParse(
                 request.getFetcherId(), request.getFetchKey(), parseContext);
         if (outcome == null) {
-            return;
+            TikaGrpcServerImpl.closeInterrupted(request.getFetchKey(), responseObserver);
+            return false;
         }
         responseObserver.onNext(FetchAndParseReply.newBuilder()
                 .setFetchKey(outcome.fetchKey())
@@ -121,5 +129,6 @@ class TikaGrpcV2ServerImpl extends TikaV2Grpc.TikaV2ImplBase {
                         outcome.status(),
                         outcome.fetchParseTimeMs()))
                 .build());
+        return true;
     }
 }

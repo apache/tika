@@ -17,9 +17,7 @@
 package org.apache.tika.grpc.mapper.transform;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.HashSet;
 import java.util.List;
@@ -100,13 +98,30 @@ class MetadataTaggerTest {
 
     @Test
     void booleanParsingAcceptsCommonSpellings() {
-        assertTrue(MetadataTagger.parseBoolean("true"));
-        assertTrue(MetadataTagger.parseBoolean("True"));
-        assertTrue(MetadataTagger.parseBoolean("yes"));
-        assertTrue(MetadataTagger.parseBoolean("1"));
-        assertFalse(MetadataTagger.parseBoolean("false"));
-        assertFalse(MetadataTagger.parseBoolean("no"));
-        assertFalse(MetadataTagger.parseBoolean("0"));
+        assertEquals(Boolean.TRUE, MetadataTagger.parseBoolean("true"));
+        assertEquals(Boolean.TRUE, MetadataTagger.parseBoolean("True"));
+        assertEquals(Boolean.TRUE, MetadataTagger.parseBoolean("yes"));
+        assertEquals(Boolean.TRUE, MetadataTagger.parseBoolean("1"));
+        assertEquals(Boolean.FALSE, MetadataTagger.parseBoolean("false"));
+        assertEquals(Boolean.FALSE, MetadataTagger.parseBoolean("NO"));
+        assertEquals(Boolean.FALSE, MetadataTagger.parseBoolean("0"));
+        assertNull(MetadataTagger.parseBoolean("maybe"));
+        assertNull(MetadataTagger.parseBoolean("N/A"));
+    }
+
+    /**
+     * A declared-boolean key with a token that is neither true nor false must fall back
+     * to strings like the other declared types, not arrive as a guessed {@code false}.
+     */
+    @Test
+    void unrecognizedBooleanFallsBackToStrings() {
+        Metadata metadata = new Metadata();
+        metadata.add(PDF.IS_ENCRYPTED.getName(), "true");
+        metadata.add(PDF.IS_ENCRYPTED.getName(), "maybe");
+
+        MetadataValue value = MetadataTagger.tag(metadata, PDF.IS_ENCRYPTED.getName());
+        assertEquals(MetadataValue.ValuesCase.STRINGS, value.getValuesCase());
+        assertEquals(List.of("true", "maybe"), value.getStrings().getValuesList());
     }
 
     @Test
