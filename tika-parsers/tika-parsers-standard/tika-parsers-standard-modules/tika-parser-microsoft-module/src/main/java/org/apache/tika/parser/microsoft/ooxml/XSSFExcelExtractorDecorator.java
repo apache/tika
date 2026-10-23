@@ -38,6 +38,7 @@ import org.apache.poi.openxml4j.opc.PackageRelationshipCollection;
 import org.apache.poi.openxml4j.opc.PackageRelationshipTypes;
 import org.apache.poi.openxml4j.opc.PackagingURIHelper;
 import org.apache.poi.openxml4j.opc.TargetMode;
+import org.apache.poi.ss.usermodel.Comment;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.HeaderFooter;
 import org.apache.poi.ss.util.CellReference;
@@ -993,6 +994,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             footers = new ArrayList<>();
         }
 
+        @Override
         public void startRow(int rowNum) {
             try {
                 // Missing rows, if desired, with a single empty row
@@ -1020,6 +1022,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
 
         }
 
+        @Override
         public void endRow(int rowNum) {
             try {
                 xhtml.endElement("tr");
@@ -1045,6 +1048,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
 
+        @Override
         public void cell(String cellRef, String formattedValue,
                           XSSFCommentsShim.CommentData comment) {
             try {
@@ -1084,19 +1088,10 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
 
-        /**
-         * Bridge for POI's {@link SheetContentsHandler} interface, used by the
-         * XLSB (binary) path via {@link org.apache.poi.xssf.binary.XSSFBSheetHandler}.
-         */
+        @Override
+        @Deprecated
         public void cell(String cellRef, String formattedValue, XSSFComment comment) {
-            XSSFCommentsShim.CommentData commentData = null;
-            if (comment != null) {
-                String text = comment.getString() != null ?
-                        comment.getString().getString() : "";
-                commentData = new XSSFCommentsShim.CommentData(
-                        comment.getAuthor(), text);
-            }
-            cell(cellRef, formattedValue, commentData);
+            cell(cellRef, formattedValue, (Comment) comment);
         }
 
         public void headerFooter(String text, boolean isHeader, String tagName) {
@@ -1113,6 +1108,23 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         @Override
         public void endSheet() {
             // no-op — satisfies both TikaSheetContentsHandler and SheetContentsHandler
+        }
+
+        /**
+         * Bridge for POI's {@link SheetContentsHandler} interface, used by the
+         * XLSB (binary) path via {@link org.apache.poi.xssf.binary.XSSFBSheetHandler}.
+         */
+        @Override
+        public void cell(String cellReference, String formattedValue, Comment comment)
+        {
+            XSSFCommentsShim.CommentData commentData = null;
+            if (comment != null) {
+                String text = comment.getString() != null ?
+                        comment.getString().getString() : "";
+                commentData = new XSSFCommentsShim.CommentData(
+                        comment.getAuthor(), text);
+            }
+            cell(cellReference, formattedValue, commentData);
         }
     }
 
