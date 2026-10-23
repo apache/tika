@@ -101,8 +101,9 @@ HTTP Return Codes
 `204` - No content (for example when we are unpacking file without attachments)  
 `400` - Bad request (unknown or invalid handler type, or a reserved/unknown fetcher or emitter was named)  
 `403` - Forbidden (per-request configuration was supplied but `allowPerRequestConfig` is off)  
+`408` - Request timeout (the request body was still arriving after `maxRequestReadMillis`, or stalled past `idleTimeoutMillis`)  
 `413` - Payload too large (the request body exceeds `maxRequestSizeBytes`, or a pipes payload limit was exceeded)  
 `422` - Unparsable document of known type (password protected documents and unsupported versions like Biff5 Excel)  
-`429` - Too many requests (all forked workers were busy for longer than `maxWaitForClientMillis`; retry with backoff)  
+`429` - Too many requests (all forked workers were busy for longer than `maxWaitForClientMillis`, or the request bodies in flight would exceed `maxInFlightRequestBytes`; retry with backoff)  
 `500` - Internal error  
 `503` - Service unavailable (the forked worker hit a timeout, ran out of memory, or crashed)  

@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.core;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -30,8 +31,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
- * Doc examples are symlinks to test configs; a test-only component in one fails at startup for
- * users who copy it (TIKA-4984).
+ * Doc examples are symlinks to test configs, so they cannot drift from what is tested; a test-only
+ * component in one fails at startup for users who copy it (TIKA-4984).
  */
 public class DocsExampleConfigsTest {
 
@@ -51,6 +52,25 @@ public class DocsExampleConfigsTest {
             }
         }
         assertTrue(offenders.isEmpty(), "test-only components in doc examples: " + offenders);
+    }
+
+    @Test
+    public void testDocExamplesAreLiveSymlinks() throws Exception {
+        List<Path> examples;
+        try (Stream<Path> files = Files.list(findExamplesDir())) {
+            examples = files.toList();
+        }
+        assumeTrue(examples.stream().anyMatch(Files::isSymbolicLink),
+                "symlinks checked out as plain files (core.symlinks=false)");
+        List<String> offenders = new ArrayList<>();
+        for (Path p : examples) {
+            if (!Files.isSymbolicLink(p)) {
+                offenders.add(p.getFileName() + ": not a symlink");
+            } else if (!Files.isRegularFile(p)) {
+                offenders.add(p.getFileName() + ": dangling");
+            }
+        }
+        assertTrue(offenders.isEmpty(), "doc examples must be symlinks into the source tree: " + offenders);
     }
 
     private static Path findExamplesDir() {

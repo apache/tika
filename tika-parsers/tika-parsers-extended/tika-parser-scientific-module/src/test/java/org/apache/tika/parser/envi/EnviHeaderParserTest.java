@@ -17,6 +17,8 @@
 package org.apache.tika.parser.envi;
 
 import static org.apache.tika.TikaTest.assertContains;
+import static org.apache.tika.TikaTest.assertNotContained;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.ByteArrayOutputStream;
@@ -155,5 +157,43 @@ public class EnviHeaderParserTest {
      */
     public void setMetadata(Metadata metadata) {
         this.metadata = metadata;
+    }
+
+    @Test
+    public void testMultiLineFieldsDoNotLeakAcrossParses() throws Exception {
+        // one instance serves every parse: the first document's multi-line description
+        // must not surface in the second document's content or metadata
+        parse("/test-documents/envi_test_header.hdr", new ToXMLContentHandler(), new Metadata());
+        ToXMLContentHandler second = new ToXMLContentHandler();
+        Metadata secondMetadata = new Metadata();
+        parse("/test-documents/ang20150420t182050_corr_v1e_img.hdr", second, secondMetadata);
+        String content = second.toString();
+        assertNotContained("GEO-TIFF File Imported into ENVI", content);
+        assertContains(
+                "<p>description = {  Georeferenced Image built from input GLT. " +
+                        "[Wed Jun 10 04:37:54 2015] [Wed  Jun 10 04:48:52 2015]}</p>",
+                content);
+        assertEquals("{  Georeferenced Image built from input GLT. [Wed Jun 10 04:37:54 2015] " +
+                "[Wed  Jun 10 04:48:52 2015]}", secondMetadata.get("envi:description"));
+    }
+
+    @Test
+    public void testSecondMultiLineFieldStartsEmpty() throws Exception {
+        String header = "ENVI\ndescription = {\n  first}\nband names = {\n  Band 1,\n  Band 2}\n";
+        try (TikaInputStream tis = TikaInputStream.get(header.getBytes(StandardCharsets.US_ASCII))) {
+            parser.parse(tis, handler, metadata, new ParseContext());
+        }
+        assertContains("<p>band names = {  Band 1,  Band 2}</p>", handler.toString());
+        assertEquals("{  first}", metadata.get("envi:description"));
+        assertEquals("{  Band 1,  Band 2}", metadata.get("envi:band.names"));
+    }
+
+    private void parse(String resource, ToXMLContentHandler handler, Metadata metadata)
+            throws Exception {
+        try (TikaInputStream tis = TikaInputStream.get(
+                EnviHeaderParser.class.getResourceAsStream(resource))) {
+            assertNotNull(tis, "Test ENVI file '" + resource + "' not found");
+            parser.parse(tis, handler, metadata, new ParseContext());
+        }
     }
 }
