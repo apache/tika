@@ -119,9 +119,18 @@ chunked uploads have none and are not recorded. Bucketed at 1KB..1GB by decades.
 |counter
 |`reason`
 |Requests refused for capacity reasons, by the status the server already uses to encode
-them: `busy_429` (the `/async` queue was full, or no fork was free within
-`maxWaitForClientMillis`), `crash_503` (the fork serving the request OOM'd, timed out or
-crashed), `payload_413` (body over `maxRequestSizeBytes` or the IPC payload limit).
+them: `busy_429` (the `/async` queue was full, no fork was free within
+`maxWaitForClientMillis`, or the request's body would exceed `maxInFlightRequestBytes`), `crash_503` (the fork serving the request OOM'd, timed out or
+crashed), `payload_413` (body over `maxRequestSizeBytes` or the IPC payload limit),
+`slow_408` (body still arriving after `maxRequestReadMillis`, or stalled past
+`idleTimeoutMillis`). A response cut off by `maxResponseWriteMillis` keeps the status it
+was sent with, so it is not counted here; `TransferLimitLog` records it.
+
+|`tika_server_request_body_in_flight_bytes`
+|gauge
+|
+|Request-body bytes held by in-flight requests, counted against `maxInFlightRequestBytes`;
+present only when that budget is enabled. It should return to 0 when the server is idle.
 
 |`tika_server_tasks_active`
 |gauge

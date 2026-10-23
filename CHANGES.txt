@@ -54,6 +54,14 @@ Release 4.2.0 - 10/22/2026
      _min-width and min-width is an error, and gated entries load as GatedEnricher,
      not SizeGatedEnricher (TIKA-4972).
 
+   * tika-server adds transfer limits: maxRequestReadMillis (408) and
+     maxResponseWriteMillis, both 5 min; idleTimeoutMillis (120s); and
+     maxInFlightRequestBytes (429). Raise the deadlines for very large or very slow
+     transfers; cut-offs are logged at INFO by the TransferLimitLog logger (TIKA-4991).
+
+   * tika-server accepts cleartext HTTP/2 (h2c) only when allowHttp2 is set; it had
+     been on by default since 4.0.0 (TIKA-4991).
+
    * embedded-limits maxDepth defaults to 20 (was unlimited) and replaces output-limits
      maxPackageEntryDepth (#3319). To be removed in 4.3.0: maxPackageEntryDepth and its
      accessors on OutputLimits and SecureContentHandler, and tika-parser-mail-commons
@@ -98,6 +106,9 @@ Release 4.2.0 - 10/22/2026
      remote images are not loaded (TIKA-4992).
 
   SERVER, PIPES AND OPERATIONS
+
+   * tika-server's welcome page lists endpoints inherited from superclasses (XMP on
+     /meta) under their real paths (TIKA-4991).
 
    * The file-system emitter can gzip its output ("compression": "GZIP"); tika-eval reads
      .json.gz extracts and measures them uncompressed (TIKA-4989).

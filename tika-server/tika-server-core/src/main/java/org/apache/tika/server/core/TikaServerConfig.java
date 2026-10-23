@@ -66,14 +66,31 @@ public class TikaServerConfig {
      */
     public static final long DEFAULT_MAX_REQUEST_SIZE_BYTES = 1024L * 1024L * 1024L;
 
+    /** Default time allowed to receive a request body: 5 minutes, so 1 GiB needs about 29 Mbit/s. */
+    public static final long DEFAULT_MAX_REQUEST_READ_MILLIS = 5L * 60L * 1000L;
+
+    /** Default time allowed to write a response body: 5 minutes. */
+    public static final long DEFAULT_MAX_RESPONSE_WRITE_MILLIS = 5L * 60L * 1000L;
+
+    /** Default connector idle timeout: 2 minutes. Ends clients that stop sending or reading entirely. */
+    public static final int DEFAULT_IDLE_TIMEOUT_MILLIS = 120_000;
+
+    /** Default cap on request-body bytes in flight: 0, meaning maxRequestSizeBytes x 2 x pipes clients. */
+    public static final long DEFAULT_MAX_IN_FLIGHT_REQUEST_BYTES = 0;
+
     /** How long a full /async queue blocks a POST before it is rejected with 429. */
     public static final long DEFAULT_MAX_QUEUE_PAUSE_MILLIS = 60000;
 
     private boolean allowPipes = false;
     private boolean allowPerRequestConfig = false;
+    private boolean allowHttp2 = false;
     private String cors = "";
     private long maxQueuePauseMillis = DEFAULT_MAX_QUEUE_PAUSE_MILLIS;
     private long maxRequestSizeBytes = DEFAULT_MAX_REQUEST_SIZE_BYTES;
+    private long maxRequestReadMillis = DEFAULT_MAX_REQUEST_READ_MILLIS;
+    private long maxResponseWriteMillis = DEFAULT_MAX_RESPONSE_WRITE_MILLIS;
+    private int idleTimeoutMillis = DEFAULT_IDLE_TIMEOUT_MILLIS;
+    private long maxInFlightRequestBytes = DEFAULT_MAX_IN_FLIGHT_REQUEST_BYTES;
     private String id = UUID
             .randomUUID()
             .toString();
@@ -225,6 +242,20 @@ public class TikaServerConfig {
         this.allowPerRequestConfig = allowPerRequestConfig;
     }
 
+    /**
+     * Whether to accept cleartext HTTP/2 (h2c) as well as HTTP/1.1; off by default. HTTP/2
+     * requests get no {@code maxResponseWriteMillis}: its abort closes the connection, which
+     * would end every request multiplexed on it. HTTP/2 over TLS is not offered either way
+     * (tika-server ships no ALPN server provider).
+     */
+    public boolean isAllowHttp2() {
+        return allowHttp2;
+    }
+
+    public void setAllowHttp2(boolean allowHttp2) {
+        this.allowHttp2 = allowHttp2;
+    }
+
     private void validateConsistency(Set<String> settings) throws TikaConfigException {
         if (host == null) {
             throw new TikaConfigException("Must specify 'host'");
@@ -248,6 +279,11 @@ public class TikaServerConfig {
             }
         }
         tlsConfig.checkInitialization();
+        if (maxInFlightRequestBytes > 0 && maxRequestSizeBytes >= 0
+                && maxInFlightRequestBytes < maxRequestSizeBytes) {
+            throw new TikaConfigException("maxInFlightRequestBytes (" + maxInFlightRequestBytes
+                    + ") must be at least maxRequestSizeBytes (" + maxRequestSizeBytes + ")");
+        }
         if (metricsPort != null) {
             if (metricsPort < 0 || metricsPort > 65535) {
                 throw new TikaConfigException("metricsPort must be 0-65535, got " + metricsPort);
@@ -347,6 +383,73 @@ public class TikaServerConfig {
 
     public void setMaxRequestSizeBytes(long maxRequestSizeBytes) {
         this.maxRequestSizeBytes = maxRequestSizeBytes;
+    }
+
+    /**
+     * How long, from the start of the request, reading its body may take; defaults to
+     * {@link #DEFAULT_MAX_REQUEST_READ_MILLIS} (5 minutes). A request still sending after
+     * that is rejected with 408. A negative value disables the deadline; zero is rejected.
+     */
+    public long getMaxRequestReadMillis() {
+        return maxRequestReadMillis;
+    }
+
+    public void setMaxRequestReadMillis(long maxRequestReadMillis) throws TikaConfigException {
+        this.maxRequestReadMillis = nonZero("maxRequestReadMillis", maxRequestReadMillis);
+    }
+
+    /**
+     * How long, from when its status line is sent, writing a response body may take; defaults to
+     * {@link #DEFAULT_MAX_RESPONSE_WRITE_MILLIS} (5 minutes). A response still being written
+     * after that is cut off. A negative value disables the deadline; zero is rejected.
+     */
+    public long getMaxResponseWriteMillis() {
+        return maxResponseWriteMillis;
+    }
+
+    public void setMaxResponseWriteMillis(long maxResponseWriteMillis) throws TikaConfigException {
+        this.maxResponseWriteMillis = nonZero("maxResponseWriteMillis", maxResponseWriteMillis);
+    }
+
+    // zero would fail every transfer, not disable the deadline
+    private static long nonZero(String name, long millis) throws TikaConfigException {
+        if (millis == 0) {
+            throw new TikaConfigException(name + " must be positive, or negative to disable it");
+        }
+        return millis;
+    }
+
+    /**
+     * How long a connection may go without any bytes moving before it is closed; defaults to
+     * {@link #DEFAULT_IDLE_TIMEOUT_MILLIS} (2 minutes). Must be positive: Jetty treats zero
+     * as "use its own default", not "never".
+     */
+    public int getIdleTimeoutMillis() {
+        return idleTimeoutMillis;
+    }
+
+    public void setIdleTimeoutMillis(int idleTimeoutMillis) throws TikaConfigException {
+        if (idleTimeoutMillis <= 0) {
+            throw new TikaConfigException("idleTimeoutMillis must be positive: " + idleTimeoutMillis);
+        }
+        this.idleTimeoutMillis = idleTimeoutMillis;
+    }
+
+    /**
+     * How many request-body bytes all requests together may hold at once, counted as they
+     * are read and freed when each response completes; a request that would go over gets 429.
+     * This bounds the temp disk and memory request bodies take, without letting a client that
+     * sends slowly hold capacity it has not used. 0 (the default) means
+     * {@code maxRequestSizeBytes} x 2 x the pipes clients; negative disables it; a positive
+     * value below {@code maxRequestSizeBytes} is rejected, as a request of that size could
+     * never succeed.
+     */
+    public long getMaxInFlightRequestBytes() {
+        return maxInFlightRequestBytes;
+    }
+
+    public void setMaxInFlightRequestBytes(long maxInFlightRequestBytes) {
+        this.maxInFlightRequestBytes = maxInFlightRequestBytes;
     }
 
     /**
