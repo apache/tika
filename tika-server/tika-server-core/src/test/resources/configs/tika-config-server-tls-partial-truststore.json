@@ -5,7 +5,6 @@
       "status"
     ],
     "tlsConfig": {
-      "active": true,
       "keyStoreType": "PKCS12",
       "keyStorePassword": "tika-secret",
       "keyStoreFile": "src/test/resources/ssl-keys/tika-server-keystore.p12",

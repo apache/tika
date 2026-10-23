@@ -62,6 +62,12 @@ Release 4.2.0 - 10/22/2026
    * tika-server accepts cleartext HTTP/2 (h2c) only when allowHttp2 is set; it had
      been on by default since 4.0.0 (TIKA-4991).
 
+   * tika-server: a tlsConfig block turns TLS on; "active" is deprecated (true ignored
+     with a warning, false refused, rejected in 4.3.0). A keystore without "active" used
+     to serve plain HTTP. Also refused: clientAuthenticationWanted without a truststore,
+     and protocol or cipher lists matching nothing this JVM supports, which silently
+     used JVM defaults (TIKA-4994).
+
    * embedded-limits maxDepth defaults to 20 (was unlimited) and replaces output-limits
      maxPackageEntryDepth (#3319). To be removed in 4.3.0: maxPackageEntryDepth and its
      accessors on OutputLimits and SecureContentHandler, and tika-parser-mail-commons

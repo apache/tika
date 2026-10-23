@@ -242,8 +242,8 @@ public class TikaServerConfigTest extends TikaTest {
         Path path = getConfigPath(getClass(), "tika-config-server-tls.json");
 
         TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
+        assertTrue(config.tlsEnabled());
         TlsConfig tlsConfig = config.getTlsConfig();
-        assertTrue(tlsConfig.isActive());
         assertFalse(tlsConfig.isClientAuthenticationWanted());
         assertFalse(tlsConfig.isClientAuthenticationRequired());
         assertEquals("myType", tlsConfig.getKeyStoreType());
@@ -274,6 +274,35 @@ public class TikaServerConfigTest extends TikaTest {
                 () -> TikaServerConfig.load(commandLine));
         assertContains("client authentication", ex.getMessage());
         assertContains("no trust store", ex.getMessage());
+    }
+
+    /** A tlsConfig block is TLS; it does not need the deprecated "active" flag. */
+    @Test
+    public void testTlsBlockWithoutActiveIsTls() throws Exception {
+        Set<String> settings = new HashSet<>();
+        CommandLine emptyCommandLine = new DefaultParser().parse(new Options(), new String[]{});
+        Path path = getConfigPath(getClass(), "tika-config-server-tls-active-omitted.json");
+        TikaServerConfig config = TikaServerConfig.load(path, emptyCommandLine, settings);
+        assertTrue(config.tlsEnabled());
+        assertFalse(new TikaServerConfig().tlsEnabled());
+    }
+
+    /** A configured block that claims to be off is the footgun this replaces: refuse it. */
+    @Test
+    public void testTlsActiveFalseRefusesToLoad() throws Exception {
+        CommandLineParser parser = new DefaultParser();
+        Path path = getConfigPath(getClass(), "tika-config-server-tls-active-false.json");
+        CommandLine commandLine = parser.parse(new Options()
+                .addOption(Option
+                        .builder("c")
+                        .longOpt("config")
+                        .hasArg()
+                        .get()), new String[]{"-c", ProcessUtils.escapeCommandLine(path
+                .toAbsolutePath()
+                .toString())});
+        TikaConfigException ex = assertThrows(TikaConfigException.class,
+                () -> TikaServerConfig.load(commandLine));
+        assertContains("remove the block", ex.getMessage());
     }
 
     @Test

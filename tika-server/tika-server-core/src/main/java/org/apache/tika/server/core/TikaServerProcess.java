@@ -339,18 +339,14 @@ public class TikaServerProcess {
 
         warnOnPermissiveConfig(tikaServerConfig);
 
-        String protocol = tikaServerConfig
-                .getTlsConfig()
-                .isActive() ? "https" : "http";
+        String protocol = tikaServerConfig.tlsEnabled() ? "https" : "http";
         String url = protocol + "://" + host + ":" + port + "/";
         sf.setAddress(url);
         sf.setResourceComparator(new ProduceTypeResourceComparator());
         BindingFactoryManager manager = sf
                 .getBus()
                 .getExtension(BindingFactoryManager.class);
-        if (tikaServerConfig
-                .getTlsConfig()
-                .isActive()) {
+        if (tikaServerConfig.tlsEnabled()) {
             LOG.warn("The TLS configuration is in BETA and might change " + "dramatically in future releases.");
             // Check for expiring certificates and log warnings
             tikaServerConfig.getTlsConfig().checkCertificateExpiration();

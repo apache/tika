@@ -27,10 +27,16 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.PatternSyntaxException;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +59,8 @@ public class TlsConfig {
      */
     public static final int DEFAULT_CERT_EXPIRATION_WARNING_DAYS = 30;
 
-    private boolean active = false;
+    // deprecated 4.2.0, removed in 4.3.0: TLS is on whenever a tlsConfig block is present
+    private Boolean active = null;
     private int certExpirationWarningDays = DEFAULT_CERT_EXPIRATION_WARNING_DAYS;
     private String keyStoreType = null;
     private String keyStorePassword = null;
@@ -73,10 +80,8 @@ public class TlsConfig {
     private List<String> includedCipherSuites = null;
     private List<String> excludedCipherSuites = null;
 
-    public boolean isActive() {
-        return active;
-    }
-
+    /** @deprecated since 4.2.0: a {@code tlsConfig} block turns TLS on; remove the block to turn it off. */
+    @Deprecated
     public void setActive(boolean active) {
         this.active = active;
     }
@@ -130,7 +135,14 @@ public class TlsConfig {
     }
 
     public void checkInitialization() throws TikaConfigException {
-        if (active) {
+        if (Boolean.FALSE.equals(active)) {
+            throw new TikaConfigException("tlsConfig.active=false: a tlsConfig block turns TLS on; "
+                    + "remove the block to serve plain HTTP (\"active\" is deprecated and will be removed in 4.3.0)");
+        }
+        if (Boolean.TRUE.equals(active)) {
+            LOG.warn("tlsConfig.active is deprecated and ignored: a tlsConfig block turns TLS on; remove \"active\" (it will be rejected in 4.3.0)");
+        }
+        {
             // Validate keystore configuration
             if (StringUtils.isBlank(keyStoreType)) {
                 throw new TikaConfigException("must initialize keyStoreType");
@@ -169,6 +181,61 @@ public class TlsConfig {
             if (!hasTrustStore() && isClientAuthenticationRequired()) {
                 throw new TikaConfigException("requiring client authentication, but no trust store has been specified");
             }
+            if (!hasTrustStore() && isClientAuthenticationWanted()) {
+                throw new TikaConfigException("clientAuthenticationWanted, but no trust store has been specified to verify client certificates against");
+            }
+            checkProtocolsAndCipherSuites();
+        }
+    }
+
+    /**
+     * Every included protocol or cipher pattern must match something this JVM supports, and
+     * the lists together must leave something enabled; otherwise the server would start and
+     * fail every handshake, or silently fall back to the JVM defaults. Exclusions that match
+     * nothing are fine: a denylist written for an older JVM stays valid.
+     */
+    private void checkProtocolsAndCipherSuites() throws TikaConfigException {
+        SSLParameters supported;
+        try {
+            supported = SSLContext.getDefault().getSupportedSSLParameters();
+        } catch (NoSuchAlgorithmException e) {
+            throw new TikaConfigException("cannot inspect this JVM's TLS support", e);
+        }
+        List<String> protocols = Arrays.asList(supported.getProtocols());
+        Set<String> enabledProtocols = new LinkedHashSet<>(includedProtocols == null ? protocols : includedProtocols);
+        for (String p : enabledProtocols) {
+            if (!protocols.contains(p)) {
+                throw new TikaConfigException("includedProtocols entry '" + p + "' is not supported by this JVM; supported: " + protocols);
+            }
+        }
+        if (excludedProtocols != null) {
+            excludedProtocols.forEach(enabledProtocols::remove);
+        }
+        if (enabledProtocols.isEmpty()) {
+            throw new TikaConfigException("includedProtocols/excludedProtocols leave no TLS protocol enabled; supported: " + protocols);
+        }
+        List<String> ciphers = Arrays.asList(supported.getCipherSuites());
+        List<String> enabledCiphers = new ArrayList<>();
+        try {
+            if (includedCipherSuites == null) {
+                enabledCiphers.addAll(ciphers);
+            } else {
+                for (String pattern : includedCipherSuites) {
+                    List<String> matched = ciphers.stream().filter(c -> c.matches(pattern)).toList();
+                    if (matched.isEmpty()) {
+                        throw new TikaConfigException("includedCipherSuites entry '" + pattern + "' matches no cipher suite supported by this JVM");
+                    }
+                    enabledCiphers.addAll(matched);
+                }
+            }
+            if (excludedCipherSuites != null) {
+                enabledCiphers.removeIf(c -> excludedCipherSuites.stream().anyMatch(c::matches));
+            }
+        } catch (PatternSyntaxException e) {
+            throw new TikaConfigException("cipher suite pattern is not a valid regular expression: " + e.getMessage(), e);
+        }
+        if (enabledCiphers.isEmpty()) {
+            throw new TikaConfigException("includedCipherSuites/excludedCipherSuites leave no cipher suite enabled");
         }
     }
 
@@ -256,7 +323,7 @@ public class TlsConfig {
      * warn about upcoming certificate expirations.
      */
     public void checkCertificateExpiration() {
-        if (!active || certExpirationWarningDays <= 0) {
+        if (certExpirationWarningDays <= 0) {
             return;
         }
 
@@ -322,8 +389,7 @@ public class TlsConfig {
     @Override
     public String toString() {
         return "TlsConfig{" +
-                "active=" + active +
-                ", keyStoreType='" + keyStoreType + '\'' +
+                "keyStoreType='" + keyStoreType + '\'' +
                 ", keyStorePassword='" + maskPassword(keyStorePassword) + '\'' +
                 ", keyStoreFile='" + keyStoreFile + '\'' +
                 ", trustStoreType='" + trustStoreType + '\'' +

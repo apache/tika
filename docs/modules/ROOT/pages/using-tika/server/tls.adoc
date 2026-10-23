@@ -53,7 +53,6 @@ Server authenticates to clients; clients present no certificate.
     "host": "localhost",
     "port": 9998,
     "tlsConfig": {
-      "active": true,
       "keyStoreType": "PKCS12",
       "keyStoreFile": "/path/to/server-keystore.p12",
       "keyStorePassword": "${env:KEYSTORE_PASSWORD}",
@@ -75,7 +74,6 @@ Add a truststore holding the client certificates you trust, and require client a
     "host": "localhost",
     "port": 9998,
     "tlsConfig": {
-      "active": true,
       "keyStoreType": "PKCS12",
       "keyStoreFile": "/path/to/server-keystore.p12",
       "keyStorePassword": "${env:KEYSTORE_PASSWORD}",
@@ -91,16 +89,17 @@ Add a truststore holding the client certificates you trust, and require client a
 
 == Configuration Reference
 
-All properties below go in `server.tlsConfig`.
+A `tlsConfig` block turns TLS on: there is no separate switch to forget, and the server never
+falls back to plain HTTP. To serve plain HTTP, leave the block out. All properties below go in
+`server.tlsConfig`.
+
+NOTE: Up to 4.1 the block also carried `"active": true`. It is deprecated in 4.2.0: `true` is
+ignored with a warning, `false` is refused (remove the block instead), and the key is rejected
+from 4.3.0.
 
 [cols="2,1,1,4"]
 |===
 |Property |Type |Default |Description
-
-|`active`
-|boolean
-|`false`
-|Enable TLS. When true, the server serves HTTPS.
 
 |`keyStoreType`
 |string
@@ -136,7 +135,7 @@ All properties below go in `server.tlsConfig`.
 |`clientAuthenticationWanted`
 |boolean
 |`false`
-|Request client certificates but do not require them; clients without one still connect.
+|Request client certificates but do not require them; clients without one still connect. Needs a truststore to check the certificates against, like `clientAuthenticationRequired`.
 
 |`clientAuthenticationRequired`
 |boolean
@@ -169,8 +168,13 @@ All properties below go in `server.tlsConfig`.
 |Days before certificate expiration to log a warning. `0` disables the check.
 |===
 
-When `active` is true, `keyStoreType`, `keyStoreFile` and `keyStorePassword` are all required.
-Truststore properties are all-or-nothing: set all three or none.
+`keyStoreType`, `keyStoreFile` and `keyStorePassword` are all required.
+Truststore properties are all-or-nothing: set all three or none. Every `includedProtocols` entry
+and every `includedCipherSuites` pattern must match something the JVM supports, and the lists
+together must leave at least one protocol and one cipher suite enabled; otherwise the server
+refuses to start rather than fall back to the JVM defaults or fail every handshake. Exclusions
+that match nothing are fine. Any of these problems, and a keystore or truststore that cannot be
+opened, stops startup: the server never falls back to plain HTTP.
 
 === Restricting protocols and cipher suites
 
@@ -302,7 +306,6 @@ With `/tika/config/tika-config.json` holding, for example:
   "server": {
     "port": 9998,
     "tlsConfig": {
-      "active": true,
       "keyStoreType": "PKCS12",
       "keyStoreFile": "/tika/certs/server-keystore.p12",
       "keyStorePassword": "${env:KEYSTORE_PASSWORD}",
@@ -404,7 +407,16 @@ script, which writes the config file before starting the server.
 |Message |Cause
 
 |`must initialize keyStoreType` / `keyStoreFile` / `keyStorePassword`
-|`active` is true but one of the three required keystore properties is missing.
+|A `tlsConfig` block is present but one of the three required keystore properties is missing.
+
+|`tlsConfig.active=false: a tlsConfig block turns TLS on`
+|The deprecated `active` flag is set to false. Remove the whole `tlsConfig` block to serve plain HTTP.
+
+|`clientAuthenticationWanted, but no trust store has been specified`
+|Client certificates can only be checked against a truststore; configure one or drop the flag.
+
+|`includedProtocols entry '...' is not supported by this JVM` / `includedCipherSuites entry '...' matches no cipher suite`
+|A typo, or a name this JVM does not know; the message lists what it supports. The server refuses to start rather than silently use the JVM defaults.
 
 |`keyStoreFile does not exist or is not a file`
 |Wrong path. Absolute paths are safest; relative ones resolve against the working directory, which
