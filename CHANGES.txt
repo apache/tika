@@ -55,8 +55,8 @@ Release 4.2.0 - 10/22/2026
      not SizeGatedEnricher (TIKA-4972).
 
    * tika-server adds transfer limits: maxRequestReadMillis (408) and
-     maxResponseWriteMillis, both 5 min; idleTimeoutMillis (120s); and
-     maxInFlightRequestBytes (429). Raise the deadlines for very large or very slow
+     maxResponseWriteMillis, both 5 min; idleTimeoutMillis (120s, was CXF's fixed
+     200s); and maxInFlightRequestBytes (429). Raise the deadlines for very large or very slow
      transfers; cut-offs are logged at INFO by the TransferLimitLog logger (TIKA-4991).
 
    * tika-server accepts cleartext HTTP/2 (h2c) only when allowHttp2 is set; it had
