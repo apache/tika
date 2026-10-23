@@ -67,4 +67,15 @@ public class IDMLParserTest extends TikaTest {
         assertContains("<meta name=\"xmp:CreatorTool\" content=\"Adobe InDesign CC 14.0 (Windows)\" />", xml);
     }
 
+
+    @Test
+    public void testPageCountsAreNotCarriedAcrossParses() throws Exception {
+        // one instance serves every parse: the totals must start from zero each time
+        getText("testIndesign.idml", parser, new Metadata());
+        Metadata metadata = new Metadata();
+        getText("testIndesign.idml", parser, metadata);
+        assertEquals("3", metadata.get(Office.PAGE_COUNT));
+        assertEquals("2", metadata.get(IDML.MASTER_SPREAD_PAGE_COUNT));
+        assertEquals("1", metadata.get(IDML.SPREAD_PAGE_COUNT));
+    }
 }
