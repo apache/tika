@@ -53,11 +53,9 @@ Server authenticates to clients; clients present no certificate.
     "host": "localhost",
     "port": 9998,
     "tlsConfig": {
-      "active": true,
       "keyStoreType": "PKCS12",
       "keyStoreFile": "/path/to/server-keystore.p12",
       "keyStorePassword": "${env:KEYSTORE_PASSWORD}",
-      "clientAuthenticationWanted": false,
       "clientAuthenticationRequired": false
     }
   }
@@ -66,7 +64,9 @@ Server authenticates to clients; clients present no certificate.
 
 === 2-Way TLS (mTLS)
 
-Add a truststore holding the client certificates you trust, and require client authentication.
+Add a truststore holding the client certificates you trust, or the CA certificate that issues
+them, and require client authentication. A certificate issued by a CA is also checked for
+revocation; see <<Client certificate revocation>>.
 
 [source,json]
 ----
@@ -75,14 +75,12 @@ Add a truststore holding the client certificates you trust, and require client a
     "host": "localhost",
     "port": 9998,
     "tlsConfig": {
-      "active": true,
       "keyStoreType": "PKCS12",
       "keyStoreFile": "/path/to/server-keystore.p12",
       "keyStorePassword": "${env:KEYSTORE_PASSWORD}",
       "trustStoreType": "PKCS12",
       "trustStoreFile": "/path/to/server-truststore.p12",
       "trustStorePassword": "${env:TRUSTSTORE_PASSWORD}",
-      "clientAuthenticationWanted": true,
       "clientAuthenticationRequired": true
     }
   }
@@ -91,16 +89,17 @@ Add a truststore holding the client certificates you trust, and require client a
 
 == Configuration Reference
 
-All properties below go in `server.tlsConfig`.
+A `tlsConfig` block turns TLS on: there is no separate switch to forget, and the server never
+falls back to plain HTTP. To serve plain HTTP, leave the block out. All properties below go in
+`server.tlsConfig`.
+
+NOTE: Up to 4.1 the block also carried `"active": true`. It is deprecated in 4.2.0: `true` is
+ignored with a warning, `false` is refused (remove the block instead), and the key is rejected
+from 4.3.0.
 
 [cols="2,1,1,4"]
 |===
 |Property |Type |Default |Description
-
-|`active`
-|boolean
-|`false`
-|Enable TLS. When true, the server serves HTTPS.
 
 |`keyStoreType`
 |string
@@ -126,42 +125,24 @@ All properties below go in `server.tlsConfig`.
 |`trustStoreFile`
 |string
 |null
-|Path to the truststore holding trusted client certificates (2-way TLS).
+|Path to the truststore holding trusted client certificates, or the CAs that issue them (2-way TLS).
+Only used with `clientAuthenticationRequired`.
 
 |`trustStorePassword`
 |string
 |null
 |Password for the truststore.
 
-|`clientAuthenticationWanted`
-|boolean
-|`false`
-|Request client certificates but do not require them; clients without one still connect.
-
 |`clientAuthenticationRequired`
 |boolean
 |`false`
 |Require a client certificate trusted by the server.
 
-|`includedProtocols`
-|list
-|`["TLSv1.2", "TLSv1.3"]`
-|TLS versions to enable. TLS 1.0 and 1.1 are insecure and off by default.
-
-|`excludedProtocols`
-|list
-|null
-|TLS versions to explicitly disable.
-
-|`includedCipherSuites`
-|list
-|null
-|Cipher suites to enable. Null means JVM defaults.
-
-|`excludedCipherSuites`
-|list
-|null
-|Cipher suites to disable. Entries are regular expressions.
+|`checkRevocation`
+|boolean
+|`true`
+|Reject a CA-issued client certificate unless its revocation status can be confirmed (CRL or
+OCSP). See <<Client certificate revocation>>.
 
 |`certExpirationWarningDays`
 |integer
@@ -169,36 +150,86 @@ All properties below go in `server.tlsConfig`.
 |Days before certificate expiration to log a warning. `0` disables the check.
 |===
 
-When `active` is true, `keyStoreType`, `keyStoreFile` and `keyStorePassword` are all required.
+`keyStoreType`, `keyStoreFile` and `keyStorePassword` are all required.
 Truststore properties are all-or-nothing: set all three or none.
 
-=== Restricting protocols and cipher suites
+A keystore or truststore that cannot be opened stops startup: the server never falls back to
+plain HTTP.
 
-Add to `server.tlsConfig` — for example, TLS 1.3 only:
+=== Client certificate revocation
+
+With `clientAuthenticationRequired`, a client certificate issued by a CA in the truststore is
+also checked for revocation, using the sources named in the certificate itself: its OCSP
+responder (Authority Information Access) first, then its CRL distribution point if OCSP gives no
+answer. No JVM flags are needed. The check fails closed: the client is rejected when the
+certificate names no revocation source, when no source can be reached, or when one lists the
+certificate as revoked. A certificate placed directly in the truststore is trusted as is; it is
+not checked.
+
+The check runs during the TLS handshake, so the server must be able to reach the OCSP responder or
+CRL distribution point. One that does not answer holds that client's handshake until the JDK
+gives up: 15 seconds each to connect and to read, for OCSP and then again for the CRL. To shorten
+that, set `-Dcom.sun.security.ocsp.timeout`, `-Dcom.sun.security.ocsp.readtimeout`,
+`-Dcom.sun.security.crl.timeout` and `-Dcom.sun.security.crl.readtimeout` (in seconds). Only
+certificates issued by a CA in the truststore reach this check: a certificate the server cannot
+verify is rejected without any fetch.
+
+If your CA publishes no CRL or OCSP responder, or the server cannot reach it, turn the check off.
+This is often the case for CAs that issue short-lived, automatically rotated certificates, such as
+cert-manager or SPIFFE/SPIRE, which rely on the short lifetime instead of revocation: with the
+check on, every client is rejected. With the check off, revoking a client means removing its
+certificate (or its CA) from the truststore, or letting a short-lived certificate expire:
 
 [source,json]
 ----
-"includedProtocols": ["TLSv1.3"]
+"checkRevocation": false
+----
+
+The client sees only `certificate_unknown`; the server logs the reason at INFO (logger
+`org.apache.tika.server.core.ClientCertificateTrustManager`), for example
+`client certificate rejected: CN=client-1: Certificate has been revoked`.
+
+NOTE: Through 4.1 the server checked revocation without enabling CRL fetching, so it rejected
+every CA-issued client certificate. Only certificates placed directly in the truststore worked.
+
+=== Restricting protocols and cipher suites
+
+Tika does not set TLS protocol or cipher suite policy; the JVM does. By default the server offers
+what the JVM enables (TLS 1.2 and 1.3 on current JDKs), minus Jetty's weak-suite exclusions. To
+restrict it, set the JVM's own properties when starting the server — for example, TLS 1.3 only:
+
+[source,bash]
+----
+java -Djdk.tls.server.protocols=TLSv1.3 -jar tika-server-standard.jar -c tika-config.json
 ----
 
 An explicit allowlist of cipher suites:
 
-[source,json]
+[source,bash]
 ----
-"includedCipherSuites": [
-  "TLS_AES_256_GCM_SHA384",
-  "TLS_AES_128_GCM_SHA256",
-  "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-  "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
-]
+java -Djdk.tls.server.cipherSuites=TLS_AES_256_GCM_SHA384,TLS_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 \
+  -jar tika-server-standard.jar -c tika-config.json
 ----
 
-Or a denylist of weak ones, as regular expressions:
+In a container, put the flags in `JAVA_TOOL_OPTIONS`. The `jdk.tls.server.*` properties apply
+only where Java is the TLS server, so outbound HTTPS from fetchers and parsers is unaffected. The
+reverse does not hold: `jdk.tls.client.protocols` restricts the server too, since Jetty starts
+from the JVM's client-side protocol defaults, so the server offers only protocols both properties
+allow. To ban an algorithm everywhere, client side included, edit `jdk.tls.disabledAlgorithms` in
+the JDK's `java.security`.
 
-[source,json]
-----
-"excludedCipherSuites": [".*CBC.*", ".*RC4.*", ".*3DES.*", ".*NULL.*"]
-----
+Jetty's weak-suite exclusions apply on top of `jdk.tls.server.cipherSuites`: a listed suite whose
+name ends in `+_SHA+`, `+_SHA1+` or `+_MD5+`, or starts with `+TLS_RSA_+` or `+SSL_+`, or contains
+`+_NULL_+` or `+_anon_+`, is dropped without a warning.
+
+NOTE: Through 4.1, `tlsConfig` had `includedProtocols`, `excludedProtocols`,
+`includedCipherSuites` and `excludedCipherSuites`. None of them worked as documented:
+`includedProtocols` did not stop other versions being offered, `excludedCipherSuites` on its own
+disabled every suite, and `includedCipherSuites` could be replaced by the JVM defaults. They were
+removed in 4.2.0, and a config that sets any of them is refused with the property to use instead.
+`clientAuthenticationWanted` was removed too: tika-server never reads client certificates, so
+asking for one without requiring it authenticated nobody. `true` is refused; `false` is ignored
+with a warning. Use `clientAuthenticationRequired`.
 
 == Certificate Expiration Warnings
 
@@ -288,6 +319,7 @@ paths in `tlsConfig` are container paths, not host paths.
 [source,bash]
 ----
 docker run -d --name tika-server -p 9998:9998 \
+  -e KEYSTORE_PASSWORD -e TRUSTSTORE_PASSWORD \
   -v $(pwd)/config:/tika/config:ro \
   -v $(pwd)/certs:/tika/certs:ro \
   apache/tika:<version> \
@@ -302,7 +334,6 @@ With `/tika/config/tika-config.json` holding, for example:
   "server": {
     "port": 9998,
     "tlsConfig": {
-      "active": true,
       "keyStoreType": "PKCS12",
       "keyStoreFile": "/tika/certs/server-keystore.p12",
       "keyStorePassword": "${env:KEYSTORE_PASSWORD}",
@@ -331,6 +362,9 @@ services:
       - ./config:/tika/config:ro
       - ./certs:/tika/certs:ro
     command: ["-c", "/tika/config/tika-config.json"]
+    environment:
+      KEYSTORE_PASSWORD: ${KEYSTORE_PASSWORD}
+      TRUSTSTORE_PASSWORD: ${TRUSTSTORE_PASSWORD}
     healthcheck:
       test: ["CMD", "curl", "-f", "--cacert", "/tika/certs/server.crt", "https://localhost:9998/tika"]
       interval: 30s
@@ -344,7 +378,9 @@ services:
 ----
 kubectl create secret generic tika-tls-certs \
   --from-file=server-keystore.p12=./certs/server-keystore.p12 \
-  --from-file=server-truststore.p12=./certs/server-truststore.p12
+  --from-file=server-truststore.p12=./certs/server-truststore.p12 \
+  --from-literal=keystore-password="$KEYSTORE_PASSWORD" \
+  --from-literal=truststore-password="$TRUSTSTORE_PASSWORD"
 ----
 
 [source,yaml]
@@ -370,6 +406,13 @@ spec:
         ports:
         - containerPort: 9998
         args: ["-c", "/tika/config/tika-config.json"]
+        env:
+        - name: KEYSTORE_PASSWORD
+          valueFrom:
+            secretKeyRef: {name: tika-tls-certs, key: keystore-password}
+        - name: TRUSTSTORE_PASSWORD
+          valueFrom:
+            secretKeyRef: {name: tika-tls-certs, key: truststore-password}
         volumeMounts:
         - name: config
           mountPath: /tika/config
@@ -388,14 +431,12 @@ spec:
 
 === Keystore passwords
 
-IMPORTANT: Tika reads `keyStorePassword` and `trustStorePassword` literally out of the JSON — it
-does not expand environment variables, `${...}` placeholders, or `/run/secrets` paths. Injecting
-the password as an env var does nothing on its own.
-
-Treat the whole config file as the secret: store it as a Kubernetes `Secret` or a Docker secret
-and mount it read-only (as in the deployment above), rather than baking it into an image or
-committing it. If you need to assemble the password at run time, do it in your own entrypoint
-script, which writes the config file before starting the server.
+Write the passwords as `${env:NAME}` (as in the examples above) and pass them in the environment,
+so the config file holds no secret. Tika expands `${env:NAME}` anywhere in the startup config; a
+variable that is not set stops startup
+(xref:configuration/index.adoc#env[Secrets from the environment]). Nothing else is expanded: there
+is no form that reads a file such as `/run/secrets/...`. For a secret mounted as a file, export it
+into the environment in your own entrypoint script.
 
 == Troubleshooting
 
@@ -404,7 +445,18 @@ script, which writes the config file before starting the server.
 |Message |Cause
 
 |`must initialize keyStoreType` / `keyStoreFile` / `keyStorePassword`
-|`active` is true but one of the three required keystore properties is missing.
+|A `tlsConfig` block is present but one of the three required keystore properties is missing.
+
+|`tlsConfig.active=false: a tlsConfig block turns TLS on`
+|The deprecated `active` flag is set to false. Remove the whole `tlsConfig` block to serve plain HTTP.
+
+|`removed in 4.2.0; Tika no longer sets TLS protocol or cipher policy`
+|A 4.1 config with `includedProtocols`, `excludedProtocols`, `includedCipherSuites` or
+`excludedCipherSuites`. Delete the key and use the JVM property the message names (see
+<<Restricting protocols and cipher suites>>).
+
+|`tlsConfig.clientAuthenticationWanted was removed in 4.2.0`
+|Use `clientAuthenticationRequired` with a truststore, or drop the key.
 
 |`keyStoreFile does not exist or is not a file`
 |Wrong path. Absolute paths are safest; relative ones resolve against the working directory, which
@@ -413,6 +465,13 @@ inside a container is not where you think it is.
 |`Partial truststore configuration detected`
 |Some but not all of `trustStoreType`, `trustStoreFile`, `trustStorePassword` are set. Set all
 three or none.
+
+|`client certificate rejected: ...` (INFO, server log)
+|The server refused a client's certificate; the client sees `certificate_unknown`. `Certificate
+has been revoked`: it is. `Certificate does not specify OCSP responder`, `Connection refused`, or
+a timeout: the certificate names no reachable revocation source; fix the CA's CRL or OCSP
+publication, or set `checkRevocation` to false. `Signature does not match` or `unable to find valid certification
+path`: it was not issued by a CA in the truststore.
 
 |`requiring client authentication, but no trust store has been specified`
 |`clientAuthenticationRequired` is true with no truststore. The server needs one to verify client
