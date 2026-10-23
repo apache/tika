@@ -41,6 +41,7 @@ import org.apache.poi.openxml4j.opc.TargetMode;
 import org.apache.poi.ss.usermodel.Comment;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.ss.usermodel.HeaderFooter;
+import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.eventusermodel.XSSFReader;
 import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler.SheetContentsHandler;
@@ -1088,12 +1089,16 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         */
         @Override
         @Deprecated
         public void cell(String cellRef, String formattedValue, XSSFComment comment) {
             cell(cellRef, formattedValue, (Comment) comment);
         }
 
+        @Override
         public void headerFooter(String text, boolean isHeader, String tagName) {
             if (!includeHeadersFooters) {
                 return;
@@ -1118,10 +1123,9 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
         public void cell(String cellReference, String formattedValue, Comment comment) {
             XSSFCommentsShim.CommentData commentData = null;
             if (comment != null) {
-                String text = comment.getString() != null ?
-                        comment.getString().getString() : "";
-                commentData = new XSSFCommentsShim.CommentData(
-                        comment.getAuthor(), text);
+                RichTextString richText = comment.getString();
+                String text = (richText != null) ? richText.getString() : "";
+                commentData = new XSSFCommentsShim.CommentData(comment.getAuthor(), text);
             }
             cell(cellReference, formattedValue, commentData);
         }
@@ -1134,24 +1138,30 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             this.text = text;
         }
 
+        @Override
         public String getCenter() {
             return hfHelper.getCenterSection(text);
         }
 
+        @Override
         public void setCenter(String paramString) {
         }
 
+        @Override
         public String getLeft() {
             return hfHelper.getLeftSection(text);
         }
 
+        @Override
         public void setLeft(String paramString) {
         }
 
+        @Override
         public String getRight() {
             return hfHelper.getRightSection(text);
         }
 
+        @Override
         public void setRight(String paramString) {
         }
     }
@@ -1170,6 +1180,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             this.delegate = delegate;
         }
 
+        @Override
         public void startElement(String uri, String localName, String qName, Attributes atts)
                 throws SAXException {
             if ("sheetProtection".equals(qName)) {
@@ -1190,42 +1201,52 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
             delegate.startElement(uri, localName, qName, atts);
         }
 
+        @Override
         public void characters(char[] ch, int start, int length) throws SAXException {
             delegate.characters(ch, start, length);
         }
 
+        @Override
         public void endDocument() throws SAXException {
             delegate.endDocument();
         }
 
+        @Override
         public void endElement(String uri, String localName, String qName) throws SAXException {
             delegate.endElement(uri, localName, qName);
         }
 
+        @Override
         public void endPrefixMapping(String prefix) throws SAXException {
             delegate.endPrefixMapping(prefix);
         }
 
+        @Override
         public void ignorableWhitespace(char[] ch, int start, int length) throws SAXException {
             delegate.ignorableWhitespace(ch, start, length);
         }
 
+        @Override
         public void processingInstruction(String target, String data) throws SAXException {
             delegate.processingInstruction(target, data);
         }
 
+        @Override
         public void setDocumentLocator(Locator locator) {
             delegate.setDocumentLocator(locator);
         }
 
+        @Override
         public void skippedEntity(String name) throws SAXException {
             delegate.skippedEntity(name);
         }
 
+        @Override
         public void startDocument() throws SAXException {
             delegate.startDocument();
         }
 
+        @Override
         public void startPrefixMapping(String prefix, String uri) throws SAXException {
             delegate.startPrefixMapping(prefix, uri);
         }
