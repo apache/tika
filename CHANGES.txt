@@ -192,6 +192,11 @@ Release 4.2.0 - 10/22/2026
      tk:chunks as JSON values rather than strings; new Property.ValueType.JSON
      (TIKA-4969).
 
+   * Parsers no longer carry one document's state into the next: IDML page counts no
+     longer accumulate, an ENVI header's multi-line field no longer absorbs the previous
+     field or document (#3406), and an IPTC/ANPA wire no longer inherits the previous
+     wire's agency format and publisher (TIKA-4995).
+
   OTHER CHANGES
 
    * tika-app -J writes the metadata list when the container throws, with the exception

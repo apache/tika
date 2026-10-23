@@ -79,21 +79,20 @@ public class IptcAnpaParser implements Parser {
     private final static char SR = 0x92;    // single-quote right
     private final static char DL = 0x93;    // double-quote left
     private final static char DR = 0x94;    // double-quote right
-    private int FMT_ANPA_1312 = 0x00;   // "NAA 89-3 (ANPA 1312)"
-    private int FMT_ANPA_UPI = 0x01;   // "United Press International ANPA 1312 variant"
-    private int FMT_ANPA_UPI_DL = 0x02;   // "United Press International Down-Load Message"
-    private int FMT_IPTC_7901 = 0x03;   // "IPTC7901 Recommended Message Format"
-    private int FMT_IPTC_PHOTO = 0x04;   // "IPTC-NAA Digital Newsphoto Parameter Record"
-    private int FMT_IPTC_CHAR = 0x05;
+    private static final int FMT_ANPA_1312 = 0x00;   // "NAA 89-3 (ANPA 1312)"
+    private static final int FMT_ANPA_UPI = 0x01;   // "United Press International ANPA 1312 variant"
+    private static final int FMT_ANPA_UPI_DL = 0x02;   // "United Press International Down-Load Message"
+    private static final int FMT_IPTC_7901 = 0x03;   // "IPTC7901 Recommended Message Format"
+    private static final int FMT_IPTC_PHOTO = 0x04;   // "IPTC-NAA Digital Newsphoto Parameter Record"
+    private static final int FMT_IPTC_CHAR = 0x05;
             // "IPTC Unstructured Character Oriented File Format (UCOFF)"
-    private int FMT_NITF = 0x06;   // "News Industry Text Format (NITF)"
-    private int FMT_NITF_TT = 0x07;   // "Tidningarnas Telegrambyra NITF version (TTNITF DTD)"
-    private int FMT_NITF_RB = 0x08;   // "Ritzaus Bureau NITF version (RBNITF DTD)"
-    private int FMT_IPTC_AP = 0x09;   // "Associated Press news wire format"
-    private int FMT_IPTC_BLM = 0x0A;   // "Bloomberg News news wire format"
-    private int FMT_IPTC_NYT = 0x0B;   // "New York Times news wire format"
-    private int FMT_IPTC_RTR = 0x0C;   // "Reuters news wire format"
-    private int FORMAT = FMT_ANPA_1312;    // assume the default format to be ANPA-1312
+    private static final int FMT_NITF = 0x06;   // "News Industry Text Format (NITF)"
+    private static final int FMT_NITF_TT = 0x07;   // "Tidningarnas Telegrambyra NITF version (TTNITF DTD)"
+    private static final int FMT_NITF_RB = 0x08;   // "Ritzaus Bureau NITF version (RBNITF DTD)"
+    private static final int FMT_IPTC_AP = 0x09;   // "Associated Press news wire format"
+    private static final int FMT_IPTC_BLM = 0x0A;   // "Bloomberg News news wire format"
+    private static final int FMT_IPTC_NYT = 0x0B;   // "New York Times news wire format"
+    private static final int FMT_IPTC_RTR = 0x0C;   // "Reuters news wire format"
 
     public Set<MediaType> getSupportedTypes(ParseContext context) {
         return SUPPORTED_TYPES;
@@ -102,8 +101,9 @@ public class IptcAnpaParser implements Parser {
     public void parse(TikaInputStream tis, ContentHandler handler, Metadata metadata,
                       ParseContext context) throws IOException, SAXException, TikaException {
 
-        HashMap<String, String> properties = this.loadProperties(tis);
-        this.setMetadata(metadata, properties);
+        int format = scanFormat(tis);
+        HashMap<String, String> properties = loadProperties(tis, format);
+        setMetadata(metadata, properties, format);
 
         XHTMLContentHandler xhtml = new XHTMLContentHandler(handler, metadata, context);
         xhtml.startDocument();
@@ -129,11 +129,9 @@ public class IptcAnpaParser implements Parser {
     /**
      * scan the news messsage and store the metadata and data into a map
      */
-    private HashMap<String, String> loadProperties(InputStream is) {
+    private HashMap<String, String> loadProperties(InputStream is, int format) {
 
         HashMap<String, String> properties = new HashMap<>();
-
-        FORMAT = this.scanFormat(is);
 
         byte[] residual = this.getSection(is, "residual");
 
@@ -141,17 +139,17 @@ public class IptcAnpaParser implements Parser {
         parseHeader(header, properties);
 
         byte[] body = this.getSection(is, "body");
-        parseBody(body, properties);
+        parseBody(body, properties, format);
 
         byte[] footer = this.getSection(is, "footer");
-        parseFooter(footer, properties);
+        parseFooter(footer, properties, format);
 
         return (properties);
     }
 
 
     private int scanFormat(InputStream is) {
-        int format = this.FORMAT;
+        int format = FMT_ANPA_1312;
         int maxsize = 524288;     //  512K
 
         byte[] buf = new byte[maxsize];
@@ -168,16 +166,16 @@ public class IptcAnpaParser implements Parser {
             // explicit codes to identify the wire source in the message itself
 
             if (message.contains("ap-wf")) {
-                format = this.FMT_IPTC_AP;
+                format = FMT_IPTC_AP;
             }
             if (message.contains("reuters")) {
-                format = this.FMT_IPTC_RTR;
+                format = FMT_IPTC_RTR;
             }
             if (message.contains("new york times")) {
-                format = this.FMT_IPTC_NYT;
+                format = FMT_IPTC_NYT;
             }
             if (message.contains("bloomberg news")) {
-                format = this.FMT_IPTC_BLM;
+                format = FMT_IPTC_BLM;
             }
         } catch (IOException eio) {
             // we are in an unstable state
@@ -194,22 +192,17 @@ public class IptcAnpaParser implements Parser {
     }
 
 
-    private void setFormat(int format) {
-        this.FORMAT = format;
-    }
-
-
-    private String getFormatName() {
+    private String getFormatName(int format) {
 
         String name = "";
 
-        if (FORMAT == this.FMT_IPTC_AP) {
+        if (format == FMT_IPTC_AP) {
             name = "Associated Press";
-        } else if (FORMAT == this.FMT_IPTC_BLM) {
+        } else if (format == FMT_IPTC_BLM) {
             name = "Bloomberg";
-        } else if (FORMAT == this.FMT_IPTC_NYT) {
+        } else if (format == FMT_IPTC_NYT) {
             name = "New York Times";
-        } else if (FORMAT == this.FMT_IPTC_RTR) {
+        } else if (format == FMT_IPTC_RTR) {
             name = "Reuters";
         }
 
@@ -460,7 +453,7 @@ public class IptcAnpaParser implements Parser {
         return added;
     }
 
-    private boolean parseBody(byte[] value, HashMap<String, String> properties) {
+    private boolean parseBody(byte[] value, HashMap<String, String> properties, int format) {
         boolean added = false;
 
         StringBuilder bdy_heading = new StringBuilder();
@@ -504,7 +497,7 @@ public class IptcAnpaParser implements Parser {
 
                     // for reuters, the heading does not start with the ^, so we push one back
                     // into the stream
-                    if (FORMAT == this.FMT_IPTC_RTR) {
+                    if (format == FMT_IPTC_RTR) {
                         if (val_next != CT) {
                             // for any non-whitespace, we need to go back an additional step to
                             // non destroy the data
@@ -563,7 +556,7 @@ public class IptcAnpaParser implements Parser {
 
                     // for bloomberg, the title does not start with the ^, so we push one back
                     // into the stream
-                    if (FORMAT == this.FMT_IPTC_BLM) {
+                    if (format == FMT_IPTC_BLM) {
                         if (val_next == TB) {
                             value[--read] = CT;
                             continue;
@@ -572,7 +565,7 @@ public class IptcAnpaParser implements Parser {
 
                     // for reuters, the title does not start with the ^, so we push one back into
                     // the stream
-                    if (FORMAT == this.FMT_IPTC_RTR) {
+                    if (format == FMT_IPTC_RTR) {
                         if (val_next != CT) {
                             // for any non-whitespace, we need to go back an additional step to
                             // non destroy the data
@@ -657,7 +650,7 @@ public class IptcAnpaParser implements Parser {
                         longline =
                                 ((tmp_line.toString().contains("=")) && (!longline.equals(longkey)) ? longkey :
                                         "");
-                    } else if (FORMAT == this.FMT_IPTC_BLM) {
+                    } else if (format == FMT_IPTC_BLM) {
                         String byline = "   by ";
                         if (tmp_line.toString().toLowerCase(Locale.ROOT).contains(byline)) {
                             longkey = "bdy_author";
@@ -755,7 +748,8 @@ public class IptcAnpaParser implements Parser {
     }
 
 
-    private boolean parseFooter(byte[] value, HashMap<String, String> properties) {
+    private boolean parseFooter(byte[] value, HashMap<String, String> properties,
+                                int format) {
         boolean added = false;
 
         StringBuilder ftr_source = new StringBuilder();
@@ -803,7 +797,7 @@ public class IptcAnpaParser implements Parser {
                     // standard ap format
                     String format_in = "MM-dd-yy HHmmzzz";
 
-                    if (FORMAT == this.FMT_IPTC_RTR) {
+                    if (format == FMT_IPTC_RTR) {
                         // standard reuters format
                         format_in = "HH:mm MM-dd-yy";
                     }
@@ -835,7 +829,8 @@ public class IptcAnpaParser implements Parser {
     }
 
 
-    private void setMetadata(Metadata metadata, HashMap<String, String> properties) {
+    private void setMetadata(Metadata metadata, HashMap<String, String> properties,
+                             int format) {
 
         // every property that gets set must be non-null, or it will cause NPE
         // in other consuming applications, like Lucene
@@ -847,7 +842,7 @@ public class IptcAnpaParser implements Parser {
         metadata.set(TikaCoreProperties.MODIFIED, clean(properties.get("modified")));
         metadata.set(TikaCoreProperties.SOURCE, clean(properties.get("source")));
 //      metadata.set(TikaCoreProperties.PUBLISHER,     clean(properties.get("publisher")));
-        metadata.set(TikaCoreProperties.PUBLISHER, clean(this.getFormatName()));
+        metadata.set(TikaCoreProperties.PUBLISHER, clean(getFormatName(format)));
 
 /*
         metadata.set(TikaCoreProperties.DATE, font.getHeader().getCreated().getTime());
