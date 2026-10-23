@@ -25,7 +25,7 @@ The server exposes two gRPC services on the same port:
 
 - **`tika.Tika` (v1)**: fetcher and iterator management, and FetchAndParse replies
   that return metadata as a `fields` map of strings.
-- **`org.apache.tika.grpc.v2.TikaV2` (experimental)**: FetchAndParse replies that
+- **`org.apache.tika.grpc.v2.TikaV2Service` (experimental)**: FetchAndParse replies that
   return a typed `org.apache.tika.grpc.v2.Document`. Fetchers are still managed
   through v1.
 

@@ -12,7 +12,7 @@ metadata as a `fields` map of strings, is defined in the `tika-grpc` module.
   type, the origin of the bytes, the parse status, common metadata as typed fields
   (`DocumentMetadata`) and all other metadata as key/value entries (`extra`). It does
   not include the extracted text or embedded documents.
-- **TikaV2 service** (`tika_v2.proto`): the v2 FetchAndParse RPCs, which return a
+- **TikaV2Service** (`tika_v2.proto`): the v2 FetchAndParse RPCs, which return a
   `Document`, with generated stubs. The server implementation is in `tika-grpc`.
 - **Descriptors**: the jar contains `META-INF/org.apache.tika.grpc.v2.descriptors`.
 
@@ -42,8 +42,8 @@ metadata as a `fields` map of strings, is defined in the `tika-grpc` module.
   get integer, number and boolean types only when the configuration sets
   `"metadata-list": {"typedValues": true}`, which also types the JSON that emitters
   write; their timestamps stay strings. New or renamed keys need no change to the proto.
-- **`ParseStatus`**: the outcome (`SUCCESS`, `PARTIAL` or `FAILED`), the raw Tika
-  Pipes status, the parse time and the Tika version.
+- **`ParseStatus`**: the outcome (`STATUS_SUCCESS`, `STATUS_PARTIAL` or `STATUS_FAILED`),
+  the raw Tika Pipes status, the parse time and the Tika version.
 
 `tika-grpc-mapper` decides which Tika property becomes which typed field, and what
 goes to `extra`, in its `org.apache.tika.grpc.mapper.transform.DocumentTransformer`

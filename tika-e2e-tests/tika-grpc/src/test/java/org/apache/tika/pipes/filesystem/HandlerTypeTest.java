@@ -44,7 +44,7 @@ import org.apache.tika.grpc.v2.Document;
 import org.apache.tika.grpc.v2.MetadataField;
 import org.apache.tika.grpc.v2.MetadataValue;
 import org.apache.tika.grpc.v2.ParseStatus;
-import org.apache.tika.grpc.v2.TikaV2Grpc;
+import org.apache.tika.grpc.v2.TikaV2ServiceGrpc;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.ExternalTestBase;
 import org.apache.tika.pipes.fetcher.fs.FileSystemFetcherConfig;
@@ -376,7 +376,7 @@ class HandlerTypeTest {
         ManagedChannel channel = getManagedChannel();
         try {
             TikaGrpc.TikaBlockingStub v1 = TikaGrpc.newBlockingStub(channel);
-            TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+            TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
             FileSystemFetcherConfig config = new FileSystemFetcherConfig();
             config.setBasePath(TEST_FOLDER.getAbsolutePath());
@@ -397,7 +397,7 @@ class HandlerTypeTest {
                     v1Reply.getFieldsMap().get(TikaCoreProperties.TIKA_CONTENT.getName()),
                     "v1 fields map must keep working independently of v2");
 
-            org.apache.tika.grpc.v2.FetchAndParseReply reply = v2.fetchAndParse(
+            org.apache.tika.grpc.v2.FetchAndParseResponse reply = v2.fetchAndParse(
                     org.apache.tika.grpc.v2.FetchAndParseRequest.newBuilder()
                             .setFetcherId(fetcherId)
                             .setFetchKey("testPDF.pdf")
@@ -408,7 +408,7 @@ class HandlerTypeTest {
 
             // envelope
             Assertions.assertEquals("application/pdf", document.getContentType());
-            Assertions.assertEquals(ParseStatus.Status.SUCCESS, document.getStatus().getStatus());
+            Assertions.assertEquals(ParseStatus.Status.STATUS_SUCCESS, document.getStatus().getStatus());
             Assertions.assertEquals("PARSE_SUCCESS", document.getStatus().getPipesStatus());
             Assertions.assertEquals("testPDF.pdf", document.getOrigin().getFilename());
 

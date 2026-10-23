@@ -73,7 +73,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.grpc.v2.Document;
 import org.apache.tika.grpc.v2.MetadataValue;
-import org.apache.tika.grpc.v2.TikaV2Grpc;
+import org.apache.tika.grpc.v2.TikaV2ServiceGrpc;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.PipesResult;
@@ -456,7 +456,7 @@ public class TikaGrpcServerTest {
     public void testFetchAndParseReturnsTypedDocument(Resources resources) throws Exception {
         ManagedChannel channel = startChannel(resources, tikaConfig);
         TikaGrpc.TikaBlockingStub v1 = TikaGrpc.newBlockingStub(channel);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
         // Use the fetcher configured statically in tika-pipes-test-config.json
         // (basePath = target): runtime-saved fetchers do not reach the forked worker
@@ -488,7 +488,7 @@ public class TikaGrpcServerTest {
             assertTrue(legacyContent.contains("hello typed world"));
 
             // v2 returns the typed Document contract
-            org.apache.tika.grpc.v2.FetchAndParseReply reply = v2.fetchAndParse(
+            org.apache.tika.grpc.v2.FetchAndParseResponse reply = v2.fetchAndParse(
                     org.apache.tika.grpc.v2.FetchAndParseRequest.newBuilder()
                             .setFetcherId(fetcherId)
                             .setFetchKey(fetchKey)
@@ -510,7 +510,7 @@ public class TikaGrpcServerTest {
             assertEquals(List.of("Jane Doe"), document.getMetadata().getAuthorsList());
 
             // status
-            assertEquals(org.apache.tika.grpc.v2.ParseStatus.Status.SUCCESS,
+            assertEquals(org.apache.tika.grpc.v2.ParseStatus.Status.STATUS_SUCCESS,
                     document.getStatus().getStatus());
             assertEquals("PARSE_SUCCESS", document.getStatus().getPipesStatus());
             assertTrue(document.getStatus().getTikaVersion().startsWith("Apache Tika"));
@@ -540,7 +540,7 @@ public class TikaGrpcServerTest {
         assertNull(Property.get("csv:num-rows"),
                 "the CSV parser must not be loaded in the server JVM");
         ManagedChannel channel = startChannel(resources, tikaConfig);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
         String fetchKey = "typed-csv-" + UUID.randomUUID() + ".csv";
         File testFile = new File("target", fetchKey);
@@ -794,7 +794,7 @@ public class TikaGrpcServerTest {
                 .directExecutor()
                 .build();
         resources.register(channel, Duration.ofSeconds(10));
-        TikaV2Grpc.TikaV2Stub v2 = TikaV2Grpc.newStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceStub v2 = TikaV2ServiceGrpc.newStub(channel);
 
         String fetcherId = createFetcherId(1);
         String fetchKey = "tika4766-stream-" + UUID.randomUUID() + ".html";
@@ -802,14 +802,14 @@ public class TikaGrpcServerTest {
         FileUtils.writeStringToFile(testFile,
                 "<html><body>terminal signal</body></html>", StandardCharsets.UTF_8);
 
-        List<org.apache.tika.grpc.v2.FetchAndParseReply> replies =
+        List<org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingResponse> replies =
                 Collections.synchronizedList(new ArrayList<>());
         AtomicInteger errors = new AtomicInteger();
         AtomicInteger completions = new AtomicInteger();
-        StreamObserver<org.apache.tika.grpc.v2.FetchAndParseReply> observer =
+        StreamObserver<org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingResponse> observer =
                 new StreamObserver<>() {
                     @Override
-                    public void onNext(org.apache.tika.grpc.v2.FetchAndParseReply reply) {
+                    public void onNext(org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingResponse reply) {
                         replies.add(reply);
                     }
 
@@ -825,7 +825,7 @@ public class TikaGrpcServerTest {
                 };
 
         try {
-            v2.fetchAndParseServerSideStreaming(org.apache.tika.grpc.v2.FetchAndParseRequest
+            v2.fetchAndParseServerSideStreaming(org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
                     .setFetchKey(fetchKey)
@@ -876,7 +876,7 @@ public class TikaGrpcServerTest {
         serviceImpl.fetcherManager.getFetcher(fetcherId);
 
         RecordingObserver<FetchAndParseReply> v1Observer = new RecordingObserver<>();
-        RecordingObserver<org.apache.tika.grpc.v2.FetchAndParseReply> v2Observer =
+        RecordingObserver<org.apache.tika.grpc.v2.FetchAndParseResponse> v2Observer =
                 new RecordingObserver<>();
         try {
             Thread.currentThread().interrupt();
@@ -886,7 +886,7 @@ public class TikaGrpcServerTest {
                     .setFetchKey(fetchKey)
                     .build(), v1Observer);
             Thread.currentThread().interrupt();
-            TikaV2Grpc.newStub(channel).fetchAndParse(org.apache.tika.grpc.v2.FetchAndParseRequest
+            TikaV2ServiceGrpc.newStub(channel).fetchAndParse(org.apache.tika.grpc.v2.FetchAndParseRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
                     .setFetchKey(fetchKey)
