@@ -1115,8 +1115,7 @@ public class XSSFExcelExtractorDecorator extends AbstractOOXMLExtractor {
          * XLSB (binary) path via {@link org.apache.poi.xssf.binary.XSSFBSheetHandler}.
          */
         @Override
-        public void cell(String cellReference, String formattedValue, Comment comment)
-        {
+        public void cell(String cellReference, String formattedValue, Comment comment) {
             XSSFCommentsShim.CommentData commentData = null;
             if (comment != null) {
                 String text = comment.getString() != null ?
