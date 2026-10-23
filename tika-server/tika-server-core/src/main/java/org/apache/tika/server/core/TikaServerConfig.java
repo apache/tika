@@ -421,8 +421,9 @@ public class TikaServerConfig {
 
     /**
      * How long a connection may go without any bytes moving before it is closed; defaults to
-     * {@link #DEFAULT_IDLE_TIMEOUT_MILLIS} (2 minutes). Must be positive: Jetty treats zero
-     * as "use its own default", not "never".
+     * {@link #DEFAULT_IDLE_TIMEOUT_MILLIS} (2 minutes). Jetty applies it only to a read or
+     * write waiting on the wire, so a request waiting on its parse is never ended by it.
+     * Must be positive: Jetty treats zero as "use its own default", not "never".
      */
     public int getIdleTimeoutMillis() {
         return idleTimeoutMillis;

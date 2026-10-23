@@ -720,7 +720,7 @@ independent forked-process groups you run — see
 
 |`idleTimeoutMillis`
 |`120000` (2 min)
-|How long a connection may go without any bytes moving before it is closed. This is what ends a client that stops sending or reading altogether, which the read and write deadlines cannot. A request waiting on its parse is not affected, however long the parse takes. Must be positive: it cannot be disabled. Every request cut off by this or by the size and deadline limits above is logged once, at `INFO`, by the `org.apache.tika.server.core.TransferLimitLog` logger, so these client-caused events can be routed or silenced apart from server errors.
+|How long a connection may go without any bytes moving before it is closed. This is what ends a client that stops sending or reading altogether, which the read and write deadlines cannot. A request waiting on its parse is not affected, however long the parse takes: Jetty applies the idle timeout only to a read or write that is waiting on the wire, so no setting here ends a parse; the xref:pipes/timeouts.adoc[task timeouts] do that. Must be positive: it cannot be disabled. Every request cut off by this or by the size and deadline limits above is logged once, at `INFO`, by the `org.apache.tika.server.core.TransferLimitLog` logger, so these client-caused events can be routed or silenced apart from server errors.
 
 |`allowHttp2`
 |`false`

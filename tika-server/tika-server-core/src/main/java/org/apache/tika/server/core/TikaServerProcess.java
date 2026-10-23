@@ -493,8 +493,7 @@ public class TikaServerProcess {
 
         // Add ConfigEndpointSecurityFilter to gate /config endpoints
         writers.add(new ConfigEndpointSecurityFilter(tikaServerConfig.isAllowPerRequestConfig()));
-        writers.add(new MaxRequestSizeFilter(tikaServerConfig.getMaxRequestSizeBytes(),
-                tikaServerConfig.getMaxRequestReadMillis(), bodyBudget));
+        writers.add(new MaxRequestSizeFilter(tikaServerConfig.getMaxRequestSizeBytes(), bodyBudget));
         // 413 for over-limit chunked bodies, which bypass the Content-Length pre-check.
         writers.add(new MaxRequestSizeFilter.RequestTooLargeExceptionMapper());
         writers.add(new MaxRequestSizeFilter.RequestTimeoutExceptionMapper());
