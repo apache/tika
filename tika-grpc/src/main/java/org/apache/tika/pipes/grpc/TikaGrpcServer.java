@@ -122,7 +122,7 @@ public class TikaGrpcServer {
                     Runtime.getRuntime().maxMemory())) {
                 LOGGER.warn(warning);
             }
-            // v1 (tika.Tika) stays the stable fields-map contract; v2 (TikaV2) is the
+            // v1 (tika.Tika) stays the stable fields-map contract; v2 (TikaV2Service) is the
             // experimental typed Document surface. Both share the same pipes runtime.
             server = serverBuilder
                     .addService(serviceImpl)

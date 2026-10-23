@@ -117,7 +117,12 @@ message BooleanValues { repeated bool values = 1; }
 message TimestampValues { repeated google.protobuf.Timestamp values = 1; }
 
 message ParseStatus {
-  enum Status { UNSPECIFIED = 0; SUCCESS = 1; PARTIAL = 2; FAILED = 3; }
+  enum Status {
+    STATUS_UNSPECIFIED = 0;
+    STATUS_SUCCESS = 1;
+    STATUS_PARTIAL = 2;
+    STATUS_FAILED = 3;
+  }
   Status status = 1;
   // Milliseconds for the whole fetch and parse, measured by the server. Both happen
   // in the forked pipes worker, so the parse time alone is not available.

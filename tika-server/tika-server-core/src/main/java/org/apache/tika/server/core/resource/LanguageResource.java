@@ -29,6 +29,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +68,10 @@ public class LanguageResource {
     public static final int MAX_DETECT_CHARS = 100_000;
 
     private String detectStream(InputStream is) throws IOException {
-        return detectString(readAtMost(is, MAX_DETECT_CHARS));
+        String text = readAtMost(is, MAX_DETECT_CHARS);
+        // so maxRequestSizeBytes applies to the whole body, not just the sample
+        IOUtils.consume(is);
+        return detectString(text);
     }
 
     /** Reads up to maxChars without materializing the rest of the stream. */

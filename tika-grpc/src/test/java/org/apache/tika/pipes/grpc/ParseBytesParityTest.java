@@ -48,7 +48,7 @@ import org.apache.tika.grpc.v2.FetchAndParseRequest;
 import org.apache.tika.grpc.v2.MetadataField;
 import org.apache.tika.grpc.v2.ParseBytesRequest;
 import org.apache.tika.grpc.v2.ParseStatus;
-import org.apache.tika.grpc.v2.TikaV2Grpc;
+import org.apache.tika.grpc.v2.TikaV2ServiceGrpc;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.serialization.config.JsonConfigHelper;
 
@@ -119,7 +119,7 @@ public class ParseBytesParityTest {
                 .build().start();
         ManagedChannel channel = InProcessChannelBuilder.forName(serverName)
                 .directExecutor().build();
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
         String folder = "parity";
         File dir = tempDir.resolve(folder).toFile();
@@ -139,9 +139,9 @@ public class ParseBytesParityTest {
                     .setCorrelationId(fetchKey)
                     .build()).getDocument();
 
-            assertEquals(ParseStatus.Status.SUCCESS, viaFetch.getStatus().getStatus(),
+            assertEquals(ParseStatus.Status.STATUS_SUCCESS, viaFetch.getStatus().getStatus(),
                     "the fetch path must parse the fixture");
-            assertEquals(ParseStatus.Status.SUCCESS, viaBytes.getStatus().getStatus(),
+            assertEquals(ParseStatus.Status.STATUS_SUCCESS, viaBytes.getStatus().getStatus(),
                     "the bytes path must parse the fixture");
 
             // The per-call fields, before canonical() removes them.
@@ -258,7 +258,7 @@ public class ParseBytesParityTest {
                 .build().start();
         ManagedChannel channel = InProcessChannelBuilder.forName(serverName)
                 .directExecutor().build();
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
         String inlineServerName = InProcessServerBuilder.generateName();
         TikaGrpcServerImpl inlining =
@@ -269,7 +269,7 @@ public class ParseBytesParityTest {
                 .build().start();
         ManagedChannel inlineChannel = InProcessChannelBuilder.forName(inlineServerName)
                 .directExecutor().build();
-        TikaV2Grpc.TikaV2BlockingStub inlineV2 = TikaV2Grpc.newBlockingStub(inlineChannel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub inlineV2 = TikaV2ServiceGrpc.newBlockingStub(inlineChannel);
         try {
             ParseBytesRequest request = ParseBytesRequest.newBuilder()
                     .setContent(ByteString.copyFromUtf8(HTML))
@@ -279,9 +279,9 @@ public class ParseBytesParityTest {
             Document spooled = v2.parseBytes(request).getDocument();
             Document inline = inlineV2.parseBytes(request).getDocument();
 
-            assertEquals(ParseStatus.Status.SUCCESS, spooled.getStatus().getStatus(),
+            assertEquals(ParseStatus.Status.STATUS_SUCCESS, spooled.getStatus().getStatus(),
                     "the spooled path must parse the fixture");
-            assertEquals(ParseStatus.Status.SUCCESS, inline.getStatus().getStatus(),
+            assertEquals(ParseStatus.Status.STATUS_SUCCESS, inline.getStatus().getStatus(),
                     "the inline path must parse the fixture");
             assertFalse(spooled.getOrigin().getSha256().isEmpty(),
                     "spooled reply must carry a SHA-256 digest");

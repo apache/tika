@@ -52,7 +52,9 @@ Forks still exit after `socketTimeoutMillis` idle and restart on the next reques
 A saturated `tika-server` says so. When every fork in a pool is in use and none frees up within
 `pipes.maxWaitForClientMillis`, the request comes back as `429 Too Many Requests` with a
 `Retry-After` header and `status: CLIENT_UNAVAILABLE_WITHIN_MS` — deliberately distinct from the
-`503` you get when a fork actually crashed, OOM'd or timed out.
+`503` you get when a fork actually crashed, OOM'd or timed out. A request whose body would take
+the bytes all requests hold past `maxInFlightRequestBytes` also gets `429` with `Retry-After`,
+but with a plain-text body rather than a `status`.
 
 That distinction is worth building on. A client can tell "the server is busy, come back in a
 moment" apart from "this document broke a fork" and act accordingly: back off and retry the
@@ -567,6 +569,11 @@ backpressure; see <<_endpoints_and_forked_process_groups,Endpoints and Forked-Pr
 Carries `Retry-After`. Distinct from `503` on purpose: a `429` spike means "raise `numClients` or
 add capacity", a `503` spike means "something is actually crashing".
 
+|`429 Too Many Requests`
+|none (`text/plain` body)
+|The request bodies in flight would exceed `maxInFlightRequestBytes`. Carries `Retry-After`;
+retry as for the other `429`.
+
 |`400 Bad Request`
 |`FETCHER_NOT_FOUND`, `EMITTER_NOT_FOUND`
 |The request named a fetcher or emitter that does not exist, or one reserved for the server's
@@ -698,6 +705,26 @@ independent forked-process groups you run — see
 |`maxRequestSizeBytes`
 |`1 GiB`
 |Maximum request body in bytes; larger requests are rejected with `413`. Enforced on bytes actually read, so a chunked upload with no `Content-Length` is bounded too. Bodies above xref:pipes/configuration.adoc#payload-limits[`maxInlineBytes`] are spooled to disk, so this also bounds how much one request can write. Raise it for larger documents, or set a negative value to disable the limit.
+
+|`maxRequestReadMillis`
+|`300000` (5 min)
+|How long, from the start of a request, its body may take to arrive; a request still sending after that is rejected with `408`. At the default, a body of the default `maxRequestSizeBytes` (1 GiB) needs about 29 Mbit/s. This bounds how long a slow client can hold a request thread; a client that sends nothing at all is dropped by the connector's idle timeout instead. Set a negative value to disable it; zero is rejected.
+
+|`maxResponseWriteMillis`
+|`300000` (5 min)
+|How long, from when its status line is sent, a response body may take to write; a response still being written after that is cut off (the status line has already been sent, so the client sees a truncated body). This bounds how long a client that reads slowly can hold a request thread. Set a negative value to disable it; zero is rejected.
+
+|`maxInFlightRequestBytes`
+|`0` (`maxRequestSizeBytes` × 2 × `pipes.numClients`)
+|How many request-body bytes all requests together may hold at once. Bytes count as they are read, not as declared, and are freed when each response completes; a request whose body would go over is rejected with `429` (`text/plain`, with `Retry-After`) partway through its upload. This bounds the temp disk and memory request bodies take across all requests, while a client that sends slowly holds only the bytes it has actually sent, so slow connections cannot lock others out. A client with enough bandwidth can still fill it, for at most `maxRequestReadMillis` per request. The resolved value is logged at startup, and the bytes in flight are the `tika_server_request_body_in_flight_bytes` gauge (see xref:using-tika/server/monitoring.adoc[Monitoring]). A positive value must be at least `maxRequestSizeBytes`; a negative value disables the budget, as does a negative `maxRequestSizeBytes` when this is left at `0`.
+
+|`idleTimeoutMillis`
+|`120000` (2 min)
+|How long a connection may go without any bytes moving before it is closed. This is what ends a client that stops sending or reading altogether, which the read and write deadlines cannot. A request waiting on its parse is not affected, however long the parse takes: Jetty applies the idle timeout only to a read or write that is waiting on the wire, so no setting here ends a parse; the xref:pipes/timeouts.adoc[task timeouts] do that. Must be positive: it cannot be disabled. Every request cut off by this or by the size and deadline limits above is logged once, at `INFO`, by the `org.apache.tika.server.core.TransferLimitLog` logger, so these client-caused events can be routed or silenced apart from server errors.
+
+|`allowHttp2`
+|`false`
+|Whether to accept cleartext HTTP/2 (h2c) as well as HTTP/1.1, for example behind Google Cloud Run, whose HTTP/1.1 requests are capped at 32 MB. HTTP/2 requests get every limit above except `maxResponseWriteMillis`, whose cut-off would close the connection and so every request multiplexed on it; a client that reads an HTTP/2 response slowly is bounded only by `idleTimeoutMillis`. HTTP/2 over TLS is not offered either way.
 
 |`maxQueuePauseMillis`
 |`60000`

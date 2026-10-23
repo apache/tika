@@ -81,9 +81,9 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.tika.grpc.v2.Document;
 import org.apache.tika.grpc.v2.MetadataValue;
-import org.apache.tika.grpc.v2.ParseBytesReply;
 import org.apache.tika.grpc.v2.ParseBytesRequest;
-import org.apache.tika.grpc.v2.TikaV2Grpc;
+import org.apache.tika.grpc.v2.ParseBytesResponse;
+import org.apache.tika.grpc.v2.TikaV2ServiceGrpc;
 import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.PipesResult;
@@ -503,7 +503,7 @@ public class TikaGrpcServerTest {
     public void testFetchAndParseReturnsTypedDocument(Resources resources) throws Exception {
         ManagedChannel channel = startChannel(resources, tikaConfig);
         TikaGrpc.TikaBlockingStub v1 = TikaGrpc.newBlockingStub(channel);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
         // Use the fetcher configured statically in tika-pipes-test-config.json
         // (basePath = target): runtime-saved fetchers do not reach the forked worker
@@ -535,7 +535,7 @@ public class TikaGrpcServerTest {
             assertTrue(legacyContent.contains("hello typed world"));
 
             // v2 returns the typed Document contract
-            org.apache.tika.grpc.v2.FetchAndParseReply reply = v2.fetchAndParse(
+            org.apache.tika.grpc.v2.FetchAndParseResponse reply = v2.fetchAndParse(
                     org.apache.tika.grpc.v2.FetchAndParseRequest.newBuilder()
                             .setFetcherId(fetcherId)
                             .setFetchKey(fetchKey)
@@ -557,7 +557,7 @@ public class TikaGrpcServerTest {
             assertEquals(List.of("Jane Doe"), document.getMetadata().getAuthorsList());
 
             // status
-            assertEquals(org.apache.tika.grpc.v2.ParseStatus.Status.SUCCESS,
+            assertEquals(org.apache.tika.grpc.v2.ParseStatus.Status.STATUS_SUCCESS,
                     document.getStatus().getStatus());
             assertEquals("PARSE_SUCCESS", document.getStatus().getPipesStatus());
             assertTrue(document.getStatus().getTikaVersion().startsWith("Apache Tika"));
@@ -588,7 +588,7 @@ public class TikaGrpcServerTest {
         assertNull(Property.get("csv:num-rows"),
                 "the CSV parser must not be loaded in the server JVM");
         ManagedChannel channel = startChannel(resources, tikaConfig);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
         String fetchKey = "typed-csv-" + UUID.randomUUID() + ".csv";
         File testFile = new File("target", fetchKey);
@@ -848,7 +848,7 @@ public class TikaGrpcServerTest {
                 .directExecutor()
                 .build();
         resources.register(channel, Duration.ofSeconds(10));
-        TikaV2Grpc.TikaV2Stub v2 = TikaV2Grpc.newStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceStub v2 = TikaV2ServiceGrpc.newStub(channel);
 
         String fetcherId = createFetcherId(1);
         String fetchKey = "tika4766-stream-" + UUID.randomUUID() + ".html";
@@ -856,14 +856,14 @@ public class TikaGrpcServerTest {
         FileUtils.writeStringToFile(testFile,
                 "<html><body>terminal signal</body></html>", StandardCharsets.UTF_8);
 
-        List<org.apache.tika.grpc.v2.FetchAndParseReply> replies =
+        List<org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingResponse> replies =
                 Collections.synchronizedList(new ArrayList<>());
         AtomicInteger errors = new AtomicInteger();
         AtomicInteger completions = new AtomicInteger();
-        StreamObserver<org.apache.tika.grpc.v2.FetchAndParseReply> observer =
+        StreamObserver<org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingResponse> observer =
                 new StreamObserver<>() {
                     @Override
-                    public void onNext(org.apache.tika.grpc.v2.FetchAndParseReply reply) {
+                    public void onNext(org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingResponse reply) {
                         replies.add(reply);
                     }
 
@@ -879,7 +879,7 @@ public class TikaGrpcServerTest {
                 };
 
         try {
-            v2.fetchAndParseServerSideStreaming(org.apache.tika.grpc.v2.FetchAndParseRequest
+            v2.fetchAndParseServerSideStreaming(org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
                     .setFetchKey(fetchKey)
@@ -930,7 +930,7 @@ public class TikaGrpcServerTest {
         serviceImpl.fetcherManager.getFetcher(fetcherId);
 
         RecordingObserver<FetchAndParseReply> v1Observer = new RecordingObserver<>();
-        RecordingObserver<org.apache.tika.grpc.v2.FetchAndParseReply> v2Observer =
+        RecordingObserver<org.apache.tika.grpc.v2.FetchAndParseResponse> v2Observer =
                 new RecordingObserver<>();
         try {
             Thread.currentThread().interrupt();
@@ -940,7 +940,7 @@ public class TikaGrpcServerTest {
                     .setFetchKey(fetchKey)
                     .build(), v1Observer);
             Thread.currentThread().interrupt();
-            TikaV2Grpc.newStub(channel).fetchAndParse(org.apache.tika.grpc.v2.FetchAndParseRequest
+            TikaV2ServiceGrpc.newStub(channel).fetchAndParse(org.apache.tika.grpc.v2.FetchAndParseRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
                     .setFetchKey(fetchKey)
@@ -1116,9 +1116,9 @@ public class TikaGrpcServerTest {
     @Test
     public void testParseBytesNeedsNoFetcherRegistration(Resources resources) throws Exception {
         ManagedChannel channel = startChannel(resources, tikaConfig);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
-        ParseBytesReply reply = v2.parseBytes(ParseBytesRequest.newBuilder()
+        ParseBytesResponse reply = v2.parseBytes(ParseBytesRequest.newBuilder()
                 .setCorrelationId("bytes-1")
                 .setContent(ByteString.copyFromUtf8(
                         "<html><head><title>Bytes</title></head><body>Hello from raw bytes.</body></html>"))
@@ -1143,9 +1143,9 @@ public class TikaGrpcServerTest {
     @Test
     public void testParseBytesReturnsTheTrimmedResourceName(Resources resources) throws Exception {
         ManagedChannel channel = startChannel(resources, tikaConfig);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
-        ParseBytesReply reply = v2.parseBytes(ParseBytesRequest.newBuilder()
+        ParseBytesResponse reply = v2.parseBytes(ParseBytesRequest.newBuilder()
                 .setContent(ByteString.copyFromUtf8("hello"))
                 .setResourceName("  page.txt ")
                 .build());
@@ -1161,9 +1161,9 @@ public class TikaGrpcServerTest {
     public void testParseBytesPassesBackResultsAboveTheDirectEmitThreshold(Resources resources)
             throws Exception {
         ManagedChannel channel = startChannel(resources, tikaConfigDefaultEmit);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
-        ParseBytesReply reply = v2.parseBytes(ParseBytesRequest.newBuilder()
+        ParseBytesResponse reply = v2.parseBytes(ParseBytesRequest.newBuilder()
                 .setCorrelationId("large-1")
                 .setContent(ByteString.copyFromUtf8("word ".repeat(30_000)))
                 .setResourceName("large.txt")
@@ -1184,7 +1184,7 @@ public class TikaGrpcServerTest {
     public void testParseBytesDoesNotDereferenceProvenanceUris(Resources resources)
             throws Exception {
         ManagedChannel channel = startChannel(resources, tikaConfig);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
         // A ServerSocket, because forbiddenapis rejects com.sun.net.httpserver.
         AtomicInteger requests = new AtomicInteger();
@@ -1227,7 +1227,7 @@ public class TikaGrpcServerTest {
             requests.set(0);
 
             // Resolved against the base URI, the relative link points at the local server.
-            ParseBytesReply reply = v2.parseBytes(ParseBytesRequest.newBuilder()
+            ParseBytesResponse reply = v2.parseBytes(ParseBytesRequest.newBuilder()
                     .setCorrelationId("no-deref-1")
                     .setContent(ByteString.copyFromUtf8(
                             "<html><head><title>Bytes</title></head><body>"
@@ -1257,12 +1257,12 @@ public class TikaGrpcServerTest {
     @Test
     public void testParseBytesSpoolStaysInternal(Resources resources) throws Exception {
         ManagedChannel channel = startChannel(resources, tikaConfigSpool);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
         // Longer than a file name can be. text/x-java-source has no magic bytes, so only
         // the name gives that type.
         String longName = "a".repeat(300) + ".java";
-        ParseBytesReply reply = v2.parseBytes(ParseBytesRequest.newBuilder()
+        ParseBytesResponse reply = v2.parseBytes(ParseBytesRequest.newBuilder()
                 .setCorrelationId("spool-1")
                 .setContent(ByteString.copyFromUtf8("class Spool { void f() {} }\n"))
                 .setResourceName(longName)
@@ -1282,7 +1282,7 @@ public class TikaGrpcServerTest {
         Assertions.assertFalse(document.toString().contains("parse-bytes-"),
                 "no part of the spool filename may appear in the Document");
 
-        ParseBytesReply anonymous = v2.parseBytes(ParseBytesRequest.newBuilder()
+        ParseBytesResponse anonymous = v2.parseBytes(ParseBytesRequest.newBuilder()
                 .setContent(ByteString.copyFromUtf8("<html><body>anonymous</body></html>"))
                 .build());
         assertEquals("", anonymous.getDocument().getOrigin().getFilename(),
@@ -1303,11 +1303,11 @@ public class TikaGrpcServerTest {
     public void testParseBytesDigestMatchesTheBytesSent(Resources resources)
             throws Exception {
         ManagedChannel channel = startChannel(resources, tikaConfigDigest);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
         byte[] payload = "<html><body>digest</body></html>"
                 .getBytes(StandardCharsets.UTF_8);
-        ParseBytesReply reply = v2.parseBytes(ParseBytesRequest.newBuilder()
+        ParseBytesResponse reply = v2.parseBytes(ParseBytesRequest.newBuilder()
                 .setCorrelationId("digest-1")
                 .setContent(ByteString.copyFrom(payload))
                 .build());
@@ -1340,7 +1340,7 @@ public class TikaGrpcServerTest {
                 .build();
         resources.register(channel, Duration.ofSeconds(10));
         TikaGrpc.TikaBlockingStub v1 = TikaGrpc.newBlockingStub(channel);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
         String internal = serviceImpl.spool.fetcherId();
         String unknown = "no-such-fetcher-" + UUID.randomUUID();
 
@@ -1378,7 +1378,7 @@ public class TikaGrpcServerTest {
             assertEquals(Status.Code.UNKNOWN, ex.getStatus().getCode(), "fetch " + id);
         }
 
-        ParseBytesReply reply = v2.parseBytes(ParseBytesRequest.newBuilder()
+        ParseBytesResponse reply = v2.parseBytes(ParseBytesRequest.newBuilder()
                 .setCorrelationId("crud-1")
                 .setContent(ByteString.copyFromUtf8("<html><body>still here</body></html>"))
                 .build());
@@ -1394,7 +1394,7 @@ public class TikaGrpcServerTest {
     public void testParseBytesRejectsUnrecognizedParseContextEntry(Resources resources)
             throws Exception {
         ManagedChannel channel = startChannel(resources, tikaConfigUnlocked);
-        TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
         StatusRuntimeException ex = Assertions.assertThrows(StatusRuntimeException.class, () ->
                 v2.parseBytes(ParseBytesRequest.newBuilder()

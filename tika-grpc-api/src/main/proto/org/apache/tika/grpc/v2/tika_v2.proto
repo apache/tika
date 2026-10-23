@@ -29,18 +29,24 @@ option java_multiple_files = true;
 option java_package = "org.apache.tika.grpc.v2";
 option java_outer_classname = "TikaV2Proto";
 
-service TikaV2 {
+service TikaV2Service {
   // Fetch via a previously saved fetcher and return a typed Document.
-  rpc FetchAndParse(FetchAndParseRequest) returns (FetchAndParseReply) {}
-  rpc FetchAndParseServerSideStreaming(FetchAndParseRequest)
-      returns (stream FetchAndParseReply) {}
-  rpc FetchAndParseBiDirectionalStreaming(stream FetchAndParseRequest)
-      returns (stream FetchAndParseReply) {}
+  rpc FetchAndParse(FetchAndParseRequest) returns (FetchAndParseResponse) {}
+  // FetchAndParse as a server stream: one response, then the stream completes.
+  rpc FetchAndParseServerSideStreaming(FetchAndParseServerSideStreamingRequest)
+      returns (stream FetchAndParseServerSideStreamingResponse) {}
+  // One response for each request on the stream.
+  rpc FetchAndParseBiDirectionalStreaming(stream FetchAndParseBiDirectionalStreamingRequest)
+      returns (stream FetchAndParseBiDirectionalStreamingResponse) {}
 
   // Parses the bytes sent in the request, without a fetcher, and returns the same
   // Document as FetchAndParse.
-  rpc ParseBytes(ParseBytesRequest) returns (ParseBytesReply) {}
+  rpc ParseBytes(ParseBytesRequest) returns (ParseBytesResponse) {}
 }
+
+// Each RPC has its own request and response message so it can change on its own. Today
+// the three requests carry the same fields under the same numbers, and so do the three
+// responses.
 
 message FetchAndParseRequest {
   // ID of a fetcher previously saved through the v1 Tika service.
@@ -52,14 +58,44 @@ message FetchAndParseRequest {
   string parse_context_json = 5;
 }
 
-message FetchAndParseReply {
+message FetchAndParseResponse {
+  string fetch_key = 1;
+  Document document = 2;
+}
+
+message FetchAndParseServerSideStreamingRequest {
+  // ID of a fetcher previously saved through the v1 Tika service.
+  string fetcher_id = 1;
+  string fetch_key = 2;
+  string additional_fetch_config_json = 3;
+  string emitter_id = 4;
+  // Optional JSON object to configure the ParseContext for this request.
+  string parse_context_json = 5;
+}
+
+message FetchAndParseServerSideStreamingResponse {
+  string fetch_key = 1;
+  Document document = 2;
+}
+
+message FetchAndParseBiDirectionalStreamingRequest {
+  // ID of a fetcher previously saved through the v1 Tika service.
+  string fetcher_id = 1;
+  string fetch_key = 2;
+  string additional_fetch_config_json = 3;
+  string emitter_id = 4;
+  // Optional JSON object to configure the ParseContext for this request.
+  string parse_context_json = 5;
+}
+
+message FetchAndParseBiDirectionalStreamingResponse {
   string fetch_key = 1;
   Document document = 2;
 }
 
 message ParseBytesRequest {
   // The caller's id for this request, returned unchanged as Document.id and
-  // ParseBytesReply.correlation_id.
+  // ParseBytesResponse.correlation_id.
   string correlation_id = 1;
   // Bytes to parse. Required, at most the server's parseBytesMaxContentBytes. The
   // whole request must also fit the server's gRPC inbound limit: 4 MiB unless
@@ -81,7 +117,7 @@ message ParseBytesRequest {
   string parse_context_json = 8;
 }
 
-message ParseBytesReply {
+message ParseBytesResponse {
   string correlation_id = 1;
   Document document = 2;
 }

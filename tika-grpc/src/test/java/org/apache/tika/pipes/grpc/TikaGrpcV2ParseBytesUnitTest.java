@@ -48,8 +48,8 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import org.apache.tika.exception.TikaConfigException;
-import org.apache.tika.grpc.v2.ParseBytesReply;
 import org.apache.tika.grpc.v2.ParseBytesRequest;
+import org.apache.tika.grpc.v2.ParseBytesResponse;
 import org.apache.tika.grpc.v2.SourceOrigin;
 import org.apache.tika.metadata.HttpHeaders;
 import org.apache.tika.metadata.Metadata;
@@ -78,13 +78,13 @@ class TikaGrpcV2ParseBytesUnitTest {
         v2 = new TikaGrpcV2ServerImpl(v1);
     }
 
-    static final class RecordingObserver implements StreamObserver<ParseBytesReply> {
-        final List<ParseBytesReply> replies = new ArrayList<>();
+    static final class RecordingObserver implements StreamObserver<ParseBytesResponse> {
+        final List<ParseBytesResponse> replies = new ArrayList<>();
         final List<Throwable> errors = new ArrayList<>();
         int completions = 0;
 
         @Override
-        public void onNext(ParseBytesReply reply) {
+        public void onNext(ParseBytesResponse reply) {
             replies.add(reply);
         }
 

@@ -76,7 +76,7 @@ public class IntegrationTestBase extends TikaTest {
     // `static final`, computed once for the whole JVM fork and shared by every
     // subclass; harmless serially, but a guaranteed bind collision if two
     // subclasses' tests ever ran concurrently in the same fork.
-    final int integrationTestPort = TestPortAllocator.findFreePort();
+    protected final int integrationTestPort = TestPortAllocator.findFreePort();
     final String INTEGRATION_TEST_PORT = String.valueOf(integrationTestPort);
     protected final String endPoint = "http://localhost:" + INTEGRATION_TEST_PORT;
 

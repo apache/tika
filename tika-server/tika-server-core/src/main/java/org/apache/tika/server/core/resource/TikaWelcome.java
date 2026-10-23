@@ -78,7 +78,11 @@ public class TikaWelcome {
     protected List<Endpoint> identifyEndpoints() {
         List<Endpoint> found = new ArrayList<>();
         for (Class<?> endpoint : endpoints) {
-            Path p = endpoint.getAnnotation(Path.class);
+            // @Path is not @Inherited, but JAX-RS resolves it from superclasses
+            Path p = null;
+            for (Class<?> c = endpoint; p == null && c != null; c = c.getSuperclass()) {
+                p = c.getAnnotation(Path.class);
+            }
             String basePath = null;
             if (p != null) {
                 basePath = p

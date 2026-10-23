@@ -73,7 +73,7 @@ public final class DocumentBuilder {
         }
 
         if (primary == null) {
-            if (status.getStatus() != ParseStatus.Status.SUCCESS) {
+            if (status.getStatus() != ParseStatus.Status.STATUS_SUCCESS) {
                 status.addErrors("No metadata returned from parse");
             }
             return document.setStatus(status.build()).build();
@@ -146,25 +146,26 @@ public final class DocumentBuilder {
      * Maps {@code org.apache.tika.pipes.api.PipesResult.RESULT_STATUS.name()} to
      * {@link ParseStatus.Status}. Values are named after the real enum constants (not
      * guessed) since this module intentionally has no compile dependency on tika-pipes-api:
-     * a clean success (e.g. {@code PARSE_SUCCESS}, {@code EMIT_SUCCESS}) is {@code SUCCESS};
-     * a success that happened alongside a caught exception (e.g.
+     * a clean success (e.g. {@code PARSE_SUCCESS}, {@code EMIT_SUCCESS}) is
+     * {@code STATUS_SUCCESS}; a success that happened alongside a caught exception (e.g.
      * {@code PARSE_SUCCESS_WITH_EXCEPTION}) or that the deadline cut short but still emitted
-     * ({@code PARTIAL_TIMEOUT}) is {@code PARTIAL}; everything else -- including process
+     * ({@code PARTIAL_TIMEOUT}) is {@code STATUS_PARTIAL}; everything else -- including process
      * crashes like {@code TIMEOUT} and {@code OOM}, which are not partial successes -- is
-     * {@code FAILED}. {@code PARSE_EXCEPTION_NO_EMIT} is in the pipes success category but is
-     * {@code FAILED} here: it is a parse that threw under {@code ON_PARSE_EXCEPTION.SKIP} (what
-     * tika-grpc sends), and it carries no metadata, so there is nothing partial to return.
+     * {@code STATUS_FAILED}. {@code PARSE_EXCEPTION_NO_EMIT} is in the pipes success category
+     * but is {@code STATUS_FAILED} here: it is a parse that threw under
+     * {@code ON_PARSE_EXCEPTION.SKIP} (what tika-grpc sends), and it carries no metadata, so
+     * there is nothing partial to return.
      */
     private static ParseStatus.Status mapPipesStatus(String pipesStatus) {
         if (pipesStatus == null || pipesStatus.isEmpty()) {
-            return ParseStatus.Status.UNSPECIFIED;
+            return ParseStatus.Status.STATUS_UNSPECIFIED;
         }
         return switch (pipesStatus) {
             case "EMPTY_OUTPUT", "PARSE_SUCCESS", "EMIT_SUCCESS", "EMIT_SUCCESS_PASSBACK" ->
-                    ParseStatus.Status.SUCCESS;
+                    ParseStatus.Status.STATUS_SUCCESS;
             case "PARSE_SUCCESS_WITH_EXCEPTION", "EMIT_SUCCESS_PARSE_EXCEPTION", "PARTIAL_TIMEOUT" ->
-                    ParseStatus.Status.PARTIAL;
-            default -> ParseStatus.Status.FAILED;
+                    ParseStatus.Status.STATUS_PARTIAL;
+            default -> ParseStatus.Status.STATUS_FAILED;
         };
     }
 }

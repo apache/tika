@@ -48,7 +48,7 @@ class DocumentBuilderTest extends ParseFixtureSupport {
         assertEquals("Apache Tika - Apache Tika", document.getMetadata().getTitle());
         assertTrue(document.getExtraCount() > 0);
 
-        assertEquals(ParseStatus.Status.SUCCESS, document.getStatus().getStatus());
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS, document.getStatus().getStatus());
         assertEquals("PARSE_SUCCESS", document.getStatus().getPipesStatus());
         assertEquals(42L, document.getStatus().getFetchParseTimeMs());
         assertFalse(document.getStatus().getParsersUsedList().isEmpty());
@@ -196,7 +196,7 @@ class DocumentBuilderTest extends ParseFixtureSupport {
 
         Document document = DocumentBuilder.build(metadata, null, null, 1L);
         assertEquals("", document.getId());
-        assertEquals(ParseStatus.Status.UNSPECIFIED, document.getStatus().getStatus());
+        assertEquals(ParseStatus.Status.STATUS_UNSPECIFIED, document.getStatus().getStatus());
         assertEquals("", document.getStatus().getPipesStatus());
     }
 
@@ -224,7 +224,7 @@ class DocumentBuilderTest extends ParseFixtureSupport {
         Document document = DocumentBuilder.build(null, "doc-1", "FETCH_EXCEPTION", 1L);
 
         assertEquals("doc-1", document.getId());
-        assertEquals(ParseStatus.Status.FAILED, document.getStatus().getStatus());
+        assertEquals(ParseStatus.Status.STATUS_FAILED, document.getStatus().getStatus());
         assertEquals("FETCH_EXCEPTION", document.getStatus().getPipesStatus());
         assertFalse(document.getStatus().getErrorsList().isEmpty());
     }
@@ -233,7 +233,7 @@ class DocumentBuilderTest extends ParseFixtureSupport {
     void emptyOutputWithNoMetadataIsSuccessNotFailure() {
         Document document = DocumentBuilder.build(null, "doc-1", "EMPTY_OUTPUT", 1L);
 
-        assertEquals(ParseStatus.Status.SUCCESS, document.getStatus().getStatus());
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS, document.getStatus().getStatus());
         assertTrue(document.getStatus().getErrorsList().isEmpty());
     }
 
@@ -251,27 +251,27 @@ class DocumentBuilderTest extends ParseFixtureSupport {
         Metadata metadata = new Metadata();
         metadata.set(HttpHeaders.CONTENT_TYPE, "text/plain");
 
-        assertEquals(ParseStatus.Status.SUCCESS,
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS,
                 DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS", 1L).getStatus().getStatus(),
                 "PARSE_SUCCESS is a real, clean success status");
-        assertEquals(ParseStatus.Status.SUCCESS,
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS,
                 DocumentBuilder.build(metadata, "d", "EMIT_SUCCESS", 1L).getStatus().getStatus());
-        assertEquals(ParseStatus.Status.SUCCESS,
+        assertEquals(ParseStatus.Status.STATUS_SUCCESS,
                 DocumentBuilder.build(metadata, "d", "EMPTY_OUTPUT", 1L).getStatus().getStatus());
 
-        assertEquals(ParseStatus.Status.PARTIAL,
+        assertEquals(ParseStatus.Status.STATUS_PARTIAL,
                 DocumentBuilder.build(metadata, "d", "PARSE_SUCCESS_WITH_EXCEPTION", 1L)
                         .getStatus().getStatus(),
                 "succeeded, but with a caveat along the way, is a partial success not a clean one");
-        assertEquals(ParseStatus.Status.PARTIAL,
+        assertEquals(ParseStatus.Status.STATUS_PARTIAL,
                 DocumentBuilder.build(metadata, "d", "PARTIAL_TIMEOUT", 1L).getStatus().getStatus(),
                 "PARTIAL_TIMEOUT is a success-category status: the deadline hit, and what was"
                         + " parsed before it is emitted, so it is partial, not failed");
 
-        assertEquals(ParseStatus.Status.FAILED,
+        assertEquals(ParseStatus.Status.STATUS_FAILED,
                 DocumentBuilder.build(metadata, "d", "TIMEOUT", 1L).getStatus().getStatus(),
                 "TIMEOUT is categorized as a process crash, not a partial success");
-        assertEquals(ParseStatus.Status.FAILED,
+        assertEquals(ParseStatus.Status.STATUS_FAILED,
                 DocumentBuilder.build(metadata, "d", "OOM", 1L).getStatus().getStatus());
     }
 
@@ -284,7 +284,7 @@ class DocumentBuilderTest extends ParseFixtureSupport {
     void parseExceptionWithNothingEmittedIsFailedNotPartial() {
         Document document = DocumentBuilder.build(null, "doc-1", "PARSE_EXCEPTION_NO_EMIT", 1L);
 
-        assertEquals(ParseStatus.Status.FAILED, document.getStatus().getStatus());
+        assertEquals(ParseStatus.Status.STATUS_FAILED, document.getStatus().getStatus());
         assertEquals("PARSE_EXCEPTION_NO_EMIT", document.getStatus().getPipesStatus());
         assertFalse(document.getStatus().getErrorsList().isEmpty());
     }

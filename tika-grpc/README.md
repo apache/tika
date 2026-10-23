@@ -26,9 +26,9 @@ The server exposes two gRPC services on the same port:
 
 - **`tika.Tika` (v1)**: fetcher and iterator management, and FetchAndParse replies
   that return metadata as a `fields` map of strings.
-- **`org.apache.tika.grpc.v2.TikaV2` (experimental)**: FetchAndParse and ParseBytes,
-  which return a typed `org.apache.tika.grpc.v2.Document`. Fetchers are still
-  managed through v1.
+- **`org.apache.tika.grpc.v2.TikaV2Service` (experimental)**: FetchAndParse and
+  ParseBytes, which return a typed `org.apache.tika.grpc.v2.Document`. Fetchers are
+  still managed through v1.
 
 A `Document` holds:
 
@@ -63,15 +63,15 @@ Build the API and mapper with the rest of the reactor:
 
 ## ParseBytes
 
-`TikaV2.ParseBytes` parses bytes that the caller sends in the request. Tika fetches
-nothing, so no fetcher has to be registered. The reply is the same `Document` that
-FetchAndParse returns.
+`TikaV2Service.ParseBytes` parses bytes that the caller sends in the request. Tika
+fetches nothing, so no fetcher has to be registered. The response carries the same
+`Document` that FetchAndParse returns.
 
 | Request field | Meaning |
 |---------------|---------|
 | `content` | The bytes to parse. Required, at most `parseBytesMaxContentBytes`. |
 | `resource_name` | File name, used as a hint for type detection and returned as `origin.filename`. |
-| `correlation_id` | Any string, returned as `Document.id` and `ParseBytesReply.correlation_id`. |
+| `correlation_id` | Any string, returned as `Document.id` and `ParseBytesResponse.correlation_id`. |
 | `source_uri`, `effective_uri`, `base_uri` | URIs the caller records for the bytes, such as the requested URL, the URL after redirects and the base URL for relative links. Returned in `origin`; Tika does not use them. |
 | `truncated` | Set it when the bytes were cut short, for example at a crawler's size limit. Returned as `origin.truncated`. |
 | `parse_context_json` | Parse settings for this request, refused with `PERMISSION_DENIED` unless `allowPerRequestConfig` is on. |

@@ -75,9 +75,9 @@ public class TikaServerBasicIntegrationTest extends IntegrationTestBase {
         assertTrue(body.contains("Valid types"), body);
     }
 
+    /** h2c is opt-in (allowHttp2): a client asking to upgrade is answered over HTTP/1.1. */
     @Test
-    public void testH2c() throws Exception {
-        // Using HttpClient in order to check Http2 Version
+    public void testH2cOffByDefault() throws Exception {
         HttpClient httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_2)
                 .build();
@@ -88,7 +88,7 @@ public class TikaServerBasicIntegrationTest extends IntegrationTestBase {
                 .build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString(UTF_8));
         assertEquals(200, response.statusCode());
-        assertEquals(HttpClient.Version.HTTP_2, response.version());
+        assertEquals(HttpClient.Version.HTTP_1_1, response.version());
     }
 
     @Test

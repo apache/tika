@@ -63,9 +63,9 @@ import org.mockito.InOrder;
 import org.mockito.Mockito;
 
 import org.apache.tika.config.loader.TikaJsonConfig;
-import org.apache.tika.grpc.v2.ParseBytesReply;
 import org.apache.tika.grpc.v2.ParseBytesRequest;
-import org.apache.tika.grpc.v2.TikaV2Grpc;
+import org.apache.tika.grpc.v2.ParseBytesResponse;
+import org.apache.tika.grpc.v2.TikaV2ServiceGrpc;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseReply;
 import org.apache.tika.pipes.grpc.proto.FetchAndParseRequest;
@@ -136,7 +136,7 @@ public class TikaGrpcBoundTest {
         private final TikaGrpcServerImpl serviceImpl;
         private final Server server;
         private final ManagedChannel channel;
-        final TikaV2Grpc.TikaV2BlockingStub v2;
+        final TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2;
 
         RealServer(Path config) throws Exception {
             serviceImpl = new TikaGrpcServerImpl(config.toAbsolutePath().toString());
@@ -152,7 +152,7 @@ public class TikaGrpcBoundTest {
             channel = Grpc.newChannelBuilderForAddress(
                             "localhost", server.getPort(), InsecureChannelCredentials.create())
                     .build();
-            v2 = TikaV2Grpc.newBlockingStub(channel);
+            v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
         }
 
         @Override
@@ -179,7 +179,7 @@ public class TikaGrpcBoundTest {
     @Test
     public void payloadAboveTheGrpcDefaultIsAcceptedWhenTheLimitIsRaised() throws Exception {
         try (RealServer s = new RealServer(configWithLimit(DEV_CONFIG_LIMIT))) {
-            ParseBytesReply reply = s.v2.parseBytes(ParseBytesRequest.newBuilder()
+            ParseBytesResponse reply = s.v2.parseBytes(ParseBytesRequest.newBuilder()
                     .setCorrelationId("big-1")
                     .setContent(bigInputTinyOutput(ABOVE_DEFAULT))
                     .setResourceName("big.html")
@@ -196,7 +196,7 @@ public class TikaGrpcBoundTest {
     public void contentExactlyAtTheConfiguredLimitIsAccepted() throws Exception {
         try (RealServer s = new RealServer(
                 configWithLimits(DEV_CONFIG_LIMIT, (long) ABOVE_DEFAULT))) {
-            ParseBytesReply reply = s.v2.parseBytes(ParseBytesRequest.newBuilder()
+            ParseBytesResponse reply = s.v2.parseBytes(ParseBytesRequest.newBuilder()
                     .setCorrelationId("at-cap-1")
                     .setContent(bigInputTinyOutput(ABOVE_DEFAULT))
                     .setResourceName("atcap.html")
@@ -250,7 +250,7 @@ public class TikaGrpcBoundTest {
             server.start();
             channel = Grpc.newChannelBuilderForAddress(
                     "localhost", port, InsecureChannelCredentials.create()).build();
-            TikaV2Grpc.TikaV2BlockingStub v2 = TikaV2Grpc.newBlockingStub(channel);
+            TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
 
             StatusRuntimeException thrown = assertThrows(StatusRuntimeException.class, () ->
                     v2.parseBytes(ParseBytesRequest.newBuilder()
