@@ -315,8 +315,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         if (parseContext == null) {
             return;
         }
-        fetchAndParseImpl(request, parseContext, responseObserver);
-        responseObserver.onCompleted();
+        if (fetchAndParseImpl(request, parseContext, responseObserver)) {
+            responseObserver.onCompleted();
+        }
     }
 
     @Override
@@ -358,8 +359,9 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         if (parseContext == null) {
             return;
         }
-        fetchAndParseImpl(request, parseContext, responseObserver);
-        responseObserver.onCompleted();
+        if (fetchAndParseImpl(request, parseContext, responseObserver)) {
+            responseObserver.onCompleted();
+        }
     }
 
     /**
@@ -422,12 +424,17 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         return parseContext;
     }
 
-    private void fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
-                                   StreamObserver<FetchAndParseReply> responseObserver) {
+    /**
+     * Sends the reply for one request. Returns {@code false} when the call was closed with an
+     * error instead (see {@link #closeInterrupted}), so the caller must not complete it.
+     */
+    private boolean fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
+                                      StreamObserver<FetchAndParseReply> responseObserver) {
         FetchParseOutcome outcome = runPublicFetchAndParse(
                 request.getFetcherId(), request.getFetchKey(), parseContext);
         if (outcome == null) {
-            return;
+            closeInterrupted(request.getFetchKey(), responseObserver);
+            return false;
         }
         FetchAndParseReply.Builder fetchReplyBuilder =
                 FetchAndParseReply.newBuilder()
@@ -438,6 +445,20 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
             fetchReplyBuilder.setErrorMessage(outcome.errorMessage());
         }
         responseObserver.onNext(fetchReplyBuilder.build());
+        return true;
+    }
+
+    /**
+     * Shared by v1 and v2 parse RPCs: closes the call with {@code UNAVAILABLE} when
+     * {@link #runFetchAndParse} was interrupted (typically the server shutting down) and has no
+     * outcome. A unary call must not complete without a reply, so callers skip
+     * {@code onCompleted()} after this.
+     */
+    static void closeInterrupted(String fetchKey, StreamObserver<?> responseObserver) {
+        responseObserver.onError(io.grpc.Status.UNAVAILABLE
+                .withDescription("interrupted before the fetch and parse of '" + fetchKey
+                        + "' finished")
+                .asRuntimeException());
     }
 
     /**
@@ -587,7 +608,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     /**
      * Outcome of a single fetch+parse pipes round trip, shared by v1 and v2 reply builders.
-     * {@code null} means the calling thread was interrupted before a reply could be built.
+     * {@code null} means the calling thread was interrupted before a reply could be built;
+     * callers answer that with {@link #closeInterrupted}.
      */
     record FetchParseOutcome(
             String fetchKey,

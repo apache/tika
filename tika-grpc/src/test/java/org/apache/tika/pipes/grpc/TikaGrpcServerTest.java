@@ -897,6 +897,92 @@ public class TikaGrpcServerTest {
         }
     }
 
+    /**
+     * A fetch and parse whose handler thread is interrupted (the server shutting down, say)
+     * has no outcome to send. Unary v1 and v2 must close the call with UNAVAILABLE rather
+     * than complete it without a reply, which a unary client sees as an INTERNAL error. The
+     * direct executor runs the handler on this thread, so interrupting it first makes the
+     * wait for a pipes client throw InterruptedException.
+     */
+    @Test
+    public void testInterruptedFetchAndParseClosesWithUnavailable(Resources resources)
+            throws Exception {
+        String serverName = InProcessServerBuilder.generateName();
+        TikaGrpcServerImpl serviceImpl = newService(tikaConfig);
+        Server server = InProcessServerBuilder
+                .forName(serverName)
+                .directExecutor()
+                .addService(serviceImpl)
+                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
+                .build()
+                .start();
+        resources.register(server, Duration.ofSeconds(10));
+
+        ManagedChannel channel = InProcessChannelBuilder
+                .forName(serverName)
+                .directExecutor()
+                .build();
+        resources.register(channel, Duration.ofSeconds(10));
+
+        String fetcherId = createFetcherId(1);
+        String fetchKey = "tika4766-interrupted.html";
+        // build the fetcher up front, so only the wait for a pipes client sees the interrupt
+        serviceImpl.fetcherManager.getFetcher(fetcherId);
+
+        RecordingObserver<FetchAndParseReply> v1Observer = new RecordingObserver<>();
+        RecordingObserver<org.apache.tika.grpc.v2.FetchAndParseReply> v2Observer =
+                new RecordingObserver<>();
+        try {
+            Thread.currentThread().interrupt();
+            TikaGrpc.newStub(channel).fetchAndParse(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey(fetchKey)
+                    .build(), v1Observer);
+            Thread.currentThread().interrupt();
+            TikaV2Grpc.newStub(channel).fetchAndParse(org.apache.tika.grpc.v2.FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey(fetchKey)
+                    .build(), v2Observer);
+        } finally {
+            // the server restores the interrupt it caught; clear it before cleanup waits
+            Thread.interrupted();
+        }
+
+        for (RecordingObserver<?> observer : List.of(v1Observer, v2Observer)) {
+            assertEquals(0, observer.replies.size(), "there is no outcome to reply with");
+            assertEquals(0, observer.completions.get(),
+                    "a unary call with no reply must not be completed");
+            assertEquals(1, observer.errors.size(), "the call must be closed with an error");
+            assertEquals(Status.Code.UNAVAILABLE,
+                    Status.fromThrowable(observer.errors.get(0)).getCode(),
+                    String.valueOf(observer.errors.get(0)));
+        }
+    }
+
+    /** Records what a call delivered to its client. */
+    private static final class RecordingObserver<T> implements StreamObserver<T> {
+        private final List<T> replies = Collections.synchronizedList(new ArrayList<>());
+        private final List<Throwable> errors = Collections.synchronizedList(new ArrayList<>());
+        private final AtomicInteger completions = new AtomicInteger();
+
+        @Override
+        public void onNext(T reply) {
+            replies.add(reply);
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            errors.add(throwable);
+        }
+
+        @Override
+        public void onCompleted() {
+            completions.incrementAndGet();
+        }
+    }
+
     @Test
     public void testBiStream(Resources resources) throws Exception {
         String serverName = InProcessServerBuilder.generateName();

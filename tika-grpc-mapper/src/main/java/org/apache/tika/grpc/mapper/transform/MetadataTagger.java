@@ -196,7 +196,11 @@ public final class MetadataTagger {
             case BOOLEAN: {
                 BooleanValues.Builder booleans = BooleanValues.newBuilder();
                 for (String v : values) {
-                    booleans.addValues(parseBoolean(v));
+                    Boolean b = parseBoolean(v);
+                    if (b == null) {
+                        return null;
+                    }
+                    booleans.addValues(b);
                 }
                 return MetadataValue.newBuilder().setBooleans(booleans).build();
             }
@@ -220,9 +224,16 @@ public final class MetadataTagger {
         return DATE_UTILS.tryToParse(value);
     }
 
-    static boolean parseBoolean(String v) {
-        String s = v.trim().toLowerCase(Locale.ROOT);
-        return "true".equals(s) || "yes".equals(s) || "1".equals(s);
+    /**
+     * @return the value of a true/false, yes/no or 1/0 token (any case), or {@code null}
+     * for anything else, so the entry falls back to strings instead of guessing false
+     */
+    static Boolean parseBoolean(String v) {
+        return switch (v.trim().toLowerCase(Locale.ROOT)) {
+            case "true", "yes", "1" -> Boolean.TRUE;
+            case "false", "no", "0" -> Boolean.FALSE;
+            default -> null;
+        };
     }
 
     static Timestamp toTimestamp(Date date) {

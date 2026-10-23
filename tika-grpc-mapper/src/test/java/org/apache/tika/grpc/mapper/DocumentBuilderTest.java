@@ -274,4 +274,18 @@ class DocumentBuilderTest extends ParseFixtureSupport {
         assertEquals(ParseStatus.Status.FAILED,
                 DocumentBuilder.build(metadata, "d", "OOM", 1L).getStatus().getStatus());
     }
+
+    /**
+     * {@code PARSE_EXCEPTION_NO_EMIT} is what a parse that threw comes back as under the
+     * {@code ON_PARSE_EXCEPTION.SKIP} tika-grpc sends: no metadata list, only the stack
+     * trace. Nothing partial reached the caller, so it is a failure, not a partial success.
+     */
+    @Test
+    void parseExceptionWithNothingEmittedIsFailedNotPartial() {
+        Document document = DocumentBuilder.build(null, "doc-1", "PARSE_EXCEPTION_NO_EMIT", 1L);
+
+        assertEquals(ParseStatus.Status.FAILED, document.getStatus().getStatus());
+        assertEquals("PARSE_EXCEPTION_NO_EMIT", document.getStatus().getPipesStatus());
+        assertFalse(document.getStatus().getErrorsList().isEmpty());
+    }
 }
