@@ -48,7 +48,7 @@ The File System plugin (`tika-pipes-file-system`) is the most common starting po
 
 == Complete Pipeline Example
 
-The canonical filesystem-to-filesystem integration-test config. `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH` and `PLUGINS_PATHS` are placeholders the test harness substitutes with real paths; `EMIT_INTERMEDIATE_RESULTS` with the boolean `true` or `false`. See xref:pipes/configuration.adoc[Pipes Configuration] for what each setting does.
+The canonical filesystem-to-filesystem integration-test config. `FETCHER_BASE_PATH`, `EMITTER_BASE_PATH` and `PLUGINS_PATHS` are placeholders the test harness substitutes with real paths; `EMIT_INTERMEDIATE_RESULTS` with the boolean `true` or `false`. With tika-app or tika-server, delete the `plugin-roots` line rather than filling it in, so the bundled `plugins/` directory is used (see xref:pipes/plugins/writing-a-plugin.adoc#plugin-roots[plugin-roots]). See xref:pipes/configuration.adoc[Pipes Configuration] for what each setting does.
 
 [source,json,subs=none]
 ----
