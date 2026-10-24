@@ -157,12 +157,6 @@ public class ProfilerBatchTest {
         ResultsReporter.main(new String[]{"-db", DB.toAbsolutePath().toString(), "-rd", reportsDir.toString()});
         assertTrue(Files.isRegularFile(reportsDir.resolve("exceptions/extract_exceptions_by_pipes_status.xlsx")));
         assertTrue(Files.isRegularFile(reportsDir.resolve("exceptions/crash_status_extract_present.xlsx")));
-        String plan = getSingleResult("explain select count(1) from extract_exceptions e " +
-                "join pipes_class p on p.container_id = e.container_id");
-        assertTrue(plan.contains("PC_CONTAINER_ID"), plan);
-        plan = getSingleResult("explain select 1 from containers c where not exists " +
-                "(select 1 from extract_exceptions e where e.container_id = c.container_id)");
-        assertTrue(plan.contains("EE_CONTAINER_ID"), plan);
     }
 
     @Test

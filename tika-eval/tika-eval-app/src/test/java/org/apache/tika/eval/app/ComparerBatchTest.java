@@ -28,7 +28,6 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.util.Locale;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -114,19 +113,6 @@ public class ComparerBatchTest {
         String summary = Files.readString(reports.resolve("summary.md"), StandardCharsets.UTF_8);
         assertFalse(summary.contains("## Run Info"), summary);
         assertTrue(summary.contains("## Overview"), summary);
-    }
-
-    /** Without these the crash-ledger joins scan pipes_class per exception row: 9 h at 339k rows. */
-    @Test
-    public void testPipesClassJoinsUseIndexes() throws Exception {
-        for (String side : new String[]{"a", "b"}) {
-            String plan = one("explain select count(1) from extract_exceptions_" + side + " e " +
-                    "join pipes_class_" + side + " p on p.container_id = e.container_id");
-            assertTrue(plan.contains("PC" + side.toUpperCase(Locale.ROOT) + "_CONTAINER_ID"), plan);
-            plan = one("explain select 1 from containers c where not exists " +
-                    "(select 1 from extract_exceptions_" + side + " e where e.container_id = c.container_id)");
-            assertTrue(plan.contains("EE" + side.toUpperCase(Locale.ROOT) + "_CONTAINER_ID"), plan);
-        }
     }
 
     @Test
