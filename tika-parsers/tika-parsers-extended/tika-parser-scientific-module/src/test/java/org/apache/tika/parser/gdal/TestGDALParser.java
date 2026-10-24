@@ -16,6 +16,7 @@
  */
 package org.apache.tika.parser.gdal;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -153,5 +154,12 @@ public class TestGDALParser extends TikaTest {
             e.printStackTrace();
             fail(e.getMessage());
         }
+    }
+
+    @Test
+    public void testInputPathWithWhitespaceIsOneArgument() {
+        String path = "/data/survey 2024/tile.tif --config GDAL_HTTP_PROXY attacker:8080";
+        assertArrayEquals(new String[]{"gdalinfo", path},
+                GDALParser.buildCommandLine(new GDALParser().getCommand(), path));
     }
 }
