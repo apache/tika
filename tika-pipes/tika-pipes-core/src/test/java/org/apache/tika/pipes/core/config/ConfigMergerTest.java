@@ -323,6 +323,24 @@ public class ConfigMergerTest {
     }
 
     @Test
+    public void testPluginRootsPlaceholderReplaced() throws IOException {
+        // the docs' example configs carry this token (TIKA-4984)
+        Path existingPath = tempDir.resolve("config-with-placeholder.json");
+        Files.writeString(existingPath, "{ \"plugin-roots\": \"PLUGINS_PATHS\" }");
+
+        ConfigOverrides overrides = ConfigOverrides.builder()
+                .setPluginRoots("default-plugins")
+                .build();
+
+        ConfigMerger.MergeResult result = ConfigMerger.mergeOrCreate(existingPath, overrides);
+
+        JsonNode root = new ObjectMapper().readTree(result.configPath().toFile());
+        assertEquals("default-plugins", root.get("plugin-roots").asText());
+
+        Files.deleteIfExists(result.configPath());
+    }
+
+    @Test
     public void testPluginRootsNotOverriddenIfExists() throws IOException {
         // Create config with existing plugin-roots
         String existingConfig = """
