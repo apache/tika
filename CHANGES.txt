@@ -77,7 +77,11 @@ Release 4.2.0 - 10/23/2026
 
    * Pipes plugins load only from the zips in plugin-roots; a plugin on the classpath
      needs -Dtika.plugins.classpath=true, which PipesForkParser sets when it finds no
-     plugins directory holding tika-pipes-file-system (TIKA-4918, TIKA-4985).
+     plugins directory holding tika-pipes-file-system (TIKA-4918, TIKA-4985). A
+     plugin-roots naming a directory without the plugin zips, which the classpath used
+     to mask, now fails with "Unknown type: ... Available: []"; tika-app and
+     tika-server treat the docs' PLUGINS_PATHS placeholder as unset and use their
+     bundled plugins directory (TIKA-4984).
 
    * image/vnd.microsoft.icon moves from ImageParser to the new ICOParser, which also
      parses cursors (TIKA-4937); animated cursors (RIFF ACON) are

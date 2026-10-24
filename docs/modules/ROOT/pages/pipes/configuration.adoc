@@ -293,7 +293,7 @@ include::example$pipes-fs-pipeline.json[]
 
 icon:github[] https://github.com/apache/tika/blob/main/tika-pipes/tika-pipes-integration-tests/src/test/resources/configs/tika-config-basic.json[View source on GitHub]
 
-Tokens (`FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, `PLUGINS_PATHS`, `EMIT_INTERMEDIATE_RESULTS`) are substituted by the test harness — replace them with real values in production configs. The first three are paths; `EMIT_INTERMEDIATE_RESULTS` is the boolean `emitIntermediateResults` flag.
+Tokens (`FETCHER_BASE_PATH`, `EMITTER_BASE_PATH`, `PLUGINS_PATHS`, `EMIT_INTERMEDIATE_RESULTS`) are substituted by the test harness — replace them with real values in production configs. The first two are paths; `EMIT_INTERMEDIATE_RESULTS` is the boolean `emitIntermediateResults` flag. `PLUGINS_PATHS` must name a directory holding the plugin zips; with tika-app or tika-server, delete the `plugin-roots` line to use the bundled `plugins/` directory (see xref:pipes/plugins/writing-a-plugin.adoc#plugin-roots[plugin-roots]).
 
 [#emit-all]
 === Emit-all variant

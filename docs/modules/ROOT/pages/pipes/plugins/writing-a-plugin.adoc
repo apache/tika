@@ -297,6 +297,7 @@ Everything else — your own transitive libraries — belongs in `lib/`.
 
 == Installing and configuring
 
+[#plugin-roots]
 === Deployment
 
 `plugin-roots` is a directory of **zip files**, not of unpacked plugin directories:
@@ -315,6 +316,10 @@ unpacking a plugin there by hand does not work.
 all fill it in when you do not: a `plugins` directory beside the running jar, else one in the
 working directory. Loading through `TikaPluginManager` directly with no `plugin-roots` fails with
 `plugin-roots must be specified`.
+
+A `plugin-roots` you set replaces that default rather than adding to it. If it names a directory
+with none of the needed zips, loading fails with `Unknown type: <component>. Available: []`; the
+empty list is the sign that no plugins were found.
 
 Zips in `plugin-roots` are the only source of plugins. A plugin jar on the application classpath
 is not scanned, even though it carries the same `META-INF/extensions.idx`, unless the JVM runs
