@@ -17,10 +17,14 @@
 package org.apache.tika.pipes.core.config;
 
 import java.io.IOException;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +45,9 @@ public class FileBasedConfigStore implements ConfigStore {
     
     private static final Logger LOG = LoggerFactory.getLogger(FileBasedConfigStore.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    // stored configs carry fetcher/emitter credentials; keep them from other local users
+    private static final Set<PosixFilePermission> OWNER_ONLY =
+            EnumSet.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE);
     
     private final Path configFile;
     private final ConcurrentHashMap<String, ExtensionConfig> cache = new ConcurrentHashMap<>();
@@ -152,7 +159,9 @@ public class FileBasedConfigStore implements ConfigStore {
     private synchronized void saveToFile() {
         try {
             // Write to temp file first, then atomic rename
-            Path tempFile = Paths.get(configFile.toString() + ".tmp");
+            Path tempFile = configFile.resolveSibling(configFile.getFileName() + ".tmp");
+            Files.deleteIfExists(tempFile);
+            Files.createFile(tempFile, ownerOnly());
             OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
                 .writeValue(tempFile.toFile(), cache);
             Files.move(tempFile, configFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
@@ -161,5 +170,12 @@ public class FileBasedConfigStore implements ConfigStore {
             LOG.error("Failed to save configurations to {}", configFile, e);
             throw new RuntimeException("Failed to save config store", e);
         }
+    }
+
+    private static FileAttribute<?>[] ownerOnly() {
+        if (FileSystems.getDefault().supportedFileAttributeViews().contains("posix")) {
+            return new FileAttribute<?>[]{PosixFilePermissions.asFileAttribute(OWNER_ONLY)};
+        }
+        return new FileAttribute<?>[0];
     }
 }
