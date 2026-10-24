@@ -18,6 +18,7 @@ package org.apache.tika.pipes.grpc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -70,6 +71,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.tika.grpc.v2.Document;
+import org.apache.tika.grpc.v2.MetadataValue;
+import org.apache.tika.grpc.v2.TikaV2ServiceGrpc;
+import org.apache.tika.metadata.Property;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.pipes.api.PipesResult;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherReply;
@@ -200,10 +205,12 @@ public class TikaGrpcServerTest {
     public void testFetcherCrud(Resources resources) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
 
+        TikaGrpcServerImpl serviceImpl = newService(tikaConfigUnlocked);
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(newService(tikaConfigUnlocked))
+                .addService(serviceImpl)
+                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -414,13 +421,14 @@ public class TikaGrpcServerTest {
     }
 
     //non-static: newService tracks the service on the per-test instance so it gets closed
-    private TikaGrpc.TikaBlockingStub startServer(Resources resources, Path config)
-            throws Exception {
+    private ManagedChannel startChannel(Resources resources, Path config) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
+        TikaGrpcServerImpl serviceImpl = newService(config);
         Server server = InProcessServerBuilder
                 .forName(serverName)
                 .directExecutor()
-                .addService(newService(config))
+                .addService(serviceImpl)
+                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -430,7 +438,132 @@ public class TikaGrpcServerTest {
                 .directExecutor()
                 .build();
         resources.register(channel, Duration.ofSeconds(10));
-        return TikaGrpc.newBlockingStub(channel);
+        return channel;
+    }
+
+    private TikaGrpc.TikaBlockingStub startServer(Resources resources, Path config)
+            throws Exception {
+        return TikaGrpc.newBlockingStub(startChannel(resources, config));
+    }
+
+    /**
+     * The stage-1 typed contract on the experimental v2 service (real forked pipes
+     * worker, real proto round trip): Document carries the typed envelope, Dublin Core
+     * metadata, and a lossless tagged tail that never double-ships what already has a
+     * typed home. v1 remains the legacy fields-map surface.
+     */
+    @Test
+    public void testFetchAndParseReturnsTypedDocument(Resources resources) throws Exception {
+        ManagedChannel channel = startChannel(resources, tikaConfig);
+        TikaGrpc.TikaBlockingStub v1 = TikaGrpc.newBlockingStub(channel);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
+
+        // Use the fetcher configured statically in tika-pipes-test-config.json
+        // (basePath = target): runtime-saved fetchers do not reach the forked worker
+        // with the default in-memory config store.
+        String folderName = "typed-doc-" + UUID.randomUUID();
+        File testDocumentFolder = new File("target/" + folderName);
+        assertTrue(testDocumentFolder.mkdir());
+        try {
+            File testFile = new File(testDocumentFolder, "typed.html");
+            FileUtils.writeStringToFile(testFile,
+                    "<html><head><title>Typed Contract</title>"
+                            + "<meta name=\"author\" content=\"Jane Doe\"/></head>"
+                            + "<body>hello typed world</body></html>",
+                    StandardCharsets.UTF_8);
+
+            String fetchKey = folderName + "/typed.html";
+            String fetcherId = createFetcherId(1);
+
+            // v1 keeps the legacy fields-map contract
+            FetchAndParseReply v1Reply = v1.fetchAndParse(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey(fetchKey)
+                    .build());
+            assertEquals("PARSE_SUCCESS", v1Reply.getStatus());
+            String legacyContent = v1Reply.getFieldsMap()
+                    .get(TikaCoreProperties.TIKA_CONTENT.getName());
+            assertNotNull(legacyContent, "v1 fields map must keep working");
+            assertTrue(legacyContent.contains("hello typed world"));
+
+            // v2 returns the typed Document contract
+            org.apache.tika.grpc.v2.FetchAndParseResponse reply = v2.fetchAndParse(
+                    org.apache.tika.grpc.v2.FetchAndParseRequest.newBuilder()
+                            .setFetcherId(fetcherId)
+                            .setFetchKey(fetchKey)
+                            .build());
+
+            assertTrue(reply.hasDocument(), "v2 reply should carry a typed Document");
+            Document document = reply.getDocument();
+
+            // envelope
+            assertEquals(fetchKey, document.getId());
+            assertTrue(document.getContentType().startsWith("text/html"),
+                    "detected content type, got: " + document.getContentType());
+            assertTrue(document.getOrigin().getFilename().endsWith("typed.html"),
+                    "origin filename, got: " + document.getOrigin().getFilename());
+            assertTrue(document.hasParsedAt());
+
+            // typed Dublin Core fields
+            assertEquals("Typed Contract", document.getMetadata().getTitle());
+            assertEquals(List.of("Jane Doe"), document.getMetadata().getAuthorsList());
+
+            // status
+            assertEquals(org.apache.tika.grpc.v2.ParseStatus.Status.STATUS_SUCCESS,
+                    document.getStatus().getStatus());
+            assertEquals("PARSE_SUCCESS", document.getStatus().getPipesStatus());
+            assertTrue(document.getStatus().getTikaVersion().startsWith("Apache Tika"));
+            Assertions.assertFalse(document.getStatus().getParsersUsedList().isEmpty());
+            assertTrue(document.getStatus().getFetchParseTimeMs() >= 0);
+
+            // the tagged tail is lossless but never double-ships a typed home
+            assertTrue(document.getExtraCount() > 0,
+                    "unmapped keys should survive in the tagged tail");
+            assertTrue(document.getExtraList().stream().noneMatch(f ->
+                            f.getKey().equals(TikaCoreProperties.TIKA_CONTENT.getName())
+                                    || f.getKey().equals("Content-Type")
+                                    || f.getKey().equals("dc:title")),
+                    "typed/envelope keys must not duplicate into the tail");
+        } finally {
+            FileUtils.deleteDirectory(testDocumentFolder);
+        }
+    }
+
+    /**
+     * The CSV parser declares csv:num-rows as an integer but never loads in this JVM, so the
+     * key is typed only from the value types the fork reports.
+     */
+    @Test
+    public void testFetchAndParseTypesKeysDeclaredOnlyInTheFork(Resources resources)
+            throws Exception {
+        assertNull(Property.get("csv:num-rows"),
+                "the CSV parser must not be loaded in the server JVM");
+        ManagedChannel channel = startChannel(resources, tikaConfig);
+        TikaV2ServiceGrpc.TikaV2ServiceBlockingStub v2 = TikaV2ServiceGrpc.newBlockingStub(channel);
+
+        String fetchKey = "typed-csv-" + UUID.randomUUID() + ".csv";
+        File testFile = new File("target", fetchKey);
+        StringBuilder csv = new StringBuilder("id,name,score\n");
+        for (int i = 1; i <= 11; i++) {
+            csv.append(i).append(",name").append(i).append(',').append(i * 10).append('\n');
+        }
+        FileUtils.writeStringToFile(testFile, csv.toString(), StandardCharsets.UTF_8);
+        try {
+            Document document = v2.fetchAndParse(
+                    org.apache.tika.grpc.v2.FetchAndParseRequest.newBuilder()
+                            .setFetcherId(createFetcherId(1))
+                            .setFetchKey(fetchKey)
+                            .build()).getDocument();
+            MetadataValue rows = document.getExtraList().stream()
+                    .filter(f -> f.getKey().equals("csv:num-rows"))
+                    .findFirst()
+                    .orElseThrow(() -> new AssertionError("no csv:num-rows in " + document))
+                    .getValue();
+            assertEquals(List.of(12L), rows.getIntegers().getValuesList(), rows.toString());
+        } finally {
+            FileUtils.deleteQuietly(testFile);
+        }
     }
 
     /**
@@ -638,6 +771,164 @@ public class TikaGrpcServerTest {
         }
     }
 
+    /**
+     * The v2 server-streaming variant must close the call like the v1 one above: one typed
+     * reply, no error, exactly one completion. Same in-process transport and direct
+     * executor, so the counts are final when the stub call returns.
+     */
+    @Test
+    public void testV2ServerSideStreamingSendsTerminalSignal(Resources resources) throws Exception {
+        String serverName = InProcessServerBuilder.generateName();
+        TikaGrpcServerImpl serviceImpl = newService(tikaConfigUnlocked);
+        Server server = InProcessServerBuilder
+                .forName(serverName)
+                .directExecutor()
+                .addService(serviceImpl)
+                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
+                .build()
+                .start();
+        resources.register(server, Duration.ofSeconds(10));
+
+        ManagedChannel channel = InProcessChannelBuilder
+                .forName(serverName)
+                .directExecutor()
+                .build();
+        resources.register(channel, Duration.ofSeconds(10));
+        TikaV2ServiceGrpc.TikaV2ServiceStub v2 = TikaV2ServiceGrpc.newStub(channel);
+
+        String fetcherId = createFetcherId(1);
+        String fetchKey = "tika4766-stream-" + UUID.randomUUID() + ".html";
+        File testFile = new File("target", fetchKey);
+        FileUtils.writeStringToFile(testFile,
+                "<html><body>terminal signal</body></html>", StandardCharsets.UTF_8);
+
+        List<org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingResponse> replies =
+                Collections.synchronizedList(new ArrayList<>());
+        AtomicInteger errors = new AtomicInteger();
+        AtomicInteger completions = new AtomicInteger();
+        StreamObserver<org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingResponse> observer =
+                new StreamObserver<>() {
+                    @Override
+                    public void onNext(org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingResponse reply) {
+                        replies.add(reply);
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        errors.incrementAndGet();
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        completions.incrementAndGet();
+                    }
+                };
+
+        try {
+            v2.fetchAndParseServerSideStreaming(org.apache.tika.grpc.v2.FetchAndParseServerSideStreamingRequest
+                    .newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey(fetchKey)
+                    .build(), observer);
+
+            assertEquals(1, replies.size(), "one reply for one fetch key");
+            assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(),
+                    replies.get(0).getDocument().getStatus().getPipesStatus(),
+                    "the fixture must actually parse, or this test proves nothing");
+            assertEquals(0, errors.get(), "no error on the happy path");
+            assertEquals(1, completions.get(),
+                    "server streaming must send a terminal signal");
+        } finally {
+            FileUtils.deleteQuietly(testFile);
+        }
+    }
+
+    /**
+     * A fetch and parse whose handler thread is interrupted (the server shutting down, say)
+     * has no outcome to send. Unary v1 and v2 must close the call with UNAVAILABLE rather
+     * than complete it without a reply, which a unary client sees as an INTERNAL error. The
+     * direct executor runs the handler on this thread, so interrupting it first makes the
+     * wait for a pipes client throw InterruptedException.
+     */
+    @Test
+    public void testInterruptedFetchAndParseClosesWithUnavailable(Resources resources)
+            throws Exception {
+        String serverName = InProcessServerBuilder.generateName();
+        TikaGrpcServerImpl serviceImpl = newService(tikaConfig);
+        Server server = InProcessServerBuilder
+                .forName(serverName)
+                .directExecutor()
+                .addService(serviceImpl)
+                .addService(new TikaGrpcV2ServerImpl(serviceImpl))
+                .build()
+                .start();
+        resources.register(server, Duration.ofSeconds(10));
+
+        ManagedChannel channel = InProcessChannelBuilder
+                .forName(serverName)
+                .directExecutor()
+                .build();
+        resources.register(channel, Duration.ofSeconds(10));
+
+        String fetcherId = createFetcherId(1);
+        String fetchKey = "tika4766-interrupted.html";
+        // build the fetcher up front, so only the wait for a pipes client sees the interrupt
+        serviceImpl.fetcherManager.getFetcher(fetcherId);
+
+        RecordingObserver<FetchAndParseReply> v1Observer = new RecordingObserver<>();
+        RecordingObserver<org.apache.tika.grpc.v2.FetchAndParseResponse> v2Observer =
+                new RecordingObserver<>();
+        try {
+            Thread.currentThread().interrupt();
+            TikaGrpc.newStub(channel).fetchAndParse(FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey(fetchKey)
+                    .build(), v1Observer);
+            Thread.currentThread().interrupt();
+            TikaV2ServiceGrpc.newStub(channel).fetchAndParse(org.apache.tika.grpc.v2.FetchAndParseRequest
+                    .newBuilder()
+                    .setFetcherId(fetcherId)
+                    .setFetchKey(fetchKey)
+                    .build(), v2Observer);
+        } finally {
+            // the server restores the interrupt it caught; clear it before cleanup waits
+            Thread.interrupted();
+        }
+
+        for (RecordingObserver<?> observer : List.of(v1Observer, v2Observer)) {
+            assertEquals(0, observer.replies.size(), "there is no outcome to reply with");
+            assertEquals(0, observer.completions.get(),
+                    "a unary call with no reply must not be completed");
+            assertEquals(1, observer.errors.size(), "the call must be closed with an error");
+            assertEquals(Status.Code.UNAVAILABLE,
+                    Status.fromThrowable(observer.errors.get(0)).getCode(),
+                    String.valueOf(observer.errors.get(0)));
+        }
+    }
+
+    /** Records what a call delivered to its client. */
+    private static final class RecordingObserver<T> implements StreamObserver<T> {
+        private final List<T> replies = Collections.synchronizedList(new ArrayList<>());
+        private final List<Throwable> errors = Collections.synchronizedList(new ArrayList<>());
+        private final AtomicInteger completions = new AtomicInteger();
+
+        @Override
+        public void onNext(T reply) {
+            replies.add(reply);
+        }
+
+        @Override
+        public void onError(Throwable throwable) {
+            errors.add(throwable);
+        }
+
+        @Override
+        public void onCompleted() {
+            completions.incrementAndGet();
+        }
+    }
+
     @Test
     public void testBiStream(Resources resources) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
@@ -647,6 +938,7 @@ public class TikaGrpcServerTest {
                 .forName(serverName)
                 .directExecutor()
                 .addService(tikaGrpcServerImpl)
+                .addService(new TikaGrpcV2ServerImpl(tikaGrpcServerImpl))
                 .build()
                 .start();
         resources.register(server, Duration.ofSeconds(10));
@@ -749,6 +1041,14 @@ public class TikaGrpcServerTest {
             assertEquals(NUM_TEST_DOCS, successes.size());
             assertEquals(1, errors.size());
             assertTrue(finished.get());
+
+            // v1 bi-stream replies keep the legacy fields-map contract
+            for (FetchAndParseReply success : successes) {
+                assertEquals("PARSE_SUCCESS", success.getStatus());
+                assertNotNull(success.getFieldsMap()
+                                .get(TikaCoreProperties.TIKA_CONTENT.getName()),
+                        "v1 reply should carry content in fields for " + success.getFetchKey());
+            }
 
             tikaGrpcServerImpl.shutdown();
             server.shutdown();

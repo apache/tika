@@ -4,6 +4,9 @@
       "progressTimeoutMillis": 60000
     }
   },
+  "metadata-list": {
+    "typedValues": true
+  },
   "pipes": {
     "javaPath": "JAVA_PATH",
     "numClients": 2,
