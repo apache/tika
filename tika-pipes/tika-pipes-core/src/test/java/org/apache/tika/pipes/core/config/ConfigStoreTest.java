@@ -21,8 +21,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermission;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import org.apache.tika.plugins.ExtensionConfig;
 
@@ -111,5 +119,20 @@ public class ConfigStoreTest {
         assertTrue(store.keySet().contains("id1"));
         
         assertNull(store.get("nonexistent"));
+    }
+
+    @Test
+    public void testFileBasedConfigStoreIsOwnerOnly(@TempDir Path tmp) throws Exception {
+        assumeTrue(FileSystems.getDefault().supportedFileAttributeViews().contains("posix"));
+        Path file = tmp.resolve("store").resolve("config-store.json");
+        FileBasedConfigStore store = new FileBasedConfigStore(file);
+        store.init();
+        store.put("s3", new ExtensionConfig("s3", "s3-fetcher", "{\"secretKey\":\"hunter2\"}"));
+        store.put("http", new ExtensionConfig("http", "http-fetcher", "{\"password\":\"x\"}"));
+
+        Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
+        assertEquals(Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE), perms);
+        assertFalse(Files.exists(file.resolveSibling("config-store.json.tmp")));
+        assertEquals("s3-fetcher", new FileBasedConfigStore(file).get("s3").name());
     }
 }
