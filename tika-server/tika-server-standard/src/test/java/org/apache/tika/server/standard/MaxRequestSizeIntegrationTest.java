@@ -130,6 +130,11 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
     /** Whatever a test did to the server, every request's share of the body budget comes back. */
     @AfterEach
     public void assertBudgetDrained() throws Exception {
+        awaitBudgetDrained();
+    }
+
+    // a request holds its share until Jetty completes it, which can lag the client seeing its status
+    private void awaitBudgetDrained() throws Exception {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
         long inFlight;
         do {
@@ -150,6 +155,7 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
             boolean anyTooLarge = false;
             List<String> statuses = new ArrayList<>();
             for (Map.Entry<String, byte[]> e : PREAMBLES.entrySet()) {
+                awaitBudgetDrained();
                 String status = sendChunked(endpoint, e.getKey(), e.getValue());
                 statuses.add(e.getKey() + "=" + status);
                 // fail fast: each further hang would cost another socket timeout
