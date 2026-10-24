@@ -445,7 +445,7 @@
     <pax.exam.version>4.14.0</pax.exam.version>
     <!-- TODO remove PDFBOX-6261 bugfix in PDFMarkedContent2XHTML with 3.0.9 release -->
     <pdfbox.version>3.0.8</pdfbox.version>
-    <poi.version>5.5.1</poi.version>
+    <poi.version>6.0.0</poi.version>
     <protobuf.version>3.25.9</protobuf.version>
     <quartz.version>2.5.2</quartz.version>
     <reactor.core.version>3.8.8</reactor.core.version>
