@@ -157,18 +157,28 @@ public class FileBasedConfigStore implements ConfigStore {
     }
 
     private synchronized void saveToFile() {
+        Path tempFile = null;
         try {
-            // Write to temp file first, then atomic rename
-            Path tempFile = configFile.resolveSibling(configFile.getFileName() + ".tmp");
-            Files.deleteIfExists(tempFile);
-            Files.createFile(tempFile, ownerOnly());
+            // Write to a unique temp file first, then atomic rename; a unique name keeps
+            // other instances/processes from deleting or recreating it mid-write
+            tempFile = Files.createTempFile(configFile.toAbsolutePath().getParent(),
+                    configFile.getFileName() + ".", ".tmp", ownerOnly());
             OBJECT_MAPPER.writerWithDefaultPrettyPrinter()
                 .writeValue(tempFile.toFile(), cache);
             Files.move(tempFile, configFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            tempFile = null;
             LOG.debug("Saved {} configurations to {}", cache.size(), configFile);
         } catch (IOException e) {
             LOG.error("Failed to save configurations to {}", configFile, e);
             throw new RuntimeException("Failed to save config store", e);
+        } finally {
+            if (tempFile != null) {
+                try {
+                    Files.deleteIfExists(tempFile);
+                } catch (IOException e) {
+                    LOG.warn("Failed to delete temp file {}", tempFile, e);
+                }
+            }
         }
     }
 

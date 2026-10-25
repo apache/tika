@@ -27,7 +27,10 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermission;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -132,7 +135,9 @@ public class ConfigStoreTest {
 
         Set<PosixFilePermission> perms = Files.getPosixFilePermissions(file);
         assertEquals(Set.of(PosixFilePermission.OWNER_READ, PosixFilePermission.OWNER_WRITE), perms);
-        assertFalse(Files.exists(file.resolveSibling("config-store.json.tmp")));
+        try (Stream<Path> siblings = Files.list(file.getParent())) {
+            assertEquals(List.of(file), siblings.collect(Collectors.toList()));
+        }
         assertEquals("s3-fetcher", new FileBasedConfigStore(file).get("s3").name());
     }
 }
