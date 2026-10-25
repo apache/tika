@@ -29,6 +29,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -562,6 +563,21 @@ public class MaxRequestSizeIntegrationTest extends IntegrationTestBase {
 
     /** Status code, "closed" if the connection closed first, or null if nothing came in time. */
     private String sendChunked(String[] endpoint, String contentType, byte[] preamble)
+            throws Exception {
+        for (int attempt = 1; ; attempt++) {
+            try {
+                return sendChunkedOnce(endpoint, contentType, preamble);
+            } catch (SocketException e) {
+                // the server closes with our body unread; on Windows the reset drops its answer
+                if (attempt == 3) {
+                    throw e;
+                }
+                awaitBudgetDrained();
+            }
+        }
+    }
+
+    private String sendChunkedOnce(String[] endpoint, String contentType, byte[] preamble)
             throws IOException {
         byte[] filler = new byte[64 * 1024];
         Arrays.fill(filler, (byte) 'a');
