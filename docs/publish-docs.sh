@@ -83,6 +83,17 @@ mkdir -p "${DOCS_DIR}"
 
 # Strip the 'tika/' component dir prefix so URLs are /docs/X.Y.Z/...
 cp -r target/site/tika/* "${DOCS_DIR}/"
+# Canonical links are absolute (site.url + /tika/...), so the copy above doesn't
+# flatten them. Rewrite only the <link> tag: page prose may quote /docs/tika/.
+CANONICAL_TIKA='<link rel="canonical" href="https://tika.apache.org/docs/tika/'
+{ grep -rlF --include='*.html' "${CANONICAL_TIKA}" "${DOCS_DIR}" || true; } | while IFS= read -r page; do
+    sed_atomic 's|<link rel="canonical" href="https://tika.apache.org/docs/tika/|<link rel="canonical" href="https://tika.apache.org/docs/|' \
+        "${page}" "${page}"
+done
+if grep -rqF --include='*.html' "${CANONICAL_TIKA}" "${DOCS_DIR}"; then
+    echo "Unflattened canonical links remain under ${DOCS_DIR}." >&2
+    exit 1
+fi
 # UI assets one level above docs/, since HTML uses ../../_/ relative paths.
 # Replace wholesale: cp -r into an existing directory nests source as a
 # subdirectory (publish/_/_/), so remove first to keep the layout flat.
