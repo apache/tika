@@ -15,7 +15,7 @@
 
 # Vendor-neutral dev environment: Docker-official Temurin JDK matching
 # tika-parent's maven.compiler.release. Maven comes from ./mvnw.
-FROM eclipse-temurin:17-jdk@sha256:5d6042fb8cdc14d614e4e421f52e3211fc5aeadddce44cbf9de8ed37c791f824
+FROM eclipse-temurin:17-jdk@sha256:fe947d993c32dd9cf651a4353a6ed723c2370b3a9d034ea4cab4775404ea531a
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends git \
