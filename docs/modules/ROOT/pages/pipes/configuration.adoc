@@ -256,7 +256,7 @@ For multi-host pipelines (e.g., shared-server clusters) you can store fetcher/em
 
 |`configStoreType`
 |`"memory"`
-|Backend for storing fetcher/emitter configurations. `"memory"` (default) is in-process; `"ignite"` uses Apache Ignite for shared state across nodes.
+|Backend for storing fetcher/emitter configurations registered at runtime; those in the config file are never written to it. `"memory"` (default) is in-process; `"file"` persists to a JSON file; `"ignite"` uses Apache Ignite for shared state across nodes.
 
 |`configStoreParams`
 |`"{}"`
