@@ -53,4 +53,13 @@ public class Pkcs7DetectionTest {
         // TIKA-2856: a short-form-length digestedData is now caught coarsely (routes to Pkcs7Parser)
         assertEquals("application/pkcs7-signature", detect("testPKCS7_digested.p7"));
     }
+
+    @Test
+    public void testCertsOnlyDetectedByContent() throws Exception {
+        // empty digestAlgorithms + id-data-only encapContentInfo: no signature
+        assertEquals("application/x-pkcs7-certificates", detect("testPKCS7_certs_only_def.p7c"));
+        assertEquals("application/pkcs7-signature", detect("testPKCS7_signature_def.p7s"));
+        assertEquals("application/pkcs7-signature", detect("testDetached.p7s"));
+        assertEquals("application/pkcs7-signature", detect("testPKCS7_signed_data_def.p7m"));
+    }
 }
