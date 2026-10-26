@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -246,5 +247,34 @@ public class EMFParserTest extends TikaTest {
         assertContains("next-generation", txt);//this is stored in three records -- test that no spaces are interpolated
     }
 
+    /** POI 6 caps EMF comment records at 1 MB by default; 5.x allowed 100 MB. */
+    @Test
+    public void testLargeWmfComment() throws Exception {
+        byte[] emf;
+        try (InputStream is = getResourceAsStream("/test-documents/testEMF.emf")) {
+            emf = is.readAllBytes();
+        }
+        int headerSize = ByteBuffer.wrap(emf, 4, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+        int wmfSize = 2_000_000;
+        int dataSize = 24 + wmfSize;
+        ByteBuffer comment = ByteBuffer.allocate(12 + dataSize).order(ByteOrder.LITTLE_ENDIAN);
+        comment.putInt(0x46).putInt(12 + dataSize).putInt(dataSize);
+        //"GDIC", EMR_COMMENT_WINDOWS_METAFILE, version, reserved, checksum, flags, size
+        comment.putInt(0x43494447).putInt(0x80000001).putShort((short) 1).putShort((short) 0)
+                .putInt(0).putInt(0).putInt(wmfSize);
+        byte[] injected = new byte[emf.length + comment.capacity()];
+        System.arraycopy(emf, 0, injected, 0, headerSize);
+        System.arraycopy(comment.array(), 0, injected, headerSize, comment.capacity());
+        System.arraycopy(emf, headerSize, injected, headerSize + comment.capacity(),
+                emf.length - headerSize);
 
+        List<Metadata> metadataList;
+        try (TikaInputStream tis = TikaInputStream.get(injected)) {
+            metadataList = getRecursiveMetadata(tis, true);
+        }
+        Metadata container = metadataList.get(0);
+        assertNull(container.get(TikaCoreProperties.CONTAINER_EXCEPTION),
+                container.get(TikaCoreProperties.CONTAINER_EXCEPTION));
+        assertEquals("image/wmf", metadataList.get(1).get(HttpHeaders.CONTENT_TYPE));
+    }
 }
