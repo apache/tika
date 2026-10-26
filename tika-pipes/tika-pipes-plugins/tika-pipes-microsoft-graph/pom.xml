@@ -33,7 +33,7 @@
     <wiremock.version>3.3.1</wiremock.version>
     <msal4j.version>1.26.0</msal4j.version>
     <!-- can't update to 1.10 because of forbidden APIs -->
-    <microsoft-kiota.version>1.9.3</microsoft-kiota.version>
+    <microsoft-kiota.version>1.10.3</microsoft-kiota.version>
   </properties>
 
   <dependencyManagement>
