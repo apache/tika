@@ -82,6 +82,23 @@ public class EMFParser extends AbstractMetafileParser {
     public static Property EMF_ICON_ONLY = Property.internalBoolean("emf:icon-only");
     public static Property EMF_ICON_STRING = Property.internalText("emf:icon-string");
 
+    /**
+     * POI 6 caps EMF comment records (e.g. an embedded WMF) at 1 MB; POI 5 allowed
+     * 100 MB, and real files carry comments up to ~30 MB.
+     */
+    public static final int MAX_COMMENT_RECORD_LENGTH = 100_000_000;
+
+    static {
+        raiseCommentRecordLength();
+    }
+
+    /** Sets POI's static EMF comment cap; never lowers one the caller already raised. */
+    public static void raiseCommentRecordLength() {
+        if (HemfComment.getMaxRecordLength() < MAX_COMMENT_RECORD_LENGTH) {
+            HemfComment.setMaxRecordLength(MAX_COMMENT_RECORD_LENGTH);
+        }
+    }
+
     public EMFParser() {
         this(new MetafileParserConfig());
     }
