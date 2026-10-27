@@ -161,6 +161,7 @@ public class EmitterManager extends AbstractComponentManager<Emitter, EmitterFac
      * The emitter will not be instantiated until it is first requested via {@link #getEmitter(String)}.
      * This allows for dynamic configuration without the overhead of immediate instantiation.
      * If an emitter with the same ID already exists, it will be replaced and the cached instance cleared.
+     * An emitter defined in the server config cannot be replaced.
      * <p>
      * This method is only available if the EmitterManager was loaded with
      * {@link #load(PluginManager, TikaJsonConfig, boolean)} with allowRuntimeModifications=true.

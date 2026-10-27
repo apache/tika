@@ -8,6 +8,16 @@ Release 4.2.1 - unreleased
      Arial Black now render with Liberation fonts. The images add the IPA and
      WenQuanYi fonts, so pages in non-embedded Japanese and Chinese fonts render
      instead of showing empty boxes or nothing (TIKA-5005).
+     
+   * The S3 fetcher, emitter and pipes iterator accept credentialsProvider "web_identity"
+     for EKS IAM roles for service accounts (IRSA); the plugin now bundles the AWS STS
+     module it needs (TIKA-5006).
+
+  OTHER CHANGES
+
+   * PEM-armored CMS/PKCS7 (-----BEGIN PKCS7----- or -----BEGIN CMS-----) is parsed like
+     DER: Pkcs7Parser and the opt-in pkcs-7-detector report the smime-type and extract
+     signed content; -----BEGIN CMS----- is now detected (TIKA-5002).
 
 Release 4.2.0 - 10/25/2026
 
