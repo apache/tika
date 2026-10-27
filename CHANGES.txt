@@ -1,4 +1,10 @@
-Release 4.2.1 - ???
+Release 4.2.1 - unreleased
+
+  SERVER, PIPES AND OPERATIONS
+
+   * The S3 fetcher, emitter and pipes iterator accept credentialsProvider "web_identity"
+     for EKS IAM roles for service accounts (IRSA); the plugin now bundles the AWS STS
+     module it needs (TIKA-5006).
 
   OTHER CHANGES
 
