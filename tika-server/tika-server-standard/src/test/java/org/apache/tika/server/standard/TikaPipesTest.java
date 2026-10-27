@@ -204,6 +204,7 @@ public class TikaPipesTest extends CXFTestBase {
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json")
+                .type("application/json")
                 .post(writer.toString());
         assertEquals(200, response.getStatus());
 
@@ -233,6 +234,7 @@ public class TikaPipesTest extends CXFTestBase {
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json")
+                .type("application/json")
                 .post(writer.toString());
         assertEquals(200, response.getStatus());
 
@@ -262,6 +264,7 @@ public class TikaPipesTest extends CXFTestBase {
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json")
+                .type("application/json")
                 .post(writer.toString());
         assertEquals(200, response.getStatus());
 
@@ -315,6 +318,7 @@ public class TikaPipesTest extends CXFTestBase {
         Response response = WebClient
                 .create(getUrl)
                 .accept("application/json")
+                .type("application/json")
                 .post(writer.toString());
         assertEquals(200, response.getStatus());
 
