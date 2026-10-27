@@ -160,6 +160,7 @@ public class FetcherManager extends AbstractComponentManager<Fetcher, FetcherFac
      * The fetcher will not be instantiated until it is first requested via {@link #getFetcher(String)}.
      * This allows for dynamic configuration without the overhead of immediate instantiation.
      * If a fetcher with the same ID already exists, it will be replaced and the cached instance cleared.
+     * A fetcher defined in the server config cannot be replaced.
      * <p>
      * This method is only available if the FetcherManager was loaded with
      * {@link #load(PluginManager, TikaJsonConfig, boolean)} with allowRuntimeModifications=true.

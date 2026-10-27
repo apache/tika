@@ -17,6 +17,7 @@
 package org.apache.tika.pipes.grpc;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -67,6 +68,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -218,7 +220,7 @@ public class TikaGrpcServerTest {
         String targetFolder = new File("target").getAbsolutePath();
         // create fetchers
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
-            String fetcherId = createFetcherId(i);
+            String fetcherId = "saved" + i + ".fs";
             SaveFetcherReply reply = blockingStub.saveFetcher(SaveFetcherRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
@@ -233,7 +235,7 @@ public class TikaGrpcServerTest {
         }
         // update fetchers
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
-            String fetcherId = createFetcherId(i);
+            String fetcherId = "saved" + i + ".fs";
             SaveFetcherReply reply = blockingStub.saveFetcher(SaveFetcherRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
@@ -256,7 +258,7 @@ public class TikaGrpcServerTest {
 
         // get fetchers
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
-            String fetcherId = createFetcherId(i);
+            String fetcherId = "saved" + i + ".fs";
             GetFetcherReply getFetcherReply = blockingStub.getFetcher(GetFetcherRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
@@ -267,7 +269,7 @@ public class TikaGrpcServerTest {
 
         // delete fetchers
         for (int i = 0; i < NUM_FETCHERS_TO_CREATE; ++i) {
-            String fetcherId = createFetcherId(i);
+            String fetcherId = "saved" + i + ".fs";
             DeleteFetcherReply deleteFetcherReply = blockingStub.deleteFetcher(DeleteFetcherRequest
                     .newBuilder()
                     .setFetcherId(fetcherId)
@@ -638,6 +640,54 @@ public class TikaGrpcServerTest {
         }
     }
 
+    /**
+     * The point of a persistent store: a fetcher saved at runtime reaches the forked worker.
+     * Config-file fetchers stay out of the store.
+     */
+    @Test
+    public void testSavedFetcherReachesTheForkThroughFileStore(Resources resources,
+            @TempDir Path tmp) throws Exception {
+        Path store = tmp.resolve("config-store.json");
+        ObjectNode root = (ObjectNode) OBJECT_MAPPER.readTree(tikaConfigUnlocked.toFile());
+        ObjectNode pipes = (ObjectNode) root.get("pipes");
+        pipes.put("configStoreType", "file");
+        pipes.put("configStoreParams", OBJECT_MAPPER.writeValueAsString(
+                Map.of("path", store.toAbsolutePath().toString())));
+        Path config = tmp.resolve("tika-config-file-store.json");
+        Files.writeString(config, OBJECT_MAPPER.writeValueAsString(root), StandardCharsets.UTF_8);
+
+        String serverName = InProcessServerBuilder.generateName();
+        Server server = InProcessServerBuilder.forName(serverName).directExecutor()
+                .addService(newService(config)).build().start();
+        resources.register(server, Duration.ofSeconds(10));
+        ManagedChannel channel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
+        resources.register(channel, Duration.ofSeconds(10));
+        TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
+
+        Path docs = Files.createDirectories(tmp.resolve("docs"));
+        Files.writeString(docs.resolve("saved.html"),
+                "<html><body>saved-fetcher-marker</body></html>", StandardCharsets.UTF_8);
+        blockingStub.saveFetcher(SaveFetcherRequest.newBuilder()
+                .setFetcherId("saved.fs")
+                .setFetcherType("file-system-fetcher")
+                .setFetcherConfigJson(OBJECT_MAPPER.writeValueAsString(
+                        Map.of("basePath", docs.toAbsolutePath().toString())))
+                .build());
+
+        FetchAndParseReply reply = blockingStub.fetchAndParse(FetchAndParseRequest.newBuilder()
+                .setFetcherId("saved.fs")
+                .setFetchKey("saved.html")
+                .build());
+        assertEquals(PipesResult.RESULT_STATUS.PARSE_SUCCESS.name(), reply.getStatus(),
+                reply.getErrorMessage());
+        assertTrue(reply.getFieldsMap().values().stream()
+                .anyMatch(v -> v.contains("saved-fetcher-marker")));
+
+        String stored = Files.readString(store, StandardCharsets.UTF_8);
+        assertTrue(stored.contains("saved.fs"), stored);
+        assertFalse(stored.contains("nick1.is.cool.super-fs"), stored);
+    }
+
     @Test
     public void testBiStream(Resources resources) throws Exception {
         String serverName = InProcessServerBuilder.generateName();
@@ -659,20 +709,8 @@ public class TikaGrpcServerTest {
         TikaGrpc.TikaBlockingStub blockingStub = TikaGrpc.newBlockingStub(channel);
         TikaGrpc.TikaStub tikaStub = TikaGrpc.newStub(channel);
 
-        String fetcherId = createFetcherId(1);
-        String targetFolder = new File("target").getAbsolutePath();
-        SaveFetcherReply reply = blockingStub.saveFetcher(SaveFetcherRequest
-                .newBuilder()
-                .setFetcherId(fetcherId)
-                .setFetcherType("file-system-fetcher")
-                .setFetcherConfigJson(OBJECT_MAPPER.writeValueAsString(ImmutableMap
-                        .builder()
-                        .put("basePath", targetFolder)
-                        .put("extractFileSystemMetadata", true)
-                        .build()))
-                .build());
-
-        assertEquals(fetcherId, reply.getFetcherId());
+        // from the config file: one saved at runtime is not visible to the forked worker
+        String fetcherId = "nick1.is.cool.super-fs";
 
         List<FetchAndParseReply> successes = Collections.synchronizedList(new ArrayList<>());
         List<FetchAndParseReply> errors = Collections.synchronizedList(new ArrayList<>());
