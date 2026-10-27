@@ -45,8 +45,8 @@ external.
 |`apache/tika:<version>-full`
 |Adds the external tools some parsers shell out to: Tesseract OCR (with `eng`, `ita`, `fra`,
 `spa`, `deu`, `jpn` language packs), GDAL, ImageMagick, ffmpeg (for the audio and video
-segments of a MEDIA inference binding), and the Liberation / FreeFont / msttcorefonts font
-sets. Considerably larger.
+segments of a MEDIA inference binding), and the Liberation, FreeFont, Noto CJK, IPA and
+WenQuanYi font sets. Considerably larger.
 
 |`apache/tika-grpc:<version>`
 |gRPC server on port 9090, with OCR, GDAL and fonts included.
@@ -129,6 +129,31 @@ docker run -d -p 127.0.0.1:9998:9998 -v "$(pwd)/my-jars:/tika-extras" \
 
 Treat that directory as a trusted code location: whatever is in it runs with the full privileges of
 the Tika process. Outside Docker the equivalent is the `tika.extras.dir` system property.
+
+== Adding fonts
+
+Fonts matter only when Tika renders a PDF page (OCR, page images for a vision model,
+thumbnails) and the PDF does not embed the font it uses. Text extraction does not need them. The
+`-full` image covers the common cases: Liberation for Arial, Times New Roman and Courier New, plus
+Noto CJK, IPA and WenQuanYi for Chinese and Japanese.
+
+To render with other fonts, install them in an image of your own. For example, the Microsoft core
+fonts (Verdana, Georgia, Trebuchet and others), whose license you accept by installing them:
+
+[source,dockerfile]
+----
+FROM apache/tika:X.Y.Z-full
+USER root
+RUN echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true \
+      | debconf-set-selections \
+    && apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends \
+         ttf-mscorefonts-installer \
+    && rm -rf /var/lib/apt/lists/*
+USER 35002:35002
+----
+
+The installer downloads the fonts from SourceForge, so the build needs network access.
 
 == Pipes plugins
 
