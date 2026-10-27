@@ -67,14 +67,14 @@ public record S3EmitterConfig(
             throw new TikaConfigException("'region' must not be empty");
         }
         if (credentialsProvider == null || credentialsProvider.isBlank()) {
-            throw new TikaConfigException("'credentialsProvider' must be set to 'profile', 'instance', 'identity' or 'key_secret'");
+            throw new TikaConfigException("'credentialsProvider' must be set to 'profile', 'instance', 'web_identity' or 'key_secret'");
         }
         if (!credentialsProvider.equals("profile")
                 && !credentialsProvider.equals("instance")
-                && !credentialsProvider.equals("identity")
+                && !credentialsProvider.equals("web_identity")
                 && !credentialsProvider.equals("key_secret")) {
             throw new TikaConfigException(
-                    "credentialsProvider must be 'profile', 'instance', 'identity' or 'key_secret', but was: "
+                    "credentialsProvider must be 'profile', 'instance', 'web_identity' or 'key_secret', but was: "
                             + credentialsProvider);
         }
         if (credentialsProvider.equals("profile") && (profile == null || profile.isBlank())) {

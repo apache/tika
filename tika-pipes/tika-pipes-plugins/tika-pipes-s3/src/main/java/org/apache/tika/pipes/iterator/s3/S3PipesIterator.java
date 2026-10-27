@@ -85,7 +85,7 @@ public class S3PipesIterator extends PipesIteratorBase {
             case "instance":
                 provider = InstanceProfileCredentialsProvider.builder().build();
                 break;
-            case "identity":
+            case "web_identity":
                 provider = WebIdentityTokenFileCredentialsProvider.builder().build();
                 break;
             case "profile":
@@ -96,7 +96,7 @@ public class S3PipesIterator extends PipesIteratorBase {
                 provider = StaticCredentialsProvider.create(awsCreds);
                 break;
             default:
-                throw new TikaConfigException("credentialsProvider must be set and must be either 'instance', 'identity', 'profile' or 'key_secret'");
+                throw new TikaConfigException("credentialsProvider must be set and must be either 'instance', 'web_identity', 'profile' or 'key_secret'");
         }
 
         SdkHttpClient httpClient = ApacheHttpClient.builder().maxConnections(config.getMaxConnections()).build();

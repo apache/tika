@@ -144,7 +144,7 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
         switch (credentialsProvider) {
             case "instance":
                 return InstanceProfileCredentialsProvider.builder().build();
-            case "identity":
+            case "web_identity":
                 return WebIdentityTokenFileCredentialsProvider.builder().build();
             case "profile":
                 return ProfileCredentialsProvider.builder().profileName(config.getProfile()).build();
@@ -153,7 +153,7 @@ public class S3Fetcher extends AbstractTikaExtension implements Fetcher, RangeFe
                 return StaticCredentialsProvider.create(awsCreds);
             default:
                 throw new TikaConfigException("credentialsProvider must be set and must be either "
-                        + "'instance', 'identity', 'profile' or 'key_secret'");
+                        + "'instance', 'web_identity', 'profile' or 'key_secret'");
         }
     }
 

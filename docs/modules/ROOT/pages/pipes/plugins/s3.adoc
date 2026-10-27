@@ -45,12 +45,12 @@ All three components share the same `credentialsProvider` selector:
 
 * `profile` — reads credentials from the local AWS profile named by `profile` (e.g., `default`).
 * `instance` — uses the IAM role of the EC2 instance the host runs on, read from the instance metadata service. No additional fields needed.
-* `identity` — assumes a role with a web identity token, as EKS IAM roles for service accounts (IRSA) provide. Reads the role from `AWS_ROLE_ARN` and the token from `AWS_WEB_IDENTITY_TOKEN_FILE`, which EKS sets on the pod. No additional fields needed.
+* `web_identity` — assumes a role with a web identity token, as EKS IAM roles for service accounts (IRSA) provide. Reads the role from `AWS_ROLE_ARN` and the token from `AWS_WEB_IDENTITY_TOKEN_FILE`, which EKS sets on the pod. No additional fields needed.
 * `key_secret` — reads `accessKey` and `secretKey` from the config. Avoid checking these into source control; prefer environment-variable substitution or one of the other providers.
 
 All three components reject any other value when they are created. If `credentialsProvider` is unset, the emitter's `validate()` rejects it, but the fetcher and iterator fall back to `instance`.
 
-ECS task roles and EKS Pod Identity are not supported — neither `instance` nor `identity` picks them up.
+ECS task roles and EKS Pod Identity are not supported — neither `instance` nor `web_identity` picks them up.
 
 [#s3-fetcher]
 == S3 Fetcher (`s3-fetcher`)
@@ -82,7 +82,7 @@ include::example$pipes-s3-fetcher.json[]
 
 |`credentialsProvider`
 |`instance`
-|One of `profile`, `instance`, `identity`, `key_secret`. See <<credentials>>.
+|One of `profile`, `instance`, `web_identity`, `key_secret`. See <<credentials>>.
 
 |`profile` / `accessKey` / `secretKey`
 |_conditional_
@@ -144,7 +144,7 @@ include::example$pipes-s3-emitter.json[]
 
 |`credentialsProvider`
 |_required_
-|One of `profile`, `instance`, `identity`, `key_secret` (validated). See <<credentials>>.
+|One of `profile`, `instance`, `web_identity`, `key_secret` (validated). See <<credentials>>.
 
 |`profile` / `accessKey` / `secretKey`
 |_conditional_
@@ -207,7 +207,7 @@ In addition to the required `fetcherId` / `emitterId` (see xref:pipes/iterators.
 
 |`credentialsProvider`
 |`instance`
-|One of `profile`, `instance`, `identity`, `key_secret`. See <<credentials>>.
+|One of `profile`, `instance`, `web_identity`, `key_secret`. See <<credentials>>.
 
 |`profile` / `accessKey` / `secretKey` / `endpointConfigurationService`
 |_conditional_

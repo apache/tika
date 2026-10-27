@@ -141,7 +141,7 @@ public class S3Emitter extends AbstractStreamEmitter {
         switch (config.credentialsProvider()) {
             case "instance":
                 return InstanceProfileCredentialsProvider.builder().build();
-            case "identity":
+            case "web_identity":
                 return WebIdentityTokenFileCredentialsProvider.builder().build();
             case "profile":
                 return ProfileCredentialsProvider.builder()
@@ -152,7 +152,7 @@ public class S3Emitter extends AbstractStreamEmitter {
                         config.accessKey(), config.secretKey());
                 return StaticCredentialsProvider.create(awsCreds);
             default:
-                throw new TikaConfigException("credentialsProvider must be 'instance', 'identity', 'profile' or 'key_secret'");
+                throw new TikaConfigException("credentialsProvider must be 'instance', 'web_identity', 'profile' or 'key_secret'");
         }
     }
 

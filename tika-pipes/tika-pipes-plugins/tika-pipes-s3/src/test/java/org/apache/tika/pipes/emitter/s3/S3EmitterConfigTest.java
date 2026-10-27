@@ -27,8 +27,8 @@ import org.apache.tika.exception.TikaConfigException;
 public class S3EmitterConfigTest {
 
     @Test
-    public void testIdentityIsValid() throws Exception {
-        S3EmitterConfig config = load("identity");
+    public void testWebIdentityIsValid() throws Exception {
+        S3EmitterConfig config = load("web_identity");
         assertDoesNotThrow(config::validate);
     }
 
@@ -36,7 +36,7 @@ public class S3EmitterConfigTest {
     public void testUnknownProviderIsInvalid() throws Exception {
         S3EmitterConfig config = load("bogus");
         TikaConfigException e = assertThrows(TikaConfigException.class, config::validate);
-        assertTrue(e.getMessage().contains("'identity'"), e.getMessage());
+        assertTrue(e.getMessage().contains("'web_identity'"), e.getMessage());
     }
 
     private static S3EmitterConfig load(String credentialsProvider) throws TikaConfigException {

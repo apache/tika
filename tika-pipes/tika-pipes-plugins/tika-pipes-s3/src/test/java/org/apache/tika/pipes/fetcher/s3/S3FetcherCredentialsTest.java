@@ -34,9 +34,9 @@ import org.apache.tika.plugins.ExtensionConfig;
 public class S3FetcherCredentialsTest {
 
     @Test
-    public void testIdentity() throws Exception {
+    public void testWebIdentity() throws Exception {
         assertInstanceOf(WebIdentityTokenFileCredentialsProvider.class,
-                S3Fetcher.buildCredentialsProvider(new S3FetcherConfig().setCredentialsProvider("identity")));
+                S3Fetcher.buildCredentialsProvider(new S3FetcherConfig().setCredentialsProvider("web_identity")));
     }
 
     @Test
@@ -58,14 +58,14 @@ public class S3FetcherCredentialsTest {
     public void testUnknownProvider() {
         TikaConfigException e = assertThrows(TikaConfigException.class,
                 () -> S3Fetcher.buildCredentialsProvider(new S3FetcherConfig().setCredentialsProvider("bogus")));
-        assertTrue(e.getMessage().contains("'identity'"), e.getMessage());
+        assertTrue(e.getMessage().contains("'web_identity'"), e.getMessage());
     }
 
     @Test
-    public void testBuildWithIdentity() throws Exception {
+    public void testBuildWithWebIdentity() throws Exception {
         // Credentials resolve on the first request, so the fetcher builds without a web identity
         // token in the environment.
-        String json = "{\"bucket\": \"bucket\", \"region\": \"us-east-1\", \"credentialsProvider\": \"identity\"}";
+        String json = "{\"bucket\": \"bucket\", \"region\": \"us-east-1\", \"credentialsProvider\": \"web_identity\"}";
         assertNotNull(S3Fetcher.build(new ExtensionConfig("s3", "s3-fetcher", json)));
     }
 

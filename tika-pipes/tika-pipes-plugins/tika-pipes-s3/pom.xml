@@ -50,7 +50,7 @@
       <artifactId>apache-client</artifactId>
     </dependency>
     <dependency>
-      <!-- WebIdentityTokenFileCredentialsProvider ('identity') loads STS reflectively -->
+      <!-- WebIdentityTokenFileCredentialsProvider ('web_identity') loads STS reflectively -->
       <groupId>software.amazon.awssdk</groupId>
       <artifactId>sts</artifactId>
     </dependency>
