@@ -86,7 +86,7 @@ public class FetcherManagerTest {
 
         // Try to get a fetcher when none are configured
         FetcherNotFoundException exception = assertThrows(FetcherNotFoundException.class, () -> {
-            fetcherManager.getFetcher("any-id");
+            fetcherManager.getFetcher("any-id").get();
         });
 
         assertTrue(exception.getMessage().contains("any-id"));
@@ -127,7 +127,7 @@ public class FetcherManagerTest {
         assertEquals(2, fetcherManager.getSupported().size());
 
         // Request only fsf1 - only it should be instantiated
-        Fetcher fetcher1 = fetcherManager.getFetcher("fsf1");
+        Fetcher fetcher1 = fetcherManager.getFetcher("fsf1").get();
         assertNotNull(fetcher1);
         assertEquals("fsf1", fetcher1.getExtensionConfig().id());
 
@@ -135,7 +135,7 @@ public class FetcherManagerTest {
         assertTrue(fetcherManager.getSupported().contains("fsf2"));
 
         // Now request fsf2
-        Fetcher fetcher2 = fetcherManager.getFetcher("fsf2");
+        Fetcher fetcher2 = fetcherManager.getFetcher("fsf2").get();
         assertNotNull(fetcher2);
         assertEquals("fsf2", fetcher2.getExtensionConfig().id());
     }
@@ -149,9 +149,9 @@ public class FetcherManagerTest {
         FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig);
 
         // Get the same fetcher multiple times
-        Fetcher fetcher1 = fetcherManager.getFetcher("fsf");
-        Fetcher fetcher2 = fetcherManager.getFetcher("fsf");
-        Fetcher fetcher3 = fetcherManager.getFetcher("fsf");
+        Fetcher fetcher1 = fetcherManager.getFetcher("fsf").get();
+        Fetcher fetcher2 = fetcherManager.getFetcher("fsf").get();
+        Fetcher fetcher3 = fetcherManager.getFetcher("fsf").get();
 
         // Should be the exact same instance (reference equality)
         assertSame(fetcher1, fetcher2);
@@ -180,7 +180,7 @@ public class FetcherManagerTest {
                     startLatch.await();
 
                     // All threads try to get the fetcher at once
-                    return fetcherManager.getFetcher("fsf");
+                    return fetcherManager.getFetcher("fsf").get();
                 } finally {
                     doneLatch.countDown();
                 }
@@ -217,7 +217,7 @@ public class FetcherManagerTest {
         FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig);
 
         FetcherNotFoundException exception = assertThrows(FetcherNotFoundException.class, () -> {
-            fetcherManager.getFetcher("non-existent-fetcher");
+            fetcherManager.getFetcher("non-existent-fetcher").get();
         });
 
         assertTrue(exception.getMessage().contains("non-existent-fetcher"));
@@ -298,7 +298,7 @@ public class FetcherManagerTest {
         FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig);
 
         // When only one fetcher exists, no-arg getFetcher() should work
-        Fetcher fetcher = fetcherManager.getFetcher();
+        Fetcher fetcher = fetcherManager.getFetcher().get();
         assertNotNull(fetcher);
         assertEquals("fsf", fetcher.getExtensionConfig().id());
     }
@@ -334,7 +334,7 @@ public class FetcherManagerTest {
 
         // When multiple fetchers exist, no-arg getFetcher() should fail
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            fetcherManager.getFetcher();
+            fetcherManager.getFetcher().get();
         });
 
         assertTrue(exception.getMessage().contains("requires exactly 1"));
@@ -366,7 +366,7 @@ public class FetcherManagerTest {
         assertTrue(fetcherManager.getSupported().contains("fsf2"));
 
         // Fetcher should be lazily instantiated when requested
-        Fetcher fetcher2 = fetcherManager.getFetcher("fsf2");
+        Fetcher fetcher2 = fetcherManager.getFetcher("fsf2").get();
         assertNotNull(fetcher2);
         assertEquals("fsf2", fetcher2.getExtensionConfig().id());
     }
@@ -379,13 +379,13 @@ public class FetcherManagerTest {
 
         FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, true);
         fetcherManager.saveFetcher(fileSystemFetcher("fsf2", tmpDir.resolve("path2")));
-        Fetcher originalFetcher = fetcherManager.getFetcher("fsf2");
+        Fetcher originalFetcher = fetcherManager.getFetcher("fsf2").get();
 
         fetcherManager.saveFetcher(fileSystemFetcher("fsf2", tmpDir.resolve("path3")));
 
         assertEquals(2, fetcherManager.getSupported().size());
         // the cached instance was dropped
-        assertTrue(originalFetcher != fetcherManager.getFetcher("fsf2"),
+        assertTrue(originalFetcher != fetcherManager.getFetcher("fsf2").get(),
                 "Updated fetcher should be a new instance");
     }
 
@@ -396,13 +396,13 @@ public class FetcherManagerTest {
         TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
 
         FetcherManager fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig, true);
-        Fetcher configured = fetcherManager.getFetcher("fsf");
+        Fetcher configured = fetcherManager.getFetcher("fsf").get();
 
         TikaConfigException e = assertThrows(TikaConfigException.class,
                 () -> fetcherManager.saveFetcher(fileSystemFetcher("fsf", tmpDir.resolve("path2"))));
         assertTrue(e.getMessage().contains("defined in the server config"), e.getMessage());
         assertThrows(TikaConfigException.class, () -> fetcherManager.deleteFetcher("fsf"));
-        assertSame(configured, fetcherManager.getFetcher("fsf"));
+        assertSame(configured, fetcherManager.getFetcher("fsf").get());
     }
 
     @Test
@@ -500,7 +500,7 @@ public class FetcherManagerTest {
         assertEquals(5, fetcherManager.getSupported().size());
 
         // Request only fsf3 - only it should be instantiated
-        Fetcher fetcher3 = fetcherManager.getFetcher("fsf3");
+        Fetcher fetcher3 = fetcherManager.getFetcher("fsf3").get();
         assertNotNull(fetcher3);
         assertEquals("fsf3", fetcher3.getExtensionConfig().id());
 

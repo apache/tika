@@ -1,3 +1,14 @@
+Release 4.3.0 - ???
+
+  BREAKING CHANGES AND DEPRECATIONS
+
+   * FetcherManager.getFetcher and EmitterManager.getEmitter return a Lease
+     (AbstractComponentManager.getComponent is now acquire); close it when done with
+     the component and anything it returned. Pipes now closes a
+     Closeable fetcher or emitter when a runtime save or delete replaces it (after the
+     last task using it ends) and on graceful shutdown; nothing closed them before.
+     EmittingUnpackHandler takes the emitter, not the EmitterManager (TIKA-5001).
+
 Release 4.2.1 - ???
 
   OTHER CHANGES

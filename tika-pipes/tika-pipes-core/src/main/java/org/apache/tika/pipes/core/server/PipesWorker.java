@@ -58,7 +58,6 @@ import org.apache.tika.pipes.api.emitter.EmitKey;
 import org.apache.tika.pipes.api.emitter.Emitter;
 import org.apache.tika.pipes.api.emitter.StreamEmitter;
 import org.apache.tika.pipes.core.PipesResults;
-import org.apache.tika.pipes.core.emitter.EmitterManager;
 import org.apache.tika.pipes.core.extractor.EmittingUnpackHandler;
 import org.apache.tika.pipes.core.extractor.FrictionlessUnpackHandler;
 import org.apache.tika.pipes.core.extractor.TempFileUnpackHandler;
@@ -79,7 +78,7 @@ class PipesWorker implements Callable<PipesResult> {
     private final FetchEmitTuple fetchEmitTuple;
     private final ParseContext parseContext;
     private final AutoDetectParser autoDetectParser;
-    private final EmitterManager emitterManager;
+    private final TaskLeases leases;
     private final FetchHandler fetchHandler;
     private final ParseHandler parseHandler;
     private final EmitHandler emitHandler;
@@ -87,13 +86,13 @@ class PipesWorker implements Callable<PipesResult> {
     private final ParseMode defaultParseMode;
 
     public PipesWorker(FetchEmitTuple fetchEmitTuple, ParseContext parseContext, AutoDetectParser autoDetectParser,
-                       EmitterManager emitterManager, FetchHandler fetchHandler, ParseHandler parseHandler,
+                       TaskLeases leases, FetchHandler fetchHandler, ParseHandler parseHandler,
                        EmitHandler emitHandler, MetadataWriteLimiterFactory defaultMetadataWriteLimiterFactory,
                        ParseMode defaultParseMode) {
         this.fetchEmitTuple = fetchEmitTuple;
         this.parseContext = parseContext;
         this.autoDetectParser = autoDetectParser;
-        this.emitterManager = emitterManager;
+        this.leases = leases;
         this.fetchHandler = fetchHandler;
         this.parseHandler = parseHandler;
         this.emitHandler = emitHandler;
@@ -196,6 +195,8 @@ class PipesWorker implements Callable<PipesResult> {
                     LOG.warn("problem closing unpack handler", e);
                 }
             }
+            // after the unpack handler, which may still be emitting
+            leases.close();
         }
     }
 
@@ -223,7 +224,7 @@ class PipesWorker implements Callable<PipesResult> {
         String emitterName = unpackConfig.getEmitter();
         Emitter emitter;
         try {
-            emitter = emitterManager.getEmitter(emitterName);
+            emitter = leases.emitter(emitterName);
         } catch (Exception e) {
             LOG.warn("Failed to get emitter for zip: {}", emitterName, e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_NOT_FOUND,
@@ -288,7 +289,7 @@ class PipesWorker implements Callable<PipesResult> {
 
         Emitter emitter;
         try {
-            emitter = emitterManager.getEmitter(emitterName);
+            emitter = leases.emitter(emitterName);
         } catch (Exception e) {
             LOG.warn("Failed to get emitter for Frictionless output: {}", emitterName, e);
             return new PipesResult(PipesResult.RESULT_STATUS.EMITTER_NOT_FOUND,
@@ -696,7 +697,8 @@ class PipesWorker implements Callable<PipesResult> {
             } else {
                 // Regular format, direct emission - use EmittingUnpackHandler
                 parseContext.set(UnpackHandler.class,
-                        new EmittingUnpackHandler(fetchEmitTuple, emitterManager, parseContext));
+                        new EmittingUnpackHandler(fetchEmitTuple,
+                                leases.emitter(unpackConfig.getEmitter()), parseContext));
             }
 
             return parseContext;

@@ -373,7 +373,7 @@ public class OpenSearchTest {
 
         TikaJsonConfig tikaJsonConfig = TikaJsonConfig.load(pluginsConfigFile);
         Emitter emitter = EmitterManager
-                .load(TikaPluginManager.load(tikaJsonConfig), tikaJsonConfig).getEmitter();
+                .load(TikaPluginManager.load(tikaJsonConfig), tikaJsonConfig).getEmitter().get();
         Metadata metadata = new Metadata();
         metadata.set("mime", "mimeA");
         metadata.set("title", "titleA");

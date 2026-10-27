@@ -91,7 +91,8 @@ load rather than worst-case single document.
 In per-client mode each parse gets its own JVM and a single thread, so thread-safety bugs in
 parsers stay hidden. In shared mode parses run concurrently in one JVM, which can expose
 latent threading bugs in parsers or their dependencies. Strange behaviour that appears only
-in shared mode is most often this.
+in shared mode is most often this. The same holds for fetchers and emitters: one instance
+serves every concurrent request against its id, so shared mode requires thread-safe ones.
 
 == When to Use Shared Mode
 

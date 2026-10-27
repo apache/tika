@@ -50,6 +50,7 @@ import org.apache.tika.pipes.api.fetcher.FetchKey;
 import org.apache.tika.pipes.api.fetcher.Fetcher;
 import org.apache.tika.pipes.api.fetcher.FetcherFactory;
 import org.apache.tika.pipes.api.pipesiterator.PipesIteratorFactory;
+import org.apache.tika.pipes.core.Lease;
 import org.apache.tika.pipes.core.PipesConfig;
 import org.apache.tika.pipes.core.PipesException;
 import org.apache.tika.pipes.core.PipesParser;
@@ -383,16 +384,16 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
 
     private void fetchAndParseImpl(FetchAndParseRequest request, ParseContext parseContext,
                                    StreamObserver<FetchAndParseReply> responseObserver) {
-        Fetcher fetcher;
-        try {
-            fetcher = fetcherManager.getFetcher(request.getFetcherId());
+        String fetcherId;
+        try (Lease<Fetcher> lease = fetcherManager.getFetcher(request.getFetcherId())) {
+            fetcherId = lease.get().getExtensionConfig().id();
         } catch (TikaException | IOException e) {
             throw new RuntimeException("Could not find fetcher with name " + request.getFetcherId(), e);
         }
 
         Metadata tikaMetadata = new Metadata();
         try {
-            PipesResult pipesResult = pipesParser.parse(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcher.getExtensionConfig().id(), request.getFetchKey()),
+            PipesResult pipesResult = pipesParser.parse(new FetchEmitTuple(request.getFetchKey(), new FetchKey(fetcherId, request.getFetchKey()),
                     new EmitKey(), tikaMetadata, parseContext, FetchEmitTuple.ON_PARSE_EXCEPTION.SKIP));
             FetchAndParseReply.Builder fetchReplyBuilder =
                     FetchAndParseReply.newBuilder()
@@ -483,9 +484,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     public void getFetcher(GetFetcherRequest request,
                            StreamObserver<GetFetcherReply> responseObserver) {
         GetFetcherReply.Builder getFetcherReply = GetFetcherReply.newBuilder();
-        try {
-            Fetcher fetcher = fetcherManager.getFetcher(request.getFetcherId());
-            ExtensionConfig config = fetcher.getExtensionConfig();
+        try (Lease<Fetcher> lease = fetcherManager.getFetcher(request.getFetcherId())) {
+            ExtensionConfig config = lease.get().getExtensionConfig();
 
             getFetcherReply.setFetcherId(config.id());
             getFetcherReply.setFetcherType(config.name());
@@ -512,9 +512,8 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         // The config may carry secrets; only include it once component management is enabled.
         boolean includeConfig = tikaGrpcConfig.isAllowComponentManagement();
         for (String fetcherId : fetcherManager.getSupported()) {
-            try {
-                Fetcher fetcher = fetcherManager.getFetcher(fetcherId);
-                ExtensionConfig config = fetcher.getExtensionConfig();
+            try (Lease<Fetcher> lease = fetcherManager.getFetcher(fetcherId)) {
+                ExtensionConfig config = lease.get().getExtensionConfig();
 
                 GetFetcherReply.Builder replyBuilder = GetFetcherReply.newBuilder().setFetcherId(config.id()).setFetcherType(config.name());
 
