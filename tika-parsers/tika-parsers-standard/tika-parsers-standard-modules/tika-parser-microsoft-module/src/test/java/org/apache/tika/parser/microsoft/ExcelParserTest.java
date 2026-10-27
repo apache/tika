@@ -31,6 +31,8 @@ import java.util.UUID;
 import org.apache.poi.hpsf.CustomProperties;
 import org.apache.poi.hpsf.DocumentSummaryInformation;
 import org.apache.poi.hssf.record.crypto.Biff8EncryptionKey;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.util.LocaleUtil;
 import org.junit.jupiter.api.AfterAll;
@@ -808,5 +810,31 @@ public class ExcelParserTest extends TikaTest {
             imagesChecked++;
         }
         assertTrue(imagesChecked >= 4, "expected at least four embedded images, got " + imagesChecked);
+    }
+
+    // POI 6.0.0 throws from SimpleFraction for the second value once the format is cached
+    @Test
+    public void testFractionOverflowKeepsSheet() throws Exception {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        try (HSSFWorkbook wb = new HSSFWorkbook()) {
+            HSSFCellStyle style = wb.createCellStyle();
+            style.setDataFormat(wb.createDataFormat().getFormat("#\\ ???/???"));
+            HSSFSheet sheet = wb.createSheet();
+            double[] values = {1.25, 0.00308641975308642};
+            for (int i = 0; i < values.length; i++) {
+                sheet.createRow(i).createCell(0).setCellValue(values[i]);
+                sheet.getRow(i).getCell(0).setCellStyle(style);
+            }
+            sheet.createRow(2).createCell(0).setCellValue("after");
+            wb.write(bos);
+        }
+        String xml;
+        try (TikaInputStream tis = TikaInputStream.get(bos.toByteArray())) {
+            xml = getXML(tis, AUTO_DETECT_PARSER, new Metadata()).xml;
+        }
+        assertContains("1   1/4", xml);
+        // falls back to General; POI 6.0.1 shows this as "1/324"
+        assertContains("0.0030864198", xml);
+        assertContains("after", xml);
     }
 }
