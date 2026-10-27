@@ -365,9 +365,9 @@ so a value that itself contains `${env:...}` is not expanded a second time. Pres
 at startup with the rest of it; catalog presets and per-request configuration (`/config`
 endpoints, pipes tuples) never do: a request cannot read the server's environment.
 
-A reference keeps a secret out of tika-config.json, not out of every file: with a persistent
-config store (`configStoreType` `file` or Ignite) the resolved fetcher and emitter configurations
-are written to that store. The default in-memory store writes nothing.
+A persistent config store (`configStoreType` `file` or Ignite) holds only fetchers and emitters
+registered at runtime (gRPC `SaveFetcher`), as the caller sent them. Components from the config
+file, with their resolved references, are never written to it.
 
 == Windows file paths
 

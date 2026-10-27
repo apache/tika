@@ -384,33 +384,22 @@ public class EmitterManagerTest {
         TikaPluginManager pluginManager = TikaPluginManager.load(tikaJsonConfig);
 
         EmitterManager emitterManager = EmitterManager.load(pluginManager, tikaJsonConfig, true);
+        emitterManager.saveEmitter(fileSystemEmitter("fse2", tmpDir.resolve("output2")));
+        Emitter originalEmitter = emitterManager.getEmitter("fse2");
 
-        // Update existing emitter with new configuration
-        String newConfigJson = String.format(Locale.ROOT, """
-                {
-                  "basePath": "%s",
-                  "onExists": "REPLACE"
-                }
-                """, JsonConfigHelper.toJsonPath(tmpDir.resolve("output2")));
-        ExtensionConfig updatedConfig = new ExtensionConfig("fse", "file-system-emitter", newConfigJson);
+        emitterManager.saveEmitter(fileSystemEmitter("fse2", tmpDir.resolve("output3")));
 
-        // Get original emitter instance
-        Emitter originalEmitter = emitterManager.getEmitter("fse");
-        assertNotNull(originalEmitter);
+        assertEquals(2, emitterManager.getSupported().size());
+        // the cached instance was dropped
+        assertTrue(originalEmitter != emitterManager.getEmitter("fse2"),
+                "Updated emitter should be a new instance");
 
-        // Update the emitter config
-        emitterManager.saveEmitter(updatedConfig);
-
-        // Should still only have 1 emitter
-        assertEquals(1, emitterManager.getSupported().size());
-        assertTrue(emitterManager.getSupported().contains("fse"));
-
-        // Getting the emitter again should return a NEW instance (cache cleared)
-        Emitter updatedEmitter = emitterManager.getEmitter("fse");
-        assertNotNull(updatedEmitter);
-        
-        // Should be different instance due to re-instantiation
-        assertTrue(originalEmitter != updatedEmitter, "Updated emitter should be a new instance");
+        // one from the config file is not the caller's to replace or delete
+        Emitter configured = emitterManager.getEmitter("fse");
+        assertThrows(TikaConfigException.class,
+                () -> emitterManager.saveEmitter(fileSystemEmitter("fse", tmpDir.resolve("output2"))));
+        assertThrows(TikaConfigException.class, () -> emitterManager.deleteEmitter("fse"));
+        assertSame(configured, emitterManager.getEmitter("fse"));
     }
 
     @Test
@@ -530,5 +519,14 @@ public class EmitterManagerTest {
         });
 
         assertTrue(exception.getMessage().contains("Runtime modifications are not allowed"));
+    }
+
+    private static ExtensionConfig fileSystemEmitter(String id, Path basePath) {
+        return new ExtensionConfig(id, "file-system-emitter", String.format(Locale.ROOT, """
+                {
+                  "basePath": "%s",
+                  "onExists": "REPLACE"
+                }
+                """, JsonConfigHelper.toJsonPath(basePath)));
     }
 }

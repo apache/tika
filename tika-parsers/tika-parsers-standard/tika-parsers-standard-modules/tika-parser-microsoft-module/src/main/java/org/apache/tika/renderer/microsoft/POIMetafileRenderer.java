@@ -50,6 +50,7 @@ import org.apache.tika.metadata.Rendering;
 import org.apache.tika.metadata.TikaCoreProperties;
 import org.apache.tika.mime.MediaType;
 import org.apache.tika.parser.ParseContext;
+import org.apache.tika.parser.microsoft.EMFParser;
 import org.apache.tika.renderer.ImageFormat;
 import org.apache.tika.renderer.ImageType;
 import org.apache.tika.renderer.RenderRequest;
@@ -82,6 +83,10 @@ public class POIMetafileRenderer implements Renderer {
 
     private static final Set<MediaType> SUPPORTED_TYPES =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList(EMF, WMF)));
+
+    static {
+        EMFParser.raiseCommentRecordLength();
+    }
 
     /** What this renderer draws when the parse scopes no settings: 800 px wide, RGB PNG. */
     private final RenderSettings defaults = RenderSettings.defaults();

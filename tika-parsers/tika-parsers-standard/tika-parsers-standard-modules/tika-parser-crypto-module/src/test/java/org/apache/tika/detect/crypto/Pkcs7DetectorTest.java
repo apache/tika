@@ -16,6 +16,8 @@
  */
 package org.apache.tika.detect.crypto;
 
+import static org.apache.tika.parser.crypto.PemFixtures.pem;
+import static org.apache.tika.parser.crypto.PemFixtures.resource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
@@ -31,10 +33,23 @@ public class Pkcs7DetectorTest {
     private final Pkcs7Detector detector = new Pkcs7Detector();
 
     private MediaType detect(String resource) throws Exception {
-        try (TikaInputStream tis = TikaInputStream.get(
-                Pkcs7DetectorTest.class.getResourceAsStream("/test-documents/" + resource))) {
+        return detect(resource(resource));
+    }
+
+    private MediaType detect(byte[] bytes) throws Exception {
+        try (TikaInputStream tis = TikaInputStream.get(bytes)) {
             return detector.detect(tis, new Metadata(), new ParseContext());
         }
+    }
+
+    @Test
+    public void testPemSubtypeAtDetectTime() throws Exception {
+        assertEquals(MediaType.parse("application/pkcs7-mime; smime-type=certs-only"),
+                detect(pem(resource("testPKCS7_certs_only_def.p7c"), "PKCS7", "\n")));
+        assertEquals(MediaType.parse("application/pkcs7-mime; smime-type=signed-data"),
+                detect(pem(resource("testPKCS7_signed_data_def.p7m"), "CMS", "\r\n")));
+        assertEquals(MediaType.parse("application/pkcs7-mime; smime-type=signed-data"),
+                detect("testPKCS7_signed_data_def.pem"));
     }
 
     @Test

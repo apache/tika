@@ -119,7 +119,8 @@ it is off by default. When `false`, a request carrying either field is rejected 
 configuration back (`GetFetcher`, `ListFetchers`, `GetPipesIterator`). Off by default for two
 reasons: mutations change what the server can reach for all subsequent requests (for example, a
 fetcher that escapes a configured base path), and the stored configs returned by the read RPCs may
-contain passwords, access keys and tokens. When `false`, the mutating RPCs are rejected with
+contain passwords, access keys and tokens. Fetchers defined in the config file cannot be
+modified or deleted this way. When `false`, the mutating RPCs are rejected with
 `PERMISSION_DENIED`, and the read RPCs return only component identity — id and class — never the
 config.
 |===

@@ -56,6 +56,10 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
     private static final Logger LOG = LoggerFactory.getLogger(AbstractComponentManager.class);
 
     protected final PluginManager pluginManager;
+    // from the config file: never written to the store, so a persistent store holds no resolved
+    // ${env:...} secrets, and never replaced or deleted at runtime
+    private final Map<String, ExtensionConfig> configured;
+    // runtime registrations only
     private final ConfigStore configStore;
     private final Map<String, T> componentCache = new ConcurrentHashMap<>();
     private final boolean allowRuntimeModifications;
@@ -77,7 +81,14 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize ConfigStore", e);
         }
-        componentConfigs.forEach(configStore::put);
+        this.configured = Map.copyOf(componentConfigs);
+        for (String id : configured.keySet()) {
+            if (configStore.containsKey(id)) {
+                // most likely a copy an older version persisted; it may hold resolved secrets
+                LOG.warn("The config store holds a {} '{}' that the config file also defines; the "
+                        + "config file's wins. Remove it from the store.", getComponentName(), id);
+            }
+        }
         this.allowRuntimeModifications = allowRuntimeModifications;
     }
 
@@ -243,7 +254,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         }
 
         // Check if config exists
-        ExtensionConfig config = configStore.get(id);
+        ExtensionConfig config = lookup(id);
         if (config == null) {
             throw createNotFoundException(
                     "Can't find " + getComponentName() + " for id=" + id +
@@ -270,6 +281,19 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         }
     }
 
+    private ExtensionConfig lookup(String id) {
+        ExtensionConfig config = configured.get(id);
+        return config != null ? config : configStore.get(id);
+    }
+
+    private void requireNotConfigured(String componentId) throws TikaConfigException {
+        if (configured.containsKey(componentId)) {
+            throw new TikaConfigException(getComponentName().substring(0, 1).toUpperCase(Locale.ROOT)
+                    + getComponentName().substring(1) + " '" + componentId
+                    + "' is defined in the server config; change it there");
+        }
+    }
+
     /**
      * Builds a component instance from its configuration.
      */
@@ -291,6 +315,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
      * Dynamically adds or updates a component configuration at runtime.
      * The component will not be instantiated until it is first requested via {@link #getComponent(String)}.
      * If a component with the same ID already exists, it will be replaced and the cached instance cleared.
+     * A component defined in the server config cannot be replaced.
      * <p>
      * This method is only available if the manager was loaded with allowRuntimeModifications=true.
      * <p>
@@ -321,6 +346,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         } catch (IllegalArgumentException e) {
             throw new TikaConfigException(e.getMessage(), e);
         }
+        requireNotConfigured(componentId);
         config = new ExtensionConfig(componentId, config.name(), config.json());
         String typeName = config.name();
 
@@ -349,7 +375,8 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
      * Clears the cached instance and removes the configuration.
      *
      * @param componentId the component ID to delete
-     * @throws TikaConfigException if runtime modifications are not allowed or component not found
+     * @throws TikaConfigException if runtime modifications are not allowed, the component is not
+     *         found, or it is defined in the server config
      */
     public synchronized void deleteComponent(String componentId) throws TikaConfigException {
         if (!allowRuntimeModifications) {
@@ -370,6 +397,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         } catch (IllegalArgumentException e) {
             throw new TikaConfigException(e.getMessage(), e);
         }
+        requireNotConfigured(componentId);
 
         if (!configStore.containsKey(componentId)) {
             throw new TikaConfigException(
@@ -390,7 +418,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
      * @return the component configuration, or null if not found
      */
     public ExtensionConfig getComponentConfig(String componentId) {
-        return configStore.get(ComponentIds.normalize(componentId));
+        return lookup(ComponentIds.normalize(componentId));
     }
 
     /**
@@ -398,7 +426,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
      * bind them, so listing them in a "not found" message only advertises internals.
      */
     public Set<String> getSupported() {
-        return configStore.keySet().stream()
+        return getAllIds().stream()
                 .filter(id -> !ComponentIds.isSystem(id))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
@@ -408,7 +436,9 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
      * anything a caller sees.
      */
     public Set<String> getAllIds() {
-        return configStore.keySet();
+        Set<String> ids = new LinkedHashSet<>(configured.keySet());
+        ids.addAll(configStore.keySet());
+        return ids;
     }
 
     /**
@@ -418,15 +448,15 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
      * @return the single configured component
      */
     public T getComponent() throws IOException, TikaException {
-        if (configStore.size() != 1) {
+        Set<String> ids = getAllIds();
+        if (ids.size() != 1) {
             throw new IllegalArgumentException(
                     "No-arg get" + getComponentName().substring(0, 1).toUpperCase(Locale.ROOT) +
                     getComponentName().substring(1) + "() requires exactly 1 configured " +
-                    getComponentName() + ". Found: " + configStore.size() +
-                    " (" + configStore.keySet() + ")");
+                    getComponentName() + ". Found: " + ids.size() + " (" + ids + ")");
         }
         // Get the single component id and use getComponent(id) for lazy loading
-        String componentId = configStore.keySet().iterator().next();
+        String componentId = ids.iterator().next();
         return getComponent(componentId);
     }
 }

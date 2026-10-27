@@ -44,13 +44,17 @@ public class TikaExcelDataFormatter extends DataFormatter {
     @Override
     public String formatRawCellContents(double value, int formatIndex, String formatString,
                                         boolean use1904Windowing) {
-        if (DateUtil.isADateFormat(formatIndex, formatString)) {
-            String activeDateFormatString =
-                    (dateOverrideFormatString == null) ? formatString : dateOverrideFormatString;
-            return super.formatRawCellContents(value, formatIndex, activeDateFormatString,
+        String activeFormatString = formatString;
+        if (dateOverrideFormatString != null && DateUtil.isADateFormat(formatIndex, formatString)) {
+            activeFormatString = dateOverrideFormatString;
+        }
+        try {
+            return super.formatRawCellContents(value, formatIndex, activeFormatString,
                     use1904Windowing);
-        } else {
-            return super.formatRawCellContents(value, formatIndex, formatString, use1904Windowing);
+        } catch (RuntimeException e) {
+            // TODO: remove on POI 6.0.1, whose DataFormatter falls back per value itself; 6.0.0
+            // throws from SimpleFraction on overflow for a fraction format with text, e.g. #\ ???/???
+            return super.formatRawCellContents(value, 0, "General", use1904Windowing);
         }
     }
 

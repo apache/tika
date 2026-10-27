@@ -22,10 +22,17 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.poi.hslf.record.ExOleObjStg;
+import org.apache.poi.hslf.usermodel.HSLFSlideShow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.apache.poi.util.LocaleUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -466,5 +473,53 @@ public class PowerPointParserTest extends TikaTest {
             imagesChecked++;
         }
         assertTrue(imagesChecked > 0, "expected at least one embedded image");
+    }
+
+    @Test
+    public void testOleObjectCapRaised() {
+        HSLFExtractor.raiseOleObjectLength();
+        assertTrue(ExOleObjStg.getMaxRecordLength() >= HSLFExtractor.MAX_OLE_OBJECT_LENGTH);
+    }
+
+    // an object over the cap is recorded and skipped; it used to end the loop
+    @Test
+    public void testOleObjectOverCapKeepsLaterObjects() throws Exception {
+        byte[] big = xls("big", 2_000);
+        byte[] small = xls("small", 1);
+        ByteArrayOutputStream ppt = new ByteArrayOutputStream();
+        try (HSLFSlideShow ss = new HSLFSlideShow()) {
+            ss.createSlide();
+            ss.addEmbed(new POIFSFileSystem(new ByteArrayInputStream(big)));
+            ss.addEmbed(new POIFSFileSystem(new ByteArrayInputStream(small)));
+            ss.write(ppt);
+        }
+        HSLFExtractor.raiseOleObjectLength();
+        int cap = ExOleObjStg.getMaxRecordLength();
+        ExOleObjStg.setMaxRecordLength((big.length + small.length) / 2);
+        List<Metadata> metadataList;
+        try (TikaInputStream tis = TikaInputStream.get(ppt.toByteArray())) {
+            metadataList = getRecursiveMetadata(tis, true);
+        } finally {
+            ExOleObjStg.setMaxRecordLength(cap);
+        }
+        List<Metadata> xls = metadataList.stream()
+                .filter(m -> "application/vnd.ms-excel".equals(m.get(HttpHeaders.CONTENT_TYPE)))
+                .toList();
+        assertEquals(1, xls.size());
+        assertContains("small0", xls.get(0).get(TikaCoreProperties.TIKA_CONTENT));
+        assertContains("exceeds maximum allowed",
+                metadataList.get(0).get(TikaCoreProperties.TIKA_META_EXCEPTION_WARNING));
+    }
+
+    private static byte[] xls(String text, int rows) throws Exception {
+        try (HSSFWorkbook wb = new HSSFWorkbook();
+                ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            HSSFSheet sheet = wb.createSheet();
+            for (int r = 0; r < rows; r++) {
+                sheet.createRow(r).createCell(0).setCellValue(text + r);
+            }
+            wb.write(bos);
+            return bos.toByteArray();
+        }
     }
 }
