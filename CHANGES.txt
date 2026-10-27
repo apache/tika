@@ -1,3 +1,11 @@
+Release 4.2.1 - ???
+
+  OTHER CHANGES
+
+   * PEM-armored CMS/PKCS7 (-----BEGIN PKCS7----- or -----BEGIN CMS-----) is parsed like
+     DER: Pkcs7Parser and the opt-in pkcs-7-detector report the smime-type and extract
+     signed content; -----BEGIN CMS----- is now detected (TIKA-5002).
+
 Release 4.2.0 - 10/25/2026
 
   BREAKING CHANGES AND DEPRECATIONS
