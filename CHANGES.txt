@@ -9,6 +9,17 @@ Release 4.3.0 - ???
      last task using it ends) and on graceful shutdown; nothing closed them before.
      EmittingUnpackHandler takes the emitter, not the EmitterManager (TIKA-5001).
 
+   * tika-grpc refuses SaveFetcher with configStoreType memory (FAILED_PRECONDITION):
+     the forks never saw such a fetcher, so every fetch through it failed. Use file or
+     ignite (TIKA-5001).
+
+  OTHER CHANGES
+
+   * A runtime fetcher or emitter save or delete reaches running pipes workers at
+     their next fetch, through a change token on file and ignite stores
+     (ConfigStore.changeToken); before, a worker kept the instance it first built
+     until it restarted (TIKA-5001).
+
 Release 4.2.1 - ???
 
   OTHER CHANGES

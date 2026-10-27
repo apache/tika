@@ -23,6 +23,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -70,6 +71,8 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
     private final Map<String, Holder<T>> holders = new ConcurrentHashMap<>();
     private final boolean allowRuntimeModifications;
     private volatile boolean closed = false;
+    // the store state the cached runtime instances were built from
+    private volatile Object changeToken;
 
     protected AbstractComponentManager(PluginManager pluginManager,
                                       Map<String, ExtensionConfig> componentConfigs,
@@ -88,6 +91,7 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         } catch (Exception e) {
             throw new RuntimeException("Failed to initialize ConfigStore", e);
         }
+        this.changeToken = configStore.changeToken();
         this.configured = Map.copyOf(componentConfigs);
         for (String id : configured.keySet()) {
             if (configStore.containsKey(id)) {
@@ -254,6 +258,10 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         // Canonicalize on the way in so lookup agrees with what load() stored. __ is not refused
         // here: the host's own components resolve through this method.
         id = ComponentIds.normalize(id);
+        // the store cannot change a config-file component, so its lookups never depend on it
+        if (!configured.containsKey(id)) {
+            retireIfStoreChanged();
+        }
         while (true) {
             Holder<T> holder = holders.get(id);
             if (holder == null) {
@@ -289,6 +297,36 @@ public abstract class AbstractComponentManager<T extends TikaExtension,
         holders.put(id, holder);
         LOG.debug("Lazily instantiated {}: {}", getComponentName(), id);
         return holder;
+    }
+
+    /**
+     * Another process (the gRPC server, another node) saved or deleted a runtime component:
+     * retire every cached runtime instance so the next lease rebuilds from the store.
+     * Config-file instances are untouched; the store cannot change them.
+     */
+    private void retireIfStoreChanged() throws IOException {
+        Object token;
+        try {
+            token = configStore.changeToken();
+        } catch (RuntimeException e) {
+            // fail this lookup, not the task's process: an unchecked exception crashes a fork
+            throw new IOException("Can't check the config store for changes", e);
+        }
+        if (Objects.equals(token, changeToken)) {
+            return;
+        }
+        synchronized (this) {
+            if (Objects.equals(token, changeToken)) {
+                return;
+            }
+            changeToken = token;
+            for (String id : Set.copyOf(holders.keySet())) {
+                if (!configured.containsKey(id)) {
+                    retire(id);
+                }
+            }
+        }
+        LOG.debug("Config store changed; retired cached runtime {}s", getComponentName());
     }
 
     private synchronized void retire(String id) {

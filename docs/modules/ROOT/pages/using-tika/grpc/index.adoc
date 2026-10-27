@@ -126,11 +126,17 @@ config.
 |===
 
 Fetches run in the forked pipes workers, and each worker builds its own config store from the
-same settings. With the default in-memory `configStoreType`, a fetcher saved through
-`SaveFetcher` exists only in the gRPC JVM and every `FetchAndParse` that names it fails with
-`FETCHER_NOT_FOUND`. When `allowComponentManagement` is `true`, set `configStoreType` to `file`
-or `ignite` (see xref:pipes/configuration.adoc#_distributed_config_store[Distributed Config
-Store]) so the workers see the same store.
+same settings. A fetcher saved to the default in-memory `configStoreType` would exist only in the
+gRPC JVM, so `SaveFetcher` is refused with `FAILED_PRECONDITION`. To save fetchers at runtime,
+set `configStoreType` to `file` or `ignite` (see
+xref:pipes/configuration.adoc#_distributed_config_store[Distributed Config Store]) so the
+workers see the same store.
+
+A save or delete takes effect for fetches that start after it, in every worker. A fetch already
+running finishes with the fetcher it started with, even if that fetcher was just deleted or its
+credentials replaced; the old instance is closed when the last such fetch ends. Each fetch through
+a runtime fetcher reads the store's change marker, so while an Ignite store is unreachable those
+fetches fail with `FETCHER_INITIALIZATION_EXCEPTION`; fetchers from the config file are unaffected.
 
 Enable these only for trusted callers over a secured channel:
 

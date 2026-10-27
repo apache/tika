@@ -57,6 +57,7 @@ import org.apache.tika.pipes.core.PipesParser;
 import org.apache.tika.pipes.core.config.ConfigStore;
 import org.apache.tika.pipes.core.config.ConfigStoreFactory;
 import org.apache.tika.pipes.core.config.DefaultPluginsDir;
+import org.apache.tika.pipes.core.config.InMemoryConfigStore;
 import org.apache.tika.pipes.core.fetcher.FetcherManager;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherReply;
 import org.apache.tika.pipes.grpc.proto.DeleteFetcherRequest;
@@ -92,6 +93,10 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     public static final JsonSchemaGenerator JSON_SCHEMA_GENERATOR = new JsonSchemaGenerator(OBJECT_MAPPER);
 
     private static final String PIPES_ITERATOR_PREFIX = "pipesIterator:";
+    // the pipes workers are separate JVMs, each with its own empty in-memory store
+    static final String MEMORY_STORE_SAVE_REFUSED = "SaveFetcher is refused: a fetcher saved "
+            + "to the in-memory config store never reaches the pipes workers, so every fetch "
+            + "through it would fail. Set pipes.configStoreType to 'file' or 'ignite'.";
     private static final String IGNITE_STORE_SERVER_CLASS = "org.apache.tika.pipes.ignite.server.IgniteStoreServer";
 
     PipesConfig pipesConfig;
@@ -169,6 +174,11 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
         }
 
         this.configStore = createConfigStore();
+        if (tikaGrpcConfig.isAllowComponentManagement()
+                && configStore instanceof InMemoryConfigStore) {
+            LOG.warn("allowComponentManagement is on with configStoreType 'memory': {}",
+                    MEMORY_STORE_SAVE_REFUSED);
+        }
 
         fetcherManager = FetcherManager.load(pluginManager, tikaJsonConfig,
                 tikaGrpcConfig.isAllowComponentManagement(), this.configStore);
@@ -425,6 +435,12 @@ class TikaGrpcServerImpl extends TikaGrpc.TikaImplBase {
     public void saveFetcher(SaveFetcherRequest request,
                               StreamObserver<SaveFetcherReply> responseObserver) {
         if (denyComponentManagement(responseObserver)) {
+            return;
+        }
+        if (configStore instanceof InMemoryConfigStore) {
+            responseObserver.onError(io.grpc.Status.FAILED_PRECONDITION
+                    .withDescription(MEMORY_STORE_SAVE_REFUSED)
+                    .asRuntimeException());
             return;
         }
         String fetcherType = request.getFetcherType();
