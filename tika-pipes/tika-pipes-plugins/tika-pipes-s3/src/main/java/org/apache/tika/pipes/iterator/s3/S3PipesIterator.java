@@ -86,8 +86,6 @@ public class S3PipesIterator extends PipesIteratorBase {
                 provider = InstanceProfileCredentialsProvider.builder().build();
                 break;
             case "identity":
-                // Web identity federation, eg EKS IAM roles for service accounts (IRSA):
-                // assumes AWS_ROLE_ARN with the token in AWS_WEB_IDENTITY_TOKEN_FILE.
                 provider = WebIdentityTokenFileCredentialsProvider.builder().build();
                 break;
             case "profile":

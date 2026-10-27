@@ -142,8 +142,6 @@ public class S3Emitter extends AbstractStreamEmitter {
             case "instance":
                 return InstanceProfileCredentialsProvider.builder().build();
             case "identity":
-                // Web identity federation, eg EKS IAM roles for service accounts (IRSA):
-                // assumes AWS_ROLE_ARN with the token in AWS_WEB_IDENTITY_TOKEN_FILE.
                 return WebIdentityTokenFileCredentialsProvider.builder().build();
             case "profile":
                 return ProfileCredentialsProvider.builder()
